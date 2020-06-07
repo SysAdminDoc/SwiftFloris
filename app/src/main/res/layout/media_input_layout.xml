@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/media_input"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_weight="1"
+    android:layout_alignParentBottom="true"
+    android:orientation="vertical">
+
+    <ViewFlipper
+        android:id="@+id/media_input_view_flipper"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:measureAllChildren="false"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/media_input_switch_to_text_input_button"
+            android:layout_width="@dimen/media_bottom_button_width"
+            android:layout_height="@dimen/media_bottom_button_height"
+            android:layout_weight="0"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/button_transparent_bg_on_press"
+            android:text="@string/key__view_characters" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+        
+        <com.google.android.material.tabs.TabLayout
+            android:id="@+id/media_input_tabs"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_weight="0"
+            app:tabIndicator="@drawable/media_tab_indicator"
+            app:tabIndicatorColor="?colorPrimary"
+            app:tabIndicatorFullWidth="false"
+            app:tabIndicatorHeight="@dimen/media_tab_indicator_height"
+            app:tabIconTint="?android:textColor"
+            app:tabTextColor="?android:textColor">
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:icon="@drawable/ic_image_search" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:icon="@drawable/ic_sentiment_satisfied" />
+
+            <com.google.android.material.tabs.TabItem
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=":-)" />
+
+        </com.google.android.material.tabs.TabLayout>
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_weight="1" />
+        
+        <ImageButton
+            android:id="@+id/media_input_backspace_button"
+            android:layout_width="@dimen/media_bottom_button_width"
+            android:layout_height="@dimen/media_bottom_button_height"
+            android:layout_weight="0"
+            android:layout_gravity="center_vertical"
+            android:background="@drawable/button_transparent_bg_on_press"
+            android:src="@drawable/ic_backspace"
+            android:tint="?android:textColor"
+            android:contentDescription="TODO" />
+
+    </LinearLayout>
+
+</LinearLayout>

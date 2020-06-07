@@ -1,0 +1,77 @@
+<resources>
+    <string name="app_name" translatable="false">FlorisBoard</string>
+    <string name="subtype_en_US">English (US)</string>
+
+    <string name="florisboard__repo_url" translatable="false">https://github.com/florisboard/florisboard</string>
+    <string name="florisboard__privacy_policy_url" translatable="false">https://gist.github.com/patrickgold/a18f1e47468d72f0868afc69d6faaf0b</string>
+
+    <string name="key__phone_pause">Pause</string>
+    <string name="key__phone_wait">Wait</string>
+    <string name="key__view_characters">ABC</string>
+    <string name="key__view_numeric">1 2\n3 4</string>
+    <string name="key__view_phone">123</string>
+    <string name="key__view_phone2">* #</string>
+    <string name="key__view_symbols">\?123</string>
+    <string name="key__view_symbols2">=\\&lt;</string>
+
+    <string name="key_popup__threedots_alt">Three-dot icon. If visible, indicates that more letters can be used if longer pressed.</string>
+
+    <!-- Emoji strings -->
+    <string name="emoji__category__smileys_emotion">Smileys &amp; Emotions</string>
+    <string name="emoji__category__people_body">People &amp; Body</string>
+    <string name="emoji__category__animals_nature">Animals &amp; Nature</string>
+    <string name="emoji__category__food_drink">Food &amp; Drink</string>
+    <string name="emoji__category__travel_places">Travel &amp; Places</string>
+    <string name="emoji__category__activities">Activities</string>
+    <string name="emoji__category__objects">Objects</string>
+    <string name="emoji__category__symbols">Symbols</string>
+    <string name="emoji__category__flags">Flags</string>
+
+    <!-- Smartbar strings -->
+    <string name="smartbar__quick_action_toggle__alt">Quick action toggle. If pressed, toggles between the word suggestions and the quick action buttons.</string>
+    <string name="smartbar__quick_action__one_handed_mode">Toggle the state of the one-handed mode.</string>
+    <string name="smartbar__quick_action__open_settings">Open settings.</string>
+    <string name="smartbar__quick_action__switch_to_media_context">Switch to media input view.</string>
+
+    <!-- Settings UI strings -->
+    <string name="settings__title">Settings</string>
+    <string name="settings__menu">More options</string>
+    <string name="settings__menu_about">About</string>
+    <string name="settings__menu_help">Help &amp; feedback</string>
+    <string name="settings__navigation__home">Home</string>
+    <string name="settings__navigation__keyboard">Keyboard</string>
+    <string name="settings__navigation__looknfeel">Look &amp; feel</string>
+    <string name="settings__navigation__gestures">Gestures</string>
+    <string name="settings__navigation__advanced">Advanced</string>
+
+    <string name="settings__home__title">Welcome to %s</string>
+
+    <string name="settings__keyboard__title">Keyboard &amp; Input</string>
+    <string name="pref__keyboard__group_text_correction__label">Text correction</string>
+
+    <string name="settings__looknfeel__title">Look &amp; feel</string>
+    <string name="pref__looknfeel__group_layout__label">Layout</string>
+    <string name="pref__looknfeel__height_factor__label">Keyboard height</string>
+    <string name="pref__looknfeel__one_handed_mode__label">One-handed mode</string>
+    <string name="pref__looknfeel__group_keypress__label">Key press</string>
+    <string name="pref__looknfeel__long_press_delay__label">Long key press delay</string>
+    <string name="pref__looknfeel__sound_enabled__label">Sound on key press</string>
+    <string name="pref__looknfeel__sound_volume__label">Sound volume on key press</string>
+    <string name="pref__looknfeel__vibration_enabled__label">Vibrate on key press</string>
+    <string name="pref__looknfeel__vibration_strength__label">Vibration strength on key press</string>
+    <string name="pref__theme__name__label">Keyboard Theme</string>
+
+    <string name="settings__gestures__title">Gestures</string>
+
+    <string name="settings__advanced__title">Advanced</string>
+    <string name="pref__advanced__settings_theme__label">Settings theme</string>
+    <string name="pref__advanced__show_app_icon__label">Show app icon in launcher</string>
+
+    <!-- About UI strings -->
+    <string name="about__title">About</string>
+    <string name="about__view_licenses">Open source licenses</string>
+    <string name="about__view_privacy_policy">Privacy policy</string>
+    <string name="about__view_source_code">Source code</string>
+
+    <string name="about__license__title">Open-source licenses</string>
+</resources>
