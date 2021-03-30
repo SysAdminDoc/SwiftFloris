@@ -1,0 +1,227 @@
+{
+  "package": "dev.patrickgold.florisboard",
+  "characterLayouts": {
+    "qwerty": "QWERTY",
+    "qwertz": "QWERTZ",
+    "azerty": "AZERTY",
+    "arabic": "Arabic",
+    "bepo": "BÉPO",
+    "bulgarian_bds": "Bulgarian (BDS)",
+    "bulgarian_phonetic": "Bulgarian (Phonetic)",
+    "canadian_french": "Canadian French (QWERTY)",
+    "colemak": "Colemak",
+    "danish": "Danish (QWERTY)",
+    "dvorak": "Dvorak",
+    "esperanto": "Esperanto",
+    "esperanto_with_hx": "Esperanto with 'ĥ'",
+    "greek": "Ελληνικά",
+    "hebrew": "עברית",
+    "hungarian": "Hungarian (QWERTZ)",
+    "icelandic": "Icelandic (QWERTY)",
+    "kurdish": "کوردی",
+    "norwegian": "Norwegian (QWERTY)",
+    "persian": "Persian",
+    "jcuken_russian": "Russian (JCUKEN)",
+    "serbian_latin": "Serbian (QWERTZ)",
+    "serbian_cyrillic": "Serbian (ЉЊЕРТЗ)",
+    "spanish": "Spanish (QWERTY)",
+    "swedish_finnish": "Swedish/Finnish (QWERTY)",
+    "swiss_german": "Swiss German (QWERTZ)",
+    "swiss_french": "Swiss French (QWERTZ)",
+    "swiss_italian": "Swiss Italian (QWERTZ)",
+    "turkish_q": "Turkish-Q",
+    "turkish_f": "Turkish-F"
+  },
+  "defaultSubtypes": [
+    {
+      "id": 101,
+      "languageTag": "en-US",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 102,
+      "languageTag": "en-UK",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 103,
+      "languageTag": "en-CA",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 104,
+      "languageTag": "en-AU",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 201,
+      "languageTag": "de-DE",
+      "preferredLayout": "qwertz"
+    },
+    {
+      "id": 202,
+      "languageTag": "de-AT",
+      "preferredLayout": "qwertz"
+    },
+    {
+      "id": 203,
+      "languageTag": "de-CH",
+      "preferredLayout": "swiss_german"
+    },
+    {
+      "id": 301,
+      "languageTag": "fr-FR",
+      "preferredLayout": "azerty"
+    },
+    {
+      "id": 302,
+      "languageTag": "fr-CA",
+      "preferredLayout": "canadian_french"
+    },
+    {
+      "id": 303,
+      "languageTag": "fr-CH",
+      "preferredLayout": "swiss_french"
+    },
+    {
+      "id": 401,
+      "languageTag": "it-IT",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 402,
+      "languageTag": "it-CH",
+      "preferredLayout": "swiss_italian"
+    },
+    {
+      "id": 501,
+      "languageTag": "es-ES",
+      "preferredLayout": "spanish"
+    },
+    {
+      "id": 502,
+      "languageTag": "es-US",
+      "preferredLayout": "spanish"
+    },
+    {
+      "id": 503,
+      "languageTag": "es-419",
+      "preferredLayout": "spanish"
+    },
+    {
+      "id": 601,
+      "languageTag": "pt-PT",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 602,
+      "languageTag": "pt-BR",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 701,
+      "languageTag": "nb-NO",
+      "preferredLayout": "norwegian"
+    },
+    {
+      "id": 702,
+      "languageTag": "nn-NO",
+      "preferredLayout": "norwegian"
+    },
+    {
+      "id": 711,
+      "languageTag": "sv-SE",
+      "preferredLayout": "swedish_finnish"
+    },
+    {
+      "id": 721,
+      "languageTag": "fi-FI",
+      "preferredLayout": "swedish_finnish"
+    },
+    {
+      "id": 731,
+      "languageTag": "da-DK",
+      "preferredLayout": "danish"
+    },
+    {
+      "id": 741,
+      "languageTag": "is-IS",
+      "preferredLayout": "icelandic"
+    },
+    {
+      "id": 801,
+      "languageTag": "fa-FA",
+      "preferredLayout": "persian"
+    },
+    {
+      "id": 901,
+      "languageTag": "ar",
+      "preferredLayout": "arabic"
+    },
+    {
+      "id": 1001,
+      "languageTag": "hu",
+      "preferredLayout": "hungarian"
+    },
+    {
+      "id": 1101,
+      "languageTag": "eo",
+      "preferredLayout": "esperanto"
+    },
+    {
+      "id": 1201,
+      "languageTag": "hr",
+      "preferredLayout": "qwertz"
+    },
+    {
+      "id": 1301,
+      "languageTag": "ru",
+      "preferredLayout": "jcuken_russian"
+    },
+    {
+      "id": 1401,
+      "languageTag": "el",
+      "preferredLayout": "greek"
+    },
+    {
+      "id": 1501,
+      "languageTag": "ro",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 1601,
+      "languageTag": "pl",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 1701,
+      "languageTag": "bg-bg",
+      "preferredLayout": "bulgarian_phonetic"
+    },
+    {
+      "id": 1801,
+      "languageTag": "tr",
+      "preferredLayout": "qwerty"
+    },
+    {
+      "id": 1901,
+      "languageTag": "iw-IL",
+      "preferredLayout": "hebrew"
+    },
+    {
+      "id": 2001,
+      "languageTag": "ckb",
+      "preferredLayout": "kurdish"
+    },
+    {
+      "id": 2101,
+      "languageTag": "sr-RS",
+      "preferredLayout": "serbian_cyrillic"
+    },
+    {
+      "id": 2201,
+      "languageTag": "lv-LV",
+      "preferredLayout": "qwerty"
+    }
+  ]
+}
