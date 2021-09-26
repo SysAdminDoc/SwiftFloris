@@ -1,0 +1,3 @@
+[submodule "app/src/main/icu4c"]
+	path = app/src/main/icu4c
+	url = https://github.com/florisboard/icu4c
