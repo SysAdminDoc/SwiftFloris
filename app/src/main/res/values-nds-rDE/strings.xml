@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlorisBoard</string>
+    <!-- One-handed strings -->
+    <!-- Private mode info dialog strings -->
+    <!--
+    <string name="private_mode_dialog__text" comment="Text of the private mode dialog">The icon you just clicked at indicates that FlorisBoard works in the private mode. This means that all features which require to process and temporarily save your input stop working. This applies at minimum to the following features (if they\'ve been turned on previously):\n\n - Next word algorithm adjustments\n\n - Clipboard paste suggestions\n\n - Clipboard history\n\nFlorisBoard enters this mode either if an app requests it or if it was specifically enabled in the advanced settings.</string>
+-->
+    <!-- Media strings -->
+    <!-- Emoji strings -->
+    <!-- Smartbar strings -->
+    <!-- Settings UI strings -->
+    <!-- Spelling UI strings -->
+    <string name="pref__spelling__use_contacts__label" comment="Label of Use contact list pref">[NICHT IMPLEMENTIERT] Nutze Namen von Kontakten</string>
+    <!-- About UI strings -->
+    <!-- Assets strings -->
+    <string name="assets__action__no">Ne</string>
+    <string name="assets__action__select">Auswählen</string>
+    <string name="assets__action__select_dir">Verzeichnis wählen</string>
+    <string name="assets__action__select_file">Datei auswählen</string>
+    <string name="assets__action__yes">Jau</string>
+    <!-- Setup UI strings -->
+    <!-- Crash Dialog strings -->
+    <!-- Clipboard strings -->
+    <!-- Devtools strings -->
+    <!-- Extension strings -->
+    <!-- General strings -->
+    <!-- Screen orientation strings -->
+    <!-- State strings -->
+    <!-- Enum label and description strings -->
+    <!-- Unit strings (symbols) -->
+    <!-- Unit strings (written words) -->
+</resources>
