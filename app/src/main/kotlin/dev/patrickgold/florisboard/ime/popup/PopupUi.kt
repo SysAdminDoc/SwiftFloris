@@ -1,0 +1,134 @@
+/*
+ * Copyright (C) 2021-2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.popup
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.layout.size
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreHoriz
+import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Dp
+import dev.patrickgold.florisboard.ime.keyboard.Key
+import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.lib.compose.safeTimes
+import org.florisboard.lib.snygg.SnyggSelector
+import org.florisboard.lib.snygg.ui.SnyggBox
+import org.florisboard.lib.snygg.ui.SnyggColumn
+import org.florisboard.lib.snygg.ui.SnyggIcon
+import org.florisboard.lib.snygg.ui.SnyggText
+import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
+
+@Composable
+fun PopupBaseBox(
+    modifier: Modifier = Modifier,
+    key: Key,
+    fontSizeMultiplier: Float,
+    shouldIndicateExtendedPopups: Boolean,
+): Unit = with(LocalDensity.current) {
+    val popupStyle = rememberSnyggThemeQuery(FlorisImeUi.KeyPopup.elementName)
+    val fontSize = popupStyle.fontSize() safeTimes fontSizeMultiplier
+    SnyggBox(
+        elementName = FlorisImeUi.KeyPopup.elementName,
+        modifier = modifier,
+    ) {
+        key.label?.let { label ->
+            SnyggBox(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(key.visibleBounds.height.toDp())
+                    .align(Alignment.TopCenter),
+            ) {
+                Text(
+                    modifier = Modifier.align(Alignment.Center),
+                    text = label,
+                    color = popupStyle.foreground(),
+                    fontSize = fontSize,
+                    maxLines = 1,
+                    softWrap = false,
+                )
+            }
+        }
+        if (shouldIndicateExtendedPopups) {
+            Icon(
+                modifier = Modifier
+                    .requiredSize(fontSize.toDp() * 0.65f)
+                    .align(Alignment.CenterEnd),
+                imageVector = Icons.Default.MoreHoriz,
+                contentDescription = null,
+                tint = popupStyle.foreground(),
+            )
+        }
+    }
+}
+
+@Composable
+fun PopupExtBox(
+    modifier: Modifier = Modifier,
+    elements: List<List<PopupUiController.Element>>,
+    elemArrangement: Arrangement.Horizontal,
+    elemWidth: Dp,
+    elemHeight: Dp,
+    activeElementIndex: Int,
+): Unit = with(LocalDensity.current) {
+    SnyggColumn(FlorisImeUi.KeyPopup.elementName, modifier = modifier) {
+        for (row in elements.asReversed()) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .requiredHeight(elemHeight),
+                horizontalArrangement = elemArrangement,
+            ) {
+                for (element in row) {
+                    val selector = if (activeElementIndex == element.orderedIndex) {
+                        SnyggSelector.FOCUS
+                    } else {
+                        null
+                    }
+                    SnyggBox(
+                        elementName = FlorisImeUi.KeyPopup.elementName,
+                        selector = selector,
+                        modifier = Modifier
+                            .size(elemWidth, elemHeight),
+                    ) {
+                        element.label?.let { label ->
+                            SnyggText(
+                                modifier = Modifier.align(Alignment.Center),
+                                text = label,
+                            )
+                        }
+                        element.icon?.let { icon ->
+                            SnyggIcon(
+                                modifier = Modifier.align(Alignment.Center),
+                                imageVector = icon,
+                            )
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
