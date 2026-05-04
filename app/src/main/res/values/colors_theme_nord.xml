@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Nord Theme - Arctic, north-bluish color palette -->
+    <!-- https://www.nordtheme.com/ -->
+    
+    <!-- Nord Palette -->
+    <color name="nord0">#2E3440</color>
+    <color name="nord1">#3B4252</color>
+    <color name="nord2">#434C5E</color>
+    <color name="nord3">#4C566A</color>
+    <color name="nord4">#D8DEE9</color>
+    <color name="nord5">#E5E9F0</color>
+    <color name="nord6">#ECEFF4</color>
+    <color name="nord7">#8FBCBB</color>
+    <color name="nord8">#88C0D0</color>
+    <color name="nord9">#81A1C1</color>
+    <color name="nord10">#5E81AC</color>
+    <color name="nord11">#BF616A</color>
+    <color name="nord12">#D08770</color>
+    <color name="nord13">#EBCB8B</color>
+    <color name="nord14">#A3BE8C</color>
+    <color name="nord15">#B48EAD</color>
+    
+    <!-- Theme Application -->
+    <color name="theme_nord_primary">@color/nord9</color>
+    <color name="theme_nord_primary_dark">@color/nord10</color>
+    <color name="theme_nord_primary_light">@color/nord8</color>
+    <color name="theme_nord_secondary">@color/nord14</color>
+    <color name="theme_nord_secondary_dark">@color/nord7</color>
+    <color name="theme_nord_accent">@color/nord11</color>
+    <color name="theme_nord_background">@color/nord0</color>
+    <color name="theme_nord_surface">@color/nord1</color>
+    <color name="theme_nord_surface_variant">@color/nord2</color>
+    <color name="theme_nord_text_primary">@color/nord6</color>
+    <color name="theme_nord_text_secondary">@color/nord4</color>
+    <color name="theme_nord_text_tertiary">@color/nord3</color>
+    <color name="theme_nord_success">@color/nord14</color>
+    <color name="theme_nord_warning">@color/nord13</color>
+    <color name="theme_nord_error">@color/nord11</color>
+</resources>

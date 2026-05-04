@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Tokyo Night Theme - Dark, vibrant Tokyo neon-inspired colors -->
+    <!-- https://github.com/enkia/tokyo-night-vscode-theme -->
+    
+    <!-- Tokyo Night Palette -->
+    <color name="tokyo_night_bg">#1a1b26</color>
+    <color name="tokyo_night_fg">#c0caf5</color>
+    <color name="tokyo_night_border">#15202b</color>
+    <color name="tokyo_night_black">#000000</color>
+    <color name="tokyo_night_red">#f7768e</color>
+    <color name="tokyo_night_green">#9ece6a</color>
+    <color name="tokyo_night_yellow">#e0af68</color>
+    <color name="tokyo_night_blue">#7aa2f7</color>
+    <color name="tokyo_night_magenta">#bb9af7</color>
+    <color name="tokyo_night_cyan">#7dcfff</color>
+    <color name="tokyo_night_white">#ffffff</color>
+    <color name="tokyo_night_comment">#565f89</color>
+    <color name="tokyo_night_bg_dark">#0f1419</color>
+    <color name="tokyo_night_bg_highlight">#292e42</color>
+    
+    <!-- Theme Application -->
+    <color name="theme_tokyo_night_primary">@color/tokyo_night_blue</color>
+    <color name="theme_tokyo_night_primary_dark">#5a8ad9</color>
+    <color name="theme_tokyo_night_primary_light">@color/tokyo_night_cyan</color>
+    <color name="theme_tokyo_night_secondary">@color/tokyo_night_magenta</color>
+    <color name="theme_tokyo_night_secondary_dark">#9968d4</color>
+    <color name="theme_tokyo_night_accent">@color/tokyo_night_red</color>
+    <color name="theme_tokyo_night_background">@color/tokyo_night_bg</color>
+    <color name="theme_tokyo_night_surface">@color/tokyo_night_bg_highlight</color>
+    <color name="theme_tokyo_night_surface_variant">@color/tokyo_night_border</color>
+    <color name="theme_tokyo_night_text_primary">@color/tokyo_night_fg</color>
+    <color name="theme_tokyo_night_text_secondary">@color/tokyo_night_comment</color>
+    <color name="theme_tokyo_night_text_tertiary">#555560</color>
+    <color name="theme_tokyo_night_success">@color/tokyo_night_green</color>
+    <color name="theme_tokyo_night_warning">@color/tokyo_night_yellow</color>
+    <color name="theme_tokyo_night_error">@color/tokyo_night_red</color>
+</resources>

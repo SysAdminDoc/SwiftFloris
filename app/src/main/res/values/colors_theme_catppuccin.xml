@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Catppuccin Mocha Theme - Warm, dark, elegant color palette -->
+    <!-- https://github.com/catppuccin/catppuccin -->
+    
+    <!-- Catppuccin Mocha Palette -->
+    <color name="catppuccin_rosewater">#f5e0dc</color>
+    <color name="catppuccin_flamingo">#f2cdcd</color>
+    <color name="catppuccin_pink">#f5c2e7</color>
+    <color name="catppuccin_mauve">#cba6f7</color>
+    <color name="catppuccin_red">#f38ba8</color>
+    <color name="catppuccin_maroon">#eba0ac</color>
+    <color name="catppuccin_peach">#fab387</color>
+    <color name="catppuccin_yellow">#f9e2af</color>
+    <color name="catppuccin_green">#a6e3a1</color>
+    <color name="catppuccin_teal">#94e2d5</color>
+    <color name="catppuccin_sky">#89dceb</color>
+    <color name="catppuccin_sapphire">#74c7ec</color>
+    <color name="catppuccin_blue">#89b4fa</color>
+    <color name="catppuccin_lavender">#b4befe</color>
+    <color name="catppuccin_text">#cdd6f4</color>
+    <color name="catppuccin_subtext1">#bac2de</color>
+    <color name="catppuccin_subtext0">#a6adc8</color>
+    <color name="catppuccin_overlay2">#9399b2</color>
+    <color name="catppuccin_overlay1">#7f849c</color>
+    <color name="catppuccin_overlay0">#6c7086</color>
+    <color name="catppuccin_surface2">#585b70</color>
+    <color name="catppuccin_surface1">#45475a</color>
+    <color name="catppuccin_surface0">#313244</color>
+    <color name="catppuccin_base">#1e1e2e</color>
+    <color name="catppuccin_mantle">#181825</color>
+    <color name="catppuccin_crust">#11111b</color>
+    
+    <!-- Theme Application -->
+    <color name="theme_catppuccin_primary">@color/catppuccin_blue</color>
+    <color name="theme_catppuccin_primary_dark">@color/catppuccin_sapphire</color>
+    <color name="theme_catppuccin_primary_light">@color/catppuccin_sky</color>
+    <color name="theme_catppuccin_secondary">@color/catppuccin_mauve</color>
+    <color name="theme_catppuccin_secondary_dark">#a581d4</color>
+    <color name="theme_catppuccin_accent">@color/catppuccin_peach</color>
+    <color name="theme_catppuccin_background">@color/catppuccin_base</color>
+    <color name="theme_catppuccin_surface">@color/catppuccin_surface0</color>
+    <color name="theme_catppuccin_surface_variant">@color/catppuccin_surface1</color>
+    <color name="theme_catppuccin_text_primary">@color/catppuccin_text</color>
+    <color name="theme_catppuccin_text_secondary">@color/catppuccin_subtext0</color>
+    <color name="theme_catppuccin_text_tertiary">@color/catppuccin_overlay0</color>
+    <color name="theme_catppuccin_success">@color/catppuccin_green</color>
+    <color name="theme_catppuccin_warning">@color/catppuccin_yellow</color>
+    <color name="theme_catppuccin_error">@color/catppuccin_red</color>
+</resources>
