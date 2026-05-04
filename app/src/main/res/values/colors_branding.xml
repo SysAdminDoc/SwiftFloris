@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- FlorisKeyboard Branding Colors -->
+    <!-- SwiftFloris Branding Colors -->
     
     <!-- Primary Blue (keyboard key color) -->
     <color name="primary">#4A90E2</color>

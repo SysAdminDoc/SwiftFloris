@@ -1,8 +1,8 @@
-# FlorisKeyboard v1.1.0 — Complete Customization & Feature Summary
+# SwiftFloris v1.1.0 — Complete Customization & Feature Summary
 
 ## Project Status: ✅ COMPLETE
 
-FlorisKeyboard is a professional, customizable Android IME keyboard based on FlorisBoard v0.6.0-alpha02. This session delivered **4 major phases of customization and feature implementation**.
+SwiftFloris is a professional, customizable Android IME keyboard based on FlorisBoard v0.6.0-alpha02 with SwiftKey-inspired aesthetics. This session delivered **4 major phases of customization and feature implementation**.
 
 ---
 
@@ -21,7 +21,7 @@ FlorisKeyboard is a professional, customizable Android IME keyboard based on Flo
   - Primary blue (#4A90E2), secondary purple (#9B59B6)
   - Accent teal (#1ABC9C), accent magenta (#E91E63)
   - Dark surfaces, light text for Material Design 3
-- **App Name**: Updated from "FlorisBoard" to "FlorisKeyboard"
+- **App Name**: Updated from "FlorisBoard" to "SwiftFloris"
 
 **Files**:
 - `app/src/main/res/drawable/ic_logo.xml`
@@ -132,7 +132,7 @@ fun getRecentItems(limit: Int): List<ClipboardHistoryItem>
 
 ## Build & Installation Status
 
-**Current Version**: FlorisKeyboard v1.1.0 (based on FlorisBoard v0.6.0-alpha02)
+**Current Version**: SwiftFloris v1.1.0 (based on FlorisBoard v0.6.0-alpha02)
 
 **Build Configuration**:
 - Min SDK: 26 (Android 8.0 Oreo)
@@ -161,7 +161,7 @@ fun getRecentItems(limit: Int): List<ClipboardHistoryItem>
 3. ✅ `Phase 4: Add encrypted clipboard history feature with Material 3 UI`
 
 **Repository**:
-- URL: `https://github.com/SysAdminDoc/FlorisKeyboard`
+- URL: `https://github.com/SysAdminDoc/SwiftFloris`
 - Branch: `main`
 - Visibility: Public (may need privacy change if X-ray related; currently OK)
 - Initial commit: FlorisBoard fork + native module disabled
@@ -331,7 +331,7 @@ FlorisKeyboard/
 
 ## Conclusion
 
-FlorisKeyboard v1.1.0 is now a **branded, feature-rich, professionally-designed keyboard** with:
+SwiftFloris v1.1.0 is now a **branded, feature-rich, professionally-designed keyboard** with:
 - **Distinctive visual identity** (custom logo + branding colors)
 - **Premium theme options** (4 curated color schemes)
 - **Secure clipboard management** (encrypted history + Material 3 UI)

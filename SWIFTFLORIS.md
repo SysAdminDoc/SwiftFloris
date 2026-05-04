@@ -1,6 +1,6 @@
-# FlorisKeyboard v1.0.0
+# SwiftFloris v1.0.0
 
-**Professional Android Keyboard IME** — A modern, customized fork of [FlorisBoard](https://github.com/florisboard/florisboard).
+**Professional SwiftKey-inspired Android Keyboard IME** — A modern, customized fork of [FlorisBoard](https://github.com/florisboard/florisboard) with premium theming and UX.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
 ![Android](https://img.shields.io/badge/Android-8.0%2B-brightgreen)
@@ -8,14 +8,15 @@
 
 ## About
 
-FlorisKeyboard is a production-ready Android input method editor (IME) built on the excellent FlorisBoard foundation. It provides:
+SwiftFloris is a production-ready Android input method editor (IME) built on the excellent FlorisBoard foundation with a SwiftKey-inspired interface. It provides:
 
 - **Modern Material Design 3** UI with dynamic theming
-- **Premium user experience** with smooth animations and intuitive gestures
+- **SwiftKey aesthetic** — clean, modern, premium feel
+- **Four premium themes** (Nord, Tokyo Night, Dracula, Catppuccin)
 - **Multi-language support** with 80+ layouts
 - **Privacy-first design** — no telemetry, no cloud sync
 - **Highly customizable** theme system
-- **Gesture typing** (optional glide input)
+- **Secure clipboard history** with encrypted storage
 - **Emoji picker** with organized categories
 
 ## Quick Start
@@ -23,8 +24,8 @@ FlorisKeyboard is a production-ready Android input method editor (IME) built on 
 ### Build Locally
 ```bash
 # Clone the repository
-git clone https://github.com/SysAdminDoc/FlorisKeyboard.git
-cd FlorisKeyboard
+git clone https://github.com/SysAdminDoc/SwiftFloris.git
+cd SwiftFloris
 
 # Build APK (requires Android SDK 36+, API 26 minimum)
 ./gradlew assembleDebug
