@@ -414,11 +414,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val hapticVibrationDuration = int(
             key = "input_feedback__haptic_vibration_duration",
-            default = 50,
+            default = 65,
         )
         val hapticVibrationStrength = int(
             key = "input_feedback__haptic_vibration_strength",
-            default = 50,
+            default = 70,
         )
         val hapticFeatKeyPress = boolean(
             key = "input_feedback__haptic_feat_key_press",
