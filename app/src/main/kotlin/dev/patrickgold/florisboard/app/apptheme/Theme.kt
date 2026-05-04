@@ -89,6 +89,7 @@ fun FlorisAppTheme(
     MaterialTheme(
         colorScheme = colors,
         typography = Typography,
+        shapes = Shapes,
         content = content,
     )
 }

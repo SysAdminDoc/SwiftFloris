@@ -55,9 +55,9 @@ import androidx.compose.ui.unit.sp
 
 object FlorisCardDefaults {
     val IconRequiredSize = 24.dp
-    val IconSpacing = 12.dp
+    val IconSpacing = 16.dp
 
-    val ContentPadding = PaddingValues(start = 0.dp, end = 16.dp, top = 8.dp, bottom = 8.dp)
+    val ContentPadding = PaddingValues(start = 0.dp, end = 16.dp, top = 12.dp, bottom = 12.dp)
 }
 
 object BoxDefaults {
@@ -81,14 +81,18 @@ fun FlorisSimpleCard(
         onClick = onClick ?: { },
         enabled = onClick != null,
         modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.small,
         colors = CardDefaults.cardColors(
             contentColor = contentColor,
             containerColor = backgroundColor,
             disabledContainerColor = backgroundColor,
             disabledContentColor = contentColor,
-        )
-        //backgroundColor = backgroundColor,
-        //contentColor = contentColor,
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp,
+            pressedElevation = 1.dp,
+            disabledElevation = 0.dp,
+        ),
     ) {
         Row(
             modifier = Modifier.padding(contentPadding),
@@ -105,13 +109,14 @@ fun FlorisSimpleCard(
                 Text(
                     modifier = Modifier.fillMaxWidth(),
                     text = text,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 if (secondaryText != null) {
                     Text(
                         modifier = Modifier.fillMaxWidth(),
                         text = secondaryText,
-                        style = MaterialTheme.typography.titleSmall,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = contentColor.copy(alpha = 0.72f),
                     )
                 }
             }
@@ -129,8 +134,8 @@ fun FlorisErrorCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = Color.Red,
-        contentColor = Color.White,
+        backgroundColor = MaterialTheme.colorScheme.errorContainer,
+        contentColor = MaterialTheme.colorScheme.onErrorContainer,
         onClick = onClick,
         icon = if (showIcon) ({ Icon(
             modifier = Modifier
@@ -154,8 +159,8 @@ fun FlorisWarningCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = Color.Yellow,
-        contentColor = Color.Black,
+        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         onClick = onClick,
         icon = if (showIcon) ({ Icon(
             modifier = Modifier
@@ -179,6 +184,8 @@ fun FlorisInfoCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
         onClick = onClick,
         icon = if (showIcon) ({ Icon(
             modifier = Modifier

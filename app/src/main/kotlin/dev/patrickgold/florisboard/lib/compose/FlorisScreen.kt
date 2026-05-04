@@ -17,9 +17,12 @@
 package dev.patrickgold.florisboard.lib.compose
 
 import android.app.Activity
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,11 +35,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -155,15 +160,22 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
             } else {
                 Modifier
             }
-            PreferenceLayout(
-                FlorisPreferenceStore,
+            Box(
                 modifier = Modifier
                     .padding(innerPadding)
-                    .fillMaxWidth()
-                    .then(scrollModifier),
-                iconSpaceReserved = iconSpaceReserved,
-                content = content,
-            )
+                    .fillMaxSize(),
+            ) {
+                PreferenceLayout(
+                    FlorisPreferenceStore,
+                    modifier = Modifier
+                        .align(Alignment.TopCenter)
+                        .widthIn(max = 840.dp)
+                        .fillMaxWidth()
+                        .then(scrollModifier),
+                    iconSpaceReserved = iconSpaceReserved,
+                    content = content,
+                )
+            }
         }
     }
 }

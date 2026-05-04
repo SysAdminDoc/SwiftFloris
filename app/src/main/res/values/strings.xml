@@ -123,9 +123,24 @@
     <string name="settings__default" comment="General string which is used when a preference has the default value set">Default</string>
     <string name="settings__system_default" comment="General string which is used when a preference has the system default value set">System default</string>
 
-    <string name="settings__home__title" comment="Title of the Home screen">Welcome to {app_name}</string>
-    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled in the system and thus won\'t be available as an input method in the input picker. Click here to resolve this issue.</string>
-    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is not selected as the default input method. Click here to resolve this issue.</string>
+    <string name="settings__home__title" comment="Title of the Home screen">{app_name}</string>
+    <string name="settings__home__ime_ready" comment="Status message shown in Home when SwiftFloris is enabled and selected">SwiftFloris is active. Use the preview below to check your typing setup before switching apps.</string>
+    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled yet. Tap to open Android keyboard settings and make it available.</string>
+    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is enabled but not selected. Tap to switch your active keyboard.</string>
+    <string name="settings__home__section_essentials" comment="Home screen section title">Essentials</string>
+    <string name="settings__home__section_experience" comment="Home screen section title">Experience</string>
+    <string name="settings__home__section_system" comment="Home screen section title">System</string>
+    <string name="settings__home__localization_summary" comment="Home screen preference summary">Languages, layouts, subtype presets, and language packs</string>
+    <string name="settings__home__typing_summary" comment="Home screen preference summary">Word suggestions, autocorrect, spelling, and dictionaries</string>
+    <string name="settings__home__keyboard_summary" comment="Home screen preference summary">Rows, labels, popups, spacing, and key behavior</string>
+    <string name="settings__home__smartbar_summary" comment="Home screen preference summary">Suggestion strip layout and quick action behavior</string>
+    <string name="settings__home__theme_summary" comment="Home screen preference summary">Keyboard themes, accent color, and visual style</string>
+    <string name="settings__home__gestures_summary" comment="Home screen preference summary">Glide typing, swipe actions, and gesture thresholds</string>
+    <string name="settings__home__clipboard_summary" comment="Home screen preference summary">Clipboard history, suggestions, privacy, and cleanup</string>
+    <string name="settings__home__media_summary" comment="Home screen preference summary">Emoji history, emoji suggestions, and media behavior</string>
+    <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
+    <string name="settings__home__other_summary" comment="Home screen preference summary">Backup, restore, physical keyboard, and app preferences</string>
+    <string name="settings__home__about_summary" comment="Home screen preference summary">Version, privacy policy, source, and licenses</string>
 
     <string name="settings__localization__title" comment="Title of languages and Layout screen">Languages &amp; Layouts</string>
     <string name="settings__localization__display_language_names_in__label" comment="Label of Display language names in preference">Display language names in</string>
@@ -466,23 +481,25 @@
     <!-- Smartbar strings -->
     <string name="settings__smartbar__title" comment="Title of Smartbar screen">Smartbar</string>
     <string name="pref__smartbar__enabled__label" comment="Preference title">Enable Smartbar</string>
-    <string name="pref__smartbar__enabled__summary" comment="Preference summary">Will show on top of the keyboard</string>
+    <string name="pref__smartbar__enabled__summary" comment="Preference summary">Show suggestions and quick actions above the keyboard</string>
     <string name="pref__smartbar__layout__label" comment="Preference title">Layout</string>
-    <string name="pref__smartbar__group_layout_specific__label" comment="Preference group title">Layout-specific options</string>
+    <string name="pref__smartbar__group_layout_specific__label" comment="Preference group title">Layout behavior</string>
     <string name="pref__smartbar__flip_toggles__label" comment="Preference title">Flip toggle buttons</string>
-    <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Flips action row toggles</string>
+    <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Move action row toggles to the opposite side</string>
     <string name="pref__smartbar__shared_actions_auto_expand_collapse__label" comment="Preference title">Auto-expand/collapse</string>
-    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary" comment="Preference summary">Auto-expands/collapses the shared action row based on current state</string>
+    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary" comment="Preference summary">Automatically show or hide shared actions based on typing state</string>
+    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary_locked" comment="Preference summary for a locked shared action behavior">Always enabled to keep shared actions predictable.</string>
     <string name="pref__smartbar__extended_actions_placement__label" comment="Preference title">Action row placement</string>
 
     <!-- Typing strings -->
     <string name="settings__typing__title" comment="Title of Typing screen">Typing</string>
     <string name="pref__suggestion__title" comment="Preference group title">Suggestions</string>
     <string name="pref__suggestion__enabled__label" comment="Preference title">Display suggestions</string>
-    <string name="pref__suggestion__enabled__summary" comment="Preference summary">Provides suggestions while you type</string>
+    <string name="settings__typing__suggestions_ready" comment="Informational message at top of Typing settings">Word suggestions and autocorrect are available for Latin-based typing. Some languages may still require a compatible language pack or suggestion engine.</string>
+    <string name="pref__suggestion__enabled__summary" comment="Preference summary">Show word completions and typo corrections while you type</string>
     <string name="pref__suggestion__display_mode__label" comment="Preference title">Suggestions display mode</string>
     <string name="pref__suggestion__block_possibly_offensive__label" comment="Preference title">Block possibly offensive words</string>
-    <string name="pref__suggestion__block_possibly_offensive__summary" comment="Preference summary">Prevents possibly offensive words from being suggested while you type</string>
+    <string name="pref__suggestion__block_possibly_offensive__summary" comment="Preference summary">Hide potentially offensive words from suggestion candidates</string>
     <string name="pref__suggestion__api30_inline_suggestions_enabled__label" comment="Preference title">System autofill suggestions</string>
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
@@ -490,7 +507,9 @@
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>
-    <string name="pref__correction__auto_space_punctuation__summary" comment="Preference summary">Automatically insert a space after a punctuation</string>
+    <string name="pref__correction__auto_space_punctuation__summary" comment="Preference summary">Insert a space after punctuation when context allows</string>
+    <string name="pref__correction__auto_space_punctuation__warning" comment="Warning shown when auto-space after punctuation is enabled">Auto-space after punctuation is experimental and may need correction in some apps or languages.</string>
+    <string name="pref__correction__auto_space_punctuation__feedback_link" comment="Link label for auto-space punctuation feedback thread">Feedback thread on GitHub</string>
     <string name="pref__correction__remember_caps_lock_state__label" comment="Preference title">Remember caps lock state</string>
     <string name="pref__correction__remember_caps_lock_state__summary" comment="Preference summary">Caps lock will stay on when moving to another text field</string>
     <string name="pref__correction__double_space_period__label" comment="Preference title">Double-space period</string>
@@ -520,8 +539,8 @@
     <string name="settings__udm__word_summary_freq_shortcut" comment="Summary label for a word entry. The first placeholder inserts the frequency for the word it summarizes, the second placeholder the shortcut defined.">Frequency: {freq} | Shortcut: {shortcut}</string>
     <string name="settings__udm__all_languages" comment="Label of the For all languages entry in the language list">For all languages</string>
     <string name="settings__udm__open_system_manager_ui" comment="Label of the Open system manager UI menu option">Open system manager UI</string>
-    <string name="settings__udm__dictionary_import_success" comment="Message for dictionary import success">User dictionary imported successfully!</string>
-    <string name="settings__udm__dictionary_export_success" comment="Message for dictionary export success">User dictionary exported successfully!</string>
+    <string name="settings__udm__dictionary_import_success" comment="Message for dictionary import success">User dictionary imported.</string>
+    <string name="settings__udm__dictionary_export_success" comment="Message for dictionary export success">User dictionary exported.</string>
     <string name="settings__udm__dialog__title_add" comment="Label for the title (when in adding mode) in the user dictionary add/edit dialog">Add word</string>
     <string name="settings__udm__dialog__title_edit" comment="Label for the title (when in editing mode) in the user dictionary add/edit dialog">Edit word</string>
     <string name="settings__udm__dialog__word_label" comment="Label for the word in the user dictionary add/edit dialog">Word</string>
@@ -601,30 +620,29 @@
     <string name="about__third_party_licenses__summary" comment="Preference summary">Licenses of the third-party libraries included in this app</string>
 
     <!-- Setup UI strings -->
-    <string name="setup__title" comment="Title of Setup">Welcome!</string>
-    <string name="setup__intro_message" comment="Short intro message welcoming new users">Thanks for using {app_name}! This quick setup guides you through the required steps to use {app_name} on your device.</string>
+    <string name="setup__title" comment="Title of Setup">Set up {app_name}</string>
+    <string name="setup__intro_message" comment="Short intro message welcoming new users">Complete these steps to enable {app_name}, choose it as your keyboard, and keep recovery options available.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacy policy</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Repository</string>
 
     <string name="setup__enable_ime__title">Enable {app_name}</string>
-    <string name="setup__enable_ime__description">Android requires that every custom keyboard is separately enabled before you can use it. Open the System <i>Language &amp; Input</i> Settings, there enable "{app_name}".</string>
-    <string name="setup__enable_ime__open_settings_btn">Open System Settings</string>
+    <string name="setup__enable_ime__description">Android keeps custom keyboards disabled until you approve them. Open keyboard settings and enable {app_name}.</string>
+    <string name="setup__enable_ime__open_settings_btn">Open keyboard settings</string>
 
     <string name="setup__select_ime__title">Select {app_name}</string>
-    <string name="setup__select_ime__description">{app_name} is now enabled in your system. To actively use it, switch to {app_name} by selecting it in the input selector dialog!</string>
-    <string name="setup__select_ime__switch_keyboard_btn">Switch Keyboard</string>
+    <string name="setup__select_ime__description">{app_name} is enabled. Select it in the keyboard picker to make it your active input method.</string>
+    <string name="setup__select_ime__switch_keyboard_btn">Choose keyboard</string>
 
-    <string name="setup__grant_notification_permission__title">Permit Crash Report Notifications</string>
-    <string name="setup__grant_notification_permission__description">As of Android 13+, apps must ask for permission to
-        send notifications. In Florisboard, this is only used to open a crash report screen in the event of a crash.
-        This permission can be changed at any time in the system settings.
+    <string name="setup__grant_notification_permission__title">Allow crash report alerts</string>
+    <string name="setup__grant_notification_permission__description">On Android 13 and newer, notification permission lets {app_name} show a recovery alert if it stops unexpectedly.
+        You can change this later in system settings.
     </string>
-    <string name="setup__grant_notification_permission__btn">Grant Permission</string>
+    <string name="setup__grant_notification_permission__btn">Allow alerts</string>
 
-    <string name="setup__finish_up__title">Finish Up</string>
-    <string name="setup__finish_up__description_p1">{app_name} is now enabled in the system and ready to be customized by you.</string>
-    <string name="setup__finish_up__description_p2">If you encounter any issues, bugs, crashes or just want to make a suggestion, check out the project repository from the about screen!</string>
-    <string name="setup__finish_up__finish_btn">Start Customizing</string>
+    <string name="setup__finish_up__title">Ready to type</string>
+    <string name="setup__finish_up__description_p1">{app_name} is enabled and ready to customize.</string>
+    <string name="setup__finish_up__description_p2">Start with languages, typing, and theme settings, then use the preview field to verify the feel.</string>
+    <string name="setup__finish_up__finish_btn">Open settings</string>
 
     <!-- Physical keyboard -->
     <string name="physical_keyboard__title">Physical keyboard</string>
@@ -650,8 +668,8 @@
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_text_items">Text items</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_image_items">Images</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Videos</string>
-    <string name="backup_and_restore__back_up__success">Successfully exported backup archive!</string>
-    <string name="backup_and_restore__back_up__failure">Failed to export backup archive: {error_message}</string>
+    <string name="backup_and_restore__back_up__success">Backup archive exported.</string>
+    <string name="backup_and_restore__back_up__failure">Could not export backup archive: {error_message}</string>
     <string name="backup_and_restore__restore__title">Restore data</string>
     <string name="backup_and_restore__restore__summary">Restore preferences and customizations from a backup archive</string>
     <string name="backup_and_restore__restore__files">Select what to restore</string>
@@ -663,12 +681,12 @@
     <string name="backup_and_restore__restore__mode">Restore mode</string>
     <string name="backup_and_restore__restore__mode_merge">Merge with current data</string>
     <string name="backup_and_restore__restore__mode_erase_and_overwrite">Erase and overwrite current data</string>
-    <string name="backup_and_restore__restore__success">Successfully restored data!</string>
-    <string name="backup_and_restore__restore__failure">Failed to restore data: {error_message}</string>
+    <string name="backup_and_restore__restore__success">Data restored.</string>
+    <string name="backup_and_restore__restore__failure">Could not restore data: {error_message}</string>
 
     <!-- Crash Dialog strings -->
     <string name="crash_dialog__title" comment="Title of crash dialog">SwiftFloris error report</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">Sorry for the inconvenience, but SwiftFloris has crashed due to an unexpected error.</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">SwiftFloris stopped unexpectedly. The details below can help diagnose what happened.</string>
     <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">If you wish to report this error, first check out the issue tracker on GitHub if your crash has not already been reported.\nIf it hasn\'t, copy the generated crash log and open a new issue. Use the \"%s\" template and fill out the description, the steps to reproduce, and paste the generated crash log at the end. This helps in making SwiftFloris better and more stable for everyone. Thank you!</string>
     <string name="crash_dialog__bug_report_template" comment="Name of the template to use in the GitHub issue tracker (is always in English)" translatable="false">Crash report</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Copy to system clipboard</string>
@@ -788,6 +806,7 @@
     <string name="ext__list__ext_theme">Theme extensions</string>
     <string name="ext__list__ext_keyboard">Keyboard extensions</string>
     <string name="ext__list__ext_languagepack">Language pack extensions</string>
+    <string name="ext__list__empty">No extensions are installed in this category yet. Import an extension or visit the add-ons store to expand SwiftFloris.</string>
     <string name="ext__meta__authors">Authors</string>
     <string name="ext__meta__components">Bundled components</string>
     <string name="ext__meta__components_theme">Bundled themes</string>
@@ -826,15 +845,15 @@
     <string name="ext__editor__create_component__from_empty_warning">Creating and configuring an empty component may be hard if you are new to {app_name} or if you are unfamiliar with the specifics. Consider copying an existing component and modifying it to your likings if that is the case.</string>
     <string name="ext__editor__edit_component__title">Edit component</string>
     <string name="ext__editor__edit_component__title_theme">Edit theme component</string>
-    <string name="ext__export__success">Successfully exported extension!</string>
-    <string name="ext__export__failure">Failed to export extension: {error_message}</string>
-    <string name="ext__import__success">Successfully imported extension!</string>
-    <string name="ext__import__failure">Failed to import extension: {error_message}</string>
+    <string name="ext__export__success">Extension exported.</string>
+    <string name="ext__export__failure">Could not export extension: {error_message}</string>
+    <string name="ext__import__success">Extension imported.</string>
+    <string name="ext__import__failure">Could not import extension: {error_message}</string>
     <string name="ext__import__ext_any" comment="Title of Importer screen for import of any supported SwiftFloris extension">Import extension</string>
     <string name="ext__import__ext_keyboard" comment="Title of Importer screen for keyboard extension import">Import keyboard extension</string>
     <string name="ext__import__ext_theme" comment="Title of Importer screen for theme extension import">Import theme extension</string>
     <string name="ext__import__ext_languagepack" comment="Title of Importer screen for language pack extension import">Import language pack extension</string>
-    <string name="ext__import__file_skip" comment="Label when a file cannot be imported in the current context. The actual reason string is in a separate text view below this string.">File can not be imported. Reason:</string>
+    <string name="ext__import__file_skip" comment="Label when a file cannot be imported in the current context. The actual reason string is in a separate text view below this string.">This file cannot be imported. Reason:</string>
     <string name="ext__import__file_skip_unsupported" comment="Reason string when file is unsupported">Unsupported or unrecognized file type.</string>
     <string name="ext__import__file_skip_ext_core" comment="Reason string when ext has core extension ID">Unable to replace or update default extension packages provided with the app core assets. Consider updating the app itself if you intend to use a newer version of a core extension package.</string>
     <string name="ext__import__file_skip_ext_corrupted" comment="Reason string when file seems to be ext but is corrupted">File appears to be an extension archive but parsing of the archive data failed. Either the archive is corrupted or this file is not an extension at all.</string>
@@ -866,13 +885,17 @@
     <string name="ext__validation__enter_number_between_0_100">Please enter a positive number between 0 and 100</string>
     <string name="ext__validation__hint_value_above_50_percent">Any value above 50% will behave as if you set 50%, consider lowering your percent size</string>
     <string name="ext__update_box__internet_permission_hint">Since this app does not have Internet permission, updates for installed extensions must be checked manually.</string>
-    <string name="ext__update_box__search_for_updates">Search for Updates</string>
+    <string name="ext__update_box__search_for_updates">Check for updates</string>
     <string name="ext__addon_management_box__managing_placeholder">Managing {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">All tasks related to importing, exporting, creating, customizing, and removing extensions can be handled through the centralized addon manager.</string>
     <string name="ext__addon_management_box__go_to_page">Go to {ext_home_title}</string>
-    <string name="ext__home__info">You can download and install extensions from the SwiftFloris repository or import any extension file you have downloaded from the internet.</string>
-    <string name="ext__home__visit_store">Visit Addons Store</string>
+    <string name="ext__home__info">Install trusted extensions from the SwiftFloris add-ons store or import an extension archive you already have.</string>
+    <string name="ext__home__visit_store">Visit add-ons store</string>
     <string name="ext__home__manage_extensions">Manage installed extensions</string>
+    <string name="ext__home__installed_section">Installed extension types</string>
+    <string name="ext__home__theme_summary">Keyboard styles, color systems, and visual packages</string>
+    <string name="ext__home__keyboard_summary">Additional layouts and keyboard behavior packages</string>
+    <string name="ext__home__languagepack_summary">Language resources, dictionaries, and input support</string>
     <string name="ext__list__view_details">View details</string>
     <string name="ext__check_updates__title">Check for Updates</string>
 
@@ -885,17 +908,17 @@
     <string name="action__default">Default</string>
     <string name="action__delete">Delete</string>
     <string name="action__delete_confirm_title">Confirm delete</string>
-    <string name="action__delete_confirm_message">Are you sure you want to delete \"{name}\"? This action can not be undone once executed.</string>
+    <string name="action__delete_confirm_message">Delete \"{name}\"? This cannot be undone.</string>
     <string name="action__reset">Reset</string>
     <string name="action__reset_confirm_title">Confirm reset</string>
-    <string name="action__reset_confirm_message">Are you sure you want to reset \"{name}\"? This action can not be undone once executed.</string>
+    <string name="action__reset_confirm_message">Reset \"{name}\"? This cannot be undone.</string>
     <string name="action__discard">Discard</string>
     <string name="action__discard_confirm_title">Unsaved changes</string>
-    <string name="action__discard_confirm_message">Are you sure you want to discard your unsaved changes? This action can not be undone once executed.</string>
+    <string name="action__discard_confirm_message">Discard your unsaved changes? This cannot be undone.</string>
     <string name="action__edit">Edit</string>
     <string name="action__export">Export</string>
-    <string name="action__export_file">Import file</string>
-    <string name="action__export_files">Import files</string>
+    <string name="action__export_file">Export file</string>
+    <string name="action__export_files">Export files</string>
     <string name="action__import">Import</string>
     <string name="action__import_file">Import file</string>
     <string name="action__import_files">Import files</string>

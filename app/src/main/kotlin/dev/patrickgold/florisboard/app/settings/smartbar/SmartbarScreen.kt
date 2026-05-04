@@ -73,7 +73,7 @@ fun SmartbarScreen() = FlorisScreen {
             SwitchPreference(
                 prefs.smartbar.sharedActionsAutoExpandCollapse,
                 title = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label),
-                summary = "[Since v0.4.1] Always enabled due to UX issues",
+                summary = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__summary_locked),
                 enabledIf = { false },
                 visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
             )

@@ -55,6 +55,7 @@ import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -118,6 +119,14 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                 }
                 item {
                     UpdateBox(extensionIndex = extensionIndex)
+                }
+            }
+            if (extensionIndex.isEmpty()) {
+                item {
+                    FlorisInfoCard(
+                        modifier = Modifier.padding(8.dp),
+                        text = stringRes(R.string.ext__list__empty),
+                    )
                 }
             }
             items(extensionIndex) { ext ->

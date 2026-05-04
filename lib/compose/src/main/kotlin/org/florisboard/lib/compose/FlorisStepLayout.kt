@@ -18,12 +18,13 @@ package org.florisboard.lib.compose
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.spring
+import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -31,7 +32,6 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
@@ -39,7 +39,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.contentColorFor
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -56,15 +55,17 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
-private val StepHeaderPaddingVertical = 8.dp
-private val StepHeaderNumberBoxSize = 40.dp
-private val StepHeaderNumberBoxPaddingEnd = 16.dp
-private val StepHeaderTextBoxHeight = 32.dp
-private val StepHeaderTextInnerPaddingHorizontal = 16.dp
+private val StepHeaderPaddingVertical = 6.dp
+private val StepHeaderNumberBoxSize = 36.dp
+private val StepHeaderNumberBoxPaddingEnd = 14.dp
+private val StepHeaderTextInnerPaddingHorizontal = 14.dp
 
 data class FlorisStep(
     val id: Int,
@@ -86,8 +87,10 @@ class FlorisStepLayoutScope(
         Text(
             modifier = modifier,
             text = text,
-            textAlign = TextAlign.Justify,
+            textAlign = TextAlign.Start,
             fontStyle = fontStyle,
+            style = MaterialTheme.typography.bodyMedium.copy(lineHeight = 20.sp),
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 
@@ -99,11 +102,12 @@ class FlorisStepLayoutScope(
     ) {
         Button(
             modifier = modifier
-                .align(Alignment.CenterHorizontally)
+                .fillMaxWidth()
                 .padding(top = 16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = primaryColor,
             ),
+            shape = MaterialTheme.shapes.small,
             onClick = onClick,
         ) {
             Text(text = label)
@@ -164,7 +168,9 @@ fun FlorisStepLayout(
     footer: @Composable FlorisStepLayoutScope.() -> Unit = { },
 ) {
     Column(
-        modifier = modifier.fillMaxSize()
+        modifier = modifier
+            .fillMaxSize()
+            .florisVerticalScroll()
     ) {
         val scope = FlorisStepLayoutScope(this, primaryColor)
         header(scope)
@@ -197,38 +203,38 @@ private fun ColumnScope.Step(
 ) {
     val currentStepId by stepState.getCurrent()
     val autoStepId by stepState.getCurrentAuto()
-    val backgroundColor = when (ownStepId) {
-        currentStepId -> primaryColor
-        else -> primaryColor.copy(alpha = 0.38f)
-    }
     val contentVisible = ownStepId == currentStepId
+    val isAvailable = ownStepId <= autoStepId
     StepHeader(
         modifier = when {
             ownStepId <= autoStepId -> Modifier
-                .clickable(enabled = !contentVisible) { stepState.setCurrentManual(ownStepId) }
-            else -> Modifier.alpha(0.38f)
+                .clickable(
+                    enabled = !contentVisible,
+                    role = Role.Button,
+                ) { stepState.setCurrentManual(ownStepId) }
+            else -> Modifier.alpha(0.64f)
         },
-        backgroundColor = backgroundColor,
+        primaryColor = primaryColor,
+        isCurrent = contentVisible,
+        isAvailable = isAvailable,
         step = index,
         title = title,
     )
-    val animSpec = spring<Float>(stiffness = Spring.StiffnessMedium)
-    val weight by animateFloatAsState(
-        targetValue = if (contentVisible) 1.0f else 0.00001f,
-        animationSpec = animSpec,
-    )
     AnimatedVisibility(
         modifier = Modifier
-            .fillMaxWidth()
-            .weight(weight),
+            .fillMaxWidth(),
         visible = contentVisible,
-        enter = fadeIn(animationSpec = animSpec),
-        exit = fadeOut(animationSpec = animSpec),
+        enter = fadeIn(animationSpec = tween(durationMillis = 120)) +
+            expandVertically(animationSpec = tween(durationMillis = 180), expandFrom = Alignment.Top),
+        exit = fadeOut(animationSpec = tween(durationMillis = 90)) +
+            shrinkVertically(animationSpec = tween(durationMillis = 140), shrinkTowards = Alignment.Top),
     ) {
-        val onBackground = MaterialTheme.colorScheme.onSurface
+        val colorScheme = MaterialTheme.colorScheme
+        val shape = MaterialTheme.shapes.small
+        val onBackground = colorScheme.onSurfaceVariant
         Box(
             modifier = Modifier
-                .padding(start = 56.dp)
+                .padding(start = 56.dp, bottom = 12.dp)
                 .drawBehind {
                     val strokeWidth = 2.dp
                     val x = -(StepHeaderNumberBoxPaddingEnd + (StepHeaderNumberBoxSize / 2 - strokeWidth / 2))
@@ -240,12 +246,17 @@ private fun ColumnScope.Step(
                         pathEffect = PathEffect.dashPathEffect(floatArrayOf(2.dp.toPx(), 10.dp.toPx())),
                         alpha = 0.12f,
                     )
-                },
+                }
+                .clip(shape)
+                .background(colorScheme.surfaceContainerLow)
+                .border(
+                    width = 1.dp,
+                    color = colorScheme.outlineVariant.copy(alpha = 0.56f),
+                    shape = shape,
+                )
+                .padding(16.dp),
         ) {
-            Column(modifier = Modifier
-                .fillMaxSize()
-                .florisVerticalScroll()
-                .padding(end = 8.dp),
+            Column(modifier = Modifier.fillMaxWidth(),
             ) {
                 content()
             }
@@ -256,14 +267,39 @@ private fun ColumnScope.Step(
 @Composable
 private fun StepHeader(
     modifier: Modifier = Modifier,
-    backgroundColor: Color,
-    contentColor: Color = contentColorFor(backgroundColor),
+    primaryColor: Color,
+    isCurrent: Boolean,
+    isAvailable: Boolean,
     step: Int,
     title: String,
 ) {
+    val colorScheme = MaterialTheme.colorScheme
+    val backgroundColor = when {
+        isCurrent -> colorScheme.primaryContainer
+        isAvailable -> colorScheme.surfaceContainerHigh
+        else -> colorScheme.surfaceContainerLow
+    }
+    val contentColor = when {
+        isCurrent -> colorScheme.onPrimaryContainer
+        isAvailable -> colorScheme.onSurface
+        else -> colorScheme.onSurfaceVariant
+    }
+    val numberBackgroundColor = when {
+        isCurrent -> primaryColor
+        isAvailable -> colorScheme.primaryContainer
+        else -> colorScheme.surfaceContainerHighest
+    }
+    val numberContentColor = when {
+        isCurrent -> colorScheme.onPrimary
+        isAvailable -> colorScheme.onPrimaryContainer
+        else -> colorScheme.onSurfaceVariant
+    }
     Row(
         modifier = modifier
-            .padding(vertical = StepHeaderPaddingVertical),
+            .padding(vertical = StepHeaderPaddingVertical)
+            .clip(MaterialTheme.shapes.small)
+            .background(backgroundColor)
+            .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
@@ -271,27 +307,26 @@ private fun StepHeader(
                 .padding(end = StepHeaderNumberBoxPaddingEnd)
                 .size(StepHeaderNumberBoxSize)
                 .clip(CircleShape)
-                .background(backgroundColor),
+                .background(numberBackgroundColor),
         ) {
             Text(
                 modifier = Modifier.align(Alignment.Center),
                 text = step.toString(),
-                color = contentColor,
+                style = MaterialTheme.typography.labelLarge,
+                color = numberContentColor,
             )
         }
 
-        Box(
+        Row(
             modifier = Modifier
-                .height(StepHeaderTextBoxHeight)
                 .weight(1.0f)
-                .clip(CircleShape)
-                .background(backgroundColor),
+                .padding(horizontal = StepHeaderTextInnerPaddingHorizontal),
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = StepHeaderTextInnerPaddingHorizontal),
                 text = title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Medium,
                 overflow = TextOverflow.Ellipsis,
                 maxLines = 1,
                 color = contentColor,
