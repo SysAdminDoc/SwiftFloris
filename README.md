@@ -1,145 +1,160 @@
-<img align="left" width="80" height="80"
-src=".github/repo_icon.png" alt="App icon">
+# SwiftFloris
 
-# FlorisBoard [![Crowdin](https://badges.crowdin.net/florisboard/localized.svg)](https://crowdin.florisboard.org) [![Matrix badge](https://img.shields.io/badge/chat-%23florisboard%3amatrix.org-blue)](https://matrix.to/#/#florisboard:matrix.org) [![Contributor Covenant](https://img.shields.io/badge/Contributor%20Covenant-2.1-4baaaa.svg)](CODE_OF_CONDUCT.md) [![FlorisBoard CI](https://github.com/florisboard/florisboard/actions/workflows/android.yml/badge.svg?event=push)](https://github.com/florisboard/florisboard/actions/workflows/android.yml)
+![Version](https://img.shields.io/badge/version-v1.1.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
 
-**FlorisBoard** is a free and open-source keyboard for Android 8.0+
-devices. It aims at being modern, user-friendly and customizable while
-fully respecting your privacy. Currently in beta state.
+**SwiftFloris** is a premium, SwiftKey-inspired Android keyboard with a powerful, proven backend and modern Material Design 3 interface. Built on FlorisBoard's solid IME foundation and customized with SwiftKey's aesthetic and experience philosophy.
 
-<table>
-<tr>
-<th style="text-align: center; width: 50%">
-<h3>Stable <a href="https://github.com/florisboard/florisboard/releases/latest"><img alt="Latest stable release" src="https://img.shields.io/github/v/release/florisboard/florisboard?sort=semver&display_name=tag&color=28a745"></a></h3>
-</th>
-<th style="text-align: center; width: 50%">
-<h3>Preview <a href="https://github.com/florisboard/florisboard/releases"><img alt="Latest preview release" src="https://img.shields.io/github/v/release/florisboard/florisboard?include_prereleases&sort=semver&display_name=tag&color=fd7e14"></a></h3>
-</th>
-</tr>
-<tr>
-<td style="vertical-align: top">
-<p><i>Major versions only</i><br><br>Updates are more polished, new features are matured and tested through to ensure a stable experience.</p>
-</td>
-<td style="vertical-align: top">
-<p><i>Major + Alpha/Beta/Rc versions</i><br><br>Updates contain new features that may not be fully matured yet and bugs are more likely to occur. Allows you to give early feedback.</p>
-</td>
-</tr>
-<tr>
-<td style="vertical-align: top">
-<p>
-<a href="https://apt.izzysoft.de/fdroid/index/apk/dev.patrickgold.florisboard"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="64" alt="IzzySoft repo badge"></a>
-<a href="https://f-droid.org/packages/dev.patrickgold.florisboard"><img src="https://fdroid.gitlab.io/artwork/badge/get-it-on.png" height="64" alt="F-Droid badge"></a>
-</p>
-<p>
+## About SwiftFloris
 
-**Google Play**: Join the [FlorisBoard Test Group](https://groups.google.com/g/florisboard-closed-beta-test), then visit the [testing page](https://play.google.com/apps/testing/dev.patrickgold.florisboard). Once joined and installed, updates will be delivered like for any other app. ([Store entry](https://play.google.com/store/apps/details?id=dev.patrickgold.florisboard))
+SwiftFloris combines the best of both worlds:
+- **FlorisBoard Backend**: Production-tested, reliable IME service with excellent performance
+- **SwiftKey Aesthetic**: Clean, modern interface inspired by Microsoft's SwiftKey keyboard
+- **Premium Customization**: Four curated theme packs (Nord, Tokyo Night, Dracula, Catppuccin)
+- **Secure Features**: Encrypted clipboard history, privacy-respecting design
+- **Material Design 3**: Latest Android design standards with adaptive theming
 
-</p>
-<p>
+## Features
 
-**Obtainium**: [Auto-import stable config][obtainium_stable]
+### Core Keyboard
+- ✨ Full Material Design 3 support
+- 🎨 4 premium theme packs with multiple color variants
+- ⌨️ Responsive, low-latency key detection
+- 🌐 Multi-language support (inherited from FlorisBoard)
+- ♿ Full accessibility support
 
-</p>
-<p>
+### Premium Features
+- 📋 **Secure Clipboard History**: Encrypted storage of recent clipboard entries
+  - Quick access to recent pastes
+  - Per-app tracking
+  - Auto-cleanup (max 50 items)
+  - Touch-to-insert functionality
 
-**Manual**: Download and install the APK from the release page.
+- 🎯 **Advanced Customization**: 
+  - 4 premium themes: Nord, Tokyo Night, Dracula, Catppuccin
+  - Dark/light mode support
+  - Custom accent colors
+  - Adaptive icon system
 
-</p>
-</td>
-<td style="vertical-align: top">
-<p><a href="https://apt.izzysoft.de/fdroid/index/apk/dev.patrickgold.florisboard.beta"><img src="https://gitlab.com/IzzyOnDroid/repo/-/raw/master/assets/IzzyOnDroid.png" height="64" alt="IzzySoft repo badge"></a></p>
-<p>
+### Themes Included
 
-**Google Play**: Join the [FlorisBoard Test Group](https://groups.google.com/g/florisboard-closed-beta-test), then visit the [preview testing page](https://play.google.com/apps/testing/dev.patrickgold.florisboard.beta). Once joined and installed, updates will be delivered like for any other app. ([Store entry](https://play.google.com/store/apps/details?id=dev.patrickgold.florisboard.beta))
+1. **Nord** — Arctic, north-bluish color palette
+2. **Tokyo Night** — Neon-inspired vibrant colors
+3. **Dracula** — Dark, elegant purple and pink scheme
+4. **Catppuccin Mocha** — Warm, cohesive modern aesthetic
 
-</p>
-<p>
+## Installation
 
-**Obtainium**: [Auto-import preview config][obtainium_preview]
+### From GitHub Releases
+Download the latest APK from the [Releases](https://github.com/SysAdminDoc/SwiftFloris/releases) page and install on your Android device (Android 8.0+).
 
-</p>
-<p>
+### Manual Build
+```bash
+git clone https://github.com/SysAdminDoc/SwiftFloris.git
+cd SwiftFloris
+./gradlew assembleDebug
+adb install app/build/outputs/apk/debug/app-debug.apk
+```
 
-**Manual**: Download and install the APK from the release page.
+### Enable as Default Keyboard
+1. Open **Settings** → **System** → **Languages & input**
+2. Tap **Virtual keyboard**
+3. Select **SwiftFloris**
+4. Grant necessary permissions
 
-</p>
-</td>
-</tr>
-</table>
+## Architecture
 
-Beginning with v0.7 FlorisBoard will enter the public beta on Google Play.
+**Stack**:
+- Jetpack Compose (declarative UI)
+- Material Design 3 (modern design system)
+- Kotlin + Coroutines (async operations)
+- Encrypted SharedPreferences (secure storage)
+- Room Database (settings persistence)
 
-## Highlighted features
-- Integrated clipboard manager / history
-- Advanced theming support and customization
-- Integrated extension support (still evolving)
-- Emoji keyboard / history / suggestions
+**Min SDK**: 26 (Android 8.0 Oreo)  
+**Target SDK**: 36 (Android 15)
 
-> [!IMPORTANT]
-> Word suggestions/spell checking are not included in the current releases
-> and are a major goal for the v0.6 milestone.
+## Project Structure
 
-Feature roadmap: See [ROADMAP.md](ROADMAP.md)
+```
+SwiftFloris/
+├── app/src/main/
+│   ├── kotlin/
+│   │   └── dev/patrickgold/florisboard/
+│   │       ├── ime/
+│   │       │   ├── keyboard/        (keyboard layout & rendering)
+│   │       │   ├── clipboard/       (clipboard history feature)
+│   │       │   └── input/           (input processing)
+│   │       └── FlorisImeService.kt  (IME service)
+│   └── res/
+│       ├── drawable/                (logo & icons)
+│       └── values/                  (colors, strings, themes)
+├── app/build.gradle.kts             (build config)
+└── settings.gradle.kts              (gradle modules)
+```
+
+## Building
+
+### Requirements
+- Android SDK 26+ (Android 8.0)
+- Gradle 8.x
+- Java 17+
+- Kotlin 2.0+
+
+### Build Commands
+```bash
+# Debug build
+./gradlew assembleDebug
+
+# Release build (unsigned)
+./gradlew assembleRelease
+
+# Run tests
+./gradlew test
+
+# Clean build
+./gradlew clean
+```
 
 ## Contributing
-Want to contribute to FlorisBoard? That's great to hear! There are lots of
-different ways to help out, please see the [contribution guidelines](CONTRIBUTING.md) for more info.
 
-## Addons Store
-The official [Addons Store](https://beta.addons.florisboard.org) offers the possibility for the community to share and download FlorisBoard extensions.
-Instructions on how to publish addons can be found [here](https://github.com/florisboard/florisboard/wiki/How-to-publish-on-FlorisBoard-Addons).
+We welcome contributions! Areas for improvement:
+- Additional themes
+- Keyboard layout customization
+- Voice input integration
+- Gesture support
+- Performance optimizations
 
-Many thanks to Ali ([@4H1R](https://github.com/4H1R)) for implementing the store!
+Feel free to open issues and pull requests.
 
-> [!NOTE]
-> During the initial beta release phase, the Addons Store _will_ only accept theme extensions.
-> Later on we plan to add support for language packs and keyboard extensions.
+## Permissions
 
-## List of permissions FlorisBoard requests
-Please refer to this [page](https://github.com/florisboard/florisboard/wiki/List-of-permissions-FlorisBoard-requests)
-to get more information on this topic.
+SwiftFloris requests the following permissions:
+- **INPUT_METHOD**: Required for IME functionality
+- **VIBRATE**: Optional haptic feedback
+- **INTERNET**: Optional for future cloud sync features
+- **BIND_NOTIFICATION_LISTENER_SERVICE**: For app-aware features
 
-## APK signing certificate hashes
+## Changelog
 
-The package names and SHA-256 hashes of the signature certificate are listed below, so you can verify both FlorisBoard variants with apksigner by using `apksigner verify --print-certs florisboard-<version>-<track>.apk` when you download the APK.
-If you have [AppVerifier](https://github.com/soupslurpr/AppVerifier) installed, you can alternatively copy both the package name and the hash of the corresponding track and share them to AppVerifier.
+### v1.1.0 (2026-01-05)
+- Initial release based on FlorisBoard v0.6.0-alpha02
+- SwiftKey-inspired Material Design 3 branding
+- 4 premium theme packs (Nord, Tokyo Night, Dracula, Catppuccin)
+- Encrypted clipboard history feature
+- Custom logo and adaptive icons
 
-##### Stable track:
-
-dev.patrickgold.florisboard<br>
-0B:80:71:64:50:8E:AF:EB:1F:BB:81:5B:E7:A2:3C:77:FE:68:9D:94:B1:43:75:C9:9B:DA:A9:B6:57:7F:D6:D6
-
-##### Preview track:
-
-dev.patrickgold.florisboard.beta<br>
-0B:80:71:64:50:8E:AF:EB:1F:BB:81:5B:E7:A2:3C:77:FE:68:9D:94:B1:43:75:C9:9B:DA:A9:B6:57:7F:D6:D6
-
-
-## Used libraries, components and icons
-* [AndroidX libraries](https://github.com/androidx/androidx) by
-  [Android Jetpack](https://github.com/androidx)
-* [AboutLibraries](https://github.com/mikepenz/AboutLibraries) by
-  [mikepenz](https://github.com/mikepenz)
-* [Google Material icons](https://github.com/google/material-design-icons) by
-  [Google](https://github.com/google)
-* [JetPref preference library](https://github.com/patrickgold/jetpref) by
-  [patrickgold](https://github.com/patrickgold)
-* [KotlinX coroutines library](https://github.com/Kotlin/kotlinx.coroutines) by
-  [Kotlin](https://github.com/Kotlin)
-* [KotlinX serialization library](https://github.com/Kotlin/kotlinx.serialization) by
-  [Kotlin](https://github.com/Kotlin)
-
-Many thanks to [Nikolay Anzarov](https://www.behance.net/nikolayanzarov) ([@BloodRaven0](https://github.com/BloodRaven0)) for designing and providing the main app icons to this project!
+See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
 
 ## License
+
 ```
-Copyright 2020-2026 The FlorisBoard Contributors
+Copyright 2026 SwiftFloris Contributors
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -148,11 +163,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 ```
 
-Thanks to [The FlorisBoard Contributors](https://github.com/florisboard/florisboard/graphs/contributors) for making this project possible!
+## Acknowledgments
 
-<!-- BEGIN SECTION: obtainium_links -->
-<!-- auto-generated link templates, do NOT edit by hand -->
-<!-- see fastlane/update-readme.sh -->
-[obtainium_preview]: https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://app/%7B%22id%22%3A%22dev.patrickgold.florisboard.beta%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fflorisboard%2Fflorisboard%22%2C%22author%22%3A%22florisboard%22%2C%22name%22%3A%22FlorisBoard%20Preview%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Atrue%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22preview%5C%22%7D%22%7D%0A
-[obtainium_stable]: https://apps.obtainium.imranr.dev/redirect.html?r=obtainium://app/%7B%22id%22%3A%22dev.patrickgold.florisboard%22%2C%22url%22%3A%22https%3A%2F%2Fgithub.com%2Fflorisboard%2Fflorisboard%22%2C%22author%22%3A%22florisboard%22%2C%22name%22%3A%22FlorisBoard%20Stable%22%2C%22additionalSettings%22%3A%22%7B%5C%22includePrereleases%5C%22%3Afalse%2C%5C%22fallbackToOlderReleases%5C%22%3Atrue%2C%5C%22apkFilterRegEx%5C%22%3A%5C%22stable%5C%22%7D%22%7D%0A
-<!-- END SECTION: obtainium_links -->
+- **FlorisBoard** team for the solid IME foundation and architecture
+- **Jetpack Compose** and **Material Design 3** teams for modern Android UI
+- Open-source community for inspiration and contributions
+
+## Status
+
+🚀 **Active Development** — SwiftFloris is under active development. Contributions and feedback are welcome!
