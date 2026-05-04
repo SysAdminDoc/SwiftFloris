@@ -64,7 +64,12 @@ class FlorisApplication : Application() {
         init {
             try {
                 System.loadLibrary("fl_native")
-            } catch (_: Exception) {
+            } catch (e: UnsatisfiedLinkError) {
+                // Native library not available (disabled or not built)
+                android.util.Log.d("FlorisApplication", "Native library not found, continuing without it")
+            } catch (e: Exception) {
+                // Other exceptions - also safe to ignore
+                android.util.Log.d("FlorisApplication", "Failed to load native library: ${e.message}")
             }
         }
     }
