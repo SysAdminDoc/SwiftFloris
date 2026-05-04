@@ -2,46 +2,51 @@
 
 ![Version](https://img.shields.io/badge/version-v1.2.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
 
-**SwiftFloris** is an open-source Android keyboard built on FlorisBoard with intelligent typing features, multiple themes, and a clean Material Design 3 interface.
+**SwiftFloris** is a SwiftKey-inspired Android keyboard with a powerful, proven backend and modern Material Design 3 interface. Built on FlorisBoard's solid IME foundation and customized with SwiftKey's aesthetic and experience philosophy.
 
 ## About SwiftFloris
 
-SwiftFloris focuses on what matters:
-- **Smart Typing Logic**: Auto-capitalization, spell checking, and word suggestions that just work
-- **Lightweight & Fast**: Built on FlorisBoard's proven, production-tested IME core
-- **Clean Interface**: Material Design 3 with 4 curated theme options
-- **Privacy-First**: Local spell checking and suggestions, no cloud dependency
-- **Customizable**: Multiple themes and keyboard layouts
+SwiftFloris combines the best of both worlds:
+- **FlorisBoard Backend**: Production-tested, reliable IME service with excellent performance
+- **SwiftKey Aesthetic**: Clean, modern interface inspired by Microsoft's SwiftKey keyboard
+- **Premium Customization**: Four curated theme packs (Nord, Tokyo Night, Dracula, Catppuccin)
+- **Secure Features**: Encrypted clipboard history, privacy-respecting design
+- **Material Design 3**: Latest Android design standards with adaptive theming
 
 ## Features
 
-### Intelligent Typing
-- ✨ **Auto-Capitalization**: Intelligently capitalizes the first letter of sentences and after punctuation (`.`, `!`, `?`)
-- 🔤 **Spell Checking & Autocorrect**: Dictionary-based error detection with word suggestions
-- 📚 **Word Suggestions**: Context-aware word predictions as you type
-- ⌨️ Responsive, low-latency key detection
+### Core Keyboard
+- ✨ Full Material Design 3 support
+- 🎨 4 premium theme packs with multiple color variants
+- ⌨️ Responsive, low-latency key detection with **SwiftKey-parity typing logic**
 - 🌐 Multi-language support (inherited from FlorisBoard)
 - ♿ Full accessibility support
+- 🔤 **Advanced Auto-Capitalization**: Intelligently capitalizes the first letter of sentences after `.`, `!`, and `?`
 
-### Customization
-- 🎨 **4 Theme Packs**: Nord, Tokyo Night, Dracula, Catppuccin Mocha
-- 🌓 Dark/light mode support
-- 📋 **Clipboard History**: Quick access to recent copied items (encrypted storage)
-- 🎯 Customizable keyboard layouts and settings
-- 🔊 Haptic feedback (configurable strength)
+### Premium Features
+- 📋 **Secure Clipboard History**: Encrypted storage of recent clipboard entries
+  - Quick access to recent pastes
+  - Per-app tracking
+  - Auto-cleanup (max 50 items)
+  - Touch-to-insert functionality
 
-### Design & UX
-- Material Design 3 throughout
-- Adaptive app icons
-- Touch-optimized layouts
-- Smooth animations and transitions
+- 🎯 **Advanced Customization**: 
+  - 4 premium themes: Nord, Tokyo Night, Dracula, Catppuccin
+  - Dark/light mode support
+  - Custom accent colors
+  - Adaptive icon system
+
+- ✏️ **Smart Typing**:
+  - Automatic capitalization at text field start
+  - Sentence-aware capitalization (after punctuation)
+  - Proper state management for natural typing flow
 
 ### Themes Included
 
 1. **Nord** — Arctic, north-bluish color palette
 2. **Tokyo Night** — Neon-inspired vibrant colors
 3. **Dracula** — Dark, elegant purple and pink scheme
-4. **Catppuccin Mocha** — Warm, modern aesthetic
+4. **Catppuccin Mocha** — Warm, cohesive modern aesthetic
 
 ## Installation
 
@@ -137,19 +142,14 @@ SwiftFloris requests the following permissions:
 
 ## Changelog
 
+### v1.1.0 (2026-01-05)
+- Initial release based on FlorisBoard v0.6.0-alpha02
+- SwiftKey-inspired Material Design 3 branding
+- 4 premium theme packs (Nord, Tokyo Night, Dracula, Catppuccin)
+- Encrypted clipboard history feature
+- Custom logo and adaptive icons
+
 See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
-
-### v1.2.0 (2026-05-04)
-- Auto-capitalization now works correctly for multiple consecutive sentences
-- Fixed state machine bug preventing second-sentence capitalization
-- All typing logic matches standard keyboard behavior
-
-### v1.1.0 (2026-04-XX)
-- SwiftFloris branding and custom app icon
-- 4 theme packs (Nord, Tokyo Night, Dracula, Catppuccin)
-- Encrypted clipboard history
-- Enhanced haptic feedback
-- Based on FlorisBoard v0.6.0-alpha02
 
 ## License
 
