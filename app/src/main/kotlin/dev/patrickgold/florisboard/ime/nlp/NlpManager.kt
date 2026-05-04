@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.ime.nlp
 
 import android.content.Context
-import android.os.SystemClock
 import android.util.LruCache
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
@@ -48,6 +47,7 @@ import kotlinx.coroutines.sync.withLock
 import org.florisboard.lib.kotlin.guardedByLock
 import org.florisboard.lib.kotlin.collectLatestIn
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.properties.Delegates
 
 private const val BLANK_STR_PATTERN = "^\\s*$"
@@ -79,8 +79,9 @@ class NlpManager(context: Context) {
     private val wordsListCache = mutableMapOf<String, List<String>>()
     private val frequencyCache = mutableMapOf<String, Double>()
 
+    private val suggestionsRequestCounter = AtomicLong(0L)
     private val internalSuggestionsGuard = Mutex()
-    private var internalSuggestions by Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>()) { _, _, _ ->
+    private var internalSuggestions by Delegates.observable(0L to listOf<SuggestionCandidate>()) { _, _, _ ->
         scope.launch { assembleCandidates() }
     }
 
@@ -199,10 +200,11 @@ class NlpManager(context: Context) {
     fun isSuggestionOn(): Boolean =
         prefs.suggestion.enabled.get()
             || prefs.emoji.suggestionEnabled.get()
+            || prefs.clipboard.suggestionEnabled.get()
             || providerForcesSuggestionOn(subtypeManager.activeSubtype)
 
     fun suggest(subtype: Subtype, content: EditorContent) {
-        val reqTime = SystemClock.uptimeMillis()
+        val requestId = suggestionsRequestCounter.incrementAndGet()
         scope.launch {
             val emojiSuggestions = when {
                 prefs.emoji.suggestionEnabled.get() -> {
@@ -216,16 +218,21 @@ class NlpManager(context: Context) {
                 }
                 else -> emptyList()
             }
-            val suggestions = getSuggestionProvider(subtype).suggest(
-                subtype = subtype,
-                content = content,
-                maxCandidateCount = 8,
-                allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
-                isPrivateSession = keyboardManager.activeState.isIncognitoMode,
-            )
+            val suggestionProvider = getSuggestionProvider(subtype)
+            val suggestions = if (prefs.suggestion.enabled.get() || suggestionProvider.forcesSuggestionOn) {
+                suggestionProvider.suggest(
+                    subtype = subtype,
+                    content = content,
+                    maxCandidateCount = 8,
+                    allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
+                    isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                )
+            } else {
+                emptyList()
+            }
             internalSuggestionsGuard.withLock {
-                if (internalSuggestions.first < reqTime) {
-                    internalSuggestions = reqTime to buildList {
+                if (internalSuggestions.first < requestId) {
+                    internalSuggestions = requestId to buildList {
                         addAll(emojiSuggestions)
                         addAll(suggestions)
                     }
@@ -235,22 +242,22 @@ class NlpManager(context: Context) {
     }
 
     fun suggestDirectly(suggestions: List<SuggestionCandidate>) {
-        val reqTime = SystemClock.uptimeMillis()
+        val requestId = suggestionsRequestCounter.incrementAndGet()
         scope.launch {
             internalSuggestionsGuard.withLock {
-                if (internalSuggestions.first < reqTime) {
-                    internalSuggestions = reqTime to suggestions
+                if (internalSuggestions.first < requestId) {
+                    internalSuggestions = requestId to suggestions
                 }
             }
         }
     }
 
     fun clearSuggestions() {
-        val reqTime = SystemClock.uptimeMillis()
+        val requestId = suggestionsRequestCounter.incrementAndGet()
         scope.launch {
             internalSuggestionsGuard.withLock {
-                if (internalSuggestions.first < reqTime) {
-                    internalSuggestions = reqTime to emptyList()
+                if (internalSuggestions.first < requestId) {
+                    internalSuggestions = requestId to emptyList()
                 }
             }
         }
@@ -364,7 +371,7 @@ class NlpManager(context: Context) {
         }
 
         suspend fun destroyIfNecessary() {
-            if (isInstanceAlive.getAndSet(true)) provider.destroy()
+            if (isInstanceAlive.getAndSet(false)) provider.destroy()
         }
     }
 
