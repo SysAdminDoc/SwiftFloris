@@ -16,15 +16,12 @@
 
 package dev.patrickgold.florisboard.app.settings.typing
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Contacts
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SpaceBar
-import androidx.compose.material3.Card
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -48,7 +45,8 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
-import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -60,13 +58,9 @@ fun TypingScreen() = FlorisScreen {
     val navController = LocalNavController.current
 
     content {
-        // This card is temporary and is therefore not using a string resource (not so temporary as we thought...)
-        FlorisErrorCard(
+        FlorisInfoCard(
             modifier = Modifier.padding(8.dp),
-            text = """
-                Suggestions (except system autofill) and spell checking are not available in this release. All
-                preferences in the "Corrections" group are properly implemented though.
-            """.trimIndent().replace('\n', ' '),
+            text = stringRes(R.string.settings__typing__suggestions_ready),
         )
 
         PreferenceGroup(title = stringRes(R.string.pref__suggestion__title)) {
@@ -109,21 +103,15 @@ fun TypingScreen() = FlorisScreen {
                 summary = stringRes(R.string.pref__correction__auto_space_punctuation__summary),
             )
             if (isAutoSpacePunctuationEnabled) {
-                Card(modifier = Modifier.padding(8.dp)) {
-                    Column(modifier = Modifier.padding(8.dp)) {
-                        Text(
-                            text = """
-                                Auto-space after punctuation is an experimental feature which may break or behave
-                                unexpectedly. If you want, please give feedback about it in below linked feedback
-                                thread. This helps a lot in improving this feature. Thanks!
-                            """.trimIndent().replace('\n', ' '),
-                        )
-                        FlorisHyperlinkText(
-                            text = "Feedback thread (GitHub)",
-                            url = "https://github.com/florisboard/florisboard/discussions/1935",
-                        )
-                    }
-                }
+                FlorisWarningCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.pref__correction__auto_space_punctuation__warning),
+                )
+                FlorisHyperlinkText(
+                    modifier = Modifier.padding(start = 24.dp, end = 24.dp, bottom = 12.dp),
+                    text = stringRes(R.string.pref__correction__auto_space_punctuation__feedback_link),
+                    url = "https://github.com/florisboard/florisboard/discussions/1935",
+                )
             }
             SwitchPreference(
                 prefs.correction.rememberCapsLockState,
