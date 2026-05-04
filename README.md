@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.1.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
+![Version](https://img.shields.io/badge/version-v1.2.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
 
 **SwiftFloris** is a premium, SwiftKey-inspired Android keyboard with a powerful, proven backend and modern Material Design 3 interface. Built on FlorisBoard's solid IME foundation and customized with SwiftKey's aesthetic and experience philosophy.
 
@@ -18,9 +18,10 @@ SwiftFloris combines the best of both worlds:
 ### Core Keyboard
 - ✨ Full Material Design 3 support
 - 🎨 4 premium theme packs with multiple color variants
-- ⌨️ Responsive, low-latency key detection
+- ⌨️ Responsive, low-latency key detection with **SwiftKey-parity typing logic**
 - 🌐 Multi-language support (inherited from FlorisBoard)
 - ♿ Full accessibility support
+- 🔤 **Advanced Auto-Capitalization**: Intelligently capitalizes the first letter of sentences after `.`, `!`, and `?`
 
 ### Premium Features
 - 📋 **Secure Clipboard History**: Encrypted storage of recent clipboard entries
@@ -34,6 +35,11 @@ SwiftFloris combines the best of both worlds:
   - Dark/light mode support
   - Custom accent colors
   - Adaptive icon system
+
+- ✏️ **Smart Typing**:
+  - Automatic capitalization at text field start
+  - Sentence-aware capitalization (after punctuation)
+  - Proper state management for natural typing flow
 
 ### Themes Included
 
