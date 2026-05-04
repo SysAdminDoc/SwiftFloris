@@ -121,15 +121,16 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 
 ---
 
-### P0.2: Gesture Typing Robustness Testing & Device Coverage
+### P0.2: Gesture Typing Robustness Testing & Device Coverage 🔄 IN PROGRESS
 
 **Why**: Gesture typing enabled by default in v1.4.0 but tested on limited devices. Community reports varying accuracy (Pixel vs Samsung vs mid-range).
 
 **What**:
+- [x] **Created GESTURE_TYPING_DEVICE_COMPAT.md** — Framework for device testing (test templates, accuracy baselines, latency targets, troubleshooting)
 - [ ] Expand device testing matrix: test on 10+ Android devices (different SoCs, screen sizes, DPIs)
 - [ ] Profile gesture latency on each device type
 - [ ] Document known limitations (false positives, difficult languages)
-- [ ] Publish GESTURE_TYPING_DEVICE_COMPAT.md with detailed compatibility table
+- [ ] Populate compatibility table with real device data
 - [ ] Collect user feedback from GitHub Discussions; add FAQ section to GESTURE_TYPING.md
 
 **Effort**: 3–4 weeks (distributed across user base)  
@@ -137,26 +138,45 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 **Fit**: Essential for reliability. Informs gesture improvement priorities.
 
 **Acceptance Criteria**:
-- [ ] Device compatibility table with 10+ devices, gesture accuracy scores
+- [x] Device compatibility testing framework (GESTURE_TYPING_DEVICE_COMPAT.md)
+- [ ] Device compatibility table populated with 10+ devices and accuracy scores
 - [ ] Known issues documented with workarounds
 - [ ] User feedback loop established (Discussions or GitHub Issues)
 
+**Progress Update** (2026-05-04):
+- Created comprehensive test framework with device categories (flagship, mid-range, budget, legacy)
+- Defined test corpus (19 common English words, special cases, rare words)
+- Established performance baselines: >85% accuracy, <500ms latency, <5% false positives
+- Device testing pending (awaiting real-world data from users or test lab)
+
 ---
 
-### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs
+### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs 🔄 IN PROGRESS
 
 **Why**: v1.5.0 integrates FUTO externally. Some edge cases (app crashes when FUTO unavailable, permission handling, language pack selection UX).
 
 **What**:
-- [ ] Graceful degradation when FUTO not installed — Show user-friendly message with Play Store link
-- [ ] Language pack selection UI in SwiftFloris settings (mirror FUTO's language list)
-- [ ] Permission handling robustness — Handle RECORD_AUDIO denial gracefully
-- [ ] Voice button latency profiling — Measure time from tap to FUTO UI open
-- [ ] Documentation: FUTO_VOICE_INPUT_TROUBLESHOOTING.md with common issues (crashes, language switching, offline detection)
+- [x] **Created FUTO_VOICE_INPUT_STABILIZATION_PLAN.md** — Detailed implementation roadmap with 5 sub-phases:
+  - P0.3.1: Graceful degradation when FUTO not installed
+  - P0.3.2: Language pack selection UI in SwiftFloris settings
+  - P0.3.3: Permission handling robustness
+  - P0.3.4: Voice button latency profiling
+  - P0.3.5: Troubleshooting guide (FUTO_VOICE_INPUT_TROUBLESHOOTING.md)
+- [ ] Implement graceful degradation (friendly dialog, install links)
+- [ ] Implement language pack selection UI in settings
+- [ ] Robust permission handling (denial, revocation, re-granting)
+- [ ] Measure voice button latency on 3 device types
+- [ ] Complete FUTO troubleshooting guide
 
-**Effort**: 2–3 weeks  
+**Effort**: 2–3 weeks (→ v1.5.0)  
 **Risk**: Low; mostly UX / error handling.  
 **Fit**: Improves user experience around critical voice feature.
+
+**Progress Update** (2026-05-04):
+- Designed comprehensive stabilization plan with 5 sub-phases
+- Each sub-phase has clear acceptance criteria, effort estimates, risk analysis
+- Target: v1.5.0 release with all edge cases handled gracefully
+- Implementation starting with P0.3.1 (graceful degradation) in next autonomous batch
 
 ---
 
