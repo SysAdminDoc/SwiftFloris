@@ -104,7 +104,7 @@ object Devtools {
         return buildString {
             if (withTitle) appendLine("======= APP INFO =======")
             append("Package             : ").appendLine(BuildConfig.APPLICATION_ID)
-            append("Name                : ").appendLine(context.resources.getString(R.string.floris_app_name))
+            append("Name                : ").appendLine(context.resources.getString(R.string.app_name))
             append("Version             : ").appendLine("${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
             append("Build type          : ").appendLine(BuildConfig.BUILD_TYPE)
             append("Build commit hash   : ").appendLine(BuildConfig.BUILD_COMMIT_HASH)

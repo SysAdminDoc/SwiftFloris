@@ -597,12 +597,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             if (newState) {
                 appContext.showLongToast(
                     R.string.incognito_mode__toast_after_enabled,
-                    "app_name" to appContext.getString(R.string.floris_app_name),
+                    "app_name" to appContext.getString(R.string.app_name),
                 )
             } else {
                 appContext.showLongToast(
                     R.string.incognito_mode__toast_after_disabled,
-                    "app_name" to appContext.getString(R.string.floris_app_name),
+                    "app_name" to appContext.getString(R.string.app_name),
                 )
             }
         )
