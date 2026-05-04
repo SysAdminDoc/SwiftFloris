@@ -230,9 +230,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         )
         
         // Enable auto-capitalization for the next character after sentence-ending punctuation
+        // Only set the state, don't re-evaluate as that would reset it based on cursor position
         if (result && shouldCapitalizeAfterPunctuation) {
             activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
-            keyboardManager.reevaluateInputShiftState()
         }
         
         return result
