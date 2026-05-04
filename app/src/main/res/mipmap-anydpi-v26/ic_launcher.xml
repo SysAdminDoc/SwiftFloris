@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-  <!-- Background layer (SwiftFloris blue-purple gradient) -->
+  <!-- Background layer (blue-purple gradient from icon) -->
   <background android:drawable="@color/ic_launcher_bg"/>
   
-  <!-- Foreground layer (SwiftFloris S shape) -->
-  <foreground android:drawable="@drawable/ic_floris_foreground"/>
+  <!-- Foreground layer (SwiftFloris icon PNG) -->
+  <foreground android:drawable="@drawable/ic_swiftfloris_foreground"/>
   
   <!-- Monochrome layer (for modern Android devices) -->
   <monochrome android:drawable="@drawable/ic_floris_monochrome"/>
