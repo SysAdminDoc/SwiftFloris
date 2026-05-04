@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.voice
 
+import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -29,11 +30,9 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.MicOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -45,46 +44,31 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.FlorisImeService
-import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 /**
- * A circular voice input button overlay for the keyboard.
- * Appears in the bottom-right corner of the keyboard when voice input is available.
+ * A circular voice input button that launches FUTO Voice Input.
+ * FUTO Voice Input must be installed separately from Play Store or F-Droid.
+ * 
+ * When clicked, opens the FUTO Voice Input app for on-device, offline speech-to-text.
+ * No internet connection required, all processing happens locally.
  */
 @Composable
 fun VoiceInputButton(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
-    val editor = try {
-        context.editorInstance().value
-    } catch (e: Exception) {
-        null
-    }
     val voiceInputManager = FlorisImeService.voiceInputManagerOrNull() ?: return
 
     val transcriptionState by voiceInputManager.transcriptionState.collectAsState()
-    val isListening by voiceInputManager.isListening.collectAsState()
-    val recognizedText by voiceInputManager.recognizedText.collectAsState()
-    val confidence by voiceInputManager.confidence.collectAsState()
-    val error by voiceInputManager.error.collectAsState()
-
+    
     val interactionSource = remember { MutableInteractionSource() }
     val isPressed by interactionSource.collectIsPressedAsState()
 
     val themeStyle = rememberSnyggThemeQuery(FlorisImeUi.VoiceInputButton.elementName)
     val buttonBackground = themeStyle.background(default = Color(0xFF6200EE))
     val buttonForeground = themeStyle.foreground(default = Color.White)
-    val listeningBackground = Color(0xFFFF5252)
-
-    // Auto-insert recognized text when recognition completes
-    LaunchedEffect(recognizedText) {
-        if (recognizedText.isNotEmpty() && transcriptionState == TranscriptionState.Idle) {
-            editor?.commitText(recognizedText)
-        }
-    }
 
     Box(
         modifier = modifier.size(64.dp),
@@ -99,9 +83,7 @@ fun VoiceInputButton(
                 modifier = Modifier
                     .size(56.dp)
                     .clip(CircleShape)
-                    .background(
-                        if (isListening) listeningBackground else buttonBackground
-                    )
+                    .background(buttonBackground)
                     .border(
                         width = if (isPressed) 2.dp else 1.dp,
                         color = buttonForeground.copy(alpha = 0.5f),
@@ -112,21 +94,22 @@ fun VoiceInputButton(
             ) {
                 IconButton(
                     onClick = {
-                        when {
-                            isListening -> voiceInputManager.stopListening()
-                            transcriptionState == TranscriptionState.Ready -> voiceInputManager.startListening()
-                            else -> {
-                                // Initialize if not yet ready
-                                voiceInputManager.initialize()
+                        // Launch FUTO Voice Input app
+                        try {
+                            val intent = Intent(Intent.ACTION_VIEW).apply {
+                                setPackage("org.futo.voiceinput")
                             }
+                            context.startActivity(intent)
+                        } catch (e: Exception) {
+                            // FUTO Voice Input not installed
                         }
                     },
                     interactionSource = interactionSource,
                     modifier = Modifier.size(48.dp),
                 ) {
                     Icon(
-                        imageVector = if (isListening) Icons.Default.MicOff else Icons.Default.Mic,
-                        contentDescription = if (isListening) "Stop voice input" else "Start voice input",
+                        imageVector = Icons.Default.Mic,
+                        contentDescription = "Open FUTO Voice Input",
                         tint = buttonForeground,
                         modifier = Modifier.size(28.dp),
                     )
@@ -135,3 +118,4 @@ fun VoiceInputButton(
         }
     }
 }
+
