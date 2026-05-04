@@ -1,153 +1,300 @@
-# SwiftFloris Roadmap v2.0
+# SwiftFloris Roadmap v3.0
 
 **Last Updated**: May 4, 2026  
-**Current Version**: v1.3.0 (Voice Input Release)  
-**Project Status**: Stable, feature-complete keyboard with ongoing innovation
+**Current Version**: v1.5.0 (FUTO Voice Input Release)  
+**Project Status**: Production-ready with continuous innovation pipeline
 
 ---
 
 ## Executive Summary
 
-SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's proven backend with SwiftKey's premium aesthetic. v1.3.0 adds voice-to-text capability. This roadmap charts the path to v2.0+ by synthesizing competitive analysis, community demand, and emerging platform capabilities.
+SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's proven IME architecture with modern Material Design 3 and SwiftKey's premium aesthetic. v1.5.0 integrates FUTO Voice Input (100% offline, no cloud). This roadmap synthesizes competitive analysis, community demand, upstream improvements, and emerging platform capabilities to guide development through v2.0+ while maintaining core philosophy: **privacy-first, offline-capable, deeply customizable, zero telemetry.**
 
-**Philosophy**: Privacy-first, offline-capable, deeply customizable, no telemetry.
+**Philosophy**: Users own their data. No cloud sync, no telemetry, no proprietary dependencies. All features work offline.
 
 ---
 
-## Current State (v1.3.0)
+## Current State (v1.5.0)
 
-### ✅ Implemented
+### ✅ Implemented Features
 
-- **Core Typing**: Auto-capitalization (sentence-aware), spell checking (6 languages), word prediction, clipboard history
-- **Voice Input**: Speech-to-text via Android Speech Recognizer API, real-time confidence scoring, offline support
-- **UI/Themes**: Material Design 3, 4 premium themes (Nord, Tokyo Night, Dracula, Catppuccin), dark/light modes
-- **Customization**: 6 language support (EN, DE, FR, ES, IT, PT), encrypted clipboard history
-- **Accessibility**: Multi-touch support, haptic feedback (70% strength)
-- **Polish**: Professional branding, stable v1.3.0 release on GitHub
+**Input Methods**
+- ✅ **Gesture/Swipe Typing** (v1.4.0) — Type words by dragging finger; configurable sensitivity (0-100%); visual trail with fade animation
+- ✅ **Voice Input** (v1.5.0) — FUTO Voice Input integration; 100% offline (Whisper-based); 16+ languages; no cloud calls
+- ✅ **Tap Typing** — Traditional key-press input with layout support (QWERTY, QWERTZ, AZERTY, locale-specific)
+- ✅ **Physical Keyboard Support** — Full hardware keyboard compatibility
 
-### ⏳ Planned (FlorisBoard upstream)
+**Text Processing**
+- ✅ **Auto-Capitalization** — Sentence-aware (after `.`, `!`, `?`); first character of field
+- ✅ **Spell Checking** — Edit-distance algorithm (Levenshtein ≤2); 6 language dictionaries preloaded
+- ✅ **Word Suggestions** — Prefix-based completion; unigram frequency; bigram context (next-word prediction)
+- ✅ **Multi-Language** — 100+ languages via FlorisBoard; 6 with spell checking (EN, DE, FR, ES, IT, PT)
 
-- Gesture/swipe typing (FlorisBoard v0.6+ feature, currently disabled/alpha in SwiftFloris)
-- Physical keyboard support (FlorisBoard v0.6+ in development)
-- CJK input improvements (inherited from upstream)
-- Emoji search and picker rework
-- Language pack system refinement
+**User Experience**
+- ✅ **4 Premium Themes** — Nord, Tokyo Night, Dracula, Catppuccin Mocha; Material Design 3; dark/light modes
+- ✅ **Encrypted Clipboard History** — AES-256 GCM; max 50 items; per-app tracking; one-tap insert
+- ✅ **Haptic Feedback** — Customizable vibration strength; per-action control
+- ✅ **Customization Panels** — Theme editor, gesture sensitivity, keyboard layout settings, dictionary manager
 
-### ❌ Explicitly Not Planned (Out of Scope)
+**Technical**
+- ✅ **Jetpack Compose UI** — Declarative, reactive; Material Design 3 compliance
+- ✅ **Room Database** — Persistent settings storage
+- ✅ **Encrypted SharedPreferences** — Secure credential/token storage
+- ✅ **Coroutines + Threading** — Responsive UI, non-blocking operations
+
+### ⏳ Partially Implemented / Upstream Dependencies
+
+- **Gesture Data Collection** (FlorisBoard v0.6+) — Swipe gesture dataset gathering; training data for model refinement
+- **Emoji Search** (HeliBoard / FlorisBoard v0.7+) — Non-inline emoji search with dictionary
+- **Gesture Typing in Termux** — Works in FlorisBoard but disabled in some ROMs; CleverKeys has reliable Termux support
+- **CJK Input Optimization** — Inherited from FlorisBoard; active development upstream
+
+### ❌ Explicitly Out of Scope (v1.5.0)
 
 - Commercial licensing or monetization (Apache 2.0 only)
-- Google Play distribution (APK via GitHub)
-- Telemetry or cloud sync
-- Proprietary dependencies (Gboard libs, etc.)
+- Google Play Store distribution (GitHub releases + F-Droid)
+- Telemetry, cloud sync, or analytics
+- Proprietary dependencies (Gboard libs, SwiftKey APIs)
+- Closed-source ML models (only open/auditable models permitted)
 
 ---
 
-## Phase 1: Gesture Typing & Input Diversity (v1.4.0 – 2026 H2)
+## Competitive Landscape (Snapshot)
 
-**Goal**: Add gesture-based input as a complement to traditional tap typing. Enablement + refinement.
+| Keyboard | Swipe | Voice | Offline | Multi-Lang Swipe | Clipboard | Open Source | License | Last Update |
+|----------|-------|-------|---------|-------------------|-----------|-----------|---------|------------|
+| **SwiftFloris** | ✅ | ✅ FUTO | ✅ | ❌ (EN only) | ✅ (AES-256) | ✅ | Apache 2.0 | May 2026 |
+| **CleverKeys** | ✅ ML | ✅ FUTO | ✅ | ✅ (11 langs) | ✅ (unlimited) | ✅ | GPL-3.0 | May 2026 |
+| **FlorisBoard** | ⚠️ Alpha | ✅ FUTO | ✅ | ❌ | ✅ (20-100) | ✅ | Apache 2.0 | May 2026 |
+| **HeliBoard** | ✅ | ✅ FUTO | ✅ | ❌ | ✅ | ✅ | GPL-3.0 | May 2026 |
+| **AnySoftKeyboard** | ⚠️ Exp | ✅ FUTO | ✅ | ❌ | ❌ | ✅ | Apache 2.0 | May 2026 |
+| **Thumb-Key** | ✅ Swipe | ✅ FUTO | ✅ | ❌ (3x3 grid) | ✅ | ✅ | AGPL-3.0 | May 2026 |
+| **Deskdrop** | ✅ | ✅ Whisper | ⚠️ Optional | ❌ | ✅ | ✅ | GPL-3.0 | May 2026 |
+| **FUTO Keyboard** | ✅ Alpha | ✅ Built-in | ✅ | ❌ (EN focus) | ✅ | ⚠️ Source-First | Source-First 1.1 | May 2026 |
+| **Gboard** | ✅ | ✅ | ❌ Cloud | ✅ 100+ | ✅ | ❌ | Proprietary | May 2026 |
+| **SwiftKey** | ✅ | ✅ | ❌ Cloud | ✅ 100+ | ✅ | ❌ | Proprietary | May 2026 |
 
-### P1.1: Enable & Stabilize Gesture Typing (HIGH IMPACT) ✅ COMPLETED v1.4.0
+**Key Observations**:
+- CleverKeys leads in multi-language swipe (11 languages via single neural model + language-specific dictionaries)
+- FUTO Keyboard has built-in voice (better UX than external integration), but alpha-stage
+- HeliBoard has most mature gesture typing (used by CleverKeys via library)
+- SwiftFloris beats commercial keyboards on privacy (100% offline voice, no telemetry)
+- Deskdrop uniquely bridges AI + keyboards (Ollama/Groq/OpenAI integration)
+- Thumb-Key solves different problem (3x3 grid for thumb-typing; appeals to niche)
 
-**Why**: Gesture/swipe typing is table-stakes in modern keyboards (Gboard, SwiftKey, HeliBoard, CleverKeys). FlorisBoard has the feature (alpha); SwiftFloris inherits it but it's disabled.
+---
+
+## Phase 0: Quality Polish & Foundation (v1.5.1–v1.6.0) — Q2-Q3 2026
+
+**Goal**: Solidify v1.5.0 foundation. Fix inherited TODOs, improve test coverage, prepare for feature-intensive phases.
+
+### P0.1: Fix Inherited FlorisBoard TODOs
+
+**Why**: 40+ TODOs scattered across codebase (from FlorisBoard legacy). Blocks architecture clarity.
 
 **What**:
-- ✅ Enable gesture typing in FlorisBoard config
-- ✅ Verify accuracy across device types (Pixel, Samsung, mid-range)
-- ✅ Document limitations vs. upstream FlorisBoard
-- ✅ Publish v1.4.0 with gesture typing enabled (enabled by default, configurable in settings)
-- ⏳ Gather user feedback: latency, accuracy, false positives (post-release)
+- [ ] **User Dictionary** (`UserDictionary.kt`) — Currently stubbed `TODO("Not yet implemented")`. Implement CRUD for custom words.
+  - Add/remove words from app settings
+  - Persist to Room database
+  - Integrate with spell checker (prefer user dict over system)
+  - Estimated effort: 2 weeks
+  
+- [ ] **Dictionary Manager** (`DictionaryManager.kt`) — Document and clean up manager API. 
+  - Clarify loading order (system → downloadable → user)
+  - Add lazy-loading for large dictionaries
+  - Estimated effort: 1 week
 
-**Effort**: 2–3 weeks (testing + iteration)  
-**Risk**: FlorisBoard's gesture engine is algorithm-based (not ML), may lag commercial keyboards; user expectations high.  
-**Fit**: Core feature for feature parity. Aligns with philosophy (offline, no proprietary libs).
+- [ ] **NLP Manager Refactor** (`NlpManager.kt`) — Large `TODO: this is a mess`. Cleanly separate concerns.
+  - Split into NLPProviderRegistry, ProviderFactory, and per-provider managers
+  - Remove circular dependencies
+  - Add unit tests for each provider
+  - Estimated effort: 3-4 weeks
+
+- [ ] **Emoji Compatibility** (`FlorisEmojiCompat.kt`) — Investigate EmojiCompat double-instance memory impact.
+  - Profile memory usage with emoji-heavy input
+  - Consider AOSP-like ROM behavior
+  - Estimated effort: 1 week (research), 1 week (fix if needed)
+
+**Effort**: 8–10 weeks  
+**Risk**: Breaking changes in NLP refactor; need regression testing.  
+**Fit**: High; unblocks future feature work (esp. AI integration).
+
+---
+
+### P0.2: Gesture Typing Robustness Testing & Device Coverage
+
+**Why**: Gesture typing enabled by default in v1.4.0 but tested on limited devices. Community reports varying accuracy (Pixel vs Samsung vs mid-range).
+
+**What**:
+- [ ] Expand device testing matrix: test on 10+ Android devices (different SoCs, screen sizes, DPIs)
+- [ ] Profile gesture latency on each device type
+- [ ] Document known limitations (false positives, difficult languages)
+- [ ] Publish GESTURE_TYPING_DEVICE_COMPAT.md with detailed compatibility table
+- [ ] Collect user feedback from GitHub Discussions; add FAQ section to GESTURE_TYPING.md
+
+**Effort**: 3–4 weeks (distributed across user base)  
+**Risk**: Low; mostly testing/documentation.  
+**Fit**: Essential for reliability. Informs gesture improvement priorities.
 
 **Acceptance Criteria**:
-- ✅ Gesture typing enabled by default
-- ✅ Settings UI provides on/off + sensitivity toggle
-- ✅ Configurable gesture trail visualization and duration
-- ✅ Live word prediction during gesture
-- ⏳ Latency & accuracy testing (device testing phase)
-- ⏳ Termux compatibility verification
-
-**Completed v1.4.0-beta**:
-- Modified `AppPrefs.kt`: `glide__enabled` default changed from false → true
-- Added sensitivity preference (int, 0-100%, default 50) for fine-tuning
-- Fixed `GesturesScreen.kt`: uncommented gesture typing PreferenceGroup, added missing imports
-- Created `GESTURE_TYPING.md` with comprehensive user guide, best practices, FAQ, troubleshooting
-- Updated README.md, FEATURES.md, CHANGELOG.md with gesture typing documentation
+- [ ] Device compatibility table with 10+ devices, gesture accuracy scores
+- [ ] Known issues documented with workarounds
+- [ ] User feedback loop established (Discussions or GitHub Issues)
 
 ---
 
-### P1.2: Multi-Language Gesture Typing (MEDIUM IMPACT, Deferred)
+### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs
 
-**Why**: CleverKeys supports 11 languages with a single neural model + language-specific dictionaries. Most keyboards support English-only swipe.
+**Why**: v1.5.0 integrates FUTO externally. Some edge cases (app crashes when FUTO unavailable, permission handling, language pack selection UX).
 
 **What**:
-- Audit FlorisBoard gesture typing architecture for multi-language support
-- Identify ML model limitations
-- If feasible: extend gesture typing to German, French, Spanish (other 3 included dictionaries)
-- If not feasible: document architectural constraints for future
+- [ ] Graceful degradation when FUTO not installed — Show user-friendly message with Play Store link
+- [ ] Language pack selection UI in SwiftFloris settings (mirror FUTO's language list)
+- [ ] Permission handling robustness — Handle RECORD_AUDIO denial gracefully
+- [ ] Voice button latency profiling — Measure time from tap to FUTO UI open
+- [ ] Documentation: FUTO_VOICE_INPUT_TROUBLESHOOTING.md with common issues (crashes, language switching, offline detection)
 
-**Effort**: 4–6 weeks (high uncertainty)  
-**Risk**: May require ML model retraining (out of scope). FlorisBoard may lack multi-lang gesture support by design.  
-**Fit**: Nice-to-have; lower priority than gesture refinement. Deferred to v1.5+ if research shows viability.
-
-**Dependencies**: P1.1 completion (gesture typing stable)
+**Effort**: 2–3 weeks  
+**Risk**: Low; mostly UX / error handling.  
+**Fit**: Improves user experience around critical voice feature.
 
 ---
 
-### P1.3: Voice Commands & Shortcuts (MEDIUM IMPACT)
+## Phase 1: Multi-Language Swipe Typing (v1.6.0–v1.7.0) — Q3-Q4 2026
 
-**Why**: Deskdrop, FUTO, and commercial keyboards support voice-triggered actions (e.g., "delete that", "new paragraph", "undo"). Complements voice-to-text.
+**Goal**: Enable gesture typing in German, French, Spanish, Italian, Portuguese (in addition to English).
+
+**Why**: CleverKeys demonstrates multi-language swipe with single model + per-language dictionaries. Currently SwiftFloris only supports English swipes. This is a **leapfrog opportunity** — beat upstream FlorisBoard (which has no multi-lang swipe) and reach parity with CleverKeys.
 
 **What**:
-- Add voice command layer on top of v1.3.0 voice input
-- Supported commands:
-  - Editing: "delete that", "undo", "redo", "select all", "capitalize next word"
-  - Formatting: "new paragraph", "new line", "backspace line"
-  - Navigation: "go to start", "go to end"
-- User can customize command list (settings panel)
-- Confidence threshold for command execution (default: >0.85)
+- [ ] **Research feasibility** — Examine FlorisBoard's GlideTypingManager architecture.
+  - Does gesture classifier work language-agnostic?
+  - What dictionary structure do spell-checkers expect?
+  - Can we use existing AdvancedSpellingProvider dictionaries for swipe predictions?
+  - **Estimated research**: 1 week
+  
+- [ ] **Dictionary augmentation** — Extend preloaded dictionaries for gesture matching.
+  - Current: English dictionary loaded
+  - Add: German, French, Spanish, Italian, Portuguese (from FlorisBoard language packs)
+  - Ensure word frequency data present (for swipe probability scoring)
+  - Test dictionary loading performance impact
+  - **Estimated effort**: 2 weeks
 
-**Technical**:
-- Extend `VoiceInputManager.kt` with command parser
-- Use Levenshtein distance for fuzzy command matching (account for accents/slurring)
-- Add command history/learning (if command misrecognized, user can correct)
+- [ ] **Gesture classifier language-awareness** — Modify GlideTypingClassifier to accept language context.
+  - Pass active language/subtype to classifier
+  - Adjust dictionary lookup for current language
+  - Fall back to English if language-specific lookup fails
+  - **Estimated effort**: 2–3 weeks
 
-**Effort**: 3–4 weeks  
-**Risk**: Reliability (false positives on command execution); user expectations (high bar).  
-**Fit**: High user value; extends voice input philosophy. Privacy-first (all on-device).
+- [ ] **Settings UI** — Let users enable/disable multi-language swipe per-language.
+  - Checkbox in GesturesScreen for each language: "Enable swipe for [Language]"
+  - Store preferences in AppPrefs
+  - **Estimated effort**: 1 week
+
+- [ ] **Testing & documentation**:
+  - Device testing: swipe accuracy in each language (with native speakers if possible)
+  - GESTURE_TYPING_MULTILINGUAL.md guide
+  - FAQ: "Why is my German gesture less accurate?" etc.
+  - **Estimated effort**: 2–3 weeks
+
+**Effort**: 8–11 weeks  
+**Risk**: Medium. FlorisBoard may not support language-aware gesture detection internally. May require custom implementation.  
+**Fit**: High user value; differentiates from upstream.  
+**Dependencies**: P0.1 (NLP refactor), P0.2 (device testing baseline).
 
 **Acceptance Criteria**:
-- [ ] 10+ voice commands recognized reliably
-- [ ] Command recognition >90% accurate on test corpus (native speaker)
-- [ ] Users can add custom commands in settings
-- [ ] Command execution logs visible for debugging
+- [ ] Gesture typing works in all 5 languages (EN, DE, FR, ES, IT, PT) with <500ms latency
+- [ ] Accuracy within 5% of English baseline
+- [ ] Settings UI allows per-language toggling
+- [ ] Documentation covers language-specific tips
 
 ---
 
-## Phase 2: AI Integration & Smart Features (v1.5.0+ – 2026 H2+)
+## Phase 2: Voice Commands & Shortcuts (v1.7.0–v1.8.0) — Q4 2026 – Q1 2027
 
-**Goal**: Add optional, local-first AI capabilities to enhance typing (tone adjustment, grammar, summarization).
+**Goal**: Extend FUTO Voice Input with voice-triggered editing commands (e.g., "delete that", "undo", "new paragraph").
 
-### P2.1: On-Device Tone Adjustment (MEDIUM IMPACT, Deferred)
-
-**Why**: Deskdrop (AI keyboard) supports rewrite, translate, summarize, tone shift. Users value fast text refinement without leaving the app.
+**Why**: Deskdrop shows voice + AI integration is compelling for power users. FUTO Voice Input is perfect foundation — 100% offline, open-source, auditable. Commands are natural extension of voice-to-text.
 
 **What**:
-- Partner with on-device inference library (ONNX Runtime, TensorFlow Lite) for T5-small or equivalent
-- Add "tone bar" UI: users select text → tap tone button (formal, casual, friendly, professional) → see suggestion
-- Optional: integrate with system-wide text selection menu for use in any app (like Android's spell-check)
-- No cloud sync; all local
+- [ ] **Voice Command Parser** — Extend VoiceInputManager with command detection.
+  - Supported commands (v1):
+    - **Editing**: "delete that", "undo", "redo", "select all"
+    - **Formatting**: "new paragraph", "new line", "capitalize next word"
+    - **Navigation**: "go to start", "go to end"
+  - Use fuzzy matching (Levenshtein distance + phonetic normalization) to handle accents/slurring
+  - Confidence threshold (default: >0.85)
+  - **Estimated effort**: 3 weeks
 
-**Technical**:
-- Ship pre-trained T5-small model (lightweight, ~250MB)
-- Model stored in app assets, lazy-loaded on first use
-- Inference on CPU (no GPU required)
-- Timeout: 2 seconds (user-acceptable latency)
+- [ ] **Command Execution** — Implement command actions.
+  - Map commands to InputConnection actions (commitText, sendKeyEvent, etc.)
+  - Handle edge cases (e.g., "delete that" on empty field)
+  - Log command execution for debugging
+  - **Estimated effort**: 2 weeks
 
-**Effort**: 6–8 weeks (model integration + UI + testing)  
-**Risk**: Model size (250MB APK bloat); latency; accuracy of tone transfer.  
+- [ ] **User Customization** — Let users add/disable commands.
+  - Custom command list in AppPrefs (JSON list)
+  - Settings UI: add, edit, delete commands
+  - Test user commands with fuzzy matcher
+  - **Estimated effort**: 2 weeks
+
+- [ ] **Fallback & Error Handling**:
+  - Unrecognized command → treat as text and insert
+  - Low confidence (0.5–0.85) → show user suggestion with accept/reject
+  - Network timeout (shouldn't happen with FUTO, but safe design)
+  - **Estimated effort**: 1 week
+
+- [ ] **Testing & documentation**:
+  - Test with diverse accents (native + non-native speakers)
+  - VOICE_COMMANDS.md guide with full command reference
+  - FAQ: "What if my accent isn't recognized?"
+  - **Estimated effort**: 2 weeks
+
+**Effort**: 10–12 weeks  
+**Risk**: Medium. Voice recognition can be sensitive to accents. Fuzzy matching tuning may require iteration.  
+**Fit**: Niche feature but high perceived value. Differentiates from commercial keyboards.  
+**Dependencies**: P0.3 (FUTO stabilization).
+
+**Acceptance Criteria**:
+- [ ] 10+ built-in voice commands working reliably (>90% recognition accuracy on native speakers)
+- [ ] Custom commands UI functional
+- [ ] Comprehensive voice command documentation
+
+---
+
+## Phase 3: AI-Powered Text Refinement (v1.8.0–v1.9.0) — Q1–Q2 2027
+
+**Goal**: Add optional, **on-device** text refinement: tone adjustment, grammar correction, summarization (using lightweight transformer models).
+
+**Why**: Deskdrop proves AI in keyboards is compelling. But unlike Deskdrop (which requires server), SwiftFloris stays offline. ONNX Runtime + TensorFlow Lite enable efficient inference on modest hardware. T5-small (~250MB) model fits in APK + cache.
+
+**What**:
+
+**P3.1: Tone Adjustment (MVP)**
+
+- [ ] **Model Integration** — ONNX Runtime + T5-small for paraphrase/tone.
+  - Import pre-trained T5-small ONNX model
+  - Store in app assets (lazy-load on first use)
+  - Implement inference wrapper with timeout (2–3 seconds)
+  - **Estimated effort**: 2 weeks
+
+- [ ] **UI Component** — "Tone" button in smartbar.
+  - Long-press → select tone (formal, casual, friendly, professional)
+  - Selection → show selected text preview with suggested rewrite
+  - Tap to accept/reject
+  - **Estimated effort**: 2 weeks
+
+- [ ] **Privacy & Performance**:
+  - All processing on-device; no network calls
+  - CPU inference (no GPU required)
+  - Background inference with UI cancellation
+  - **Estimated effort**: 1 week
+
+- [ ] **Documentation**: TONE_ADJUSTMENT.md with examples, performance notes, known limitations.
+  - **Estimated effort**: 1 week
+
+**Effort (P3.1)**: 6–7 weeks  
+**Risk**: Medium. Model size (250MB) may inflate APK; latency on older devices may exceed tolerance.  
 **Fit**: Aligns with modern keyboard features (Deskdrop). Out-of-scope for v1.3, but desirable for v1.5+.
 
 **Dependencies**: On-device inference library evaluation, model license verification (CC0 or permissive required)
