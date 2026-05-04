@@ -812,7 +812,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                         }
                     }
                 }
-                if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
+                if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && 
+                    activeState.inputShiftState != InputShiftState.SHIFTED_AUTOMATIC &&
+                    !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
                     activeState.inputShiftState = InputShiftState.UNSHIFTED
                 }
             }
