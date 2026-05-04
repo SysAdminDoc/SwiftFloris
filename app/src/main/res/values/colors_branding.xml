@@ -21,7 +21,7 @@
     <color name="surface_dark">#1A1B26</color>
     
     <!-- App Icon Background -->
-    <color name="ic_launcher_bg">#4A90E2</color>
+    <color name="ic_launcher_bg">#4F46E5</color><!-- SwiftFloris blue-purple -->
     
     <!-- Text Colors -->
     <color name="text_primary">#FFFFFF</color>

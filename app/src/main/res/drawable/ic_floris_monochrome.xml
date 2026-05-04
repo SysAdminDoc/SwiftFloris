@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+  
+  <!-- Monochrome S shape -->
+  <path
+      android:pathData="M 50,25 C 65,30 70,40 65,50 C 60,60 50,65 40,60 C 35,58 32,52 38,48 C 43,45 50,48 52,55 C 54,62 48,68 38,65 C 28,62 25,52 30,42 C 35,32 45,28 50,25"
+      android:fillColor="#FFFFFF"
+      android:strokeColor="@android:color/transparent"/>
+</vector>
