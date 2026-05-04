@@ -100,6 +100,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val activeState = ObservableKeyboardState.new()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
     private var lastToastReference = WeakReference<Toast>(null)
+    private var isConsumingShiftedAutomatic = false
 
     private val activeEvaluatorGuard = Mutex(locked = false)
     private var activeEvaluatorVersion = AtomicInteger(0)
@@ -212,6 +213,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun reevaluateInputShiftState() {
+        // Skip re-evaluation while actively consuming SHIFTED_AUTOMATIC to avoid losing the state
+        if (isConsumingShiftedAutomatic) {
+            return
+        }
+        
         if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
             val capsMode = editorInstance.activeCursorCapsMode
             val autoCapEnabled = prefs.correction.autoCapitalization.get()
@@ -811,13 +817,21 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                             if (!UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
                                 nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
                             }
+                            
+                            // Mark that we're consuming SHIFTED_AUTOMATIC if it's active and this is a letter
+                            if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
+                                UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
+                                isConsumingShiftedAutomatic = true
+                            }
+                            
                             editorInstance.commitChar(text)
                             
-                            // Reset SHIFTED_AUTOMATIC after it's been applied to a character
+                            // Reset SHIFTED_AUTOMATIC and flag after consumption
                             if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
                                 UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
                                 activeState.inputShiftState = InputShiftState.UNSHIFTED
                             }
+                            isConsumingShiftedAutomatic = false
                         }
                         else -> {
                             flogError(LogTopic.KEY_EVENTS) { "Received unknown key: $data" }
