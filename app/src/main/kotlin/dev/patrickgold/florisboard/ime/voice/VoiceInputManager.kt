@@ -43,6 +43,14 @@ class VoiceInputManager(private val context: Context) {
         }
 
         try {
+            // Check once more before launching to handle edge case where FUTO was uninstalled
+            if (!isFutoVoiceInputAvailable()) {
+                _transcriptionState.value = TranscriptionState.Unavailable
+                _error.value = VoiceError.NotAvailable
+                Log.w("VoiceInputManager", "FUTO Voice Input became unavailable (was uninstalled?)")
+                return
+            }
+
             _isListening.value = true
             _transcriptionState.value = TranscriptionState.Listening
             
@@ -53,9 +61,7 @@ class VoiceInputManager(private val context: Context) {
                 // No additional extras needed for IME mode
             }
             
-            if (isFutoVoiceInputAvailable()) {
-                context.startActivity(intent)
-            }
+            context.startActivity(intent)
         } catch (e: Exception) {
             _transcriptionState.value = TranscriptionState.Error
             _isListening.value = false
