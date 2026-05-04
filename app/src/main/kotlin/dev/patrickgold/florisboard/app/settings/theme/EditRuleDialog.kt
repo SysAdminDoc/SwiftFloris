@@ -418,7 +418,7 @@ private fun EditCodeValueDialog(
             lastRecordingToast?.cancel()
             lastRecordingToast = context.showShortToastSync(
                 R.string.settings__theme_editor__code_recording_requires_default_ime_floris,
-                "app_name" to context.stringRes(R.string.floris_app_name),
+                "app_name" to context.stringRes(R.string.app_name),
             )
             InputMethodUtils.showImePicker(context)
             return
