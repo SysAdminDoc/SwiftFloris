@@ -146,7 +146,8 @@ fun BackupScreen() = FlorisScreen {
 
     var backupDestination by remember { mutableStateOf(Backup.Destination.FILE_SYS) }
     val backupFilesSelector = remember { Backup.FilesSelector() }
-    var backupWorkspace: CacheManager.BackupAndRestoreWorkspace? = null
+    var backupWorkspace by remember { mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null) }
+    var isBackupInProgress by remember { mutableStateOf(false) }
 
     val backUpToFileSystemLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip"),
@@ -156,86 +157,100 @@ fun BackupScreen() = FlorisScreen {
                 // trigger, so we make sure to clear out the previous workspace
                 backupWorkspace?.close()
                 backupWorkspace = null
+                isBackupInProgress = false
                 return@rememberLauncherForActivityResult
             }
             runCatching {
                 context.contentResolver.writeFromFile(uri, backupWorkspace!!.zipFile)
                 backupWorkspace!!.close()
             }.onSuccess {
+                backupWorkspace = null
+                isBackupInProgress = false
                 context.showLongToastSync(R.string.backup_and_restore__back_up__success)
                 navController.popBackStack()
             }.onFailure { error ->
                 flogError { error.stackTraceToString() }
                 context.showLongToastSync(R.string.backup_and_restore__back_up__failure, "error_message" to error.message)
+                backupWorkspace?.close()
                 backupWorkspace = null
+                isBackupInProgress = false
             }
         },
     )
 
     suspend fun prepareBackupWorkspace() {
         val workspace = cacheManager.backupAndRestore.new()
-        if (backupFilesSelector.jetprefDatastore) {
-            val fileBasedStorage = workspace.inputDir
-                .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
-                .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
-                .let { FileBasedStorage(it.path) }
-            FlorisPreferenceStore.export(fileBasedStorage).getOrThrow()
-        }
-        val workspaceFilesDir = workspace.inputDir.subDir("files")
-        if (backupFilesSelector.imeKeyboard) {
-            context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).let { dir ->
-                dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH))
+        try {
+            if (backupFilesSelector.jetprefDatastore) {
+                val fileBasedStorage = workspace.inputDir
+                    .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
+                    .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
+                    .let { FileBasedStorage(it.path) }
+                FlorisPreferenceStore.export(fileBasedStorage).getOrThrow()
             }
-        }
-        if (backupFilesSelector.imeTheme) {
-            context.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
-                dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))
+            val workspaceFilesDir = workspace.inputDir.subDir("files")
+            if (backupFilesSelector.imeKeyboard) {
+                context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).let { dir ->
+                    dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH))
+                }
             }
-        }
+            if (backupFilesSelector.imeTheme) {
+                context.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
+                    dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))
+                }
+            }
 
-        if (backupFilesSelector.provideClipboardItems()) {
-            val clipboardManager by context.clipboardManager()
-            val clipboardHistory = clipboardManager.currentHistory.all
-            val clipboardFilesDir = workspace.inputDir.subDir("clipboard")
-            clipboardFilesDir.mkdir()
-            if (backupFilesSelector.clipboardTextItems) {
-                clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
-                    .writeJson(clipboardHistory.filter { it.type == ItemType.TEXT })
-            }
-            if (backupFilesSelector.clipboardImageItems) {
-                clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
-                    .writeJson(clipboardHistory.filter { it.type == ItemType.IMAGE })
-                for (item in clipboardHistory.filter { it.type == ItemType.IMAGE }) {
-                    val id = ContentUris.parseId(item.uri!!)
-                    ClipboardFileStorage.getFileForId(context, id).copyTo(
-                        clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
-                    )
+            if (backupFilesSelector.provideClipboardItems()) {
+                val clipboardManager by context.clipboardManager()
+                val clipboardHistory = clipboardManager.currentHistory.all
+                val clipboardFilesDir = workspace.inputDir.subDir("clipboard")
+                clipboardFilesDir.mkdir()
+                if (backupFilesSelector.clipboardTextItems) {
+                    clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
+                        .writeJson(clipboardHistory.filter { it.type == ItemType.TEXT })
+                }
+                if (backupFilesSelector.clipboardImageItems) {
+                    clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
+                        .writeJson(clipboardHistory.filter { it.type == ItemType.IMAGE })
+                    for (item in clipboardHistory.filter { it.type == ItemType.IMAGE }) {
+                        val id = ContentUris.parseId(item.uri!!)
+                        ClipboardFileStorage.getFileForId(context, id).copyTo(
+                            clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
+                        )
+                    }
+                }
+                if (backupFilesSelector.clipboardVideoItems) {
+                    clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
+                        .writeJson(clipboardHistory.filter { it.type == ItemType.VIDEO })
+                    for (item in clipboardHistory.filter { it.type == ItemType.VIDEO }) {
+                        val id = ContentUris.parseId(item.uri!!)
+                        ClipboardFileStorage.getFileForId(context, id).copyTo(
+                            clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
+                        )
+                    }
                 }
             }
-            if (backupFilesSelector.clipboardVideoItems) {
-                clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
-                    .writeJson(clipboardHistory.filter { it.type == ItemType.VIDEO })
-                for (item in clipboardHistory.filter { it.type == ItemType.VIDEO }) {
-                    val id = ContentUris.parseId(item.uri!!)
-                    ClipboardFileStorage.getFileForId(context, id).copyTo(
-                        clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
-                    )
-                }
-            }
+            workspace.metadata = Backup.Metadata(
+                packageName = BuildConfig.APPLICATION_ID,
+                versionCode = BuildConfig.VERSION_CODE,
+                versionName = BuildConfig.VERSION_NAME,
+                timestamp = System.currentTimeMillis(),
+            )
+            workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
+            workspace.zipFile = workspace.outputDir.subFile(Backup.defaultFileName(workspace.metadata))
+            ZipUtils.zip(workspace.inputDir, workspace.zipFile)
+            backupWorkspace = workspace
+        } catch (error: Throwable) {
+            workspace.close()
+            throw error
         }
-        workspace.metadata = Backup.Metadata(
-            packageName = BuildConfig.APPLICATION_ID,
-            versionCode = BuildConfig.VERSION_CODE,
-            versionName = BuildConfig.VERSION_NAME,
-            timestamp = System.currentTimeMillis(),
-        )
-        workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
-        workspace.zipFile = workspace.outputDir.subFile(Backup.defaultFileName(workspace.metadata))
-        ZipUtils.zip(workspace.inputDir, workspace.zipFile)
-        backupWorkspace = workspace
     }
 
     suspend fun prepareAndPerformBackup() {
+        if (isBackupInProgress) {
+            return
+        }
+        isBackupInProgress = true
         runCatching {
             if (backupWorkspace == null || backupWorkspace!!.isClosed()) {
                 prepareBackupWorkspace()
@@ -254,12 +269,15 @@ fun BackupScreen() = FlorisScreen {
                         .createChooserIntent()
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     context.startActivity(shareIntent)
+                    isBackupInProgress = false
                 }
             }
         }.onFailure { error ->
             flogError { error.stackTraceToString() }
             context.showLongToast(R.string.backup_and_restore__back_up__failure, "error_message" to error.message)
+            backupWorkspace?.close()
             backupWorkspace = null
+            isBackupInProgress = false
         }
     }
 
@@ -278,7 +296,7 @@ fun BackupScreen() = FlorisScreen {
                     scope.launch { prepareAndPerformBackup() }
                 },
                 text = stringRes(R.string.action__back_up),
-                enabled = backupFilesSelector.atLeastOneSelected(),
+                enabled = backupFilesSelector.atLeastOneSelected() && !isBackupInProgress,
             )
         }
     }

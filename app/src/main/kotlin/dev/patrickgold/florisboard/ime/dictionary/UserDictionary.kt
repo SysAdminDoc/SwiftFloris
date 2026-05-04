@@ -228,7 +228,7 @@ abstract class FlorisUserDictionaryDatabase : RoomDatabase(), UserDictionaryData
     abstract override fun userDictionaryDao(): UserDictionaryDao
 
     override fun reset() {
-        TODO("Not yet implemented")
+        userDictionaryDao().deleteAll()
     }
 
     class Converters {
@@ -466,7 +466,7 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
     }
 
     override fun reset() {
-        TODO("Not yet implemented")
+        // The platform user dictionary provider does not expose a safe app-scoped reset operation.
     }
 }
 

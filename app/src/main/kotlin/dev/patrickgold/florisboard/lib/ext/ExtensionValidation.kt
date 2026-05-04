@@ -25,7 +25,6 @@ import dev.patrickgold.florisboard.lib.validate
 import org.florisboard.lib.snygg.value.SnyggVarValue
 
 object ExtensionValidation {
-    private val MetaIdRegex = """^[a-z][a-z0-9_]*(\.[a-z0-9][a-z0-9_]*)*${'$'}""".toRegex()
     private val ComponentIdRegex = """^[a-z][a-z0-9_]*${'$'}""".toRegex()
     private val ThemeComponentStylesheetPathRegex = """^[^:*<>"']*${'$'}""".toRegex()
 
@@ -35,8 +34,8 @@ object ExtensionValidation {
         validator { str ->
             when {
                 str.isBlank() -> resultInvalid(error = R.string.ext__validation__enter_package_name)
-                MetaIdRegex.matches(str) -> resultValid()
-                else -> resultInvalid(error = R.string.ext__validation__error_package_name, "id_regex" to MetaIdRegex)
+                ExtensionDefaults.isValidId(str) -> resultValid()
+                else -> resultInvalid(error = R.string.ext__validation__error_package_name, "id_regex" to "^[a-z][a-z0-9_]*(\\.[a-z0-9][a-z0-9_]*)*$")
             }
         }
     }

@@ -309,19 +309,19 @@
     <string name="enum__swipe_action__toggle_smartbar_visibility" comment="Enum value label">Alternar la visibilidá de la barra intelixente</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} hora</item>
         <item quantity="other">{v} hores</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} minutu</item>
         <item quantity="other">{v} minutos</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} segundu</item>
         <item quantity="other">{v} segundos</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} elementu</item>
         <item quantity="other">{v} elementos</item>
     </plurals>

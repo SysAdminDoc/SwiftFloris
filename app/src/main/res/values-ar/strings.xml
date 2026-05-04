@@ -660,7 +660,7 @@
     <string name="ext__validation__enter_positive_number">يرجى إدخال رَقْم موجب (&gt;=0)</string>
     <string name="ext__validation__enter_percent_size">يرجى إدخال النسبة المئوية للحجم</string>
     <string name="ext__validation__enter_number_between_0_100">يرجى إدخال رَقْم موجب بين 0 و 100</string>
-    <string name="ext__validation__hint_value_above_50_percent">أي قيمة أعلى من 50 ٪ ستتصرف كما لو أنك قمت بتعيين 50 ٪، فكر في خفض النسبة المئوية لحجمك</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">أي قيمة أعلى من 50 ٪ ستتصرف كما لو أنك قمت بتعيين 50 ٪، فكر في خفض النسبة المئوية لحجمك</string>
     <string name="ext__update_box__internet_permission_hint">نظرًا لأن هذا التطبيق ليس لديه إذن إنترنت، يجب التحقق من تحديثات الإضافات المثبتة يدويًا.</string>
     <string name="ext__update_box__search_for_updates">البحث عن التحديثات</string>
     <string name="ext__addon_management_box__managing_placeholder">إدارة {extensions}</string>
@@ -857,7 +857,7 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">ديناميكي: قم بالتبديل إلى الرموز التعبيرية / تبديل اللغة</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="zero">{v} صفر ساعة</item>
         <item quantity="one">{v} ساعة واحدة</item>
         <item quantity="two">{v} ساعتان</item>
@@ -865,7 +865,7 @@
         <item quantity="many">{v} ساعات</item>
         <item quantity="other">{v} ساعات</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="zero">{v} دقيقة</item>
         <item quantity="one">{v} دقيقة واحدة</item>
         <item quantity="two">{v} دقيقتان</item>
@@ -873,7 +873,7 @@
         <item quantity="many">{v} دقائق</item>
         <item quantity="other">{v} دقائق</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="zero">{v} ثوان</item>
         <item quantity="one">{v} ثانية</item>
         <item quantity="two">{v} ثانيتان</item>
@@ -881,7 +881,7 @@
         <item quantity="many">{v} ثوان</item>
         <item quantity="other">{v} ثوان</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="zero">{v} صفر عنصر</item>
         <item quantity="one">{v} عنصر واحد</item>
         <item quantity="two">{v} عنصران</item>
@@ -889,7 +889,7 @@
         <item quantity="many">{v} عناصر</item>
         <item quantity="other">{v} عناصر</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="zero">{v} حرف</item>
         <item quantity="one">{v} حرف</item>
         <item quantity="two">{v} حرفان</item>
@@ -897,7 +897,7 @@
         <item quantity="many">{v} احرف</item>
         <item quantity="other">{v} احرف</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="zero">{v} مرشح</item>
         <item quantity="one">{v} مرشح</item>
         <item quantity="two">{v} مرشحان</item>

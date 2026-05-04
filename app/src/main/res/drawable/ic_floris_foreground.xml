@@ -4,15 +4,6 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-  
-  <!-- S shape with gradient and motion lines -->
-  <defs>
-    <linearGradient id="sGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" android:color="#E8D5FF"/>
-      <stop offset="100%" android:color="#F0E6FF"/>
-    </linearGradient>
-  </defs>
-  
   <!-- Top motion line -->
   <path
       android:pathData="M 25,35 Q 50,30 70,40"

@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.app
 import android.content.Context
 import android.content.Intent
 import android.content.res.Configuration
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -56,6 +57,8 @@ import dev.patrickgold.florisboard.lib.util.AppVersionUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import java.util.concurrent.atomic.AtomicBoolean
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.hideAppIcon
 import org.florisboard.lib.android.showAppIcon
@@ -162,7 +165,7 @@ class FlorisAppActivity : ComponentActivity() {
             intentToBeHandled = intent
             return
         }
-        if (intent.action == Intent.ACTION_SEND && intent.clipData != null) {
+        if (intent.action == Intent.ACTION_SEND && intent.importUris().isNotEmpty()) {
             intentToBeHandled = intent
             return
         }
@@ -210,16 +213,46 @@ class FlorisAppActivity : ComponentActivity() {
                 if (intent.action == Intent.ACTION_VIEW && intent.categories?.contains(Intent.CATEGORY_BROWSABLE) == true) {
                     navController.handleDeepLink(intent)
                 } else {
-                    val data = if (intent.action == Intent.ACTION_VIEW) {
-                        intent.data!!
+                    val uris = intent.importUris()
+                    val workspace = if (uris.isNotEmpty()) {
+                        runCatching {
+                            withContext(Dispatchers.IO) {
+                                cacheManager.readFromUriIntoCache(uris)
+                            }
+                        }.getOrNull()
                     } else {
-                        intent.clipData!!.getItemAt(0).uri
+                        null
                     }
-                    val workspace = runCatching { cacheManager.readFromUriIntoCache(data) }.getOrNull()
                     navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_ANY, workspace?.uuid))
                 }
             }
             intentToBeHandled = null
+        }
+    }
+
+    private fun Intent.importUris(): List<Uri> {
+        return buildList {
+            if (action == Intent.ACTION_VIEW) {
+                data?.let { add(it) }
+                return@buildList
+            }
+            clipData?.let { clip ->
+                for (index in 0 until clip.itemCount) {
+                    clip.getItemAt(index).uri?.let { add(it) }
+                }
+            }
+            streamExtraUri()?.let { uri ->
+                if (none { it == uri }) add(uri)
+            }
+        }
+    }
+
+    private fun Intent.streamExtraUri(): Uri? {
+        return if (AndroidVersion.ATLEAST_API33_T) {
+            getParcelableExtra(Intent.EXTRA_STREAM, Uri::class.java)
+        } else {
+            @Suppress("DEPRECATION")
+            getParcelableExtra(Intent.EXTRA_STREAM)
         }
     }
 }

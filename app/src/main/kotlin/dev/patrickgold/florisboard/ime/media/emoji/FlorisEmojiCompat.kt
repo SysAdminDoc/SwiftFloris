@@ -112,6 +112,7 @@ object FlorisEmojiCompat {
         }
 
         // Despite its name, `EmojiCompat.reset()` actually creates a new instance, exactly what we need
+        @SuppressLint("RestrictedApi")
         private val instance: EmojiCompat? = if (config != null) EmojiCompat.reset(config) else null
         val publishedInstanceFlow = MutableStateFlow<EmojiCompat?>(null)
 

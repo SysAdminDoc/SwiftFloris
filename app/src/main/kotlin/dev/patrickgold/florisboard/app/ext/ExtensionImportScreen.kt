@@ -52,6 +52,7 @@ import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.ext.validate
 import dev.patrickgold.florisboard.lib.io.FileRegistry
 import org.florisboard.lib.compose.FlorisBulletSpacer
 import org.florisboard.lib.compose.FlorisButtonBar
@@ -65,7 +66,7 @@ import org.florisboard.lib.kotlin.resultOk
 
 enum class ExtensionImportScreenType(
     val id: String,
-    @StringRes val titleResId: Int,
+    @param:StringRes val titleResId: Int,
     val supportedFiles: List<FileRegistry.Entry>,
 ) {
     EXT_ANY(
@@ -106,10 +107,16 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             }
             fileInfo.ext != null -> {
                 val ext = fileInfo.ext
-                if (extensionManager.getExtensionById(ext.meta.id)?.sourceRef?.isAssets == true) {
-                    R.string.ext__import__file_skip_ext_core
-                } else {
-                    NATIVE_NULLPTR.toInt()
+                when {
+                    !ext.meta.validate() -> {
+                        R.string.ext__import__file_skip_ext_corrupted
+                    }
+                    extensionManager.getExtensionById(ext.meta.id)?.sourceRef?.isAssets == true -> {
+                        R.string.ext__import__file_skip_ext_core
+                    }
+                    else -> {
+                        NATIVE_NULLPTR.toInt()
+                    }
                 }
             }
             else -> { // ext == null

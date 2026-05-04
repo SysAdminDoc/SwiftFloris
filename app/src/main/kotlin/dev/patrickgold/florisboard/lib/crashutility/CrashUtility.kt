@@ -168,7 +168,7 @@ abstract class CrashUtility private constructor() {
             val handler = Thread.getDefaultUncaughtExceptionHandler()
             if (handler is UncaughtExceptionHandler) {
                 stagedException = null
-                handler.uncaughtException(null, e)
+                handler.uncaughtException(Thread.currentThread(), e)
             }
         }
 
@@ -269,21 +269,32 @@ abstract class CrashUtility private constructor() {
          */
         private fun pushNotification(context: Context?, id: Int, title: String, body: String) {
             context ?: return
-            val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
-            if (notificationManager != null && notificationManager is NotificationManager) {
-                val notificationBuilder = Notification.Builder(context.applicationContext, NOTIFICATION_CHANNEL_ID)
-                val crashDialogIntent = Intent(context, CrashDialogActivity::class.java)
-                val notification = notificationBuilder.run {
-                    setContentTitle(title)
-                    style = Notification.BigTextStyle().bigText(body)
-                    setContentText(body)
-                    setSmallIcon(android.R.drawable.stat_notify_error)
-                    setContentIntent(PendingIntent.getActivity(context, 0, crashDialogIntent, PendingIntent.FLAG_IMMUTABLE)).setAutoCancel(
-                        true
-                    )
-                    build()
+            try {
+                val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
+                if (notificationManager != null && notificationManager is NotificationManager) {
+                    val notificationBuilder = Notification.Builder(context.applicationContext, NOTIFICATION_CHANNEL_ID)
+                    val crashDialogIntent = Intent(context, CrashDialogActivity::class.java)
+                    val notification = notificationBuilder.run {
+                        setContentTitle(title)
+                        style = Notification.BigTextStyle().bigText(body)
+                        setContentText(body)
+                        setSmallIcon(android.R.drawable.stat_notify_error)
+                        setContentIntent(
+                            PendingIntent.getActivity(
+                                context,
+                                0,
+                                crashDialogIntent,
+                                PendingIntent.FLAG_IMMUTABLE,
+                            )
+                        ).setAutoCancel(true)
+                        build()
+                    }
+                    notificationManager.notify(id, notification)
                 }
-                notificationManager.notify(id, notification)
+            } catch (error: Throwable) {
+                flogError(LogTopic.CRASH_UTILITY) {
+                    "Failed to post crash notification:\n$error"
+                }
             }
         }
 

@@ -116,6 +116,7 @@ class ExtensionManager(context: Context) {
     }
 
     fun import(ext: Extension) {
+        require(ext.meta.validate()) { "Invalid extension metadata" }
         val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
         val extFileName = ExtensionDefaults.createFlexName(ext.meta.id)
         val relGroupPath = when (ext) {

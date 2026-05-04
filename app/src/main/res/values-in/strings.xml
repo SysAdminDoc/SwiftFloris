@@ -771,7 +771,7 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="ext__validation__enter_positive_number">Harap masukkan bilangan positif (&gt;=0)</string>
     <string name="ext__validation__enter_percent_size">Harap masukkan ukuran persen</string>
     <string name="ext__validation__enter_number_between_0_100">Harap masukkan bilangan positif antara 0 dan 100</string>
-    <string name="ext__validation__hint_value_above_50_percent">Nilai apa pun di atas 50% akan berperilaku seolah-olah Anda menetapkan 50%, pertimbangkan untuk menurunkan ukuran persen Anda</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">Nilai apa pun di atas 50% akan berperilaku seolah-olah Anda menetapkan 50%, pertimbangkan untuk menurunkan ukuran persen Anda</string>
     <string name="ext__update_box__internet_permission_hint">Karena aplikasi ini tidak memiliki izin Internet, pembaruan untuk ekstensi yang diinstal harus diperiksa secara manual.</string>
     <string name="ext__update_box__search_for_updates">Cari Pembaruan</string>
     <string name="ext__addon_management_box__managing_placeholder">Kelola {extensions}</string>
@@ -985,22 +985,22 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Dinamis: Beralih ke emoji / Beralih bahasa</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} jam</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} menit</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} detik</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} item</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">Karakter {v}</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">Kandidat {v}</item>
     </plurals>
 </resources>

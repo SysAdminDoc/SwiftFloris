@@ -749,7 +749,7 @@
     <string name="ext__validation__enter_positive_number">正の数 (&gt;=0) を入力してください</string>
     <string name="ext__validation__enter_percent_size">パーセントサイズを入力してください</string>
     <string name="ext__validation__enter_number_between_0_100">0から100の間の正の数を入力してください</string>
-    <string name="ext__validation__hint_value_above_50_percent">50%を超える値は50%に設定した場合と同様に動作します。パーセントサイズを小さくすることを検討してください</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">50%を超える値は50%に設定した場合と同様に動作します。パーセントサイズを小さくすることを検討してください</string>
     <string name="ext__update_box__internet_permission_hint">このアプリにはインターネットアクセス許可がないため、インストールされている拡張機能の更新は手動で確認する必要があります。</string>
     <string name="ext__update_box__search_for_updates">更新を確認</string>
     <string name="ext__addon_management_box__managing_placeholder">{extensions}を管理中</string>
@@ -962,22 +962,22 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">動的：絵文字に切り替え / 言語を切り替え</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}時間</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}分</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}秒</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}アイテム</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}文字</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}候補</item>
     </plurals>
 </resources>

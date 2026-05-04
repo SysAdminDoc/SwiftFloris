@@ -661,7 +661,7 @@
     <string name="ext__validation__enter_positive_number">Введіть додатне число (&gt;=0)</string>
     <string name="ext__validation__enter_percent_size">Введіть розмір у відсотках</string>
     <string name="ext__validation__enter_number_between_0_100">Введіть додатне число від 0 до 100</string>
-    <string name="ext__validation__hint_value_above_50_percent">Будь-яке значення вище 50% буде таке ж як і 50%, розгляньте можливість зменшення розміру відсотка</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">Будь-яке значення вище 50% буде таке ж як і 50%, розгляньте можливість зменшення розміру відсотка</string>
     <string name="ext__update_box__internet_permission_hint">Оскільки цей застосунок не має дозволу на доступ до Інтернету, оновлення для встановлених розширень потрібно перевіряти вручну.</string>
     <string name="ext__update_box__search_for_updates">Перевірити оновлення</string>
     <string name="ext__addon_management_box__managing_placeholder">Керування {extensions}</string>
@@ -858,37 +858,37 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Динамічне: Перемикнутись на емоджі / Змінити мову</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} година</item>
         <item quantity="few">{v} години</item>
         <item quantity="many">{v} годин</item>
         <item quantity="other">{v} годин</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} хвилина</item>
         <item quantity="few">{v} хвилини</item>
         <item quantity="many">{v} хвилин</item>
         <item quantity="other">{v} хвилин</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} секунда</item>
         <item quantity="few">{v} секунди</item>
         <item quantity="many">{v} секунд</item>
         <item quantity="other">{v} секунд</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} елемент</item>
         <item quantity="few">{v} елементи</item>
         <item quantity="many">{v} елементів</item>
         <item quantity="other">{v} елементів</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} символ</item>
         <item quantity="few">{v} символи</item>
         <item quantity="many">{v} символів</item>
         <item quantity="other">{v} символів</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} пропозиція</item>
         <item quantity="few">{v} пропозиції</item>
         <item quantity="many">{v} пропозицій</item>

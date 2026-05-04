@@ -410,19 +410,19 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Δυναμικό: Εναλλαγή σε emojis / Εναλλαγή γλώσσας</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} ώρα</item>
         <item quantity="other">{v} ώρες</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} λεπτό</item>
         <item quantity="other">{v} λεπτά</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} δευτερόλεπτο</item>
         <item quantity="other">{v} δευτερόλεπτα</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} στοιχείο</item>
         <item quantity="other">{v} στοιχεία</item>
     </plurals>

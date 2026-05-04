@@ -398,19 +398,19 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Dînamîk: Bi zimanê emojîyan / Ziman veguherîn</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} saet</item>
         <item quantity="other">{v} saet</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} xulek</item>
         <item quantity="other">{v} xulek</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} çirke</item>
         <item quantity="other">{v} çirke</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} hêman</item>
         <item quantity="other">{v} hêman</item>
     </plurals>
