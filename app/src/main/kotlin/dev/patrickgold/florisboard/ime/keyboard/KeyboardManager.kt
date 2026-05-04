@@ -812,6 +812,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                                 nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
                             }
                             editorInstance.commitChar(text)
+                            
+                            // Reset SHIFTED_AUTOMATIC after it's been applied to a character
+                            if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
+                                UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
+                                activeState.inputShiftState = InputShiftState.UNSHIFTED
+                            }
                         }
                         else -> {
                             flogError(LogTopic.KEY_EVENTS) { "Received unknown key: $data" }
