@@ -28,6 +28,8 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
+import dev.patrickgold.florisboard.ime.nlp.advanced.AdvancedPredictionProvider
+import dev.patrickgold.florisboard.ime.nlp.advanced.AdvancedSpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import dev.patrickgold.florisboard.keyboardManager
@@ -66,6 +68,8 @@ class NlpManager(context: Context) {
         mapOf(
             LatinLanguageProvider.ProviderId to ProviderInstanceWrapper(LatinLanguageProvider(context)),
             HanShapeBasedLanguageProvider.ProviderId to ProviderInstanceWrapper(HanShapeBasedLanguageProvider(context)),
+            AdvancedSpellingProvider(context).providerId to ProviderInstanceWrapper(AdvancedSpellingProvider(context)),
+            AdvancedPredictionProvider(context).providerId to ProviderInstanceWrapper(AdvancedPredictionProvider(context)),
         )
     }
     // lock unnecessary because values constant

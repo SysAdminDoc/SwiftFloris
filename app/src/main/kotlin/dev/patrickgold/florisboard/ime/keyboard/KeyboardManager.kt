@@ -213,9 +213,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     fun reevaluateInputShiftState() {
         if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
-            val shift = prefs.correction.autoCapitalization.get()
+            val capsMode = editorInstance.activeCursorCapsMode
+            val autoCapEnabled = prefs.correction.autoCapitalization.get()
                 && subtypeManager.activeSubtype.primaryLocale.supportsCapitalization
-                && editorInstance.activeCursorCapsMode != InputAttributes.CapsMode.NONE
+            
+            // Workaround for apps like TikTok that don't report caps mode: force auto-cap at start of field
+            val isAtStartOfField = editorInstance.activeContent.textBeforeSelection.isEmpty()
+            
+            val shift = autoCapEnabled && (capsMode != InputAttributes.CapsMode.NONE || isAtStartOfField)
+            android.util.Log.d("SwiftFloris", "reevaluateInputShiftState: capsMode=$capsMode, autoCapEnabled=$autoCapEnabled, isAtStart=$isAtStartOfField, shift=$shift")
             activeState.inputShiftState = when {
                 shift -> InputShiftState.SHIFTED_AUTOMATIC
                 else -> InputShiftState.UNSHIFTED

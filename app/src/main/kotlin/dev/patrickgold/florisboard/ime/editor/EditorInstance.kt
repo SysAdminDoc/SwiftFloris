@@ -65,9 +65,11 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     private fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
+        android.util.Log.d("SwiftFloris", "handleStartInputView called: inputType=${editorInfo.inputAttributes.type}, package=${editorInfo.packageName}")
         if (!prefs.correction.rememberCapsLockState.get()) {
             // Enable auto-capitalization for the first letter of the text field
             activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
+            android.util.Log.d("SwiftFloris", "Set SHIFTED_AUTOMATIC at start of input view")
         }
         activeState.isActionsOverflowVisible = false
         activeState.isActionsEditorVisible = false
