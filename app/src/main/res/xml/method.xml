@@ -15,4 +15,11 @@
         android:isAsciiCapable="true"
         android:overridesImplicitlyEnabledSubtype="true"/>
 
+    <!-- Voice input subtype for FUTO Voice Input integration -->
+    <subtype
+        android:label="@string/app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:imeSubtypeMode="voice"
+        android:isAsciiCapable="true"/>
+
 </input-method>

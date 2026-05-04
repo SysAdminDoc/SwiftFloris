@@ -2,6 +2,42 @@
 
 All notable changes to SwiftFloris are documented in this file.
 
+## [1.5.0] — 2026-05-04
+
+### 🎤 FUTO Voice Input Integration
+
+**Added**
+- **FUTO Voice Input Integration**: Replaced Google Speech Recognizer with FUTO Voice Input
+  - Privacy-first design: 100% offline, no internet calls, no cloud processing
+  - Based on OpenAI Whisper — accurate speech recognition
+  - 16+ language support (EN, DE, FR, ES, IT, PT, JP, KR, ZH, RU, PL, SV, NL, TR, KA, ID)
+  - On-device processing — audio never leaves your device
+  - Lightweight and efficient — runs on modest hardware
+  - Open-source: [github.com/futo-org/voice-input](https://github.com/futo-org/voice-input)
+
+**Technical**
+- `method.xml`: Added voice subtype to IME configuration for FUTO Voice Input compatibility
+- `VoiceInputManager.kt`: Refactored to delegate to FUTO Voice Input (removed SpeechRecognizer API)
+- `VoiceInputButton.kt`: Simplified to launch FUTO Voice Input app on tap
+- Removed `VoiceInputUI.kt` (deprecated in favor of FUTO delegation)
+- `FlorisImeService.kt`: VoiceInputManager initialization preserved for compatibility
+
+**Documentation**
+- `FUTO_VOICE_INPUT.md`: Complete setup, troubleshooting, and FAQ guide
+- Updated `README.md` to reflect FUTO Voice Input integration
+
+**Breaking Changes**
+- Requires separate installation of FUTO Voice Input app from Play Store or F-Droid
+- Voice input now delegates to external app (FUTO) instead of system SpeechRecognizer
+- Users on debloated ROMs can now use FUTO instead of relying on system speech services
+
+**Benefits**
+- ✅ Privacy: Zero-knowledge speech recognition (local processing only)
+- ✅ Reliability: Independent of Google Play Services or system speech recognizer
+- ✅ Language Support: 16+ languages vs. system-dependent availability
+- ✅ User Control: Users choose and update FUTO independently
+- ✅ Offline: Works without internet connection
+
 ## [1.4.0] — 2026-05-05
 
 ### 🎯 Gesture/Swipe Typing Implementation
