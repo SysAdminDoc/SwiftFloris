@@ -297,17 +297,20 @@ class NlpManager(context: Context) {
         scope.launch {
             val candidates = when {
                 isSuggestionOn() -> {
-                    clipboardSuggestionProvider.suggest(
-                        subtype = Subtype.DEFAULT,
-                        content = editorInstance.activeContent,
-                        maxCandidateCount = 8,
-                        allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
-                        isPrivateSession = keyboardManager.activeState.isIncognitoMode,
-                    ).ifEmpty {
-                        buildList {
-                            internalSuggestionsGuard.withLock {
-                                addAll(internalSuggestions.second)
-                            }
+                    buildList {
+                        // Clipboard suggestions first
+                        addAll(
+                            clipboardSuggestionProvider.suggest(
+                                subtype = Subtype.DEFAULT,
+                                content = editorInstance.activeContent,
+                                maxCandidateCount = 8,
+                                allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
+                                isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                            )
+                        )
+                        // Then add spell + emoji suggestions from internalSuggestions
+                        internalSuggestionsGuard.withLock {
+                            addAll(internalSuggestions.second)
                         }
                     }
                 }
