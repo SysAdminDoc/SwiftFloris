@@ -2,6 +2,32 @@
 
 All notable changes to SwiftFloris are documented in this file.
 
+## [1.3.0] — 2026-05-04
+
+### 🎤 Voice Input & Multilingual Features
+
+**Added**
+- **Voice-to-Text Input**: Full speech recognition integration
+  - Android Speech Recognizer API (no API key required)
+  - Works offline on compatible devices
+  - Real-time transcription with confidence scores
+  - Animated UI with pulse effect during recording
+  - Support for all 6 languages (EN, DE, FR, ES, IT, PT)
+  - Comprehensive error handling with user-friendly messages
+
+- **Documentation & Testing**
+  - MULTILINGUAL.md — Testing guide for spell checking across 6 languages
+  - VOICE_INPUT.md — Voice feature guide with troubleshooting
+  - Updated README with voice input feature description
+
+**Technical**
+- `VoiceInputManager` — Lifecycle management and state handling
+- `VoiceInputUI` — Compose components (full button + FAB) with animations
+- Permission: `RECORD_AUDIO` added to manifest
+- Automatic language detection from keyboard subtype
+
+**Status**: Ready for device testing
+
 ## [1.2.0] — 2026-05-04
 
 ### 🎯 Typing Logic Parity with SwiftKey
