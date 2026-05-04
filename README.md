@@ -2,7 +2,7 @@
 
 ![Version](https://img.shields.io/badge/version-v1.2.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
 
-**SwiftFloris** is a premium, SwiftKey-inspired Android keyboard with a powerful, proven backend and modern Material Design 3 interface. Built on FlorisBoard's solid IME foundation and customized with SwiftKey's aesthetic and experience philosophy.
+**SwiftFloris** is a SwiftKey-inspired Android keyboard with a powerful, proven backend and modern Material Design 3 interface. Built on FlorisBoard's solid IME foundation and customized with SwiftKey's aesthetic and experience philosophy.
 
 ## About SwiftFloris
 
