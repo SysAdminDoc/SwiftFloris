@@ -196,10 +196,23 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             punctuationRule.symbolsPrecedingAutoSpace.contains(text.first())
     }
 
+    private fun isSentenceEndingPunctuation(char: String): Boolean {
+        return char.isNotEmpty() && char.first() in ".!?"
+    }
+
+    private fun shouldAutoCapitalizeAfter(char: String): Boolean {
+        if (!prefs.correction.autoCapitalization.get() || !isSentenceEndingPunctuation(char)) return false
+        if (activeInfo.isRawInputEditor) return false
+        if (activeState.keyVariation != KeyVariation.NORMAL) return false
+        return true
+    }
+
     override fun commitChar(char: String): Boolean {
         val isInsertAutoSpaceBeforeChar = shouldInsertAutoSpaceBefore(char)
         val isInsertAutoSpaceAfterChar = shouldInsertAutoSpaceAfter(char)
+        val shouldCapitalizeAfterPunctuation = shouldAutoCapitalizeAfter(char)
         val isDeletePreviousSpace = isInsertAutoSpaceAfterChar && autoSpace.isActive
+        
         if (isInsertAutoSpaceAfterChar) {
             autoSpace.setActive()
         } else {
@@ -207,12 +220,21 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
         val isPhantomSpaceActive = phantomSpace.determine(char)
         phantomSpace.setInactive()
-        return super.commitChar(
+        
+        val result = super.commitChar(
             char = char,
             deletePreviousSpace = isDeletePreviousSpace,
             insertSpaceBeforeChar = isInsertAutoSpaceBeforeChar || isPhantomSpaceActive,
-            insertSpaceAfterChar = isInsertAutoSpaceAfterChar,
+            insertSpaceAfterChar = isInsertAutoSpaceAfterChar || shouldCapitalizeAfterPunctuation,
         )
+        
+        // Enable auto-capitalization for the next character after sentence-ending punctuation
+        if (result && shouldCapitalizeAfterPunctuation) {
+            activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
+            keyboardManager.reevaluateInputShiftState()
+        }
+        
+        return result
     }
 
     /**
