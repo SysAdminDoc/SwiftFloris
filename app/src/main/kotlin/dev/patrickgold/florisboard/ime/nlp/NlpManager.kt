@@ -74,6 +74,10 @@ class NlpManager(context: Context) {
     }
     // lock unnecessary because values constant
     private val providersForceSuggestionOn = mutableMapOf<String, Boolean>()
+    
+    // Caches for word lists and frequencies to avoid blocking on repeated calls
+    private val wordsListCache = mutableMapOf<String, List<String>>()
+    private val frequencyCache = mutableMapOf<String, Double>()
 
     private val internalSuggestionsGuard = Mutex()
     private var internalSuggestions by Delegates.observable(SystemClock.uptimeMillis() to listOf<SuggestionCandidate>()) { _, _, _ ->
@@ -232,15 +236,23 @@ class NlpManager(context: Context) {
 
     fun suggestDirectly(suggestions: List<SuggestionCandidate>) {
         val reqTime = SystemClock.uptimeMillis()
-        runBlocking {
-            internalSuggestions = reqTime to suggestions
+        scope.launch {
+            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqTime) {
+                    internalSuggestions = reqTime to suggestions
+                }
+            }
         }
     }
 
     fun clearSuggestions() {
         val reqTime = SystemClock.uptimeMillis()
-        runBlocking {
-            internalSuggestions = reqTime to emptyList()
+        scope.launch {
+            internalSuggestionsGuard.withLock {
+                if (internalSuggestions.first < reqTime) {
+                    internalSuggestions = reqTime to emptyList()
+                }
+            }
         }
     }
 
@@ -249,30 +261,40 @@ class NlpManager(context: Context) {
     }
 
     fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
-        return runBlocking { candidate.sourceProvider?.removeSuggestion(subtype, candidate) == true }.also { result ->
+        // Fire and forget the provider call; don't block
+        scope.launch {
+            val result = candidate.sourceProvider?.removeSuggestion(subtype, candidate) == true
             if (result) {
-                scope.launch {
-                    // Need to re-trigger the suggestions algorithm
-                    if (candidate is ClipboardSuggestionCandidate) {
-                        assembleCandidates()
-                    } else {
-                        suggest(subtypeManager.activeSubtype, editorInstance.activeContent)
-                    }
+                // Need to re-trigger the suggestions algorithm
+                if (candidate is ClipboardSuggestionCandidate) {
+                    assembleCandidates()
+                } else {
+                    suggest(subtypeManager.activeSubtype, editorInstance.activeContent)
                 }
             }
         }
+        // Optimistically return true if eligible for removal
+        return candidate.isEligibleForUserRemoval
     }
 
     fun getListOfWords(subtype: Subtype): List<String> {
-        return runBlocking { getSuggestionProvider(subtype).getListOfWords(subtype) }
+        val cacheKey = subtype.toString()
+        return wordsListCache.getOrPut(cacheKey) {
+            // Use blocking only for first-time fetch; results are cached afterward
+            runBlocking { getSuggestionProvider(subtype).getListOfWords(subtype) }
+        }
     }
 
     fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        return runBlocking { getSuggestionProvider(subtype).getFrequencyForWord(subtype, word) }
+        val cacheKey = "${subtype}-$word"
+        return frequencyCache.getOrPut(cacheKey) {
+            // Use blocking only for first-time fetch; results are cached afterward
+            runBlocking { getSuggestionProvider(subtype).getFrequencyForWord(subtype, word) }
+        }
     }
 
     private fun assembleCandidates() {
-        runBlocking {
+        scope.launch {
             val candidates = when {
                 isSuggestionOn() -> {
                     clipboardSuggestionProvider.suggest(

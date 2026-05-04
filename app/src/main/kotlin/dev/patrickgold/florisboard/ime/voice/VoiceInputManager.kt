@@ -2,6 +2,7 @@ package dev.patrickgold.florisboard.ime.voice
 
 import android.content.Context
 import android.content.Intent
+import android.content.ActivityNotFoundException
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -53,6 +54,7 @@ class VoiceInputManager(private val context: Context) {
 
             _isListening.value = true
             _transcriptionState.value = TranscriptionState.Listening
+            _error.value = null  // Clear any previous errors
             
             // Launch FUTO Voice Input via IME subtype mode
             // This opens voice input in the bottom half of the keyboard
@@ -62,11 +64,26 @@ class VoiceInputManager(private val context: Context) {
             }
             
             context.startActivity(intent)
+        } catch (e: ActivityNotFoundException) {
+            _transcriptionState.value = TranscriptionState.Unavailable
+            _isListening.value = false
+            _error.value = VoiceError.NotAvailable
+            Log.e("VoiceInputManager", "FUTO Voice Input activity not found", e)
+        } catch (e: SecurityException) {
+            _transcriptionState.value = TranscriptionState.Error
+            _isListening.value = false
+            _error.value = VoiceError.StartFailed("Permission denied to start voice input")
+            Log.e("VoiceInputManager", "Permission denied to start voice input", e)
         } catch (e: Exception) {
             _transcriptionState.value = TranscriptionState.Error
             _isListening.value = false
-            _error.value = VoiceError.StartFailed(e.message ?: "Failed to launch FUTO Voice Input")
-            Log.e("VoiceInputManager", "Failed to start listening", e)
+            val errorMsg = when {
+                e.message?.contains("Context", ignoreCase = true) == true -> "Context error: voice input unavailable"
+                !e.message.isNullOrEmpty() -> e.message!!
+                else -> "Failed to launch voice input"
+            }
+            _error.value = VoiceError.StartFailed(errorMsg)
+            Log.e("VoiceInputManager", "Failed to start listening: $errorMsg", e)
         }
     }
 
