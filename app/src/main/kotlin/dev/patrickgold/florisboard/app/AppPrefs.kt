@@ -341,7 +341,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Glide {
         val enabled = boolean(
             key = "glide__enabled",
-            default = false,
+            default = true,
         )
         val showTrail = boolean(
             key = "glide__show_trail",
@@ -362,6 +362,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val immediateBackspaceDeletesWord = boolean(
             key = "glide__immediate_backspace_deletes_word",
             default = true,
+        )
+        val sensitivity = int(
+            key = "glide__sensitivity",
+            default = 50,
         )
     }
 
