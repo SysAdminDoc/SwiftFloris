@@ -49,7 +49,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.tryOrNull
-import org.florisboard.libnative.dummyAdd
+//import org.florisboard.libnative.dummyAdd  // Native module disabled
 import java.lang.ref.WeakReference
 
 /**
@@ -96,7 +96,8 @@ class FlorisApplication : Application() {
             )
             CrashUtility.install(this)
             FlorisEmojiCompat.init(this)
-            flogError { "dummy result: ${dummyAdd(3,4)}" }
+            flogError { "native module disabled, skipping dummy test" }
+            // Originally: flogError { "dummy result: ${dummyAdd(3,4)}" }
 
             if (!UserManagerCompat.isUserUnlocked(this)) {
                 cacheDir?.deleteContentsRecursively()
