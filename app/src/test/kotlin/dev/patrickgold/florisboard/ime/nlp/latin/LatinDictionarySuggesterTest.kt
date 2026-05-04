@@ -1,0 +1,72 @@
+/*
+ * Copyright (C) 2026 SwiftFloris Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.nlp.latin
+
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+
+class LatinDictionarySuggesterTest : FunSpec({
+    val dictionary = latinDictionary(
+        "the" to 255,
+        "there" to 220,
+        "their" to 215,
+        "then" to 210,
+        "test" to 180,
+        "toast" to 160,
+        "address" to 210,
+    )
+
+    test("suggest returns autocorrect candidate for transposed typo") {
+        val suggestions = LatinDictionarySuggester.suggest("teh", dictionary, maxCandidateCount = 4)
+
+        suggestions.first().text shouldBe "the"
+        suggestions.first().isEligibleForAutoCommit shouldBe true
+    }
+
+    test("suggest returns frequency-ranked prefix completions") {
+        val suggestions = LatinDictionarySuggester.suggest("th", dictionary, maxCandidateCount = 3)
+
+        suggestions.map { it.text } shouldBe listOf("the", "there", "their")
+        suggestions.any { it.isEligibleForAutoCommit } shouldBe false
+    }
+
+    test("suggest keeps completions ahead of corrections for an active prefix") {
+        val suggestions = LatinDictionarySuggester.suggest("ther", dictionary, maxCandidateCount = 3)
+
+        suggestions.first().text shouldBe "there"
+        suggestions.first().isEligibleForAutoCommit shouldBe false
+    }
+
+    test("suggest preserves typed capitalization") {
+        val suggestions = LatinDictionarySuggester.suggest("Teh", dictionary, maxCandidateCount = 4)
+
+        suggestions.first().text shouldBe "The"
+    }
+
+    test("suggest ignores non-word tokens") {
+        LatinDictionarySuggester.suggest("123", dictionary, maxCandidateCount = 4) shouldBe emptyList()
+        LatinDictionarySuggester.suggest("mail@example.com", dictionary, maxCandidateCount = 4) shouldBe emptyList()
+    }
+})
+
+private fun latinDictionary(vararg words: Pair<String, Int>): LatinDictionarySnapshot {
+    val frequencies = words.toMap()
+    return LatinDictionarySnapshot(
+        frequencies = frequencies,
+        sortedWords = frequencies.keys.sorted(),
+    )
+}

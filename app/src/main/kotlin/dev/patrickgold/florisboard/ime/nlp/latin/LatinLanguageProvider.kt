@@ -24,14 +24,16 @@ import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
+import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.readText
-import org.florisboard.lib.kotlin.guardedByLock
 
 class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProvider {
     companion object {
@@ -42,8 +44,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
 
     private val appContext by context.appContext()
 
-    private val wordData = guardedByLock { mutableMapOf<String, Int>() }
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
+    private val dictionaryLoadGuard = Mutex()
+    @Volatile private var dictionarySnapshot = LatinDictionarySnapshot.Empty
 
     override val providerId = ProviderId
 
@@ -51,31 +54,8 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // Here we initialize our provider, set up all things which are not language dependent.
     }
 
-    override suspend fun preload(subtype: Subtype) = withContext(Dispatchers.IO) {
-        // Here we have the chance to preload dictionaries and prepare a neural network for a specific language.
-        // Is kept in sync with the active keyboard subtype of the user, however a new preload does not necessary mean
-        // the previous language is not needed anymore (e.g. if the user constantly switches between two subtypes)
-
-        // To read a file from the APK assets the following methods can be used:
-        // appContext.assets.open()
-        // appContext.assets.reader()
-        // appContext.assets.bufferedReader()
-        // appContext.assets.readText()
-        // To copy an APK file/dir to the file system cache (appContext.cacheDir), the following methods are available:
-        // appContext.assets.copy()
-        // appContext.assets.copyRecursively()
-
-        // The subtype we get here contains a lot of data, however we are only interested in subtype.primaryLocale and
-        // subtype.secondaryLocales.
-
-        wordData.withLock { wordData ->
-            if (wordData.isEmpty()) {
-                // Here we use readText() because the test dictionary is a json dictionary
-                val rawData = appContext.assets.readText("ime/dict/data.json")
-                val jsonData = Json.decodeFromString(wordDataSerializer, rawData)
-                wordData.putAll(jsonData)
-            }
-        }
+    override suspend fun preload(subtype: Subtype) {
+        dictionary()
     }
 
     override suspend fun spell(
@@ -87,15 +67,16 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): SpellingResult {
-        return when (word.lowercase()) {
-            // Use typo for typing errors
-            "typo" -> SpellingResult.typo(arrayOf("typo1", "typo2", "typo3"))
-            // Use grammar error if the algorithm can detect this. On Android 11 and lower grammar errors are visually
-            // marked as typos due to a lack of support
-            "gerror" -> SpellingResult.grammarError(arrayOf("grammar1", "grammar2", "grammar3"))
-            // Use valid word for valid input
-            else -> SpellingResult.validWord()
+        val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return SpellingResult.unspecified()
+        val dictionary = dictionary()
+        if (dictionary.contains(normalizedWord)) {
+            return SpellingResult.validWord()
         }
+        val corrections = LatinDictionarySuggester.corrections(normalizedWord, dictionary, maxSuggestionCount)
+        return SpellingResult.typo(
+            suggestions = corrections.map { it.text }.toTypedArray(),
+            isHighConfidenceResult = corrections.firstOrNull()?.isEligibleForAutoCommit == true,
+        )
     }
 
     override suspend fun suggest(
@@ -105,21 +86,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
-        return emptyList()
-        /*val word = content.composingText.ifBlank { "next" }
-        val suggestions = buildList {
-            for (n in 0 until maxCandidateCount) {
-                add(WordSuggestionCandidate(
-                    text = "$word$n",
-                    secondaryText = if (n % 2 == 1) "secondary" else null,
-                    confidence = 0.5,
-                    isEligibleForAutoCommit = false,//n == 0 && word.startsWith("auto"),
-                    // We set ourselves as the source provider so we can get notify events for our candidate
-                    sourceProvider = this@LatinLanguageProvider,
-                ))
-            }
+        val currentWord = content.currentWordText.ifBlank { content.composingText }
+        return LatinDictionarySuggester.suggest(
+            rawWord = currentWord,
+            dictionary = dictionary(),
+            maxCandidateCount = maxCandidateCount,
+        ).map { candidate ->
+            WordSuggestionCandidate(
+                text = candidate.text,
+                confidence = candidate.confidence,
+                isEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
+                sourceProvider = this@LatinLanguageProvider,
+            )
         }
-        return suggestions*/
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
@@ -137,15 +116,255 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return wordData.withLock { it.keys.toList() }
+        return dictionary().sortedWords
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        return wordData.withLock { it.getOrDefault(word, 0) / 255.0 }
+        val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: word.lowercase()
+        return dictionary().frequencyFor(normalizedWord)
     }
 
     override suspend fun destroy() {
         // Here we have the chance to de-allocate memory and finish our work. However this might never be called if
         // the app process is killed (which will most likely always be the case).
+    }
+
+    private suspend fun dictionary(): LatinDictionarySnapshot {
+        val cached = dictionarySnapshot
+        if (cached.isLoaded) return cached
+
+        return dictionaryLoadGuard.withLock {
+            val current = dictionarySnapshot
+            if (current.isLoaded) {
+                current
+            } else {
+                val rawData = withContext(Dispatchers.IO) {
+                    appContext.assets.readText("ime/dict/data.json")
+                }
+                val frequencies = Json.decodeFromString(wordDataSerializer, rawData)
+                    .mapKeys { (word, _) -> word.lowercase() }
+                LatinDictionarySnapshot(
+                    frequencies = frequencies,
+                    sortedWords = frequencies.keys.sorted(),
+                ).also { dictionarySnapshot = it }
+            }
+        }
+    }
+}
+
+internal data class LatinDictionarySnapshot(
+    val frequencies: Map<String, Int>,
+    val sortedWords: List<String>,
+) {
+    val isLoaded: Boolean get() = frequencies.isNotEmpty()
+
+    fun contains(word: String): Boolean = frequencies.containsKey(word)
+
+    fun frequencyFor(word: String): Double = frequencies.getOrDefault(word, 0).coerceIn(0, 255) / 255.0
+
+    companion object {
+        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList())
+    }
+}
+
+internal data class LatinSuggestion(
+    val text: String,
+    val confidence: Double,
+    val isEligibleForAutoCommit: Boolean,
+)
+
+internal object LatinDictionarySuggester {
+    private const val MinCompletionLength = 2
+    private const val MinCorrectionLength = 3
+    private const val MaxTwoEditWordLength = 8
+    private const val AutoCommitMinFrequency = 0.62
+    private val Alphabet = ('a'..'z').toList()
+
+    fun suggest(
+        rawWord: String,
+        dictionary: LatinDictionarySnapshot,
+        maxCandidateCount: Int,
+    ): List<LatinSuggestion> {
+        if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
+        val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
+        if (normalizedWord.length < MinCompletionLength) return emptyList()
+
+        val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount)
+        val correctionCandidates = if (!dictionary.contains(normalizedWord) && normalizedWord.length >= MinCorrectionLength) {
+            corrections(normalizedWord, dictionary, maxCandidateCount).map { candidate ->
+                if (completionCandidates.isNotEmpty()) {
+                    candidate.copy(isEligibleForAutoCommit = false)
+                } else {
+                    candidate
+                }
+            }
+        } else {
+            emptyList()
+        }
+
+        val seen = mutableSetOf<String>()
+        return buildList {
+            completionCandidates.forEach { candidate ->
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+            }
+            correctionCandidates.forEach { candidate ->
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+            }
+        }.take(maxCandidateCount)
+    }
+
+    fun corrections(
+        word: String,
+        dictionary: LatinDictionarySnapshot,
+        maxCandidateCount: Int,
+    ): List<LatinSuggestion> {
+        if (maxCandidateCount <= 0 || word.length < MinCorrectionLength || !dictionary.isLoaded) return emptyList()
+        val oneEditCandidates = knownEdits1(word, dictionary)
+        val candidateDistances = if (oneEditCandidates.isNotEmpty()) {
+            oneEditCandidates.map { it to 1 }
+        } else if (word.length <= MaxTwoEditWordLength) {
+            knownEdits2(word, dictionary).map { it to 2 }
+        } else {
+            emptyList()
+        }
+
+        return candidateDistances
+            .asSequence()
+            .filter { (candidate, _) -> candidate != word }
+            .distinctBy { (candidate, _) -> candidate }
+            .sortedWith(
+                compareBy<Pair<String, Int>> { (_, distance) -> distance }
+                    .thenByDescending { (candidate, _) -> dictionary.frequencyFor(candidate) }
+                    .thenBy { (candidate, _) -> candidate.length }
+                    .thenBy { (candidate, _) -> candidate }
+            )
+            .take(maxCandidateCount)
+            .mapIndexed { index, (candidate, distance) ->
+                val frequency = dictionary.frequencyFor(candidate)
+                LatinSuggestion(
+                    text = candidate,
+                    confidence = correctionConfidence(frequency, distance),
+                    isEligibleForAutoCommit = index == 0 &&
+                        distance == 1 &&
+                        word.length >= MinCorrectionLength &&
+                        frequency >= AutoCommitMinFrequency,
+                )
+            }
+            .toList()
+    }
+
+    fun normalizeWord(rawWord: String): String? {
+        val trimmedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
+        if (trimmedWord.isEmpty() || trimmedWord.none { it.isLetter() }) return null
+        if (trimmedWord.any { !it.isLetter() && it != '\'' }) return null
+        return trimmedWord.lowercase()
+    }
+
+    private fun completions(
+        prefix: String,
+        dictionary: LatinDictionarySnapshot,
+        maxCandidateCount: Int,
+    ): List<LatinSuggestion> {
+        return wordsWithPrefix(prefix, dictionary.sortedWords)
+            .asSequence()
+            .filter { it.length > prefix.length }
+            .sortedWith(
+                compareByDescending<String> { dictionary.frequencyFor(it) }
+                    .thenBy { it.length }
+                    .thenBy { it }
+            )
+            .take(maxCandidateCount)
+            .map { word ->
+                LatinSuggestion(
+                    text = word,
+                    confidence = (0.2 + dictionary.frequencyFor(word) * 0.6).coerceIn(0.0, 1.0),
+                    isEligibleForAutoCommit = false,
+                )
+            }
+            .toList()
+    }
+
+    private fun wordsWithPrefix(prefix: String, sortedWords: List<String>): List<String> {
+        val start = lowerBound(sortedWords, prefix)
+        val matches = mutableListOf<String>()
+        var index = start
+        while (index < sortedWords.size) {
+            val word = sortedWords[index]
+            if (!word.startsWith(prefix)) break
+            matches.add(word)
+            index++
+        }
+        return matches
+    }
+
+    private fun lowerBound(words: List<String>, target: String): Int {
+        var low = 0
+        var high = words.size
+        while (low < high) {
+            val mid = (low + high) ushr 1
+            if (words[mid] < target) {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return low
+    }
+
+    private fun knownEdits1(word: String, dictionary: LatinDictionarySnapshot): Set<String> {
+        return edits1(word).filterTo(mutableSetOf()) { dictionary.contains(it) }
+    }
+
+    private fun knownEdits2(word: String, dictionary: LatinDictionarySnapshot): Set<String> {
+        val known = mutableSetOf<String>()
+        for (edit in edits1(word)) {
+            for (candidate in edits1(edit)) {
+                if (dictionary.contains(candidate)) {
+                    known.add(candidate)
+                }
+            }
+        }
+        return known
+    }
+
+    private fun edits1(word: String): Set<String> {
+        val edits = mutableSetOf<String>()
+        for (i in 0..word.length) {
+            val left = word.substring(0, i)
+            val right = word.substring(i)
+            if (right.isNotEmpty()) {
+                edits.add(left + right.drop(1))
+            }
+            if (right.length > 1) {
+                edits.add(left + right[1] + right[0] + right.drop(2))
+            }
+            if (right.isNotEmpty()) {
+                for (char in Alphabet) {
+                    edits.add(left + char + right.drop(1))
+                }
+            }
+            for (char in Alphabet) {
+                edits.add(left + char + right)
+            }
+        }
+        return edits
+    }
+
+    private fun correctionConfidence(frequency: Double, distance: Int): Double {
+        val editDistanceBonus = if (distance == 1) 0.1 else 0.0
+        return (0.35 + frequency * 0.55 + editDistanceBonus).coerceIn(0.0, 1.0)
+    }
+
+    private fun LatinSuggestion.withTypedCase(rawWord: String): LatinSuggestion {
+        return copy(text = applyTypedCase(text, rawWord))
+    }
+
+    private fun applyTypedCase(candidate: String, rawWord: String): String {
+        val letters = rawWord.filter { it.isLetter() }
+        return when {
+            letters.length > 1 && letters.all { it.isUpperCase() } -> candidate.uppercase()
+            letters.firstOrNull()?.isUpperCase() == true -> candidate.replaceFirstChar { it.titlecase() }
+            else -> candidate
+        }
     }
 }
