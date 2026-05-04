@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Build
 import android.speech.RecognitionListener
 import android.speech.SpeechRecognizer
+import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.Locale
@@ -17,6 +18,7 @@ import java.util.Locale
  * - Works offline on most Android 12+ devices
  * - Supports all configured languages
  * - Real-time transcription with confidence scores
+ * - Performance profiling for latency optimization (v1.4.1+)
  */
 class VoiceInputManager(private val context: Context) {
 
@@ -38,6 +40,11 @@ class VoiceInputManager(private val context: Context) {
     val error: StateFlow<VoiceError?> = _error
 
     private var currentLocale: Locale = Locale.US
+    
+    // Profiling fields (for latency measurement in v1.4.1+)
+    private var recognitionStartTime: Long = 0
+    private var partialResultTime: Long = 0
+    private var resultReceiveTime: Long = 0
     
     fun initialize() {
         if (SpeechRecognizer.isRecognitionAvailable(context)) {
@@ -65,6 +72,9 @@ class VoiceInputManager(private val context: Context) {
         }
 
         try {
+            recognitionStartTime = System.currentTimeMillis()
+            Log.d("VoiceProfiler", "Recognition started at $recognitionStartTime")
+            
             _transcriptionState.value = TranscriptionState.Listening
             _isListening.value = true
             _recognizedText.value = ""
@@ -128,10 +138,12 @@ class VoiceInputManager(private val context: Context) {
     private inner class RecognitionListenerImpl : RecognitionListener {
 
         override fun onReadyForSpeech(params: android.os.Bundle?) {
+            Log.d("VoiceProfiler", "onReadyForSpeech called at ${System.currentTimeMillis() - recognitionStartTime}ms")
             _transcriptionState.value = TranscriptionState.Listening
         }
 
         override fun onBeginningOfSpeech() {
+            Log.d("VoiceProfiler", "User started speaking at ${System.currentTimeMillis() - recognitionStartTime}ms")
             _transcriptionState.value = TranscriptionState.Processing
         }
 
@@ -144,6 +156,7 @@ class VoiceInputManager(private val context: Context) {
         }
 
         override fun onEndOfSpeech() {
+            Log.d("VoiceProfiler", "User stopped speaking at ${System.currentTimeMillis() - recognitionStartTime}ms")
             _transcriptionState.value = TranscriptionState.Processing
         }
 
@@ -165,6 +178,10 @@ class VoiceInputManager(private val context: Context) {
         }
 
         override fun onResults(results: android.os.Bundle?) {
+            resultReceiveTime = System.currentTimeMillis()
+            val latency = resultReceiveTime - recognitionStartTime
+            Log.d("VoiceProfiler", "Results received. Total latency: ${latency}ms, Start: $recognitionStartTime, End: $resultReceiveTime")
+            
             _isListening.value = false
             _transcriptionState.value = TranscriptionState.Ready
 
@@ -180,6 +197,7 @@ class VoiceInputManager(private val context: Context) {
                 _recognizedText.value = matches[0]
                 _confidence.value = if (confidences.isNotEmpty()) confidences[0] else 0f
                 _error.value = null
+                Log.d("VoiceProfiler", "Result text: '${matches[0]}' (confidence: ${_confidence.value})")
             } else {
                 _error.value = VoiceError.NoResults
             }
@@ -189,9 +207,14 @@ class VoiceInputManager(private val context: Context) {
             // Handle partial results for real-time feedback
             if (partialResults == null) return
 
+            partialResultTime = System.currentTimeMillis()
+            val partialLatency = partialResultTime - recognitionStartTime
+            Log.d("VoiceProfiler", "Partial result received at ${partialLatency}ms")
+            
             val partialMatches = partialResults.getStringArray(SpeechRecognizer.RESULTS_RECOGNITION)
             if (partialMatches?.isNotEmpty() == true) {
                 _recognizedText.value = partialMatches[0]
+                Log.d("VoiceProfiler", "Partial text: '${partialMatches[0]}'")
             }
         }
 
