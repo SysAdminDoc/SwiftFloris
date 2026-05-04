@@ -124,8 +124,8 @@
     <string name="settings__system_default" comment="General string which is used when a preference has the system default value set">System default</string>
 
     <string name="settings__home__title" comment="Title of the Home screen">Welcome to {app_name}</string>
-    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when FlorisBoard is not enabled in the system">FlorisBoard is not enabled in the system and thus won\'t be available as an input method in the input picker. Click here to resolve this issue.</string>
-    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when FlorisBoard is not selected as the default keyboard">FlorisBoard is not selected as the default input method. Click here to resolve this issue.</string>
+    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled in the system and thus won\'t be available as an input method in the input picker. Click here to resolve this issue.</string>
+    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is not selected as the default input method. Click here to resolve this issue.</string>
 
     <string name="settings__localization__title" comment="Title of languages and Layout screen">Languages &amp; Layouts</string>
     <string name="settings__localization__display_language_names_in__label" comment="Label of Display language names in preference">Display language names in</string>
@@ -175,7 +175,7 @@
         Accent color (Material You themes)
     </string>
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
-    <string name="pref__theme__source_assets" comment="Label for the theme source field">FlorisBoard App Assets</string>
+    <string name="pref__theme__source_assets" comment="Label for the theme source field">SwiftFloris App Assets</string>
     <string name="pref__theme__source_internal" comment="Label for the theme source field">Internal Storage</string>
     <string name="pref__theme__source_external" comment="Label for the theme source field">External Provider</string>
 
@@ -577,7 +577,7 @@
 
     <!-- About UI strings -->
     <string name="about__title" comment="Title of About activity">About</string>
-    <string name="about__app_icon_content_description" comment="Content description of app icon in About">App icon of FlorisBoard</string>
+    <string name="about__app_icon_content_description" comment="Content description of app icon in About">App icon of SwiftFloris</string>
     <string name="about__view_licenses" comment="Label of View licenses button in About">Open source licenses</string>
     <string name="about__view_privacy_policy" comment="Label of View privacy policy button in About">Privacy policy</string>
     <string name="about__view_source_code" comment="Label of View source code button in About">Source code</string>
@@ -594,7 +594,7 @@
     <string name="about__privacy_policy__title" comment="Preference title">Privacy policy</string>
     <string name="about__privacy_policy__summary" comment="Preference summary">The privacy policy for this project</string>
     <string name="about__project_license__title" comment="Preference title">Project license</string>
-    <string name="about__project_license__summary" comment="Preference summary">FlorisBoard is licensed under {license_name}</string>
+    <string name="about__project_license__summary" comment="Preference summary">SwiftFloris is licensed under {license_name}</string>
     <string name="about__project_license__error_license_text_failed" comment="Error text for license text loading failure">Error: Failed to load license text.\n-&gt; Reason: {error_message}</string>
     <string name="about__project_license__error_reason_asset_manager_null" comment="Error text if asset manager is null">Asset manager reference is null</string>
     <string name="about__third_party_licenses__title" comment="Preference title">Third-party licenses</string>
@@ -667,19 +667,19 @@
     <string name="backup_and_restore__restore__failure">Failed to restore data: {error_message}</string>
 
     <!-- Crash Dialog strings -->
-    <string name="crash_dialog__title" comment="Title of crash dialog">FlorisBoard error report</string>
-    <string name="crash_dialog__description" comment="Description of crash dialog">Sorry for the inconvenience, but FlorisBoard has crashed due to an unexpected error.</string>
-    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">If you wish to report this error, first check out the issue tracker on GitHub if your crash has not already been reported.\nIf it hasn\'t, copy the generated crash log and open a new issue. Use the \"%s\" template and fill out the description, the steps to reproduce, and paste the generated crash log at the end. This helps in making FlorisBoard better and more stable for everyone. Thank you!</string>
+    <string name="crash_dialog__title" comment="Title of crash dialog">SwiftFloris error report</string>
+    <string name="crash_dialog__description" comment="Description of crash dialog">Sorry for the inconvenience, but SwiftFloris has crashed due to an unexpected error.</string>
+    <string name="crash_dialog__report_instructions" comment="Issue tracker report instructions for the crash dialog. The %s placeholder is the name of the crash report template and always in English/LTR.">If you wish to report this error, first check out the issue tracker on GitHub if your crash has not already been reported.\nIf it hasn\'t, copy the generated crash log and open a new issue. Use the \"%s\" template and fill out the description, the steps to reproduce, and paste the generated crash log at the end. This helps in making SwiftFloris better and more stable for everyone. Thank you!</string>
     <string name="crash_dialog__bug_report_template" comment="Name of the template to use in the GitHub issue tracker (is always in English)" translatable="false">Crash report</string>
     <string name="crash_dialog__copy_to_clipboard" comment="Label of Copy to clipboard button in crash dialog">Copy to system clipboard</string>
     <string name="crash_dialog__copy_to_clipboard_success" comment="Label of Copy to clipboard success message in crash dialog">Copied to system clipboard</string>
     <string name="crash_dialog__copy_to_clipboard_failure" comment="Label of Copy to clipboard failure message in crash dialog">Cannot copy to system clipboard: Clipboard manager instance not found</string>
     <string name="crash_dialog__open_issue_tracker" comment="Label of Open issue tracker button in crash dialog">Open issue tracker (github.com)</string>
     <string name="crash_dialog__close" comment="Label of Close button in crash dialog">Close</string>
-    <string name="crash_notification_channel__title" comment="Title of crash notification channel">FlorisBoard error reports</string>
-    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">FlorisBoard has stopped working…</string>
+    <string name="crash_notification_channel__title" comment="Title of crash notification channel">SwiftFloris error reports</string>
+    <string name="crash_once_notification__title" comment="Title of the notification for a single crash">SwiftFloris has stopped working…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">Tap to view error details</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">FlorisBoard seems to stop working repeatedly…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">SwiftFloris seems to stop working repeatedly…</string>
     <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">Falling back to previous keyboard to stop infinite crash loop. Tap to view error details</string>
 
 
@@ -830,7 +830,7 @@
     <string name="ext__export__failure">Failed to export extension: {error_message}</string>
     <string name="ext__import__success">Successfully imported extension!</string>
     <string name="ext__import__failure">Failed to import extension: {error_message}</string>
-    <string name="ext__import__ext_any" comment="Title of Importer screen for import of any supported FlorisBoard extension">Import extension</string>
+    <string name="ext__import__ext_any" comment="Title of Importer screen for import of any supported SwiftFloris extension">Import extension</string>
     <string name="ext__import__ext_keyboard" comment="Title of Importer screen for keyboard extension import">Import keyboard extension</string>
     <string name="ext__import__ext_theme" comment="Title of Importer screen for theme extension import">Import theme extension</string>
     <string name="ext__import__ext_languagepack" comment="Title of Importer screen for language pack extension import">Import language pack extension</string>
@@ -870,7 +870,7 @@
     <string name="ext__addon_management_box__managing_placeholder">Managing {extensions}</string>
     <string name="ext__addon_management_box__addon_manager_info">All tasks related to importing, exporting, creating, customizing, and removing extensions can be handled through the centralized addon manager.</string>
     <string name="ext__addon_management_box__go_to_page">Go to {ext_home_title}</string>
-    <string name="ext__home__info">You can download and install extensions from the FlorisBoard Addons Store or import any extension file you have downloaded from the internet.</string>
+    <string name="ext__home__info">You can download and install extensions from the SwiftFloris repository or import any extension file you have downloaded from the internet.</string>
     <string name="ext__home__visit_store">Visit Addons Store</string>
     <string name="ext__home__manage_extensions">Manage installed extensions</string>
     <string name="ext__list__view_details">View details</string>
