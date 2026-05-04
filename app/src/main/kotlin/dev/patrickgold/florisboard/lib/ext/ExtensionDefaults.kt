@@ -20,6 +20,7 @@ import org.florisboard.lib.kotlin.curlyFormat
 
 object ExtensionDefaults {
     private const val ID_LOCAL_TEMPLATE = "local.{groupName}.{extensionName}"
+    private val ExtensionIdRegex = """^[a-z][a-z0-9_]*(\.[a-z0-9][a-z0-9_]*)*${'$'}""".toRegex()
 
     const val FILE_EXTENSION = "flex"
     const val MANIFEST_FILE_NAME = "extension.json"
@@ -29,5 +30,10 @@ object ExtensionDefaults {
         extensionName: String = System.currentTimeMillis().toString(),
     ) = ID_LOCAL_TEMPLATE.curlyFormat("groupName" to groupName, "extensionName" to extensionName)
 
-    fun createFlexName(id: String) = "$id.$FILE_EXTENSION"
+    fun isValidId(id: String): Boolean = ExtensionIdRegex.matches(id)
+
+    fun createFlexName(id: String): String {
+        require(isValidId(id)) { "Invalid extension id: $id" }
+        return "$id.$FILE_EXTENSION"
+    }
 }

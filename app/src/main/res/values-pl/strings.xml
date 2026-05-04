@@ -803,7 +803,7 @@
     <string name="ext__validation__enter_positive_number">Wprowadź liczbę dodatnią (&gt;=0)</string>
     <string name="ext__validation__enter_percent_size">Wprowadź rozmiar procentowy</string>
     <string name="ext__validation__enter_number_between_0_100">Wprowadź liczbę dodatnią z przedziału od 0 do 100</string>
-    <string name="ext__validation__hint_value_above_50_percent">Każda wartość powyżej 50% będzie zachowywać się tak, jakby ustawić 50%, rozważ obniżenie rozmiaru procentowego</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">Każda wartość powyżej 50% będzie zachowywać się tak, jakby ustawić 50%, rozważ obniżenie rozmiaru procentowego</string>
     <string name="ext__update_box__internet_permission_hint">Ponieważ ta aplikacja nie ma dostępu do Internetu, aktualizacje zainstalowanych rozszerzeń muszą być sprawdzane ręcznie.</string>
     <string name="ext__update_box__search_for_updates">Szukaj aktualizacji</string>
     <string name="ext__addon_management_box__managing_placeholder">Zarządzanie {extensions}</string>
@@ -1030,37 +1030,37 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Dynamiczne: Przełącz na emojis / Przełącz język</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} godzina</item>
         <item quantity="few">{v} godziny</item>
         <item quantity="many">{v} godzin</item>
         <item quantity="other">{v} godzin</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} minuta</item>
         <item quantity="few">{v} minuty</item>
         <item quantity="many">{v} minut</item>
         <item quantity="other">{v} minut</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} sekunda</item>
         <item quantity="few">{v} sekundy</item>
         <item quantity="many">{v} sekund</item>
         <item quantity="other">{v} sekund</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} element</item>
         <item quantity="few">{v} elementy</item>
         <item quantity="many">{v} elementów</item>
         <item quantity="other">{v} elementów</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} znak</item>
         <item quantity="few">{v} znaki</item>
         <item quantity="many">{v} znaków</item>
         <item quantity="other">{v} znaków</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} propozycja</item>
         <item quantity="few">{v} propozycje</item>
         <item quantity="many">{v} propozycji</item>

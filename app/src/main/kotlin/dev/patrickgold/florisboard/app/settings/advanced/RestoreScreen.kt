@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.settings.advanced
 
+import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -35,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -62,9 +64,9 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import java.io.FileNotFoundException
 import java.text.DateFormat
 import java.util.*
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showLongToastSync
@@ -96,50 +98,65 @@ fun RestoreScreen() = FlorisScreen {
 
     val restoreFilesSelector = remember { Backup.FilesSelector() }
     var importStrategy by remember { mutableStateOf(ImportStrategy.Merge) }
-    // TODO: rememberCoroutineScope() is unusable because it provides the scope in a cancelled state, which does
-    //  not make sense at all. I suspect that this is a bug and once it is resolved we can use it here again.
-    val restoreScope = remember { CoroutineScope(Dispatchers.Main) }
+    val restoreScope = rememberCoroutineScope()
+    var isRestoreInProgress by remember { mutableStateOf(false) }
     var restoreWorkspace by remember {
         mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null)
+    }
+
+    suspend fun prepareRestoreWorkspace(uri: Uri): CacheManager.BackupAndRestoreWorkspace = withContext(Dispatchers.IO) {
+        val workspace = cacheManager.backupAndRestore.new()
+        try {
+            workspace.zipFile = workspace.inputDir.subFile(Restore.BACKUP_ARCHIVE_FILE_NAME)
+            context.contentResolver.readToFile(uri, workspace.zipFile)
+            ZipUtils.unzip(workspace.zipFile, workspace.outputDir)
+            workspace.metadata = try {
+                workspace.outputDir.subFile(Backup.METADATA_JSON_NAME).readJson()
+            } catch (e: FileNotFoundException) {
+                error("Invalid archive: either backup_metadata.json is missing or file is not a ZIP archive.")
+            }
+            workspace.restoreWarningId = when {
+                workspace.metadata.versionCode != BuildConfig.VERSION_CODE -> {
+                    R.string.backup_and_restore__restore__metadata_warn_different_version
+                }
+                !workspace.metadata.packageName.startsWith(Restore.PACKAGE_NAME) -> {
+                    R.string.backup_and_restore__restore__metadata_warn_different_vendor
+                }
+                else -> null
+            }
+            workspace.restoreErrorId = when {
+                workspace.metadata.packageName.isBlank() || workspace.metadata.versionCode < Restore.MIN_VERSION_CODE -> {
+                    R.string.backup_and_restore__restore__metadata_error_invalid_metadata
+                }
+                else -> null
+            }
+            workspace
+        } catch (error: Throwable) {
+            workspace.close()
+            throw error
+        }
     }
 
     val restoreDataFromFileSystemLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             if (uri == null) return@rememberLauncherForActivityResult
-            runCatching {
-                restoreWorkspace?.close()
-                restoreWorkspace = null
-                val workspace = cacheManager.backupAndRestore.new()
-                workspace.zipFile = workspace.inputDir.subFile(Restore.BACKUP_ARCHIVE_FILE_NAME)
-                context.contentResolver.readToFile(uri, workspace.zipFile)
-                ZipUtils.unzip(workspace.zipFile, workspace.outputDir)
-                workspace.metadata = try {
-                    workspace.outputDir.subFile(Backup.METADATA_JSON_NAME).readJson()
-                } catch (e: FileNotFoundException) {
-                    error("Invalid archive: either backup_metadata.json is missing or file is not a ZIP archive.")
+            restoreScope.launch {
+                if (isRestoreInProgress) return@launch
+                isRestoreInProgress = true
+                runCatching {
+                    restoreWorkspace?.close()
+                    restoreWorkspace = null
+                    prepareRestoreWorkspace(uri)
+                }.onSuccess { workspace ->
+                    restoreWorkspace = workspace
+                }.onFailure { error ->
+                    context.showLongToastSync(
+                        R.string.backup_and_restore__restore__failure,
+                        "error_message" to error.localizedMessage,
+                    )
                 }
-                workspace.restoreWarningId = when {
-                    workspace.metadata.versionCode != BuildConfig.VERSION_CODE -> {
-                        R.string.backup_and_restore__restore__metadata_warn_different_version
-                    }
-                    !workspace.metadata.packageName.startsWith(Restore.PACKAGE_NAME) -> {
-                        R.string.backup_and_restore__restore__metadata_warn_different_vendor
-                    }
-                    else -> null
-                }
-                workspace.restoreErrorId = when {
-                    workspace.metadata.packageName.isBlank() || workspace.metadata.versionCode < Restore.MIN_VERSION_CODE -> {
-                        R.string.backup_and_restore__restore__metadata_error_invalid_metadata
-                    }
-                    else -> null
-                }
-                restoreWorkspace = workspace
-            }.onFailure { error ->
-                context.showLongToastSync(
-                    R.string.backup_and_restore__restore__failure,
-                    "error_message" to error.localizedMessage,
-                )
+                isRestoreInProgress = false
             }
         },
     )
@@ -246,9 +263,13 @@ fun RestoreScreen() = FlorisScreen {
             )
             ButtonBarButton(
                 onClick = {
-                    restoreScope.launch(Dispatchers.Main) {
+                    restoreScope.launch {
+                        if (isRestoreInProgress) return@launch
+                        isRestoreInProgress = true
                         try {
-                            performRestore()
+                            withContext(Dispatchers.IO) {
+                                performRestore()
+                            }
                             context.showLongToast(R.string.backup_and_restore__restore__success)
                             navController.navigateUp()
                         } catch (e: Throwable) {
@@ -257,11 +278,13 @@ fun RestoreScreen() = FlorisScreen {
                                 R.string.backup_and_restore__restore__failure,
                                 "error_message" to e.localizedMessage,
                             )
+                        } finally {
+                            isRestoreInProgress = false
                         }
                     }
                 },
                 text = stringRes(R.string.action__restore),
-                enabled = restoreWorkspace != null && restoreWorkspace?.restoreErrorId == null,
+                enabled = restoreWorkspace != null && restoreWorkspace?.restoreErrorId == null && !isRestoreInProgress,
             )
         }
     }
@@ -301,6 +324,7 @@ fun RestoreScreen() = FlorisScreen {
                 .padding(vertical = 16.dp)
                 .align(Alignment.CenterHorizontally),
             text = stringRes(R.string.action__select_file),
+            enabled = !isRestoreInProgress,
         )
         val workspace = restoreWorkspace
         if (workspace == null) {

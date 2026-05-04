@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.lib.cache
 
 import android.content.Context
+import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
 import androidx.compose.runtime.getValue
@@ -51,7 +52,6 @@ import org.florisboard.lib.kotlin.io.readJson
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
 import java.io.Closeable
-import java.io.File
 import java.util.UUID
 
 class CacheManager(context: Context) {
@@ -65,6 +65,30 @@ class CacheManager(context: Context) {
         private const val BackupAndRestoreDirName = "backup-and-restore"
 
         const val LoadedDirName = "loaded"
+
+        private val UnsafeImportFileNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
+
+        internal fun sanitizeImportFileName(displayName: String?, fallbackName: String): String {
+            val sanitized = displayName
+                ?.substringAfterLast('/')
+                ?.substringAfterLast('\\')
+                ?.replace(UnsafeImportFileNameChars, "_")
+                ?.trim()
+                ?.trim('.')
+                ?.take(128)
+                ?.takeIf { it.isNotBlank() }
+            return sanitized ?: fallbackName
+        }
+
+        private fun Cursor.getStringOrNull(columnName: String): String? {
+            val index = getColumnIndex(columnName)
+            return if (index >= 0 && !isNull(index)) getString(index) else null
+        }
+
+        private fun Cursor.getLongOrNull(columnName: String): Long? {
+            val index = getColumnIndex(columnName)
+            return if (index >= 0 && !isNull(index)) getLong(index) else null
+        }
     }
 
     private val appContext by context.appContext()
@@ -80,13 +104,19 @@ class CacheManager(context: Context) {
     fun readFromUriIntoCache(uriList: List<Uri>): ImporterWorkspace {
         val contentResolver = appContext.contentResolver ?: error("Content resolver is null.")
         val workspace = ImporterWorkspace(uuid = UUID.randomUUID().toString()).also { it.mkdirs() }
-        workspace.inputFileInfos = buildList {
-            for (uri in uriList) {
-                val info = contentResolver.query(uri)?.use { cursor ->
-                    val nameIndex = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                    val sizeIndex = cursor.getColumnIndex(OpenableColumns.SIZE)
-                    cursor.moveToFirst()
-                    val file = workspace.inputDir.subFile(cursor.getString(nameIndex))
+        try {
+            workspace.inputFileInfos = buildList {
+                for ((index, uri) in uriList.withIndex()) {
+                    val fallbackFileName = "import-${index + 1}"
+                    val (displayName, reportedSize) = contentResolver.query(uri)?.use { cursor ->
+                        if (cursor.moveToFirst()) {
+                            cursor.getStringOrNull(OpenableColumns.DISPLAY_NAME) to cursor.getLongOrNull(OpenableColumns.SIZE)
+                        } else {
+                            null to null
+                        }
+                    } ?: (null to null)
+                    val fileName = sanitizeImportFileName(displayName ?: uri.lastPathSegment, fallbackFileName)
+                    val file = workspace.inputDir.subFile(fileName)
                     contentResolver.readToFile(uri, file)
                     val ext = runCatching {
                         val extWorkingDir = workspace.outputDir.subDir(file.nameWithoutExtension)
@@ -94,18 +124,22 @@ class CacheManager(context: Context) {
                         val extJsonFile = extWorkingDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
                         extJsonFile.readJson<Extension>(ExtensionJsonConfig).also { it.workingDir = extWorkingDir }
                     }
-                    FileInfo(
-                        file = file,
-                        mediaType = FileRegistry.guessMediaType(file, contentResolver.getType(uri)),
-                        size = cursor.getLong(sizeIndex),
-                        ext = ext.getOrNull(),
+                    add(
+                        FileInfo(
+                            file = file,
+                            mediaType = FileRegistry.guessMediaType(file, contentResolver.getType(uri)),
+                            size = reportedSize?.takeIf { it >= 0L } ?: file.length(),
+                            ext = ext.getOrNull(),
+                        )
                     )
-                } ?: error("Unable to fetch info about one or more resources to be imported.")
-                add(info)
+                }
             }
+            importer.add(workspace)
+            return workspace
+        } catch (error: Throwable) {
+            workspace.close()
+            throw error
         }
-        importer.add(workspace)
-        return workspace
     }
 
     open inner class WorkspacesContainer<T : Workspace> internal constructor(
@@ -121,13 +155,15 @@ class CacheManager(context: Context) {
             return factory(uuid).also { it.mkdirs(); add(it) }
         }
 
-        internal fun add(workspace: T) = scope.launch {
+        internal fun add(workspace: T) = runBlocking {
             workspacesGuard.withLock {
-                workspaces.add(workspace)
+                if (workspaces.none { it.uuid == workspace.uuid }) {
+                    workspaces.add(workspace)
+                }
             }
         }
 
-        internal fun remove(workspace: T) = scope.launch {
+        internal fun remove(workspace: T) = runBlocking {
             workspacesGuard.withLock {
                 workspaces.remove(workspace)
             }

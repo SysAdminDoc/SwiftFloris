@@ -800,7 +800,7 @@
     <string name="ext__validation__enter_positive_number">请输入一个正数（>=0）</string>
     <string name="ext__validation__enter_percent_size">请输入百分比大小</string>
     <string name="ext__validation__enter_number_between_0_100">请输入值为0～100的正数</string>
-    <string name="ext__validation__hint_value_above_50_percent">任何高于50%的数值都会表现得像设置为50%一样，建议降低你的百分比大小</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">任何高于50%的数值都会表现得像设置为50%一样，建议降低你的百分比大小</string>
     <string name="ext__update_box__internet_permission_hint">由于此应用程序没有互联网权限，无法自行获取更新，因此必须要您手动检查已安装扩展的更新。</string>
     <string name="ext__update_box__search_for_updates">搜索更新</string>
     <string name="ext__addon_management_box__managing_placeholder">管理 {extensions}</string>
@@ -1027,22 +1027,22 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">动态：切换到表情符号 / 切换语言</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} 小时</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} 分</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} 秒</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} 项</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">字符</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">候选</item>
     </plurals>
 </resources>

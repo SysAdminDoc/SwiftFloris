@@ -549,16 +549,16 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">이모지 입력으로 전환 / 언어 전환</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}시간</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}분</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v}초</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="other">{v} 항목</item>
     </plurals>
 </resources>

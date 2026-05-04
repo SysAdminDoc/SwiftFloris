@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 import android.content.ClipData
 import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Bundle
@@ -57,10 +58,18 @@ import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.mimeTypeFilterOf
+import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.roundToInt
 
 class FlorisCopyToClipboardActivity : ComponentActivity() {
+    companion object {
+        private const val MaxPreviewBitmapSide = 1024
+    }
+
     private var error: CopyToClipboardError? = null
     private var bitmap: Bitmap? = null
+    private var copiedToClipboard: Boolean = false
     private val clipboardManager by lazy { systemService(AndroidClipboardManager::class) }
     private val filter = mimeTypeFilterOf("image/*")
 
@@ -118,19 +127,61 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
             error = CopyToClipboardError.TYPE_NOT_SUPPORTED_ERROR
             return
         }
-        bitmap = uriToBitmap(uri)
+        runCatching {
+            copyUriToClipboard(uri)
+        }.onSuccess {
+            copiedToClipboard = true
+            bitmap = runCatching { uriToPreviewBitmap(uri) }.getOrNull()
+        }.onFailure {
+            error = CopyToClipboardError.UNKNOWN_ERROR
+        }
     }
 
-    private fun uriToBitmap(uri: Uri): Bitmap {
+    private fun copyUriToClipboard(uri: Uri) {
         val clip = ClipData.newUri(contentResolver, "image", uri)
         clipboardManager.setPrimaryClip(clip)
+    }
+
+    private fun uriToPreviewBitmap(uri: Uri): Bitmap {
         return if (AndroidVersion.ATLEAST_API28_P) {
             val source = ImageDecoder.createSource(contentResolver, uri)
-            ImageDecoder.decodeBitmap(source)
+            ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
+                val size = info.size
+                val scale = max(
+                    size.width.toFloat() / MaxPreviewBitmapSide,
+                    size.height.toFloat() / MaxPreviewBitmapSide,
+                )
+                if (scale > 1f) {
+                    decoder.setTargetSize(
+                        (size.width / scale).roundToInt().coerceAtLeast(1),
+                        (size.height / scale).roundToInt().coerceAtLeast(1),
+                    )
+                }
+            }
         } else {
-            @Suppress("DEPRECATION")
-            MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            decodeLegacyPreviewBitmap(uri)
         }
+    }
+
+    private fun decodeLegacyPreviewBitmap(uri: Uri): Bitmap {
+        val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, bounds)
+        }
+        if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
+            @Suppress("DEPRECATION")
+            return MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        }
+        val scale = max(
+            bounds.outWidth.toFloat() / MaxPreviewBitmapSide,
+            bounds.outHeight.toFloat() / MaxPreviewBitmapSide,
+        )
+        val options = BitmapFactory.Options().apply {
+            inSampleSize = if (scale > 1f) ceil(scale).toInt() else 1
+        }
+        return contentResolver.openInputStream(uri)?.use { stream ->
+            BitmapFactory.decodeStream(stream, null, options)
+        } ?: error("Cannot decode image preview")
     }
 
     @Composable
@@ -147,7 +198,9 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
                     Row {
                         Text(
                             text = error?.showError()
-                                ?: bitmap?.let { stringRes(id = R.string.send_to_clipboard__description__copied_image_to_clipboard) }
+                                ?: copiedToClipboard.takeIf { it }?.let {
+                                    stringRes(id = R.string.send_to_clipboard__description__copied_image_to_clipboard)
+                                }
                                 ?: stringRes(R.string.send_to_clipboard__unknown_error),
                             textAlign = TextAlign.Center,
                             modifier = Modifier.weight(1f),

@@ -28,6 +28,9 @@ import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
 
 object ZipUtils {
+    private const val MaxUnzippedEntrySizeBytes = 100_000_000L
+    private const val MaxUnzippedArchiveSizeBytes = 250_000_000L
+
     fun readFileFromArchive(context: Context, zipRef: FlorisRef, relPath: String) = runCatching<String> {
         when {
             zipRef.isAssets -> {
@@ -139,6 +142,7 @@ object ZipUtils {
         dstDir.mkdirs()
         ZipFile(srcFile).use { flexFile ->
             val flexEntries = flexFile.entries()
+            var totalUnzippedBytes = 0L
             while (flexEntries.hasMoreElements()) {
                 val flexEntry = flexEntries.nextElement()
                 if (flexEntry.name.length > 255) {
@@ -154,21 +158,48 @@ object ZipUtils {
                     continue
                 }
                 if (flexEntry.isDirectory) {
-                    flexEntryFile.mkdir()
+                    flexEntryFile.mkdirs()
                 } else {
-                    flexFile.copy(flexEntry, flexEntryFile)
+                    val copiedBytes = flexFile.copy(
+                        srcEntry = flexEntry,
+                        dstFile = flexEntryFile,
+                        maxEntryBytes = MaxUnzippedEntrySizeBytes,
+                        maxRemainingArchiveBytes = MaxUnzippedArchiveSizeBytes - totalUnzippedBytes,
+                    )
+                    if (copiedBytes > 0L) {
+                        totalUnzippedBytes += copiedBytes
+                    }
                 }
             }
         }
     }
 
-    private fun ZipFile.copy(srcEntry: ZipEntry, dstFile: FsFile) {
-        dstFile.outputStream().use { outStream ->
-            if (srcEntry.size > 100000000) {
-                return
-            }
-            this.getInputStream(srcEntry).use { inStream ->
-                inStream.copyTo(outStream)
+    private fun ZipFile.copy(
+        srcEntry: ZipEntry,
+        dstFile: FsFile,
+        maxEntryBytes: Long,
+        maxRemainingArchiveBytes: Long,
+    ): Long {
+        if (maxRemainingArchiveBytes <= 0L || srcEntry.size > maxEntryBytes) {
+            return 0L
+        }
+        dstFile.parentFile?.mkdirs()
+        var copiedBytes = 0L
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        this.getInputStream(srcEntry).use { inStream ->
+            dstFile.outputStream().use { outStream ->
+                while (true) {
+                    val readBytes = inStream.read(buffer)
+                    if (readBytes < 0) {
+                        return copiedBytes
+                    }
+                    copiedBytes += readBytes
+                    if (copiedBytes > maxEntryBytes || copiedBytes > maxRemainingArchiveBytes) {
+                        dstFile.delete()
+                        return 0L
+                    }
+                    outStream.write(buffer, 0, readBytes)
+                }
             }
         }
     }

@@ -802,7 +802,7 @@
     <string name="ext__validation__enter_positive_number">Zadejte prosím kladné číslo (&gt;=0)</string>
     <string name="ext__validation__enter_percent_size">Zadejte prosím velikost v procentech</string>
     <string name="ext__validation__enter_number_between_0_100">Zadejte prosím kladné číslo mezi 0 a 100</string>
-    <string name="ext__validation__hint_value_above_50_percent">Jakákoli hodnota nad 50 % se bude chovat, jako kdybyste nastavili 50 %, zvažte snížení velikosti v procentech</string>
+    <string name="ext__validation__hint_value_above_50_percent" formatted="false">Jakákoli hodnota nad 50 % se bude chovat, jako kdybyste nastavili 50 %, zvažte snížení velikosti v procentech</string>
     <string name="ext__update_box__internet_permission_hint">Jelikož tato aplikace nemá přístup k internetu, musíte aktualizace nainstalovaných rozšíření kontrolovat ručně.</string>
     <string name="ext__update_box__search_for_updates">Vyhledat aktualizace</string>
     <string name="ext__addon_management_box__managing_placeholder">Správa {extensions}</string>
@@ -1029,37 +1029,37 @@
     <string name="enum__utility_key_action__dynamic_switch_language_emojis" comment="Enum value label">Dynamicky: Přepnout na emoji / Přepnout jazyk</string>
     <!-- Unit strings (symbols) -->
     <!-- Unit strings (written words) -->
-    <plurals name="unit__hours__written">
+    <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} hodina</item>
         <item quantity="few">{v} hodiny</item>
         <item quantity="many">{v} hodin</item>
         <item quantity="other">{v} hodin</item>
     </plurals>
-    <plurals name="unit__minutes__written">
+    <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} minuta</item>
         <item quantity="few">{v} minuty</item>
         <item quantity="many">{v} minut</item>
         <item quantity="other">{v} minut</item>
     </plurals>
-    <plurals name="unit__seconds__written">
+    <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} sekunda</item>
         <item quantity="few">{v} sekundy</item>
         <item quantity="many">{v} sekund</item>
         <item quantity="other">{v} sekund</item>
     </plurals>
-    <plurals name="unit__items__written">
+    <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} položka</item>
         <item quantity="few">{v} položky</item>
         <item quantity="many">{v} položek</item>
         <item quantity="other">{v} položek</item>
     </plurals>
-    <plurals name="unit__characters__written">
+    <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} znak</item>
         <item quantity="few">{v} znaky</item>
         <item quantity="many">{v} znaků</item>
         <item quantity="other">{v} znaků</item>
     </plurals>
-    <plurals name="unit__candidates__written">
+    <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} návrh</item>
         <item quantity="few">{v} návrhy</item>
         <item quantity="many">{v} návrhů</item>

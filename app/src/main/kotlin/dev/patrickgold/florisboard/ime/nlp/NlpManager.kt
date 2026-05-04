@@ -48,6 +48,7 @@ import org.florisboard.lib.kotlin.guardedByLock
 import org.florisboard.lib.kotlin.collectLatestIn
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.Delegates
 
 private const val BLANK_STR_PATTERN = "^\\s*$"
@@ -73,11 +74,11 @@ class NlpManager(context: Context) {
         )
     }
     // lock unnecessary because values constant
-    private val providersForceSuggestionOn = mutableMapOf<String, Boolean>()
+    private val providersForceSuggestionOn = ConcurrentHashMap<String, Boolean>()
     
     // Caches for word lists and frequencies to avoid blocking on repeated calls
-    private val wordsListCache = mutableMapOf<String, List<String>>()
-    private val frequencyCache = mutableMapOf<String, Double>()
+    private val wordsListCache = ConcurrentHashMap<String, List<String>>()
+    private val frequencyCache = ConcurrentHashMap<String, Double>()
 
     private val suggestionsRequestCounter = AtomicLong(0L)
     private val internalSuggestionsGuard = Mutex()
@@ -363,7 +364,14 @@ class NlpManager(context: Context) {
         private var isInstanceAlive = AtomicBoolean(false)
 
         suspend fun createIfNecessary() {
-            if (!isInstanceAlive.getAndSet(true)) provider.create()
+            if (isInstanceAlive.compareAndSet(false, true)) {
+                try {
+                    provider.create()
+                } catch (error: Throwable) {
+                    isInstanceAlive.set(false)
+                    throw error
+                }
+            }
         }
 
         suspend fun preload(subtype: Subtype) {
