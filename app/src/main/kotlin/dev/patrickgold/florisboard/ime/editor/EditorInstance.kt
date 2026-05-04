@@ -66,7 +66,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
 
     override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
         if (!prefs.correction.rememberCapsLockState.get()) {
-            activeState.inputShiftState = InputShiftState.UNSHIFTED
+            // Enable auto-capitalization for the first letter of the text field
+            activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
         }
         activeState.isActionsOverflowVisible = false
         activeState.isActionsEditorVisible = false
