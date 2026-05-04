@@ -26,10 +26,10 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/backup_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/floris_app_icon"
-        android:label="@string/floris_app_name"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
         android:enableOnBackInvokedCallback="true"
-        android:roundIcon="@mipmap/floris_app_icon_round"
+        android:roundIcon="@mipmap/ic_launcher"
         android:supportsRtl="true"
         android:theme="@style/FlorisAppTheme"
         tools:targetApi="tiramisu">
@@ -40,7 +40,7 @@
         <!-- IME service -->
         <service
             android:name="dev.patrickgold.florisboard.FlorisImeService"
-            android:label="@string/floris_app_name"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_INPUT_METHOD"
             android:directBootAware="true"
             android:exported="true">
@@ -53,7 +53,7 @@
         <!-- Spellchecker service -->
         <service
             android:name="dev.patrickgold.florisboard.FlorisSpellCheckerService"
-            android:label="@string/floris_app_name"
+            android:label="@string/app_name"
             android:permission="android.permission.BIND_TEXT_SERVICE"
             android:exported="true">
             <intent-filter>
