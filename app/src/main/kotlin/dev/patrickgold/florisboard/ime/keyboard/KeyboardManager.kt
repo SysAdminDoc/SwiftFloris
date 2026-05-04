@@ -100,7 +100,6 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val activeState = ObservableKeyboardState.new()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
     private var lastToastReference = WeakReference<Toast>(null)
-    private var isConsumingShiftedAutomatic = false
 
     private val activeEvaluatorGuard = Mutex(locked = false)
     private var activeEvaluatorVersion = AtomicInteger(0)
@@ -213,11 +212,6 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun reevaluateInputShiftState() {
-        // Skip re-evaluation while actively consuming SHIFTED_AUTOMATIC to avoid losing the state
-        if (isConsumingShiftedAutomatic) {
-            return
-        }
-        
         if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isPressed(KeyCode.SHIFT)) {
             val capsMode = editorInstance.activeCursorCapsMode
             val autoCapEnabled = prefs.correction.autoCapitalization.get()
@@ -227,7 +221,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             val isAtStartOfField = editorInstance.activeContent.textBeforeSelection.isEmpty()
             
             val shift = autoCapEnabled && (capsMode != InputAttributes.CapsMode.NONE || isAtStartOfField)
-            android.util.Log.d("SwiftFloris", "reevaluateInputShiftState: capsMode=$capsMode, autoCapEnabled=$autoCapEnabled, isAtStart=$isAtStartOfField, shift=$shift")
+            android.util.Log.d("SwiftFloris", "reevaluateInputShiftState: capsMode=$capsMode, autoCapEnabled=$autoCapEnabled, isAtStart=$isAtStartOfField, shift=$shift, wasShiftedAuto=${activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC}")
+            
+            // CRITICAL: Preserve SHIFTED_AUTOMATIC state if it was set - don't override it with re-evaluation
+            // The state will be reset after the auto-capped character is consumed in KeyboardManager.onInputKey()
+            if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC) {
+                return
+            }
+            
             activeState.inputShiftState = when {
                 shift -> InputShiftState.SHIFTED_AUTOMATIC
                 else -> InputShiftState.UNSHIFTED
@@ -817,21 +818,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                             if (!UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
                                 nlpManager.getAutoCommitCandidate()?.let { commitCandidate(it) }
                             }
-                            
-                            // Mark that we're consuming SHIFTED_AUTOMATIC if it's active and this is a letter
-                            if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
-                                UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
-                                isConsumingShiftedAutomatic = true
-                            }
-                            
                             editorInstance.commitChar(text)
                             
-                            // Reset SHIFTED_AUTOMATIC and flag after consumption
+                            // Reset SHIFTED_AUTOMATIC after it's been applied to a character
                             if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
                                 UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
                                 activeState.inputShiftState = InputShiftState.UNSHIFTED
                             }
-                            isConsumingShiftedAutomatic = false
                         }
                         else -> {
                             flogError(LogTopic.KEY_EVENTS) { "Received unknown key: $data" }
