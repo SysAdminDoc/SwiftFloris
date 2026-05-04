@@ -221,7 +221,6 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             val isAtStartOfField = editorInstance.activeContent.textBeforeSelection.isEmpty()
             
             val shift = autoCapEnabled && (capsMode != InputAttributes.CapsMode.NONE || isAtStartOfField)
-            android.util.Log.d("SwiftFloris", "reevaluateInputShiftState: capsMode=$capsMode, autoCapEnabled=$autoCapEnabled, isAtStart=$isAtStartOfField, shift=$shift, wasShiftedAuto=${activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC}")
             
             // CRITICAL: Preserve SHIFTED_AUTOMATIC state if it was set - don't override it with re-evaluation
             // The state will be reset after the auto-capped character is consumed in KeyboardManager.onInputKey()
