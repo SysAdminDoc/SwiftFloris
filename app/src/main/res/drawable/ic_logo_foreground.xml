@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="108" height="108" viewBox="0 0 108 108" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="flowerGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9B59B6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#6C3A7F;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+
+  <!-- Flower bloom - 5 petals for clarity at small sizes -->
+  <g transform="translate(54, 54)">
+    <!-- Top petal -->
+    <ellipse cx="0" cy="-28" rx="18" ry="26" fill="url(#flowerGrad)"/>
+    
+    <!-- Top-right petal -->
+    <ellipse cx="26" cy="-8" rx="18" ry="26" fill="url(#flowerGrad)" opacity="0.9" transform="rotate(72 26 -8)"/>
+    
+    <!-- Bottom-right petal -->
+    <ellipse cx="16" cy="22" rx="18" ry="26" fill="url(#flowerGrad)" opacity="0.85" transform="rotate(144 16 22)"/>
+    
+    <!-- Bottom-left petal -->
+    <ellipse cx="-16" cy="22" rx="18" ry="26" fill="url(#flowerGrad)" opacity="0.9" transform="rotate(216 -16 22)"/>
+    
+    <!-- Top-left petal -->
+    <ellipse cx="-26" cy="-8" rx="18" ry="26" fill="url(#flowerGrad)" opacity="0.85" transform="rotate(288 -26 -8)"/>
+    
+    <!-- Center circle -->
+    <circle cx="0" cy="0" r="11" fill="#FFFFFF"/>
+    
+    <!-- Center dot -->
+    <circle cx="0" cy="0" r="5" fill="#9B59B6"/>
+  </g>
+</svg>

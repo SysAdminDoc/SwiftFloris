@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- FlorisKeyboard Branding Colors -->
+    
+    <!-- Primary Blue (keyboard key color) -->
+    <color name="primary">#4A90E2</color>
+    <color name="primary_dark">#2E5BAA</color>
+    <color name="primary_light">#5BA3F5</color>
+    
+    <!-- Secondary Purple (flower/accent color) -->
+    <color name="secondary">#9B59B6</color>
+    <color name="secondary_dark">#6C3A7F</color>
+    <color name="secondary_light">#B574D5</color>
+    
+    <!-- Accent Colors -->
+    <color name="accent_teal">#1ABC9C</color>
+    <color name="accent_magenta">#E91E63</color>
+    
+    <!-- Surface & Background -->
+    <color name="surface_light">#F5F7FA</color>
+    <color name="surface_dark">#1A1B26</color>
+    
+    <!-- App Icon Background -->
+    <color name="ic_launcher_bg">#4A90E2</color>
+    
+    <!-- Text Colors -->
+    <color name="text_primary">#FFFFFF</color>
+    <color name="text_secondary">#E0E0E0</color>
+</resources>
