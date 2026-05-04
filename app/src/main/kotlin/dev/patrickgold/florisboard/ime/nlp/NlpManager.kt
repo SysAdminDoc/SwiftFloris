@@ -212,20 +212,13 @@ class NlpManager(context: Context) {
                 }
                 else -> emptyList()
             }
-            val suggestions = when {
-                emojiSuggestions.isNotEmpty() && prefs.emoji.suggestionType.get().prefix.isNotEmpty() -> {
-                    emptyList()
-                }
-                else -> {
-                    getSuggestionProvider(subtype).suggest(
-                        subtype = subtype,
-                        content = content,
-                        maxCandidateCount = 8,
-                        allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
-                        isPrivateSession = keyboardManager.activeState.isIncognitoMode,
-                    )
-                }
-            }
+            val suggestions = getSuggestionProvider(subtype).suggest(
+                subtype = subtype,
+                content = content,
+                maxCandidateCount = 8,
+                allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
+                isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+            )
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < reqTime) {
                     internalSuggestions = reqTime to buildList {
