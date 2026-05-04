@@ -2,6 +2,43 @@
 
 All notable changes to SwiftFloris are documented in this file.
 
+## [1.4.0] — 2026-05-05
+
+### 🎯 Gesture/Swipe Typing Implementation
+
+**Added**
+- **Gesture Typing Feature**: Full swipe-typing support (enabled by default in v1.4.0)
+  - FlorisBoard's GlideTypingManager fully enabled and integrated
+  - Type entire words by dragging finger across keyboard
+  - Configurable sensitivity (0-100%) for fine-tuning gesture detection
+  - Visual feedback: gesture trail with customizable duration (0-500ms)
+  - Live word prediction during gesture
+  - Automatic backspace/delete handling
+  - Works offline, fully private, no API calls
+
+- **Settings & UI**
+  - New Gesture Typing settings panel in app Settings
+  - Gesture trail visualization toggle
+  - Trail fade duration adjustment
+  - Preview word suggestions toggle
+  - Sensitivity slider for gesture detection tuning
+  - Mutual exclusion with standard swipe actions
+
+- **Documentation**
+  - GESTURE_TYPING.md — Comprehensive user guide with best practices
+  - Performance characteristics and optimization tips
+  - Multi-device compatibility notes and troubleshooting
+  - FAQ covering common gesture typing questions
+
+**Technical**
+- `AppPrefs.kt`: Enabled `glide__enabled` by default (was false, now true)
+- `AppPrefs.kt`: Added `sensitivity` preference (int, 0-100%, default 50)
+- `GesturesScreen.kt`: Uncommented and fixed gesture typing PreferenceGroup
+- Fixed type checking issues with FlorisPreferenceStore delegation in lambda contexts
+- All gesture infrastructure leverages FlorisBoard v0.6.0-alpha02 built-in classifiers
+
+**Status**: Ready for device testing and v1.4.0 release
+
 ## [1.3.0] — 2026-05-04
 
 ### 🎤 Voice Input & Multilingual Features

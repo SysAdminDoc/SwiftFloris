@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.3.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
+![Version](https://img.shields.io/badge/version-v1.4.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
 
 **SwiftFloris** is a SwiftKey-inspired Android keyboard with a powerful, proven backend and modern Material Design 3 interface. Built on FlorisBoard's solid IME foundation and customized with SwiftKey's aesthetic and experience philosophy.
 
@@ -41,11 +41,18 @@ SwiftFloris combines the best of both worlds:
   - Sentence-aware capitalization (after punctuation)
   - Proper state management for natural typing flow
 
-- 🎤 **Voice Input** (NEW in v1.3.0):
+- 🎤 **Voice Input** (since v1.3.0):
   - Speech-to-text conversion
   - Supports all 6 languages (EN, DE, FR, ES, IT, PT)
   - Confidence scoring and real-time feedback
   - No API key required, works offline
+
+- 🎯 **Gesture/Swipe Typing** (NEW in v1.4.0):
+  - Type entire words by dragging finger across keyboard
+  - Intelligent word prediction with spell checking
+  - Configurable sensitivity and trail visualization
+  - Fast, offline, fully private
+  - See [Gesture Typing Guide](GESTURE_TYPING.md) for best practices
 
 ### Themes Included
 
@@ -78,6 +85,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 - **[Features Overview](FEATURES.md)** — Complete feature inventory with implementation status
 - **[Multilingual Support](MULTILINGUAL.md)** — Testing guide for spell checking across 6 languages  
 - **[Voice Input Guide](VOICE_INPUT.md)** — Voice-to-text feature documentation and troubleshooting
+- **[Gesture Typing Guide](GESTURE_TYPING.md)** — Swipe typing feature guide with best practices and troubleshooting
 - **[Changelog](CHANGELOG.md)** — Release history and version notes
 
 ## Architecture
