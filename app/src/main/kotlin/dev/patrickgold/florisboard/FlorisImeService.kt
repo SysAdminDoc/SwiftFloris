@@ -53,6 +53,7 @@ import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
+import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.window.ImeRootView
 import dev.patrickgold.florisboard.ime.window.ImeWindowController
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -145,6 +146,11 @@ class FlorisImeService : LifecycleInputMethodService() {
         fun windowControllerOrNull(): ImeWindowController? {
             val ims = FlorisImeServiceReference.get() ?: return null
             return ims.windowController
+        }
+
+        fun voiceInputManagerOrNull(): VoiceInputManager? {
+            val ims = FlorisImeServiceReference.get() ?: return null
+            return ims.voiceInputManager
         }
     }
 
@@ -261,6 +267,7 @@ class FlorisImeService : LifecycleInputMethodService() {
     private val nlpManager by nlpManager()
     private val subtypeManager by subtypeManager()
     private val themeManager by themeManager()
+    val voiceInputManager by lazy { VoiceInputManager(this) }
 
     val windowController = ImeWindowController(prefs, lifecycleScope)
 
@@ -280,6 +287,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onCreate()
         FlorisImeServiceReference = WeakReference(this)
         systemLocalesFlow.value = resources.configuration.locales
+
+        // Initialize voice input manager
+        voiceInputManager.initialize()
 
         WindowCompat.setDecorFitsSystemWindows(window.window!!, false)
         windowController.onConfigurationChanged(resources.configuration)
@@ -353,6 +363,7 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        voiceInputManager.destroy()
         unregisterReceiver(wallpaperChangeReceiver)
         FlorisImeServiceReference = WeakReference(null)
     }
