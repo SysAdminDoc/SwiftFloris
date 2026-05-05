@@ -16,25 +16,32 @@
 
 package dev.patrickgold.florisboard.app.ext
 
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.stringRes
 
 @Composable
 internal fun ExtensionNotFoundScreen(id: String) = FlorisScreen {
     title = stringRes(R.string.ext__error__not_found_title)
 
+    val navController = LocalNavController.current
+
     content {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp),
-        ) {
-            Text(stringRes(R.string.ext__error__not_found_description, "id" to id))
-        }
+        FlorisEmptyState(
+            modifier = Modifier.padding(16.dp),
+            icon = Icons.Default.Extension,
+            title = stringRes(R.string.ext__error__not_found_title),
+            message = stringRes(R.string.ext__error__not_found_description, "id" to id),
+            actionLabel = stringRes(R.string.action__back),
+            onAction = { navController.popBackStack() },
+        )
     }
 }

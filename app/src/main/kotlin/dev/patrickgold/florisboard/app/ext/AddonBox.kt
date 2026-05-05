@@ -49,11 +49,13 @@ fun ImportExtensionBox(navController: NavController) {
     val context = LocalContext.current
     FlorisOutlinedBox(
         modifier = Modifier.defaultFlorisOutlinedBox(),
+        title = stringRes(id = R.string.ext__home__import_box_title),
     ) {
         Text(
             modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
             text = stringRes(id = R.string.ext__home__info),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(
             modifier = Modifier
@@ -84,11 +86,13 @@ fun UpdateBox(extensionIndex: List<Extension>) {
     val context = LocalContext.current
     FlorisOutlinedBox(
         modifier = Modifier.defaultFlorisOutlinedBox(),
+        title = stringRes(id = R.string.ext__update_box__title),
     ) {
         Text(
             modifier = Modifier.padding(start = 16.dp, top = 8.dp, end = 16.dp, bottom = 4.dp),
             text = stringRes(id = R.string.ext__update_box__internet_permission_hint),
-            style = MaterialTheme.typography.bodySmall,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Row(
             modifier = Modifier

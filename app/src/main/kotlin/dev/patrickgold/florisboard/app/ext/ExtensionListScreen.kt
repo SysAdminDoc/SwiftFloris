@@ -29,6 +29,7 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -55,7 +56,7 @@ import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -123,9 +124,11 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
             }
             if (extensionIndex.isEmpty()) {
                 item {
-                    FlorisInfoCard(
-                        modifier = Modifier.padding(8.dp),
-                        text = stringRes(R.string.ext__list__empty),
+                    FlorisEmptyState(
+                        modifier = Modifier.padding(16.dp),
+                        icon = Icons.Default.Extension,
+                        title = stringRes(R.string.ext__list__empty_title),
+                        message = stringRes(R.string.ext__list__empty),
                     )
                 }
             }
@@ -135,11 +138,14 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                     title = ext.meta.title,
                     subtitle = ext.meta.id,
                 ) {
-                    Text(
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
-                        text = ext.meta.description ?: "",
-                        style = MaterialTheme.typography.bodySmall,
-                    )
+                    if (!ext.meta.description.isNullOrBlank()) {
+                        Text(
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            text = ext.meta.description!!,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        )
+                    }
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

@@ -19,19 +19,12 @@ package dev.patrickgold.florisboard.app.settings.advanced
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.LocalContentColor
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -41,7 +34,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
@@ -71,9 +63,12 @@ import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.compose.FlorisButtonBar
-import org.florisboard.lib.compose.FlorisCardDefaults
+import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisOutlinedButton
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
@@ -300,6 +295,7 @@ fun RestoreScreen() = FlorisScreen {
                 },
                 selected = importStrategy == ImportStrategy.Merge,
                 text = stringRes(R.string.backup_and_restore__restore__mode_merge),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__mode_merge_summary),
             )
             RadioListItem(
                 onClick = {
@@ -307,6 +303,7 @@ fun RestoreScreen() = FlorisScreen {
                 },
                 selected = importStrategy == ImportStrategy.Erase,
                 text = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite_summary),
             )
         }
         FlorisOutlinedButton(
@@ -323,17 +320,27 @@ fun RestoreScreen() = FlorisScreen {
             modifier = Modifier
                 .padding(vertical = 16.dp)
                 .align(Alignment.CenterHorizontally),
-            text = stringRes(R.string.action__select_file),
+            text = if (isRestoreInProgress && restoreWorkspace == null) {
+                stringRes(R.string.backup_and_restore__restore__loading_file)
+            } else {
+                stringRes(R.string.action__select_file)
+            },
             enabled = !isRestoreInProgress,
         )
         val workspace = restoreWorkspace
-        if (workspace == null) {
-            Text(
+        if (isRestoreInProgress && workspace == null) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__loading_file),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__loading_file_summary),
+            )
+        } else if (workspace == null) {
+            FlorisEmptyState(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(horizontal = 16.dp),
-                text = stringRes(R.string.state__no_file_selected),
-                fontStyle = FontStyle.Italic,
+                    .padding(horizontal = 16.dp, vertical = 8.dp),
+                icon = Icons.Default.Archive,
+                title = stringRes(R.string.backup_and_restore__restore__empty_title),
+                message = stringRes(R.string.backup_and_restore__restore__empty_message),
             )
         } else {
             FlorisOutlinedBox(
@@ -358,37 +365,17 @@ fun RestoreScreen() = FlorisScreen {
                     },
                 )
                 if (workspace.restoreErrorId != null) {
-                    Column(modifier = Modifier.padding(FlorisCardDefaults.ContentPadding)) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(9.dp)
-                                .padding(bottom = 8.dp)
-                                .background(MaterialTheme.colorScheme.error.copy(alpha = 0.56f))
-                        )
-                        Text(
-                            text = stringRes(workspace.restoreErrorId!!),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error,
-                            fontStyle = FontStyle.Italic,
-                        )
-                    }
+                    FlorisErrorCard(
+                        modifier = Modifier.padding(8.dp),
+                        text = stringRes(R.string.backup_and_restore__restore__metadata_error_title),
+                        secondaryText = stringRes(workspace.restoreErrorId!!),
+                    )
                 } else if (workspace.restoreWarningId != null) {
-                    Column(modifier = Modifier.padding(FlorisCardDefaults.ContentPadding)) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(9.dp)
-                                .padding(bottom = 8.dp)
-                                .background(LocalContentColor.current)
-                        )
-                        Text(
-                            text = stringRes(workspace.restoreWarningId!!),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = LocalContentColor.current,
-                            fontStyle = FontStyle.Italic,
-                        )
-                    }
+                    FlorisWarningCard(
+                        modifier = Modifier.padding(8.dp),
+                        text = stringRes(R.string.backup_and_restore__restore__metadata_warning_title),
+                        secondaryText = stringRes(workspace.restoreWarningId!!),
+                    )
                 }
             }
             if (workspace.restoreErrorId == null) {

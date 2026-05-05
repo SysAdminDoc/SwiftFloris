@@ -20,11 +20,13 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
@@ -43,7 +45,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -67,6 +68,7 @@ import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.android.stringRes
+import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
@@ -144,7 +146,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
             }
             if (db == null) {
-                context.showLongToastSync("Database handle is null, failed to import")
+                context.showLongToastSync(R.string.settings__udm__dictionary_store_unavailable)
                 return@rememberLauncherForActivityResult
             }
             runCatching {
@@ -153,7 +155,10 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 buildUi()
                 context.showLongToastSync(R.string.settings__udm__dictionary_import_success)
             }.onFailure { error ->
-                context.showLongToastSync("Error: ${error.localizedMessage}")
+                context.showLongToastSync(
+                    R.string.settings__udm__dictionary_import_failure,
+                    "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
+                )
             }
         },
     )
@@ -169,7 +174,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
             }
             if (db == null) {
-                context.showLongToastSync("Database handle is null, failed to export")
+                context.showLongToastSync(R.string.settings__udm__dictionary_store_unavailable)
                 return@rememberLauncherForActivityResult
             }
             runCatching {
@@ -177,7 +182,10 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             }.onSuccess {
                 context.showLongToastSync(R.string.settings__udm__dictionary_export_success)
             }.onFailure { error ->
-                context.showLongToastSync("Error: ${error.localizedMessage}")
+                context.showLongToastSync(
+                    R.string.settings__udm__dictionary_export_failure,
+                    "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
+                )
             }
         },
     )
@@ -197,6 +205,13 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             } else {
                 Icons.AutoMirrored.Filled.ArrowBack
             },
+            contentDescription = stringRes(
+                if (currentLocale != null) {
+                    R.string.action__close
+                } else {
+                    R.string.action__back
+                },
+            ),
         )
     }
 
@@ -205,6 +220,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
         FlorisIconButton(
             onClick = { expanded = !expanded },
             icon = Icons.Default.MoreVert,
+            contentDescription = stringRes(R.string.action__more_options),
         )
         DropdownMenu(
             expanded = expanded,
@@ -239,7 +255,12 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     floatingActionButton {
         ExtendedFloatingActionButton(
             onClick = { userDictionaryEntryForDialog = UserDictionaryEntryToAdd },
-            icon = { Icon(imageVector = Icons.Default.Add, contentDescription = null) },
+            icon = {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringRes(R.string.settings__udm__dialog__title_add),
+                )
+            },
             text = { Text(text = stringRes(R.string.settings__udm__dialog__title_add)) },
         )
     }
@@ -255,13 +276,18 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             buildUi()
         }
 
-        LazyColumn {
+        LazyColumn(
+            contentPadding = PaddingValues(bottom = 96.dp),
+        ) {
             if (languageList.isEmpty()) {
                 item {
-                    Text(
-                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
-                        text = stringRes(R.string.settings__udm__no_words_in_dictionary),
-                        fontStyle = FontStyle.Italic,
+                    FlorisEmptyState(
+                        modifier = Modifier.padding(16.dp),
+                        icon = Icons.AutoMirrored.Filled.LibraryBooks,
+                        title = stringRes(R.string.settings__udm__empty_title),
+                        message = stringRes(R.string.settings__udm__no_words_in_dictionary),
+                        actionLabel = stringRes(R.string.settings__udm__dialog__title_add),
+                        onAction = { userDictionaryEntryForDialog = UserDictionaryEntryToAdd },
                     )
                 }
             }

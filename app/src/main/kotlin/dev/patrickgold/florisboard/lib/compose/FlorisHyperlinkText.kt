@@ -23,6 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import dev.patrickgold.florisboard.lib.util.launchUrl
 
@@ -38,11 +40,12 @@ fun FlorisHyperlinkText(
 
     Text(
         modifier = modifier
-            .clickable(enabled = enabled) {
+            .clickable(enabled = enabled, role = Role.Button) {
                 context.launchUrl(url)
             },
         text = text,
         color = color,
+        style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
     )

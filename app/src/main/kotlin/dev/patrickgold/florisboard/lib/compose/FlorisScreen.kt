@@ -42,6 +42,7 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -52,6 +53,7 @@ import org.florisboard.lib.compose.FlorisAppBar
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.autoMirrorForRtl
 import org.florisboard.lib.compose.florisVerticalScroll
+import org.florisboard.lib.compose.stringRes
 
 @Composable
 fun FlorisScreen(builder: @Composable FlorisScreenScope.() -> Unit) {
@@ -105,6 +107,7 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
             onClick = { navController.popBackStack() },
             modifier = Modifier.autoMirrorForRtl(),
             icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringRes(R.string.action__back),
         )
     }
 
@@ -151,6 +154,7 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
 
         Scaffold(
             modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            containerColor = colorScheme.background,
             topBar = { FlorisAppBar(title, navigationIcon.takeIf { navigationIconVisible }, actions, scrollBehavior) },
             bottomBar = bottomBar,
             floatingActionButton = fab,

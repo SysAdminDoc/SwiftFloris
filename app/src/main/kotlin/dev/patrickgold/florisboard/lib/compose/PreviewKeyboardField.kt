@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Keyboard
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -56,7 +57,6 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import org.florisboard.lib.android.showShortToastSync
-import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.compose.verticalTween
 
@@ -86,6 +86,8 @@ fun PreviewKeyboardField(
 ) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
+    val colorScheme = MaterialTheme.colorScheme
+    val switchKeyboardLabel = stringRes(R.string.settings__preview_keyboard__switch_keyboard)
 
     AnimatedVisibility(
         visible = controller.isVisible,
@@ -118,12 +120,12 @@ fun PreviewKeyboardField(
                     Row {
                         IconButton(onClick = {
                             if (!InputMethodUtils.showImePicker(context)) {
-                                context.showShortToastSync("Error: InputMethodManager service not available!")
+                                context.showShortToastSync(R.string.settings__preview_keyboard__ime_picker_unavailable)
                             }
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Keyboard,
-                                contentDescription = null,
+                                contentDescription = switchKeyboardLabel,
                             )
                         }
                     }
@@ -135,6 +137,12 @@ fun PreviewKeyboardField(
                 singleLine = true,
                 shape = RectangleShape,
                 colors = TextFieldDefaults.colors(
+                    focusedContainerColor = colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = colorScheme.surfaceContainerHigh,
+                    disabledContainerColor = colorScheme.surfaceContainerHigh,
+                    focusedTrailingIconColor = colorScheme.primary,
+                    unfocusedTrailingIconColor = colorScheme.onSurfaceVariant,
+                    cursorColor = colorScheme.primary,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,

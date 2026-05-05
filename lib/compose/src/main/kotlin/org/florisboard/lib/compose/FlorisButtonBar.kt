@@ -40,19 +40,19 @@ import androidx.compose.ui.unit.dp
 fun FlorisButtonBar(content: @Composable FlorisButtonBarScope.() -> Unit) {
     Surface(
         modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background,
-        tonalElevation = 8.dp,
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        tonalElevation = 3.dp,
     ) {
         Column {
             Surface(
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(1.dp),
-                color = MaterialTheme.colorScheme.surface,
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
             ) {}
             Row(
                 modifier = Modifier
-                    .padding(top = 4.dp, bottom = 4.dp, start = 0.dp, end = 16.dp),
+                    .padding(top = 8.dp, bottom = 8.dp, start = 0.dp, end = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 val scope = FlorisButtonBarScope(this)
@@ -74,6 +74,7 @@ class FlorisButtonBarScope(rowScope: RowScope) : RowScope by rowScope {
         Button(
             modifier = modifier.padding(start = 16.dp),
             enabled = enabled,
+            shape = MaterialTheme.shapes.small,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -102,6 +103,7 @@ class FlorisButtonBarScope(rowScope: RowScope) : RowScope by rowScope {
         TextButton(
             modifier = modifier.padding(start = 16.dp),
             enabled = enabled,
+            shape = MaterialTheme.shapes.small,
             colors = ButtonDefaults.textButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary,
             ),
