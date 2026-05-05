@@ -1,6 +1,6 @@
 # SwiftFloris Roadmap v3.0
 
-**Last Updated**: May 4, 2026  
+**Last Updated**: May 5, 2026
 **Current Version**: v1.5.0 (FUTO Voice Input Release)  
 **Project Status**: Production-ready with continuous innovation pipeline
 
@@ -162,7 +162,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 
 ---
 
-### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs 🔄 IN PROGRESS
+### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs ✅ COMPLETE
 
 **Why**: v1.5.0 integrates FUTO externally. Some edge cases (app crashes when FUTO unavailable, permission handling, language pack selection UX).
 
@@ -212,11 +212,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 **Why**: CleverKeys demonstrates multi-language swipe with single model + per-language dictionaries. Currently SwiftFloris only supports English swipes. This is a **leapfrog opportunity** — beat upstream FlorisBoard (which has no multi-lang swipe) and reach parity with CleverKeys.
 
 **What**:
-- [ ] **Research feasibility** — Examine FlorisBoard's GlideTypingManager architecture.
+- [x] **Research feasibility** — Examine FlorisBoard's GlideTypingManager architecture.
   - Does gesture classifier work language-agnostic?
   - What dictionary structure do spell-checkers expect?
   - Can we use existing AdvancedSpellingProvider dictionaries for swipe predictions?
   - **Estimated research**: 1 week
+  - Completed: May 5, 2026
   
 - [ ] **Dictionary augmentation** — Extend preloaded dictionaries for gesture matching.
   - Current: English dictionary loaded
@@ -252,6 +253,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - [ ] Accuracy within 5% of English baseline
 - [ ] Settings UI allows per-language toggling
 - [ ] Documentation covers language-specific tips
+
+**Progress Update** (2026-05-05):
+- Added `GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` documenting the glide manager, classifier, NLP provider path, feasibility decision, and implementation risks.
+- Feasibility result: the existing statistical classifier is already mostly language-agnostic and subtype-aware; the blocking work is locale-specific dictionary and frequency data returned through the active suggestion provider.
+- Next implementation batch: add a locale-aware dictionary loader for `LatinLanguageProvider`, keep English fallback behavior, add tests for dictionary selection/fallback, and add production German/French/Spanish/Italian/Portuguese assets only after dictionary licensing is verified.
 
 ---
 
