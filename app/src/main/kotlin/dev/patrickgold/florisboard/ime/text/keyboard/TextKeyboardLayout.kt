@@ -86,6 +86,7 @@ import dev.patrickgold.florisboard.lib.PointerMap
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.toIntOffset
+import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.onFailure
@@ -114,7 +115,22 @@ fun TextKeyboardLayout(
 
     val keyboard = evaluator.keyboard as TextKeyboard
     val glideEnabledInternal by prefs.glide.enabled.collectAsState()
-    val glideEnabled = glideEnabledInternal && evaluator.editorInfo.isRichInputEditor &&
+    val glideEnglishEnabled by prefs.glide.enabledEnglish.collectAsState()
+    val glideGermanEnabled by prefs.glide.enabledGerman.collectAsState()
+    val glideSpanishEnabled by prefs.glide.enabledSpanish.collectAsState()
+    val glideFrenchEnabled by prefs.glide.enabledFrench.collectAsState()
+    val glideItalianEnabled by prefs.glide.enabledItalian.collectAsState()
+    val glidePortugueseEnabled by prefs.glide.enabledPortuguese.collectAsState()
+    val glideLanguageEnabled = when (evaluator.subtype.primaryLocale.language) {
+        "en" -> glideEnglishEnabled
+        "de" -> glideGermanEnabled
+        "es" -> glideSpanishEnabled
+        "fr" -> glideFrenchEnabled
+        "it" -> glideItalianEnabled
+        "pt" -> glidePortugueseEnabled
+        else -> false
+    }
+    val glideEnabled = glideEnabledInternal && glideLanguageEnabled && evaluator.editorInfo.isRichInputEditor &&
         evaluator.state.keyVariation != KeyVariation.PASSWORD
     val glideShowTrail by prefs.glide.showTrail.collectAsState()
     val glideTrailStyle = rememberSnyggThemeQuery(FlorisImeUi.GlideTrail.elementName)
@@ -395,6 +411,7 @@ private class TextKeyboardLayoutController(
     private val prefs by FlorisPreferenceStore
     private val editorInstance by context.editorInstance()
     private val keyboardManager by context.keyboardManager()
+    private val subtypeManager by context.subtypeManager()
 
     private val inputEventDispatcher get() = keyboardManager.inputEventDispatcher
     private val inputFeedbackController get() = FlorisImeService.inputFeedbackController()
@@ -415,7 +432,9 @@ private class TextKeyboardLayoutController(
     lateinit var keyboard: TextKeyboard
     var size = Size.Zero
 
-    val isGlideEnabled: Boolean get() = prefs.glide.enabled.get() && editorInstance.activeInfo.isRichInputEditor &&
+    val isGlideEnabled: Boolean get() = prefs.glide.enabled.get() &&
+        prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype) &&
+        editorInstance.activeInfo.isRichInputEditor &&
         keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD
 
     fun onTouchEventInternal(event: MotionEvent) {

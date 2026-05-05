@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
@@ -98,6 +99,31 @@ fun GesturesScreen() = FlorisScreen {
                 summary = stringRes(R.string.pref__glide__immediate_backspace_deletes_word__summary),
                 enabledIf = { prefs.glide.enabled.get() },
             )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.pref__glide__languages_title)) {
+            listOf(
+                FlorisLocale.ENGLISH to prefs.glide.enabledEnglish,
+                FlorisLocale.from("de") to prefs.glide.enabledGerman,
+                FlorisLocale.from("es") to prefs.glide.enabledSpanish,
+                FlorisLocale.from("fr") to prefs.glide.enabledFrench,
+                FlorisLocale.from("it") to prefs.glide.enabledItalian,
+                FlorisLocale.from("pt") to prefs.glide.enabledPortuguese,
+            ).forEach { (locale, preference) ->
+                val language = locale.displayLanguage()
+                SwitchPreference(
+                    preference,
+                    title = stringRes(
+                        R.string.pref__glide__language_enabled__label,
+                        "language" to language,
+                    ),
+                    summary = stringRes(
+                        R.string.pref__glide__language_enabled__summary,
+                        "language" to language,
+                    ),
+                    enabledIf = { prefs.glide.enabled.get() },
+                )
+            }
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__gestures__general_title)) {
