@@ -269,7 +269,7 @@ class NlpManager(context: Context) {
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
-        return activeCandidates.firstOrNull { candidate ->
+        val activeCandidate = activeCandidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
                 !autoCommitSuppression.shouldSuppress(
                     currentWord = currentWord,
@@ -277,6 +277,10 @@ class NlpManager(context: Context) {
                     currentWordStart = currentWordStart,
                 )
         }
+        if (activeCandidate != null) {
+            return activeCandidate
+        }
+        return immediateAutoCommitCandidate(currentWord, currentWordStart)
     }
 
     fun rememberAcceptedAutoCommit(content: EditorContent, candidate: SuggestionCandidate) {
@@ -338,6 +342,23 @@ class NlpManager(context: Context) {
             return emptyList()
         }
         return dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
+    }
+
+    private fun immediateAutoCommitCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {
+        if (!prefs.suggestion.enabled.get()) {
+            return null
+        }
+        val candidate = ImmediateAutocorrect.englishFirstPersonPronounCandidate(
+            rawWord = currentWord,
+            languageCode = subtypeManager.activeSubtype.primaryLocale.language,
+        ) ?: return null
+        return candidate.takeUnless {
+            autoCommitSuppression.shouldSuppress(
+                currentWord = currentWord,
+                candidateText = it.text,
+                currentWordStart = currentWordStart,
+            )
+        }
     }
 
     private fun onUserDictionaryConfigurationChanged() {
