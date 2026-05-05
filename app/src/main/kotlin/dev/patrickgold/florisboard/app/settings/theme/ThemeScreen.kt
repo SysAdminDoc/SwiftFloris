@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.ColorLens
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -32,7 +33,6 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
-import dev.patrickgold.florisboard.app.ext.AddonManagementReferenceBox
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
@@ -121,6 +121,13 @@ fun ThemeScreen() = FlorisScreen {
             }
         )
 
-        AddonManagementReferenceBox(type = ExtensionListScreenType.EXT_THEME)
+        Preference(
+            icon = Icons.Default.Tune,
+            title = stringRes(R.string.pref__theme__customization__label),
+            summary = stringRes(R.string.pref__theme__customization__summary),
+            onClick = {
+                navController.navigate(Routes.Ext.List(ExtensionListScreenType.EXT_THEME, showUpdate = true))
+            },
+        )
     }
 }

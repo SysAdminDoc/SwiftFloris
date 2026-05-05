@@ -198,6 +198,8 @@
     <string name="pref__theme__theme_accent_color__label" comment="Label of accent color preference in Theme">
         Accent color (Material You themes)
     </string>
+    <string name="pref__theme__customization__label" comment="Label of the shortcut that opens theme customization">Theme customization</string>
+    <string name="pref__theme__customization__summary" comment="Summary of the shortcut that opens theme customization">Create, edit, import, or manage keyboard theme extensions</string>
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
     <string name="pref__theme__source_assets" comment="Label for the theme source field">SwiftFloris App Assets</string>
     <string name="pref__theme__source_internal" comment="Label for the theme source field">Internal Storage</string>
@@ -361,6 +363,7 @@
     <string name="snygg__rule_element__subtype_panel_list_item">Subtype panel list item</string>
     <string name="snygg__rule_element__subtype_panel_list_item_icon_leading">Subtype panel list item icon (leading)</string>
     <string name="snygg__rule_element__subtype_panel_list_item_text">Subtype panel list item text</string>
+    <string name="snygg__rule_element__voice_input_button">Voice input button</string>
 
     <string name="snygg__rule_selector__pressed">Pressed</string>
     <string name="snygg__rule_selector__focus">Focused</string>
