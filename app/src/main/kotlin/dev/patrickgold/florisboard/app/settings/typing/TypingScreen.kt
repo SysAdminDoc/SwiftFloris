@@ -157,6 +157,7 @@ fun TypingScreen() = FlorisScreen {
             Preference(
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 title = stringRes(R.string.settings__dictionary__title),
+                summary = stringRes(R.string.settings__typing__dictionary_summary),
                 onClick = { navController.navigate(Routes.Settings.Dictionary) },
             )
         }

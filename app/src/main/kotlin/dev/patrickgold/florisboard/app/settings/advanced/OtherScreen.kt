@@ -60,112 +60,119 @@ fun OtherScreen() = FlorisScreen {
     val context = LocalContext.current
 
     content {
-        ListPreference(
-            prefs.other.settingsTheme,
-            icon = Icons.Default.Palette,
-            title = stringRes(R.string.pref__other__settings_theme__label),
-            entries = enumDisplayEntriesOf(AppTheme::class),
-        )
-        ColorPickerPreference(
-            pref = prefs.other.accentColor,
-            title = stringRes(R.string.pref__other__settings_accent_color__label),
-            defaultValueLabel = stringRes(R.string.action__default),
-            icon = Icons.Default.FormatColorFill,
-            defaultColors = ColorMappings.colors,
-            showAlphaSlider = false,
-            enableAdvancedLayout = true,
-            colorOverride = {
-                if (it.isMaterialYou(context)) {
-                    Color.Unspecified
-                } else {
-                    it
-                }
-            }
-        )
-        ListPreference(
-            prefs.other.settingsLanguage,
-            icon = Icons.Default.Language,
-            title = stringRes(R.string.pref__other__settings_language__label),
-            entries = listPrefEntries {
-                listOf(
-                    "auto",
-                    "ar",
-                    "bg",
-                    "bs",
-                    "ca",
-                    "ckb",
-                    "cs",
-                    "da",
-                    "de",
-                    "el",
-                    "en",
-                    "eo",
-                    "es",
-                    "fa",
-                    "fi",
-                    "fr",
-                    "hr",
-                    "hu",
-                    "in",
-                    "it",
-                    "iw",
-                    "ja",
-                    "ko-KR",
-                    "ku",
-                    "lv-LV",
-                    "mk",
-                    "nds-DE",
-                    "nl",
-                    "no",
-                    "pl",
-                    "pt",
-                    "pt-BR",
-                    "ru",
-                    "sk",
-                    "sl",
-                    "sr",
-                    "sv",
-                    "tr",
-                    "uk",
-                    "zgh",
-                    "zh-CN",
-                ).map { languageTag ->
-                    if (languageTag == "auto") {
-                        entry(
-                            key = "auto",
-                            label = stringRes(R.string.settings__system_default),
-                        )
+        PreferenceGroup(title = stringRes(R.string.settings__other__section_app_preferences)) {
+            ListPreference(
+                prefs.other.settingsTheme,
+                icon = Icons.Default.Palette,
+                title = stringRes(R.string.pref__other__settings_theme__label),
+                entries = enumDisplayEntriesOf(AppTheme::class),
+            )
+            ColorPickerPreference(
+                pref = prefs.other.accentColor,
+                title = stringRes(R.string.pref__other__settings_accent_color__label),
+                defaultValueLabel = stringRes(R.string.action__default),
+                icon = Icons.Default.FormatColorFill,
+                defaultColors = ColorMappings.colors,
+                showAlphaSlider = false,
+                enableAdvancedLayout = true,
+                colorOverride = {
+                    if (it.isMaterialYou(context)) {
+                        Color.Unspecified
                     } else {
-                        val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.collectAsState()
-                        val locale = FlorisLocale.fromTag(languageTag)
-                        entry(locale.languageTag(), when (displayLanguageNamesIn) {
-                            DisplayLanguageNamesIn.SYSTEM_LOCALE -> locale.displayName()
-                            DisplayLanguageNamesIn.NATIVE_LOCALE -> locale.displayName(locale)
-                        })
+                        it
                     }
                 }
-            }
-        )
-        SwitchPreference(
-            prefs.other.showAppIcon,
-            icon = Icons.Default.Preview,
-            title = stringRes(R.string.pref__other__show_app_icon__label),
-            summary = when {
-                AndroidVersion.ATLEAST_API29_Q -> stringRes(R.string.pref__other__show_app_icon__summary_atleast_q)
-                else -> null
-            },
-            enabledIf = { AndroidVersion.ATMOST_API28_P },
-        )
-        Preference(
-            icon = ImageVector.vectorResource(R.drawable.ic_keyboard_keys),
-            title = stringRes(R.string.physical_keyboard__title),
-            onClick = { navController.navigate(Routes.Settings.PhysicalKeyboard) },
-        )
-        Preference(
-            icon = Icons.Default.Adb,
-            title = stringRes(R.string.devtools__title),
-            onClick = { navController.navigate(Routes.Devtools.Home) },
-        )
+            )
+            ListPreference(
+                prefs.other.settingsLanguage,
+                icon = Icons.Default.Language,
+                title = stringRes(R.string.pref__other__settings_language__label),
+                entries = listPrefEntries {
+                    listOf(
+                        "auto",
+                        "ar",
+                        "bg",
+                        "bs",
+                        "ca",
+                        "ckb",
+                        "cs",
+                        "da",
+                        "de",
+                        "el",
+                        "en",
+                        "eo",
+                        "es",
+                        "fa",
+                        "fi",
+                        "fr",
+                        "hr",
+                        "hu",
+                        "in",
+                        "it",
+                        "iw",
+                        "ja",
+                        "ko-KR",
+                        "ku",
+                        "lv-LV",
+                        "mk",
+                        "nds-DE",
+                        "nl",
+                        "no",
+                        "pl",
+                        "pt",
+                        "pt-BR",
+                        "ru",
+                        "sk",
+                        "sl",
+                        "sr",
+                        "sv",
+                        "tr",
+                        "uk",
+                        "zgh",
+                        "zh-CN",
+                    ).map { languageTag ->
+                        if (languageTag == "auto") {
+                            entry(
+                                key = "auto",
+                                label = stringRes(R.string.settings__system_default),
+                            )
+                        } else {
+                            val displayLanguageNamesIn by prefs.localization.displayLanguageNamesIn.collectAsState()
+                            val locale = FlorisLocale.fromTag(languageTag)
+                            entry(locale.languageTag(), when (displayLanguageNamesIn) {
+                                DisplayLanguageNamesIn.SYSTEM_LOCALE -> locale.displayName()
+                                DisplayLanguageNamesIn.NATIVE_LOCALE -> locale.displayName(locale)
+                            })
+                        }
+                    }
+                }
+            )
+            SwitchPreference(
+                prefs.other.showAppIcon,
+                icon = Icons.Default.Preview,
+                title = stringRes(R.string.pref__other__show_app_icon__label),
+                summary = when {
+                    AndroidVersion.ATLEAST_API29_Q -> stringRes(R.string.pref__other__show_app_icon__summary_atleast_q)
+                    else -> null
+                },
+                enabledIf = { AndroidVersion.ATMOST_API28_P },
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__other__section_keyboard_system)) {
+            Preference(
+                icon = ImageVector.vectorResource(R.drawable.ic_keyboard_keys),
+                title = stringRes(R.string.physical_keyboard__title),
+                summary = stringRes(R.string.settings__other__physical_keyboard_summary),
+                onClick = { navController.navigate(Routes.Settings.PhysicalKeyboard) },
+            )
+            Preference(
+                icon = Icons.Default.Adb,
+                title = stringRes(R.string.devtools__title),
+                summary = stringRes(R.string.settings__other__devtools_summary),
+                onClick = { navController.navigate(Routes.Devtools.Home) },
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.backup_and_restore__title)) {
             Preference(

@@ -58,11 +58,13 @@ fun MediaScreen() = FlorisScreen {
     val scope = rememberCoroutineScope()
 
     content {
-        ListPreference(
-            prefs.emoji.preferredSkinTone,
-            title = stringRes(R.string.prefs__media__emoji_preferred_skin_tone),
-            entries = enumDisplayEntriesOf(EmojiSkinTone::class),
-        )
+        PreferenceGroup(title = stringRes(R.string.prefs__media__emoji_defaults__title)) {
+            ListPreference(
+                prefs.emoji.preferredSkinTone,
+                title = stringRes(R.string.prefs__media__emoji_preferred_skin_tone),
+                entries = enumDisplayEntriesOf(EmojiSkinTone::class),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.prefs__media__emoji_history__title)) {
             SwitchPreference(
@@ -205,9 +207,19 @@ fun DeleteEmojiHistoryConfirmDialog(
             onConfirm = onConfirm,
         ) {
             if (it.pinned) {
-                Text(stringRes(R.string.action__reset_confirm_message, "name" to "pinned emojis"))
+                Text(
+                    stringRes(
+                        R.string.action__reset_confirm_message,
+                        "name" to stringRes(R.string.prefs__media__emoji_history_pinned_reset_confirm_name),
+                    )
+                )
             } else {
-                Text(stringRes(R.string.action__reset_confirm_message, "name" to "emoji history"))
+                Text(
+                    stringRes(
+                        R.string.action__reset_confirm_message,
+                        "name" to stringRes(R.string.prefs__media__emoji_history_reset_confirm_name),
+                    )
+                )
             }
 
         }

@@ -45,69 +45,74 @@ fun KeyboardScreen() = FlorisScreen {
     val navController = LocalNavController.current
 
     content {
-        SwitchPreference(
-            prefs.keyboard.numberRow,
-            title = stringRes(R.string.pref__keyboard__number_row__label),
-            summary = stringRes(R.string.pref__keyboard__number_row__summary),
-        )
-        ListPreference(
-            listPref = prefs.keyboard.hintedNumberRowMode,
-            switchPref = prefs.keyboard.hintedNumberRowEnabled,
-            title = stringRes(R.string.pref__keyboard__hinted_number_row_mode__label),
-            summarySwitchDisabled = stringRes(R.string.state__disabled),
-            entries = enumDisplayEntriesOf(KeyHintMode::class),
-            enabledIf = { prefs.keyboard.numberRow.isFalse() }
-        )
-        ListPreference(
-            listPref = prefs.keyboard.hintedSymbolsMode,
-            switchPref = prefs.keyboard.hintedSymbolsEnabled,
-            title = stringRes(R.string.pref__keyboard__hinted_symbols_mode__label),
-            summarySwitchDisabled = stringRes(R.string.state__disabled),
-            entries = enumDisplayEntriesOf(KeyHintMode::class),
-        )
-        SwitchPreference(
-            prefs.keyboard.utilityKeyEnabled,
-            title = stringRes(R.string.pref__keyboard__utility_key_enabled__label),
-            summary = stringRes(R.string.pref__keyboard__utility_key_enabled__summary),
-        )
-        ListPreference(
-            prefs.keyboard.utilityKeyAction,
-            title = stringRes(R.string.pref__keyboard__utility_key_action__label),
-            entries = enumDisplayEntriesOf(UtilityKeyAction::class),
-            visibleIf = { prefs.keyboard.utilityKeyEnabled isEqualTo true },
-        )
-        ListPreference(
-            prefs.keyboard.spaceBarMode,
-            title = stringRes(R.string.pref__keyboard__space_bar_mode__label),
-            entries = enumDisplayEntriesOf(SpaceBarMode::class),
-        )
-        ListPreference(
-            prefs.keyboard.capitalizationBehavior,
-            title = stringRes(R.string.pref__keyboard__capitalization_behavior__label),
-            entries = enumDisplayEntriesOf(CapitalizationBehavior::class),
-        )
-        DialogSliderPreference(
-            primaryPref = prefs.keyboard.fontSizeMultiplierPortrait,
-            secondaryPref = prefs.keyboard.fontSizeMultiplierLandscape,
-            title = stringRes(R.string.pref__keyboard__font_size_multiplier__label),
-            primaryLabel = stringRes(R.string.screen_orientation__portrait),
-            secondaryLabel = stringRes(R.string.screen_orientation__landscape),
-            valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
-            min = 50,
-            max = 150,
-            stepIncrement = 5,
-        )
-        ListPreference(
-            listPref = prefs.keyboard.incognitoDisplayMode,
-            title = stringRes(R.string.pref__keyboard__incognito_indicator__label),
-            entries = enumDisplayEntriesOf(IncognitoDisplayMode::class),
-        )
+        PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_rows_and_hints__label)) {
+            SwitchPreference(
+                prefs.keyboard.numberRow,
+                title = stringRes(R.string.pref__keyboard__number_row__label),
+                summary = stringRes(R.string.pref__keyboard__number_row__summary),
+            )
+            ListPreference(
+                listPref = prefs.keyboard.hintedNumberRowMode,
+                switchPref = prefs.keyboard.hintedNumberRowEnabled,
+                title = stringRes(R.string.pref__keyboard__hinted_number_row_mode__label),
+                summarySwitchDisabled = stringRes(R.string.state__disabled),
+                entries = enumDisplayEntriesOf(KeyHintMode::class),
+                enabledIf = { prefs.keyboard.numberRow.isFalse() },
+            )
+            ListPreference(
+                listPref = prefs.keyboard.hintedSymbolsMode,
+                switchPref = prefs.keyboard.hintedSymbolsEnabled,
+                title = stringRes(R.string.pref__keyboard__hinted_symbols_mode__label),
+                summarySwitchDisabled = stringRes(R.string.state__disabled),
+                entries = enumDisplayEntriesOf(KeyHintMode::class),
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_behavior__label)) {
+            SwitchPreference(
+                prefs.keyboard.utilityKeyEnabled,
+                title = stringRes(R.string.pref__keyboard__utility_key_enabled__label),
+                summary = stringRes(R.string.pref__keyboard__utility_key_enabled__summary),
+            )
+            ListPreference(
+                prefs.keyboard.utilityKeyAction,
+                title = stringRes(R.string.pref__keyboard__utility_key_action__label),
+                entries = enumDisplayEntriesOf(UtilityKeyAction::class),
+                visibleIf = { prefs.keyboard.utilityKeyEnabled isEqualTo true },
+            )
+            ListPreference(
+                prefs.keyboard.spaceBarMode,
+                title = stringRes(R.string.pref__keyboard__space_bar_mode__label),
+                entries = enumDisplayEntriesOf(SpaceBarMode::class),
+            )
+            ListPreference(
+                prefs.keyboard.capitalizationBehavior,
+                title = stringRes(R.string.pref__keyboard__capitalization_behavior__label),
+                entries = enumDisplayEntriesOf(CapitalizationBehavior::class),
+            )
+            ListPreference(
+                listPref = prefs.keyboard.incognitoDisplayMode,
+                title = stringRes(R.string.pref__keyboard__incognito_indicator__label),
+                entries = enumDisplayEntriesOf(IncognitoDisplayMode::class),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_layout__label)) {
             ListPreference(
                 prefs.keyboard.landscapeInputUiMode,
                 title = stringRes(R.string.pref__keyboard__landscape_input_ui_mode__label),
                 entries = enumDisplayEntriesOf(LandscapeInputUiMode::class),
+            )
+            DialogSliderPreference(
+                primaryPref = prefs.keyboard.fontSizeMultiplierPortrait,
+                secondaryPref = prefs.keyboard.fontSizeMultiplierLandscape,
+                title = stringRes(R.string.pref__keyboard__font_size_multiplier__label),
+                primaryLabel = stringRes(R.string.screen_orientation__portrait),
+                secondaryLabel = stringRes(R.string.screen_orientation__landscape),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 50,
+                max = 150,
+                stepIncrement = 5,
             )
             DialogSliderPreference(
                 primaryPref = prefs.keyboard.keySpacingVertical,
@@ -125,6 +130,7 @@ fun KeyboardScreen() = FlorisScreen {
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_keypress__label)) {
             Preference(
                 title = stringRes(R.string.settings__input_feedback__title),
+                summary = stringRes(R.string.settings__input_feedback__summary),
                 onClick = { navController.navigate(Routes.Settings.InputFeedback) },
             )
             SwitchPreference(

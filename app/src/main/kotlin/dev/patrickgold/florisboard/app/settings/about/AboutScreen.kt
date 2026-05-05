@@ -69,7 +69,7 @@ fun AboutScreen() = FlorisScreen {
             FlorisCanvasIcon(
                 modifier = Modifier.requiredSize(64.dp),
                 iconId = R.mipmap.ic_launcher,
-                contentDescription = "SwiftFloris app icon",
+                contentDescription = stringRes(R.string.about__app_icon_content_description),
             )
             Text(
                 text = stringRes(R.string.app_name),

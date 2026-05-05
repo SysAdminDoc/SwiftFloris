@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.app.settings.gestures
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -25,6 +26,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
@@ -41,12 +43,18 @@ fun GesturesScreen() = FlorisScreen {
     previewFieldVisible = true
 
     content {
+        val isGlideEnabled by prefs.glide.enabled.collectAsState()
+
         FlorisInfoCard(
             modifier = Modifier.padding(8.dp),
-            text = """
-                SwiftFloris v1.4.0 re-enables gesture/swipe typing with word suggestions & improved accuracy. Gesture typing can be toggled on/off in the settings below. Tap a key while dragging your finger to type entire words with a single gesture.
-            """.trimIndent()
+            text = stringRes(R.string.settings__gestures__intro),
         )
+        if (isGlideEnabled) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__glide_conflict_notice),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.pref__glide__title)) {
             SwitchPreference(
@@ -72,7 +80,7 @@ fun GesturesScreen() = FlorisScreen {
             SwitchPreference(
                 prefs.glide.showPreview,
                 title = stringRes(R.string.pref__glide__show_preview),
-                summary = "Word suggestions must be enabled for this to take effect!",
+                summary = stringRes(R.string.pref__glide__show_preview__summary),
                 enabledIf = { prefs.glide.enabled.get() },
             )
             DialogSliderPreference(
