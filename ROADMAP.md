@@ -320,10 +320,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Note: SwiftFloris currently delegates dictation to FUTO as an external IME, so this parser is exposed through `VoiceInputManager` for transcript sources but cannot intercept FUTO output until a transcript handoff path exists.
   - **Estimated effort**: 3 weeks
 
-- [ ] **Command Execution** — Implement command actions.
-  - Map commands to InputConnection actions (commitText, sendKeyEvent, etc.)
-  - Handle edge cases (e.g., "delete that" on empty field)
-  - Log command execution for debugging
+- [x] **Command Execution** — Implement command actions.
+  - [x] Map commands to InputConnection/editor actions (commitText, sendKeyEvent, select all, undo/redo, etc.)
+  - [x] Handle edge cases (e.g., "delete that" on empty field)
+  - [x] Log command execution for debugging
+  - Completed: May 5, 2026
+  - Note: command execution is available for parsed transcripts through the reusable executor; live FUTO output still cannot be intercepted while dictation is delegated to FUTO as a separate IME.
   - **Estimated effort**: 2 weeks
 
 - [ ] **User Customization** — Let users add/disable commands.
@@ -360,6 +362,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Exposed command detection through `VoiceInputManager.detectCommand(...)` for future transcript sources.
 - Added unit coverage for exact built-ins, aliases, fuzzy recognition, normalization, confidence thresholds, and false-positive resistance.
 - Implementation limitation: FUTO Voice Input is still launched as a separate IME, so SwiftFloris does not receive dictated text from FUTO for command execution yet.
+
+**Progress Update** (2026-05-05):
+- Added `VoiceCommandExecutor`, `VoiceCommandActions`, and `EditorVoiceCommandActions` to map parsed commands to existing editor operations.
+- Supported execution actions now cover previous-word deletion, undo, redo, select all, new paragraph, new line, one-shot capitalization, go to start, and go to end.
+- Added failure reporting for rejected actions and empty-field delete attempts, plus debug logging for command execution results.
+- Added `VoiceCommandExecutorTest` coverage for action mapping and failure propagation.
 
 ---
 

@@ -102,6 +102,15 @@ class VoiceInputManager(private val context: Context) {
         return commandParser.parse(spokenText, minimumConfidence)
     }
 
+    fun detectAndExecuteCommand(
+        spokenText: String,
+        actions: VoiceCommandActions,
+        minimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
+    ): VoiceCommandExecutionResult? {
+        val match = detectCommand(spokenText, minimumConfidence) ?: return null
+        return VoiceCommandExecutor(actions).execute(match)
+    }
+
     fun destroy() {
         _isListening.value = false
         _transcriptionState.value = TranscriptionState.Idle

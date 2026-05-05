@@ -506,6 +506,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     }
 
     /**
+     * Requests one-shot capitalization for the next typed word.
+     */
+    fun performCapitalizeNextWord(): Boolean {
+        autoSpace.setInactive()
+        phantomSpace.setInactive()
+        activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
+        return true
+    }
+
+    /**
      * Performs an enter key press on the current input editor.
      *
      * @return True on success, false if an error occurred or the input connection is invalid.
