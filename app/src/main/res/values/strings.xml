@@ -152,6 +152,7 @@
     <string name="settings__home__input_feedback_summary" comment="Home screen preference summary">Sounds, vibration strength, duration, and per-action feedback</string>
     <string name="settings__home__theme_summary" comment="Home screen preference summary">Keyboard themes, accent color, and visual style</string>
     <string name="settings__home__gestures_summary" comment="Home screen preference summary">Glide typing, swipe actions, and gesture thresholds</string>
+    <string name="settings__home__voice_input_summary" comment="Home screen preference summary">FUTO setup, offline language models, and voice keyboard status</string>
     <string name="settings__home__clipboard_summary" comment="Home screen preference summary">Clipboard history, suggestions, privacy, and cleanup</string>
     <string name="settings__home__media_summary" comment="Home screen preference summary">Emoji history, emoji suggestions, and media behavior</string>
     <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Personal words used by suggestions, correction, and spell checking</string>
@@ -170,6 +171,42 @@
     <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add subtype</string>
     <string name="settings__localization__language_pack_title" comment="Title of the language pack manager screen for managing installed and custom language packs">Manage installed language packs</string>
     <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Install and manage language extensions for layouts, dictionaries, and language-specific input</string>
+    <string name="settings__voice_input__title" comment="Title of Voice input settings screen">Voice input</string>
+    <string name="settings__voice_input__status_ready" comment="Voice input status message">FUTO Voice Input is ready</string>
+    <string name="settings__voice_input__status_ready_summary" comment="Voice input status summary">SwiftFloris can hand dictation to FUTO from the keyboard voice action.</string>
+    <string name="settings__voice_input__status_futo_not_enabled" comment="Voice input status message">FUTO is installed but not enabled</string>
+    <string name="settings__voice_input__status_futo_not_enabled_summary" comment="Voice input status summary">Enable FUTO Voice Input in Android keyboard settings before using offline dictation.</string>
+    <string name="settings__voice_input__status_futo_not_installed" comment="Voice input status message">FUTO Voice Input is not installed</string>
+    <string name="settings__voice_input__status_futo_not_installed_summary" comment="Voice input status summary">Install FUTO Voice Input to use offline voice typing with SwiftFloris.</string>
+    <string name="settings__voice_input__status_other_provider" comment="Voice input status message">A voice keyboard is enabled</string>
+    <string name="settings__voice_input__status_other_provider_summary" comment="Voice input status summary">SwiftFloris can use an enabled voice keyboard, but FUTO is recommended for offline dictation.</string>
+    <string name="settings__voice_input__group_setup" comment="Voice input settings group title">FUTO setup</string>
+    <string name="settings__voice_input__open_futo_language_settings" comment="Voice input settings preference title">Open FUTO language settings</string>
+    <string name="settings__voice_input__open_futo_language_settings_summary" comment="Voice input settings preference summary">Choose the voice language and download offline models inside the FUTO app.</string>
+    <string name="settings__voice_input__keyboard_settings_summary" comment="Voice input settings preference summary">Enable FUTO Voice Input as an Android keyboard so SwiftFloris can switch to it.</string>
+    <string name="settings__voice_input__install_summary" comment="Voice input settings preference summary">Install the external FUTO app used for offline voice input.</string>
+    <string name="settings__voice_input__group_language_packs" comment="Voice input settings group title">Supported FUTO voice languages</string>
+    <string name="settings__voice_input__language_pack_handoff_title" comment="Voice input language pack information title">Language selection happens in FUTO</string>
+    <string name="settings__voice_input__language_pack_handoff_summary" comment="Voice input language pack information summary">Android voice keyboard handoff does not let SwiftFloris force a FUTO language. Select and download models in FUTO, then use the voice action from SwiftFloris.</string>
+    <string name="settings__voice_input__supported_language_summary" comment="Voice input supported language row summary">Available in FUTO Voice Input</string>
+    <string name="settings__voice_input__open_futo_failed" comment="Voice input error toast">Could not open FUTO Voice Input.</string>
+    <string name="settings__voice_input__language_english">English</string>
+    <string name="settings__voice_input__language_chinese">Chinese</string>
+    <string name="settings__voice_input__language_german">German</string>
+    <string name="settings__voice_input__language_spanish">Spanish</string>
+    <string name="settings__voice_input__language_russian">Russian</string>
+    <string name="settings__voice_input__language_french">French</string>
+    <string name="settings__voice_input__language_portuguese">Portuguese</string>
+    <string name="settings__voice_input__language_korean">Korean</string>
+    <string name="settings__voice_input__language_japanese">Japanese</string>
+    <string name="settings__voice_input__language_turkish">Turkish</string>
+    <string name="settings__voice_input__language_polish">Polish</string>
+    <string name="settings__voice_input__language_italian">Italian</string>
+    <string name="settings__voice_input__language_swedish">Swedish</string>
+    <string name="settings__voice_input__language_dutch">Dutch</string>
+    <string name="settings__voice_input__language_catalan">Catalan</string>
+    <string name="settings__voice_input__language_finnish">Finnish</string>
+    <string name="settings__voice_input__language_indonesian">Indonesian</string>
     <string name="settings__localization__subtype_edit_title" comment="Title of subtype dialog when editing an existing subtype">Edit subtype</string>
     <string name="settings__localization__subtype_locale" comment="Label for locale dropdown in subtype dialog">Primary language</string>
     <string name="settings__localization__subtype_popup_mapping" comment="Label for popup mapping dropdown in subtype screen">Popup mapping</string>

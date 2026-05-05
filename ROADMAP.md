@@ -174,7 +174,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - P0.3.4: Voice button latency profiling
   - P0.3.5: Troubleshooting guide (FUTO_VOICE_INPUT_TROUBLESHOOTING.md)
 - [x] Implement graceful degradation (friendly dialog, install links)
-- [ ] Implement language pack selection UI in settings
+- [x] Implement language pack selection UI in settings
 - [ ] Robust permission handling (denial, revocation, re-granting)
 - [ ] Measure voice button latency on 3 device types
 - [ ] Complete FUTO troubleshooting guide
@@ -193,6 +193,8 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Replaced the voice-provider missing-state toast with a SwiftFloris setup dialog launched from the keyboard voice action.
 - The dialog distinguishes missing FUTO from installed-but-disabled FUTO, opens Android keyboard settings, and provides F-Droid/GitHub release install links.
 - `VoiceInputManager` now reports installed-but-disabled FUTO as `NotEnabled` instead of a generic unavailable state.
+- Added a dedicated Voice input settings screen with FUTO readiness, install/enable/open actions, and a supported-language list sourced from FUTO's public language support notes.
+- Documented the handoff limitation in-product: FUTO owns voice language/model selection because Android's voice IME switch path does not provide a SwiftFloris-side language override.
 
 ---
 

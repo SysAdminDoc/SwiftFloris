@@ -16,7 +16,9 @@
 
 package dev.patrickgold.florisboard.ime.voice
 
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.view.inputmethod.InputMethodManager
@@ -113,12 +115,25 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun isExternalVoiceInputMethodEnabled(): Boolean {
-        val imm = context.systemServiceOrNull(InputMethodManager::class) ?: return false
-        return imm.enabledInputMethodList.any { inputMethod ->
-            inputMethod.packageName != BuildConfig.APPLICATION_ID &&
-                (0 until inputMethod.subtypeCount).any { index ->
-                    inputMethod.getSubtypeAt(index).mode == "voice"
-                }
+        return enabledVoiceInputMethodPackages().any { it != BuildConfig.APPLICATION_ID }
+    }
+
+    fun isFutoVoiceInputEnabled(): Boolean {
+        return FUTO_PACKAGE_NAME in enabledVoiceInputMethodPackages()
+    }
+
+    fun launchFutoVoiceInputApp(): Boolean {
+        val intent = context.packageManager
+            .getLaunchIntentForPackage(FUTO_PACKAGE_NAME)
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            ?: return false
+        return try {
+            context.startActivity(intent)
+            true
+        } catch (_: ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
         }
     }
 
@@ -139,6 +154,17 @@ class VoiceInputManager(private val context: Context) {
             VoiceInputSetupReason.FUTO_NOT_INSTALLED,
             VoiceInputSetupReason.NO_ENABLED_PROVIDER,
             -> VoiceError.NotAvailable
+        }
+    }
+
+    private fun enabledVoiceInputMethodPackages(): Set<String> {
+        val imm = context.systemServiceOrNull(InputMethodManager::class) ?: return emptySet()
+        return imm.enabledInputMethodList.mapNotNullTo(mutableSetOf()) { inputMethod ->
+            inputMethod.packageName.takeIf {
+                (0 until inputMethod.subtypeCount).any { index ->
+                    inputMethod.getSubtypeAt(index).mode == "voice"
+                }
+            }
         }
     }
 }
