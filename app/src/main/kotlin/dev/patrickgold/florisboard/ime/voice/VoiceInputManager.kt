@@ -21,7 +21,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
+import android.provider.Settings
 import android.view.inputmethod.InputMethodManager
+import androidx.core.net.toUri
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.FlorisImeService
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,7 +57,7 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun refreshAvailability(): Boolean {
-        val available = isExternalVoiceInputMethodEnabled()
+        val available = isVoiceInputReadyForHandoff()
         _transcriptionState.value = if (available) TranscriptionState.Ready else TranscriptionState.Unavailable
         _error.value = if (available) null else resolveAvailabilityError()
         return available
@@ -118,8 +120,28 @@ class VoiceInputManager(private val context: Context) {
         return enabledVoiceInputMethodPackages().any { it != BuildConfig.APPLICATION_ID }
     }
 
+    fun isVoiceInputReadyForHandoff(): Boolean {
+        val enabledExternalPackages = enabledVoiceInputMethodPackages().filter { it != BuildConfig.APPLICATION_ID }
+        return enabledExternalPackages.any { it != FUTO_PACKAGE_NAME } ||
+            (FUTO_PACKAGE_NAME in enabledExternalPackages && isFutoMicrophonePermissionGranted())
+    }
+
     fun isFutoVoiceInputEnabled(): Boolean {
         return FUTO_PACKAGE_NAME in enabledVoiceInputMethodPackages()
+    }
+
+    fun isFutoMicrophonePermissionGranted(): Boolean {
+        if (!isFutoVoiceInputInstalled()) {
+            return false
+        }
+        return try {
+            context.packageManager.checkPermission(
+                android.Manifest.permission.RECORD_AUDIO,
+                FUTO_PACKAGE_NAME,
+            ) == PackageManager.PERMISSION_GRANTED
+        } catch (_: RuntimeException) {
+            false
+        }
     }
 
     fun launchFutoVoiceInputApp(): Boolean {
@@ -127,6 +149,17 @@ class VoiceInputManager(private val context: Context) {
             .getLaunchIntentForPackage(FUTO_PACKAGE_NAME)
             ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             ?: return false
+        return launchActivity(intent)
+    }
+
+    fun launchFutoAppInfoSettings(): Boolean {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
+            .setData("package:$FUTO_PACKAGE_NAME".toUri())
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return launchActivity(intent)
+    }
+
+    private fun launchActivity(intent: Intent): Boolean {
         return try {
             context.startActivity(intent)
             true
@@ -139,8 +172,10 @@ class VoiceInputManager(private val context: Context) {
 
     fun resolveSetupReason(): VoiceInputSetupReason {
         return when {
-            isFutoVoiceInputInstalled() -> VoiceInputSetupReason.FUTO_NOT_ENABLED
-            else -> VoiceInputSetupReason.FUTO_NOT_INSTALLED
+            !isFutoVoiceInputInstalled() -> VoiceInputSetupReason.FUTO_NOT_INSTALLED
+            isFutoVoiceInputEnabled() && !isFutoMicrophonePermissionGranted() ->
+                VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED
+            else -> VoiceInputSetupReason.FUTO_NOT_ENABLED
         }
     }
 
@@ -151,6 +186,7 @@ class VoiceInputManager(private val context: Context) {
     private fun resolveAvailabilityError(): VoiceError {
         return when (resolveSetupReason()) {
             VoiceInputSetupReason.FUTO_NOT_ENABLED -> VoiceError.NotEnabled
+            VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED -> VoiceError.PermissionDenied
             VoiceInputSetupReason.FUTO_NOT_INSTALLED,
             VoiceInputSetupReason.NO_ENABLED_PROVIDER,
             -> VoiceError.NotAvailable
