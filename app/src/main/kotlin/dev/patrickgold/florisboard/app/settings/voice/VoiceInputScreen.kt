@@ -462,6 +462,7 @@ private fun VoiceCommandAction.labelRes(): Int {
         VoiceCommandAction.UNDO -> R.string.settings__voice_input__voice_command_undo
         VoiceCommandAction.REDO -> R.string.settings__voice_input__voice_command_redo
         VoiceCommandAction.SELECT_ALL -> R.string.settings__voice_input__voice_command_select_all
+        VoiceCommandAction.CLEAR_TEXT -> R.string.settings__voice_input__voice_command_clear_text
         VoiceCommandAction.NEW_PARAGRAPH -> R.string.settings__voice_input__voice_command_new_paragraph
         VoiceCommandAction.NEW_LINE -> R.string.settings__voice_input__voice_command_new_line
         VoiceCommandAction.CAPITALIZE_NEXT_WORD ->

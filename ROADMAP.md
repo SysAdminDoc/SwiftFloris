@@ -343,9 +343,9 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - **Estimated effort**: 1 week
 
 - [ ] **Testing & documentation**:
-  - Test with diverse accents (native + non-native speakers)
-  - VOICE_COMMANDS.md guide with full command reference
-  - FAQ: "What if my accent isn't recognized?"
+  - [ ] Test with diverse accents (native + non-native speakers)
+  - [x] VOICE_COMMANDS.md guide with full command reference
+  - [x] FAQ: "What if my accent isn't recognized?"
   - **Estimated effort**: 2 weeks
 
 **Effort**: 10–12 weeks  
@@ -356,7 +356,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 **Acceptance Criteria**:
 - [ ] 10+ built-in voice commands working reliably (>90% recognition accuracy on native speakers)
 - [x] Custom commands UI functional
-- [ ] Comprehensive voice command documentation
+- [x] Comprehensive voice command documentation
 
 **Progress Update** (2026-05-05):
 - Added `VoiceCommandParser` with built-in command definitions for delete, undo, redo, select all, new paragraph, new line, capitalize next word, go to start, and go to end.
@@ -388,6 +388,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added explicit voice error recovery mapping, including retryable handling for `NetworkTimeout`, while keeping setup errors in the unavailable state.
 - Added unit coverage for command execution fallback, unrecognized text insertion, suggestion accept/reject, blank transcript handling, and timeout recovery.
 - Implementation limitation: these flows are ready for a transcript source, but live FUTO output is still delegated through a separate IME and cannot yet be intercepted by SwiftFloris.
+
+**Progress Update** (2026-05-05):
+- Added the tenth built-in voice command, `clear text`, with `clear field` and `delete all` aliases.
+- Documented every built-in command, alias, confidence threshold, custom-command workflow, error recovery behavior, accent FAQ, and current FUTO transcript-handoff limitation in `VOICE_COMMANDS.md`.
+- Remaining testing limitation: diverse-accent validation still requires native and non-native speaker samples, so recognition-accuracy acceptance is not yet claimed.
 
 ---
 
