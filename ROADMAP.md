@@ -116,6 +116,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Profile memory usage with emoji-heavy input
   - Consider AOSP-like ROM behavior
   - Estimated effort: 1 week (research), 1 week (fix if needed)
+  - Progress: lazy-load mitigation for the replace-all EmojiCompat instance completed May 5, 2026; adb-backed memory profiling is still blocked until a device is attached.
 
 **Effort**: 8–10 weeks  
 **Risk**: Breaking changes in NLP refactor; need regression testing.  
