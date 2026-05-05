@@ -21,6 +21,9 @@ import io.kotest.matchers.shouldBe
 
 class LatinDictionarySuggesterTest : FunSpec({
     val dictionary = latinDictionary(
+        "i" to 255,
+        "i'm" to 253,
+        "i've" to 248,
         "the" to 255,
         "there" to 220,
         "their" to 215,
@@ -35,6 +38,29 @@ class LatinDictionarySuggesterTest : FunSpec({
 
         suggestions.first().text shouldBe "the"
         suggestions.first().isEligibleForAutoCommit shouldBe true
+    }
+
+    test("suggest auto-commits lowercase English first-person pronoun") {
+        val suggestions = LatinDictionarySuggester.suggest("i", dictionary, maxCandidateCount = 4)
+
+        suggestions.first().text shouldBe "I"
+        suggestions.first().isEligibleForAutoCommit shouldBe true
+    }
+
+    test("suggest auto-commits common lowercase English first-person contractions") {
+        val suggestions = LatinDictionarySuggester.suggest("im", dictionary, maxCandidateCount = 4)
+
+        suggestions.first().text shouldBe "I'm"
+        suggestions.first().isEligibleForAutoCommit shouldBe true
+    }
+
+    test("suggest does not apply English pronoun casing to other Latin languages") {
+        LatinDictionarySuggester.suggest(
+            rawWord = "i",
+            dictionary = dictionary,
+            maxCandidateCount = 4,
+            languageCode = "it",
+        ) shouldBe emptyList()
     }
 
     test("suggest returns frequency-ranked prefix completions") {

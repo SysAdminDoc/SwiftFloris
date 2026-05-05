@@ -79,8 +79,20 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): SpellingResult {
+        val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
         val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return SpellingResult.unspecified()
         val dictionary = dictionary(subtype)
+        LatinDictionarySuggester.englishPronounCorrection(
+            rawWord = word,
+            normalizedWord = normalizedWord,
+            dictionary = dictionary,
+            languageCode = languageCode,
+        )?.let { correction ->
+            return SpellingResult.typo(
+                suggestions = arrayOf(correction.text),
+                isHighConfidenceResult = correction.isEligibleForAutoCommit,
+            )
+        }
         if (dictionary.contains(normalizedWord)) {
             return SpellingResult.validWord()
         }
@@ -99,10 +111,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
         val currentWord = content.currentWordText.ifBlank { content.composingText }
+        val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
         return LatinDictionarySuggester.suggest(
             rawWord = currentWord,
             dictionary = dictionary(subtype),
             maxCandidateCount = maxCandidateCount,
+            languageCode = languageCode,
         ).map { candidate ->
             WordSuggestionCandidate(
                 text = candidate.text,
@@ -310,9 +324,16 @@ internal object LatinDictionarySuggester {
         rawWord: String,
         dictionary: LatinDictionarySnapshot,
         maxCandidateCount: Int,
+        languageCode: String = LatinDictionaryStore.DefaultLanguageCode,
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
+        englishPronounCorrection(
+            rawWord = rawWord,
+            normalizedWord = normalizedWord,
+            dictionary = dictionary,
+            languageCode = languageCode,
+        )?.let { return listOf(it) }
         if (normalizedWord.length < MinCompletionLength) return emptyList()
 
         val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount)
@@ -384,6 +405,27 @@ internal object LatinDictionarySuggester {
         if (trimmedWord.isEmpty() || trimmedWord.none { it.isLetter() }) return null
         if (trimmedWord.any { !it.isLetter() && it != '\'' }) return null
         return trimmedWord.lowercase()
+    }
+
+    fun englishPronounCorrection(
+        rawWord: String,
+        normalizedWord: String,
+        dictionary: LatinDictionarySnapshot,
+        languageCode: String,
+    ): LatinSuggestion? {
+        if (LatinDictionaryStore.normalizeLanguageCode(languageCode) != LatinDictionaryStore.DefaultLanguageCode) {
+            return null
+        }
+        val correction = EnglishPronounCorrections[normalizedWord] ?: return null
+        if (!dictionary.contains(correction.dictionaryWord)) return null
+
+        val typedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
+        if (typedWord.firstOrNull() != 'i' || typedWord == correction.text) return null
+        return LatinSuggestion(
+            text = correction.text,
+            confidence = 1.0,
+            isEligibleForAutoCommit = true,
+        )
     }
 
     private fun completions(
@@ -493,4 +535,19 @@ internal object LatinDictionarySuggester {
             else -> candidate
         }
     }
+
+    private data class EnglishPronounCorrection(
+        val dictionaryWord: String,
+        val text: String,
+    )
+
+    private val EnglishPronounCorrections = mapOf(
+        "i" to EnglishPronounCorrection("i", "I"),
+        "i'd" to EnglishPronounCorrection("i'd", "I'd"),
+        "i'll" to EnglishPronounCorrection("i'll", "I'll"),
+        "i'm" to EnglishPronounCorrection("i'm", "I'm"),
+        "im" to EnglishPronounCorrection("i'm", "I'm"),
+        "i've" to EnglishPronounCorrection("i've", "I've"),
+        "ive" to EnglishPronounCorrection("i've", "I've"),
+    )
 }
