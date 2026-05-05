@@ -172,6 +172,7 @@ class VoiceInputManager(private val context: Context) {
 
     fun resolveSetupReason(): VoiceInputSetupReason {
         return when {
+            isVoiceInputReadyForHandoff() -> VoiceInputSetupReason.READY
             !isFutoVoiceInputInstalled() -> VoiceInputSetupReason.FUTO_NOT_INSTALLED
             isFutoVoiceInputEnabled() && !isFutoMicrophonePermissionGranted() ->
                 VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED
@@ -185,6 +186,7 @@ class VoiceInputManager(private val context: Context) {
 
     private fun resolveAvailabilityError(): VoiceError {
         return when (resolveSetupReason()) {
+            VoiceInputSetupReason.READY -> VoiceError.NotAvailable
             VoiceInputSetupReason.FUTO_NOT_ENABLED -> VoiceError.NotEnabled
             VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED -> VoiceError.PermissionDenied
             VoiceInputSetupReason.FUTO_NOT_INSTALLED,

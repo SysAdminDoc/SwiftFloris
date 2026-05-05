@@ -99,6 +99,7 @@
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
     <string name="voice_input_setup__title">Set up voice input</string>
+    <string name="voice_input_setup__ready_message">Voice input is already available. Return to the keyboard and use the voice action to start dictation.</string>
     <string name="voice_input_setup__not_installed_message">Install FUTO Voice Input, then enable it in Android keyboard settings. SwiftFloris keeps dictation offline by handing voice input to the external FUTO keyboard.</string>
     <string name="voice_input_setup__not_enabled_message">FUTO Voice Input is installed but is not enabled as an Android keyboard. Enable it in system keyboard settings, then return to SwiftFloris.</string>
     <string name="voice_input_setup__mic_permission_message">FUTO Voice Input is enabled, but Android reports that microphone access is denied or revoked. Open FUTO app permissions, allow Microphone, then return to SwiftFloris.</string>
