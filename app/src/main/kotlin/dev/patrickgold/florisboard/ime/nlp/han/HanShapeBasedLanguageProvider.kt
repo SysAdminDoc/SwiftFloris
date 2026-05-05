@@ -19,7 +19,6 @@ package dev.patrickgold.florisboard.ime.nlp.han
 import android.content.Context
 import android.database.sqlite.SQLiteException
 import android.icu.text.BreakIterator
-import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
@@ -34,11 +33,7 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
-import dev.patrickgold.florisboard.subtypeManager
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, SuggestionProvider {
@@ -51,28 +46,14 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
     }
 
 
-    private val appContext by context.appContext()
-
     private val maxFreqBySubType = mutableMapOf<String, Int>();
     private val extensionManager by context.extensionManager()
-    private val subtypeManager by context.subtypeManager()
     private val allLanguagePacks: List<LanguagePackExtension>
         // Assume other types of extensions do not extend LanguagePackExtension
         get() = extensionManager.languagePacks.value
-    private var __connectedActiveLanguagePacks: Set<LanguagePackExtension> = setOf() // FIXME: hack for not able to observe extensionManager.languagePacks and subtypeManager.subtypes
+    private var connectedLanguagePacks: Set<LanguagePackExtension> = setOf()
     private var languagePackItems: Map<String, LanguagePackComponent> = mapOf() // init in refreshLanguagePacks()
     private var keyCode: Map<String, Set<Char>> = mapOf() // init in refreshLanguagePacks()
-    private val activeLanguagePacks  // language packs referenced in subtypes
-        get() = buildSet {
-            val locales = subtypeManager.subtypes.map { it.primaryLocale.localeTag() }.toSet()
-            for (languagePack in allLanguagePacks) {
-                // FIXME: skip checking language pack type because it always is for now
-                if (languagePack.items.any { it.locale.localeTag() in locales }) {
-                    add(languagePack)
-                }
-            }
-        }
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())  // same as NlpManager's preload()
 
     override val providerId = ProviderId
 
@@ -80,10 +61,6 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
 //        // FIXME: observeForever only callable on the main thread.
 //        extensionManager.languagePacks.observeForever { refreshLanguagePacks() }
 //    }
-
-    private fun refreshLanguagePacks() {
-        scope.launch { create() }
-    }
 
     override suspend fun create() {
         // Here we initialize our provider, set up all things which are not language dependent.
@@ -107,17 +84,7 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             }
             put("default", "abcdefghijklmnopqrstuvwxyz".toSet())
         }.toMap()
-
-        // Load all actively used language packs.
-        val activeLanguagePacks = activeLanguagePacks
-        for (activeLanguagePack in activeLanguagePacks) {
-            if (!activeLanguagePack.isLoaded()) {
-                // populates activeLanguagePack.hanShapeBasedSQLiteDatabase
-                // FIXME: every time this is copied over to cache.
-                activeLanguagePack.load(context)
-            }
-        }
-        __connectedActiveLanguagePacks = activeLanguagePacks
+        connectedLanguagePacks = connectedLanguagePacks.intersect(allLanguagePacks.toSet())
     }
 
     override suspend fun preload(subtype: Subtype) = withContext(Dispatchers.IO) {
@@ -136,6 +103,7 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
 
         // The subtype we get here contains a lot of data, however we are only interested in subtype.primaryLocale and
         // subtype.secondaryLocales.
+        loadLanguagePacksFor(subtype)
     }
 
     override suspend fun spell(
@@ -165,9 +133,11 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
-        if (__connectedActiveLanguagePacks != activeLanguagePacks) {
-            // FIXME: hack for not able to observe extensionManager.languagePacks
-            refreshLanguagePacks()
+        val requiredLanguagePacks = languagePacksFor(subtype)
+        if (!connectedLanguagePacks.containsAll(requiredLanguagePacks)) {
+            withContext(Dispatchers.IO) {
+                loadLanguagePacksFor(subtype)
+            }
         }
         if (content.composingText.isEmpty()) {
             return emptyList();
@@ -241,6 +211,23 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             return null;
         }
         return Pair(languagePackItem, languagePackExtension)
+    }
+
+    private fun languagePacksFor(subtype: Subtype): Set<LanguagePackExtension> {
+        val locales = subtype.locales().map { it.localeTag() }.toSet()
+        return allLanguagePacks.filterTo(mutableSetOf()) { languagePack ->
+            languagePack.items.any { it.locale.localeTag() in locales }
+        }
+    }
+
+    private fun loadLanguagePacksFor(subtype: Subtype) {
+        val requiredLanguagePacks = languagePacksFor(subtype)
+        for (languagePack in requiredLanguagePacks) {
+            if (!languagePack.isLoaded()) {
+                languagePack.load(context)
+            }
+        }
+        connectedLanguagePacks = connectedLanguagePacks + requiredLanguagePacks
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
