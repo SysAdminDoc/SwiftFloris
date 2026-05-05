@@ -28,10 +28,6 @@ import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
-import dev.patrickgold.florisboard.ime.nlp.advanced.AdvancedPredictionProvider
-import dev.patrickgold.florisboard.ime.nlp.advanced.AdvancedSpellingProvider
-import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
-import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.florisboard.subtypeManager
@@ -45,9 +41,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.florisboard.lib.kotlin.guardedByLock
 import org.florisboard.lib.kotlin.collectLatestIn
-import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.properties.Delegates
@@ -67,16 +61,7 @@ class NlpManager(context: Context) {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val clipboardSuggestionProvider = ClipboardSuggestionProvider(context)
     private val emojiSuggestionProvider = EmojiSuggestionProvider(context)
-    private val providers = guardedByLock {
-        mapOf(
-            LatinLanguageProvider.ProviderId to ProviderInstanceWrapper(LatinLanguageProvider(context)),
-            HanShapeBasedLanguageProvider.ProviderId to ProviderInstanceWrapper(HanShapeBasedLanguageProvider(context)),
-            AdvancedSpellingProvider(context).providerId to ProviderInstanceWrapper(AdvancedSpellingProvider(context)),
-            AdvancedPredictionProvider(context).providerId to ProviderInstanceWrapper(AdvancedPredictionProvider(context)),
-        )
-    }
-    // lock unnecessary because values constant
-    private val providersForceSuggestionOn = ConcurrentHashMap<String, Boolean>()
+    private val providerRegistry = NlpProviderRegistry(context)
     
     // Caches for word lists and frequencies to avoid blocking on repeated calls
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
@@ -144,27 +129,10 @@ class NlpManager(context: Context) {
         return keyboardManager.resources.punctuationRules.value[subtype.punctuationRule] ?: PunctuationRule.Fallback
     }
 
-    private suspend fun getSpellingProvider(subtype: Subtype): SpellingProvider {
-        return providers.withLock { it[subtype.nlpProviders.spelling] }?.provider as? SpellingProvider
-            ?: FallbackNlpProvider
-    }
-
-    private suspend fun getSuggestionProvider(subtype: Subtype): SuggestionProvider {
-        return providers.withLock { it[subtype.nlpProviders.suggestion] }?.provider as? SuggestionProvider
-            ?: FallbackNlpProvider
-    }
-
     fun preload(subtype: Subtype) {
         scope.launch {
             emojiSuggestionProvider.preload(subtype)
-            providers.withLock { providers ->
-                subtype.nlpProviders.forEach { _, providerId ->
-                    providers[providerId]?.let { provider ->
-                        provider.createIfNecessary()
-                        provider.preload(subtype)
-                    }
-                }
-            }
+            providerRegistry.preload(subtype)
         }
     }
 
@@ -184,7 +152,7 @@ class NlpManager(context: Context) {
                 return SpellingResult.validWord()
             }
         }
-        return getSpellingProvider(subtype).spell(
+        return providerRegistry.spellingProvider(subtype).spell(
             subtype = subtype,
             word = word,
             precedingWords = precedingWords,
@@ -198,18 +166,13 @@ class NlpManager(context: Context) {
     suspend fun determineLocalComposing(
         textBeforeSelection: CharSequence, breakIterators: BreakIteratorGroup, localLastCommitPosition: Int
     ): EditorRange {
-        return getSuggestionProvider(subtypeManager.activeSubtype).determineLocalComposing(
+        return providerRegistry.suggestionProvider(subtypeManager.activeSubtype).determineLocalComposing(
             subtypeManager.activeSubtype, textBeforeSelection, breakIterators, localLastCommitPosition
         )
     }
 
     fun providerForcesSuggestionOn(subtype: Subtype): Boolean {
-        // Using a cache because I have no idea how fast the runBlocking is
-        return providersForceSuggestionOn.getOrPut(subtype.nlpProviders.suggestion) {
-            runBlocking {
-                getSuggestionProvider(subtype).forcesSuggestionOn
-            }
-        }
+        return providerRegistry.providerForcesSuggestionOn(subtype)
     }
 
     fun isSuggestionOn(): Boolean =
@@ -234,7 +197,7 @@ class NlpManager(context: Context) {
                 }
                 else -> emptyList()
             }
-            val suggestionProvider = getSuggestionProvider(subtype)
+            val suggestionProvider = providerRegistry.suggestionProvider(subtype)
             val suggestionsEnabled = prefs.suggestion.enabled.get() || suggestionProvider.forcesSuggestionOn
             val userDictionarySuggestions = if (suggestionsEnabled) {
                 userDictionarySuggestions(
@@ -340,7 +303,7 @@ class NlpManager(context: Context) {
         val cacheKey = subtype.toString()
         return wordsListCache.getOrPut(cacheKey) {
             // Use blocking only for first-time fetch; results are cached afterward
-            runBlocking { getSuggestionProvider(subtype).getListOfWords(subtype) }
+            runBlocking { providerRegistry.suggestionProvider(subtype).getListOfWords(subtype) }
         }
     }
 
@@ -348,7 +311,7 @@ class NlpManager(context: Context) {
         val cacheKey = "${subtype}-$word"
         return frequencyCache.getOrPut(cacheKey) {
             // Use blocking only for first-time fetch; results are cached afterward
-            runBlocking { getSuggestionProvider(subtype).getFrequencyForWord(subtype, word) }
+            runBlocking { providerRegistry.suggestionProvider(subtype).getFrequencyForWord(subtype, word) }
         }
     }
 
@@ -450,29 +413,6 @@ class NlpManager(context: Context) {
     fun clearDebugOverlay() {
         debugOverlaySuggestionsInfos.evictAll()
         debugOverlayVersion.update { it + 1 }
-    }
-
-    private class ProviderInstanceWrapper(val provider: NlpProvider) {
-        private var isInstanceAlive = AtomicBoolean(false)
-
-        suspend fun createIfNecessary() {
-            if (isInstanceAlive.compareAndSet(false, true)) {
-                try {
-                    provider.create()
-                } catch (error: Throwable) {
-                    isInstanceAlive.set(false)
-                    throw error
-                }
-            }
-        }
-
-        suspend fun preload(subtype: Subtype) {
-            provider.preload(subtype)
-        }
-
-        suspend fun destroyIfNecessary() {
-            if (isInstanceAlive.getAndSet(false)) provider.destroy()
-        }
     }
 
     private fun EditorContent.autoCommitWord(): String {
