@@ -266,7 +266,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added locale-aware dictionary infrastructure to `LatinLanguageProvider`: future assets at `ime/dict/{language}.json` are selected by active subtype language, with the existing English `ime/dict/data.json` retained as fallback.
 - Added unit coverage for language-code normalization, target asset paths, locale-specific dictionary selection, and English fallback behavior.
 - Increased the glide pruner cache from five to six subtype entries so English plus German/French/Spanish/Italian/Portuguese can remain warm during normal language switching.
-- Blocker: the repo and current upstream FlorisBoard assets do not include licensed German/French/Spanish/Italian/Portuguese word-frequency dictionaries. The production asset import remains unchecked until the dictionary source and license are selected.
+- Blocker: SwiftFloris and upstream FlorisBoard app assets do not include German/French/Spanish/Italian/Portuguese JSON word-frequency dictionaries. The FlorisBoard NLP repo has draft `.fldic`/`.flex` dictionaries for German, Spanish, French, and Italian, but not Portuguese, and they require a separate format/license/import decision before production bundling.
 
 ---
 
