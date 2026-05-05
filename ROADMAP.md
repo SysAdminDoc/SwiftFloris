@@ -99,10 +99,10 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - [x] Integrate with spell checker and suggestions, preferring SwiftFloris entries over system entries
   - Completed: May 5, 2026
   
-- [ ] **Dictionary Manager** (`DictionaryManager.kt`) — Document and clean up manager API. 
-  - Clarify loading order (system → downloadable → user)
-  - Add lazy-loading for large dictionaries
-  - Estimated effort: 1 week
+- [x] **Dictionary Manager** (`DictionaryManager.kt`) — Document and clean up manager API.
+  - [x] Clarify dictionary layering and precedence (provider/downloadable base → system user dictionary → SwiftFloris user dictionary)
+  - [x] Add lazy-loading and preference-driven unload behavior for user dictionary stores
+  - Completed: May 5, 2026
 
 - [ ] **NLP Manager Refactor** (`NlpManager.kt`) — Large `TODO: this is a mess`. Cleanly separate concerns.
   - Split into NLPProviderRegistry, ProviderFactory, and per-provider managers
