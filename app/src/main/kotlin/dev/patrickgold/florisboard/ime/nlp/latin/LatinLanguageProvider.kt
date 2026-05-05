@@ -20,6 +20,7 @@ import android.content.Context
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
+import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrect
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -84,7 +85,6 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val dictionary = dictionary(subtype)
         LatinDictionarySuggester.englishPronounCorrection(
             rawWord = word,
-            normalizedWord = normalizedWord,
             dictionary = dictionary,
             languageCode = languageCode,
         )?.let { correction ->
@@ -330,7 +330,6 @@ internal object LatinDictionarySuggester {
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
         englishPronounCorrection(
             rawWord = rawWord,
-            normalizedWord = normalizedWord,
             dictionary = dictionary,
             languageCode = languageCode,
         )?.let { return listOf(it) }
@@ -409,18 +408,14 @@ internal object LatinDictionarySuggester {
 
     fun englishPronounCorrection(
         rawWord: String,
-        normalizedWord: String,
         dictionary: LatinDictionarySnapshot,
         languageCode: String,
     ): LatinSuggestion? {
         if (LatinDictionaryStore.normalizeLanguageCode(languageCode) != LatinDictionaryStore.DefaultLanguageCode) {
             return null
         }
-        val correction = EnglishPronounCorrections[normalizedWord] ?: return null
+        val correction = ImmediateAutocorrect.englishFirstPersonPronoun(rawWord, languageCode) ?: return null
         if (!dictionary.contains(correction.dictionaryWord)) return null
-
-        val typedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
-        if (typedWord.firstOrNull() != 'i' || typedWord == correction.text) return null
         return LatinSuggestion(
             text = correction.text,
             confidence = 1.0,
@@ -535,19 +530,4 @@ internal object LatinDictionarySuggester {
             else -> candidate
         }
     }
-
-    private data class EnglishPronounCorrection(
-        val dictionaryWord: String,
-        val text: String,
-    )
-
-    private val EnglishPronounCorrections = mapOf(
-        "i" to EnglishPronounCorrection("i", "I"),
-        "i'd" to EnglishPronounCorrection("i'd", "I'd"),
-        "i'll" to EnglishPronounCorrection("i'll", "I'll"),
-        "i'm" to EnglishPronounCorrection("i'm", "I'm"),
-        "im" to EnglishPronounCorrection("i'm", "I'm"),
-        "i've" to EnglishPronounCorrection("i've", "I've"),
-        "ive" to EnglishPronounCorrection("i've", "I've"),
-    )
 }
