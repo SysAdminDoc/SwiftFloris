@@ -154,6 +154,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Established performance baselines: >85% accuracy, <500ms latency, <5% false positives
 - Device testing pending (awaiting real-world data from users or test lab)
 
+**Progress Update** (2026-05-05):
+- Added `GlideTypingGestureLatencyProfileTest`, an instrumentation profile for the gesture detector path that logs min/p50/p95/max latency with device metadata.
+- Current attached-device baseline: Samsung SM-S938B, Android 16 / API 36, 1080x2340, 450 dpi, Qualcomm SM8750. Detector-only profile passed at p50=287us, p95=463us, max=529us.
+- Matrix completion remains blocked on access to 9+ additional Android devices across different SoCs, screen sizes, and DPIs; do not mark the 10-device compatibility criteria complete until real device accuracy data is collected.
+
 ---
 
 ### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs 🔄 IN PROGRESS
