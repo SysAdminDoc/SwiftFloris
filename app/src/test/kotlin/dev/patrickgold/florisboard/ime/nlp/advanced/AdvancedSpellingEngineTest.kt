@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.nlp.advanced
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.io.File
 
 class AdvancedSpellingEngineTest : FunSpec({
     val dictionary = setOf(
@@ -45,4 +46,18 @@ class AdvancedSpellingEngineTest : FunSpec({
         AdvancedSpellingEngine.generateCorrections("swft", dictionary, maxCount = 1) shouldBe listOf("swift")
         AdvancedSpellingEngine.generateCorrections("zzzzzz", dictionary, maxCount = 3) shouldBe emptyList()
     }
+
+    test("bundled English word list has production-size autocorrect coverage") {
+        val words = bundledEnglishDictionary().readLines()
+
+        (words.size >= 45_000) shouldBe true
+        setOf("autocorrect", "because", "dictionary", "keyboard", "conversation").all { it in words } shouldBe true
+    }
 })
+
+private fun bundledEnglishDictionary(): File {
+    return listOf(
+        File("src/main/assets/dictionaries/en.txt"),
+        File("app/src/main/assets/dictionaries/en.txt"),
+    ).first { it.isFile }
+}
