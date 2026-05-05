@@ -53,6 +53,7 @@ class VoiceInputManager(private val context: Context) {
     val error: StateFlow<VoiceError?> = _error
 
     private val commandParser = VoiceCommandParser()
+    private val fallbackHandler = VoiceCommandFallbackHandler(commandParser)
 
     fun initialize() {
         refreshAvailability()
@@ -131,6 +132,43 @@ class VoiceInputManager(private val context: Context) {
     ): VoiceCommandExecutionResult? {
         val match = detectCommand(spokenText, customCommands, minimumConfidence) ?: return null
         return VoiceCommandExecutor(actions).execute(match)
+    }
+
+    fun handleTranscript(
+        spokenText: String,
+        actions: VoiceCommandActions,
+        customCommands: VoiceCommandCustomCommands = VoiceCommandCustomCommands.Empty,
+    ): VoiceCommandTranscriptResult {
+        return fallbackHandler.handleTranscript(
+            spokenText = spokenText,
+            actions = actions,
+            customCommands = customCommands,
+        )
+    }
+
+    fun acceptSuggestedCommand(
+        suggestion: VoiceCommandSuggestion,
+        actions: VoiceCommandActions,
+    ): VoiceCommandExecutionResult {
+        return fallbackHandler.acceptSuggestion(suggestion, actions)
+    }
+
+    fun rejectSuggestedCommand(
+        suggestion: VoiceCommandSuggestion,
+        actions: VoiceCommandActions,
+    ): VoiceCommandTranscriptResult.InsertedText {
+        return fallbackHandler.rejectSuggestion(suggestion, actions)
+    }
+
+    fun handleError(error: VoiceError): VoiceCommandErrorHandlingResult {
+        val result = fallbackHandler.handleError(error)
+        _isListening.value = false
+        _error.value = error
+        _transcriptionState.value = result.transcriptionState
+        if (result.recovery == VoiceCommandErrorRecovery.NO_TRANSCRIPT) {
+            _recognizedText.value = ""
+        }
+        return result
     }
 
     fun destroy() {

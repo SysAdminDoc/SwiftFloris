@@ -51,6 +51,7 @@ class VoiceCommandExecutor(
 }
 
 interface VoiceCommandActions {
+    fun insertText(text: String): VoiceCommandActionResult
     fun deleteThat(): VoiceCommandActionResult
     fun undo(): VoiceCommandActionResult
     fun redo(): VoiceCommandActionResult
@@ -65,6 +66,10 @@ interface VoiceCommandActions {
 class EditorVoiceCommandActions(
     private val editor: EditorInstance,
 ) : VoiceCommandActions {
+    override fun insertText(text: String): VoiceCommandActionResult {
+        return editor.commitText(text).toVoiceCommandResult()
+    }
+
     override fun deleteThat(): VoiceCommandActionResult {
         val content = editor.activeContent
         if (

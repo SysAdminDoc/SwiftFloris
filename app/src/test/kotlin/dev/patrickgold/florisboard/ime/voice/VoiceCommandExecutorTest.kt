@@ -67,6 +67,7 @@ private class RecordingVoiceCommandActions(
 ) : VoiceCommandActions {
     val calls = mutableListOf<String>()
 
+    override fun insertText(text: String): VoiceCommandActionResult = record("insertText:$text")
     override fun deleteThat(): VoiceCommandActionResult = record("deleteThat")
     override fun undo(): VoiceCommandActionResult = record("undo")
     override fun redo(): VoiceCommandActionResult = record("redo")
