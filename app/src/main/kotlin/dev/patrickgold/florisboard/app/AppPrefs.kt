@@ -53,6 +53,7 @@ import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
+import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
 import dev.patrickgold.florisboard.ime.window.ImeWindowConfig
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.util.VersionName
@@ -221,6 +222,15 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val enableFlorisUserDictionary = boolean(
             key = "suggestion__enable_floris_user_dictionary",
             default = true,
+        )
+    }
+
+    val voice = Voice()
+    inner class Voice {
+        val customCommands = custom(
+            key = "voice__custom_commands",
+            default = VoiceCommandCustomCommands.Empty,
+            serializer = VoiceCommandCustomCommands.Serializer,
         )
     }
 

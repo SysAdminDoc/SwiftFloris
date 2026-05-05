@@ -99,7 +99,19 @@ class VoiceInputManager(private val context: Context) {
         spokenText: String,
         minimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
     ): VoiceCommandMatch? {
-        return commandParser.parse(spokenText, minimumConfidence)
+        return commandParser.parse(spokenText = spokenText, minimumConfidence = minimumConfidence)
+    }
+
+    fun detectCommand(
+        spokenText: String,
+        customCommands: VoiceCommandCustomCommands,
+        minimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
+    ): VoiceCommandMatch? {
+        return commandParser.parse(
+            spokenText = spokenText,
+            customCommands = customCommands,
+            minimumConfidence = minimumConfidence,
+        )
     }
 
     fun detectAndExecuteCommand(
@@ -108,6 +120,16 @@ class VoiceInputManager(private val context: Context) {
         minimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
     ): VoiceCommandExecutionResult? {
         val match = detectCommand(spokenText, minimumConfidence) ?: return null
+        return VoiceCommandExecutor(actions).execute(match)
+    }
+
+    fun detectAndExecuteCommand(
+        spokenText: String,
+        actions: VoiceCommandActions,
+        customCommands: VoiceCommandCustomCommands,
+        minimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
+    ): VoiceCommandExecutionResult? {
+        val match = detectCommand(spokenText, customCommands, minimumConfidence) ?: return null
         return VoiceCommandExecutor(actions).execute(match)
     }
 

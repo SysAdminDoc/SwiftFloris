@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.voice
 
+import kotlinx.serialization.Serializable
 import java.text.Normalizer
 import kotlin.math.max
 
@@ -25,6 +26,7 @@ class VoiceCommandParser(
 ) {
     fun parse(
         spokenText: String,
+        additionalCommands: List<VoiceCommandDefinition> = emptyList(),
         minimumConfidence: Double = defaultMinimumConfidence,
     ): VoiceCommandMatch? {
         val normalizedSpokenText = normalizeForMatching(spokenText)
@@ -32,26 +34,44 @@ class VoiceCommandParser(
             return null
         }
 
-        val bestMatch = commands
-            .flatMap { command ->
-                command.phrases.map { phrase ->
+        val bestMatch = (additionalCommands.map { CommandCandidate(command = it, priority = 1) } +
+            commands.map { CommandCandidate(command = it, priority = 0) })
+            .flatMap { candidate ->
+                candidate.command.phrases.map { phrase ->
                     val normalizedPhrase = normalizeForMatching(phrase)
-                    VoiceCommandMatch(
-                        action = command.action,
-                        spokenText = spokenText,
-                        matchedPhrase = command.canonicalPhrase,
-                        matchedAlias = phrase.takeUnless { it == command.canonicalPhrase },
-                        confidence = confidence(normalizedSpokenText, normalizedPhrase),
+                    MatchedCommandCandidate(
+                        priority = candidate.priority,
+                        match = VoiceCommandMatch(
+                            action = candidate.command.action,
+                            spokenText = spokenText,
+                            matchedPhrase = candidate.command.canonicalPhrase,
+                            matchedAlias = phrase.takeUnless { it == candidate.command.canonicalPhrase },
+                            confidence = confidence(normalizedSpokenText, normalizedPhrase),
+                        ),
                     )
                 }
             }
             .maxWithOrNull(
-                compareBy<VoiceCommandMatch> { it.confidence }
-                    .thenBy { it.matchedAlias == null }
-                    .thenBy { it.matchedPhrase.length },
+                compareBy<MatchedCommandCandidate> { it.match.confidence }
+                    .thenBy { it.priority }
+                    .thenBy { it.match.matchedAlias == null }
+                    .thenBy { it.match.matchedPhrase.length },
             )
+            ?.match
 
         return bestMatch?.takeIf { it.confidence >= minimumConfidence.coerceIn(0.0, 1.0) }
+    }
+
+    fun parse(
+        spokenText: String,
+        customCommands: VoiceCommandCustomCommands,
+        minimumConfidence: Double = defaultMinimumConfidence,
+    ): VoiceCommandMatch? {
+        return parse(
+            spokenText = spokenText,
+            additionalCommands = customCommands.enabledDefinitions(),
+            minimumConfidence = minimumConfidence,
+        )
     }
 
     internal fun normalizeForMatching(text: String): String {
@@ -115,6 +135,16 @@ class VoiceCommandParser(
         private val NonWordRegex = "[^a-z0-9\\s]".toRegex()
         private val WhitespaceRegex = "\\s+".toRegex()
     }
+
+    private data class CommandCandidate(
+        val command: VoiceCommandDefinition,
+        val priority: Int,
+    )
+
+    private data class MatchedCommandCandidate(
+        val match: VoiceCommandMatch,
+        val priority: Int,
+    )
 }
 
 data class VoiceCommandDefinition(
@@ -184,6 +214,7 @@ data class VoiceCommandMatch(
     val confidence: Double,
 )
 
+@Serializable
 enum class VoiceCommandAction {
     DELETE_THAT,
     UNDO,
