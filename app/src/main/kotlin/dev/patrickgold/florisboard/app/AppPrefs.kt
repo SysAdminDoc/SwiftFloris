@@ -367,6 +367,46 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "glide__sensitivity",
             default = 50,
         )
+        val enabledEnglish = boolean(
+            key = "glide__language_enabled_en",
+            default = true,
+        )
+        val enabledGerman = boolean(
+            key = "glide__language_enabled_de",
+            default = true,
+        )
+        val enabledSpanish = boolean(
+            key = "glide__language_enabled_es",
+            default = true,
+        )
+        val enabledFrench = boolean(
+            key = "glide__language_enabled_fr",
+            default = true,
+        )
+        val enabledItalian = boolean(
+            key = "glide__language_enabled_it",
+            default = true,
+        )
+        val enabledPortuguese = boolean(
+            key = "glide__language_enabled_pt",
+            default = true,
+        )
+
+        fun languagePreference(languageCode: String): PreferenceData<Boolean>? {
+            return when (languageCode) {
+                "en" -> enabledEnglish
+                "de" -> enabledGerman
+                "es" -> enabledSpanish
+                "fr" -> enabledFrench
+                "it" -> enabledItalian
+                "pt" -> enabledPortuguese
+                else -> null
+            }
+        }
+
+        fun isEnabledForSubtype(subtype: Subtype): Boolean {
+            return languagePreference(subtype.primaryLocale.language)?.get() ?: false
+        }
     }
 
     val inputFeedback = InputFeedback()

@@ -653,8 +653,11 @@
     <string name="pref__glide__show_preview__summary">Requires word suggestions to be enabled</string>
     <string name="pref__glide__immediate_backspace_deletes_word__label">Always delete word</string>
     <string name="pref__glide__immediate_backspace_deletes_word__summary">Pressing delete right after a glide deletes the whole word</string>
+    <string name="pref__glide__languages_title" comment="Preference group title">Swipe languages</string>
+    <string name="pref__glide__language_enabled__label" comment="Preference title">Enable swipe for {language}</string>
+    <string name="pref__glide__language_enabled__summary" comment="Preference summary">Use the bundled {language} dictionary for glide typing</string>
     <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Space bar and delete key gestures stay available even when glide typing is on.</string>
-    <string name="settings__gestures__glide_conflict_notice">General key swipes are paused while glide typing is enabled so swipe-to-type remains predictable.</string>
+    <string name="settings__gestures__glide_conflict_notice">General key swipes are paused for languages where glide typing is enabled so swipe-to-type remains predictable.</string>
     <string name="pref__gestures__general_title" comment="Preference group title">General gestures</string>
     <string name="pref__gestures__space_bar_title" comment="Preference group title">Space bar gestures</string>
     <string name="pref__gestures__other_title" comment="Preference group title">Delete key &amp; thresholds</string>

@@ -74,7 +74,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
      * Change the layout of the internal gesture classifier
      */
     fun setLayout(keys: List<TextKey>) {
-        if (keys.isNotEmpty()) {
+        if (keys.isNotEmpty() && prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype)) {
             glideTypingClassifier.setLayout(keys, subtypeManager.activeSubtype)
         }
     }
@@ -88,7 +88,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
      * were successfully set.
      */
     private fun updateSuggestionsAsync(maxSuggestionsToShow: Int, commit: Boolean, callback: (Boolean) -> Unit) {
-        if (!glideTypingClassifier.ready) {
+        if (!prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype) || !glideTypingClassifier.ready) {
             callback.invoke(false)
             return
         }

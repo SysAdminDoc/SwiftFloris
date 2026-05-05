@@ -237,10 +237,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - **Estimated effort**: 2–3 weeks
   - Completed: May 5, 2026
 
-- [ ] **Settings UI** — Let users enable/disable multi-language swipe per-language.
-  - Checkbox in GesturesScreen for each language: "Enable swipe for [Language]"
-  - Store preferences in AppPrefs
+- [x] **Settings UI** — Let users enable/disable multi-language swipe per-language.
+  - [x] Checkbox in GesturesScreen for each language: "Enable swipe for [Language]"
+  - [x] Store preferences in AppPrefs
   - **Estimated effort**: 1 week
+  - Completed: May 5, 2026
 
 - [ ] **Testing & documentation**:
   - Device testing: swipe accuracy in each language (with native speakers if possible)
@@ -286,6 +287,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Confirmed `StatisticalGlideTypingClassifier` already receives the active subtype from `GlideTypingManager`, loads word data through `NlpManager.getListOfWords(subtype)`, and scores candidates through `getFrequencyForWord(currentSubtype, word)`.
 - Scoped the classifier suggestion cache by subtype so identical swipe paths cannot reuse stale candidates after switching languages.
 - Added cache invalidation when layout data, word data, or the active gesture is cleared; English fallback remains centralized in `LatinLanguageProvider` dictionary loading.
+
+**Progress Update** (2026-05-05):
+- Added per-language glide typing preferences for English, German, Spanish, French, Italian, and Portuguese, all enabled by default.
+- Added a Swipe languages group to `GesturesScreen` with one switch per bundled gesture dictionary language.
+- Wired keyboard gesture activation and classifier layout setup to the active subtype's language preference, so disabling a language cleanly restores normal key swipe gestures for that subtype.
 
 ---
 
