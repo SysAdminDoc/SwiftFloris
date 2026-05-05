@@ -255,7 +255,10 @@ class FlorisImeService : LifecycleInputMethodService() {
             method.packageName == VoiceInputManager.FUTO_PACKAGE_NAME
         } ?: candidates.firstOrNull() ?: run {
             if (showFailureToast) {
-                showShortToastSync("No enabled voice input provider found")
+                val shown = voiceInputManager.showSetupDialog()
+                if (!shown) {
+                    showShortToastSync(R.string.voice_input_setup__open_failed)
+                }
             }
             return false
         }
