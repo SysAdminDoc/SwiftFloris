@@ -35,8 +35,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -59,6 +62,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -205,6 +210,7 @@ private fun ColumnScope.Step(
     val autoStepId by stepState.getCurrentAuto()
     val contentVisible = ownStepId == currentStepId
     val isAvailable = ownStepId <= autoStepId
+    val isCompleted = ownStepId < autoStepId && !contentVisible
     StepHeader(
         modifier = when {
             ownStepId <= autoStepId -> Modifier
@@ -217,6 +223,7 @@ private fun ColumnScope.Step(
         primaryColor = primaryColor,
         isCurrent = contentVisible,
         isAvailable = isAvailable,
+        isCompleted = isCompleted,
         step = index,
         title = title,
     )
@@ -270,6 +277,7 @@ private fun StepHeader(
     primaryColor: Color,
     isCurrent: Boolean,
     isAvailable: Boolean,
+    isCompleted: Boolean,
     step: Int,
     title: String,
 ) {
@@ -296,6 +304,7 @@ private fun StepHeader(
     }
     Row(
         modifier = modifier
+            .semantics { selected = isCurrent }
             .padding(vertical = StepHeaderPaddingVertical)
             .clip(MaterialTheme.shapes.small)
             .background(backgroundColor)
@@ -309,12 +318,23 @@ private fun StepHeader(
                 .clip(CircleShape)
                 .background(numberBackgroundColor),
         ) {
-            Text(
-                modifier = Modifier.align(Alignment.Center),
-                text = step.toString(),
-                style = MaterialTheme.typography.labelLarge,
-                color = numberContentColor,
-            )
+            if (isCompleted) {
+                Icon(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .size(18.dp),
+                    imageVector = Icons.Default.Check,
+                    contentDescription = null,
+                    tint = numberContentColor,
+                )
+            } else {
+                Text(
+                    modifier = Modifier.align(Alignment.Center),
+                    text = step.toString(),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = numberContentColor,
+                )
+            }
         }
 
         Row(

@@ -65,7 +65,7 @@ import org.florisboard.lib.compose.stringRes
 
 enum class ExtensionListScreenType(
     val id: String,
-    @StringRes val titleResId: Int,
+    @param:StringRes val titleResId: Int,
     val getExtensionIndex: (ExtensionManager) -> ExtensionManager.ExtensionIndex<*>,
     val launchExtensionCreate: ((NavController) -> Unit)?,
 ) {
@@ -87,6 +87,14 @@ enum class ExtensionListScreenType(
         getExtensionIndex = { it.languagePacks },
         launchExtensionCreate = null,//{ it.navigate(Routes.Ext.Edit("null", LanguagePackExtension.SERIAL_TYPE)) },
     );
+}
+
+private fun ExtensionListScreenType.importScreenType(): ExtensionImportScreenType {
+    return when (this) {
+        ExtensionListScreenType.EXT_THEME -> ExtensionImportScreenType.EXT_THEME
+        ExtensionListScreenType.EXT_KEYBOARD -> ExtensionImportScreenType.EXT_KEYBOARD
+        ExtensionListScreenType.EXT_LANGUAGEPACK -> ExtensionImportScreenType.EXT_LANGUAGEPACK
+    }
 }
 
 @Composable
@@ -129,6 +137,10 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                         icon = Icons.Default.Extension,
                         title = stringRes(R.string.ext__list__empty_title),
                         message = stringRes(R.string.ext__list__empty),
+                        actionLabel = stringRes(R.string.action__import),
+                        onAction = {
+                            navController.navigate(Routes.Ext.Import(type.importScreenType(), null))
+                        },
                     )
                 }
             }

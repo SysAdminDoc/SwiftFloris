@@ -34,6 +34,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.outlined.Warning
@@ -127,6 +128,16 @@ fun FlorisSimpleCard(
                         color = contentColor.copy(alpha = 0.72f),
                     )
                 }
+            }
+            if (onClick != null) {
+                Icon(
+                    modifier = Modifier
+                        .padding(start = 12.dp)
+                        .size(20.dp),
+                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                    contentDescription = null,
+                    tint = contentColor.copy(alpha = 0.72f),
+                )
             }
         }
     }
