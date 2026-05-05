@@ -16,6 +16,18 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after cleanup batches: 259 warnings, 0 hints. Largest remaining bucket is `UnusedResources`.
+- Current compile-warning focus: touched backup/restore deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in other user-facing import/export, dictionary, theme, language pack, devtools, keyboard, and clipboard surfaces.
+
+## Current Improvement Assessment
+
+- Keyboard correctness is the highest-risk product surface. Autocorrect, backspace rejection, punctuation commits, phantom spacing, glide delete, and hardware keyboard paths need explicit contracts plus JVM coverage.
+- Backup, restore, extension, language pack, dictionary, and theme workflows are trust-sensitive. They need clear busy states, specific errors, recovery copy, duplicate-action blocking, and post-action confirmation.
+- Settings are feature-rich and need stronger information architecture: clearer section summaries, consistent secondary text, better empty states, and predictable destructive confirmations.
+- The keyboard surface needs a dedicated accessibility and polish pass for candidate row semantics, smartbar controls, touch targets, contrast, and state labels.
+- Lint signal is improving, but `UnusedResources` still hides real regressions. Resource cleanup must be conservative because dynamic lookup and build variants are likely.
+- Compile warnings show older synchronous feedback APIs in several UI surfaces. Replacing them with coroutine-safe feedback removes UI-thread risk and improves consistency.
+- CI and release verification should match the local path: lint, unit tests, assemble, optional adb install/launch, lint-baseline drift, and dependency review.
+- Performance quality is currently under-instrumented. Keyboard cold start, first render, first suggestion latency, dictionary load, candidate recomposition, and backup/restore durations need repeatable measurements.
 
 ## Priority Model
 
@@ -29,6 +41,8 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: First lint cleanup batch removed invalid manifest alias attributes, closed a Han suggestion cursor, resolved Compose naming warnings, and cleared efficiency hints for integer state and zero-filled arrays.
 - 2026-05-05: Second lint cleanup batch migrated simple URI/preference calls to KTX APIs, fixed a translated crash-report format mismatch, normalized reported ellipses, and corrected high-confidence German, Portuguese, and Spanish translation typos. Remaining typo warnings are intentional Turkish repeated-word phrases.
 - 2026-05-05: Third lint cleanup batch added translation-safe `many` plural fallbacks for affected Catalan, French, Italian, Portuguese, Brazilian Portuguese, and Spanish unit strings.
+- 2026-05-05: Expanded this plan into a broader product-quality tracker covering keyboard correctness, UX polish, accessibility, trust states, localization, privacy, performance, CI, and release hygiene.
+- 2026-05-05: Began build-warning hygiene by moving backup/restore success and failure feedback off deprecated synchronous toast calls.
 
 ## Workstreams
 
@@ -121,12 +135,13 @@ Acceptance criteria:
 
 ### 5. User-Facing Trust States
 
-Status: Planned
+Status: In progress
 Priority: P1
 
 Goal: Make high-risk workflows communicate clearly, recover gracefully, and avoid silent failure.
 
 Tasks:
+- [x] Start replacing deprecated synchronous toast feedback in backup/restore flows with coroutine-safe feedback.
 - [ ] Audit backup flow for loading, success, warning, failure, and cancellation states.
 - [ ] Audit restore flow for destructive confirmation, progress, partial failure, and recovery copy.
 - [ ] Audit language pack import/update/remove states.
@@ -223,13 +238,137 @@ Acceptance criteria:
 - Each commit has a clear purpose and matching verification.
 - Project state can be resumed from this plan.
 
+### 10. Product UX and Visual Polish
+
+Status: Planned
+Priority: P1
+
+Goal: Make settings, onboarding, dialogs, and keyboard-adjacent UI feel more coherent, modern, calm, and easier to scan.
+
+Tasks:
+- [ ] Audit first-run/setup flow for orientation, progress, permission clarity, IME enablement, and final success state.
+- [ ] Audit settings landing page hierarchy, section naming, secondary text, and action discoverability.
+- [ ] Normalize screen-level spacing, section density, and button placement across settings screens.
+- [ ] Normalize dialog, bottom-bar, empty-state, warning, error, and info-card copy.
+- [ ] Review primary/secondary/destructive action treatment across backup, restore, extension, theme, language pack, and dictionary flows.
+- [ ] Add consistent loading/skeleton or progress affordances where files, extensions, or language packs are being scanned.
+- [ ] Improve empty states for dictionary, extension lists, language packs, clipboard, and theme lists.
+- [ ] Review keyboard preview field placement and state feedback in settings screens.
+- [ ] Create a visual QA checklist for phone portrait, phone landscape, compact mode, floating mode, dark theme, and high font scale.
+
+Acceptance criteria:
+- Main settings flows use consistent hierarchy, labels, and action placement.
+- Empty and error states explain what happened and what the user can do next.
+- Visual QA notes identify remaining large design changes before they are attempted.
+
+### 11. Keyboard Surface Polish
+
+Status: Planned
+Priority: P0
+
+Goal: Make the typing surface feel predictable, accessible, and intentional.
+
+Tasks:
+- [ ] Audit candidate row visual hierarchy, selection, pressed, disabled, and correction states.
+- [ ] Audit smartbar action ordering, icon semantics, overflow behavior, and long-label resilience.
+- [ ] Audit software-key pressed/held/disabled/gesture states.
+- [ ] Audit one-handed, floating, split, compact, landscape, and tablet layouts.
+- [ ] Audit autocorrect toggle behavior; replace placeholder feedback with a completed or hidden affordance.
+- [ ] Verify manual correction override behavior in real input fields after the autocorrect fix.
+- [ ] Add QA scripts for candidate accept/reject, punctuation commit, enter, delete, and hardware keyboard input.
+
+Acceptance criteria:
+- Keyboard actions provide clear feedback without surprising text mutation.
+- Layout variants maintain touch targets, readability, and stable alignment.
+- Placeholder or unfinished controls are removed or completed.
+
+### 12. Localization and Content Quality
+
+Status: In progress
+Priority: P1
+
+Goal: Keep user-facing language clear while avoiding risky translation churn.
+
+Tasks:
+- [x] Fix high-confidence format, ellipsis, typo, and plural lint issues.
+- [ ] Review remaining Turkish repeated-word lint warnings with a native-language-safe approach before changing them.
+- [ ] Check top-level English source strings for vague, abrupt, or overly technical labels.
+- [ ] Standardize backup/restore/import/export failure copy around cause and recovery.
+- [ ] Standardize destructive confirmation copy.
+- [ ] Document translation-safe rules for future resource cleanup.
+
+Acceptance criteria:
+- Text changes preserve placeholders and meaning.
+- Risky translation changes are documented or deferred.
+- Core recovery messages are specific enough to guide action.
+
+### 13. Privacy, Safety, and Data Integrity
+
+Status: Planned
+Priority: P0
+
+Goal: Make sensitive keyboard data, backups, dictionaries, clipboard data, and extensions safer to manage.
+
+Tasks:
+- [ ] Audit backup contents selection and labels for privacy clarity.
+- [ ] Audit restore overwrite/merge behavior and confirm destructive impact before execution.
+- [ ] Audit clipboard backup/restore media handling for missing-file and path-safety cases.
+- [ ] Audit dictionary import/export for malformed files and duplicate handling.
+- [ ] Audit extension import for path traversal, duplicate IDs, invalid manifests, and recovery.
+- [ ] Audit incognito mode persistence and suggestion suppression semantics.
+- [ ] Add tests around backup/restore path safety and import validation.
+
+Acceptance criteria:
+- Destructive or privacy-sensitive operations are explicit and reversible where feasible.
+- Invalid archives/files fail with specific messages and no partial corruption.
+- Import/export code has focused tests for path and validation failures.
+
+### 14. Build Warning and Dependency Hygiene
+
+Status: In progress
+Priority: P1
+
+Goal: Reduce compile and dependency noise without destabilizing the app.
+
+Tasks:
+- [ ] Replace deprecated synchronous toast calls in user-facing Compose screens where coroutine scope is available.
+- [x] Replace deprecated synchronous toast calls in backup/restore screens.
+- [ ] Review Room nullable DAO warning and either fix the type or document why it is intentional.
+- [ ] Review Kotlin compiler flags and remove stale flags only when language-version behavior is confirmed.
+- [ ] Review dependency update warnings separately from product changes.
+- [ ] Add a dependency-review note before any version bump.
+
+Acceptance criteria:
+- Compile output gets quieter without broad suppressions.
+- Dependency changes are isolated and easy to revert.
+- User-facing behavior remains unchanged unless explicitly intended.
+
+### 15. Manual QA and Release Evidence
+
+Status: Planned
+Priority: P1
+
+Goal: Make repeated quality passes verifiable by future runs.
+
+Tasks:
+- [ ] Add a manual QA checklist for setup, settings navigation, typing, backup/restore, extensions, themes, language packs, dictionary, and clipboard.
+- [ ] Add adb commands for settings launch, crash-buffer capture, and keyboard smoke where possible.
+- [ ] Add expected lint/test/build commands and success criteria.
+- [ ] Track known device coverage and gaps.
+- [ ] Add before/after measurement slots for performance and interaction polish work.
+
+Acceptance criteria:
+- A future agent can repeat the same smoke checks without rediscovering commands.
+- Release readiness is based on concrete evidence rather than visual inspection alone.
+
 ## Suggested Build Order
 
-1. Finish first lint cleanup batch.
+1. Continue warning cleanup in user-facing feedback flows, starting with backup/restore synchronous toast removal.
 2. Add input behavior contract and extend autocorrect tests.
 3. Extract punctuation/phantom-space rules into pure testable classes.
 4. Audit and harden backup/restore trust states.
-5. Add accessibility checklist and fix obvious semantic/touch-target gaps.
-6. Add performance notes and first-suggestion/cold-start measurement workflow.
-7. Tighten CI gates after local checks are stable.
-8. Continue resource cleanup once lint signal is cleaner.
+5. Add product UX and accessibility checklist with concrete screen coverage.
+6. Fix obvious semantic/touch-target gaps found by that checklist.
+7. Add performance notes and first-suggestion/cold-start measurement workflow.
+8. Tighten CI gates after local checks are stable.
+9. Continue conservative resource cleanup once lint signal is cleaner.

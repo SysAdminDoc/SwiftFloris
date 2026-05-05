@@ -61,7 +61,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.android.showLongToast
-import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
@@ -146,7 +145,7 @@ fun RestoreScreen() = FlorisScreen {
                 }.onSuccess { workspace ->
                     restoreWorkspace = workspace
                 }.onFailure { error ->
-                    context.showLongToastSync(
+                    context.showLongToast(
                         R.string.backup_and_restore__restore__failure,
                         "error_message" to error.localizedMessage,
                     )
@@ -311,10 +310,12 @@ fun RestoreScreen() = FlorisScreen {
                 runCatching {
                     restoreDataFromFileSystemLauncher.launch("*/*")
                 }.onFailure { error ->
-                    context.showLongToastSync(
-                        R.string.backup_and_restore__restore__failure,
-                        "error_message" to error.localizedMessage,
-                    )
+                    restoreScope.launch {
+                        context.showLongToast(
+                            R.string.backup_and_restore__restore__failure,
+                            "error_message" to error.localizedMessage,
+                        )
+                    }
                 }
             },
             modifier = Modifier
