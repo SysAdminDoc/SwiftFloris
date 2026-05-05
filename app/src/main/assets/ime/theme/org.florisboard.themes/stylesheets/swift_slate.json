@@ -494,12 +494,5 @@
   "subtype-panel-list-item-text": {
     "text-max-lines": "1",
     "text-overflow": "ellipsis"
-  },
-
-  "voice-input-button": {
-    "background": "var(--primary)",
-    "foreground": "var(--on-primary)",
-    "shape": "circle()",
-    "shadow-elevation": "4dp"
   }
 }
