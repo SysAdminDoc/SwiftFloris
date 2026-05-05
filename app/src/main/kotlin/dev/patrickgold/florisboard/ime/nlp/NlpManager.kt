@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.core.Subtype
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
@@ -57,6 +58,7 @@ class NlpManager(context: Context) {
     private val blankStrRegex = Regex(BLANK_STR_PATTERN)
 
     private val prefs by FlorisPreferenceStore
+    private val dictionaryManager = DictionaryManager.default()
     private val clipboardManager by context.clipboardManager()
     private val editorInstance by context.editorInstance()
     private val keyboardManager by context.keyboardManager()
@@ -110,6 +112,12 @@ class NlpManager(context: Context) {
         }
         prefs.emoji.suggestionEnabled.asFlow().collectLatestIn(scope) {
             assembleCandidates()
+        }
+        prefs.dictionary.enableFlorisUserDictionary.asFlow().collectLatestIn(scope) {
+            onUserDictionaryConfigurationChanged()
+        }
+        prefs.dictionary.enableSystemUserDictionary.asFlow().collectLatestIn(scope) {
+            onUserDictionaryConfigurationChanged()
         }
         subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
             preload(subtype)
@@ -171,6 +179,12 @@ class NlpManager(context: Context) {
         followingWords: List<String>,
         maxSuggestionCount: Int,
     ): SpellingResult {
+        if (prefs.spelling.useUdmEntries.get()) {
+            ensureUserDictionariesLoaded()
+            if (dictionaryManager.isKnownUserDictionaryWord(word, subtype.primaryLocale)) {
+                return SpellingResult.validWord()
+            }
+        }
         return getSpellingProvider(subtype).spell(
             subtype = subtype,
             word = word,
@@ -222,7 +236,17 @@ class NlpManager(context: Context) {
                 else -> emptyList()
             }
             val suggestionProvider = getSuggestionProvider(subtype)
-            val suggestions = if (prefs.suggestion.enabled.get() || suggestionProvider.forcesSuggestionOn) {
+            val suggestionsEnabled = prefs.suggestion.enabled.get() || suggestionProvider.forcesSuggestionOn
+            val userDictionarySuggestions = if (suggestionsEnabled) {
+                userDictionarySuggestions(
+                    subtype = subtype,
+                    content = content,
+                    maxCandidateCount = 8,
+                )
+            } else {
+                emptyList()
+            }
+            val suggestions = if (suggestionsEnabled) {
                 suggestionProvider.suggest(
                     subtype = subtype,
                     content = content,
@@ -237,7 +261,7 @@ class NlpManager(context: Context) {
                 if (internalSuggestions.first < requestId) {
                     internalSuggestions = requestId to buildList {
                         addAll(emojiSuggestions)
-                        addAll(suggestions)
+                        addAll(mergeWordSuggestions(userDictionarySuggestions, suggestions, maxCandidateCount = 8))
                     }
                 }
             }
@@ -327,6 +351,52 @@ class NlpManager(context: Context) {
             // Use blocking only for first-time fetch; results are cached afterward
             runBlocking { getSuggestionProvider(subtype).getFrequencyForWord(subtype, word) }
         }
+    }
+
+    private fun userDictionarySuggestions(
+        subtype: Subtype,
+        content: EditorContent,
+        maxCandidateCount: Int,
+    ): List<SuggestionCandidate> {
+        val currentWord = content.currentWordText.ifBlank { content.composingText }
+        if (maxCandidateCount <= 0 || currentWord.isBlank()) {
+            return emptyList()
+        }
+        ensureUserDictionariesLoaded()
+        return dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
+    }
+
+    private fun mergeWordSuggestions(
+        preferred: List<SuggestionCandidate>,
+        fallback: List<SuggestionCandidate>,
+        maxCandidateCount: Int,
+    ): List<SuggestionCandidate> {
+        if (maxCandidateCount <= 0) {
+            return emptyList()
+        }
+        val seen = mutableSetOf<String>()
+        return buildList {
+            for (candidate in preferred + fallback) {
+                val key = candidate.text.toString().lowercase()
+                if (key.isNotBlank() && seen.add(key)) {
+                    add(candidate)
+                    if (size >= maxCandidateCount) {
+                        break
+                    }
+                }
+            }
+        }
+    }
+
+    private fun onUserDictionaryConfigurationChanged() {
+        ensureUserDictionariesLoaded()
+        wordsListCache.clear()
+        frequencyCache.clear()
+        assembleCandidates()
+    }
+
+    private fun ensureUserDictionariesLoaded() {
+        dictionaryManager.loadUserDictionariesIfNecessary()
     }
 
     private fun assembleCandidates() {

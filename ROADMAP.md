@@ -93,11 +93,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 **Why**: 40+ TODOs scattered across codebase (from FlorisBoard legacy). Blocks architecture clarity.
 
 **What**:
-- [ ] **User Dictionary** (`UserDictionary.kt`) — Currently stubbed `TODO("Not yet implemented")`. Implement CRUD for custom words.
-  - Add/remove words from app settings
-  - Persist to Room database
-  - Integrate with spell checker (prefer user dict over system)
-  - Estimated effort: 2 weeks
+- [x] **User Dictionary** (`UserDictionary.kt`) — Custom word CRUD, persistence, and NLP integration.
+  - [x] Add/remove words from app settings
+  - [x] Persist to Room database
+  - [x] Integrate with spell checker and suggestions, preferring SwiftFloris entries over system entries
+  - Completed: May 5, 2026
   
 - [ ] **Dictionary Manager** (`DictionaryManager.kt`) — Document and clean up manager API. 
   - Clarify loading order (system → downloadable → user)

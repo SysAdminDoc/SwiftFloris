@@ -25,7 +25,10 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import java.lang.ref.WeakReference
 
 /**
- * TODO: document
+ * Coordinates SwiftFloris' internal user dictionary and the platform user dictionary.
+ *
+ * The internal dictionary is queried before the system dictionary so words explicitly managed inside SwiftFloris win
+ * over platform entries when both stores contain the same suggestion.
  */
 class DictionaryManager private constructor(context: Context) {
     private val applicationContext: WeakReference<Context> = WeakReference(context.applicationContext ?: context)
@@ -56,56 +59,59 @@ class DictionaryManager private constructor(context: Context) {
     }
 
     fun queryUserDictionary(word: String, locale: FlorisLocale): List<SuggestionCandidate> {
+        val query = word.trim()
+        if (query.isBlank()) {
+            return emptyList()
+        }
+
         val florisDao = florisUserDictionaryDao()
         val systemDao = systemUserDictionaryDao()
         if (florisDao == null && systemDao == null) {
             return emptyList()
         }
-        return buildList {
-            if (prefs.dictionary.enableFlorisUserDictionary.get()) {
-                florisDao?.query(word, locale)?.let {
-                    for (entry in it) {
-                        add(WordSuggestionCandidate(entry.word, confidence = entry.freq / 255.0))
-                    }
-                }
-                florisDao?.queryShortcut(word, locale)?.let {
-                    for (entry in it) {
-                        add(WordSuggestionCandidate(entry.word, confidence = entry.freq / 255.0))
-                    }
-                }
+
+        val candidates = buildList {
+            if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
+                addAll(florisDao.queryCandidates(query, locale, sourcePriority = 0))
             }
-            if (prefs.dictionary.enableSystemUserDictionary.get()) {
-                systemDao?.query(word, locale)?.let {
-                    for (entry in it) {
-                        add(WordSuggestionCandidate(entry.word, confidence = entry.freq / 255.0))
-                    }
-                }
-                systemDao?.queryShortcut(word, locale)?.let {
-                    for (entry in it) {
-                        add(WordSuggestionCandidate(entry.word, confidence = entry.freq / 255.0))
-                    }
-                }
+            if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
+                addAll(systemDao.queryCandidates(query, locale, sourcePriority = 1))
             }
         }
 
+        return rankUserDictionaryCandidates(query, candidates).map { entry ->
+            WordSuggestionCandidate(
+                text = entry.word,
+                confidence = (entry.freq.coerceIn(0, 255) / 255.0).coerceIn(0.0, 1.0),
+                isEligibleForUserRemoval = false,
+            )
+        }
     }
 
-    fun spell(word: String, locale: FlorisLocale): Boolean {
+    fun isKnownUserDictionaryWord(word: String, locale: FlorisLocale): Boolean {
+        val query = word.trim()
+        if (query.isBlank()) {
+            return false
+        }
+
         val florisDao = florisUserDictionaryDao()
         val systemDao = systemUserDictionaryDao()
         if (florisDao == null && systemDao == null) {
             return false
         }
-        var ret = false
+
         if (prefs.dictionary.enableFlorisUserDictionary.get()) {
-            ret = ret || florisDao?.queryExactFuzzyLocale(word, locale)?.isNotEmpty() ?: false
-            ret = ret || florisDao?.queryShortcut(word, locale)?.isNotEmpty() ?: false
+            if (florisDao?.containsWordOrShortcut(query, locale) == true) {
+                return true
+            }
         }
         if (prefs.dictionary.enableSystemUserDictionary.get()) {
-            ret = ret || systemDao?.queryExactFuzzyLocale(word, locale)?.isNotEmpty() ?: false
-            ret = ret || systemDao?.queryShortcut(word, locale)?.isNotEmpty() ?: false
+            if (systemDao?.containsWordOrShortcut(query, locale) == true) {
+                return true
+            }
         }
-        return ret
+
+        return false
     }
 
     @Synchronized
@@ -170,4 +176,80 @@ class DictionaryManager private constructor(context: Context) {
             systemUserDictionaryDatabase = null
         }
     }
+
+    private fun UserDictionaryDao.queryCandidates(
+        query: String,
+        locale: FlorisLocale,
+        sourcePriority: Int,
+    ): List<UserDictionaryCandidate> {
+        val shortcutCandidates = queryShortcut(query, locale).map { entry ->
+            UserDictionaryCandidate(
+                entry = entry,
+                sourcePriority = sourcePriority,
+                matchPriority = 0,
+            )
+        }
+        val wordCandidates = query(query, locale).map { entry ->
+            UserDictionaryCandidate(
+                entry = entry,
+                sourcePriority = sourcePriority,
+                matchPriority = if (entry.word.startsWith(query, ignoreCase = true)) 1 else 2,
+            )
+        }
+        return shortcutCandidates + wordCandidates
+    }
+
+    private fun UserDictionaryDao.containsWordOrShortcut(word: String, locale: FlorisLocale): Boolean {
+        if (queryExactFuzzyLocale(word, locale).any { it.word.equals(word, ignoreCase = true) }) {
+            return true
+        }
+        val lowercaseWord = word.lowercase()
+        if (lowercaseWord != word && queryExactFuzzyLocale(lowercaseWord, locale).any {
+                it.word.equals(word, ignoreCase = true)
+            }
+        ) {
+            return true
+        }
+        if (queryShortcut(word, locale).any { it.shortcut.equals(word, ignoreCase = true) }) {
+            return true
+        }
+        return query(word, locale).any { entry ->
+            entry.word.equals(word, ignoreCase = true) ||
+                entry.shortcut.equals(word, ignoreCase = true)
+        }
+    }
+}
+
+internal data class UserDictionaryCandidate(
+    val entry: UserDictionaryEntry,
+    val sourcePriority: Int,
+    val matchPriority: Int,
+)
+
+internal fun rankUserDictionaryCandidates(
+    query: String,
+    candidates: List<UserDictionaryCandidate>,
+): List<UserDictionaryEntry> {
+    val normalizedQuery = query.trim()
+    if (normalizedQuery.isBlank()) {
+        return emptyList()
+    }
+
+    return candidates
+        .asSequence()
+        .filter { it.entry.word.isNotBlank() }
+        .filterNot { candidate ->
+            candidate.entry.word.equals(normalizedQuery, ignoreCase = true) &&
+                !candidate.entry.shortcut.equals(normalizedQuery, ignoreCase = true)
+        }
+        .sortedWith(
+            compareBy<UserDictionaryCandidate> { it.sourcePriority }
+                .thenBy { it.matchPriority }
+                .thenByDescending { it.entry.freq }
+                .thenBy { it.entry.word.length }
+                .thenBy { it.entry.word.lowercase() }
+        )
+        .distinctBy { it.entry.word.lowercase() }
+        .map { it.entry }
+        .toList()
 }
