@@ -100,7 +100,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         /**
          * For multiple subtypes, the pruner is cached.
          */
-        private const val PRUNER_CACHE_SIZE = 5
+        private const val PRUNER_CACHE_SIZE = 6
     }
 
     override fun addGesturePoint(position: GlideTypingGesture.Detector.Position) {
