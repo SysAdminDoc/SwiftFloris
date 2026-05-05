@@ -62,6 +62,15 @@ class NlpManager(context: Context) {
     private val clipboardSuggestionProvider = ClipboardSuggestionProvider(context)
     private val emojiSuggestionProvider = EmojiSuggestionProvider(context)
     private val providerRegistry = NlpProviderRegistry(context)
+    private val candidateAssembler = NlpCandidateAssembler(
+        clipboardSuggestionProvider = clipboardSuggestionProvider,
+        editorInstance = editorInstance,
+        keyboardManager = keyboardManager,
+    )
+    private val smartbarAutoExpandController = SmartbarAutoExpandController(
+        editorInstance = editorInstance,
+        scope = scope,
+    )
     
     // Caches for word lists and frequencies to avoid blocking on repeated calls
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
@@ -223,7 +232,11 @@ class NlpManager(context: Context) {
                 if (internalSuggestions.first < requestId) {
                     internalSuggestions = requestId to buildList {
                         addAll(emojiSuggestions)
-                        addAll(mergeWordSuggestions(userDictionarySuggestions, suggestions, maxCandidateCount = 8))
+                        addAll(SuggestionCandidateMerger.mergePreferred(
+                            preferred = userDictionarySuggestions,
+                            fallback = suggestions,
+                            maxCandidateCount = 8,
+                        ))
                     }
                 }
             }
@@ -327,28 +340,6 @@ class NlpManager(context: Context) {
         return dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
     }
 
-    private fun mergeWordSuggestions(
-        preferred: List<SuggestionCandidate>,
-        fallback: List<SuggestionCandidate>,
-        maxCandidateCount: Int,
-    ): List<SuggestionCandidate> {
-        if (maxCandidateCount <= 0) {
-            return emptyList()
-        }
-        val seen = mutableSetOf<String>()
-        return buildList {
-            for (candidate in preferred + fallback) {
-                val key = candidate.text.toString().lowercase()
-                if (key.isNotBlank() && seen.add(key)) {
-                    add(candidate)
-                    if (size >= maxCandidateCount) {
-                        break
-                    }
-                }
-            }
-        }
-    }
-
     private fun onUserDictionaryConfigurationChanged() {
         dictionaryManager.syncUserDictionaryStoresWithPreferences()
         wordsListCache.clear()
@@ -358,51 +349,20 @@ class NlpManager(context: Context) {
 
     private fun assembleCandidates() {
         scope.launch {
-            val candidates = when {
-                isSuggestionOn() -> {
-                    buildList {
-                        // Clipboard suggestions first
-                        addAll(
-                            clipboardSuggestionProvider.suggest(
-                                subtype = Subtype.DEFAULT,
-                                content = editorInstance.activeContent,
-                                maxCandidateCount = 8,
-                                allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
-                                isPrivateSession = keyboardManager.activeState.isIncognitoMode,
-                            )
-                        )
-                        // Then add spell + emoji suggestions from internalSuggestions
-                        internalSuggestionsGuard.withLock {
-                            addAll(internalSuggestions.second)
-                        }
-                    }
-                }
-                else -> emptyList()
+            val suggestions = internalSuggestionsGuard.withLock {
+                internalSuggestions.second
             }
+            val candidates = candidateAssembler.assemble(
+                isSuggestionOn = isSuggestionOn(),
+                internalSuggestions = suggestions,
+            )
             activeCandidates = candidates
             autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)
         }
     }
 
     fun autoExpandCollapseSmartbarActions(list1: List<*>?, list2: List<*>?) {
-        if (!prefs.smartbar.enabled.get()) {// || !prefs.smartbar.sharedActionsAutoExpandCollapse.get()) {
-            return
-        }
-        // TODO: this is a mess and needs to be cleaned up in v0.5 with the NLP development
-        /*if (keyboardManager.inputEventDispatcher.isRepeatableCodeLastDown()
-            && !keyboardManager.inputEventDispatcher.isPressed(KeyCode.DELETE)
-            && !keyboardManager.inputEventDispatcher.isPressed(KeyCode.FORWARD_DELETE)
-            || keyboardManager.activeState.isActionsOverflowVisible
-        ) {
-            return // We do not auto switch if a repeatable action key was last pressed or if the actions overflow
-                   // menu is visible to prevent annoying UI changes
-        }*/
-        val isSelection = editorInstance.activeContent.selection.isSelectionMode
-        val isExpanded = list1.isNullOrEmpty() && list2.isNullOrEmpty() || isSelection
-        scope.launch {
-            prefs.smartbar.sharedActionsExpandWithAnimation.set(false)
-            prefs.smartbar.sharedActionsExpanded.set(isExpanded)
-        }
+        smartbarAutoExpandController.onCandidateStateChanged(list1, list2)
     }
 
     fun addToDebugOverlay(word: String, info: SpellingResult) {
