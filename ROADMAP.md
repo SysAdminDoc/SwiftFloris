@@ -177,7 +177,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - [x] Implement language pack selection UI in settings
 - [x] Robust permission handling (denial, revocation, re-granting)
 - [x] Measure voice button preflight latency on available local targets
-- [ ] Complete FUTO troubleshooting guide
+- [x] Complete FUTO troubleshooting guide
 
 **Effort**: 2–3 weeks (→ v1.5.0)  
 **Risk**: Low; mostly UX / error handling.  
@@ -201,6 +201,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Samsung SM-S938B baseline: Android 16 / API 36, FUTO installed/enabled, microphone granted. Preflight profile passed at p50=798us, p95=1131us, max=1261us.
 - Medium_Phone_API_36.1 emulator baseline: Android API 36, x86_64, 1080x2400, 420 dpi. Preflight profile passed at p50=4069us, p95=8221us, max=12239us.
 - The original three-device voice latency requirement was narrowed to the owned phone plus local emulator because no additional physical devices are available in this project environment.
+- Added `FUTO_VOICE_INPUT_TROUBLESHOOTING.md` with user recovery paths for install, enablement, microphone permission, language/model selection, wrong-provider handoff, no-insertion cases, latency expectations, and maintainer diagnostics.
 
 ---
 
