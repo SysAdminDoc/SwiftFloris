@@ -53,6 +53,7 @@ import org.florisboard.lib.compose.stringRes
 enum class VoiceInputSetupReason {
     FUTO_NOT_INSTALLED,
     FUTO_NOT_ENABLED,
+    FUTO_MIC_PERMISSION_DENIED,
     NO_ENABLED_PROVIDER,
 }
 
@@ -108,6 +109,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
                     VoiceSetupDialog(
                         reason = reason,
                         onOpenKeyboardSettings = ::openKeyboardSettings,
+                        onOpenFutoAppSettings = ::openFutoAppSettings,
                         onOpenFdroid = { openUrl(VoiceInputManager.FUTO_FDROID_URL) },
                         onOpenReleases = { openUrl(VoiceInputManager.FUTO_RELEASES_URL) },
                         onDismiss = ::finish,
@@ -121,6 +123,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
     private fun VoiceSetupDialog(
         reason: VoiceInputSetupReason,
         onOpenKeyboardSettings: () -> Unit,
+        onOpenFutoAppSettings: () -> Unit,
         onOpenFdroid: () -> Unit,
         onOpenReleases: () -> Unit,
         onDismiss: () -> Unit,
@@ -141,11 +144,30 @@ class VoiceInputSetupActivity : ComponentActivity() {
                     ) {
                         FilledTonalButton(
                             modifier = Modifier.fillMaxWidth(),
-                            onClick = onOpenKeyboardSettings,
+                            onClick = if (reason == VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED) {
+                                onOpenFutoAppSettings
+                            } else {
+                                onOpenKeyboardSettings
+                            },
                         ) {
-                            Text(text = stringRes(R.string.voice_input_setup__open_keyboard_settings))
+                            Text(
+                                text = stringRes(
+                                    if (reason == VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED) {
+                                        R.string.voice_input_setup__open_futo_permissions
+                                    } else {
+                                        R.string.voice_input_setup__open_keyboard_settings
+                                    },
+                                ),
+                            )
                         }
-                        if (reason != VoiceInputSetupReason.FUTO_NOT_ENABLED) {
+                        if (reason == VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED) {
+                            OutlinedButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                onClick = onOpenKeyboardSettings,
+                            ) {
+                                Text(text = stringRes(R.string.voice_input_setup__open_keyboard_settings))
+                            }
+                        } else if (reason != VoiceInputSetupReason.FUTO_NOT_ENABLED) {
                             OutlinedButton(
                                 modifier = Modifier.fillMaxWidth(),
                                 onClick = onOpenFdroid,
@@ -177,6 +199,15 @@ class VoiceInputSetupActivity : ComponentActivity() {
         openIntent(Intent(Settings.ACTION_INPUT_METHOD_SETTINGS))
     }
 
+    private fun openFutoAppSettings() {
+        openIntent(
+            Intent(
+                Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                "package:${VoiceInputManager.FUTO_PACKAGE_NAME}".toUri(),
+            ),
+        )
+    }
+
     private fun openUrl(url: String) {
         openIntent(Intent(Intent.ACTION_VIEW, url.toUri()))
     }
@@ -197,5 +228,6 @@ private val VoiceInputSetupReason.messageRes: Int
     get() = when (this) {
         VoiceInputSetupReason.FUTO_NOT_INSTALLED -> R.string.voice_input_setup__not_installed_message
         VoiceInputSetupReason.FUTO_NOT_ENABLED -> R.string.voice_input_setup__not_enabled_message
+        VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED -> R.string.voice_input_setup__mic_permission_message
         VoiceInputSetupReason.NO_ENABLED_PROVIDER -> R.string.voice_input_setup__no_provider_message
     }

@@ -55,6 +55,7 @@ import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
+import dev.patrickgold.florisboard.ime.voice.VoiceInputSetupReason
 import dev.patrickgold.florisboard.ime.window.ImeRootView
 import dev.patrickgold.florisboard.ime.window.ImeWindowController
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -251,16 +252,33 @@ class FlorisImeService : LifecycleInputMethodService() {
             }
         }
 
-        val (method, subtype) = candidates.firstOrNull { (method, _) ->
+        val futoCandidate = candidates.firstOrNull { (method, _) ->
             method.packageName == VoiceInputManager.FUTO_PACKAGE_NAME
-        } ?: candidates.firstOrNull() ?: run {
-            if (showFailureToast) {
-                val shown = voiceInputManager.showSetupDialog()
-                if (!shown) {
-                    showShortToastSync(R.string.voice_input_setup__open_failed)
+        }
+        val fallbackCandidate = candidates.firstOrNull { (method, _) ->
+            method.packageName != VoiceInputManager.FUTO_PACKAGE_NAME
+        }
+        val (method, subtype) = when {
+            futoCandidate != null && voiceInputManager.isFutoMicrophonePermissionGranted() -> futoCandidate
+            fallbackCandidate != null -> fallbackCandidate
+            futoCandidate != null -> {
+                if (showFailureToast) {
+                    val shown = voiceInputManager.showSetupDialog(VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED)
+                    if (!shown) {
+                        showShortToastSync(R.string.voice_input_setup__open_failed)
+                    }
                 }
+                return false
             }
-            return false
+            else -> {
+                if (showFailureToast) {
+                    val shown = voiceInputManager.showSetupDialog()
+                    if (!shown) {
+                        showShortToastSync(R.string.voice_input_setup__open_failed)
+                    }
+                }
+                return false
+            }
         }
 
         if (AndroidVersion.ATLEAST_API28_P) {

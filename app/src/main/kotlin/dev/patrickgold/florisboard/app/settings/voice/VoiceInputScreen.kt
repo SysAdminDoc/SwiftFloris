@@ -52,6 +52,7 @@ import org.florisboard.lib.compose.stringRes
 private data class VoiceInputStatus(
     val isFutoInstalled: Boolean,
     val isFutoEnabled: Boolean,
+    val isFutoMicrophonePermissionGranted: Boolean,
     val isAnyVoiceProviderEnabled: Boolean,
 )
 
@@ -87,6 +88,8 @@ fun VoiceInputScreen() = FlorisScreen {
     var status by remember { mutableStateOf(voiceInputManager.readStatus()) }
 
     val openFutoFailedText = stringRes(R.string.settings__voice_input__open_futo_failed)
+    val openFutoPermissionsFailedText =
+        stringRes(R.string.settings__voice_input__open_futo_permissions_failed)
 
     fun refreshStatus() {
         status = voiceInputManager.readStatus()
@@ -95,6 +98,12 @@ fun VoiceInputScreen() = FlorisScreen {
     fun openFuto() {
         if (!voiceInputManager.launchFutoVoiceInputApp()) {
             Toast.makeText(context, openFutoFailedText, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun openFutoAppSettings() {
+        if (!voiceInputManager.launchFutoAppInfoSettings()) {
+            Toast.makeText(context, openFutoPermissionsFailedText, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -124,10 +133,12 @@ fun VoiceInputScreen() = FlorisScreen {
         VoiceInputStatusCard(
             modifier = Modifier.padding(8.dp),
             status = status,
-            onClick = if (status.isFutoInstalled) {
-                ::openFuto
-            } else {
-                { context.launchUrl(VoiceInputManager.FUTO_FDROID_URL) }
+            onClick = when {
+                status.isFutoEnabled && !status.isFutoMicrophonePermissionGranted -> ::openFutoAppSettings
+                status.isFutoInstalled -> ::openFuto
+                else -> {
+                    { context.launchUrl(VoiceInputManager.FUTO_FDROID_URL) }
+                }
             },
         )
 
@@ -150,6 +161,14 @@ fun VoiceInputScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__voice_input__keyboard_settings_summary),
                 onClick = ::openKeyboardSettings,
             )
+            if (status.isFutoInstalled) {
+                Preference(
+                    icon = Icons.Default.Mic,
+                    title = stringRes(R.string.settings__voice_input__open_futo_permissions),
+                    summary = stringRes(R.string.settings__voice_input__open_futo_permissions_summary),
+                    onClick = ::openFutoAppSettings,
+                )
+            }
             if (!status.isFutoInstalled) {
                 Preference(
                     icon = Icons.Default.Download,
@@ -184,6 +203,12 @@ private fun VoiceInputStatusCard(
     onClick: () -> Unit,
 ) {
     when {
+        status.isFutoEnabled && !status.isFutoMicrophonePermissionGranted -> FlorisWarningCard(
+            modifier = modifier,
+            text = stringRes(R.string.settings__voice_input__status_permission_denied),
+            secondaryText = stringRes(R.string.settings__voice_input__status_permission_denied_summary),
+            onClick = onClick,
+        )
         status.isFutoEnabled -> FlorisInfoCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_ready),
@@ -215,6 +240,7 @@ private fun VoiceInputManager.readStatus(): VoiceInputStatus {
     return VoiceInputStatus(
         isFutoInstalled = isFutoVoiceInputInstalled(),
         isFutoEnabled = isFutoVoiceInputEnabled(),
+        isFutoMicrophonePermissionGranted = isFutoMicrophonePermissionGranted(),
         isAnyVoiceProviderEnabled = isExternalVoiceInputMethodEnabled(),
     )
 }

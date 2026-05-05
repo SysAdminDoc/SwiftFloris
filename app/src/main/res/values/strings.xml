@@ -101,8 +101,10 @@
     <string name="voice_input_setup__title">Set up voice input</string>
     <string name="voice_input_setup__not_installed_message">Install FUTO Voice Input, then enable it in Android keyboard settings. SwiftFloris keeps dictation offline by handing voice input to the external FUTO keyboard.</string>
     <string name="voice_input_setup__not_enabled_message">FUTO Voice Input is installed but is not enabled as an Android keyboard. Enable it in system keyboard settings, then return to SwiftFloris.</string>
+    <string name="voice_input_setup__mic_permission_message">FUTO Voice Input is enabled, but Android reports that microphone access is denied or revoked. Open FUTO app permissions, allow Microphone, then return to SwiftFloris.</string>
     <string name="voice_input_setup__no_provider_message">No enabled voice input keyboard is available. Install or enable FUTO Voice Input to use offline dictation.</string>
     <string name="voice_input_setup__open_keyboard_settings">Keyboard settings</string>
+    <string name="voice_input_setup__open_futo_permissions">FUTO app permissions</string>
     <string name="voice_input_setup__install_fdroid">Install from F-Droid</string>
     <string name="voice_input_setup__github_releases">GitHub releases</string>
     <string name="voice_input_setup__dismiss">Not now</string>
@@ -174,6 +176,8 @@
     <string name="settings__voice_input__title" comment="Title of Voice input settings screen">Voice input</string>
     <string name="settings__voice_input__status_ready" comment="Voice input status message">FUTO Voice Input is ready</string>
     <string name="settings__voice_input__status_ready_summary" comment="Voice input status summary">SwiftFloris can hand dictation to FUTO from the keyboard voice action.</string>
+    <string name="settings__voice_input__status_permission_denied" comment="Voice input status message">Microphone permission needs attention</string>
+    <string name="settings__voice_input__status_permission_denied_summary" comment="Voice input status summary">SwiftFloris does not record audio itself. Re-grant microphone access to FUTO in Android app permissions.</string>
     <string name="settings__voice_input__status_futo_not_enabled" comment="Voice input status message">FUTO is installed but not enabled</string>
     <string name="settings__voice_input__status_futo_not_enabled_summary" comment="Voice input status summary">Enable FUTO Voice Input in Android keyboard settings before using offline dictation.</string>
     <string name="settings__voice_input__status_futo_not_installed" comment="Voice input status message">FUTO Voice Input is not installed</string>
@@ -184,12 +188,15 @@
     <string name="settings__voice_input__open_futo_language_settings" comment="Voice input settings preference title">Open FUTO language settings</string>
     <string name="settings__voice_input__open_futo_language_settings_summary" comment="Voice input settings preference summary">Choose the voice language and download offline models inside the FUTO app.</string>
     <string name="settings__voice_input__keyboard_settings_summary" comment="Voice input settings preference summary">Enable FUTO Voice Input as an Android keyboard so SwiftFloris can switch to it.</string>
+    <string name="settings__voice_input__open_futo_permissions" comment="Voice input settings preference title">FUTO app permissions</string>
+    <string name="settings__voice_input__open_futo_permissions_summary" comment="Voice input settings preference summary">Review microphone permission if dictation stops after denial, revocation, or device restore.</string>
     <string name="settings__voice_input__install_summary" comment="Voice input settings preference summary">Install the external FUTO app used for offline voice input.</string>
     <string name="settings__voice_input__group_language_packs" comment="Voice input settings group title">Supported FUTO voice languages</string>
     <string name="settings__voice_input__language_pack_handoff_title" comment="Voice input language pack information title">Language selection happens in FUTO</string>
     <string name="settings__voice_input__language_pack_handoff_summary" comment="Voice input language pack information summary">Android voice keyboard handoff does not let SwiftFloris force a FUTO language. Select and download models in FUTO, then use the voice action from SwiftFloris.</string>
     <string name="settings__voice_input__supported_language_summary" comment="Voice input supported language row summary">Available in FUTO Voice Input</string>
     <string name="settings__voice_input__open_futo_failed" comment="Voice input error toast">Could not open FUTO Voice Input.</string>
+    <string name="settings__voice_input__open_futo_permissions_failed" comment="Voice input error toast">Could not open FUTO app permissions.</string>
     <string name="settings__voice_input__language_english">English</string>
     <string name="settings__voice_input__language_chinese">Chinese</string>
     <string name="settings__voice_input__language_german">German</string>
