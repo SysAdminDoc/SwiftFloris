@@ -153,6 +153,7 @@ fun FlorisIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     icon: ImageVector,
+    contentDescription: String? = null,
     enabled: Boolean = true,
     iconModifier: Modifier = Modifier,
     iconColor: Color = Color.Unspecified,
@@ -170,7 +171,7 @@ fun FlorisIconButton(
             Icon(
                 modifier = iconModifier,
                 imageVector = icon,
-                contentDescription = null,
+                contentDescription = contentDescription,
             )
         }
     }

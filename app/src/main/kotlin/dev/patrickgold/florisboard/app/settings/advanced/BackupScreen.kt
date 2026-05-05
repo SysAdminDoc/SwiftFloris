@@ -20,6 +20,7 @@ import android.content.ContentUris
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.width
@@ -65,6 +66,7 @@ import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.android.writeFromFile
 import org.florisboard.lib.compose.FlorisButtonBar
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
@@ -295,13 +297,24 @@ fun BackupScreen() = FlorisScreen {
                 onClick = {
                     scope.launch { prepareAndPerformBackup() }
                 },
-                text = stringRes(R.string.action__back_up),
+                text = if (isBackupInProgress) {
+                    stringRes(R.string.backup_and_restore__back_up__in_progress)
+                } else {
+                    stringRes(R.string.action__back_up)
+                },
                 enabled = backupFilesSelector.atLeastOneSelected() && !isBackupInProgress,
             )
         }
     }
 
     content {
+        if (isBackupInProgress) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__back_up__in_progress),
+                secondaryText = stringRes(R.string.backup_and_restore__back_up__in_progress_summary),
+            )
+        }
         FlorisOutlinedBox(
             modifier = Modifier.defaultFlorisOutlinedBox(),
             title = stringRes(R.string.backup_and_restore__back_up__destination),
@@ -312,6 +325,7 @@ fun BackupScreen() = FlorisScreen {
                 },
                 selected = backupDestination == Backup.Destination.FILE_SYS,
                 text = stringRes(R.string.backup_and_restore__back_up__destination_file_sys),
+                secondaryText = stringRes(R.string.backup_and_restore__back_up__destination_file_sys_summary),
             )
             RadioListItem(
                 onClick = {
@@ -319,6 +333,7 @@ fun BackupScreen() = FlorisScreen {
                 },
                 selected = backupDestination == Backup.Destination.SHARE_INTENT,
                 text = stringRes(R.string.backup_and_restore__back_up__destination_share_intent),
+                secondaryText = stringRes(R.string.backup_and_restore__back_up__destination_share_intent_summary),
             )
         }
         BackupFilesSelector(
@@ -342,16 +357,19 @@ internal fun BackupFilesSelector(
             onClick = { filesSelector.jetprefDatastore = !filesSelector.jetprefDatastore },
             checked = filesSelector.jetprefDatastore,
             text = stringRes(R.string.backup_and_restore__back_up__files_jetpref_datastore),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_jetpref_datastore_summary),
         )
         CheckboxListItem(
             onClick = { filesSelector.imeKeyboard = !filesSelector.imeKeyboard },
             checked = filesSelector.imeKeyboard,
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_keyboard),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_ime_keyboard_summary),
         )
         CheckboxListItem(
             onClick = { filesSelector.imeTheme = !filesSelector.imeTheme },
             checked = filesSelector.imeTheme,
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_theme),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_ime_theme_summary),
         )
 
         TriStateCheckboxListItem(
@@ -372,6 +390,7 @@ internal fun BackupFilesSelector(
             },
             state = filesSelector.clipboardData.value,
             text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history_summary),
         )
 
 
@@ -411,6 +430,7 @@ internal fun CheckboxListItem(
     onClick: () -> Unit,
     checked: Boolean,
     text: String,
+    secondaryText: String? = null,
     isSecondaryListItem: Boolean = false
 ) {
     JetPrefListItem(
@@ -427,6 +447,7 @@ internal fun CheckboxListItem(
             }
         },
         text = text,
+        secondaryText = secondaryText,
     )
 }
 
@@ -435,6 +456,7 @@ internal fun TriStateCheckboxListItem(
     onClick: () -> Unit,
     state: ToggleableState,
     text: String,
+    secondaryText: String? = null,
     isSecondaryListItem: Boolean = false,
 ) {
     JetPrefListItem(
@@ -451,6 +473,7 @@ internal fun TriStateCheckboxListItem(
             }
         },
         text = text,
+        secondaryText = secondaryText,
     )
 }
 
