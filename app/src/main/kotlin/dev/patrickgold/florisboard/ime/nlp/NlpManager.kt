@@ -180,7 +180,6 @@ class NlpManager(context: Context) {
         maxSuggestionCount: Int,
     ): SpellingResult {
         if (prefs.spelling.useUdmEntries.get()) {
-            ensureUserDictionariesLoaded()
             if (dictionaryManager.isKnownUserDictionaryWord(word, subtype.primaryLocale)) {
                 return SpellingResult.validWord()
             }
@@ -362,7 +361,6 @@ class NlpManager(context: Context) {
         if (maxCandidateCount <= 0 || currentWord.isBlank()) {
             return emptyList()
         }
-        ensureUserDictionariesLoaded()
         return dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
     }
 
@@ -389,14 +387,10 @@ class NlpManager(context: Context) {
     }
 
     private fun onUserDictionaryConfigurationChanged() {
-        ensureUserDictionariesLoaded()
+        dictionaryManager.syncUserDictionaryStoresWithPreferences()
         wordsListCache.clear()
         frequencyCache.clear()
         assembleCandidates()
-    }
-
-    private fun ensureUserDictionariesLoaded() {
-        dictionaryManager.loadUserDictionariesIfNecessary()
     }
 
     private fun assembleCandidates() {

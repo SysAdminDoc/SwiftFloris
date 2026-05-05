@@ -24,11 +24,18 @@ import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import java.lang.ref.WeakReference
 
+private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
+private const val SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY = 1
+private const val SHORTCUT_MATCH_PRIORITY = 0
+private const val PREFIX_MATCH_PRIORITY = 1
+private const val CONTAINS_MATCH_PRIORITY = 2
+
 /**
  * Coordinates SwiftFloris' internal user dictionary and the platform user dictionary.
  *
- * The internal dictionary is queried before the system dictionary so words explicitly managed inside SwiftFloris win
- * over platform entries when both stores contain the same suggestion.
+ * NLP providers own bundled and downloadable language dictionaries. This manager overlays user-managed entries on top
+ * of those providers: the platform user dictionary is treated as a system-level source, and SwiftFloris' internal user
+ * dictionary is the highest-priority source for conflicts. Stores are opened lazily when an accessor first needs them.
  */
 class DictionaryManager private constructor(context: Context) {
     private val applicationContext: WeakReference<Context> = WeakReference(context.applicationContext ?: context)
@@ -72,10 +79,10 @@ class DictionaryManager private constructor(context: Context) {
 
         val candidates = buildList {
             if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
-                addAll(florisDao.queryCandidates(query, locale, sourcePriority = 0))
+                addAll(florisDao.queryCandidates(query, locale, sourcePriority = FLORIS_USER_DICTIONARY_SOURCE_PRIORITY))
             }
             if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
-                addAll(systemDao.queryCandidates(query, locale, sourcePriority = 1))
+                addAll(systemDao.queryCandidates(query, locale, sourcePriority = SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY))
             }
         }
 
@@ -116,44 +123,60 @@ class DictionaryManager private constructor(context: Context) {
 
     @Synchronized
     fun florisUserDictionaryDao(): UserDictionaryDao? {
-        return if (prefs.dictionary.enableFlorisUserDictionary.get()) {
-            florisUserDictionaryDatabase?.userDictionaryDao()
-        } else {
-            null
-        }
+        return florisUserDictionaryDatabase()?.userDictionaryDao()
     }
 
     @Synchronized
     fun florisUserDictionaryDatabase(): FlorisUserDictionaryDatabase? {
-        return if (prefs.dictionary.enableFlorisUserDictionary.get()) {
-            florisUserDictionaryDatabase
-        } else {
-            null
+        if (!prefs.dictionary.enableFlorisUserDictionary.get()) {
+            return null
         }
+        loadFlorisUserDictionaryIfNecessary()
+        return florisUserDictionaryDatabase
     }
 
     @Synchronized
     fun systemUserDictionaryDao(): UserDictionaryDao? {
-        return if (prefs.dictionary.enableSystemUserDictionary.get()) {
-            systemUserDictionaryDatabase?.userDictionaryDao()
-        } else {
-            null
-        }
+        return systemUserDictionaryDatabase()?.userDictionaryDao()
     }
 
     @Synchronized
     fun systemUserDictionaryDatabase(): SystemUserDictionaryDatabase? {
-        return if (prefs.dictionary.enableSystemUserDictionary.get()) {
-            systemUserDictionaryDatabase
-        } else {
-            null
+        if (!prefs.dictionary.enableSystemUserDictionary.get()) {
+            return null
         }
+        loadSystemUserDictionaryIfNecessary()
+        return systemUserDictionaryDatabase
     }
 
     @Synchronized
     fun loadUserDictionariesIfNecessary() {
-        val context = applicationContext.get() ?: return
+        loadFlorisUserDictionaryIfNecessary()
+        loadSystemUserDictionaryIfNecessary()
+    }
 
+    @Synchronized
+    fun syncUserDictionaryStoresWithPreferences() {
+        if (prefs.dictionary.enableFlorisUserDictionary.get()) {
+            loadFlorisUserDictionaryIfNecessary()
+        } else {
+            closeFlorisUserDictionary()
+        }
+        if (prefs.dictionary.enableSystemUserDictionary.get()) {
+            loadSystemUserDictionaryIfNecessary()
+        } else {
+            closeSystemUserDictionary()
+        }
+    }
+
+    @Synchronized
+    fun unloadUserDictionariesIfNecessary() {
+        closeFlorisUserDictionary()
+        closeSystemUserDictionary()
+    }
+
+    private fun loadFlorisUserDictionaryIfNecessary() {
+        val context = applicationContext.get() ?: return
         if (florisUserDictionaryDatabase == null && prefs.dictionary.enableFlorisUserDictionary.get()) {
             florisUserDictionaryDatabase = Room.databaseBuilder(
                 context,
@@ -161,17 +184,23 @@ class DictionaryManager private constructor(context: Context) {
                 FlorisUserDictionaryDatabase.DB_FILE_NAME
             ).allowMainThreadQueries().build()
         }
+    }
+
+    private fun loadSystemUserDictionaryIfNecessary() {
+        val context = applicationContext.get() ?: return
         if (systemUserDictionaryDatabase == null && prefs.dictionary.enableSystemUserDictionary.get()) {
             systemUserDictionaryDatabase = SystemUserDictionaryDatabase(context)
         }
     }
 
-    @Synchronized
-    fun unloadUserDictionariesIfNecessary() {
+    private fun closeFlorisUserDictionary() {
         if (florisUserDictionaryDatabase != null) {
             florisUserDictionaryDatabase?.close()
             florisUserDictionaryDatabase = null
         }
+    }
+
+    private fun closeSystemUserDictionary() {
         if (systemUserDictionaryDatabase != null) {
             systemUserDictionaryDatabase = null
         }
@@ -186,14 +215,18 @@ class DictionaryManager private constructor(context: Context) {
             UserDictionaryCandidate(
                 entry = entry,
                 sourcePriority = sourcePriority,
-                matchPriority = 0,
+                matchPriority = SHORTCUT_MATCH_PRIORITY,
             )
         }
         val wordCandidates = query(query, locale).map { entry ->
             UserDictionaryCandidate(
                 entry = entry,
                 sourcePriority = sourcePriority,
-                matchPriority = if (entry.word.startsWith(query, ignoreCase = true)) 1 else 2,
+                matchPriority = if (entry.word.startsWith(query, ignoreCase = true)) {
+                    PREFIX_MATCH_PRIORITY
+                } else {
+                    CONTAINS_MATCH_PRIORITY
+                },
             )
         }
         return shortcutCandidates + wordCandidates
