@@ -213,6 +213,7 @@
     <string name="settings__voice_input__voice_command_undo" comment="Voice command action label">Undo</string>
     <string name="settings__voice_input__voice_command_redo" comment="Voice command action label">Redo</string>
     <string name="settings__voice_input__voice_command_select_all" comment="Voice command action label">Select all</string>
+    <string name="settings__voice_input__voice_command_clear_text" comment="Voice command action label">Clear text</string>
     <string name="settings__voice_input__voice_command_new_paragraph" comment="Voice command action label">New paragraph</string>
     <string name="settings__voice_input__voice_command_new_line" comment="Voice command action label">New line</string>
     <string name="settings__voice_input__voice_command_capitalize_next_word" comment="Voice command action label">Capitalize next word</string>

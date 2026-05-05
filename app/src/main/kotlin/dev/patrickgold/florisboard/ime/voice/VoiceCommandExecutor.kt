@@ -31,6 +31,7 @@ class VoiceCommandExecutor(
             VoiceCommandAction.UNDO -> actions.undo()
             VoiceCommandAction.REDO -> actions.redo()
             VoiceCommandAction.SELECT_ALL -> actions.selectAll()
+            VoiceCommandAction.CLEAR_TEXT -> actions.clearText()
             VoiceCommandAction.NEW_PARAGRAPH -> actions.newParagraph()
             VoiceCommandAction.NEW_LINE -> actions.newLine()
             VoiceCommandAction.CAPITALIZE_NEXT_WORD -> actions.capitalizeNextWord()
@@ -56,6 +57,7 @@ interface VoiceCommandActions {
     fun undo(): VoiceCommandActionResult
     fun redo(): VoiceCommandActionResult
     fun selectAll(): VoiceCommandActionResult
+    fun clearText(): VoiceCommandActionResult
     fun newParagraph(): VoiceCommandActionResult
     fun newLine(): VoiceCommandActionResult
     fun capitalizeNextWord(): VoiceCommandActionResult
@@ -92,6 +94,23 @@ class EditorVoiceCommandActions(
 
     override fun selectAll(): VoiceCommandActionResult {
         return editor.performClipboardSelectAll().toVoiceCommandResult()
+    }
+
+    override fun clearText(): VoiceCommandActionResult {
+        val content = editor.activeContent
+        if (
+            !editor.activeInfo.isRawInputEditor &&
+            content.selectedText.isEmpty() &&
+            content.textBeforeSelection.isEmpty() &&
+            content.textAfterSelection.isEmpty()
+        ) {
+            return VoiceCommandActionResult.failure(VoiceCommandFailureReason.NO_TEXT_TO_DELETE)
+        }
+        val selected = content.selectedText.isNotEmpty() || editor.performClipboardSelectAll()
+        if (!selected) {
+            return VoiceCommandActionResult.failure(VoiceCommandFailureReason.ACTION_REJECTED)
+        }
+        return editor.commitText("").toVoiceCommandResult()
     }
 
     override fun newParagraph(): VoiceCommandActionResult {

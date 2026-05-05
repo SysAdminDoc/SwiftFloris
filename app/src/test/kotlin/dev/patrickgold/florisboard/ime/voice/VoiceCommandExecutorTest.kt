@@ -33,6 +33,7 @@ class VoiceCommandExecutorTest : FunSpec({
             "undo",
             "redo",
             "selectAll",
+            "clearText",
             "newParagraph",
             "newLine",
             "capitalizeNextWord",
@@ -72,6 +73,7 @@ private class RecordingVoiceCommandActions(
     override fun undo(): VoiceCommandActionResult = record("undo")
     override fun redo(): VoiceCommandActionResult = record("redo")
     override fun selectAll(): VoiceCommandActionResult = record("selectAll")
+    override fun clearText(): VoiceCommandActionResult = record("clearText")
     override fun newParagraph(): VoiceCommandActionResult = record("newParagraph")
     override fun newLine(): VoiceCommandActionResult = record("newLine")
     override fun capitalizeNextWord(): VoiceCommandActionResult = record("capitalizeNextWord")

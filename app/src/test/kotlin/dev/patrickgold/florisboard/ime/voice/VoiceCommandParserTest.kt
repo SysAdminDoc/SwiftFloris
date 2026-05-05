@@ -29,6 +29,7 @@ class VoiceCommandParserTest : FunSpec({
             "undo" to VoiceCommandAction.UNDO,
             "redo" to VoiceCommandAction.REDO,
             "select all" to VoiceCommandAction.SELECT_ALL,
+            "clear text" to VoiceCommandAction.CLEAR_TEXT,
             "new paragraph" to VoiceCommandAction.NEW_PARAGRAPH,
             "new line" to VoiceCommandAction.NEW_LINE,
             "capitalize next word" to VoiceCommandAction.CAPITALIZE_NEXT_WORD,
@@ -49,6 +50,7 @@ class VoiceCommandParserTest : FunSpec({
     test("uses aliases for natural variants") {
         parser.parse("line break")?.action shouldBe VoiceCommandAction.NEW_LINE
         parser.parse("select everything")?.action shouldBe VoiceCommandAction.SELECT_ALL
+        parser.parse("delete all")?.action shouldBe VoiceCommandAction.CLEAR_TEXT
         parser.parse("go to beginning")?.action shouldBe VoiceCommandAction.GO_TO_START
     }
 

@@ -178,6 +178,11 @@ data class VoiceCommandDefinition(
                     aliases = listOf("select everything"),
                 ),
                 VoiceCommandDefinition(
+                    action = VoiceCommandAction.CLEAR_TEXT,
+                    canonicalPhrase = "clear text",
+                    aliases = listOf("clear field", "delete all"),
+                ),
+                VoiceCommandDefinition(
                     action = VoiceCommandAction.NEW_PARAGRAPH,
                     canonicalPhrase = "new paragraph",
                     aliases = listOf("next paragraph"),
@@ -221,6 +226,7 @@ enum class VoiceCommandAction {
     UNDO,
     REDO,
     SELECT_ALL,
+    CLEAR_TEXT,
     NEW_PARAGRAPH,
     NEW_LINE,
     CAPITALIZE_NEXT_WORD,
