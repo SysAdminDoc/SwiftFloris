@@ -51,6 +51,7 @@ import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 
 enum class VoiceInputSetupReason {
+    READY,
     FUTO_NOT_INSTALLED,
     FUTO_NOT_ENABLED,
     FUTO_MIC_PERMISSION_DENIED,
@@ -226,6 +227,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
 
 private val VoiceInputSetupReason.messageRes: Int
     get() = when (this) {
+        VoiceInputSetupReason.READY -> R.string.voice_input_setup__ready_message
         VoiceInputSetupReason.FUTO_NOT_INSTALLED -> R.string.voice_input_setup__not_installed_message
         VoiceInputSetupReason.FUTO_NOT_ENABLED -> R.string.voice_input_setup__not_enabled_message
         VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED -> R.string.voice_input_setup__mic_permission_message
