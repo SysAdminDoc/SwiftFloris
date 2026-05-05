@@ -22,6 +22,18 @@
       "isNight": false
     },
     {
+      "id": "swift_glacier",
+      "label": "Swift Glacier",
+      "authors": [ "SwiftFloris" ],
+      "isNight": false
+    },
+    {
+      "id": "swift_glacier_borderless",
+      "label": "Swift Glacier (Borderless)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": false
+    },
+    {
       "id": "floris_night",
       "label": "Floris Night",
       "authors": [ "patrickgold" ],
@@ -31,6 +43,18 @@
       "id": "floris_night_borderless",
       "label": "Floris Night (Borderless)",
       "authors": [ "patrickgold" ],
+      "isNight": true
+    },
+    {
+      "id": "swift_slate",
+      "label": "Swift Slate",
+      "authors": [ "SwiftFloris" ],
+      "isNight": true
+    },
+    {
+      "id": "swift_slate_borderless",
+      "label": "Swift Slate (Borderless)",
+      "authors": [ "SwiftFloris" ],
       "isNight": true
     },
     {

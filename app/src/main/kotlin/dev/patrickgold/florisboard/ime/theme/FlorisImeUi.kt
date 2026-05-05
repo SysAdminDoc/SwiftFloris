@@ -389,7 +389,7 @@ enum class FlorisImeUi(val elementName: String, val resId: Int?) {
 
     VoiceInputButton(
         elementName = "voice-input-button",
-        resId = null,
+        resId = R.string.snygg__rule_element__voice_input_button,
     );
 
     companion object {
