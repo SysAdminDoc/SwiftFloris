@@ -74,7 +74,7 @@ object FlorisEmojiCompat {
      * @return A state flow providing the latest EmojiCompat instance for given args. The flow may provide null if
      *  EmojiCompat is still loading or if it has failed.
      */
-    @SuppressLint("RestrictedApi")
+    @SuppressLint("RestrictedApi", "VisibleForTests")
     fun getAsFlow(replaceAll: Boolean, setAsDefaultInstance: Boolean = true): StateFlow<EmojiCompat?> {
         val instanceFlow = if (replaceAll) {
             instanceReplaceAll.publishedInstanceFlow

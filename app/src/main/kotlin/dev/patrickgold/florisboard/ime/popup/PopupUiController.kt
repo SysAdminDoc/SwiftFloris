@@ -205,7 +205,7 @@ class PopupUiController(
         val popupIndices: IntArray
         val uiIndices = IntRange(0, (n - 1).coerceAtLeast(0))
         if (key is TextKey) {
-            popupIndices = IntArray(n) { 0 }
+            popupIndices = IntArray(n)
             val popupKeys = key.computedPopups.getPopupKeys(keyHintConfiguration)
             when (popupKeys.prioritized.size) {
                 // only one key: use initial position
