@@ -15,7 +15,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
-- Current lint shape after cleanup batches: 293 warnings, 0 hints. Largest remaining buckets are `UnusedResources` and `MissingQuantity`.
+- Current lint shape after cleanup batches: 259 warnings, 0 hints. Largest remaining bucket is `UnusedResources`.
 
 ## Priority Model
 
@@ -28,6 +28,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: Created this plan and began the first implementation slice: small lint/testability cleanup with no product behavior change intended.
 - 2026-05-05: First lint cleanup batch removed invalid manifest alias attributes, closed a Han suggestion cursor, resolved Compose naming warnings, and cleared efficiency hints for integer state and zero-filled arrays.
 - 2026-05-05: Second lint cleanup batch migrated simple URI/preference calls to KTX APIs, fixed a translated crash-report format mismatch, normalized reported ellipses, and corrected high-confidence German, Portuguese, and Spanish translation typos. Remaining typo warnings are intentional Turkish repeated-word phrases.
+- 2026-05-05: Third lint cleanup batch added translation-safe `many` plural fallbacks for affected Catalan, French, Italian, Portuguese, Brazilian Portuguese, and Spanish unit strings.
 
 ## Workstreams
 
@@ -68,7 +69,7 @@ Tasks:
 - [x] Fix `StringFormatCount` in translated resources without changing source-string intent.
 - [x] Normalize `TypographyEllipsis` in string resources.
 - [x] Audit `Typos` warnings and correct only cases with high confidence.
-- [ ] Address `MissingQuantity` by adding required plural quantities, preferably via translation-safe fallback copying.
+- [x] Address `MissingQuantity` by adding required plural quantities, preferably via translation-safe fallback copying.
 - [ ] Review `UnusedResources`; delete only resources proven unused across build variants and dynamic lookup paths.
 - [ ] Review dependency version warnings separately from source cleanup.
 

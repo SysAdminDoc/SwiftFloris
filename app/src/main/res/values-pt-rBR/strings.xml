@@ -835,26 +835,32 @@
     <!-- Unit strings (written words) -->
     <plurals name="unit__hours__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} hora</item>
+        <item quantity="many">{v} horas</item>
         <item quantity="other">{v} horas</item>
     </plurals>
     <plurals name="unit__minutes__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} minuto</item>
+        <item quantity="many">{v} minutos</item>
         <item quantity="other">{v} minutos</item>
     </plurals>
     <plurals name="unit__seconds__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} segundo</item>
+        <item quantity="many">{v} segundos</item>
         <item quantity="other">{v} segundos</item>
     </plurals>
     <plurals name="unit__items__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} item</item>
+        <item quantity="many">{v} itens</item>
         <item quantity="other">{v} itens</item>
     </plurals>
     <plurals name="unit__characters__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} caractere</item>
+        <item quantity="many">{v} caracteres</item>
         <item quantity="other">{v} caracteres</item>
     </plurals>
     <plurals name="unit__candidates__written" tools:ignore="ImpliedQuantity">
         <item quantity="one">{v} candidato</item>
+        <item quantity="many">{v} candidatos</item>
         <item quantity="other">{v} candidatos</item>
     </plurals>
 </resources>
