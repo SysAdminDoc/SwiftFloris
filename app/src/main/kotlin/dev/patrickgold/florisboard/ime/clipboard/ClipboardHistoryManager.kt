@@ -3,6 +3,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 import android.content.Context
 import android.content.ClipboardManager
 import android.content.SharedPreferences
+import androidx.core.content.edit
 import androidx.security.crypto.EncryptedSharedPreferences
 import androidx.security.crypto.MasterKey
 import java.text.SimpleDateFormat
@@ -87,7 +88,9 @@ class ClipboardHistoryManager(private val context: Context) {
     }
 
     fun clearHistory() {
-        encryptedPrefs.edit().remove(CLIPBOARD_HISTORY_KEY).apply()
+        encryptedPrefs.edit {
+            remove(CLIPBOARD_HISTORY_KEY)
+        }
     }
 
     fun getRecentItems(limit: Int = 10): List<ClipboardHistoryItem> {
@@ -98,7 +101,9 @@ class ClipboardHistoryManager(private val context: Context) {
         val json = items.joinToString(",", "[", "]") { item ->
             """{"id":"${item.id}","text":"${escapeJson(item.text)}","timestamp":${item.timestamp},"appName":"${item.appName}","frequency":${item.frequency}}"""
         }
-        encryptedPrefs.edit().putString(CLIPBOARD_HISTORY_KEY, json).apply()
+        encryptedPrefs.edit {
+            putString(CLIPBOARD_HISTORY_KEY, json)
+        }
     }
 
     private fun parseJsonArray(json: String): List<ClipboardHistoryItem> {

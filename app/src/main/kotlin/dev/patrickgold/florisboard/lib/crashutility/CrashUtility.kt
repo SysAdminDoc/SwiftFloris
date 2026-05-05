@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.lib.crashutility
 
-import android.annotation.SuppressLint
 import android.app.Activity
 import android.app.Application
 import android.app.Application.ActivityLifecycleCallbacks
@@ -33,6 +32,7 @@ import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import androidx.core.content.edit
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import java.lang.ref.WeakReference
@@ -228,15 +228,13 @@ abstract class CrashUtility private constructor() {
          *  nothing.
          * @param value The timestamp of the current crash.
          */
-        @SuppressLint("ApplySharedPref")
         private fun setLastCrashTimestamp(context: Context?, value: Long) {
             context ?: return
             // Note: must use commit() instead of apply(), as the value must be immediately written
             //       to be possibly instantly read again.
-            context.getSharedPreferences(SHARED_PREFS_FILE, Context.MODE_PRIVATE)
-                .edit()
-                .putLong(SHARED_PREFS_LAST_CRASH_TIMESTAMP, value)
-                .commit()
+            context.getSharedPreferences(SHARED_PREFS_FILE, Context.MODE_PRIVATE).edit(commit = true) {
+                putLong(SHARED_PREFS_LAST_CRASH_TIMESTAMP, value)
+            }
         }
 
         /**

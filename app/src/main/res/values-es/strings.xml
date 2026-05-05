@@ -972,7 +972,7 @@
     <string name="enum__swipe_action__no_action" comment="Enum value label">Sin acción</string>
     <string name="enum__swipe_action__cycle_to_previous_keyboard_mode" comment="Enum value label">Alternar con el modo de teclado anterior</string>
     <string name="enum__swipe_action__cycle_to_next_keyboard_mode" comment="Enum value label">Alternar con el modo de teclado siguiente</string>
-    <string name="enum__swipe_action__delete_character" comment="Enum value label">Borrar caracter antes del cursor</string>
+    <string name="enum__swipe_action__delete_character" comment="Enum value label">Borrar carácter antes del cursor</string>
     <string name="enum__swipe_action__delete_characters_precisely" comment="Enum value label">Eliminar caracteres con precisión</string>
     <string name="enum__swipe_action__delete_word" comment="Enum value label">Borrar palabra antes del cursor</string>
     <string name="enum__swipe_action__delete_words_precisely" comment="Enum value label">Eliminar palabras con precisión</string>
