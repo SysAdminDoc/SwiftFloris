@@ -95,6 +95,11 @@
     <string name="quick_action__toggle_autocorrect__tooltip">Toggle autocorrect</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
+    <string name="voice_input__install_provider__title">Install FUTO Voice Input</string>
+    <string name="voice_input__install_provider__message">SwiftFloris uses an enabled voice keyboard for dictation. Install FUTO Voice Input, enable it as a keyboard, then tap the microphone again.</string>
+    <string name="voice_input__enable_provider__title">Enable voice input</string>
+    <string name="voice_input__enable_provider__message">FUTO Voice Input is installed, but Android has not enabled it as a voice keyboard yet.</string>
+    <string name="voice_input__setup_hint">Open Android keyboard settings and enable FUTO Voice Input to let recognized speech insert into the current text field.</string>
     <string name="quick_action__floating_window_mode" comment="Please mind the limited available space for the quick action strings">Floating</string>
     <string name="quick_action__floating_window_mode__tooltip">Toggle floating keyboard window mode</string>
     <string name="quick_action__one_handed_mode" comment="Please mind the limited available space for the quick action strings">One-handed</string>
@@ -444,9 +449,9 @@
     <string name="pref__input_feedback__haptic_enabled__summary_disabled" comment="Preference summary">Never vibrate for input events, regardless of system settings</string>
     <string name="pref__input_feedback__haptic_vibration_mode__label" comment="Preference title">Vibration mode</string>
     <string name="pref__input_feedback__haptic_vibration_duration__label" comment="Preference title">Vibration duration</string>
-    <string name="pref__input_feedback__haptic_vibration_strength__label" comment="Preference title">Vibration strength</string>
-    <string name="pref__input_feedback__haptic_vibration_strength__summary_no_vibrator" comment="Preference summary">This feature requires a hardware vibrator, which seems to be missing on this device</string>
-    <string name="pref__input_feedback__haptic_vibration_strength__summary_no_amplitude_ctrl" comment="Preference summary">This feature requires hardware amplitude control support, which is missing on your device</string>
+    <string name="pref__input_feedback__haptic_vibration_strength__label" comment="Preference title">Key vibration strength</string>
+    <string name="pref__input_feedback__haptic_vibration_strength__summary_no_vibrator" comment="Preference summary">Key vibration strength requires a hardware vibrator, which seems to be missing on this device</string>
+    <string name="pref__input_feedback__haptic_vibration_strength__summary_no_amplitude_ctrl" comment="Preference summary">Key vibration strength requires hardware amplitude control support, which is missing on your device</string>
     <string name="pref__input_feedback__haptic_feat_key_press__label" comment="Preference title">Key press vibration</string>
     <string name="pref__input_feedback__haptic_feat_key_long_press__label" comment="Preference title">Key long press vibration</string>
     <string name="pref__input_feedback__haptic_feat_key_repeated_action__label" comment="Preference title">Key repeated action vibration</string>
@@ -951,9 +956,11 @@
     <string name="action__import">Import</string>
     <string name="action__import_file">Import file</string>
     <string name="action__import_files">Import files</string>
+    <string name="action__install">Install</string>
     <string name="action__more_options">More options</string>
     <string name="action__no">No</string>
     <string name="action__ok">OK</string>
+    <string name="action__open_settings">Open settings</string>
     <string name="action__done">Done</string>
     <string name="action__restore">Restore</string>
     <string name="action__save">Save</string>
