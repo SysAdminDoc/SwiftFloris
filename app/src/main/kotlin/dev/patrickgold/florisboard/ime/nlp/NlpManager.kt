@@ -79,6 +79,7 @@ class NlpManager(context: Context) {
     // Caches for word lists and frequencies to avoid blocking on repeated calls
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
     private val frequencyCache = ConcurrentHashMap<String, Double>()
+    private val autoCommitSuppression = AutoCommitSuppression()
 
     private val suggestionsRequestCounter = AtomicLong(0L)
     private val internalSuggestionsGuard = Mutex()
@@ -205,6 +206,7 @@ class NlpManager(context: Context) {
             || providerForcesSuggestionOn(subtypeManager.activeSubtype)
 
     fun suggest(subtype: Subtype, content: EditorContent) {
+        autoCommitSuppression.onContentChanged(content.autoCommitWord(), content.autoCommitWordStart())
         val requestId = suggestionsRequestCounter.incrementAndGet()
         scope.launch {
             val emojiSuggestions = when {
@@ -265,7 +267,33 @@ class NlpManager(context: Context) {
     }
 
     fun getAutoCommitCandidate(): SuggestionCandidate? {
-        return activeCandidates.firstOrNull { it.isEligibleForAutoCommit }
+        val content = editorInstance.activeContent
+        val currentWord = content.autoCommitWord()
+        val currentWordStart = content.autoCommitWordStart()
+        return activeCandidates.firstOrNull { candidate ->
+            candidate.isEligibleForAutoCommit &&
+                !autoCommitSuppression.shouldSuppress(
+                    currentWord = currentWord,
+                    candidateText = candidate.text,
+                    currentWordStart = currentWordStart,
+                )
+        }
+    }
+
+    fun rememberAcceptedAutoCommit(content: EditorContent, candidate: SuggestionCandidate) {
+        autoCommitSuppression.rememberAccepted(
+            originalText = content.autoCommitWord(),
+            correctedText = candidate.text,
+            wordStart = content.autoCommitWordStart(),
+        )
+    }
+
+    fun rejectAcceptedAutoCommitOnBackspace(content: EditorContent): Boolean {
+        val cursorPosition = content.selection.takeIf { it.isValid }?.start
+        return autoCommitSuppression.rejectAccepted(
+            textBeforeSelection = content.textBeforeSelection,
+            cursorPosition = cursorPosition,
+        )
     }
 
     fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
@@ -380,6 +408,18 @@ class NlpManager(context: Context) {
 
         suspend fun destroyIfNecessary() {
             if (isInstanceAlive.getAndSet(false)) provider.destroy()
+        }
+    }
+
+    private fun EditorContent.autoCommitWord(): String {
+        return currentWordText.ifBlank { composingText }
+    }
+
+    private fun EditorContent.autoCommitWordStart(): Int? {
+        return when {
+            currentWord.isValid -> currentWord.start
+            composing.isValid -> composing.start
+            else -> null
         }
     }
 
