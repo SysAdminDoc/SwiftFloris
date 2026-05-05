@@ -1,101 +1,96 @@
+/*
+ * Copyright (C) 2025 The FlorisBoard Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package dev.patrickgold.florisboard.ime.voice
 
 import android.content.Context
-import android.content.Intent
-import android.content.ActivityNotFoundException
-import android.util.Log
+import android.content.pm.PackageManager
+import android.os.Build
+import android.view.inputmethod.InputMethodManager
+import dev.patrickgold.florisboard.BuildConfig
+import dev.patrickgold.florisboard.FlorisImeService
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import org.florisboard.lib.android.systemServiceOrNull
 
 /**
- * Delegates voice input to FUTO Voice Input app.
- * FUTO Voice Input must be installed separately.
- * Integrates via IME voice subtype mode.
+ * Delegates dictation to an external voice IME such as FUTO Voice Input.
  */
 class VoiceInputManager(private val context: Context) {
+    companion object {
+        const val FUTO_PACKAGE_NAME = "org.futo.voiceinput"
+        const val FUTO_FDROID_URL = "https://f-droid.org/packages/org.futo.voiceinput/"
+        const val FUTO_RELEASES_URL = "https://github.com/FUTO-org/android-voice-input/releases"
+    }
 
     private val _transcriptionState = MutableStateFlow<TranscriptionState>(TranscriptionState.Idle)
     val transcriptionState: StateFlow<TranscriptionState> = _transcriptionState
 
-    private val _recognizedText = MutableStateFlow<String>("")
+    private val _recognizedText = MutableStateFlow("")
     val recognizedText: StateFlow<String> = _recognizedText
 
-    private val _isListening = MutableStateFlow<Boolean>(false)
+    private val _isListening = MutableStateFlow(false)
     val isListening: StateFlow<Boolean> = _isListening
 
     private val _error = MutableStateFlow<VoiceError?>(null)
     val error: StateFlow<VoiceError?> = _error
 
     fun initialize() {
-        // Check if FUTO Voice Input is available
-        if (isFutoVoiceInputAvailable()) {
-            _transcriptionState.value = TranscriptionState.Ready
-        } else {
-            _transcriptionState.value = TranscriptionState.Unavailable
-            _error.value = VoiceError.NotAvailable
-            Log.w("VoiceInputManager", "FUTO Voice Input not installed. Please install it from Play Store or F-Droid.")
-        }
+        refreshAvailability()
     }
 
-    fun startListening() {
-        if (_transcriptionState.value == TranscriptionState.Unavailable) {
-            _error.value = VoiceError.NotAvailable
-            return
+    fun refreshAvailability(): Boolean {
+        val available = isExternalVoiceInputMethodEnabled()
+        _transcriptionState.value = if (available) TranscriptionState.Ready else TranscriptionState.Unavailable
+        _error.value = if (available) null else VoiceError.NotAvailable
+        return available
+    }
+
+    fun startListening(): Boolean {
+        _recognizedText.value = ""
+        _error.value = null
+        _isListening.value = true
+        _transcriptionState.value = TranscriptionState.Listening
+
+        val switched = FlorisImeService.switchToVoiceInputMethod(showFailureToast = false)
+        if (switched) {
+            _isListening.value = false
+            _transcriptionState.value = TranscriptionState.Ready
+            return true
         }
 
-        try {
-            // Check once more before launching to handle edge case where FUTO was uninstalled
-            if (!isFutoVoiceInputAvailable()) {
-                _transcriptionState.value = TranscriptionState.Unavailable
-                _error.value = VoiceError.NotAvailable
-                Log.w("VoiceInputManager", "FUTO Voice Input became unavailable (was uninstalled?)")
-                return
-            }
-
-            _isListening.value = true
-            _transcriptionState.value = TranscriptionState.Listening
-            _error.value = null  // Clear any previous errors
-            
-            // Launch FUTO Voice Input via IME subtype mode
-            // This opens voice input in the bottom half of the keyboard
-            val intent = Intent("android.intent.action.VIEW").apply {
-                setPackage("org.futo.voiceinput")
-                // No additional extras needed for IME mode
-            }
-            
-            context.startActivity(intent)
-        } catch (e: ActivityNotFoundException) {
-            _transcriptionState.value = TranscriptionState.Unavailable
-            _isListening.value = false
-            _error.value = VoiceError.NotAvailable
-            Log.e("VoiceInputManager", "FUTO Voice Input activity not found", e)
-        } catch (e: SecurityException) {
-            _transcriptionState.value = TranscriptionState.Error
-            _isListening.value = false
-            _error.value = VoiceError.StartFailed("Permission denied to start voice input")
-            Log.e("VoiceInputManager", "Permission denied to start voice input", e)
-        } catch (e: Exception) {
-            _transcriptionState.value = TranscriptionState.Error
-            _isListening.value = false
-            val errorMsg = when {
-                e.message?.contains("Context", ignoreCase = true) == true -> "Context error: voice input unavailable"
-                !e.message.isNullOrEmpty() -> e.message!!
-                else -> "Failed to launch voice input"
-            }
-            _error.value = VoiceError.StartFailed(errorMsg)
-            Log.e("VoiceInputManager", "Failed to start listening: $errorMsg", e)
+        _isListening.value = false
+        _transcriptionState.value = TranscriptionState.Unavailable
+        _error.value = if (isFutoVoiceInputInstalled()) {
+            VoiceError.NotEnabled
+        } else {
+            VoiceError.NotAvailable
         }
+        return false
     }
 
     fun stopListening() {
         _isListening.value = false
-        _transcriptionState.value = TranscriptionState.Ready
+        refreshAvailability()
     }
 
     fun cancel() {
         _isListening.value = false
-        _transcriptionState.value = TranscriptionState.Ready
         _recognizedText.value = ""
+        refreshAvailability()
     }
 
     fun destroy() {
@@ -103,36 +98,53 @@ class VoiceInputManager(private val context: Context) {
         _transcriptionState.value = TranscriptionState.Idle
     }
 
-    private fun isFutoVoiceInputAvailable(): Boolean {
+    fun isFutoVoiceInputInstalled(): Boolean {
+        val packageManager = context.packageManager
         return try {
-            val intent = Intent("android.intent.action.VIEW").apply {
-                setPackage("org.futo.voiceinput")
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                packageManager.getPackageInfo(
+                    FUTO_PACKAGE_NAME,
+                    PackageManager.PackageInfoFlags.of(0),
+                )
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getPackageInfo(FUTO_PACKAGE_NAME, 0)
             }
-            val activities = context.packageManager.queryIntentActivities(intent, 0)
-            activities.isNotEmpty()
-        } catch (e: Exception) {
+            true
+        } catch (_: PackageManager.NameNotFoundException) {
             false
+        }
+    }
+
+    fun isExternalVoiceInputMethodEnabled(): Boolean {
+        val imm = context.systemServiceOrNull(InputMethodManager::class) ?: return false
+        return imm.enabledInputMethodList.any { inputMethod ->
+            inputMethod.packageName != BuildConfig.APPLICATION_ID &&
+                (0 until inputMethod.subtypeCount).any { index ->
+                    inputMethod.getSubtypeAt(index).mode == "voice"
+                }
         }
     }
 }
 
 /**
- * State of the voice transcription process
+ * State of the external voice input handoff.
  */
 enum class TranscriptionState {
-    Idle,           // Not initialized
-    Ready,          // Ready to accept input
-    Listening,      // Currently recording audio
-    Processing,     // Processing recorded audio
-    Error,          // Error occurred
-    Unavailable     // Voice input not available
+    Idle,
+    Ready,
+    Listening,
+    Processing,
+    Error,
+    Unavailable,
 }
 
 /**
- * Voice input errors
+ * Voice input handoff errors.
  */
 sealed class VoiceError {
     object NotAvailable : VoiceError()
+    object NotEnabled : VoiceError()
     object AudioError : VoiceError()
     object ClientError : VoiceError()
     object PermissionDenied : VoiceError()
@@ -148,4 +160,3 @@ sealed class VoiceError {
     data class CancelFailed(val message: String) : VoiceError()
     data class UnknownError(val code: Int) : VoiceError()
 }
-
