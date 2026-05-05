@@ -328,10 +328,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Note: command execution is available for parsed transcripts through the reusable executor; live FUTO output still cannot be intercepted while dictation is delegated to FUTO as a separate IME.
   - **Estimated effort**: 2 weeks
 
-- [ ] **User Customization** — Let users add/disable commands.
+- [x] **User Customization** — Let users add/disable commands.
   - [x] Custom command list in AppPrefs (JSON list)
-  - Settings UI: add, edit, delete commands
+  - [x] Settings UI: add, edit, delete commands
   - [x] Test user commands with fuzzy matcher
+  - Completed: May 5, 2026
   - **Estimated effort**: 2 weeks
 
 - [ ] **Fallback & Error Handling**:
@@ -373,7 +374,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added JSON-backed `VoiceCommandCustomCommands` storage through `AppPrefs.voice.customCommands`.
 - Added custom command serialization, deserialization fallback, add/replace/remove helpers, enabled-command filtering, and parser integration for user-defined phrases.
 - Added unit coverage for custom-command persistence, disabled/blank command filtering, and fuzzy parser matching through custom command definitions.
-- Remaining customization work: build the settings UI for adding, editing, deleting, enabling, and disabling custom commands.
+- The data layer was completed before the management UI so parser behavior could be verified independently.
+
+**Progress Update** (2026-05-05):
+- Added custom voice-command management to the Voice input settings screen.
+- Users can add a phrase, choose a command action, enable or disable the command, edit existing commands, delete commands, and see disabled state in the list.
+- The UI keeps the transcript-handoff limitation visible so users do not mistake stored custom phrases for live FUTO interception.
 
 ---
 

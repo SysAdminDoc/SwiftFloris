@@ -192,6 +192,32 @@
     <string name="settings__voice_input__open_futo_permissions" comment="Voice input settings preference title">FUTO app permissions</string>
     <string name="settings__voice_input__open_futo_permissions_summary" comment="Voice input settings preference summary">Review microphone permission if dictation stops after denial, revocation, or device restore.</string>
     <string name="settings__voice_input__install_summary" comment="Voice input settings preference summary">Install the external FUTO app used for offline voice input.</string>
+    <string name="settings__voice_input__group_voice_commands" comment="Voice input settings group title">Voice commands</string>
+    <string name="settings__voice_input__voice_commands_info_title" comment="Voice command settings information title">Custom commands stay on device</string>
+    <string name="settings__voice_input__voice_commands_info_summary" comment="Voice command settings information summary">SwiftFloris can store and test command phrases locally. FUTO dictation is still an external keyboard, so live command execution needs a transcript handoff path.</string>
+    <string name="settings__voice_input__custom_command_add" comment="Voice command settings add row title">Add custom command</string>
+    <string name="settings__voice_input__custom_command_add_summary" comment="Voice command settings add row summary">Create a spoken phrase and map it to a command action.</string>
+    <string name="settings__voice_input__custom_commands_empty_title" comment="Voice command settings empty list title">No custom commands</string>
+    <string name="settings__voice_input__custom_commands_empty_summary" comment="Voice command settings empty list summary">Built-in commands still work when a transcript source is available.</string>
+    <string name="settings__voice_input__custom_command_blank_phrase" comment="Voice command settings blank phrase fallback">Unnamed command</string>
+    <string name="settings__voice_input__custom_command_disabled_summary" comment="Voice command settings disabled command row summary">Disabled - {action}</string>
+    <string name="settings__voice_input__custom_command_dialog_add" comment="Voice command settings dialog title">Add voice command</string>
+    <string name="settings__voice_input__custom_command_dialog_edit" comment="Voice command settings dialog title">Edit voice command</string>
+    <string name="settings__voice_input__custom_command_phrase_label" comment="Voice command settings field label">Spoken phrase</string>
+    <string name="settings__voice_input__custom_command_phrase_required" comment="Voice command settings validation message">Enter a phrase.</string>
+    <string name="settings__voice_input__custom_command_phrase_duplicate" comment="Voice command settings validation message">A command already uses this phrase.</string>
+    <string name="settings__voice_input__custom_command_enabled_label" comment="Voice command settings field label">Status</string>
+    <string name="settings__voice_input__custom_command_enabled_summary" comment="Voice command settings checkbox label">Enabled</string>
+    <string name="settings__voice_input__custom_command_action_label" comment="Voice command settings field label">Command action</string>
+    <string name="settings__voice_input__voice_command_delete_that" comment="Voice command action label">Delete that</string>
+    <string name="settings__voice_input__voice_command_undo" comment="Voice command action label">Undo</string>
+    <string name="settings__voice_input__voice_command_redo" comment="Voice command action label">Redo</string>
+    <string name="settings__voice_input__voice_command_select_all" comment="Voice command action label">Select all</string>
+    <string name="settings__voice_input__voice_command_new_paragraph" comment="Voice command action label">New paragraph</string>
+    <string name="settings__voice_input__voice_command_new_line" comment="Voice command action label">New line</string>
+    <string name="settings__voice_input__voice_command_capitalize_next_word" comment="Voice command action label">Capitalize next word</string>
+    <string name="settings__voice_input__voice_command_go_to_start" comment="Voice command action label">Go to start</string>
+    <string name="settings__voice_input__voice_command_go_to_end" comment="Voice command action label">Go to end</string>
     <string name="settings__voice_input__group_language_packs" comment="Voice input settings group title">Supported FUTO voice languages</string>
     <string name="settings__voice_input__language_pack_handoff_title" comment="Voice input language pack information title">Language selection happens in FUTO</string>
     <string name="settings__voice_input__language_pack_handoff_summary" comment="Voice input language pack information summary">Android voice keyboard handoff does not let SwiftFloris force a FUTO language. Select and download models in FUTO, then use the voice action from SwiftFloris.</string>
