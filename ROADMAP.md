@@ -110,7 +110,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - [x] Remove provider-to-`SubtypeManager` dependency from Han language-pack loading
   - [ ] Add unit tests for each provider
   - Estimated effort: 3-4 weeks
-  - Progress: provider registry, candidate assembly extraction, Han provider dependency cleanup, and advanced spelling/prediction engine tests completed May 5, 2026
+  - Progress: provider registry, candidate assembly extraction, Han provider dependency cleanup, advanced spelling/prediction engine tests, and Han composing tests completed May 5, 2026
 
 - [ ] **Emoji Compatibility** (`FlorisEmojiCompat.kt`) — Investigate EmojiCompat double-instance memory impact.
   - Profile memory usage with emoji-heavy input

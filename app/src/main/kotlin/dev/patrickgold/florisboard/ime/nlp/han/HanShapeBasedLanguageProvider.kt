@@ -18,7 +18,6 @@ package dev.patrickgold.florisboard.ime.nlp.han
 
 import android.content.Context
 import android.database.sqlite.SQLiteException
-import android.icu.text.BreakIterator
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
@@ -35,6 +34,34 @@ import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+
+internal object HanShapeComposingEngine {
+    fun determineLocalComposing(
+        textBeforeSelection: CharSequence,
+        keyCodeLocale: Set<Char>,
+        localLastCommitPosition: Int,
+    ): EditorRange {
+        val end = textBeforeSelection.length
+        var start = end
+        var next = end - 1
+        val minStart = localLastCommitPosition.coerceAtLeast(0)
+
+        while (next >= minStart) {
+            val char = textBeforeSelection[next]
+            if (char !in keyCodeLocale) {
+                break
+            }
+            start = next
+            next--
+        }
+
+        return if (start != end) {
+            EditorRange(start, end)
+        } else {
+            EditorRange.Unspecified
+        }
+    }
+}
 
 class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, SuggestionProvider {
     companion object {
@@ -279,27 +306,21 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         breakIterators: BreakIteratorGroup,
         localLastCommitPosition: Int
     ): EditorRange {
-        return breakIterators.character(subtype.primaryLocale) {
-            it.setText(textBeforeSelection.toString())
-            val end = it.last()
-            var start = end
-            var next = it.previous()
-            val keyCodeLocale = keyCode[subtype.primaryLocale.localeTag()]?: keyCode["default"]?: emptySet()
-            while (next != BreakIterator.DONE && start > localLastCommitPosition) {
-                val sub = textBeforeSelection.substring(next, start)
-                if (! sub.all { char -> char in keyCodeLocale })
-                    break
-                start = next
-                next = it.previous()
+        val keyCodeLocale = keyCode[subtype.primaryLocale.localeTag()] ?: keyCode["default"] ?: emptySet()
+        val composing = HanShapeComposingEngine.determineLocalComposing(
+            textBeforeSelection = textBeforeSelection,
+            keyCodeLocale = keyCodeLocale,
+            localLastCommitPosition = localLastCommitPosition,
+        )
+        if (composing.isValid) {
+            flogDebug {
+                "Determined ${composing.start} - ${composing.end} as composing: " +
+                    textBeforeSelection.substring(composing.start, composing.end)
             }
-            if (start != end) {
-                flogDebug { "Determined $start - $end as composing: ${textBeforeSelection.substring(start, end)}" }
-                EditorRange(start, end)
-            } else {
-                flogDebug { "Determined Unspecified as composing" }
-                EditorRange.Unspecified
-            }
+        } else {
+            flogDebug { "Determined Unspecified as composing" }
         }
+        return composing
     }
 
     override val forcesSuggestionOn
