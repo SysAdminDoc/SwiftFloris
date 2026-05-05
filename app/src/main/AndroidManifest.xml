@@ -117,6 +117,13 @@
             android:configChanges="orientation|screenSize"
             android:theme="@style/CrashDialogTheme"/>
 
+        <!-- Voice Input Setup Activity -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.voice.VoiceInputSetupActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/FlorisAppTheme.Transparent"/>
+
         <!-- Copy to Clipboard Activity -->
         <activity
             android:name="dev.patrickgold.florisboard.ime.clipboard.FlorisCopyToClipboardActivity"

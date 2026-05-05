@@ -55,7 +55,7 @@ class VoiceInputManager(private val context: Context) {
     fun refreshAvailability(): Boolean {
         val available = isExternalVoiceInputMethodEnabled()
         _transcriptionState.value = if (available) TranscriptionState.Ready else TranscriptionState.Unavailable
-        _error.value = if (available) null else VoiceError.NotAvailable
+        _error.value = if (available) null else resolveAvailabilityError()
         return available
     }
 
@@ -74,11 +74,7 @@ class VoiceInputManager(private val context: Context) {
 
         _isListening.value = false
         _transcriptionState.value = TranscriptionState.Unavailable
-        _error.value = if (isFutoVoiceInputInstalled()) {
-            VoiceError.NotEnabled
-        } else {
-            VoiceError.NotAvailable
-        }
+        _error.value = resolveAvailabilityError()
         return false
     }
 
@@ -123,6 +119,26 @@ class VoiceInputManager(private val context: Context) {
                 (0 until inputMethod.subtypeCount).any { index ->
                     inputMethod.getSubtypeAt(index).mode == "voice"
                 }
+        }
+    }
+
+    fun resolveSetupReason(): VoiceInputSetupReason {
+        return when {
+            isFutoVoiceInputInstalled() -> VoiceInputSetupReason.FUTO_NOT_ENABLED
+            else -> VoiceInputSetupReason.FUTO_NOT_INSTALLED
+        }
+    }
+
+    fun showSetupDialog(reason: VoiceInputSetupReason = resolveSetupReason()): Boolean {
+        return VoiceInputSetupActivity.launch(context, reason)
+    }
+
+    private fun resolveAvailabilityError(): VoiceError {
+        return when (resolveSetupReason()) {
+            VoiceInputSetupReason.FUTO_NOT_ENABLED -> VoiceError.NotEnabled
+            VoiceInputSetupReason.FUTO_NOT_INSTALLED,
+            VoiceInputSetupReason.NO_ENABLED_PROVIDER,
+            -> VoiceError.NotAvailable
         }
     }
 }
