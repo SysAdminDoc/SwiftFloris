@@ -16,14 +16,16 @@
 
 package dev.patrickgold.florisboard.app.settings.localization
 
-import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.combinedClickable
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -52,6 +54,7 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
+import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
@@ -65,7 +68,6 @@ internal val SubtypeSaver = Saver<MutableState<Subtype?>, String>(
     },
 )
 
-@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun LocalizationScreen() = FlorisScreen {
     title = stringRes(R.string.settings__localization__title)
@@ -130,26 +132,45 @@ fun LocalizationScreen() = FlorisScreen {
                     val currMeta = currencySets[subtype.currencySet]
                     val summary = stringRes(
                         id = R.string.settings__localization__subtype_summary,
-                        "characters_name" to (cMeta?.label ?: "null"),
-                        "symbols_name" to (sMeta?.label ?: "null"),
-                        "currency_set_name" to (currMeta?.label ?: "null"),
+                        "characters_name" to (cMeta?.label ?: stringRes(
+                            id = R.string.settings__localization__subtype_component_not_installed,
+                            "component_id" to subtype.layoutMap.characters.toString(),
+                        )),
+                        "symbols_name" to (sMeta?.label ?: stringRes(
+                            id = R.string.settings__localization__subtype_component_not_installed,
+                            "component_id" to subtype.layoutMap.symbols.toString(),
+                        )),
+                        "currency_set_name" to (currMeta?.label ?: stringRes(
+                            id = R.string.settings__localization__subtype_component_not_installed,
+                            "component_id" to subtype.currencySet.toString(),
+                        )),
                     )
-                    Preference(
-                        title = when (displayLanguageNamesIn) {
+                    JetPrefListItem(
+                        modifier = Modifier.clickable {
+                            navController.navigate(
+                                Routes.Settings.SubtypeEdit(subtype.id)
+                            )
+                        },
+                        text = when (displayLanguageNamesIn) {
                             DisplayLanguageNamesIn.SYSTEM_LOCALE -> subtype.primaryLocale.displayName()
                             DisplayLanguageNamesIn.NATIVE_LOCALE -> subtype.primaryLocale.displayName(subtype.primaryLocale)
                         },
-                        summary = summary,
-                        modifier = Modifier.combinedClickable(
-                            onClick = {
-                                navController.navigate(
-                                    Routes.Settings.SubtypeEdit(subtype.id)
+                        secondaryText = summary,
+                        trailing = {
+                            IconButton(
+                                onClick = {
+                                    chosenSubtypeToDelete = subtype
+                                },
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = stringRes(
+                                        R.string.settings__localization__subtype_delete_action,
+                                    ),
+                                    tint = MaterialTheme.colorScheme.error,
                                 )
-                            },
-                            onLongClick = {
-                                chosenSubtypeToDelete = subtype
-                            },
-                        )
+                            }
+                        },
                     )
                 }
             }
@@ -164,7 +185,7 @@ fun LocalizationScreen() = FlorisScreen {
         onConfirm = {
             chosenSubtypeToDelete?.let { subtypeManager.removeSubtype(subtypeToRemove = it) }
             chosenSubtypeToDelete = null
-        }
+        },
     )
 
 }
@@ -174,16 +195,21 @@ fun DeleteSubtypeConfirmationDialog(
     subtypeToDelete: Subtype?,
     onDismiss: () -> Unit,
     onConfirm: () -> Unit,
-)   {
-    subtypeToDelete?.let {
+) {
+    subtypeToDelete?.let { subtype ->
         JetPrefAlertDialog(
             title = stringRes(R.string.settings__localization__subtype_delete_confirmation_title),
-            confirmLabel = stringRes(R.string.action__yes),
-            dismissLabel = stringRes(R.string.action__no),
+            confirmLabel = stringRes(R.string.action__delete),
+            dismissLabel = stringRes(R.string.action__cancel),
             onDismiss = onDismiss,
             onConfirm = onConfirm,
-            ) {
-                Text(stringRes(R.string.settings__localization__subtype_delete_confirmation_warning))
-            }
+        ) {
+            Text(
+                stringRes(
+                    R.string.settings__localization__subtype_delete_confirmation_warning,
+                    "subtype_name" to subtype.primaryLocale.displayName(),
+                )
+            )
+        }
     }
 }

@@ -218,6 +218,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
     var showSubtypePresetsDialog by rememberSaveable { mutableStateOf(id == null) }
     var showSelectAsError by rememberSaveable { mutableStateOf(false) }
     var errorDialogStrId by rememberSaveable { mutableStateOf<Int?>(null) }
+    var subtypeToDelete: Subtype? by rememberSaveable(saver = SubtypeSaver) { mutableStateOf(null) }
 
     val selectLocaleScreenResult = navController.currentBackStackEntry
         ?.savedStateHandle
@@ -254,15 +255,13 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
     actions {
         if (id != null) {
             IconButton(onClick = {
-                val subtype = subtypeManager.getSubtypeById(id)
-                if (subtype != null) {
-                    subtypeManager.removeSubtype(subtype)
-                    navController.popBackStack()
-                }
+                subtypeToDelete = subtypeManager.getSubtypeById(id)
             }) {
                 Icon(
                     imageVector = Icons.Default.Delete,
-                    contentDescription = null,
+                    contentDescription = stringRes(
+                        R.string.settings__localization__subtype_delete_action,
+                    ),
                 )
             }
         }
@@ -530,6 +529,20 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
             }
         }
     }
+
+    DeleteSubtypeConfirmationDialog(
+        subtypeToDelete = subtypeToDelete,
+        onDismiss = {
+            subtypeToDelete = null
+        },
+        onConfirm = {
+            subtypeToDelete?.let { subtype ->
+                subtypeManager.removeSubtype(subtype)
+                navController.popBackStack()
+            }
+            subtypeToDelete = null
+        },
+    )
 }
 
 @Composable
