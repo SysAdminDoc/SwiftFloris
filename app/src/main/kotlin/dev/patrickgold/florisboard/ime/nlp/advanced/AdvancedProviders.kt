@@ -80,6 +80,75 @@ internal object AdvancedSpellingEngine {
     }
 }
 
+internal data class AdvancedPredictionSuggestion(
+    val text: String,
+    val confidence: Double,
+    val isEligibleForAutoCommit: Boolean,
+)
+
+internal object AdvancedPredictionEngine {
+    fun suggest(
+        textBeforeSelection: String,
+        dictionary: Set<String>,
+        bigramPredictions: Map<String, List<Pair<String, Double>>>,
+        maxCandidateCount: Int,
+        frequencyForWord: (String) -> Double = { 0.5 },
+    ): List<AdvancedPredictionSuggestion> {
+        if (maxCandidateCount <= 0 || textBeforeSelection.isBlank()) {
+            return emptyList()
+        }
+
+        val words = textBeforeSelection.trimEnd().split(Regex("\\s+"))
+        val currentWord = words.lastOrNull()?.lowercase() ?: return emptyList()
+        if (currentWord.length < 2) {
+            return emptyList()
+        }
+
+        val contextWord = if (words.size >= 2) words[words.size - 2].lowercase() else null
+        val suggestions = mutableListOf<AdvancedPredictionSuggestion>()
+        val seen = mutableSetOf<String>()
+
+        dictionary.asSequence()
+            .filter { it.startsWith(currentWord) && it.length > currentWord.length }
+            .sortedWith(
+                compareByDescending<String> { frequencyForWord(it) }
+                    .thenBy { it.length }
+                    .thenBy { it }
+            )
+            .take(maxCandidateCount)
+            .forEach { word ->
+                seen.add(word)
+                val frequency = frequencyForWord(word)
+                suggestions.add(
+                    AdvancedPredictionSuggestion(
+                        text = word,
+                        confidence = frequency,
+                        isEligibleForAutoCommit = frequency >= 0.8,
+                    )
+                )
+            }
+
+        if (contextWord != null && suggestions.size < maxCandidateCount) {
+            for ((word, score) in bigramPredictions[contextWord].orEmpty()) {
+                if (seen.add(word)) {
+                    suggestions.add(
+                        AdvancedPredictionSuggestion(
+                            text = word,
+                            confidence = score,
+                            isEligibleForAutoCommit = score >= 0.8,
+                        )
+                    )
+                    if (suggestions.size >= maxCandidateCount) {
+                        break
+                    }
+                }
+            }
+        }
+
+        return suggestions
+    }
+}
+
 /**
  * Advanced spell checker and autocorrect provider using dictionary-based spell checking
  * and edit distance algorithms for robust error detection and correction.
@@ -202,59 +271,24 @@ class AdvancedPredictionProvider(private val context: Context) : SuggestionProvi
         val lang = subtype.primaryLocale.language
         val textBeforeSelection = content.textBeforeSelection
 
-        if (textBeforeSelection.isBlank()) {
-            return emptyList()
-        }
-
-        // Extract the current word being typed
-        val words = textBeforeSelection.split(Regex("\\s+"))
-        val currentWord = words.lastOrNull()?.lowercase() ?: return emptyList()
-
-        if (currentWord.length < 2) {
-            return emptyList()
-        }
-
-        // Get context (previous word if available)
-        val contextWord = if (words.size >= 2) words[words.size - 2].lowercase() else null
-
-        // Check cache first
-        val cacheKey = "$lang:$contextWord:$currentWord"
+        val cacheKey = "$lang:$textBeforeSelection:$maxCandidateCount"
         contextCache[cacheKey]?.let { return it }
 
-        val suggestions = mutableListOf<WordSuggestionCandidate>()
         val dictionary = dictionaryCache[lang] ?: emptySet()
-
-        // Get completions for current word
-        val completions = dictionary
-            .filter { it.startsWith(currentWord) && it.length > currentWord.length }
-            .take(maxCandidateCount)
-            .map { word ->
-                val frequency = unigramFrequency[word] ?: 0.5
-                WordSuggestionCandidate(
-                    text = word,
-                    confidence = frequency,
-                    isEligibleForAutoCommit = frequency >= 0.8,
-                    sourceProvider = this
-                )
-            }
-
-        suggestions.addAll(completions)
-
-        // If we have context, add context-based predictions
-        if (contextWord != null && suggestions.size < maxCandidateCount) {
-            val contextBigrams = bigramCache[lang]?.get(contextWord) ?: emptyList()
-            for ((word, score) in contextBigrams) {
-                if (suggestions.none { it.text == word } && suggestions.size < maxCandidateCount) {
-                    suggestions.add(
-                        WordSuggestionCandidate(
-                            text = word,
-                            confidence = score,
-                            isEligibleForAutoCommit = score >= 0.8,
-                            sourceProvider = this
-                        )
-                    )
-                }
-            }
+        val bigrams = bigramCache[lang] ?: emptyMap()
+        val suggestions = AdvancedPredictionEngine.suggest(
+            textBeforeSelection = textBeforeSelection,
+            dictionary = dictionary,
+            bigramPredictions = bigrams,
+            maxCandidateCount = maxCandidateCount,
+            frequencyForWord = { word -> unigramFrequency[word] ?: 0.5 },
+        ).map { prediction ->
+            WordSuggestionCandidate(
+                text = prediction.text,
+                confidence = prediction.confidence,
+                isEligibleForAutoCommit = prediction.isEligibleForAutoCommit,
+                sourceProvider = this,
+            )
         }
 
         contextCache.put(cacheKey, suggestions)
