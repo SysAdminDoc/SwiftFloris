@@ -17,6 +17,7 @@
     <string name="media__tab__kaomoji" comment="Tab description for kaomoji in the media UI">Kaomoji</string>
     <string name="prefs__media__emoji_preferred_skin_tone">Preferred emoji skin tone</string>
     <string name="prefs__media__emoji_preferred_hair_style">Preferred emoji hair style</string>
+    <string name="prefs__media__emoji_defaults__title" comment="Preference group title">Emoji defaults</string>
     <string name="prefs__media__emoji_history__title" comment="Preference group title">Emoji history</string>
     <string name="prefs__media__emoji_history_enabled" comment="Preference title">Enable emoji history</string>
     <string name="prefs__media__emoji_history_enabled__summary" comment="Preference summary">Retain recently used emojis for quick access</string>
@@ -25,6 +26,8 @@
     <string name="prefs__media__emoji_history_max_size">Maximum items to keep</string>
     <string name="prefs__media__emoji_history_pinned_reset">Reset pinned emojis</string>
     <string name="prefs__media__emoji_history_reset">Reset recent emojis</string>
+    <string name="prefs__media__emoji_history_pinned_reset_confirm_name">pinned emojis</string>
+    <string name="prefs__media__emoji_history_reset_confirm_name">recent emoji history</string>
     <string name="prefs__media__emoji_suggestion__title" comment="Preference group title">Emoji suggestions</string>
     <string name="prefs__media__emoji_suggestion_enabled" comment="Preference title">Enable emoji suggestions</string>
     <string name="prefs__media__emoji_suggestion_enabled__summary" comment="Preference summary">Provide emoji suggestions while you type</string>
@@ -129,28 +132,35 @@
     <string name="settings__home__ime_ready" comment="Status message shown in Home when SwiftFloris is enabled and selected">SwiftFloris is active. Use the preview below to check your typing setup before switching apps.</string>
     <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled yet. Tap to open Android keyboard settings and make it available.</string>
     <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is enabled but not selected. Tap to switch your active keyboard.</string>
-    <string name="settings__home__section_essentials" comment="Home screen section title">Essentials</string>
-    <string name="settings__home__section_experience" comment="Home screen section title">Experience</string>
+    <string name="settings__home__section_essentials" comment="Home screen section title">Start here</string>
+    <string name="settings__home__section_experience" comment="Home screen section title">Typing experience</string>
+    <string name="settings__home__section_data" comment="Home screen section title">Data &amp; extensions</string>
     <string name="settings__home__section_system" comment="Home screen section title">System</string>
     <string name="settings__home__localization_summary" comment="Home screen preference summary">Languages, layouts, subtype presets, and language packs</string>
     <string name="settings__home__typing_summary" comment="Home screen preference summary">Word suggestions, autocorrect, spelling, and dictionaries</string>
     <string name="settings__home__keyboard_summary" comment="Home screen preference summary">Rows, labels, popups, spacing, and key behavior</string>
     <string name="settings__home__smartbar_summary" comment="Home screen preference summary">Suggestion strip layout and quick action behavior</string>
+    <string name="settings__home__input_feedback_summary" comment="Home screen preference summary">Sounds, vibration strength, duration, and per-action feedback</string>
     <string name="settings__home__theme_summary" comment="Home screen preference summary">Keyboard themes, accent color, and visual style</string>
     <string name="settings__home__gestures_summary" comment="Home screen preference summary">Glide typing, swipe actions, and gesture thresholds</string>
     <string name="settings__home__clipboard_summary" comment="Home screen preference summary">Clipboard history, suggestions, privacy, and cleanup</string>
     <string name="settings__home__media_summary" comment="Home screen preference summary">Emoji history, emoji suggestions, and media behavior</string>
+    <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Personal words used by suggestions, correction, and spell checking</string>
     <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
-    <string name="settings__home__other_summary" comment="Home screen preference summary">Backup, restore, physical keyboard, and app preferences</string>
+    <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
+    <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
+    <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
     <string name="settings__home__about_summary" comment="Home screen preference summary">Version, privacy policy, source, and licenses</string>
 
     <string name="settings__localization__title" comment="Title of languages and Layout screen">Languages &amp; Layouts</string>
+    <string name="settings__localization__group_display__label" comment="Preference group title">Display</string>
+    <string name="settings__localization__group_language_packs__label" comment="Preference group title">Language packs</string>
     <string name="settings__localization__display_language_names_in__label" comment="Label of Display language names in preference">Display language names in</string>
     <string name="settings__localization__display_keyboard_labels_in_subtype_language" comment="Label of Display keyboard labels in subtype language preference">Display keyboard labels in subtype language</string>
-    <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Subtypes</string>
+    <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Active keyboard languages</string>
     <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add subtype</string>
     <string name="settings__localization__language_pack_title" comment="Title of the language pack manager screen for managing installed and custom language packs">Manage installed language packs</string>
-    <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Experimental: manage extensions that add support for specific languages (shape-based Chinese input for now)</string>
+    <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Install and manage language extensions for layouts, dictionaries, and language-specific input</string>
     <string name="settings__localization__subtype_edit_title" comment="Title of subtype dialog when editing an existing subtype">Edit subtype</string>
     <string name="settings__localization__subtype_locale" comment="Label for locale dropdown in subtype dialog">Primary language</string>
     <string name="settings__localization__subtype_popup_mapping" comment="Label for popup mapping dropdown in subtype screen">Popup mapping</string>
@@ -185,6 +195,9 @@
     <string name="settings__localization__subtype_delete_confirmation_warning" comment="Warning message in the confirmation dialog to confirm the user's intent to delete">Delete &quot;{subtype_name}&quot;? This removes its keyboard layouts and language settings from SwiftFloris.</string>
 
     <string name="settings__theme__title" comment="Title of the Theme screen">Theme</string>
+    <string name="pref__theme__group_schedule__label" comment="Preference group title">Appearance schedule</string>
+    <string name="pref__theme__group_keyboard_themes__label" comment="Preference group title">Keyboard themes</string>
+    <string name="pref__theme__group_customization__label" comment="Preference group title">Accent &amp; customization</string>
     <string name="pref__theme__mode__label" comment="Label of the theme mode preference">Theme mode</string>
     <string name="pref__theme__sunrise_time__label" comment="Label of the sunrise time preference">Sunrise time</string>
     <string name="pref__theme__sunset_time__label" comment="Label of the sunset time preference">Sunset time</string>
@@ -432,7 +445,8 @@
     <string name="snygg__property_value__uri">URI reference</string>
 
     <string name="settings__input_feedback__title" comment="Title of Input Feedback screen">Sounds &amp; Vibration</string>
-    <string name="pref__input_feedback__group_audio__label" comment="Preference group title">Audio feedback / Sounds</string>
+    <string name="settings__input_feedback__summary" comment="Preference summary for the Sounds and Vibration settings shortcut">Sounds, vibration strength, duration, and feedback for each input action</string>
+    <string name="pref__input_feedback__group_audio__label" comment="Preference group title">Sounds</string>
     <string name="pref__input_feedback__audio_enabled__label" comment="Preference title">Enable audio feedback</string>
     <string name="pref__input_feedback__audio_enabled__summary_disabled" comment="Preference summary">Never play sounds for input events, regardless of system settings</string>
     <string name="pref__input_feedback__audio_volume__label" comment="Preference title">Sound volume for input events</string>
@@ -441,14 +455,17 @@
     <string name="pref__input_feedback__audio_feat_key_repeated_action__label" comment="Preference title">Key repeated action sounds</string>
     <string name="pref__input_feedback__audio_feat_gesture_swipe__label" comment="Preference title">Gesture swipe sounds</string>
     <string name="pref__input_feedback__audio_feat_gesture_moving_swipe__label" comment="Preference title">Gesture moving swipe sounds</string>
-    <string name="pref__input_feedback__group_haptic__label" comment="Preference group title">Haptic feedback / Vibration</string>
+    <string name="pref__input_feedback__group_haptic__label" comment="Preference group title">Vibration</string>
     <string name="pref__input_feedback__haptic_enabled__label" comment="Preference title">Enable haptic feedback</string>
     <string name="pref__input_feedback__haptic_enabled__summary_disabled" comment="Preference summary">Never vibrate for input events, regardless of system settings</string>
     <string name="pref__input_feedback__haptic_vibration_mode__label" comment="Preference title">Vibration mode</string>
     <string name="pref__input_feedback__haptic_vibration_duration__label" comment="Preference title">Vibration duration</string>
+    <string name="pref__input_feedback__haptic_vibration_duration__summary_no_vibrator" comment="Preference summary">Vibration duration requires a hardware vibrator, which seems to be missing on this device</string>
     <string name="pref__input_feedback__haptic_vibration_strength__label" comment="Preference title">Key vibration strength</string>
     <string name="pref__input_feedback__haptic_vibration_strength__summary_no_vibrator" comment="Preference summary">Key vibration strength requires a hardware vibrator, which seems to be missing on this device</string>
     <string name="pref__input_feedback__haptic_vibration_strength__summary_no_amplitude_ctrl" comment="Preference summary">Key vibration strength requires hardware amplitude control support, which is missing on your device</string>
+    <string name="pref__input_feedback__haptic_vibrator_unavailable__message" comment="Info message shown when vibration settings cannot work">This device does not report a hardware vibrator, so vibration options remain unavailable.</string>
+    <string name="pref__input_feedback__haptic_amplitude_unavailable__message" comment="Info message shown when vibration strength cannot be adjusted">This device can vibrate, but Android does not expose adjustable vibration strength. Duration can still be tuned.</string>
     <string name="pref__input_feedback__haptic_feat_key_press__label" comment="Preference title">Key press vibration</string>
     <string name="pref__input_feedback__haptic_feat_key_long_press__label" comment="Preference title">Key long press vibration</string>
     <string name="pref__input_feedback__haptic_feat_key_repeated_action__label" comment="Preference title">Key repeated action vibration</string>
@@ -457,10 +474,12 @@
     <string name="pref__input_feedback__any_feat_key_press__summary" comment="Preference summary">e.g. keys, buttons, emoji tabs</string>
     <string name="pref__input_feedback__any_feat_key_long_press__summary" comment="Preference summary">e.g. popup menu</string>
     <string name="pref__input_feedback__any_feat_key_repeated_action__summary" comment="Preference summary">e.g. delete key</string>
-    <string name="pref__input_feedback__any_feat_gesture_swipe__summary" comment="Preference summary">not implemented</string>
+    <string name="pref__input_feedback__any_feat_gesture_swipe__summary" comment="Preference summary">Reserved for gesture feedback</string>
     <string name="pref__input_feedback__any_feat_gesture_moving_swipe__summary" comment="Preference summary">e.g. cursor control swipe</string>
 
     <string name="settings__keyboard__title" comment="Title of Keyboard preferences screen">Keyboard</string>
+    <string name="pref__keyboard__group_rows_and_hints__label" comment="Preference group title">Rows &amp; hints</string>
+    <string name="pref__keyboard__group_behavior__label" comment="Preference group title">Key behavior</string>
     <string name="pref__keyboard__number_row__label" comment="Preference title">Number row</string>
     <string name="pref__keyboard__number_row__summary" comment="Preference summary">Show a number row above the character layout</string>
     <string name="pref__keyboard__hinted_number_row_mode__label" comment="Preference title">Hinted number row</string>
@@ -471,10 +490,10 @@
     <string name="pref__keyboard__space_bar_mode__label" comment="Preference title">Spacebar label</string>
     <string name="pref__keyboard__capitalization_behavior__label" comment="Preference title">Capitalization behavior</string>
     <string name="pref__keyboard__font_size_multiplier__label" comment="Preference title">Font size multiplier</string>
-    <string name="pref__keyboard__group_layout__label" comment="Preference group title">Layout</string>
+    <string name="pref__keyboard__group_layout__label" comment="Preference group title">Layout &amp; size</string>
     <string name="pref__keyboard__landscape_input_ui_mode__label" comment="Preference value">Landscape fullscreen input</string>
     <string name="pref__keyboard__key_spacing__label" comment="Preference title">Key spacing factor</string>
-    <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Key press</string>
+    <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Feedback &amp; previews</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Popup Visibility</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Show popup when you press a key</string>
     <string name="pref__keyboard__merge_hint_popups_enabled__label" comment="Preference title">Accents include symbol popups</string>
@@ -486,6 +505,7 @@
 
     <!-- Smartbar strings -->
     <string name="settings__smartbar__title" comment="Title of Smartbar screen">Smartbar</string>
+    <string name="pref__smartbar__group_basics__label" comment="Preference group title">Basics</string>
     <string name="pref__smartbar__enabled__label" comment="Preference title">Enable Smartbar</string>
     <string name="pref__smartbar__enabled__summary" comment="Preference summary">Show suggestions and quick actions above the keyboard</string>
     <string name="pref__smartbar__layout__label" comment="Preference title">Layout</string>
@@ -501,7 +521,7 @@
     <string name="settings__typing__title" comment="Title of Typing screen">Typing</string>
     <string name="pref__suggestion__title" comment="Preference group title">Suggestions</string>
     <string name="pref__suggestion__enabled__label" comment="Preference title">Display suggestions</string>
-    <string name="settings__typing__suggestions_ready" comment="Informational message at top of Typing settings">Word suggestions and autocorrect are available for Latin-based typing. Some languages may still require a compatible language pack or suggestion engine.</string>
+    <string name="settings__typing__suggestions_ready" comment="Informational message at top of Typing settings">Tune suggestions, corrections, spell checking, and personal dictionaries. Changes take effect immediately in the preview field.</string>
     <string name="pref__suggestion__enabled__summary" comment="Preference summary">Show word completions and typo corrections while you type</string>
     <string name="pref__suggestion__display_mode__label" comment="Preference title">Suggestions display mode</string>
     <string name="pref__suggestion__block_possibly_offensive__label" comment="Preference title">Block possibly offensive words</string>
@@ -530,6 +550,9 @@
     <string name="pref__spelling__use_udm_entries__summary" comment="Summary of Use user dictionary entries pref">Look up entries from the user dictionaries</string>
 
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
+    <string name="settings__typing__dictionary_summary" comment="Typing screen shortcut summary">Manage personal words used by suggestions, corrections, and spell checking</string>
+    <string name="pref__dictionary__group_system__label" comment="Preference group title">System dictionary</string>
+    <string name="pref__dictionary__group_internal__label" comment="Preference group title">SwiftFloris dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__summary" comment="Preference summary">Suggest words stored in the system user dictionary</string>
     <string name="pref__dictionary__manage_system_user_dictionary__label" comment="Preference title">Manage system user dictionary</string>
@@ -573,11 +596,14 @@
     <string name="pref__glide_trail_fade_duration">Glide trail fade time</string>
     <string name="pref__glide_preview_refresh_delay">Preview refresh delay</string>
     <string name="pref__glide__show_preview">Show preview while glide typing</string>
+    <string name="pref__glide__show_preview__summary">Requires word suggestions to be enabled</string>
     <string name="pref__glide__immediate_backspace_deletes_word__label">Always delete word</string>
     <string name="pref__glide__immediate_backspace_deletes_word__summary">Pressing delete right after a glide deletes the whole word</string>
+    <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Space bar and delete key gestures stay available even when glide typing is on.</string>
+    <string name="settings__gestures__glide_conflict_notice">General key swipes are paused while glide typing is enabled so swipe-to-type remains predictable.</string>
     <string name="pref__gestures__general_title" comment="Preference group title">General gestures</string>
     <string name="pref__gestures__space_bar_title" comment="Preference group title">Space bar gestures</string>
-    <string name="pref__gestures__other_title" comment="Preference group title">Other gestures / Gesture thresholds</string>
+    <string name="pref__gestures__other_title" comment="Preference group title">Delete key &amp; thresholds</string>
     <string name="pref__gestures__swipe_up__label" comment="Preference title">Swipe up</string>
     <string name="pref__gestures__swipe_down__label" comment="Preference title">Swipe down</string>
     <string name="pref__gestures__swipe_left__label" comment="Preference title">Swipe left</string>
@@ -591,7 +617,9 @@
     <string name="pref__gestures__swipe_velocity_threshold__label" comment="Preference title">Swipe velocity threshold</string>
     <string name="pref__gestures__swipe_distance_threshold__label" comment="Preference title">Swipe distance threshold</string>
 
-    <string name="settings__other__title" comment="Title of Other settings">Other</string>
+    <string name="settings__other__title" comment="Title of Other settings">System &amp; advanced</string>
+    <string name="settings__other__section_app_preferences" comment="Preference group title">Settings app</string>
+    <string name="settings__other__section_keyboard_system" comment="Preference group title">Keyboard system</string>
     <string name="pref__other__settings_theme__label" comment="Label of Settings theme preference in Other">Settings theme</string>
     <string name="pref__other__settings_theme__auto_amoled" comment="Possible value of Settings theme preference in Other">System default (AMOLED)</string>
     <string name="pref__other__settings_theme__light" comment="Possible value of Settings theme preference in Other">Light</string>
@@ -603,6 +631,8 @@
     <string name="pref__other__settings_language__label" comment="Label of Settings language preference in Other">Settings language</string>
     <string name="pref__other__show_app_icon__label" comment="Label of Show app icon preference in Other">Show app icon in launcher</string>
     <string name="pref__other__show_app_icon__summary_atleast_q" comment="Summary of Show app icon preference in Other for Android 10+">Always enabled on Android 10+ due to restrictions of the system</string>
+    <string name="settings__other__physical_keyboard_summary" comment="Preference summary">Configure attached hardware keyboards and on-screen keyboard behavior</string>
+    <string name="settings__other__devtools_summary" comment="Preference summary">Diagnostics and debugging tools for advanced troubleshooting</string>
 
     <!-- About UI strings -->
     <string name="about__title" comment="Title of About activity">About</string>
@@ -755,6 +785,7 @@
     <string name="clipboard__confirm_clear_unfiltered_history__message">Are you sure you want to clear your full clipboard history? This will affect all items, except pinned ones.</string>
     <string name="clipboard__confirm_clear_filtered_history__message">Are you sure you want to clear your clipboard history? This will affect all currently filtered items, except pinned ones.</string>
     <string name="settings__clipboard__title">Clipboard</string>
+    <string name="pref__clipboard__group_system_clipboard__label">System clipboard sync</string>
     <string name="pref__clipboard__use_internal_clipboard__label">Use internal clipboard</string>
     <string name="pref__clipboard__use_internal_clipboard__summary">Use an internal clipboard instead of the system clipboard</string>
     <string name="pref__clipboard__sync_from_system_clipboard__label">Sync from system clipboard</string>
@@ -769,13 +800,18 @@
     <string name="pref__clipboard__enable_clipboard_history__label">Enable clipboard history</string>
     <string name="pref__clipboard__enable_clipboard_history__summary">Retain clipboard items for quick access</string>
     <string name="pref__clipboard__clean_up_old__label">Clean up old items</string>
+    <string name="pref__clipboard__clean_up_old__summary">Automatically remove unpinned history entries after a time limit</string>
     <string name="pref__clipboard__clean_up_after__label">Clean up old items after</string>
     <string name="pref__clipboard__auto_clean_sensitive__label">Auto clean sensitive items</string>
+    <string name="pref__clipboard__auto_clean_sensitive__summary">Remove sensitive clips sooner when Android marks them as private</string>
     <string name="pref__clipboard__auto_clean_sensitive_after__label">Auto clean sensitive items after</string>
     <string name="pref__clipboard__limit_history_size__label">Limit history size</string>
+    <string name="pref__clipboard__limit_history_size__summary">Keep the clipboard history from growing beyond a chosen item count</string>
     <string name="pref__clipboard__max_history_size__label">Max history size</string>
     <string name="pref__clipboard__history_hide_on_paste__label">Hide history on paste</string>
+    <string name="pref__clipboard__history_hide_on_paste__summary">Return to the keyboard after pasting an item from history</string>
     <string name="pref__clipboard__history_hide_on_next_text_field__label">Hide history on next text field</string>
+    <string name="pref__clipboard__history_hide_on_next_text_field__summary">Return to the keyboard when focus moves to another text field</string>
     <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label">Clear primary clip affects history</string>
     <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary">Clearing the primary clip also removes it from the history, if not pinned</string>
     <string name="send_to_clipboard__unknown_error">An unknown error occurred. Please try again!</string>

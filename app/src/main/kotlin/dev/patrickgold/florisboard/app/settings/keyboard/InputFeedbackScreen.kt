@@ -16,8 +16,11 @@
 
 package dev.patrickgold.florisboard.app.settings.keyboard
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.input.HapticVibrationMode
@@ -30,6 +33,7 @@ import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.android.systemVibratorOrNull
 import org.florisboard.lib.android.vibrate
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -87,12 +91,24 @@ fun InputFeedbackScreen() = FlorisScreen {
             SwitchPreference(
                 prefs.inputFeedback.audioFeatGestureMovingSwipe,
                 title = stringRes(R.string.pref__input_feedback__audio_feat_gesture_moving_swipe__label),
-                summary = stringRes(R.string.pref__input_feedback__audio_feat_gesture_moving_swipe__label),
+                summary = stringRes(R.string.pref__input_feedback__any_feat_gesture_moving_swipe__summary),
                 enabledIf = { prefs.inputFeedback.audioEnabled isEqualTo true },
             )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__input_feedback__group_haptic__label)) {
+            if (vibrator == null || !vibrator.hasVibrator()) {
+                FlorisInfoCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.pref__input_feedback__haptic_vibrator_unavailable__message),
+                )
+            } else if (!vibrator.hasAmplitudeControl()) {
+                FlorisInfoCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.pref__input_feedback__haptic_amplitude_unavailable__message),
+                )
+            }
+
             ListPreference(
                 listPref = prefs.inputFeedback.hapticActivationMode,
                 switchPref = prefs.inputFeedback.hapticEnabled,
@@ -112,7 +128,7 @@ fun InputFeedbackScreen() = FlorisScreen {
                 valueLabel = { stringRes(R.string.unit__milliseconds__symbol, "v" to it) },
                 summary = {
                     if (vibrator == null || !vibrator.hasVibrator()) {
-                        stringRes(R.string.pref__input_feedback__haptic_vibration_strength__summary_no_vibrator)
+                        stringRes(R.string.pref__input_feedback__haptic_vibration_duration__summary_no_vibrator)
                     } else {
                         stringRes(R.string.unit__milliseconds__symbol, "v" to it)
                     }
@@ -184,7 +200,7 @@ fun InputFeedbackScreen() = FlorisScreen {
             SwitchPreference(
                 prefs.inputFeedback.hapticFeatGestureMovingSwipe,
                 title = stringRes(R.string.pref__input_feedback__haptic_feat_gesture_moving_swipe__label),
-                summary = stringRes(R.string.pref__input_feedback__audio_feat_gesture_moving_swipe__label),
+                summary = stringRes(R.string.pref__input_feedback__any_feat_gesture_moving_swipe__summary),
                 enabledIf = { prefs.inputFeedback.hapticEnabled isEqualTo true },
             )
         }

@@ -18,13 +18,17 @@ package dev.patrickgold.florisboard.app.settings
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.outlined.Assignment
+import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
+import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Spellcheck
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Keyboard
@@ -85,31 +89,37 @@ fun HomeScreen() = FlorisScreen {
                 onClick = { navController.navigate(Routes.Settings.Localization) },
             )
             Preference(
-                icon = Icons.Default.Spellcheck,
-                title = stringRes(R.string.settings__typing__title),
-                summary = stringRes(R.string.settings__home__typing_summary),
-                onClick = { navController.navigate(Routes.Settings.Typing) },
-            )
-            Preference(
                 icon = Icons.Outlined.Keyboard,
                 title = stringRes(R.string.settings__keyboard__title),
                 summary = stringRes(R.string.settings__home__keyboard_summary),
                 onClick = { navController.navigate(Routes.Settings.Keyboard) },
             )
             Preference(
-                icon = Icons.Default.SmartButton,
-                title = stringRes(R.string.settings__smartbar__title),
-                summary = stringRes(R.string.settings__home__smartbar_summary),
-                onClick = { navController.navigate(Routes.Settings.Smartbar) },
+                icon = Icons.Default.Spellcheck,
+                title = stringRes(R.string.settings__typing__title),
+                summary = stringRes(R.string.settings__home__typing_summary),
+                onClick = { navController.navigate(Routes.Settings.Typing) },
             )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__home__section_experience)) {
             Preference(
                 icon = Icons.Outlined.Palette,
                 title = stringRes(R.string.settings__theme__title),
                 summary = stringRes(R.string.settings__home__theme_summary),
                 onClick = { navController.navigate(Routes.Settings.Theme) },
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_experience)) {
+            Preference(
+                icon = Icons.Default.SmartButton,
+                title = stringRes(R.string.settings__smartbar__title),
+                summary = stringRes(R.string.settings__home__smartbar_summary),
+                onClick = { navController.navigate(Routes.Settings.Smartbar) },
+            )
+            Preference(
+                icon = Icons.Default.Vibration,
+                title = stringRes(R.string.settings__input_feedback__title),
+                summary = stringRes(R.string.settings__home__input_feedback_summary),
+                onClick = { navController.navigate(Routes.Settings.InputFeedback) },
             )
             Preference(
                 icon = Icons.Default.Gesture,
@@ -129,11 +139,32 @@ fun HomeScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__home__media_summary),
                 onClick = { navController.navigate(Routes.Settings.Media) },
             )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_data)) {
+            Preference(
+                icon = Icons.AutoMirrored.Filled.LibraryBooks,
+                title = stringRes(R.string.settings__dictionary__title),
+                summary = stringRes(R.string.settings__home__dictionary_summary),
+                onClick = { navController.navigate(Routes.Settings.Dictionary) },
+            )
             Preference(
                 icon = Icons.Default.Extension,
                 title = stringRes(R.string.ext__home__title),
                 summary = stringRes(R.string.settings__home__extensions_summary),
                 onClick = { navController.navigate(Routes.Ext.Home) },
+            )
+            Preference(
+                icon = Icons.Default.Archive,
+                title = stringRes(R.string.backup_and_restore__back_up__title),
+                summary = stringRes(R.string.settings__home__backup_summary),
+                onClick = { navController.navigate(Routes.Settings.Backup) },
+            )
+            Preference(
+                icon = Icons.Default.SettingsBackupRestore,
+                title = stringRes(R.string.backup_and_restore__restore__title),
+                summary = stringRes(R.string.settings__home__restore_summary),
+                onClick = { navController.navigate(Routes.Settings.Restore) },
             )
         }
 

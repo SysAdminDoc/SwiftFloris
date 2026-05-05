@@ -44,6 +44,7 @@ import dev.patrickgold.jetpref.datastore.ui.ColorPickerPreference
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.LocalTimePickerPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.isMaterialYou
 import org.florisboard.lib.color.ColorMappings
 import org.florisboard.lib.compose.stringRes
@@ -68,66 +69,74 @@ fun ThemeScreen() = FlorisScreen {
         val dayThemeId by prefs.theme.dayThemeId.collectAsState()
         val nightThemeId by prefs.theme.nightThemeId.collectAsState()
 
-        ListPreference(
-            prefs.theme.mode,
-            icon = Icons.Default.BrightnessAuto,
-            title = stringRes(R.string.pref__theme__mode__label),
-            entries = enumDisplayEntriesOf(ThemeMode::class),
-        )
-        Preference(
-            icon = Icons.Default.LightMode,
-            title = stringRes(R.string.pref__theme__day),
-            summary = themeManager.getThemeLabel(dayThemeId),
-            enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_NIGHT },
-            onClick = {
-                navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_DAY))
-            },
-        )
-        Preference(
-            icon = Icons.Default.DarkMode,
-            title = stringRes(R.string.pref__theme__night),
-            summary = themeManager.getThemeLabel(nightThemeId),
-            enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_DAY },
-            onClick = {
-                navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_NIGHT))
-            },
-        )
-        LocalTimePickerPreference(
-            pref = prefs.theme.sunriseTime,
-            title = stringRes(R.string.pref__theme__sunrise_time__label),
-            icon = Icons.Default.WbTwilight,
-            enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
-        )
-        LocalTimePickerPreference(
-            pref = prefs.theme.sunsetTime,
-            title = stringRes(R.string.pref__theme__sunset_time__label),
-            icon = Icons.Default.Brightness2,
-            enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
-        )
-        ColorPickerPreference(
-            pref = prefs.theme.accentColor,
-            title = stringRes(R.string.pref__theme__theme_accent_color__label),
-            defaultValueLabel = stringRes(R.string.action__default),
-            icon = Icons.Default.ColorLens,
-            defaultColors = ColorMappings.colors,
-            showAlphaSlider = false,
-            enableAdvancedLayout = true,
-            colorOverride = {
-                if (it.isMaterialYou(context)) {
-                    Color.Unspecified
-                } else {
-                    it
-                }
-            }
-        )
+        PreferenceGroup(title = stringRes(R.string.pref__theme__group_schedule__label)) {
+            ListPreference(
+                prefs.theme.mode,
+                icon = Icons.Default.BrightnessAuto,
+                title = stringRes(R.string.pref__theme__mode__label),
+                entries = enumDisplayEntriesOf(ThemeMode::class),
+            )
+            LocalTimePickerPreference(
+                pref = prefs.theme.sunriseTime,
+                title = stringRes(R.string.pref__theme__sunrise_time__label),
+                icon = Icons.Default.WbTwilight,
+                enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
+            )
+            LocalTimePickerPreference(
+                pref = prefs.theme.sunsetTime,
+                title = stringRes(R.string.pref__theme__sunset_time__label),
+                icon = Icons.Default.Brightness2,
+                enabledIf = { prefs.theme.mode isEqualTo ThemeMode.FOLLOW_TIME },
+            )
+        }
 
-        Preference(
-            icon = Icons.Default.Tune,
-            title = stringRes(R.string.pref__theme__customization__label),
-            summary = stringRes(R.string.pref__theme__customization__summary),
-            onClick = {
-                navController.navigate(Routes.Ext.List(ExtensionListScreenType.EXT_THEME, showUpdate = true))
-            },
-        )
+        PreferenceGroup(title = stringRes(R.string.pref__theme__group_keyboard_themes__label)) {
+            Preference(
+                icon = Icons.Default.LightMode,
+                title = stringRes(R.string.pref__theme__day),
+                summary = themeManager.getThemeLabel(dayThemeId),
+                enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_NIGHT },
+                onClick = {
+                    navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_DAY))
+                },
+            )
+            Preference(
+                icon = Icons.Default.DarkMode,
+                title = stringRes(R.string.pref__theme__night),
+                summary = themeManager.getThemeLabel(nightThemeId),
+                enabledIf = { prefs.theme.mode isNotEqualTo ThemeMode.ALWAYS_DAY },
+                onClick = {
+                    navController.navigate(Routes.Settings.ThemeManager(ThemeManagerScreenAction.SELECT_NIGHT))
+                },
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.pref__theme__group_customization__label)) {
+            ColorPickerPreference(
+                pref = prefs.theme.accentColor,
+                title = stringRes(R.string.pref__theme__theme_accent_color__label),
+                defaultValueLabel = stringRes(R.string.action__default),
+                icon = Icons.Default.ColorLens,
+                defaultColors = ColorMappings.colors,
+                showAlphaSlider = false,
+                enableAdvancedLayout = true,
+                colorOverride = {
+                    if (it.isMaterialYou(context)) {
+                        Color.Unspecified
+                    } else {
+                        it
+                    }
+                }
+            )
+
+            Preference(
+                icon = Icons.Default.Tune,
+                title = stringRes(R.string.pref__theme__customization__label),
+                summary = stringRes(R.string.pref__theme__customization__summary),
+                onClick = {
+                    navController.navigate(Routes.Ext.List(ExtensionListScreenType.EXT_THEME, showUpdate = true))
+                },
+            )
+        }
     }
 }

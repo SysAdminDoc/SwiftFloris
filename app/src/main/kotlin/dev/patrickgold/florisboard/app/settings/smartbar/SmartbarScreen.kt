@@ -35,17 +35,19 @@ fun SmartbarScreen() = FlorisScreen {
     previewFieldVisible = true
 
     content {
-        SwitchPreference(
-            prefs.smartbar.enabled,
-            title = stringRes(R.string.pref__smartbar__enabled__label),
-            summary = stringRes(R.string.pref__smartbar__enabled__summary),
-        )
-        ListPreference(
-            listPref = prefs.smartbar.layout,
-            title = stringRes(R.string.pref__smartbar__layout__label),
-            entries = enumDisplayEntriesOf(SmartbarLayout::class),
-            enabledIf = { prefs.smartbar.enabled isEqualTo true },
-        )
+        PreferenceGroup(title = stringRes(R.string.pref__smartbar__group_basics__label)) {
+            SwitchPreference(
+                prefs.smartbar.enabled,
+                title = stringRes(R.string.pref__smartbar__enabled__label),
+                summary = stringRes(R.string.pref__smartbar__enabled__summary),
+            )
+            ListPreference(
+                listPref = prefs.smartbar.layout,
+                title = stringRes(R.string.pref__smartbar__layout__label),
+                entries = enumDisplayEntriesOf(SmartbarLayout::class),
+                enabledIf = { prefs.smartbar.enabled isEqualTo true },
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.pref__smartbar__group_layout_specific__label)) {
             ListPreference(
