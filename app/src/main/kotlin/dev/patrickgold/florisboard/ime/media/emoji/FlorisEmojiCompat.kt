@@ -30,17 +30,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 /**
- * Helper object which manages two separate EmojiCompat instances, something EmojiCompat by default does not want us
- * to do for unknown reasons. Additionally we implement a proper loaded callback and a state flow, so the UI can always
- * receive the EmojiCompat instance as soon as it is loaded. This helper still uses the default config and thus relies
- * either on a system font with emoji or Google GMS services with their downloadable font provider.
+ * Helper object which manages EmojiCompat instances for the two replace modes. The default no-replace instance is
+ * loaded during application startup, while the replace-all instance is created and loaded only when an editor requests
+ * it. This keeps the common path to one EmojiCompat metadata graph while preserving compatibility for editors that
+ * explicitly ask for replace-all behavior.
  *
  * TODO: investigate how AOSP-like ROMs without any GMS services installed handle backwards emoji compatibility. Same
  *  goes for newer Huawei devices, which are subjected to no Google services. (Probably these devices rely on the good
  *  old method of just querying the system painter, which we already use as a fallback in the palette logic).
- *
- * TODO: investigate if having two instances of EmojiCompat has significant memory impact. Based on the docs one
- *  instance has ~300kB, so two should have ~600kB, which should not cause issues.
  *
  * TODO: investigate if having two instances of EmojiCompat causes other logic issues or if there's a better way of
  *  achieving the same result than the current implementation does.
@@ -48,6 +45,7 @@ import kotlinx.coroutines.launch
 object FlorisEmojiCompat {
     private lateinit var instanceNoReplace: InstanceHandler
     private lateinit var instanceReplaceAll: InstanceHandler
+    @Volatile private var initialized = false
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
@@ -56,15 +54,16 @@ object FlorisEmojiCompat {
      * metadata in a background thread. After this method has been called, it is safe to call [getAsFlow].
      */
     fun init(context: Context) {
-        instanceNoReplace = InstanceHandler(context, replaceAll = false)
-        instanceReplaceAll = InstanceHandler(context, replaceAll = true)
-
-        scope.launch {
-            instanceNoReplace.load()
+        synchronized(this) {
+            if (initialized) {
+                return
+            }
+            val appContext = context.applicationContext
+            instanceNoReplace = InstanceHandler(appContext, replaceAll = false)
+            instanceReplaceAll = InstanceHandler(appContext, replaceAll = true)
+            initialized = true
         }
-        scope.launch {
-            instanceReplaceAll.load()
-        }
+        instanceNoReplace.ensureLoad(scope)
     }
 
     /**
@@ -76,27 +75,39 @@ object FlorisEmojiCompat {
      */
     @SuppressLint("RestrictedApi", "VisibleForTests")
     fun getAsFlow(replaceAll: Boolean, setAsDefaultInstance: Boolean = true): StateFlow<EmojiCompat?> {
-        val instanceFlow = if (replaceAll) {
-            instanceReplaceAll.publishedInstanceFlow
+        check(initialized && ::instanceNoReplace.isInitialized && ::instanceReplaceAll.isInitialized) {
+            "${FlorisEmojiCompat::class.simpleName} has not been initialized. Call init(context) before getAsFlow()."
+        }
+        val handler = if (replaceAll) {
+            instanceReplaceAll
         } else {
-            instanceNoReplace.publishedInstanceFlow
+            instanceNoReplace
         }
-        val instance = instanceFlow.value
-        if (setAsDefaultInstance && instance != null) {
-            flogInfo { "Set default EmojiCompat instance to $instance(replaceAll=$replaceAll)" }
-            // This API is not really supposed to be used by third-party apps, but it is really handy and does
-            // exactly what we need, so we suppress the restriction here
-            EmojiCompat.reset(instance)
+        if (setAsDefaultInstance) {
+            handler.setAsDefaultWhenAvailable()
         }
-        return instanceFlow
+        handler.ensureLoad(scope)
+        return handler.publishedInstanceFlow
     }
 
-    private class InstanceHandler(context: Context, replaceAll: Boolean = false) {
+    private class InstanceHandler(
+        private val context: Context,
+        private val replaceAll: Boolean = false,
+    ) {
+        val publishedInstanceFlow = MutableStateFlow<EmojiCompat?>(null)
+
+        @Volatile private var loadStarted = false
+        @Volatile private var setAsDefaultWhenLoaded = false
+
         private val initCallback: EmojiCompat.InitCallback = object : EmojiCompat.InitCallback() {
             override fun onInitialized() {
                 super.onInitialized()
                 flogInfo { "EmojiCompat(replaceAll=$replaceAll) successfully loaded!" }
-                publishedInstanceFlow.value = instance
+                val loadedInstance = instance ?: return
+                publishedInstanceFlow.value = loadedInstance
+                if (setAsDefaultWhenLoaded) {
+                    setAsDefault(loadedInstance)
+                }
             }
 
             override fun onFailed(throwable: Throwable?) {
@@ -105,24 +116,64 @@ object FlorisEmojiCompat {
             }
         }
 
-        private val config: EmojiCompat.Config? = DefaultEmojiCompatConfig.create(context)?.apply {
-            setReplaceAll(replaceAll)
-            setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
-            registerInitCallback(initCallback)
+        private val config: EmojiCompat.Config? by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            DefaultEmojiCompatConfig.create(context)?.apply {
+                setReplaceAll(replaceAll)
+                setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
+                registerInitCallback(initCallback)
+            }
         }
 
         // Despite its name, `EmojiCompat.reset()` actually creates a new instance, exactly what we need
-        @SuppressLint("RestrictedApi")
-        private val instance: EmojiCompat? = if (config != null) EmojiCompat.reset(config) else null
-        val publishedInstanceFlow = MutableStateFlow<EmojiCompat?>(null)
+        private val instance: EmojiCompat? by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
+            config?.let { createInstance(it) }
+        }
+
+        fun setAsDefaultWhenAvailable() {
+            setAsDefaultWhenLoaded = true
+            publishedInstanceFlow.value?.let { setAsDefault(it) }
+        }
+
+        fun ensureLoad(scope: CoroutineScope) {
+            var shouldStart = false
+            synchronized(this) {
+                if (!loadStarted) {
+                    loadStarted = true
+                    shouldStart = true
+                }
+            }
+            if (shouldStart) {
+                scope.launch {
+                    load()
+                }
+            }
+        }
 
         /**
          * Manually loads the EmojiCompat instance. Call this method on a background thread to avoid blocking main.
          *
          * @see EmojiCompat.load
          */
-        fun load() {
-            instance?.load()
+        private fun load() {
+            val emojiCompat = instance
+            if (emojiCompat == null) {
+                flogError { "EmojiCompat(replaceAll=$replaceAll) default config is unavailable" }
+                return
+            }
+            emojiCompat.load()
+        }
+
+        @SuppressLint("RestrictedApi")
+        private fun createInstance(config: EmojiCompat.Config): EmojiCompat {
+            return EmojiCompat.reset(config)
+        }
+
+        @SuppressLint("RestrictedApi")
+        private fun setAsDefault(instance: EmojiCompat) {
+            flogInfo { "Set default EmojiCompat instance to $instance(replaceAll=$replaceAll)" }
+            // This API is not really supposed to be used by third-party apps, but it is really handy and does
+            // exactly what we need, so we suppress the restriction here.
+            EmojiCompat.reset(instance)
         }
     }
 }
