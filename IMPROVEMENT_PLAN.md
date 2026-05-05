@@ -16,7 +16,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after cleanup batches: 259 warnings, 0 hints. Largest remaining bucket is `UnusedResources`.
-- Current compile-warning focus: touched backup/restore deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in other user-facing import/export, dictionary, theme, language pack, devtools, keyboard, and clipboard surfaces.
+- Current compile-warning focus: touched backup/restore and extension import/export/view deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in extension editing, dictionary, theme, language pack, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
 
@@ -43,6 +43,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: Third lint cleanup batch added translation-safe `many` plural fallbacks for affected Catalan, French, Italian, Portuguese, Brazilian Portuguese, and Spanish unit strings.
 - 2026-05-05: Expanded this plan into a broader product-quality tracker covering keyboard correctness, UX polish, accessibility, trust states, localization, privacy, performance, CI, and release hygiene.
 - 2026-05-05: Began build-warning hygiene by moving backup/restore success and failure feedback off deprecated synchronous toast calls.
+- 2026-05-05: Continued build-warning hygiene by moving extension import/export/delete feedback off deprecated synchronous long toasts and giving extension export a concrete MIME type.
 
 ## Workstreams
 
@@ -142,6 +143,7 @@ Goal: Make high-risk workflows communicate clearly, recover gracefully, and avoi
 
 Tasks:
 - [x] Start replacing deprecated synchronous toast feedback in backup/restore flows with coroutine-safe feedback.
+- [x] Replace deprecated synchronous toast feedback in extension import/export/view flows.
 - [ ] Audit backup flow for loading, success, warning, failure, and cancellation states.
 - [ ] Audit restore flow for destructive confirmation, progress, partial failure, and recovery copy.
 - [ ] Audit language pack import/update/remove states.
@@ -333,6 +335,8 @@ Goal: Reduce compile and dependency noise without destabilizing the app.
 Tasks:
 - [ ] Replace deprecated synchronous toast calls in user-facing Compose screens where coroutine scope is available.
 - [x] Replace deprecated synchronous toast calls in backup/restore screens.
+- [x] Replace deprecated synchronous toast calls in extension import/export/view screens.
+- [x] Replace wildcard extension export document MIME type with the registered extension archive MIME type.
 - [ ] Review Room nullable DAO warning and either fix the type or document why it is intentional.
 - [ ] Review Kotlin compiler flags and remove stale flags only when language-version behavior is confirmed.
 - [ ] Review dependency update warnings separately from product changes.

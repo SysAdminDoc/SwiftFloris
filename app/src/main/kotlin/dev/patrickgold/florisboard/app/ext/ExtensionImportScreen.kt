@@ -36,6 +36,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,6 +55,8 @@ import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.validate
 import dev.patrickgold.florisboard.lib.io.FileRegistry
+import kotlinx.coroutines.launch
+import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisBulletSpacer
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisOutlinedBox
@@ -61,7 +64,6 @@ import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.florisHorizontalScroll
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.kotlin.resultOk
 
 enum class ExtensionImportScreenType(
@@ -99,6 +101,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
     val context = LocalContext.current
     val cacheManager by context.cacheManager()
     val extensionManager by context.extensionManager()
+    val scope = rememberCoroutineScope()
 
     fun getSkipReason(fileInfo: CacheManager.FileInfo): Int {
         return when {
@@ -195,10 +198,14 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     }
                 }.onSuccess {
                     workspace.close()
-                    context.showLongToastSync(R.string.ext__import__success)
-                    navController.popBackStack()
+                    scope.launch {
+                        context.showLongToast(R.string.ext__import__success)
+                        navController.popBackStack()
+                    }
                 }.onFailure { error ->
-                    context.showLongToastSync(R.string.ext__import__failure, "error_message" to error.localizedMessage)
+                    scope.launch {
+                        context.showLongToast(R.string.ext__import__failure, "error_message" to error.localizedMessage)
+                    }
                 }
             }
         }
