@@ -329,9 +329,9 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - **Estimated effort**: 2 weeks
 
 - [ ] **User Customization** — Let users add/disable commands.
-  - Custom command list in AppPrefs (JSON list)
+  - [x] Custom command list in AppPrefs (JSON list)
   - Settings UI: add, edit, delete commands
-  - Test user commands with fuzzy matcher
+  - [x] Test user commands with fuzzy matcher
   - **Estimated effort**: 2 weeks
 
 - [ ] **Fallback & Error Handling**:
@@ -368,6 +368,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Supported execution actions now cover previous-word deletion, undo, redo, select all, new paragraph, new line, one-shot capitalization, go to start, and go to end.
 - Added failure reporting for rejected actions and empty-field delete attempts, plus debug logging for command execution results.
 - Added `VoiceCommandExecutorTest` coverage for action mapping and failure propagation.
+
+**Progress Update** (2026-05-05):
+- Added JSON-backed `VoiceCommandCustomCommands` storage through `AppPrefs.voice.customCommands`.
+- Added custom command serialization, deserialization fallback, add/replace/remove helpers, enabled-command filtering, and parser integration for user-defined phrases.
+- Added unit coverage for custom-command persistence, disabled/blank command filtering, and fuzzy parser matching through custom command definitions.
+- Remaining customization work: build the settings UI for adding, editing, deleting, enabling, and disabling custom commands.
 
 ---
 
