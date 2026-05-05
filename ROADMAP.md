@@ -335,10 +335,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Completed: May 5, 2026
   - **Estimated effort**: 2 weeks
 
-- [ ] **Fallback & Error Handling**:
-  - Unrecognized command → treat as text and insert
-  - Low confidence (0.5–0.85) → show user suggestion with accept/reject
-  - Network timeout (shouldn't happen with FUTO, but safe design)
+- [x] **Fallback & Error Handling**:
+  - [x] Unrecognized command → treat as text and insert
+  - [x] Low confidence (0.5–0.85) → show user suggestion with accept/reject
+  - [x] Network timeout (shouldn't happen with FUTO, but safe design)
+  - Completed: May 5, 2026
   - **Estimated effort**: 1 week
 
 - [ ] **Testing & documentation**:
@@ -354,7 +355,7 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 
 **Acceptance Criteria**:
 - [ ] 10+ built-in voice commands working reliably (>90% recognition accuracy on native speakers)
-- [ ] Custom commands UI functional
+- [x] Custom commands UI functional
 - [ ] Comprehensive voice command documentation
 
 **Progress Update** (2026-05-05):
@@ -380,6 +381,13 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added custom voice-command management to the Voice input settings screen.
 - Users can add a phrase, choose a command action, enable or disable the command, edit existing commands, delete commands, and see disabled state in the list.
 - The UI keeps the transcript-handoff limitation visible so users do not mistake stored custom phrases for live FUTO interception.
+
+**Progress Update** (2026-05-05):
+- Added `VoiceCommandFallbackHandler` to route confident transcripts to command execution, low-confidence command-like transcripts to a pending suggestion, and unrecognized transcripts to normal text insertion.
+- Added accept/reject handling for low-confidence suggestions so callers can execute the suggested command or insert the original dictated text.
+- Added explicit voice error recovery mapping, including retryable handling for `NetworkTimeout`, while keeping setup errors in the unavailable state.
+- Added unit coverage for command execution fallback, unrecognized text insertion, suggestion accept/reject, blank transcript handling, and timeout recovery.
+- Implementation limitation: these flows are ready for a transcript source, but live FUTO output is still delegated through a separate IME and cannot yet be intercepted by SwiftFloris.
 
 ---
 

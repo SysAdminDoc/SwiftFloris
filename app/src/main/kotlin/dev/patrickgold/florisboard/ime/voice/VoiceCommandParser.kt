@@ -129,6 +129,7 @@ class VoiceCommandParser(
 
     companion object {
         const val DEFAULT_MINIMUM_CONFIDENCE = 0.85
+        const val DEFAULT_SUGGESTION_MINIMUM_CONFIDENCE = 0.50
 
         private val CombiningMarksRegex = "\\p{Mn}+".toRegex()
         private val ApostropheRegex = "[']".toRegex()
