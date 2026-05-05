@@ -33,7 +33,12 @@ internal object ImmediateAutocorrect {
         val typedWord = rawWord.trim().trim { char -> !char.isLetter() && char != '\'' }
         val normalizedWord = typedWord.lowercase()
         val correction = EnglishFirstPersonPronounCorrections[normalizedWord] ?: return null
-        if (typedWord.firstOrNull() != 'i' || typedWord == correction.text) {
+        val letters = typedWord.filter { it.isLetter() }
+        val isAllCapsInput = letters.length > 1 && letters.all { it.isUpperCase() }
+        if (typedWord.firstOrNull()?.equals('i', ignoreCase = true) != true ||
+            typedWord == correction.text ||
+            isAllCapsInput
+        ) {
             return null
         }
         return correction
