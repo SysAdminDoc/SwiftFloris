@@ -36,6 +36,8 @@ import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.readText
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.ln
+import kotlin.math.roundToInt
 
 class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProvider {
     companion object {
@@ -180,8 +182,8 @@ internal class LatinDictionaryStore(
     private suspend fun loadSpecificDictionary(languageCode: String): LatinDictionarySnapshot? {
         for (path in assetPathsForLanguage(languageCode)) {
             val rawData = readAsset.read(path) ?: continue
-            val frequencies = json.decodeFromString(wordDataSerializer, rawData)
-                .mapKeys { (word, _) -> word.lowercase() }
+            val frequencies = decodeFrequencies(path, rawData)
+            if (frequencies.isEmpty()) continue
             return LatinDictionarySnapshot(
                 frequencies = frequencies,
                 sortedWords = frequencies.keys.sorted(),
@@ -190,10 +192,65 @@ internal class LatinDictionaryStore(
         return null
     }
 
+    private fun decodeFrequencies(path: String, rawData: String): Map<String, Int> {
+        return if (path.endsWith(FldicExtension)) {
+            decodeFldicFrequencies(rawData)
+        } else {
+            json.decodeFromString(wordDataSerializer, rawData)
+                .toNormalizedFrequencyMap()
+        }
+    }
+
+    private fun decodeFldicFrequencies(rawData: String): Map<String, Int> {
+        val scores = mutableMapOf<String, Long>()
+        var maxScore = 0L
+        var inWordsSection = false
+        for (rawLine in rawData.lineSequence()) {
+            val line = rawLine.trimEnd()
+            when {
+                line == FldicWordsSection -> {
+                    inWordsSection = true
+                    continue
+                }
+                inWordsSection && line.startsWith("[") -> break
+                !inWordsSection || line.isBlank() || line.startsWith("#") -> continue
+            }
+
+            val components = line.split('\t')
+            if (components.size < 2) continue
+            val word = LatinDictionarySuggester.normalizeWord(components[0]) ?: continue
+            val score = components[1].toLongOrNull()?.takeIf { it > 0L } ?: continue
+            val previousScore = scores[word] ?: 0L
+            if (score > previousScore) {
+                scores[word] = score
+                maxScore = maxOf(maxScore, score)
+            }
+        }
+        return scores.mapValues { (_, score) -> normalizeFldicScore(score, maxScore) }
+    }
+
+    private fun Map<String, Int>.toNormalizedFrequencyMap(): Map<String, Int> {
+        val frequencies = mutableMapOf<String, Int>()
+        forEach { (word, frequency) ->
+            val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return@forEach
+            val normalizedFrequency = frequency.coerceIn(0, 255)
+            frequencies[normalizedWord] = maxOf(frequencies[normalizedWord] ?: 0, normalizedFrequency)
+        }
+        return frequencies
+    }
+
+    private fun normalizeFldicScore(score: Long, maxScore: Long): Int {
+        if (score <= 0L || maxScore <= 0L) return 0
+        val normalizedScore = ln(score.toDouble() + 1.0) / ln(maxScore.toDouble() + 1.0)
+        return (normalizedScore * 255.0).roundToInt().coerceIn(1, 255)
+    }
+
     companion object {
         const val DefaultLanguageCode = "en"
         private const val DictionaryRoot = "ime/dict"
         private const val LegacyEnglishDictionaryPath = "$DictionaryRoot/data.json"
+        private const val FldicExtension = ".fldic"
+        private const val FldicWordsSection = "[words]"
 
         fun normalizeLanguageCode(language: String): String {
             return language
@@ -206,9 +263,16 @@ internal class LatinDictionaryStore(
         fun assetPathsForLanguage(language: String): List<String> {
             val languageCode = normalizeLanguageCode(language)
             return if (languageCode == DefaultLanguageCode) {
-                listOf("$DictionaryRoot/$DefaultLanguageCode.json", LegacyEnglishDictionaryPath)
+                listOf(
+                    "$DictionaryRoot/$DefaultLanguageCode.json",
+                    "$DictionaryRoot/$DefaultLanguageCode$FldicExtension",
+                    LegacyEnglishDictionaryPath,
+                )
             } else {
-                listOf("$DictionaryRoot/$languageCode.json")
+                listOf(
+                    "$DictionaryRoot/$languageCode.json",
+                    "$DictionaryRoot/$languageCode$FldicExtension",
+                )
             }
         }
     }
