@@ -230,11 +230,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - [x] Test dictionary loading compatibility and performance impact
   - **Estimated effort**: 2 weeks
 
-- [ ] **Gesture classifier language-awareness** — Modify GlideTypingClassifier to accept language context.
-  - Pass active language/subtype to classifier
-  - Adjust dictionary lookup for current language
-  - Fall back to English if language-specific lookup fails
+- [x] **Gesture classifier language-awareness** — Modify GlideTypingClassifier to accept language context.
+  - [x] Pass active language/subtype to classifier
+  - [x] Adjust dictionary lookup for current language
+  - [x] Fall back to English if language-specific lookup fails
   - **Estimated effort**: 2–3 weeks
+  - Completed: May 5, 2026
 
 - [ ] **Settings UI** — Let users enable/disable multi-language swipe per-language.
   - Checkbox in GesturesScreen for each language: "Enable swipe for [Language]"
@@ -280,6 +281,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Converted the ranked Portuguese source into FlorisBoard-compatible `.fldic` shape, retaining normalized words and frequency counts while excluding source URLs from the app asset.
 - Added Portuguese to the bundled dictionary loading test with a minimum 100k-word coverage threshold; the generated asset currently contains 134k normalized Portuguese words.
 - Dictionary augmentation is complete for the roadmap target languages: English fallback plus German, French, Spanish, Italian, and Portuguese.
+
+**Progress Update** (2026-05-05):
+- Confirmed `StatisticalGlideTypingClassifier` already receives the active subtype from `GlideTypingManager`, loads word data through `NlpManager.getListOfWords(subtype)`, and scores candidates through `getFrequencyForWord(currentSubtype, word)`.
+- Scoped the classifier suggestion cache by subtype so identical swipe paths cannot reuse stale candidates after switching languages.
+- Added cache invalidation when layout data, word data, or the active gesture is cleared; English fallback remains centralized in `LatinLanguageProvider` dictionary loading.
 
 ---
 
