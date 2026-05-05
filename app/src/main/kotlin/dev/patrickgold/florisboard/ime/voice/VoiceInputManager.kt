@@ -52,6 +52,8 @@ class VoiceInputManager(private val context: Context) {
     private val _error = MutableStateFlow<VoiceError?>(null)
     val error: StateFlow<VoiceError?> = _error
 
+    private val commandParser = VoiceCommandParser()
+
     fun initialize() {
         refreshAvailability()
     }
@@ -91,6 +93,13 @@ class VoiceInputManager(private val context: Context) {
         _isListening.value = false
         _recognizedText.value = ""
         refreshAvailability()
+    }
+
+    fun detectCommand(
+        spokenText: String,
+        minimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
+    ): VoiceCommandMatch? {
+        return commandParser.parse(spokenText, minimumConfidence)
     }
 
     fun destroy() {
