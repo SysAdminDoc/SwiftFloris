@@ -219,13 +219,13 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - **Estimated research**: 1 week
   - Completed: May 5, 2026
   
-- [ ] **Dictionary augmentation** — Extend preloaded dictionaries for gesture matching.
+- [x] **Dictionary augmentation** — Extend preloaded dictionaries for gesture matching.
   - [x] Add locale-aware dictionary asset lookup for gesture matching
   - [x] Preserve English fallback through the existing bundled dictionary
   - [x] Add dictionary selection/fallback unit tests
   - [x] Expand glide pruner cache for English plus the five target language subtypes
   - [x] Add production German, French, Spanish, Italian word-frequency assets from FlorisBoard NLP
-  - [ ] Add Portuguese word-frequency asset after source/license verification
+  - [x] Add Portuguese word-frequency asset after source/license verification
   - [x] Ensure word frequency data present for imported gesture dictionaries
   - [x] Test dictionary loading compatibility and performance impact
   - **Estimated effort**: 2 weeks
@@ -273,7 +273,13 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added direct `.fldic` dictionary support to `LatinLanguageProvider`. SwiftFloris now reads the `[words]` section from FlorisBoard NLP dictionaries and normalizes absolute scores into the existing 0..255 frequency scale.
 - Imported FlorisBoard NLP v0~draft1 `words_de.fldic`, `words_es.fldic`, `words_fr.fldic`, and `words_it.fldic` into `app/src/main/assets/ime/dict/` with local attribution notes.
 - Added tests for `.fldic` parsing, score normalization, non-word section handling, and real bundled dictionary loading. The imported assets provide 241k German, 406k Spanish, 243k French, and 365k Italian words.
-- Remaining blocker: Portuguese still has no upstream FlorisBoard NLP asset, so full Dictionary augmentation cannot be checked complete until a Portuguese source is selected or generated with verified licensing.
+- Portuguese was not available in FlorisBoard NLP, so it required a separate source selection with verified licensing.
+
+**Progress Update** (2026-05-05):
+- Added `pt.fldic` from the CC0-1.0 `diplomaticvegetation/portuguese` Hugging Face `words-top.txt` frequency list.
+- Converted the ranked Portuguese source into FlorisBoard-compatible `.fldic` shape, retaining normalized words and frequency counts while excluding source URLs from the app asset.
+- Added Portuguese to the bundled dictionary loading test with a minimum 100k-word coverage threshold; the generated asset currently contains 134k normalized Portuguese words.
+- Dictionary augmentation is complete for the roadmap target languages: English fallback plus German, French, Spanish, Italian, and Portuguese.
 
 ---
 

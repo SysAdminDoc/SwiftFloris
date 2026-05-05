@@ -100,6 +100,7 @@ class LatinDictionaryStoreTest : FunSpec({
             "es" to 350_000,
             "fr" to 200_000,
             "it" to 300_000,
+            "pt" to 100_000,
         )
 
         expectedMinimumWordCounts.forEach { (language, minimumWordCount) ->
