@@ -28,7 +28,57 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import java.io.BufferedReader
 import java.io.InputStreamReader
-import kotlin.math.min
+
+internal object AdvancedSpellingEngine {
+    fun generateCorrections(word: String, dictionary: Set<String>, maxCount: Int): List<String> {
+        if (maxCount <= 0) {
+            return emptyList()
+        }
+
+        val candidates = mutableListOf<Pair<String, Int>>()
+        for (dictWord in dictionary) {
+            if (dictWord.length >= word.length - 2 && dictWord.length <= word.length + 2) {
+                val distance = levenshteinDistance(word, dictWord)
+                if (distance in 1..2) {
+                    candidates.add(dictWord to distance)
+                }
+            }
+        }
+
+        return candidates
+            .sortedWith(
+                compareBy<Pair<String, Int>> { it.second }
+                    .thenBy { it.first.length }
+                    .thenBy { it.first }
+            )
+            .take(maxCount)
+            .map { it.first }
+    }
+
+    fun levenshteinDistance(a: String, b: String): Int {
+        if (a == b) return 0
+        if (a.isEmpty()) return b.length
+        if (b.isEmpty()) return a.length
+
+        val matrix = Array(a.length + 1) { IntArray(b.length + 1) }
+
+        for (i in 0..a.length) matrix[i][0] = i
+        for (j in 0..b.length) matrix[0][j] = j
+
+        for (i in 1..a.length) {
+            for (j in 1..b.length) {
+                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+                matrix[i][j] = minOf(
+                    matrix[i - 1][j] + 1,
+                    matrix[i][j - 1] + 1,
+                    matrix[i - 1][j - 1] + cost,
+                )
+            }
+        }
+
+        return matrix[a.length][b.length]
+    }
+}
 
 /**
  * Advanced spell checker and autocorrect provider using dictionary-based spell checking
@@ -77,62 +127,13 @@ class AdvancedSpellingProvider(private val context: Context) : SpellingProvider 
         }
 
         // Generate correction suggestions using edit distance
-        val suggestions = generateCorrections(normalizedWord, dictionary, maxSuggestionCount)
+        val suggestions = AdvancedSpellingEngine.generateCorrections(normalizedWord, dictionary, maxSuggestionCount)
 
         return if (suggestions.isNotEmpty()) {
             SpellingResult.typo(suggestions.toTypedArray(), isHighConfidenceResult = true)
         } else {
             SpellingResult.typo(arrayOf())
         }
-    }
-
-    private fun generateCorrections(word: String, dictionary: Set<String>, maxCount: Int): List<String> {
-        val candidates = mutableListOf<Pair<String, Int>>()
-
-        // Find words within edit distance of 2
-        for (dictWord in dictionary) {
-            if (dictWord.length >= word.length - 2 && dictWord.length <= word.length + 2) {
-                val distance = levenshteinDistance(word, dictWord)
-                if (distance in 1..2) {
-                    candidates.add(dictWord to distance)
-                }
-            }
-        }
-
-        // Sort by edit distance, return top N
-        return candidates
-            .sortedBy { it.second }
-            .take(maxCount)
-            .map { it.first }
-    }
-
-    /**
-     * Computes the Levenshtein distance between two strings.
-     * This is the minimum number of edits (insertions, deletions, substitutions) required
-     * to transform one string into another.
-     */
-    private fun levenshteinDistance(a: String, b: String): Int {
-        if (a == b) return 0
-        if (a.isEmpty()) return b.length
-        if (b.isEmpty()) return a.length
-
-        val matrix = Array(a.length + 1) { IntArray(b.length + 1) }
-
-        for (i in 0..a.length) matrix[i][0] = i
-        for (j in 0..b.length) matrix[0][j] = j
-
-        for (i in 1..a.length) {
-            for (j in 1..b.length) {
-                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
-                matrix[i][j] = minOf(
-                    matrix[i - 1][j] + 1,      // deletion
-                    matrix[i][j - 1] + 1,      // insertion
-                    matrix[i - 1][j - 1] + cost // substitution
-                )
-            }
-        }
-
-        return matrix[a.length][b.length]
     }
 
     private fun loadDictionary(language: String) {
@@ -199,7 +200,7 @@ class AdvancedPredictionProvider(private val context: Context) : SuggestionProvi
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
         val lang = subtype.primaryLocale.language
-        val textBeforeSelection = content.textBeforeSelection.toString()
+        val textBeforeSelection = content.textBeforeSelection
 
         if (textBeforeSelection.isBlank()) {
             return emptyList()
