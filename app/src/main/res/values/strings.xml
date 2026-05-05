@@ -95,11 +95,6 @@
     <string name="quick_action__toggle_autocorrect__tooltip">Toggle autocorrect</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
-    <string name="voice_input__install_provider__title">Install FUTO Voice Input</string>
-    <string name="voice_input__install_provider__message">SwiftFloris uses an enabled voice keyboard for dictation. Install FUTO Voice Input, enable it as a keyboard, then tap the microphone again.</string>
-    <string name="voice_input__enable_provider__title">Enable voice input</string>
-    <string name="voice_input__enable_provider__message">FUTO Voice Input is installed, but Android has not enabled it as a voice keyboard yet.</string>
-    <string name="voice_input__setup_hint">Open Android keyboard settings and enable FUTO Voice Input to let recognized speech insert into the current text field.</string>
     <string name="quick_action__floating_window_mode" comment="Please mind the limited available space for the quick action strings">Floating</string>
     <string name="quick_action__floating_window_mode__tooltip">Toggle floating keyboard window mode</string>
     <string name="quick_action__one_handed_mode" comment="Please mind the limited available space for the quick action strings">One-handed</string>
@@ -363,7 +358,6 @@
     <string name="snygg__rule_element__subtype_panel_list_item">Subtype panel list item</string>
     <string name="snygg__rule_element__subtype_panel_list_item_icon_leading">Subtype panel list item icon (leading)</string>
     <string name="snygg__rule_element__subtype_panel_list_item_text">Subtype panel list item text</string>
-    <string name="snygg__rule_element__voice_input_button">Voice input button</string>
 
     <string name="snygg__rule_selector__pressed">Pressed</string>
     <string name="snygg__rule_selector__focus">Focused</string>
