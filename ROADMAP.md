@@ -224,9 +224,10 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - [x] Preserve English fallback through the existing bundled dictionary
   - [x] Add dictionary selection/fallback unit tests
   - [x] Expand glide pruner cache for English plus the five target language subtypes
-  - [ ] Add production German, French, Spanish, Italian, Portuguese word-frequency assets after source/license verification
-  - Ensure word frequency data present (for swipe probability scoring)
-  - Test dictionary loading performance impact
+  - [x] Add production German, French, Spanish, Italian word-frequency assets from FlorisBoard NLP
+  - [ ] Add Portuguese word-frequency asset after source/license verification
+  - [x] Ensure word frequency data present for imported gesture dictionaries
+  - [x] Test dictionary loading compatibility and performance impact
   - **Estimated effort**: 2 weeks
 
 - [ ] **Gesture classifier language-awareness** — Modify GlideTypingClassifier to accept language context.
@@ -266,7 +267,13 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added locale-aware dictionary infrastructure to `LatinLanguageProvider`: future assets at `ime/dict/{language}.json` are selected by active subtype language, with the existing English `ime/dict/data.json` retained as fallback.
 - Added unit coverage for language-code normalization, target asset paths, locale-specific dictionary selection, and English fallback behavior.
 - Increased the glide pruner cache from five to six subtype entries so English plus German/French/Spanish/Italian/Portuguese can remain warm during normal language switching.
-- Blocker: SwiftFloris and upstream FlorisBoard app assets do not include German/French/Spanish/Italian/Portuguese JSON word-frequency dictionaries. The FlorisBoard NLP repo has draft `.fldic`/`.flex` dictionaries for German, Spanish, French, and Italian, but not Portuguese, and they require a separate format/license/import decision before production bundling.
+- Initial blocker: SwiftFloris and upstream FlorisBoard app assets did not include German/French/Spanish/Italian/Portuguese JSON word-frequency dictionaries. The FlorisBoard NLP repo had draft `.fldic`/`.flex` dictionaries for German, Spanish, French, and Italian, but not Portuguese, so production bundling required a separate format/import decision.
+
+**Progress Update** (2026-05-05):
+- Added direct `.fldic` dictionary support to `LatinLanguageProvider`. SwiftFloris now reads the `[words]` section from FlorisBoard NLP dictionaries and normalizes absolute scores into the existing 0..255 frequency scale.
+- Imported FlorisBoard NLP v0~draft1 `words_de.fldic`, `words_es.fldic`, `words_fr.fldic`, and `words_it.fldic` into `app/src/main/assets/ime/dict/` with local attribution notes.
+- Added tests for `.fldic` parsing, score normalization, non-word section handling, and real bundled dictionary loading. The imported assets provide 241k German, 406k Spanish, 243k French, and 365k Italian words.
+- Remaining blocker: Portuguese still has no upstream FlorisBoard NLP asset, so full Dictionary augmentation cannot be checked complete until a Portuguese source is selected or generated with verified licensing.
 
 ---
 

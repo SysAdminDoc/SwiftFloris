@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.nlp.latin
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
+import java.io.File
+import kotlin.math.roundToInt
 
 class LatinDictionaryStoreTest : FunSpec({
     test("normalizes locale tags to language asset paths") {
@@ -26,9 +28,13 @@ class LatinDictionaryStoreTest : FunSpec({
         LatinDictionaryStore.normalizeLanguageCode("de_DE") shouldBe "de"
         LatinDictionaryStore.normalizeLanguageCode("") shouldBe "en"
 
-        LatinDictionaryStore.assetPathsForLanguage("pt-BR") shouldBe listOf("ime/dict/pt.json")
+        LatinDictionaryStore.assetPathsForLanguage("pt-BR") shouldBe listOf(
+            "ime/dict/pt.json",
+            "ime/dict/pt.fldic",
+        )
         LatinDictionaryStore.assetPathsForLanguage("en-US") shouldBe listOf(
             "ime/dict/en.json",
+            "ime/dict/en.fldic",
             "ime/dict/data.json",
         )
     }
@@ -56,6 +62,53 @@ class LatinDictionaryStoreTest : FunSpec({
         dictionary.sortedWords shouldBe listOf("hello", "test")
         dictionary.frequencyFor("hello") shouldBe 210 / 255.0
     }
+
+    test("loads fldic word scores and ignores non-word sections") {
+        val store = latinDictionaryStore(
+            "ime/dict/es.fldic" to """
+                #~schema: https://schemas.florisboard.org/nlp/v0~draft1/fldic.txt
+                #~encoding: utf-8
+
+                [words]
+                hola	1000
+                árbol	500
+                hola	900
+                buen-día	800
+                oculto	100	h
+
+                [ngrams]
+                1,2	500
+            """.trimIndent(),
+            "ime/dict/data.json" to dictionaryJson("hello" to 210),
+        )
+
+        val dictionary = runBlocking { store.dictionaryForLanguage("es") }
+
+        dictionary.sortedWords shouldBe listOf("hola", "oculto", "árbol")
+        dictionary.frequencyFor("hola") shouldBe 1.0
+        dictionary.frequencyFor("árbol") shouldBe (kotlin.math.ln(501.0) / kotlin.math.ln(1001.0) * 255.0)
+            .roundToInt() / 255.0
+        dictionary.frequencyFor("hello") shouldBe 0.0
+    }
+
+    test("loads bundled imported fldic dictionaries") {
+        val store = LatinDictionaryStore(readAsset = LatinDictionaryAssetReader { path ->
+            bundledAsset(path)?.readText()
+        })
+        val expectedMinimumWordCounts = mapOf(
+            "de" to 200_000,
+            "es" to 350_000,
+            "fr" to 200_000,
+            "it" to 300_000,
+        )
+
+        expectedMinimumWordCounts.forEach { (language, minimumWordCount) ->
+            val dictionary = runBlocking { store.dictionaryForLanguage(language) }
+
+            (dictionary.sortedWords.size >= minimumWordCount) shouldBe true
+            dictionary.isLoaded shouldBe true
+        }
+    }
 })
 
 private fun latinDictionaryStore(vararg assets: Pair<String, String>): LatinDictionaryStore {
@@ -67,4 +120,11 @@ private fun dictionaryJson(vararg words: Pair<String, Int>): String {
     return words.joinToString(prefix = "{", postfix = "}") { (word, frequency) ->
         """"$word":$frequency"""
     }
+}
+
+private fun bundledAsset(path: String): File? {
+    return listOf(
+        File("src/main/assets/$path"),
+        File("app/src/main/assets/$path"),
+    ).firstOrNull { it.isFile }
 }
