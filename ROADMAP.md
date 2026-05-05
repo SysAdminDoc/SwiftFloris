@@ -112,11 +112,13 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Estimated effort: 3-4 weeks
   - Progress: provider registry, candidate assembly extraction, Han provider dependency cleanup, provider-family unit tests, and fallback defaults coverage completed May 5, 2026
 
-- [ ] **Emoji Compatibility** (`FlorisEmojiCompat.kt`) — Investigate EmojiCompat double-instance memory impact.
+- [x] **Emoji Compatibility** (`FlorisEmojiCompat.kt`) — Investigate EmojiCompat double-instance memory impact.
   - Profile memory usage with emoji-heavy input
   - Consider AOSP-like ROM behavior
   - Estimated effort: 1 week (research), 1 week (fix if needed)
-  - Progress: lazy-load mitigation for the replace-all EmojiCompat instance completed May 5, 2026; adb-backed memory profiling is still blocked until a device is attached.
+  - Completed: May 5, 2026
+  - Profile result: `EmojiCompatMemoryProfileTest` on Samsung SM-S938B (Android 16 / API 36) measured replace-all lazy-load overhead at +611 KB total PSS and +516 KB Java heap after the default no-replace instance loaded.
+  - AOSP-like behavior: `DefaultEmojiCompatConfig` absence now leaves the flow at null and logs a clear failure instead of forcing eager initialization; the emoji palette continues to use the system-font glyph fallback when EmojiCompat is unavailable.
 
 **Effort**: 8–10 weeks  
 **Risk**: Breaking changes in NLP refactor; need regression testing.  
