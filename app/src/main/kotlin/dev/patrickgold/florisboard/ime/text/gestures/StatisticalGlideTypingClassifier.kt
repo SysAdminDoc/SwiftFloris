@@ -59,6 +59,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     val ready: Boolean
         get() = currentSubtype == layoutSubtype && wordDataSubtype == layoutSubtype && wordDataSubtype != null
     private val prunerCache = LruCache<Subtype, Pruner>(PRUNER_CACHE_SIZE)
+    private val lruSuggestionCache = LruCache<SuggestionCacheKey, List<String>>(SUGGESTION_CACHE_SIZE)
 
     /**
      * The minimum distance between points to be added to a gesture.
@@ -125,6 +126,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
 
         // if only layout changed but not subtype
         val layoutChanged = layoutSubtype == subtype
+        lruSuggestionCache.evictAll()
 
         keysByCharacter.clear()
         keys.clear()
@@ -150,6 +152,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
             return
         }
 
+        lruSuggestionCache.evictAll()
         this.words = nlpManager.getListOfWords(subtype)
 
         this.wordDataSubtype = subtype
@@ -183,12 +186,22 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         }
     }
 
-    private val lruSuggestionCache = LruCache<Pair<Gesture, Int>, List<String>>(SUGGESTION_CACHE_SIZE)
+    private data class SuggestionCacheKey(
+        val gesture: Gesture,
+        val maxSuggestionCount: Int,
+        val subtype: Subtype,
+    )
+
     override fun getSuggestions(maxSuggestionCount: Int, gestureCompleted: Boolean): List<String> {
-        return when (val cached = lruSuggestionCache.get(Pair(this.gesture, maxSuggestionCount))) {
+        val subtype = currentSubtype ?: return emptyList()
+        val key = SuggestionCacheKey(this.gesture, maxSuggestionCount, subtype)
+        return when (val cached = lruSuggestionCache.get(key)) {
             null -> {
                 val suggestions = unCachedGetSuggestions(maxSuggestionCount)
-                lruSuggestionCache.put(Pair(this.gesture.clone(), maxSuggestionCount), suggestions)
+                lruSuggestionCache.put(
+                    SuggestionCacheKey(this.gesture.clone(), maxSuggestionCount, subtype),
+                    suggestions,
+                )
 
                 suggestions
             }
@@ -252,6 +265,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
 
     override fun clear() {
         gesture.clear()
+        lruSuggestionCache.evictAll()
     }
 
     private fun calcLocationDistance(gesture1: Gesture, gesture2: Gesture): Float {
