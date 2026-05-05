@@ -176,25 +176,39 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         val layout: String = languagePackItem.hanShapeBasedTable
         try {
             val database = languagePackExtension.hanShapeBasedSQLiteDatabase
-            val cur = database.query(layout, arrayOf ( "code", "text" ), "code LIKE ? || '%'", arrayOf(content.composingText), "", "", "code ASC, weight DESC", "$maxCandidateCount");
-            cur.moveToFirst();
-            val rowCount = cur.getCount();
-            flogDebug { "Query was '${content.composingText}'" }
-            val suggestions = buildList {
-                for (n in 0 until rowCount) {
-                    val code = cur.getString(0);
-                    val word = cur.getString(1);
-                    cur.moveToNext();
-                    add(WordSuggestionCandidate(
-                        text = "$word",
-                        secondaryText = code,
-                        confidence = 0.5,
-                        isEligibleForAutoCommit = n == 0,
-                        // We set ourselves as the source provider so we can get notify events for our candidate
-                        sourceProvider = this@HanShapeBasedLanguageProvider,
-                    ))
+            val suggestions = database
+                .query(
+                    layout,
+                    arrayOf("code", "text"),
+                    "code LIKE ? || '%'",
+                    arrayOf(content.composingText),
+                    "",
+                    "",
+                    "code ASC, weight DESC",
+                    "$maxCandidateCount",
+                )
+                .use { cur ->
+                    cur.moveToFirst()
+                    val rowCount = cur.count
+                    flogDebug { "Query was '${content.composingText}'" }
+                    buildList {
+                        for (n in 0 until rowCount) {
+                            val code = cur.getString(0)
+                            val word = cur.getString(1)
+                            cur.moveToNext()
+                            add(
+                                WordSuggestionCandidate(
+                                    text = word,
+                                    secondaryText = code,
+                                    confidence = 0.5,
+                                    isEligibleForAutoCommit = n == 0,
+                                    // We set ourselves as the source provider so we can get notify events for our candidate
+                                    sourceProvider = this@HanShapeBasedLanguageProvider,
+                                )
+                            )
+                        }
+                    }
                 }
-            }
             return suggestions
         } catch (e: IllegalStateException) {
             flogError { "Invalid layout '${layout}' not found" }
