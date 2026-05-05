@@ -66,7 +66,6 @@ import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showLongToast
-import org.florisboard.lib.android.showLongToastSync
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisIconButton
@@ -75,6 +74,7 @@ import org.florisboard.lib.compose.stringRes
 
 private val AllLanguagesLocale = FlorisLocale.from(language = "zz")
 private val UserDictionaryEntryToAdd = UserDictionaryEntry(id = 0, "", 255, null, null)
+private const val UserDictionaryMediaType = "text/plain"
 private const val SystemUserDictionaryUiIntentAction = "android.settings.USER_DICTIONARY_SETTINGS"
 
 enum class UserDictionaryType(val id: String) {
@@ -146,25 +146,31 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
             }
             if (db == null) {
-                context.showLongToastSync(R.string.settings__udm__dictionary_store_unavailable)
+                scope.launch {
+                    context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+                }
                 return@rememberLauncherForActivityResult
             }
             runCatching {
                 db.importCombinedList(context, uri)
             }.onSuccess {
                 buildUi()
-                context.showLongToastSync(R.string.settings__udm__dictionary_import_success)
+                scope.launch {
+                    context.showLongToast(R.string.settings__udm__dictionary_import_success)
+                }
             }.onFailure { error ->
-                context.showLongToastSync(
-                    R.string.settings__udm__dictionary_import_failure,
-                    "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
-                )
+                scope.launch {
+                    context.showLongToast(
+                        R.string.settings__udm__dictionary_import_failure,
+                        "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
+                    )
+                }
             }
         },
     )
 
     val exportDictionary = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument(),
+        contract = ActivityResultContracts.CreateDocument(UserDictionaryMediaType),
         onResult = { uri ->
             // If uri is null it indicates that the selection activity was cancelled (mostly
             // by pressing the back button), so we don't display an error message here.
@@ -174,18 +180,24 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
             }
             if (db == null) {
-                context.showLongToastSync(R.string.settings__udm__dictionary_store_unavailable)
+                scope.launch {
+                    context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+                }
                 return@rememberLauncherForActivityResult
             }
             runCatching {
                 db.exportCombinedList(context, uri)
             }.onSuccess {
-                context.showLongToastSync(R.string.settings__udm__dictionary_export_success)
+                scope.launch {
+                    context.showLongToast(R.string.settings__udm__dictionary_export_success)
+                }
             }.onFailure { error ->
-                context.showLongToastSync(
-                    R.string.settings__udm__dictionary_export_failure,
-                    "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
-                )
+                scope.launch {
+                    context.showLongToast(
+                        R.string.settings__udm__dictionary_export_failure,
+                        "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
+                    )
+                }
             }
         },
     )
