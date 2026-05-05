@@ -42,7 +42,7 @@
     <string name="emoji__category__objects" comment="Emoji category name">Objetos</string>
     <string name="emoji__category__symbols" comment="Emoji category name">Símbolos</string>
     <string name="emoji__category__flags" comment="Emoji category name">Bandeiras</string>
-    <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Nenhum emoji usado ainda... Que tal começar agora? Eles aparecerão aqui.</string>
+    <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Nenhum emoji usado ainda… Que tal começar agora? Eles aparecerão aqui.</string>
     <string name="emoji__history__phone_locked_message" comment="Message to show if phone is locked">Quer ver seus emojis favoritos? É só desbloquear a telinha!</string>
     <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Quer personalizar? Segure um emoji para fixá-lo nos favoritos ou removê-lo do histórico!</string>
     <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">O emoji {emoji} foi removido do histórico</string>
@@ -641,8 +641,8 @@
     <string name="ext__import__file_skip_ext_core" comment="Reason string when ext has core extension ID">Não é possível substituir ou atualizar os pacotes de extensão padrão fornecidos com os ativos principais do aplicativo. Considere atualizar o próprio aplicativo se você pretende usar uma versão mais recente de um pacote de extensão principal.</string>
     <string name="ext__import__file_skip_ext_corrupted" comment="Reason string when file seems to be ext but is corrupted">O arquivo parece ser um arquivo de extensão, mas a análise dos dados do arquivo falhou. O arquivo está corrompido ou este arquivo não é uma extensão.</string>
     <string name="ext__import__file_skip_ext_incorrect_type" comment="Reason string when file is of incorrect extension serial type">Esperava-se um arquivo de extensão do tipo serial \"{expected_serial_type}\" mas, é um arquivo de serial \"{actual_serial_type}\".</string>
-    <string name="ext__import__file_skip_ext_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um arquivo de mídia (imagem, áudio, font, etc...) porém foi encontrado um arquivo de extensão.</string>
-    <string name="ext__import__file_skip_media_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um arquivo de extensão, porém foi encontrado um arquivo de mídia (image, audio, font, etc...).</string>
+    <string name="ext__import__file_skip_ext_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um arquivo de mídia (imagem, áudio, font, etc…) porém foi encontrado um arquivo de extensão.</string>
+    <string name="ext__import__file_skip_media_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um arquivo de extensão, porém foi encontrado um arquivo de mídia (image, audio, font, etc…).</string>
     <string name="ext__import__error_unexpected_exception" comment="Label when an error occurred during import. The error message will be appended below this text view">Ocorreu um erro inesperado durante a importação. Os seguintes detalhes foram fornecidos:</string>
     <string name="ext__validation__enter_version">Insira uma versão</string>
     <string name="ext__validation__enter_title">Insira um título</string>

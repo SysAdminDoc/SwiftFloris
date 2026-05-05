@@ -129,7 +129,7 @@
     <string name="settings__theme_editor__code_recording_started">ضبط کد کلید شروع شد</string>
     <string name="settings__theme_editor__code_recording_stopped">ضبط کد کلید پایان یافت</string>
     <string name="settings__theme_editor__code_recording_requires_default_ime_floris">{app_name} باید به عنوان کیبورد پیشفرض انتخاب شود تا کد کلید را بتوان ضبط کرد</string>
-    <string name="settings__theme_editor__code_recording_placeholder">در حال ضبط...</string>
+    <string name="settings__theme_editor__code_recording_placeholder">در حال ضبط…</string>
     <string name="settings__theme_editor__add_property">افزودن ویژگی</string>
     <string name="settings__theme_editor__edit_property">ویرایش ویژگی</string>
     <string name="settings__theme_editor__property_already_exists">یک ویزگی با همین نام در این قانون از قبل وجود دارد.</string>

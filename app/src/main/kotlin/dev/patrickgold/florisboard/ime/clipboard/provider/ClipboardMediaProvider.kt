@@ -28,6 +28,7 @@ import android.os.ParcelFileDescriptor
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.exifinterface.media.ExifInterface
+import androidx.core.net.toUri
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.CoroutineScope
@@ -138,7 +139,7 @@ class ClipboardMediaProvider : ContentProvider() {
             IMAGE_CLIPS_TABLE, VIDEO_CLIPS_TABLE -> {
                 return try {
                     values as ContentValues
-                    val mediaUri = Uri.parse(values.getAsString(Columns.MediaUri))
+                    val mediaUri = values.getAsString(Columns.MediaUri).toUri()
                     // Get the orientation of the image
                     val exifInterface = ExifInterface(context!!.contentResolver.openInputStream(mediaUri)!!)
                     var rotation = 0

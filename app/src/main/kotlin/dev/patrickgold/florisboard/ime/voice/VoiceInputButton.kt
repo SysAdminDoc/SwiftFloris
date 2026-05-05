@@ -1,7 +1,7 @@
 package dev.patrickgold.florisboard.ime.voice
 
 import android.content.Intent
-import android.net.Uri
+import androidx.core.net.toUri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
@@ -140,13 +140,13 @@ fun VoiceInputButton(
                     onClick = {
                         // Open F-Droid listing for FUTO Voice Input
                         val futoFdroidUrl = "https://f-droid.org/packages/org.futo.voiceinput/"
-                        val intent = Intent(Intent.ACTION_VIEW, Uri.parse(futoFdroidUrl))
+                        val intent = Intent(Intent.ACTION_VIEW, futoFdroidUrl.toUri())
                         try {
                             context.startActivity(intent)
                         } catch (e: Exception) {
                             // Fallback to FUTO GitHub releases
                             val futoGithubUrl = "https://github.com/FUTO-org/android-voice-input/releases"
-                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(futoGithubUrl)))
+                            context.startActivity(Intent(Intent.ACTION_VIEW, futoGithubUrl.toUri()))
                         }
                         showNotInstalledDialog = false
                     }

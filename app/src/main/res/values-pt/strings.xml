@@ -43,7 +43,7 @@
     <string name="emoji__category__objects" comment="Emoji category name">Objetos</string>
     <string name="emoji__category__symbols" comment="Emoji category name">Símbolos</string>
     <string name="emoji__category__flags" comment="Emoji category name">Bandeiras</string>
-    <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Nenhum emoji usado ainda... Que tal começar agora? Eles irão aparecer aqui.</string>
+    <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Nenhum emoji usado ainda… Que tal começar agora? Eles irão aparecer aqui.</string>
     <string name="emoji__history__phone_locked_message" comment="Message to show if phone is locked">Quer ver os emojis favoritos? É só desbloquear o ecrã!</string>
     <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Quer personalizar? Segure um emoji para fixá-lo nos favoritos ou removê-lo do histórico!</string>
     <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">O emoji {emoji} foi removido do histórico</string>
@@ -541,7 +541,7 @@
     <string name="about__third_party_licenses__title" comment="Preference title">Licenças de terceiros</string>
     <string name="about__third_party_licenses__summary" comment="Preference summary">Licenças das bibliotecas de terceiros incluídas nesta aplicação</string>
     <!-- Setup UI strings -->
-    <string name="setup__title" comment="Title of Setup">Boas vindas!</string>
+    <string name="setup__title" comment="Title of Setup">Boas-vindas!</string>
     <string name="setup__intro_message" comment="Short intro message welcoming new users">Obrigado por utilizar {app_name}! Esta configuração permite-lhe dar os primeiros passos para começar a utilizar {app_name}.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Política de privacidade</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Repositório</string>
@@ -758,8 +758,8 @@
     <string name="ext__import__file_skip_ext_core" comment="Reason string when ext has core extension ID">Não é possível substituir ou atualizar os pacotes de extensão padrão fornecidos com os ativos principais do aplicativo. Considere atualizar a própria aplicação se pretende usar uma versão mais recente de um pacote de extensão principal.</string>
     <string name="ext__import__file_skip_ext_corrupted" comment="Reason string when file seems to be ext but is corrupted">O ficheiro parece ser um ficheiro de extensão, mas a análise dos dados do ficheiro falhou. O ficheiro está corrompido ou este ficheiro não é uma extensão.</string>
     <string name="ext__import__file_skip_ext_incorrect_type" comment="Reason string when file is of incorrect extension serial type">Esperava-se um ficheiro de extensão do tipo serial \"{expected_serial_type}\" mas, é um ficheiro de serial \"{actual_serial_type}\".</string>
-    <string name="ext__import__file_skip_ext_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um ficheiro de mídia (imagem, áudio, font, etc...) mas foi encontrado um ficheiro de extensão.</string>
-    <string name="ext__import__file_skip_media_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um ficheiro de extensão, mas foi encontrado um ficheiro de média (image, audio, font, etc...).</string>
+    <string name="ext__import__file_skip_ext_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um ficheiro de mídia (imagem, áudio, font, etc…) mas foi encontrado um ficheiro de extensão.</string>
+    <string name="ext__import__file_skip_media_not_supported" comment="Reason string when file is loaded in incorrect context">Era esperado um ficheiro de extensão, mas foi encontrado um ficheiro de média (image, audio, font, etc…).</string>
     <string name="ext__import__error_unexpected_exception" comment="Label when an error occurred during import. The error message will be appended below this text view">Ocorreu um erro inesperado durante a importação. Detalhes:</string>
     <string name="ext__validation__enter_package_name">Introduza o nome para o pacote</string>
     <string name="ext__validation__error_package_name">O nome do pacote não corresponde à expressão regular {id_regex}</string>
@@ -947,7 +947,7 @@
     <string name="enum__shape_corner__top_start" comment="Enum value label">Início do topo</string>
     <string name="enum__shape_corner__top_end" comment="Enum value label">Fim do topo</string>
     <string name="enum__shape_corner__bottom_end" comment="Enum value label">Fim do fundo</string>
-    <string name="enum__shape_corner__bottom_start" comment="Enum value label">Inicio do fundo</string>
+    <string name="enum__shape_corner__bottom_start" comment="Enum value label">Início do fundo</string>
     <string name="enum__smartbar_layout__suggestions_only" comment="Enum value label">Apenas sugestões</string>
     <string name="enum__smartbar_layout__suggestions_only__description" comment="Enum value description">Mostrar apenas a linha candidata, sem nenhuma linha/botão de ação ou ação fixa</string>
     <string name="enum__smartbar_layout__actions_only" comment="Enum value label">Apenas ações</string>
