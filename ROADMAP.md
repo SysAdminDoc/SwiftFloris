@@ -105,10 +105,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Completed: May 5, 2026
 
 - [ ] **NLP Manager Refactor** (`NlpManager.kt`) — Large `TODO: this is a mess`. Cleanly separate concerns.
-  - Split into NLPProviderRegistry, ProviderFactory, and per-provider managers
-  - Remove circular dependencies
-  - Add unit tests for each provider
+  - [x] Split provider lookup and lifecycle into `NlpProviderRegistry` / `NlpProviderFactory`
+  - [ ] Split remaining candidate assembly and smartbar auto-expand concerns out of `NlpManager`
+  - [ ] Remove circular dependencies
+  - [ ] Add unit tests for each provider
   - Estimated effort: 3-4 weeks
+  - Progress: provider registry extraction completed May 5, 2026
 
 - [ ] **Emoji Compatibility** (`FlorisEmojiCompat.kt`) — Investigate EmojiCompat double-instance memory impact.
   - Profile memory usage with emoji-heavy input
