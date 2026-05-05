@@ -309,13 +309,15 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 **Why**: Deskdrop shows voice + AI integration is compelling for power users. FUTO Voice Input is perfect foundation — 100% offline, open-source, auditable. Commands are natural extension of voice-to-text.
 
 **What**:
-- [ ] **Voice Command Parser** — Extend VoiceInputManager with command detection.
+- [x] **Voice Command Parser** — Extend VoiceInputManager with command detection.
   - Supported commands (v1):
     - **Editing**: "delete that", "undo", "redo", "select all"
     - **Formatting**: "new paragraph", "new line", "capitalize next word"
     - **Navigation**: "go to start", "go to end"
-  - Use fuzzy matching (Levenshtein distance + phonetic normalization) to handle accents/slurring
-  - Confidence threshold (default: >0.85)
+  - [x] Use fuzzy matching (Levenshtein distance + phonetic normalization) to handle accents/slurring
+  - [x] Confidence threshold (default: >0.85)
+  - Completed: May 5, 2026
+  - Note: SwiftFloris currently delegates dictation to FUTO as an external IME, so this parser is exposed through `VoiceInputManager` for transcript sources but cannot intercept FUTO output until a transcript handoff path exists.
   - **Estimated effort**: 3 weeks
 
 - [ ] **Command Execution** — Implement command actions.
@@ -351,6 +353,13 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - [ ] 10+ built-in voice commands working reliably (>90% recognition accuracy on native speakers)
 - [ ] Custom commands UI functional
 - [ ] Comprehensive voice command documentation
+
+**Progress Update** (2026-05-05):
+- Added `VoiceCommandParser` with built-in command definitions for delete, undo, redo, select all, new paragraph, new line, capitalize next word, go to start, and go to end.
+- Added accent-insensitive normalization, punctuation/case cleanup, courtesy-word handling, Damerau-Levenshtein fuzzy matching, alias support, and configurable confidence thresholds with a default of 0.85.
+- Exposed command detection through `VoiceInputManager.detectCommand(...)` for future transcript sources.
+- Added unit coverage for exact built-ins, aliases, fuzzy recognition, normalization, confidence thresholds, and false-positive resistance.
+- Implementation limitation: FUTO Voice Input is still launched as a separate IME, so SwiftFloris does not receive dictated text from FUTO for command execution yet.
 
 ---
 
