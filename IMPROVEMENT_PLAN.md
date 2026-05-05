@@ -46,6 +46,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: Continued build-warning hygiene by moving extension import/export/delete feedback off deprecated synchronous long toasts and giving extension export a concrete MIME type.
 - 2026-05-05: Moved user dictionary import/export feedback off deprecated synchronous long toasts and gave dictionary export a concrete text MIME type.
 - 2026-05-05: Moved language pack delete failure feedback off deprecated synchronous long toasts and switched the language pack import action to the AutoMirrored icon.
+- 2026-05-05: Began the premium UX polish pass by tightening the shared settings shell, action-card affordances, setup step completion treatment, bottom-bar insets, backup/restore busy-state locking, extension empty-state actions, and language-pack manager empty/detail behavior.
 
 ## Workstreams
 
@@ -246,17 +247,18 @@ Acceptance criteria:
 
 ### 10. Product UX and Visual Polish
 
-Status: Planned
+Status: In progress
 Priority: P1
 
 Goal: Make settings, onboarding, dialogs, and keyboard-adjacent UI feel more coherent, modern, calm, and easier to scan.
 
 Tasks:
-- [ ] Audit first-run/setup flow for orientation, progress, permission clarity, IME enablement, and final success state.
-- [ ] Audit settings landing page hierarchy, section naming, secondary text, and action discoverability.
-- [ ] Normalize screen-level spacing, section density, and button placement across settings screens.
-- [ ] Normalize dialog, bottom-bar, empty-state, warning, error, and info-card copy.
-- [ ] Review primary/secondary/destructive action treatment across backup, restore, extension, theme, language pack, and dictionary flows.
+- [x] Audit first-run/setup flow for orientation, progress, permission clarity, IME enablement, and final success state.
+- [x] Audit settings landing page hierarchy, section naming, secondary text, and action discoverability.
+- [x] Normalize screen-level spacing, section density, and button placement across settings screens.
+- [x] Normalize bottom-bar, empty-state, warning, error, and info-card treatment in the first shared pass.
+- [x] Review primary/secondary/destructive action treatment across backup, restore, extension, language pack, and dictionary flows.
+- [ ] Continue dialog copy and destructive-confirmation review across theme and extension editing.
 - [ ] Add consistent loading/skeleton or progress affordances where files, extensions, or language packs are being scanned.
 - [ ] Improve empty states for dictionary, extension lists, language packs, clipboard, and theme lists.
 - [ ] Review keyboard preview field placement and state feedback in settings screens.

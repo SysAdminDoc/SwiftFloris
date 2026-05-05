@@ -278,7 +278,10 @@ fun RestoreScreen() = FlorisScreen {
                     }
                 },
                 text = stringRes(R.string.action__restore),
-                enabled = restoreWorkspace != null && restoreWorkspace?.restoreErrorId == null && !isRestoreInProgress,
+                enabled = restoreWorkspace != null &&
+                    restoreWorkspace?.restoreErrorId == null &&
+                    restoreFilesSelector.atLeastOneSelected() &&
+                    !isRestoreInProgress,
             )
         }
     }
@@ -293,6 +296,7 @@ fun RestoreScreen() = FlorisScreen {
                     importStrategy = ImportStrategy.Merge
                 },
                 selected = importStrategy == ImportStrategy.Merge,
+                enabled = !isRestoreInProgress,
                 text = stringRes(R.string.backup_and_restore__restore__mode_merge),
                 secondaryText = stringRes(R.string.backup_and_restore__restore__mode_merge_summary),
             )
@@ -301,6 +305,7 @@ fun RestoreScreen() = FlorisScreen {
                     importStrategy = ImportStrategy.Erase
                 },
                 selected = importStrategy == ImportStrategy.Erase,
+                enabled = !isRestoreInProgress,
                 text = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite),
                 secondaryText = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite_summary),
             )
@@ -383,6 +388,7 @@ fun RestoreScreen() = FlorisScreen {
                 BackupFilesSelector(
                     filesSelector = restoreFilesSelector,
                     title = stringRes(R.string.backup_and_restore__restore__files),
+                    enabled = !isRestoreInProgress,
                 )
             }
         }

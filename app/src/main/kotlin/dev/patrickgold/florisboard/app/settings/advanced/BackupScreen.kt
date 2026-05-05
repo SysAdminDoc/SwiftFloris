@@ -36,7 +36,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.state.ToggleableState
 import androidx.compose.ui.unit.dp
 import androidx.core.app.ShareCompat
@@ -330,6 +332,7 @@ fun BackupScreen() = FlorisScreen {
                     backupDestination = Backup.Destination.FILE_SYS
                 },
                 selected = backupDestination == Backup.Destination.FILE_SYS,
+                enabled = !isBackupInProgress,
                 text = stringRes(R.string.backup_and_restore__back_up__destination_file_sys),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__destination_file_sys_summary),
             )
@@ -338,6 +341,7 @@ fun BackupScreen() = FlorisScreen {
                     backupDestination = Backup.Destination.SHARE_INTENT
                 },
                 selected = backupDestination == Backup.Destination.SHARE_INTENT,
+                enabled = !isBackupInProgress,
                 text = stringRes(R.string.backup_and_restore__back_up__destination_share_intent),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__destination_share_intent_summary),
             )
@@ -345,6 +349,7 @@ fun BackupScreen() = FlorisScreen {
         BackupFilesSelector(
             filesSelector = backupFilesSelector,
             title = stringRes(R.string.backup_and_restore__back_up__files),
+            enabled = !isBackupInProgress,
         )
     }
 }
@@ -354,6 +359,7 @@ internal fun BackupFilesSelector(
     modifier: Modifier = Modifier,
     filesSelector: Backup.FilesSelector,
     title: String,
+    enabled: Boolean = true,
 ) {
     FlorisOutlinedBox(
         modifier = modifier.defaultFlorisOutlinedBox(),
@@ -364,18 +370,21 @@ internal fun BackupFilesSelector(
             checked = filesSelector.jetprefDatastore,
             text = stringRes(R.string.backup_and_restore__back_up__files_jetpref_datastore),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_jetpref_datastore_summary),
+            enabled = enabled,
         )
         CheckboxListItem(
             onClick = { filesSelector.imeKeyboard = !filesSelector.imeKeyboard },
             checked = filesSelector.imeKeyboard,
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_keyboard),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_ime_keyboard_summary),
+            enabled = enabled,
         )
         CheckboxListItem(
             onClick = { filesSelector.imeTheme = !filesSelector.imeTheme },
             checked = filesSelector.imeTheme,
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_theme),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_ime_theme_summary),
+            enabled = enabled,
         )
 
         TriStateCheckboxListItem(
@@ -397,6 +406,7 @@ internal fun BackupFilesSelector(
             state = filesSelector.clipboardData.value,
             text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history_summary),
+            enabled = enabled,
         )
 
 
@@ -408,6 +418,7 @@ internal fun BackupFilesSelector(
             checked = filesSelector.clipboardTextItems,
             text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history__clipboard_text_items),
             isSecondaryListItem = true,
+            enabled = enabled,
         )
         CheckboxListItem(
             onClick = {
@@ -417,6 +428,7 @@ internal fun BackupFilesSelector(
             checked = filesSelector.clipboardImageItems,
             text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history__clipboard_image_items),
             isSecondaryListItem = true,
+            enabled = enabled,
         )
         CheckboxListItem(
             onClick = {
@@ -426,6 +438,7 @@ internal fun BackupFilesSelector(
             checked = filesSelector.clipboardVideoItems,
             text = stringRes(R.string.backup_and_restore__back_up__files_clipboard_history__clipboard_video_items),
             isSecondaryListItem = true,
+            enabled = enabled,
         )
 
     }
@@ -437,10 +450,13 @@ internal fun CheckboxListItem(
     checked: Boolean,
     text: String,
     secondaryText: String? = null,
-    isSecondaryListItem: Boolean = false
+    isSecondaryListItem: Boolean = false,
+    enabled: Boolean = true,
 ) {
     JetPrefListItem(
-        modifier = Modifier.rippleClickable(onClick = onClick),
+        modifier = Modifier
+            .alpha(if (enabled) 1f else 0.56f)
+            .rippleClickable(enabled = enabled, role = Role.Checkbox, onClick = onClick),
         icon = {
             Row {
                 if (isSecondaryListItem) {
@@ -449,6 +465,7 @@ internal fun CheckboxListItem(
                 Checkbox(
                     checked = checked,
                     onCheckedChange = null,
+                    enabled = enabled,
                 )
             }
         },
@@ -464,9 +481,12 @@ internal fun TriStateCheckboxListItem(
     text: String,
     secondaryText: String? = null,
     isSecondaryListItem: Boolean = false,
+    enabled: Boolean = true,
 ) {
     JetPrefListItem(
-        modifier = Modifier.rippleClickable(onClick = onClick),
+        modifier = Modifier
+            .alpha(if (enabled) 1f else 0.56f)
+            .rippleClickable(enabled = enabled, role = Role.Checkbox, onClick = onClick),
         icon = {
             Row {
                 if (isSecondaryListItem) {
@@ -475,6 +495,7 @@ internal fun TriStateCheckboxListItem(
                 TriStateCheckbox(
                     state = state,
                     onClick = null,
+                    enabled = enabled,
                 )
             }
         },
@@ -489,13 +510,17 @@ internal fun RadioListItem(
     selected: Boolean,
     text: String,
     secondaryText: String? = null,
+    enabled: Boolean = true,
 ) {
     JetPrefListItem(
-        modifier = Modifier.rippleClickable(onClick = onClick),
+        modifier = Modifier
+            .alpha(if (enabled) 1f else 0.56f)
+            .rippleClickable(enabled = enabled, role = Role.RadioButton, onClick = onClick),
         icon = {
             RadioButton(
                 selected = selected,
                 onClick = null,
+                enabled = enabled,
             )
         },
         text = text,

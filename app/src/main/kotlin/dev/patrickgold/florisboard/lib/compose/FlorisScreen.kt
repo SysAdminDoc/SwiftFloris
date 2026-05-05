@@ -175,6 +175,7 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                         .align(Alignment.TopCenter)
                         .widthIn(max = 840.dp)
                         .fillMaxWidth()
+                        .padding(horizontal = 8.dp, vertical = if (scrollable) 8.dp else 0.dp)
                         .then(scrollModifier),
                     iconSpaceReserved = iconSpaceReserved,
                     content = content,
