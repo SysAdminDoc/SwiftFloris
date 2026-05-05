@@ -34,6 +34,8 @@ import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.readText
+import java.io.IOException
+import java.util.concurrent.ConcurrentHashMap
 
 class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProvider {
     companion object {
@@ -44,9 +46,17 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
 
     private val appContext by context.appContext()
 
-    private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
-    private val dictionaryLoadGuard = Mutex()
-    @Volatile private var dictionarySnapshot = LatinDictionarySnapshot.Empty
+    private val dictionaryStore = LatinDictionaryStore(
+        readAsset = LatinDictionaryAssetReader { path ->
+            withContext(Dispatchers.IO) {
+                try {
+                    appContext.assets.readText(path)
+                } catch (_: IOException) {
+                    null
+                }
+            }
+        },
+    )
 
     override val providerId = ProviderId
 
@@ -55,7 +65,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun preload(subtype: Subtype) {
-        dictionary()
+        dictionary(subtype)
     }
 
     override suspend fun spell(
@@ -68,7 +78,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         isPrivateSession: Boolean,
     ): SpellingResult {
         val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return SpellingResult.unspecified()
-        val dictionary = dictionary()
+        val dictionary = dictionary(subtype)
         if (dictionary.contains(normalizedWord)) {
             return SpellingResult.validWord()
         }
@@ -89,7 +99,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val currentWord = content.currentWordText.ifBlank { content.composingText }
         return LatinDictionarySuggester.suggest(
             rawWord = currentWord,
-            dictionary = dictionary(),
+            dictionary = dictionary(subtype),
             maxCandidateCount = maxCandidateCount,
         ).map { candidate ->
             WordSuggestionCandidate(
@@ -116,12 +126,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return dictionary().sortedWords
+        return dictionary(subtype).sortedWords
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
         val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: word.lowercase()
-        return dictionary().frequencyFor(normalizedWord)
+        return dictionary(subtype).frequencyFor(normalizedWord)
     }
 
     override suspend fun destroy() {
@@ -129,24 +139,76 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         // the app process is killed (which will most likely always be the case).
     }
 
-    private suspend fun dictionary(): LatinDictionarySnapshot {
-        val cached = dictionarySnapshot
-        if (cached.isLoaded) return cached
+    private suspend fun dictionary(subtype: Subtype): LatinDictionarySnapshot {
+        return dictionaryStore.dictionaryForLanguage(subtype.primaryLocale.language)
+    }
+}
+
+internal fun interface LatinDictionaryAssetReader {
+    suspend fun read(path: String): String?
+}
+
+internal class LatinDictionaryStore(
+    private val readAsset: LatinDictionaryAssetReader,
+    private val json: Json = Json,
+) {
+    private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
+    private val dictionaryLoadGuard = Mutex()
+    private val dictionaries = ConcurrentHashMap<String, LatinDictionarySnapshot>()
+
+    suspend fun dictionaryForLanguage(language: String): LatinDictionarySnapshot {
+        val languageCode = normalizeLanguageCode(language)
+        dictionaries[languageCode]?.let { return it }
 
         return dictionaryLoadGuard.withLock {
-            val current = dictionarySnapshot
-            if (current.isLoaded) {
-                current
-            } else {
-                val rawData = withContext(Dispatchers.IO) {
-                    appContext.assets.readText("ime/dict/data.json")
+            dictionaries[languageCode]?.let { return@withLock it }
+
+            val dictionary = loadSpecificDictionary(languageCode)
+                ?: if (languageCode == DefaultLanguageCode) {
+                    LatinDictionarySnapshot.Empty
+                } else {
+                    dictionaries[DefaultLanguageCode]
+                        ?: loadSpecificDictionary(DefaultLanguageCode)
+                            ?.also { dictionaries[DefaultLanguageCode] = it }
+                        ?: LatinDictionarySnapshot.Empty
                 }
-                val frequencies = Json.decodeFromString(wordDataSerializer, rawData)
-                    .mapKeys { (word, _) -> word.lowercase() }
-                LatinDictionarySnapshot(
-                    frequencies = frequencies,
-                    sortedWords = frequencies.keys.sorted(),
-                ).also { dictionarySnapshot = it }
+            dictionaries[languageCode] = dictionary
+            dictionary
+        }
+    }
+
+    private suspend fun loadSpecificDictionary(languageCode: String): LatinDictionarySnapshot? {
+        for (path in assetPathsForLanguage(languageCode)) {
+            val rawData = readAsset.read(path) ?: continue
+            val frequencies = json.decodeFromString(wordDataSerializer, rawData)
+                .mapKeys { (word, _) -> word.lowercase() }
+            return LatinDictionarySnapshot(
+                frequencies = frequencies,
+                sortedWords = frequencies.keys.sorted(),
+            )
+        }
+        return null
+    }
+
+    companion object {
+        const val DefaultLanguageCode = "en"
+        private const val DictionaryRoot = "ime/dict"
+        private const val LegacyEnglishDictionaryPath = "$DictionaryRoot/data.json"
+
+        fun normalizeLanguageCode(language: String): String {
+            return language
+                .substringBefore('-')
+                .substringBefore('_')
+                .lowercase()
+                .ifBlank { DefaultLanguageCode }
+        }
+
+        fun assetPathsForLanguage(language: String): List<String> {
+            val languageCode = normalizeLanguageCode(language)
+            return if (languageCode == DefaultLanguageCode) {
+                listOf("$DictionaryRoot/$DefaultLanguageCode.json", LegacyEnglishDictionaryPath)
+            } else {
+                listOf("$DictionaryRoot/$languageCode.json")
             }
         }
     }

@@ -220,8 +220,11 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
   - Completed: May 5, 2026
   
 - [ ] **Dictionary augmentation** — Extend preloaded dictionaries for gesture matching.
-  - Current: English dictionary loaded
-  - Add: German, French, Spanish, Italian, Portuguese (from FlorisBoard language packs)
+  - [x] Add locale-aware dictionary asset lookup for gesture matching
+  - [x] Preserve English fallback through the existing bundled dictionary
+  - [x] Add dictionary selection/fallback unit tests
+  - [x] Expand glide pruner cache for English plus the five target language subtypes
+  - [ ] Add production German, French, Spanish, Italian, Portuguese word-frequency assets after source/license verification
   - Ensure word frequency data present (for swipe probability scoring)
   - Test dictionary loading performance impact
   - **Estimated effort**: 2 weeks
@@ -258,6 +261,12 @@ SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's 
 - Added `GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` documenting the glide manager, classifier, NLP provider path, feasibility decision, and implementation risks.
 - Feasibility result: the existing statistical classifier is already mostly language-agnostic and subtype-aware; the blocking work is locale-specific dictionary and frequency data returned through the active suggestion provider.
 - Next implementation batch: add a locale-aware dictionary loader for `LatinLanguageProvider`, keep English fallback behavior, add tests for dictionary selection/fallback, and add production German/French/Spanish/Italian/Portuguese assets only after dictionary licensing is verified.
+
+**Progress Update** (2026-05-05):
+- Added locale-aware dictionary infrastructure to `LatinLanguageProvider`: future assets at `ime/dict/{language}.json` are selected by active subtype language, with the existing English `ime/dict/data.json` retained as fallback.
+- Added unit coverage for language-code normalization, target asset paths, locale-specific dictionary selection, and English fallback behavior.
+- Increased the glide pruner cache from five to six subtype entries so English plus German/French/Spanish/Italian/Portuguese can remain warm during normal language switching.
+- Blocker: the repo and current upstream FlorisBoard assets do not include licensed German/French/Spanish/Italian/Portuguese word-frequency dictionaries. The production asset import remains unchecked until the dictionary source and license are selected.
 
 ---
 
