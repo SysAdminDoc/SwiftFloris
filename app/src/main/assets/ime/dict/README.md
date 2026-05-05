@@ -21,5 +21,10 @@ The following dictionaries were imported from the FlorisBoard NLP repository:
 Source: https://github.com/florisboard/nlp/tree/main/data/dicts/v0~draft1
 
 Upstream metadata describes these dictionaries as Apache-2.0 FlorisBoard dictionary extensions preprocessed from
-Wiktextract and Google Ngram data. Portuguese is not bundled here because the upstream repository does not currently
-provide a `words_pt.fldic` or `org.florisboard.dictionaries.pt.flex` asset.
+Wiktextract and Google Ngram data.
+
+`pt.fldic` was generated from `diplomaticvegetation/portuguese` `words-top.txt` on Hugging Face, which is published
+under CC0-1.0. The source file is a frequency-ranked Portuguese word list with counts and source URLs; SwiftFloris
+imports only normalized words and counts.
+
+Source: https://huggingface.co/datasets/diplomaticvegetation/portuguese/blob/main/words-top.txt
