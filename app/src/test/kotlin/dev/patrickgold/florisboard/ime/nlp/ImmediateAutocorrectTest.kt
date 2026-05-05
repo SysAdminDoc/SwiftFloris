@@ -40,9 +40,35 @@ class ImmediateAutocorrectTest : FunSpec({
         }
     }
 
+    test("english first-person pronouns handle sentence-start auto capitalization") {
+        val corrections = listOf(
+            "Id" to "I'd",
+            "Ill" to "I'll",
+            "Im" to "I'm",
+            "Ive" to "I've",
+        )
+
+        corrections.forEach { (typed, expected) ->
+            val candidate = ImmediateAutocorrect.englishFirstPersonPronounCandidate(
+                rawWord = typed,
+                languageCode = "en-US",
+            )
+
+            candidate?.text shouldBe expected
+            candidate?.isEligibleForAutoCommit shouldBe true
+        }
+    }
+
     test("english first-person pronouns preserve already-correct text") {
         ImmediateAutocorrect.englishFirstPersonPronounCandidate("I'm", "en") shouldBe null
         ImmediateAutocorrect.englishFirstPersonPronounCandidate("I'll", "en") shouldBe null
+    }
+
+    test("english first-person pronouns preserve all-caps input") {
+        ImmediateAutocorrect.englishFirstPersonPronounCandidate("ID", "en") shouldBe null
+        ImmediateAutocorrect.englishFirstPersonPronounCandidate("ILL", "en") shouldBe null
+        ImmediateAutocorrect.englishFirstPersonPronounCandidate("IM", "en") shouldBe null
+        ImmediateAutocorrect.englishFirstPersonPronounCandidate("IVE", "en") shouldBe null
     }
 
     test("english first-person pronouns do not apply to other languages") {

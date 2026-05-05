@@ -63,6 +63,20 @@ class LatinDictionarySuggesterTest : FunSpec({
         }
     }
 
+    test("suggest auto-commits sentence-start English first-person contractions") {
+        mapOf(
+            "Id" to "I'd",
+            "Ill" to "I'll",
+            "Im" to "I'm",
+            "Ive" to "I've",
+        ).forEach { (typed, expected) ->
+            val suggestions = LatinDictionarySuggester.suggest(typed, dictionary, maxCandidateCount = 4)
+
+            suggestions.first().text shouldBe expected
+            suggestions.first().isEligibleForAutoCommit shouldBe true
+        }
+    }
+
     test("suggest does not apply English pronoun casing to other Latin languages") {
         LatinDictionarySuggester.suggest(
             rawWord = "i",
