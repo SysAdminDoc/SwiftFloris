@@ -114,6 +114,18 @@ fun KeyboardScreen() = FlorisScreen {
                 max = 150,
                 stepIncrement = 5,
             )
+            // ROADMAP §6 N5.3 — keyboard height slider (HeliBoard #1342, ASK #1775).
+            DialogSliderPreference(
+                primaryPref = prefs.keyboard.keyboardHeightMultiplierPortrait,
+                secondaryPref = prefs.keyboard.keyboardHeightMultiplierLandscape,
+                title = stringRes(R.string.pref__keyboard__keyboard_height_multiplier__label),
+                primaryLabel = stringRes(R.string.screen_orientation__portrait),
+                secondaryLabel = stringRes(R.string.screen_orientation__landscape),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 50,
+                max = 150,
+                stepIncrement = 5,
+            )
             DialogSliderPreference(
                 primaryPref = prefs.keyboard.keySpacingVertical,
                 secondaryPref = prefs.keyboard.keySpacingHorizontal,

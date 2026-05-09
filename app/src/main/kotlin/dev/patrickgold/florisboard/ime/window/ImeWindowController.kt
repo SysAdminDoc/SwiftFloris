@@ -115,22 +115,35 @@ class ImeWindowController(
         }
 
         val userPreferredOptions = combine(
-            activeRootInsets,
-            prefs.keyboard.keySpacingHorizontal.asFlow(),
-            prefs.keyboard.keySpacingVertical.asFlow(),
-            prefs.keyboard.fontSizeMultiplierPortrait.asFlow(),
-            prefs.keyboard.fontSizeMultiplierLandscape.asFlow(),
-        ) { rootInsets, keySpacingFactorH, keySpacingFactorV, multiplierP, multiplierL ->
-            // TODO: this should adhere to form factor
-            // TODO: font scale needs a rework anyways, change this in font scale rework PR!
+            listOf(
+                activeRootInsets,
+                prefs.keyboard.keySpacingHorizontal.asFlow(),
+                prefs.keyboard.keySpacingVertical.asFlow(),
+                prefs.keyboard.fontSizeMultiplierPortrait.asFlow(),
+                prefs.keyboard.fontSizeMultiplierLandscape.asFlow(),
+                prefs.keyboard.keyboardHeightMultiplierPortrait.asFlow(),
+                prefs.keyboard.keyboardHeightMultiplierLandscape.asFlow(),
+            )
+        ) { values ->
+            val rootInsets = values[0] as ImeInsets.Root
+            val keySpacingFactorH = values[1] as Int
+            val keySpacingFactorV = values[2] as Int
+            val multiplierP = values[3] as Int
+            val multiplierL = values[4] as Int
+            val heightP = values[5] as Int
+            val heightL = values[6] as Int
+
             val rootBounds = rootInsets.boundsDp
+            val isPortrait = rootBounds.width <= rootBounds.height
+            // ROADMAP §6 N5.3 — Scalable keyboard height. Form-factor default ×
+            // user multiplier; ImeWindowController.doComputeWindowSpec re-constrains
+            // to [minKeyboardHeight, maxKeyboardHeight].
+            val heightScale = if (isPortrait) heightP / 100f else heightL / 100f
             ImeWindowSpec.UserPreferredOptions(
                 keySpacingFactorH = keySpacingFactorH / 100f,
                 keySpacingFactorV = keySpacingFactorV / 100f,
-                fontScale = when {
-                    rootBounds.width <= rootBounds.height -> multiplierP / 100f
-                    else -> multiplierL / 100f
-                },
+                fontScale = if (isPortrait) multiplierP / 100f else multiplierL / 100f,
+                keyboardHeightScale = heightScale.coerceIn(0.5f, 1.5f),
             )
         }
 
@@ -265,8 +278,13 @@ class ImeWindowController(
         return when (windowConfig.mode) {
             ImeWindowMode.FIXED -> {
                 val constraints = ImeWindowConstraints.of(rootInsets, windowConfig.fixedMode)
-                val props = (windowConfig.fixedProps[windowConfig.fixedMode] ?: constraints.defaultProps)
-                    .constrained(constraints)
+                val rawProps = windowConfig.fixedProps[windowConfig.fixedMode] ?: constraints.defaultProps
+                // ROADMAP §6 N5.3 — apply user height scale before constrained() so the
+                // [min, max] keyboard-height clamp catches absurd slider values.
+                val scaledProps = rawProps.copy(
+                    keyboardHeight = rawProps.keyboardHeight * userPreferredOptions.keyboardHeightScale,
+                )
+                val props = scaledProps.constrained(constraints)
                 ImeWindowSpec.Fixed(
                     fixedMode = windowConfig.fixedMode,
                     props = props,
@@ -278,6 +296,8 @@ class ImeWindowController(
                 val constraints = ImeWindowConstraints.of(rootInsets, windowConfig.floatingMode)
                 val props = (windowConfig.floatingProps[windowConfig.floatingMode] ?: constraints.defaultProps)
                     .constrained(constraints)
+                // Floating window has its own resize affordance, so the slider is
+                // intentionally ignored for floating mode.
                 ImeWindowSpec.Floating(
                     floatingMode = windowConfig.floatingMode,
                     props = props,
