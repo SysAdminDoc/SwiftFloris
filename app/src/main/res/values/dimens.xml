@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- SwiftKey-aligned key dimensions. SwiftKey ships ~56dp tall keys (vs AOSP ~48dp,
-         vintage Floris 42dp). The bigger touch target is the single most impactful
-         "premium feel" lever per the design research. Width is wider per-key floor too. -->
+    <!-- SwiftKey-aligned key dimensions (spec reference, not directly consumed).
+
+         SwiftKey ships ~56dp tall keys (vs AOSP ~48dp, vintage Floris 42dp). The bigger
+         touch target is the single most impactful "premium feel" lever per the design
+         research [SWIFTKEY-DESIGN-RESEARCH internal report].
+
+         Actual keyboard height is computed dynamically by ImeWindowConstraints based on
+         screen size and form factor (Phone portrait factor 0.26 × screenHeight; tablet
+         and landscape factors lower). On a typical 6-7" phone in portrait this lands at
+         ~52..58dp per row, which brackets the 56dp SwiftKey reference. Users can override
+         globally via ROADMAP §6 N5.3's keyboardHeightMultiplier slider (50..150%).
+
+         These dimens stay as the canonical spec target; future ImeWindowConstraints
+         work (N3.5 follow-up) may convert them into a form-factor-aware floor. -->
     <dimen name="key_width">36dp</dimen>
     <dimen name="key_height">56dp</dimen>
 
