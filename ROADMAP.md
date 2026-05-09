@@ -172,7 +172,7 @@ The IMPROVEMENT_PLAN already has this as Workstream 6 (Planned, P1) — promote 
 - **N8.1** Audit every key for **48dp touch target** (WCAG 2.5.5 AAA, M3 default) [STD-WCAG-TARGET]. Edge keys in landscape and number-row keys are the typical offenders.
 - **N8.2** Audit Catppuccin Mocha + Tokyo Night key glyph contrast at 4.5:1 (WCAG 2.1 AA); fix any failures or document trade-off [STD-WCAG-CONTRAST].
 - **N8.3** TalkBack labels for every key, smartbar action, and suggestion-strip slot. Long-press hint must announce "Alternative characters available" per Gboard convention [STD-TALKBACK].
-- **N8.4** **Reduced-motion respect** in gesture trail — guard the trail animation behind `Settings.Global.ANIMATOR_DURATION_SCALE != 0f` [STD-REDUCED-MOTION].
+- ✅ **N8.4** shipped 2026-05-09 (v1.7.x). `TextKeyboardLayout` reads `Settings.Global.ANIMATOR_DURATION_SCALE` once per recomposition (memoized on `configuration` so animator-toggle Developer Options changes propagate via the standard Compose configuration-change recompose path). When the scale is exactly `0f` ("Animations off"), the trail is suppressed even if the user has `showTrail` enabled. Wrapped in `runCatching` because some OEM devices restrict cross-app `Settings.Global` reads.
 - **N8.5** Switch Access compatibility — declare `supportsSwitchingToNextInputMethod="true"` and call `switchToNextInputMethod(token, false)` so switch users can rotate subtypes [STD-SWITCH].
 - **N8.6** Voice Access integration — verify `setComposingRegion` / `finishComposingText` lifecycle stays clean (Voice Access dictation breaks on shortcut composing).
 
