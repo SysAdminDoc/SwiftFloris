@@ -179,6 +179,64 @@ kover {
     useJacoco()
 }
 
+// ROADMAP §6 N7.1 — Pin the no-network promise in code, not just in marketing.
+// Fails the build if any AndroidManifest.xml in the :app sourceSets declares the
+// INTERNET permission (or any equivalent network-permission alias). The check
+// runs as part of preBuild on every variant, so PRs cannot accidentally break
+// the offline-only contract that makes SwiftFloris viable for F-Droid privacy
+// review. Removing this check is itself a load-bearing review signal.
+val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
+    group = "verification"
+    description = "Fails the build if any AndroidManifest.xml declares INTERNET / network permissions (ROADMAP §6 N7.1)."
+
+    val manifests = fileTree("src") {
+        include("**/AndroidManifest.xml")
+    }
+    inputs.files(manifests).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.upToDateWhen { true }
+
+    val bannedPermissions = listOf(
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_WIFI_STATE",
+        "android.permission.CHANGE_NETWORK_STATE",
+        "android.permission.CHANGE_WIFI_STATE",
+    )
+
+    doLast {
+        val violations = mutableListOf<String>()
+        manifests.forEach { manifest ->
+            val text = manifest.readText()
+            bannedPermissions.forEach { perm ->
+                val pattern = Regex(
+                    """<uses-permission[^>]*android:name\s*=\s*"${Regex.escape(perm)}""""
+                )
+                if (pattern.containsMatchIn(text)) {
+                    violations += "${manifest.relativeTo(projectDir)} declares $perm"
+                }
+            }
+        }
+        if (violations.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("SwiftFloris no-network contract violation (ROADMAP §6 N7.1):")
+                    violations.forEach { appendLine("  - $it") }
+                    appendLine()
+                    append("SwiftFloris must ship without ANY network permission. ")
+                    append("If a feature genuinely needs network access, it must move to ")
+                    append("an isolated optional module loaded by user opt-in, never the base APK.")
+                }
+            )
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.named("preBuild").configure {
+        dependsOn(verifyNoInternetPermission)
+    }
+}
+
 dependencies {
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
