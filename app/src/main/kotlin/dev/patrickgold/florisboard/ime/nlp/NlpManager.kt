@@ -266,6 +266,9 @@ class NlpManager(context: Context) {
     }
 
     fun getAutoCommitCandidate(): SuggestionCandidate? {
+        if (!prefs.correction.autoCorrect.get()) {
+            return null
+        }
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()

@@ -205,6 +205,20 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         if (!prefs.correction.autoCapitalization.get() || !isSentenceEndingPunctuation(char)) return false
         if (activeInfo.isRawInputEditor) return false
         if (activeState.keyVariation != KeyVariation.NORMAL) return false
+        // Only auto-cap when the punctuation actually ends a word (letter immediately before).
+        // Skip cases like "3.14", "192.168.0.1", "e.g.", "U.S.A.", URLs, abbreviations, ellipses.
+        val textBefore = activeContent.getTextBeforeCursor(2)
+        val charBeforePunctuation = textBefore.lastOrNull() ?: return false
+        if (!charBeforePunctuation.isLetter()) return false
+        // Skip single-letter abbreviations ("e.", "U.", "A.") — heuristic: require at least 2 letters,
+        // or that the char before that is itself a letter (i.e. the punct closes a real word).
+        val charBeforeWordEnd = textBefore.dropLast(1).lastOrNull()
+        if (charBeforeWordEnd != null && charBeforeWordEnd.isLetter().not() &&
+            charBeforeWordEnd.isWhitespace().not()
+        ) {
+            // Pattern like "X.Y." — likely an abbreviation chain, not a sentence end.
+            return false
+        }
         return true
     }
 
@@ -213,7 +227,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val isInsertAutoSpaceAfterChar = shouldInsertAutoSpaceAfter(char)
         val shouldCapitalizeAfterPunctuation = shouldAutoCapitalizeAfter(char)
         val isDeletePreviousSpace = isInsertAutoSpaceAfterChar && autoSpace.isActive
-        
+
         if (isInsertAutoSpaceAfterChar) {
             autoSpace.setActive()
         } else {
@@ -221,20 +235,21 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
         val isPhantomSpaceActive = phantomSpace.determine(char)
         phantomSpace.setInactive()
-        
+
         val result = super.commitChar(
             char = char,
             deletePreviousSpace = isDeletePreviousSpace,
             insertSpaceBeforeChar = isInsertAutoSpaceBeforeChar || isPhantomSpaceActive,
-            insertSpaceAfterChar = isInsertAutoSpaceAfterChar || shouldCapitalizeAfterPunctuation,
+            insertSpaceAfterChar = isInsertAutoSpaceAfterChar,
         )
-        
-        // Enable auto-capitalization for the next character after sentence-ending punctuation
-        // Only set the state, don't re-evaluate as that would reset it based on cursor position
+
+        // Arm auto-capitalization for the next character after sentence-ending punctuation.
+        // The shift state is consumed when the next alphabetic character is committed
+        // (KeyboardManager.onInputKeyUp resets SHIFTED_AUTOMATIC after consuming a letter).
         if (result && shouldCapitalizeAfterPunctuation) {
             activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
         }
-        
+
         return result
     }
 

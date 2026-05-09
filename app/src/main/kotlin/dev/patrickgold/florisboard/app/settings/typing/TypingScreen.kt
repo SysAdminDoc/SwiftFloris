@@ -95,6 +95,11 @@ fun TypingScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__correction__auto_capitalization__label),
                 summary = stringRes(R.string.pref__correction__auto_capitalization__summary),
             )
+            SwitchPreference(
+                prefs.correction.autoCorrect,
+                title = stringRes(R.string.pref__correction__auto_correct__label),
+                summary = stringRes(R.string.pref__correction__auto_correct__summary),
+            )
             val isAutoSpacePunctuationEnabled by prefs.correction.autoSpacePunctuation.collectAsState()
             SwitchPreference(
                 prefs.correction.autoSpacePunctuation,

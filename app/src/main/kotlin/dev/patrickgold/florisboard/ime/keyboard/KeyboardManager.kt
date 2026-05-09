@@ -216,23 +216,47 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             val capsMode = editorInstance.activeCursorCapsMode
             val autoCapEnabled = prefs.correction.autoCapitalization.get()
                 && subtypeManager.activeSubtype.primaryLocale.supportsCapitalization
-            
+
             // Workaround for apps like TikTok that don't report caps mode: force auto-cap at start of field
-            val isAtStartOfField = editorInstance.activeContent.textBeforeSelection.isEmpty()
-            
-            val shift = autoCapEnabled && (capsMode != InputAttributes.CapsMode.NONE || isAtStartOfField)
-            
-            // CRITICAL: Preserve SHIFTED_AUTOMATIC state if it was set - don't override it with re-evaluation
-            // The state will be reset after the auto-capped character is consumed in KeyboardManager.onInputKey()
-            if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC) {
-                return
-            }
-            
+            // and infer it from the text immediately preceding the cursor when the OS hides it.
+            val textBeforeCursor = editorInstance.activeContent.textBeforeSelection
+            val isAtStartOfField = textBeforeCursor.isEmpty()
+            val isAfterSentenceEnd = isCursorAfterSentenceEnd(textBeforeCursor)
+
+            val shift = autoCapEnabled &&
+                (capsMode != InputAttributes.CapsMode.NONE || isAtStartOfField || isAfterSentenceEnd)
+
             activeState.inputShiftState = when {
                 shift -> InputShiftState.SHIFTED_AUTOMATIC
                 else -> InputShiftState.UNSHIFTED
             }
         }
+    }
+
+    /**
+     * Returns true if the text before the cursor genuinely ends a sentence:
+     * a letter, then sentence-ending punctuation, then optional whitespace.
+     * Avoids false positives for decimals (3.14), IPs (192.168.0.1), abbreviations (e.g.),
+     * URLs, and ellipses.
+     */
+    private fun isCursorAfterSentenceEnd(textBeforeCursor: CharSequence): Boolean {
+        if (textBeforeCursor.isEmpty()) return false
+        var i = textBeforeCursor.length - 1
+        // Skip trailing whitespace (but not newlines used for visual reset).
+        while (i >= 0 && textBeforeCursor[i] == ' ') i--
+        if (i < 0) return false
+        val punct = textBeforeCursor[i]
+        if (punct !in ".!?") return false
+        // Reject ellipses ("...").
+        if (i >= 2 && textBeforeCursor[i - 1] == '.' && textBeforeCursor[i - 2] == '.') return false
+        // The character immediately before the punctuation must be a letter
+        // (excludes "3.", "X.Y." abbreviation chains, etc.).
+        if (i == 0) return false
+        val prev = textBeforeCursor[i - 1]
+        if (!prev.isLetter()) return false
+        // Single-letter chunk preceded by another '.' looks like an abbreviation chain (e.g. "U.S.A.").
+        if (i >= 2 && textBeforeCursor[i - 2] == '.') return false
+        return true
     }
 
     fun resetSuggestions(content: EditorContent) {

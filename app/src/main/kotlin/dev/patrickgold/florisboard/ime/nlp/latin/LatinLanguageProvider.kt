@@ -317,7 +317,12 @@ internal object LatinDictionarySuggester {
     private const val MinCompletionLength = 2
     private const val MinCorrectionLength = 3
     private const val MaxTwoEditWordLength = 8
-    private const val AutoCommitMinFrequency = 0.62
+    // Frequency threshold (0.0–1.0, normalized from a 0–255 dictionary count).
+    // SwiftKey-style behavior: only auto-replace the user's typed word when the candidate is
+    // genuinely common. Lower thresholds aggressively swap unusual words and proper nouns.
+    // 0.78 ≈ frequency 198/255 — covers high-confidence typo fixes like "teh" → "the" while
+    // sparing rarer dictionary words that share an edit-distance-1 neighborhood.
+    private const val AutoCommitMinFrequency = 0.78
     private val Alphabet = ('a'..'z').toList()
 
     fun suggest(
@@ -416,6 +421,13 @@ internal object LatinDictionarySuggester {
         }
         val correction = ImmediateAutocorrect.englishFirstPersonPronoun(rawWord, languageCode) ?: return null
         if (!dictionary.contains(correction.dictionaryWord)) return null
+        // Don't override a real word the user actually typed (e.g. "ill", "id", "im", "ive").
+        // The single-letter "i" is the only safe auto-substitution because it is never a
+        // standalone English word.
+        val typedNormalized = normalizeWord(rawWord)
+        if (typedNormalized != null && typedNormalized != "i" && dictionary.contains(typedNormalized)) {
+            return null
+        }
         return LatinSuggestion(
             text = correction.text,
             confidence = 1.0,
