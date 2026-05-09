@@ -1,7 +1,7 @@
 # SwiftFloris Roadmap v4.0
 
 **Last Updated:** 2026-05-09
-**Current Version:** v1.7.2 (released 2026-05-09 — 21 Now-tier items closed across v1.7.0 + v1.7.1 + v1.7.2 same-day batch)
+**Current Version:** v1.7.3 (released 2026-05-09 — 24 Now-tier items closed across v1.7.0 → v1.7.3 same-day batch)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline, with autocorrect + dictionary work already past upstream
 **Supersedes:** ROADMAP v3.0 (2026-05-05). Completed items preserved in §3 with dated checkmarks; tier system, themes, and cited opportunities below are new.
 **Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
@@ -58,6 +58,7 @@
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.7.3 | 2026-05-09 | N6.2 release workflow + signing fallback, N8.1 48dp touch-target WCAG regression test (`TouchTargetWcagTest`), N8.3 TalkBack content descriptions per key | `RELEASE_NOTES_v1.7.3.md` |
 | v1.7.2 | 2026-05-09 | N6.4 dep-CVE scan workflow, N3.3 SwiftKey haptic defaults (20ms / 60), N3.4 popup elevation 2dp→4dp; N5.2/N3.5/N8.5/N10.2 verified-already-shipped triage | `RELEASE_NOTES_v1.7.2.md` |
 | v1.7.1 | 2026-05-09 | Same-day follow-up: N3.1 SwiftKey Pure themes, N5.3 keyboard-height slider, N7.3 personal-dict isolation regression test + threat-model doc, N8.4 reduced-motion guard, N8.5 switch-access verified, N9.1/N9.2 commitContent verified | `RELEASE_NOTES_v1.7.1.md` |
 | v1.7.0 | 2026-05-09 | Correctness floor + privacy hardening + SwiftKey-parity polish (closes Now items N11/N7.1/N7.2/N7.5/N6.1/N6.5/N5.1/N5.4/N10.3/N3.2) | `RELEASE_NOTES_v1.7.0.md` |
