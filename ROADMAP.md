@@ -126,7 +126,7 @@ The killer SwiftKey feature with no first-class FOSS equivalent [C1, COMM-2]. Us
 v1.6.0 shipped accent (`#319DFF`) + Pure palette tokens + dimens bumps. Finish:
 
 - **N3.1** Wire a "SwiftKey Pure Light" + "SwiftKey Pure Dark" theme preset into the picker, consuming the `swiftkey_pure_*` tokens added in `colors_branding.xml` [STD-Material3].
-- **N3.2** Switch key glyph font to `sans-serif-medium` (weight 500) — the single biggest factor in SwiftKey's "premium" perception [SWIFTKEY-DESIGN-RESEARCH internal report].
+- ✅ **N3.2** shipped 2026-05-09 (v1.7.0). `FlorisImeUi.Key.elementName` base style in `FlorisImeThemeBaseStyle.kt` now sets `fontWeight = fontWeight(FontWeight.Medium)` (weight 500). Applies to every shipped theme (Nord/Tokyo Night/Dracula/Catppuccin/SwiftKey-Pure) since they all inherit from the base style. Closes the SwiftKey perceived-quality gap without changing key dimensions or layouts.
 - **N3.3** Ship SwiftKey-default haptic profile (~20ms duration, amplitude 153/255), gated on `Vibrator.hasAmplitudeControl()`. Add Android 16 envelope haptics (`BasicEnvelopeBuilder`) when `areEnvelopeEffectsSupported()` returns true [STD-A16-HAPTIC, AI14].
 - **N3.4** Pressed-key flash (~80ms color flash + 1.03× scale-up over 60ms; no Material ripple) + long-press preview popup (80×96dp, 4dp elevation, accent-ringed). Currently the long-press popup is functional but visually plain.
 - **N3.5** Finish the dimens migration started in v1.6.0 — verify `key_height: 56dp` actually flows through `defKeyboardHeight` calculation in `ImeWindowConstraints.kt`; current bump landed in dimens.xml only.

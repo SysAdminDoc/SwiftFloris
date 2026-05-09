@@ -55,6 +55,10 @@ val FlorisImeThemeBaseStyle = SnyggStylesheet.v2 {
     FlorisImeUi.Key.elementName {
         background = `var`("--surface")
         foreground = `var`("--on-surface")
+        // ROADMAP §6 N3.2 — sans-serif-medium (FontWeight.Medium / 500) gives keys
+        // the SwiftKey-Pure "premium" weight without bumping size; this is the
+        // single biggest factor in the perceived-quality gap with Gboard/SwiftKey.
+        fontWeight = fontWeight(FontWeight.Medium)
         fontSize = fontSize(22.sp)
         shadowElevation = size(2.dp)
         shape = `var`("--shape")
