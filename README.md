@@ -98,7 +98,19 @@ All themes support:
 
 ## Installation
 
-### From GitHub Releases (Recommended)
+### Option A — Obtainium (recommended for auto-updates)
+
+[Obtainium](https://github.com/ImranR98/Obtainium) tracks GitHub Releases directly and notifies you the moment a new SwiftFloris APK ships — no Play Store, no F-Droid mirror lag, no manual polling.
+
+**One-tap subscribe:**
+
+```
+obtainium://app/{"id":"dev.patrickgold.florisboard","url":"https://github.com/SysAdminDoc/SwiftFloris","author":"SysAdminDoc","name":"SwiftFloris","preferredApkIndex":0,"additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"app-release.*\\\\.apk\"}"}
+```
+
+Open the link above on a device with Obtainium installed (or paste it into Obtainium's "Add app from URL" field). Obtainium will subscribe to this repository's GitHub Releases feed and auto-prompt for installs on each new tag.
+
+### Option B — GitHub Releases (manual)
 
 1. Download the latest APK from [Releases](https://github.com/SysAdminDoc/SwiftFloris/releases)
 2. Install on your Android device (Android 8.0+)
@@ -107,7 +119,7 @@ All themes support:
    - [F-Droid](https://f-droid.org/app/org.futo.voiceinput)
    - [FUTO Website](https://voiceinput.futo.org/)
 
-### Manual Build
+### Option C — Manual Build
 
 ```bash
 git clone https://github.com/SysAdminDoc/SwiftFloris.git
