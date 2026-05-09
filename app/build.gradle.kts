@@ -61,6 +61,27 @@ configure<ApplicationExtension> {
     buildToolsVersion = tools.versions.buildTools.get()
     ndkVersion = tools.versions.ndk.get()
 
+    // ROADMAP §6 N6.2 — release signing. The KEYSTORE_PATH + SIGNING_*
+    // env vars are populated by the GitHub release workflow from encrypted
+    // secrets. When KEYSTORE_PATH is unset (local builds, fork dispatches
+    // without secrets), the release variant falls back to debug signing
+    // so contributors can still validate the build pipeline.
+    signingConfigs {
+        val keystorePath = System.getenv("KEYSTORE_PATH")
+        if (!keystorePath.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("SIGNING_KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+                keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
+                enableV1Signing = true
+                enableV2Signing = true
+                enableV3Signing = true
+                enableV4Signing = true
+            }
+        }
+    }
+
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
@@ -124,6 +145,10 @@ configure<ApplicationExtension> {
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             isMinifyEnabled = true
             isShrinkResources = true
+
+            // Use the release signing config when the env-driven keystore is present;
+            // otherwise fall back to debug signing so the build still produces an APK.
+            signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
         }
 
         create("benchmark") {
