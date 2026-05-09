@@ -475,9 +475,15 @@ abstract class AbstractEditorInstance(context: Context) {
                         textBeforeSelection = scopeText.dropLast(length),
                     )
                     expectedContentQueue.push(newContent)
+                    // ROADMAP §6 N10.3 — Use deleteSurroundingTextInCodePoints (API 24+) so backspace
+                    // never splits a surrogate pair in Unicode 16/17 emoji or Indic conjuncts. The
+                    // length we just computed is grapheme-aligned via ICU, but the underlying editor
+                    // may still receive an unsafe count from deleteSurroundingText if length lands
+                    // mid-surrogate after concurrent modifications.
+                    val cpCount = scopeText.codePointCount(scopeText.length - length, scopeText.length)
                     ic.beginBatchEdit()
                     ic.finishComposingText()
-                    ic.deleteSurroundingText(length, 0)
+                    ic.deleteSurroundingTextInCodePoints(cpCount, 0)
                     ic.setComposingRegion(newContent.composing)
                     ic.endBatchEdit()
                 }
@@ -493,9 +499,11 @@ abstract class AbstractEditorInstance(context: Context) {
                         textAfterSelection = scopeText.drop(length),
                     )
                     expectedContentQueue.push(newContent)
+                    // ROADMAP §6 N10.3 — same as above for forward delete.
+                    val cpCount = scopeText.codePointCount(0, length)
                     ic.beginBatchEdit()
                     ic.finishComposingText()
-                    ic.deleteSurroundingText(0, length)
+                    ic.deleteSurroundingTextInCodePoints(0, cpCount)
                     ic.setComposingRegion(newContent.composing)
                     ic.endBatchEdit()
                 }
