@@ -150,7 +150,7 @@ ASK #1832 / HeliBoard #695 / FlorisBoard #196 — the most-requested customizati
 
 The current GitHub Action runs `assembleDebug` only — tests, lint, and reproducibility are ungated. This is a quality gate that costs CI minutes, not engineering velocity.
 
-- **N6.1** Gate PRs on `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`. Lint baseline diff must not regress.
+- ✅ **N6.1** shipped 2026-05-09 (v1.7.0). `.github/workflows/android.yml` now runs (in order) `:app:verifyNoInternetPermission` (N7.1 fail-fast), `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`. Lint + test reports upload as artifacts on every run (`if: always()`) for triage. Renamed workflow to `SwiftFloris CI`. Cache wired via `gradle/actions/setup-gradle@v4`.
 - **N6.2** Add a release workflow (`workflow_dispatch`) that signs an APK with a stored keystore, attaches it to a GitHub release with SHA256, and bumps the F-Droid metadata file. Apache-2.0 NOTICE attribution check (SCOWL + LDNOOBW + FlorisBoard upstream).
 - **N6.3** Submit to F-Droid for **reproducible-build verification** — pin AGP / Gradle / Kotlin / NDK; lock `lib/native` checksums; submit `fdroiddata` `Builds:` block. Target the verified ✔ badge alongside HeliBoard, Fossify, FlickBoard, Thumb-Key [STD-FDROID-REPRO, F1].
 - **N6.4** Add **dependency-CVE scan** on a weekly schedule (OWASP Dependency-Check Gradle plugin or Renovate) [STD-CVE].
