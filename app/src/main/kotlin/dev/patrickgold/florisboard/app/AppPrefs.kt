@@ -474,13 +474,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "input_feedback__haptic_vibration_mode",
             default = HapticVibrationMode.USE_VIBRATOR_DIRECTLY,
         )
+        // ROADMAP §6 N3.3 — SwiftKey-aligned haptic profile defaults: ~20ms duration,
+        // amplitude 153/255 ≈ 60%. The default keyboard-tap haptic on FlorisBoard
+        // upstream (65ms / 70%) feels heavier than SwiftKey/Gboard. Existing users
+        // who have customized these prefs are unaffected (jetpref fall-back-only-when-unset).
         val hapticVibrationDuration = int(
             key = "input_feedback__haptic_vibration_duration",
-            default = 65,
+            default = 20,
         )
         val hapticVibrationStrength = int(
             key = "input_feedback__haptic_vibration_strength",
-            default = 70,
+            default = 60,
         )
         val hapticFeatKeyPress = boolean(
             key = "input_feedback__haptic_feat_key_press",
