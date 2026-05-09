@@ -180,8 +180,8 @@ The IMPROVEMENT_PLAN already has this as Workstream 6 (Planned, P1) — promote 
 
 Universal request across OSS keyboards [COMM-A, COMM-B PAIN-15, FR-13]. Architecture is small; payoff is parity with Gboard's image-paste behavior in apps that declare `EditorInfo.contentMimeTypes`.
 
-- **N9.1** Wire `InputConnection.commitContent()` (API 25+ via `InputConnectionCompat`) for clipboard images.
-- **N9.2** Surface the clipboard image-paste in the existing clipboard panel.
+- ✅ **N9.1** verified shipped (inherited FlorisBoard upstream, validated 2026-05-09 v1.7.x). `EditorInstance.commitClipboardItem` for `ItemType.IMAGE`/`VIDEO` already wraps the URI in an `InputContentInfoCompat`, calls `InputConnectionCompat.commitContent` with `INPUT_CONTENT_GRANT_READ_URI_PERMISSION`. Editor-compatibility gate at `ClipboardManager.canUseClipImage` (text/plain || matches `activeInfo.contentMimeTypes`).
+- ✅ **N9.2** verified shipped (inherited FlorisBoard upstream, validated 2026-05-09 v1.7.x). `ClipboardInputLayout.kt` renders image clipboard items in the panel grid (`Image` composable from decoded bitmap), tap → `clipboardManager.pasteItem(item)` → `commitClipboardItem` → `commitContent`. Long-press → preview popup with delete/pin actions.
 - **N9.3** Search bar over emoji + bundled sticker packs (HeliBoard #259, FlorisBoard #45 — 80 reactions [FR-9]).
 
 ### N10. Emoji 16/17 + Unicode 17 readiness
