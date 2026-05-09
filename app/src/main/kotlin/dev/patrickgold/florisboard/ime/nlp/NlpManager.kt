@@ -272,6 +272,13 @@ class NlpManager(context: Context) {
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
+
+        // ROADMAP §6 N5.4 — Personal-dictionary shortcut auto-replace runs *before*
+        // the in-strip auto-commit candidate and the English contraction fallback,
+        // because user-defined shortcuts ("omw" → "on my way") express explicit user
+        // intent that should win over algorithmic guesses.
+        userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
+
         val activeCandidate = activeCandidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
                 !autoCommitSuppression.shouldSuppress(
@@ -284,6 +291,32 @@ class NlpManager(context: Context) {
             return activeCandidate
         }
         return immediateAutoCommitCandidate(currentWord, currentWordStart)
+    }
+
+    private fun userDictionaryShortcutAutoCommitCandidate(
+        currentWord: String,
+        currentWordStart: Int?,
+    ): SuggestionCandidate? {
+        if (currentWord.isBlank()) return null
+        val expansion = dictionaryManager.queryUserDictionaryShortcutExact(
+            currentWord,
+            subtypeManager.activeSubtype.primaryLocale,
+        ) ?: return null
+        val candidate = WordSuggestionCandidate(
+            text = expansion,
+            confidence = 1.0,
+            isEligibleForAutoCommit = true,
+            isEligibleForUserRemoval = false,
+        )
+        if (autoCommitSuppression.shouldSuppress(
+                currentWord = currentWord,
+                candidateText = expansion,
+                currentWordStart = currentWordStart,
+            )
+        ) {
+            return null
+        }
+        return candidate
     }
 
     fun rememberAcceptedAutoCommit(content: EditorContent, candidate: SuggestionCandidate) {
