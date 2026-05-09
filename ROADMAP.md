@@ -1,7 +1,7 @@
 # SwiftFloris Roadmap v4.0
 
 **Last Updated:** 2026-05-09
-**Current Version:** v1.7.0 (released 2026-05-09 — correctness floor + privacy hardening + SwiftKey-parity polish; closes 10 Now-tier items in one release)
+**Current Version:** v1.7.1 (released 2026-05-09 — 16 Now-tier items closed across v1.7.0+v1.7.1 same-day batch)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline, with autocorrect + dictionary work already past upstream
 **Supersedes:** ROADMAP v3.0 (2026-05-05). Completed items preserved in §3 with dated checkmarks; tier system, themes, and cited opportunities below are new.
 **Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
@@ -58,6 +58,7 @@
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.7.1 | 2026-05-09 | Same-day follow-up: N3.1 SwiftKey Pure themes, N5.3 keyboard-height slider, N7.3 personal-dict isolation regression test + threat-model doc, N8.4 reduced-motion guard, N8.5 switch-access verified, N9.1/N9.2 commitContent verified | `RELEASE_NOTES_v1.7.1.md` |
 | v1.7.0 | 2026-05-09 | Correctness floor + privacy hardening + SwiftKey-parity polish (closes Now items N11/N7.1/N7.2/N7.5/N6.1/N6.5/N5.1/N5.4/N10.3/N3.2) | `RELEASE_NOTES_v1.7.0.md` |
 | v1.6.0 | 2026-05-08 | Personal-learning dict + 117k SCOWL English + SwiftKey design tokens (#319DFF accent, Pure-theme palette, key dims) | `RELEASE_NOTES_v1.6.0.md` |
 | v1.5.5 | 2026-05-09 | 130-entry contraction autocorrect (two-tier safety: SAFE / DICTIONARY_GATED); ALL-CAPS skip; sentence-start case preservation | `RELEASE_NOTES_v1.5.5.md` |
@@ -173,7 +174,7 @@ The IMPROVEMENT_PLAN already has this as Workstream 6 (Planned, P1) — promote 
 - **N8.2** Audit Catppuccin Mocha + Tokyo Night key glyph contrast at 4.5:1 (WCAG 2.1 AA); fix any failures or document trade-off [STD-WCAG-CONTRAST].
 - **N8.3** TalkBack labels for every key, smartbar action, and suggestion-strip slot. Long-press hint must announce "Alternative characters available" per Gboard convention [STD-TALKBACK].
 - ✅ **N8.4** shipped 2026-05-09 (v1.7.x). `TextKeyboardLayout` reads `Settings.Global.ANIMATOR_DURATION_SCALE` once per recomposition (memoized on `configuration` so animator-toggle Developer Options changes propagate via the standard Compose configuration-change recompose path). When the scale is exactly `0f` ("Animations off"), the trail is suppressed even if the user has `showTrail` enabled. Wrapped in `runCatching` because some OEM devices restrict cross-app `Settings.Global` reads.
-- **N8.5** Switch Access compatibility — declare `supportsSwitchingToNextInputMethod="true"` and call `switchToNextInputMethod(token, false)` so switch users can rotate subtypes [STD-SWITCH].
+- ✅ **N8.5** verified shipped (inherited FlorisBoard upstream + supplemented in fork). `app/src/main/res/xml/method.xml` already declares `android:supportsSwitchingToNextInputMethod="true"`. `FlorisImeService.switchToNextInputMethod` correctly calls `imm.switchToNextInputMethod(window.attributes.token, false)` (API 28+ path) with `super.switchToNextInputMethod(false)` fallback. Switch Access users can rotate subtypes via the platform's standard subtype-cycle gesture.
 - **N8.6** Voice Access integration — verify `setComposingRegion` / `finishComposingText` lifecycle stays clean (Voice Access dictation breaks on shortcut composing).
 
 ### N9. Inline `commitContent()` for sticker / GIF / image insertion
