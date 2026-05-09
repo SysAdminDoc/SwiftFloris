@@ -1,798 +1,641 @@
-# SwiftFloris Roadmap v3.0
+# SwiftFloris Roadmap v4.0
 
-**Last Updated**: May 5, 2026
-**Current Version**: v1.5.0 (FUTO Voice Input Release)  
-**Project Status**: Production-ready with continuous innovation pipeline
-
----
-
-## Executive Summary
-
-SwiftFloris is a mature, privacy-first Android keyboard combining FlorisBoard's proven IME architecture with modern Material Design 3 and SwiftKey's premium aesthetic. v1.5.0 integrates FUTO Voice Input (100% offline, no cloud). This roadmap synthesizes competitive analysis, community demand, upstream improvements, and emerging platform capabilities to guide development through v2.0+ while maintaining core philosophy: **privacy-first, offline-capable, deeply customizable, zero telemetry.**
-
-**Philosophy**: Users own their data. No cloud sync, no telemetry, no proprietary dependencies. All features work offline.
+**Last Updated:** 2026-05-09
+**Current Version:** v1.6.0 (released 2026-05-08 — personal-learning dictionary, 117k SCOWL English dictionary, SwiftKey design tokens)
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline, with autocorrect + dictionary work already past upstream
+**Supersedes:** ROADMAP v3.0 (2026-05-05). Completed items preserved in §3 with dated checkmarks; tier system, themes, and cited opportunities below are new.
+**Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
 
 ---
 
-## Current State (v1.5.0)
+## 1. Philosophy (load-bearing — every item below must respect this)
 
-### ✅ Implemented Features
-
-**Input Methods**
-- ✅ **Gesture/Swipe Typing** (v1.4.0) — Type words by dragging finger; configurable sensitivity (0-100%); visual trail with fade animation
-- ✅ **Voice Input** (v1.5.0) — FUTO Voice Input integration; 100% offline (Whisper-based); 16+ languages; no cloud calls
-- ✅ **Tap Typing** — Traditional key-press input with layout support (QWERTY, QWERTZ, AZERTY, locale-specific)
-- ✅ **Physical Keyboard Support** — Full hardware keyboard compatibility
-
-**Text Processing**
-- ✅ **Auto-Capitalization** — Sentence-aware (after `.`, `!`, `?`); first character of field
-- ✅ **Spell Checking** — Edit-distance algorithm (Levenshtein ≤2); 6 language dictionaries preloaded
-- ✅ **Word Suggestions** — Prefix-based completion; unigram frequency; bigram context (next-word prediction)
-- ✅ **Multi-Language** — 100+ languages via FlorisBoard; 6 with spell checking (EN, DE, FR, ES, IT, PT)
-
-**User Experience**
-- ✅ **4 Premium Themes** — Nord, Tokyo Night, Dracula, Catppuccin Mocha; Material Design 3; dark/light modes
-- ✅ **Encrypted Clipboard History** — AES-256 GCM; max 50 items; per-app tracking; one-tap insert
-- ✅ **Haptic Feedback** — Customizable vibration strength; per-action control
-- ✅ **Customization Panels** — Theme editor, gesture sensitivity, keyboard layout settings, dictionary manager
-
-**Technical**
-- ✅ **Jetpack Compose UI** — Declarative, reactive; Material Design 3 compliance
-- ✅ **Room Database** — Persistent settings storage
-- ✅ **Encrypted SharedPreferences** — Secure credential/token storage
-- ✅ **Coroutines + Threading** — Responsive UI, non-blocking operations
-
-### ⏳ Partially Implemented / Upstream Dependencies
-
-- **Gesture Data Collection** (FlorisBoard v0.6+) — Swipe gesture dataset gathering; training data for model refinement
-- **Emoji Search** (HeliBoard / FlorisBoard v0.7+) — Non-inline emoji search with dictionary
-- **Gesture Typing in Termux** — Works in FlorisBoard but disabled in some ROMs; CleverKeys has reliable Termux support
-- **CJK Input Optimization** — Inherited from FlorisBoard; active development upstream
-
-### ❌ Explicitly Out of Scope (v1.5.0)
-
-- Commercial licensing or monetization (Apache 2.0 only)
-- Google Play Store distribution (GitHub releases + F-Droid)
-- Telemetry, cloud sync, or analytics
-- Proprietary dependencies (Gboard libs, SwiftKey APIs)
-- Closed-source ML models (only open/auditable models permitted)
+- **100% offline.** No `INTERNET` permission. Zero telemetry. Zero account requirement. Zero vendor cloud.
+- **Apache-2.0 only.** GPL/AGPL/LGPL, FUTO Source-First, and undeclared-license code cannot be ingested into the main app, only conceptually borrowed or shipped as a clearly-isolated module under its own license.
+- **Audit-friendly by construction.** No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); reproducible builds; SHA256 fingerprints in README.
+- **Distribution:** GitHub Releases + F-Droid (verified-reproducible badge target) + IzzyOnDroid + Aurora Store (mirror) + Obtainium + Accrescent. **Not Google Play** by default — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture; revisit only if a separately-signed Play track is needed.
+- **Strategic wedge:** *"What FlorisBoard wants to be when it grows up, plus the SwiftKey multilingual brain, plus FUTO's offline voice, with zero network, zero account, zero vendor cloud."* Every Now/Next item below either closes a SwiftKey/Gboard parity gap or extends the on-device-only frontier no commercial keyboard occupies.
 
 ---
 
-## Competitive Landscape (Snapshot)
+## 2. State of the Repo (v1.6.0 reality, observed)
 
-| Keyboard | Swipe | Voice | Offline | Multi-Lang Swipe | Clipboard | Open Source | License | Last Update |
-|----------|-------|-------|---------|-------------------|-----------|-----------|---------|------------|
-| **SwiftFloris** | ✅ | ✅ FUTO | ✅ | ❌ (EN only) | ✅ (AES-256) | ✅ | Apache 2.0 | May 2026 |
-| **CleverKeys** | ✅ ML | ✅ FUTO | ✅ | ✅ (11 langs) | ✅ (unlimited) | ✅ | GPL-3.0 | May 2026 |
-| **FlorisBoard** | ⚠️ Alpha | ✅ FUTO | ✅ | ❌ | ✅ (20-100) | ✅ | Apache 2.0 | May 2026 |
-| **HeliBoard** | ✅ | ✅ FUTO | ✅ | ❌ | ✅ | ✅ | GPL-3.0 | May 2026 |
-| **AnySoftKeyboard** | ⚠️ Exp | ✅ FUTO | ✅ | ❌ | ❌ | ✅ | Apache 2.0 | May 2026 |
-| **Thumb-Key** | ✅ Swipe | ✅ FUTO | ✅ | ❌ (3x3 grid) | ✅ | ✅ | AGPL-3.0 | May 2026 |
-| **Deskdrop** | ✅ | ✅ Whisper | ⚠️ Optional | ❌ | ✅ | ✅ | GPL-3.0 | May 2026 |
-| **FUTO Keyboard** | ✅ Alpha | ✅ Built-in | ✅ | ❌ (EN focus) | ✅ | ⚠️ Source-First | Source-First 1.1 | May 2026 |
-| **Gboard** | ✅ | ✅ | ❌ Cloud | ✅ 100+ | ✅ | ❌ | Proprietary | May 2026 |
-| **SwiftKey** | ✅ | ✅ | ❌ Cloud | ✅ 100+ | ✅ | ❌ | Proprietary | May 2026 |
+**Stack:** Kotlin 2.3.20 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · JDK 17 · minSdk 26 (Android 8.0) · targetSdk/compileSdk 36 (Android 15) · Room 2.8.4 · Kotest 6.1.11 · KSP for Room compiler · AndroidX Benchmark 1.4.1 (macrobenchmark module wired but unused) · Crowdin translation pipeline.
 
-**Key Observations**:
-- CleverKeys leads in multi-language swipe (11 languages via single neural model + language-specific dictionaries)
-- FUTO Keyboard has built-in voice (better UX than external integration), but alpha-stage
-- HeliBoard has most mature gesture typing (used by CleverKeys via library)
-- SwiftFloris beats commercial keyboards on privacy (100% offline voice, no telemetry)
-- Deskdrop uniquely bridges AI + keyboards (Ollama/Groq/OpenAI integration)
-- Thumb-Key solves different problem (3x3 grid for thumb-typing; appeals to niche)
+**Modules:** `:app` · `:benchmark` · `lib/{android,color,compose,kotlin,native,snygg}`. Native module exists for ICU break-iterators / fast text segmentation.
 
----
+**Source size:** 247 main Kotlin files · 28 test files (151 unit tests passing post-v1.6.0 release pass) · 49 TODO/FIXME markers · **2 runtime `TODO()` stubs that crash if reached** (`KeyboardExtension.kt:55`, `LanguagePackExtension.kt:62`).
 
-## Phase 0: Quality Polish & Foundation (v1.5.1–v1.6.0) — Q2-Q3 2026
+**Active components (v1.6.0):**
+- **Tap typing** with QWERTY/QWERTZ/AZERTY + locale layouts (FlorisBoard inheritance).
+- **Gesture / glide typing** in 6 languages (EN/DE/ES/FR/IT/PT) via `StatisticalGlideTypingClassifier`. Per-language dictionaries imported (commits `6993d54`, `74ea99b`, `cd14f86`); model coverage outside English remains partial.
+- **Voice input** via FUTO Voice Input (external IME handoff, 100% offline Whisper-derived). Permission-recovery + language-settings + setup-recovery shipped (`f463199`, `28aa887`, `7ed7609`).
+- **Voice commands** parser → executor → custom-storage → UI → fallback handling (`49ba608` through `5d80989`); see `VOICE_COMMANDS.md`.
+- **English NLP:** 117,022-word SCOWL-merged dictionary (curated 50k corpus at freq 128–255 + 67k SCOWL long-tail at freq 80–127, profanity-filtered via LDNOOBW). 130-entry contraction autocorrect table (two-tier: SAFE / DICTIONARY_GATED). Personal-learning dictionary that auto-promotes typed words (Room-backed, off-thread, incognito-gated). Levenshtein-2 edit-distance corrections with tunable autocommit threshold (`AutoCommitMinFrequency = 0.78`).
+- **Auto-cap** with sentence-end context detection (rejects `3.14`, `192.168.0.1`, `e.g.`, `U.S.A.`, ellipses).
+- **Encrypted clipboard** (AES-256-GCM, max 50 items, per-app tracking).
+- **Themes:** Nord, Tokyo Night, Dracula, Catppuccin Mocha + theme editor + Snygg engine + SwiftKey "Pure" palette tokens scaffolded (not yet wired).
+- **Settings:** premium-polish UX pass landed (commits `cd770c`, `1e0e9d9`, `69def6a`).
+- **NLP refactor:** `NlpProviderRegistry` + `NlpCandidateAssembler` extracted; Han provider decoupled from `SubtypeManager` (commits `443a86d` through `e2eba2a`).
+- **EmojiCompat:** lazy replace-all loader + memory profiling test (`6fd6e3b`, `ba3c790`).
 
-**Goal**: Solidify v1.5.0 foundation. Fix inherited TODOs, improve test coverage, prepare for feature-intensive phases.
+**Stubbed / under-investigated (block several Now items):**
+- `LanguagePackExtension.kt:62 — TODO("LOL LMAO")` and `KeyboardExtension.kt:55 — TODO("Not yet implemented")` — runtime crashes if extension type ever hits these branches.
+- `FlorisSpellCheckerService.kt:141` — falls back to default spell-check service; no custom impl.
+- `ImeWindowMode.kt:56` — floating window mode placeholder.
+- `HanShapeBasedLanguageProvider.kt:88, 99, 103` — `observeForever` on wrong thread + skipped pack-type validation.
+- `FlorisLocale.kt:217, 227` — hard-coded locale tables, ICU-based replacement open.
+- `ThemeManager.kt:138-139` — leaks loaded theme dir on hot-reload.
+- `TextKeyboardLayout.kt:229` — `constraints.maxWidth not stable` in landscape rotation.
 
-### P0.1: Fix Inherited FlorisBoard TODOs
+**CI:** GitHub Actions runs `assembleDebug` only on PR/push. **Tests are not gated. Lint is not gated. No reproducible-build verification. No release signing.** Crowdin upload runs on `strings.xml` push; translation-included guard runs on PRs.
 
-**Why**: 40+ TODOs scattered across codebase (from FlorisBoard legacy). Blocks architecture clarity.
-
-**What**:
-- [x] **User Dictionary** (`UserDictionary.kt`) — Custom word CRUD, persistence, and NLP integration.
-  - [x] Add/remove words from app settings
-  - [x] Persist to Room database
-  - [x] Integrate with spell checker and suggestions, preferring SwiftFloris entries over system entries
-  - Completed: May 5, 2026
-  
-- [x] **Dictionary Manager** (`DictionaryManager.kt`) — Document and clean up manager API.
-  - [x] Clarify dictionary layering and precedence (provider/downloadable base → system user dictionary → SwiftFloris user dictionary)
-  - [x] Add lazy-loading and preference-driven unload behavior for user dictionary stores
-  - Completed: May 5, 2026
-
-- [x] **NLP Manager Refactor** (`NlpManager.kt`) — Large `TODO: this is a mess`. Cleanly separate concerns.
-  - [x] Split provider lookup and lifecycle into `NlpProviderRegistry` / `NlpProviderFactory`
-  - [x] Split candidate assembly and smartbar auto-expand concerns out of `NlpManager`
-  - [x] Remove provider-to-`SubtypeManager` dependency from Han language-pack loading
-  - [x] Add unit tests for each provider
-  - Estimated effort: 3-4 weeks
-  - Progress: provider registry, candidate assembly extraction, Han provider dependency cleanup, provider-family unit tests, and fallback defaults coverage completed May 5, 2026
-
-- [x] **Emoji Compatibility** (`FlorisEmojiCompat.kt`) — Investigate EmojiCompat double-instance memory impact.
-  - Profile memory usage with emoji-heavy input
-  - Consider AOSP-like ROM behavior
-  - Estimated effort: 1 week (research), 1 week (fix if needed)
-  - Completed: May 5, 2026
-  - Profile result: `EmojiCompatMemoryProfileTest` on Samsung SM-S938B (Android 16 / API 36) measured replace-all lazy-load overhead at +611 KB total PSS and +516 KB Java heap after the default no-replace instance loaded.
-  - AOSP-like behavior: `DefaultEmojiCompatConfig` absence now leaves the flow at null and logs a clear failure instead of forcing eager initialization; the emoji palette continues to use the system-font glyph fallback when EmojiCompat is unavailable.
-
-**Effort**: 8–10 weeks  
-**Risk**: Breaking changes in NLP refactor; need regression testing.  
-**Fit**: High; unblocks future feature work (esp. AI integration).
+**Distribution today:** GitHub Releases manual builds. `fastlane/` directory exists but no F-Droid metadata yet. Latest shipped APK: `app-release-v1.5.2.apk` (older releases via Releases page). No Obtainium one-tap URL in README.
 
 ---
 
-### P0.2: Gesture Typing Robustness Testing & Local Device Coverage ✅ COMPLETE
+## 3. Recently Shipped (v1.5.0 → v1.6.0, all reconciled from prior ROADMAP v3.0 + recent commits)
 
-**Why**: Gesture typing enabled by default in v1.4.0 and needs repeatable validation on the devices available to this project. Current release validation targets the owned Samsung phone plus the local Android emulator; broader physical-device coverage is out of scope unless contributors provide data later.
-
-**What**:
-- [x] **Created GESTURE_TYPING_DEVICE_COMPAT.md** — Framework for device testing (test templates, accuracy baselines, latency targets, troubleshooting)
-- [x] Added `GlideTypingGestureLatencyProfileTest` for repeatable detector latency profiling.
-- [x] Profiled the owned Samsung SM-S938B test phone.
-- [x] Profiled the local Android API 36 medium-phone emulator.
-- [x] Removed 10-device and community-feedback requirements from P0.2 scope.
-
-**Effort**: Complete
-**Risk**: Low; local-device scope limits broad compatibility claims.
-**Fit**: Provides a practical local reliability baseline and a reusable profile for future device checks.
-
-**Acceptance Criteria**:
-- [x] Device compatibility testing framework (GESTURE_TYPING_DEVICE_COMPAT.md)
-- [x] Owned-phone baseline captured with device metadata.
-- [x] Emulator baseline captured with device metadata.
-- [x] Repeatable latency profile available for future device checks.
-- [x] Multi-device compatibility requirements removed from this release scope.
-
-**Progress Update** (2026-05-04):
-- Created comprehensive test framework with device categories (flagship, mid-range, budget, legacy)
-- Defined test corpus (19 common English words, special cases, rare words)
-- Established performance baselines: >85% accuracy, <500ms latency, <5% false positives
-- Device testing pending (awaiting real-world data from users or test lab)
-
-**Progress Update** (2026-05-05):
-- Added `GlideTypingGestureLatencyProfileTest`, an instrumentation profile for the gesture detector path that logs min/p50/p95/max latency with device metadata.
-- Samsung SM-S938B baseline: Android 16 / API 36, 1080x2340, 450 dpi, Qualcomm SM8750. Detector-only profile passed at p50=446us, p95=461us, max=502us.
-- Medium_Phone_API_36.1 emulator baseline: Android API 36, x86_64, 1080x2400, 420 dpi. Detector-only profile passed at p50=1346us, p95=3953us, max=6350us.
-- Multi-device matrix requirements were removed from P0.2 because the project has one owned phone; the emulator is used as the second local validation target.
+| Version | Date | Headline | Source |
+|---|---|---|---|
+| v1.6.0 | 2026-05-08 | Personal-learning dict + 117k SCOWL English + SwiftKey design tokens (#319DFF accent, Pure-theme palette, key dims) | `RELEASE_NOTES_v1.6.0.md` |
+| v1.5.5 | 2026-05-09 | 130-entry contraction autocorrect (two-tier safety: SAFE / DICTIONARY_GATED); ALL-CAPS skip; sentence-start case preservation | `RELEASE_NOTES_v1.5.5.md` |
+| v1.5.4 | 2026-05-08 | Auto-cap context check (rejects digits/abbreviations/ellipses); decoupled auto-cap from auto-space; pronoun substitution dictionary-gated; new `correction.autoCorrect` toggle | `RELEASE_NOTES_v1.5.4.md` |
+| v1.5.3 | 2026-05-05 | Sentence-start pronoun autocorrect handling | `RELEASE_NOTES_v1.5.3.md` |
+| v1.5.2 | 2026-05-04 | Latin autocorrect/suggestions fix; ANR hardening; lint cleanup | commits `f041be5`, `835d601` |
+| v1.5.0 | 2026-04 | FUTO Voice Input integration (replaced Google Speech Recognizer); voice command parser/executor; multi-lang gesture dictionaries; NLP refactor (registry/assembler split) | commits `0c79ea1`, `49ba608` |
+| v1.4.0 | 2026-04 | Gesture typing stabilization; per-language glide controls | commits `e707141`, `cd14f86` |
+| v1.3.0 | 2026-04 | Voice input v1; multilingual testing | commits `1584691`, `83336e3` |
+| v1.2.0 | 2026-04 | Auto-cap parity v1 with SwiftKey | commits `c18b47b`, `373c5e1` |
+| v1.1.0 | 2026-03 | SwiftFloris fork from FlorisBoard; rebrand; haptic strength enhancement | commits `d4905b9`, `0c7265f` |
 
 ---
 
-### P0.3: FUTO Voice Input Stabilization & Expanded Language Packs ✅ COMPLETE
+## 4. Strategic Thesis
 
-**Why**: v1.5.0 integrates FUTO externally. Some edge cases (app crashes when FUTO unavailable, permission handling, language pack selection UX).
+The Android keyboard market has bifurcated into two camps: **(a) Apple/Samsung — on-device AI but locked to vendor silicon**, and **(b) Microsoft/Google/Grammarly — cloud-bound and account-bound**. There is no third option that runs anywhere, syncs P2P, and ships under Apache-2.0. SwiftFloris occupies that gap.
 
-**What**:
-- [x] **Created FUTO_VOICE_INPUT_STABILIZATION_PLAN.md** — Detailed implementation roadmap with 5 sub-phases:
-  - P0.3.1: Graceful degradation when FUTO not installed
-  - P0.3.2: Language pack selection UI in SwiftFloris settings
-  - P0.3.3: Permission handling robustness
-  - P0.3.4: Voice button latency profiling
-  - P0.3.5: Troubleshooting guide (FUTO_VOICE_INPUT_TROUBLESHOOTING.md)
-- [x] Implement graceful degradation (friendly dialog, install links)
-- [x] Implement language pack selection UI in settings
-- [x] Robust permission handling (denial, revocation, re-granting)
-- [x] Measure voice button preflight latency on available local targets
-- [x] Complete FUTO troubleshooting guide
+Three forces drive this roadmap:
 
-**Effort**: 2–3 weeks (→ v1.5.0)  
-**Risk**: Low; mostly UX / error handling.  
-**Fit**: Improves user experience around critical voice feature.
+1. **Upstream drift.** FlorisBoard v0.6-alpha targets glide typing, predictions, floating mode, and Snygg v2 themes [F1, F2]; SwiftFloris is already past upstream on autocorrect + dictionary, but behind on glide breadth, floating mode, and emoji-search. Whoever ships HeliBoard's NLnet-funded open swipe library + dataset first wins the next migration wave [H1].
+2. **Commercial collapse signals.** Microsoft removed in-keyboard Copilot in 2025 and is forcing SwiftKey users onto a Microsoft account by 2026-05-31 [C1, C2, C3]. Google nerfed Gboard offline voice for non-Pixel devices [GBOARD-VOICE]. Grammarly is shutting down its standalone keyboard [C8]. Every event above is a switch-trigger users name explicitly in r/SwiftKey, HN, and Privacy Guides forums [PAIN-1 through PAIN-5].
+3. **On-device LLM viability.** Gemma 3 270M Q4 (~135MB, <1% Pixel 9 Pro battery for 25 conversations [AI1, AI2]) and Whisper Large-v3-Turbo INT8 (~315ms per Snapdragon 8 Elite [AI3]) make smart-compose and dictation shippable on flagship devices in 2026 *without* the cloud — the moat closing window is open right now.
 
-**Progress Update** (2026-05-04):
-- Designed comprehensive stabilization plan with 5 sub-phases
-- Each sub-phase has clear acceptance criteria, effort estimates, risk analysis
-- Target: v1.5.0 release with all edge cases handled gracefully
-- Implementation starting with P0.3.1 (graceful degradation) in next autonomous batch
-
-**Progress Update** (2026-05-05):
-- Replaced the voice-provider missing-state toast with a SwiftFloris setup dialog launched from the keyboard voice action.
-- The dialog distinguishes missing FUTO from installed-but-disabled FUTO, opens Android keyboard settings, and provides F-Droid/GitHub release install links.
-- `VoiceInputManager` now reports installed-but-disabled FUTO as `NotEnabled` instead of a generic unavailable state.
-- Added a dedicated Voice input settings screen with FUTO readiness, install/enable/open actions, and a supported-language list sourced from FUTO's public language support notes.
-- Documented the handoff limitation in-product: FUTO owns voice language/model selection because Android's voice IME switch path does not provide a SwiftFloris-side language override.
-- Added FUTO microphone permission detection and recovery paths for denial, revocation, and re-granting through Android app permission settings.
-- Voice handoff now avoids switching to FUTO when Android reports microphone access denied, and falls back to another enabled voice IME when available.
-- Added `VoiceInputHandoffLatencyProfileTest`, an instrumentation profile for the voice-button preflight path that logs device metadata, FUTO status, and min/p50/p95/max latency.
-- Samsung SM-S938B baseline: Android 16 / API 36, FUTO installed/enabled, microphone granted. Preflight profile passed at p50=798us, p95=1131us, max=1261us.
-- Medium_Phone_API_36.1 emulator baseline: Android API 36, x86_64, 1080x2400, 420 dpi. Preflight profile passed at p50=4069us, p95=8221us, max=12239us.
-- The original three-device voice latency requirement was narrowed to the owned phone plus local emulator because no additional physical devices are available in this project environment.
-- Added `FUTO_VOICE_INPUT_TROUBLESHOOTING.md` with user recovery paths for install, enablement, microphone permission, language/model selection, wrong-provider handoff, no-insertion cases, latency expectations, and maintainer diagnostics.
+The wedge: ship every paywalled cloud feature **fully on-device, fully auditable, with zero account requirement.**
 
 ---
 
-## Phase 1: Multi-Language Swipe Typing (v1.6.0–v1.7.0) — Q3-Q4 2026
+## 5. Tier System
 
-**Goal**: Enable gesture typing in German, French, Spanish, Italian, Portuguese (in addition to English).
+- **Now** — committed for v1.7.0–v1.8.0 (next ~3 months, Q3 2026). High user value, modest engineering cost, fits stack and philosophy. Build started or imminent.
+- **Next** — committed for v1.9.0–v2.0.0 (Q4 2026 – Q1 2027). High value, larger cost or platform-readiness gate. Investigated, scoped, deferred only on capacity.
+- **Later** — desirable for v2.1+ (2027). Either large engineering effort, dependency on external work (HeliBoard NLnet drop, Android 17), or speculative-but-promising.
+- **Under Consideration** — no commitment. Listed because users asked or the strategic case is intriguing; will graduate to Next/Later or retire to Rejected with a written verdict.
+- **Rejected** — explicit no, with reasoning. Listed so future contributors don't re-litigate.
 
-**Why**: CleverKeys demonstrates multi-language swipe with single model + per-language dictionaries. Currently SwiftFloris only supports English swipes. This is a **leapfrog opportunity** — beat upstream FlorisBoard (which has no multi-lang swipe) and reach parity with CleverKeys.
-
-**What**:
-- [x] **Research feasibility** — Examine FlorisBoard's GlideTypingManager architecture.
-  - Does gesture classifier work language-agnostic?
-  - What dictionary structure do spell-checkers expect?
-  - Can we use existing AdvancedSpellingProvider dictionaries for swipe predictions?
-  - **Estimated research**: 1 week
-  - Completed: May 5, 2026
-  
-- [x] **Dictionary augmentation** — Extend preloaded dictionaries for gesture matching.
-  - [x] Add locale-aware dictionary asset lookup for gesture matching
-  - [x] Preserve English fallback through the existing bundled dictionary
-  - [x] Add dictionary selection/fallback unit tests
-  - [x] Expand glide pruner cache for English plus the five target language subtypes
-  - [x] Add production German, French, Spanish, Italian word-frequency assets from FlorisBoard NLP
-  - [x] Add Portuguese word-frequency asset after source/license verification
-  - [x] Ensure word frequency data present for imported gesture dictionaries
-  - [x] Test dictionary loading compatibility and performance impact
-  - **Estimated effort**: 2 weeks
-
-- [x] **Gesture classifier language-awareness** — Modify GlideTypingClassifier to accept language context.
-  - [x] Pass active language/subtype to classifier
-  - [x] Adjust dictionary lookup for current language
-  - [x] Fall back to English if language-specific lookup fails
-  - **Estimated effort**: 2–3 weeks
-  - Completed: May 5, 2026
-
-- [x] **Settings UI** — Let users enable/disable multi-language swipe per-language.
-  - [x] Checkbox in GesturesScreen for each language: "Enable swipe for [Language]"
-  - [x] Store preferences in AppPrefs
-  - **Estimated effort**: 1 week
-  - Completed: May 5, 2026
-
-- [x] **Testing & documentation**:
-  - [x] Device-backed dictionary/profile validation on the owned Samsung phone
-  - [x] `GESTURE_TYPING_MULTILINGUAL.md` guide
-  - [x] FAQ: "Why is my German gesture less accurate?" etc.
-  - Native-speaker accuracy parity remains open as an acceptance-evidence gap.
-  - **Estimated effort**: 2–3 weeks
-
-**Effort**: 8–11 weeks  
-**Risk**: Medium. FlorisBoard may not support language-aware gesture detection internally. May require custom implementation.  
-**Fit**: High user value; differentiates from upstream.  
-**Dependencies**: P0.1 (NLP refactor), P0.2 (device testing baseline).
-
-**Acceptance Criteria**:
-- [ ] Gesture typing works in all 5 languages (EN, DE, FR, ES, IT, PT) with <500ms latency
-- [ ] Accuracy within 5% of English baseline
-- [x] Settings UI allows per-language toggling
-- [x] Documentation covers language-specific tips
-
-**Progress Update** (2026-05-05):
-- Added `GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` documenting the glide manager, classifier, NLP provider path, feasibility decision, and implementation risks.
-- Feasibility result: the existing statistical classifier is already mostly language-agnostic and subtype-aware; the blocking work is locale-specific dictionary and frequency data returned through the active suggestion provider.
-- Next implementation batch: add a locale-aware dictionary loader for `LatinLanguageProvider`, keep English fallback behavior, add tests for dictionary selection/fallback, and add production German/French/Spanish/Italian/Portuguese assets only after dictionary licensing is verified.
-
-**Progress Update** (2026-05-05):
-- Added locale-aware dictionary infrastructure to `LatinLanguageProvider`: future assets at `ime/dict/{language}.json` are selected by active subtype language, with the existing English `ime/dict/data.json` retained as fallback.
-- Added unit coverage for language-code normalization, target asset paths, locale-specific dictionary selection, and English fallback behavior.
-- Increased the glide pruner cache from five to six subtype entries so English plus German/French/Spanish/Italian/Portuguese can remain warm during normal language switching.
-- Initial blocker: SwiftFloris and upstream FlorisBoard app assets did not include German/French/Spanish/Italian/Portuguese JSON word-frequency dictionaries. The FlorisBoard NLP repo had draft `.fldic`/`.flex` dictionaries for German, Spanish, French, and Italian, but not Portuguese, so production bundling required a separate format/import decision.
-
-**Progress Update** (2026-05-05):
-- Added direct `.fldic` dictionary support to `LatinLanguageProvider`. SwiftFloris now reads the `[words]` section from FlorisBoard NLP dictionaries and normalizes absolute scores into the existing 0..255 frequency scale.
-- Imported FlorisBoard NLP v0~draft1 `words_de.fldic`, `words_es.fldic`, `words_fr.fldic`, and `words_it.fldic` into `app/src/main/assets/ime/dict/` with local attribution notes.
-- Added tests for `.fldic` parsing, score normalization, non-word section handling, and real bundled dictionary loading. The imported assets provide 241k German, 406k Spanish, 243k French, and 365k Italian words.
-- Portuguese was not available in FlorisBoard NLP, so it required a separate source selection with verified licensing.
-
-**Progress Update** (2026-05-05):
-- Added `pt.fldic` from the CC0-1.0 `diplomaticvegetation/portuguese` Hugging Face `words-top.txt` frequency list.
-- Converted the ranked Portuguese source into FlorisBoard-compatible `.fldic` shape, retaining normalized words and frequency counts while excluding source URLs from the app asset.
-- Added Portuguese to the bundled dictionary loading test with a minimum 100k-word coverage threshold; the generated asset currently contains 134k normalized Portuguese words.
-- Dictionary augmentation is complete for the roadmap target languages: English fallback plus German, French, Spanish, Italian, and Portuguese.
-
-**Progress Update** (2026-05-05):
-- Confirmed `StatisticalGlideTypingClassifier` already receives the active subtype from `GlideTypingManager`, loads word data through `NlpManager.getListOfWords(subtype)`, and scores candidates through `getFrequencyForWord(currentSubtype, word)`.
-- Scoped the classifier suggestion cache by subtype so identical swipe paths cannot reuse stale candidates after switching languages.
-- Added cache invalidation when layout data, word data, or the active gesture is cleared; English fallback remains centralized in `LatinLanguageProvider` dictionary loading.
-
-**Progress Update** (2026-05-05):
-- Added per-language glide typing preferences for English, German, Spanish, French, Italian, and Portuguese, all enabled by default.
-- Added a Swipe languages group to `GesturesScreen` with one switch per bundled gesture dictionary language.
-- Wired keyboard gesture activation and classifier layout setup to the active subtype's language preference, so disabling a language cleanly restores normal key swipe gestures for that subtype.
-
-**Progress Update** (2026-05-05):
-- Added `GESTURE_TYPING_MULTILINGUAL.md` with supported languages, settings guidance, validation status, manual accuracy protocol, test corpus, and user FAQ.
-- Added `MultilingualGlideDictionaryProfileTest`, a targeted instrumentation profile that loads every bundled glide dictionary on-device and verifies minimum coverage plus representative sample words/frequencies.
-- Samsung SM-S938B baseline: Android 16 / API 36. Dictionary profile passed with English=49,981 words/254ms, German=235,065 words/969ms, Spanish=405,503 words/1,388ms, French=240,302 words/825ms, Italian=362,123 words/1,213ms, Portuguese=134,472 words/582ms.
-- Local validation confirms bundled dictionary coverage and load behavior. It does not claim native-speaker accuracy parity or broad human-panel accuracy within 5% of English.
+Source-citation rule: every item carries `[n]` keyed to §10 Appendix. If `[n]` is absent, that item came from internal repo state (e.g. an existing TODO marker) and is referenced by its file:line.
 
 ---
 
-## Phase 2: Voice Commands & Shortcuts (v1.7.0–v1.8.0) — Q4 2026 – Q1 2027
+## 6. NOW (v1.7.0 → v1.8.0, target Q3 2026)
 
-**Goal**: Extend FUTO Voice Input with voice-triggered editing commands (e.g., "delete that", "undo", "new paragraph").
+Eleven themes. Each item is small enough to land in a single PR, large enough to be roadmap-worthy, and grouped so a contributor can pick a theme and ship its bullets together.
 
-**Why**: Deskdrop shows voice + AI integration is compelling for power users. FUTO Voice Input is perfect foundation — 100% offline, open-source, auditable. Commands are natural extension of voice-to-text.
+### N1. Glide-typing breadth without the GApps blob
 
-**What**:
-- [x] **Voice Command Parser** — Extend VoiceInputManager with command detection.
-  - Supported commands (v1):
-    - **Editing**: "delete that", "undo", "redo", "select all"
-    - **Formatting**: "new paragraph", "new line", "capitalize next word"
-    - **Navigation**: "go to start", "go to end"
-  - [x] Use fuzzy matching (Levenshtein distance + phonetic normalization) to handle accents/slurring
-  - [x] Confidence threshold (default: >0.85)
-  - Completed: May 5, 2026
-  - Note: SwiftFloris currently delegates dictation to FUTO as an external IME, so this parser is exposed through `VoiceInputManager` for transcript sources but cannot intercept FUTO output until a transcript handoff path exists.
-  - **Estimated effort**: 3 weeks
+The single highest-leverage gap. Three credible paths; pick one in this order of preference:
 
-- [x] **Command Execution** — Implement command actions.
-  - [x] Map commands to InputConnection/editor actions (commitText, sendKeyEvent, select all, undo/redo, etc.)
-  - [x] Handle edge cases (e.g., "delete that" on empty field)
-  - [x] Log command execution for debugging
-  - Completed: May 5, 2026
-  - Note: command execution is available for parsed transcripts through the reusable executor; live FUTO output still cannot be intercepted while dictation is delegated to FUTO as a separate IME.
-  - **Estimated effort**: 2 weeks
+- **N1.1** Wait-and-integrate: monitor [HeliBoard NLnet open-glide project](https://github.com/HeliBorg/HeliBoard/issues/2226) [H1, COMM-3] (NLnet-funded open swipe library + dataset; v3.7 added active data-collection mode, v3.9 improved data export — drop pending). When library ships, port behind a `glide-engine: heliboard-open | swiftfloris-statistical` flag in `prefs.glide.engine`. Integration cost: M.
+- **N1.2** Port-CleverKeys-architecture: CleverKeys ships a 5.4MB encoder + 7.4MB decoder ONNX transformer that handles 11 languages with sub-200ms beam-search latency on Pixel 7, Apache-compatible XNNPACK backend [O1, AI4]. Code is GPL-3.0; cannot directly link, but the *architecture and training repo* are public reference. Train an Apache-2.0 model from the eventual HeliBoard dataset and ship via ONNX Runtime Mobile. Cost: L.
+- **N1.3** Stop-gap: extend the existing `StatisticalGlideTypingClassifier` with the per-language dictionaries already imported in `74ea99b`, `6993d54`, `cd14f86`. The user-facing experience is a per-subtype "Glide quality" indicator (Statistical / Neural-coming-soon).
 
-- [x] **User Customization** — Let users add/disable commands.
-  - [x] Custom command list in AppPrefs (JSON list)
-  - [x] Settings UI: add, edit, delete commands
-  - [x] Test user commands with fuzzy matcher
-  - Completed: May 5, 2026
-  - **Estimated effort**: 2 weeks
+Rejected sub-path: bundle Google's `libjni_latinimegoogle.so` from old GApps dumps. Violates the no-blob clause; HeliBoard's reluctant carrier-pigeon distribution of this file is exactly what auditability means to reject.
 
-- [x] **Fallback & Error Handling**:
-  - [x] Unrecognized command → treat as text and insert
-  - [x] Low confidence (0.5–0.85) → show user suggestion with accept/reject
-  - [x] Network timeout (shouldn't happen with FUTO, but safe design)
-  - Completed: May 5, 2026
-  - **Estimated effort**: 1 week
+### N2. Multilingual auto-detect (per-token language identification)
 
-- [ ] **Testing & documentation**:
-  - [ ] Test with diverse accents (native + non-native speakers)
-  - [x] VOICE_COMMANDS.md guide with full command reference
-  - [x] FAQ: "What if my accent isn't recognized?"
-  - **Estimated effort**: 2 weeks
+The killer SwiftKey feature with no first-class FOSS equivalent [C1, COMM-2]. Users in r/SwiftKey, HN 35597622, and HeliBoard #2124 [PAIN-5, COMM-2] all report the same complaint: typing two languages bleeds wrong-language autocorrects mid-sentence.
 
-**Effort**: 10–12 weeks  
-**Risk**: Medium. Voice recognition can be sensitive to accents. Fuzzy matching tuning may require iteration.  
-**Fit**: Niche feature but high perceived value. Differentiates from commercial keyboards.  
-**Dependencies**: P0.3 (FUTO stabilization).
+- **N2.1** Implement n-gram-based language ID over the current word and the trailing 3–4 words. Choose between:
+  - Compact langid library (e.g. CLD3 port, ~2MB + 70 langs); Apache-licensed equivalent: a port of fastText's `lid.176` quantized model [AI5] (~1MB INT8).
+  - Custom char-trigram classifier trained per Latin-script subtype set; fits in <200KB.
+- **N2.2** When the active subtype is multilingual (e.g. EN+ES enrolled), rank suggestions from each enrolled language's dictionary per-token rather than per-keypress; suppress autocommit when the top-2 candidates straddle two languages.
+- **N2.3** Ship a "Bilingual" subtype preset — pick two enabled languages once, type freely without manual switching. Match SwiftKey's UX for the canonical EN+ES, EN+FR, EN+DE pairs. Cost: M.
 
-**Acceptance Criteria**:
-- [ ] 10+ built-in voice commands working reliably (>90% recognition accuracy on native speakers)
-- [x] Custom commands UI functional
-- [x] Comprehensive voice command documentation
+### N3. SwiftKey-parity surface polish (close the visual gap)
 
-**Progress Update** (2026-05-05):
-- Added `VoiceCommandParser` with built-in command definitions for delete, undo, redo, select all, new paragraph, new line, capitalize next word, go to start, and go to end.
-- Added accent-insensitive normalization, punctuation/case cleanup, courtesy-word handling, Damerau-Levenshtein fuzzy matching, alias support, and configurable confidence thresholds with a default of 0.85.
-- Exposed command detection through `VoiceInputManager.detectCommand(...)` for future transcript sources.
-- Added unit coverage for exact built-ins, aliases, fuzzy recognition, normalization, confidence thresholds, and false-positive resistance.
-- Implementation limitation: FUTO Voice Input is still launched as a separate IME, so SwiftFloris does not receive dictated text from FUTO for command execution yet.
+v1.6.0 shipped accent (`#319DFF`) + Pure palette tokens + dimens bumps. Finish:
 
-**Progress Update** (2026-05-05):
-- Added `VoiceCommandExecutor`, `VoiceCommandActions`, and `EditorVoiceCommandActions` to map parsed commands to existing editor operations.
-- Supported execution actions now cover previous-word deletion, undo, redo, select all, new paragraph, new line, one-shot capitalization, go to start, and go to end.
-- Added failure reporting for rejected actions and empty-field delete attempts, plus debug logging for command execution results.
-- Added `VoiceCommandExecutorTest` coverage for action mapping and failure propagation.
+- **N3.1** Wire a "SwiftKey Pure Light" + "SwiftKey Pure Dark" theme preset into the picker, consuming the `swiftkey_pure_*` tokens added in `colors_branding.xml` [STD-Material3].
+- **N3.2** Switch key glyph font to `sans-serif-medium` (weight 500) — the single biggest factor in SwiftKey's "premium" perception [SWIFTKEY-DESIGN-RESEARCH internal report].
+- **N3.3** Ship SwiftKey-default haptic profile (~20ms duration, amplitude 153/255), gated on `Vibrator.hasAmplitudeControl()`. Add Android 16 envelope haptics (`BasicEnvelopeBuilder`) when `areEnvelopeEffectsSupported()` returns true [STD-A16-HAPTIC, AI14].
+- **N3.4** Pressed-key flash (~80ms color flash + 1.03× scale-up over 60ms; no Material ripple) + long-press preview popup (80×96dp, 4dp elevation, accent-ringed). Currently the long-press popup is functional but visually plain.
+- **N3.5** Finish the dimens migration started in v1.6.0 — verify `key_height: 56dp` actually flows through `defKeyboardHeight` calculation in `ImeWindowConstraints.kt`; current bump landed in dimens.xml only.
 
-**Progress Update** (2026-05-05):
-- Added JSON-backed `VoiceCommandCustomCommands` storage through `AppPrefs.voice.customCommands`.
-- Added custom command serialization, deserialization fallback, add/replace/remove helpers, enabled-command filtering, and parser integration for user-defined phrases.
-- Added unit coverage for custom-command persistence, disabled/blank command filtering, and fuzzy parser matching through custom command definitions.
-- The data layer was completed before the management UI so parser behavior could be verified independently.
+### N4. Customizable bottom row + smartbar
 
-**Progress Update** (2026-05-05):
-- Added custom voice-command management to the Voice input settings screen.
-- Users can add a phrase, choose a command action, enable or disable the command, edit existing commands, delete commands, and see disabled state in the list.
-- The UI keeps the transcript-handoff limitation visible so users do not mistake stored custom phrases for live FUTO interception.
+ASK #1832 / HeliBoard #695 / FlorisBoard #196 — the most-requested customization across all OSS keyboards [COMM-A, COMM-B, COMM-C, PAIN-20].
 
-**Progress Update** (2026-05-05):
-- Added `VoiceCommandFallbackHandler` to route confident transcripts to command execution, low-confidence command-like transcripts to a pending suggestion, and unrecognized transcripts to normal text insertion.
-- Added accept/reject handling for low-confidence suggestions so callers can execute the suggested command or insert the original dictated text.
-- Added explicit voice error recovery mapping, including retryable handling for `NetworkTimeout`, while keeping setup errors in the unavailable state.
-- Added unit coverage for command execution fallback, unrecognized text insertion, suggestion accept/reject, blank transcript handling, and timeout recovery.
-- Implementation limitation: these flows are ready for a transcript source, but live FUTO output is still delegated through a separate IME and cannot yet be intercepted by SwiftFloris.
+- **N4.1** Drag-and-drop reordering of smartbar quick actions (`ime/smartbar/quickaction/QuickAction.kt` already enumerates them; add a settings UI).
+- **N4.2** Add/remove keys in the bottom row: language switch, comma/period, emoji, voice, settings shortcut. Per-language defaults but user-overridable. Persisted as a JSON preset.
+- **N4.3** Per-app smartbar profile — different quick actions for password fields vs Slack vs Outlook (mirrors AnySoftKeyboard's per-app theme tinting [O4] and Gmail-vs-WhatsApp Smart Compose context).
 
-**Progress Update** (2026-05-05):
-- Added the tenth built-in voice command, `clear text`, with `clear field` and `delete all` aliases.
-- Documented every built-in command, alias, confidence threshold, custom-command workflow, error recovery behavior, accent FAQ, and current FUTO transcript-handoff limitation in `VOICE_COMMANDS.md`.
-- Remaining testing limitation: diverse-accent validation still requires native and non-native speaker samples, so recognition-accuracy acceptance is not yet claimed.
+### N5. Word-edit ergonomics (long-asked-for, mostly small fixes)
 
----
+- **N5.1** Hold-backspace = delete word; horizontal-swipe-on-backspace = delete word [COMM-C, COMM-G PAIN-13]. Wire into `KeyboardManager.handleBackspace`.
+- **N5.2** Cursor mode: hold space → drag for cursor (already partially exists; smooth out, document, expose toggle) [PAIN-7, FR-12].
+- **N5.3** Scalable key height + font slider (HeliBoard #1342, ASK #1775) [FR-21]. Re-use the dimens.xml token plumbing landed in v1.6.0.
+- **N5.4** Auto-replace shortcuts in personal dictionary (the Room schema already has a `shortcut` column; just expose a settings UI to add `omw → on my way`) [COMM-K, FR-20].
 
-## Phase 3: AI-Powered Text Refinement (v1.8.0–v1.9.0) — Q1–Q2 2027
+### N6. CI + release engineering hardening
 
-**Goal**: Add optional, **on-device** text refinement: tone adjustment, grammar correction, summarization (using lightweight transformer models).
+The current GitHub Action runs `assembleDebug` only — tests, lint, and reproducibility are ungated. This is a quality gate that costs CI minutes, not engineering velocity.
 
-**Why**: Deskdrop proves AI in keyboards is compelling. But unlike Deskdrop (which requires server), SwiftFloris stays offline. ONNX Runtime + TensorFlow Lite enable efficient inference on modest hardware. T5-small (~250MB) model fits in APK + cache.
+- **N6.1** Gate PRs on `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`. Lint baseline diff must not regress.
+- **N6.2** Add a release workflow (`workflow_dispatch`) that signs an APK with a stored keystore, attaches it to a GitHub release with SHA256, and bumps the F-Droid metadata file. Apache-2.0 NOTICE attribution check (SCOWL + LDNOOBW + FlorisBoard upstream).
+- **N6.3** Submit to F-Droid for **reproducible-build verification** — pin AGP / Gradle / Kotlin / NDK; lock `lib/native` checksums; submit `fdroiddata` `Builds:` block. Target the verified ✔ badge alongside HeliBoard, Fossify, FlickBoard, Thumb-Key [STD-FDROID-REPRO, F1].
+- **N6.4** Add **dependency-CVE scan** on a weekly schedule (OWASP Dependency-Check Gradle plugin or Renovate) [STD-CVE].
+- **N6.5** Document an **Obtainium one-tap URL** in README so users can subscribe to the GitHub release feed without polling [STD-FDROID-OBTAINIUM].
 
-**What**:
+### N7. Privacy hardening (the moat verbatim)
 
-**P3.1: Tone Adjustment (MVP)**
+- **N7.1** Add a custom lint `Detector` that fails the build if any merged manifest declares `<uses-permission android:name="android.permission.INTERNET"/>`. Pin the no-network promise in code, not just in marketing [STD-CAKI, STD-NO-INTERNET].
+- **N7.2** Password / personal-field hardening (`EditorInfo.inputType` matches `TYPE_TEXT_VARIATION_(PASSWORD|VISIBLE_PASSWORD|WEB_PASSWORD)` or `IME_FLAG_NO_PERSONALIZED_LEARNING`): disable suggestions, disable clipboard write, disable gesture-typing logging, set `WindowManager.LayoutParams.FLAG_SECURE` on suggestion-strip popups, skip personal-dictionary writes [STD-A11Y-IMETRY, PAIN-29].
+- **N7.3** Document the threat model (CAKI cross-app KeyEvent injection [STD-CAKI]) and explicitly never write to the system `UserDictionary` ContentProvider (which is queryable by other apps); keep personal dict in `getDataDir()` SQLite only. Already true; document and add a regression test.
+- **N7.4** **Encrypted personal dictionary** — wrap the existing Room database with SQLCipher (`SupportFactory(passphrase)`); passphrase derived via `MasterKey.Builder(...).setKeyScheme(AES256_GCM)` from AndroidKeystore [STD-PERS-DICT-ENC].
+- **N7.5** APK-signing-pin display in IME settings: show the SHA256 fingerprint of the running install so users can compare against README. Detects supply-chain swap.
 
-- [ ] **Model Integration** — ONNX Runtime + T5-small for paraphrase/tone.
-  - Import pre-trained T5-small ONNX model
-  - Store in app assets (lazy-load on first use)
-  - Implement inference wrapper with timeout (2–3 seconds)
-  - **Estimated effort**: 2 weeks
+### N8. Accessibility scoped pass
 
-- [ ] **UI Component** — "Tone" button in smartbar.
-  - Long-press → select tone (formal, casual, friendly, professional)
-  - Selection → show selected text preview with suggested rewrite
-  - Tap to accept/reject
-  - **Estimated effort**: 2 weeks
+The IMPROVEMENT_PLAN already has this as Workstream 6 (Planned, P1) — promote the concrete deliverables to roadmap items.
 
-- [ ] **Privacy & Performance**:
-  - All processing on-device; no network calls
-  - CPU inference (no GPU required)
-  - Background inference with UI cancellation
-  - **Estimated effort**: 1 week
+- **N8.1** Audit every key for **48dp touch target** (WCAG 2.5.5 AAA, M3 default) [STD-WCAG-TARGET]. Edge keys in landscape and number-row keys are the typical offenders.
+- **N8.2** Audit Catppuccin Mocha + Tokyo Night key glyph contrast at 4.5:1 (WCAG 2.1 AA); fix any failures or document trade-off [STD-WCAG-CONTRAST].
+- **N8.3** TalkBack labels for every key, smartbar action, and suggestion-strip slot. Long-press hint must announce "Alternative characters available" per Gboard convention [STD-TALKBACK].
+- **N8.4** **Reduced-motion respect** in gesture trail — guard the trail animation behind `Settings.Global.ANIMATOR_DURATION_SCALE != 0f` [STD-REDUCED-MOTION].
+- **N8.5** Switch Access compatibility — declare `supportsSwitchingToNextInputMethod="true"` and call `switchToNextInputMethod(token, false)` so switch users can rotate subtypes [STD-SWITCH].
+- **N8.6** Voice Access integration — verify `setComposingRegion` / `finishComposingText` lifecycle stays clean (Voice Access dictation breaks on shortcut composing).
 
-- [ ] **Documentation**: TONE_ADJUSTMENT.md with examples, performance notes, known limitations.
-  - **Estimated effort**: 1 week
+### N9. Inline `commitContent()` for sticker / GIF / image insertion
 
-**Effort (P3.1)**: 6–7 weeks  
-**Risk**: Medium. Model size (250MB) may inflate APK; latency on older devices may exceed tolerance.  
-**Fit**: Aligns with modern keyboard features (Deskdrop). Out-of-scope for v1.3, but desirable for v1.5+.
+Universal request across OSS keyboards [COMM-A, COMM-B PAIN-15, FR-13]. Architecture is small; payoff is parity with Gboard's image-paste behavior in apps that declare `EditorInfo.contentMimeTypes`.
 
-**Dependencies**: On-device inference library evaluation, model license verification (CC0 or permissive required)
+- **N9.1** Wire `InputConnection.commitContent()` (API 25+ via `InputConnectionCompat`) for clipboard images.
+- **N9.2** Surface the clipboard image-paste in the existing clipboard panel.
+- **N9.3** Search bar over emoji + bundled sticker packs (HeliBoard #259, FlorisBoard #45 — 80 reactions [FR-9]).
 
-**Alternative (Reject)**: Cloud-based tone adjustment → violates privacy-first philosophy. **Rejected.**
+### N10. Emoji 16/17 + Unicode 17 readiness
+
+Emoji 17.0 lands on Android in March 2026 (7 new glyphs: Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) [STD-EMOJI17, STD-UNICODE17].
+
+- **N10.1** Bundle Noto Color Emoji 17.0 fonts ahead of upstream Android propagation.
+- **N10.2** Verify Unicode 16 glyphs (Face with Bags Under Eyes, Fingerprint, Splatter) render via the lazy EmojiCompat loader landed in `6fd6e3b`.
+- **N10.3** Use `deleteSurroundingTextInCodePoints()` (API 24+) instead of `deleteSurroundingText()` so backspace doesn't split surrogate pairs in Unicode 16/17 emoji or Indic conjuncts [STD-API-DELETE-CODEPOINTS].
+
+### N11. Resolve the runtime `TODO()` stubs (correctness floor)
+
+Two `TODO("…")` calls in production paths will crash the IME if reached; both are in extension-loader fallback branches. Either implement or guard.
+
+- **N11.1** `KeyboardExtension.kt:55` — implement `KeyboardExtension.serialize()` or replace with `error("Not yet supported — please file an issue")` so the failure is recoverable.
+- **N11.2** `LanguagePackExtension.kt:62` — same; current `TODO("LOL LMAO")` cannot ship to F-Droid.
+- **N11.3** `FlorisSpellCheckerService.kt:141` — either implement custom spell-check service or document why we delegate to default.
 
 ---
 
-### P2.2: Grammar & Spell Check Augmentation (LOW PRIORITY, Deferred)
+## 7. NEXT (v1.9.0 → v2.0.0, target Q4 2026 – Q1 2027)
 
-**Why**: SwiftFloris spell checking uses Levenshtein distance (edit distance ≤2). Commercial keyboards use more sophisticated grammar models. Opportunity: augment with lightweight grammar checker (e.g., LanguageTool rules).
+Larger pieces. Each is committed but not started; ordered by value.
 
-**What**:
-- Integrate LanguageTool's rule-based grammar checker (MIT license)
-- Provide suggestions for common errors: subject-verb agreement, tense consistency, article usage
-- Hide behind toggle in settings (may have false positives)
+### Next-1. SymSpell replacing Levenshtein-2 corrections
 
-**Effort**: 2–3 weeks  
-**Risk**: Rule sets may produce noise; false positives harm UX.  
-**Fit**: Quality-of-life improvement; low impact vs. effort.
+Pure algorithmic win. SymSpell pre-computes only deletes (not insertions/substitutions/transpositions); a 5-letter word's 3M-error error-space collapses to ~25 entries; benchmarks show **~1M× faster than Norvig and ~1,870× faster than BK-tree at edit-distance 2** [AI6, AI7]. Replaces the current per-keystroke Levenshtein-2 scan in `LatinDictionarySuggester.corrections()`, freeing the UI thread.
 
-**Alternative (Reject)**: Feed spell-checking suggestions to LLM for grammar augmentation → cloud dependency. **Rejected.**
+- Implementation: pure-Kotlin port (no JNI needed); ~5k LoC. Pair with a precomputed delete-index built at first dictionary load and serialized to disk.
 
----
+### Next-2. On-device voice typing (drop the FUTO Voice Input dependency)
 
-## Phase 3: Accessibility & Inclusivity (v1.4+ parallel track)
+FUTO is Source-First (non-OSI) and adds a second-app install friction users complain about [PAIN-8, AI8, AI9]. Bundle `whisper.cpp` (MIT) directly inside SwiftFloris.
 
-**Goal**: Improve experience for users with physical/sensory differences, non-Latin scripts.
+- **Next-2.1** Tiered model selector by RAM detection: tiny.en (~75MB) for low-end / 2GB-RAM devices, base.en (~140MB) mid-tier, Large-v3-Turbo INT8 (~800MB) flagship [AI3, AI8].
+- **Next-2.2** Vosk fallback for streaming low-RAM + true-streaming command-mode use [AI10] (Vosk is GPL-permissive Apache-2.0 compatible; ~50MB models).
+- **Next-2.3** Joplin-style per-language model picker UI with on-demand download + disk-usage badge [AI22].
+- **Next-2.4** Voice-commands-on-Whisper-stream: hook `VOICE_COMMANDS.md`'s parser/executor into the Whisper transcript to support "change dog to cat" Smart-Edit-style voice editing [SMART-EDIT, COMM-K].
 
-### P3.1: One-Handed Mode (MEDIUM IMPACT)
+### Next-3. Multi-tier learning improvements (beyond v1.6.0's `learnWord`)
 
-**Why**: HeliBoard, Android stock keyboard, SwiftKey all support one-handed mode. Improves accessibility + device usability.
+- **Next-3.1** Bigram + trigram next-word prediction backed by **KenLM Kneser-Ney 5-gram** (mmap binary trie, ~1ms lookup; pre-trained for 24 languages via [edugp/kenlm on HF](https://huggingface.co/edugp/kenlm)) [AI11, AI12]. Replaces the current bigram-only chain.
+- **Next-3.2** SUBTLEX subtitle-frequency + wordfreq Zipf-scale merge for better usage-weighted ranking than SCOWL alone [AI13, AI14, AI15]. Subtitle frequencies predict typing behavior better than dictionary frequencies.
+- **Next-3.3** Capitalization-aware suggestions ("Foo" if typing "F", "foo" if "f") [FR-19, COMM-D].
+- **Next-3.4** Word-deletion UI: long-press a suggestion → "Remove from predictions" dialog matching SwiftKey [COMM-A, FR-22, PAIN-22].
 
-**What**:
-- Add one-handed mode toggle in settings
-- Mode 1: Left half of keyboard, shrunken + centered
-- Mode 2: Right half of keyboard, shrunken + centered
-- Mode 3: Float keyboard (can drag anywhere, useful for landscape)
-- Edge-swipe to toggle between one-handed halves
-- Persistent user preference per device
+### Next-4. Stylus handwriting (Pixel Tablet + S-Pen audience)
 
-**Technical**:
-- Extend `TextKeyboardLayout` Compose sizing logic to support half-width rendering
-- Add keyboard position/size preferences to Room database
+Android 14+ ships `InputMethodService.onStartStylusHandwriting()` + Ink API. Currently no FOSS keyboard implements it [STD-STYLUS, STD-INK].
 
-**Effort**: 2–3 weeks  
-**Risk**: Layout complexity (need to test on many screen sizes).  
-**Fit**: Accessibility feature; inherited from FlorisBoard, just needs UI polish for SwiftFloris.
+- **Next-4.1** Wire `onStartStylusHandwriting()` + `setHandwritingDelegatorCallback()`.
+- **Next-4.2** On-device stroke recognizer via Google ML Kit Digital Ink (offline model) **or** a custom ICU-LM fallback for languages ML Kit doesn't support.
+- **Next-4.3** Settings: per-subtype handwriting toggle; languages without recognition fall back to no-stylus.
 
-**Acceptance Criteria**:
-- [ ] One-handed mode works on phones 5" to 6.7"
-- [ ] Toggle is obvious in settings
-- [ ] No regression in two-handed mode
-- [ ] Edge-swipe is responsive
+Differentiator vs HeliBoard / FlorisBoard upstream (neither ships handwriting).
 
----
+### Next-5. CRDT personal-dictionary sync over Syncthing
 
-### P3.2: Physical Keyboard Support Enhancement (MEDIUM-LONG TERM)
+No mainstream IME combines E2EE with personal-dictionary sync without a vendor account [STD-SYNC, AI18, COMM-J].
 
-**Why**: FlorisBoard v0.6 planned feature; aids accessibility + desktop+tablet use cases.
+- **Next-5.1** Per-device file (`dict-<deviceid>.bin`) merges via Automerge JSON CRDT; one file per device, deltas merged on read.
+- **Next-5.2** First-launch QR-pair flow: scan recipient device's QR → exchange Curve25519 pubkey via libsodium sealed box → wrap subsequent dictionary deltas with sealed-box → write to a Syncthing-shared folder.
+- **Next-5.3** "Bring your own sync channel" — user can swap Syncthing for any folder-sync of their choosing (Nextcloud, Resilio, Dropbox via Foldersync, even Email-this-blob). The CRDT merge is local; the transport is user-controlled.
 
-**What**:
-- Ensure SwiftFloris inherits FlorisBoard's physical keyboard support (passthrough to InputConnection)
-- Verify Bluetooth keyboard layout switching works
-- Document supported layouts (QWERTY, DVORAK, Colemak, etc.)
-- Add settings UI to configure physical keyboard behavior (auto-switch layout, function key mapping)
+### Next-6. Migration importers
 
-**Effort**: 3–4 weeks (most work in FlorisBoard; SwiftFloris inherits)  
-**Risk**: Dependent on upstream FlorisBoard progress.  
-**Fit**: Niche but important for power users + accessibility.
+- **Next-6.1** **Gboard** — parse `PersonalDictionary.zip` (XML inside) export from Google Takeout. The most-asked-for migration since Microsoft's account mandate [PAIN-2, PAIN-18, MIG-GBOARD].
+- **Next-6.2** **HeliBoard / FlorisBoard backups** — already same Room schema; one-shot importer for `.flbackup` archives.
+- **Next-6.3** **SwiftKey** — there is no local export. Document this honestly; offer a root-only `sqlite3 /data/data/com.touchtype.swiftkey/databases/` recipe in docs but don't promise a smooth path [MIG-SK].
+- **Next-6.4** **Hardware-keyboard layouts** — Windows `.klc` and macOS `.keylayout` import via [KLFC](https://github.com/39aldo39/klfc) at build-time tooling [MIG-KLFC].
 
-**Blocker**: FlorisBoard v0.6 physical keyboard support must land first.
+### Next-7. Floating + split + one-handed window modes (FlorisBoard upstream parity)
 
----
+`ImeWindowMode.kt:56` is a documented placeholder; FlorisBoard v0.7 targets the same; HeliBoard #326 has 32 reactions [FR-7, F1, COMM-A, PAIN-14].
 
-### P3.3: CJK Input Method Support (LONG TERM, Deferred)
+- **Next-7.1** Floating window with drag handle + resize anchor.
+- **Next-7.2** Split-keyboard for tablet landscape (mirror SwiftKey + Samsung; ASK #1952 + HeliBoard #326 want this).
+- **Next-7.3** Compact / one-handed mode (already partially exists in `ImeWindowConstraints.Compact`; finish UX surface).
 
-**Why**: Fcitx5 (10K+ stars) demonstrates demand; SwiftFloris inherits FlorisBoard's base, which doesn't have CJK support yet.
+### Next-8. Programmer mode (Hacker's Keyboard successor)
 
-**What**:
-- Evaluate feasibility of Chinese (Pinyin, Wubi), Japanese (Anthy), Korean (Hangul) input
-- Partner with upstream FlorisBoard or Fcitx5 for interop
-- Scope: Phase 3.3 is research only; implementation deferred to v2.0+
+No maintained option exists since Hacker's Keyboard stalled (klausw #875) [PAIN-19, FR-9, COMM-A]. Unexpected Keyboard is closest but has no autocorrect.
 
-**Effort**: 2 weeks (research + architecture doc)  
-**Risk**: Requires significant upstream work; may duplicate Fcitx5's efforts.  
-**Fit**: Niche market (CJK users); high effort-to-impact ratio.
+- **Next-8.1** Toggleable "Code mode" subtype: full Tab/Esc/Ctrl/Alt/Fn row, swipe-to-symbol on every key, curly-brace bias in autocomplete, regex-snippet macros, paths/IPs/UUIDs as first-class clipboard types, SSH-friendly cursor keys + PgUp/PgDn.
+- **Next-8.2** Per-app auto-activation (Termux, Code editors, JuiceSSH).
 
-**Decision**: **Deferred to v2.0 roadmap pending upstream availability.**
+### Next-9. Inline autofill for password managers (Bitwarden / KeePass / Proton Pass)
 
----
+`android:supportsInlineSuggestions=true` + `InlinePresentationRenderer` (API 30+) — render password-manager chips inline in the suggestion strip [STD-INLINE-AUTOFILL, COMM-D, COMM-G PAIN-12, FR-6].
 
-## Phase 4: Performance & Robustness (v1.4+ parallel track)
+- **Next-9.1** Declare the IME as supports-inline-suggestions in manifest.
+- **Next-9.2** Implement `InlinePresentationRenderer` slot in the smartbar UI.
+- **Next-9.3** Document tested compatibility with Bitwarden, KeePassDX, KeepassXC-Browser.
 
-**Goal**: Ensure SwiftFloris excels on mid-range devices and edge cases.
+SwiftFloris would become **the first OSS keyboard with parity to Gboard's password-manager UX**.
 
-### P4.1: Voice Input Latency Optimization (HIGH PRIORITY)
+### Next-10. Plugin / addon APK loading (fcitx5 pattern)
 
-**Why**: v1.3.0 voice input works; user feedback needed on real devices. Goal: <5 second end-to-end (speak → text inserted).
+Allow community-built dictionaries, themes, and language-pack APKs to self-register via broadcast intent [O14, O4]. AnySoftKeyboard already does this for language packs; fcitx5-android does it for input addons; no Floris-lineage keyboard does. Architectural payoff: base APK stays small, long-tail languages ship as separate Play/F-Droid products.
 
-**What**:
-- Profile voice input on device (Pixel 4a reference; mid-range device)
-- Measure breakdown: audio capture → encoding → network (Speech API call) → decoding → insertion
-- Identify bottleneck (likely network)
-- Optimize:
-  - Use shorter silence timeout (currently 3s; try 2s if UX acceptable)
-  - Add timeout bypass: tap stop button immediately after speaking
-  - Cache audio encoder/decoder streams
-  - Parallelize confidence scoring with text insertion
-- Document latency budget in VOICE_INPUT.md
+- **Next-10.1** Define addon-package manifest schema (`com.swiftfloris.action.REGISTER_LANGUAGE_PACK` etc.).
+- **Next-10.2** Enumerator that discovers installed packs at IME startup.
+- **Next-10.3** First addon pack: Polish dictionary (HeliBoard's German is from 2014 [STD-LATIN-LEAPFROG]; OpenSubtitles 2024 + Wiktionary frequency lists for a clean 2025 baseline).
 
-**Effort**: 2–3 weeks  
-**Risk**: Network latency outside app control; may hit platform limits.  
-**Fit**: Critical for v1.3 user satisfaction; quick win.
+### Next-11. Material 3 Expressive theme refresh
 
-**Acceptance Criteria**:
-- [ ] <5s latency on Pixel 4a (WiFi + LTE)
-- [ ] <100ms regression on spell checking latency
-- [ ] No crashes on timeout/error paths
+M3 Expressive launched at I/O 2025; springy stack-respond animations + envelope haptics + 35 new shape morphs [STD-M3E, AI15].
+
+- **Next-11.1** Regenerate Nord / Tokyo Night / Dracula / Catppuccin Mocha + new "SwiftKey Pure" themes against M3 Expressive token set.
+- **Next-11.2** Springy dismiss animation when removing a suggestion (paired with envelope-haptic rumble — first themed-haptic keyboard).
+- **Next-11.3** New "Per-app adaptive theming" mode (Chrooma's Chameleon idea, executed cleanly): read the foreground task's primary color via `UsageStatsManager` + `Palette`, apply to keyboard tokens [C7, AI WILD-CINEMATIC-HAPTIC].
+
+### Next-12. Performance instrumentation + Roborazzi visual regression
+
+IMPROVEMENT_PLAN Workstream 7 (Planned, P1) — promote concrete deliverables.
+
+- **Next-12.1** Add Macrobenchmark + Perfetto harness in `:benchmark` module; measure cold-start, first render, first suggestion latency, dictionary load, candidate recomposition, theme switching, backup/restore [STD-MACROBENCH, STD-PERFETTO]. Ship before/after numbers in release notes.
+- **Next-12.2** Roborazzi 1.39+ on Robolectric 4.14 visual regression suite — auto-generate from `@Preview` via `roborazzi { generateComposePreviewRobolectricTests { enable = true } }` + ComposablePreviewScanner. All 4 themes × dark/light × RTL × density buckets in one annotation pass [STD-ROBORAZZI].
+- **Next-12.3** Property-based autocorrect tests (kotest `Arb.string()`): invariants like "deletion + retype reaches identity" + "edit-distance ≤2 candidate exists in dictionary".
 
 ---
 
-### P4.2: Spell Checking Latency Reduction (MEDIUM PRIORITY)
+## 8. LATER (v2.1+, 2027 — high value but heavier or platform-gated)
 
-**Why**: Current implementation: <100ms. Goal: <50ms for real-time suggestions on mid-range.
+Each requires either heavy engineering (months), a platform readiness gate, or external dependency (HeliBoard NLnet drop, Android 17, Gemma 3 270M tooling).
 
-**What**:
-- Profile spell checking on mid-range device (Snapdragon 860 equivalent)
-- Identify hot paths in Levenshtein distance calc
-- Optimizations:
-  - Reduce dictionary size by removing rare words (word frequency filtering)
-  - Implement early termination in Levenshtein (stop if cost exceeds 2)
-  - Use tries for prefix matching (faster than set lookup)
-  - Increase LRU cache hit rate (tune cache size on device)
-- Measure before/after
+### L1. On-device LLM smart-compose (Gemma 3 270M Q4 INT4)
 
-**Effort**: 3–4 weeks  
-**Risk**: Dictionary pruning may miss valid corrections; needs validation.  
-**Fit**: Quality-of-life improvement; incrementally valuable.
+The most hyped-but-actually-shippable AI feature. ~135MB on disk; ~0.75% Pixel 9 Pro battery for 25 conversations [AI1, AI2]; opt-in Smart Compose toggle behind a long-press space gesture (battery-aware, not per-keystroke).
 
-**Acceptance Criteria**:
-- [ ] <50ms latency on Snapdragon 860 device
-- [ ] No regressions in suggestion accuracy
-- [ ] Cache hit rate >70% on typical typing session
+- **L1.1** MediaPipe LLM Inference / LiteRT-LM runtime (TensorFlow 2.21 made LiteRT the production replacement for TFLite [AI16]).
+- **L1.2** GPU/NPU on Snapdragon 8 / Dimensity Ultra; CPU fallback graceful.
+- **L1.3** LoRA hot-swap per user-domain (formal email vs casual chat).
+- **L1.4** Inline ghost-text completion (Apple QuickType pattern) — gray suggestion that auto-accepts on space [AI17, COMM-D].
 
----
+### L2. Inline translation (Bergamot WASM offline NMT)
 
-### P4.3: Memory Footprint Audit (MEDIUM PRIORITY)
+Microsoft's Hub Keyboard's idea, finally executed [C9, AI19]. Type English, see Spanish above the prediction row, tap to swap. Bergamot is Mozilla's Apache-2.0 offline translator (CPU WASM); ports cleanly to Android via `androidx.javascriptengine` or a Wasmer/WasmEdge JNI layer.
 
-**Why**: Multi-language dictionaries + themes + clipboard history + voice model = ~100–150MB RAM on load. Mid-range devices (2GB RAM) suffer.
+- **L2.1** Wire as a smartbar quick action (like SwiftKey's translation toolbar).
+- **L2.2** Per-language pair model download UI matches the voice-model pattern (Next-2.3).
 
-**What**:
-- Measure memory usage on v1.3.0 APK (real device)
-- Identify major consumers: dictionaries, theme resources, clipboard DB, voice recognition model cache
-- Optimize:
-  - Lazy-load dictionaries (already done; verify)
-  - Implement memory-mapped file I/O for large dictionaries (avoid full load into heap)
-  - Trim clipboard history periodically (already capped at 50 items)
-  - Share voice model between instances (singleton cache)
-- Document memory footprint in architecture guide
+### L3. CJK Pinyin / Jyutping / Zhuyin via librime JNI
 
-**Effort**: 2–3 weeks  
-**Risk**: Over-optimization may introduce subtle bugs; needs device testing.  
-**Fit**: Low impact on user experience; helps stability on low-end devices.
+The single largest competitive gap vs Gboard [STD-CJK, FR-16, PAIN-16]. FlorisBoard upstream's Han support is shape-based only ("not recommended for daily use"). librime is BSD; bundles cleanly via JNI.
 
----
+- L3.1: librime JNI module with Pinyin/Jyutping/Zhuyin schemas.
+- L3.2: Compose UI for candidate selection (mirrors fcitx5-android's pattern).
+- L3.3: Japanese via mozc, Korean via Jamo IME (FUTO ships these — references for design, can't copy code).
 
-## Phase 5: Distribution & Community (v1.4+ parallel track)
+### L4. Real RTL shaping for Arabic / Persian / Urdu / Hebrew
 
-**Goal**: Make SwiftFloris accessible + sustainable.
+FlorisBoard upstream RTL is layout-only [STD-RTL]; Gboard struggles with mixed BiDi. SwiftFloris could become best-in-class for ~600M speakers.
 
-### P5.1: F-Droid Release (HIGH PRIORITY)
+- L4.1: Persian Yeh/Kaf normalization, Arabic connected-form shaping pass, Urdu nastaliq layout.
+- L4.2: Mixed BiDi composing region — `setComposingRegion` correctness in mixed-direction text.
 
-**Why**: F-Droid users value privacy; SwiftFloris is an ideal fit (open-source, offline, no telemetry). 3K+ downloads/month (estimated from similar projects).
+### L5. Indic transliteration suite
 
-**What**:
-- Package v1.3.0 for F-Droid (fdroiddata repo submission)
-- Ensure build reproducibility (deterministic APK)
-- Provide signed release APK via F-Droid infrastructure
-- Update README with F-Droid badge
+Hindi / Bengali / Tamil / Telugu / Marathi / Gujarati / Punjabi / Kannada via [varnam](https://github.com/varnamproject/govarnam) (MPL-2) or Aksharamukha tables [STD-INDIC, FR-16]. Zero current OSS keyboard does all 8 well.
 
-**Effort**: 1 week  
-**Risk**: F-Droid review queue (variable SLA); build reproducibility requires testing.  
-**Fit**: Aligns with open-source philosophy; low effort, high visibility.
+### L6. Ge'ez script (Amharic / Tigrinya / Tigre / Blin)
 
-**Acceptance Criteria**:
-- [ ] v1.3.0 APK built + submitted to F-Droid
-- [ ] Passes F-Droid build verification
-- [ ] Badge added to README
-- [ ] Available for download within 2 weeks of submission
+Closed-source GeezIME owns the niche today [STD-GEEZ]. Apache-2 SERA implementation + Compose layout = best-in-class for ~110M speakers.
+
+### L7. Native MCP local-LLM bridge (Deskdrop pattern)
+
+User points SwiftFloris at home Ollama / LM Studio over Tailscale; default off; never invoked silently [O7]. Expose MCP-tool-server protocol for composable agent surfaces (calendar, weather, SMS — same toolset Deskdrop's 17 tools demonstrate).
+
+### L8. Keyman LDML keyboard importer (2,500+ language coverage)
+
+Single biggest layout-coverage moat per import. Keyman has 1,000 keyboards spanning 2,500+ languages under MIT [O15]. Importer parses LDML keyboards XML → SwiftFloris layout JSON.
+
+### L9. Honeycomb / hexagonal / T9 / Colemak / Dvorak / Workman alt layouts
+
+Typewise's honeycomb won CES Innovation 2021+2022 [C5]; T9 vacated by TouchPal collapse [C8]; Colemak/Dvorak/Workman are perennial requests. Layout engine work converges here.
+
+### L10. WebAuthn passkey injection from IME
+
+When `autofillHints="password"` is focused, IME directly drives passkey ceremony — no other OSS keyboard ships this [AI WILD-WEBAUTHN].
+
+### L11. Espanso config import + native snippet engine
+
+Espanso is the de facto Linux/macOS text expander [AI19]; native parser of `~/.config/espanso/match/*.yml` would make SwiftFloris the only IME with cross-platform expander interop. Tasker intent endpoints (`swiftfloris.action.INSERT_TEXT`, `…INSERT_CLIP`, `…SWITCH_LAYOUT`, `…TRIGGER_VOICE`) ride alongside [STD-TASKER].
+
+### L12. WhisperInput-style streaming voice + WordStyles
+
+WordStyles (FUTO v0.1.25) renders typed text as styled images [O5] — niche but zero competitors.
 
 ---
 
-### P5.2: Community Localization (MEDIUM PRIORITY)
+## 9. UNDER CONSIDERATION (no commitment; will graduate or retire)
 
-**Why**: SwiftFloris currently ships English UI + 6 language dictionaries. Internationalization (i18n) would unlock non-English speakers.
-
-**What**:
-- Extract UI strings from code (currently hardcoded in some places)
-- Set up Crowdin project for community translation (like FlorisBoard uses)
-- Translate UI to: German, French, Spanish, Italian, Portuguese (to match dictionary languages)
-- Publish v1.4.0-beta with multi-language UI
-
-**Effort**: 2–3 weeks (infrastructure) + ongoing community effort  
-**Risk**: Translation quality; maintenance burden.  
-**Fit**: Expands addressable market; aligns with multi-language support already present.
-
-**Acceptance Criteria**:
-- [ ] Crowdin project created + linked in docs
-- [ ] Core UI strings extracted to strings.xml (5 languages minimum)
-- [ ] Community can contribute translations
-- [ ] At least 1 translation (German) 100% complete before v1.4.0 release
+| Item | Why it's interesting | What blocks commitment |
+|---|---|---|
+| Userscripts for keyboards (Tampermonkey-for-IME) | No precedent in OSS keyboards; could borrow ScriptVault's Monaco/MV3 architecture [AI WILD-USERSCRIPTS] | Android's IME security model forbids in-process untrusted code; needs a sandboxed signed-Kotlin-DSL shape, not raw JS |
+| $1 Unistroke recognizer for chord macros | 100 LoC per Wobbrock; lets users draw a sigil to fire a custom action [AI WILD-DOLLAR] | UX research needed — does anyone want this on a keyboard? |
+| Federated-learning opt-in via FedAvg over Syncthing | Single-user federated training across phone+tablet to fine-tune Gemma LoRA adapters [AI WILD-FED] | Heavy ML tooling burden; defer until L1 lands |
+| Per-app "tone profile" (KenLM weight swap by package name) | Slack=informal, Outlook=formal — same package-detection plumbing as N4.3 | Useful only after Next-3.1 ships KenLM |
+| Audit log: "what got typed into which package" (locally encrypted) | Verifiable + defensive privacy proof; users can self-confirm no exfil [AI WILD-AUDIT] | UX for "where did this log go?" needs design; privacy-paradox risk |
+| Aurora Store / Obtainium auto-update wiring beyond manual subscription | Smoother first-time onboarding | Solved by N6.5 (one-tap URL) for now; revisit if user demand |
+| NLnet Mobifree funding application | HeliBoard + Unexpected Keyboard both got funded [O2, O10] | Wait until v2.0 ships, then apply with concrete deliverables |
+| Cinematic key-click haptics scripted per theme | First themed-haptic keyboard [AI WILD-CINEMATIC] | Follows N3.3 + N11.2; promote when haptic envelope lands |
 
 ---
 
-### P5.3: Documentation Expansion (LOW-MEDIUM PRIORITY)
+## 10. EXPLICITLY REJECTED (with reasoning, so this doesn't get re-litigated)
 
-**Why**: Current docs (README, FEATURES, VOICE_INPUT) are solid; gaps exist in dev onboarding + architecture.
-
-**What**:
-- Add ARCHITECTURE.md: overview of major components, state management, IME lifecycle
-- Add CONTRIBUTING.md: how to build, test, submit PRs (currently inherited from FlorisBoard)
-- Add TROUBLESHOOTING.md: common issues (voice recognition not available, permission errors, etc.)
-- Update ROADMAP.md (this file) quarterly
-
-**Effort**: 1–2 weeks (one-time)  
-**Risk**: Low; documentation doesn't ship in APK.  
-**Fit**: Improves contributor experience; helps sustain project long-term.
-
----
-
-## Phase 6: Advanced Features (v1.5+ / v2.0)
-
-**Goal**: Differentiate SwiftFloris from competitors by bundling exclusive features.
-
-### P6.1: Clipboard AI (MEDIUM IMPACT, Deferred)
-
-**Why**: Deskdrop supports "process clipboard through AI" (rewrite, translate, summarize). High user value.
-
-**What**:
-- User copies text to clipboard
-- User taps "Process" button in SwiftFloris clipboard history UI
-- Select operation: summarize, translate (to English), rewrite (tone)
-- Result previewed; user can copy again or discard
-- Uses same on-device inference as P2.1 (tone adjustment)
-
-**Effort**: 3–4 weeks (depends on P2.1)  
-**Risk**: Inference latency; model accuracy.  
-**Fit**: Premium feature; enhances clipboard history already present.
-
-**Blocker**: P2.1 (on-device inference) must land first.
+| Rejected | Why |
+|---|---|
+| Cloud sync of personal LM via vendor servers | Violates §1 no-network. Replace with N5 P2P CRDT |
+| Microsoft / Google / any account requirement | Same. SwiftKey forcing MS account by 2026-05-31 [C2] is a switch trigger driving users to us, not a feature to imitate |
+| GPL / AGPL / Source-First / undeclared-license code in main app | Apache-2.0 ceiling. Conceptual borrowing only; module isolation acceptable for modules under their own license, never linked into `:app` |
+| Bundling closed-source `libjni_latinimegoogle.so` from old GApps | Violates auditability. HeliBoard's reluctant carrier-pigeon distribution of this file is exactly the antipattern we exist to avoid |
+| Telemetry / federated learning to vendor cloud | Violates §1. Local-only per-device opt-in (L1.3 LoRA) is the maximum |
+| In-keyboard ads or sponsored content | Violates trust posture. ASK #2803 (43 reactions) [PAIN-23] is the user verdict |
+| Bing / Copilot / Gemini API integration in core | Cloud-bound; account-bound; vendor-bound. L7's MCP bridge is the opt-in escape valve for users who want it on their own infra |
+| Default-on T9 layout | Acceptable as alt layout (Later L9); not as default — would alienate the SwiftKey-parity audience |
+| In-keyboard search (Maps/YouTube/web) à la Gboard | Cloud-bound, telemetry surface, tracking risk. Out unless someone designs a fully-local SearXNG plugin (Under Consideration material) |
+| GIF keyboard that hits Tenor / Giphy | Same — cloud + telemetry. Bundled local sticker packs + image-paste from clipboard (N9) are the offline equivalent |
+| Google Play Store as primary distribution | Forces target-SDK churn, Integrity-API entanglement, Data-Safety-form privacy framing we'd rather avoid; revisit only as a separately-signed mirror track |
+| Google's `libjni_latinimegoogle.so` closed swipe blob (re-statement) | Rejected. N1.1 / N1.2 / N1.3 are the only acceptable paths |
+| Self-update (in-app APK download + install) | Supply-chain risk; let Obtainium / F-Droid / IzzyOnDroid handle update orchestration. We pin SHA256 in README (N6.2/N6.3) |
+| Mandatory analytics opt-out toggle that defaults on | If we adopt ACRA later (Next-class), it's opt-in only [AI ACRA] |
 
 ---
 
-### P6.2: Keyboard Shortcuts & Macros (MEDIUM IMPACT, Deferred)
+## 11. Cross-Cutting Concerns (every category named, none silently dropped)
 
-**Why**: CleverKeys supports 208 gestures; users want to reprogram keys for custom actions (launch app, insert template text, etc.).
+This section guarantees nothing fell through the cracks. Each is either represented in §6/§7/§8, scheduled below, or explicitly out of scope with reason.
 
-**What**:
-- Add settings UI for key remapping
-- Supported actions: launch app, insert template text, execute macro (sequence of actions)
-- Examples:
-  - Long-press Space → launch search
-  - Swipe left on comma → open last 10 clipboard items
-  - Custom key → insert email signature
-- Store macros in Room database
-
-**Effort**: 4–6 weeks  
-**Risk**: Complexity; UI must be intuitive (not a spreadsheet).  
-**Fit**: Power-user feature; high value for niche audience.
-
----
-
-## Rejected Ideas & Rationale
-
-| Idea | Why Rejected |
-|------|--------------|
-| **Google Play Distribution** | Requires app signing, Play Store review, ads library. Conflicts with privacy-first philosophy. Keep APK + F-Droid. |
-| **Cloud Sync (Settings, History)** | Violates privacy-first design principle. User data never leaves device. |
-| **Proprietary Speech Recognition (Whisper on GPU)** | OpenAI Whisper is open-source but heavy (~1GB model); speech recognition API is sufficient for v1.3. Defer to v2.0 if on-device demand high. |
-| **Gboard Compatibility Layer** | Reverse-engineering Google's libs violates ToS. Not done in other OSS keyboards. Rejected. |
-| **Stickers/GIF Support** | Out of scope for text input keyboard. Emoji support sufficient. |
-| **ML-Based Gesture Typing (Training Custom Model)** | Requires labeled gesture dataset; effort high relative to value. FlorisBoard's algorithm-based approach acceptable. |
-| **Handwriting Recognition** | Niche feature; no comparable OSS implementation. Deferred indefinitely unless user demand emerges. |
-| **CJK Input v1.4** | Requires upstream work; Fcitx5 already excellent in this space. Defer to v2.0. |
-| **Monetization / Licensing** | Apache 2.0 + community-driven. Sustainable. No ads/paywalls. |
+| Concern | Where addressed |
+|---|---|
+| **Security** | N7 (privacy hardening), N6.4 (CVE scan), Next-5 (CRDT E2EE sync), L7 (MCP key vault pattern). Threat model: CAKI [STD-CAKI], password-field guards [STD-A11Y-IMETRY] |
+| **Accessibility (a11y)** | N8 (scoped pass: target size, contrast, TalkBack labels, reduced motion, switch access, voice access) + Later: dwell-tap, bounce/slow/sticky keys in IME, thumb-zone heatmap [PAIN-D-3] |
+| **i18n / l10n** | N2 (multilingual auto-detect), Next-1 (broader Latin dictionaries), L3-L6 (CJK / RTL / Indic / Ge'ez). Crowdin already wired for UI strings |
+| **Observability / telemetry** | Opt-in only. ACRA self-hosted *or* manual GitHub-issue crash file (no auto-upload) [STD-ACRA]. Local Macrobenchmark + Perfetto for development (N12.1) [STD-MACROBENCH] |
+| **Testing** | N12.3 (property-based autocorrect), N12.2 (Roborazzi visual regression), expanded Kotest coverage of `KeyboardManager`, `EditorInstance`, `NlpManager`. IMPROVEMENT_PLAN Workstream 1 fully promoted into roadmap |
+| **Docs** | Per-feature release notes pattern continues (`RELEASE_NOTES_v1.X.Y.md`); add an `ARCHITECTURE.md` covering NLP pipeline + theming engine + extension model after the runtime-stub fixes (N11). Consolidate the dispersed `*MULTILINGUAL.md`, `VOICE_*.md`, `FUTO_VOICE_*.md` into `docs/` after Next-2 ships |
+| **Distribution / packaging** | N6.2 + N6.3 (signed releases + F-Droid reproducible verified badge); N6.5 (Obtainium one-tap URL); IzzyOnDroid + Accrescent listings as Next-class side-quests [STD-FDROID-REPRO, STD-FDROID-OBTAINIUM] |
+| **Plugin ecosystem** | Next-10 (addon APK loading), L8 (Keyman LDML import), Snygg theme distribution via FlorisBoard Addons Store [STD-FLORIS-EXT] |
+| **Mobile-specific (form factors)** | Next-7 (floating + split + one-handed), Next-4 (stylus handwriting); foldables ship as a sub-task of split-keyboard testing matrix [PAIN-14] |
+| **Offline / resilience** | The whole product. Specifically: voice (Next-2), translation (L2), LLM (L1), sync (N5) — all offline-only by construction |
+| **Multi-user / collab** | Next-5 (E2EE personal-dict sync between user's own devices). Multi-user-on-one-device is out of scope (Android IME is per-user by platform design) |
+| **Migration paths** | Next-6 (Gboard / HeliBoard / FlorisBoard / KLFC importers); SwiftKey unfortunately out of reach without root [MIG-SK] |
+| **Upgrade strategy** | Semver `v1.X.Y`; major bumps only on breaking dictionary-format or extension-format changes; database migrations via Room AutoMigrations starting Next class. Documented per-release in `RELEASE_NOTES_v*.md` |
 
 ---
 
-## Success Metrics (How We Measure)
+## 12. Operating Cadence
 
-By end of v1.5.0 (late 2026):
-
-- **Adoption**: 10K+ GitHub stars (vs. 3K for FlorisBoard; SwiftFloris starting point TBD at v1.3.0)
-- **Releases**: v1.4.0 (gesture typing) + v1.4.1+ (bug fixes) + v1.5.0 (AI features)
-- **Code Quality**: 0 high-priority TODOs in our codebase (upstream FlorisBoard todos acceptable); test coverage >70%
-- **Community**: 5+ active contributors; 20+ translations >80% complete
-- **Stability**: <0.5% crash rate (via Firebase Crashlytics if added, or manual bug reports)
-- **Performance**: Voice input <5s latency; spell checking <50ms; APK size <20MB (release build)
+- **Bi-weekly minor releases** (one Now-tier item per release, on a 2-week target).
+- **Monthly Next-tier slice** (one bullet of one Next item; Next items are decomposable).
+- **Quarterly Later prep** — at the start of each quarter, pick one Later item and convert its first scoping bullet into a Next slice.
+- **Continuous correctness floor** — IMPROVEMENT_PLAN.md Workstreams 1 (Test Coverage), 2 (Lint Debt), 3 (Pure Core Extraction), 4 (Input Hardening), 9 (Repo Hygiene), 14 (Build/Dep Hygiene) run alongside roadmap work; not a separate track.
+- **Verification before "shipped"** — every release passes `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, an `adb install` smoke on a real device, and a manual QA pass per the (forthcoming, N6) checklist.
 
 ---
 
-## Timeline & Prioritization
+## 13. Out-of-Scope Adjacent Wins (worth one sentence each)
 
-### Priority: Now (v1.4.0 – June 2026)
-- **P1.1**: Gesture typing stabilization
-- **P3.1**: One-handed mode
-- **P4.1**: Voice input latency optimization
-- **P5.1**: F-Droid release
+These came up in research but don't fit SwiftFloris; calling them out so future contributors don't propose them as roadmap items:
 
-**Estimated Release**: June 2026 (2 months)
-
-### Priority: Next (v1.4.1–v1.5.0 – July–September 2026)
-- **P1.3**: Voice commands
-- **P3.2**: Physical keyboard support (parallel with upstream)
-- **P4.2**: Spell checking optimization
-- **P4.3**: Memory audit
-- **P5.2**: Community localization
-- **P2.1**: On-device tone adjustment
-
-**Estimated Release**: September 2026 (3 months)
-
-### Priority: Later (v1.5.0+ – H4 2026 / 2027)
-- **P6.1**: Clipboard AI
-- **P6.2**: Keyboard shortcuts & macros
-- **P2.2**: Grammar augmentation
-- **P3.3**: CJK research
-
-**Estimated Release**: Q1 2027
+- **A separate Voice IME** (Sayboard pattern) — out; voice belongs *inside* the keyboard (Next-2), not as a separate IME.
+- **A separate Clipboard manager app** — out; clipboard already lives inside the IME.
+- **AOSP LatinIME maintenance** — out; that's HeliBoard's mandate.
+- **Trinity / WhisperInput stand-alone keyboard** — out; voice integrates as Next-2 inside SwiftFloris.
+- **Generic Android system-wide spellcheck service** — interesting (and `FlorisSpellCheckerService.kt:141` is the existing hook), but Out for this roadmap pass; revisit only if we have spare capacity after L1.
 
 ---
 
-## FlorisBoard Upstream Reference
+## 14. Risk Register
 
-This roadmap builds on FlorisBoard v0.6.0-alpha02. Key upstream milestones:
-
-- **v0.5**: Theme rework (Snygg v2) + Android 13/14 support — ✅ Completed
-- **v0.6** (in development): Spell checking, word predictions, language packs, physical keyboard support
-- **v0.7+**: Floating keyboard, emoji picker rework, glide typing refinement, Google Play preparation
-
-SwiftFloris inherits these features as they stabilize in upstream. See https://github.com/florisboard/florisboard/blob/main/ROADMAP.md for detailed upstream progress.
-
----
-
-## Appendix: Research Sources
-
-### Competitive Analysis
-1. **GitHub Topics**: `android-keyboard`, `ime`, `input-method` — 53 public repos analyzed
-2. **Top Competitors**:
-   - FlorisBoard (upstream): github.com/florisboard/florisboard (3K+ ⭐)
-   - Thumb-Key: github.com/dessalines/thumb-key (1.5K+ ⭐)
-   - HeliBoard: github.com/Helium314/HeliBoard (3K+ ⭐)
-   - CleverKeys: github.com/tribixbite/CleverKeys (2K+ ⭐)
-   - Fcitx5: github.com/fcitx5-android/fcitx5-android (3K+ ⭐)
-   - Deskdrop: github.com/SvReenen/Deskdrop (NEW, 500+ ⭐)
-   - FUTO: keyboard.futo.org (closed beta, ~200 ⭐)
-   - AnySoftKeyboard: github.com/AnySoftKeyboard/AnySoftKeyboard (500+ ⭐)
-   - 8VIM: github.com/8VIM/8VIM (300+ ⭐)
-
-3. **Android Dev Docs**: developer.android.com/guide/topics/text/creating-input-method, IME API reference
-4. **Feature Trends**: GitHub Issues/PRs in top 5 competitors; market research (Google Play trending, F-Droid popular)
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| FlorisBoard upstream merges back the v0.6 glide work and obviates N1 | Medium | Medium | Re-base; ship per-language polish on top |
+| HeliBoard's NLnet glide drop ships first and becomes the de facto OSS swipe lib | High | Low (good for users; we adopt it; positive outcome) | Plan N1.1 as the default path |
+| Gemma 3 270M licensing changes break L1 plan | Low | Medium | Have Phi-3 / Llama 3.2 1B fallback on stand-by; LiteRT-LM is model-agnostic |
+| F-Droid reproducible-build verification fails due to Gradle/AGP/NDK churn | Medium | Low | Pin everything in `gradle.properties`; subscribe to F-Droid Reproducible Builds discussion; address per release |
+| The two `TODO("…")` runtime stubs get hit in the wild | Low (extension paths rarely traverse) | High (crash) | N11 fixes them as a Now item; not deferrable |
+| Kotlin 2.3 / Compose 2026.03.01 BOM regressions | Medium | Medium | Pin BOM until all four themes pass Roborazzi (N12.2) |
+| Personal-dictionary growth balloons Room DB; Room main-thread query adds lag | Medium | Medium | The current `allowMainThreadQueries()` flag is a known concern; convert to suspend-only access on a Next-class refactor |
+| Unicode 17 / Emoji 17 backports break `EmojiCompat` lazy loader | Low | Low | N10.2 verifies pre-release |
+| The malicious closed-source FlorisBoard fork "CleverType AI Keyboard" [F3] confuses SwiftFloris's positioning | Low | Low | README + Settings → About explicitly distance from any closed fork |
 
 ---
 
-**Maintainer**: @SysAdminDoc  
-**License**: Apache 2.0  
-**Contribution Guidelines**: See CONTRIBUTING.md
+## 15. Definition of Done (for individual items)
+
+Every item, before being marked complete:
+
+1. Implementation lands.
+2. Tests added (unit at minimum; Roborazzi if visual; Macrobenchmark if perf-sensitive after N12.1).
+3. Documentation updated (README badge, RELEASE_NOTES_vX.Y.Z.md, IMPROVEMENT_PLAN.md if a workstream task closes).
+4. `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:lintDebug` all green locally.
+5. Manual QA pass on a real device (Galaxy R5CY34G070L is the current reference).
+6. Source/license attribution updated (`NOTICE`, `LICENSES/`) if a new dependency entered.
+7. APK signed and installable; SHA256 published.
+
+---
+
+## 16. Glossary
+
+- **AOSP** — Android Open Source Project.
+- **CRDT** — Conflict-free Replicated Data Type; merge structure that converges across devices without coordination.
+- **IME** — Input Method Editor; what Android calls a soft keyboard.
+- **LiteRT** — TensorFlow's renamed mobile runtime (formerly TFLite); production successor as of TensorFlow 2.21.
+- **MCP** — Model Context Protocol; emerging tool-server standard for AI assistants.
+- **NMT** — Neural Machine Translation.
+- **SCOWL** — Spell-Checker Oriented Word Lists (Kevin Atkinson, Apache-2.0-compatible BSD).
+- **SLM / LLM** — Small / Large Language Model.
+- **Snygg** — FlorisBoard's theme engine ("snygg" is Swedish for "stylish").
+- **WCAG** — Web Content Accessibility Guidelines.
+
+---
+
+## Appendix — Source URLs (every claim above traces here)
+
+### Internal (this repo)
+
+- `RELEASE_NOTES_v1.5.3.md`, `v1.5.4.md`, `v1.5.5.md`, `v1.6.0.md`
+- `IMPROVEMENT_PLAN.md` (workstreams 1–15)
+- `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle.properties`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/{NlpManager,ImmediateAutocorrect,latin/LatinLanguageProvider}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/{KeyboardExtension,LanguagePackExtension}.kt` (TODO stubs)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowMode.kt` (floating placeholder)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/FlorisLocale.kt` (hard-coded locales)
+
+### F — FlorisBoard ecosystem
+
+- [F1] [FlorisBoard repo](https://github.com/florisboard/florisboard) · [ROADMAP](https://github.com/florisboard/florisboard/blob/main/ROADMAP.md) · [Releases](https://github.com/florisboard/florisboard/releases)
+- [F2] FlorisBoard issues: [#3233 k3lp Unicode-Keyboard-v3](https://github.com/florisboard/florisboard/issues/3233), [#3225 PIN scrambling](https://github.com/florisboard/florisboard/issues/3225), [#3280 Snygg v2](https://github.com/florisboard/florisboard/issues/3280)
+- [F3] [FlorisBoard #3234 — malicious closed fork "CleverType AI Keyboard"](https://github.com/florisboard/florisboard/issues/3234)
+- [FlorisBoard privacy policy](https://florisboard.org/legal/privacy/)
+- [FlorisBoard extensions docs](https://docs.florisboard.org/extensions)
+
+### O — OSS competitors
+
+- [O1] [CleverKeys repo](https://github.com/tribixbite/CleverKeys) · [CleverKeys-ML training repo](https://github.com/tribixbite/CleverKeys-ML) · [project site](https://cleverkeys.app/)
+- [O2] [HeliBoard repo](https://github.com/Helium314/HeliBoard) · [Wiki](https://github.com/Helium314/HeliBoard/wiki) · [layouts.md](https://github.com/Helium314/HeliBoard/blob/main/layouts.md)
+- [aosp-dictionaries (HeliBoard)](https://codeberg.org/Helium314/aosp-dictionaries)
+- [O3] [OpenBoard repo](https://github.com/openboard-team/openboard) · [PrivacyGuides successor thread](https://discuss.privacyguides.net/t/openboard-android-keyboard-removed-from-google-app-store-lets-search-the-forks/13602)
+- [O4] [AnySoftKeyboard repo](https://github.com/AnySoftKeyboard/AnySoftKeyboard) · [LanguagePack repo](https://github.com/AnySoftKeyboard/LanguagePack) · [project site](https://anysoftkeyboard.github.io/) · [addons CONTRIBUTING](https://github.com/AnySoftKeyboard/AnySoftKeyboard/blob/main/addons/CONTRIBUTING.md)
+- [O5] [FUTO Keyboard mirror](https://github.com/futo-org/android-keyboard) · [Releases](https://github.com/futo-org/android-keyboard/releases) · [docs language models](https://docs.keyboard.futo.org/settings/languagesmodels) · [text prediction](https://docs.keyboard.futo.org/settings/textprediction)
+- [O6] [FUTO Voice Input repo](https://github.com/futo-org/voice-input) · [whisper-acft v3 turbo issue](https://github.com/futo-org/whisper-acft/issues/9)
+- [O7] [Deskdrop repo](https://github.com/SvReenen/Deskdrop) · [project site](https://svreenen.github.io/Deskdrop/) · [LeanType repo](https://github.com/LeanBitLab/HeliboardL)
+- [O8] [Thumb-Key repo](https://github.com/dessalines/thumb-key)
+- [O9] [Unexpected Keyboard repo](https://github.com/Julow/Unexpected-Keyboard)
+- [O10] [Simple Keyboard](https://github.com/SimpleMobileTools/Simple-Keyboard) · [Fossify Keyboard](https://github.com/FossifyOrg/Keyboard)
+- [O11] [Sayboard repo](https://github.com/ElishaAz/Sayboard)
+- [O12] [Hacker's Keyboard #875](https://github.com/klausw/hackerskeyboard/issues/875)
+- [O14] [fcitx5-android repo](https://github.com/fcitx5-android/fcitx5-android)
+- [O15] [Keyman repo](https://github.com/keymanapp/keyman) · [keyboards repo](https://github.com/keymanapp/keyboards) · [keyman.com get-involved](https://keyman.com/about/get-involved)
+- [H1] HeliBoard issues: [#2226 NLnet open glide](https://github.com/Helium314/HeliBoard/issues/2226), [#326 floating tablet](https://github.com/Helium314/HeliBoard/issues/326), [#363 GIFs](https://github.com/Helium314/HeliBoard/issues/363), [#490 clipboard images](https://github.com/Helium314/HeliBoard/issues/490), [#695 toolbar customization](https://github.com/Helium314/HeliBoard/issues/695), [#786 Asian languages](https://github.com/Helium314/HeliBoard/issues/786), [#891 Accrescent](https://github.com/Helium314/HeliBoard/issues/891), [#1055 Gboard look](https://github.com/Helium314/HeliBoard/issues/1055), [#1289 horizontal-swipe-on-backspace](https://github.com/Helium314/HeliBoard/issues/1289), [#1342 scalable font/key](https://github.com/Helium314/HeliBoard/issues/1342), [#2124 multi-lang autocorrect bleed](https://github.com/Helium314/HeliBoard/issues/2124), [#2165 dual-finger gestures](https://github.com/Helium314/HeliBoard/issues/2165)
+
+### C — Commercial competitors
+
+- [C1] [Microsoft SwiftKey official](https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/do-more-with-ai/general-ai/all-you-can-do-swiftkey-ai-keyboard)
+- [C2] [SwiftKey requires MS Account by 2026-05-31 — Windows Central](https://www.windowscentral.com/software-apps/swiftkey-will-soon-require-a-microsoft-account-data-to-be-moved-to-onedrive)
+- [C3] [SwiftKey Copilot removed 2025 — Microsoft Support FAQ](https://support.microsoft.com/en-us/topic/faqs-for-copilot-changes-in-swiftkey-c02289e6-c5b3-401c-af8d-f6c88409a2d2)
+- [C4] [SwiftKey Clarity multi-word — TechCrunch](https://techcrunch.com/2015/04/27/swiftkey-debuts-clarity-an-experimental-keyboard-featuring-multi-word-autocorrect/)
+- [C5] [Typewise CES 2021+2022 award](https://www.neowin.net/news/typewise039s-honeycomb-ai-keyboard-app-secures-ces-innovation-award-once-again/)
+- [C6] [Gboard Sept 2025 AI writing tools — Google blog](https://blog.google/products-and-platforms/platforms/android/new-android-features-september-2025/)
+- [C7] [Chrooma Keyboard — APKMirror](https://www.apkmirror.com/apk/loopsie-srl/chrooma-keyboard/)
+- [C8] [TouchPal Wikipedia (CooTek + adware ban)](https://en.wikipedia.org/wiki/TouchPal); [Grammarly Mobile](https://www.grammarly.com/mobile)
+- [C9] [Microsoft Hub Keyboard — Liliputing](https://liliputing.com/microsoft-hub-keyboard-for-android-includes-translation-clipboard-search-tools/) · [Hub image translation — 9to5Google](https://9to5google.com/2016/04/21/microsoft-image-inline-translation-translator-hub-keyboard/)
+- [GBOARD-VOICE] [Google disabled offline voice typing on Gboard for non-Pixel — GrapheneOS forum](https://discuss.grapheneos.org/d/26041-google-disabled-voice-typing-on-gboard-without-network-access)
+- [Gboard one-handed help](https://fotoai.app/b/enable-one-handed-mode-on-android-keyboard); [Samsung One UI 7 Galaxy AI any keyboard](https://www.sammobile.com/news/one-ui-7-0-galaxy-ai-writing-tools-any-keyboard/)
+- [Apple Intelligence iOS 18 Writing Tools — AppleMagazine](https://applemagazine.com/predictive-text-engine-012)
+- [SMART-EDIT] [Gboard Smart Edit voice — XDA / Pixel Drop](https://www.xda-developers.com/google-smart-compose-gboard-android-messages-telegram-whatsapp/)
+
+### COMM — Community pain & feature requests (selected)
+
+- [COMM-A] [r/SwiftKey + complaints synthesis — Cybernews](https://cybernews.com/tech/microsoft-switfkey-service-logins/)
+- [COMM-B] [SwiftKey Account requires MS account — HN 35597152](https://news.ycombinator.com/item?id=35597152)
+- [COMM-C] [FlorisBoard #1283 (32 reactions) — autocorrect demand](https://github.com/florisboard/florisboard/issues/1283); [#1474 predictions](https://github.com/florisboard/florisboard/issues/1474); [#677 OOM (36 reactions)](https://github.com/florisboard/florisboard/issues/677); [#2362 invisible keys regression](https://github.com/florisboard/florisboard/issues/2362)
+- [COMM-D] FlorisBoard issues: [#45 emoji search (80 reactions)](https://github.com/florisboard/florisboard/issues/45); [#196 customizable layout (21)](https://github.com/florisboard/florisboard/issues/196); [#229 modifier keys (24)](https://github.com/florisboard/florisboard/issues/229); [#155 multilingual](https://github.com/florisboard/florisboard/issues/155); [#1007 capitalization-aware](https://github.com/florisboard/florisboard/issues/1007); [#938 randomized password layout](https://github.com/florisboard/florisboard/issues/938); [#1888 search clipboard history](https://github.com/florisboard/florisboard/issues/1888); [#2728 inline autofill](https://github.com/florisboard/florisboard/issues/2728); [#116 dual-finger gestures (35)](https://github.com/florisboard/florisboard/issues/116); [#737 delete learned word](https://github.com/florisboard/florisboard/issues/737)
+- [COMM-E] AnySoftKeyboard issues: [#1832 customizable bottom row](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1832), [#1404 cursor placement (highly upvoted)](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1404), [#4426 random period/space](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/4426), [#1399 delete from learned dict](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1399), [#1684 auto-replace shortcuts](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1684), [#2803 ad/nag suggestion bar (43 reactions)](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/2803), [#1952 split keyboard](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1952), [#1412 T9 layout](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1412), [#1233 CJKV demand](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1233)
+- [COMM-F] OpenBoard issues: [#7 multilingual (55 reactions)](https://github.com/openboard-team/openboard/issues/7), [#167 wrong-language correction (49)](https://github.com/openboard-team/openboard/issues/167), [#3 glide typing (49)](https://github.com/openboard-team/openboard/issues/3), [#35 emoji search (51)](https://github.com/openboard-team/openboard/issues/35), [#387 inline autofill (28)](https://github.com/openboard-team/openboard/issues/387)
+- [COMM-G] [Privacy Guides — what keyboard?](https://discuss.privacyguides.net/t/what-keyboard-are-you-using-on-android/15973); [MakeUseOf — best open-source Gboard alternatives](https://www.makeuseof.com/best-open-source-gboard-alternatives-tested/); [HN 40831489 FUTO discussion](https://news.ycombinator.com/item?id=40831489)
+- [COMM-K] [Computerworld — Android typing trick](https://www.computerworld.com/article/1714907/android-typing-trick.html); [TechWiser — text expanders](https://techwiser.com/text-expander-apps-for-android/)
+- [Bitwarden inline autofill #1156](https://github.com/bitwarden/mobile/issues/1156); [PR #1145](https://github.com/bitwarden/mobile/pull/1145); [#62](https://github.com/bitwarden/mobile/issues/62)
+- [Trinity College Dublin Gboard paper (audio at any time)](https://www.scss.tcd.ie/Doug.Leith/pubs/gboard_kamil.pdf)
+
+### AI — Adjacent / AI-keyboard wave
+
+- [AI1] [Gemma 3 270M intro — Google Developers Blog](https://developers.googleblog.com/en/introducing-gemma-3-270m/)
+- [AI2] [Gemma 3 270M demo — DataCamp](https://www.datacamp.com/tutorial/gemma-3-270m); [On-Device LLMs: State of the Union 2026](https://v-chandra.github.io/on-device-llms/)
+- [AI3] [whisper.cpp](https://github.com/ggml-org/whisper.cpp); [Vosk vs Whisper 2026 guide](https://www.sinologic.net/en/2026-05/vosk-vs-whisper-local-the-ultimate-2026-guide-to-self-hosted-speech-recognition-stt.html)
+- [AI4] [CleverKeys ML training repo](https://github.com/tribixbite/CleverKeys-ML)
+- [AI5] [fastText 157-language vectors](https://fasttext.cc/docs/en/crawl-vectors.html)
+- [AI6] [SymSpell — Symmetric Delete algorithm](https://github.com/wolfgarbe/SymSpell)
+- [AI7] [SymSpell vs BK-tree benchmark](https://medium.com/data-science/symspell-vs-bk-tree-100x-faster-fuzzy-string-search-spell-checking-c4f10d80a078); [In-Depth Comparison of 14 Spelling Correction Tools (LREC 2020)](https://aclanthology.org/2020.lrec-1.228.pdf)
+- [AI8] [WhisperInput keyboard (alex-vt)](https://github.com/alex-vt/WhisperInput); [FUTO larger Whisper models on flagships](https://github.com/futo-org/android-keyboard/issues/1863)
+- [AI9] [Joplin voice typing spec](https://joplinapp.org/help/dev/spec/voice_typing/)
+- [AI10] [Vosk Android](https://alphacephei.com/vosk/android); [Vosk API](https://github.com/alphacep/vosk-api)
+- [AI11] [KenLM toolkit](https://kheafield.com/code/kenlm/); [KenLM estimation](https://kheafield.com/code/kenlm/estimation/)
+- [AI12] [edugp/kenlm 24-language pre-trained models — HF](https://huggingface.co/edugp/kenlm)
+- [AI13] [wordfreq (rspeer)](https://github.com/rspeer/wordfreq)
+- [AI14] [SUBTLEX-US frequency norms](https://www.ugent.be/pp/experimentele-psychologie/en/research/documents/subtlexus); [subs2vec](https://github.com/jvparidon/subs2vec)
+- [AI15] [Real-Time Optimized N-gram for Mobile (arXiv)](https://arxiv.org/pdf/2101.03967)
+- [AI16] [MediaPipe LLM Inference Android](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference/android)
+- [AI17] [Apple Intelligence Foundation Language Models](https://arxiv.org/html/2507.13575v1); [Apple iOS 17 transformer autocorrect — TechCrunch](https://techcrunch.com/2023/06/05/thanks-to-ai-ios-17-will-learn-your-swears/)
+- [AI18] [Local-first CRDTs over Syncthing (tonsky)](https://tonsky.me/blog/crdt-filesync/); [Automerge / Yjs landscape](https://crdt.tech/implementations); [Yjs](https://github.com/yjs/yjs)
+- [AI19] [Espanso options](https://espanso.org/docs/configuration/options/); [Espanso extensions](https://espanso.org/docs/matches/extensions/)
+- [AI22] [Joplin tiered voice typing](https://joplinapp.org/help/dev/spec/voice_typing/)
+- [AI ACRA] [ACRA](https://github.com/ACRA/acra); [Sentry mobile privacy](https://docs.sentry.io/security-legal-pii/security/mobile-privacy/)
+- AI WILD: see "Wild Ideas" section in adjacent-research output (userscripts, $1 Unistroke, federated learning, audit log, cinematic haptics, WebAuthn injection)
+
+### STD — Standards / a11y / i18n / security
+
+- [STD-INPUTSERVICE] [InputMethodService API](https://developer.android.com/reference/android/inputmethodservice/InputMethodService); [InputConnection](https://developer.android.com/reference/android/view/inputmethod/InputConnection)
+- [STD-A14] [Android 14 features](https://developer.android.com/about/versions/14/features); [Android 16 release notes](https://developer.android.com/about/versions/16/release-notes); [SDK setup](https://developer.android.com/about/versions/16/setup-sdk)
+- [STD-STYLUS] [Stylus in text fields](https://developer.android.com/develop/ui/views/touch-and-input/stylus-input/stylus-input-in-text-fields); [Compose stylus](https://developer.android.com/develop/ui/compose/touch-input/stylus-input/stylus-input-in-text-fields)
+- [STD-INK] (Google ML Kit Digital Ink Recognition — official Android docs surface)
+- [STD-INLINE-AUTOFILL] [Integrate autofill with IMEs](https://developer.android.com/identity/autofill/ime-autofill); [Create input method (Switch Access)](https://developer.android.com/develop/ui/views/touch-and-input/creating-input-method)
+- [STD-A16-HAPTIC] [Android custom haptic effects (16+ envelopes)](https://developer.android.com/develop/ui/views/haptics/custom-haptic-effects); [haptics design principles](https://developer.android.com/develop/ui/views/haptics/haptics-principles)
+- [STD-Material3] [M3 design tokens](https://m3.material.io/foundations/design-tokens)
+- [STD-M3E] [Material 3 Expressive launch — Google blog](https://blog.google/products-and-platforms/platforms/android/material-3-expressive-android-wearos-launch/)
+- [STD-TALKBACK] [TalkBack keyboard shortcuts](https://support.google.com/accessibility/android/answer/6110948); [TalkBack 16.2](https://support.google.com/accessibility/android/answer/16800105); [SwiftKey + TalkBack](https://support.microsoft.com/en-us/topic/accessibility-in-microsoft-swiftkey-keyboard-a3b12d18-61ba-4e2c-82bc-c42e8f12c62c)
+- [STD-A11Y-IMETRY] [TalkBack braille](https://support.google.com/accessibility/android/answer/9728765); [Voice Access](https://support.google.com/accessibility/android/answer/6151848)
+- [STD-WCAG-TARGET] [WCAG 2.5.5 Target Size](https://www.w3.org/WAI/WCAG21/Understanding/target-size); [WCAG 2.5.8 (TestParty)](https://testparty.ai/blog/wcag-target-size-guide)
+- [STD-WCAG-CONTRAST] (WCAG 2.1 1.4.3 Contrast Minimum — W3C reference)
+- [STD-REDUCED-MOTION] [Android reduced motion (eevis.codes)](https://eevis.codes/blog/2022-12-12/android-animations-and-reduced-motion/)
+- [STD-SWITCH] [Voice Access activation keys](https://support.google.com/accessibility/android/answer/6151843?hl=en)
+- [STD-CJK] [FlorisBoard Chinese language packs](https://github.com/florisboard/florisboard/blob/main/LANGUAGEPACKS-CHINESE.md); [Issue #2211 Pinyin](https://github.com/florisboard/florisboard/issues/2211)
+- [STD-RTL] (FlorisBoard upstream RTL state — repo audit)
+- [STD-INDIC] [FlorisBoard #1327 Hindi transcription](https://github.com/florisboard/florisboard/issues/1327)
+- [STD-LATIN-LEAPFROG] [HeliBoard FAQ](https://github.com/HeliBorg/HeliBoard/wiki/FAQ); [HeliBoard #2067 / #1699 word-learning threshold](https://github.com/HeliBorg/HeliBoard/issues/2067)
+- [STD-GEEZ] [GeezIME 2025](https://play.google.com/store/apps/details?id=com.geezlab.geezime); [Keyman Ge'ez keyboard](https://keyman.com/keyboards/gff_geez)
+- [STD-UNICODE17] [ICU releases](https://github.com/unicode-org/icu/releases); [Android i18n via ICU](https://developer.android.com/guide/topics/resources/internationalization)
+- [STD-EMOJI17] [Unicode 17 / Emoji 17 (Emojipedia)](https://blog.emojipedia.org/whats-new-in-unicode-17-0/); [Emoji 16 on Android 16 (TechRadar)](https://www.techradar.com/phones/android/android-16-users-can-get-early-access-to-163-new-emojis-thatll-soon-be-everywhere-heres-how)
+- [STD-API-DELETE-CODEPOINTS] (`InputConnection#deleteSurroundingTextInCodePoints` — Android docs)
+- [STD-FDROID-REPRO] [F-Droid keyboards reproducible (March 2025)](https://f-droid.org/en/2025/03/04/even-my-keyboard-is-built-reproducibly.html); [F-Droid reproducible builds docs](https://f-droid.org/docs/Reproducible_Builds/)
+- [STD-FDROID-OBTAINIUM] [F-Droid 2025 status update](https://f-droid.org/en/2026/01/23/fdroid-in-2025-strengthening-our-foundations-in-a-changing-mobile-landscape.html); [Google Play target SDK](https://developer.android.com/google/play/requirements/target-sdk); [Play Integrity overview](https://developer.android.com/google/play/integrity/overview)
+- [STD-CVE] [Android Dec 2025 bulletin](https://source.android.com/docs/security/bulletin/2025-12-01); [CVE-2025-48593](https://socprime.com/blog/cve-2025-48593-vulnerability-in-android/)
+- [STD-CAKI] [CAKI ESORICS paper](https://staff.ie.cuhk.edu.hk/~khzhang/my-papers/2015-esorics-ime.pdf)
+- [STD-PERS-DICT-ENC] (Android Keystore + EncryptedSharedPreferences — official docs); [SQLCipher — Zetetic]
+- [STD-MACROBENCH] [Macrobenchmark](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview)
+- [STD-PERFETTO] (`androidx.tracing:tracing-perfetto:1.0.0` — official Android perf docs)
+- [STD-ROBORAZZI] [Roborazzi](https://github.com/takahirom/roborazzi)
+- [STD-ACRA] [ACRA](https://github.com/ACRA/acra)
+- [STD-SYNC] [Syncthing device IDs](https://docs.syncthing.net/v0.11.7/dev/device-ids); [KryptEY E2EE keyboard](https://github.com/amnesica/KryptEY)
+- [STD-TASKER] [Tasker plugin intro](https://tasker.joaoapps.com/plugins-intro.html); [HeliBoard Tasker PR #290](https://github.com/HeliBorg/HeliBoard/pull/290); [AutoInput + Tasker](https://blog.php-systems.com/setting-up-autoinput-with-tasker/)
+- [STD-FLORIS-EXT] [FlorisBoard extensions docs](https://docs.florisboard.org/extensions)
+- [STD-NO-INTERNET] (FlorisBoard's no-INTERNET-permission posture — manifest audit)
+- [MIG-GBOARD] [Gboard PersonalDictionary export — How-To Geek](https://www.howtogeek.com/how-to-speed-up-your-typing-game-with-gboards-personal-dictionary/)
+- [MIG-SK] [SwiftKey Backup & Sync — MS Support](https://support.microsoft.com/en-us/topic/how-to-use-backup-sync-in-microsoft-swiftkey-keyboard-3604cb8a-47e9-4045-82de-fd301904e59a)
+- [MIG-KLFC] [KLFC layout converter](https://github.com/39aldo39/klfc)
+- [Hub Keyboard Microsoft Garage profile](https://www.microsoft.com/en-us/garage/profiles/hub-keyboard/)
+- [PAIN-D-3] [BLTT keyboards-for-disabled-people](https://bltt.org/keyboards-for-disabled-people/); [OT-with-Apps motor accessibility](https://otswithapps.com/2015/11/08/keyboard-accessibility-for-individuals-with-motor-impairment-for-computers-and-mobile-devices/); [Android accessibility help — physical keyboard a11y](https://support.google.com/accessibility/android/answer/16323943)
+- [PAIN-29] [Android accessibility — bounce/slow/sticky](https://support.google.com/accessibility/android/answer/16318538)
+
+---
+
+*End of ROADMAP v4.0. Total source URLs cited: 130+. Total feature/initiative items: 60+ across Now/Next/Later/Under Consideration/Rejected. This document supersedes ROADMAP v3.0 (2026-05-05). Next planned reconcile: at v1.7.0 ship.*
