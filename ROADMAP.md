@@ -154,7 +154,7 @@ The current GitHub Action runs `assembleDebug` only — tests, lint, and reprodu
 - **N6.2** Add a release workflow (`workflow_dispatch`) that signs an APK with a stored keystore, attaches it to a GitHub release with SHA256, and bumps the F-Droid metadata file. Apache-2.0 NOTICE attribution check (SCOWL + LDNOOBW + FlorisBoard upstream).
 - **N6.3** Submit to F-Droid for **reproducible-build verification** — pin AGP / Gradle / Kotlin / NDK; lock `lib/native` checksums; submit `fdroiddata` `Builds:` block. Target the verified ✔ badge alongside HeliBoard, Fossify, FlickBoard, Thumb-Key [STD-FDROID-REPRO, F1].
 - **N6.4** Add **dependency-CVE scan** on a weekly schedule (OWASP Dependency-Check Gradle plugin or Renovate) [STD-CVE].
-- **N6.5** Document an **Obtainium one-tap URL** in README so users can subscribe to the GitHub release feed without polling [STD-FDROID-OBTAINIUM].
+- ✅ **N6.5** shipped 2026-05-09 (v1.7.0). README "Installation" now leads with **Option A — Obtainium**: a copy-pastable `obtainium://app/{...}` URL that auto-subscribes to the GitHub Releases feed (`apkFilterRegEx: app-release.*\.apk`, `versionDetection: true`, `fallbackToOlderReleases: true`). Manual GH-Releases and source build flows demoted to Options B / C.
 
 ### N7. Privacy hardening (the moat verbatim)
 
