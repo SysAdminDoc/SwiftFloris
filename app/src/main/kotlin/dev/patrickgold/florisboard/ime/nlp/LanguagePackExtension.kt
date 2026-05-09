@@ -58,9 +58,12 @@ class LanguagePackExtension( // FIXME: how to make this support multiple types o
 
     override fun components(): List<ExtensionComponent> = items
 
-    override fun edit(): ExtensionEditor {
-        TODO("LOL LMAO")
-    }
+    override fun edit() = LanguagePackExtensionEditor(
+        meta = meta,
+        dependencies = dependencies?.toMutableList() ?: mutableListOf(),
+        items = items.toMutableList(),
+        hanShapeBasedSQLite = hanShapeBasedSQLite,
+    )
 
     companion object {
         const val SERIAL_TYPE = "ime.extension.languagepack"
@@ -91,4 +94,19 @@ class LanguagePackExtension( // FIXME: how to make this support multiple types o
         super.onBeforeUnload(context, cacheDir)
         hanShapeBasedSQLiteDatabase.takeIf { it.isOpen }?.close()
     }
+}
+
+class LanguagePackExtensionEditor(
+    override var meta: ExtensionMeta,
+    override val dependencies: MutableList<String>,
+    val items: MutableList<LanguagePackComponent>,
+    val hanShapeBasedSQLite: String,
+) : ExtensionEditor {
+
+    override fun build() = LanguagePackExtension(
+        meta = meta,
+        dependencies = dependencies.takeUnless { it.isEmpty() }?.toList(),
+        items = items.toList(),
+        hanShapeBasedSQLite = hanShapeBasedSQLite,
+    )
 }

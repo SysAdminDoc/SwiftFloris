@@ -191,13 +191,13 @@ Emoji 17.0 lands on Android in March 2026 (7 new glyphs: Distorted Face, Fight C
 - **N10.2** Verify Unicode 16 glyphs (Face with Bags Under Eyes, Fingerprint, Splatter) render via the lazy EmojiCompat loader landed in `6fd6e3b`.
 - **N10.3** Use `deleteSurroundingTextInCodePoints()` (API 24+) instead of `deleteSurroundingText()` so backspace doesn't split surrogate pairs in Unicode 16/17 emoji or Indic conjuncts [STD-API-DELETE-CODEPOINTS].
 
-### N11. Resolve the runtime `TODO()` stubs (correctness floor)
+### N11. Resolve the runtime `TODO()` stubs (correctness floor) ✅ shipped 2026-05-09 (v1.7.0)
 
 Two `TODO("…")` calls in production paths will crash the IME if reached; both are in extension-loader fallback branches. Either implement or guard.
 
-- **N11.1** `KeyboardExtension.kt:55` — implement `KeyboardExtension.serialize()` or replace with `error("Not yet supported — please file an issue")` so the failure is recoverable.
-- **N11.2** `LanguagePackExtension.kt:62` — same; current `TODO("LOL LMAO")` cannot ship to F-Droid.
-- **N11.3** `FlorisSpellCheckerService.kt:141` — either implement custom spell-check service or document why we delegate to default.
+- ✅ **N11.1** `KeyboardExtension.kt:55` — replaced `TODO("Not yet implemented")` with a real `KeyboardExtensionEditor` (mirrors `ThemeExtensionEditor` shape: meta + dependencies + per-component mutable lists; `build()` round-trips back to a `KeyboardExtension`). Edit screen no longer crashes if an extension of this type is opened.
+- ✅ **N11.2** `LanguagePackExtension.kt:62` — replaced `TODO("LOL LMAO")` with a real `LanguagePackExtensionEditor`. Unblocks F-Droid acceptance check.
+- ✅ **N11.3** `FlorisSpellCheckerService.kt:141` — documented design choice. AOSP's default sentence-aggregation already routes per-word lookups through `onGetSuggestionsMultiple`, which is SwiftFloris-backed via `NlpManager`. Custom impl deferred until we need cross-word sentence context. Comment in code explains the rationale.
 
 ---
 

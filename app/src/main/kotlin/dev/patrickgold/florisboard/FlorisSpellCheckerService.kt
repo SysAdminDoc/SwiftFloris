@@ -138,7 +138,10 @@ class FlorisSpellCheckerService : SpellCheckerService() {
         ): Array<SentenceSuggestionsInfo> {
             flogInfo(LogTopic.SPELL_EVENTS)
 
-            // TODO: implement custom solution here instead of calling the default implementation
+            // Delegate to AOSP's default sentence-aggregation implementation. The default
+            // splits the sentence into words and calls onGetSuggestionsMultiple, which is
+            // already SwiftFloris-backed via NlpManager. A custom implementation would only
+            // be worthwhile if we needed sentence-level context across word boundaries.
             return super.onGetSentenceSuggestionsMultiple(textInfos, suggestionsLimit)
         }
 

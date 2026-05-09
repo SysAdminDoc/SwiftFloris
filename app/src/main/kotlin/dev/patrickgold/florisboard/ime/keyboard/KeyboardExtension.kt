@@ -51,9 +51,39 @@ data class KeyboardExtension(
         return emptyList()
     }
 
-    override fun edit(): ExtensionEditor {
-        TODO("Not yet implemented")
-    }
+    override fun edit() = KeyboardExtensionEditor(
+        meta = meta,
+        dependencies = dependencies?.toMutableList() ?: mutableListOf(),
+        composers = composers.toMutableList(),
+        currencySets = currencySets.toMutableList(),
+        layouts = layouts.mapValues { (_, v) -> v.toMutableList() }.toMutableMap(),
+        punctuationRules = punctuationRules.toMutableList(),
+        popupMappings = popupMappings.toMutableList(),
+        subtypePresets = subtypePresets.toMutableList(),
+    )
+}
+
+class KeyboardExtensionEditor(
+    override var meta: ExtensionMeta,
+    override val dependencies: MutableList<String>,
+    val composers: MutableList<Composer>,
+    val currencySets: MutableList<CurrencySet>,
+    val layouts: MutableMap<String, MutableList<LayoutArrangementComponent>>,
+    val punctuationRules: MutableList<PunctuationRule>,
+    val popupMappings: MutableList<PopupMappingComponent>,
+    val subtypePresets: MutableList<SubtypePreset>,
+) : ExtensionEditor {
+
+    override fun build() = KeyboardExtension(
+        meta = meta,
+        dependencies = dependencies.takeUnless { it.isEmpty() }?.toList(),
+        composers = composers.toList(),
+        currencySets = currencySets.toList(),
+        layouts = layouts.mapValues { (_, v) -> v.toList() }.toMap(),
+        punctuationRules = punctuationRules.toList(),
+        popupMappings = popupMappings.toList(),
+        subtypePresets = subtypePresets.toList(),
+    )
 }
 
 @Suppress("NOTHING_TO_INLINE")
