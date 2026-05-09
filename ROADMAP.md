@@ -1,7 +1,7 @@
 # SwiftFloris Roadmap v4.0
 
 **Last Updated:** 2026-05-09
-**Current Version:** v1.7.1 (released 2026-05-09 — 16 Now-tier items closed across v1.7.0+v1.7.1 same-day batch)
+**Current Version:** v1.7.2 (released 2026-05-09 — 21 Now-tier items closed across v1.7.0 + v1.7.1 + v1.7.2 same-day batch)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline, with autocorrect + dictionary work already past upstream
 **Supersedes:** ROADMAP v3.0 (2026-05-05). Completed items preserved in §3 with dated checkmarks; tier system, themes, and cited opportunities below are new.
 **Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
@@ -58,6 +58,7 @@
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.7.2 | 2026-05-09 | N6.4 dep-CVE scan workflow, N3.3 SwiftKey haptic defaults (20ms / 60), N3.4 popup elevation 2dp→4dp; N5.2/N3.5/N8.5/N10.2 verified-already-shipped triage | `RELEASE_NOTES_v1.7.2.md` |
 | v1.7.1 | 2026-05-09 | Same-day follow-up: N3.1 SwiftKey Pure themes, N5.3 keyboard-height slider, N7.3 personal-dict isolation regression test + threat-model doc, N8.4 reduced-motion guard, N8.5 switch-access verified, N9.1/N9.2 commitContent verified | `RELEASE_NOTES_v1.7.1.md` |
 | v1.7.0 | 2026-05-09 | Correctness floor + privacy hardening + SwiftKey-parity polish (closes Now items N11/N7.1/N7.2/N7.5/N6.1/N6.5/N5.1/N5.4/N10.3/N3.2) | `RELEASE_NOTES_v1.7.0.md` |
 | v1.6.0 | 2026-05-08 | Personal-learning dict + 117k SCOWL English + SwiftKey design tokens (#319DFF accent, Pure-theme palette, key dims) | `RELEASE_NOTES_v1.6.0.md` |
@@ -130,7 +131,7 @@ v1.6.0 shipped accent (`#319DFF`) + Pure palette tokens + dimens bumps. Finish:
 - ✅ **N3.1** shipped 2026-05-09 (v1.7.x). Two new theme stylesheets registered in `org.florisboard.themes/extension.json`: **SwiftKey Pure (Light)** and **SwiftKey Pure (Dark)**. Each stylesheet branches off the existing `swift_glacier` / `swift_slate` skeleton with the `@defines` block rewritten to consume the `swiftkey_pure_*` tokens from `colors_branding.xml` (light: `#E1E4E8` kbd / `#FFFFFF` keys / `#BFC4CC` special / `#1F1F1F` text / `#7A7E85` hint; dark: `#1F1F1F` kbd / `#2C2C2E` keys / `#3A3A3C` special / `#F2F2F2` text / `#8E8E93` hint; both share the SwiftKey 2020+ accent `#319DFF`). Themes appear in Settings → Theme picker and inherit the N3.2 `FontWeight.Medium` glyph weight automatically.
 - ✅ **N3.2** shipped 2026-05-09 (v1.7.0). `FlorisImeUi.Key.elementName` base style in `FlorisImeThemeBaseStyle.kt` now sets `fontWeight = fontWeight(FontWeight.Medium)` (weight 500). Applies to every shipped theme (Nord/Tokyo Night/Dracula/Catppuccin/SwiftKey-Pure) since they all inherit from the base style. Closes the SwiftKey perceived-quality gap without changing key dimensions or layouts.
 - ✅ **N3.3** partial — shipped 2026-05-09 (v1.7.x). Default `hapticVibrationDuration` reduced from 65ms → **20ms** and `hapticVibrationStrength` from 70 → **60** (153/255 ≈ 60%) to match SwiftKey/Gboard. Existing user overrides preserved. Vibrator amplitude-control fallback already in `org.florisboard.lib.android.Vibrator.vibrate` (gates on `hasAmplitudeControl()`). **Pending:** Android 16 `BasicEnvelopeBuilder` envelope haptics (when `Vibrator.areEnvelopeEffectsSupported()` returns true) — separate pass.
-- **N3.4** Pressed-key flash (~80ms color flash + 1.03× scale-up over 60ms; no Material ripple) + long-press preview popup (80×96dp, 4dp elevation, accent-ringed). Currently the long-press popup is functional but visually plain.
+- ✅ **N3.4** partial — shipped 2026-05-09 (v1.7.x). Long-press preview popup elevation bumped from 2dp → **4dp** in `FlorisImeUi.KeyPopupBox` base style for SwiftKey's "elevated dropdown" feel. **Pending:** ~80ms pressed-key color flash + 1.03× scale-up over 60ms (requires Compose-side `animateFloatAsState` on each `TextKey` press) + accent-ring stroke on popup element. Both are larger Compose surgery; deferred.
 - ✅ **N3.5** resolved 2026-05-09 (v1.7.x) by documentation. Verified that `R.dimen.key_height` is *not* directly consumed by `ImeWindowConstraints.defKeyboardHeight` — that calculation is form-factor-derived (`screenHeight * factor`). On a typical 6-7" phone in portrait the resulting per-row height lands at ~52..58dp, bracketing the 56dp SwiftKey reference. Updated `dimens.xml` comment to accurately frame the token as a spec reference (not consumed) and cross-reference N5.3's user-facing percentage slider (50..150%) which is now the supported way to adjust keyboard height. A future "form-factor-aware floor" (`key_height × rows`) is captured as N3.5 follow-up but not blocking; the current behavior already meets SwiftKey-parity on common phones.
 
 ### N4. Customizable bottom row + smartbar

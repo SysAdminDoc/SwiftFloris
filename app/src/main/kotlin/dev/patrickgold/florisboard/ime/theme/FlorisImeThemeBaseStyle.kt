@@ -117,7 +117,10 @@ val FlorisImeThemeBaseStyle = SnyggStylesheet.v2 {
         foreground = `var`("--on-surface")
         fontSize = fontSize(22.sp)
         shape = `var`("--shape")
-        shadowElevation = size(2.dp)
+        // ROADMAP §6 N3.4 — bump from 2dp → 4dp to match SwiftKey's elevated
+        // long-press preview "dropdown" feel. Per-theme stylesheets retain their
+        // own values; this only affects the base inheritance.
+        shadowElevation = size(4.dp)
     }
     FlorisImeUi.KeyPopupElement.elementName(selector = SnyggSelector.FOCUS) {
         background = rgbaColor(189, 189, 189)
