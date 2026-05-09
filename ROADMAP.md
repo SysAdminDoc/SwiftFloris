@@ -1,7 +1,7 @@
 # SwiftFloris Roadmap v4.0
 
 **Last Updated:** 2026-05-09
-**Current Version:** v1.6.0 (released 2026-05-08 — personal-learning dictionary, 117k SCOWL English dictionary, SwiftKey design tokens)
+**Current Version:** v1.7.0 (released 2026-05-09 — correctness floor + privacy hardening + SwiftKey-parity polish; closes 10 Now-tier items in one release)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline, with autocorrect + dictionary work already past upstream
 **Supersedes:** ROADMAP v3.0 (2026-05-05). Completed items preserved in §3 with dated checkmarks; tier system, themes, and cited opportunities below are new.
 **Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
@@ -18,15 +18,15 @@
 
 ---
 
-## 2. State of the Repo (v1.6.0 reality, observed)
+## 2. State of the Repo (v1.7.0 reality, observed)
 
 **Stack:** Kotlin 2.3.20 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · JDK 17 · minSdk 26 (Android 8.0) · targetSdk/compileSdk 36 (Android 15) · Room 2.8.4 · Kotest 6.1.11 · KSP for Room compiler · AndroidX Benchmark 1.4.1 (macrobenchmark module wired but unused) · Crowdin translation pipeline.
 
 **Modules:** `:app` · `:benchmark` · `lib/{android,color,compose,kotlin,native,snygg}`. Native module exists for ICU break-iterators / fast text segmentation.
 
-**Source size:** 247 main Kotlin files · 28 test files (151 unit tests passing post-v1.6.0 release pass) · 49 TODO/FIXME markers · **2 runtime `TODO()` stubs that crash if reached** (`KeyboardExtension.kt:55`, `LanguagePackExtension.kt:62`).
+**Source size:** 247 main Kotlin files · 28 test files · TODO/FIXME markers reduced from 49 → ~46 after N11. **0 crash-on-reach `TODO()` stubs** (both `KeyboardExtension.kt` and `LanguagePackExtension.kt` now ship real `ExtensionEditor` implementations; `FlorisSpellCheckerService` TODO converted to a documented design choice).
 
-**Active components (v1.6.0):**
+**Active components (v1.7.0):**
 - **Tap typing** with QWERTY/QWERTZ/AZERTY + locale layouts (FlorisBoard inheritance).
 - **Gesture / glide typing** in 6 languages (EN/DE/ES/FR/IT/PT) via `StatisticalGlideTypingClassifier`. Per-language dictionaries imported (commits `6993d54`, `74ea99b`, `cd14f86`); model coverage outside English remains partial.
 - **Voice input** via FUTO Voice Input (external IME handoff, 100% offline Whisper-derived). Permission-recovery + language-settings + setup-recovery shipped (`f463199`, `28aa887`, `7ed7609`).
@@ -40,24 +40,25 @@
 - **EmojiCompat:** lazy replace-all loader + memory profiling test (`6fd6e3b`, `ba3c790`).
 
 **Stubbed / under-investigated (block several Now items):**
-- `LanguagePackExtension.kt:62 — TODO("LOL LMAO")` and `KeyboardExtension.kt:55 — TODO("Not yet implemented")` — runtime crashes if extension type ever hits these branches.
-- `FlorisSpellCheckerService.kt:141` — falls back to default spell-check service; no custom impl.
+- ~~`LanguagePackExtension.kt:62`, `KeyboardExtension.kt:55`~~ — **resolved in v1.7.0** (N11). Both ship real `ExtensionEditor` implementations.
+- ~~`FlorisSpellCheckerService.kt:141`~~ — **resolved in v1.7.0** (N11.3) as a documented delegate to AOSP default sentence-aggregation, which already routes per-word lookups through `NlpManager`.
 - `ImeWindowMode.kt:56` — floating window mode placeholder.
 - `HanShapeBasedLanguageProvider.kt:88, 99, 103` — `observeForever` on wrong thread + skipped pack-type validation.
 - `FlorisLocale.kt:217, 227` — hard-coded locale tables, ICU-based replacement open.
 - `ThemeManager.kt:138-139` — leaks loaded theme dir on hot-reload.
 - `TextKeyboardLayout.kt:229` — `constraints.maxWidth not stable` in landscape rotation.
 
-**CI:** GitHub Actions runs `assembleDebug` only on PR/push. **Tests are not gated. Lint is not gated. No reproducible-build verification. No release signing.** Crowdin upload runs on `strings.xml` push; translation-included guard runs on PRs.
+**CI:** GitHub Actions now sequences `verifyNoInternetPermission` → `:app:testDebugUnitTest` → `:app:lintDebug` → `:app:assembleDebug` on every PR/push (v1.7.0 N6.1). Lint + test reports upload as artifacts. Still missing: reproducible-build verification, release signing. Crowdin upload runs on `strings.xml` push; translation-included guard runs on PRs.
 
 **Distribution today:** GitHub Releases manual builds. `fastlane/` directory exists but no F-Droid metadata yet. Latest shipped APK: `app-release-v1.5.2.apk` (older releases via Releases page). No Obtainium one-tap URL in README.
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.6.0, all reconciled from prior ROADMAP v3.0 + recent commits)
+## 3. Recently Shipped (v1.5.0 → v1.7.0, all reconciled from prior ROADMAP v3.0 + recent commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.7.0 | 2026-05-09 | Correctness floor + privacy hardening + SwiftKey-parity polish (closes Now items N11/N7.1/N7.2/N7.5/N6.1/N6.5/N5.1/N5.4/N10.3/N3.2) | `RELEASE_NOTES_v1.7.0.md` |
 | v1.6.0 | 2026-05-08 | Personal-learning dict + 117k SCOWL English + SwiftKey design tokens (#319DFF accent, Pure-theme palette, key dims) | `RELEASE_NOTES_v1.6.0.md` |
 | v1.5.5 | 2026-05-09 | 130-entry contraction autocorrect (two-tier safety: SAFE / DICTIONARY_GATED); ALL-CAPS skip; sentence-start case preservation | `RELEASE_NOTES_v1.5.5.md` |
 | v1.5.4 | 2026-05-08 | Auto-cap context check (rejects digits/abbreviations/ellipses); decoupled auto-cap from auto-space; pronoun substitution dictionary-gated; new `correction.autoCorrect` toggle | `RELEASE_NOTES_v1.5.4.md` |
