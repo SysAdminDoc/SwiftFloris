@@ -1,0 +1,151 @@
+name: Release
+
+# ROADMAP §6 N6.2 — manual-trigger release workflow:
+#   1. Builds the release variant.
+#   2. Signs with the keystore stored as an encrypted secret.
+#   3. Uploads the signed APK + SHA-256 manifest to a GitHub Release.
+#   4. NOTICE / LICENSES attribution check (Apache-2.0 + SCOWL + LDNOOBW + FlorisBoard upstream).
+#
+# Required repo secrets (set up under Settings → Secrets and variables → Actions):
+#   SIGNING_KEYSTORE_BASE64   — base64-encoded contents of the .jks file
+#   SIGNING_KEYSTORE_PASSWORD — keystore password
+#   SIGNING_KEY_ALIAS         — key alias inside the keystore
+#   SIGNING_KEY_PASSWORD      — key password
+#
+# If the secrets are absent (e.g. a fork running its own dispatch), the workflow
+# falls back to producing an unsigned APK and skips the Release-create step;
+# this lets contributors validate the build pipeline without owning the signing key.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Release version (must match gradle.properties projectVersionName, e.g. 1.7.2)"
+        required: true
+        type: string
+      draft:
+        description: "Create the GitHub Release as a draft"
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: temurin
+
+      - name: Cache Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Verify version matches input
+        run: |
+          declared=$(grep -E '^projectVersionName=' gradle.properties | cut -d= -f2)
+          if [ "$declared" != "${{ inputs.version }}" ]; then
+            echo "::error::projectVersionName ($declared) does not match input version (${{ inputs.version }}). Bump gradle.properties first."
+            exit 1
+          fi
+
+      - name: Verify NOTICE / LICENSES attributions present
+        run: |
+          test -f NOTICE || (echo "NOTICE missing"; exit 1)
+          test -d LICENSES || (echo "LICENSES/ missing"; exit 1)
+
+      - name: No-network contract check (N7.1)
+        run: ./gradlew :app:verifyNoInternetPermission
+
+      - name: Run unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Lint debug
+        run: ./gradlew :app:lintDebug
+
+      - name: Decode keystore
+        id: decode-keystore
+        if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+        run: |
+          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
+          echo "keystore-path=$RUNNER_TEMP/keystore.jks" >> "$GITHUB_OUTPUT"
+
+      - name: Build signed release APK
+        if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_KEYSTORE_PASSWORD: ${{ secrets.SIGNING_KEYSTORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          KEYSTORE_PATH: ${{ steps.decode-keystore.outputs.keystore-path }}
+        run: ./gradlew :app:assembleRelease
+
+      - name: Build unsigned release APK (fallback when no signing secrets)
+        if: ${{ env.SIGNING_KEYSTORE_BASE64 == '' }}
+        run: ./gradlew :app:assembleRelease
+
+      - name: Locate release APK
+        id: locate-apk
+        run: |
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
+          test -f "$apk" || (echo "::error::No release APK produced"; exit 1)
+          echo "apk-path=$apk" >> "$GITHUB_OUTPUT"
+          echo "apk-name=$(basename $apk)" >> "$GITHUB_OUTPUT"
+
+      - name: Compute SHA-256 manifest
+        id: sha
+        run: |
+          cd "$(dirname '${{ steps.locate-apk.outputs.apk-path }}')"
+          sha256sum "$(basename '${{ steps.locate-apk.outputs.apk-path }}')" > SHA256SUMS
+          echo "manifest-path=$(pwd)/SHA256SUMS" >> "$GITHUB_OUTPUT"
+          echo "## Artifact SHA-256" >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat SHA256SUMS >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftfloris-v${{ inputs.version }}
+          path: |
+            ${{ steps.locate-apk.outputs.apk-path }}
+            ${{ steps.sha.outputs.manifest-path }}
+
+      - name: Create GitHub Release
+        if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+        run: |
+          tag="v${{ inputs.version }}"
+          notes="RELEASE_NOTES_v${{ inputs.version }}.md"
+          notes_arg=""
+          if [ -f "$notes" ]; then
+            notes_arg="--notes-file $notes"
+          else
+            notes_arg="--generate-notes"
+          fi
+          draft_arg=""
+          if [ "${{ inputs.draft }}" = "true" ]; then
+            draft_arg="--draft"
+          fi
+          gh release create "$tag" \
+            "${{ steps.locate-apk.outputs.apk-path }}" \
+            "${{ steps.sha.outputs.manifest-path }}" \
+            --title "SwiftFloris v${{ inputs.version }}" \
+            $notes_arg \
+            $draft_arg \
+            --target ${{ github.ref_name }}
