@@ -21,6 +21,7 @@ import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrect
+import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrectCorrection
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -83,7 +84,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
         val normalizedWord = LatinDictionarySuggester.normalizeWord(word) ?: return SpellingResult.unspecified()
         val dictionary = dictionary(subtype)
-        LatinDictionarySuggester.englishPronounCorrection(
+        LatinDictionarySuggester.englishContractionCorrection(
             rawWord = word,
             dictionary = dictionary,
             languageCode = languageCode,
@@ -333,7 +334,7 @@ internal object LatinDictionarySuggester {
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
-        englishPronounCorrection(
+        englishContractionCorrection(
             rawWord = rawWord,
             dictionary = dictionary,
             languageCode = languageCode,
@@ -411,7 +412,7 @@ internal object LatinDictionarySuggester {
         return trimmedWord.lowercase()
     }
 
-    fun englishPronounCorrection(
+    fun englishContractionCorrection(
         rawWord: String,
         dictionary: LatinDictionarySnapshot,
         languageCode: String,
@@ -419,14 +420,18 @@ internal object LatinDictionarySuggester {
         if (LatinDictionaryStore.normalizeLanguageCode(languageCode) != LatinDictionaryStore.DefaultLanguageCode) {
             return null
         }
-        val correction = ImmediateAutocorrect.englishFirstPersonPronoun(rawWord, languageCode) ?: return null
+        val correction = ImmediateAutocorrect.englishContraction(rawWord, languageCode) ?: return null
         if (!dictionary.contains(correction.dictionaryWord)) return null
-        // Don't override a real word the user actually typed (e.g. "ill", "id", "im", "ive").
-        // The single-letter "i" is the only safe auto-substitution because it is never a
-        // standalone English word.
-        val typedNormalized = normalizeWord(rawWord)
-        if (typedNormalized != null && typedNormalized != "i" && dictionary.contains(typedNormalized)) {
-            return null
+        // For DICTIONARY_GATED contractions ("ill", "id", "im", "well", "hell", "shell",
+        // "wed", "shed", "lets", "wont", "cant", "its", ...) only commit when the typed
+        // word is NOT itself a valid dictionary word — otherwise the user genuinely meant
+        // the standalone form. SAFE-tier contractions ("dont", "youre", "weve", ...) have
+        // no real-word collision and always auto-commit.
+        if (correction.tier == ImmediateAutocorrectCorrection.Tier.DICTIONARY_GATED) {
+            val typedNormalized = normalizeWord(rawWord)
+            if (typedNormalized != null && dictionary.contains(typedNormalized)) {
+                return null
+            }
         }
         return LatinSuggestion(
             text = correction.text,
