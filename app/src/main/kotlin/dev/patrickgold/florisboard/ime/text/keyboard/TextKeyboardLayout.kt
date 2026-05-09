@@ -132,7 +132,21 @@ fun TextKeyboardLayout(
     }
     val glideEnabled = glideEnabledInternal && glideLanguageEnabled && evaluator.editorInfo.isRichInputEditor &&
         evaluator.state.keyVariation != KeyVariation.PASSWORD
-    val glideShowTrail by prefs.glide.showTrail.collectAsState()
+    val glideShowTrailPref by prefs.glide.showTrail.collectAsState()
+    // ROADMAP §6 N8.4 — Respect Android's reduced-motion (Developer Options →
+    // Animator duration scale = 0). Read once on enter; cheap (single ContentProvider
+    // query) and stays correct because configuration changes recompose this layout.
+    val animatorDurationScale = remember(configuration) {
+        runCatching {
+            android.provider.Settings.Global.getFloat(
+                context.contentResolver,
+                android.provider.Settings.Global.ANIMATOR_DURATION_SCALE,
+                1f,
+            )
+        }.getOrDefault(1f)
+    }
+    val reducedMotion = animatorDurationScale == 0f
+    val glideShowTrail = glideShowTrailPref && !reducedMotion
     val glideTrailStyle = rememberSnyggThemeQuery(FlorisImeUi.GlideTrail.elementName)
     val glideTrailColor = glideTrailStyle.foreground(default = Color.Green)
 
