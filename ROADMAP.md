@@ -189,7 +189,7 @@ Emoji 17.0 lands on Android in March 2026 (7 new glyphs: Distorted Face, Fight C
 
 - **N10.1** Bundle Noto Color Emoji 17.0 fonts ahead of upstream Android propagation.
 - **N10.2** Verify Unicode 16 glyphs (Face with Bags Under Eyes, Fingerprint, Splatter) render via the lazy EmojiCompat loader landed in `6fd6e3b`.
-- **N10.3** Use `deleteSurroundingTextInCodePoints()` (API 24+) instead of `deleteSurroundingText()` so backspace doesn't split surrogate pairs in Unicode 16/17 emoji or Indic conjuncts [STD-API-DELETE-CODEPOINTS].
+- ✅ **N10.3** shipped 2026-05-09 (v1.7.0). `AbstractEditorInstance.deleteText` (BEFORE_CURSOR + AFTER_CURSOR branches) now converts the ICU-grapheme-aligned char `length` to a code-point count via `String.codePointCount(start, end)` and calls `InputConnection.deleteSurroundingTextInCodePoints` (API 24+, always available since `minSdk = 26`). Backspace is now surrogate-pair safe even if the editor has drifted from our expected text. Applies to character + word units, EN-locale and ICU-driven multilingual paths alike.
 
 ### N11. Resolve the runtime `TODO()` stubs (correctness floor) ✅ shipped 2026-05-09 (v1.7.0)
 
