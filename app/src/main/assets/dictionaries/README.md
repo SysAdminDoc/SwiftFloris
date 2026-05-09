@@ -5,3 +5,66 @@ frequency data. It is generated from `../ime/dict/data.json` by preserving ASCII
 
 The default Latin NLP provider reads `../ime/dict/data.json` directly so it can use word frequencies for completions,
 corrections, and autocorrect ranking.
+
+## Provenance
+
+The English dictionary is a merge of two sources:
+
+1. **Curated high-frequency corpus (~50k words, freq band 128–255).** The original frequency-ranked subset shipped
+   with SwiftFloris, derived from the FlorisBoard project's bundled dictionary. Real-world frequency data informs the
+   ranking — common words like `the`, `of`, `and` sit at 254–255.
+
+2. **SCOWL long-tail expansion (~67k additional words, freq band 80–127).** Sourced from Kevin Atkinson's
+   [Spell-Checker Oriented Word Lists v2020.12.07](http://wordlist.aspell.net/), specifically the
+   `english-words.{10,20,35,40,50,60}` + `american-words.{10,20,35,40,50,60}` + selected proper-name lists.
+   These words are included for spell-check membership (so legitimate uncommon words don't get red-squiggled or
+   silently auto-corrected), but ranked below the curated corpus so autocorrect still prefers high-frequency forms.
+
+Total: ~117k words.
+
+Profanity is filtered using the
+[LDNOOBW English bad-words list](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)
+(CC-BY 4.0).
+
+## Licenses
+
+- **SCOWL** — see `../../../../LICENSES/SCOWL-Copyright.txt`. BSD-style permissive notice; Apache-2.0 compatible.
+- **LDNOOBW** — CC-BY 4.0; attribution preserved in the project NOTICE file (Apache-2.0 § 4(d)).
+
+## Regenerating the dictionary
+
+```sh
+# 1. Download SCOWL
+cd /tmp && curl -L -o scowl.tar.gz \
+    https://sourceforge.net/projects/wordlist/files/SCOWL/2020.12.07/scowl-2020.12.07.tar.gz/download
+tar xzf scowl.tar.gz
+
+# 2. Combine wordlists
+cd scowl-2020.12.07/final
+cat english-words.{10,20,35,40,50,60} american-words.{10,20,35,40,50,60} \
+    english-proper-names.{50,60} american-proper-names.{50} 2>/dev/null \
+  | iconv -f ISO-8859-1 -t UTF-8 | tr -d '\r' > /tmp/scowl_combined.txt
+
+# 3. Filter profanity (LDNOOBW)
+curl -sL -o /tmp/profanity_en.txt \
+    https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en
+grep -vxFf /tmp/profanity_en.txt /tmp/scowl_combined.txt > /tmp/scowl_clean.txt
+
+# 4. Merge into existing data.json (preserves curated frequencies, adds long tail)
+cd <repo_root>
+python3 utils/expand_dictionary.py \
+    --existing app/src/main/assets/ime/dict/data.json \
+    --scowl /tmp/scowl_clean.txt \
+    --output app/src/main/assets/ime/dict/data.json
+
+# 5. Regenerate en.txt from updated data.json
+python3 -c "
+import json
+with open('app/src/main/assets/ime/dict/data.json', 'r', encoding='utf-8') as fh:
+    d = json.load(fh)
+sorted_words = sorted(d.items(), key=lambda kv: (-kv[1], kv[0]))
+with open('app/src/main/assets/dictionaries/en.txt', 'w', encoding='utf-8') as fh:
+    for word, _ in sorted_words:
+        fh.write(word + '\n')
+"
+```

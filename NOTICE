@@ -1,0 +1,30 @@
+SwiftFloris
+Copyright 2026 SwiftFloris Contributors
+
+This product is derived from FlorisBoard
+Copyright 2021-2025 The FlorisBoard Contributors
+Licensed under the Apache License, Version 2.0
+
+================================================================================
+Bundled English dictionary attribution
+================================================================================
+
+The bundled English word frequency dictionary
+(`app/src/main/assets/ime/dict/data.json`) merges:
+
+1. A curated high-frequency corpus inherited from the FlorisBoard project,
+   licensed under the Apache License, Version 2.0.
+
+2. The Spell Checker Oriented Word Lists (SCOWL), version 2020.12.07, by
+   Kevin Atkinson. SCOWL is distributed under a BSD-style permissive license
+   compatible with Apache-2.0. Full license text:
+   `LICENSES/SCOWL-Copyright.txt`. Project home: http://wordlist.aspell.net/
+
+================================================================================
+Bundled profanity filter attribution
+================================================================================
+
+The profanity exclusion list applied during dictionary generation is the
+LDNOOBW List of Dirty, Naughty, Obscene, and Otherwise Bad Words (English),
+licensed under CC-BY 4.0. Original curation by Shutterstock.
+Source: https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words
