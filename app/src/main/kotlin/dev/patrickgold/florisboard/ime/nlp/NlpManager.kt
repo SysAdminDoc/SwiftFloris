@@ -351,7 +351,7 @@ class NlpManager(context: Context) {
         if (!prefs.suggestion.enabled.get()) {
             return null
         }
-        val candidate = ImmediateAutocorrect.englishFirstPersonPronounCandidate(
+        val candidate = ImmediateAutocorrect.englishContractionCandidate(
             rawWord = currentWord,
             languageCode = subtypeManager.activeSubtype.primaryLocale.language,
         ) ?: return null

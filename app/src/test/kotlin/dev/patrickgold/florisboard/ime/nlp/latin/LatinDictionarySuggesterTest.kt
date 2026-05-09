@@ -26,6 +26,11 @@ class LatinDictionarySuggesterTest : FunSpec({
         "i'll" to 244,
         "i'm" to 253,
         "i've" to 248,
+        "don't" to 252,
+        "you're" to 250,
+        "they're" to 240,
+        "we've" to 235,
+        "won't" to 240,
         "the" to 255,
         "there" to 220,
         "their" to 215,
@@ -77,6 +82,25 @@ class LatinDictionarySuggesterTest : FunSpec({
         }
     }
 
+    test("suggest auto-commits safe-tier non-pronoun contractions") {
+        // SAFE-tier contractions are auto-committed by the dict-aware path whenever the
+        // canonical contracted form exists in the dictionary. Case is preserved.
+        mapOf(
+            "dont" to "don't",
+            "Dont" to "Don't",
+            "youre" to "you're",
+            "Youre" to "You're",
+            "theyre" to "they're",
+            "weve" to "we've",
+            "wont" to "won't",
+        ).forEach { (typed, expected) ->
+            val suggestions = LatinDictionarySuggester.suggest(typed, dictionary, maxCandidateCount = 4)
+
+            suggestions.first().text shouldBe expected
+            suggestions.first().isEligibleForAutoCommit shouldBe true
+        }
+    }
+
     test("suggest does not apply English pronoun casing to other Latin languages") {
         LatinDictionarySuggester.suggest(
             rawWord = "i",
@@ -87,9 +111,11 @@ class LatinDictionarySuggesterTest : FunSpec({
     }
 
     test("suggest returns frequency-ranked prefix completions") {
+        // "they're" lives in the dictionary at frequency 240 and is a valid prefix
+        // completion of "th"; it correctly ranks above "there" (220) and "their" (215).
         val suggestions = LatinDictionarySuggester.suggest("th", dictionary, maxCandidateCount = 3)
 
-        suggestions.map { it.text } shouldBe listOf("the", "there", "their")
+        suggestions.map { it.text } shouldBe listOf("the", "they're", "there")
         suggestions.any { it.isEligibleForAutoCommit } shouldBe false
     }
 
