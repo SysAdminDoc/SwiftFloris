@@ -55,6 +55,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.toSize
 import dev.patrickgold.florisboard.FlorisImeService
@@ -362,13 +366,24 @@ private fun TextKeyButton(
     val size = remember(key, desiredKey) {
         key.visibleBounds.size.toDpSize()
     }
+    // ROADMAP §6 N8.3 — TalkBack content description per key. Uses the visible
+    // label when present (covers letters, numbers, punctuation) and falls back to
+    // a stable code-derived label for special keys (Shift, Backspace, Enter, Space,
+    // arrow keys, etc.) so screen-reader users hear the key's purpose, not "button".
+    val keyDescription = remember(key.computedData.code, key.label) {
+        keyContentDescription(key.computedData.code, key.label)
+    }
     SnyggBox(
         FlorisImeUi.Key.elementName,
         attributes = attributes,
         selector = selector,
         modifier = Modifier
             .requiredSize(size)
-            .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() },
+            .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() }
+            .semantics {
+                contentDescription = keyDescription
+                role = Role.Button
+            },
     ) {
         val isTelPadKey = key.computedData.type == KeyType.NUMERIC && evaluator.keyboard.mode == KeyboardMode.PHONE
         key.label?.let { label ->
@@ -415,6 +430,62 @@ private fun TextKeyButton(
                 .absoluteOffset { key.touchBounds.topLeft.toIntOffset() }
                 .border(Dp.Hairline, Color.Red),
         )
+    }
+}
+
+/**
+ * ROADMAP §6 N8.3 — TalkBack content description for a single keyboard key.
+ *
+ * Strategy:
+ *  - For printable keys ([label] is non-blank and not a Snygg layout artifact),
+ *    use the label directly (a, b, ?, …) — this is what TalkBack already says
+ *    for letter keys via the underlying SnyggText, but providing it on the
+ *    button container ensures the press target itself announces correctly.
+ *  - For control / system keys, return a short stable English fallback. A
+ *    follow-up pass will move these to string resources for i18n; for now an
+ *    English string is strictly better than the platform default ("button"
+ *    with no further context, which Gboard / SwiftKey users have complained
+ *    about at length on the FlorisBoard tracker).
+ */
+internal fun keyContentDescription(code: Int, label: String?): String {
+    if (!label.isNullOrBlank() && label.length <= 4 && label.all { !it.isISOControl() }) {
+        return label
+    }
+    return when (code) {
+        KeyCode.SHIFT -> "Shift"
+        KeyCode.DELETE -> "Backspace"
+        KeyCode.DELETE_WORD -> "Delete word"
+        KeyCode.FORWARD_DELETE -> "Forward delete"
+        KeyCode.FORWARD_DELETE_WORD -> "Forward delete word"
+        KeyCode.ENTER -> "Enter"
+        KeyCode.SPACE -> "Space"
+        KeyCode.TAB -> "Tab"
+        KeyCode.ESCAPE -> "Escape"
+        KeyCode.ARROW_LEFT -> "Arrow left"
+        KeyCode.ARROW_RIGHT -> "Arrow right"
+        KeyCode.ARROW_UP -> "Arrow up"
+        KeyCode.ARROW_DOWN -> "Arrow down"
+        KeyCode.MOVE_START_OF_LINE -> "Move to start of line"
+        KeyCode.MOVE_END_OF_LINE -> "Move to end of line"
+        KeyCode.MOVE_START_OF_PAGE -> "Move to start of page"
+        KeyCode.MOVE_END_OF_PAGE -> "Move to end of page"
+        KeyCode.LANGUAGE_SWITCH -> "Switch language"
+        KeyCode.IME_NEXT_SUBTYPE -> "Next language"
+        KeyCode.IME_PREV_SUBTYPE -> "Previous language"
+        KeyCode.SYSTEM_INPUT_METHOD_PICKER -> "Choose input method"
+        KeyCode.IME_HIDE_UI -> "Hide keyboard"
+        KeyCode.IME_UI_MODE_TEXT -> "Text mode"
+        KeyCode.IME_UI_MODE_MEDIA -> "Emoji and media"
+        KeyCode.IME_UI_MODE_CLIPBOARD -> "Clipboard"
+        KeyCode.UNDO -> "Undo"
+        KeyCode.REDO -> "Redo"
+        KeyCode.VIEW_CHARACTERS -> "Letters"
+        KeyCode.VIEW_SYMBOLS -> "Symbols"
+        KeyCode.VIEW_SYMBOLS2 -> "More symbols"
+        KeyCode.VIEW_NUMERIC -> "Numbers"
+        KeyCode.VIEW_NUMERIC_ADVANCED -> "Numeric"
+        KeyCode.SETTINGS -> "Settings"
+        else -> label?.takeIf { it.isNotBlank() } ?: "Key"
     }
 }
 
