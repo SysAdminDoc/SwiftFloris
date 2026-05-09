@@ -460,7 +460,12 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         phantomSpace.setInactive()
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
-            clipboardManager.addNewPlaintext(text.toString())
+            // ROADMAP §6 N7.2 — Never write password-field text into the keyboard
+            // clipboard history. The system clipboard still receives it (the host app
+            // initiated the cut), but our IME-local history must not retain it.
+            if (!isPasswordField()) {
+                clipboardManager.addNewPlaintext(text.toString())
+            }
         } else {
             appContext.showShortToastSync("Failed to retrieve selected text requested to cut: Eiter selection state is invalid or an error occurred within the input connection.")
         }
@@ -478,12 +483,19 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         phantomSpace.setInactive()
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
-            clipboardManager.addNewPlaintext(text.toString())
+            // ROADMAP §6 N7.2 — same gating as performClipboardCut.
+            if (!isPasswordField()) {
+                clipboardManager.addNewPlaintext(text.toString())
+            }
         } else {
             appContext.showShortToastSync("Failed to retrieve selected text requested to copy: Eiter selection state is invalid or an error occurred within the input connection.")
         }
         val activeSelection = activeContent.selection
         return setSelection(activeSelection.end, activeSelection.end)
+    }
+
+    private fun isPasswordField(): Boolean {
+        return keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD
     }
 
     /**

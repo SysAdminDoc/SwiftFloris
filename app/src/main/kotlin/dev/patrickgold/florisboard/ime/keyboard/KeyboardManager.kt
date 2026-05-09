@@ -41,6 +41,7 @@ import dev.patrickgold.florisboard.ime.editor.ImeOptions
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
 import dev.patrickgold.florisboard.ime.editor.OperationUnit
 import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
 import dev.patrickgold.florisboard.ime.input.InputShiftState
@@ -348,9 +349,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * typed words bubble up in suggestions over time. Skipped in incognito mode and
      * when the user has disabled the personal dictionary. Off-thread inside
      * DictionaryManager.
+     *
+     * ROADMAP §6 N7.2 — Also skipped on password / visible-password / web-password
+     * fields *even when the host app forgets to set IME_FLAG_NO_PERSONALIZED_LEARNING*
+     * (a depressingly common bug — see HeliBoard #2124, AnySoftKeyboard #1399).
+     * Trusting only the incognito flag would bleed credentials into the user's
+     * suggestions; the keyVariation check is the belt to incognito's suspenders.
      */
     private fun learnIfAllowed(rawWord: String) {
         if (activeState.isIncognitoMode) return
+        if (activeState.keyVariation == KeyVariation.PASSWORD) return
         if (rawWord.isBlank()) return
         DictionaryManager.default().learnWord(rawWord, subtypeManager.activeSubtype.primaryLocale)
     }
