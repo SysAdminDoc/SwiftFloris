@@ -49,6 +49,12 @@ internal object ImmediateAutocorrect {
         languageCode: String,
     ): WordSuggestionCandidate? {
         val correction = englishFirstPersonPronoun(rawWord, languageCode) ?: return null
+        // Only the standalone "i" → "I" substitution is safe to auto-commit without dictionary
+        // context, because there is no English word "i". Multi-letter forms ("im", "ill", "id",
+        // "ive") collide with real words; the LatinLanguageProvider path adds those as suggestions
+        // with a dictionary check before allowing auto-commit.
+        val typedNormalized = rawWord.trim().trim { c -> !c.isLetter() && c != '\'' }.lowercase()
+        if (typedNormalized != "i") return null
         return WordSuggestionCandidate(
             text = correction.text,
             confidence = 1.0,
