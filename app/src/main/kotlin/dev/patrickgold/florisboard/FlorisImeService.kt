@@ -421,6 +421,33 @@ class FlorisImeService : LifecycleInputMethodService() {
             activeState.isSelectionMode = editorInfo.initialSelection.isSelectionMode
             editorInstance.handleStartInputView(editorInfo, isRestart = restarting)
         }
+        applyFlagSecureForCurrentField(editorInfo)
+    }
+
+    /**
+     * ROADMAP §6 N7.2 — set [WindowManager.LayoutParams.FLAG_SECURE] on the IME window
+     * whenever the active editor is a password / visible-password / web-password field.
+     * Prevents screenshots, screen recordings, and external display mirroring from
+     * capturing the long-press preview popup or the suggestion strip.
+     *
+     * The flag is cleared when the user moves to a non-password field, so the user can
+     * still screenshot the keyboard for support / bug-report purposes outside of
+     * credential-entry contexts.
+     */
+    private fun applyFlagSecureForCurrentField(editorInfo: FlorisEditorInfo) {
+        val w = window?.window ?: return
+        val isPasswordField = when (editorInfo.inputAttributes.variation) {
+            dev.patrickgold.florisboard.ime.editor.InputAttributes.Variation.PASSWORD,
+            dev.patrickgold.florisboard.ime.editor.InputAttributes.Variation.VISIBLE_PASSWORD,
+            dev.patrickgold.florisboard.ime.editor.InputAttributes.Variation.WEB_PASSWORD,
+            -> true
+            else -> false
+        }
+        if (isPasswordField) {
+            w.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        } else {
+            w.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
+        }
     }
 
     override fun onEvaluateInputViewShown(): Boolean {
