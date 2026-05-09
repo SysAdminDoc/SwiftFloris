@@ -28,14 +28,22 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Policy
+import androidx.compose.material.icons.outlined.VerifiedUser
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -92,6 +100,35 @@ fun AboutScreen() = FlorisScreen {
                         context.stringRes(R.string.about__version_copied__error, "error_message" to e.message),
                         Toast.LENGTH_SHORT,
                     ).show()
+                }
+            },
+        )
+
+        // ROADMAP §6 N7.5 — APK signing fingerprint pin. Users can compare this
+        // SHA-256 against the value published in the README to detect supply-chain
+        // tampering (a third party rebuilds + signs a modified APK with a different
+        // key). Computed off the main thread because PackageManager I/O can block.
+        var signingFingerprint by remember { mutableStateOf<String?>(null) }
+        var signingFingerprintReady by remember { mutableStateOf(false) }
+        LaunchedEffect(Unit) {
+            signingFingerprint = withContext(Dispatchers.IO) { SigningFingerprint.sha256(context) }
+            signingFingerprintReady = true
+        }
+        Preference(
+            icon = Icons.Outlined.VerifiedUser,
+            title = stringRes(R.string.about__signing_fingerprint__title),
+            summary = when {
+                !signingFingerprintReady -> stringRes(R.string.about__signing_fingerprint__summary_loading)
+                signingFingerprint != null -> signingFingerprint!!
+                else -> stringRes(R.string.about__signing_fingerprint__summary_unavailable)
+            },
+            onClick = {
+                val fp = signingFingerprint ?: return@Preference
+                try {
+                    clipboardManager.addNewPlaintext(fp)
+                    Toast.makeText(context, R.string.about__signing_fingerprint__copied, Toast.LENGTH_SHORT).show()
+                } catch (_: Throwable) {
+                    // Silent — clipboard write is the only side effect, no recovery needed.
                 }
             },
         )
