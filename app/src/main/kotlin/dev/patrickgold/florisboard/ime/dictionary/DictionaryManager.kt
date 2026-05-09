@@ -83,6 +83,41 @@ class DictionaryManager private constructor(context: Context) {
         }
     }
 
+    /**
+     * ROADMAP §6 N5.4 — Exact personal-dictionary shortcut match for SwiftKey-style
+     * auto-replacement on space/punctuation. Returns the expansion word *only when*
+     * [word] (case-insensitive, trimmed) is a complete shortcut entry — never a prefix.
+     *
+     * Returns null when:
+     * - No personal dictionary is enabled
+     * - The query doesn't exactly match any shortcut (case-insensitive)
+     * - The shortcut and its expansion are identical (no replacement needed)
+     */
+    fun queryUserDictionaryShortcutExact(word: String, locale: FlorisLocale): String? {
+        val query = word.trim()
+        if (query.isBlank()) return null
+
+        val florisDao = florisUserDictionaryDao()
+        val systemDao = systemUserDictionaryDao()
+        if (florisDao == null && systemDao == null) return null
+
+        val matches = buildList {
+            if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
+                addAll(florisDao.queryShortcut(query, locale))
+            }
+            if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
+                addAll(systemDao.queryShortcut(query, locale))
+            }
+        }
+
+        return matches.asSequence()
+            .filter { it.shortcut.equals(query, ignoreCase = true) }
+            .filter { it.word.isNotBlank() && !it.word.equals(query, ignoreCase = true) }
+            .sortedByDescending { it.freq }
+            .firstOrNull()
+            ?.word
+    }
+
     fun queryUserDictionary(word: String, locale: FlorisLocale): List<SuggestionCandidate> {
         val query = word.trim()
         if (query.isBlank()) {
