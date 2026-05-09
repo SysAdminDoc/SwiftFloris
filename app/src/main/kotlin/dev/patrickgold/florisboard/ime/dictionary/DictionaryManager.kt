@@ -22,6 +22,10 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.FlorisLocale
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import java.lang.ref.WeakReference
 
 private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
@@ -29,6 +33,19 @@ private const val SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY = 1
 private const val SHORTCUT_MATCH_PRIORITY = 0
 private const val PREFIX_MATCH_PRIORITY = 1
 private const val CONTAINS_MATCH_PRIORITY = 2
+
+/** Frequency starting point assigned to a freshly-learned word. */
+private const val LEARN_INITIAL_FREQUENCY = 80
+/** Frequency increment applied each time an existing learned word is reinforced. */
+private const val LEARN_INCREMENT = 6
+/** Cap learned-word frequency below the canonical-corpus top-tier (255) so curated
+ *  high-frequency words still rank first when both are equally prefix-matched. */
+private const val LEARN_MAX_FREQUENCY = 250
+/** Minimum word length for auto-learning. Single chars and digrams are noise. */
+private const val LEARN_MIN_LENGTH = 3
+/** Maximum word length for auto-learning. Anything longer is almost certainly a URL,
+ *  email, or pasted token and shouldn't be added to the personal dictionary. */
+private const val LEARN_MAX_LENGTH = 32
 
 /**
  * Coordinates SwiftFloris' internal user dictionary and the platform user dictionary.
@@ -40,6 +57,7 @@ private const val CONTAINS_MATCH_PRIORITY = 2
 class DictionaryManager private constructor(context: Context) {
     private val applicationContext: WeakReference<Context> = WeakReference(context.applicationContext ?: context)
     private val prefs by FlorisPreferenceStore
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var florisUserDictionaryDatabase: FlorisUserDictionaryDatabase? = null
     private var systemUserDictionaryDatabase: SystemUserDictionaryDatabase? = null
@@ -92,6 +110,49 @@ class DictionaryManager private constructor(context: Context) {
                 confidence = (entry.freq.coerceIn(0, 255) / 255.0).coerceIn(0.0, 1.0),
                 isEligibleForUserRemoval = false,
             )
+        }
+    }
+
+    /**
+     * Auto-learn a word that the user just committed (via space, punctuation, or
+     * accepted suggestion). Increments the frequency of an existing entry, or inserts
+     * a new entry at [LEARN_INITIAL_FREQUENCY]. Off-thread; safe to call from input
+     * event handlers. No-op when the user has disabled the personal dictionary or is
+     * in incognito mode (caller is responsible for the incognito gate).
+     */
+    fun learnWord(rawWord: String, locale: FlorisLocale) {
+        if (!prefs.dictionary.enableFlorisUserDictionary.get()) return
+        val cleaned = rawWord.trim()
+            .trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
+        if (cleaned.length < LEARN_MIN_LENGTH || cleaned.length > LEARN_MAX_LENGTH) return
+        // Reject anything that doesn't look like a real word: must contain at least
+        // one letter, no digits, no internal punctuation other than ' or -.
+        if (cleaned.any { it.isDigit() }) return
+        if (cleaned.none { it.isLetter() }) return
+        if (cleaned.any { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }) return
+        val normalized = cleaned.lowercase()
+
+        ioScope.launch {
+            val dao = florisUserDictionaryDao() ?: return@launch
+            val existingMatches = dao.queryExactFuzzyLocale(normalized, locale)
+                .filter { it.word.equals(normalized, ignoreCase = true) }
+            if (existingMatches.isNotEmpty()) {
+                val entry = existingMatches.first()
+                val newFreq = (entry.freq + LEARN_INCREMENT).coerceAtMost(LEARN_MAX_FREQUENCY)
+                if (newFreq != entry.freq) {
+                    dao.update(entry.copy(freq = newFreq))
+                }
+            } else {
+                dao.insert(
+                    UserDictionaryEntry(
+                        id = 0,
+                        word = normalized,
+                        freq = LEARN_INITIAL_FREQUENCY,
+                        locale = locale.toString(),
+                        shortcut = null,
+                    ),
+                )
+            }
         }
     }
 

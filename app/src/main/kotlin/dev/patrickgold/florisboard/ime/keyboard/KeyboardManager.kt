@@ -34,6 +34,7 @@ import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.core.SubtypePreset
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.ImeOptions
@@ -322,10 +323,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         scope.launch {
             candidate.sourceProvider?.notifySuggestionAccepted(subtypeManager.activeSubtype, candidate)
         }
-        return when (candidate) {
+        val committed = when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
             else -> editorInstance.commitCompletion(candidate)
         }
+        if (committed && candidate !is ClipboardSuggestionCandidate) {
+            // The user explicitly chose this candidate (or auto-commit chose it on their
+            // behalf). Reinforce its weight in the personal dictionary so it ranks higher
+            // next time. Skipped in incognito.
+            learnIfAllowed(candidate.text.toString())
+        }
+        return committed
     }
 
     private fun commitAutoCommitCandidate(candidate: SuggestionCandidate) {
@@ -335,8 +343,22 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
+    /**
+     * Auto-learn a freshly-committed word into the personal dictionary so frequently
+     * typed words bubble up in suggestions over time. Skipped in incognito mode and
+     * when the user has disabled the personal dictionary. Off-thread inside
+     * DictionaryManager.
+     */
+    private fun learnIfAllowed(rawWord: String) {
+        if (activeState.isIncognitoMode) return
+        if (rawWord.isBlank()) return
+        DictionaryManager.default().learnWord(rawWord, subtypeManager.activeSubtype.primaryLocale)
+    }
+
     fun commitGesture(word: String) {
-        editorInstance.commitGesture(fixCase(word))
+        val cased = fixCase(word)
+        editorInstance.commitGesture(cased)
+        learnIfAllowed(cased)
     }
 
     /**
@@ -594,8 +616,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * enabled by the user.
      */
     private fun handleSpace(data: KeyData) {
+        // Snapshot the word the user actually typed *before* any auto-correct candidate
+        // overwrites it; we want to learn what the user committed, which is either the
+        // chosen candidate text (if autocorrect fired) or the literal typed word.
+        val typedWordBeforeCommit = editorInstance.activeContent.currentWordText.toString()
         val candidate = nlpManager.getAutoCommitCandidate()
         candidate?.let { commitAutoCommitCandidate(it) }
+        val learnedText = candidate?.text?.toString() ?: typedWordBeforeCommit
+        if (learnedText.isNotBlank()) {
+            learnIfAllowed(learnedText)
+        }
         if (prefs.keyboard.spaceBarSwitchesToCharacters.get()) {
             when (activeState.keyboardMode) {
                 KeyboardMode.NUMERIC_ADVANCED,

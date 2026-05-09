@@ -1,9 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="key_width">33dp</dimen>
-    <dimen name="key_height">42dp</dimen>
+    <!-- SwiftKey-aligned key dimensions. SwiftKey ships ~56dp tall keys (vs AOSP ~48dp,
+         vintage Floris 42dp). The bigger touch target is the single most impactful
+         "premium feel" lever per the design research. Width is wider per-key floor too. -->
+    <dimen name="key_width">36dp</dimen>
+    <dimen name="key_height">56dp</dimen>
 
-    <dimen name="suggestions_chip_corner_radius">32dp</dimen>
+    <!-- SwiftKey suggestion strip is unchipped — text on the strip with vertical
+         dividers. Drop the chip pill (was 32dp) to a flat 6dp. -->
+    <dimen name="suggestions_chip_corner_radius">6dp</dimen>
 
     <dimen name="suggestion_chip_bg_padding_start">13dp</dimen>
     <dimen name="suggestion_chip_bg_padding_top">0dp</dimen>
