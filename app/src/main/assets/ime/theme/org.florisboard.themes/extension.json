@@ -34,6 +34,12 @@
       "isNight": false
     },
     {
+      "id": "swiftkey_pure_light",
+      "label": "SwiftKey Pure (Light)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": false
+    },
+    {
       "id": "floris_night",
       "label": "Floris Night",
       "authors": [ "patrickgold" ],
@@ -54,6 +60,12 @@
     {
       "id": "swift_slate_borderless",
       "label": "Swift Slate (Borderless)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": true
+    },
+    {
+      "id": "swiftkey_pure_dark",
+      "label": "SwiftKey Pure (Dark)",
       "authors": [ "SwiftFloris" ],
       "isNight": true
     },
