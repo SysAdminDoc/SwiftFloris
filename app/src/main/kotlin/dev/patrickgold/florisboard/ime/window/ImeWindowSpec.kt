@@ -289,6 +289,10 @@ sealed class ImeWindowSpec {
         val keySpacingFactorH: Float,
         val keySpacingFactorV: Float,
         val fontScale: Float,
+        // ROADMAP §6 N5.3 — applied in ImeWindowController.doComputeWindowSpec.
+        // Default 1f preserves form-factor defaults; user-controlled slider
+        // typically maps 0.5..1.5.
+        val keyboardHeightScale: Float = 1f,
     )
 
     companion object {

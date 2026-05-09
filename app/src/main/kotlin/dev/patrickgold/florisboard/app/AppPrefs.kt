@@ -583,6 +583,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "keyboard__font_size_multiplier_landscape",
             default = 100,
         )
+        // ROADMAP §6 N5.3 — Scalable keyboard height (HeliBoard #1342, ASK #1775).
+        // Percentages applied to the form-factor-derived defKeyboardHeight, then
+        // re-constrained to [minKeyboardHeight, maxKeyboardHeight] in
+        // ImeWindowController.doComputeWindowSpec.
+        val keyboardHeightMultiplierPortrait = int(
+            key = "keyboard__keyboard_height_multiplier_portrait",
+            default = 100,
+        )
+        val keyboardHeightMultiplierLandscape = int(
+            key = "keyboard__keyboard_height_multiplier_landscape",
+            default = 100,
+        )
         val landscapeInputUiMode = enum(
             key = "keyboard__landscape_input_ui_mode",
             default = LandscapeInputUiMode.DYNAMICALLY_SHOW,
