@@ -141,7 +141,7 @@ ASK #1832 / HeliBoard #695 / FlorisBoard #196 — the most-requested customizati
 
 ### N5. Word-edit ergonomics (long-asked-for, mostly small fixes)
 
-- **N5.1** Hold-backspace = delete word; horizontal-swipe-on-backspace = delete word [COMM-C, COMM-G PAIN-13]. Wire into `KeyboardManager.handleBackspace`.
+- ✅ **N5.1** shipped 2026-05-09 (v1.7.0). Wiring was already present (`KeyboardManager.handleSwipe → SwipeAction.DELETE_WORD → TextKeyData.DELETE_WORD → handleBackwardDelete(OperationUnit.WORDS)`). Flipped the prefs defaults in `AppPrefs.Gestures`: `deleteKeySwipeLeft` `DELETE_CHARACTERS_PRECISELY → DELETE_WORD`, `deleteKeyLongPress` `DELETE_CHARACTER → DELETE_WORD`. SwiftKey/Gboard parity. Existing user overrides preserved (jetpref only falls back to default when no value is set).
 - **N5.2** Cursor mode: hold space → drag for cursor (already partially exists; smooth out, document, expose toggle) [PAIN-7, FR-12].
 - **N5.3** Scalable key height + font slider (HeliBoard #1342, ASK #1775) [FR-21]. Re-use the dimens.xml token plumbing landed in v1.6.0.
 - **N5.4** Auto-replace shortcuts in personal dictionary (the Room schema already has a `shortcut` column; just expose a settings UI to add `omw → on my way`) [COMM-K, FR-20].

@@ -333,13 +333,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "gestures__space_bar_long_press",
             default = SwipeAction.SHOW_INPUT_METHOD_PICKER,
         )
+        // ROADMAP §6 N5.1 — match SwiftKey/Gboard convention: hold-backspace and
+        // horizontal-swipe-on-backspace both delete by word. Existing users who set
+        // a custom value via the gesture settings keep their override; only the
+        // default fallback shifts.
         val deleteKeySwipeLeft = enum(
             key = "gestures__delete_key_swipe_left",
-            default = SwipeAction.DELETE_CHARACTERS_PRECISELY,
+            default = SwipeAction.DELETE_WORD,
         )
         val deleteKeyLongPress = enum(
             key = "gestures__delete_key_long_press",
-            default = SwipeAction.DELETE_CHARACTER,
+            default = SwipeAction.DELETE_WORD,
         )
         val swipeDistanceThreshold = int(
             key = "gestures__swipe_distance_threshold",
