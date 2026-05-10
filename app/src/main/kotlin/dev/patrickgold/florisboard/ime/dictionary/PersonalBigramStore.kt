@@ -200,6 +200,31 @@ class PersonalBigramStore private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Forgets every bigram in [locale] that has [rawWord] as its `next` value, so the
+     * given word never resurfaces in next-word predictions for that locale. Triggers a
+     * flush.
+     */
+    fun forget(rawWord: String, locale: FlorisLocale) {
+        val target = normalize(rawWord)
+        if (target.isEmpty()) return
+        val tag = locale.languageTag()
+        ioScope.launch {
+            val table = ensureLoaded(tag)
+            synchronized(table) {
+                val emptiedKeys = ArrayList<String>()
+                for ((prev, nextMap) in table) {
+                    if (nextMap.remove(target) != null && nextMap.isEmpty()) {
+                        emptiedKeys.add(prev)
+                    }
+                }
+                for (k in emptiedKeys) table.remove(k)
+                pendingCommits = FLUSH_EVERY_N_COMMITS
+            }
+            flush(tag)
+        }
+    }
+
     /** Clears all bigram data on disk and in memory. Used by the "Reset learned data" action. */
     fun reset() {
         ioScope.launch {

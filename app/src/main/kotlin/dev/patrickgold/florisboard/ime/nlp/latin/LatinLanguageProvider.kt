@@ -250,6 +250,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 text = applySentenceCase(word, before),
                 confidence = confidence,
                 isEligibleForAutoCommit = false,
+                isEligibleForUserRemoval = true,
                 sourceProvider = this@LatinLanguageProvider,
             )
         }
@@ -302,7 +303,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
 
     override suspend fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
         flogDebug { candidate.toString() }
-        return false
+        if (!candidate.isEligibleForUserRemoval) return false
+        val word = candidate.text.toString()
+        if (word.isBlank()) return false
+        val locale = subtype.primaryLocale
+        // Forget the word from every learned source on this device. Each forget call is
+        // idempotent — if the word never lived in that store, nothing happens.
+        val removedFromUserDict = withContext(Dispatchers.IO) {
+            dev.patrickgold.florisboard.ime.dictionary.DictionaryManager.default()
+                .forgetWord(word, locale)
+        }
+        dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore.get(appContext).forget(word, locale)
+        dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore.get(appContext).forget(word, locale)
+        return removedFromUserDict || true
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
