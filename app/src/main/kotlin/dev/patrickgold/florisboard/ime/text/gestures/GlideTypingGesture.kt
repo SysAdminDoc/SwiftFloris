@@ -132,6 +132,30 @@ class GlideTypingGesture {
             return false
         }
 
+        /**
+         * Splits the active gesture at the current point: fires `onGlideWordBoundary` to
+         * every listener with the points gathered so far, then resets the position list
+         * (keeping the pointer id and timing) so that subsequent ACTION_MOVE events feed
+         * a fresh gesture for the next word. Used by Flow Through Space when the trace
+         * crosses into the space bar mid-word without lifting.
+         */
+        fun signalWordBoundary() {
+            if (pointerId == -1 || pointerData.isActuallyGesture != true) return
+            if (pointerData.positions.size < 3) return
+            val snapshot = PointerData(
+                positions = pointerData.positions.toMutableList(),
+                startTime = pointerData.startTime,
+                isActuallyGesture = true,
+            )
+            listeners.forEach { listener -> listener.onGlideWordBoundary(snapshot) }
+            // Keep the pointer alive but start a fresh trace from here.
+            val lastPoint = pointerData.positions.lastOrNull()
+            pointerData.positions.clear()
+            if (lastPoint != null) pointerData.positions.add(lastPoint)
+            pointerData.startTime = System.currentTimeMillis()
+            pointerData.isActuallyGesture = null
+        }
+
         fun registerListener(listener: Listener) {
             listeners.add(listener)
         }
@@ -178,5 +202,12 @@ class GlideTypingGesture {
          * Called to cancel a gesture.
          */
         fun onGlideCancelled() {}
+
+        /**
+         * Called when the user crossed the space bar mid-gesture (Flow Through Space).
+         * Listeners should treat this as if the user had lifted their finger to commit
+         * the current word — the same finger then continues into the next word's trace.
+         */
+        fun onGlideWordBoundary(data: Detector.PointerData) {}
     }
 }

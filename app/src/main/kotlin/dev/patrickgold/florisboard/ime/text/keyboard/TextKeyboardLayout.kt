@@ -1034,13 +1034,35 @@ private class TextKeyboardLayoutController(
         }
     }
 
+    private var glideHasLeftSpaceBar: Boolean = false
+
     override fun onGlideAddPoint(point: GlideTypingGesture.Detector.Position) {
         if (isGlideEnabled) {
             glideDataForDrawing.add(point to System.currentTimeMillis())
+            // Flow Through Space: split the gesture into separate words when the trace
+            // crosses the top edge of the space bar after first leaving it.
+            if (prefs.glide.flowThroughSpace.get() && keyboard.mode == KeyboardMode.CHARACTERS) {
+                val pointed = keyboard.getKeyForPos(point.x, point.y)
+                val isOnSpace = pointed?.computedData?.code == KeyCode.SPACE ||
+                    pointed?.computedData?.code == KeyCode.CJK_SPACE
+                if (!isOnSpace) {
+                    glideHasLeftSpaceBar = true
+                } else if (glideHasLeftSpaceBar) {
+                    glideHasLeftSpaceBar = false
+                    glideTypingDetector.signalWordBoundary()
+                }
+            }
         }
     }
 
+    override fun onGlideWordBoundary(data: GlideTypingGesture.Detector.PointerData) {
+        // Match onGlideComplete's trail-fade visual so each finished word feels like a
+        // separate finger-up to the user, even though the finger never actually lifted.
+        onGlideCancelled()
+    }
+
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
+        glideHasLeftSpaceBar = false
         onGlideCancelled()
     }
 

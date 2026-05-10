@@ -54,6 +54,16 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         }
     }
 
+    override fun onGlideWordBoundary(data: GlideTypingGesture.Detector.PointerData) {
+        // Flow Through Space: commit the current most-confident gesture word, then clear
+        // the classifier so the continuing trace starts fresh for the next word. The
+        // existing commitGesture path already activates phantom-space, so the next
+        // committed word will be auto-prefixed with " ".
+        updateSuggestionsAsync(MAX_SUGGESTION_COUNT, true) {
+            glideTypingClassifier.clear()
+        }
+    }
+
     override fun onGlideCancelled() {
         glideTypingClassifier.clear()
     }

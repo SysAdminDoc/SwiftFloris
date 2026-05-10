@@ -393,6 +393,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "glide__sensitivity",
             default = 50,
         )
+        val flowThroughSpace = boolean(
+            key = "glide__flow_through_space",
+            default = true,
+        )
         val enabledEnglish = boolean(
             key = "glide__language_enabled_en",
             default = true,
