@@ -143,9 +143,30 @@ class DictionaryManager private constructor(context: Context) {
             WordSuggestionCandidate(
                 text = entry.word,
                 confidence = (entry.freq.coerceIn(0, 255) / 255.0).coerceIn(0.0, 1.0),
-                isEligibleForUserRemoval = false,
+                isEligibleForUserRemoval = true,
             )
         }
+    }
+
+    /**
+     * Removes [rawWord] from the personal Floris user dictionary for [locale]. Returns
+     * `true` if at least one row was deleted. Off-thread.
+     */
+    fun forgetWord(rawWord: String, locale: FlorisLocale): Boolean {
+        if (!prefs.dictionary.enableFlorisUserDictionary.get()) return false
+        val cleaned = rawWord.trim()
+            .trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
+        if (cleaned.isBlank()) return false
+        val normalized = cleaned.lowercase()
+        val dao = florisUserDictionaryDao() ?: return false
+        // Synchronous-on-IO inside a runBlocking is acceptable here because the long-press
+        // removal path expects an immediate boolean acknowledgement before re-running suggest.
+        return runCatching {
+            val matches = dao.queryExactFuzzyLocale(normalized, locale)
+                .filter { it.word.equals(normalized, ignoreCase = true) }
+            for (entry in matches) dao.delete(entry)
+            matches.isNotEmpty()
+        }.getOrDefault(false)
     }
 
     /**

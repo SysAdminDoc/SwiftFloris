@@ -202,6 +202,29 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         }
     }
 
+    /**
+     * Forgets every trigram in [locale] that has [rawWord] as its `next` value.
+     */
+    fun forget(rawWord: String, locale: FlorisLocale) {
+        val target = normalize(rawWord)
+        if (target.isEmpty()) return
+        val tag = locale.languageTag()
+        ioScope.launch {
+            val table = ensureLoaded(tag)
+            synchronized(table) {
+                val emptiedKeys = ArrayList<String>()
+                for ((ctxKey, nextMap) in table) {
+                    if (nextMap.remove(target) != null && nextMap.isEmpty()) {
+                        emptiedKeys.add(ctxKey)
+                    }
+                }
+                for (k in emptiedKeys) table.remove(k)
+                pendingCommits = FLUSH_EVERY_N_COMMITS
+            }
+            flush(tag)
+        }
+    }
+
     fun reset() {
         ioScope.launch {
             synchronized(tablesByLocale) { tablesByLocale.clear() }
