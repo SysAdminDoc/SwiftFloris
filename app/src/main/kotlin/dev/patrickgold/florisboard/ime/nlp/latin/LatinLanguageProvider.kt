@@ -479,6 +479,16 @@ internal data class LatinDictionarySnapshot(
 
     fun frequencyFor(word: String): Double = frequencies.getOrDefault(word, 0).coerceIn(0, 255) / 255.0
 
+    /**
+     * Lazily-built SymSpell delete-index over the dictionary's word list. First access
+     * triggers the build (~100-300 ms over 117k words on Pixel 6); subsequent calls are
+     * O(L²) for input length L. Used by the distance-1 correction path to skip the
+     * Norvig-style insertion/substitution explosion.
+     */
+    val symSpellIndex: SymSpellIndex by lazy {
+        SymSpellIndex.build(frequencies.keys)
+    }
+
     private val topByFrequencyCache: List<String> by lazy {
         // Curated bootstrap: high-frequency dictionary words used as next-word suggestions
         // when the user's bigram store has nothing learned for the previous token. Cap at
@@ -522,6 +532,15 @@ internal object LatinDictionarySuggester {
     // 0.78 ≈ frequency 198/255 — covers high-confidence typo fixes like "teh" → "the" while
     // sparing rarer dictionary words that share an edit-distance-1 neighborhood.
     private const val AutoCommitMinFrequency = 0.78
+
+    /**
+     * Distance-2 corrections only auto-commit when the candidate is *very* common — covers
+     * the canonical SwiftKey-style autocorrections of long-word typos like "recieved" →
+     * "received" or "tommorow" → "tomorrow" without aggressively replacing rarer words
+     * the user might have meant. 0.92 ≈ frequency 234/255, which lands roughly in the top
+     * ~3,000 SCOWL words.
+     */
+    private const val AutoCommitMinFrequencyDistance2 = 0.92
     private val Alphabet = ('a'..'z').toList()
 
     fun suggest(
@@ -591,13 +610,18 @@ internal object LatinDictionarySuggester {
             .take(maxCandidateCount)
             .mapIndexed { index, (candidate, distance) ->
                 val frequency = dictionary.frequencyFor(candidate)
+                val autoCommitThreshold = when (distance) {
+                    1 -> AutoCommitMinFrequency
+                    2 -> AutoCommitMinFrequencyDistance2
+                    else -> Double.POSITIVE_INFINITY
+                }
                 LatinSuggestion(
                     text = candidate,
                     confidence = correctionConfidence(frequency, distance),
                     isEligibleForAutoCommit = index == 0 &&
-                        distance == 1 &&
+                        distance in 1..2 &&
                         word.length >= MinCorrectionLength &&
-                        frequency >= AutoCommitMinFrequency,
+                        frequency >= autoCommitThreshold,
                 )
             }
             .toList()
@@ -690,7 +714,11 @@ internal object LatinDictionarySuggester {
     }
 
     private fun knownEdits1(word: String, dictionary: LatinDictionarySnapshot): Set<String> {
-        return edits1(word).filterTo(mutableSetOf()) { dictionary.contains(it) }
+        // SymSpell-based fast path: the precomputed delete-index returns every dict word
+        // within edit-distance ≤ 1 in O(L²) instead of generating L · |alphabet| ≈ L · 54
+        // candidate strings per call.
+        return dictionary.symSpellIndex.candidatesAtDistance1(word)
+            .filterTo(HashSet()) { it != word }
     }
 
     private fun knownEdits2(word: String, dictionary: LatinDictionarySnapshot): Set<String> {
