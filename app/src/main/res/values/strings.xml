@@ -628,6 +628,8 @@
     <string name="pref__correction__adaptive_touch_model__summary" comment="Preference summary">Learn how you actually tap each key and bias hit-tests toward your tap pattern. All on-device.</string>
     <string name="pref__suggestion__next_word_prediction__label" comment="Preference title">Predict the next word</string>
     <string name="pref__suggestion__next_word_prediction__summary" comment="Preference summary">Show predicted next words in the suggestion strip after a space. Learns from your typing history, all on-device.</string>
+    <string name="pref__correction__multilingual_suggestions__label" comment="Preference title">Multilingual suggestions</string>
+    <string name="pref__correction__multilingual_suggestions__summary" comment="Preference summary">When a subtype has secondary languages, score the typed word against every enabled language and prefer the language that recognises it.</string>
     <string name="pref__spelling__title" comment="Preference group title">Spelling</string>
     <string name="pref__spelling__active_spellchecker__summary_disabled">Disabled system-wide. No red lines will appear in text fields for incorrect words. Tap to change.</string>
     <string name="pref__spelling__active_spellchecker__summary_none">No inline text spell checker service set. Tap to change.</string>

@@ -183,6 +183,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "correction__adaptive_touch_model",
             default = true,
         )
+        val multilingualSuggestions = boolean(
+            key = "correction__multilingual_suggestions",
+            default = true,
+        )
     }
 
     val devtools = Devtools()
