@@ -177,6 +177,34 @@ internal object AdaptiveTouchModel {
     }
 
     /**
+     * Returns the adjusted screen-pixel center of [keyCode] for the active subtype,
+     * given the geometric [fallbackCenterX], [fallbackCenterY] and the key's
+     * [halfWidth], [halfHeight]. When the key has fewer than [MIN_SAMPLES_PER_KEY]
+     * recorded taps, returns the geometric fallback (no adjustment).
+     *
+     * Used by the glide classifier to personalise ideal-trace templates so that
+     * matching scores reward swipes that pass through where this user actually
+     * aims, not the visual key center.
+     */
+    @Synchronized
+    fun adjustedCenter(
+        keyCode: Int,
+        fallbackCenterX: Float,
+        fallbackCenterY: Float,
+        halfWidth: Float,
+        halfHeight: Float,
+    ): Pair<Float, Float> {
+        val bucket = statsBySubtype[activeBucket] ?: return fallbackCenterX to fallbackCenterY
+        val stats = bucket[keyCode] ?: return fallbackCenterX to fallbackCenterY
+        if (stats.count < MIN_SAMPLES_PER_KEY) return fallbackCenterX to fallbackCenterY
+        // Cap the bias so even a heavily-skewed learner can never drag the template
+        // outside the visible key — that would make the ideal trace miss the key entirely.
+        val biasedX = fallbackCenterX + stats.meanX.coerceIn(-0.5f, 0.5f) * halfWidth
+        val biasedY = fallbackCenterY + stats.meanY.coerceIn(-0.5f, 0.5f) * halfHeight
+        return biasedX to biasedY
+    }
+
+    /**
      * Snapshot of per-key tap-offset stats for a debug-mode heat-map. Returns
      * the active bucket only; map is a defensive copy.
      */

@@ -421,13 +421,16 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
             ): Iterable<Int> {
                 val keyDistances = HashMap<TextKey, Float>()
                 for (key in keys) {
-                    val visibleBoundsCenter = key.visibleBounds.center
-                    val distance = Gesture.distance(
-                        visibleBoundsCenter.x,
-                        visibleBoundsCenter.y,
-                        x,
-                        y
+                    val centerX = key.visibleBounds.left + key.visibleBounds.width * 0.5f
+                    val centerY = key.visibleBounds.top + key.visibleBounds.height * 0.5f
+                    val (cx, cy) = dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel.adjustedCenter(
+                        keyCode = key.computedData.code,
+                        fallbackCenterX = centerX,
+                        fallbackCenterY = centerY,
+                        halfWidth = key.visibleBounds.width * 0.5f,
+                        halfHeight = key.visibleBounds.height * 0.5f,
                     )
+                    val distance = Gesture.distance(cx, cy, x, y)
                     keyDistances[key] = distance
                 }
 
@@ -475,7 +478,15 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
                             continue
                         }
                     }
-                    val visibleBoundsCenter = key.visibleBounds.center
+                    val rawCenter = key.visibleBounds.center
+                    val (adjCenterX, adjCenterY) = dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel.adjustedCenter(
+                        keyCode = key.computedData.code,
+                        fallbackCenterX = rawCenter.x,
+                        fallbackCenterY = rawCenter.y,
+                        halfWidth = key.visibleBounds.width * 0.5f,
+                        halfHeight = key.visibleBounds.height * 0.5f,
+                    )
+                    val visibleBoundsCenter = androidx.compose.ui.geometry.Offset(adjCenterX, adjCenterY)
 
                     // We adda little loop on  the key for duplicate letters
                     // so that we can differentiate words like pool and poll, lull and lul, etc...
