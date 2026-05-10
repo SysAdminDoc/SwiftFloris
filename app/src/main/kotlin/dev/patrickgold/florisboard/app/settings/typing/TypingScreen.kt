@@ -133,6 +133,11 @@ fun TypingScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__correction__adaptive_touch_model__label),
                 summary = stringRes(R.string.pref__correction__adaptive_touch_model__summary),
             )
+            SwitchPreference(
+                prefs.suggestion.nextWordPrediction,
+                title = stringRes(R.string.pref__suggestion__next_word_prediction__label),
+                summary = stringRes(R.string.pref__suggestion__next_word_prediction__summary),
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__spelling__title)) {

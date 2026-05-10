@@ -17,8 +17,10 @@
 package dev.patrickgold.florisboard.ime.nlp.latin
 
 import android.content.Context
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
+import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrect
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrectCorrection
@@ -113,6 +115,9 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     ): List<SuggestionCandidate> {
         val currentWord = content.currentWordText.ifBlank { content.composingText }
         val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
+        if (currentWord.isBlank()) {
+            return nextWordSuggestions(subtype, content, maxCandidateCount, isPrivateSession)
+        }
         return LatinDictionarySuggester.suggest(
             rawWord = currentWord,
             dictionary = dictionary(subtype),
@@ -126,6 +131,48 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 sourceProvider = this@LatinLanguageProvider,
             )
         }
+    }
+
+    private suspend fun nextWordSuggestions(
+        subtype: Subtype,
+        content: EditorContent,
+        maxCandidateCount: Int,
+        isPrivateSession: Boolean,
+    ): List<SuggestionCandidate> {
+        val prefs by FlorisPreferenceStore
+        if (!prefs.suggestion.nextWordPrediction.get()) return emptyList()
+        if (isPrivateSession) return emptyList()
+        if (maxCandidateCount <= 0) return emptyList()
+        val before = content.textBeforeSelection
+        val prevWord = previousWordOf(before) ?: return emptyList()
+        val store = PersonalBigramStore.get(appContext)
+        val predicted = store.predict(prevWord, subtype.primaryLocale, maxCandidateCount)
+        if (predicted.isEmpty()) return emptyList()
+        return predicted.mapIndexed { index, word ->
+            WordSuggestionCandidate(
+                text = word,
+                confidence = 0.5 - 0.05 * index,
+                isEligibleForAutoCommit = false,
+                sourceProvider = this@LatinLanguageProvider,
+            )
+        }
+    }
+
+    private fun previousWordOf(textBeforeCursor: String): String? {
+        if (textBeforeCursor.isBlank()) return null
+        val trimmed = textBeforeCursor.trimEnd()
+        if (trimmed.isEmpty()) return null
+        var end = trimmed.length
+        while (end > 0 && !trimmed[end - 1].isLetter() && trimmed[end - 1] != '\'' && trimmed[end - 1] != '-') end--
+        if (end == 0) return null
+        var start = end
+        while (start > 0) {
+            val ch = trimmed[start - 1]
+            if (!ch.isLetter() && ch != '\'' && ch != '-') break
+            start--
+        }
+        if (start == end) return null
+        return trimmed.substring(start, end)
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {

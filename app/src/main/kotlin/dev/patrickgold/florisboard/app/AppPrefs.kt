@@ -785,6 +785,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "suggestion__force_incognito_mode_from_dynamic",
             default = false,
         )
+        val nextWordPrediction = boolean(
+            key = "suggestion__next_word_prediction",
+            default = true,
+        )
     }
 
     val theme = Theme()
