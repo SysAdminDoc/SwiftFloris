@@ -114,23 +114,80 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
         val currentWord = content.currentWordText.ifBlank { content.composingText }
-        val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
         if (currentWord.isBlank()) {
             return nextWordSuggestions(subtype, content, maxCandidateCount, isPrivateSession)
         }
-        return LatinDictionarySuggester.suggest(
-            rawWord = currentWord,
-            dictionary = dictionary(subtype),
-            maxCandidateCount = maxCandidateCount,
-            languageCode = languageCode,
-        ).map { candidate ->
-            WordSuggestionCandidate(
-                text = candidate.text,
-                confidence = candidate.confidence,
-                isEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
-                sourceProvider = this@LatinLanguageProvider,
-            )
+        val prefs by FlorisPreferenceStore
+        val locales = subtype.locales()
+        val multilingual = prefs.correction.multilingualSuggestions.get() && locales.size > 1
+        return if (multilingual) {
+            suggestMultilingual(currentWord, locales, maxCandidateCount)
+        } else {
+            val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
+            LatinDictionarySuggester.suggest(
+                rawWord = currentWord,
+                dictionary = dictionary(subtype),
+                maxCandidateCount = maxCandidateCount,
+                languageCode = languageCode,
+            ).map { candidate ->
+                WordSuggestionCandidate(
+                    text = candidate.text,
+                    confidence = candidate.confidence,
+                    isEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
+                    sourceProvider = this@LatinLanguageProvider,
+                )
+            }
         }
+    }
+
+    private suspend fun suggestMultilingual(
+        rawWord: String,
+        locales: List<dev.patrickgold.florisboard.lib.FlorisLocale>,
+        maxCandidateCount: Int,
+    ): List<SuggestionCandidate> {
+        val normalized = LatinDictionarySuggester.normalizeWord(rawWord) ?: return emptyList()
+        // Per-locale: language code, dictionary recognised the typed word, candidate list.
+        data class PerLocale(
+            val recognised: Boolean,
+            val candidates: List<LatinSuggestion>,
+        )
+        val perLocale = locales.map { locale ->
+            val langCode = LatinDictionaryStore.normalizeLanguageCode(locale.language)
+            val dict = dictionaryStore.dictionaryForLanguage(locale.language)
+            val cands = LatinDictionarySuggester.suggest(
+                rawWord = rawWord,
+                dictionary = dict,
+                maxCandidateCount = maxCandidateCount,
+                languageCode = langCode,
+            )
+            PerLocale(recognised = dict.contains(normalized), candidates = cands)
+        }
+        val anyRecognised = perLocale.any { it.recognised }
+        val merged = HashMap<String, Pair<SuggestionCandidate, Double>>()
+        for (slot in perLocale) {
+            // If at least one locale recognises the typed word, demote candidates from
+            // locales that don't — that's where SwiftKey's "stop bleeding wrong-language
+            // autocorrects mid-sentence" property comes from.
+            val prior = if (!anyRecognised) 1.0 else if (slot.recognised) 1.0 else 0.4
+            for (c in slot.candidates) {
+                val key = c.text.lowercase()
+                val score = c.confidence * prior
+                val candidate = WordSuggestionCandidate(
+                    text = c.text,
+                    confidence = score,
+                    isEligibleForAutoCommit = c.isEligibleForAutoCommit && (!anyRecognised || slot.recognised),
+                    sourceProvider = this@LatinLanguageProvider,
+                )
+                val existing = merged[key]
+                if (existing == null || existing.second < score) {
+                    merged[key] = candidate to score
+                }
+            }
+        }
+        return merged.values
+            .sortedByDescending { it.second }
+            .map { it.first }
+            .take(maxCandidateCount)
     }
 
     private suspend fun nextWordSuggestions(
