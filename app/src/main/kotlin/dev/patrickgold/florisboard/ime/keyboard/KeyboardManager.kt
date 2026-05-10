@@ -359,6 +359,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * suggestions; the keyVariation check is the belt to incognito's suspenders.
      */
     private var lastLearnedWord: String? = null
+    private var prevLearnedWord: String? = null
     private var lastLearnedLocaleTag: String? = null
 
     private fun learnIfAllowed(rawWord: String) {
@@ -369,11 +370,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         DictionaryManager.default().learnWord(rawWord, locale)
         if (prefs.suggestion.nextWordPrediction.get()) {
             val tag = locale.languageTag()
-            val prev = lastLearnedWord
-            if (prev != null && lastLearnedLocaleTag == tag) {
+            val prev1 = lastLearnedWord
+            val prev2 = prevLearnedWord
+            if (prev1 != null && lastLearnedLocaleTag == tag) {
                 dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore.get(appContext)
-                    .learn(prev, rawWord, locale)
+                    .learn(prev1, rawWord, locale)
+                if (prev2 != null) {
+                    dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore.get(appContext)
+                        .learn(prev2, prev1, rawWord, locale)
+                }
             }
+            prevLearnedWord = if (lastLearnedLocaleTag == tag) lastLearnedWord else null
             lastLearnedWord = rawWord
             lastLearnedLocaleTag = tag
         }
