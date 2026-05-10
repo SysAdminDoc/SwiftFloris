@@ -21,6 +21,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
+import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrect
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrectCorrection
@@ -202,19 +203,33 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         if (maxCandidateCount <= 0) return emptyList()
         val before = content.textBeforeSelection
         val prevWord = previousWordOf(before)
-        val store = PersonalBigramStore.get(appContext)
-        // Tier 1: trained bigrams for the actual previous word.
-        val bigramHits = if (prevWord != null) {
-            store.predict(prevWord, subtype.primaryLocale, maxCandidateCount)
+        val prev2Word = previousWordOf(before, depth = 2)
+        val bigramStore = PersonalBigramStore.get(appContext)
+        val trigramStore = PersonalTrigramStore.get(appContext)
+        // Tier 0: trained trigrams for the (prev2, prev1) context — sharpest predictions.
+        val trigramHits = if (prevWord != null && prev2Word != null) {
+            trigramStore.predict(prev2Word, prevWord, subtype.primaryLocale, maxCandidateCount)
         } else {
             emptyList()
         }
-        // Tier 2: when the bigram tier returned fewer than maxCandidateCount, fill the
-        // remaining slots with high-frequency dictionary words. This ensures a never-empty
-        // suggestion strip on cold-start (Day 1) and after sentence-ending punctuation.
-        val remainingSlots = maxCandidateCount - bigramHits.size
-        val seen = HashSet<String>(maxCandidateCount * 2)
+        // Tier 1: trained bigrams for the actual previous word.
+        val bigramHits = if (prevWord != null) {
+            bigramStore.predict(prevWord, subtype.primaryLocale, maxCandidateCount)
+        } else {
+            emptyList()
+        }
+        // Tier 2: when the trigram + bigram tiers returned fewer than maxCandidateCount,
+        // fill the remaining slots with high-frequency dictionary words. This ensures a
+        // never-empty suggestion strip on cold-start (Day 1) and after sentence-ending
+        // punctuation.
+        val remainingSlots = maxCandidateCount - (trigramHits.size + bigramHits.size)
+        val seen = HashSet<String>(maxCandidateCount * 3)
         val merged = ArrayList<Pair<String, Double>>(maxCandidateCount)
+        trigramHits.forEachIndexed { index, word ->
+            if (seen.add(word.lowercase())) {
+                merged.add(word to (0.80 - 0.05 * index))
+            }
+        }
         bigramHits.forEachIndexed { index, word ->
             if (seen.add(word.lowercase())) {
                 merged.add(word to (0.55 - 0.05 * index))
@@ -251,21 +266,29 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
     }
 
-    private fun previousWordOf(textBeforeCursor: String): String? {
-        if (textBeforeCursor.isBlank()) return null
-        val trimmed = textBeforeCursor.trimEnd()
-        if (trimmed.isEmpty()) return null
-        var end = trimmed.length
-        while (end > 0 && !trimmed[end - 1].isLetter() && trimmed[end - 1] != '\'' && trimmed[end - 1] != '-') end--
-        if (end == 0) return null
-        var start = end
-        while (start > 0) {
-            val ch = trimmed[start - 1]
-            if (!ch.isLetter() && ch != '\'' && ch != '-') break
-            start--
+    private fun previousWordOf(textBeforeCursor: String, depth: Int = 1): String? {
+        if (textBeforeCursor.isBlank() || depth < 1) return null
+        var working = textBeforeCursor
+        var lastFound: String? = null
+        for (n in 1..depth) {
+            if (working.isBlank()) return null
+            val trimmed = working.trimEnd()
+            if (trimmed.isEmpty()) return null
+            var end = trimmed.length
+            while (end > 0 && !trimmed[end - 1].isLetter() && trimmed[end - 1] != '\'' && trimmed[end - 1] != '-') end--
+            if (end == 0) return null
+            var start = end
+            while (start > 0) {
+                val ch = trimmed[start - 1]
+                if (!ch.isLetter() && ch != '\'' && ch != '-') break
+                start--
+            }
+            if (start == end) return null
+            lastFound = trimmed.substring(start, end)
+            if (n == depth) return lastFound
+            working = trimmed.substring(0, start)
         }
-        if (start == end) return null
-        return trimmed.substring(start, end)
+        return lastFound
     }
 
     override suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate) {
