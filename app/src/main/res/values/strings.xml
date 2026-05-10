@@ -624,6 +624,8 @@
     <string name="pref__correction__remember_caps_lock_state__summary" comment="Preference summary">Caps lock will stay on when moving to another text field</string>
     <string name="pref__correction__double_space_period__label" comment="Preference title">Double-space period</string>
     <string name="pref__correction__double_space_period__summary" comment="Preference summary">Tapping twice on spacebar inserts a period followed by a space</string>
+    <string name="pref__correction__adaptive_touch_model__label" comment="Preference title">Adaptive touch model</string>
+    <string name="pref__correction__adaptive_touch_model__summary" comment="Preference summary">Learn how you actually tap each key and bias hit-tests toward your tap pattern. All on-device.</string>
     <string name="pref__spelling__title" comment="Preference group title">Spelling</string>
     <string name="pref__spelling__active_spellchecker__summary_disabled">Disabled system-wide. No red lines will appear in text fields for incorrect words. Tap to change.</string>
     <string name="pref__spelling__active_spellchecker__summary_none">No inline text spell checker service set. Tap to change.</string>

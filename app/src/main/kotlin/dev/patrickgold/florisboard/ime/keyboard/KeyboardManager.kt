@@ -155,11 +155,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             subtypeManager.subtypesFlow.collectLatestIn(scope) {
                 updateActiveEvaluators()
             }
-            subtypeManager.activeSubtypeFlow.collectLatestIn(scope) {
+            subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
                 reevaluateInputShiftState()
                 updateActiveEvaluators()
                 editorInstance.refreshComposing()
                 resetSuggestions(editorInstance.activeContent)
+                dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
+                    .setActiveSubtype("${subtype.id}:${subtype.primaryLocale.languageTag()}")
             }
             clipboardManager.primaryClipFlow.collectLatestIn(scope) {
                 updateActiveEvaluators()

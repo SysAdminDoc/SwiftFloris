@@ -659,8 +659,19 @@ private class TextKeyboardLayoutController(
     private fun onTouchDownInternal(event: MotionEvent, pointer: TouchPointer) {
         flogDebug(LogTopic.TEXT_KEYBOARD_VIEW) { "pointer=$pointer" }
 
-        val key = keyboard.getKeyForPos(event.getX(pointer.index), event.getY(pointer.index))
+        val touchX = event.getX(pointer.index)
+        val touchY = event.getY(pointer.index)
+        val initialKey = keyboard.getKeyForPos(touchX, touchY)
+        val key = if (initialKey != null && prefs.correction.adaptiveTouchModel.get() &&
+            keyboard.mode == KeyboardMode.CHARACTERS) {
+            AdaptiveTouchModel.refine(keyboard, initialKey, touchX, touchY)
+        } else {
+            initialKey
+        }
         if (key != null && key.isEnabled) {
+            if (prefs.correction.adaptiveTouchModel.get() && keyboard.mode == KeyboardMode.CHARACTERS) {
+                AdaptiveTouchModel.recordTap(key, touchX, touchY)
+            }
             key.computedDataOnDown = key.computedData
             pointer.pressedKeyInfo = inputEventDispatcher.sendDown(
                 data = key.computedData,
