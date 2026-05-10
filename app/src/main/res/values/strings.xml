@@ -689,6 +689,8 @@
     <string name="pref__glide__show_preview__summary">Requires word suggestions to be enabled</string>
     <string name="pref__glide__immediate_backspace_deletes_word__label">Always delete word</string>
     <string name="pref__glide__immediate_backspace_deletes_word__summary">Pressing delete right after a glide deletes the whole word</string>
+    <string name="pref__glide__flow_through_space__label">Flow through space</string>
+    <string name="pref__glide__flow_through_space__summary">Continue gliding across the space bar to start the next word without lifting your finger</string>
     <string name="pref__glide__languages_title" comment="Preference group title">Swipe languages</string>
     <string name="pref__glide__language_enabled__label" comment="Preference title">Enable swipe for {language}</string>
     <string name="pref__glide__language_enabled__summary" comment="Preference summary">Use the bundled {language} dictionary for glide typing</string>

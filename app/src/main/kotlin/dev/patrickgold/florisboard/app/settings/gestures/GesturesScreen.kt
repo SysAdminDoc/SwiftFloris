@@ -99,6 +99,12 @@ fun GesturesScreen() = FlorisScreen {
                 summary = stringRes(R.string.pref__glide__immediate_backspace_deletes_word__summary),
                 enabledIf = { prefs.glide.enabled.get() },
             )
+            SwitchPreference(
+                prefs.glide.flowThroughSpace,
+                title = stringRes(R.string.pref__glide__flow_through_space__label),
+                summary = stringRes(R.string.pref__glide__flow_through_space__summary),
+                enabledIf = { prefs.glide.enabled.get() },
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__glide__languages_title)) {
