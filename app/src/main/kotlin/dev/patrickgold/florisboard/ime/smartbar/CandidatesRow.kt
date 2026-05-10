@@ -39,6 +39,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -164,6 +165,7 @@ private fun CandidateItem(
                 awaitEachGesture {
                     val down = awaitFirstDown()
                     isPressed = true
+                    FlorisImeService.inputFeedbackController()?.keyPress()
                     if (down.pressed != down.previousPressed) down.consume()
                     var upOrCancel: PointerInputChange? = null
                     try {
@@ -173,6 +175,7 @@ private fun CandidateItem(
                         upOrCancel?.let { if (it.pressed != it.previousPressed) it.consume() }
                     } catch (_: PointerEventTimeoutCancellationException) {
                         if (onLongPress()) {
+                            FlorisImeService.inputFeedbackController()?.keyLongPress()
                             upOrCancel = null
                             isPressed = false
                         }
