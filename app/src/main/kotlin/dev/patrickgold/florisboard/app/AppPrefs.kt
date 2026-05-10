@@ -179,6 +179,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "correction__remember_caps_lock_state",
             default = false,
         )
+        val adaptiveTouchModel = boolean(
+            key = "correction__adaptive_touch_model",
+            default = true,
+        )
     }
 
     val devtools = Devtools()
