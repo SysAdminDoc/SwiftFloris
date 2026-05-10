@@ -20,6 +20,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Contacts
+import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.SpaceBar
 import androidx.compose.runtime.Composable
@@ -179,6 +180,12 @@ fun TypingScreen() = FlorisScreen {
                 title = stringRes(R.string.settings__dictionary__title),
                 summary = stringRes(R.string.settings__typing__dictionary_summary),
                 onClick = { navController.navigate(Routes.Settings.Dictionary) },
+            )
+            Preference(
+                icon = Icons.Default.Insights,
+                title = stringRes(R.string.settings__typing_stats__title),
+                summary = stringRes(R.string.settings__typing_stats__summary),
+                onClick = { navController.navigate(Routes.Settings.TypingStats) },
             )
         }
     }

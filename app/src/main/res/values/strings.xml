@@ -641,6 +641,16 @@
 
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
     <string name="settings__typing__dictionary_summary" comment="Typing screen shortcut summary">Manage personal words used by suggestions, corrections, and spell checking</string>
+    <string name="settings__typing_stats__title" comment="Title of the Typing stats screen">Typing stats</string>
+    <string name="settings__typing_stats__summary" comment="Summary of the Typing stats entry on the Typing screen">See how much SwiftFloris has learned from your typing — local, never uploaded</string>
+    <string name="settings__typing_stats__group_corpus" comment="Section header on the Typing stats screen">Learned corpus</string>
+    <string name="settings__typing_stats__group_top_words" comment="Section header on the Typing stats screen">Your top 10 words</string>
+    <string name="settings__typing_stats__group_actions" comment="Section header on the Typing stats screen">Actions</string>
+    <string name="settings__typing_stats__words_learned" comment="Stat row title">Words learned</string>
+    <string name="settings__typing_stats__bigrams_disk" comment="Stat row title">Bigram store on disk</string>
+    <string name="settings__typing_stats__adaptive_touch_samples" comment="Stat row title">Adaptive touch samples (this session)</string>
+    <string name="settings__typing_stats__refresh" comment="Action row title">Refresh</string>
+    <string name="settings__typing_stats__loading" comment="Placeholder shown while a stat is loading">Loading…</string>
     <string name="pref__dictionary__group_system__label" comment="Preference group title">System dictionary</string>
     <string name="pref__dictionary__group_internal__label" comment="Preference group title">SwiftFloris dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>
