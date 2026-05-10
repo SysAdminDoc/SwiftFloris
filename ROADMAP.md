@@ -1,7 +1,7 @@
 # SwiftFloris Roadmap v4.0
 
 **Last Updated:** 2026-05-09
-**Current Version:** v1.7.4 (released 2026-05-09 — 28 Now-tier items closed across v1.7.0 → v1.7.4 same-day batch; remaining 4 Now items are gated on external dependencies or are multi-week projects)
+**Current Version:** v1.7.5 (released 2026-05-09 — N12 "SwiftKey indistinguishability" + Next-1.A/B SymSpell wave: 12 items shipped this drop. See `RELEASE_NOTES_v1.7.5.md`. Remaining accuracy/smartness work intentionally kept on the roadmap for the next pass — Next-1.C, Next-3.1, L1 Gemma 3 270M)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline, with autocorrect + dictionary work already past upstream
 **Supersedes:** ROADMAP v3.0 (2026-05-05). Completed items preserved in §3 with dated checkmarks; tier system, themes, and cited opportunities below are new.
 **Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
@@ -58,6 +58,7 @@
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.7.5 | 2026-05-09 | SwiftKey indistinguishability wave: N12.1 adaptive touch, N12.2 bigram next-word, N12.3 multilingual hot-switch, N12.4 Flow Through Space, N12.5 trigram, N12.6 stats screen, N12.7 cold-start bootstrap, N12.8 adaptive touch → glide, N12.9 sentence-case, N12.10 long-press to forget, Next-1.A SymSpell d1, Next-1.B d2 high-freq auto-commit | `RELEASE_NOTES_v1.7.5.md` |
 | v1.7.4 | 2026-05-09 | N7.2 final piece (FLAG_SECURE on IME window in password fields), N6.3 partial (toolchain pins + `docs/REPRODUCIBLE_BUILDS.md`), N4.1 + N8.6 verified-already-shipped | `RELEASE_NOTES_v1.7.4.md` |
 | v1.7.3 | 2026-05-09 | N6.2 release workflow + signing fallback, N8.1 48dp touch-target WCAG regression test (`TouchTargetWcagTest`), N8.3 TalkBack content descriptions per key | `RELEASE_NOTES_v1.7.3.md` |
 | v1.7.2 | 2026-05-09 | N6.4 dep-CVE scan workflow, N3.3 SwiftKey haptic defaults (20ms / 60), N3.4 popup elevation 2dp→4dp; N5.2/N3.5/N8.5/N10.2 verified-already-shipped triage | `RELEASE_NOTES_v1.7.2.md` |
