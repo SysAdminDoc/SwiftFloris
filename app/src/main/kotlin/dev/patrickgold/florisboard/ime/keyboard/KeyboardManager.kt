@@ -358,11 +358,25 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Trusting only the incognito flag would bleed credentials into the user's
      * suggestions; the keyVariation check is the belt to incognito's suspenders.
      */
+    private var lastLearnedWord: String? = null
+    private var lastLearnedLocaleTag: String? = null
+
     private fun learnIfAllowed(rawWord: String) {
         if (activeState.isIncognitoMode) return
         if (activeState.keyVariation == KeyVariation.PASSWORD) return
         if (rawWord.isBlank()) return
-        DictionaryManager.default().learnWord(rawWord, subtypeManager.activeSubtype.primaryLocale)
+        val locale = subtypeManager.activeSubtype.primaryLocale
+        DictionaryManager.default().learnWord(rawWord, locale)
+        if (prefs.suggestion.nextWordPrediction.get()) {
+            val tag = locale.languageTag()
+            val prev = lastLearnedWord
+            if (prev != null && lastLearnedLocaleTag == tag) {
+                dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore.get(appContext)
+                    .learn(prev, rawWord, locale)
+            }
+            lastLearnedWord = rawWord
+            lastLearnedLocaleTag = tag
+        }
     }
 
     fun commitGesture(word: String) {
