@@ -73,6 +73,7 @@ import dev.patrickgold.florisboard.ime.editor.OperationUnit
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
 import dev.patrickgold.florisboard.ime.popup.ExceptionsForKeyCodes
@@ -692,18 +693,24 @@ private class TextKeyboardLayoutController(
 
         val touchX = event.getX(pointer.index)
         val touchY = event.getY(pointer.index)
-        val initialKey = keyboard.getKeyForPos(touchX, touchY)
-        val key = if (initialKey != null && prefs.correction.adaptiveTouchModel.get() &&
-            keyboard.mode == KeyboardMode.CHARACTERS) {
+        val adaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get() && keyboard.mode == KeyboardMode.CHARACTERS
+        val initialKey = keyboard.getKeyForPos(touchX, touchY) ?: if (adaptiveTouchEnabled) {
+            keyboard.getNearestKeyForPos(touchX, touchY)
+        } else {
+            null
+        }
+        val key = if (initialKey != null && adaptiveTouchEnabled) {
             AdaptiveTouchModel.refine(keyboard, initialKey, touchX, touchY)
         } else {
             initialKey
         }
         if (key != null && key.isEnabled) {
-            if (prefs.correction.adaptiveTouchModel.get() && keyboard.mode == KeyboardMode.CHARACTERS) {
-                AdaptiveTouchModel.recordTap(key, touchX, touchY)
-            }
             key.computedDataOnDown = key.computedData
+            if (adaptiveTouchEnabled) {
+                pointer.adaptiveTouchKey = key
+                pointer.adaptiveTouchX = touchX
+                pointer.adaptiveTouchY = touchY
+            }
             pointer.pressedKeyInfo = inputEventDispatcher.sendDown(
                 data = key.computedData,
                 onLongPress = onLongPress@ {
@@ -817,6 +824,7 @@ private class TextKeyboardLayoutController(
                         inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                         inputEventDispatcher.sendDownUp(retData)
                     }
+                    recordAdaptiveTapIfEligible(pointer, activeKey, retData)
                 } else {
                     inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                 }
@@ -831,11 +839,20 @@ private class TextKeyboardLayoutController(
                     } else {
                         inputEventDispatcher.sendUp(activeKey.computedDataOnDown)
                     }
+                    recordAdaptiveTapIfEligible(pointer, activeKey, activeKey.computedData)
                 }
             }
             pointer.activeKey = null
         }
         pointer.hasTriggeredGestureMove = false
+    }
+
+    private fun recordAdaptiveTapIfEligible(pointer: TouchPointer, activeKey: TextKey, committedData: KeyData) {
+        if (!prefs.correction.adaptiveTouchModel.get() || keyboard.mode != KeyboardMode.CHARACTERS) return
+        if (pointer.hasTriggeredGestureMove || pointer.hasTriggeredLongPress) return
+        if (pointer.adaptiveTouchKey !== activeKey) return
+        if (committedData.code != activeKey.computedData.code) return
+        AdaptiveTouchModel.recordTap(activeKey, pointer.adaptiveTouchX, pointer.adaptiveTouchY)
     }
 
     private fun onTouchCancelInternal(event: MotionEvent, pointer: TouchPointer) {
@@ -1158,6 +1175,9 @@ private class TextKeyboardLayoutController(
         var hasTriggeredLongPress: Boolean = false
         var hasTriggeredMassSelection: Boolean = false
         var pressedKeyInfo: InputEventDispatcher.PressedKeyInfo? = null
+        var adaptiveTouchKey: TextKey? = null
+        var adaptiveTouchX: Float = 0.0f
+        var adaptiveTouchY: Float = 0.0f
 
         override fun reset() {
             super.reset()
@@ -1167,6 +1187,9 @@ private class TextKeyboardLayoutController(
             hasTriggeredLongPress = false
             hasTriggeredMassSelection = false
             pressedKeyInfo = null
+            adaptiveTouchKey = null
+            adaptiveTouchX = 0.0f
+            adaptiveTouchY = 0.0f
         }
 
         override fun toString(): String {
