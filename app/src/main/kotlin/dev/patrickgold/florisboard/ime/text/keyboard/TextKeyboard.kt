@@ -21,6 +21,8 @@ import dev.patrickgold.florisboard.ime.keyboard.Keyboard
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.popup.PopupMapping
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 
 class TextKeyboard(
     val arrangement: Array<Array<TextKey>>,
@@ -41,6 +43,37 @@ class TextKeyboard(
             }
         }
         return null
+    }
+
+    fun getNearestKeyForPos(pointerX: Float, pointerY: Float): TextKey? {
+        var bestKey: TextKey? = null
+        var bestDistanceSq = Float.POSITIVE_INFINITY
+        for (key in keys()) {
+            if (!key.isEnabled || !key.isVisible || key.visibleBounds.isEmpty()) {
+                continue
+            }
+            val bounds = key.visibleBounds
+            val maxRescueDistance = min(bounds.width, bounds.height) * GapRescueDistanceFactor
+            val dx = when {
+                pointerX < bounds.left -> bounds.left - pointerX
+                pointerX >= bounds.right -> pointerX - bounds.right
+                else -> 0.0f
+            }
+            val dy = when {
+                pointerY < bounds.top -> bounds.top - pointerY
+                pointerY >= bounds.bottom -> pointerY - bounds.bottom
+                else -> 0.0f
+            }
+            if (max(dx, dy) > maxRescueDistance) {
+                continue
+            }
+            val distanceSq = dx * dx + dy * dy
+            if (distanceSq < bestDistanceSq) {
+                bestDistanceSq = distanceSq
+                bestKey = key
+            }
+        }
+        return bestKey
     }
 
     override fun layout(
@@ -179,5 +212,9 @@ class TextKeyboard(
             }
             return next
         }
+    }
+
+    companion object {
+        private const val GapRescueDistanceFactor = 0.32f
     }
 }

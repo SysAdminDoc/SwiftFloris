@@ -70,3 +70,12 @@ The first implementation slice is the decoder foundation:
 - Cover ranking behavior with unit tests.
 
 This gives future touch and Flow work one stable integration point instead of adding more one-off heuristics.
+
+## Second Slice
+
+The second implementation slice starts touch-aware typing:
+
+- Rescue character-key taps that land just outside key bounds but still close to a visible key.
+- Keep the rescue bounded so accidental touches far from the keyboard are ignored.
+- Train the adaptive touch model on successful normal tap-up events rather than touch-down events.
+- Avoid learning from cancelled touches, long-presses, swipe gestures, popup selections, or glide traces.
