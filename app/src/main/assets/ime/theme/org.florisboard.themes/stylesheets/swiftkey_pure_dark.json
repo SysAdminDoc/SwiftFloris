@@ -12,7 +12,7 @@
     "--popup-surface": "#252525",
     "--focused-popup-surface": "#333333",
     "--drag-marker": "#FB7185",
-    "--spacer-color": "rgba(242, 242, 242, 0.18)",
+    "--spacer-color": "#00000000",
     "--one-hand-background": "#171717",
     "--one-hand-foreground": "#F2F2F2",
     "--incognito-icon-color": "#FFFFFF14",
@@ -89,7 +89,7 @@
     "text-overflow": "ellipsis"
   },
   "key[code=-201,-202,-203]": {
-    "font-size": "22sp"
+    "font-size": "18sp"
   },
   "key[code=-204,-205]": {
     "font-size": "12sp"
