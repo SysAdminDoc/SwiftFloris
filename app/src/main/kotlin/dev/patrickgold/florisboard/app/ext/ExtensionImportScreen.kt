@@ -20,8 +20,8 @@ import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Input
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -38,10 +37,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -59,8 +57,11 @@ import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisBulletSpacer
 import org.florisboard.lib.compose.FlorisButtonBar
+import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
-import org.florisboard.lib.compose.FlorisOutlinedButton
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.florisHorizontalScroll
 import org.florisboard.lib.compose.stringRes
@@ -155,6 +156,9 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             importResult = runCatching { cacheManager.readFromUriIntoCache(uriList) }.mapSkipReasons()
         },
     )
+    val selectFiles = {
+        importLauncher.launch("*/*")
+    }
 
     bottomBar {
         FlorisButtonBar {
@@ -212,52 +216,75 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
     }
 
     content {
-        if (initUuid == null) {
-            FlorisOutlinedButton(
-                onClick = {
-                    importLauncher.launch("*/*")
-                },
-                modifier = Modifier
-                    .padding(vertical = 16.dp)
-                    .align(Alignment.CenterHorizontally),
-                text = stringRes(R.string.action__select_files),
-            )
-        }
-
         val result = importResult
         when {
             result == null -> {
-                Text(
-                    modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(horizontal = 16.dp),
-                    text = stringRes(R.string.state__no_files_selected),
-                    fontStyle = FontStyle.Italic,
+                FlorisEmptyState(
+                    modifier = Modifier.padding(16.dp),
+                    icon = Icons.AutoMirrored.Filled.Input,
+                    title = stringRes(R.string.ext__import__empty_title),
+                    message = stringRes(R.string.ext__import__empty_message),
+                    actionLabel = stringRes(R.string.action__select_files),
+                    onAction = selectFiles.takeIf { initUuid == null },
                 )
             }
             result.isSuccess -> {
                 val workspace = result.getOrThrow()
+                val importableFileCount = workspace.inputFileInfos.count { fileInfo ->
+                    fileInfo.skipReason == NATIVE_NULLPTR.toInt()
+                }
+                val skippedFileCount = workspace.inputFileInfos.size - importableFileCount
+                if (importableFileCount > 0) {
+                    FlorisInfoCard(
+                        modifier = Modifier.defaultFlorisOutlinedBox(),
+                        text = stringRes(R.string.ext__import__review_title),
+                        secondaryText = stringRes(
+                            if (skippedFileCount > 0) {
+                                R.string.ext__import__review_message_with_skips
+                            } else {
+                                R.string.ext__import__review_message_all_ready
+                            },
+                        ),
+                        actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
+                        onClick = selectFiles.takeIf { initUuid == null },
+                    )
+                } else {
+                    FlorisWarningCard(
+                        modifier = Modifier.defaultFlorisOutlinedBox(),
+                        text = stringRes(R.string.ext__import__none_ready_title),
+                        secondaryText = stringRes(R.string.ext__import__none_ready_message),
+                        actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
+                        onClick = selectFiles.takeIf { initUuid == null },
+                    )
+                }
                 for (fileInfo in workspace.inputFileInfos) {
                     FileInfoView(fileInfo)
                 }
             }
             result.isFailure -> {
-                Text(
-                    modifier = Modifier.padding(horizontal = 16.dp),
-                    text = stringRes(R.string.ext__import__error_unexpected_exception),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.error,
+                FlorisErrorCard(
+                    modifier = Modifier.defaultFlorisOutlinedBox(),
+                    text = stringRes(R.string.ext__import__error_title),
+                    secondaryText = stringRes(R.string.ext__import__error_message),
+                    actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
+                    onClick = selectFiles.takeIf { initUuid == null },
                 )
-                SelectionContainer {
-                    Text(
-                        modifier = Modifier
-                            .florisHorizontalScroll()
-                            .padding(horizontal = 16.dp),
-                        text = result.exceptionOrNull()?.stackTraceToString() ?: "null",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.error,
-                        fontStyle = FontStyle.Italic,
-                    )
+                FlorisOutlinedBox(
+                    modifier = Modifier.defaultFlorisOutlinedBox(),
+                    title = stringRes(R.string.ext__import__error_details_title),
+                ) {
+                    SelectionContainer {
+                        Text(
+                            modifier = Modifier
+                                .florisHorizontalScroll()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            text = result.exceptionOrNull()?.stackTraceToString()
+                                ?: stringRes(R.string.ext__import__error_details_unavailable),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
                 }
             }
         }
@@ -268,36 +295,55 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
 private fun FileInfoView(
     fileInfo: CacheManager.FileInfo,
 ) {
+    val context = LocalContext.current
+    val isImportable = fileInfo.skipReason == NATIVE_NULLPTR.toInt()
     FlorisOutlinedBox(
         modifier = Modifier.defaultFlorisOutlinedBox(),
         title = fileInfo.file.name,
-        subtitle = fileInfo.mediaType ?: "application/unknown",
+        subtitle = fileInfo.mediaType ?: stringRes(R.string.ext__import__unknown_file_type),
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 16.dp, vertical = 8.dp),
         ) {
-            val grayColor = LocalContentColor.current.copy(alpha = 0.56f)
+            val metadataColor = MaterialTheme.colorScheme.onSurfaceVariant
+            val statusColor = if (isImportable) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.error
+            }
             val ext = fileInfo.ext
+            Text(
+                text = stringRes(
+                    if (isImportable) {
+                        R.string.ext__import__file_ready
+                    } else {
+                        R.string.ext__import__file_skipped
+                    },
+                ),
+                style = MaterialTheme.typography.labelLarge,
+                color = statusColor,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
             Row {
                 Text(
-                    text = Formatter.formatShortFileSize(LocalContext.current, fileInfo.size),
+                    text = Formatter.formatShortFileSize(context, fileInfo.size),
                     style = MaterialTheme.typography.bodyMedium,
-                    color = grayColor,
+                    color = metadataColor,
                 )
                 if (ext != null) {
                     FlorisBulletSpacer()
                     Text(
                         text = ext.meta.id,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = grayColor,
+                        color = metadataColor,
                     )
                     FlorisBulletSpacer()
                     Text(
                         text = ext.meta.version,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = grayColor,
+                        color = metadataColor,
                     )
                 }
             }
@@ -305,13 +351,13 @@ private fun FileInfoView(
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
                     text = ext.meta.title,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleSmall,
                 )
                 ext.meta.description?.let { description ->
                     Text(
                         text = description,
                         style = MaterialTheme.typography.bodyMedium,
-                        fontStyle = FontStyle.Italic,
+                        color = metadataColor,
                     )
                 }
                 Spacer(modifier = Modifier.height(8.dp))
@@ -321,31 +367,37 @@ private fun FileInfoView(
                 Text(
                     text = stringRes(R.string.ext__meta__maintainers_by, "maintainers" to maintainers),
                     style = MaterialTheme.typography.bodyMedium,
+                    color = metadataColor,
                 )
-                Spacer(modifier = Modifier.height(8.dp))
-                for (component in ext.components()) {
+                val components = remember(ext) { ext.components() }
+                if (components.isNotEmpty()) {
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = component.id,
-                        style = MaterialTheme.typography.bodyMedium,
+                        text = stringRes(R.string.ext__import__components_label),
+                        style = MaterialTheme.typography.labelLarge,
+                        color = metadataColor,
                     )
+                    for (component in components) {
+                        Text(
+                            text = component.id,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = metadataColor,
+                            fontFamily = FontFamily.Monospace,
+                        )
+                    }
                 }
             }
-            if (fileInfo.skipReason != NATIVE_NULLPTR.toInt()) {
-                Box(modifier = Modifier
-                    .fillMaxWidth()
-                    .height(19.dp)
-                    .padding(top = 10.dp, bottom = 8.dp)
-                    .background(MaterialTheme.colorScheme.error.copy(alpha = 0.56f)))
+            if (!isImportable) {
+                Spacer(modifier = Modifier.height(12.dp))
                 Text(
                     text = stringRes(R.string.ext__import__file_skip),
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.titleSmall,
                     color = MaterialTheme.colorScheme.error,
                 )
                 Text(
                     text = stringRes(fileInfo.skipReason),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.error,
-                    fontStyle = FontStyle.Italic,
                 )
             }
         }
