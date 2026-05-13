@@ -129,3 +129,13 @@ The sixth implementation slice makes adaptive touch durable:
 - Save in bounded batches to avoid disk churn while typing.
 - Keep the existing privacy gates: no learning in incognito, password fields, long-presses, popup selections, or gesture moves.
 - Acceptance: adaptive-touch sample counts and adjusted key centers survive a serialize/restore cycle.
+
+## Seventh Slice
+
+The seventh implementation slice starts the unified scorer and replay harness:
+
+- Replace role-only candidate ordering with an explicit `SwiftKeyCandidateScore`.
+- Score role, spatial likelihood, preferred-vs-fallback source affinity, provider confidence, edit proximity, completion affinity, and length penalty in one object.
+- Expose scored candidates for deterministic tests and future debugging.
+- Add replay cases for adjacent-key correction, known-word literal preservation, and quick prediction spacebar insertion.
+- Acceptance: existing candidate-strip behavior remains stable while every new SwiftKey-like behavior can be protected by a replay case.

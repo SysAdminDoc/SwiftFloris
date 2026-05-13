@@ -45,6 +45,12 @@
    - Add reset controls for learned words, phrase history, rejected corrections, and adaptive touch.
    - Acceptance: users can see and reset what the keyboard learned.
 
+## Completed Slices
+
+- Item 1 is implemented: adaptive touch persists bounded per-subtype tap-offset distributions locally and restores them at startup.
+- Item 2 is started: candidate ranking now emits an explicit score object with role, spatial likelihood, source affinity, provider confidence, edit proximity, completion affinity, and length penalty.
+- Item 3 is started: deterministic replay tests now cover adjacent-key correction, known-word literal preservation, and quick prediction spacebar behavior.
+
 ## Current Slice
 
-Build item 1 first. It is the most direct path to SwiftKey's forgiving feel and creates reusable signal for the unified scorer, glide templates, and future neural reranker.
+Keep expanding items 2 and 3 until every SwiftKey-like typing decision has a replay case. The next concrete work is to feed dictionary frequency, personal phrase probability, rejection history, and language confidence into `SwiftKeyCandidateScore`.
