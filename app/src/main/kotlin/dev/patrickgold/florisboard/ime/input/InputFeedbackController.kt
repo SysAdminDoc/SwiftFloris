@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
 val LocalInputFeedbackController = staticCompositionLocalOf<InputFeedbackController> { error("not init") }
@@ -84,6 +85,17 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     fun gestureMovingSwipe(data: KeyData = TextKeyData.UNSPECIFIED) {
         if (prefs.inputFeedback.audioFeatGestureMovingSwipe.get()) performAudioFeedback(data, 0.4)
         if (prefs.inputFeedback.hapticFeatGestureMovingSwipe.get()) performHapticFeedback(data, 0.05)
+    }
+
+    /**
+     * Cancels the internal feedback scope so any in-flight audio/haptic coroutines
+     * stop holding references to the InputMethodService (and transitively its
+     * decorView). Must be invoked from FlorisImeService.onDestroy — without this
+     * the SupervisorJob outlives the service and leaks the window decorView for
+     * the duration of any queued playSoundEffect / vibrate calls.
+     */
+    fun dispose() {
+        scope.cancel()
     }
 
     private fun systemPref(id: String): Boolean {
