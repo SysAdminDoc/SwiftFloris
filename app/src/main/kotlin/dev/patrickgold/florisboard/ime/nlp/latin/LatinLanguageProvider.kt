@@ -371,16 +371,31 @@ internal class LatinDictionaryStore(
     }
 
     private suspend fun loadSpecificDictionary(languageCode: String): LatinDictionarySnapshot? {
+        val base = loadFirstDictionary(languageCode) ?: return null
+        return if (languageCode == DefaultLanguageCode) {
+            base.mergeWith(loadSupplementalEnglishFrequencies())
+        } else {
+            base
+        }
+    }
+
+    private suspend fun loadFirstDictionary(languageCode: String): LatinDictionarySnapshot? {
         for (path in assetPathsForLanguage(languageCode)) {
             val rawData = readAsset.read(path) ?: continue
             val frequencies = decodeFrequencies(path, rawData)
             if (frequencies.isEmpty()) continue
-            return LatinDictionarySnapshot(
-                frequencies = frequencies,
-                sortedWords = frequencies.keys.sorted(),
-            )
+            return LatinDictionarySnapshot.from(frequencies)
         }
         return null
+    }
+
+    private suspend fun loadSupplementalEnglishFrequencies(): Map<String, Int> {
+        val rawData = readAsset.read(SupplementalEnglishDictionaryPath) ?: return emptyMap()
+        return runCatching {
+            decodeFrequencies(SupplementalEnglishDictionaryPath, rawData)
+        }.getOrElse {
+            emptyMap()
+        }
     }
 
     private fun decodeFrequencies(path: String, rawData: String): Map<String, Int> {
@@ -440,6 +455,7 @@ internal class LatinDictionaryStore(
         const val DefaultLanguageCode = "en"
         private const val DictionaryRoot = "ime/dict"
         private const val LegacyEnglishDictionaryPath = "$DictionaryRoot/data.json"
+        private const val SupplementalEnglishDictionaryPath = "$DictionaryRoot/en_supplemental.json"
         private const val FldicExtension = ".fldic"
         private const val FldicWordsSection = "[words]"
 
@@ -511,8 +527,25 @@ internal data class LatinDictionarySnapshot(
         return topByFrequencyCache.take(n)
     }
 
+    fun mergeWith(supplementalFrequencies: Map<String, Int>): LatinDictionarySnapshot {
+        if (supplementalFrequencies.isEmpty()) return this
+        val merged = HashMap<String, Int>(frequencies.size + supplementalFrequencies.size)
+        merged.putAll(frequencies)
+        supplementalFrequencies.forEach { (word, frequency) ->
+            merged[word] = maxOf(merged[word] ?: 0, frequency)
+        }
+        return from(merged)
+    }
+
     companion object {
         val Empty = LatinDictionarySnapshot(emptyMap(), emptyList())
+
+        fun from(frequencies: Map<String, Int>): LatinDictionarySnapshot {
+            return LatinDictionarySnapshot(
+                frequencies = frequencies,
+                sortedWords = frequencies.keys.sorted(),
+            )
+        }
     }
 }
 

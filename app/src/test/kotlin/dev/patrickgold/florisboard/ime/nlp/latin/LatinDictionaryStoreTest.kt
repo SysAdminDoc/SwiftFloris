@@ -63,6 +63,19 @@ class LatinDictionaryStoreTest : FunSpec({
         dictionary.frequencyFor("hello") shouldBe 210 / 255.0
     }
 
+    test("merges bundled English supplemental dictionary without lowering base frequencies") {
+        val store = latinDictionaryStore(
+            "ime/dict/data.json" to dictionaryJson("hello" to 210, "test" to 180),
+            "ime/dict/en_supplemental.json" to dictionaryJson("hello" to 48, "swiftfloris" to 96),
+        )
+
+        val dictionary = runBlocking { store.dictionaryForLanguage("en-US") }
+
+        dictionary.sortedWords shouldBe listOf("hello", "swiftfloris", "test")
+        dictionary.frequencyFor("hello") shouldBe 210 / 255.0
+        dictionary.frequencyFor("swiftfloris") shouldBe 96 / 255.0
+    }
+
     test("loads fldic word scores and ignores non-word sections") {
         val store = latinDictionaryStore(
             "ime/dict/es.fldic" to """
@@ -109,6 +122,21 @@ class LatinDictionaryStoreTest : FunSpec({
             (dictionary.sortedWords.size >= minimumWordCount) shouldBe true
             dictionary.isLoaded shouldBe true
         }
+    }
+
+    test("loads bundled expanded English supplemental dictionary") {
+        val store = LatinDictionaryStore(readAsset = LatinDictionaryAssetReader { path ->
+            bundledAsset(path)?.readText()
+        })
+
+        val dictionary = runBlocking { store.dictionaryForLanguage("en") }
+
+        (dictionary.sortedWords.size >= 295_000) shouldBe true
+        dictionary.contains("kubernetes") shouldBe true
+        dictionary.contains("chatgpt") shouldBe true
+        dictionary.contains("telehealth") shouldBe true
+        dictionary.contains("swiftfloris") shouldBe true
+        dictionary.frequencyFor("kubernetes") shouldBe 96 / 255.0
     }
 })
 

@@ -1,14 +1,15 @@
 # Standard Word Dictionaries
 
 `en.txt` is the plain one-word-per-line English dictionary used by providers that need a direct word set instead of
-frequency data. It is generated from `../ime/dict/data.json` by preserving ASCII English tokens in frequency order.
+frequency data. It is generated from the merged English runtime dictionary: `../ime/dict/data.json` plus the
+low-priority `../ime/dict/en_supplemental.json` expansion.
 
-The default Latin NLP provider reads `../ime/dict/data.json` directly so it can use word frequencies for completions,
-corrections, and autocorrect ranking.
+The default Latin NLP provider reads `../ime/dict/data.json` and merges `../ime/dict/en_supplemental.json` for
+English, preserving word frequencies for completions, corrections, and autocorrect ranking.
 
 ## Provenance
 
-The English dictionary is a merge of two sources:
+The English dictionary is a merge of three sources:
 
 1. **Curated high-frequency corpus (~50k words, freq band 128–255).** The original frequency-ranked subset shipped
    with SwiftFloris, derived from the FlorisBoard project's bundled dictionary. Real-world frequency data informs the
@@ -20,7 +21,12 @@ The English dictionary is a merge of two sources:
    These words are included for spell-check membership (so legitimate uncommon words don't get red-squiggled or
    silently auto-corrected), but ranked below the curated corpus so autocorrect still prefers high-frequency forms.
 
-Total: ~117k words.
+3. **Low-priority supplemental expansion (~183k additional words, freq band 48-96).** Stored in
+   `../ime/dict/en_supplemental.json` and merged at runtime for English. Most entries come from SCOWL's larger
+   `70` and `80` word-list tiers. A small maintained `utils/english_modern_terms.txt` list adds current technical,
+   healthcare, Android, and AI vocabulary not covered by SCOWL 2020.
+
+Total merged plain English list: ~299k words.
 
 Profanity is filtered using the
 [LDNOOBW English bad-words list](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)
@@ -36,10 +42,27 @@ Profanity is filtered using the
 ```sh
 # 1. Download SCOWL
 cd /tmp && curl -L -o scowl.tar.gz \
-    https://sourceforge.net/projects/wordlist/files/SCOWL/2020.12.07/scowl-2020.12.07.tar.gz/download
+    https://qa.debian.org/watch/sf.php/wordlist/scowl-2020.12.07.tar.gz
 tar xzf scowl.tar.gz
 
-# 2. Combine wordlists
+# 2. Download profanity blocklist
+curl -sL -o /tmp/profanity_en.txt \
+    https://raw.githubusercontent.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words/master/en
+
+# 3. Generate low-priority supplement and merged plain word list
+cd <repo_root>
+python3 utils/build_english_supplemental_dictionary.py \
+    --base app/src/main/assets/ime/dict/data.json \
+    --scowl-final /tmp/scowl-2020.12.07/final \
+    --modern-terms utils/english_modern_terms.txt \
+    --profanity /tmp/profanity_en.txt \
+    --output-json app/src/main/assets/ime/dict/en_supplemental.json \
+    --output-word-list app/src/main/assets/dictionaries/en.txt
+```
+
+The older one-file merge flow is still available if `data.json` itself needs to be regenerated:
+
+```sh
 cd scowl-2020.12.07/final
 cat english-words.{10,20,35,40,50,60} american-words.{10,20,35,40,50,60} \
     english-proper-names.{50,60} american-proper-names.{50} 2>/dev/null \
@@ -56,15 +79,4 @@ python3 utils/expand_dictionary.py \
     --existing app/src/main/assets/ime/dict/data.json \
     --scowl /tmp/scowl_clean.txt \
     --output app/src/main/assets/ime/dict/data.json
-
-# 5. Regenerate en.txt from updated data.json
-python3 -c "
-import json
-with open('app/src/main/assets/ime/dict/data.json', 'r', encoding='utf-8') as fh:
-    d = json.load(fh)
-sorted_words = sorted(d.items(), key=lambda kv: (-kv[1], kv[0]))
-with open('app/src/main/assets/dictionaries/en.txt', 'w', encoding='utf-8') as fh:
-    for word, _ in sorted_words:
-        fh.write(word + '\n')
-"
 ```
