@@ -72,9 +72,15 @@ class NlpManager(context: Context) {
         scope = scope,
     )
     
-    // Caches for word lists and frequencies to avoid blocking on repeated calls
+    // Caches for word lists and frequencies to avoid blocking on repeated calls.
+    // wordsListCache is keyed by subtype only, so it is bounded by the active subtype
+    // count. frequencyCache is keyed by `${subtype}-$word` and is queried from the
+    // glide classifier inner loop (StatisticalGlideTypingClassifier:235) — on a long
+    // typing session every unique word would otherwise accumulate forever in a
+    // long-lived IME process, so it is bounded by an LruCache. 5000 entries is enough
+    // for the warm vocabulary of a single language session without unbounded growth.
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
-    private val frequencyCache = ConcurrentHashMap<String, Double>()
+    private val frequencyCache = LruCache<String, Double>(5000)
     private val autoCommitSuppression = AutoCommitSuppression()
 
     private val suggestionsRequestCounter = AtomicLong(0L)
@@ -362,10 +368,12 @@ class NlpManager(context: Context) {
 
     fun getFrequencyForWord(subtype: Subtype, word: String): Double {
         val cacheKey = "${subtype}-$word"
-        return frequencyCache.getOrPut(cacheKey) {
-            // Use blocking only for first-time fetch; results are cached afterward
-            runBlocking { providerRegistry.suggestionProvider(subtype).getFrequencyForWord(subtype, word) }
-        }
+        frequencyCache.get(cacheKey)?.let { return it }
+        // Use blocking only on cache miss; for trivial providers (e.g. Latin's pure
+        // map lookup) the wrapped suspend fn never actually suspends.
+        val value = runBlocking { providerRegistry.suggestionProvider(subtype).getFrequencyForWord(subtype, word) }
+        frequencyCache.put(cacheKey, value)
+        return value
     }
 
     private fun userDictionarySuggestions(
@@ -400,7 +408,7 @@ class NlpManager(context: Context) {
     private fun onUserDictionaryConfigurationChanged() {
         dictionaryManager.syncUserDictionaryStoresWithPreferences()
         wordsListCache.clear()
-        frequencyCache.clear()
+        frequencyCache.evictAll()
         assembleCandidates()
     }
 

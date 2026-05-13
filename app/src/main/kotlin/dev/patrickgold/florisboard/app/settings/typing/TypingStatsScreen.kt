@@ -54,13 +54,16 @@ fun TypingStatsScreen() = FlorisScreen {
         withContext(Dispatchers.IO) {
             // Personal dictionary count + top words. Lifecycle-safe: a null dao means the
             // user hasn't opted into personal-dict yet, in which case we just show 0.
+            // Query the DAO once and reuse the result — the prior implementation issued
+            // two separate `queryAll()` calls (one for size, one for the sorted top-N),
+            // which means two full table scans per refresh on what can be a 10k+ row table.
             val dao = DictionaryManager.default().florisUserDictionaryDao()
-            personalDictCount = dao?.queryAll()?.size?.toLong() ?: 0L
-            personalDictTopWords = dao?.queryAll()
-                ?.sortedByDescending { it.freq }
-                ?.take(10)
-                ?.map { "${it.word}  (×${it.freq})" }
-                ?: emptyList()
+            val allEntries = dao?.queryAll().orEmpty()
+            personalDictCount = allEntries.size.toLong()
+            personalDictTopWords = allEntries
+                .sortedByDescending { it.freq }
+                .take(10)
+                .map { "${it.word}  (×${it.freq})" }
             // Bigram store size on disk — sum of every personal_bigrams_*.tsv file.
             bigramFileBytes = context.filesDir.listFiles { _, name ->
                 name.startsWith("personal_bigrams_") && name.endsWith(".tsv")
@@ -68,7 +71,10 @@ fun TypingStatsScreen() = FlorisScreen {
         }
     }
 
-    val adaptiveSamples = AdaptiveTouchModel.totalSampleCount()
+    // Snapshot the adaptive-touch sample count once per refresh, not on every
+    // recomposition — totalSampleCount() walks every key in every subtype bucket
+    // under a synchronized block and gets called from a Compose hot path otherwise.
+    val adaptiveSamples = remember(refreshTick) { AdaptiveTouchModel.totalSampleCount() }
 
     content {
         PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_corpus)) {

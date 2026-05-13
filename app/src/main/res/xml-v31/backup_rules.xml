@@ -1,4 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Data extraction rules for API 31+ (Android 12+).
+
+    Privacy posture: this is the "no cloud, no telemetry" keyboard. The
+    user dictionary (floris_user_dictionary) records every word the
+    personal-learning pipeline has promoted from the user's typing and is
+    therefore deliberately omitted from cloud-backup. Device-transfer is
+    a deliberate user action (Google's direct phone-to-phone setup flow,
+    not a silent upload), so it keeps the dictionary so a transferring
+    user does not lose their adaptive vocabulary.
+-->
 <data-extraction-rules>
     <cloud-backup>
         <include
@@ -7,9 +18,6 @@
         <include
             domain="file"
             path="ime"/>
-        <include
-            domain="database"
-            path="floris_user_dictionary"/>
     </cloud-backup>
     <device-transfer>
         <include

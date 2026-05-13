@@ -35,9 +35,6 @@
         android:theme="@style/FlorisAppTheme"
         tools:targetApi="tiramisu">
 
-        <!-- Allow app to be profiled for benchmarking and baseline profile generation -->
-        <profileable android:shell="true"/>
-
         <!-- IME service -->
         <service
             android:name="dev.patrickgold.florisboard.FlorisImeService"
