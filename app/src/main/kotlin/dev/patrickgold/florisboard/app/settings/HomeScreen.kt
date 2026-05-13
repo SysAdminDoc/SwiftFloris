@@ -67,18 +67,23 @@ fun HomeScreen() = FlorisScreen {
             FlorisErrorCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__home__ime_not_enabled),
+                secondaryText = stringRes(R.string.settings__home__ime_not_enabled_summary),
+                actionLabel = stringRes(R.string.settings__home__open_keyboard_settings),
                 onClick = { InputMethodUtils.showImeEnablerActivity(context) },
             )
         } else if (!isFlorisBoardSelected) {
             FlorisWarningCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__home__ime_not_selected),
+                secondaryText = stringRes(R.string.settings__home__ime_not_selected_summary),
+                actionLabel = stringRes(R.string.settings__home__choose_keyboard),
                 onClick = { InputMethodUtils.showImePicker(context) },
             )
         } else {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__home__ime_ready),
+                secondaryText = stringRes(R.string.settings__home__ime_ready_summary),
             )
         }
 

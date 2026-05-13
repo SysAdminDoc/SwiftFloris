@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExtendedFloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -203,7 +202,7 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                 modifier = Modifier.onGloballyPositioned {
                     fabHeight = it.size.height
                 },
-                shape = FloatingActionButtonDefaults.extendedFabShape,
+                shape = MaterialTheme.shapes.medium,
                 onClick = { type.launchExtensionCreate.invoke(navController) },
             )
         }

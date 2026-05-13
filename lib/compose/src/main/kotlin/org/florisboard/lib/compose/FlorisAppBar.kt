@@ -35,6 +35,7 @@ fun FlorisAppBar(
     actions: @Composable RowScope.() -> Unit = { },
     scrollBehavior: TopAppBarScrollBehavior
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     TopAppBar(
         navigationIcon = navigationIcon ?: {},
         title = {
@@ -48,8 +49,11 @@ fun FlorisAppBar(
         },
         actions = actions,
         colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = MaterialTheme.colorScheme.background,
-            scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+            containerColor = colorScheme.background,
+            scrolledContainerColor = colorScheme.surfaceContainerLow,
+            titleContentColor = colorScheme.onSurface,
+            navigationIconContentColor = colorScheme.onSurfaceVariant,
+            actionIconContentColor = colorScheme.onSurfaceVariant,
         ),
         scrollBehavior = scrollBehavior
     )

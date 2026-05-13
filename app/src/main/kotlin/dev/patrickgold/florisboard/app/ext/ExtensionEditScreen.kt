@@ -85,6 +85,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import java.util.*
 import org.florisboard.lib.compose.FlorisButtonBar
+import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
@@ -586,16 +587,25 @@ private fun ManageDependenciesScreen(workspace: CacheManager.ExtEditorWorkspace<
 
         FlorisInfoCard(
             modifier = Modifier.padding(all = 8.dp),
-            text = """
-                Dependencies are currently not implemented, but are already somewhat
-                integrated as a placeholder for the future.
-                """.trimIndent().replace('\n', ' '),
+            text = stringRes(R.string.ext__editor__dependencies__placeholder_title),
+            secondaryText = stringRes(R.string.ext__editor__dependencies__placeholder_summary),
+            showIcon = false,
         )
         if (dependencyList.isEmpty()) {
-            Text(text = "no deps found")
+            FlorisEmptyState(
+                modifier = Modifier.padding(16.dp),
+                icon = Icons.Default.Code,
+                title = stringRes(R.string.ext__editor__dependencies__empty_title),
+                message = stringRes(R.string.ext__editor__dependencies__empty_message),
+            )
         } else {
             for (dependency in dependencyList) {
-                Text(text = dependency)
+                Text(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    text = dependency,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
@@ -666,7 +676,7 @@ private fun <T : ExtensionComponent> CreateComponentScreen(
                     when (createFrom) {
                         CreateFrom.EMPTY -> {
                             if (editor.themes.any { it.id == newId.trim() }) {
-                                context.showLongToastSync("A theme with this ID already exists!")
+                                context.showLongToastSync(R.string.settings__theme_editor__theme_id_exists)
                             } else {
                                 val componentEditor = ThemeExtensionComponentEditor(
                                     id = newId.trim(),

@@ -171,6 +171,7 @@ fun VoiceInputScreen() = FlorisScreen {
             status = status,
             onClick = when {
                 status.isFutoEnabled && !status.isFutoMicrophonePermissionGranted -> ::openFutoAppSettings
+                status.isFutoInstalled && !status.isFutoEnabled -> ::openKeyboardSettings
                 status.isFutoInstalled -> ::openFuto
                 else -> {
                     { context.launchUrl(VoiceInputManager.FUTO_FDROID_URL) }
@@ -418,30 +419,35 @@ private fun VoiceInputStatusCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_permission_denied),
             secondaryText = stringRes(R.string.settings__voice_input__status_permission_denied_summary),
+            actionLabel = stringRes(R.string.voice_input_setup__open_futo_permissions),
             onClick = onClick,
         )
         status.isFutoEnabled -> FlorisInfoCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_ready),
             secondaryText = stringRes(R.string.settings__voice_input__status_ready_summary),
+            actionLabel = stringRes(R.string.settings__voice_input__open_futo_language_settings),
             onClick = onClick,
         )
         status.isFutoInstalled -> FlorisWarningCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_futo_not_enabled),
             secondaryText = stringRes(R.string.settings__voice_input__status_futo_not_enabled_summary),
+            actionLabel = stringRes(R.string.voice_input_setup__open_keyboard_settings),
             onClick = onClick,
         )
         status.isAnyVoiceProviderEnabled -> FlorisWarningCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_other_provider),
             secondaryText = stringRes(R.string.settings__voice_input__status_other_provider_summary),
+            actionLabel = stringRes(R.string.voice_input_setup__open_keyboard_settings),
             onClick = onClick,
         )
         else -> FlorisErrorCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_futo_not_installed),
             secondaryText = stringRes(R.string.settings__voice_input__status_futo_not_installed_summary),
+            actionLabel = stringRes(R.string.voice_input_setup__install_fdroid),
             onClick = onClick,
         )
     }

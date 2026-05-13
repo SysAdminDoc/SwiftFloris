@@ -34,7 +34,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Button
@@ -315,7 +314,7 @@ private fun StepHeader(
             modifier = Modifier
                 .padding(end = StepHeaderNumberBoxPaddingEnd)
                 .size(StepHeaderNumberBoxSize)
-                .clip(CircleShape)
+                .clip(MaterialTheme.shapes.small)
                 .background(numberBackgroundColor),
         ) {
             if (isCompleted) {
@@ -348,7 +347,7 @@ private fun StepHeader(
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = if (isCurrent) FontWeight.SemiBold else FontWeight.Medium,
                 overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
+                maxLines = 2,
                 color = contentColor,
             )
         }

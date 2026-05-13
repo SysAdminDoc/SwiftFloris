@@ -310,6 +310,13 @@ fun RestoreScreen() = FlorisScreen {
                 secondaryText = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite_summary),
             )
         }
+        if (importStrategy == ImportStrategy.Erase) {
+            FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__erase_warning_title),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__erase_warning_summary),
+            )
+        }
         FlorisOutlinedButton(
             onClick = {
                 runCatching {

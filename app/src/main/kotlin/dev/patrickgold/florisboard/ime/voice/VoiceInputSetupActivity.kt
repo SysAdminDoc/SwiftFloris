@@ -131,6 +131,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
     ) {
         AlertDialog(
             onDismissRequest = onDismiss,
+            shape = MaterialTheme.shapes.large,
             title = { Text(text = stringRes(R.string.voice_input_setup__title)) },
             text = {
                 Column(
@@ -145,6 +146,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
                     ) {
                         FilledTonalButton(
                             modifier = Modifier.fillMaxWidth(),
+                            shape = MaterialTheme.shapes.small,
                             onClick = if (reason == VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED) {
                                 onOpenFutoAppSettings
                             } else {
@@ -164,6 +166,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
                         if (reason == VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED) {
                             OutlinedButton(
                                 modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.small,
                                 onClick = onOpenKeyboardSettings,
                             ) {
                                 Text(text = stringRes(R.string.voice_input_setup__open_keyboard_settings))
@@ -171,12 +174,14 @@ class VoiceInputSetupActivity : ComponentActivity() {
                         } else if (reason != VoiceInputSetupReason.FUTO_NOT_ENABLED) {
                             OutlinedButton(
                                 modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.small,
                                 onClick = onOpenFdroid,
                             ) {
                                 Text(text = stringRes(R.string.voice_input_setup__install_fdroid))
                             }
                             OutlinedButton(
                                 modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.small,
                                 onClick = onOpenReleases,
                             ) {
                                 Text(text = stringRes(R.string.voice_input_setup__github_releases))
@@ -188,6 +193,7 @@ class VoiceInputSetupActivity : ComponentActivity() {
             confirmButton = {
                 TextButton(
                     modifier = Modifier.padding(end = 8.dp),
+                    shape = MaterialTheme.shapes.small,
                     onClick = onDismiss,
                 ) {
                     Text(text = stringRes(R.string.voice_input_setup__dismiss))

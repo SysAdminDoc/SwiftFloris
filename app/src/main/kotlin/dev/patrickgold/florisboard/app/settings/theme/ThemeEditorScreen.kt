@@ -247,6 +247,7 @@ fun ThemeEditorScreen(
             text = { Text(
                 text = stringRes(R.string.settings__theme_editor__add_rule),
             ) },
+            shape = MaterialTheme.shapes.medium,
             onClick = { snyggRuleToEdit = SnyggEmptyRuleForAdding },
         )
     }
@@ -638,7 +639,7 @@ private fun ComponentMetaEditorDialog(
             if (!allFieldsValid) {
                 showValidationErrors = true
             } else if (id != editor.id && (workspace.editor as? ThemeExtensionEditor)?.themes?.find { it.id == id.trim() } != null) {
-                context.showLongToastSync("A theme with this ID already exists!")
+                context.showLongToastSync(R.string.settings__theme_editor__theme_id_exists)
             } else {
                 workspace.update {
                     editor.id = id.trim()

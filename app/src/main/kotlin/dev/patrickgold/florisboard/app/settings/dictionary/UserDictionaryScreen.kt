@@ -34,6 +34,7 @@ import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -267,6 +268,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     floatingActionButton {
         ExtendedFloatingActionButton(
             onClick = { userDictionaryEntryForDialog = UserDictionaryEntryToAdd },
+            shape = MaterialTheme.shapes.medium,
             icon = {
                 Icon(
                     imageVector = Icons.Default.Add,
