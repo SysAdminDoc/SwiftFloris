@@ -585,7 +585,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val spaceBarMode = enum(
             key = "keyboard__space_bar_display_mode",
-            default = SpaceBarMode.CURRENT_LANGUAGE,
+            default = SpaceBarMode.NOTHING,
         )
         val capitalizationBehavior = enum(
             key = "keyboard__capitalization_behavior",
@@ -1005,6 +1005,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             "keyboard__key_spacing_vertical" -> {
                 if (entry.type.isFloat()) {
                     entry.reset()
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "keyboard__space_bar_display_mode" -> {
+                if (entry.rawValue == SpaceBarMode.CURRENT_LANGUAGE.name) {
+                    entry.transform(rawValue = SpaceBarMode.NOTHING.name)
                 } else {
                     entry.keepAsIs()
                 }
