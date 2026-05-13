@@ -6,15 +6,22 @@
   ],
   [
     { "code": -202, "label": "view_symbols", "type": "system_gui" },
+    { "code": -212, "label": "ime_ui_mode_media", "type": "system_gui" },
     { "$": "variation_selector",
-      "default":  { "code":   44, "label": ",", "groupId": 1 },
+      "default":  { "code":   44, "label": ",", "groupId": 1, "popup": {
+        "main": { "code": -233, "label": "voice_input", "type": "system_gui" }
+      } },
       "email":    { "code":   64, "label": "@", "groupId": 1 },
       "uri":      { "code":   47, "label": "/", "groupId": 1 }
     },
     { "code": -227, "label": "language_switch", "type": "system_gui" },
-    { "code": -212, "label": "ime_ui_mode_media", "type": "system_gui" },
     { "code":   32, "label": "space" },
-    { "code":   46, "label": ".", "groupId": 2 },
+    { "code":   46, "label": ".", "groupId": 2, "popup": {
+      "main": { "code":   33, "label": "!" },
+      "relevant": [
+        { "code":   63, "label": "?" }
+      ]
+    } },
     { "code":   10, "label": "enter", "groupId": 3, "type": "enter_editing" }
   ]
 ]

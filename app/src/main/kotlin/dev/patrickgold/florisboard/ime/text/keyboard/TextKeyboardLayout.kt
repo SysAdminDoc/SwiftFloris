@@ -29,6 +29,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.KeyboardVoice
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +47,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -386,6 +389,8 @@ private fun TextKeyButton(
             },
     ) {
         val isTelPadKey = key.computedData.type == KeyType.NUMERIC && evaluator.keyboard.mode == KeyboardMode.PHONE
+        val isVoiceCommaKey = evaluator.keyboard.mode == KeyboardMode.CHARACTERS && key.computedData.code == 44
+        val isPunctuationClusterKey = evaluator.keyboard.mode == KeyboardMode.CHARACTERS && key.computedData.code == 46
         key.label?.let { label ->
             var customLabel = label
             if (key.computedData.code == KeyCode.SPACE) {
@@ -400,8 +405,34 @@ private fun TextKeyButton(
             SnyggText(
                 modifier = Modifier
                     .wrapContentSize()
-                    .align(if (isTelPadKey) BiasAlignment(-0.5f, 0f) else Alignment.Center),
+                    .align(
+                        when {
+                            isTelPadKey -> BiasAlignment(-0.5f, 0f)
+                            isVoiceCommaKey || isPunctuationClusterKey -> BiasAlignment(0f, 0.58f)
+                            else -> Alignment.Center
+                        }
+                    ),
                 text = customLabel,
+            )
+        }
+        if (isVoiceCommaKey) {
+            SnyggIcon(
+                modifier = Modifier
+                    .align(BiasAlignment(0f, -0.55f))
+                    .alpha(0.56f),
+                imageVector = Icons.Default.KeyboardVoice,
+                contentDescription = null,
+            )
+        }
+        if (isPunctuationClusterKey) {
+            SnyggText(
+                elementName = FlorisImeUi.KeyHint.elementName,
+                attributes = attributes,
+                selector = selector,
+                modifier = Modifier
+                    .wrapContentSize()
+                    .align(BiasAlignment(0f, -0.62f)),
+                text = "!?",
             )
         }
         key.hintedLabel?.let { hintedLabel ->
