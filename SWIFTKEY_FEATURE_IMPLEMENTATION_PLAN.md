@@ -89,3 +89,13 @@ The third implementation slice tightens SwiftKey-style spacebar semantics:
 - Let pressing space complete or correct an unrecognized current word with the middle prediction.
 - Keep high-confidence autocorrect and shortcut replacements ahead of generic prediction insertion.
 - Leave next-word "always insert prediction" as a separate explicit setting, because SwiftKey exposes it separately from normal autocorrect.
+
+## Fourth Slice
+
+The fourth implementation slice starts the real touch-decoder loop:
+
+- Record the primary key plus bounded nearby letter alternatives on successful tap-up events.
+- Feed the current word's recent touch evidence into the central SwiftKey-style ranker.
+- Promote candidates whose replacement path matches nearby-key evidence, even when their raw confidence is lower than a generic fallback.
+- Keep recognized typed words as the middle spacebar action, so spatial evidence does not replace deliberate valid words.
+- Keep the evidence transient, incognito-gated, password-field-gated, and bounded until the per-subtype persistent touch model is ready.

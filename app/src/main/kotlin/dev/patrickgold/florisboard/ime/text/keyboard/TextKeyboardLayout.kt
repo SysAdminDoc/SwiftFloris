@@ -76,6 +76,7 @@ import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
+import dev.patrickgold.florisboard.ime.nlp.TouchDecoderCandidate
 import dev.patrickgold.florisboard.ime.popup.ExceptionsForKeyCodes
 import dev.patrickgold.florisboard.ime.popup.PopupUiController
 import dev.patrickgold.florisboard.ime.popup.rememberPopupUiController
@@ -94,6 +95,7 @@ import dev.patrickgold.florisboard.lib.PointerMap
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.toIntOffset
+import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.channels.Channel
@@ -528,6 +530,7 @@ private class TextKeyboardLayoutController(
     private val prefs by FlorisPreferenceStore
     private val editorInstance by context.editorInstance()
     private val keyboardManager by context.keyboardManager()
+    private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
 
     private val inputEventDispatcher get() = keyboardManager.inputEventDispatcher
@@ -693,7 +696,12 @@ private class TextKeyboardLayoutController(
 
         val touchX = event.getX(pointer.index)
         val touchY = event.getY(pointer.index)
-        val adaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get() && keyboard.mode == KeyboardMode.CHARACTERS
+        val canCaptureTextTap = keyboard.mode == KeyboardMode.CHARACTERS &&
+            keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD
+        val adaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get() && canCaptureTextTap
+        val touchDecoderEnabled = prefs.correction.autoCorrect.get() &&
+            canCaptureTextTap &&
+            !keyboardManager.activeState.isIncognitoMode
         val initialKey = keyboard.getKeyForPos(touchX, touchY) ?: if (adaptiveTouchEnabled) {
             keyboard.getNearestKeyForPos(touchX, touchY)
         } else {
@@ -706,7 +714,7 @@ private class TextKeyboardLayoutController(
         }
         if (key != null && key.isEnabled) {
             key.computedDataOnDown = key.computedData
-            if (adaptiveTouchEnabled) {
+            if (adaptiveTouchEnabled || touchDecoderEnabled) {
                 pointer.adaptiveTouchKey = key
                 pointer.adaptiveTouchX = touchX
                 pointer.adaptiveTouchY = touchY
@@ -814,6 +822,7 @@ private class TextKeyboardLayoutController(
                 val retData = popupUiController.getActiveKeyData(activeKey)
                 if (retData != null && !pointer.hasTriggeredGestureMove) {
                     if (retData == activeKey.computedData) {
+                        recordSuccessfulTapIfEligible(pointer, activeKey, retData)
                         if (activeKey.computedData != activeKey.computedDataOnDown) {
                             inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                             inputEventDispatcher.sendDownUp(activeKey.computedData)
@@ -824,7 +833,6 @@ private class TextKeyboardLayoutController(
                         inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                         inputEventDispatcher.sendDownUp(retData)
                     }
-                    recordAdaptiveTapIfEligible(pointer, activeKey, retData)
                 } else {
                     inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                 }
@@ -833,13 +841,13 @@ private class TextKeyboardLayoutController(
                 if (pointer.hasTriggeredGestureMove) {
                     inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                 } else {
+                    recordSuccessfulTapIfEligible(pointer, activeKey, activeKey.computedData)
                     if (activeKey.computedData != activeKey.computedDataOnDown) {
                         inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
                         inputEventDispatcher.sendDownUp(activeKey.computedData)
                     } else {
                         inputEventDispatcher.sendUp(activeKey.computedDataOnDown)
                     }
-                    recordAdaptiveTapIfEligible(pointer, activeKey, activeKey.computedData)
                 }
             }
             pointer.activeKey = null
@@ -847,12 +855,41 @@ private class TextKeyboardLayoutController(
         pointer.hasTriggeredGestureMove = false
     }
 
-    private fun recordAdaptiveTapIfEligible(pointer: TouchPointer, activeKey: TextKey, committedData: KeyData) {
-        if (!prefs.correction.adaptiveTouchModel.get() || keyboard.mode != KeyboardMode.CHARACTERS) return
+    private fun recordSuccessfulTapIfEligible(pointer: TouchPointer, activeKey: TextKey, committedData: KeyData) {
+        if (keyboard.mode != KeyboardMode.CHARACTERS) return
         if (pointer.hasTriggeredGestureMove || pointer.hasTriggeredLongPress) return
         if (pointer.adaptiveTouchKey !== activeKey) return
         if (committedData.code != activeKey.computedData.code) return
-        AdaptiveTouchModel.recordTap(activeKey, pointer.adaptiveTouchX, pointer.adaptiveTouchY)
+        if (prefs.correction.adaptiveTouchModel.get()) {
+            AdaptiveTouchModel.recordTap(activeKey, pointer.adaptiveTouchX, pointer.adaptiveTouchY)
+        }
+        recordTouchDecoderEvidence(activeKey, committedData, pointer.adaptiveTouchX, pointer.adaptiveTouchY)
+    }
+
+    private fun recordTouchDecoderEvidence(
+        activeKey: TextKey,
+        committedData: KeyData,
+        touchX: Float,
+        touchY: Float,
+    ) {
+        val primaryText = committedData.asString(isForDisplay = false)
+        if (primaryText.length != 1 || primaryText.none { it.isLetter() }) return
+        val alternatives = keyboard.getNearbyKeysForPos(touchX, touchY)
+            .asSequence()
+            .filter { nearby -> nearby.key !== activeKey }
+            .mapNotNull { nearby ->
+                val alternativeText = nearby.key.computedData.asString(isForDisplay = false)
+                if (alternativeText.length == 1 && alternativeText.any { it.isLetter() }) {
+                    TouchDecoderCandidate(
+                        text = alternativeText,
+                        confidence = nearby.confidence,
+                    )
+                } else {
+                    null
+                }
+            }
+            .toList()
+        nlpManager.recordTouchDecoderSample(primaryText, alternatives)
     }
 
     private fun onTouchCancelInternal(event: MotionEvent, pointer: TouchPointer) {

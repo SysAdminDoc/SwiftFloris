@@ -49,6 +49,18 @@ class TextKeyboardGapRescueTest : FunSpec({
 
         keyboard.getNearestKeyForPos(45f, 25f) shouldBe available
     }
+
+    test("nearby key evidence includes adjacent visible keys by confidence") {
+        val primary = key("g", 0f, 0f, 50f, 50f)
+        val adjacent = key("h", 50f, 0f, 100f, 50f)
+        val far = key("j", 180f, 0f, 230f, 50f)
+        val keyboard = keyboard(arrayOf(primary, adjacent, far))
+
+        val nearby = keyboard.getNearbyKeysForPos(49f, 25f)
+
+        nearby.map { it.key } shouldBe listOf(primary, adjacent)
+        (nearby[0].confidence > nearby[1].confidence) shouldBe true
+    }
 })
 
 private fun keyboard(vararg rows: Array<TextKey>): TextKeyboard {
