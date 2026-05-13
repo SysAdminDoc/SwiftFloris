@@ -141,9 +141,14 @@
     <string name="settings__system_default" comment="General string which is used when a preference has the system default value set">System default</string>
 
     <string name="settings__home__title" comment="Title of the Home screen">{app_name}</string>
-    <string name="settings__home__ime_ready" comment="Status message shown in Home when SwiftFloris is enabled and selected">SwiftFloris is active. Use the preview below to check your typing setup before switching apps.</string>
-    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled yet. Tap to open Android keyboard settings and make it available.</string>
-    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is enabled but not selected. Tap to switch your active keyboard.</string>
+    <string name="settings__home__ime_ready" comment="Status message shown in Home when SwiftFloris is enabled and selected">SwiftFloris is active</string>
+    <string name="settings__home__ime_ready_summary" comment="Status summary shown in Home when SwiftFloris is enabled and selected">Use the preview below to check languages, layout, autocorrect, and theme before switching apps. Your typing data stays on this device.</string>
+    <string name="settings__home__ime_not_enabled" comment="Error message shown in Home fragment when SwiftFloris is not enabled in the system">SwiftFloris is not enabled yet</string>
+    <string name="settings__home__ime_not_enabled_summary" comment="Error summary shown in Home fragment when SwiftFloris is not enabled in the system">Android requires one system approval before SwiftFloris can appear in the keyboard picker.</string>
+    <string name="settings__home__open_keyboard_settings" comment="Action label shown on Home status card">Open keyboard settings</string>
+    <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is enabled but not selected</string>
+    <string name="settings__home__ime_not_selected_summary" comment="Warning summary shown in Home fragment when SwiftFloris is not selected as the default keyboard">Choose SwiftFloris as your active keyboard. You can switch back from the Android keyboard picker at any time.</string>
+    <string name="settings__home__choose_keyboard" comment="Action label shown on Home status card">Choose keyboard</string>
     <string name="settings__home__section_essentials" comment="Home screen section title">Start here</string>
     <string name="settings__home__section_experience" comment="Home screen section title">Typing experience</string>
     <string name="settings__home__section_data" comment="Home screen section title">Data &amp; extensions</string>
@@ -339,6 +344,7 @@
     <string name="settings__theme_editor__component_meta_material_you__title">Material You</string>
     <string name="settings__theme_editor__stylesheet_error_title">Stylesheet error</string>
     <string name="settings__theme_editor__stylesheet_error_description">{app_name} can try to leniently load the stylesheet and add missing schemas, rules, or remove invalid rules, properties, or values. Do you want {app_name} to apply these changes?</string>
+    <string name="settings__theme_editor__theme_id_exists">A theme with this ID already exists</string>
     <string name="settings__theme_editor__component_meta_material_you__palette_style">Palette style</string>
     <string name="settings__theme_editor__component_meta_material_you__color_contrast">Color contrast</string>
     <string name="settings__theme_editor__component_meta_material_you__spec_version">Spec version</string>
@@ -771,6 +777,8 @@
     <!-- Setup UI strings -->
     <string name="setup__title" comment="Title of Setup">Set up {app_name}</string>
     <string name="setup__intro_message" comment="Short intro message welcoming new users">Complete these steps to enable {app_name}, choose it as your keyboard, and keep recovery options available.</string>
+    <string name="setup__privacy_status_title" comment="Privacy note shown during setup">Private by default</string>
+    <string name="setup__privacy_status_summary" comment="Privacy note summary shown during setup">SwiftFloris has no Internet permission. Setup only enables the Android input method and optional recovery alerts.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacy policy</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Repository</string>
 
@@ -842,6 +850,8 @@
     <string name="backup_and_restore__restore__mode_merge_summary">Keep existing data and add compatible items from the archive</string>
     <string name="backup_and_restore__restore__mode_erase_and_overwrite">Erase and overwrite current data</string>
     <string name="backup_and_restore__restore__mode_erase_and_overwrite_summary">Clear the selected data first, then restore from the archive</string>
+    <string name="backup_and_restore__restore__erase_warning_title">Erase mode will replace selected data</string>
+    <string name="backup_and_restore__restore__erase_warning_summary">Review the selected backup sections before restoring. SwiftFloris will remove matching local data first, then import the archive copy.</string>
     <string name="backup_and_restore__restore__success">Data restored.</string>
     <string name="backup_and_restore__restore__failure">Could not restore data: {error_message}</string>
     <string name="backup_and_restore__restore__empty_title">Select a backup archive</string>
@@ -968,8 +978,11 @@
     <string name="devtools__debuglog__title">Debug log</string>
     <string name="devtools__debuglog__copied_to_clipboard">Copied debug log to clipboard</string>
     <string name="devtools__debuglog__copy_log">Copy log</string>
-    <string name="devtools__debuglog__copy_for_github">Copy log (GitHub formatting)</string>
+    <string name="devtools__debuglog__copy_for_github">Copy GitHub log</string>
     <string name="devtools__debuglog__loading">Loading…</string>
+    <string name="devtools__debuglog__loading_summary">Collecting app, device, and logcat details. Nothing leaves this device unless you copy it.</string>
+    <string name="devtools__debuglog__ready_title">Debug log ready</string>
+    <string name="devtools__debuglog__ready_summary">{line_count} lines collected. Copy the raw log for local troubleshooting or the formatted log for GitHub issues.</string>
 
 
     <!-- Extension strings -->
@@ -1005,10 +1018,21 @@
     <string name="ext__editor__title_edit_keyboard">Edit keyboard extension</string>
     <string name="ext__editor__title_edit_theme">Edit theme extension</string>
     <string name="ext__editor__metadata__title">Manage meta data</string>
-    <string name="ext__editor__metadata__title_invalid">Invalid meta data</string>
-    <string name="ext__editor__metadata__message_invalid">The meta data for this extension is not valid, please check the meta data editor for details!</string>
+    <string name="ext__editor__metadata__title_invalid">Invalid metadata</string>
+    <string name="ext__editor__metadata__message_invalid">Review this extension\'s metadata before saving.</string>
     <string name="ext__editor__dependencies__title">Manage dependencies</string>
+    <string name="ext__editor__dependencies__placeholder_title">Dependency support is reserved for extension authors</string>
+    <string name="ext__editor__dependencies__placeholder_summary">SwiftFloris already preserves dependency metadata, but dependency resolution is not active yet.</string>
+    <string name="ext__editor__dependencies__empty_title">No dependencies declared</string>
+    <string name="ext__editor__dependencies__empty_message">This extension can be edited and exported without adding dependency metadata.</string>
     <string name="ext__editor__files__title">Manage archive files</string>
+    <string name="ext__editor__files__delete_success">File deleted</string>
+    <string name="ext__editor__files__delete_failure">Could not delete file</string>
+    <string name="ext__editor__files__rename_invalid">Use a valid file name in this folder</string>
+    <string name="ext__editor__files__rename_exists">A file with this name already exists</string>
+    <string name="ext__editor__files__rename_success">File renamed</string>
+    <string name="ext__editor__files__rename_failure">Could not rename file</string>
+    <string name="ext__editor__files__import_failure">Could not import file</string>
     <string name="ext__editor__files__type_fonts">Fonts</string>
     <string name="ext__editor__files__type_images">Images</string>
     <string name="ext__editor__create_component__title">Create component</string>

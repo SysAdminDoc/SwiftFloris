@@ -25,13 +25,12 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -78,6 +77,7 @@ fun FlorisSimpleCard(
     modifier: Modifier = Modifier,
     text: String,
     secondaryText: String? = null,
+    actionLabel: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     borderColor: Color = Color.Transparent,
@@ -104,7 +104,9 @@ fun FlorisSimpleCard(
         ),
     ) {
         Row(
-            modifier = Modifier.padding(contentPadding),
+            modifier = Modifier
+                .defaultMinSize(minHeight = 64.dp)
+                .padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             if (icon != null) {
@@ -128,8 +130,30 @@ fun FlorisSimpleCard(
                         color = contentColor.copy(alpha = 0.72f),
                     )
                 }
+                if (actionLabel != null && onClick != null) {
+                    Row(
+                        modifier = Modifier.padding(top = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Text(
+                            text = actionLabel,
+                            style = MaterialTheme.typography.labelLarge,
+                            color = contentColor,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        Icon(
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .size(18.dp),
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = contentColor.copy(alpha = 0.84f),
+                        )
+                    }
+                }
             }
-            if (onClick != null) {
+            if (onClick != null && actionLabel == null) {
                 Icon(
                     modifier = Modifier
                         .padding(start = 12.dp)
@@ -148,6 +172,7 @@ fun FlorisErrorCard(
     text: String,
     modifier: Modifier = Modifier,
     secondaryText: String? = null,
+    actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
     onClick: (() -> Unit)? = null,
@@ -158,15 +183,15 @@ fun FlorisErrorCard(
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
         borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.24f),
         onClick = onClick,
-        icon = if (showIcon) ({ Icon(
-            modifier = Modifier
-                .padding(all = FlorisCardDefaults.IconSpacing)
-                .requiredSize(FlorisCardDefaults.IconRequiredSize),
-            imageVector = Icons.Default.ErrorOutline,
-            contentDescription = null,
-        ) }) else null,
+        icon = if (showIcon) ({
+            FlorisStatusIcon(
+                imageVector = Icons.Default.ErrorOutline,
+                tint = MaterialTheme.colorScheme.onErrorContainer,
+            )
+        }) else null,
         text = text,
         secondaryText = secondaryText,
+        actionLabel = actionLabel,
         contentPadding = contentPadding,
     )
 }
@@ -176,6 +201,7 @@ fun FlorisWarningCard(
     text: String,
     modifier: Modifier = Modifier,
     secondaryText: String? = null,
+    actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
     onClick: (() -> Unit)? = null,
@@ -186,15 +212,15 @@ fun FlorisWarningCard(
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
         borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f),
         onClick = onClick,
-        icon = if (showIcon) ({ Icon(
-            modifier = Modifier
-                .padding(all = FlorisCardDefaults.IconSpacing)
-                .requiredSize(FlorisCardDefaults.IconRequiredSize),
-            imageVector = Icons.Outlined.Warning,
-            contentDescription = null,
-        ) }) else null,
+        icon = if (showIcon) ({
+            FlorisStatusIcon(
+                imageVector = Icons.Outlined.Warning,
+                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }) else null,
         text = text,
         secondaryText = secondaryText,
+        actionLabel = actionLabel,
         contentPadding = contentPadding,
     )
 }
@@ -204,6 +230,7 @@ fun FlorisInfoCard(
     text: String,
     modifier: Modifier = Modifier,
     secondaryText: String? = null,
+    actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
     onClick: (() -> Unit)? = null,
@@ -214,17 +241,39 @@ fun FlorisInfoCard(
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
         onClick = onClick,
-        icon = if (showIcon) ({ Icon(
-            modifier = Modifier
-                .padding(all = FlorisCardDefaults.IconSpacing)
-                .requiredSize(FlorisCardDefaults.IconRequiredSize),
-            imageVector = Icons.Default.Info,
-            contentDescription = null,
-        ) }) else null,
+        icon = if (showIcon) ({
+            FlorisStatusIcon(
+                imageVector = Icons.Default.Info,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }) else null,
         text = text,
         secondaryText = secondaryText,
+        actionLabel = actionLabel,
         contentPadding = contentPadding,
     )
+}
+
+@Composable
+private fun FlorisStatusIcon(
+    imageVector: ImageVector,
+    tint: Color,
+) {
+    Box(
+        modifier = Modifier
+            .padding(horizontal = FlorisCardDefaults.IconSpacing)
+            .size(40.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(tint.copy(alpha = 0.10f)),
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(
+            modifier = Modifier.size(FlorisCardDefaults.IconRequiredSize),
+            imageVector = imageVector,
+            contentDescription = null,
+            tint = tint,
+        )
+    }
 }
 
 @Composable
@@ -259,7 +308,7 @@ fun FlorisEmptyState(
             Box(
                 modifier = Modifier
                     .size(48.dp)
-                    .clip(CircleShape)
+                    .clip(MaterialTheme.shapes.medium)
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center,
             ) {

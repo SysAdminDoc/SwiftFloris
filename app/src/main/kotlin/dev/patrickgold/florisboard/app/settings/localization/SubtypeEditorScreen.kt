@@ -347,6 +347,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                             modifier = Modifier
                                 .padding(horizontal = 16.dp)
                                 .align(Alignment.End),
+                            shape = MaterialTheme.shapes.small,
                             onClick = { showSubtypePresetsDialog = true },
                         ) {
                             Text(

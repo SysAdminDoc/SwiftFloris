@@ -36,6 +36,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -241,6 +242,7 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
                     modifier = Modifier
                         .align(Alignment.End)
                         .padding(16.dp),
+                    shape = MaterialTheme.shapes.small,
                     onClick = { finish() },
                     colors = ButtonDefaults.textButtonColors(),
                 ) {
