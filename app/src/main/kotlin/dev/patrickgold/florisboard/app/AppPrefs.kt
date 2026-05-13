@@ -911,6 +911,9 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                     dynamicActions = arrangement.dynamicActions.map { migrateAction(it) },
                     hiddenActions = arrangement.hiddenActions.map { migrateAction(it) },
                 )
+                if (newArrangement.stickyAction == QuickAction.InsertKey(TextKeyData.VOICE_INPUT)) {
+                    newArrangement = newArrangement.copy(stickyAction = null)
+                }
                 if (QuickAction.InsertKey(TextKeyData.LANGUAGE_SWITCH) !in newArrangement) {
                     newArrangement = newArrangement.copy(
                         dynamicActions = newArrangement.dynamicActions.plus(QuickAction.InsertKey(TextKeyData.LANGUAGE_SWITCH))

@@ -25,7 +25,6 @@ import androidx.compose.animation.core.updateTransition
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.RowScope
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.absoluteOffset
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -294,12 +293,6 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 modifier = Modifier.padding(horizontal = 4.dp),
                 action = action,
                 evaluator = evaluator,
-            )
-        } else {
-            Spacer(
-                modifier = Modifier
-                    .padding(horizontal = 4.dp)
-                    .aspectRatio(1f),
             )
         }
     }

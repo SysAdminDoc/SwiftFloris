@@ -14,7 +14,7 @@
     "--focused-popup-surface": "#D6DBE2",
 
     "--drag-marker": "#DC2626",
-    "--spacer-color": "rgba(31, 31, 31, 0.18)",
+    "--spacer-color": "#00000000",
 
     "--one-hand-background": "#D4D8DD",
     "--one-hand-foreground": "#1F1F1F",
@@ -94,7 +94,7 @@
     "text-overflow": "ellipsis"
   },
   "key[code=-201,-202,-203]": {
-    "font-size": "22sp"
+    "font-size": "18sp"
   },
   "key[code=-204,-205]": {
     "font-size": "12sp"
