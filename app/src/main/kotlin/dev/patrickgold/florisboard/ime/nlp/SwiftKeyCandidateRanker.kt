@@ -20,6 +20,7 @@ internal data class SwiftKeyDecoderContext(
     val currentWord: String,
     val maxCandidateCount: Int,
     val typedWordKnown: Boolean = false,
+    val touchEvidence: TouchDecoderEvidence? = null,
 )
 
 internal object SwiftKeyCandidateRanker {
@@ -37,6 +38,8 @@ internal object SwiftKeyCandidateRanker {
         val canShowTypedLiteral = currentWord.isWordLike()
         val rankedSuggestions = rankedCandidates(
             typedWordKey = typedWordKey,
+            currentWord = currentWord,
+            touchEvidence = context.touchEvidence,
             preferred = preferred,
             fallback = fallback,
         )
@@ -90,6 +93,9 @@ internal object SwiftKeyCandidateRanker {
 
         val middleCandidate = candidates.getOrNull(1)
         val middleCandidateKey = middleCandidate?.text?.toString()?.normalizedCandidateKey()
+        if (middleCandidateKey == typedWordKey) {
+            return null
+        }
         if (middleCandidate is WordSuggestionCandidate &&
             middleCandidateKey != null &&
             middleCandidateKey != typedWordKey
@@ -105,25 +111,32 @@ internal object SwiftKeyCandidateRanker {
 
     private fun rankedCandidates(
         typedWordKey: String,
+        currentWord: String,
+        touchEvidence: TouchDecoderEvidence?,
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
     ): List<SuggestionCandidate> {
         return (preferred.mapIndexed { index, candidate ->
+            val touchScore = touchEvidence?.spatialReplacementScore(candidate.text, currentWord) ?: 0.0
             RankedCandidate(
                 candidate = candidate,
                 originalIndex = index,
                 sourcePriority = PreferredSourcePriority,
-                role = candidate.role(typedWordKey),
+                role = candidate.role(typedWordKey, touchScore),
+                touchScore = touchScore,
             )
         } + fallback.mapIndexed { index, candidate ->
+            val touchScore = touchEvidence?.spatialReplacementScore(candidate.text, currentWord) ?: 0.0
             RankedCandidate(
                 candidate = candidate,
                 originalIndex = index,
                 sourcePriority = FallbackSourcePriority,
-                role = candidate.role(typedWordKey),
+                role = candidate.role(typedWordKey, touchScore),
+                touchScore = touchScore,
             )
         }).sortedWith(
             compareByDescending<RankedCandidate> { it.role.priority }
+                .thenByDescending { it.touchScore }
                 .thenByDescending { it.sourcePriority }
                 .thenByDescending { it.candidate.confidence }
                 .thenBy { it.candidate.text.length }
@@ -131,11 +144,12 @@ internal object SwiftKeyCandidateRanker {
         ).map { it.candidate }
     }
 
-    private fun SuggestionCandidate.role(typedWordKey: String): CandidateRole {
+    private fun SuggestionCandidate.role(typedWordKey: String, touchScore: Double): CandidateRole {
         val key = text.toString().normalizedCandidateKey()
         return when {
             key.isBlank() -> CandidateRole.Other
             typedWordKey.isNotBlank() && key == typedWordKey -> CandidateRole.TypedLiteral
+            touchScore >= SpatialCorrectionScoreThreshold -> CandidateRole.SpatialCorrection
             isEligibleForAutoCommit -> CandidateRole.AutoCorrection
             typedWordKey.isNotBlank() && key.startsWith(typedWordKey) -> CandidateRole.Completion
             else -> CandidateRole.Other
@@ -147,10 +161,12 @@ internal object SwiftKeyCandidateRanker {
         val originalIndex: Int,
         val sourcePriority: Int,
         val role: CandidateRole,
+        val touchScore: Double,
     )
 
     private enum class CandidateRole(val priority: Int) {
         TypedLiteral(50),
+        SpatialCorrection(45),
         AutoCorrection(40),
         Completion(30),
         Other(10),
@@ -166,6 +182,7 @@ internal object SwiftKeyCandidateRanker {
     }
 
     private const val TypedLiteralConfidence = 0.62
+    private const val SpatialCorrectionScoreThreshold = 0.28
     private const val PreferredSourcePriority = 2
     private const val FallbackSourcePriority = 1
 }

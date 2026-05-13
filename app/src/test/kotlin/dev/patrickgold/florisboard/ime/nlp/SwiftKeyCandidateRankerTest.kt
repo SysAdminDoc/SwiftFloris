@@ -90,10 +90,56 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext("the", typedWordKnown = true),
             preferred = emptyList(),
-            fallback = listOf(candidate("they", confidence = 0.80), candidate("then", confidence = 0.70)),
+            fallback = listOf(
+                candidate("they", confidence = 0.80, autoCommit = true),
+                candidate("then", confidence = 0.70),
+            ),
         )
 
         SwiftKeyCandidateRanker.selectSpacebarCandidate("the", candidates) shouldBe null
+    }
+
+    test("rank promotes a spatial correction from touch evidence") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "gello",
+                touchEvidence = touchEvidence(
+                    sample("g", "h" to 0.74),
+                    sample("e"),
+                    sample("l"),
+                    sample("l"),
+                    sample("o"),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("fello", confidence = 0.99),
+                candidate("hello", confidence = 0.40),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("gello", "hello", "fello")
+    }
+
+    test("spatial evidence does not make spacebar replace a known typed word") {
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "jello",
+                typedWordKnown = true,
+                touchEvidence = touchEvidence(
+                    sample("j", "h" to 0.82),
+                    sample("e"),
+                    sample("l"),
+                    sample("l"),
+                    sample("o"),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(candidate("hello", confidence = 0.90, autoCommit = true)),
+        )
+
+        candidates.map { it.text.toString() } shouldBe listOf("hello", "jello")
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("jello", candidates) shouldBe null
     }
 
     test("spacebar candidate ignores emoji suggestions after a known literal") {
@@ -110,11 +156,29 @@ private fun decoderContext(
     currentWord: String,
     maxCandidateCount: Int = 8,
     typedWordKnown: Boolean = false,
+    touchEvidence: TouchDecoderEvidence? = null,
 ): SwiftKeyDecoderContext {
     return SwiftKeyDecoderContext(
         currentWord = currentWord,
         maxCandidateCount = maxCandidateCount,
         typedWordKnown = typedWordKnown,
+        touchEvidence = touchEvidence,
+    )
+}
+
+private fun touchEvidence(vararg samples: TouchDecoderSample): TouchDecoderEvidence {
+    return TouchDecoderEvidence(samples.toList())
+}
+
+private fun sample(primaryText: String, vararg alternatives: Pair<String, Double>): TouchDecoderSample {
+    return TouchDecoderSample(
+        primaryText = primaryText,
+        alternatives = alternatives.map { alternative ->
+            TouchDecoderCandidate(
+                text = alternative.first,
+                confidence = alternative.second,
+            )
+        },
     )
 }
 

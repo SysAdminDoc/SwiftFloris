@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.florisboard.subtypeManager
@@ -82,6 +83,7 @@ class NlpManager(context: Context) {
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
     private val frequencyCache = LruCache<String, Double>(5000)
     private val autoCommitSuppression = AutoCommitSuppression()
+    private val touchDecoderEvidence = TouchDecoderEvidenceBuffer()
 
     private val suggestionsRequestCounter = AtomicLong(0L)
     private val internalSuggestionsGuard = Mutex()
@@ -120,6 +122,7 @@ class NlpManager(context: Context) {
             onUserDictionaryConfigurationChanged()
         }
         subtypeManager.activeSubtypeFlow.collectLatestIn(scope) { subtype ->
+            touchDecoderEvidence.clear()
             preload(subtype)
         }
     }
@@ -244,6 +247,7 @@ class NlpManager(context: Context) {
                         subtype = subtype,
                         currentWord = currentWord,
                     ),
+                    touchEvidence = touchDecoderEvidence.evidenceFor(currentWord),
                 ),
                 preferred = userDictionarySuggestions,
                 fallback = suggestions,
@@ -279,6 +283,18 @@ class NlpManager(context: Context) {
                 }
             }
         }
+    }
+
+    internal fun recordTouchDecoderSample(primaryText: String, alternatives: List<TouchDecoderCandidate>) {
+        if (!prefs.correction.autoCorrect.get()) return
+        if (keyboardManager.activeState.isIncognitoMode) return
+        if (keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD) return
+        touchDecoderEvidence.record(
+            TouchDecoderSample(
+                primaryText = primaryText,
+                alternatives = alternatives,
+            )
+        )
     }
 
     fun getAutoCommitCandidate(): SuggestionCandidate? {

@@ -21,6 +21,7 @@ Primary references:
 - Personal dictionary learning, personal bigram/trigram next-word prediction, incognito gating, password-field learning suppression, and local-only learning all exist.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
 - Adaptive touch learning exists and now trains on successful tap-up rather than raw touch-down.
+- Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 
 ## Gaps That Still Matter
 
@@ -28,10 +29,10 @@ Primary references:
    SwiftKey exposes three modes: insert space, complete current word, or always insert prediction. SwiftFloris has the first two concepts, but does not yet expose "always insert prediction" for next-word insertion. This pass adds current-word middle-prediction behavior.
 
 2. Candidate ranking is still heuristic, not a unified decoder.
-   The app now has a central ranker, but it does not yet combine spatial tap alternatives, dictionary frequency, personal phrase frequency, language prior, and context probability in one scored lattice.
+   The app now has a central ranker and a first spatial evidence signal, but it does not yet combine dictionary frequency, personal phrase frequency, language prior, and context probability in one scored lattice.
 
 3. Touch correction still resolves one key before NLP.
-   Gap rescue and adaptive offsets help, but SwiftKey-like behavior should pass nearby-key alternatives into the decoder so "fat finger" ambiguity can be corrected by the language model instead of being fixed before text exists.
+   Gap rescue, adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs persistent per-subtype statistics, stronger offset priors, and multi-edit path scoring.
 
 4. Next-word prediction needs richer context.
    Personal bigram/trigram prediction exists, but a SwiftKey-level feel needs phrase-level continuation, recency/frequency decay, and stronger cold-start language-model priors.
@@ -52,13 +53,14 @@ Primary references:
 - Treat an unrecognized current word's middle candidate as the spacebar completion/correction.
 - Keep typed literal visible so correction mistakes are recoverable.
 - Continue to suppress rejected autocorrect pairs after backspace.
+- Use nearby-key touch evidence as a conservative tiebreaker before generic fallback confidence.
 
 ## Next Build Slice
 
-Build a `TouchDecoderEvidence` path:
+Persist and tune the `TouchDecoderEvidence` path:
 
-- On touch-up, emit the primary key plus nearest adjacent key alternatives with distance likelihood.
-- Feed those alternatives into `SwiftKeyCandidateRanker`.
-- Score candidates by edit path from the spatial evidence instead of plain Levenshtein only.
 - Persist per-subtype adaptive touch stats so the model survives process death, with reset and incognito guards.
-- Add tests for adjacent-key typos such as `gello -> hello`, row-gap taps, and rejected corrections.
+- Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
+- Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
+- Fold dictionary frequency and personal phrase probability into the same decoder score.
+- Add end-to-end instrumentation for adjacent-key typos such as `gello -> hello`, row-gap taps, and rejected corrections.
