@@ -1050,6 +1050,21 @@
     <string name="ext__import__ext_keyboard" comment="Title of Importer screen for keyboard extension import">Import keyboard extension</string>
     <string name="ext__import__ext_theme" comment="Title of Importer screen for theme extension import">Import theme extension</string>
     <string name="ext__import__ext_languagepack" comment="Title of Importer screen for language pack extension import">Import language pack extension</string>
+    <string name="ext__import__empty_title">No files selected</string>
+    <string name="ext__import__empty_message">Choose one or more SwiftFloris extension archives to review before importing.</string>
+    <string name="ext__import__review_title">Review before importing</string>
+    <string name="ext__import__review_message_all_ready">All selected files look ready. Review the details, then import when you are comfortable.</string>
+    <string name="ext__import__review_message_with_skips">Compatible files can be imported. Skipped files remain unchanged, so review them before continuing.</string>
+    <string name="ext__import__none_ready_title">No importable files</string>
+    <string name="ext__import__none_ready_message">Choose a supported SwiftFloris extension archive and try again.</string>
+    <string name="ext__import__error_title">Could not prepare import</string>
+    <string name="ext__import__error_message">SwiftFloris could not read the selected files. Review the technical details below or choose different files.</string>
+    <string name="ext__import__error_details_title">Technical details</string>
+    <string name="ext__import__error_details_unavailable">No technical details were provided.</string>
+    <string name="ext__import__unknown_file_type">Unknown file type</string>
+    <string name="ext__import__file_ready">Ready to import</string>
+    <string name="ext__import__file_skipped">Skipped</string>
+    <string name="ext__import__components_label">Includes</string>
     <string name="ext__import__file_skip" comment="Label when a file cannot be imported in the current context. The actual reason string is in a separate text view below this string.">This file cannot be imported. Reason:</string>
     <string name="ext__import__file_skip_unsupported" comment="Reason string when file is unsupported">Unsupported or unrecognized file type.</string>
     <string name="ext__import__file_skip_ext_core" comment="Reason string when ext has core extension ID">Unable to replace or update default extension packages provided with the app core assets. Consider updating the app itself if you intend to use a newer version of a core extension package.</string>
