@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
+import io.kotest.matchers.comparables.shouldBeLessThanOrEqualTo
 
 /**
  * ROADMAP §6 N8.1 — 48dp touch-target audit (WCAG 2.5.5 AAA, Material 3 default).
@@ -68,6 +69,21 @@ class TouchTargetWcagTest : FunSpec({
 
         // At max, keys are well above 48dp — this is a sanity floor on the upper bound.
         perKeyAtMax shouldBeGreaterThanOrEqualTo wcagAaaTargetDp
+    }
+
+    test("PHONE_PORTRAIT default visible key surface keeps row gaps compact") {
+        val density = Density(density = 1f, fontScale = 1f)
+        val rootInsets = with(density) {
+            ImeInsets.Root.of(IntRect(0, 0, typicalPhoneWidthDp, typicalPhoneHeightDp))
+        }
+
+        val constraints = ImeWindowConstraints.of(rootInsets, ImeWindowMode.Fixed.NORMAL)
+        val visibleKeyHeight = constraints.defKeyboardHeight.value / keyboardCharacterRows -
+            constraints.defKeyMarginV.value * 2f
+        val visibleRowGap = constraints.defKeyMarginV.value * 2f
+
+        visibleKeyHeight shouldBeGreaterThanOrEqualTo wcagAaaTargetDp
+        visibleRowGap shouldBeLessThanOrEqualTo 6f
     }
 
     test("PHONE_LANDSCAPE default keyboard on 800x360dp meets 24dp/key WCAG 2.5.8 AA floor") {
