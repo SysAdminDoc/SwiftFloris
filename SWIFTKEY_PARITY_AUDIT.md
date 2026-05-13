@@ -21,7 +21,7 @@ Primary references:
 - Flow-style glide typing exists, including Flow Through Space support.
 - Personal dictionary learning, personal bigram/trigram next-word prediction, incognito gating, password-field learning suppression, and local-only learning all exist.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
-- Adaptive touch learning exists and now trains on successful tap-up rather than raw touch-down.
+- Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 
 ## Gaps That Still Matter
@@ -33,7 +33,7 @@ Primary references:
    The app now has a central ranker and a first spatial evidence signal, but it does not yet combine dictionary frequency, personal phrase frequency, language prior, and context probability in one scored lattice.
 
 3. Touch correction still resolves one key before NLP.
-   Gap rescue, adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs persistent per-subtype statistics, stronger offset priors, and multi-edit path scoring.
+   Gap rescue, persisted adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs stronger accepted/rejected-correction priors and multi-edit path scoring.
 
 4. Next-word prediction needs richer context.
    Personal bigram/trigram prediction exists, but a SwiftKey-level feel needs phrase-level continuation, recency/frequency decay, and stronger cold-start language-model priors.
@@ -58,9 +58,8 @@ Primary references:
 
 ## Next Build Slice
 
-Persist and tune the `TouchDecoderEvidence` path, then attach an optional neural reranker:
+Tune the persisted adaptive-touch and `TouchDecoderEvidence` paths, then attach an optional neural reranker:
 
-- Persist per-subtype adaptive touch stats so the model survives process death, with reset and incognito guards.
 - Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
 - Fold dictionary frequency and personal phrase probability into the same decoder score.

@@ -119,3 +119,13 @@ The next high-leverage build path is an optional on-device neural reranker, not 
 - Start with the current heuristic ranker as the fallback implementation.
 - Later attach a quantized ONNX model through Android NNAPI/XNNPACK after the candidate contract is stable and test-covered.
 - Keep the base APK free of network permissions and keep every model local, user-resettable, and incognito-aware.
+
+## Sixth Slice
+
+The sixth implementation slice makes adaptive touch durable:
+
+- Persist per-subtype tap-offset distributions locally.
+- Restore learned offsets at app startup so hit-testing, nearby-key evidence, and glide ideal traces keep improving after process death.
+- Save in bounded batches to avoid disk churn while typing.
+- Keep the existing privacy gates: no learning in incognito, password fields, long-presses, popup selections, or gesture moves.
+- Acceptance: adaptive-touch sample counts and adjusted key centers survive a serialize/restore cycle.
