@@ -16,23 +16,26 @@
 
 package dev.patrickgold.florisboard.app.ext
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ListItem
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -53,6 +56,8 @@ fun ExtensionComponentNoneFoundView() {
     Text(
         modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
         text = stringRes(R.string.ext__meta__components_none_found),
+        style = MaterialTheme.typography.bodyMedium,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
         fontStyle = FontStyle.Italic,
     )
 }
@@ -80,35 +85,37 @@ fun ExtensionComponentView(
         ) {
             when (component) {
                 is ThemeExtensionComponent -> {
-                    val text = remember(
-                        component.authors, component.isNightTheme, component.stylesheetPath(),
-                    ) {
-                        buildString {
-                            appendLine("authors = ${component.authors}")
-                            appendLine("isNightTheme = ${component.isNightTheme}")
-                            append("stylesheetPath = ${component.stylesheetPath()}")
-                        }
-                    }
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = LocalContentColor.current,
+                    ComponentMetaRow(
+                        label = stringRes(R.string.ext__component__authors),
+                        value = component.authors.asComponentAuthorsText(),
+                        showDividerAbove = false,
+                    )
+                    ComponentMetaRow(
+                        label = stringRes(R.string.ext__component__night_theme),
+                        value = stringRes(if (component.isNightTheme) R.string.action__yes else R.string.action__no),
+                    )
+                    ComponentMetaRow(
+                        label = stringRes(R.string.ext__component__stylesheet_path),
+                        value = component.stylesheetPath(),
+                        monospace = true,
                     )
                 }
                 is LanguagePackComponent -> {
-                    val text = remember(
-                        component.authors, component.locale, component.hanShapeBasedKeyCode,
-                    ) {
-                        buildString {
-                            appendLine("authors = ${component.authors}")
-                            appendLine("locale = ${component.locale.localeTag()}")
-                            appendLine("hanShapeBasedKeyCode = ${component.hanShapeBasedKeyCode}")
-                        }
-                    }
-                    Text(
-                        text = text,
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = LocalContentColor.current,
+                    ComponentMetaRow(
+                        label = stringRes(R.string.ext__component__authors),
+                        value = component.authors.asComponentAuthorsText(),
+                        showDividerAbove = false,
+                    )
+                    ComponentMetaRow(
+                        label = stringRes(R.string.ext__component__locale),
+                        value = component.locale.localeTag(),
+                        monospace = true,
+                    )
+                    ComponentMetaRow(
+                        label = stringRes(R.string.ext__component__han_shape_key_code),
+                        value = component.hanShapeBasedKeyCode.takeIf { it.isNotBlank() }
+                            ?: stringRes(R.string.ext__component__not_configured),
+                        monospace = component.hanShapeBasedKeyCode.isNotBlank(),
                     )
                 }
                 else -> { }
@@ -140,6 +147,51 @@ fun ExtensionComponentView(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun List<String>.asComponentAuthorsText(): String {
+    return takeIf { it.isNotEmpty() }?.joinToString() ?: stringRes(R.string.ext__component__authors_none)
+}
+
+@Composable
+private fun ComponentMetaRow(
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    monospace: Boolean = false,
+    showDividerAbove: Boolean = true,
+) {
+    if (showDividerAbove) {
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
+    }
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween,
+    ) {
+        Text(
+            modifier = Modifier
+                .weight(0.40f)
+                .padding(end = 16.dp),
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            modifier = Modifier.weight(0.60f),
+            text = value,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontFamily = if (monospace) FontFamily.Monospace else null,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 

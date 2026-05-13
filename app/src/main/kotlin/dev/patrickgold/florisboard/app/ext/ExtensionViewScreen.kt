@@ -23,9 +23,9 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -43,6 +43,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -61,7 +63,9 @@ import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
 import dev.patrickgold.florisboard.lib.io.FlorisRef
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showLongToast
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedButton
+import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 
@@ -90,61 +94,94 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
     var extToDelete by remember { mutableStateOf<Extension?>(null) }
 
     content {
-        Column(
-            modifier = Modifier.padding(horizontal = 16.dp),
+        val canDeleteExtension = extensionManager.canDelete(ext)
+        FlorisInfoCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.ext__view__overview_title),
+            secondaryText = buildString {
+                append(
+                    ext.meta.description
+                        ?.takeIf { it.isNotBlank() }
+                        ?: stringRes(R.string.ext__view__no_description),
+                )
+                append("\n\n")
+                append(
+                    stringRes(
+                        if (canDeleteExtension) {
+                            R.string.ext__view__user_extension_summary
+                        } else {
+                            R.string.ext__view__core_extension_summary
+                        },
+                    ),
+                )
+            },
+            showIcon = false,
+        )
+        FlorisOutlinedBox(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            title = stringRes(R.string.ext__view__metadata_title),
         ) {
-            ext.meta.description?.let { Text(it) }
-            Spacer(modifier = Modifier.height(16.dp))
-            ExtensionMetaRowScrollableChips(
-                label = stringRes(R.string.ext__meta__maintainers),
-                showDividerAbove = false,
-            ) {
-                for ((n, maintainer) in ext.meta.maintainers.withIndex()) {
-                    if (n > 0) {
-                        Spacer(modifier = Modifier.width(8.dp))
-                    }
-                    ExtensionMaintainerChip(maintainer)
-                }
-            }
-            ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__id)) {
-                Text(text = ext.meta.id)
-            }
-            ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__version)) {
-                Text(text = ext.meta.version)
-            }
-            if (ext.meta.keywords != null && ext.meta.keywords!!.isNotEmpty()) {
-                ExtensionMetaRowScrollableChips(label = stringRes(R.string.ext__meta__keywords)) {
-                    for ((n, keyword) in ext.meta.keywords!!.withIndex()) {
+            Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)) {
+                ExtensionMetaRowScrollableChips(
+                    label = stringRes(R.string.ext__meta__maintainers),
+                    showDividerAbove = false,
+                ) {
+                    for ((n, maintainer) in ext.meta.maintainers.withIndex()) {
                         if (n > 0) {
                             Spacer(modifier = Modifier.width(8.dp))
                         }
-                        ExtensionKeywordChip(keyword)
+                        ExtensionMaintainerChip(maintainer)
                     }
                 }
-            }
-            if (!ext.meta.homepage.isNullOrBlank()) {
-                ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__homepage)) {
-                    FlorisHyperlinkText(
-                        text = FlorisRef.fromUrl(ext.meta.homepage!!).authority,
-                        url = ext.meta.homepage!!,
-                    )
+                ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__id)) {
+                    ExtensionMetaValueText(text = ext.meta.id, monospace = true)
+                }
+                ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__version)) {
+                    ExtensionMetaValueText(text = ext.meta.version, monospace = true)
+                }
+                if (ext.meta.keywords != null && ext.meta.keywords!!.isNotEmpty()) {
+                    ExtensionMetaRowScrollableChips(label = stringRes(R.string.ext__meta__keywords)) {
+                        for ((n, keyword) in ext.meta.keywords!!.withIndex()) {
+                            if (n > 0) {
+                                Spacer(modifier = Modifier.width(8.dp))
+                            }
+                            ExtensionKeywordChip(keyword)
+                        }
+                    }
+                }
+                if (!ext.meta.homepage.isNullOrBlank()) {
+                    ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__homepage)) {
+                        FlorisHyperlinkText(
+                            text = FlorisRef.fromUrl(ext.meta.homepage!!).authority,
+                            url = ext.meta.homepage!!,
+                        )
+                    }
+                }
+                if (!ext.meta.issueTracker.isNullOrBlank()) {
+                    ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__issue_tracker)) {
+                        FlorisHyperlinkText(
+                            text = FlorisRef.fromUrl(ext.meta.issueTracker!!).authority,
+                            url = ext.meta.issueTracker!!,
+                        )
+                    }
+                }
+                ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__license)) {
+                    ExtensionMetaValueText(text = ext.meta.license, monospace = true)
                 }
             }
-            if (!ext.meta.issueTracker.isNullOrBlank()) {
-                ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__issue_tracker)) {
-                    FlorisHyperlinkText(
-                        text = FlorisRef.fromUrl(ext.meta.issueTracker!!).authority,
-                        url = ext.meta.issueTracker!!,
-                    )
-                }
-            }
-            ExtensionMetaRowSimpleText(label = stringRes(R.string.ext__meta__license)) {
-                // TODO: display human-readable License name instead of
-                //  SPDX identifier
-                Text(text = ext.meta.license)
-            }
+        }
+        FlorisOutlinedBox(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            title = stringRes(R.string.ext__view__actions_title),
+        ) {
+            Text(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                text = stringRes(R.string.ext__view__actions_summary),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
             Row(modifier = Modifier.fillMaxWidth()) {
-                if (extensionManager.canDelete(ext)) {
+                if (canDeleteExtension) {
                     FlorisOutlinedButton(
                         onClick = {
                             extToDelete = ext
@@ -229,7 +266,7 @@ private fun ExtensionMetaRowSimpleText(
     content: @Composable RowScope.() -> Unit,
 ) {
     if (showDividerAbove) {
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
     }
     Row(
         modifier = modifier
@@ -238,8 +275,22 @@ private fun ExtensionMetaRowSimpleText(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(modifier = Modifier.padding(end = 24.dp), text = label)
-        content()
+        Text(
+            modifier = Modifier
+                .weight(0.40f)
+                .padding(end = 16.dp),
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Row(
+            modifier = Modifier.weight(0.60f),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
     }
 }
 
@@ -251,21 +302,51 @@ private fun ExtensionMetaRowScrollableChips(
     content: @Composable RowScope.() -> Unit,
 ) {
     if (showDividerAbove) {
-        HorizontalDivider()
+        HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
     }
     Row(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(modifier = Modifier.padding(end = 24.dp), text = label)
+        Text(
+            modifier = Modifier
+                .weight(0.40f)
+                .padding(end = 16.dp),
+            text = label,
+            style = MaterialTheme.typography.labelLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
         Row(
             modifier = Modifier
-                .weight(1.0f, fill = false)
+                .weight(0.60f)
                 .horizontalScroll(rememberScrollState()),
+            horizontalArrangement = Arrangement.End,
+            verticalAlignment = Alignment.CenterVertically,
         ) {
             content()
         }
+    }
+}
+
+@Composable
+private fun ExtensionMetaValueText(
+    text: String,
+    monospace: Boolean = false,
+) {
+    SelectionContainer {
+        Text(
+            text = text,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+            fontFamily = if (monospace) FontFamily.Monospace else null,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
     }
 }
 
