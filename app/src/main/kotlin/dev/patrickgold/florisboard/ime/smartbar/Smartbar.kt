@@ -35,8 +35,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.filled.UnfoldLess
 import androidx.compose.material.icons.filled.UnfoldMore
 import androidx.compose.runtime.Composable
@@ -184,11 +183,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
             ) {
                 if (it) 180f else 0f
             }
-            val arrowIcon = if (flipToggles) {
-                Icons.AutoMirrored.Default.KeyboardArrowLeft
-            } else {
-                Icons.AutoMirrored.Default.KeyboardArrowRight
-            }
+            val arrowIcon = Icons.Default.KeyboardArrowUp
             val incognitoIcon = ImageVector.vectorResource(id = R.drawable.ic_incognito)
             val incognitoDisplayMode = prefs.keyboard.incognitoDisplayMode.collectAsState()
             val isIncognitoMode = keyboardManager.activeState.isIncognitoMode

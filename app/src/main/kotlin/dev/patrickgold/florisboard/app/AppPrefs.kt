@@ -557,11 +557,11 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val numberRow = boolean(
             key = "keyboard__number_row",
-            default = false,
+            default = true,
         )
         val hintedNumberRowEnabled = boolean(
             key = "keyboard__hinted_number_row_enabled",
-            default = true,
+            default = false,
         )
         val hintedNumberRowMode = enum(
             key = "keyboard__hinted_number_row_mode",
@@ -569,7 +569,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val hintedSymbolsEnabled = boolean(
             key = "keyboard__hinted_symbols_enabled",
-            default = true,
+            default = false,
         )
         val hintedSymbolsMode = enum(
             key = "keyboard__hinted_symbols_mode",
@@ -581,7 +581,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val utilityKeyAction = enum(
             key = "keyboard__utility_key_action",
-            default = UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
+            default = UtilityKeyAction.SWITCH_TO_EMOJIS,
         )
         val spaceBarMode = enum(
             key = "keyboard__space_bar_display_mode",
@@ -778,7 +778,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
         val displayMode = enum(
             key = "suggestion__display_mode",
-            default = CandidatesDisplayMode.DYNAMIC_SCROLLABLE,
+            default = CandidatesDisplayMode.CLASSIC,
         )
         val blockPossiblyOffensive = boolean(
             key = "suggestion__block_possibly_offensive",
@@ -803,16 +803,16 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     inner class Theme {
         val mode = enum(
             key = "theme__mode",
-            default = ThemeMode.FOLLOW_SYSTEM,
+            default = ThemeMode.ALWAYS_NIGHT,
         )
         val dayThemeId = custom(
             key = "theme__day_theme_id",
-            default = extCoreTheme("floris_day"),
+            default = extCoreTheme("swiftkey_pure_light"),
             serializer = ExtensionComponentName.Serializer,
         )
         val nightThemeId = custom(
             key = "theme__night_theme_id",
-            default = extCoreTheme("floris_night"),
+            default = extCoreTheme("swiftkey_pure_dark"),
             serializer = ExtensionComponentName.Serializer,
         )
         val accentColor = custom(
@@ -1009,9 +1009,59 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                     entry.keepAsIs()
                 }
             }
+            "keyboard__number_row" -> {
+                if (entry.rawValue.equals("false", ignoreCase = true)) {
+                    entry.transform(rawValue = "true")
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "keyboard__hinted_number_row_enabled",
+            "keyboard__hinted_symbols_enabled" -> {
+                if (entry.rawValue.equals("true", ignoreCase = true)) {
+                    entry.transform(rawValue = "false")
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "keyboard__utility_key_action" -> {
+                if (entry.rawValue == UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS.name) {
+                    entry.transform(rawValue = UtilityKeyAction.SWITCH_TO_EMOJIS.name)
+                } else {
+                    entry.keepAsIs()
+                }
+            }
             "keyboard__space_bar_display_mode" -> {
                 if (entry.rawValue == SpaceBarMode.CURRENT_LANGUAGE.name) {
                     entry.transform(rawValue = SpaceBarMode.NOTHING.name)
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "suggestion__display_mode" -> {
+                if (entry.rawValue == CandidatesDisplayMode.DYNAMIC_SCROLLABLE.name) {
+                    entry.transform(rawValue = CandidatesDisplayMode.CLASSIC.name)
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "theme__mode" -> {
+                if (entry.rawValue == ThemeMode.FOLLOW_SYSTEM.name) {
+                    entry.transform(rawValue = ThemeMode.ALWAYS_NIGHT.name)
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "theme__day_theme_id" -> {
+                if (entry.rawValue == "org.florisboard.themes:floris_day") {
+                    entry.transform(rawValue = "org.florisboard.themes:swiftkey_pure_light")
+                } else {
+                    entry.keepAsIs()
+                }
+            }
+            "theme__night_theme_id" -> {
+                if (entry.rawValue == "org.florisboard.themes:floris_night") {
+                    entry.transform(rawValue = "org.florisboard.themes:swiftkey_pure_dark")
                 } else {
                     entry.keepAsIs()
                 }

@@ -27,9 +27,9 @@
     "--on-surface": "#1F1F1F",
     "--on-surface-variant": "#7A7E85",
 
-    "--shape": "rounded-corner(10dp, 10dp, 10dp, 10dp)",
-    "--shape-variant": "rounded-corner(16dp, 16dp, 16dp, 16dp)",
-    "--shape-chip": "rounded-corner(50%, 50%, 50%, 50%)"
+    "--shape": "rounded-corner(12dp, 12dp, 12dp, 12dp)",
+    "--shape-variant": "rounded-corner(12dp, 12dp, 12dp, 12dp)",
+    "--shape-chip": "rounded-corner(8dp, 8dp, 8dp, 8dp)"
   },
 
   "window": {
@@ -70,9 +70,9 @@
   "key": {
     "background": "var(--surface)",
     "foreground": "var(--on-surface)",
-    "font-size": "22sp",
+    "font-size": "30sp",
     "shape": "var(--shape)",
-    "shadow-elevation": "2dp",
+    "shadow-elevation": "1dp",
     "text-max-lines": "1"
   },
   "key:pressed": {
@@ -80,12 +80,12 @@
     "foreground": "var(--on-surface)"
   },
   "key[code=10]": {
-    "background": "var(--primary)",
-    "foreground": "var(--on-primary)"
+    "background": "var(--surface)",
+    "foreground": "var(--on-surface)"
   },
   "key[code=10]:pressed": {
-    "background": "var(--primary-variant)",
-    "foreground": "var(--on-primary)"
+    "background": "var(--surface-variant)",
+    "foreground": "var(--on-surface)"
   },
   "key[code=32]": {
     "background": "var(--surface)",
@@ -94,7 +94,7 @@
     "text-overflow": "ellipsis"
   },
   "key[code=-201,-202,-203]": {
-    "font-size": "18sp"
+    "font-size": "22sp"
   },
   "key[code=-204,-205]": {
     "font-size": "12sp"
@@ -109,7 +109,7 @@
     "background": "transparent",
     "foreground": "var(--on-surface-variant)",
     "font-family": "monospace",
-    "font-size": "12sp",
+    "font-size": "14sp",
     "padding": "0dp 1dp 1dp 0dp",
     "text-max-lines": "1"
   },
@@ -133,7 +133,7 @@
   },
 
   "smartbar": {
-    "font-size": "18sp"
+    "font-size": "20sp"
   },
   "smartbar-shared-actions-toggle": {
     "background": "var(--surface)",
@@ -165,7 +165,7 @@
     "foreground": "var(--on-primary)",
     "font-size": "14sp",
     "margin": "0dp 8dp 0dp 0dp",
-    "shape": "rounded-corner(24dp, 24dp, 24dp, 24dp)"
+    "shape": "rounded-corner(8dp, 8dp, 8dp, 8dp)"
   },
   "smartbar-action-tile": {
     "background": "var(--background-variant)",
@@ -173,7 +173,7 @@
     "font-size": "14sp",
     "margin": "4dp",
     "padding": "4dp",
-    "shape": "rounded-corner(20%, 20%, 20%, 20%)",
+    "shape": "rounded-corner(10dp, 10dp, 10dp, 10dp)",
     "text-align": "center",
     "text-max-lines": "2",
     "text-overflow": "ellipsis"
@@ -189,7 +189,7 @@
   "smartbar-actions-editor": {
     "background": "var(--background)",
     "foreground": "var(--on-background)",
-    "shape": "rounded-corner(24dp, 24dp, 0dp, 0dp)"
+    "shape": "rounded-corner(12dp, 12dp, 0dp, 0dp)"
   },
   "smartbar-actions-editor-header": {
     "background": "var(--surface)",
@@ -230,9 +230,9 @@
   "smartbar-candidate-word": {
     "background": "transparent",
     "foreground": "var(--on-background)",
-    "font-size": "14sp",
+    "font-size": "20sp",
     "margin": "4dp",
-    "padding": "8dp 0dp",
+    "padding": "6dp 0dp",
     "shape": "rectangle()",
     "text-max-lines": "1",
     "text-overflow": "ellipsis"
@@ -383,7 +383,7 @@
   "clipboard-history-disabled-button": {
     "background": "var(--primary)",
     "foreground": "var(--on-primary)",
-    "shape": "rounded-corner(24dp,24dp,24dp,24dp)"
+    "shape": "rounded-corner(8dp, 8dp, 8dp, 8dp)"
   },
   "clipboard-history-locked-title": {
     "font-weight": "bold",
@@ -477,7 +477,7 @@
   "subtype-panel": {
     "background": "var(--background)",
     "foreground": "var(--on-background)",
-    "shape": "rounded-corner(24dp, 24dp, 0dp, 0dp)"
+    "shape": "rounded-corner(12dp, 12dp, 0dp, 0dp)"
   },
   "subtype-panel-header": {
     "background": "var(--surface)",
