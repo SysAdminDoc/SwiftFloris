@@ -632,7 +632,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * but skips handling changing to characters keyboard and double space periods.
      */
     fun handleHardwareKeyboardSpace() {
-        val candidate = nlpManager.getAutoCommitCandidate()
+        val candidate = nlpManager.getSpacebarCandidate()
         candidate?.let { commitAutoCommitCandidate(it) }
         // Skip handling changing to characters keyboard and double space periods
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
@@ -650,8 +650,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // Snapshot the word the user actually typed *before* any auto-correct candidate
         // overwrites it; we want to learn what the user committed, which is either the
         // chosen candidate text (if autocorrect fired) or the literal typed word.
-        val typedWordBeforeCommit = editorInstance.activeContent.currentWordText.toString()
-        val candidate = nlpManager.getAutoCommitCandidate()
+        val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
+        val candidate = nlpManager.getSpacebarCandidate()
         candidate?.let { commitAutoCommitCandidate(it) }
         val learnedText = candidate?.text?.toString() ?: typedWordBeforeCommit
         if (learnedText.isNotBlank()) {

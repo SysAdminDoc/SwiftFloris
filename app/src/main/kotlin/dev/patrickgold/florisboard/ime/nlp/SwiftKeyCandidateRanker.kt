@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.nlp
 internal data class SwiftKeyDecoderContext(
     val currentWord: String,
     val maxCandidateCount: Int,
+    val typedWordKnown: Boolean = false,
 )
 
 internal object SwiftKeyCandidateRanker {
@@ -40,17 +41,29 @@ internal object SwiftKeyCandidateRanker {
             fallback = fallback,
         )
 
+        val typedLiteral = WordSuggestionCandidate(
+            text = currentWord,
+            confidence = TypedLiteralConfidence,
+            isEligibleForAutoCommit = false,
+            isEligibleForUserRemoval = false,
+        )
+
         val seen = mutableSetOf<String>()
         return buildList {
-            if (canShowTypedLiteral) {
-                add(
-                    WordSuggestionCandidate(
-                        text = currentWord,
-                        confidence = TypedLiteralConfidence,
-                        isEligibleForAutoCommit = false,
-                        isEligibleForUserRemoval = false,
-                    )
-                )
+            if (canShowTypedLiteral && context.typedWordKnown) {
+                if (context.maxCandidateCount >= 2) {
+                    rankedSuggestions.firstOrNull { candidate ->
+                        val key = candidate.text.toString().normalizedCandidateKey()
+                        key.isNotBlank() && key != typedWordKey
+                    }?.let { leadingCandidate ->
+                        add(leadingCandidate)
+                        seen.add(leadingCandidate.text.toString().normalizedCandidateKey())
+                    }
+                }
+                add(typedLiteral)
+                seen.add(typedWordKey)
+            } else if (canShowTypedLiteral) {
+                add(typedLiteral)
                 seen.add(typedWordKey)
             }
 
@@ -64,6 +77,30 @@ internal object SwiftKeyCandidateRanker {
                 }
             }
         }.take(context.maxCandidateCount)
+    }
+
+    fun selectSpacebarCandidate(
+        currentWord: String,
+        candidates: List<SuggestionCandidate>,
+    ): SuggestionCandidate? {
+        val typedWordKey = currentWord.trim().normalizedCandidateKey()
+        if (!currentWord.trim().isWordLike() || typedWordKey.isBlank()) {
+            return null
+        }
+
+        val middleCandidate = candidates.getOrNull(1)
+        val middleCandidateKey = middleCandidate?.text?.toString()?.normalizedCandidateKey()
+        if (middleCandidate is WordSuggestionCandidate &&
+            middleCandidateKey != null &&
+            middleCandidateKey != typedWordKey
+        ) {
+            return middleCandidate
+        }
+
+        return candidates.firstOrNull { candidate ->
+            candidate.isEligibleForAutoCommit &&
+                candidate.text.toString().normalizedCandidateKey() != typedWordKey
+        }
     }
 
     private fun rankedCandidates(

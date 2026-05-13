@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import dev.patrickgold.florisboard.ime.media.emoji.Emoji
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -64,15 +65,56 @@ class SwiftKeyCandidateRankerTest : FunSpec({
             fallback = listOf(candidate("next")),
         ).map { it.text.toString() } shouldBe listOf("next")
     }
+
+    test("rank places known typed words in the middle slot") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("I", typedWordKnown = true),
+            preferred = emptyList(),
+            fallback = listOf(candidate("I'm", confidence = 0.92), candidate("it's", confidence = 0.75)),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("I'm", "I", "it's")
+    }
+
+    test("spacebar candidate follows the middle prediction when it replaces the current word") {
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("neces"),
+            preferred = emptyList(),
+            fallback = listOf(candidate("necessary", confidence = 0.90)),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("neces", candidates)?.text shouldBe "necessary"
+    }
+
+    test("spacebar candidate keeps known middle literal unchanged") {
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("the", typedWordKnown = true),
+            preferred = emptyList(),
+            fallback = listOf(candidate("they", confidence = 0.80), candidate("then", confidence = 0.70)),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("the", candidates) shouldBe null
+    }
+
+    test("spacebar candidate ignores emoji suggestions after a known literal") {
+        val candidates = listOf(
+            candidate("love"),
+            EmojiSuggestionCandidate(Emoji("<3", "heart", emptyList()), showName = false),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("love", candidates) shouldBe null
+    }
 })
 
 private fun decoderContext(
     currentWord: String,
     maxCandidateCount: Int = 8,
+    typedWordKnown: Boolean = false,
 ): SwiftKeyDecoderContext {
     return SwiftKeyDecoderContext(
         currentWord = currentWord,
         maxCandidateCount = maxCandidateCount,
+        typedWordKnown = typedWordKnown,
     )
 }
 

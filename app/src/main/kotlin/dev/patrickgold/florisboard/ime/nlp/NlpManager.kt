@@ -234,10 +234,16 @@ class NlpManager(context: Context) {
             } else {
                 emptyList()
             }
+            val currentWord = content.autoCommitWord()
             val wordSuggestions = SwiftKeyCandidateRanker.rank(
                 context = SwiftKeyDecoderContext(
-                    currentWord = content.autoCommitWord(),
+                    currentWord = currentWord,
                     maxCandidateCount = 8,
+                    typedWordKnown = suggestionsEnabled && isKnownTypedWord(
+                        suggestionProvider = suggestionProvider,
+                        subtype = subtype,
+                        currentWord = currentWord,
+                    ),
                 ),
                 preferred = userDictionarySuggestions,
                 fallback = suggestions,
@@ -301,6 +307,30 @@ class NlpManager(context: Context) {
             return activeCandidate
         }
         return immediateAutoCommitCandidate(currentWord, currentWordStart)
+    }
+
+    fun getSpacebarCandidate(): SuggestionCandidate? {
+        if (!prefs.correction.autoCorrect.get()) {
+            return null
+        }
+        val content = editorInstance.activeContent
+        val currentWord = content.autoCommitWord()
+        val currentWordStart = content.autoCommitWordStart()
+
+        userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
+
+        val candidate = SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = currentWord,
+            candidates = activeCandidates,
+        ) ?: return immediateAutoCommitCandidate(currentWord, currentWordStart)
+
+        return candidate.takeUnless {
+            autoCommitSuppression.shouldSuppress(
+                currentWord = currentWord,
+                candidateText = it.text,
+                currentWordStart = currentWordStart,
+            )
+        }
     }
 
     private fun userDictionaryShortcutAutoCommitCandidate(
@@ -390,6 +420,23 @@ class NlpManager(context: Context) {
             return emptyList()
         }
         return dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
+    }
+
+    private suspend fun isKnownTypedWord(
+        suggestionProvider: SuggestionProvider,
+        subtype: Subtype,
+        currentWord: String,
+    ): Boolean {
+        val normalizedWord = currentWord.trim()
+            .trim { char -> !char.isLetter() && char != '\'' && char != '\u2019' }
+            .lowercase()
+        if (normalizedWord.isBlank() || normalizedWord.none { it.isLetter() }) {
+            return false
+        }
+        if (dictionaryManager.isKnownUserDictionaryWord(normalizedWord, subtype.primaryLocale)) {
+            return true
+        }
+        return suggestionProvider.getFrequencyForWord(subtype, normalizedWord) > 0.0
     }
 
     private fun immediateAutoCommitCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {

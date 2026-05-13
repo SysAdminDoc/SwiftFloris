@@ -79,3 +79,13 @@ The second implementation slice starts touch-aware typing:
 - Keep the rescue bounded so accidental touches far from the keyboard are ignored.
 - Train the adaptive touch model on successful normal tap-up events rather than touch-down events.
 - Avoid learning from cancelled touches, long-presses, swipe gestures, popup selections, or glide traces.
+
+## Third Slice
+
+The third implementation slice tightens SwiftKey-style spacebar semantics:
+
+- Treat the classic candidate strip as left alternative, middle action, right alternative.
+- Place recognized typed words in the middle slot so pressing space keeps the literal word.
+- Let pressing space complete or correct an unrecognized current word with the middle prediction.
+- Keep high-confidence autocorrect and shortcut replacements ahead of generic prediction insertion.
+- Leave next-word "always insert prediction" as a separate explicit setting, because SwiftKey exposes it separately from normal autocorrect.
