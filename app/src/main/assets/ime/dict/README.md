@@ -5,7 +5,10 @@ suggestions.
 
 ## Asset formats
 
-- `data.json` is the legacy English frequency map used by SwiftFloris before multilingual swipe support.
+- `data.json` is the core English frequency map used for completions, corrections, and autocorrect ranking.
+- `en_supplemental.json` is a low-priority English expansion merged after `data.json`. It adds large SCOWL
+  long-tail coverage and current technical/healthcare/Android/AI vocabulary while keeping frequencies below
+  autocorrect auto-commit thresholds.
 - `{language}.fldic` files are FlorisBoard NLP v0~draft1 dictionaries. SwiftFloris reads only their `[words]` section
   and normalizes the absolute word scores into the existing 0..255 frequency range.
 
