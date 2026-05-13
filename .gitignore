@@ -89,8 +89,9 @@ result
 /VOICE_INPUT_LATENCY_PLAN.md
 /VOICE_INPUT_PROFILING.md
 
-# Rust
-debug/
-target/
+# Rust (kept narrow so they don't shadow Android variant dirs like app/src/debug/)
+/target/
+**/target/debug/
+**/target/release/
 **/*.rs.bk
 *.pdb

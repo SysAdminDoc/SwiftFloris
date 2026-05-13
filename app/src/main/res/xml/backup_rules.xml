@@ -1,4 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Auto Backup rules for API 23-30 (pre-data-extraction-rules era).
+
+    Privacy posture: this is the "no cloud, no telemetry" keyboard. The
+    user dictionary table (floris_user_dictionary) records every word the
+    personal-learning pipeline has promoted from the user's typing, which
+    may include names, addresses, codenames, slang, and other PII. Auto
+    Backup on these old API levels uploads to the user's Google Drive
+    without granular cloud-vs-device-transfer control, so the dictionary
+    is deliberately excluded here. Layouts, prefs, and imported extensions
+    are safe to back up (they do not contain typed-text history).
+-->
 <full-backup-content>
     <include
         domain="root"
@@ -6,7 +18,4 @@
     <include
         domain="file"
         path="ime"/>
-    <include
-        domain="database"
-        path="floris_user_dictionary"/>
 </full-backup-content>

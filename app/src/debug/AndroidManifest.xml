@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Debug-only manifest overlay. Adds the <profileable> tag so adb-attached
+    profilers (Macrobenchmark, simpleperf, perfetto) can attach to the IME
+    process. Intentionally NOT present in release/beta builds: shell-attached
+    profiling on a production privacy keyboard is an unnecessary attack surface
+    (heap dumps would expose freshly-typed text), and it is not required for
+    normal end-user functionality.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <application>
+        <profileable android:shell="true"/>
+    </application>
+</manifest>
