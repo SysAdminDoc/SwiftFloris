@@ -234,15 +234,19 @@ class NlpManager(context: Context) {
             } else {
                 emptyList()
             }
+            val wordSuggestions = SwiftKeyCandidateRanker.rank(
+                context = SwiftKeyDecoderContext(
+                    currentWord = content.autoCommitWord(),
+                    maxCandidateCount = 8,
+                ),
+                preferred = userDictionarySuggestions,
+                fallback = suggestions,
+            )
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
                     internalSuggestions = requestId to buildList {
+                        addAll(wordSuggestions)
                         addAll(emojiSuggestions)
-                        addAll(SuggestionCandidateMerger.mergePreferred(
-                            preferred = userDictionarySuggestions,
-                            fallback = suggestions,
-                            maxCandidateCount = 8,
-                        ))
                     }
                 }
             }
