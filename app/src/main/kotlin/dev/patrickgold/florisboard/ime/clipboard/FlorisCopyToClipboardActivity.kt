@@ -23,7 +23,6 @@ import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Bundle
-import android.provider.MediaStore
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
@@ -168,9 +167,15 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
         contentResolver.openInputStream(uri)?.use { stream ->
             BitmapFactory.decodeStream(stream, null, bounds)
         }
+        // If bounds-only decode couldn't determine dimensions, fall back to a sampled
+        // full decode with a defensive inSampleSize=2 rather than MediaStore.getBitmap,
+        // which decodes at full resolution and can OOM on multi-megapixel inputs from
+        // attacker-supplied content:// URIs.
         if (bounds.outWidth <= 0 || bounds.outHeight <= 0) {
-            @Suppress("DEPRECATION")
-            return MediaStore.Images.Media.getBitmap(contentResolver, uri)
+            val fallbackOptions = BitmapFactory.Options().apply { inSampleSize = 2 }
+            return contentResolver.openInputStream(uri)?.use { stream ->
+                BitmapFactory.decodeStream(stream, null, fallbackOptions)
+            } ?: error("Cannot decode image preview")
         }
         val scale = max(
             bounds.outWidth.toFloat() / MaxPreviewBitmapSide,
@@ -206,13 +211,13 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
                             modifier = Modifier.weight(1f),
                         )
                     }
-                    bitmap?.let {
+                    bitmap?.let { bmp ->
                         Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                             Image(
                                 modifier = Modifier
                                     .padding(start = 64.dp, end = 64.dp, top = 32.dp, bottom = 8.dp),
-                                bitmap = bitmap!!.asImageBitmap(),
-                                contentDescription = null
+                                bitmap = bmp.asImageBitmap(),
+                                contentDescription = null,
                             )
                         }
                     }

@@ -408,6 +408,11 @@ class FlorisImeService : LifecycleInputMethodService() {
         try { voiceInputManager.destroy() } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "voiceInputManager.destroy() failed: $e" }
         }
+        // Cancel the input-feedback scope so in-flight playSoundEffect / vibrate
+        // coroutines don't outlive this service and keep the decorView alive.
+        try { inputFeedbackController.dispose() } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "inputFeedbackController.dispose() failed: $e" }
+        }
         if (wallpaperReceiverRegistered) {
             try {
                 unregisterReceiver(wallpaperChangeReceiver)
