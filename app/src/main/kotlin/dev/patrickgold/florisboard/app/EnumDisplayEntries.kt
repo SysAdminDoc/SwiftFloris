@@ -524,10 +524,6 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
                 label = stringRes(R.string.enum__space_bar_mode__nothing),
             )
             entry(
-                key = SpaceBarMode.CURRENT_LANGUAGE,
-                label = stringRes(R.string.enum__space_bar_mode__current_language),
-            )
-            entry(
                 key = SpaceBarMode.SPACE_BAR_KEY,
                 label = stringRes(R.string.enum__space_bar_mode__space_bar_key),
             )

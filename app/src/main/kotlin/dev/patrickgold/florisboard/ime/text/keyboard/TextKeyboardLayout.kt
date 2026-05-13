@@ -393,7 +393,7 @@ private fun TextKeyButton(
                 val spaceBarMode by prefs.keyboard.spaceBarMode.collectAsState()
                 when (spaceBarMode) {
                     SpaceBarMode.NOTHING -> return@let
-                    SpaceBarMode.CURRENT_LANGUAGE -> {}
+                    SpaceBarMode.CURRENT_LANGUAGE -> return@let
                     SpaceBarMode.SPACE_BAR_KEY -> customLabel = "␣"
                 }
             }
