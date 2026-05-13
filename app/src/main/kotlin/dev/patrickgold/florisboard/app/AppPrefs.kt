@@ -167,6 +167,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "correction__auto_correct",
             default = true,
         )
+        val quickPredictionInsert = boolean(
+            key = "correction__quick_prediction_insert",
+            default = false,
+        )
         val autoSpacePunctuation = boolean(
             key = "correction__auto_space_punctuation",
             default = true,

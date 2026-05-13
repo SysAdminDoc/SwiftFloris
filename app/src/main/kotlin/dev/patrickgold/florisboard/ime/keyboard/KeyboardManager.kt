@@ -633,7 +633,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      */
     fun handleHardwareKeyboardSpace() {
         val candidate = nlpManager.getSpacebarCandidate()
+        val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
         candidate?.let { commitAutoCommitCandidate(it) }
+        if (suppressPlainSpace) {
+            return
+        }
         // Skip handling changing to characters keyboard and double space periods
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
         if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
@@ -652,6 +656,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         // chosen candidate text (if autocorrect fired) or the literal typed word.
         val typedWordBeforeCommit = editorInstance.activeContent.currentWordText
         val candidate = nlpManager.getSpacebarCandidate()
+        val suppressPlainSpace = candidate == null && nlpManager.shouldSuppressPlainSpaceForPrediction()
         candidate?.let { commitAutoCommitCandidate(it) }
         val learnedText = candidate?.text?.toString() ?: typedWordBeforeCommit
         if (learnedText.isNotBlank()) {
@@ -666,6 +671,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
                 else -> { /* Do nothing */ }
             }
+        }
+        if (suppressPlainSpace) {
+            return
         }
         if (prefs.correction.doubleSpacePeriod.get()) {
             if (inputEventDispatcher.isConsecutiveUp(data)) {

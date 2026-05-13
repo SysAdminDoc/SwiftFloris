@@ -85,10 +85,15 @@ internal object SwiftKeyCandidateRanker {
     fun selectSpacebarCandidate(
         currentWord: String,
         candidates: List<SuggestionCandidate>,
+        quickPredictionInsert: Boolean = false,
     ): SuggestionCandidate? {
         val typedWordKey = currentWord.trim().normalizedCandidateKey()
         if (!currentWord.trim().isWordLike() || typedWordKey.isBlank()) {
-            return null
+            return if (quickPredictionInsert) {
+                nextWordSpacebarCandidate(candidates)
+            } else {
+                null
+            }
         }
 
         val middleCandidate = candidates.getOrNull(1)
@@ -107,6 +112,14 @@ internal object SwiftKeyCandidateRanker {
             candidate.isEligibleForAutoCommit &&
                 candidate.text.toString().normalizedCandidateKey() != typedWordKey
         }
+    }
+
+    private fun nextWordSpacebarCandidate(candidates: List<SuggestionCandidate>): SuggestionCandidate? {
+        val middleCandidate = candidates.getOrNull(1)
+        if (middleCandidate is WordSuggestionCandidate) {
+            return middleCandidate
+        }
+        return candidates.firstOrNull { it is WordSuggestionCandidate }
     }
 
     private fun rankedCandidates(
