@@ -78,16 +78,20 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
     private val allLanguagePacks: List<LanguagePackExtension>
         // Assume other types of extensions do not extend LanguagePackExtension
         get() = extensionManager.languagePacks.value
-    private var connectedLanguagePacks: Set<LanguagePackExtension> = setOf()
-    private var languagePackItems: Map<String, LanguagePackComponent> = mapOf() // init in refreshLanguagePacks()
-    private var keyCode: Map<String, Set<Char>> = mapOf() // init in refreshLanguagePacks()
+
+    // Index state is mutated from a coroutine context (create/preload/suggest) and read
+    // concurrently from determineLocalComposing/suggest on a different worker. Mark these
+    // @Volatile so worker threads observe the latest replacement of the immutable snapshots
+    // rather than a stale reference; mutations remain copy-on-write to keep readers
+    // lock-free. All map/set values are themselves read-only (created via buildMap /
+    // intersect / +) so reading a stale-but-consistent snapshot is safe.
+    @Volatile private var connectedLanguagePacks: Set<LanguagePackExtension> = setOf()
+    @Volatile private var languagePackItems: Map<String, LanguagePackComponent> = mapOf()
+    @Volatile private var keyCode: Map<String, Set<Char>> = mapOf()
+
+    private val loadLock = Any()
 
     override val providerId = ProviderId
-
-//    init {
-//        // FIXME: observeForever only callable on the main thread.
-//        extensionManager.languagePacks.observeForever { refreshLanguagePacks() }
-//    }
 
     override suspend fun create() {
         // Here we initialize our provider, set up all things which are not language dependent.
@@ -249,12 +253,17 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
 
     private fun loadLanguagePacksFor(subtype: Subtype) {
         val requiredLanguagePacks = languagePacksFor(subtype)
-        for (languagePack in requiredLanguagePacks) {
-            if (!languagePack.isLoaded()) {
-                languagePack.load(context)
+        // Serialize concurrent loads so two coroutines for different subtypes don't both
+        // call LanguagePack.load() on the same pack simultaneously (the underlying
+        // SQLite handle creation isn't safe under concurrent open).
+        synchronized(loadLock) {
+            for (languagePack in requiredLanguagePacks) {
+                if (!languagePack.isLoaded()) {
+                    languagePack.load(context)
+                }
             }
+            connectedLanguagePacks = connectedLanguagePacks + requiredLanguagePacks
         }
-        connectedLanguagePacks = connectedLanguagePacks + requiredLanguagePacks
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {

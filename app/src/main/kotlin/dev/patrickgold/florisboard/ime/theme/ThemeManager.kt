@@ -85,6 +85,12 @@ class ThemeManager(context: Context) {
     val activeThemeInfo get() = _activeThemeInfo.asStateFlow()
 
     init {
+        // Clean stale "loaded" theme directories left behind from previous process lifetimes.
+        // Each successful theme load below unzips into a UUID-named subdir; without this
+        // sweep on startup, those subdirs accumulated indefinitely under cacheDir/loaded/.
+        runCatching {
+            appContext.cacheDir.subDir("loaded").deleteContentsRecursively()
+        }
         extensionManager.themes.collectIn(scope) { themeExtensions ->
             val version = indexedThemeConfigVersion.incrementAndGet()
             _indexedThemeConfigs.value = buildMap {
@@ -96,7 +102,7 @@ class ThemeManager(context: Context) {
             } to version
         }
         indexedThemeConfigs.collectIn(scope) {
-            updateActiveTheme { cachedThemeInfos.clear() }
+            updateActiveTheme { evictCachedThemeInfosLocked() }
         }
         combine(
             prefs.theme.mode.asFlow(),
@@ -135,8 +141,6 @@ class ThemeManager(context: Context) {
         if (themeConfig == null) {
             return@withLock
         }
-        // TODO: loaded dir is implemented already...
-        // TODO: this leaks the loaded dir, but at least the state is not kaput from compose viewpoint
         val loadedDir = appContext.cacheDir.subDir("loaded").subDir(UUID.randomUUID().toString())
         runCatching {
             loadedDir.mkdirs()
@@ -158,6 +162,28 @@ class ThemeManager(context: Context) {
                 )
             },
         )
+    }
+
+    /**
+     * Clears the cached theme infos and deletes the on-disk unzip dir for each evicted
+     * entry. Must be invoked while holding [activeThemeGuard] (the only caller does so
+     * via [updateActiveTheme]'s `action` block).
+     */
+    private fun evictCachedThemeInfosLocked() {
+        if (cachedThemeInfos.isEmpty()) return
+        val evicted = cachedThemeInfos.toList()
+        cachedThemeInfos.clear()
+        for (info in evicted) {
+            val dir = info.loadedDir ?: continue
+            // Don't delete the dir backing the currently-active theme — composition is
+            // still reading stylesheet assets from it. ThemeInfo.DEFAULT has loadedDir=null
+            // so the typical post-config-change case doesn't hit this branch.
+            if (dir == _activeThemeInfo.value.loadedDir) continue
+            runCatching {
+                dir.deleteContentsRecursively()
+                dir.delete()
+            }
+        }
     }
 
     private fun evaluateActiveThemeName(): ExtensionComponentName {
