@@ -16,6 +16,7 @@ Primary references:
 - Candidate strip is in classic three-slot mode by default.
 - Typed literal remains available as an escape hatch before correction.
 - Spacebar autocorrect can accept a high-confidence correction and backspace can reject/suppress the accepted pair.
+- Typing settings now expose SwiftKey's separate Quick prediction insert behavior, allowing space to insert middle next-word predictions instead of acting only as a plain space.
 - Long-press candidate removal is wired through providers and learned stores.
 - Flow-style glide typing exists, including Flow Through Space support.
 - Personal dictionary learning, personal bigram/trigram next-word prediction, incognito gating, password-field learning suppression, and local-only learning all exist.
@@ -26,7 +27,7 @@ Primary references:
 ## Gaps That Still Matter
 
 1. Spacebar semantics need to stay centered on the middle prediction.
-   SwiftKey exposes three modes: insert space, complete current word, or always insert prediction. SwiftFloris has the first two concepts, but does not yet expose "always insert prediction" for next-word insertion. This pass adds current-word middle-prediction behavior.
+   SwiftKey exposes three modes: insert space, complete current word, or always insert prediction. SwiftFloris now has all three user-facing modes, including Quick prediction insert, but still needs broader real-world tuning around empty fields and low-confidence next-word candidates.
 
 2. Candidate ranking is still heuristic, not a unified decoder.
    The app now has a central ranker and a first spatial evidence signal, but it does not yet combine dictionary frequency, personal phrase frequency, language prior, and context probability in one scored lattice.
@@ -57,10 +58,11 @@ Primary references:
 
 ## Next Build Slice
 
-Persist and tune the `TouchDecoderEvidence` path:
+Persist and tune the `TouchDecoderEvidence` path, then attach an optional neural reranker:
 
 - Persist per-subtype adaptive touch stats so the model survives process death, with reset and incognito guards.
 - Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
 - Fold dictionary frequency and personal phrase probability into the same decoder score.
 - Add end-to-end instrumentation for adjacent-key typos such as `gello -> hello`, row-gap taps, and rejected corrections.
+- Define a model boundary for ONNX/NNAPI candidate rescoring so the heuristic decoder remains the always-available fallback.

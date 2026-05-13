@@ -150,6 +150,34 @@ class SwiftKeyCandidateRankerTest : FunSpec({
 
         SwiftKeyCandidateRanker.selectSpacebarCandidate("love", candidates) shouldBe null
     }
+
+    test("quick prediction insert uses the middle next-word prediction") {
+        val candidates = listOf(
+            candidate("I'm"),
+            candidate("I"),
+            candidate("it's"),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("", candidates) shouldBe null
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = candidates,
+            quickPredictionInsert = true,
+        )?.text shouldBe "I"
+    }
+
+    test("quick prediction insert skips non-word candidates") {
+        val candidates = listOf(
+            EmojiSuggestionCandidate(Emoji("<3", "heart", emptyList()), showName = false),
+            candidate("hello"),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = candidates,
+            quickPredictionInsert = true,
+        )?.text shouldBe "hello"
+    }
 })
 
 private fun decoderContext(

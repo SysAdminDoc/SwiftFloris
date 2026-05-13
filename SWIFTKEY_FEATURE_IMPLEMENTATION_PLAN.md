@@ -99,3 +99,23 @@ The fourth implementation slice starts the real touch-decoder loop:
 - Promote candidates whose replacement path matches nearby-key evidence, even when their raw confidence is lower than a generic fallback.
 - Keep recognized typed words as the middle spacebar action, so spatial evidence does not replace deliberate valid words.
 - Keep the evidence transient, incognito-gated, password-field-gated, and bounded until the per-subtype persistent touch model is ready.
+
+## Fifth Slice
+
+The fifth implementation slice closes SwiftKey's documented quick spacebar mode:
+
+- Add an explicit `Quick prediction insert` Typing setting, matching SwiftKey's separate spacebar behavior.
+- Let space insert the middle next-word prediction when no current word is active.
+- Keep normal autocorrect semantics intact when the setting is disabled.
+- Skip emoji and clipboard candidates for automatic spacebar insertion.
+- Suppress a plain space when quick insertion is waiting on a word prediction, so the setting behaves like SwiftKey's "prediction, not space" mode.
+
+## AI Research Slice
+
+The next high-leverage build path is an optional on-device neural reranker, not a cloud feature:
+
+- Borrow architecture ideas from AOSP LatinIME's proximity model and CleverKeys' public ONNX swipe pipeline, while keeping SwiftFloris' Apache-compatible codebase clean.
+- Build a small decoder contract that can score `(typed word, touch evidence, previous words, candidate list)` and return rescored candidates.
+- Start with the current heuristic ranker as the fallback implementation.
+- Later attach a quantized ONNX model through Android NNAPI/XNNPACK after the candidate contract is stable and test-covered.
+- Keep the base APK free of network permissions and keep every model local, user-resettable, and incognito-aware.

@@ -326,19 +326,28 @@ class NlpManager(context: Context) {
     }
 
     fun getSpacebarCandidate(): SuggestionCandidate? {
-        if (!prefs.correction.autoCorrect.get()) {
+        val autoCorrectEnabled = prefs.correction.autoCorrect.get()
+        val quickPredictionInsertEnabled = prefs.correction.quickPredictionInsert.get()
+        if (!autoCorrectEnabled && !quickPredictionInsertEnabled) {
             return null
         }
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
 
-        userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
+        if (autoCorrectEnabled) {
+            userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
+        }
 
         val candidate = SwiftKeyCandidateRanker.selectSpacebarCandidate(
             currentWord = currentWord,
             candidates = activeCandidates,
-        ) ?: return immediateAutoCommitCandidate(currentWord, currentWordStart)
+            quickPredictionInsert = quickPredictionInsertEnabled,
+        ) ?: return if (autoCorrectEnabled) {
+            immediateAutoCommitCandidate(currentWord, currentWordStart)
+        } else {
+            null
+        }
 
         return candidate.takeUnless {
             autoCommitSuppression.shouldSuppress(
@@ -347,6 +356,17 @@ class NlpManager(context: Context) {
                 currentWordStart = currentWordStart,
             )
         }
+    }
+
+    fun shouldSuppressPlainSpaceForPrediction(): Boolean {
+        if (!prefs.correction.quickPredictionInsert.get()) {
+            return false
+        }
+        val content = editorInstance.activeContent
+        if (content.autoCommitWord().isNotBlank()) {
+            return false
+        }
+        return activeCandidates.any { it is WordSuggestionCandidate }
     }
 
     private fun userDictionaryShortcutAutoCommitCandidate(
