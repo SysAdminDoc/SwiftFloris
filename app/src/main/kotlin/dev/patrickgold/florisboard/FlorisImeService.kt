@@ -311,6 +311,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         private set
 
     private val wallpaperChangeReceiver = WallpaperChangeReceiver()
+    private var wallpaperReceiverRegistered = false
 
     init {
         setTheme(R.style.FlorisImeTheme)
@@ -353,7 +354,12 @@ class FlorisImeService : LifecycleInputMethodService() {
         }
 
         @Suppress("DEPRECATION") // We do not retrieve the wallpaper but only listen to changes
-        registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))
+        try {
+            registerReceiver(wallpaperChangeReceiver, IntentFilter(Intent.ACTION_WALLPAPER_CHANGED))
+            wallpaperReceiverRegistered = true
+        } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "Failed to register wallpaper change receiver: $e" }
+        }
     }
 
     override fun onCreateInputView(): View? {
@@ -396,8 +402,20 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        voiceInputManager.destroy()
-        unregisterReceiver(wallpaperChangeReceiver)
+        // Guard each teardown step independently so a single failure (e.g. unregistering
+        // a receiver that was never registered because onCreate threw before reaching it)
+        // doesn't abort the rest of cleanup and leak references.
+        try { voiceInputManager.destroy() } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "voiceInputManager.destroy() failed: $e" }
+        }
+        if (wallpaperReceiverRegistered) {
+            try {
+                unregisterReceiver(wallpaperChangeReceiver)
+            } catch (e: IllegalArgumentException) {
+                flogWarning(LogTopic.IMS_EVENTS) { "unregisterReceiver(wallpaper) skipped: $e" }
+            }
+            wallpaperReceiverRegistered = false
+        }
         FlorisImeServiceReference = WeakReference(null)
     }
 
