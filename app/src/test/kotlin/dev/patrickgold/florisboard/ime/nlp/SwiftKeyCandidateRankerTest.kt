@@ -121,6 +121,32 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         ranked.map { it.text.toString() } shouldBe listOf("gello", "hello", "fello")
     }
 
+    test("scoreCandidates exposes the reason a spatial correction wins") {
+        val scored = SwiftKeyCandidateRanker.scoreCandidates(
+            context = decoderContext(
+                currentWord = "gello",
+                touchEvidence = touchEvidence(
+                    sample("g", "h" to 0.74),
+                    sample("e"),
+                    sample("l"),
+                    sample("l"),
+                    sample("o"),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("fello", confidence = 0.99),
+                candidate("hello", confidence = 0.40),
+            ),
+        )
+
+        val hello = scored.first { it.candidate.text == "hello" }
+        val fello = scored.first { it.candidate.text == "fello" }
+        hello.score.role shouldBe SwiftKeyCandidateRole.SpatialCorrection
+        hello.score.spatialLikelihood shouldBe 0.74
+        (hello.score.total > fello.score.total) shouldBe true
+    }
+
     test("spatial evidence does not make spacebar replace a known typed word") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext(

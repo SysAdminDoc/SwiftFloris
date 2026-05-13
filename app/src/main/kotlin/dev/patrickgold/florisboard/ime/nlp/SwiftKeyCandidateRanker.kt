@@ -23,6 +23,55 @@ internal data class SwiftKeyDecoderContext(
     val touchEvidence: TouchDecoderEvidence? = null,
 )
 
+internal data class SwiftKeyScoredCandidate(
+    val candidate: SuggestionCandidate,
+    val originalIndex: Int,
+    val source: SwiftKeyCandidateSource,
+    val score: SwiftKeyCandidateScore,
+)
+
+internal data class SwiftKeyCandidateScore(
+    val role: SwiftKeyCandidateRole,
+    val rolePriority: Double,
+    val spatialLikelihood: Double,
+    val providerConfidence: Double,
+    val sourceAffinity: Double,
+    val editProximity: Double,
+    val completionAffinity: Double,
+    val lengthPenalty: Double,
+) {
+    val total: Double =
+        rolePriority * RoleWeight +
+            spatialLikelihood * SpatialWeight +
+            sourceAffinity * SourceWeight +
+            providerConfidence * ConfidenceWeight +
+            editProximity * EditWeight +
+            completionAffinity * CompletionWeight -
+            lengthPenalty
+
+    private companion object {
+        const val RoleWeight = 100.0
+        const val SpatialWeight = 24.0
+        const val SourceWeight = 18.0
+        const val ConfidenceWeight = 6.0
+        const val EditWeight = 4.0
+        const val CompletionWeight = 3.0
+    }
+}
+
+internal enum class SwiftKeyCandidateSource(val affinity: Double) {
+    Preferred(1.0),
+    Fallback(0.5),
+}
+
+internal enum class SwiftKeyCandidateRole(val priority: Double) {
+    TypedLiteral(5.0),
+    SpatialCorrection(4.5),
+    AutoCorrection(4.0),
+    Completion(3.0),
+    Other(1.0),
+}
+
 internal object SwiftKeyCandidateRanker {
     fun rank(
         context: SwiftKeyDecoderContext,
@@ -37,7 +86,6 @@ internal object SwiftKeyCandidateRanker {
         val typedWordKey = currentWord.normalizedCandidateKey()
         val canShowTypedLiteral = currentWord.isWordLike()
         val rankedSuggestions = rankedCandidates(
-            typedWordKey = typedWordKey,
             currentWord = currentWord,
             touchEvidence = context.touchEvidence,
             preferred = preferred,
@@ -82,6 +130,34 @@ internal object SwiftKeyCandidateRanker {
         }.take(context.maxCandidateCount)
     }
 
+    fun scoreCandidates(
+        context: SwiftKeyDecoderContext,
+        preferred: List<SuggestionCandidate>,
+        fallback: List<SuggestionCandidate>,
+    ): List<SwiftKeyScoredCandidate> {
+        val currentWord = context.currentWord.trim()
+        val typedWordKey = currentWord.normalizedCandidateKey()
+        return (preferred.mapIndexed { index, candidate ->
+            scoredCandidate(
+                candidate = candidate,
+                originalIndex = index,
+                source = SwiftKeyCandidateSource.Preferred,
+                typedWordKey = typedWordKey,
+                currentWord = currentWord,
+                touchEvidence = context.touchEvidence,
+            )
+        } + fallback.mapIndexed { index, candidate ->
+            scoredCandidate(
+                candidate = candidate,
+                originalIndex = index,
+                source = SwiftKeyCandidateSource.Fallback,
+                typedWordKey = typedWordKey,
+                currentWord = currentWord,
+                touchEvidence = context.touchEvidence,
+            )
+        }).sortedWith(ScoredCandidateComparator)
+    }
+
     fun selectSpacebarCandidate(
         currentWord: String,
         candidates: List<SuggestionCandidate>,
@@ -123,66 +199,111 @@ internal object SwiftKeyCandidateRanker {
     }
 
     private fun rankedCandidates(
-        typedWordKey: String,
         currentWord: String,
         touchEvidence: TouchDecoderEvidence?,
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
     ): List<SuggestionCandidate> {
-        return (preferred.mapIndexed { index, candidate ->
-            val touchScore = touchEvidence?.spatialReplacementScore(candidate.text, currentWord) ?: 0.0
-            RankedCandidate(
-                candidate = candidate,
-                originalIndex = index,
-                sourcePriority = PreferredSourcePriority,
-                role = candidate.role(typedWordKey, touchScore),
-                touchScore = touchScore,
-            )
-        } + fallback.mapIndexed { index, candidate ->
-            val touchScore = touchEvidence?.spatialReplacementScore(candidate.text, currentWord) ?: 0.0
-            RankedCandidate(
-                candidate = candidate,
-                originalIndex = index,
-                sourcePriority = FallbackSourcePriority,
-                role = candidate.role(typedWordKey, touchScore),
-                touchScore = touchScore,
-            )
-        }).sortedWith(
-            compareByDescending<RankedCandidate> { it.role.priority }
-                .thenByDescending { it.touchScore }
-                .thenByDescending { it.sourcePriority }
-                .thenByDescending { it.candidate.confidence }
-                .thenBy { it.candidate.text.length }
-                .thenBy { it.originalIndex }
+        return scoreCandidates(
+            context = SwiftKeyDecoderContext(
+                currentWord = currentWord,
+                maxCandidateCount = Int.MAX_VALUE,
+                touchEvidence = touchEvidence,
+            ),
+            preferred = preferred,
+            fallback = fallback,
         ).map { it.candidate }
     }
 
-    private fun SuggestionCandidate.role(typedWordKey: String, touchScore: Double): CandidateRole {
+    private fun scoredCandidate(
+        candidate: SuggestionCandidate,
+        originalIndex: Int,
+        source: SwiftKeyCandidateSource,
+        typedWordKey: String,
+        currentWord: String,
+        touchEvidence: TouchDecoderEvidence?,
+    ): SwiftKeyScoredCandidate {
+        val spatialLikelihood = touchEvidence?.spatialReplacementScore(candidate.text, currentWord)
+            ?.coerceIn(0.0, 1.0)
+            ?: 0.0
+        val role = candidate.role(typedWordKey, spatialLikelihood)
+        val candidateKey = candidate.text.toString().normalizedCandidateKey()
+        val score = SwiftKeyCandidateScore(
+            role = role,
+            rolePriority = role.priority,
+            spatialLikelihood = spatialLikelihood,
+            providerConfidence = candidate.confidence.coerceIn(0.0, 1.0),
+            sourceAffinity = source.affinity,
+            editProximity = editProximity(typedWordKey, candidateKey),
+            completionAffinity = completionAffinity(typedWordKey, candidateKey),
+            lengthPenalty = lengthPenalty(candidate.text.length),
+        )
+        return SwiftKeyScoredCandidate(
+            candidate = candidate,
+            originalIndex = originalIndex,
+            source = source,
+            score = score,
+        )
+    }
+
+    private fun SuggestionCandidate.role(typedWordKey: String, touchScore: Double): SwiftKeyCandidateRole {
         val key = text.toString().normalizedCandidateKey()
         return when {
-            key.isBlank() -> CandidateRole.Other
-            typedWordKey.isNotBlank() && key == typedWordKey -> CandidateRole.TypedLiteral
-            touchScore >= SpatialCorrectionScoreThreshold -> CandidateRole.SpatialCorrection
-            isEligibleForAutoCommit -> CandidateRole.AutoCorrection
-            typedWordKey.isNotBlank() && key.startsWith(typedWordKey) -> CandidateRole.Completion
-            else -> CandidateRole.Other
+            key.isBlank() -> SwiftKeyCandidateRole.Other
+            typedWordKey.isNotBlank() && key == typedWordKey -> SwiftKeyCandidateRole.TypedLiteral
+            touchScore >= SpatialCorrectionScoreThreshold -> SwiftKeyCandidateRole.SpatialCorrection
+            isEligibleForAutoCommit -> SwiftKeyCandidateRole.AutoCorrection
+            typedWordKey.isNotBlank() && key.startsWith(typedWordKey) -> SwiftKeyCandidateRole.Completion
+            else -> SwiftKeyCandidateRole.Other
         }
     }
 
-    private data class RankedCandidate(
-        val candidate: SuggestionCandidate,
-        val originalIndex: Int,
-        val sourcePriority: Int,
-        val role: CandidateRole,
-        val touchScore: Double,
-    )
+    private fun editProximity(typedWordKey: String, candidateKey: String): Double {
+        if (typedWordKey.isBlank() || candidateKey.isBlank()) return 0.0
+        if (typedWordKey == candidateKey) return 1.0
+        val maxLength = maxOf(typedWordKey.length, candidateKey.length)
+        if (maxLength == 0) return 0.0
+        val distance = boundedEditDistance(
+            left = typedWordKey,
+            right = candidateKey,
+            maxDistance = minOf(3, maxLength),
+        ) ?: return 0.0
+        return (1.0 - distance.toDouble() / maxLength.toDouble()).coerceIn(0.0, 1.0)
+    }
 
-    private enum class CandidateRole(val priority: Int) {
-        TypedLiteral(50),
-        SpatialCorrection(45),
-        AutoCorrection(40),
-        Completion(30),
-        Other(10),
+    private fun completionAffinity(typedWordKey: String, candidateKey: String): Double {
+        if (typedWordKey.isBlank() || candidateKey.isBlank()) return 0.0
+        if (!candidateKey.startsWith(typedWordKey) || candidateKey == typedWordKey) return 0.0
+        val extraLength = candidateKey.length - typedWordKey.length
+        return (1.0 - extraLength.toDouble() / candidateKey.length.toDouble()).coerceIn(0.0, 1.0)
+    }
+
+    private fun lengthPenalty(length: Int): Double {
+        return length.coerceAtLeast(0) * 0.001
+    }
+
+    private fun boundedEditDistance(left: String, right: String, maxDistance: Int): Int? {
+        if (kotlin.math.abs(left.length - right.length) > maxDistance) return null
+        var previous = IntArray(right.length + 1) { it }
+        var current = IntArray(right.length + 1)
+        for (i in 1..left.length) {
+            current[0] = i
+            var rowMin = current[0]
+            for (j in 1..right.length) {
+                val cost = if (left[i - 1] == right[j - 1]) 0 else 1
+                current[j] = minOf(
+                    previous[j] + 1,
+                    current[j - 1] + 1,
+                    previous[j - 1] + cost,
+                )
+                rowMin = minOf(rowMin, current[j])
+            }
+            if (rowMin > maxDistance) return null
+            val swap = previous
+            previous = current
+            current = swap
+        }
+        return previous[right.length].takeIf { it <= maxDistance }
     }
 
     private fun String.normalizedCandidateKey(): String = trim().lowercase()
@@ -196,6 +317,12 @@ internal object SwiftKeyCandidateRanker {
 
     private const val TypedLiteralConfidence = 0.62
     private const val SpatialCorrectionScoreThreshold = 0.28
-    private const val PreferredSourcePriority = 2
-    private const val FallbackSourcePriority = 1
+
+    private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
+        .thenByDescending { it.score.rolePriority }
+        .thenByDescending { it.score.spatialLikelihood }
+        .thenByDescending { it.score.sourceAffinity }
+        .thenByDescending { it.score.providerConfidence }
+        .thenBy { it.candidate.text.length }
+        .thenBy { it.originalIndex }
 }
