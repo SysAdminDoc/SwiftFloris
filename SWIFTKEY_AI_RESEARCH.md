@@ -34,6 +34,10 @@
 
 The SwiftKey quick spacebar mode is now implemented as a user-visible `Quick prediction insert` setting. It reuses the existing candidate strip, inserts the middle next-word prediction when there is no active word, ignores non-word suggestions for automatic insertion, and keeps the plain autocorrect behavior unchanged unless the user enables the setting.
 
+## Adaptive touch persistence
+
+Adaptive touch is now persisted locally by subtype. That closes the biggest weakness in the first adaptive-touch slice: the keyboard no longer forgets learned tap offsets when the process restarts.
+
 ## Sources
 
 - Microsoft SwiftKey spacebar modes: https://support.microsoft.com/en-US/swiftkey-keyboard/how-does-the-spacebar-work-with-autocorrect-in-microsoft-swiftkey-keyboard

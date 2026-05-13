@@ -35,6 +35,7 @@ import dev.patrickgold.florisboard.ime.keyboard.KeyboardManager
 import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
+import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
@@ -131,6 +132,7 @@ class FlorisApplication : Application() {
         extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
         DictionaryManager.init(this)
+        AdaptiveTouchModel.initialize(this)
     }
 
     private inner class BootComplete : BroadcastReceiver() {
