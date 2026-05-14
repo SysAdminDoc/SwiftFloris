@@ -34,6 +34,14 @@ class TypingContextExtractorTest : FunSpec({
         ) shouldBe PreviousWordContext(prev2 = "Let", prev1 = "me")
     }
 
+    test("extracts up to four trailing words for language context") {
+        TypingContextExtractor.previousWordListBeforeCurrentWord(
+            textBeforeSelection = "Please let me know if grac",
+            currentWord = "grac",
+            maxDepth = 4,
+        ) shouldBe listOf("let", "me", "know", "if")
+    }
+
     test("does not carry locale context across newlines") {
         TypingContextExtractor.previousWordsBeforeCurrentWord(
             textBeforeSelection = "hola amigo\nThanks fo",

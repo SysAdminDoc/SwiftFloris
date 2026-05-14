@@ -599,21 +599,28 @@ class NlpManager(context: Context) {
             textBeforeSelection = content.textBeforeSelection,
             currentWord = currentWord,
         )
+        val languageContextWords = TypingContextExtractor.previousWordListBeforeCurrentWord(
+            textBeforeSelection = content.textBeforeSelection,
+            currentWord = currentWord,
+            maxDepth = MaxLanguageContextWords,
+        )
         val contextPrefix = TypingContextExtractor.sentenceLocalPrefixBeforeCurrentWord(
             textBeforeSelection = content.textBeforeSelection,
             currentWord = currentWord,
         )
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
-        val contextLanguageScores = locales.associateWith { locale ->
-            maxOf(
-                previousWords.prev1?.let { word ->
-                    frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
-                } ?: 0.0,
-                previousWords.prev2?.let { word ->
-                    frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
-                } ?: 0.0,
-            )
+        val contextLanguageScores = buildMap {
+            for (activeLocale in locales) {
+                var bestFrequency = 0.0
+                for (word in languageContextWords) {
+                    bestFrequency = maxOf(
+                        bestFrequency,
+                        frequencyForWordInLocale(suggestionProvider, subtype, activeLocale, word),
+                    )
+                }
+                put(activeLocale, bestFrequency)
+            }
         }
         val candidateKeys = candidates.asSequence()
             .filterIsInstance<WordSuggestionCandidate>()
@@ -815,6 +822,7 @@ class NlpManager(context: Context) {
     private companion object {
         const val BigramContextWeight = 0.75
         const val MaxColdStartContextCandidates = 16
+        const val MaxLanguageContextWords = 4
         const val MinLanguageSwitchPrefixLength = 2
     }
 

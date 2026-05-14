@@ -36,11 +36,25 @@ internal object TypingContextExtractor {
     }
 
     fun previousWordsBeforeCurrentWord(textBeforeSelection: CharSequence, currentWord: String): PreviousWordContext {
-        val before = sentenceLocalPrefixBeforeCurrentWord(textBeforeSelection, currentWord)
-        return PreviousWordContext(
-            prev2 = previousWordOf(before, depth = 2),
-            prev1 = previousWordOf(before, depth = 1),
+        val words = previousWordListBeforeCurrentWord(
+            textBeforeSelection = textBeforeSelection,
+            currentWord = currentWord,
+            maxDepth = 2,
         )
+        return PreviousWordContext(
+            prev2 = words.getOrNull(words.size - 2),
+            prev1 = words.lastOrNull(),
+        )
+    }
+
+    fun previousWordListBeforeCurrentWord(
+        textBeforeSelection: CharSequence,
+        currentWord: String,
+        maxDepth: Int,
+    ): List<String> {
+        if (maxDepth <= 0) return emptyList()
+        val before = sentenceLocalPrefixBeforeCurrentWord(textBeforeSelection, currentWord)
+        return previousWordsOf(before, maxDepth)
     }
 
     private fun sentenceLocalPrefix(textBeforeCursor: String): String {
@@ -52,23 +66,22 @@ internal object TypingContextExtractor {
         }
     }
 
-    private fun previousWordOf(textBeforeCursor: String, depth: Int): String? {
-        if (depth <= 0) return null
+    private fun previousWordsOf(textBeforeCursor: String, maxDepth: Int): List<String> {
+        if (maxDepth <= 0) return emptyList()
         var working = textBeforeCursor
-        var found: String? = null
-        repeat(depth) { index ->
+        val words = ArrayDeque<String>()
+        repeat(maxDepth) {
             val trimmed = working.trimEnd()
-            if (trimmed.isEmpty()) return null
+            if (trimmed.isEmpty()) return words.toList()
             var end = trimmed.length
             while (end > 0 && !trimmed[end - 1].isContextWordChar()) end--
             var start = end
             while (start > 0 && trimmed[start - 1].isContextWordChar()) start--
-            if (start == end) return null
-            found = trimmed.substring(start, end)
-            if (index == depth - 1) return found
+            if (start == end) return words.toList()
+            words.addFirst(trimmed.substring(start, end))
             working = trimmed.substring(0, start)
         }
-        return found
+        return words.toList()
     }
 
     private fun Char.isContextWordChar(): Boolean {
