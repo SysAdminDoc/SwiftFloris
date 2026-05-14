@@ -16,6 +16,14 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.spring
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
@@ -28,7 +36,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
-import androidx.compose.foundation.background
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -165,18 +172,42 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 }
             }
         }
-        pendingRemoval?.let { candidateItem ->
-            CandidateRemoveConfirmation(
-                candidate = candidateItem,
-                onConfirm = {
-                    nlpManager.removeSuggestion(subtypeManager.activeSubtype, candidateItem)
-                    pendingRemoval = null
-                },
-                onDismiss = { pendingRemoval = null },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(horizontal = 8.dp, vertical = 4.dp),
-            )
+        // ROADMAP §7 Next-11.2 — springy entry/exit for the confirm overlay.
+        // Critically-damped spring (Spring.DampingRatioMediumBouncy) gives a
+        // tiny rebound on appear so the prompt reads as a deliberate action
+        // rather than a flash. Exit is a faster scale-out so the user gets
+        // immediate feedback when they tap Cancel or the backdrop.
+        AnimatedVisibility(
+            visible = pendingRemoval != null,
+            enter = scaleIn(
+                animationSpec = spring(
+                    dampingRatio = Spring.DampingRatioMediumBouncy,
+                    stiffness = Spring.StiffnessMedium,
+                ),
+                initialScale = 0.85f,
+            ) + fadeIn(
+                animationSpec = spring(stiffness = Spring.StiffnessMedium),
+            ),
+            exit = scaleOut(
+                animationSpec = spring(stiffness = Spring.StiffnessHigh),
+                targetScale = 0.9f,
+            ) + fadeOut(
+                animationSpec = spring(stiffness = Spring.StiffnessHigh),
+            ),
+        ) {
+            pendingRemoval?.let { candidateItem ->
+                CandidateRemoveConfirmation(
+                    candidate = candidateItem,
+                    onConfirm = {
+                        nlpManager.removeSuggestion(subtypeManager.activeSubtype, candidateItem)
+                        pendingRemoval = null
+                    },
+                    onDismiss = { pendingRemoval = null },
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                )
+            }
         }
     }
 }
