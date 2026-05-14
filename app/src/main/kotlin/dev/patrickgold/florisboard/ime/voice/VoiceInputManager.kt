@@ -55,6 +55,25 @@ class VoiceInputManager(private val context: Context) {
     private val commandParser = VoiceCommandParser()
     private val fallbackHandler = VoiceCommandFallbackHandler(commandParser)
 
+    /**
+     * ROADMAP §7 Next-2.4 — streaming-transcript voice-command harness. Each
+     * partial / final transcript chunk emitted by the embedded recognizer
+     * (Whisper, Vosk, or external) flows through this buffer; when the buffer
+     * detects a confident command match, the IME executes it immediately via
+     * [VoiceCommandExecutor]. This is the SwiftKey "Smart Edit" voice-edit
+     * surface ("change dog to cat") expressed as a stream consumer, so the
+     * command fires the moment the user finishes saying it rather than
+     * waiting for the recognizer's full-utterance final transcript.
+     *
+     * Streaming buffer state is per-session: callers re-create one via
+     * [resetStreamingBuffer] when a new dictation session starts.
+     */
+    private var streamingBuffer = StreamingVoiceTranscriptBuffer(commandParser)
+
+    fun resetStreamingBuffer() {
+        streamingBuffer = StreamingVoiceTranscriptBuffer(commandParser)
+    }
+
     fun initialize() {
         refreshAvailability()
     }
@@ -132,6 +151,50 @@ class VoiceInputManager(private val context: Context) {
     ): VoiceCommandExecutionResult? {
         val match = detectCommand(spokenText, customCommands, minimumConfidence) ?: return null
         return VoiceCommandExecutor(actions).execute(match)
+    }
+
+    /**
+     * ROADMAP §7 Next-2.4 — feed a streaming-transcript chunk through the
+     * per-session [StreamingVoiceTranscriptBuffer] and, when the buffer
+     * surfaces a confident command match, execute it via
+     * [VoiceCommandExecutor]. Returns the buffer's update so callers can
+     * render the partial / committed transcript exactly as the user sees
+     * it in the dictation overlay, plus any executed-command result so the
+     * UI can show feedback ("Executed: undo word").
+     *
+     * Designed to be called per-chunk from the embedded recognizer (Whisper
+     * / Vosk) or from the external-IME bridge's streaming handoff path,
+     * not per-keystroke. Cheap (~one regex pass per chunk).
+     */
+    fun consumeStreamingChunk(
+        chunk: VoiceTranscriptChunk,
+        actions: VoiceCommandActions,
+        customCommands: VoiceCommandCustomCommands = VoiceCommandCustomCommands.Empty,
+        commandMode: Boolean = false,
+        commandMinimumConfidence: Double = VoiceCommandParser.DEFAULT_MINIMUM_CONFIDENCE,
+        suggestionMinimumConfidence: Double = VoiceCommandParser.DEFAULT_SUGGESTION_MINIMUM_CONFIDENCE,
+    ): VoiceStreamingCommandUpdate {
+        val bufferUpdate = streamingBuffer.accept(
+            chunk = chunk,
+            customCommands = customCommands,
+            commandMode = commandMode,
+            commandMinimumConfidence = commandMinimumConfidence,
+            suggestionMinimumConfidence = suggestionMinimumConfidence,
+        )
+        // Auto-execute only on FINAL chunks so a partial transcript that
+        // *might* be a command ("undo wo…") doesn't fire `undoWord` before
+        // the user finished the utterance. Partials still surface as a
+        // suggestion in the update payload so the UI can preview the
+        // command before commit.
+        val executed = if (chunk.isFinal && bufferUpdate.commandMatch != null) {
+            VoiceCommandExecutor(actions).execute(bufferUpdate.commandMatch)
+        } else {
+            null
+        }
+        return VoiceStreamingCommandUpdate(
+            transcript = bufferUpdate,
+            executed = executed,
+        )
     }
 
     fun handleTranscript(
