@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.florisboard.subtypeManager
 import kotlinx.coroutines.CoroutineScope
@@ -256,7 +257,6 @@ class NlpManager(context: Context) {
                 suggestionProvider = suggestionProvider,
                 currentWord = currentWord,
                 currentWordStart = currentWordStart,
-                typedWordKnown = typedWordKnown,
                 candidates = userDictionarySuggestions + suggestions,
             )
             val decoderContext = SwiftKeyDecoderContext(
@@ -525,16 +525,36 @@ class NlpManager(context: Context) {
         subtype: Subtype,
         currentWord: String,
     ): Boolean {
-        val normalizedWord = currentWord.trim()
-            .trim { char -> !char.isLetter() && char != '\'' && char != '\u2019' }
-            .lowercase()
-        if (normalizedWord.isBlank() || normalizedWord.none { it.isLetter() }) {
-            return false
+        val normalizedWord = currentWord.normalizedCandidateSignalKey() ?: return false
+        return activeLocales(subtype).any { locale ->
+            dictionaryManager.isKnownUserDictionaryWord(normalizedWord, locale) ||
+                frequencyForWordInLocale(suggestionProvider, subtype, locale, normalizedWord) > 0.0
         }
-        if (dictionaryManager.isKnownUserDictionaryWord(normalizedWord, subtype.primaryLocale)) {
-            return true
+    }
+
+    private fun activeLocales(subtype: Subtype): List<FlorisLocale> {
+        return subtype.locales().distinctBy { locale -> locale.languageTag() }
+    }
+
+    private suspend fun frequencyForWordInLocale(
+        suggestionProvider: SuggestionProvider,
+        subtype: Subtype,
+        locale: FlorisLocale,
+        word: String,
+    ): Double {
+        val normalizedWord = word.normalizedCandidateSignalKey() ?: return 0.0
+        val localeSubtype = if (locale == subtype.primaryLocale && subtype.secondaryLocales.isEmpty()) {
+            subtype
+        } else {
+            subtype.copy(primaryLocale = locale, secondaryLocales = emptyList())
         }
-        return suggestionProvider.getFrequencyForWord(subtype, normalizedWord) > 0.0
+        val cacheKey = "${suggestionProvider.javaClass.name}:${locale.languageTag()}-$normalizedWord"
+        frequencyCache.get(cacheKey)?.let { return it }
+        val value = runCatching {
+            suggestionProvider.getFrequencyForWord(localeSubtype, normalizedWord)
+        }.getOrDefault(0.0).coerceIn(0.0, 1.0)
+        frequencyCache.put(cacheKey, value)
+        return value
     }
 
     private suspend fun candidateSignals(
@@ -543,12 +563,16 @@ class NlpManager(context: Context) {
         suggestionProvider: SuggestionProvider,
         currentWord: String,
         currentWordStart: Int?,
-        typedWordKnown: Boolean,
         candidates: List<SuggestionCandidate>,
     ): Map<String, SwiftKeyCandidateSignals> {
         if (candidates.isEmpty()) return emptyMap()
         val locale = subtype.primaryLocale
-        val localeCount = subtype.locales().size
+        val locales = activeLocales(subtype)
+        val localeCount = locales.size
+        val typedWordKey = currentWord.normalizedCandidateSignalKey()
+        val typedWordKnownByUserDictionary = typedWordKey?.let { key ->
+            locales.any { locale -> dictionaryManager.isKnownUserDictionaryWord(key, locale) }
+        } ?: false
         val previousWords = previousWordsForContext(content, currentWord)
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
@@ -558,9 +582,25 @@ class NlpManager(context: Context) {
                 if (candidate !is WordSuggestionCandidate) continue
                 val candidateText = candidate.text.toString()
                 val key = candidateText.normalizedCandidateSignalKey() ?: continue
-                val dictionaryFrequency = runCatching {
-                    suggestionProvider.getFrequencyForWord(subtype, candidateText)
-                }.getOrDefault(0.0).coerceIn(0.0, 1.0)
+                val languageSignal = MultilingualTokenScorer.score(
+                    localeEvidence = locales.map { locale ->
+                        TokenLocaleEvidence(
+                            typedFrequency = typedWordKey?.let { word ->
+                                frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
+                            } ?: 0.0,
+                            candidateFrequency = frequencyForWordInLocale(
+                                suggestionProvider,
+                                subtype,
+                                locale,
+                                key,
+                            ),
+                        )
+                    },
+                    typedWordKnownByUserDictionary = typedWordKnownByUserDictionary,
+                    candidateMatchesTypedWord = typedWordKey == key,
+                    candidateIsEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
+                )
+                val dictionaryFrequency = languageSignal.dictionaryFrequency
                 val bigramProbability = previousWords.prev1?.let { prev1 ->
                     bigramStore.score(prev1, candidateText, locale)
                 } ?: 0.0
@@ -573,12 +613,7 @@ class NlpManager(context: Context) {
                     bigramProbability * BigramContextWeight,
                     trigramProbability,
                 ).coerceIn(0.0, 1.0)
-                val languageConfidence = when {
-                    localeCount <= 1 -> 1.0
-                    dictionaryFrequency > 0.0 -> 1.0
-                    typedWordKnown && candidate.isEligibleForAutoCommit -> 0.35
-                    else -> 0.65
-                }
+                val languageConfidence = if (localeCount <= 1) 1.0 else languageSignal.languageConfidence
                 val outcomeSignal = correctionOutcomePriors.signal(
                     originalText = currentWord,
                     correctedText = candidateText,

@@ -200,9 +200,18 @@ The thirteenth implementation slice improves Flow/glide parity:
 
 ## Fourteenth Slice
 
-The fourteenth implementation slice should close the multilingual parity gap:
+The fourteenth implementation slice closes more of the multilingual parity gap:
 
-- Add per-token language posterior scoring across active subtype locales, using current token evidence plus the trailing word context.
-- Feed that language posterior into `SwiftKeyCandidateRanker` so recognized mixed-language words stay literal and wrong-language corrections lose auto-commit authority.
-- Add checked-in replay cases for bilingual sentences, shared-spelling words, and wrong-language near misses.
-- Acceptance: bilingual typing feels closer to SwiftKey because normal mixed-language words no longer require manual keyboard switching or repeated correction rejection.
+- Add per-token language posterior scoring across active subtype locales. This is now implemented by active-locale dictionary frequency checks and `MultilingualTokenScorer`.
+- Feed that language posterior into `SwiftKeyCandidateRanker` so recognized mixed-language words stay literal and wrong-language corrections lose confidence. `NlpManager` now checks known typed words across every active locale and uses cross-locale candidate frequencies in `SwiftKeyCandidateSignals`.
+- Add checked-in replay cases for bilingual sentences, shared-spelling words, and wrong-language near misses. The first deterministic coverage is pure JVM scorer coverage; broader JSONL replay coverage remains useful.
+- Acceptance: bilingual typing feels closer to SwiftKey because normal mixed-language words no longer require manual keyboard switching or repeated correction rejection. This is now partially met for words recognized by any active locale.
+
+## Fifteenth Slice
+
+The fifteenth implementation slice should deepen phrase prediction:
+
+- Add phrase-continuation priors for common two- and three-word starts beyond the current short continuation table.
+- Feed phrase priors into both next-word prediction and short-glide context rescoring so Flow recovery benefits from the same language model.
+- Add trace fixtures for sentence starts, casual chat continuations, and phrase disambiguation after accepted/rejected corrections.
+- Acceptance: fresh installs feel less generic, and personal history takes over cleanly as the user types.
