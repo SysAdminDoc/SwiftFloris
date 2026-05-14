@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.nlp
 internal data class TokenLocaleEvidence(
     val typedFrequency: Double,
     val candidateFrequency: Double,
+    val contextFrequency: Double = 0.0,
 )
 
 internal data class MultilingualTokenSignal(
@@ -41,6 +42,10 @@ internal object MultilingualTokenScorer {
         val sameLocaleAsTypedWord = localeEvidence.any { evidence ->
             evidence.typedFrequency > 0.0 && evidence.candidateFrequency > 0.0
         }
+        val contextKnown = localeEvidence.any { it.contextFrequency > 0.0 }
+        val sameLocaleAsContext = localeEvidence.any { evidence ->
+            evidence.contextFrequency > 0.0 && evidence.candidateFrequency > 0.0
+        }
         val languageConfidence = when {
             localeEvidence.size <= 1 -> 1.0
             candidateMatchesTypedWord && typedWordKnown -> 1.0
@@ -48,6 +53,10 @@ internal object MultilingualTokenScorer {
             typedWordKnown && candidateKnown -> 0.32
             typedWordKnown && candidateIsEligibleForAutoCommit -> 0.20
             typedWordKnown -> 0.38
+            contextKnown && candidateKnown && sameLocaleAsContext -> 0.98
+            contextKnown && candidateKnown -> 0.12
+            contextKnown && candidateIsEligibleForAutoCommit -> 0.08
+            contextKnown -> 0.44
             candidateKnown -> 0.88
             else -> 0.62
         }

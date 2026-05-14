@@ -591,6 +591,16 @@ class NlpManager(context: Context) {
         val contextPrefix = contextPrefixForCandidateScoring(content, currentWord)
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
+        val contextLanguageScores = locales.associateWith { locale ->
+            maxOf(
+                previousWords.prev1?.let { word ->
+                    frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
+                } ?: 0.0,
+                previousWords.prev2?.let { word ->
+                    frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
+                } ?: 0.0,
+            )
+        }
 
         return buildMap {
             for (candidate in candidates) {
@@ -609,6 +619,7 @@ class NlpManager(context: Context) {
                                 locale,
                                 key,
                             ),
+                            contextFrequency = contextLanguageScores[locale] ?: 0.0,
                         )
                     },
                     typedWordKnownByUserDictionary = typedWordKnownByUserDictionary,

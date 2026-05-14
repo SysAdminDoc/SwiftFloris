@@ -67,4 +67,36 @@ class MultilingualTokenScorerTest : FunSpec({
         signal.dictionaryFrequency shouldBe 0.72
         signal.languageConfidence shouldBe 1.0
     }
+
+    test("trailing context boosts candidates from the active sentence language") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, contextFrequency = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.72, contextFrequency = 0.88),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = false,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.72
+        signal.languageConfidence shouldBe 0.98
+    }
+
+    test("trailing context demotes candidates from the inactive sentence language") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.82, contextFrequency = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, contextFrequency = 0.88),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = true,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.82
+        signal.languageConfidence shouldBeLessThan 0.4
+    }
 })

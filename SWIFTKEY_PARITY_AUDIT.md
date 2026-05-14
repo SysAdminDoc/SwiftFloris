@@ -24,6 +24,7 @@ Primary references:
 - Cold-start English next-word prediction now has a small local prior model for sentence starts, common short continuations, and selected two-/three-word phrase continuations, and those priors now feed partial-word candidate scoring as well as blank next-word prediction.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
 - Known-word detection and candidate language confidence now score across every active subtype locale, so a word recognized only by a secondary language can still occupy the middle literal slot and resist wrong-language correction.
+- Candidate language confidence now also uses the previous two words as per-locale context evidence, allowing partial bilingual completions to follow the sentence language before the current token is itself recognizable.
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 - Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
@@ -48,7 +49,7 @@ Primary references:
    Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors for sentence starts, one-word continuations, and selected phrase continuations. Cold-start phrase context now promotes typed completions like `know` after `Let me kn` before personal history exists. A SwiftKey-level feel still needs broader phrase coverage, domain adaptation, and trace-calibrated ranking.
 
 5. Multilingual detection should keep adding context.
-   Current support now checks the current token across active locales and lowers wrong-language correction confidence when a token is valid elsewhere. The next step is language posterior scoring from trailing words, shared-spelling handling, and broader bilingual replay fixtures.
+   Current support now checks the current token across active locales, lowers wrong-language correction confidence when a token is valid elsewhere, and uses trailing-word locale evidence to steer partial completions toward the active sentence language. The next step is shared-spelling handling, active-locale switching edge cases, and broader bilingual replay fixtures from real traces.
 
 6. Flow needs broader real-world tuning.
    Current Flow can commit through space and now has conservative following-context rescue for short ambiguous words. The new glide replay fixture guards both successful context rescues and no-op safety cases, and `GlideContextTuning` makes the rescue constants testable before default changes. SwiftKey-like glide still needs richer real path fixtures, adaptive-touch weighting inside the gesture candidate list, and neural/beam-search-style rescoring to match SwiftKey on longer or multilingual swipes.
@@ -72,6 +73,6 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 - Keep tuning offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Keep expanding bounded multi-edit scoring from checked-in trace evidence rather than hand-tuning weights.
 - Keep promoting debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
-- Add deterministic replay tests for active-locale switching and multi-word autocorrect repairs; partial phrase completions and longer Flow contraction rescue are now covered.
+- Add deterministic replay tests for active-locale switching edge cases and multi-word autocorrect repairs; partial phrase completions, bilingual context completions, and longer Flow contraction rescue are now covered.
 - Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
 - Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.
