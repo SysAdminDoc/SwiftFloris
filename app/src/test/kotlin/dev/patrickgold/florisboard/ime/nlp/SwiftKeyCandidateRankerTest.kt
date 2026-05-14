@@ -161,6 +161,86 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         (hello.score.total > fello.score.total) shouldBe true
     }
 
+    test("rank promotes an interior missing-letter correction from touch alignment") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "ths",
+                touchEvidence = touchEvidence(
+                    sample("t"),
+                    sample("h"),
+                    sample("s"),
+                ),
+                signals = mapOf(
+                    "this" to SwiftKeyCandidateSignals(dictionaryFrequency = 1.0),
+                    "thus" to SwiftKeyCandidateSignals(dictionaryFrequency = 0.18),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("thus", confidence = 0.92),
+                candidate("this", confidence = 0.42),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("ths", "this", "thus")
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("ths", ranked)?.text shouldBe "this"
+    }
+
+    test("rank promotes an extra-letter correction when nearby-key evidence supports deletion") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "thuis",
+                touchEvidence = touchEvidence(
+                    sample("t"),
+                    sample("h"),
+                    sample("u", "i" to 0.70),
+                    sample("i"),
+                    sample("s"),
+                ),
+                signals = mapOf(
+                    "this" to SwiftKeyCandidateSignals(dictionaryFrequency = 1.0),
+                    "thugs" to SwiftKeyCandidateSignals(dictionaryFrequency = 0.20),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("thugs", confidence = 0.95),
+                candidate("this", confidence = 0.45),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("thuis", "this", "thugs")
+    }
+
+    test("rank treats accidental double letters as spatial corrections") {
+        val scored = SwiftKeyCandidateRanker.scoreCandidates(
+            context = decoderContext(
+                currentWord = "thiis",
+                touchEvidence = touchEvidence(
+                    sample("t"),
+                    sample("h"),
+                    sample("i"),
+                    sample("i"),
+                    sample("s"),
+                ),
+                signals = mapOf(
+                    "this" to SwiftKeyCandidateSignals(dictionaryFrequency = 1.0),
+                    "thins" to SwiftKeyCandidateSignals(dictionaryFrequency = 0.25),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("thins", confidence = 0.96),
+                candidate("this", confidence = 0.40),
+            ),
+        )
+
+        val thisCandidate = scored.first { it.candidate.text == "this" }
+        thisCandidate.score.role shouldBe SwiftKeyCandidateRole.SpatialCorrection
+        thisCandidate.score.spatialLikelihood shouldBe 0.46
+        scored.map { it.candidate.text.toString() } shouldBe listOf("this", "thins")
+    }
+
     test("scoreCandidates uses dictionary frequency as a lexical prior") {
         val ranked = SwiftKeyCandidateRanker.rank(
             context = decoderContext(
