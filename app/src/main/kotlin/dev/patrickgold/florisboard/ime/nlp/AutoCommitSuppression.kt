@@ -55,17 +55,32 @@ internal class AutoCommitSuppression {
         candidateText: CharSequence,
         currentWordStart: Int?,
     ): Boolean {
-        val rejected = rejectedAutoCommit ?: return false
-        val current = normalizeWord(currentWord) ?: return false
-        if (normalizeWord(candidateText) == null) return false
+        val shouldSuppress = rejectedPairPenalty(
+            currentWord = currentWord,
+            candidateText = candidateText,
+            currentWordStart = currentWordStart,
+        ) >= 1.0
+        if (shouldSuppress) {
+            rejectedAutoCommit = rejectedAutoCommit?.copy(hasSuppressed = true)
+        }
+        return shouldSuppress
+    }
+
+    fun rejectedPairPenalty(
+        currentWord: CharSequence,
+        candidateText: CharSequence,
+        currentWordStart: Int?,
+    ): Double {
+        val rejected = rejectedAutoCommit ?: return 0.0
+        val current = normalizeWord(currentWord) ?: return 0.0
+        val candidate = normalizeWord(candidateText) ?: return 0.0
         val isSameWordSlot = rejected.wordStart == null ||
             currentWordStart == null ||
             rejected.wordStart == currentWordStart
-        val shouldSuppress = isSameWordSlot && current == rejected.original
-        if (shouldSuppress) {
-            rejectedAutoCommit = rejected.copy(hasSuppressed = true)
+        if (!isSameWordSlot || current != rejected.original) {
+            return 0.0
         }
-        return shouldSuppress
+        return if (candidate == rejected.corrected) 1.0 else 0.0
     }
 
     fun onContentChanged(currentWord: CharSequence, currentWordStart: Int?) {

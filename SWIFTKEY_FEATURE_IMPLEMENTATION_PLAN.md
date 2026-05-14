@@ -135,7 +135,16 @@ The sixth implementation slice makes adaptive touch durable:
 The seventh implementation slice starts the unified scorer and replay harness:
 
 - Replace role-only candidate ordering with an explicit `SwiftKeyCandidateScore`.
-- Score role, spatial likelihood, preferred-vs-fallback source affinity, provider confidence, edit proximity, completion affinity, and length penalty in one object.
+- Score role, spatial likelihood, preferred-vs-fallback source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty in one object.
 - Expose scored candidates for deterministic tests and future debugging.
-- Add replay cases for adjacent-key correction, known-word literal preservation, and quick prediction spacebar insertion.
+- Add replay cases for adjacent-key correction, known-word literal preservation, quick prediction spacebar insertion, dictionary frequency, personal phrase context, and rejected autocorrect demotion.
 - Acceptance: existing candidate-strip behavior remains stable while every new SwiftKey-like behavior can be protected by a replay case.
+
+## Eighth Slice
+
+The eighth implementation slice should move from synthetic replay to field-tunable local learning:
+
+- Add a debug-only typing trace recorder that captures typed text, candidate order, selected candidate, touch evidence, context words, and rejection events without network upload. The first trace recorder is now present and writes local JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
+- Add recency decay to personal bigram/trigram scoring so recent user phrases can beat stale history without unbounded growth.
+- Add a `NeuralCandidateReranker` interface behind the current scorer. Keep the heuristic scorer as the always-on fallback and make any ONNX/TFLite model optional.
+- Acceptance: ranking changes can be evaluated against recorded local traces before enabling more aggressive neural or context scoring.

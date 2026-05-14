@@ -48,9 +48,10 @@
 ## Completed Slices
 
 - Item 1 is implemented: adaptive touch persists bounded per-subtype tap-offset distributions locally and restores them at startup.
-- Item 2 is started: candidate ranking now emits an explicit score object with role, spatial likelihood, source affinity, provider confidence, edit proximity, completion affinity, and length penalty.
-- Item 3 is started: deterministic replay tests now cover adjacent-key correction, known-word literal preservation, and quick prediction spacebar behavior.
+- Item 2 is substantially expanded: candidate ranking now emits an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty.
+- Item 3 is expanded: deterministic replay tests now cover adjacent-key correction, known-word literal preservation, quick prediction spacebar behavior, dictionary-frequency ranking, personal phrase-context ranking, and rejected autocorrect demotion.
+- The first debug trace recorder is implemented: creating `<filesDir>/swiftkey_trace.enabled` enables local JSONL capture of suggestion scores and accepted/rejected autocorrect events at `<filesDir>/swiftkey_typing_traces.jsonl`.
 
 ## Current Slice
 
-Keep expanding items 2 and 3 until every SwiftKey-like typing decision has a replay case. The next concrete work is to feed dictionary frequency, personal phrase probability, rejection history, and language confidence into `SwiftKeyCandidateScore`.
+Keep expanding items 2 and 3 until every SwiftKey-like typing decision has a replay case. The next concrete work is to add recency decay to personal n-gram scores, promote captured JSONL traces into replay fixtures, and define the optional neural reranker interface behind the existing local decoder.

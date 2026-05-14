@@ -142,6 +142,24 @@ class PersonalTrigramStore private constructor(private val context: Context) {
             .toList()
     }
 
+    /**
+     * Scores [currWord] as a continuation for the two-word context
+     * ([prev2], [prev1]). The result is normalized to the strongest learned
+     * continuation for that exact context.
+     */
+    suspend fun score(prev2: String, prev1: String, currWord: String, locale: FlorisLocale): Double {
+        val a = normalize(prev2)
+        val b = normalize(prev1)
+        val c = normalize(currWord)
+        if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return 0.0
+        val table = ensureLoaded(locale.languageTag())
+        val nextMap = synchronized(table) { table[contextKey(a, b)]?.toMap() } ?: return 0.0
+        val count = nextMap[c] ?: return 0.0
+        val maxCount = nextMap.values.maxOrNull() ?: return 0.0
+        if (maxCount <= 0) return 0.0
+        return (count.toDouble() / maxCount.toDouble()).coerceIn(0.0, 1.0)
+    }
+
     fun flush(localeTag: String) {
         ioScope.launch {
             val table = tablesByLocale[localeTag] ?: return@launch

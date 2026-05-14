@@ -16,11 +16,21 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import kotlin.math.ln
+
 internal data class SwiftKeyDecoderContext(
     val currentWord: String,
     val maxCandidateCount: Int,
     val typedWordKnown: Boolean = false,
     val touchEvidence: TouchDecoderEvidence? = null,
+    val candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
+)
+
+internal data class SwiftKeyCandidateSignals(
+    val dictionaryFrequency: Double = 0.0,
+    val contextProbability: Double = 0.0,
+    val languageConfidence: Double = 1.0,
+    val rejectionPenalty: Double = 0.0,
 )
 
 internal data class SwiftKeyScoredCandidate(
@@ -38,24 +48,44 @@ internal data class SwiftKeyCandidateScore(
     val sourceAffinity: Double,
     val editProximity: Double,
     val completionAffinity: Double,
+    val dictionaryFrequency: Double,
+    val contextProbability: Double,
+    val languageConfidence: Double,
+    val rejectionPenalty: Double,
     val lengthPenalty: Double,
 ) {
     val total: Double =
-        rolePriority * RoleWeight +
-            spatialLikelihood * SpatialWeight +
+        evidence(rolePriority / MaxRolePriority) * RoleWeight +
+            evidence(spatialLikelihood) * SpatialWeight +
             sourceAffinity * SourceWeight +
-            providerConfidence * ConfidenceWeight +
-            editProximity * EditWeight +
-            completionAffinity * CompletionWeight -
+            evidence(providerConfidence) * ConfidenceWeight +
+            evidence(dictionaryFrequency) * DictionaryWeight +
+            evidence(contextProbability) * ContextWeight +
+            evidence(languageConfidence) * LanguageWeight +
+            evidence(editProximity) * EditWeight +
+            evidence(completionAffinity) * CompletionWeight -
+            rejectionPenalty.coerceIn(0.0, 1.0) * RejectionWeight -
             lengthPenalty
 
     private companion object {
-        const val RoleWeight = 100.0
-        const val SpatialWeight = 24.0
-        const val SourceWeight = 18.0
-        const val ConfidenceWeight = 6.0
-        const val EditWeight = 4.0
+        const val MaxRolePriority = 5.0
+        const val RoleWeight = 22.0
+        const val SpatialWeight = 28.0
+        const val SourceWeight = 14.0
+        const val ConfidenceWeight = 8.0
+        const val DictionaryWeight = 12.0
+        const val ContextWeight = 20.0
+        const val LanguageWeight = 8.0
+        const val EditWeight = 5.0
         const val CompletionWeight = 3.0
+        const val RejectionWeight = 32.0
+        val LogDenominator: Double = ln(10.0)
+
+        fun evidence(value: Double): Double {
+            val normalized = value.coerceIn(0.0, 1.0)
+            if (normalized <= 0.0) return 0.0
+            return ln(1.0 + 9.0 * normalized) / LogDenominator
+        }
     }
 }
 
@@ -88,6 +118,7 @@ internal object SwiftKeyCandidateRanker {
         val rankedSuggestions = rankedCandidates(
             currentWord = currentWord,
             touchEvidence = context.touchEvidence,
+            signals = context.candidateSignals,
             preferred = preferred,
             fallback = fallback,
         )
@@ -145,6 +176,7 @@ internal object SwiftKeyCandidateRanker {
                 typedWordKey = typedWordKey,
                 currentWord = currentWord,
                 touchEvidence = context.touchEvidence,
+                signals = context.candidateSignals,
             )
         } + fallback.mapIndexed { index, candidate ->
             scoredCandidate(
@@ -154,6 +186,7 @@ internal object SwiftKeyCandidateRanker {
                 typedWordKey = typedWordKey,
                 currentWord = currentWord,
                 touchEvidence = context.touchEvidence,
+                signals = context.candidateSignals,
             )
         }).sortedWith(ScoredCandidateComparator)
     }
@@ -201,6 +234,7 @@ internal object SwiftKeyCandidateRanker {
     private fun rankedCandidates(
         currentWord: String,
         touchEvidence: TouchDecoderEvidence?,
+        signals: Map<String, SwiftKeyCandidateSignals>,
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
     ): List<SuggestionCandidate> {
@@ -209,6 +243,7 @@ internal object SwiftKeyCandidateRanker {
                 currentWord = currentWord,
                 maxCandidateCount = Int.MAX_VALUE,
                 touchEvidence = touchEvidence,
+                candidateSignals = signals,
             ),
             preferred = preferred,
             fallback = fallback,
@@ -222,12 +257,14 @@ internal object SwiftKeyCandidateRanker {
         typedWordKey: String,
         currentWord: String,
         touchEvidence: TouchDecoderEvidence?,
+        signals: Map<String, SwiftKeyCandidateSignals>,
     ): SwiftKeyScoredCandidate {
         val spatialLikelihood = touchEvidence?.spatialReplacementScore(candidate.text, currentWord)
             ?.coerceIn(0.0, 1.0)
             ?: 0.0
         val role = candidate.role(typedWordKey, spatialLikelihood)
         val candidateKey = candidate.text.toString().normalizedCandidateKey()
+        val signal = signals[candidateKey] ?: SwiftKeyCandidateSignals()
         val score = SwiftKeyCandidateScore(
             role = role,
             rolePriority = role.priority,
@@ -236,6 +273,10 @@ internal object SwiftKeyCandidateRanker {
             sourceAffinity = source.affinity,
             editProximity = editProximity(typedWordKey, candidateKey),
             completionAffinity = completionAffinity(typedWordKey, candidateKey),
+            dictionaryFrequency = signal.dictionaryFrequency,
+            contextProbability = signal.contextProbability,
+            languageConfidence = signal.languageConfidence,
+            rejectionPenalty = signal.rejectionPenalty,
             lengthPenalty = lengthPenalty(candidate.text.length),
         )
         return SwiftKeyScoredCandidate(
@@ -321,6 +362,9 @@ internal object SwiftKeyCandidateRanker {
     private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
         .thenByDescending { it.score.rolePriority }
         .thenByDescending { it.score.spatialLikelihood }
+        .thenByDescending { it.score.contextProbability }
+        .thenByDescending { it.score.dictionaryFrequency }
+        .thenByDescending { it.score.languageConfidence }
         .thenByDescending { it.score.sourceAffinity }
         .thenByDescending { it.score.providerConfidence }
         .thenBy { it.candidate.text.length }

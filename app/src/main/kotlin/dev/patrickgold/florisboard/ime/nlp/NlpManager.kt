@@ -25,6 +25,8 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
+import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
@@ -52,6 +54,7 @@ private const val BLANK_STR_PATTERN = "^\\s*$"
 class NlpManager(context: Context) {
     private val blankStrRegex = Regex(BLANK_STR_PATTERN)
 
+    private val appContext = context.applicationContext
     private val prefs by FlorisPreferenceStore
     private val dictionaryManager = DictionaryManager.default()
     private val clipboardManager by context.clipboardManager()
@@ -63,6 +66,7 @@ class NlpManager(context: Context) {
     private val clipboardSuggestionProvider = ClipboardSuggestionProvider(context)
     private val emojiSuggestionProvider = EmojiSuggestionProvider(context)
     private val providerRegistry = NlpProviderRegistry(context)
+    private val typingTraceRecorder = SwiftKeyTypingTraceRecorder(appContext)
     private val candidateAssembler = NlpCandidateAssembler(
         clipboardSuggestionProvider = clipboardSuggestionProvider,
         editorInstance = editorInstance,
@@ -238,20 +242,45 @@ class NlpManager(context: Context) {
                 emptyList()
             }
             val currentWord = content.autoCommitWord()
+            val currentWordStart = content.autoCommitWordStart()
+            val typedWordKnown = suggestionsEnabled && isKnownTypedWord(
+                suggestionProvider = suggestionProvider,
+                subtype = subtype,
+                currentWord = currentWord,
+            )
+            val candidateSignals = candidateSignals(
+                subtype = subtype,
+                content = content,
+                suggestionProvider = suggestionProvider,
+                currentWord = currentWord,
+                currentWordStart = currentWordStart,
+                typedWordKnown = typedWordKnown,
+                candidates = userDictionarySuggestions + suggestions,
+            )
+            val decoderContext = SwiftKeyDecoderContext(
+                currentWord = currentWord,
+                maxCandidateCount = 8,
+                typedWordKnown = typedWordKnown,
+                touchEvidence = touchDecoderEvidence.evidenceFor(currentWord),
+                candidateSignals = candidateSignals,
+            )
             val wordSuggestions = SwiftKeyCandidateRanker.rank(
-                context = SwiftKeyDecoderContext(
-                    currentWord = currentWord,
-                    maxCandidateCount = 8,
-                    typedWordKnown = suggestionsEnabled && isKnownTypedWord(
-                        suggestionProvider = suggestionProvider,
-                        subtype = subtype,
-                        currentWord = currentWord,
-                    ),
-                    touchEvidence = touchDecoderEvidence.evidenceFor(currentWord),
-                ),
+                context = decoderContext,
                 preferred = userDictionarySuggestions,
                 fallback = suggestions,
             )
+            if (typingTraceRecorder.isEnabled()) {
+                typingTraceRecorder.recordSuggestion(
+                    content = content,
+                    context = decoderContext,
+                    scoredCandidates = SwiftKeyCandidateRanker.scoreCandidates(
+                        context = decoderContext,
+                        preferred = userDictionarySuggestions,
+                        fallback = suggestions,
+                    ),
+                    rankedCandidates = wordSuggestions,
+                )
+            }
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
                     internalSuggestions = requestId to buildList {
@@ -401,14 +430,19 @@ class NlpManager(context: Context) {
             correctedText = candidate.text,
             wordStart = content.autoCommitWordStart(),
         )
+        typingTraceRecorder.recordAutoCommitAccepted(content, candidate)
     }
 
     fun rejectAcceptedAutoCommitOnBackspace(content: EditorContent): Boolean {
         val cursorPosition = content.selection.takeIf { it.isValid }?.start
-        return autoCommitSuppression.rejectAccepted(
+        val rejected = autoCommitSuppression.rejectAccepted(
             textBeforeSelection = content.textBeforeSelection,
             cursorPosition = cursorPosition,
         )
+        if (rejected) {
+            typingTraceRecorder.recordAutoCommitRejected(content)
+        }
+        return rejected
     }
 
     fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean {
@@ -475,6 +509,65 @@ class NlpManager(context: Context) {
         return suggestionProvider.getFrequencyForWord(subtype, normalizedWord) > 0.0
     }
 
+    private suspend fun candidateSignals(
+        subtype: Subtype,
+        content: EditorContent,
+        suggestionProvider: SuggestionProvider,
+        currentWord: String,
+        currentWordStart: Int?,
+        typedWordKnown: Boolean,
+        candidates: List<SuggestionCandidate>,
+    ): Map<String, SwiftKeyCandidateSignals> {
+        if (candidates.isEmpty()) return emptyMap()
+        val locale = subtype.primaryLocale
+        val localeCount = subtype.locales().size
+        val previousWords = previousWordsForContext(content, currentWord)
+        val bigramStore = PersonalBigramStore.get(appContext)
+        val trigramStore = PersonalTrigramStore.get(appContext)
+
+        return buildMap {
+            for (candidate in candidates) {
+                if (candidate !is WordSuggestionCandidate) continue
+                val candidateText = candidate.text.toString()
+                val key = candidateText.normalizedCandidateSignalKey() ?: continue
+                val dictionaryFrequency = runCatching {
+                    suggestionProvider.getFrequencyForWord(subtype, candidateText)
+                }.getOrDefault(0.0).coerceIn(0.0, 1.0)
+                val bigramProbability = previousWords.prev1?.let { prev1 ->
+                    bigramStore.score(prev1, candidateText, locale)
+                } ?: 0.0
+                val trigramProbability = if (previousWords.prev2 != null && previousWords.prev1 != null) {
+                    trigramStore.score(previousWords.prev2, previousWords.prev1, candidateText, locale)
+                } else {
+                    0.0
+                }
+                val contextProbability = maxOf(
+                    bigramProbability * BigramContextWeight,
+                    trigramProbability,
+                ).coerceIn(0.0, 1.0)
+                val languageConfidence = when {
+                    localeCount <= 1 -> 1.0
+                    dictionaryFrequency > 0.0 -> 1.0
+                    typedWordKnown && candidate.isEligibleForAutoCommit -> 0.35
+                    else -> 0.65
+                }
+                put(
+                    key,
+                    SwiftKeyCandidateSignals(
+                        dictionaryFrequency = dictionaryFrequency,
+                        contextProbability = contextProbability,
+                        languageConfidence = languageConfidence,
+                        rejectionPenalty = autoCommitSuppression.rejectedPairPenalty(
+                            currentWord = currentWord,
+                            candidateText = candidateText,
+                            currentWordStart = currentWordStart,
+                        ),
+                    ),
+                )
+            }
+        }
+    }
+
     private fun immediateAutoCommitCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {
         if (!prefs.suggestion.enabled.get()) {
             return null
@@ -537,6 +630,54 @@ class NlpManager(context: Context) {
             composing.isValid -> composing.start
             else -> null
         }
+    }
+
+    private fun previousWordsForContext(content: EditorContent, currentWord: String): PreviousWords {
+        var before = content.textBeforeSelection
+        val activeWord = currentWord.trim()
+        if (activeWord.isNotEmpty() && before.endsWith(activeWord)) {
+            before = before.dropLast(activeWord.length)
+        }
+        return PreviousWords(
+            prev2 = previousWordOf(before, depth = 2),
+            prev1 = previousWordOf(before, depth = 1),
+        )
+    }
+
+    private fun previousWordOf(textBeforeCursor: String, depth: Int = 1): String? {
+        if (depth <= 0) return null
+        var working = textBeforeCursor
+        var found: String? = null
+        repeat(depth) { index ->
+            val trimmed = working.trimEnd()
+            if (trimmed.isEmpty()) return null
+            var end = trimmed.length
+            while (end > 0 && !trimmed[end - 1].isLetter()) end--
+            var start = end
+            while (start > 0 && (trimmed[start - 1].isLetter() || trimmed[start - 1] == '\'')) start--
+            if (start == end) return null
+            found = trimmed.substring(start, end)
+            if (index == depth - 1) return found
+            working = trimmed.substring(0, start)
+        }
+        return found
+    }
+
+    private data class PreviousWords(
+        val prev2: String?,
+        val prev1: String?,
+    )
+
+    private fun String.normalizedCandidateSignalKey(): String? {
+        val normalized = trim()
+            .trim { char -> !char.isLetter() && char != '\'' && char != '\u2019' }
+            .lowercase()
+        if (normalized.isBlank() || normalized.none { it.isLetter() }) return null
+        return normalized
+    }
+
+    private companion object {
+        const val BigramContextWeight = 0.75
     }
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
