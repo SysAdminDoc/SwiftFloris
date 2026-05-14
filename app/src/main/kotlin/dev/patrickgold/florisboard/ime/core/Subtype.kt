@@ -232,6 +232,7 @@ data class SubtypeNlpProviderMap(
  * @property locale The locale of this subtype. Beware its different name in json: 'languageTag'.
  * @property currencySet The currency set name of this subtype.
  * @property preferred The preferred layout map for this subtype's locale.
+ * @property secondaryLocales The secondary locales which share this subtype without manual switching.
  */
 @Serializable
 data class SubtypePreset(
@@ -244,12 +245,13 @@ data class SubtypePreset(
     val punctuationRule: ExtensionComponentName = extCorePunctuationRule("default"),
     val popupMapping: ExtensionComponentName = extCorePopupMapping("default"),
     val preferred: SubtypeLayoutMap,
+    val secondaryLocales: List<FlorisLocale> = emptyList(),
 ) {
     fun toSubtype(): Subtype {
         return Subtype(
             id = -1,
             primaryLocale = locale,
-            secondaryLocales = emptyList(),
+            secondaryLocales = secondaryLocales,
             nlpProviders = nlpProviders,
             composer = composer,
             currencySet = currencySet,

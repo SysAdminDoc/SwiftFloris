@@ -63,6 +63,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.ime.core.BilingualSubtypePresets
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.core.SubtypeJsonConfig
@@ -187,6 +188,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
 
     val selectValue = stringRes(R.string.settings__localization__subtype_select_placeholder)
     val selectListValues = remember(selectValue) { listOf(selectValue) }
+    val bilingualSummary = stringRes(R.string.settings__localization__subtype_bilingual_summary)
 
     val prefs by FlorisPreferenceStore
     val navController = LocalNavController.current
@@ -202,13 +204,19 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
     val layoutExtensions by keyboardManager.resources.layouts.collectAsState()
     val popupMappings by keyboardManager.resources.popupMappings.collectAsState()
     val subtypePresets by keyboardManager.resources.subtypePresets.collectAsState()
+    val bilingualSubtypePresets = remember(subtypePresets) {
+        BilingualSubtypePresets.canonicalFrom(subtypePresets)
+    }
+    val allSubtypePresets = remember(subtypePresets, bilingualSubtypePresets) {
+        bilingualSubtypePresets + subtypePresets
+    }
 
     val subtypeEditor = rememberSaveable(saver = SubtypeEditorState.Saver) {
         val subtype = id?.let { subtypeManager.getSubtypeById(id) }
         SubtypeEditorState(subtype)
     }
     var primaryLocale by subtypeEditor.primaryLocale
-    //var secondaryLocales by subtypeEditor.secondaryLocales
+    var secondaryLocales by subtypeEditor.secondaryLocales
     var composer by subtypeEditor.composer
     var currencySet by subtypeEditor.currencySet
     var popupMapping by subtypeEditor.popupMapping
@@ -227,6 +235,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
         val observer = Observer<String> { languageTag ->
             val locale = FlorisLocale.fromTag(languageTag)
             primaryLocale = locale
+            secondaryLocales = emptyList()
             val preset = subtypeManager.getSubtypePresetForLocale(locale)
             popupMapping = preset?.popupMapping ?: extCorePopupMapping("default")
         }
@@ -329,15 +338,34 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                                     modifier = Modifier.clickable {
                                         subtypeEditor.applySubtype(suggestedPreset.toSubtype())
                                     },
-                                    text = when (displayLanguageNamesIn) {
-                                        DisplayLanguageNamesIn.SYSTEM_LOCALE -> suggestedPreset.locale.displayName()
-                                        DisplayLanguageNamesIn.NATIVE_LOCALE -> suggestedPreset.locale.displayName(suggestedPreset.locale)
-                                    },
-                                    secondaryText = suggestedPreset.preferred.characters.componentId,
+                                    text = suggestedPreset.displayName(displayLanguageNamesIn),
+                                    secondaryText = subtypePresetSummary(suggestedPreset, bilingualSummary),
                                     colors = ListItemDefaults.colors(containerColor = CardDefaults.cardColors().containerColor),
                                 )
                             }
-                        } else {
+                        }
+                        if (bilingualSubtypePresets.isNotEmpty()) {
+                            Text(
+                                modifier = Modifier.padding(top = 12.dp, bottom = 4.dp, start = 16.dp, end = 16.dp),
+                                text = stringRes(R.string.settings__localization__subtype_bilingual_presets),
+                                color = MaterialTheme.colorScheme.secondary,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Bold,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                            )
+                            for (bilingualPreset in bilingualSubtypePresets) {
+                                JetPrefListItem(
+                                    modifier = Modifier.clickable {
+                                        subtypeEditor.applySubtype(bilingualPreset.toSubtype())
+                                    },
+                                    text = bilingualPreset.displayName(displayLanguageNamesIn),
+                                    secondaryText = subtypePresetSummary(bilingualPreset, bilingualSummary),
+                                    colors = ListItemDefaults.colors(containerColor = CardDefaults.cardColors().containerColor),
+                                )
+                            }
+                        }
+                        if (suggestedPresets.isEmpty() && bilingualSubtypePresets.isEmpty()) {
                             Text(
                                 modifier = Modifier.padding(vertical = 8.dp, horizontal = 16.dp),
                                 text = stringRes(R.string.settings__localization__suggested_subtype_presets_none_found),
@@ -369,6 +397,18 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                         navController.navigate(Routes.Settings.SelectLocale)
                     },
                     appearance = JetPrefDropdownMenuDefaults.outlined(shape = ShapeDefaults.Small),
+                )
+            }
+            SubtypeProperty(stringRes(R.string.settings__localization__subtype_secondary_locales)) {
+                Text(
+                    modifier = Modifier.padding(vertical = 12.dp, horizontal = 16.dp),
+                    text = if (secondaryLocales.isEmpty()) {
+                        stringRes(R.string.settings__localization__subtype_secondary_locales_none)
+                    } else {
+                        secondaryLocales.displayName(displayLanguageNamesIn)
+                    },
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             }
             SubtypeProperty(stringRes(R.string.settings__localization__subtype_popup_mapping)) {
@@ -495,17 +535,14 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
                             .florisScrollbar(lazyListState, isVertical = true).weight(1f),
                         state = lazyListState,
                     ) {
-                        items(subtypePresets) { subtypePreset ->
+                        items(allSubtypePresets) { subtypePreset ->
                             JetPrefListItem(
                                 modifier = Modifier.clickable {
                                     subtypeEditor.applySubtype(subtypePreset.toSubtype())
                                     showSubtypePresetsDialog = false
                                 },
-                                text = when (displayLanguageNamesIn) {
-                                    DisplayLanguageNamesIn.SYSTEM_LOCALE -> subtypePreset.locale.displayName()
-                                    DisplayLanguageNamesIn.NATIVE_LOCALE -> subtypePreset.locale.displayName(subtypePreset.locale)
-                                },
-                                secondaryText = subtypePreset.preferred.characters.componentId,
+                                text = subtypePreset.displayName(displayLanguageNamesIn),
+                                secondaryText = subtypePresetSummary(subtypePreset, bilingualSummary),
                                 colors = ListItemDefaults.colors(containerColor = AlertDialogDefaults.containerColor),
                             )
                         }
@@ -533,6 +570,7 @@ fun SubtypeEditorScreen(id: Long?) = FlorisScreen {
 
     DeleteSubtypeConfirmationDialog(
         subtypeToDelete = subtypeToDelete,
+        displayLanguageNamesIn = displayLanguageNamesIn,
         onDismiss = {
             subtypeToDelete = null
         },
@@ -587,4 +625,12 @@ private fun SubtypeGroupSpacer() {
     Spacer(modifier = Modifier
         .fillMaxWidth()
         .height(32.dp))
+}
+
+private fun subtypePresetSummary(subtypePreset: SubtypePreset, bilingualSummary: String): String {
+    return if (subtypePreset.secondaryLocales.isEmpty()) {
+        subtypePreset.preferred.characters.componentId
+    } else {
+        "$bilingualSummary / ${subtypePreset.preferred.characters.componentId}"
+    }
 }
