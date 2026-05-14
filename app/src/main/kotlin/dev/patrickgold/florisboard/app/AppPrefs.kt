@@ -55,6 +55,7 @@ import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
 import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
+import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEnginePreference
 import dev.patrickgold.florisboard.ime.window.ImeWindowConfig
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.util.VersionName
@@ -244,6 +245,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
 
     val voice = Voice()
     inner class Voice {
+        val recognitionEnginePreference = enum(
+            key = "voice__recognition_engine_preference",
+            default = VoiceRecognitionEnginePreference.AUTO,
+        )
         val embeddedModelPreference = enum(
             key = "voice__embedded_model_preference",
             default = VoiceModelPreference.AUTO,
