@@ -26,7 +26,9 @@ Primary references:
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 - Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
+- Touch evidence now treats adjacent character transpositions such as "teh" -> "the" as a spatial/temporal correction signal, not just a generic edit-distance match.
 - A disabled-by-default local trace recorder can capture scored candidate order, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events to JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
+- An anonymized JSONL replay fixture and parser now make captured trace-like events runnable in plain JVM tests.
 - A no-op `NeuralCandidateReranker` boundary now sits behind the scorer, giving a future local ONNX/TFLite model a safe integration point without changing the no-network baseline.
 
 ## Gaps That Still Matter
@@ -38,7 +40,7 @@ Primary references:
    The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice, with a neural-reranker seam ready for a future local model. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
 
 3. Touch correction still resolves one key before NLP.
-   Gap rescue, persisted adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs stronger accepted/rejected-correction priors and multi-edit path scoring.
+   Gap rescue, persisted adaptive offsets, transient nearby-key evidence, and adjacent transposition scoring now help, but the touch model still needs stronger accepted/rejected-correction priors and insertion/deletion path scoring.
 
 4. Next-word prediction needs richer context.
    Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and broader context priors.
@@ -67,7 +69,7 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 
 - Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
-- Promote debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
-- Add deterministic replay tests for row-gap taps, multi-edit typos, multilingual words, glide paths, and next-word prediction.
+- Keep promoting debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
+- Add deterministic replay tests for insertion/deletion typos, double-letter mistakes, multilingual words, glide paths, and next-word prediction.
 - Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
 - Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.
