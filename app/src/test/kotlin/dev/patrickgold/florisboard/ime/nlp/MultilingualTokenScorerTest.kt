@@ -168,4 +168,53 @@ class MultilingualTokenScorerTest : FunSpec({
         signal.dictionaryFrequency shouldBe 0.72
         signal.languageConfidence shouldBe 0.50
     }
+
+    test("language-id boosts candidates from the detected token language") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, languageIdConfidence = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.83, languageIdConfidence = 1.0),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = false,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.83
+        signal.languageConfidence shouldBe 0.94
+    }
+
+    test("language-id demotes inactive-language autocorrects") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.82, languageIdConfidence = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, languageIdConfidence = 1.0),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = true,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.82
+        signal.languageConfidence shouldBe 0.16
+    }
+
+    test("language-id softens active-language autocorrects that fight the typed prefix") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, languageIdConfidence = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.72, languageIdConfidence = 1.0),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = true,
+            candidateConflictsWithTypedPrefix = true,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.72
+        signal.languageConfidence shouldBe 0.58
+    }
 })
