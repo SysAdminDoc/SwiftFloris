@@ -54,6 +54,7 @@
 - Item 3 also protects bounded touch-edit alignment: the scorer now handles same-length nearby-key substitution, adjacent transposition, interior missing letters, supported extra letters, and accidental double letters before promoting a candidate to `SpatialCorrection`.
 - Item 3 now feeds correction outcomes back into spatial ranking: accepted typed/corrected pairs build local confidence, rejected pairs dampen spatial confidence before role selection, and both are represented in JSONL replay fixtures.
 - Item 4 now has recency-aware personal context scoring plus a first English cold-start prior layer: bigram and trigram stores persist `lastSeenMs`, upgrade legacy TSV rows on flush, rank personal continuations with a 21-day half-life, and fall back to curated sentence-start/common-continuation priors before raw dictionary frequency.
+- Item 4 now has richer phrase priors: cold-start English prediction checks two- and three-word phrase contexts before falling back to single-word continuations, covering common patterns like `let me -> know`, `as soon as -> possible`, and `thank you for -> the`.
 - Item 5 now has a first short-glide context rescue path: Flow commits keep a bounded pending candidate list for 6 seconds, the next committed glide word scores the previous candidates against personal/cold-start next-word context, and conservative short-word rescoring can replace ambiguous commits such as `in` with `I'm` before the next word is committed.
 - Item 6 is expanded: typed-word known detection now checks every active subtype locale, candidate dictionary frequency is scored across active locales, and a pure `MultilingualTokenScorer` lowers wrong-language correction confidence when the typed token is recognized in another enabled language.
 - Item 7 now has the optional neural reranker seam: `NeuralCandidateReranker` can reorder scored candidates while the shipped default remains a no-op heuristic fallback.
@@ -61,6 +62,6 @@
 
 ## Current Slice
 
-Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to add richer phrase priors, promote more captured JSONL traces into checked-in replay fixtures, and expose stronger trust/reset controls for the learned models.
+Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote more captured JSONL traces into checked-in replay fixtures and expose stronger trust/reset controls for the learned models.
 
-Current next step: expand phrase-level cold-start and personal context beyond bigram/trigram scoring so common multi-word continuations feel less generic on a fresh install.
+Current next step: add user-visible reset controls for learned phrase history, correction outcomes, and adaptive touch state so the stronger local learning model stays understandable and reversible.

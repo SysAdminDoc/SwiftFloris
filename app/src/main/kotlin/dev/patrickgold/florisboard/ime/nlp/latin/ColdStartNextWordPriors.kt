@@ -40,8 +40,11 @@ internal object ColdStartNextWordPriors {
         val words = when {
             isSentenceStart(textBeforeCursor) -> SentenceStart
             else -> {
-                val previousWord = previousWordOf(textBeforeCursor)?.lowercase() ?: return emptyList()
-                Continuations[previousWord].orEmpty()
+                val previousWords = previousWordsOf(textBeforeCursor, maxDepth = 3)
+                if (previousWords.isEmpty()) return emptyList()
+                PhraseContinuations[previousWords.takeLast(3).joinToString(" ")]
+                    ?: PhraseContinuations[previousWords.takeLast(2).joinToString(" ")]
+                    ?: Continuations[previousWords.last()].orEmpty()
             }
         }
         return words
@@ -60,21 +63,34 @@ internal object ColdStartNextWordPriors {
         return trimmed.last() in SentenceTerminators
     }
 
-    private fun previousWordOf(textBeforeCursor: String): String? {
+    private fun previousWordsOf(textBeforeCursor: String, maxDepth: Int): List<String> {
+        if (maxDepth <= 0) return emptyList()
+        val words = mutableListOf<String>()
         val trimmed = textBeforeCursor.trimEnd()
-        if (trimmed.isEmpty()) return null
+        if (trimmed.isEmpty()) return emptyList()
         var end = trimmed.length
-        while (end > 0 && !trimmed[end - 1].isLetter() && trimmed[end - 1] != '\'' && trimmed[end - 1] != '-') {
-            end--
+        while (end > 0 && words.size < maxDepth) {
+            while (end > 0 && !trimmed[end - 1].isPriorWordChar()) {
+                end--
+            }
+            if (end == 0) break
+            var start = end
+            while (start > 0 && trimmed[start - 1].isPriorWordChar()) {
+                start--
+            }
+            val word = trimmed.substring(start, end)
+                .lowercase()
+                .replace('\u2019', '\'')
+            if (word.isNotBlank()) {
+                words.add(0, word)
+            }
+            end = start
         }
-        if (end == 0) return null
-        var start = end
-        while (start > 0) {
-            val ch = trimmed[start - 1]
-            if (!ch.isLetter() && ch != '\'' && ch != '-') break
-            start--
-        }
-        return trimmed.substring(start, end).takeIf { it.isNotBlank() }
+        return words
+    }
+
+    private fun Char.isPriorWordChar(): Boolean {
+        return isLetter() || this == '\'' || this == '\u2019' || this == '-'
     }
 
     private val SentenceTerminators = setOf('.', '!', '?', '\n')
@@ -121,5 +137,48 @@ internal object ColdStartNextWordPriors {
         "of" to listOf("the", "course"),
         "to" to listOf("the", "be", "get", "make"),
         "be" to listOf("able", "there", "ready"),
+    )
+
+    private val PhraseContinuations = mapOf(
+        "a lot" to listOf("of", "more"),
+        "are you" to listOf("going", "available", "sure", "there"),
+        "are you going" to listOf("to", "there"),
+        "as soon" to listOf("as"),
+        "as soon as" to listOf("possible", "i", "we"),
+        "at the" to listOf("same", "end", "office"),
+        "can you" to listOf("please", "send", "check", "help"),
+        "do you" to listOf("want", "have", "think", "know"),
+        "do you want" to listOf("to", "me", "a"),
+        "for the" to listOf("first", "same", "most"),
+        "going to" to listOf("be", "the", "get", "make"),
+        "have a" to listOf("great", "good", "nice"),
+        "how are" to listOf("you", "things", "we"),
+        "i am" to listOf("going", "not", "sure", "sorry"),
+        "i don't" to listOf("think", "know", "want"),
+        "i have" to listOf("been", "a", "to"),
+        "i need" to listOf("to", "a", "the"),
+        "i will" to listOf("be", "send", "check", "try"),
+        "i'll be" to listOf("there", "back", "home"),
+        "i'm going" to listOf("to", "home", "there"),
+        "i'm not" to listOf("sure", "going", "able"),
+        "if you" to listOf("can", "want", "need"),
+        "in the" to listOf("morning", "same", "first"),
+        "let me" to listOf("know", "see", "check", "try"),
+        "let me know" to listOf("if", "when", "what"),
+        "on my" to listOf("way", "phone", "end"),
+        "one of" to listOf("the", "my"),
+        "see you" to listOf("soon", "tomorrow", "then"),
+        "talk to" to listOf("you", "me", "them"),
+        "thank you" to listOf("for", "so", "again"),
+        "thank you for" to listOf("the", "your", "everything"),
+        "thanks for" to listOf("the", "your", "help"),
+        "to be" to listOf("able", "honest", "sure"),
+        "we need" to listOf("to", "a", "the"),
+        "what are" to listOf("you", "the", "we"),
+        "when are" to listOf("you", "we", "they"),
+        "where are" to listOf("you", "the", "we"),
+        "would you" to listOf("like", "be", "mind"),
+        "would you like" to listOf("to", "me", "a"),
+        "you should" to listOf("be", "try", "check"),
     )
 }

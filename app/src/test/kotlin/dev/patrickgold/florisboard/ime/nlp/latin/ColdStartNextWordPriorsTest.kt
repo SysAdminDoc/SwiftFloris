@@ -41,6 +41,26 @@ class ColdStartNextWordPriorsTest : FunSpec({
         suggestions.map { it.word } shouldBe listOf("am", "have", "will", "think", "can")
     }
 
+    test("prefers phrase continuations over one-word continuations") {
+        val suggestions = ColdStartNextWordPriors.suggest(
+            textBeforeCursor = "Let me ",
+            languageCode = "en",
+            maxCandidateCount = 4,
+        )
+
+        suggestions.map { it.word } shouldBe listOf("know", "see", "check", "try")
+    }
+
+    test("uses three-word phrase continuations when available") {
+        val suggestions = ColdStartNextWordPriors.suggest(
+            textBeforeCursor = "as soon as ",
+            languageCode = "en",
+            maxCandidateCount = 3,
+        )
+
+        suggestions.map { it.word } shouldBe listOf("possible", "i", "we")
+    }
+
     test("does not inject English priors for non-English languages") {
         ColdStartNextWordPriors.suggest(
             textBeforeCursor = "",
