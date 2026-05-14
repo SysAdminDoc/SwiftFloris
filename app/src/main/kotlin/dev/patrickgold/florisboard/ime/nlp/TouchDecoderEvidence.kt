@@ -36,6 +36,8 @@ internal data class TouchDecoderEvidence(
             return 0.0
         }
 
+        adjacentTranspositionScore(candidate, typed)?.let { return it }
+
         var changedPositions = 0
         var score = 0.0
         for (index in candidate.indices) {
@@ -51,6 +53,32 @@ internal data class TouchDecoderEvidence(
         } else {
             score / changedPositions.toDouble()
         }
+    }
+
+    private fun adjacentTranspositionScore(candidate: String, typed: String): Double? {
+        var firstDifference = -1
+        var secondDifference = -1
+        for (index in candidate.indices) {
+            if (candidate[index] == typed[index]) continue
+            when {
+                firstDifference < 0 -> firstDifference = index
+                secondDifference < 0 -> secondDifference = index
+                else -> return null
+            }
+        }
+        if (firstDifference < 0 || secondDifference != firstDifference + 1) return null
+        return if (
+            candidate[firstDifference] == typed[secondDifference] &&
+            candidate[secondDifference] == typed[firstDifference]
+        ) {
+            TranspositionSpatialConfidence
+        } else {
+            null
+        }
+    }
+
+    private companion object {
+        const val TranspositionSpatialConfidence = 0.38
     }
 }
 

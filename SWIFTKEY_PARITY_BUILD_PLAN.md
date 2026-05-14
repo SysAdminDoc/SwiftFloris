@@ -50,6 +50,7 @@
 - Item 1 is implemented: adaptive touch persists bounded per-subtype tap-offset distributions locally and restores them at startup.
 - Item 2 is substantially expanded: candidate ranking now emits an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty.
 - Item 3 is expanded: deterministic replay tests now cover adjacent-key correction, known-word literal preservation, quick prediction spacebar behavior, dictionary-frequency ranking, personal phrase-context ranking, and rejected autocorrect demotion.
+- Item 3 now has a checked-in trace replay fixture path: anonymized JSONL suggestion traces can be parsed by local JVM tests and replayed through the ranker, currently covering row-gap adjacent correction, adjacent transposition correction, mixed-language literal protection, empty-field quick prediction insertion, and rejected-correction demotion.
 - Item 4 now has recency-aware personal context scoring plus a first English cold-start prior layer: bigram and trigram stores persist `lastSeenMs`, upgrade legacy TSV rows on flush, rank personal continuations with a 21-day half-life, and fall back to curated sentence-start/common-continuation priors before raw dictionary frequency.
 - Item 7 now has the optional neural reranker seam: `NeuralCandidateReranker` can reorder scored candidates while the shipped default remains a no-op heuristic fallback.
 - The first debug trace recorder is implemented and enriched: creating `<filesDir>/swiftkey_trace.enabled` enables local JSONL capture of suggestion scores, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events at `<filesDir>/swiftkey_typing_traces.jsonl`.
@@ -57,3 +58,5 @@
 ## Current Slice
 
 Keep expanding items 2, 3, and 4 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote captured JSONL traces into checked-in replay fixtures, add row-gap and multi-edit replay coverage, and start feeding accepted/rejected correction priors back into touch scoring.
+
+Current next step: expand touch scoring beyond equal-length substitutions and adjacent transpositions into bounded insertion/deletion alignment, then add replay fixtures for missing-letter, extra-letter, double-letter, and short-glide ambiguity cases.

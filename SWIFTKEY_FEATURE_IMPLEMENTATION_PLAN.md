@@ -164,8 +164,18 @@ The ninth implementation slice should turn recorded local evidence into safer tu
 
 The tenth implementation slice should close the trace-to-replay loop:
 
-- Add a checked-in anonymized JSONL fixture format for selected local traces.
-- Build a parser that turns suggestion trace events into `ReplayRankerCase` instances.
-- Add deterministic cases for row-gap taps, multi-edit typos, mixed-language words, short glide ambiguity, and empty-field next-word insertion.
-- Add a tiny benchmark-style unit test that verifies a replay batch can run without Android framework dependencies.
+- Add a checked-in anonymized JSONL fixture format for selected local traces. The first fixture now lives at `app/src/test/resources/swiftkey/replay/trace_replay_cases.jsonl`.
+- Build a parser that turns suggestion trace events into `ReplayRankerCase` instances. The parser now runs in local JVM tests using Kotlin serialization rather than Android `org.json` stubs.
+- Add deterministic cases for row-gap taps, multi-edit typos, mixed-language words, short glide ambiguity, and empty-field next-word insertion. Current coverage includes row-gap adjacent correction, adjacent transposition correction, mixed-language literal protection, empty-field quick prediction insertion, and rejected-correction demotion.
+- Add a tiny benchmark-style unit test that verifies a replay batch can run without Android framework dependencies. The first replay batch test now verifies fixture coverage and ranker replay in a plain unit test.
 - Acceptance: score tuning can be driven by captured local behavior instead of manually crafted examples only.
+
+## Eleventh Slice
+
+The eleventh implementation slice should use replay evidence to improve touch correction depth:
+
+- Expand touch scoring from equal-length substitutions and adjacent transpositions to bounded insertion/deletion alignment where key evidence supports the edit.
+- Add fixture cases for missing-letter, extra-letter, and double-letter mistakes that users commonly hit while typing fast.
+- Feed rejected correction pairs back into touch evidence weighting so repeated backspace rejection lowers the spatial score for that pair.
+- Add a short-glide ambiguity fixture so Flow candidates can stay recoverable until the following word gives context.
+- Acceptance: row-gap, transposition, insertion/deletion, and short-glide corrections are all replay-protected before any neural reranker is attached.
