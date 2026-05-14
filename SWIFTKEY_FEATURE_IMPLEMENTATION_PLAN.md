@@ -266,6 +266,7 @@ The twentieth implementation slice should expand real-world replay traces:
 - Longer Flow ambiguity now has a checked-in contraction rescue case for `were` + `going` -> `we're`.
 - Trailing-word locale evidence now feeds multilingual candidate scoring, and replay fixtures cover Spanish-context partial completion (`grac` -> `gracias`) beating an inactive-language autocorrect.
 - Curated safe multi-word repair now covers common run-together English forms such as `thankyou`, `alot`, `atleast`, and `ofcourse`, with replay coverage for `thankyou -> thank you`.
-- Remaining work: capture more local traces from device typing sessions and add fixture categories for active-locale switching edge cases, shared-spelling bilingual words, and additional multi-word repairs.
+- Sentence-local context extraction now prevents previous-word, phrase-prior, and trailing-language evidence from crossing `.`, `!`, `?`, or newline boundaries.
+- Remaining work: capture more local traces from device typing sessions and add fixture categories for shared-spelling bilingual words, same-sentence language switches, and additional multi-word repairs.
 - Compare aggregate metrics before and after any scoring change so tuning is evidence-led rather than constant guessing.
-- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome. This is now partially met by fixture export, partial phrase scoring, restored-word suppression, bilingual-context scoring, first multi-word repair, and longer glide contraction replay coverage.
+- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome. This is now partially met by fixture export, partial phrase scoring, restored-word suppression, bilingual-context scoring, sentence-boundary reset tests, first multi-word repair, and longer glide contraction replay coverage.

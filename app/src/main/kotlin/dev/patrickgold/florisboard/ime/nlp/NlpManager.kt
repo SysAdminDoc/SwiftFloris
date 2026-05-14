@@ -589,8 +589,14 @@ class NlpManager(context: Context) {
         val typedWordKnownByUserDictionary = typedWordKey?.let { key ->
             locales.any { locale -> dictionaryManager.isKnownUserDictionaryWord(key, locale) }
         } ?: false
-        val previousWords = previousWordsForContext(content, currentWord)
-        val contextPrefix = contextPrefixForCandidateScoring(content, currentWord)
+        val previousWords = TypingContextExtractor.previousWordsBeforeCurrentWord(
+            textBeforeSelection = content.textBeforeSelection,
+            currentWord = currentWord,
+        )
+        val contextPrefix = TypingContextExtractor.sentenceLocalPrefixBeforeCurrentWord(
+            textBeforeSelection = content.textBeforeSelection,
+            currentWord = currentWord,
+        )
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
         val contextLanguageScores = locales.associateWith { locale ->
@@ -754,47 +760,6 @@ class NlpManager(context: Context) {
             else -> null
         }
     }
-
-    private fun previousWordsForContext(content: EditorContent, currentWord: String): PreviousWords {
-        val before = contextPrefixForCandidateScoring(content, currentWord)
-        return PreviousWords(
-            prev2 = previousWordOf(before, depth = 2),
-            prev1 = previousWordOf(before, depth = 1),
-        )
-    }
-
-    private fun contextPrefixForCandidateScoring(content: EditorContent, currentWord: String): String {
-        var before = content.textBeforeSelection
-        val activeWord = currentWord.trim()
-        if (activeWord.isNotEmpty() && before.endsWith(activeWord)) {
-            before = before.dropLast(activeWord.length)
-        }
-        return before
-    }
-
-    private fun previousWordOf(textBeforeCursor: String, depth: Int = 1): String? {
-        if (depth <= 0) return null
-        var working = textBeforeCursor
-        var found: String? = null
-        repeat(depth) { index ->
-            val trimmed = working.trimEnd()
-            if (trimmed.isEmpty()) return null
-            var end = trimmed.length
-            while (end > 0 && !trimmed[end - 1].isLetter()) end--
-            var start = end
-            while (start > 0 && (trimmed[start - 1].isLetter() || trimmed[start - 1] == '\'')) start--
-            if (start == end) return null
-            found = trimmed.substring(start, end)
-            if (index == depth - 1) return found
-            working = trimmed.substring(0, start)
-        }
-        return found
-    }
-
-    private data class PreviousWords(
-        val prev2: String?,
-        val prev1: String?,
-    )
 
     private fun String.normalizedCandidateSignalKey(): String? {
         val normalized = trim()
