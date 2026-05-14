@@ -504,6 +504,7 @@ internal fun keyContentDescription(code: Int, label: String?): String {
         KeyCode.MOVE_START_OF_PAGE -> "Move to start of page"
         KeyCode.MOVE_END_OF_PAGE -> "Move to end of page"
         KeyCode.LANGUAGE_SWITCH -> "Switch language"
+        KeyCode.SHOW_SUBTYPE_PICKER -> "Language picker"
         KeyCode.IME_NEXT_SUBTYPE -> "Next language"
         KeyCode.IME_PREV_SUBTYPE -> "Previous language"
         KeyCode.SYSTEM_INPUT_METHOD_PICKER -> "Choose input method"

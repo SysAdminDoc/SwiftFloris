@@ -54,6 +54,8 @@ import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
+import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowKey
+import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowPreset
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -142,6 +144,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             prefs.keyboard.hintedSymbolsEnabled.asFlow().collectLatestIn(scope) {
                 updateActiveEvaluators()
+            }
+            prefs.keyboard.bottomRowPresetJson.asFlow().collectLatestIn(scope) {
+                updateActiveEvaluators {
+                    keyboardCache.clear(KeyboardMode.CHARACTERS)
+                }
             }
             prefs.keyboard.utilityKeyEnabled.asFlow().collectLatestIn(scope) {
                 updateActiveEvaluators()
@@ -1131,6 +1138,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
 
         override fun evaluateVisible(data: KeyData): Boolean {
+            val bottomRowPreset = BottomRowPreset.fromJsonOverride(prefs.keyboard.bottomRowPresetJson.get())
+            if (bottomRowPreset != null && data.code == KeyCode.IME_UI_MODE_MEDIA) {
+                return bottomRowPreset.contains(BottomRowKey.EMOJI)
+            }
             return when (data.code) {
                 KeyCode.IME_UI_MODE_TEXT,
                 KeyCode.IME_UI_MODE_MEDIA -> {

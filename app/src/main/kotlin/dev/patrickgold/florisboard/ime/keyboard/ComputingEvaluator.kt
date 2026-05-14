@@ -262,7 +262,8 @@ fun ComputingEvaluator.computeImageVector(data: KeyData): ImageVector? {
         KeyCode.IME_UI_MODE_CLIPBOARD -> {
             Icons.AutoMirrored.Outlined.Assignment
         }
-        KeyCode.LANGUAGE_SWITCH -> {
+        KeyCode.LANGUAGE_SWITCH,
+        KeyCode.SHOW_SUBTYPE_PICKER -> {
             Icons.Default.Language
         }
         KeyCode.SETTINGS -> {

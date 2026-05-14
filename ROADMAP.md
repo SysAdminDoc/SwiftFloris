@@ -141,7 +141,7 @@ v1.6.0 shipped accent (`#319DFF`) + Pure palette tokens + dimens bumps. Finish:
 ASK #1832 / HeliBoard #695 / FlorisBoard #196 — the most-requested customization across all OSS keyboards [COMM-A, COMM-B, COMM-C, PAIN-20].
 
 - ✅ **N4.1** verified shipped (inherited FlorisBoard upstream + verified 2026-05-09 v1.7.x). `QuickActionsEditorPanel.kt:278` already implements long-press drag-and-drop reordering of smartbar actions via `detectDragGesturesAfterLongPress` over a `LazyVerticalGrid`. Sticky-action slot, primary actions, and overflow grid all support drag. UI accessible via `Settings → Smartbar → Customize quick actions`.
-- **N4.2** Add/remove keys in the bottom row: language switch, comma/period, emoji, voice, settings shortcut. Per-language defaults but user-overridable. Persisted as a JSON preset.
+- ✅ **N4.2** shipped 2026-05-14. Added a JSON-backed bottom-row preset override while preserving the current asset-defined row as `Automatic`. Settings → Keyboard now offers SwiftKey-style, language-picker, voice-key, settings-shortcut, and minimal rows; each preset can add/remove the language picker, comma/period cluster, emoji/media key, voice key, and settings shortcut without touching layout assets. `LayoutManager` applies the override only in `KeyboardMode.CHARACTERS`, clears the character-keyboard cache when the preset changes, and keeps the legacy utility-key behavior intact unless the user chooses an explicit preset.
 - **N4.3** Per-app smartbar profile — different quick actions for password fields vs Slack vs Outlook (mirrors AnySoftKeyboard's per-app theme tinting [O4] and Gmail-vs-WhatsApp Smart Compose context).
 
 ### N5. Word-edit ergonomics (long-asked-for, mostly small fixes)
