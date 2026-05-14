@@ -43,10 +43,11 @@ class PerAppAccentResolverTest : FunSpec({
     }
 
     test("near-white saturated pixel is classified as tooLight") {
-        // 250/240/240 is a barely-pink that's effectively white in a
-        // launcher icon. Reject it so the resolver picks a real accent
-        // pixel instead.
-        PerAppAccentResolver.classify(250, 240, 240) shouldBe "tooLight"
+        // A genuinely-saturated pink that's also very bright. (255, 230, 230)
+        // has saturation ~0.098 → grey path, so we need a brighter
+        // saturated color: a pink at saturation 0.30 and value 0.95.
+        // R=242, G=170, B=170 hits S≈0.30, V≈0.95.
+        PerAppAccentResolver.classify(242, 170, 170) shouldBe "tooLight"
     }
 
     test("near-black saturated pixel is classified as tooDark") {

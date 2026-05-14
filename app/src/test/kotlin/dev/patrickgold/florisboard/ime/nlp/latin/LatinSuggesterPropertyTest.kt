@@ -89,9 +89,9 @@ class LatinSuggesterPropertyTest : FunSpec({
                 // must never autocommit the typed word back at the user.
                 // A literal match means we have no useful suggestion at
                 // all, not a high-confidence one.
-                candidate.isEligibleForAutoCommit && candidate.text.equals(word, ignoreCase = true) should {
-                    it shouldBe false
-                }
+                val literalAutocommit =
+                    candidate.isEligibleForAutoCommit && candidate.text.equals(word, ignoreCase = true)
+                literalAutocommit shouldBe false
             }
         }
     }
@@ -155,7 +155,16 @@ class LatinSuggesterPropertyTest : FunSpec({
     }
 
     test("ALL_CAPS typed prefix produces ALL_CAPS suggestions when length >= 2") {
-        checkAll(arbDictionaryWord.filter { it.length >= 3 }) { word ->
+        checkAll(
+            // Filter to dictionary words whose first three chars are all
+            // letters; contractions like "i'd" / "i've" embed an apostrophe
+            // in the prefix and break the simple uppercasing assumption
+            // (`withTypedCase` cares about the all-letters subset, not the
+            // raw 2-char prefix). The test pins the *typical* case.
+            arbDictionaryWord.filter {
+                it.length >= 3 && it.take(3).all { ch -> ch.isLetter() }
+            },
+        ) { word ->
             val capsPrefix = word.substring(0, 2).uppercase()
             val suggestions = LatinDictionarySuggester.suggest(
                 rawWord = capsPrefix,
@@ -175,7 +184,11 @@ class LatinSuggesterPropertyTest : FunSpec({
     }
 
     test("Title Case typed prefix produces Title Case suggestions") {
-        checkAll(arbDictionaryWord.filter { it.length >= 3 }) { word ->
+        checkAll(
+            arbDictionaryWord.filter {
+                it.length >= 3 && it.take(3).all { ch -> ch.isLetter() }
+            },
+        ) { word ->
             val titlePrefix = word[0].uppercase() + word.substring(1, 3)
             val suggestions = LatinDictionarySuggester.suggest(
                 rawWord = titlePrefix,
