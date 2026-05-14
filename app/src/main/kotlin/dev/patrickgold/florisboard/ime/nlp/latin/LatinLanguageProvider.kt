@@ -330,7 +330,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return dictionary(subtype).sortedWords
+        return dictionary(subtype).glideWords
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
@@ -501,6 +501,7 @@ internal data class LatinDictionarySnapshot(
     val sortedWords: List<String>,
     val correctionWords: Collection<String> = frequencies.keys,
     val distanceTwoCorrectionWords: Collection<String> = correctionWords,
+    val glideWords: List<String> = buildGlideWords(frequencies),
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
@@ -561,13 +562,17 @@ internal data class LatinDictionarySnapshot(
     }
 
     companion object {
+        private const val GlideDictionaryMinFrequency = 80
+        private const val MaxGlideDictionaryWords = 120_000
+        private const val MinGlideWordLength = 2
+        private const val MaxGlideWordLength = 24
         private const val CorrectionIndexMinFrequency = 96
         private const val MaxCorrectionIndexWords = 96_000
         private const val DistanceTwoCorrectionIndexMinFrequency = 192
         private const val MaxDistanceTwoCorrectionIndexWords = 24_000
         private const val MaxDistanceTwoCorrectionWordLength = 12
 
-        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList(), emptyList(), emptyList())
+        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList(), emptyList(), emptyList(), emptyList())
 
         fun from(frequencies: Map<String, Int>): LatinDictionarySnapshot {
             val correctionEntries = frequencies.entries
@@ -595,6 +600,24 @@ internal data class LatinDictionarySnapshot(
                     .map { it.key }
                     .toList(),
             )
+        }
+
+        private fun buildGlideWords(frequencies: Map<String, Int>): List<String> {
+            if (frequencies.isEmpty()) return emptyList()
+            return frequencies.entries
+                .asSequence()
+                .filter { (word, frequency) ->
+                    word.length in MinGlideWordLength..MaxGlideWordLength &&
+                        frequency >= GlideDictionaryMinFrequency
+                }
+                .sortedWith(
+                    compareByDescending<Map.Entry<String, Int>> { it.value }
+                        .thenBy { it.key.length }
+                        .thenBy { it.key }
+                )
+                .take(MaxGlideDictionaryWords)
+                .map { it.key }
+                .toList()
         }
     }
 }

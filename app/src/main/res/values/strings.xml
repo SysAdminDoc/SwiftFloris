@@ -744,6 +744,13 @@
     <string name="pref__glide__languages_title" comment="Preference group title">Swipe languages</string>
     <string name="pref__glide__language_enabled__label" comment="Preference title">Enable swipe for {language}</string>
     <string name="pref__glide__language_enabled__summary" comment="Preference summary">Use the bundled {language} dictionary for glide typing</string>
+    <string name="pref__glide__language_enabled__summary_with_quality" comment="Preference summary">Use the bundled {language} dictionary for glide typing. Quality: {quality}. Engine: {engine}</string>
+    <string name="pref__glide__quality__expanded_statistical" comment="Glide typing quality label">Expanded statistical dictionary</string>
+    <string name="pref__glide__quality__imported_statistical" comment="Glide typing quality label">Imported statistical dictionary</string>
+    <string name="pref__glide__quality__unsupported" comment="Glide typing quality label">Unsupported</string>
+    <string name="pref__glide__engine__statistical" comment="Glide typing engine label">Statistical</string>
+    <string name="pref__glide__engine__neural_coming_soon" comment="Glide typing engine label">Neural coming soon</string>
+    <string name="pref__glide__engine__unsupported" comment="Glide typing engine label">Unavailable</string>
     <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Space bar and delete key gestures stay available even when glide typing is on.</string>
     <string name="settings__gestures__glide_conflict_notice">General key swipes are paused for languages where glide typing is enabled so swipe-to-type remains predictable.</string>
     <string name="pref__gestures__general_title" comment="Preference group title">General gestures</string>
