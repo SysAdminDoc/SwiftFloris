@@ -21,6 +21,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 internal data class CorrectionOutcomeSignal(
@@ -82,10 +83,29 @@ internal class CorrectionOutcomePriors private constructor(
     }
 
     @Synchronized
+    fun entryCount(): Int {
+        ensureLoadedLocked()
+        return entries.size
+    }
+
+    @Synchronized
     fun reset() {
         ensureLoadedLocked()
         entries.clear()
         persistLocked()
+    }
+
+    suspend fun resetAndAwait() {
+        val file = synchronized(this) {
+            ensureLoadedLocked()
+            entries.clear()
+            storageFile
+        }
+        withContext(Dispatchers.IO) {
+            runCatching {
+                file?.delete()
+            }
+        }
     }
 
     private fun ensureLoadedLocked() {

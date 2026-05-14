@@ -65,6 +65,27 @@ class AdaptiveTouchModelTest : FunSpec({
         AdaptiveTouchModel.restoreSnapshotForPersistence("{not-json") shouldBe false
         AdaptiveTouchModel.totalSampleCount() shouldBe 35
     }
+
+    test("reset clears persisted adaptive touch sample state") {
+        val key = key("g", 0f, 0f, 50f, 50f)
+
+        repeat(35) {
+            AdaptiveTouchModel.recordTap(key, touchX = 37.5f, touchY = 30f)
+        }
+
+        AdaptiveTouchModel.totalSampleCount() shouldBe 35
+
+        AdaptiveTouchModel.reset()
+
+        AdaptiveTouchModel.totalSampleCount() shouldBe 0
+        AdaptiveTouchModel.adjustedCenter(
+            keyCode = 'g'.code,
+            fallbackCenterX = 25f,
+            fallbackCenterY = 25f,
+            halfWidth = 25f,
+            halfHeight = 25f,
+        ) shouldBe (25f to 25f)
+    }
 })
 
 private fun key(label: String, left: Float, top: Float, right: Float, bottom: Float): TextKey {

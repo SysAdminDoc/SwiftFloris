@@ -216,81 +216,106 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         )
     }
 
+    /**
+     * Returns the total number of learned trigram continuations across all
+     * loaded and persisted locales. Used by the local-only typing stats screen.
+     */
+    suspend fun totalEntryCount(): Int {
+        val localeTags = buildSet {
+            context.filesDir.listFiles { _, name ->
+                name.startsWith("personal_trigrams_") && name.endsWith(".tsv")
+            }?.forEach { file ->
+                add(file.name.removePrefix("personal_trigrams_").removeSuffix(".tsv"))
+            }
+            synchronized(tablesByLocale) {
+                addAll(tablesByLocale.keys)
+            }
+        }
+        return localeTags.sumOf { localeTag ->
+            val table = ensureLoaded(localeTag)
+            synchronized(table) {
+                table.values.sumOf { nextMap -> nextMap.size }
+            }
+        }
+    }
+
     fun flush(localeTag: String) {
         ioScope.launch {
-            val table = tablesByLocale[localeTag] ?: return@launch
-            val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
-            val snapshot: List<TrigramSnapshot>
-            synchronized(table) {
-                pendingCommits = 0
-                if (table.size > MAX_CONTEXTS) {
-                    val keepKeys = table.entries
-                        .sortedByDescending { e -> e.value.values.sum() }
-                        .take(MAX_CONTEXTS)
-                        .map { it.key }
-                        .toSet()
-                    val removeKeys = table.keys.filter { it !in keepKeys }
-                    for (k in removeKeys) {
-                        table.remove(k)
-                        recencyTable.remove(k)
-                    }
-                }
-                for ((ctxKey, nextMap) in table) {
-                    if (nextMap.size > MAX_NEXT_PER_CONTEXT) {
-                        val keepKeys = nextMap.entries
-                            .sortedByDescending { it.value }
-                            .take(MAX_NEXT_PER_CONTEXT)
+            loadGuard.withLock {
+                val table = tablesByLocale[localeTag] ?: return@withLock
+                val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
+                val snapshot: List<TrigramSnapshot>
+                synchronized(table) {
+                    pendingCommits = 0
+                    if (table.size > MAX_CONTEXTS) {
+                        val keepKeys = table.entries
+                            .sortedByDescending { e -> e.value.values.sum() }
+                            .take(MAX_CONTEXTS)
                             .map { it.key }
                             .toSet()
-                        val removeKeys = nextMap.keys.filter { it !in keepKeys }
-                        val recencyNextMap = recencyTable[ctxKey]
+                        val removeKeys = table.keys.filter { it !in keepKeys }
                         for (k in removeKeys) {
-                            nextMap.remove(k)
-                            recencyNextMap?.remove(k)
+                            table.remove(k)
+                            recencyTable.remove(k)
                         }
                     }
-                }
-                snapshot = buildList {
-                    val now = System.currentTimeMillis()
                     for ((ctxKey, nextMap) in table) {
-                        val parts = ctxKey.split(CONTEXT_DELIMITER, limit = 2)
-                        if (parts.size != 2) continue
-                        val prev2 = parts[0]
-                        val prev1 = parts[1]
-                        val recencyNextMap = recencyTable[ctxKey].orEmpty()
-                        for ((next, count) in nextMap) {
-                            add(
-                                TrigramSnapshot(
-                                    prev2 = prev2,
-                                    prev1 = prev1,
-                                    next = next,
-                                    count = count,
-                                    lastSeenMs = recencyNextMap[next] ?: now,
+                        if (nextMap.size > MAX_NEXT_PER_CONTEXT) {
+                            val keepKeys = nextMap.entries
+                                .sortedByDescending { it.value }
+                                .take(MAX_NEXT_PER_CONTEXT)
+                                .map { it.key }
+                                .toSet()
+                            val removeKeys = nextMap.keys.filter { it !in keepKeys }
+                            val recencyNextMap = recencyTable[ctxKey]
+                            for (k in removeKeys) {
+                                nextMap.remove(k)
+                                recencyNextMap?.remove(k)
+                            }
+                        }
+                    }
+                    snapshot = buildList {
+                        val now = System.currentTimeMillis()
+                        for ((ctxKey, nextMap) in table) {
+                            val parts = ctxKey.split(CONTEXT_DELIMITER, limit = 2)
+                            if (parts.size != 2) continue
+                            val prev2 = parts[0]
+                            val prev1 = parts[1]
+                            val recencyNextMap = recencyTable[ctxKey].orEmpty()
+                            for ((next, count) in nextMap) {
+                                add(
+                                    TrigramSnapshot(
+                                        prev2 = prev2,
+                                        prev1 = prev1,
+                                        next = next,
+                                        count = count,
+                                        lastSeenMs = recencyNextMap[next] ?: now,
+                                    )
                                 )
-                            )
+                            }
                         }
                     }
                 }
-            }
-            runCatching {
-                val tmp = File(fileFor(localeTag).parentFile, fileFor(localeTag).name + ".tmp")
-                tmp.bufferedWriter().use { w ->
-                    for (row in snapshot) {
-                        w.write(row.prev2)
-                        w.write("\t")
-                        w.write(row.prev1)
-                        w.write("\t")
-                        w.write(row.next)
-                        w.write("\t")
-                        w.write(row.count.toString())
-                        w.write("\t")
-                        w.write(row.lastSeenMs.toString())
-                        w.newLine()
+                runCatching {
+                    val tmp = File(fileFor(localeTag).parentFile, fileFor(localeTag).name + ".tmp")
+                    tmp.bufferedWriter().use { w ->
+                        for (row in snapshot) {
+                            w.write(row.prev2)
+                            w.write("\t")
+                            w.write(row.prev1)
+                            w.write("\t")
+                            w.write(row.next)
+                            w.write("\t")
+                            w.write(row.count.toString())
+                            w.write("\t")
+                            w.write(row.lastSeenMs.toString())
+                            w.newLine()
+                        }
                     }
-                }
-                if (!tmp.renameTo(fileFor(localeTag))) {
-                    fileFor(localeTag).delete()
-                    tmp.renameTo(fileFor(localeTag))
+                    if (!tmp.renameTo(fileFor(localeTag))) {
+                        fileFor(localeTag).delete()
+                        tmp.renameTo(fileFor(localeTag))
+                    }
                 }
             }
         }
@@ -326,8 +351,19 @@ class PersonalTrigramStore private constructor(private val context: Context) {
 
     fun reset() {
         ioScope.launch {
+            resetAndAwait()
+        }
+    }
+
+    /**
+     * Synchronous-in-coroutine reset for settings UI flows that need the next
+     * stats refresh to observe the cleared state immediately.
+     */
+    suspend fun resetAndAwait() {
+        loadGuard.withLock {
             synchronized(tablesByLocale) { tablesByLocale.clear() }
             synchronized(lastSeenByLocale) { lastSeenByLocale.clear() }
+            pendingCommits = 0
             runCatching {
                 context.filesDir.listFiles { _, name -> name.startsWith("personal_trigrams_") }
                     ?.forEach { it.delete() }

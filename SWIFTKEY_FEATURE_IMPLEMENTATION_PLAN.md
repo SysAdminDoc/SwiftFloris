@@ -218,9 +218,18 @@ The fifteenth implementation slice deepens phrase prediction:
 
 ## Sixteenth Slice
 
-The sixteenth implementation slice should improve trust and reset controls:
+The sixteenth implementation slice improves trust and reset controls:
 
-- Add reset actions for personal phrase history, correction outcome priors, and adaptive touch state from Typing stats or nearby settings.
-- Show concise counts for learned bigrams, learned trigrams, accepted/rejected correction priors, and adaptive touch samples.
-- Keep each reset local, immediate, and reversible only by relearning through typing.
+- Reset actions for personal phrase history, correction outcome priors, adaptive touch state, and all non-dictionary typing learning are now available from Typing stats.
+- Concise counts now cover learned bigrams, learned trigrams, correction outcome priors, adaptive touch samples, learned dictionary words, and local n-gram disk usage.
+- Bigram/trigram reset paths now have an awaited reset entry point and serialize disk flushes with reset so stale pending writes cannot recreate cleared phrase history.
 - Acceptance: users can see and clear the local behavior that now meaningfully changes suggestions.
+
+## Seventeenth Slice
+
+The seventeenth implementation slice should make parity tuning more evidence-driven:
+
+- Promote more captured JSONL traces into checked-in replay fixtures for common SwiftKey-like mistakes: row-gap taps, accidental doubles, missed letters, multilingual literals, and phrase prediction after spaces.
+- Add a visible debug/export path for local typing traces that keeps the no-network contract clear.
+- Use the replay set to tune autocommit thresholds, correction outcome priors, and short-glide rescoring without relying on manual anecdotes.
+- Acceptance: every high-impact typing behavior change is backed by a deterministic replay case.
