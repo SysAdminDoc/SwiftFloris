@@ -282,7 +282,7 @@ Pure algorithmic win. SymSpell pre-computes only deletes (not insertions/substit
 
 FUTO is Source-First (non-OSI) and adds a second-app install friction users complain about [PAIN-8, AI8, AI9]. Bundle `whisper.cpp` (MIT) directly inside SwiftFloris.
 
-- **Next-2.1** Tiered model selector by RAM detection: tiny.en (~75MB) for low-end / 2GB-RAM devices, base.en (~140MB) mid-tier, Large-v3-Turbo INT8 (~800MB) flagship [AI3, AI8].
+- ✅ **Next-2.1** shipped 2026-05-14. Added the RAM-aware embedded voice model selector foundation: `VoiceModelSelector` detects total device RAM / Android low-RAM class, maps Auto to tiny.en (~75MB) for low-end devices, base.en (~140MB) for mid-tier or unknown non-low-RAM devices, and Large-v3-Turbo INT8 (~800MB) for 8GB+ flagship devices. Settings → Voice input now has an Embedded engine group with a persisted model-tier preference, the resolved current selection, and the detected recommendation. The UI deliberately states that live dictation still uses FUTO until the bundled Whisper runtime and on-demand model manager ship. `VoiceModelSelectorTest` pins the RAM thresholds, manual overrides, and roadmap size metadata [AI3, AI8].
 - **Next-2.2** Vosk fallback for streaming low-RAM + true-streaming command-mode use [AI10] (Vosk is GPL-permissive Apache-2.0 compatible; ~50MB models).
 - **Next-2.3** Joplin-style per-language model picker UI with on-demand download + disk-usage badge [AI22].
 - **Next-2.4** Voice-commands-on-Whisper-stream: hook `VOICE_COMMANDS.md`'s parser/executor into the Whisper transcript to support "change dog to cat" Smart-Edit-style voice editing [SMART-EDIT, COMM-K].

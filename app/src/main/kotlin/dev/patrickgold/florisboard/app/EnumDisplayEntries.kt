@@ -42,6 +42,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
+import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import dev.patrickgold.jetpref.datastore.ui.ListPreferenceEntry
 import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
@@ -726,6 +727,36 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
             entry(
                 key = UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
                 label = stringRes(R.string.enum__utility_key_action__dynamic_switch_language_emojis),
+            )
+        }
+    },
+    VoiceModelPreference::class to DEFAULT to {
+        listPrefEntries {
+            entry(
+                key = VoiceModelPreference.AUTO,
+                label = stringRes(R.string.enum__voice_model_preference__auto),
+                description = stringRes(R.string.enum__voice_model_preference__auto__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = VoiceModelPreference.TINY_EN,
+                label = stringRes(R.string.enum__voice_model_preference__tiny_en),
+                description = stringRes(R.string.enum__voice_model_preference__tiny_en__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = VoiceModelPreference.BASE_EN,
+                label = stringRes(R.string.enum__voice_model_preference__base_en),
+                description = stringRes(R.string.enum__voice_model_preference__base_en__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = VoiceModelPreference.LARGE_V3_TURBO_INT8,
+                label = stringRes(R.string.enum__voice_model_preference__large_v3_turbo_int8),
+                description = stringRes(
+                    R.string.enum__voice_model_preference__large_v3_turbo_int8__description,
+                ),
+                showDescriptionOnlyIfSelected = true,
             )
         }
     },
