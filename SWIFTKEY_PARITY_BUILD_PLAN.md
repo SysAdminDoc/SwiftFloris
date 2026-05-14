@@ -61,9 +61,10 @@
 - The first debug trace recorder is implemented and enriched: creating `<filesDir>/swiftkey_trace.enabled` enables local JSONL capture of suggestion scores, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events at `<filesDir>/swiftkey_typing_traces.jsonl`.
 - Item 8 now exposes the learned-model trust surface: Typing stats shows learned dictionary words, bigram/trigram counts plus disk usage, correction outcome prior count, and adaptive-touch samples, with local reset actions for phrase predictions, correction memory, adaptive touch, and all non-dictionary typing learning.
 - Item 3 and Item 8 are now connected: Typing stats can enable, share, and clear local JSONL trace capture, and the checked-in replay fixture set adds `thos -> this` plus phrase-context prediction coverage.
+- Item 3 now has aggregate replay outcome metrics: full-ranking hits, spacebar-action hits, expected role hits, and typed-literal protection misses are derived from the JSONL fixture set and guarded in tests.
 
 ## Current Slice
 
 Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to use the expanded replay set to tune correction thresholds and glide rescoring.
 
-Current next step: add replay outcome metrics and use them to tune autocommit thresholds, accepted/rejected correction priors, and short-glide rescoring constants.
+Current next step: add fixture categories for glide context rescue and bilingual token protection, then use the aggregate metrics to tune autocommit thresholds, accepted/rejected correction priors, and short-glide rescoring constants.

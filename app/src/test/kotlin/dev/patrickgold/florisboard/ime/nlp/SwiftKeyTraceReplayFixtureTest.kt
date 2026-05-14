@@ -51,27 +51,24 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
 
     test("checked-in trace fixtures replay through the ranker") {
         for (case in cases) {
-            val ranked = SwiftKeyCandidateRanker.rank(
-                context = case.context,
-                preferred = case.preferred,
-                fallback = case.fallback,
-            )
-            ranked.map { it.text.toString() } shouldBe case.expectedRankedText
-            SwiftKeyCandidateRanker.selectSpacebarCandidate(
-                currentWord = case.context.currentWord,
-                candidates = ranked,
-                quickPredictionInsert = case.quickPredictionInsert,
-            )?.text?.toString() shouldBe case.expectedSpacebarText
-
-            val scored = SwiftKeyCandidateRanker.scoreCandidates(
-                context = case.context,
-                preferred = case.preferred,
-                fallback = case.fallback,
-            )
+            val outcome = case.replay()
+            outcome.rankedText shouldBe case.expectedRankedText
+            outcome.spacebarText shouldBe case.expectedSpacebarText
             for ((text, expectedRole) in case.expectedRolesByText) {
-                scored.first { it.candidate.text.toString() == text }.score.role.name shouldBe expectedRole
+                outcome.rolesByText.getValue(text) shouldBe expectedRole
             }
         }
+    }
+
+    test("checked-in trace fixtures expose aggregate parity outcome metrics") {
+        val outcomes = cases.map { it.replay() }
+        val metrics = ReplayOutcomeMetrics.from(outcomes)
+
+        metrics.caseCount shouldBe cases.size
+        metrics.fullRankingHitCount shouldBe metrics.caseCount
+        metrics.spacebarHitCount shouldBe metrics.spacebarAssertionCount
+        metrics.roleHitCount shouldBe metrics.roleAssertionCount
+        metrics.typedLiteralProtectionMissCount shouldBe 0
     }
 })
 
@@ -85,6 +82,83 @@ private data class TraceReplayCase(
     val expectedSpacebarText: String?,
     val expectedRolesByText: Map<String, String>,
 )
+
+private data class TraceReplayOutcome(
+    val case: TraceReplayCase,
+    val rankedText: List<String>,
+    val spacebarText: String?,
+    val rolesByText: Map<String, String>,
+)
+
+private data class ReplayOutcomeMetrics(
+    val caseCount: Int,
+    val fullRankingHitCount: Int,
+    val spacebarAssertionCount: Int,
+    val spacebarHitCount: Int,
+    val roleAssertionCount: Int,
+    val roleHitCount: Int,
+    val typedLiteralProtectionMissCount: Int,
+) {
+    companion object {
+        fun from(outcomes: List<TraceReplayOutcome>): ReplayOutcomeMetrics {
+            var roleAssertions = 0
+            var roleHits = 0
+            var typedLiteralProtectionMisses = 0
+            for (outcome in outcomes) {
+                for ((text, expectedRole) in outcome.case.expectedRolesByText) {
+                    roleAssertions += 1
+                    if (outcome.rolesByText[text] == expectedRole) {
+                        roleHits += 1
+                    }
+                }
+                if (outcome.case.typedLiteralProtectionExpected() && outcome.spacebarText != null) {
+                    typedLiteralProtectionMisses += 1
+                }
+            }
+            return ReplayOutcomeMetrics(
+                caseCount = outcomes.size,
+                fullRankingHitCount = outcomes.count { it.rankedText == it.case.expectedRankedText },
+                spacebarAssertionCount = outcomes.count { it.case.expectedSpacebarText != null },
+                spacebarHitCount = outcomes.count {
+                    it.case.expectedSpacebarText != null && it.spacebarText == it.case.expectedSpacebarText
+                },
+                roleAssertionCount = roleAssertions,
+                roleHitCount = roleHits,
+                typedLiteralProtectionMissCount = typedLiteralProtectionMisses,
+            )
+        }
+    }
+}
+
+private fun TraceReplayCase.replay(): TraceReplayOutcome {
+    val ranked = SwiftKeyCandidateRanker.rank(
+        context = context,
+        preferred = preferred,
+        fallback = fallback,
+    )
+    val scored = SwiftKeyCandidateRanker.scoreCandidates(
+        context = context,
+        preferred = preferred,
+        fallback = fallback,
+    )
+    return TraceReplayOutcome(
+        case = this,
+        rankedText = ranked.map { it.text.toString() },
+        spacebarText = SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = context.currentWord,
+            candidates = ranked,
+            quickPredictionInsert = quickPredictionInsert,
+        )?.text?.toString(),
+        rolesByText = scored.associate { it.candidate.text.toString() to it.score.role.name },
+    )
+}
+
+private fun TraceReplayCase.typedLiteralProtectionExpected(): Boolean {
+    return context.currentWord.isNotBlank() &&
+        context.typedWordKnown &&
+        expectedRankedText.contains(context.currentWord) &&
+        expectedSpacebarText == null
+}
 
 private object SwiftKeyTraceReplayFixtureParser {
     private val json = Json
