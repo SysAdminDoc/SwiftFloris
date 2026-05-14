@@ -27,6 +27,7 @@ Primary references:
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 - Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
 - Touch evidence now treats adjacent character transpositions such as "teh" -> "the" as a spatial/temporal correction signal, not just a generic edit-distance match.
+- Flow now keeps short ambiguous glide commits recoverable for a bounded window and can retroactively replace the previous glide word from immediate next-word context before committing the next word.
 - A disabled-by-default local trace recorder can capture scored candidate order, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events to JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
 - An anonymized JSONL replay fixture and parser now make captured trace-like events runnable in plain JVM tests.
 - A no-op `NeuralCandidateReranker` boundary now sits behind the scorer, giving a future local ONNX/TFLite model a safe integration point without changing the no-network baseline.
@@ -40,7 +41,7 @@ Primary references:
    The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice, with a neural-reranker seam ready for a future local model. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
 
 3. Touch correction still needs broader trace calibration.
-   Gap rescue, persisted adaptive offsets, transient nearby-key evidence, adjacent transposition scoring, bounded insertion/deletion path scoring, and accepted/rejected outcome priors now help. The remaining touch gap is broader real-trace calibration plus short-glide ambiguity recovery.
+   Gap rescue, persisted adaptive offsets, transient nearby-key evidence, adjacent transposition scoring, bounded insertion/deletion path scoring, accepted/rejected outcome priors, and first-pass short-glide context rescue now help. The remaining touch gap is broader real-trace calibration plus richer gesture fixtures.
 
 4. Next-word prediction needs richer context.
    Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and broader context priors.
@@ -48,8 +49,8 @@ Primary references:
 5. Multilingual detection should operate per word across active languages.
    Current support works when a subtype carries multiple locales. The next step is language posterior scoring from recent words, plus safer suppression when a token is valid in any enabled language.
 
-6. Flow needs rescoring after the next word starts.
-   Current Flow can commit through space. SwiftKey-like glide should keep ambiguity open briefly, then rescore the previous glide candidate using the next word.
+6. Flow needs broader real-world tuning.
+   Current Flow can commit through space and now has conservative following-context rescue for short ambiguous words. SwiftKey-like glide still needs richer path fixtures, adaptive-touch weighting inside the gesture candidate list, and neural/beam-search-style rescoring to match SwiftKey on longer or multilingual swipes.
 
 7. Trust UX is underbuilt.
    SwiftKey exposes personalization/back-up concepts. SwiftFloris intentionally avoids network sync, but should make local learning visible with reset controls for learned words, phrase history, and adaptive touch.
@@ -70,6 +71,6 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 - Keep tuning offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Keep expanding bounded multi-edit scoring from checked-in trace evidence rather than hand-tuning weights.
 - Keep promoting debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
-- Add deterministic replay tests for multilingual words, glide paths, and next-word prediction.
+- Add deterministic replay tests for multilingual words, longer glide paths, and next-word prediction.
 - Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
 - Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.
