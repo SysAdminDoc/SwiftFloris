@@ -32,6 +32,7 @@ internal data class SwiftKeyCandidateSignals(
     val languageConfidence: Double = 1.0,
     val acceptedCorrectionConfidence: Double = 0.0,
     val rejectionPenalty: Double = 0.0,
+    val candidateLanguage: String? = null,
 )
 
 internal data class SwiftKeyScoredCandidate(
@@ -235,9 +236,15 @@ internal object SwiftKeyCandidateRanker {
         if (middleCandidateKey == typedWordKey) {
             return null
         }
+        val topCandidatesStraddleLanguages = topCandidatesStraddleLanguages(
+            typedWordKey = typedWordKey,
+            candidates = candidates,
+            candidateSignals = candidateSignals,
+        )
         if (middleCandidate is WordSuggestionCandidate &&
             middleCandidateKey != null &&
             middleCandidateKey != typedWordKey &&
+            !topCandidatesStraddleLanguages &&
             languageConfidenceAllowsAutoCommit(middleCandidate, candidateSignals)
         ) {
             return middleCandidate
@@ -246,6 +253,7 @@ internal object SwiftKeyCandidateRanker {
         return candidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
                 candidate.text.toString().normalizedCandidateKey() != typedWordKey &&
+                !topCandidatesStraddleLanguages &&
                 languageConfidenceAllowsAutoCommit(candidate, candidateSignals)
         }
     }
@@ -257,6 +265,28 @@ internal object SwiftKeyCandidateRanker {
         val key = candidate.text.toString().normalizedCandidateKey()
         if (key.isBlank()) return true
         return (candidateSignals[key]?.languageConfidence ?: 1.0) >= MinAutoCommitLanguageConfidence
+    }
+
+    private fun topCandidatesStraddleLanguages(
+        typedWordKey: String,
+        candidates: List<SuggestionCandidate>,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals>,
+    ): Boolean {
+        val topLanguages = candidates.asSequence()
+            .filterIsInstance<WordSuggestionCandidate>()
+            .map { candidate -> candidate.text.toString().normalizedCandidateKey() }
+            .filter { key -> key.isNotBlank() && key != typedWordKey }
+            .distinct()
+            .mapNotNull { key ->
+                val signal = candidateSignals[key] ?: return@mapNotNull null
+                if (signal.languageConfidence < MinStraddleLanguageConfidence) return@mapNotNull null
+                signal.candidateLanguage
+                    ?.takeIf { language -> language.isNotBlank() }
+                    ?.let { language -> key to language }
+            }
+            .take(2)
+            .toList()
+        return topLanguages.size >= 2 && topLanguages[0].second != topLanguages[1].second
     }
 
     private fun nextWordSpacebarCandidate(candidates: List<SuggestionCandidate>): SuggestionCandidate? {
@@ -451,6 +481,7 @@ internal object SwiftKeyCandidateRanker {
 
     private const val TypedLiteralConfidence = 0.62
     private const val MinAutoCommitLanguageConfidence = 0.40
+    private const val MinStraddleLanguageConfidence = 0.50
 
     private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
         .thenByDescending { it.score.rolePriority }

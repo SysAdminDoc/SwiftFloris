@@ -121,6 +121,66 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         ) shouldBe null
     }
 
+    test("spacebar candidate suppresses plausible top-two language straddles") {
+        val signals = mapOf(
+            "the" to SwiftKeyCandidateSignals(
+                dictionaryFrequency = 0.92,
+                languageConfidence = 0.76,
+                candidateLanguage = "en",
+            ),
+            "te" to SwiftKeyCandidateSignals(
+                dictionaryFrequency = 0.88,
+                languageConfidence = 0.72,
+                candidateLanguage = "es",
+            ),
+        )
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("teh", signals = signals),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("the", confidence = 0.92, autoCommit = true),
+                candidate("te", confidence = 0.90, autoCommit = true),
+            ),
+        )
+
+        candidates.first().text.toString() shouldBe "teh"
+        candidates.map { it.text.toString() }.containsAll(listOf("the", "te")) shouldBe true
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "teh",
+            candidates = candidates,
+            candidateSignals = signals,
+        ) shouldBe null
+    }
+
+    test("spacebar candidate ignores straddle guard when the second language is weak") {
+        val signals = mapOf(
+            "the" to SwiftKeyCandidateSignals(
+                dictionaryFrequency = 0.92,
+                languageConfidence = 0.94,
+                candidateLanguage = "en",
+            ),
+            "te" to SwiftKeyCandidateSignals(
+                dictionaryFrequency = 0.88,
+                languageConfidence = 0.16,
+                candidateLanguage = "es",
+            ),
+        )
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("teh", signals = signals),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("the", confidence = 0.92, autoCommit = true),
+                candidate("te", confidence = 0.90, autoCommit = true),
+            ),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "teh",
+            candidates = candidates,
+            candidateSignals = signals,
+        )?.text shouldBe "the"
+    }
+
     test("spacebar candidate keeps known middle literal unchanged") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext("the", typedWordKnown = true),
