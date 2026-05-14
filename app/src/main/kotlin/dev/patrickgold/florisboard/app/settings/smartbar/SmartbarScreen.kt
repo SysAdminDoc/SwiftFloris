@@ -47,6 +47,12 @@ fun SmartbarScreen() = FlorisScreen {
                 entries = enumDisplayEntriesOf(SmartbarLayout::class),
                 enabledIf = { prefs.smartbar.enabled isEqualTo true },
             )
+            SwitchPreference(
+                prefs.smartbar.perAppProfilesEnabled,
+                title = stringRes(R.string.pref__smartbar__per_app_profiles__label),
+                summary = stringRes(R.string.pref__smartbar__per_app_profiles__summary),
+                enabledIf = { prefs.smartbar.enabled isEqualTo true },
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__smartbar__group_layout_specific__label)) {
