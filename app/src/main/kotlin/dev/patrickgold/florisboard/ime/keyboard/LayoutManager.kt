@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.popup.PopupMapping
 import dev.patrickgold.florisboard.ime.popup.PopupMappingComponent
 import dev.patrickgold.florisboard.ime.text.key.KeyType
+import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowPreset
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboard
@@ -260,6 +261,13 @@ class LayoutManager(context: Context) {
             for (modRow in modifierLayout.arrangement) {
                 val rowArray = Array(modRow.size) { TextKey(modRow[it]) }
                 computedArrangement.add(rowArray)
+            }
+        }
+
+        if (keyboardMode == KeyboardMode.CHARACTERS && computedArrangement.isNotEmpty()) {
+            BottomRowPreset.fromJsonOverride(prefs.keyboard.bottomRowPresetJson.get())?.let { bottomRowPreset ->
+                val bottomRow = bottomRowPreset.toTextKeyDataRow()
+                computedArrangement[computedArrangement.lastIndex] = Array(bottomRow.size) { TextKey(bottomRow[it]) }
             }
         }
 

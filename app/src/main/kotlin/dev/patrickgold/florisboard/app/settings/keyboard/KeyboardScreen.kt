@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
+import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowPreset
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
@@ -34,6 +35,7 @@ import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
+import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -65,6 +67,38 @@ fun KeyboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__keyboard__hinted_symbols_mode__label),
                 summarySwitchDisabled = stringRes(R.string.state__disabled),
                 entries = enumDisplayEntriesOf(KeyHintMode::class),
+            )
+            ListPreference(
+                prefs.keyboard.bottomRowPresetJson,
+                title = stringRes(R.string.pref__keyboard__bottom_row_preset__label),
+                entries = listPrefEntries {
+                    listOf(
+                        entry(
+                            key = BottomRowPreset.AutomaticPreferenceValue,
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__automatic),
+                        ),
+                        entry(
+                            key = BottomRowPreset.SwiftKey.toJson(),
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__swiftkey),
+                        ),
+                        entry(
+                            key = BottomRowPreset.Language.toJson(),
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__language),
+                        ),
+                        entry(
+                            key = BottomRowPreset.Voice.toJson(),
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__voice),
+                        ),
+                        entry(
+                            key = BottomRowPreset.Settings.toJson(),
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__settings),
+                        ),
+                        entry(
+                            key = BottomRowPreset.Minimal.toJson(),
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__minimal),
+                        ),
+                    )
+                },
             )
         }
 

@@ -579,6 +579,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "keyboard__hinted_symbols_mode",
             default = KeyHintMode.SMART_PRIORITY,
         )
+        val bottomRowPresetJson = string(
+            key = "keyboard__bottom_row_preset_json",
+            default = "automatic",
+        )
         val utilityKeyEnabled = boolean(
             key = "keyboard__utility_key_enabled",
             default = true,

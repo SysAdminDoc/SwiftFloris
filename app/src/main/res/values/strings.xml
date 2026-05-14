@@ -575,6 +575,13 @@
     <string name="pref__keyboard__number_row__summary" comment="Preference summary">Show a number row above the character layout</string>
     <string name="pref__keyboard__hinted_number_row_mode__label" comment="Preference title">Hinted number row</string>
     <string name="pref__keyboard__hinted_symbols_mode__label" comment="Preference title">Hinted symbols</string>
+    <string name="pref__keyboard__bottom_row_preset__label" comment="Preference title">Bottom row</string>
+    <string name="pref__keyboard__bottom_row_preset__automatic" comment="Bottom row preset label">Automatic</string>
+    <string name="pref__keyboard__bottom_row_preset__swiftkey" comment="Bottom row preset label">SwiftKey style</string>
+    <string name="pref__keyboard__bottom_row_preset__language" comment="Bottom row preset label">Add language picker</string>
+    <string name="pref__keyboard__bottom_row_preset__voice" comment="Bottom row preset label">Add voice key</string>
+    <string name="pref__keyboard__bottom_row_preset__settings" comment="Bottom row preset label">Add settings shortcut</string>
+    <string name="pref__keyboard__bottom_row_preset__minimal" comment="Bottom row preset label">Minimal</string>
     <string name="pref__keyboard__utility_key_enabled__label" comment="Preference title">Show utility key</string>
     <string name="pref__keyboard__utility_key_enabled__summary" comment="Preference summary">Shows a configurable utility key next to space bar</string>
     <string name="pref__keyboard__utility_key_action__label" comment="Preference title">Utility key action</string>
