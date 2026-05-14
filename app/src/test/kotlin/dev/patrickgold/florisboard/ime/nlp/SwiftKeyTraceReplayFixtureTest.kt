@@ -39,6 +39,9 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "mixed-language literal protection",
             "empty-field quick prediction insertion",
             "rejected correction demotion",
+            "missing-letter correction",
+            "extra-letter correction",
+            "double-letter correction",
         )
     }
 
