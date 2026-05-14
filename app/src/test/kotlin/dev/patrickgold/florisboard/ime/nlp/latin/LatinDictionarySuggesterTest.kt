@@ -149,6 +149,35 @@ class LatinDictionarySuggesterTest : FunSpec({
         suggestions.first().text shouldBe "The"
     }
 
+    // ROADMAP §7 Next-3.3 — capitalization-aware suggestions: the typed prefix's
+    // case pattern (lowercase / Title Case / ALL_CAPS) is applied to every
+    // candidate the suggester returns, for both prefix completions and
+    // edit-distance corrections. This matches the SwiftKey "Foo if F, foo if f"
+    // contract from FlorisBoard #1007.
+    test("suggest applies Title case to prefix completions when prefix is capitalized") {
+        val suggestions = LatinDictionarySuggester.suggest("Th", dictionary, maxCandidateCount = 3)
+
+        suggestions.map { it.text } shouldBe listOf("The", "This", "Those")
+    }
+
+    test("suggest applies ALL_CAPS to prefix completions when prefix is ALL_CAPS") {
+        val suggestions = LatinDictionarySuggester.suggest("TH", dictionary, maxCandidateCount = 3)
+
+        suggestions.map { it.text } shouldBe listOf("THE", "THIS", "THOSE")
+    }
+
+    test("suggest leaves prefix completions lowercase when prefix is lowercase") {
+        val suggestions = LatinDictionarySuggester.suggest("th", dictionary, maxCandidateCount = 3)
+
+        suggestions.map { it.text } shouldBe listOf("the", "this", "those")
+    }
+
+    test("suggest applies typed case to long-distance corrections too") {
+        val suggestions = LatinDictionarySuggester.suggest("RECVED", dictionary, maxCandidateCount = 3)
+
+        suggestions.first().text shouldBe "RECEIVED"
+    }
+
     test("suggest ignores non-word tokens") {
         LatinDictionarySuggester.suggest("123", dictionary, maxCandidateCount = 4) shouldBe emptyList()
         LatinDictionarySuggester.suggest("mail@example.com", dictionary, maxCandidateCount = 4) shouldBe emptyList()
