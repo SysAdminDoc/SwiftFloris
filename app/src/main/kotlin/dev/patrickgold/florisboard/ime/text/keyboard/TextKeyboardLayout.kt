@@ -382,8 +382,8 @@ private fun TextKeyButton(
     // label when present (covers letters, numbers, punctuation) and falls back to
     // a stable code-derived label for special keys (Shift, Backspace, Enter, Space,
     // arrow keys, etc.) so screen-reader users hear the key's purpose, not "button".
-    val keyDescription = remember(key.computedData.code, key.label) {
-        keyContentDescription(key.computedData.code, key.label)
+    val keyDescription = remember(key.computedData.code, key.label, key.hintedLabel) {
+        keyContentDescription(key.computedData.code, key.label, key.hintedLabel)
     }
     // ROADMAP §6 N3.4 — pressed-key 1.03× scale-up over 60ms gives the keypress
     // visible "depress" feedback SwiftKey/Gboard ship without changing the
@@ -510,9 +510,20 @@ private fun TextKeyButton(
  *    with no further context, which Gboard / SwiftKey users have complained
  *    about at length on the FlorisBoard tracker).
  */
-internal fun keyContentDescription(code: Int, label: String?): String {
+internal fun keyContentDescription(code: Int, label: String?, hintedLabel: String? = null): String {
+    // §6 N8.3 — long-press hint announcement. When a key surfaces a hintedLabel
+    // (the small glyph in the top-right corner — typically an alt-char that
+    // appears on long-press), TalkBack appends "Alternative: <hint>" so the
+    // screen-reader user knows extra characters are available without sighted
+    // visual feedback. This mirrors how Samsung Keyboard / Gboard announce alt
+    // glyphs to TalkBack.
+    val hintSuffix = if (!hintedLabel.isNullOrBlank() && hintedLabel.length <= 4) {
+        ", alternative: $hintedLabel"
+    } else {
+        ""
+    }
     if (!label.isNullOrBlank() && label.length <= 4 && label.all { !it.isISOControl() }) {
-        return label
+        return label + hintSuffix
     }
     return when (code) {
         KeyCode.SHIFT -> "Shift"
@@ -549,7 +560,7 @@ internal fun keyContentDescription(code: Int, label: String?): String {
         KeyCode.VIEW_NUMERIC -> "Numbers"
         KeyCode.VIEW_NUMERIC_ADVANCED -> "Numeric"
         KeyCode.SETTINGS -> "Settings"
-        else -> label?.takeIf { it.isNotBlank() } ?: "Key"
+        else -> (label?.takeIf { it.isNotBlank() } ?: "Key") + hintSuffix
     }
 }
 
