@@ -34,6 +34,9 @@ internal object MultilingualTokenScorer {
         typedWordKnownByUserDictionary: Boolean,
         candidateMatchesTypedWord: Boolean,
         candidateIsEligibleForAutoCommit: Boolean,
+        candidateCompletesTypedWord: Boolean = false,
+        candidateConflictsWithTypedPrefix: Boolean = false,
+        contextLocaleHasTypedPrefixCandidate: Boolean = false,
     ): MultilingualTokenSignal {
         val typedKnownByDictionary = localeEvidence.any { it.typedFrequency > 0.0 }
         val typedWordKnown = typedWordKnownByUserDictionary || typedKnownByDictionary
@@ -53,7 +56,9 @@ internal object MultilingualTokenScorer {
             typedWordKnown && candidateKnown -> 0.32
             typedWordKnown && candidateIsEligibleForAutoCommit -> 0.20
             typedWordKnown -> 0.38
+            contextKnown && candidateKnown && sameLocaleAsContext && candidateConflictsWithTypedPrefix -> 0.50
             contextKnown && candidateKnown && sameLocaleAsContext -> 0.98
+            contextKnown && candidateKnown && candidateCompletesTypedWord && !contextLocaleHasTypedPrefixCandidate -> 0.74
             contextKnown && candidateKnown -> 0.12
             contextKnown && candidateIsEligibleForAutoCommit -> 0.08
             contextKnown -> 0.44

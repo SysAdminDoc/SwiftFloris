@@ -69,9 +69,10 @@
 - Item 6 now includes trailing-context language evidence: active-locale candidate scoring uses the previous two words as per-locale evidence, so partial bilingual completions can follow the sentence language before the current token is recognized. The replay set now has a `bilingual-context` category for this gap.
 - Item 2 now has a first multi-word repair tier: curated safe run-together English phrases such as `thankyou`, `alot`, `ofcourse`, `bytheway`, and `rightnow` can produce a multi-word autocorrect before weaker generic suggestions, with replay coverage in the `multi-word-repair` category.
 - Items 4 and 6 now use a shared sentence-local context extractor: previous-word, phrase-prior, and trailing-locale evidence reset after sentence terminators/newlines so active-language context can switch naturally between sentences.
+- Item 6 now handles same-sentence language switching more like SwiftKey: trailing language context still protects `hola grac... -> gracias`, but if the active context language has no prefix candidate for the current token, a typed prefix such as `th...` can let English `the` outrank a Spanish-context autocorrect like `te`. The replay set covers both sides of that threshold.
 
 ## Current Slice
 
-Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to use the expanded replay set to tune correction thresholds and glide rescoring.
+Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to use the expanded replay set to tune correction thresholds, glide rescoring, and additional language-switch edge cases.
 
-Current next step: keep promoting real exported trace failures into checked-in fixtures, especially shared-spelling bilingual words, same-sentence language switches, and additional multi-word repairs, then use the tuning objects to justify any production default changes with before/after replay metrics.
+Current next step: keep promoting real exported trace failures into checked-in fixtures, especially shared-spelling bilingual words, additional same-sentence language switches, and additional multi-word repairs, then use the tuning objects to justify any production default changes with before/after replay metrics.

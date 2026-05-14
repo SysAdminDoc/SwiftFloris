@@ -51,6 +51,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "same-prefix bilingual literal protection",
             "secondary-language auto-commit protection",
             "bilingual context completion follows active language",
+            "same-sentence language switch follows current token",
         )
     }
 
@@ -82,8 +83,8 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.fullRankingHitCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
         metrics.caseCountByTag.getValue(MultiWordRepairTag) shouldBe 1
         metrics.fullRankingHitCountByTag.getValue(MultiWordRepairTag) shouldBe 1
-        metrics.caseCountByTag.getValue(BilingualContextTag) shouldBe 1
-        metrics.fullRankingHitCountByTag.getValue(BilingualContextTag) shouldBe 1
+        metrics.caseCountByTag.getValue(BilingualContextTag) shouldBe 2
+        metrics.fullRankingHitCountByTag.getValue(BilingualContextTag) shouldBe 2
 
         val conservativeSpatialMetrics = ReplayOutcomeMetrics.from(
             cases.map {

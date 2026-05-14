@@ -99,4 +99,57 @@ class MultilingualTokenScorerTest : FunSpec({
         signal.dictionaryFrequency shouldBe 0.82
         signal.languageConfidence shouldBeLessThan 0.4
     }
+
+    test("current token prefix can override trailing context during a language switch") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.84, contextFrequency = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, contextFrequency = 0.88),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = false,
+            candidateCompletesTypedWord = true,
+            contextLocaleHasTypedPrefixCandidate = false,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.84
+        signal.languageConfidence shouldBe 0.74
+    }
+
+    test("active-language prefix candidates keep trailing context priority") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.84, contextFrequency = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, contextFrequency = 0.88),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = false,
+            candidateCompletesTypedWord = true,
+            contextLocaleHasTypedPrefixCandidate = true,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.84
+        signal.languageConfidence shouldBe 0.12
+    }
+
+    test("context-language autocorrects lose confidence when they conflict with the current prefix") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.0, contextFrequency = 0.0),
+                TokenLocaleEvidence(typedFrequency = 0.0, candidateFrequency = 0.72, contextFrequency = 0.88),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = true,
+            candidateConflictsWithTypedPrefix = true,
+        )
+
+        signal.typedWordKnown shouldBe false
+        signal.dictionaryFrequency shouldBe 0.72
+        signal.languageConfidence shouldBe 0.50
+    }
 })
