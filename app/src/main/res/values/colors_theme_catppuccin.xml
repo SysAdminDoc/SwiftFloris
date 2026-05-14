@@ -43,7 +43,7 @@
     <color name="theme_catppuccin_surface_variant">@color/catppuccin_surface1</color>
     <color name="theme_catppuccin_text_primary">@color/catppuccin_text</color>
     <color name="theme_catppuccin_text_secondary">@color/catppuccin_subtext0</color>
-    <color name="theme_catppuccin_text_tertiary">@color/catppuccin_overlay0</color>
+    <color name="theme_catppuccin_text_tertiary">@color/catppuccin_subtext0</color>
     <color name="theme_catppuccin_success">@color/catppuccin_green</color>
     <color name="theme_catppuccin_warning">@color/catppuccin_yellow</color>
     <color name="theme_catppuccin_error">@color/catppuccin_red</color>
