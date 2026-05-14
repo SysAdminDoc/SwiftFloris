@@ -52,6 +52,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "same-prefix bilingual literal protection",
             "secondary-language auto-commit protection",
             "shared-spelling bilingual literal protection",
+            "low-confidence multilingual autocorrect guard",
             "bilingual context completion follows active language",
             "same-sentence language switch follows current token",
         )
@@ -77,7 +78,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.spacebarHitCount shouldBe metrics.spacebarAssertionCount
         metrics.roleHitCount shouldBe metrics.roleAssertionCount
         metrics.typedLiteralProtectionMissCount shouldBe 0
-        metrics.caseCountByTag.getValue(BilingualTokenProtectionTag) shouldBe 3
+        metrics.caseCountByTag.getValue(BilingualTokenProtectionTag) shouldBe 4
         metrics.fullRankingHitCountByTag.getValue(BilingualTokenProtectionTag) shouldBe
             metrics.caseCountByTag.getValue(BilingualTokenProtectionTag)
         metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0
@@ -203,6 +204,7 @@ private fun TraceReplayCase.replay(
             currentWord = context.currentWord,
             candidates = ranked,
             quickPredictionInsert = quickPredictionInsert,
+            candidateSignals = context.candidateSignals,
         )?.text?.toString(),
         rolesByText = scored.associate { it.candidate.text.toString() to it.score.role.name },
     )

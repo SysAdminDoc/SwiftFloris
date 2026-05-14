@@ -219,6 +219,7 @@ internal object SwiftKeyCandidateRanker {
         currentWord: String,
         candidates: List<SuggestionCandidate>,
         quickPredictionInsert: Boolean = false,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
     ): SuggestionCandidate? {
         val typedWordKey = currentWord.trim().normalizedCandidateKey()
         if (!currentWord.trim().isWordLike() || typedWordKey.isBlank()) {
@@ -236,15 +237,26 @@ internal object SwiftKeyCandidateRanker {
         }
         if (middleCandidate is WordSuggestionCandidate &&
             middleCandidateKey != null &&
-            middleCandidateKey != typedWordKey
+            middleCandidateKey != typedWordKey &&
+            languageConfidenceAllowsAutoCommit(middleCandidate, candidateSignals)
         ) {
             return middleCandidate
         }
 
         return candidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
-                candidate.text.toString().normalizedCandidateKey() != typedWordKey
+                candidate.text.toString().normalizedCandidateKey() != typedWordKey &&
+                languageConfidenceAllowsAutoCommit(candidate, candidateSignals)
         }
+    }
+
+    fun languageConfidenceAllowsAutoCommit(
+        candidate: SuggestionCandidate,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals>,
+    ): Boolean {
+        val key = candidate.text.toString().normalizedCandidateKey()
+        if (key.isBlank()) return true
+        return (candidateSignals[key]?.languageConfidence ?: 1.0) >= MinAutoCommitLanguageConfidence
     }
 
     private fun nextWordSpacebarCandidate(candidates: List<SuggestionCandidate>): SuggestionCandidate? {
@@ -438,6 +450,7 @@ internal object SwiftKeyCandidateRanker {
     }
 
     private const val TypedLiteralConfidence = 0.62
+    private const val MinAutoCommitLanguageConfidence = 0.40
 
     private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
         .thenByDescending { it.score.rolePriority }

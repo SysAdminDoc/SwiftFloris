@@ -100,6 +100,27 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         SwiftKeyCandidateRanker.selectSpacebarCandidate("Thos", candidates)?.text shouldBe "This"
     }
 
+    test("spacebar candidate suppresses low-confidence multilingual autocorrects") {
+        val signals = mapOf(
+            "hello" to SwiftKeyCandidateSignals(
+                dictionaryFrequency = 0.82,
+                languageConfidence = 0.12,
+            ),
+        )
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("hola", signals = signals),
+            preferred = emptyList(),
+            fallback = listOf(candidate("hello", confidence = 0.96, autoCommit = true)),
+        )
+
+        candidates.map { it.text.toString() } shouldBe listOf("hola", "hello")
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "hola",
+            candidates = candidates,
+            candidateSignals = signals,
+        ) shouldBe null
+    }
+
     test("spacebar candidate keeps known middle literal unchanged") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext("the", typedWordKnown = true),
