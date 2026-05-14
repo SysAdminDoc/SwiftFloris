@@ -40,6 +40,19 @@ data class VoiceStreamingTranscriptUpdate(
     val changed: Boolean,
 )
 
+/**
+ * ROADMAP §7 Next-2.4 — single envelope returned by
+ * [VoiceInputManager.consumeStreamingChunk]: the buffer's transcript update
+ * plus the (optional) command-execution result the IME fired on a final
+ * chunk match. Partial chunks return [executed] = null even when
+ * [transcript].commandMatch is non-null, so the dictation overlay can
+ * preview a pending command without committing it.
+ */
+data class VoiceStreamingCommandUpdate(
+    val transcript: VoiceStreamingTranscriptUpdate,
+    val executed: VoiceCommandExecutionResult?,
+)
+
 class StreamingVoiceTranscriptBuffer(
     private val commandParser: VoiceCommandParser = VoiceCommandParser(),
 ) {
