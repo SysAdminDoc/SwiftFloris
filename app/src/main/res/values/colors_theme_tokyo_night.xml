@@ -30,8 +30,8 @@
     <color name="theme_tokyo_night_surface">@color/tokyo_night_bg_highlight</color>
     <color name="theme_tokyo_night_surface_variant">@color/tokyo_night_border</color>
     <color name="theme_tokyo_night_text_primary">@color/tokyo_night_fg</color>
-    <color name="theme_tokyo_night_text_secondary">@color/tokyo_night_comment</color>
-    <color name="theme_tokyo_night_text_tertiary">#555560</color>
+    <color name="theme_tokyo_night_text_secondary">#9aa5ce</color>
+    <color name="theme_tokyo_night_text_tertiary">#9aa5ce</color>
     <color name="theme_tokyo_night_success">@color/tokyo_night_green</color>
     <color name="theme_tokyo_night_warning">@color/tokyo_night_yellow</color>
     <color name="theme_tokyo_night_error">@color/tokyo_night_red</color>
