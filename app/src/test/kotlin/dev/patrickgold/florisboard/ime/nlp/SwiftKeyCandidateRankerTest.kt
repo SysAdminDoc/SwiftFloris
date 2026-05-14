@@ -86,6 +86,20 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         SwiftKeyCandidateRanker.selectSpacebarCandidate("neces", candidates)?.text shouldBe "necessary"
     }
 
+    test("spacebar candidate prefers high confidence typo correction over prefix completion") {
+        val candidates = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("Thos"),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("This", confidence = 0.94, autoCommit = true),
+                candidate("Those", confidence = 0.78),
+            ),
+        )
+
+        candidates.map { it.text.toString() } shouldBe listOf("Thos", "This", "Those")
+        SwiftKeyCandidateRanker.selectSpacebarCandidate("Thos", candidates)?.text shouldBe "This"
+    }
+
     test("spacebar candidate keeps known middle literal unchanged") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext("the", typedWordKnown = true),
