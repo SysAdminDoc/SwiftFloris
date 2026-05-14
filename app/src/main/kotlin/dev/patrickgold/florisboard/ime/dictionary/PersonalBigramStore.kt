@@ -23,8 +23,9 @@ import java.io.File
 /**
  * Local on-device bigram counter that powers next-word suggestions. Bigrams
  * are accumulated as the user commits words and persisted to a single TSV
- * file per locale under `<filesDir>/personal_bigrams_<localeTag>.tsv`. Format
- * is one tab-separated triple per line: `prevWord\tnextWord\tcount`.
+ * file per locale under `<filesDir>/personal_bigrams_<localeTag>.tsv`. Current
+ * format is `prevWord\tnextWord\tcount\tlastSeenMs`; legacy three-column files
+ * are still accepted and upgraded on the next flush.
  *
  * Storage cap: at most [MAX_PREV_WORDS] previous words per locale, [MAX_NEXT_PER_PREV]
  * next words per previous word. When the cap is reached, the lowest-count
@@ -57,11 +58,19 @@ class PersonalBigramStore private constructor(private val context: Context) {
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val tablesByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Int>>> = HashMap()
+    private val lastSeenByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Long>>> = HashMap()
     private val loadGuard = Mutex()
     private var pendingCommits: Int = 0
 
     private fun fileFor(localeTag: String): File =
         File(context.filesDir, "personal_bigrams_${localeTag.ifBlank { "default" }}.tsv")
+
+    private data class BigramSnapshot(
+        val prev: String,
+        val next: String,
+        val count: Int,
+        val lastSeenMs: Long,
+    )
 
     private fun normalize(word: String): String {
         if (word.isBlank()) return ""
@@ -77,24 +86,32 @@ class PersonalBigramStore private constructor(private val context: Context) {
         loadGuard.withLock {
             tablesByLocale[localeTag]?.let { return it }
             val table: MutableMap<String, MutableMap<String, Int>> = HashMap()
+            val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
             val f = fileFor(localeTag)
+            val loadTimestampMs = System.currentTimeMillis()
             if (f.exists() && f.length() > 0L) {
                 runCatching {
                     f.bufferedReader().useLines { lines ->
                         for (line in lines) {
                             val parts = line.split('\t')
-                            if (parts.size != 3) continue
+                            if (parts.size != 3 && parts.size != 4) continue
                             val prev = parts[0]
                             val next = parts[1]
                             val count = parts[2].toIntOrNull() ?: continue
+                            val lastSeenMs = parts.getOrNull(3)?.toLongOrNull()
+                                ?.takeIf { it > 0L }
+                                ?: loadTimestampMs
                             if (prev.isBlank() || next.isBlank() || count <= 0) continue
                             val nextMap = table.getOrPut(prev) { HashMap() }
                             nextMap[next] = count.coerceAtMost(MAX_COUNT)
+                            val recencyNextMap = recencyTable.getOrPut(prev) { HashMap() }
+                            recencyNextMap[next] = lastSeenMs
                         }
                     }
                 }
             }
             tablesByLocale[localeTag] = table
+            lastSeenByLocale[localeTag] = recencyTable
             return table
         }
     }
@@ -111,10 +128,14 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val tag = locale.languageTag()
         ioScope.launch {
             val table = ensureLoaded(tag)
+            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
+            val now = System.currentTimeMillis()
             synchronized(table) {
                 val nextMap = table.getOrPut(prev) { HashMap() }
                 val newCount = (nextMap[curr] ?: 0) + 1
                 nextMap[curr] = newCount.coerceAtMost(MAX_COUNT)
+                val recencyNextMap = recencyTable.getOrPut(prev) { HashMap() }
+                recencyNextMap[curr] = now
                 pendingCommits += 1
             }
             if (pendingCommits >= FLUSH_EVERY_N_COMMITS) {
@@ -125,18 +146,32 @@ class PersonalBigramStore private constructor(private val context: Context) {
 
     /**
      * Returns the top-[max] next-word candidates following [prevWord] in [locale],
-     * sorted by count desc. Empty when there is no learned context yet.
+     * sorted by decayed personal score. Empty when there is no learned context yet.
      */
     suspend fun predict(prevWord: String, locale: FlorisLocale, max: Int): List<String> {
         if (max <= 0) return emptyList()
         val prev = normalize(prevWord)
         if (prev.isEmpty()) return emptyList()
         val table = ensureLoaded(locale.languageTag())
-        val nextMap = synchronized(table) { table[prev]?.toMap() } ?: return emptyList()
-        return nextMap.entries
+        val localeTag = locale.languageTag()
+        val snapshot = synchronized(table) {
+            val nextMap = table[prev]?.toMap() ?: return emptyList()
+            val recencyMap = lastSeenByLocale[localeTag]?.get(prev)?.toMap().orEmpty()
+            nextMap to recencyMap
+        }
+        val now = System.currentTimeMillis()
+        return snapshot.first.entries
             .asSequence()
             .filter { it.value >= MIN_COUNT_FOR_SUGGEST }
-            .sortedByDescending { it.value }
+            .sortedWith(
+                compareByDescending<Map.Entry<String, Int>> { entry ->
+                    PersonalNgramRecency.decayedScore(
+                        count = entry.value,
+                        lastSeenMs = snapshot.second[entry.key] ?: now,
+                        nowMs = now,
+                    )
+                }.thenByDescending { it.value }
+            )
             .map { it.key }
             .take(max)
             .toList()
@@ -151,12 +186,28 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val prev = normalize(prevWord)
         val curr = normalize(currWord)
         if (prev.isEmpty() || curr.isEmpty()) return 0.0
-        val table = ensureLoaded(locale.languageTag())
-        val nextMap = synchronized(table) { table[prev]?.toMap() } ?: return 0.0
-        val count = nextMap[curr] ?: return 0.0
-        val maxCount = nextMap.values.maxOrNull() ?: return 0.0
-        if (maxCount <= 0) return 0.0
-        return (count.toDouble() / maxCount.toDouble()).coerceIn(0.0, 1.0)
+        val localeTag = locale.languageTag()
+        val table = ensureLoaded(localeTag)
+        val snapshot = synchronized(table) {
+            val nextMap = table[prev]?.toMap() ?: return 0.0
+            val recencyMap = lastSeenByLocale[localeTag]?.get(prev)?.toMap().orEmpty()
+            nextMap to recencyMap
+        }
+        val count = snapshot.first[curr] ?: return 0.0
+        val now = System.currentTimeMillis()
+        val maxScore = snapshot.first.entries.maxOfOrNull { entry ->
+            PersonalNgramRecency.decayedScore(
+                count = entry.value,
+                lastSeenMs = snapshot.second[entry.key] ?: now,
+                nowMs = now,
+            )
+        } ?: return 0.0
+        return PersonalNgramRecency.normalizedScore(
+            count = count,
+            lastSeenMs = snapshot.second[curr] ?: now,
+            maxScore = maxScore,
+            nowMs = now,
+        )
     }
 
     /**
@@ -166,7 +217,8 @@ class PersonalBigramStore private constructor(private val context: Context) {
     fun flush(localeTag: String) {
         ioScope.launch {
             val table = tablesByLocale[localeTag] ?: return@launch
-            val snapshot: List<Triple<String, String, Int>>
+            val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
+            val snapshot: List<BigramSnapshot>
             synchronized(table) {
                 pendingCommits = 0
                 if (table.size > MAX_PREV_WORDS) {
@@ -176,9 +228,12 @@ class PersonalBigramStore private constructor(private val context: Context) {
                         .map { it.key }
                         .toSet()
                     val removeKeys = table.keys.filter { it !in keepKeys }
-                    for (k in removeKeys) table.remove(k)
+                    for (k in removeKeys) {
+                        table.remove(k)
+                        recencyTable.remove(k)
+                    }
                 }
-                for ((_, nextMap) in table) {
+                for ((prev, nextMap) in table) {
                     if (nextMap.size > MAX_NEXT_PER_PREV) {
                         val keepKeys = nextMap.entries
                             .sortedByDescending { it.value }
@@ -186,13 +241,26 @@ class PersonalBigramStore private constructor(private val context: Context) {
                             .map { it.key }
                             .toSet()
                         val removeKeys = nextMap.keys.filter { it !in keepKeys }
-                        for (k in removeKeys) nextMap.remove(k)
+                        val recencyNextMap = recencyTable[prev]
+                        for (k in removeKeys) {
+                            nextMap.remove(k)
+                            recencyNextMap?.remove(k)
+                        }
                     }
                 }
                 snapshot = buildList {
+                    val now = System.currentTimeMillis()
                     for ((prev, nextMap) in table) {
+                        val recencyNextMap = recencyTable[prev].orEmpty()
                         for ((next, count) in nextMap) {
-                            add(Triple(prev, next, count))
+                            add(
+                                BigramSnapshot(
+                                    prev = prev,
+                                    next = next,
+                                    count = count,
+                                    lastSeenMs = recencyNextMap[next] ?: now,
+                                )
+                            )
                         }
                     }
                 }
@@ -200,12 +268,14 @@ class PersonalBigramStore private constructor(private val context: Context) {
             runCatching {
                 val tmp = File(fileFor(localeTag).parentFile, fileFor(localeTag).name + ".tmp")
                 tmp.bufferedWriter().use { w ->
-                    for ((prev, next, count) in snapshot) {
-                        w.write(prev)
+                    for (row in snapshot) {
+                        w.write(row.prev)
                         w.write("\t")
-                        w.write(next)
+                        w.write(row.next)
                         w.write("\t")
-                        w.write(count.toString())
+                        w.write(row.count.toString())
+                        w.write("\t")
+                        w.write(row.lastSeenMs.toString())
                         w.newLine()
                     }
                 }
@@ -228,14 +298,19 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val tag = locale.languageTag()
         ioScope.launch {
             val table = ensureLoaded(tag)
+            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
             synchronized(table) {
                 val emptiedKeys = ArrayList<String>()
                 for ((prev, nextMap) in table) {
+                    recencyTable[prev]?.remove(target)
                     if (nextMap.remove(target) != null && nextMap.isEmpty()) {
                         emptiedKeys.add(prev)
                     }
                 }
-                for (k in emptiedKeys) table.remove(k)
+                for (k in emptiedKeys) {
+                    table.remove(k)
+                    recencyTable.remove(k)
+                }
                 pendingCommits = FLUSH_EVERY_N_COMMITS
             }
             flush(tag)
@@ -246,6 +321,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
     fun reset() {
         ioScope.launch {
             synchronized(tablesByLocale) { tablesByLocale.clear() }
+            synchronized(lastSeenByLocale) { lastSeenByLocale.clear() }
             runCatching {
                 context.filesDir.listFiles { _, name -> name.startsWith("personal_bigrams_") }
                     ?.forEach { it.delete() }

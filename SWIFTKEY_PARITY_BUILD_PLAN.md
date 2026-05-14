@@ -21,7 +21,7 @@
 
 4. **Better next-word and phrase prediction**
    - Add phrase continuation, recency decay, sentence-position priors, and cold-start phrase priors.
-   - Acceptance: common continuations outrank isolated dictionary completions before personal history is rich.
+   - Acceptance: recent and common continuations outrank isolated dictionary completions before personal history is rich.
 
 5. **Flow/glide parity**
    - Keep ambiguous glide words open briefly.
@@ -50,8 +50,9 @@
 - Item 1 is implemented: adaptive touch persists bounded per-subtype tap-offset distributions locally and restores them at startup.
 - Item 2 is substantially expanded: candidate ranking now emits an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty.
 - Item 3 is expanded: deterministic replay tests now cover adjacent-key correction, known-word literal preservation, quick prediction spacebar behavior, dictionary-frequency ranking, personal phrase-context ranking, and rejected autocorrect demotion.
+- Item 4 now has recency-aware personal context scoring: bigram and trigram stores persist `lastSeenMs`, upgrade legacy TSV rows on flush, and rank personal continuations with a 21-day half-life so recently typed phrases can beat stale high-count phrases.
 - The first debug trace recorder is implemented: creating `<filesDir>/swiftkey_trace.enabled` enables local JSONL capture of suggestion scores and accepted/rejected autocorrect events at `<filesDir>/swiftkey_typing_traces.jsonl`.
 
 ## Current Slice
 
-Keep expanding items 2 and 3 until every SwiftKey-like typing decision has a replay case. The next concrete work is to add recency decay to personal n-gram scores, promote captured JSONL traces into replay fixtures, and define the optional neural reranker interface behind the existing local decoder.
+Keep expanding items 2, 3, and 4 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote captured JSONL traces into replay fixtures, add sentence-position priors for cold-start next-word prediction, and define the optional neural reranker interface behind the existing local decoder.

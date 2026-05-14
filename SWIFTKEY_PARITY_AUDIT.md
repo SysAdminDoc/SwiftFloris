@@ -20,6 +20,7 @@ Primary references:
 - Long-press candidate removal is wired through providers and learned stores.
 - Flow-style glide typing exists, including Flow Through Space support.
 - Personal dictionary learning, personal bigram/trigram next-word prediction, incognito gating, password-field learning suppression, and local-only learning all exist.
+- Personal bigram/trigram prediction is now recency-aware: learned phrase files keep a last-seen timestamp, older files are migrated safely, and recent continuations can outrank stale high-count history.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
@@ -38,7 +39,7 @@ Primary references:
    Gap rescue, persisted adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs stronger accepted/rejected-correction priors and multi-edit path scoring.
 
 4. Next-word prediction needs richer context.
-   Personal bigram/trigram prediction exists, but a SwiftKey-level feel needs phrase-level continuation, recency/frequency decay, and stronger cold-start language-model priors.
+   Personal bigram/trigram prediction now has recency/frequency decay, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and stronger cold-start language-model priors.
 
 5. Multilingual detection should operate per word across active languages.
    Current support works when a subtype carries multiple locales. The next step is language posterior scoring from recent words, plus safer suppression when a token is valid in any enabled language.
@@ -66,4 +67,5 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 - Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
 - Promote debug JSONL traces into replay fixtures so score weights can be tuned from accepted/rejected events.
 - Add deterministic replay tests for row-gap taps, multi-edit typos, multilingual words, glide paths, and next-word prediction.
+- Add sentence-position priors and cold-start phrase priors so good next-word behavior exists before personal history is rich.
 - Define a model boundary for ONNX/NNAPI candidate rescoring so the heuristic decoder remains the always-available fallback.
