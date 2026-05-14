@@ -275,6 +275,44 @@ class SwiftKeyCandidateRankerTest : FunSpec({
             quickPredictionInsert = true,
         )?.text shouldBe "hello"
     }
+
+    test("disabled neural reranker preserves heuristic order") {
+        val scored = SwiftKeyCandidateRanker.scoreCandidates(
+            context = decoderContext(
+                currentWord = "",
+                signals = mapOf(
+                    "brown" to SwiftKeyCandidateSignals(contextProbability = 1.0),
+                    "bring" to SwiftKeyCandidateSignals(contextProbability = 0.0),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("bring", confidence = 0.95),
+                candidate("brown", confidence = 0.40),
+            ),
+        )
+
+        scored.map { it.candidate.text.toString() } shouldBe listOf("brown", "bring")
+    }
+
+    test("neural reranker boundary can reorder scored candidates with heuristic backfill") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext("th"),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("there", confidence = 0.91),
+                candidate("this", confidence = 0.84),
+                candidate("the", confidence = 0.80),
+            ),
+            reranker = NeuralCandidateReranker { _, scoredCandidates ->
+                scoredCandidates
+                    .filter { it.candidate.text == "this" }
+                    .plus(scoredCandidates.first { it.candidate.text == "there" })
+            },
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("th", "this", "there", "the")
+    }
 })
 
 private fun decoderContext(

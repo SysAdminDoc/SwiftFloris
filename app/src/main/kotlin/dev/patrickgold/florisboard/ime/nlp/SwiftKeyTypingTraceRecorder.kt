@@ -56,7 +56,9 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
                 .put("timestampMs", System.currentTimeMillis())
                 .put("currentWord", context.currentWord)
                 .put("textBeforeCursorLength", content.textBeforeSelection.length)
+                .put("previousWords", JSONArray(previousWords(content.textBeforeSelection, context.currentWord)))
                 .put("typedWordKnown", context.typedWordKnown)
+                .put("touchEvidence", context.touchEvidence?.toJson() ?: JSONObject.NULL)
                 .put("ranked", JSONArray(rankedCandidates.map { it.text.toString() }))
                 .put("scored", JSONArray(scoredCandidates.map { it.toJson() })),
         )
@@ -98,10 +100,12 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         return JSONObject()
             .put("text", candidate.text.toString())
             .put("source", source.name)
+            .put("originalIndex", originalIndex)
             .put("role", score.role.name)
             .put("total", score.total)
             .put("spatialLikelihood", score.spatialLikelihood)
             .put("providerConfidence", score.providerConfidence)
+            .put("autoCommitEligible", candidate.isEligibleForAutoCommit)
             .put("dictionaryFrequency", score.dictionaryFrequency)
             .put("contextProbability", score.contextProbability)
             .put("languageConfidence", score.languageConfidence)
@@ -110,8 +114,56 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
             .put("completionAffinity", score.completionAffinity)
     }
 
+    private fun TouchDecoderEvidence.toJson(): JSONArray {
+        return JSONArray(samples.map { sample ->
+            JSONObject()
+                .put("primaryText", sample.primaryText)
+                .put(
+                    "alternatives",
+                    JSONArray(sample.alternatives.map { alternative ->
+                        JSONObject()
+                            .put("text", alternative.text)
+                            .put("confidence", alternative.confidence)
+                    }),
+                )
+        })
+    }
+
+    private fun previousWords(textBeforeCursor: String, currentWord: String): List<String> {
+        val trimmedCurrent = currentWord.trim()
+        val source = if (trimmedCurrent.isNotBlank() && textBeforeCursor.endsWith(trimmedCurrent)) {
+            textBeforeCursor.dropLast(trimmedCurrent.length)
+        } else {
+            textBeforeCursor
+        }
+        val words = ArrayDeque<String>()
+        var index = source.length
+        while (index > 0 && words.size < MaxPreviousWordsInTrace) {
+            while (index > 0 && !source[index - 1].isTraceWordChar()) {
+                index--
+            }
+            if (index == 0) break
+            val end = index
+            while (index > 0) {
+                val ch = source[index - 1]
+                if (!ch.isTraceWordChar()) break
+                index--
+            }
+            val word = source.substring(index, end)
+            if (word.isNotBlank()) {
+                words.addFirst(word)
+            }
+        }
+        return words.toList()
+    }
+
+    private fun Char.isTraceWordChar(): Boolean {
+        return isLetter() || this == '\'' || this == '-'
+    }
+
     private companion object {
         const val EnableFileName = "swiftkey_trace.enabled"
         const val TraceFileName = "swiftkey_typing_traces.jsonl"
+        const val MaxPreviousWordsInTrace = 3
     }
 }

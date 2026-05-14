@@ -107,6 +107,7 @@ internal object SwiftKeyCandidateRanker {
         context: SwiftKeyDecoderContext,
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
+        reranker: NeuralCandidateReranker = NeuralCandidateReranker.Disabled,
     ): List<SuggestionCandidate> {
         if (context.maxCandidateCount <= 0) {
             return emptyList()
@@ -121,6 +122,7 @@ internal object SwiftKeyCandidateRanker {
             signals = context.candidateSignals,
             preferred = preferred,
             fallback = fallback,
+            reranker = reranker,
         )
 
         val typedLiteral = WordSuggestionCandidate(
@@ -165,10 +167,11 @@ internal object SwiftKeyCandidateRanker {
         context: SwiftKeyDecoderContext,
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
+        reranker: NeuralCandidateReranker = NeuralCandidateReranker.Disabled,
     ): List<SwiftKeyScoredCandidate> {
         val currentWord = context.currentWord.trim()
         val typedWordKey = currentWord.normalizedCandidateKey()
-        return (preferred.mapIndexed { index, candidate ->
+        val heuristicRanking = (preferred.mapIndexed { index, candidate ->
             scoredCandidate(
                 candidate = candidate,
                 originalIndex = index,
@@ -189,6 +192,7 @@ internal object SwiftKeyCandidateRanker {
                 signals = context.candidateSignals,
             )
         }).sortedWith(ScoredCandidateComparator)
+        return safeRerank(context, heuristicRanking, reranker)
     }
 
     fun selectSpacebarCandidate(
@@ -237,6 +241,7 @@ internal object SwiftKeyCandidateRanker {
         signals: Map<String, SwiftKeyCandidateSignals>,
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
+        reranker: NeuralCandidateReranker,
     ): List<SuggestionCandidate> {
         return scoreCandidates(
             context = SwiftKeyDecoderContext(
@@ -247,7 +252,41 @@ internal object SwiftKeyCandidateRanker {
             ),
             preferred = preferred,
             fallback = fallback,
+            reranker = reranker,
         ).map { it.candidate }
+    }
+
+    private fun safeRerank(
+        context: SwiftKeyDecoderContext,
+        heuristicRanking: List<SwiftKeyScoredCandidate>,
+        reranker: NeuralCandidateReranker,
+    ): List<SwiftKeyScoredCandidate> {
+        if (heuristicRanking.isEmpty()) return heuristicRanking
+        val reranked = runCatching {
+            reranker.rerank(context, heuristicRanking)
+        }.getOrDefault(heuristicRanking)
+        if (reranked === heuristicRanking) return heuristicRanking
+
+        val heuristicByKey = heuristicRanking.associateBy { it.rerankKey() }
+        val seen = HashSet<String>(heuristicRanking.size)
+        return buildList {
+            for (candidate in reranked) {
+                val key = candidate.rerankKey()
+                val original = heuristicByKey[key] ?: continue
+                if (seen.add(key)) {
+                    add(original)
+                }
+            }
+            for (candidate in heuristicRanking) {
+                if (seen.add(candidate.rerankKey())) {
+                    add(candidate)
+                }
+            }
+        }
+    }
+
+    private fun SwiftKeyScoredCandidate.rerankKey(): String {
+        return "${source.name}:$originalIndex:${candidate.text.toString().normalizedCandidateKey()}"
     }
 
     private fun scoredCandidate(
