@@ -16,15 +16,21 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
+import androidx.compose.foundation.background
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -77,68 +83,154 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     val displayMode by prefs.suggestion.displayMode.collectAsState()
     val candidates by nlpManager.activeCandidatesFlow.collectAsState()
 
-    SnyggRow(
-        elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
-        modifier = modifier
-            .fillMaxSize()
-            .conditional(displayMode == CandidatesDisplayMode.DYNAMIC_SCROLLABLE && candidates.size > 1) {
-                florisHorizontalScroll(scrollbarHeight = CandidatesRowScrollbarHeight)
-            },
-        horizontalArrangement = if (candidates.size > 1) {
-            Arrangement.Start
-        } else {
-            Arrangement.Center
-        },
-    ) {
-        if (candidates.isNotEmpty()) {
-            val candidateModifier = if (candidates.size == 1) {
-                Modifier
-                    .fillMaxHeight()
-                    .weight(1f, fill = false)
+    // ROADMAP §7 Next-3.4 — long-press a suggestion to surface an in-strip
+    // "Remove '<word>' from predictions?" prompt (SwiftKey/Gboard parity, closes
+    // FlorisBoard #737, AnySoftKeyboard #1399, FlorisBoard #1888, COMM-A FR-22).
+    // The actual removal is deferred until the user taps "Remove"; tapping
+    // anywhere else (or pressing Cancel) dismisses without changes.
+    var pendingRemoval by remember { mutableStateOf<SuggestionCandidate?>(null) }
+    // If the underlying candidate list rotates out the pending word, clear the
+    // overlay so we don't show a confirm prompt for a candidate the user can no
+    // longer see.
+    if (pendingRemoval != null && candidates.none { it === pendingRemoval }) {
+        pendingRemoval = null
+    }
+
+    Box(modifier = modifier.fillMaxSize()) {
+        SnyggRow(
+            elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
+            modifier = Modifier
+                .fillMaxSize()
+                .conditional(displayMode == CandidatesDisplayMode.DYNAMIC_SCROLLABLE && candidates.size > 1) {
+                    florisHorizontalScroll(scrollbarHeight = CandidatesRowScrollbarHeight)
+                },
+            horizontalArrangement = if (candidates.size > 1) {
+                Arrangement.Start
             } else {
-                Modifier
-                    .fillMaxHeight()
-                    .conditional(displayMode == CandidatesDisplayMode.CLASSIC) {
-                        weight(1f)
+                Arrangement.Center
+            },
+        ) {
+            if (candidates.isNotEmpty()) {
+                val candidateModifier = if (candidates.size == 1) {
+                    Modifier
+                        .fillMaxHeight()
+                        .weight(1f, fill = false)
+                } else {
+                    Modifier
+                        .fillMaxHeight()
+                        .conditional(displayMode == CandidatesDisplayMode.CLASSIC) {
+                            weight(1f)
+                        }
+                        .conditional(displayMode != CandidatesDisplayMode.CLASSIC) {
+                            wrapContentWidth().widthIn(max = 160.dp)
+                        }
+                }
+                val list = when (displayMode) {
+                    CandidatesDisplayMode.CLASSIC -> candidates.subList(0, 3.coerceAtMost(candidates.size))
+                    else -> candidates
+                }
+                for ((n, candidate) in list.withIndex()) {
+                    if (n > 0) {
+                        SnyggSpacer(
+                            elementName = FlorisImeUi.SmartbarCandidateSpacer.elementName,
+                            modifier = Modifier
+                                .width(1.dp)
+                                .fillMaxHeight(0.6f)
+                                .align(Alignment.CenterVertically),
+                        )
                     }
-                    .conditional(displayMode != CandidatesDisplayMode.CLASSIC) {
-                        wrapContentWidth().widthIn(max = 160.dp)
-                    }
-            }
-            val list = when (displayMode) {
-                CandidatesDisplayMode.CLASSIC -> candidates.subList(0, 3.coerceAtMost(candidates.size))
-                else -> candidates
-            }
-            for ((n, candidate) in list.withIndex()) {
-                if (n > 0) {
-                    SnyggSpacer(
-                        elementName = FlorisImeUi.SmartbarCandidateSpacer.elementName,
-                        modifier = Modifier
-                            .width(1.dp)
-                            .fillMaxHeight(0.6f)
-                            .align(Alignment.CenterVertically),
+                    CandidateItem(
+                        modifier = candidateModifier,
+                        candidate = candidate,
+                        displayMode = displayMode,
+                        onClick = {
+                            // Can't use candidate directly
+                            keyboardManager.commitCandidate(candidates[n])
+                        },
+                        onLongPress = {
+                            // Can't use candidate directly — capture the live
+                            // candidate at gesture time so the confirm prompt
+                            // operates on what the user actually saw, even if
+                            // the strip rerolls before they confirm.
+                            val candidateItem = candidates[n]
+                            if (candidateItem.isEligibleForUserRemoval) {
+                                pendingRemoval = candidateItem
+                                true
+                            } else {
+                                false
+                            }
+                        },
+                        longPressDelay = prefs.keyboard.longPressDelay.get().toLong(),
                     )
                 }
-                CandidateItem(
-                    modifier = candidateModifier,
-                    candidate = candidate,
-                    displayMode = displayMode,
-                    onClick = {
-                        // Can't use candidate directly
-                        keyboardManager.commitCandidate(candidates[n])
-                    },
-                    onLongPress = {
-                        // Can't use candidate directly
-                        val candidateItem = candidates[n]
-                        if (candidateItem.isEligibleForUserRemoval) {
-                            nlpManager.removeSuggestion(subtypeManager.activeSubtype, candidateItem)
-                        } else {
-                            false
-                        }
-                    },
-                    longPressDelay = prefs.keyboard.longPressDelay.get().toLong(),
-                )
             }
+        }
+        pendingRemoval?.let { candidateItem ->
+            CandidateRemoveConfirmation(
+                candidate = candidateItem,
+                onConfirm = {
+                    nlpManager.removeSuggestion(subtypeManager.activeSubtype, candidateItem)
+                    pendingRemoval = null
+                },
+                onDismiss = { pendingRemoval = null },
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+            )
+        }
+    }
+}
+
+/**
+ * ROADMAP §7 Next-3.4 — confirmation overlay for "Remove '<word>' from
+ * predictions". Renders flush over the candidate strip. Square 8 dp corners
+ * (per global UI rules); cancels on tap-outside; confirms via the right-hand
+ * Remove button.
+ */
+@Composable
+private fun CandidateRemoveConfirmation(
+    candidate: SuggestionCandidate,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Box(
+        modifier = modifier.clickable(
+            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+            indication = null,
+            onClick = onDismiss,
+        ),
+        contentAlignment = Alignment.Center,
+    ) {
+        SnyggRow(
+            elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
+            modifier = Modifier
+                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+                SnyggText(
+                    elementName = FlorisImeUi.SmartbarCandidateWord.elementName + "-text",
+                    text = "Remove \u2018${candidate.text}\u2019?",
+                )
+                SnyggSpacer(
+                    elementName = FlorisImeUi.SmartbarCandidateSpacer.elementName,
+                    modifier = Modifier.width(12.dp),
+                )
+                SnyggText(
+                    elementName = FlorisImeUi.SmartbarCandidateWord.elementName + "-text",
+                    modifier = Modifier
+                        .clickable(onClick = onDismiss)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    text = "Cancel",
+                )
+                SnyggText(
+                    elementName = FlorisImeUi.SmartbarCandidateWord.elementName + "-text",
+                    modifier = Modifier
+                        .clickable(onClick = onConfirm)
+                        .padding(horizontal = 10.dp, vertical = 6.dp),
+                    text = "Remove",
+                )
         }
     }
 }
