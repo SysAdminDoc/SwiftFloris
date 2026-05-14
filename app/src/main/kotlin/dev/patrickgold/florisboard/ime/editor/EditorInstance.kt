@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.editor
 import android.content.ClipDescription
 import android.content.ContentUris
 import android.content.Context
+import android.net.Uri
 import android.view.KeyEvent
 import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
@@ -381,6 +382,29 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                 keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
             }
         }
+    }
+
+    fun canCommitMimeType(mimeType: String): Boolean {
+        return activeInfo.contentMimeTypes.any { editorMimeType ->
+            ClipDescription.compareMimeTypes(mimeType, editorMimeType)
+        }
+    }
+
+    fun commitRichContent(
+        uri: Uri,
+        mimeTypes: List<String>,
+        descriptionLabel: String,
+    ): Boolean {
+        if (mimeTypes.isEmpty() || mimeTypes.none { canCommitMimeType(it) }) return false
+        val ic = currentInputConnection() ?: return false
+        val inputContentInfo = InputContentInfoCompat(
+            uri,
+            ClipDescription(descriptionLabel, mimeTypes.toTypedArray()),
+            null,
+        )
+        ic.finishComposingText()
+        val flags = InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION
+        return InputConnectionCompat.commitContent(ic, activeInfo.base, inputContentInfo, flags, null)
     }
 
     /**
