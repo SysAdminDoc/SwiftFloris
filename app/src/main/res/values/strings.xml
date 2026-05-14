@@ -608,6 +608,8 @@
     <string name="pref__smartbar__enabled__label" comment="Preference title">Enable Smartbar</string>
     <string name="pref__smartbar__enabled__summary" comment="Preference summary">Show suggestions and quick actions above the keyboard</string>
     <string name="pref__smartbar__layout__label" comment="Preference title">Layout</string>
+    <string name="pref__smartbar__per_app_profiles__label" comment="Preference title">Per-app profiles</string>
+    <string name="pref__smartbar__per_app_profiles__summary" comment="Preference summary">Prioritize useful quick actions for password, chat, and email fields</string>
     <string name="pref__smartbar__group_layout_specific__label" comment="Preference group title">Layout behavior</string>
     <string name="pref__smartbar__flip_toggles__label" comment="Preference title">Flip toggle buttons</string>
     <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Move action row toggles to the opposite side</string>

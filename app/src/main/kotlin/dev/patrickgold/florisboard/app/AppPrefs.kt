@@ -731,6 +731,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = QuickActionArrangement.Default,
             serializer = QuickActionArrangement.Serializer,
         )
+        val perAppProfilesEnabled = boolean(
+            key = "smartbar__per_app_profiles_enabled",
+            default = true,
+        )
         val flipToggles = boolean(
             key = "smartbar__flip_toggles",
             default = false,

@@ -52,19 +52,27 @@ fun QuickActionsRow(
     val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
     val smartbarLayout by prefs.smartbar.layout.collectAsState()
     val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
+    val perAppProfilesEnabled by prefs.smartbar.perAppProfilesEnabled.collectAsState()
     val sharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.collectAsState()
+    val profiledActionArrangement = remember(actionArrangement, evaluator.editorInfo, perAppProfilesEnabled) {
+        SmartbarActionProfiles.apply(
+            base = actionArrangement,
+            editorInfo = evaluator.editorInfo,
+            enabled = perAppProfilesEnabled,
+        )
+    }
 
-    val dynamicActions = remember(smartbarLayout, actionArrangement) {
-        if (smartbarLayout == SmartbarLayout.ACTIONS_ONLY && actionArrangement.stickyAction != null) {
+    val dynamicActions = remember(smartbarLayout, profiledActionArrangement) {
+        if (smartbarLayout == SmartbarLayout.ACTIONS_ONLY && profiledActionArrangement.stickyAction != null) {
             buildList {
-                add(actionArrangement.stickyAction!!)
-                addAll(actionArrangement.dynamicActions)
+                add(profiledActionArrangement.stickyAction)
+                addAll(profiledActionArrangement.dynamicActions)
             }
         } else {
-            actionArrangement.dynamicActions
+            profiledActionArrangement.dynamicActions
         }
     }
-    val showOverflowAction = actionArrangement.stickyAction != null ||
+    val showOverflowAction = profiledActionArrangement.stickyAction != null ||
         smartbarLayout != SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED || !sharedActionsExpanded
 
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
@@ -76,7 +84,7 @@ fun QuickActionsRow(
 
         SideEffect {
             keyboardManager.smartbarVisibleDynamicActionsCount =
-                if (smartbarLayout == SmartbarLayout.ACTIONS_ONLY && actionArrangement.stickyAction != null) {
+                if (smartbarLayout == SmartbarLayout.ACTIONS_ONLY && profiledActionArrangement.stickyAction != null) {
                     numActionsToShow - 1
                 } else {
                     numActionsToShow
