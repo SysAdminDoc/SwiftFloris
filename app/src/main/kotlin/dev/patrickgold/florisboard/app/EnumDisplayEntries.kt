@@ -43,6 +43,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
+import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEnginePreference
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import dev.patrickgold.jetpref.datastore.ui.ListPreferenceEntry
 import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
@@ -727,6 +728,40 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
             entry(
                 key = UtilityKeyAction.DYNAMIC_SWITCH_LANGUAGE_EMOJIS,
                 label = stringRes(R.string.enum__utility_key_action__dynamic_switch_language_emojis),
+            )
+        }
+    },
+    VoiceRecognitionEnginePreference::class to DEFAULT to {
+        listPrefEntries {
+            entry(
+                key = VoiceRecognitionEnginePreference.AUTO,
+                label = stringRes(R.string.enum__voice_recognition_engine_preference__auto),
+                description = stringRes(R.string.enum__voice_recognition_engine_preference__auto__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = VoiceRecognitionEnginePreference.EMBEDDED_WHISPER,
+                label = stringRes(R.string.enum__voice_recognition_engine_preference__embedded_whisper),
+                description = stringRes(
+                    R.string.enum__voice_recognition_engine_preference__embedded_whisper__description,
+                ),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = VoiceRecognitionEnginePreference.VOSK_STREAMING,
+                label = stringRes(R.string.enum__voice_recognition_engine_preference__vosk_streaming),
+                description = stringRes(
+                    R.string.enum__voice_recognition_engine_preference__vosk_streaming__description,
+                ),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = VoiceRecognitionEnginePreference.EXTERNAL_IME,
+                label = stringRes(R.string.enum__voice_recognition_engine_preference__external_ime),
+                description = stringRes(
+                    R.string.enum__voice_recognition_engine_preference__external_ime__description,
+                ),
+                showDescriptionOnlyIfSelected = true,
             )
         }
     },

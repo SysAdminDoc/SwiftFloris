@@ -59,6 +59,10 @@ import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
 import dev.patrickgold.florisboard.ime.voice.VoiceModelSelector
 import dev.patrickgold.florisboard.ime.voice.VoiceModelTier
+import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEnginePreference
+import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEngineRoute
+import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEngineRouteReason
+import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEngineSelection
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -124,7 +128,24 @@ fun VoiceInputScreen() = FlorisScreen {
     val voiceInputManager = remember(appContext) { VoiceInputManager(appContext) }
     var status by remember { mutableStateOf(voiceInputManager.readStatus()) }
     val ramProfile = remember(appContext) { VoiceModelSelector.detectDeviceRamProfile(appContext) }
+    val recognitionEnginePreference by prefs.voice.recognitionEnginePreference.collectAsState()
     val embeddedModelPreference by prefs.voice.embeddedModelPreference.collectAsState()
+    val engineSelection = remember(status, ramProfile, recognitionEnginePreference, embeddedModelPreference) {
+        voiceInputManager.resolveRecognitionEngineSelection(
+            enginePreference = recognitionEnginePreference,
+            modelPreference = embeddedModelPreference,
+            ramProfile = ramProfile,
+            commandModeRequested = false,
+        )
+    }
+    val commandModeEngineSelection = remember(status, ramProfile, recognitionEnginePreference, embeddedModelPreference) {
+        voiceInputManager.resolveRecognitionEngineSelection(
+            enginePreference = recognitionEnginePreference,
+            modelPreference = embeddedModelPreference,
+            ramProfile = ramProfile,
+            commandModeRequested = true,
+        )
+    }
     val customCommands by prefs.voice.customCommands.collectAsState()
     var commandDialogState by remember { mutableStateOf<VoiceCommandDialogState?>(null) }
 
@@ -200,9 +221,28 @@ fun VoiceInputScreen() = FlorisScreen {
                 showIcon = false,
             )
             ListPreference(
+                prefs.voice.recognitionEnginePreference,
+                title = stringRes(R.string.settings__voice_input__recognition_engine_preference),
+                entries = enumDisplayEntriesOf(VoiceRecognitionEnginePreference::class),
+            )
+            ListPreference(
                 prefs.voice.embeddedModelPreference,
                 title = stringRes(R.string.settings__voice_input__embedded_model_preference),
                 entries = enumDisplayEntriesOf(VoiceModelPreference::class),
+            )
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__voice_input__streaming_fallback_info_title),
+                secondaryText = stringRes(R.string.settings__voice_input__streaming_fallback_info_summary),
+                showIcon = false,
+            )
+            VoiceRecognitionEngineRouteRow(
+                title = stringRes(R.string.settings__voice_input__recognition_engine_route),
+                selection = engineSelection,
+            )
+            VoiceRecognitionEngineRouteRow(
+                title = stringRes(R.string.settings__voice_input__command_mode_route),
+                selection = commandModeEngineSelection,
             )
             JetPrefListItem(
                 text = stringRes(R.string.settings__voice_input__embedded_model_selection),
@@ -454,6 +494,21 @@ private fun VoiceCommandEditDialog(
 }
 
 @Composable
+private fun VoiceRecognitionEngineRouteRow(
+    title: String,
+    selection: VoiceRecognitionEngineSelection,
+) {
+    JetPrefListItem(
+        text = title,
+        secondaryText = stringRes(
+            R.string.settings__voice_input__recognition_engine_route_summary,
+            "route" to voiceRecognitionEngineRouteLabel(selection.route),
+            "reason" to voiceRecognitionEngineRouteReasonLabel(selection.reason),
+        ),
+    )
+}
+
+@Composable
 private fun VoiceInputStatusCard(
     modifier: Modifier,
     status: VoiceInputStatus,
@@ -495,6 +550,52 @@ private fun VoiceInputStatusCard(
             actionLabel = stringRes(R.string.voice_input_setup__install_fdroid),
             onClick = onClick,
         )
+    }
+}
+
+@Composable
+private fun voiceRecognitionEngineRouteLabel(route: VoiceRecognitionEngineRoute): String {
+    return when (route) {
+        VoiceRecognitionEngineRoute.EMBEDDED_WHISPER ->
+            stringRes(R.string.enum__voice_recognition_engine_route__embedded_whisper)
+        VoiceRecognitionEngineRoute.VOSK_STREAMING ->
+            stringRes(R.string.enum__voice_recognition_engine_route__vosk_streaming)
+        VoiceRecognitionEngineRoute.EXTERNAL_IME ->
+            stringRes(R.string.enum__voice_recognition_engine_route__external_ime)
+        VoiceRecognitionEngineRoute.UNAVAILABLE ->
+            stringRes(R.string.enum__voice_recognition_engine_route__unavailable)
+    }
+}
+
+@Composable
+private fun voiceRecognitionEngineRouteReasonLabel(reason: VoiceRecognitionEngineRouteReason): String {
+    return when (reason) {
+        VoiceRecognitionEngineRouteReason.AUTO_COMMAND_MODE_VOSK ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__auto_command_mode_vosk)
+        VoiceRecognitionEngineRouteReason.AUTO_LOW_RAM_VOSK ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__auto_low_ram_vosk)
+        VoiceRecognitionEngineRouteReason.AUTO_EMBEDDED_WHISPER ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__auto_embedded_whisper)
+        VoiceRecognitionEngineRouteReason.AUTO_VOSK_WHISPER_MISSING ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__auto_vosk_whisper_missing)
+        VoiceRecognitionEngineRouteReason.EXPLICIT_EMBEDDED_WHISPER ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__explicit_embedded_whisper)
+        VoiceRecognitionEngineRouteReason.EXPLICIT_VOSK_STREAMING ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__explicit_vosk_streaming)
+        VoiceRecognitionEngineRouteReason.EXPLICIT_EXTERNAL_IME ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__explicit_external_ime)
+        VoiceRecognitionEngineRouteReason.FALLBACK_EXTERNAL_WHILE_LOCAL_UNAVAILABLE ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__fallback_external)
+        VoiceRecognitionEngineRouteReason.LOCAL_MIC_PERMISSION_MISSING ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__local_mic_permission_missing)
+        VoiceRecognitionEngineRouteReason.EMBEDDED_WHISPER_MODEL_MISSING ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__embedded_model_missing)
+        VoiceRecognitionEngineRouteReason.VOSK_MODEL_MISSING ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__vosk_model_missing)
+        VoiceRecognitionEngineRouteReason.EXTERNAL_IME_NOT_READY ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__external_ime_not_ready)
+        VoiceRecognitionEngineRouteReason.NO_VOICE_ENGINE_AVAILABLE ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__no_engine_available)
     }
 }
 

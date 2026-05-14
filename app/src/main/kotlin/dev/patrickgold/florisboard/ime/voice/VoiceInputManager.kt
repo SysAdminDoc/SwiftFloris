@@ -222,6 +222,39 @@ class VoiceInputManager(private val context: Context) {
         }
     }
 
+    fun isSwiftFlorisMicrophonePermissionGranted(): Boolean {
+        return try {
+            context.packageManager.checkPermission(
+                android.Manifest.permission.RECORD_AUDIO,
+                BuildConfig.APPLICATION_ID,
+            ) == PackageManager.PERMISSION_GRANTED
+        } catch (_: RuntimeException) {
+            false
+        }
+    }
+
+    fun resolveRecognitionEngineSelection(
+        enginePreference: VoiceRecognitionEnginePreference,
+        modelPreference: VoiceModelPreference,
+        ramProfile: VoiceDeviceRamProfile = VoiceModelSelector.detectDeviceRamProfile(context),
+        commandModeRequested: Boolean = false,
+    ): VoiceRecognitionEngineSelection {
+        return VoiceRecognitionEngineSelector.select(
+            request = VoiceRecognitionEngineRequest(
+                enginePreference = enginePreference,
+                modelPreference = modelPreference,
+                deviceRamProfile = ramProfile,
+                commandModeRequested = commandModeRequested,
+            ),
+            availability = VoiceRecognitionEngineAvailability(
+                hasEmbeddedWhisperModel = false,
+                hasVoskStreamingModel = false,
+                hasSwiftFlorisMicrophonePermission = isSwiftFlorisMicrophonePermissionGranted(),
+                externalVoiceInputReady = isVoiceInputReadyForHandoff(),
+            ),
+        )
+    }
+
     fun launchFutoVoiceInputApp(): Boolean {
         val intent = context.packageManager
             .getLaunchIntentForPackage(FUTO_PACKAGE_NAME)
