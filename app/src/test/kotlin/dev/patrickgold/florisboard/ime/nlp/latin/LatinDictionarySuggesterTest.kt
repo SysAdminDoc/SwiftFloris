@@ -40,6 +40,7 @@ class LatinDictionarySuggesterTest : FunSpec({
         "test" to 180,
         "toast" to 160,
         "address" to 210,
+        "received" to 250,
     )
 
     test("suggest returns autocorrect candidate for transposed typo") {
@@ -132,6 +133,13 @@ class LatinDictionarySuggesterTest : FunSpec({
         val suggestions = LatinDictionarySuggester.suggest("Thos", dictionary, maxCandidateCount = 3)
 
         suggestions.map { it.text } shouldBe listOf("This", "Those")
+        suggestions.first().isEligibleForAutoCommit shouldBe true
+    }
+
+    test("suggest uses bounded distance-two SymSpell for deeper typos") {
+        val suggestions = LatinDictionarySuggester.suggest("recved", dictionary, maxCandidateCount = 3)
+
+        suggestions.first().text shouldBe "received"
         suggestions.first().isEligibleForAutoCommit shouldBe true
     }
 
