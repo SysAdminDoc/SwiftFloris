@@ -125,6 +125,12 @@ val FlorisImeThemeBaseStyle = SnyggStylesheet.v2 {
     FlorisImeUi.KeyPopupElement.elementName(selector = SnyggSelector.FOCUS) {
         background = rgbaColor(189, 189, 189)
         shape = `var`("--shape")
+        // ROADMAP §6 N3.4 — accent-ring stroke on the focused popup variant gives
+        // the long-press "active alt-glyph" a SwiftKey-style visual hit; per-theme
+        // stylesheets that ship their own brand accent inherit this geometry and
+        // can override `--primary` to retint it (SwiftKey Pure uses #319DFF).
+        borderColor = `var`("--primary")
+        borderWidth = size(1.5.dp)
     }
     FlorisImeUi.KeyPopupExtendedIndicator.elementName {
         fontSize = fontSize(16.sp)

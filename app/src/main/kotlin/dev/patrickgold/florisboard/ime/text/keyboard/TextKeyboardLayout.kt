@@ -21,6 +21,8 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.view.MotionEvent
 import android.view.animation.AccelerateInterpolator
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -52,7 +54,9 @@ import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalConfiguration
@@ -337,6 +341,7 @@ fun TextKeyboardLayout(
             TextKeyButton(
                 textKey, evaluator, desiredKey,
                 debugShowTouchBoundaries,
+                reducedMotion = reducedMotion,
             )
         }
 
@@ -358,6 +363,7 @@ private fun TextKeyButton(
     evaluator: ComputingEvaluator,
     desiredKey: TextKey,
     debugShowTouchBoundaries: Boolean,
+    reducedMotion: Boolean,
 ) = with(LocalDensity.current) {
     val attributes = mapOf(
         FlorisImeUi.Attr.Code to key.computedData.code,
@@ -379,6 +385,24 @@ private fun TextKeyButton(
     val keyDescription = remember(key.computedData.code, key.label) {
         keyContentDescription(key.computedData.code, key.label)
     }
+    // ROADMAP §6 N3.4 — pressed-key 1.03× scale-up over 60ms gives the keypress
+    // visible "depress" feedback SwiftKey/Gboard ship without changing the
+    // touch-target geometry (graphicsLayer scales the visual only). The animation
+    // recovers to 1.0× over 80ms on release for a snappy spring-back, then
+    // converges on the static glyph weight from the PRESSED Snygg selector.
+    // §6 N8.4 — reduced-motion users (Developer Options → Animator duration scale
+    // = 0) get a static 1.0× — the PRESSED Snygg selector still flips colors so
+    // the press still reads visually, just without animation.
+    val pressTarget = if (key.isPressed && !reducedMotion) 1.03f else 1.0f
+    val pressScale by animateFloatAsState(
+        targetValue = pressTarget,
+        animationSpec = if (reducedMotion) {
+            tween(durationMillis = 0)
+        } else {
+            tween(durationMillis = if (key.isPressed) 60 else 80)
+        },
+        label = "TextKeyButton.pressScale",
+    )
     SnyggBox(
         FlorisImeUi.Key.elementName,
         attributes = attributes,
@@ -386,6 +410,11 @@ private fun TextKeyButton(
         modifier = Modifier
             .requiredSize(size)
             .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() }
+            .graphicsLayer {
+                scaleX = pressScale
+                scaleY = pressScale
+                transformOrigin = TransformOrigin.Center
+            }
             .semantics {
                 contentDescription = keyDescription
                 role = Role.Button
