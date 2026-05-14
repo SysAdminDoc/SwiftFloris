@@ -3,9 +3,9 @@
 Build the low-priority supplemental English dictionary.
 
 The main English dictionary keeps curated frequencies in the 80-255 range. This
-supplement adds large SCOWL long-tail membership and a small modern-terms list
-below the autocorrect auto-commit thresholds, so legitimate words are recognized
-without making rare words aggressive corrections.
+supplement adds very large SCOWL long-tail membership and a small modern-terms
+list below the autocorrect auto-commit thresholds, so legitimate words are
+recognized without making rare words aggressive corrections.
 """
 
 import argparse
@@ -25,12 +25,16 @@ SCOWL_FILES = (
     "american-words.80",
     "british-words.80",
     "canadian-words.80",
+    "english-words.95",
+    "american-words.95",
+    "british-words.95",
+    "canadian-words.95",
     "english-proper-names.70",
     "american-proper-names.80",
 )
 
 SCOWL_FREQ_MAX = 79
-SCOWL_FREQ_MIN = 48
+SCOWL_FREQ_MIN = 32
 MODERN_TERM_FREQ = 96
 
 

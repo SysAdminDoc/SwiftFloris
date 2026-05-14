@@ -131,12 +131,15 @@ class LatinDictionaryStoreTest : FunSpec({
 
         val dictionary = runBlocking { store.dictionaryForLanguage("en") }
 
-        (dictionary.sortedWords.size >= 295_000) shouldBe true
+        (dictionary.sortedWords.size >= 515_000) shouldBe true
         dictionary.contains("kubernetes") shouldBe true
         dictionary.contains("chatgpt") shouldBe true
         dictionary.contains("telehealth") shouldBe true
         dictionary.contains("swiftfloris") shouldBe true
+        dictionary.contains("qwerty") shouldBe true
+        dictionary.contains("zyzzyvas") shouldBe true
         dictionary.frequencyFor("kubernetes") shouldBe 96 / 255.0
+        dictionary.frequencyFor("zyzzyvas") shouldBe 59 / 255.0
     }
 })
 
