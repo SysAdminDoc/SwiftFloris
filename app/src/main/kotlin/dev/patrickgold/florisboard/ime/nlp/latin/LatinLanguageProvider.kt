@@ -908,6 +908,20 @@ internal object LatinDictionarySuggester {
         return copy(text = applyTypedCase(text, rawWord))
     }
 
+    /**
+     * ROADMAP §7 Next-3.3 — capitalization-aware suggestions. Apply the typed
+     * prefix's case pattern to a candidate so the suggestion strip surfaces
+     * "Foo" when the user types "F", "FOO" when they type "FO", and "foo" when
+     * they type "f". Closes FlorisBoard #1007.
+     *
+     * Rules (Title Case beats ALL_CAPS only for single-letter prefixes since
+     * a lone capital is ambiguous):
+     *  - prefix has ≥2 letters AND all are uppercase → candidate uppercased
+     *  - prefix's first letter is uppercase → candidate titlecased on first char
+     *  - else → candidate returned as-is (typically already lowercase)
+     *
+     * Covered by LatinDictionarySuggesterTest.
+     */
     private fun applyTypedCase(candidate: String, rawWord: String): String {
         val letters = rawWord.filter { it.isLetter() }
         return when {
