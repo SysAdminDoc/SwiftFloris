@@ -209,9 +209,18 @@ The fourteenth implementation slice closes more of the multilingual parity gap:
 
 ## Fifteenth Slice
 
-The fifteenth implementation slice should deepen phrase prediction:
+The fifteenth implementation slice deepens phrase prediction:
 
-- Add phrase-continuation priors for common two- and three-word starts beyond the current short continuation table.
-- Feed phrase priors into both next-word prediction and short-glide context rescoring so Flow recovery benefits from the same language model.
-- Add trace fixtures for sentence starts, casual chat continuations, and phrase disambiguation after accepted/rejected corrections.
-- Acceptance: fresh installs feel less generic, and personal history takes over cleanly as the user types.
+- Add phrase-continuation priors for common two- and three-word starts beyond the current short continuation table. This is now implemented in `ColdStartNextWordPriors`.
+- Feed phrase priors into both next-word prediction and short-glide context rescoring so Flow recovery benefits from the same language model. Next-word prediction now uses the phrase table; Flow still uses the one-word context entry point.
+- Add trace fixtures for sentence starts, casual chat continuations, and phrase disambiguation after accepted/rejected corrections. The first JVM tests cover phrase priority and three-word phrase lookup.
+- Acceptance: fresh installs feel less generic, and personal history takes over cleanly as the user types. This is now partially met for common English phrase continuations.
+
+## Sixteenth Slice
+
+The sixteenth implementation slice should improve trust and reset controls:
+
+- Add reset actions for personal phrase history, correction outcome priors, and adaptive touch state from Typing stats or nearby settings.
+- Show concise counts for learned bigrams, learned trigrams, accepted/rejected correction priors, and adaptive touch samples.
+- Keep each reset local, immediate, and reversible only by relearning through typing.
+- Acceptance: users can see and clear the local behavior that now meaningfully changes suggestions.
