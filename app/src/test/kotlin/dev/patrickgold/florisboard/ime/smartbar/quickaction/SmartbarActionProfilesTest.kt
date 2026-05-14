@@ -107,6 +107,48 @@ class SmartbarActionProfilesTest : FunSpec({
         result.hiddenActions.contains(action(TextKeyData.ARROW_RIGHT)) shouldBe false
     }
 
+    test("code apps prioritize tab, esc, arrow, and line-jump actions") {
+        // ROADMAP §7 Next-8.1 + Next-8.2 — Termux / JuiceSSH / Acode / etc.
+        // get a code-mode smartbar that surfaces Tab + Esc + nav keys so
+        // power users don't have to switch to the symbol layer for every
+        // keypress that matters in a terminal.
+        val base = arrangement(
+            dynamicActions = listOf(action(TextKeyData.SETTINGS), action(TextKeyData.CLIPBOARD_PASTE)),
+            hiddenActions = listOf(action(TextKeyData.TAB), action(TextKeyData.ESCAPE)),
+        )
+        val editorInfo = editorInfo(
+            packageName = "com.termux",
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_NORMAL,
+        )
+
+        val result = SmartbarActionProfiles.apply(base, editorInfo, enabled = true)
+
+        SmartbarActionProfiles.detect(editorInfo) shouldBe SmartbarActionProfile.CODE
+        result.dynamicActions.take(8) shouldBe listOf(
+            action(TextKeyData.TAB),
+            action(TextKeyData.ESCAPE),
+            action(TextKeyData.ARROW_LEFT),
+            action(TextKeyData.ARROW_RIGHT),
+            action(TextKeyData.ARROW_UP),
+            action(TextKeyData.ARROW_DOWN),
+            action(TextKeyData.MOVE_START_OF_LINE),
+            action(TextKeyData.MOVE_END_OF_LINE),
+        )
+        result.hiddenActions.contains(action(TextKeyData.TAB)) shouldBe false
+        result.hiddenActions.contains(action(TextKeyData.ESCAPE)) shouldBe false
+    }
+
+    test("code-mode wins over chat-mode when both could match") {
+        // JuiceSSH and Acode have generic SHORT_MESSAGE-like input types
+        // but the CODE matcher must fire first so terminal users don't get
+        // a chat profile.
+        val codeEditor = editorInfo(
+            packageName = "com.sonelli.juicessh",
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_SHORT_MESSAGE,
+        )
+        SmartbarActionProfiles.detect(codeEditor) shouldBe SmartbarActionProfile.CODE
+    }
+
     test("unmatched apps keep the saved arrangement unchanged") {
         val base = arrangement(
             dynamicActions = listOf(action(TextKeyData.SETTINGS), action(TextKeyData.UNDO)),

@@ -239,6 +239,27 @@ data class TextKeyData(
             label = "caps_lock",
         )
 
+        /** ROADMAP §7 Next-8.1 — programmer-mode Tab key. Sends a literal
+         *  `\t` via the editor's commitText path so it works in Termux,
+         *  Acode, JuiceSSH, and any TextField whose IME options don't
+         *  request `IME_ACTION_NEXT`. Surfaced via the CODE smartbar profile
+         *  when the active editor's package matches an IDE/terminal app. */
+        val TAB = TextKeyData(
+            type = KeyType.CHARACTER,
+            code = KeyCode.TAB,
+            label = "tab",
+        )
+
+        /** ROADMAP §7 Next-8.1 — programmer-mode Escape key. Sends a
+         *  literal ESC (0x1B) which Termux / JuiceSSH interpret as the
+         *  terminal escape character; pure-Compose TextFields ignore it
+         *  cleanly. */
+        val ESCAPE = TextKeyData(
+            type = KeyType.CHARACTER,
+            code = KeyCode.ESCAPE,
+            label = "esc",
+        )
+
         /** Predefined key data for [KeyCode.ARROW_LEFT] */
         val ARROW_LEFT = TextKeyData(
             type = KeyType.NAVIGATION,

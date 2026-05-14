@@ -37,6 +37,13 @@ object SmartbarActionProfiles {
         val packageName = editorInfo.packageName.orEmpty().lowercase(Locale.ROOT)
         return when {
             variation.isPassword() -> SmartbarActionProfile.PASSWORD
+            // ROADMAP §7 Next-8.2 — per-app code-mode activation. The CODE
+            // profile surfaces tab/esc/arrow keys so terminal + IDE users
+            // don't have to switch to the symbol layer for the keys they
+            // hit most. Check the package name match BEFORE the variation
+            // gate below because IDEs often use SHORT_MESSAGE / generic
+            // text variations and we don't want chat-mode to win.
+            packageName.isCodeApp() -> SmartbarActionProfile.CODE
             packageName.isChatApp() || variation == InputAttributes.Variation.SHORT_MESSAGE -> {
                 SmartbarActionProfile.CHAT
             }
@@ -87,6 +94,34 @@ object SmartbarActionProfiles {
             contains("gmail") ||
             contains("email")
     }
+
+    /**
+     * ROADMAP §7 Next-8.2 — packages that should auto-activate programmer
+     * mode. Curated list of mainstream Android terminals, code editors,
+     * and SSH clients. Substring match (lowercased) so the same matcher
+     * works for the typical reverse-DNS shapes (`com.termux`,
+     * `com.foxdebug.acode`, `com.sonelli.juicessh`, etc.).
+     */
+    private fun String.isCodeApp(): Boolean {
+        return contains("termux") ||                      // Termux
+            contains("juicessh") ||                       // JuiceSSH
+            contains("foxdebug.acode") ||                 // Acode IDE
+            contains("acode") ||                          // Acode/Pro
+            contains("spck") ||                           // Spck Code Editor
+            contains("quoda") ||                          // Quoda
+            contains("github.android") ||                 // GitHub mobile
+            contains("dev.editor") ||                     // Generic editor naming
+            contains("git.client") ||                     // PocketGit / similar
+            contains("jetbrains") ||                      // JetBrains family
+            contains("codeeditor") ||
+            contains("hackerterm") ||
+            contains("connectbot") ||                     // ConnectBot
+            contains("termius") ||                        // Termius
+            contains("sshd") ||
+            contains("vimtouch") ||                       // VimTouch
+            contains("vim.android") ||
+            contains("scummvm")  // not strictly code, but power-users want code keys here
+    }
 }
 
 enum class SmartbarActionProfile(
@@ -116,6 +151,30 @@ enum class SmartbarActionProfile(
             QuickAction.InsertKey(TextKeyData.LANGUAGE_SWITCH),
             QuickAction.InsertKey(TextKeyData.ARROW_LEFT),
             QuickAction.InsertKey(TextKeyData.ARROW_RIGHT),
+            QuickAction.InsertKey(TextKeyData.SETTINGS),
+        )
+    ),
+
+    /**
+     * ROADMAP §7 Next-8.1 + Next-8.2 — programmer / code-mode profile.
+     * Surfaces Tab, Esc, arrow keys, and start/end-of-line jumps in the
+     * smartbar so Termux, JuiceSSH, Acode, and similar users don't have to
+     * dive into the symbol layer for every Tab/Esc keypress. The full
+     * "Hacker's Keyboard" experience (modifier-key chords, swipe-to-symbol
+     * on every key, regex snippets) belongs in a follow-up bottom-row
+     * preset; this is the smartbar-surface MVP that ships now.
+     */
+    CODE(
+        listOf(
+            QuickAction.InsertKey(TextKeyData.TAB),
+            QuickAction.InsertKey(TextKeyData.ESCAPE),
+            QuickAction.InsertKey(TextKeyData.ARROW_LEFT),
+            QuickAction.InsertKey(TextKeyData.ARROW_RIGHT),
+            QuickAction.InsertKey(TextKeyData.ARROW_UP),
+            QuickAction.InsertKey(TextKeyData.ARROW_DOWN),
+            QuickAction.InsertKey(TextKeyData.MOVE_START_OF_LINE),
+            QuickAction.InsertKey(TextKeyData.MOVE_END_OF_LINE),
+            QuickAction.InsertKey(TextKeyData.CLIPBOARD_PASTE),
             QuickAction.InsertKey(TextKeyData.SETTINGS),
         )
     ),
