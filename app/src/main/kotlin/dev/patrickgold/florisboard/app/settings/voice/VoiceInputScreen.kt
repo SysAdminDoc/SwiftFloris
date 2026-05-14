@@ -20,20 +20,26 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.provider.Settings
 import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -56,6 +62,11 @@ import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommand
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
 import dev.patrickgold.florisboard.ime.voice.VoiceDeviceRamProfile
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
+import dev.patrickgold.florisboard.ime.voice.VoiceModelCatalog
+import dev.patrickgold.florisboard.ime.voice.VoiceModelCatalogEntry
+import dev.patrickgold.florisboard.ime.voice.VoiceModelEngine
+import dev.patrickgold.florisboard.ime.voice.VoiceModelInstallRepository
+import dev.patrickgold.florisboard.ime.voice.VoiceModelInstallState
 import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
 import dev.patrickgold.florisboard.ime.voice.VoiceModelSelector
 import dev.patrickgold.florisboard.ime.voice.VoiceModelTier
@@ -128,22 +139,52 @@ fun VoiceInputScreen() = FlorisScreen {
     val voiceInputManager = remember(appContext) { VoiceInputManager(appContext) }
     var status by remember { mutableStateOf(voiceInputManager.readStatus()) }
     val ramProfile = remember(appContext) { VoiceModelSelector.detectDeviceRamProfile(appContext) }
+    val modelRepository = remember(appContext) { VoiceModelInstallRepository(appContext) }
+    var modelStates by remember { mutableStateOf<Map<String, VoiceModelInstallState>>(emptyMap()) }
+    var pendingModelImportId by rememberSaveable { mutableStateOf<String?>(null) }
     val recognitionEnginePreference by prefs.voice.recognitionEnginePreference.collectAsState()
     val embeddedModelPreference by prefs.voice.embeddedModelPreference.collectAsState()
-    val engineSelection = remember(status, ramProfile, recognitionEnginePreference, embeddedModelPreference) {
+    val resolvedEmbeddedModel = embeddedModelPreference.resolve(ramProfile)
+    val hasEmbeddedWhisperModel = remember(modelStates, resolvedEmbeddedModel) {
+        modelStates[VoiceModelCatalog.embeddedWhisperModelFor(resolvedEmbeddedModel).id]?.installed == true
+    }
+    val hasVoskStreamingModel = remember(modelStates) {
+        VoiceModelCatalog.entries.any { model ->
+            model.engine == VoiceModelEngine.VOSK_STREAMING && modelStates[model.id]?.installed == true
+        }
+    }
+    val engineSelection = remember(
+        status,
+        ramProfile,
+        recognitionEnginePreference,
+        embeddedModelPreference,
+        hasEmbeddedWhisperModel,
+        hasVoskStreamingModel,
+    ) {
         voiceInputManager.resolveRecognitionEngineSelection(
             enginePreference = recognitionEnginePreference,
             modelPreference = embeddedModelPreference,
             ramProfile = ramProfile,
             commandModeRequested = false,
+            hasEmbeddedWhisperModel = hasEmbeddedWhisperModel,
+            hasVoskStreamingModel = hasVoskStreamingModel,
         )
     }
-    val commandModeEngineSelection = remember(status, ramProfile, recognitionEnginePreference, embeddedModelPreference) {
+    val commandModeEngineSelection = remember(
+        status,
+        ramProfile,
+        recognitionEnginePreference,
+        embeddedModelPreference,
+        hasEmbeddedWhisperModel,
+        hasVoskStreamingModel,
+    ) {
         voiceInputManager.resolveRecognitionEngineSelection(
             enginePreference = recognitionEnginePreference,
             modelPreference = embeddedModelPreference,
             ramProfile = ramProfile,
             commandModeRequested = true,
+            hasEmbeddedWhisperModel = hasEmbeddedWhisperModel,
+            hasVoskStreamingModel = hasVoskStreamingModel,
         )
     }
     val customCommands by prefs.voice.customCommands.collectAsState()
@@ -152,9 +193,53 @@ fun VoiceInputScreen() = FlorisScreen {
     val openFutoFailedText = stringRes(R.string.settings__voice_input__open_futo_failed)
     val openFutoPermissionsFailedText =
         stringRes(R.string.settings__voice_input__open_futo_permissions_failed)
+    val modelImportedText = stringRes(R.string.settings__voice_input__model_imported)
+    val modelImportFailedText = stringRes(R.string.settings__voice_input__model_import_failed)
+    val modelRemovedText = stringRes(R.string.settings__voice_input__model_removed)
+
+    val modelImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        val model = VoiceModelCatalog.byId(pendingModelImportId)
+        pendingModelImportId = null
+        if (uri != null && model != null) {
+            scope.launch {
+                runCatching {
+                    modelRepository.installFromUri(model, uri)
+                }.onSuccess {
+                    modelStates = modelRepository.states(VoiceModelCatalog.entries)
+                    Toast.makeText(context, modelImportedText, Toast.LENGTH_SHORT).show()
+                }.onFailure {
+                    Toast.makeText(context, modelImportFailedText, Toast.LENGTH_LONG).show()
+                }
+            }
+        }
+    }
+
+    LaunchedEffect(modelRepository) {
+        modelStates = modelRepository.states(VoiceModelCatalog.entries)
+    }
 
     fun refreshStatus() {
         status = voiceInputManager.readStatus()
+    }
+
+    fun importVoiceModel(model: VoiceModelCatalogEntry) {
+        pendingModelImportId = model.id
+        modelImportLauncher.launch(
+            arrayOf(
+                "application/octet-stream",
+                "application/zip",
+                "application/x-zip-compressed",
+                "*/*",
+            ),
+        )
+    }
+
+    fun deleteVoiceModel(model: VoiceModelCatalogEntry) {
+        scope.launch {
+            modelRepository.delete(model)
+            modelStates = modelRepository.states(VoiceModelCatalog.entries)
+            Toast.makeText(context, modelRemovedText, Toast.LENGTH_SHORT).show()
+        }
     }
 
     fun openFuto() {
@@ -262,6 +347,35 @@ fun VoiceInputScreen() = FlorisScreen {
                     "ram" to voiceRamSummary(ramProfile),
                 ),
             )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__voice_input__group_local_models)) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__voice_input__local_models_info_title),
+                secondaryText = stringRes(R.string.settings__voice_input__local_models_info_summary),
+                showIcon = false,
+            )
+            VoiceModelCatalog.entries
+                .groupBy { it.languageName }
+                .forEach { (languageName, models) ->
+                    JetPrefListItem(
+                        text = languageName,
+                        secondaryText = stringRes(
+                            R.string.settings__voice_input__local_model_language_summary,
+                            "count" to models.size,
+                        ),
+                    )
+                    models.forEach { model ->
+                        VoiceModelRow(
+                            model = model,
+                            state = modelStates[model.id],
+                            onDownload = { context.launchUrl(model.sourceUrl) },
+                            onImport = { importVoiceModel(model) },
+                            onDelete = { deleteVoiceModel(model) },
+                        )
+                    }
+                }
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__voice_input__group_setup)) {
@@ -490,6 +604,78 @@ private fun VoiceCommandEditDialog(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun VoiceModelRow(
+    model: VoiceModelCatalogEntry,
+    state: VoiceModelInstallState?,
+    onDownload: () -> Unit,
+    onImport: () -> Unit,
+    onDelete: () -> Unit,
+) {
+    val installedState = state?.takeIf { it.installed }
+    val installed = installedState != null
+    val installSummary = installedState?.let {
+        stringRes(
+            R.string.settings__voice_input__local_model_installed,
+            "size" to voiceModelDiskUsage(it.diskBytes),
+        )
+    } ?: stringRes(R.string.settings__voice_input__local_model_not_installed)
+    JetPrefListItem(
+        text = model.displayName,
+        secondaryText = listOf(
+            voiceModelEngineLabel(model.engine),
+            stringRes(
+                R.string.settings__voice_input__local_model_size_summary,
+                "size" to model.approximateSizeMb,
+            ),
+            model.license,
+            installSummary,
+        ).joinToString(" - "),
+        trailing = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                IconButton(onClick = onDownload) {
+                    Icon(
+                        imageVector = Icons.Default.Download,
+                        contentDescription = stringRes(R.string.settings__voice_input__local_model_download),
+                    )
+                }
+                IconButton(onClick = onImport) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringRes(R.string.settings__voice_input__local_model_import),
+                    )
+                }
+                if (installed) {
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = stringRes(R.string.settings__voice_input__local_model_delete),
+                        )
+                    }
+                }
+            }
+        },
+    )
+}
+
+@Composable
+private fun voiceModelEngineLabel(engine: VoiceModelEngine): String {
+    return when (engine) {
+        VoiceModelEngine.WHISPER_CPP -> stringRes(R.string.enum__voice_model_engine__whisper_cpp)
+        VoiceModelEngine.VOSK_STREAMING -> stringRes(R.string.enum__voice_model_engine__vosk_streaming)
+    }
+}
+
+private fun voiceModelDiskUsage(bytes: Long): String {
+    val mib = bytes / (1_024.0 * 1_024.0)
+    return when {
+        mib >= 100.0 -> String.format(Locale.ROOT, "%.0f MB", mib)
+        mib >= 10.0 -> String.format(Locale.ROOT, "%.1f MB", mib)
+        mib > 0.0 -> String.format(Locale.ROOT, "%.2f MB", mib)
+        else -> "0 MB"
     }
 }
 

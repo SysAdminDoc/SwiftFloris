@@ -210,6 +210,19 @@
     <string name="settings__voice_input__embedded_model_recommendation_summary" comment="Embedded voice model recommendation row summary">Auto resolves to {tier} ({size} MB model target) on {ram}.</string>
     <string name="settings__voice_input__embedded_model_ram_detected" comment="Embedded voice model RAM summary">{ram} GB RAM</string>
     <string name="settings__voice_input__embedded_model_ram_unknown" comment="Embedded voice model RAM fallback">unknown RAM</string>
+    <string name="settings__voice_input__group_local_models" comment="Voice input settings group title">Local voice models</string>
+    <string name="settings__voice_input__local_models_info_title" comment="Local voice model manager information title">Models stay outside the base APK</string>
+    <string name="settings__voice_input__local_models_info_summary" comment="Local voice model manager information summary">SwiftFloris keeps the app offline-only: download model artifacts in the browser, then import them from local storage. Installed models are kept in private app storage and counted below.</string>
+    <string name="settings__voice_input__local_model_language_summary" comment="Local voice model manager language row summary">{count} model options</string>
+    <string name="settings__voice_input__local_model_size_summary" comment="Local voice model manager size summary">{size} MB target</string>
+    <string name="settings__voice_input__local_model_installed" comment="Local voice model manager installed status">Installed: {size}</string>
+    <string name="settings__voice_input__local_model_not_installed" comment="Local voice model manager not installed status">Not installed</string>
+    <string name="settings__voice_input__local_model_download" comment="Local voice model manager download action">Open download source</string>
+    <string name="settings__voice_input__local_model_import" comment="Local voice model manager import action">Import downloaded model</string>
+    <string name="settings__voice_input__local_model_delete" comment="Local voice model manager delete action">Remove local model</string>
+    <string name="settings__voice_input__model_imported" comment="Local voice model manager toast">Voice model imported.</string>
+    <string name="settings__voice_input__model_import_failed" comment="Local voice model manager toast">Could not import voice model.</string>
+    <string name="settings__voice_input__model_removed" comment="Local voice model manager toast">Voice model removed.</string>
     <string name="settings__voice_input__group_setup" comment="Voice input settings group title">FUTO setup</string>
     <string name="settings__voice_input__open_futo_language_settings" comment="Voice input settings preference title">Open FUTO language settings</string>
     <string name="settings__voice_input__open_futo_language_settings_summary" comment="Voice input settings preference summary">Choose the voice language and download offline models inside the FUTO app.</string>
@@ -279,6 +292,8 @@
     <string name="enum__voice_recognition_engine_route__vosk_streaming" comment="Voice recognition engine route label">Vosk streaming</string>
     <string name="enum__voice_recognition_engine_route__external_ime" comment="Voice recognition engine route label">External voice keyboard</string>
     <string name="enum__voice_recognition_engine_route__unavailable" comment="Voice recognition engine route label">Unavailable</string>
+    <string name="enum__voice_model_engine__whisper_cpp" comment="Voice model engine label">Whisper.cpp</string>
+    <string name="enum__voice_model_engine__vosk_streaming" comment="Voice model engine label">Vosk streaming</string>
     <string name="enum__voice_recognition_engine_reason__auto_command_mode_vosk" comment="Voice recognition engine route reason">Command mode prefers Vosk so partial transcripts can be inspected while the user speaks.</string>
     <string name="enum__voice_recognition_engine_reason__auto_low_ram_vosk" comment="Voice recognition engine route reason">Low-RAM devices prefer the smaller streaming model.</string>
     <string name="enum__voice_recognition_engine_reason__auto_embedded_whisper" comment="Voice recognition engine route reason">The selected embedded Whisper model is available locally.</string>
