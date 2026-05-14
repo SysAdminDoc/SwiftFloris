@@ -227,9 +227,18 @@ The sixteenth implementation slice improves trust and reset controls:
 
 ## Seventeenth Slice
 
-The seventeenth implementation slice should make parity tuning more evidence-driven:
+The seventeenth implementation slice makes parity tuning more evidence-driven:
 
-- Promote more captured JSONL traces into checked-in replay fixtures for common SwiftKey-like mistakes: row-gap taps, accidental doubles, missed letters, multilingual literals, and phrase prediction after spaces.
-- Add a visible debug/export path for local typing traces that keeps the no-network contract clear.
-- Use the replay set to tune autocommit thresholds, correction outcome priors, and short-glide rescoring without relying on manual anecdotes.
-- Acceptance: every high-impact typing behavior change is backed by a deterministic replay case.
+- Typing stats now exposes local trace capture, trace sharing, and trace clearing so the hidden JSONL recorder is discoverable without adb file flags.
+- Captured trace export uses the existing app FileProvider cache path and never introduces network permissions or background upload.
+- Checked-in replay coverage now includes the user-reported `thos -> this` short-word correction and a phrase-context `let me -> know` prediction case.
+- Acceptance: high-impact typing behavior changes can be backed by deterministic replay cases and local user traces.
+
+## Eighteenth Slice
+
+The eighteenth implementation slice should tune from the replay evidence:
+
+- Add more real trace fixtures for glide ambiguity, bilingual same-prefix words, and correction undo/retype loops.
+- Use the expanded fixture set to adjust autocommit thresholds and accepted/rejected correction priors with fewer manual constants.
+- Add stats for replay outcomes: how often the middle candidate, spacebar candidate, and typed literal match the expected SwiftKey-like action.
+- Acceptance: scoring changes improve fixture outcomes without regressing known-word protection or user-rejected corrections.

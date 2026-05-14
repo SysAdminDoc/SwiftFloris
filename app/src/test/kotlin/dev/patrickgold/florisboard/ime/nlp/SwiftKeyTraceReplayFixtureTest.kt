@@ -40,10 +40,12 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "empty-field quick prediction insertion",
             "rejected correction demotion",
             "missing-letter correction",
+            "short o-i substitution correction",
             "extra-letter correction",
             "double-letter correction",
             "accepted correction prior promotion",
             "rejected spatial correction demotion",
+            "phrase continuation after let me",
         )
     }
 
