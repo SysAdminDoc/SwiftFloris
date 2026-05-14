@@ -23,6 +23,7 @@ Primary references:
 - Personal bigram/trigram prediction is now recency-aware: learned phrase files keep a last-seen timestamp, older files are migrated safely, and recent continuations can outrank stale high-count history.
 - Cold-start English next-word prediction now has a small local prior model for sentence starts and common short continuations, so empty fields and fresh installs no longer rely only on raw dictionary frequency.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
+- Known-word detection and candidate language confidence now score across every active subtype locale, so a word recognized only by a secondary language can still occupy the middle literal slot and resist wrong-language correction.
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 - Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
@@ -46,8 +47,8 @@ Primary references:
 4. Next-word prediction needs richer context.
    Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and broader context priors.
 
-5. Multilingual detection should operate per word across active languages.
-   Current support works when a subtype carries multiple locales. The next step is language posterior scoring from recent words, plus safer suppression when a token is valid in any enabled language.
+5. Multilingual detection should keep adding context.
+   Current support now checks the current token across active locales and lowers wrong-language correction confidence when a token is valid elsewhere. The next step is language posterior scoring from trailing words, shared-spelling handling, and broader bilingual replay fixtures.
 
 6. Flow needs broader real-world tuning.
    Current Flow can commit through space and now has conservative following-context rescue for short ambiguous words. SwiftKey-like glide still needs richer path fixtures, adaptive-touch weighting inside the gesture candidate list, and neural/beam-search-style rescoring to match SwiftKey on longer or multilingual swipes.
