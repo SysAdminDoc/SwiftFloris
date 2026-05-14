@@ -287,6 +287,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.sqlite)
     implementation(libs.androidx.window.core)
     implementation(libs.cache4k)
     implementation(libs.kotlin.reflect)
@@ -299,6 +300,7 @@ dependencies {
     ksp(libs.patrickgold.jetpref.datastore.model.processor)
     implementation(libs.patrickgold.jetpref.datastore.ui)
     implementation(libs.patrickgold.jetpref.material.ui)
+    implementation(libs.sqlcipher.android)
 
     implementation(projects.lib.android)
     implementation(projects.lib.color)

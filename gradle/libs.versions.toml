@@ -12,6 +12,7 @@ androidx-exifinterface = "1.4.2"
 androidx-navigation = "2.9.7"
 androidx-profileinstaller = "1.4.1"
 androidx-room = "2.8.4"
+androidx-sqlite = "2.6.2"
 androidx-window = "1.5.1"
 cache4k = "0.14.0"
 coil = "3.4.0"
@@ -23,6 +24,7 @@ material-kolor = "4.1.1"
 mikepenz-aboutlibraries = "14.0.1"
 patrickgold-compose-tooltip = "0.2.0-rc02"
 patrickgold-jetpref = "0.3.0"
+sqlcipher-android = "4.16.0"
 
 # Testing
 androidx-benchmark = "1.4.1"
@@ -56,6 +58,7 @@ androidx-navigation-compose = { module = "androidx.navigation:navigation-compose
 androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstaller", version.ref = "androidx-profileinstaller" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
+androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
 androidx-window-core = { module = "androidx.window:window-core", version.ref = "androidx-window" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
@@ -71,6 +74,7 @@ patrickgold-jetpref-datastore-model = { module = "dev.patrickgold.jetpref:jetpre
 patrickgold-jetpref-datastore-model-processor = { module = "dev.patrickgold.jetpref:jetpref-datastore-model-processor", version.ref = "patrickgold-jetpref" }
 patrickgold-jetpref-datastore-ui = { module = "dev.patrickgold.jetpref:jetpref-datastore-ui", version.ref = "patrickgold-jetpref" }
 patrickgold-jetpref-material-ui = { module = "dev.patrickgold.jetpref:jetpref-material-ui", version.ref = "patrickgold-jetpref" }
+sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher-android" }
 
 # Testing
 androidx-benchmark-macro = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "androidx-benchmark" }

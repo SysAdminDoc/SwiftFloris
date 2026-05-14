@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.dictionary
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -26,8 +27,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.io.File
 import java.lang.ref.WeakReference
 
+private const val TAG = "DictionaryManager"
 private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
 private const val SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY = 1
 private const val SHORTCUT_MATCH_PRIORITY = 0
@@ -295,11 +298,96 @@ class DictionaryManager private constructor(context: Context) {
     private fun loadFlorisUserDictionaryIfNecessary() {
         val context = applicationContext.get() ?: return
         if (florisUserDictionaryDatabase == null && prefs.dictionary.enableFlorisUserDictionary.get()) {
-            florisUserDictionaryDatabase = Room.databaseBuilder(
+            florisUserDictionaryDatabase = openEncryptedFlorisUserDictionary(context)
+        }
+    }
+
+    private fun openEncryptedFlorisUserDictionary(context: Context): FlorisUserDictionaryDatabase? {
+        if (!migratePlaintextFlorisUserDictionaryIfNecessary(context)) {
+            return null
+        }
+        return openVerifiedEncryptedFlorisUserDictionary(context)
+    }
+
+    private fun openVerifiedEncryptedFlorisUserDictionary(context: Context): FlorisUserDictionaryDatabase? {
+        val database = buildEncryptedFlorisUserDictionary(context) ?: return null
+        return runCatching {
+            database.userDictionaryDao().queryLanguageList()
+            database
+        }.getOrElse { error ->
+            Log.w(TAG, "Encrypted user dictionary could not be opened; recreating empty store: ${error.message}")
+            database.close()
+            deleteFlorisUserDictionaryDatabaseFiles(context)
+            val replacement = buildEncryptedFlorisUserDictionary(context) ?: return null
+            runCatching {
+                replacement.userDictionaryDao().queryLanguageList()
+                replacement
+            }.getOrElse { replacementError ->
+                Log.w(TAG, "Encrypted user dictionary unavailable after recreation: ${replacementError.message}")
+                replacement.close()
+                null
+            }
+        }
+    }
+
+    private fun buildEncryptedFlorisUserDictionary(context: Context): FlorisUserDictionaryDatabase? {
+        val factory = FlorisUserDictionaryEncryption.openHelperFactory(context) ?: return null
+        return Room.databaseBuilder(
+            context,
+            FlorisUserDictionaryDatabase::class.java,
+            FlorisUserDictionaryDatabase.DB_FILE_NAME,
+        ).openHelperFactory(factory).allowMainThreadQueries().build()
+    }
+
+    private fun migratePlaintextFlorisUserDictionaryIfNecessary(context: Context): Boolean {
+        val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        if (!FlorisUserDictionaryEncryption.isPlaintextSqliteDatabase(databaseFile)) {
+            return true
+        }
+        val entries = runCatching {
+            val plaintextDatabase = Room.databaseBuilder(
                 context,
                 FlorisUserDictionaryDatabase::class.java,
-                FlorisUserDictionaryDatabase.DB_FILE_NAME
+                FlorisUserDictionaryDatabase.DB_FILE_NAME,
             ).allowMainThreadQueries().build()
+            try {
+                plaintextDatabase.userDictionaryDao().queryAll()
+            } finally {
+                plaintextDatabase.close()
+            }
+        }.getOrElse { error ->
+            Log.w(TAG, "Unable to read plaintext user dictionary for encryption migration: ${error.message}")
+            return false
+        }
+
+        val backups = runCatching {
+            moveFlorisUserDictionaryDatabaseFilesAside(context)
+        }.getOrElse { error ->
+            Log.w(TAG, "Unable to stage plaintext user dictionary for encryption migration: ${error.message}")
+            return false
+        }
+
+        val encryptedDatabase = buildEncryptedFlorisUserDictionary(context)
+        if (encryptedDatabase == null) {
+            restoreFlorisUserDictionaryDatabaseFiles(backups)
+            return false
+        }
+
+        return runCatching {
+            val dao = encryptedDatabase.userDictionaryDao()
+            for (entry in entries) {
+                dao.insert(entry)
+            }
+            encryptedDatabase.close()
+            deleteBackedUpFlorisUserDictionaryDatabaseFiles(backups)
+            Log.i(TAG, "Migrated ${entries.size} user dictionary entries to encrypted SQLCipher storage")
+            true
+        }.getOrElse { error ->
+            Log.w(TAG, "Encrypted user dictionary migration failed; restoring plaintext store: ${error.message}")
+            encryptedDatabase.close()
+            deleteFlorisUserDictionaryDatabaseFiles(context)
+            restoreFlorisUserDictionaryDatabaseFiles(backups)
+            false
         }
     }
 
@@ -321,6 +409,68 @@ class DictionaryManager private constructor(context: Context) {
         if (systemUserDictionaryDatabase != null) {
             systemUserDictionaryDatabase = null
         }
+    }
+
+    private data class DatabaseFileBackup(val original: File, val backup: File)
+
+    private fun moveFlorisUserDictionaryDatabaseFilesAside(context: Context): List<DatabaseFileBackup> {
+        val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        val timestamp = System.currentTimeMillis()
+        val backups = mutableListOf<DatabaseFileBackup>()
+        for (file in florisUserDictionaryDatabaseFiles(databaseFile)) {
+            if (file.exists()) {
+                val backup = File(file.parentFile, "${file.name}.plaintext-$timestamp")
+                if (file.renameTo(backup)) {
+                    backups.add(DatabaseFileBackup(file, backup))
+                } else {
+                    restoreFlorisUserDictionaryDatabaseFiles(backups)
+                    error("Could not move ${file.name} to ${backup.name}")
+                }
+            }
+        }
+        return backups
+    }
+
+    private fun restoreFlorisUserDictionaryDatabaseFiles(backups: List<DatabaseFileBackup>): Boolean {
+        var restored = true
+        for ((original, backup) in backups) {
+            if (original.exists() && !original.delete()) {
+                Log.w(TAG, "Could not delete ${original.name} before restoring ${backup.name}")
+                restored = false
+            }
+            if (backup.exists()) {
+                if (!backup.renameTo(original)) {
+                    Log.w(TAG, "Could not restore ${backup.name} to ${original.name}")
+                    restored = false
+                }
+            }
+        }
+        return restored
+    }
+
+    private fun deleteBackedUpFlorisUserDictionaryDatabaseFiles(backups: List<DatabaseFileBackup>) {
+        for ((_, backup) in backups) {
+            if (backup.exists() && !backup.delete()) {
+                Log.w(TAG, "Could not delete migrated plaintext user dictionary backup ${backup.name}")
+            }
+        }
+    }
+
+    private fun deleteFlorisUserDictionaryDatabaseFiles(context: Context) {
+        context.deleteDatabase(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        for (file in florisUserDictionaryDatabaseFiles(databaseFile)) {
+            file.delete()
+        }
+    }
+
+    private fun florisUserDictionaryDatabaseFiles(databaseFile: File): List<File> {
+        return listOf(
+            databaseFile,
+            File("${databaseFile.path}-wal"),
+            File("${databaseFile.path}-shm"),
+            File("${databaseFile.path}-journal"),
+        )
     }
 
     private fun UserDictionaryDao.queryCandidates(
