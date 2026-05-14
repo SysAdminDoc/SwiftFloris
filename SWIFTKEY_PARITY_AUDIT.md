@@ -30,6 +30,7 @@ Primary references:
 - Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
 - Touch evidence now treats adjacent character transpositions such as "teh" -> "the" as a spatial/temporal correction signal, not just a generic edit-distance match.
 - Flow now keeps short ambiguous glide commits recoverable for a bounded window and can retroactively replace the previous glide word from immediate next-word context before committing the next word.
+- A small curated multi-word repair tier now handles common run-together English phrase typos such as `thankyou`, `alot`, and `ofcourse` before lower-confidence generic autocorrects.
 - A disabled-by-default local trace recorder can capture scored candidate order, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events to JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
 - An anonymized JSONL replay fixture and parser now make captured trace-like events runnable in plain JVM tests.
 - A no-op `NeuralCandidateReranker` boundary now sits behind the scorer, giving a future local ONNX/TFLite model a safe integration point without changing the no-network baseline.
@@ -40,7 +41,7 @@ Primary references:
    SwiftKey exposes three modes: insert space, complete current word, or always insert prediction. SwiftFloris now has all three user-facing modes, including Quick prediction insert, but still needs broader real-world tuning around empty fields and low-confidence next-word candidates.
 
 2. Candidate ranking is still heuristic, but it now has the right decoder inputs.
-   The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice, with a neural-reranker seam ready for a future local model. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
+   The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, spatial likelihood, and a first curated multi-word repair tier, with a neural-reranker seam ready for a future local model. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
 
 3. Touch correction still needs broader trace calibration.
    Gap rescue, persisted adaptive offsets, transient nearby-key evidence, adjacent transposition scoring, bounded insertion/deletion path scoring, accepted/rejected outcome priors, and first-pass short-glide context rescue now help. The remaining touch gap is broader real-trace calibration plus richer gesture fixtures.
@@ -73,6 +74,6 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 - Keep tuning offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Keep expanding bounded multi-edit scoring from checked-in trace evidence rather than hand-tuning weights.
 - Keep promoting debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
-- Add deterministic replay tests for active-locale switching edge cases and multi-word autocorrect repairs; partial phrase completions, bilingual context completions, and longer Flow contraction rescue are now covered.
+- Add deterministic replay tests for active-locale switching edge cases, shared-spelling bilingual words, and more multi-word repairs; partial phrase completions, bilingual context completions, a first multi-word repair, and longer Flow contraction rescue are now covered.
 - Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
 - Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.

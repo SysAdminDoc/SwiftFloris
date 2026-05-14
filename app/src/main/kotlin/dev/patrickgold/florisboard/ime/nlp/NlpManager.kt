@@ -348,6 +348,7 @@ class NlpManager(context: Context) {
         // because user-defined shortcuts ("omw" → "on my way") express explicit user
         // intent that should win over algorithmic guesses.
         userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
+        immediatePhraseRepairCandidate(currentWord, currentWordStart)?.let { return it }
 
         val activeCandidate = activeCandidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
@@ -382,6 +383,7 @@ class NlpManager(context: Context) {
 
         if (autoCorrectEnabled) {
             userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
+            immediatePhraseRepairCandidate(currentWord, currentWordStart)?.let { return it }
         }
 
         val candidate = SwiftKeyCandidateRanker.selectSpacebarCandidate(
@@ -677,6 +679,23 @@ class NlpManager(context: Context) {
             return null
         }
         val candidate = ImmediateAutocorrect.englishContractionCandidate(
+            rawWord = currentWord,
+            languageCode = subtypeManager.activeSubtype.primaryLocale.language,
+        ) ?: return null
+        return candidate.takeUnless {
+            autoCommitSuppression.shouldSuppress(
+                currentWord = currentWord,
+                candidateText = it.text,
+                currentWordStart = currentWordStart,
+            )
+        }
+    }
+
+    private fun immediatePhraseRepairCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {
+        if (!prefs.suggestion.enabled.get()) {
+            return null
+        }
+        val candidate = ImmediateAutocorrect.englishPhraseRepairCandidate(
             rawWord = currentWord,
             languageCode = subtypeManager.activeSubtype.primaryLocale.language,
         ) ?: return null

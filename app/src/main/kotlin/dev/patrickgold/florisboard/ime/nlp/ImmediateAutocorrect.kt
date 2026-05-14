@@ -106,6 +106,44 @@ internal object ImmediateAutocorrect {
         )
     }
 
+    fun englishPhraseRepair(
+        rawWord: String,
+        languageCode: String,
+    ): ImmediateAutocorrectCorrection? {
+        if (normalizeLanguageCode(languageCode) != "en") {
+            return null
+        }
+        val typedWord = rawWord.trim().trim { char -> !char.isLetter() }
+        if (typedWord.isEmpty()) return null
+        val normalizedWord = typedWord.lowercase()
+        val canonical = EnglishPhraseRepairs[normalizedWord] ?: return null
+
+        val letters = typedWord.filter { it.isLetter() }
+        val isAllCapsInput = letters.length > 1 && letters.all { it.isUpperCase() }
+        if (isAllCapsInput) return null
+
+        val finalText = applyTypedCase(canonical.text, typedWord)
+        if (typedWord == finalText) return null
+        return ImmediateAutocorrectCorrection(
+            dictionaryWord = canonical.dictionaryWord,
+            text = finalText,
+            tier = ImmediateAutocorrectCorrection.Tier.SAFE,
+        )
+    }
+
+    fun englishPhraseRepairCandidate(
+        rawWord: String,
+        languageCode: String,
+    ): WordSuggestionCandidate? {
+        val correction = englishPhraseRepair(rawWord, languageCode) ?: return null
+        return WordSuggestionCandidate(
+            text = correction.text,
+            confidence = 1.0,
+            isEligibleForAutoCommit = true,
+            isEligibleForUserRemoval = false,
+        )
+    }
+
     /**
      * Apply the user's typed-case pattern to a canonical contraction.
      * Examples:
@@ -360,5 +398,21 @@ internal object ImmediateAutocorrect {
         put("y'all's", safe("y'all's", "y'all's"))
         put("maam", safe("ma'am", "ma'am"))
         put("ma'am", safe("ma'am", "ma'am"))
+    }
+
+    private val EnglishPhraseRepairs: Map<String, ImmediateAutocorrectCorrection> = buildMap {
+        put("alot", safe("a lot", "a lot"))
+        put("alittle", safe("a little", "a little"))
+        put("aswell", safe("as well", "as well"))
+        put("atleast", safe("at least", "at least"))
+        put("eachother", safe("each other", "each other"))
+        put("goodmorning", safe("good morning", "good morning"))
+        put("infact", safe("in fact", "in fact"))
+        put("infront", safe("in front", "in front"))
+        put("kindof", safe("kind of", "kind of"))
+        put("noone", safe("no one", "no one"))
+        put("ofcourse", safe("of course", "of course"))
+        put("sortof", safe("sort of", "sort of"))
+        put("thankyou", safe("thank you", "thank you"))
     }
 }
