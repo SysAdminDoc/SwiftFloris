@@ -11,6 +11,7 @@
 package dev.patrickgold.florisboard.app.settings.typing
 
 import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -29,11 +30,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ShareCompat
+import androidx.core.content.FileProvider
+import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.nlp.CorrectionOutcomePriors
+import dev.patrickgold.florisboard.ime.nlp.SwiftKeyTypingTraceRecorder
 import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.Preference
@@ -69,6 +74,29 @@ fun TypingStatsScreen() = FlorisScreen {
             }
             refreshTick = System.currentTimeMillis()
             context.showLongToast(messageId)
+        }
+    }
+
+    fun shareTraceFile() {
+        scope.launch {
+            val exportFile = withContext(Dispatchers.IO) {
+                SwiftKeyTypingTraceRecorder(context).copyTraceFileToShareCache()
+            }
+            if (exportFile == null) {
+                context.showLongToast(R.string.settings__typing_stats__trace_share_empty__toast)
+                return@launch
+            }
+            runCatching {
+                val uri = FileProvider.getUriForFile(context, TraceFileProviderAuthority, exportFile)
+                val shareIntent = ShareCompat.IntentBuilder(context)
+                    .setStream(uri)
+                    .setType(TraceExportMimeType)
+                    .createChooserIntent()
+                    .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                context.startActivity(shareIntent)
+            }.onFailure {
+                context.showLongToast(R.string.settings__typing_stats__trace_share_failed__toast)
+            }
         }
     }
 
@@ -161,6 +189,53 @@ fun TypingStatsScreen() = FlorisScreen {
                 },
             )
         }
+
+        PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_diagnostics)) {
+            Preference(
+                title = stringRes(R.string.settings__typing_stats__trace_capture),
+                summary = stats?.let { current ->
+                    if (current.traceCaptureEnabled) {
+                        stringRes(
+                            R.string.settings__typing_stats__trace_capture__on,
+                            "size" to formatBytes(current.traceFileBytes),
+                        )
+                    } else {
+                        stringRes(
+                            R.string.settings__typing_stats__trace_capture__off,
+                            "size" to formatBytes(current.traceFileBytes),
+                        )
+                    }
+                } ?: stringRes(R.string.settings__typing_stats__loading),
+                onClick = {
+                    val shouldEnable = stats?.traceCaptureEnabled != true
+                    resetAndRefresh(
+                        if (shouldEnable) {
+                            R.string.settings__typing_stats__trace_capture_enabled__toast
+                        } else {
+                            R.string.settings__typing_stats__trace_capture_disabled__toast
+                        },
+                    ) {
+                        SwiftKeyTypingTraceRecorder(context).setEnabled(shouldEnable)
+                    }
+                },
+            )
+            Preference(
+                title = stringRes(R.string.settings__typing_stats__trace_share),
+                summary = stringRes(R.string.settings__typing_stats__trace_share__summary),
+                enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
+                onClick = { shareTraceFile() },
+            )
+            Preference(
+                title = stringRes(R.string.settings__typing_stats__trace_clear),
+                summary = stringRes(R.string.settings__typing_stats__trace_clear__summary),
+                enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
+                onClick = {
+                    resetAndRefresh(R.string.settings__typing_stats__trace_clear__toast) {
+                        SwiftKeyTypingTraceRecorder(context).clearTraceFile()
+                    }
+                },
+            )
+        }
     }
 }
 
@@ -173,6 +248,8 @@ private data class TypingLearningStats(
     val trigramFileBytes: Long,
     val correctionOutcomeCount: Int,
     val adaptiveTouchSamples: Int,
+    val traceCaptureEnabled: Boolean,
+    val traceFileBytes: Long,
 )
 
 private suspend fun loadTypingLearningStats(context: Context): TypingLearningStats {
@@ -180,6 +257,7 @@ private suspend fun loadTypingLearningStats(context: Context): TypingLearningSta
     // the user hasn't opted into personal-dict yet, in which case we show 0.
     val dao = DictionaryManager.default().florisUserDictionaryDao()
     val allEntries = dao?.queryAll().orEmpty()
+    val traceRecorder = SwiftKeyTypingTraceRecorder(context)
     return TypingLearningStats(
         personalDictCount = allEntries.size.toLong(),
         personalDictTopWords = allEntries
@@ -192,6 +270,8 @@ private suspend fun loadTypingLearningStats(context: Context): TypingLearningSta
         trigramFileBytes = sumFilesWithPrefix(context, "personal_trigrams_"),
         correctionOutcomeCount = CorrectionOutcomePriors.get(context).entryCount(),
         adaptiveTouchSamples = AdaptiveTouchModel.totalSampleCount(),
+        traceCaptureEnabled = traceRecorder.isEnabled(),
+        traceFileBytes = traceRecorder.traceFileSizeBytes(),
     )
 }
 
@@ -208,3 +288,6 @@ private fun formatBytes(bytes: Long): String {
         else -> "${bytes / (1024L * 1024L)} MB"
     }
 }
+
+private const val TraceExportMimeType = "application/json"
+private const val TraceFileProviderAuthority = "${BuildConfig.APPLICATION_ID}.provider.file"

@@ -654,6 +654,7 @@
     <string name="settings__typing_stats__group_corpus" comment="Section header on the Typing stats screen">Learned corpus</string>
     <string name="settings__typing_stats__group_top_words" comment="Section header on the Typing stats screen">Your top 10 words</string>
     <string name="settings__typing_stats__group_actions" comment="Section header on the Typing stats screen">Actions</string>
+    <string name="settings__typing_stats__group_diagnostics" comment="Section header on the Typing stats screen">Diagnostics</string>
     <string name="settings__typing_stats__words_learned" comment="Stat row title">Words learned</string>
     <string name="settings__typing_stats__bigrams_disk" comment="Stat row title">Bigram store on disk</string>
     <string name="settings__typing_stats__phrase_pairs" comment="Stat row title">Phrase pairs learned</string>
@@ -674,6 +675,18 @@
     <string name="settings__typing_stats__reset_all_learning" comment="Action row title">Reset all typing learning</string>
     <string name="settings__typing_stats__reset_all_learning__summary" comment="Action row summary">Clears phrase predictions, correction memory, and adaptive touch samples. Saved dictionary words stay in place.</string>
     <string name="settings__typing_stats__reset_all_learning__toast" comment="Toast shown after resetting all typing learning">Typing learning reset.</string>
+    <string name="settings__typing_stats__trace_capture" comment="Action row title">Local trace capture</string>
+    <string name="settings__typing_stats__trace_capture__on" comment="Trace capture row summary when enabled. The placeholder inserts file size.">On. Records suggestion decisions locally for replay tuning. Size: {size}</string>
+    <string name="settings__typing_stats__trace_capture__off" comment="Trace capture row summary when disabled. The placeholder inserts file size.">Off. Enable only when collecting a local typing replay. Size: {size}</string>
+    <string name="settings__typing_stats__trace_capture_enabled__toast" comment="Toast shown after enabling local trace capture">Local trace capture enabled.</string>
+    <string name="settings__typing_stats__trace_capture_disabled__toast" comment="Toast shown after disabling local trace capture">Local trace capture disabled.</string>
+    <string name="settings__typing_stats__trace_share" comment="Action row title">Share typing trace</string>
+    <string name="settings__typing_stats__trace_share__summary" comment="Action row summary">Exports the local JSONL replay file for debugging.</string>
+    <string name="settings__typing_stats__trace_share_empty__toast" comment="Toast shown when trace sharing is requested without a trace file">No typing trace has been captured yet.</string>
+    <string name="settings__typing_stats__trace_share_failed__toast" comment="Toast shown when trace sharing fails">Could not share the typing trace.</string>
+    <string name="settings__typing_stats__trace_clear" comment="Action row title">Clear typing trace</string>
+    <string name="settings__typing_stats__trace_clear__summary" comment="Action row summary">Deletes the local replay file from this device.</string>
+    <string name="settings__typing_stats__trace_clear__toast" comment="Toast shown after clearing local trace capture file">Typing trace cleared.</string>
     <string name="pref__dictionary__group_system__label" comment="Preference group title">System dictionary</string>
     <string name="pref__dictionary__group_internal__label" comment="Preference group title">SwiftFloris dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>

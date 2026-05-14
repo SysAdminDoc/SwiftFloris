@@ -3,4 +3,7 @@
     <cache-path
         name="backup"
         path="backup-and-restore/"/>
+    <cache-path
+        name="swiftkey-trace-export"
+        path="swiftkey-trace-export/"/>
 </paths>

@@ -43,6 +43,39 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
 
     fun isEnabled(): Boolean = enableFile.exists()
 
+    fun setEnabled(enabled: Boolean) {
+        runCatching {
+            if (enabled) {
+                enableFile.writeText("enabled\n")
+            } else {
+                enableFile.delete()
+            }
+        }
+    }
+
+    fun traceFileSizeBytes(): Long {
+        return traceFile.takeIf { it.exists() }?.length() ?: 0L
+    }
+
+    fun clearTraceFile() {
+        runCatching {
+            traceFile.delete()
+        }
+    }
+
+    fun copyTraceFileToShareCache(): File? {
+        if (!traceFile.exists() || traceFile.length() <= 0L) {
+            return null
+        }
+        val exportDir = File(appContext.cacheDir, TraceExportCacheDir)
+        exportDir.mkdirs()
+        val exportFile = File(exportDir, TraceFileName)
+        return runCatching {
+            traceFile.copyTo(exportFile, overwrite = true)
+            exportFile
+        }.getOrNull()
+    }
+
     fun recordSuggestion(
         content: EditorContent,
         context: SwiftKeyDecoderContext,
@@ -165,6 +198,7 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
     private companion object {
         const val EnableFileName = "swiftkey_trace.enabled"
         const val TraceFileName = "swiftkey_typing_traces.jsonl"
+        const val TraceExportCacheDir = "swiftkey-trace-export"
         const val MaxPreviousWordsInTrace = 3
     }
 }
