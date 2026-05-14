@@ -67,9 +67,10 @@
 - Item 3 and Item 8 now have a fixture export bridge: Typing stats can share sanitized replay fixtures converted from the local trace file, preserving candidate evidence and accepted/rejected outcomes while dropping timing and surrounding-context metadata.
 - Items 3, 4, and 5 are now connected more tightly: cold-start phrase priors feed partial-word candidate scoring, checked-in replay fixtures guard `let me kn -> know`, and glide context fixtures cover a longer contraction rescue (`were` + `going` -> `we're`). Undo/retype handling also keeps a manually restored word literal after an autocorrect rejection instead of allowing a different replacement to take over the same word slot.
 - Item 6 now includes trailing-context language evidence: active-locale candidate scoring uses the previous two words as per-locale evidence, so partial bilingual completions can follow the sentence language before the current token is recognized. The replay set now has a `bilingual-context` category for this gap.
+- Item 2 now has a first multi-word repair tier: curated safe run-together English phrases such as `thankyou`, `alot`, and `ofcourse` can produce a multi-word autocorrect before weaker generic suggestions, with replay coverage in the `multi-word-repair` category.
 
 ## Current Slice
 
 Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to use the expanded replay set to tune correction thresholds and glide rescoring.
 
-Current next step: keep promoting real exported trace failures into checked-in fixtures, especially active-locale switching edge cases and multi-word autocorrect repairs, then use the tuning objects to justify any production default changes with before/after replay metrics.
+Current next step: keep promoting real exported trace failures into checked-in fixtures, especially active-locale switching edge cases, shared-spelling bilingual words, and additional multi-word repairs, then use the tuning objects to justify any production default changes with before/after replay metrics.

@@ -150,6 +150,28 @@ class ImmediateAutocorrectTest : FunSpec({
         }
     }
 
+    test("safe-tier run-together phrase repairs auto-commit immediately") {
+        mapOf(
+            "alot" to "a lot",
+            "alittle" to "a little",
+            "aswell" to "as well",
+            "atleast" to "at least",
+            "eachother" to "each other",
+            "goodmorning" to "good morning",
+            "infact" to "in fact",
+            "infront" to "in front",
+            "kindof" to "kind of",
+            "noone" to "no one",
+            "ofcourse" to "of course",
+            "sortof" to "sort of",
+            "thankyou" to "thank you",
+        ).forEach { (typed, expected) ->
+            val candidate = ImmediateAutocorrect.englishPhraseRepairCandidate(typed, "en-US")
+            candidate?.text shouldBe expected
+            candidate?.isEligibleForAutoCommit shouldBe true
+        }
+    }
+
     // ----------------------------------------------------------------------------------
     // Case preservation: typed-case maps to the contraction.
     // ----------------------------------------------------------------------------------
@@ -179,6 +201,10 @@ class ImmediateAutocorrectTest : FunSpec({
                "WHATS", "WHOS", "HOWS").forEach { typed ->
             ImmediateAutocorrect.englishContractionCandidate(typed, "en-US") shouldBe null
             ImmediateAutocorrect.englishContraction(typed, "en-US") shouldBe null
+        }
+        listOf("THANKYOU", "ALOT", "ATLEAST").forEach { typed ->
+            ImmediateAutocorrect.englishPhraseRepairCandidate(typed, "en-US") shouldBe null
+            ImmediateAutocorrect.englishPhraseRepair(typed, "en-US") shouldBe null
         }
     }
 
@@ -235,5 +261,10 @@ class ImmediateAutocorrectTest : FunSpec({
         ImmediateAutocorrect.englishContractionCandidate("youre", "de") shouldBe null
         ImmediateAutocorrect.englishContractionCandidate("i", "it") shouldBe null
         ImmediateAutocorrect.englishContractionCandidate("im", "it") shouldBe null
+    }
+
+    test("phrase repairs do not apply to non-English locales") {
+        ImmediateAutocorrect.englishPhraseRepairCandidate("thankyou", "fr") shouldBe null
+        ImmediateAutocorrect.englishPhraseRepairCandidate("alot", "de") shouldBe null
     }
 })

@@ -47,6 +47,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "rejected spatial correction demotion",
             "phrase continuation after let me",
             "partial phrase continuation after let me",
+            "multi-word autocorrect repair",
             "same-prefix bilingual literal protection",
             "secondary-language auto-commit protection",
             "bilingual context completion follows active language",
@@ -79,6 +80,8 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0
         metrics.caseCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
         metrics.fullRankingHitCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
+        metrics.caseCountByTag.getValue(MultiWordRepairTag) shouldBe 1
+        metrics.fullRankingHitCountByTag.getValue(MultiWordRepairTag) shouldBe 1
         metrics.caseCountByTag.getValue(BilingualContextTag) shouldBe 1
         metrics.fullRankingHitCountByTag.getValue(BilingualContextTag) shouldBe 1
 
@@ -373,4 +376,5 @@ private fun MutableMap<String, Int>.increment(key: String) {
 
 private const val BilingualTokenProtectionTag = "bilingual-token-protection"
 private const val PhraseContextCompletionTag = "phrase-context-completion"
+private const val MultiWordRepairTag = "multi-word-repair"
 private const val BilingualContextTag = "bilingual-context"
