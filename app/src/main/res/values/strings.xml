@@ -194,6 +194,16 @@
     <string name="settings__voice_input__status_futo_not_installed_summary" comment="Voice input status summary">Install FUTO Voice Input to use offline voice typing with SwiftFloris.</string>
     <string name="settings__voice_input__status_other_provider" comment="Voice input status message">A voice keyboard is enabled</string>
     <string name="settings__voice_input__status_other_provider_summary" comment="Voice input status summary">SwiftFloris can use an enabled voice keyboard, but FUTO is recommended for offline dictation.</string>
+    <string name="settings__voice_input__group_embedded_engine" comment="Voice input settings group title">Embedded engine</string>
+    <string name="settings__voice_input__embedded_engine_info_title" comment="Embedded voice engine information title">Local engine foundation</string>
+    <string name="settings__voice_input__embedded_engine_info_summary" comment="Embedded voice engine information summary">SwiftFloris now stores a RAM-aware model choice for the planned bundled Whisper engine. Live dictation still uses FUTO until the local runtime and model manager land.</string>
+    <string name="settings__voice_input__embedded_model_preference" comment="Embedded voice model setting title">Model tier</string>
+    <string name="settings__voice_input__embedded_model_selection" comment="Embedded voice model current selection row title">Current selection</string>
+    <string name="settings__voice_input__embedded_model_selection_summary" comment="Embedded voice model current selection row summary">Selected: {selected}. Recommended: {recommended} for {ram}.</string>
+    <string name="settings__voice_input__embedded_model_recommendation" comment="Embedded voice model recommendation row title">Device recommendation</string>
+    <string name="settings__voice_input__embedded_model_recommendation_summary" comment="Embedded voice model recommendation row summary">Auto resolves to {tier} ({size} MB model target) on {ram}.</string>
+    <string name="settings__voice_input__embedded_model_ram_detected" comment="Embedded voice model RAM summary">{ram} GB RAM</string>
+    <string name="settings__voice_input__embedded_model_ram_unknown" comment="Embedded voice model RAM fallback">unknown RAM</string>
     <string name="settings__voice_input__group_setup" comment="Voice input settings group title">FUTO setup</string>
     <string name="settings__voice_input__open_futo_language_settings" comment="Voice input settings preference title">Open FUTO language settings</string>
     <string name="settings__voice_input__open_futo_language_settings_summary" comment="Voice input settings preference summary">Choose the voice language and download offline models inside the FUTO app.</string>
@@ -251,6 +261,14 @@
     <string name="settings__voice_input__language_catalan">Catalan</string>
     <string name="settings__voice_input__language_finnish">Finnish</string>
     <string name="settings__voice_input__language_indonesian">Indonesian</string>
+    <string name="enum__voice_model_preference__auto" comment="Embedded voice model preference option">Auto</string>
+    <string name="enum__voice_model_preference__auto__description" comment="Embedded voice model preference description">Choose the safest local model from detected device RAM.</string>
+    <string name="enum__voice_model_preference__tiny_en" comment="Embedded voice model preference option">tiny.en</string>
+    <string name="enum__voice_model_preference__tiny_en__description" comment="Embedded voice model preference description">About 75 MB. Best for low-RAM devices and the smallest offline footprint.</string>
+    <string name="enum__voice_model_preference__base_en" comment="Embedded voice model preference option">base.en</string>
+    <string name="enum__voice_model_preference__base_en__description" comment="Embedded voice model preference description">About 140 MB. Balanced default for mid-tier devices.</string>
+    <string name="enum__voice_model_preference__large_v3_turbo_int8" comment="Embedded voice model preference option">Large-v3-Turbo INT8</string>
+    <string name="enum__voice_model_preference__large_v3_turbo_int8__description" comment="Embedded voice model preference description">About 800 MB. Highest-quality target for flagship devices.</string>
     <string name="settings__localization__subtype_edit_title" comment="Title of subtype dialog when editing an existing subtype">Edit subtype</string>
     <string name="settings__localization__subtype_locale" comment="Label for locale dropdown in subtype dialog">Primary language</string>
     <string name="settings__localization__subtype_secondary_locales" comment="Label for secondary languages in subtype dialog">Secondary languages</string>

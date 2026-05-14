@@ -49,14 +49,21 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandAction
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommand
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
+import dev.patrickgold.florisboard.ime.voice.VoiceDeviceRamProfile
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
+import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
+import dev.patrickgold.florisboard.ime.voice.VoiceModelSelector
+import dev.patrickgold.florisboard.ime.voice.VoiceModelTier
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
+import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
@@ -68,6 +75,7 @@ import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
+import java.util.Locale
 import java.util.UUID
 
 private data class VoiceInputStatus(
@@ -102,6 +110,7 @@ private val SupportedFutoVoiceLanguages = listOf(
     R.string.settings__voice_input__language_indonesian,
 )
 
+@OptIn(ExperimentalJetPrefDatastoreUi::class)
 @Composable
 fun VoiceInputScreen() = FlorisScreen {
     title = stringRes(R.string.settings__voice_input__title)
@@ -114,6 +123,8 @@ fun VoiceInputScreen() = FlorisScreen {
     val appContext = context.applicationContext
     val voiceInputManager = remember(appContext) { VoiceInputManager(appContext) }
     var status by remember { mutableStateOf(voiceInputManager.readStatus()) }
+    val ramProfile = remember(appContext) { VoiceModelSelector.detectDeviceRamProfile(appContext) }
+    val embeddedModelPreference by prefs.voice.embeddedModelPreference.collectAsState()
     val customCommands by prefs.voice.customCommands.collectAsState()
     var commandDialogState by remember { mutableStateOf<VoiceCommandDialogState?>(null) }
 
@@ -178,6 +189,40 @@ fun VoiceInputScreen() = FlorisScreen {
                 }
             },
         )
+
+        PreferenceGroup(title = stringRes(R.string.settings__voice_input__group_embedded_engine)) {
+            val recommendedModel = VoiceModelSelector.recommend(ramProfile)
+            val resolvedModel = embeddedModelPreference.resolve(ramProfile)
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__voice_input__embedded_engine_info_title),
+                secondaryText = stringRes(R.string.settings__voice_input__embedded_engine_info_summary),
+                showIcon = false,
+            )
+            ListPreference(
+                prefs.voice.embeddedModelPreference,
+                title = stringRes(R.string.settings__voice_input__embedded_model_preference),
+                entries = enumDisplayEntriesOf(VoiceModelPreference::class),
+            )
+            JetPrefListItem(
+                text = stringRes(R.string.settings__voice_input__embedded_model_selection),
+                secondaryText = stringRes(
+                    R.string.settings__voice_input__embedded_model_selection_summary,
+                    "selected" to voiceModelTierLabel(resolvedModel),
+                    "recommended" to voiceModelTierLabel(recommendedModel),
+                    "ram" to voiceRamSummary(ramProfile),
+                ),
+            )
+            JetPrefListItem(
+                text = stringRes(R.string.settings__voice_input__embedded_model_recommendation),
+                secondaryText = stringRes(
+                    R.string.settings__voice_input__embedded_model_recommendation_summary,
+                    "tier" to voiceModelTierLabel(recommendedModel),
+                    "size" to recommendedModel.approximateSizeMb,
+                    "ram" to voiceRamSummary(ramProfile),
+                ),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.settings__voice_input__group_setup)) {
             Preference(
@@ -476,4 +521,26 @@ private fun VoiceCommandAction.labelRes(): Int {
         VoiceCommandAction.GO_TO_START -> R.string.settings__voice_input__voice_command_go_to_start
         VoiceCommandAction.GO_TO_END -> R.string.settings__voice_input__voice_command_go_to_end
     }
+}
+
+@Composable
+private fun voiceModelTierLabel(tier: VoiceModelTier): String {
+    return when (tier) {
+        VoiceModelTier.TINY_EN -> stringRes(R.string.enum__voice_model_preference__tiny_en)
+        VoiceModelTier.BASE_EN -> stringRes(R.string.enum__voice_model_preference__base_en)
+        VoiceModelTier.LARGE_V3_TURBO_INT8 -> stringRes(
+            R.string.enum__voice_model_preference__large_v3_turbo_int8,
+        )
+    }
+}
+
+@Composable
+private fun voiceRamSummary(profile: VoiceDeviceRamProfile): String {
+    val totalRamMb = profile.totalRamMb
+        ?: return stringRes(R.string.settings__voice_input__embedded_model_ram_unknown)
+    val totalRamGb = String.format(Locale.ROOT, "%.1f", totalRamMb / 1_024.0)
+    return stringRes(
+        R.string.settings__voice_input__embedded_model_ram_detected,
+        "ram" to totalRamGb,
+    )
 }
