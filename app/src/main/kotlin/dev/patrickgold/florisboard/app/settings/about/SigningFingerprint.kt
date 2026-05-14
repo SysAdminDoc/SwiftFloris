@@ -41,8 +41,16 @@ object SigningFingerprint {
      * or null if the platform refuses to surface signing info on this build (extremely
      * rare; not expected on Android 8.0+ where PackageInfo.signingInfo is supported).
      */
-    fun sha256(context: Context): String? {
-        val signatures = readSignatures(context) ?: return null
+    fun sha256(context: Context): String? = sha256OfPackage(context, context.packageName)
+
+    /**
+     * ROADMAP §7 Next-10.2 — same SHA-256 routine as [sha256] but for an
+     * arbitrary installed package, used by the addon enumerator to pin each
+     * enrolled addon's signing certificate on first contact. Returns null if
+     * the package isn't installed or signing info is unavailable.
+     */
+    fun sha256OfPackage(context: Context, packageName: String): String? {
+        val signatures = readSignatures(context, packageName) ?: return null
         if (signatures.isEmpty()) return null
         val primary = signatures.first().toByteArray()
         return try {
@@ -61,8 +69,7 @@ object SigningFingerprint {
         }
     }
 
-    private fun readSignatures(context: Context): List<Signature>? {
-        val packageName = context.packageName
+    private fun readSignatures(context: Context, packageName: String): List<Signature>? {
         val pm = context.packageManager
         return try {
             // PackageManager.GET_SIGNING_CERTIFICATES is Android 9+ (API 28). minSdk = 26

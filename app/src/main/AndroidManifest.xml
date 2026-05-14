@@ -8,6 +8,16 @@
     <!-- Permission needed to create notifications on devices running Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- ROADMAP §7 Next-10.1 — signature-protected permission addons must hold
+         to fire REGISTER_ADDON broadcasts. Only packages co-signed with the
+         same key as the IME (or whitelisted by the user via Settings → Addons)
+         can request a self-registration callback. Addons are also subject to
+         the no-INTERNET invariant verified by AddonEnumerator at enrolment. -->
+    <permission
+        android:name="dev.patrickgold.florisboard.permission.REGISTER_ADDON"
+        android:label="@string/app_name"
+        android:protectionLevel="signature"/>
+
     <!-- Android 11+ only: Define that FlorisBoard requests to see all apps that
           ship with an IME or Spell Check service. This is used to guide the user
           in the Settings Ui why FlorisBoard may not be working.
@@ -19,6 +29,27 @@
         </intent>
         <intent>
             <action android:name="android.service.textservice.SpellCheckerService"/>
+        </intent>
+        <!-- ROADMAP §7 Next-10.1 — addon package visibility. Lets the IME's
+             AddonEnumerator (Next-10.2) see installed addon packages on
+             Android 11+, where queries are required by default. -->
+        <intent>
+            <action android:name="dev.patrickgold.florisboard.action.REGISTER_ADDON"/>
+        </intent>
+        <intent>
+            <action android:name="dev.patrickgold.florisboard.action.REGISTER_LANGUAGE_PACK"/>
+        </intent>
+        <intent>
+            <action android:name="dev.patrickgold.florisboard.action.REGISTER_THEME_PACK"/>
+        </intent>
+        <intent>
+            <action android:name="dev.patrickgold.florisboard.action.REGISTER_DICTIONARY_PACK"/>
+        </intent>
+        <intent>
+            <action android:name="dev.patrickgold.florisboard.action.REGISTER_LAYOUT_PACK"/>
+        </intent>
+        <intent>
+            <action android:name="dev.patrickgold.florisboard.action.REGISTER_POPUP_MAPPING_PACK"/>
         </intent>
     </queries>
 
