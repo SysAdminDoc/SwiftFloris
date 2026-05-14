@@ -659,22 +659,23 @@ class NlpManager(context: Context) {
                 if (candidate !is WordSuggestionCandidate) continue
                 val candidateText = candidate.text.toString()
                 val key = candidateText.normalizedCandidateSignalKey() ?: continue
+                val localeEvidence = locales.map { locale ->
+                    TokenLocaleEvidence(
+                        typedFrequency = typedWordKey?.let { word ->
+                            frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
+                        } ?: 0.0,
+                        candidateFrequency = frequencyForWordInLocale(
+                            suggestionProvider,
+                            subtype,
+                            locale,
+                            key,
+                        ),
+                        contextFrequency = contextLanguageScores[locale] ?: 0.0,
+                        languageIdConfidence = languageIdScores[locale.language] ?: 0.0,
+                    )
+                }
                 val languageSignal = MultilingualTokenScorer.score(
-                    localeEvidence = locales.map { locale ->
-                        TokenLocaleEvidence(
-                            typedFrequency = typedWordKey?.let { word ->
-                                frequencyForWordInLocale(suggestionProvider, subtype, locale, word)
-                            } ?: 0.0,
-                            candidateFrequency = frequencyForWordInLocale(
-                                suggestionProvider,
-                                subtype,
-                                locale,
-                                key,
-                            ),
-                            contextFrequency = contextLanguageScores[locale] ?: 0.0,
-                            languageIdConfidence = languageIdScores[locale.language] ?: 0.0,
-                        )
-                    },
+                    localeEvidence = localeEvidence,
                     typedWordKnownByUserDictionary = typedWordKnownByUserDictionary,
                     candidateMatchesTypedWord = typedWordKey == key,
                     candidateIsEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
@@ -730,10 +731,34 @@ class NlpManager(context: Context) {
                             ),
                             outcomeSignal.rejectedConfidence,
                         ),
+                        candidateLanguage = dominantCandidateLanguage(locales, localeEvidence),
                     ),
                 )
             }
         }
+    }
+
+    private fun dominantCandidateLanguage(
+        locales: List<FlorisLocale>,
+        localeEvidence: List<TokenLocaleEvidence>,
+    ): String? {
+        var bestIndex = -1
+        var bestFrequency = 0.0
+        var secondFrequency = 0.0
+        for (index in localeEvidence.indices) {
+            val candidateFrequency = localeEvidence[index].candidateFrequency
+            if (candidateFrequency > bestFrequency) {
+                secondFrequency = bestFrequency
+                bestFrequency = candidateFrequency
+                bestIndex = index
+            } else if (candidateFrequency > secondFrequency) {
+                secondFrequency = candidateFrequency
+            }
+        }
+        if (bestFrequency <= 0.0 || bestFrequency - secondFrequency <= CandidateLanguageTieTolerance) {
+            return null
+        }
+        return locales.getOrNull(bestIndex)?.language?.takeIf { it.isNotBlank() }
     }
 
     private fun immediateAutoCommitCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {
@@ -830,6 +855,7 @@ class NlpManager(context: Context) {
         const val MaxColdStartContextCandidates = 16
         const val MaxLanguageContextWords = 4
         const val MinLanguageSwitchPrefixLength = 2
+        const val CandidateLanguageTieTolerance = 0.0001
     }
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
