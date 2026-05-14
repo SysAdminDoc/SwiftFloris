@@ -76,6 +76,22 @@ class LatinDictionaryStoreTest : FunSpec({
         dictionary.frequencyFor("swiftfloris") shouldBe 96 / 255.0
     }
 
+    test("glide vocabulary keeps common words and filters long-tail recognition words") {
+        val dictionary = LatinDictionarySnapshot.from(
+            mapOf(
+                "hello" to 210,
+                "swiftfloris" to 96,
+                "zyzzyvas" to 59,
+                "a" to 255,
+                "averyveryveryveryverylongword" to 255,
+            ),
+        )
+
+        dictionary.sortedWords.contains("zyzzyvas") shouldBe true
+        dictionary.sortedWords.contains("a") shouldBe true
+        dictionary.glideWords shouldBe listOf("hello", "swiftfloris")
+    }
+
     test("loads fldic word scores and ignores non-word sections") {
         val store = latinDictionaryStore(
             "ime/dict/es.fldic" to """
@@ -120,6 +136,7 @@ class LatinDictionaryStoreTest : FunSpec({
             val dictionary = runBlocking { store.dictionaryForLanguage(language) }
 
             (dictionary.sortedWords.size >= minimumWordCount) shouldBe true
+            (dictionary.glideWords.size in 50_000..120_000) shouldBe true
             dictionary.isLoaded shouldBe true
         }
     }
@@ -140,6 +157,9 @@ class LatinDictionaryStoreTest : FunSpec({
         dictionary.contains("zyzzyvas") shouldBe true
         dictionary.frequencyFor("kubernetes") shouldBe 96 / 255.0
         dictionary.frequencyFor("zyzzyvas") shouldBe 59 / 255.0
+        (dictionary.glideWords.size in 100_000..120_000) shouldBe true
+        dictionary.glideWords.contains("swiftkey") shouldBe true
+        dictionary.glideWords.contains("zyzzyvas") shouldBe false
         (dictionary.correctionWords.size in 90_000..96_000) shouldBe true
         dictionary.correctionWords.contains("swiftkey") shouldBe true
         dictionary.correctionWords.contains("zyzzyvas") shouldBe false

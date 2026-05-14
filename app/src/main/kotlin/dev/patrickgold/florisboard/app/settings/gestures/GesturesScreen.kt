@@ -24,6 +24,10 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingEngine
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageProfile
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageSupport
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingQuality
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -117,6 +121,7 @@ fun GesturesScreen() = FlorisScreen {
                 FlorisLocale.from("pt") to prefs.glide.enabledPortuguese,
             ).forEach { (locale, preference) ->
                 val language = locale.displayLanguage()
+                val profile = GlideTypingLanguageSupport.profileFor(locale.language)
                 SwitchPreference(
                     preference,
                     title = stringRes(
@@ -124,8 +129,10 @@ fun GesturesScreen() = FlorisScreen {
                         "language" to language,
                     ),
                     summary = stringRes(
-                        R.string.pref__glide__language_enabled__summary,
+                        R.string.pref__glide__language_enabled__summary_with_quality,
                         "language" to language,
+                        "quality" to stringRes(profile.qualityLabelRes),
+                        "engine" to stringRes(profile.engineLabelRes),
                     ),
                     enabledIf = { prefs.glide.enabled.get() },
                 )
@@ -212,3 +219,17 @@ fun GesturesScreen() = FlorisScreen {
         }
     }
 }
+
+private val GlideTypingLanguageProfile?.qualityLabelRes: Int
+    get() = when (this?.quality) {
+        GlideTypingQuality.EXPANDED_STATISTICAL -> R.string.pref__glide__quality__expanded_statistical
+        GlideTypingQuality.IMPORTED_STATISTICAL -> R.string.pref__glide__quality__imported_statistical
+        null -> R.string.pref__glide__quality__unsupported
+    }
+
+private val GlideTypingLanguageProfile?.engineLabelRes: Int
+    get() = when (this?.engine) {
+        GlideTypingEngine.STATISTICAL -> R.string.pref__glide__engine__statistical
+        GlideTypingEngine.NEURAL_COMING_SOON -> R.string.pref__glide__engine__neural_coming_soon
+        null -> R.string.pref__glide__engine__unsupported
+    }
