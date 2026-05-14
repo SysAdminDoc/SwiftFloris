@@ -62,7 +62,15 @@ class PerAppAccentResolver(
     cacheCapacity: Int = 64,
 ) {
 
-    private val cache = LruCache<String, Color?>(cacheCapacity)
+    /**
+     * androidx.collection.LruCache rejects nullable value types, so the
+     * sentinel [NO_ACCENT] sits in cache slots where extraction returned
+     * "no usable accent color" (icon mostly grey / icon load failed).
+     * Distinguishes "we looked, found nothing useful" from "not looked
+     * yet" — once we've extracted null we don't re-extract every
+     * keystroke.
+     */
+    private val cache = LruCache<String, AccentResult>(cacheCapacity)
 
     /**
      * Look up the accent color for [packageName]. Returns null when the
@@ -72,12 +80,9 @@ class PerAppAccentResolver(
      */
     fun accentFor(packageName: String?): Color? {
         if (packageName.isNullOrBlank()) return null
-        cache[packageName]?.let { return it }
-        // Distinguishes "we looked, found nothing useful" from "not looked
-        // yet" — once we've extracted null we don't re-extract every
-        // keystroke.
+        cache[packageName]?.let { return it.color }
         val computed = computeAccent(packageName)
-        cache.put(packageName, computed)
+        cache.put(packageName, AccentResult(computed))
         flogDebug { "PerAppAccentResolver: $packageName -> $computed" }
         return computed
     }
@@ -144,6 +149,10 @@ class PerAppAccentResolver(
         }
         return bestArgb?.let { Color(it) }
     }
+
+    /** Sentinel wrapper so the LruCache (which forbids nullable V) can
+     *  still represent "we looked and there was no accent". */
+    private data class AccentResult(val color: Color?)
 
     companion object {
         private const val SAMPLE_SIZE = 32
