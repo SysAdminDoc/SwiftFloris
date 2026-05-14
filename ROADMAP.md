@@ -121,9 +121,8 @@ Rejected sub-path: bundle Google's `libjni_latinimegoogle.so` from old GApps dum
 
 The killer SwiftKey feature with no first-class FOSS equivalent [C1, COMM-2]. Users in r/SwiftKey, HN 35597622, and HeliBoard #2124 [PAIN-5, COMM-2] all report the same complaint: typing two languages bleeds wrong-language autocorrects mid-sentence.
 
-- **N2.1** Implement n-gram-based language ID over the current word and the trailing 3–4 words. Choose between:
-  - Compact langid library (e.g. CLD3 port, ~2MB + 70 langs); Apache-licensed equivalent: a port of fastText's `lid.176` quantized model [AI5] (~1MB INT8).
-  - Custom char-trigram classifier trained per Latin-script subtype set; fits in <200KB.
+- ✅ **N2.1** shipped 2026-05-14. Added an offline Latin-script language identifier over the current token plus the trailing four sentence-local context words. The first implementation is a compact per-language char n-gram/common-word/prefix classifier for enrolled EN/ES/FR/DE/IT/PT subtypes, with accent folding and BCP-47 language normalization. `NlpManager` now feeds those confidence scores into `MultilingualTokenScorer`, letting the ranker boost detected-language candidates and demote inactive-language autocorrects before context-only heuristics run.
+  Follow-up scale paths remain a compact langid library (e.g. CLD3 port, ~2MB + 70 langs), an Apache-compatible fastText `lid.176` quantized model [AI5] (~1MB INT8), or a custom trained char-trigram profile set that fits in <200KB.
 - **N2.2** When the active subtype is multilingual (e.g. EN+ES enrolled), rank suggestions from each enrolled language's dictionary per-token rather than per-keypress; suppress autocommit when the top-2 candidates straddle two languages.
 - **N2.3** Ship a "Bilingual" subtype preset — pick two enabled languages once, type freely without manual switching. Match SwiftKey's UX for the canonical EN+ES, EN+FR, EN+DE pairs. Cost: M.
 

@@ -622,6 +622,11 @@ class NlpManager(context: Context) {
                 put(activeLocale, bestFrequency)
             }
         }
+        val languageIdScores = LatinScriptLanguageIdentifier.score(
+            currentWord = currentWord,
+            previousWords = languageContextWords,
+            locales = locales.map { it.language },
+        )
         val candidateKeys = candidates.asSequence()
             .filterIsInstance<WordSuggestionCandidate>()
             .mapNotNull { candidate -> candidate.text.toString().normalizedCandidateSignalKey() }
@@ -667,6 +672,7 @@ class NlpManager(context: Context) {
                                 key,
                             ),
                             contextFrequency = contextLanguageScores[locale] ?: 0.0,
+                            languageIdConfidence = languageIdScores[locale.language] ?: 0.0,
                         )
                     },
                     typedWordKnownByUserDictionary = typedWordKnownByUserDictionary,

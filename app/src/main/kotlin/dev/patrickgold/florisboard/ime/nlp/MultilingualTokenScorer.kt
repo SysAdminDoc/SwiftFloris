@@ -20,6 +20,7 @@ internal data class TokenLocaleEvidence(
     val typedFrequency: Double,
     val candidateFrequency: Double,
     val contextFrequency: Double = 0.0,
+    val languageIdConfidence: Double = 0.0,
 )
 
 internal data class MultilingualTokenSignal(
@@ -50,6 +51,10 @@ internal object MultilingualTokenScorer {
         val sameLocaleAsContext = localeEvidence.any { evidence ->
             evidence.contextFrequency > 0.0 && evidence.candidateFrequency > 0.0
         }
+        val languageIdKnown = localeEvidence.any { it.languageIdConfidence >= LanguageIdActiveThreshold }
+        val sameLocaleAsLanguageId = localeEvidence.any { evidence ->
+            evidence.languageIdConfidence >= LanguageIdActiveThreshold && evidence.candidateFrequency > 0.0
+        }
         val languageConfidence = when {
             localeEvidence.size <= 1 -> 1.0
             candidateMatchesTypedWord && typedWordKnown -> 1.0
@@ -58,6 +63,12 @@ internal object MultilingualTokenScorer {
             typedWordKnown && candidateKnown -> 0.32
             typedWordKnown && candidateIsEligibleForAutoCommit -> 0.20
             typedWordKnown -> 0.38
+            languageIdKnown && candidateKnown && sameLocaleAsLanguageId && candidateConflictsWithTypedPrefix -> 0.58
+            languageIdKnown && candidateKnown && sameLocaleAsLanguageId -> 0.94
+            languageIdKnown && candidateKnown && candidateCompletesTypedWord && !contextLocaleHasTypedPrefixCandidate -> 0.70
+            languageIdKnown && candidateKnown -> 0.16
+            languageIdKnown && candidateIsEligibleForAutoCommit -> 0.10
+            languageIdKnown -> 0.46
             contextKnown && candidateKnown && sameLocaleAsContext && candidateConflictsWithTypedPrefix -> 0.50
             contextKnown && candidateKnown && sameLocaleAsContext -> 0.98
             contextKnown && candidateKnown && candidateCompletesTypedWord && !contextLocaleHasTypedPrefixCandidate -> 0.74
@@ -73,4 +84,6 @@ internal object MultilingualTokenScorer {
             languageConfidence = languageConfidence,
         )
     }
+
+    private const val LanguageIdActiveThreshold = 0.80
 }
