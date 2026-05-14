@@ -21,11 +21,11 @@ package dev.patrickgold.florisboard.ime.nlp.latin
  * within edit-distance 1 (or 2) by Damerau-Levenshtein iff they share a common
  * delete-form, so this is a complete lossless filter.
  *
- * Trade-off: a one-time build cost (a few hundred ms over a 117k-word dict on a
- * Pixel 6) and a few MB of RAM for the precomputed map, in exchange for ~50×
- * faster per-keystroke correction lookups. The build runs lazily when the first
- * correction is requested for a given dictionary, then stays cached for the
- * lifetime of the process.
+ * Trade-off: a one-time build cost and a few MB of RAM for the precomputed map,
+ * in exchange for ~50x faster per-keystroke correction lookups. Callers should
+ * pass a bounded, high-confidence correction vocabulary instead of a full
+ * recognition dictionary; indexing hundreds of thousands of rare words can exceed
+ * Android's IME heap during active typing.
  *
  * This shipping version is configured at distance = 1 only — covers the most
  * common typo class (single-key off-by-one) without the memory blow-up of
@@ -45,8 +45,11 @@ internal class SymSpellIndex private constructor(
          * and the per-entry overhead is one Java object header instead of a HashSet.
          */
         fun build(words: Iterable<String>): SymSpellIndex {
-            val builder = HashMap<String, MutableSet<String>>(2 * 1024 * 1024)
-            for (word in words) {
+            val wordList = if (words is Collection) words else words.toList()
+            val expectedDeleteCount = wordList.sumOf { word -> (word.length + 1).coerceAtMost(16) }
+            val initialCapacity = expectedDeleteCount.coerceIn(1024, 1_048_576)
+            val builder = HashMap<String, MutableSet<String>>(initialCapacity)
+            for (word in wordList) {
                 if (word.length < 2) continue
                 builder.getOrPut(word) { HashSet(2) }.add(word)
                 generateDeletes(word, MAX_DISTANCE).forEach { delForm ->

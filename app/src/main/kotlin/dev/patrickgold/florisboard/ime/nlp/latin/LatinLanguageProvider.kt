@@ -488,6 +488,7 @@ internal class LatinDictionaryStore(
 internal data class LatinDictionarySnapshot(
     val frequencies: Map<String, Int>,
     val sortedWords: List<String>,
+    val correctionWords: Collection<String> = frequencies.keys,
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
@@ -496,13 +497,14 @@ internal data class LatinDictionarySnapshot(
     fun frequencyFor(word: String): Double = frequencies.getOrDefault(word, 0).coerceIn(0, 255) / 255.0
 
     /**
-     * Lazily-built SymSpell delete-index over the dictionary's word list. First access
-     * triggers the build (~100-300 ms over 117k words on Pixel 6); subsequent calls are
-     * O(L²) for input length L. Used by the distance-1 correction path to skip the
-     * Norvig-style insertion/substitution explosion.
+     * Lazily-built SymSpell delete-index over the high-confidence correction vocabulary.
+     * The full English dictionary intentionally includes hundreds of thousands of rare
+     * words for recognition, but indexing all of them multiplies memory during typing.
+     * Rare supplemental words should prevent false autocorrect, not become aggressive
+     * correction candidates.
      */
     val symSpellIndex: SymSpellIndex by lazy {
-        SymSpellIndex.build(frequencies.keys)
+        SymSpellIndex.build(correctionWords)
     }
 
     private val topByFrequencyCache: List<String> by lazy {
@@ -538,12 +540,26 @@ internal data class LatinDictionarySnapshot(
     }
 
     companion object {
-        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList())
+        private const val CorrectionIndexMinFrequency = 96
+        private const val MaxCorrectionIndexWords = 96_000
+
+        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList(), emptyList())
 
         fun from(frequencies: Map<String, Int>): LatinDictionarySnapshot {
             return LatinDictionarySnapshot(
                 frequencies = frequencies,
                 sortedWords = frequencies.keys.sorted(),
+                correctionWords = frequencies.entries
+                    .asSequence()
+                    .filter { (word, frequency) -> word.length >= 2 && frequency >= CorrectionIndexMinFrequency }
+                    .sortedWith(
+                        compareByDescending<Map.Entry<String, Int>> { it.value }
+                            .thenBy { it.key.length }
+                            .thenBy { it.key }
+                    )
+                    .take(MaxCorrectionIndexWords)
+                    .map { it.key }
+                    .toList(),
             )
         }
     }

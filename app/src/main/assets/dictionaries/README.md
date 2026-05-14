@@ -28,6 +28,11 @@ The English dictionary is a merge of three sources:
 
 Total merged plain English list: ~520k words.
 
+The runtime Latin provider treats the expanded English list as recognition coverage. To avoid IME heap pressure while
+typing, the expensive SymSpell correction index is built only from high-confidence words at frequency `96+` (currently
+~95k words). Rare long-tail entries can still prevent false typo marking and unwanted autocorrect, but they do not
+become aggressive correction candidates.
+
 Profanity is filtered using the
 [LDNOOBW English bad-words list](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)
 (CC-BY 4.0).

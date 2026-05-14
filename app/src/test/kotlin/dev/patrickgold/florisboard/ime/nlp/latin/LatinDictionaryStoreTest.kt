@@ -140,6 +140,9 @@ class LatinDictionaryStoreTest : FunSpec({
         dictionary.contains("zyzzyvas") shouldBe true
         dictionary.frequencyFor("kubernetes") shouldBe 96 / 255.0
         dictionary.frequencyFor("zyzzyvas") shouldBe 59 / 255.0
+        (dictionary.correctionWords.size in 90_000..96_000) shouldBe true
+        dictionary.correctionWords.contains("swiftkey") shouldBe true
+        dictionary.correctionWords.contains("zyzzyvas") shouldBe false
     }
 })
 
