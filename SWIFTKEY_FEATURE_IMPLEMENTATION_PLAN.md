@@ -145,6 +145,16 @@ The seventh implementation slice starts the unified scorer and replay harness:
 The eighth implementation slice should move from synthetic replay to field-tunable local learning:
 
 - Add a debug-only typing trace recorder that captures typed text, candidate order, selected candidate, touch evidence, context words, and rejection events without network upload. The first trace recorder is now present and writes local JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
-- Add recency decay to personal bigram/trigram scoring so recent user phrases can beat stale history without unbounded growth.
+- Add recency decay to personal bigram/trigram scoring so recent user phrases can beat stale history without unbounded growth. This is now implemented with backward-compatible TSV migration and a shared 21-day half-life scorer for personal n-grams.
 - Add a `NeuralCandidateReranker` interface behind the current scorer. Keep the heuristic scorer as the always-on fallback and make any ONNX/TFLite model optional.
 - Acceptance: ranking changes can be evaluated against recorded local traces before enabling more aggressive neural or context scoring.
+
+## Ninth Slice
+
+The ninth implementation slice should turn recorded local evidence into safer tuning:
+
+- Convert selected `swiftkey_typing_traces.jsonl` rows into deterministic replay fixtures that preserve typed text, context words, candidate order, selected candidate, correction acceptance, and rejection events.
+- Add replay coverage for row-gap taps, multi-edit typos, mixed-language tokens, short glide ambiguity, and next-word prediction in empty fields.
+- Add sentence-position priors so cold-start predictions can prefer likely starts such as "I", "The", "This", and "What" without requiring personal history first.
+- Define the optional `NeuralCandidateReranker` contract, with heuristic pass-through as the default implementation and no model dependency in the base APK.
+- Acceptance: every future scorer weight change can be checked against real local traces plus synthetic SwiftKey-parity cases.
