@@ -19,17 +19,21 @@ package dev.patrickgold.florisboard.ime.media
 import android.annotation.SuppressLint
 import androidx.compose.foundation.gestures.awaitEachGesture
 import androidx.compose.foundation.gestures.awaitFirstDown
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.indication
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.interaction.collectIsPressedAsState
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.outlined.Backspace
+import androidx.compose.material.icons.filled.EmojiEmotions
+import androidx.compose.material.icons.filled.Image
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -50,6 +54,7 @@ import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiData
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiPaletteView
+import dev.patrickgold.florisboard.ime.media.sticker.StickerPaletteView
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
@@ -57,6 +62,11 @@ import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
 import org.florisboard.lib.snygg.ui.SnyggRow
+
+private enum class MediaPanelMode {
+    EMOJI,
+    STICKERS,
+}
 
 @SuppressLint("MutableCollectionMutableState")
 @Composable
@@ -67,6 +77,7 @@ fun MediaInputLayout(
     val keyboardManager by context.keyboardManager()
 
     var emojiLayoutDataMap by remember { mutableStateOf(EmojiData.Fallback) }
+    var activeMode by remember { mutableStateOf(MediaPanelMode.EMOJI) }
     LaunchedEffect(Unit) {
         emojiLayoutDataMap = EmojiData.get(context, "ime/media/emoji/root.txt")
     }
@@ -77,10 +88,19 @@ fun MediaInputLayout(
             .fillMaxWidth()
             .height(FlorisImeSizing.imeUiHeight()),
     ) {
-        EmojiPaletteView(
-            modifier = Modifier.weight(1f),
-            fullEmojiMappings = emojiLayoutDataMap,
-        )
+        when (activeMode) {
+            MediaPanelMode.EMOJI -> {
+                EmojiPaletteView(
+                    modifier = Modifier.weight(1f),
+                    fullEmojiMappings = emojiLayoutDataMap,
+                )
+            }
+            MediaPanelMode.STICKERS -> {
+                StickerPaletteView(
+                    modifier = Modifier.weight(1f),
+                )
+            }
+        }
         SnyggRow(
             elementName = FlorisImeUi.MediaBottomRow.elementName,
             modifier = Modifier
@@ -99,6 +119,25 @@ fun MediaInputLayout(
                 )
             }
             Spacer(modifier = Modifier.weight(1f))
+            MediaModeButton(
+                active = activeMode == MediaPanelMode.EMOJI,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f),
+                onClick = { activeMode = MediaPanelMode.EMOJI },
+            ) {
+                Icon(imageVector = Icons.Default.EmojiEmotions, contentDescription = null)
+            }
+            MediaModeButton(
+                active = activeMode == MediaPanelMode.STICKERS,
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .aspectRatio(1f),
+                onClick = { activeMode = MediaPanelMode.STICKERS },
+            ) {
+                Icon(imageVector = Icons.Default.Image, contentDescription = null)
+            }
+            Spacer(modifier = Modifier.weight(1f))
             KeyboardLikeButton(
                 elementName = FlorisImeUi.MediaBottomRowButton.elementName,
                 inputEventDispatcher = keyboardManager.inputEventDispatcher,
@@ -108,6 +147,34 @@ fun MediaInputLayout(
                 Icon(imageVector = Icons.AutoMirrored.Outlined.Backspace, contentDescription = null)
             }
         }
+    }
+}
+
+@Composable
+private fun MediaModeButton(
+    active: Boolean,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) {
+    val inputFeedbackController = LocalInputFeedbackController.current
+    val selector = if (active) {
+        SnyggSelector.FOCUS
+    } else {
+        SnyggSelector.NONE
+    }
+    SnyggBox(
+        elementName = FlorisImeUi.MediaBottomRowButton.elementName,
+        selector = selector,
+        clickAndSemanticsModifier = modifier.pointerInput(Unit) {
+            detectTapGestures {
+                inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                onClick()
+            }
+        },
+        contentAlignment = Alignment.Center,
+    ) {
+        content()
     }
 }
 

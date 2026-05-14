@@ -141,6 +141,14 @@
             android:exported="false">
         </provider>
 
+        <!-- Bundled sticker file provider -->
+        <provider
+            android:name="dev.patrickgold.florisboard.ime.media.sticker.StickerMediaProvider"
+            android:authorities="${applicationId}.provider.sticker"
+            android:grantUriPermissions="true"
+            android:exported="false">
+        </provider>
+
         <!-- Default file provider to share files from the "files" or "cache" dir -->
         <provider
             android:name="androidx.core.content.FileProvider"
