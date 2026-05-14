@@ -34,6 +34,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import dev.patrickgold.compose.tooltip.PlainTooltip
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
@@ -86,6 +90,15 @@ fun QuickActionButton(
         }
     }
 
+    // ROADMAP §6 N8.3 — smartbar action a11y label. Use the same human-readable
+    // display name we already render in tile mode (e.g. "Voice input", "Clipboard",
+    // "Settings"); falls back to the tooltip the QuickAction supplies so every
+    // smartbar slot announces something descriptive instead of "button".
+    val actionA11yLabel = remember(action, evaluator) {
+        action.computeDisplayName(evaluator = evaluator).ifBlank {
+            action.computeTooltip(evaluator).ifBlank { "Action" }
+        }
+    }
     PlainTooltip(action.computeTooltip(evaluator), enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
         SnyggBox(
             elementName = elementName,
@@ -94,6 +107,10 @@ fun QuickActionButton(
             modifier = modifier,
             clickAndSemanticsModifier = Modifier
                 .aspectRatio(1f)
+                .semantics {
+                    contentDescription = actionA11yLabel
+                    role = Role.Button
+                }
                 .indication(interactionSource, LocalIndication.current)
                 .pointerInput(action, isEnabled) {
                     awaitEachGesture {

@@ -38,6 +38,12 @@ import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -156,11 +162,33 @@ private fun CandidateItem(
     val attributes = mapOf("auto-commit" to if (candidate.isEligibleForAutoCommit) 1 else 0)
     val selector = if (isPressed) SnyggSelector.PRESSED else SnyggSelector.NONE
 
+    // ROADMAP §6 N8.3 — TalkBack semantic for each suggestion-strip slot. The
+    // candidate text is the primary announce; eligible-for-user-removal candidates
+    // also expose a "Remove from predictions" custom action so screen-reader users
+    // can do what long-press does for sighted users.
+    val candidateText = candidate.text.toString()
+    val candidateSemanticLabel = if (candidate is ClipboardSuggestionCandidate) {
+        "Paste from clipboard: $candidateText"
+    } else {
+        candidateText
+    }
     SnyggRow(
         elementName = elementName,
         attributes = attributes,
         selector = selector,
         modifier = modifier
+            .semantics {
+                contentDescription = candidateSemanticLabel
+                role = Role.Button
+                if (candidate.isEligibleForUserRemoval) {
+                    customActions = listOf(
+                        CustomAccessibilityAction(
+                            label = "Remove from predictions",
+                            action = { onLongPress() },
+                        ),
+                    )
+                }
+            }
             .pointerInput(Unit) {
                 awaitEachGesture {
                     val down = awaitFirstDown()
