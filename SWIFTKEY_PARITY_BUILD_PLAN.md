@@ -71,6 +71,7 @@
 - Items 4 and 6 now use a shared sentence-local context extractor: previous-word, phrase-prior, and trailing-locale evidence reset after sentence terminators/newlines so active-language context can switch naturally between sentences.
 - Item 6 now handles same-sentence language switching more like SwiftKey: trailing language context still protects `hola grac... -> gracias`, but if the active context language has no prefix candidate for the current token, a typed prefix such as `th...` can let English `the` outrank a Spanish-context autocorrect like `te`. The replay set covers both sides of that threshold.
 - Item 2 now includes three-word run-together repair coverage: safe forms such as `letmeknow`, `thankyoufor`, `infrontof`, `aswellas`, `fromnowon`, and `seeyousoon` can autocorrect to spaced phrases, and replay metrics include a dedicated three-word repair fixture.
+- Item 5 now has an additional contraction-glide rescue: cold-start phrase priors know `I'd like/rather/love`, and glide replay covers `id` + `like` recovering to `I'd`.
 
 ## Current Slice
 

@@ -81,6 +81,12 @@ class ColdStartNextWordPriorsTest : FunSpec({
             languageCode = "en-US",
             candidateWord = "going",
         ) shouldBe 0.44
+
+        ColdStartNextWordPriors.score(
+            textBeforeCursor = "I'd ",
+            languageCode = "en-US",
+            candidateWord = "like",
+        ) shouldBe 0.44
     }
 
     test("does not inject English priors for non-English languages") {

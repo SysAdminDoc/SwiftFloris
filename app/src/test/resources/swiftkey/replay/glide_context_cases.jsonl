@@ -2,6 +2,7 @@
 {"name":"contraction before going from were","tags":["glide-context-rescue","glide-contraction-rescue"],"committedWord":"were","candidateWords":["were","we're","where","we"],"nextWord":"going","contextScores":{"we're":0.44,"were":0.0,"where":0.0},"expectedReplacement":"we're"}
 {"name":"preposition before the","tags":["glide-context-rescue"],"committedWord":"in","candidateWords":["in","on","I'm"],"nextWord":"the","contextScores":{"on":0.72,"in":0.0},"expectedReplacement":"on"}
 {"name":"contraction before be","tags":["glide-context-rescue"],"committedWord":"ill","candidateWords":["ill","I'll","all"],"nextWord":"be","contextScores":{"i'll":0.80,"ill":0.0},"expectedReplacement":"I'll"}
+{"name":"contraction before like","tags":["glide-context-rescue","glide-contraction-rescue"],"committedWord":"id","candidateWords":["id","I'd","it"],"nextWord":"like","contextScores":{"i'd":0.44,"id":0.0,"it":0.0},"expectedReplacement":"I'd"}
 {"name":"weak context no override","tags":["glide-no-op"],"committedWord":"to","candidateWords":["to","go","too"],"nextWord":"the","contextScores":{"go":0.30,"to":0.22},"expectedReplacement":null}
 {"name":"long word no override","tags":["glide-no-op"],"committedWord":"through","candidateWords":["through","though"],"nextWord":"the","contextScores":{"though":1.0},"expectedReplacement":null}
 {"name":"punctuated next word no override","tags":["glide-no-op"],"committedWord":"in","candidateWords":["in","I'm"],"nextWord":".","contextScores":{"i'm":1.0},"expectedReplacement":null}
