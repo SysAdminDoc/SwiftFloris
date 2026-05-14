@@ -105,6 +105,7 @@ class NlpManager(context: Context) {
         private set(v) {
             _activeCandidatesFlow.value = v
         }
+    private var activeCandidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap()
 
     val debugOverlaySuggestionsInfos = LruCache<Long, Pair<String, SpellingResult>>(10)
     var debugOverlayVersion = MutableStateFlow(0)
@@ -285,6 +286,7 @@ class NlpManager(context: Context) {
             }
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
+                    activeCandidateSignals = candidateSignals
                     internalSuggestions = requestId to buildList {
                         addAll(wordSuggestions)
                         addAll(emojiSuggestions)
@@ -299,6 +301,7 @@ class NlpManager(context: Context) {
         scope.launch {
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
+                    activeCandidateSignals = emptyMap()
                     internalSuggestions = requestId to suggestions
                 }
             }
@@ -310,6 +313,7 @@ class NlpManager(context: Context) {
         scope.launch {
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
+                    activeCandidateSignals = emptyMap()
                     internalSuggestions = requestId to emptyList()
                 }
             }
@@ -352,6 +356,7 @@ class NlpManager(context: Context) {
 
         val activeCandidate = activeCandidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
+                SwiftKeyCandidateRanker.languageConfidenceAllowsAutoCommit(candidate, activeCandidateSignals) &&
                 !autoCommitSuppression.shouldSuppress(
                     currentWord = currentWord,
                     candidateText = candidate.text,
@@ -390,6 +395,7 @@ class NlpManager(context: Context) {
             currentWord = currentWord,
             candidates = activeCandidates,
             quickPredictionInsert = quickPredictionInsertEnabled,
+            candidateSignals = activeCandidateSignals,
         ) ?: return if (autoCorrectEnabled) {
             immediateAutoCommitCandidate(currentWord, currentWordStart)
         } else {

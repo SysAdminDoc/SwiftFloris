@@ -73,6 +73,7 @@
 - Item 2 now includes three-word run-together repair coverage: safe forms such as `letmeknow`, `thankyoufor`, `infrontof`, `aswellas`, `fromnowon`, and `seeyousoon` can autocorrect to spaced phrases, and replay metrics include a dedicated three-word repair fixture.
 - Item 5 now has an additional contraction-glide rescue: cold-start phrase priors know `I'd like/rather/love`, and glide replay covers `id` + `like` recovering to `I'd`.
 - Item 6 now covers shared-spelling bilingual literals: words known in multiple active locales damp one-language correction confidence, with replay coverage for `no` staying literal-safe against English corrections.
+- Item 6 now gates spacebar and punctuation autocommit with language confidence, so low-confidence multilingual corrections can remain visible without automatically replacing the user's typed token.
 
 ## Current Slice
 
