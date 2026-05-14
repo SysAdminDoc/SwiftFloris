@@ -53,8 +53,8 @@ Primary references:
 6. Flow needs broader real-world tuning.
    Current Flow can commit through space and now has conservative following-context rescue for short ambiguous words. SwiftKey-like glide still needs richer path fixtures, adaptive-touch weighting inside the gesture candidate list, and neural/beam-search-style rescoring to match SwiftKey on longer or multilingual swipes.
 
-7. Trust UX is underbuilt.
-   SwiftKey exposes personalization/back-up concepts. SwiftFloris intentionally avoids network sync, but should make local learning visible with reset controls for learned words, phrase history, and adaptive touch.
+7. Trust UX is improving but still needs replay/export polish.
+   SwiftKey exposes personalization/back-up concepts. SwiftFloris intentionally avoids network sync, and Typing stats now makes local phrase history, correction memory, and adaptive touch visible and resettable. Remaining trust work is a clearer developer/testing trace export path plus richer accuracy deltas from replay evidence.
 
 ## Immediate Implementation Direction
 

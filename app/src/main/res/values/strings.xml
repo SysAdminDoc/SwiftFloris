@@ -656,9 +656,24 @@
     <string name="settings__typing_stats__group_actions" comment="Section header on the Typing stats screen">Actions</string>
     <string name="settings__typing_stats__words_learned" comment="Stat row title">Words learned</string>
     <string name="settings__typing_stats__bigrams_disk" comment="Stat row title">Bigram store on disk</string>
-    <string name="settings__typing_stats__adaptive_touch_samples" comment="Stat row title">Adaptive touch samples (this session)</string>
+    <string name="settings__typing_stats__phrase_pairs" comment="Stat row title">Phrase pairs learned</string>
+    <string name="settings__typing_stats__phrase_triples" comment="Stat row title">Phrase triples learned</string>
+    <string name="settings__typing_stats__correction_decisions" comment="Stat row title">Correction decisions learned</string>
+    <string name="settings__typing_stats__adaptive_touch_samples" comment="Stat row title">Adaptive touch samples</string>
     <string name="settings__typing_stats__refresh" comment="Action row title">Refresh</string>
     <string name="settings__typing_stats__loading" comment="Placeholder shown while a stat is loading">Loading…</string>
+    <string name="settings__typing_stats__reset_phrase_history" comment="Action row title">Reset phrase predictions</string>
+    <string name="settings__typing_stats__reset_phrase_history__summary" comment="Action row summary">Clears learned phrase pairs and triples. Saved dictionary words stay in place.</string>
+    <string name="settings__typing_stats__reset_phrase_history__toast" comment="Toast shown after resetting phrase prediction learning">Phrase prediction learning reset.</string>
+    <string name="settings__typing_stats__reset_correction_memory" comment="Action row title">Reset correction memory</string>
+    <string name="settings__typing_stats__reset_correction_memory__summary" comment="Action row summary">Clears accepted and rejected autocorrect outcomes.</string>
+    <string name="settings__typing_stats__reset_correction_memory__toast" comment="Toast shown after resetting correction outcome learning">Correction memory reset.</string>
+    <string name="settings__typing_stats__reset_adaptive_touch" comment="Action row title">Reset adaptive touch model</string>
+    <string name="settings__typing_stats__reset_adaptive_touch__summary" comment="Action row summary">Clears learned tap offsets for every keyboard layout.</string>
+    <string name="settings__typing_stats__reset_adaptive_touch__toast" comment="Toast shown after resetting adaptive touch learning">Adaptive touch model reset.</string>
+    <string name="settings__typing_stats__reset_all_learning" comment="Action row title">Reset all typing learning</string>
+    <string name="settings__typing_stats__reset_all_learning__summary" comment="Action row summary">Clears phrase predictions, correction memory, and adaptive touch samples. Saved dictionary words stay in place.</string>
+    <string name="settings__typing_stats__reset_all_learning__toast" comment="Toast shown after resetting all typing learning">Typing learning reset.</string>
     <string name="pref__dictionary__group_system__label" comment="Preference group title">System dictionary</string>
     <string name="pref__dictionary__group_internal__label" comment="Preference group title">SwiftFloris dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>

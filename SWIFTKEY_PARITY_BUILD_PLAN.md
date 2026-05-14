@@ -59,9 +59,10 @@
 - Item 6 is expanded: typed-word known detection now checks every active subtype locale, candidate dictionary frequency is scored across active locales, and a pure `MultilingualTokenScorer` lowers wrong-language correction confidence when the typed token is recognized in another enabled language.
 - Item 7 now has the optional neural reranker seam: `NeuralCandidateReranker` can reorder scored candidates while the shipped default remains a no-op heuristic fallback.
 - The first debug trace recorder is implemented and enriched: creating `<filesDir>/swiftkey_trace.enabled` enables local JSONL capture of suggestion scores, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events at `<filesDir>/swiftkey_typing_traces.jsonl`.
+- Item 8 now exposes the learned-model trust surface: Typing stats shows learned dictionary words, bigram/trigram counts plus disk usage, correction outcome prior count, and adaptive-touch samples, with local reset actions for phrase predictions, correction memory, adaptive touch, and all non-dictionary typing learning.
 
 ## Current Slice
 
-Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote more captured JSONL traces into checked-in replay fixtures and expose stronger trust/reset controls for the learned models.
+Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote more captured JSONL traces into checked-in replay fixtures and use them to tune correction thresholds and glide rescoring.
 
-Current next step: add user-visible reset controls for learned phrase history, correction outcomes, and adaptive touch state so the stronger local learning model stays understandable and reversible.
+Current next step: add checked-in replay fixtures for real typing mistakes and wire the debug trace export path into a visible developer/testing surface without weakening the no-network contract.

@@ -53,4 +53,28 @@ class CorrectionOutcomePriorsTest : FunSpec({
         priors.signal("teh", "ten") shouldBe CorrectionOutcomeSignal()
         priors.signal("the", "the") shouldBe CorrectionOutcomeSignal()
     }
+
+    test("entry count tracks learned pairs and reset clears them") {
+        val priors = CorrectionOutcomePriors.inMemory()
+
+        priors.recordAccepted("teh", "the")
+        priors.recordRejected("gello", "hello")
+
+        priors.entryCount() shouldBe 2
+
+        priors.reset()
+
+        priors.entryCount() shouldBe 0
+        priors.signal("teh", "the") shouldBe CorrectionOutcomeSignal()
+    }
+
+    test("awaited reset clears learned pairs before returning") {
+        val priors = CorrectionOutcomePriors.inMemory()
+
+        priors.recordAccepted("teh", "the")
+
+        priors.resetAndAwait()
+
+        priors.entryCount() shouldBe 0
+    }
 })
