@@ -1,4 +1,4 @@
-# SwiftFloris v1.7.8
+# SwiftFloris v1.7.9
 
 Released: 2026-05-14
 
