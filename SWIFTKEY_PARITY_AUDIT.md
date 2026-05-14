@@ -39,8 +39,8 @@ Primary references:
 2. Candidate ranking is still heuristic, but it now has the right decoder inputs.
    The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice, with a neural-reranker seam ready for a future local model. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
 
-3. Touch correction still needs outcome-aware calibration.
-   Gap rescue, persisted adaptive offsets, transient nearby-key evidence, adjacent transposition scoring, and bounded insertion/deletion path scoring now help. The remaining touch gap is stronger accepted/rejected-correction priors plus short-glide ambiguity recovery.
+3. Touch correction still needs broader trace calibration.
+   Gap rescue, persisted adaptive offsets, transient nearby-key evidence, adjacent transposition scoring, bounded insertion/deletion path scoring, and accepted/rejected outcome priors now help. The remaining touch gap is broader real-trace calibration plus short-glide ambiguity recovery.
 
 4. Next-word prediction needs richer context.
    Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and broader context priors.
@@ -67,9 +67,9 @@ Primary references:
 
 Expand the scorer/replay foundation before attaching an optional neural reranker:
 
-- Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
+- Keep tuning offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Keep expanding bounded multi-edit scoring from checked-in trace evidence rather than hand-tuning weights.
 - Keep promoting debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
-- Add deterministic replay tests for multilingual words, glide paths, accepted/rejected touch priors, and next-word prediction.
+- Add deterministic replay tests for multilingual words, glide paths, and next-word prediction.
 - Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
 - Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.

@@ -176,15 +176,24 @@ The eleventh implementation slice uses replay evidence to improve touch correcti
 
 - Expand touch scoring from equal-length substitutions and adjacent transpositions to bounded insertion/deletion alignment where key evidence supports the edit. This is now implemented for conservative one- and two-edit paths.
 - Add fixture cases for missing-letter, extra-letter, and double-letter mistakes that users commonly hit while typing fast. These cases now live in the checked-in JSONL replay fixture and direct ranker tests.
-- Feed rejected correction pairs back into touch evidence weighting so repeated backspace rejection lowers the spatial score for that pair.
+- Feed rejected correction pairs back into touch evidence weighting so repeated backspace rejection lowers the spatial score for that pair. This is now implemented through local correction outcome priors.
 - Add a short-glide ambiguity fixture so Flow candidates can stay recoverable until the following word gives context.
-- Acceptance: row-gap, transposition, and insertion/deletion corrections are replay-protected before any neural reranker is attached. Short-glide correction and rejected-pair touch weighting remain open.
+- Acceptance: row-gap, transposition, insertion/deletion, and accepted/rejected correction priors are replay-protected before any neural reranker is attached. Short-glide correction remains open.
 
 ## Twelfth Slice
 
-The twelfth implementation slice should turn correction outcomes into spatial priors:
+The twelfth implementation slice turns correction outcomes into spatial priors:
 
-- Feed accepted corrections into touch weighting so repeatedly accepted pairs rise faster than generic nearby-key evidence.
-- Feed rejected corrections into touch weighting so repeated backspace rejection lowers spatial confidence for that typed/candidate pair.
-- Add replay fixtures for accepted correction reinforcement, rejected spatial correction demotion, and short-glide ambiguity after the next word starts.
-- Acceptance: the scorer can distinguish a one-off plausible touch correction from a correction the user has repeatedly accepted or rejected.
+- Feed accepted corrections into touch weighting so repeatedly accepted pairs rise faster than generic nearby-key evidence. This now uses a local bounded outcome-prior store.
+- Feed rejected corrections into touch weighting so repeated backspace rejection lowers spatial confidence for that typed/candidate pair. This is now applied before role selection, so rejected pairs stop masquerading as spatial corrections.
+- Add replay fixtures for accepted correction reinforcement, rejected spatial correction demotion, and short-glide ambiguity after the next word starts. The accepted/rejected fixtures now exist.
+- Acceptance: the scorer can distinguish a one-off plausible touch correction from a correction the user has repeatedly accepted or rejected. Short-glide context rescue remains the next open item.
+
+## Thirteenth Slice
+
+The thirteenth implementation slice should improve Flow/glide parity:
+
+- Add a short-glide ambiguity replay fixture where the previous glide candidate is unclear until the next word starts.
+- Keep the previous Flow candidate recoverable long enough for following context to rescore it.
+- Feed adaptive touch offsets and correction outcome priors into the Flow candidate scorer where available.
+- Acceptance: short Flow words can be corrected by immediate phrase context instead of being locked too early.

@@ -52,12 +52,13 @@
 - Item 3 is expanded: deterministic replay tests now cover adjacent-key correction, known-word literal preservation, quick prediction spacebar behavior, dictionary-frequency ranking, personal phrase-context ranking, and rejected autocorrect demotion.
 - Item 3 now has a checked-in trace replay fixture path: anonymized JSONL suggestion traces can be parsed by local JVM tests and replayed through the ranker, currently covering row-gap adjacent correction, adjacent transposition correction, missing-letter correction, extra-letter correction, double-letter correction, mixed-language literal protection, empty-field quick prediction insertion, and rejected-correction demotion.
 - Item 3 also protects bounded touch-edit alignment: the scorer now handles same-length nearby-key substitution, adjacent transposition, interior missing letters, supported extra letters, and accidental double letters before promoting a candidate to `SpatialCorrection`.
+- Item 3 now feeds correction outcomes back into spatial ranking: accepted typed/corrected pairs build local confidence, rejected pairs dampen spatial confidence before role selection, and both are represented in JSONL replay fixtures.
 - Item 4 now has recency-aware personal context scoring plus a first English cold-start prior layer: bigram and trigram stores persist `lastSeenMs`, upgrade legacy TSV rows on flush, rank personal continuations with a 21-day half-life, and fall back to curated sentence-start/common-continuation priors before raw dictionary frequency.
 - Item 7 now has the optional neural reranker seam: `NeuralCandidateReranker` can reorder scored candidates while the shipped default remains a no-op heuristic fallback.
 - The first debug trace recorder is implemented and enriched: creating `<filesDir>/swiftkey_trace.enabled` enables local JSONL capture of suggestion scores, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events at `<filesDir>/swiftkey_typing_traces.jsonl`.
 
 ## Current Slice
 
-Keep expanding items 2, 3, and 4 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote captured JSONL traces into checked-in replay fixtures, add short-glide and multilingual replay coverage, and start feeding accepted/rejected correction priors back into touch scoring.
+Keep expanding items 2, 3, and 4 until every SwiftKey-like typing decision has a replay case. The next concrete work is to promote captured JSONL traces into checked-in replay fixtures and add short-glide, multilingual, and richer next-word replay coverage.
 
-Current next step: feed accepted/rejected correction priors into spatial weighting, then add short-glide ambiguity fixtures so Flow candidates can stay recoverable until the following word gives context.
+Current next step: add short-glide ambiguity fixtures so Flow candidates can stay recoverable until the following word gives context, then broaden sentence-position and phrase priors.

@@ -42,6 +42,8 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "missing-letter correction",
             "extra-letter correction",
             "double-letter correction",
+            "accepted correction prior promotion",
+            "rejected spatial correction demotion",
         )
     }
 
@@ -148,6 +150,7 @@ private object SwiftKeyTraceReplayFixtureParser {
                         dictionaryFrequency = item.getDouble("dictionaryFrequency", 0.0),
                         contextProbability = item.getDouble("contextProbability", 0.0),
                         languageConfidence = item.getDouble("languageConfidence", 1.0),
+                        acceptedCorrectionConfidence = item.getDouble("acceptedCorrectionConfidence", 0.0),
                         rejectionPenalty = item.getDouble("rejectionPenalty", 0.0),
                     ),
                 )

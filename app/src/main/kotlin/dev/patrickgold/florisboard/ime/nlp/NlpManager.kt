@@ -87,6 +87,7 @@ class NlpManager(context: Context) {
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
     private val frequencyCache = LruCache<String, Double>(5000)
     private val autoCommitSuppression = AutoCommitSuppression()
+    private val correctionOutcomePriors = CorrectionOutcomePriors.get(appContext)
     private val touchDecoderEvidence = TouchDecoderEvidenceBuffer()
 
     private val suggestionsRequestCounter = AtomicLong(0L)
@@ -425,10 +426,15 @@ class NlpManager(context: Context) {
     }
 
     fun rememberAcceptedAutoCommit(content: EditorContent, candidate: SuggestionCandidate) {
+        val originalText = content.autoCommitWord()
         autoCommitSuppression.rememberAccepted(
-            originalText = content.autoCommitWord(),
+            originalText = originalText,
             correctedText = candidate.text,
             wordStart = content.autoCommitWordStart(),
+        )
+        correctionOutcomePriors.recordAccepted(
+            originalText = originalText,
+            correctedText = candidate.text,
         )
         typingTraceRecorder.recordAutoCommitAccepted(content, candidate)
     }
@@ -440,6 +446,12 @@ class NlpManager(context: Context) {
             cursorPosition = cursorPosition,
         )
         if (rejected) {
+            autoCommitSuppression.consumeLastRejectedPair()?.let { pair ->
+                correctionOutcomePriors.recordRejected(
+                    originalText = pair.original,
+                    correctedText = pair.corrected,
+                )
+            }
             typingTraceRecorder.recordAutoCommitRejected(content)
         }
         return rejected
@@ -551,16 +563,24 @@ class NlpManager(context: Context) {
                     typedWordKnown && candidate.isEligibleForAutoCommit -> 0.35
                     else -> 0.65
                 }
+                val outcomeSignal = correctionOutcomePriors.signal(
+                    originalText = currentWord,
+                    correctedText = candidateText,
+                )
                 put(
                     key,
                     SwiftKeyCandidateSignals(
                         dictionaryFrequency = dictionaryFrequency,
                         contextProbability = contextProbability,
                         languageConfidence = languageConfidence,
-                        rejectionPenalty = autoCommitSuppression.rejectedPairPenalty(
-                            currentWord = currentWord,
-                            candidateText = candidateText,
-                            currentWordStart = currentWordStart,
+                        acceptedCorrectionConfidence = outcomeSignal.acceptedConfidence,
+                        rejectionPenalty = maxOf(
+                            autoCommitSuppression.rejectedPairPenalty(
+                                currentWord = currentWord,
+                                candidateText = candidateText,
+                                currentWordStart = currentWordStart,
+                            ),
+                            outcomeSignal.rejectedConfidence,
                         ),
                     ),
                 )
