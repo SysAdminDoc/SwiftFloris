@@ -41,6 +41,7 @@ import kotlinx.serialization.json.Json
 import org.florisboard.lib.android.readText
 import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.abs
 import kotlin.math.ln
 import kotlin.math.roundToInt
 
@@ -499,6 +500,7 @@ internal data class LatinDictionarySnapshot(
     val frequencies: Map<String, Int>,
     val sortedWords: List<String>,
     val correctionWords: Collection<String> = frequencies.keys,
+    val distanceTwoCorrectionWords: Collection<String> = correctionWords,
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
@@ -515,6 +517,15 @@ internal data class LatinDictionarySnapshot(
      */
     val symSpellIndex: SymSpellIndex by lazy {
         SymSpellIndex.build(correctionWords)
+    }
+
+    /**
+     * Bounded distance-2 index over common correction words only. The full recognition
+     * dictionary can exceed 500k English words; indexing all of it would waste IME heap
+     * on rare words that should only block false autocorrect, not drive corrections.
+     */
+    val symSpellDistance2Index: SymSpellIndex by lazy {
+        SymSpellIndex.build(distanceTwoCorrectionWords, maxDistance = 2)
     }
 
     private val topByFrequencyCache: List<String> by lazy {
@@ -552,22 +563,35 @@ internal data class LatinDictionarySnapshot(
     companion object {
         private const val CorrectionIndexMinFrequency = 96
         private const val MaxCorrectionIndexWords = 96_000
+        private const val DistanceTwoCorrectionIndexMinFrequency = 192
+        private const val MaxDistanceTwoCorrectionIndexWords = 24_000
+        private const val MaxDistanceTwoCorrectionWordLength = 12
 
-        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList(), emptyList())
+        val Empty = LatinDictionarySnapshot(emptyMap(), emptyList(), emptyList(), emptyList())
 
         fun from(frequencies: Map<String, Int>): LatinDictionarySnapshot {
+            val correctionEntries = frequencies.entries
+                .asSequence()
+                .filter { (word, frequency) -> word.length >= 2 && frequency >= CorrectionIndexMinFrequency }
+                .sortedWith(
+                    compareByDescending<Map.Entry<String, Int>> { it.value }
+                        .thenBy { it.key.length }
+                        .thenBy { it.key }
+                )
+                .take(MaxCorrectionIndexWords)
+                .toList()
             return LatinDictionarySnapshot(
                 frequencies = frequencies,
                 sortedWords = frequencies.keys.sorted(),
-                correctionWords = frequencies.entries
+                correctionWords = correctionEntries
+                    .map { it.key },
+                distanceTwoCorrectionWords = correctionEntries
                     .asSequence()
-                    .filter { (word, frequency) -> word.length >= 2 && frequency >= CorrectionIndexMinFrequency }
-                    .sortedWith(
-                        compareByDescending<Map.Entry<String, Int>> { it.value }
-                            .thenBy { it.key.length }
-                            .thenBy { it.key }
-                    )
-                    .take(MaxCorrectionIndexWords)
+                    .filter { (word, frequency) ->
+                        word.length in 3..MaxDistanceTwoCorrectionWordLength &&
+                            frequency >= DistanceTwoCorrectionIndexMinFrequency
+                    }
+                    .take(MaxDistanceTwoCorrectionIndexWords)
                     .map { it.key }
                     .toList(),
             )
@@ -601,7 +625,6 @@ internal object LatinDictionarySuggester {
      * ~3,000 SCOWL words.
      */
     private const val AutoCommitMinFrequencyDistance2 = 0.92
-    private val Alphabet = ('a'..'z').toList()
 
     fun suggest(
         rawWord: String,
@@ -681,7 +704,7 @@ internal object LatinDictionarySuggester {
         val candidateDistances = if (oneEditCandidates.isNotEmpty()) {
             oneEditCandidates.map { it to 1 }
         } else if (word.length <= MaxTwoEditWordLength) {
-            knownEdits2(word, dictionary).map { it to 2 }
+            knownEdits2(word, dictionary)
         } else {
             emptyList()
         }
@@ -810,39 +833,47 @@ internal object LatinDictionarySuggester {
             .filterTo(HashSet()) { it != word }
     }
 
-    private fun knownEdits2(word: String, dictionary: LatinDictionarySnapshot): Set<String> {
-        val known = mutableSetOf<String>()
-        for (edit in edits1(word)) {
-            for (candidate in edits1(edit)) {
-                if (dictionary.contains(candidate)) {
-                    known.add(candidate)
-                }
+    private fun knownEdits2(word: String, dictionary: LatinDictionarySnapshot): List<Pair<String, Int>> {
+        return dictionary.symSpellDistance2Index.candidates(word)
+            .asSequence()
+            .filter { candidate -> candidate != word }
+            .mapNotNull { candidate ->
+                val distance = boundedDamerauLevenshteinDistance(word, candidate, maxDistance = 2)
+                    ?: return@mapNotNull null
+                candidate to distance
             }
-        }
-        return known
+            .filter { (_, distance) -> distance in 1..2 }
+            .toList()
     }
 
-    private fun edits1(word: String): Set<String> {
-        val edits = mutableSetOf<String>()
-        for (i in 0..word.length) {
-            val left = word.substring(0, i)
-            val right = word.substring(i)
-            if (right.isNotEmpty()) {
-                edits.add(left + right.drop(1))
-            }
-            if (right.length > 1) {
-                edits.add(left + right[1] + right[0] + right.drop(2))
-            }
-            if (right.isNotEmpty()) {
-                for (char in Alphabet) {
-                    edits.add(left + char + right.drop(1))
+    private fun boundedDamerauLevenshteinDistance(left: String, right: String, maxDistance: Int): Int? {
+        if (abs(left.length - right.length) > maxDistance) return null
+        if (left == right) return 0
+        val rows = Array(left.length + 1) { IntArray(right.length + 1) }
+        for (i in 0..left.length) rows[i][0] = i
+        for (j in 0..right.length) rows[0][j] = j
+        for (i in 1..left.length) {
+            var rowMin = maxDistance + 1
+            for (j in 1..right.length) {
+                val cost = if (left[i - 1] == right[j - 1]) 0 else 1
+                var value = minOf(
+                    rows[i - 1][j] + 1,
+                    rows[i][j - 1] + 1,
+                    rows[i - 1][j - 1] + cost,
+                )
+                if (i > 1 &&
+                    j > 1 &&
+                    left[i - 1] == right[j - 2] &&
+                    left[i - 2] == right[j - 1]
+                ) {
+                    value = minOf(value, rows[i - 2][j - 2] + 1)
                 }
+                rows[i][j] = value
+                rowMin = minOf(rowMin, value)
             }
-            for (char in Alphabet) {
-                edits.add(left + char + right)
-            }
+            if (rowMin > maxDistance) return null
         }
-        return edits
+        return rows[left.length][right.length].takeIf { it <= maxDistance }
     }
 
     private fun correctionConfidence(frequency: Double, distance: Int): Double {
