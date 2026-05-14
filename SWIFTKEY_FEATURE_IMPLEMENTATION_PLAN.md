@@ -259,7 +259,8 @@ The nineteenth implementation slice should tune the scorer itself:
 
 The twentieth implementation slice should expand real-world replay traces:
 
-- Capture and anonymize more local traces from device typing sessions using the Typing stats trace controls.
-- Add fixture categories for undo/retype loops, phrase-continuation mistakes, longer glide ambiguity, and active-locale switching.
+- Typing stats can now share sanitized replay fixtures derived from local trace capture, not just the raw diagnostic trace.
+- `SwiftKeyTraceFixtureExporter` drops timestamps, cursor lengths, and previous-word context while preserving replay-relevant candidate evidence and accepted/rejected outcomes.
+- Remaining work: capture more local traces from device typing sessions and add fixture categories for undo/retype loops, phrase-continuation mistakes, longer glide ambiguity, and active-locale switching.
 - Compare aggregate metrics before and after any scoring change so tuning is evidence-led rather than constant guessing.
-- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome.
+- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome. This is partially met by the fixture export workflow.

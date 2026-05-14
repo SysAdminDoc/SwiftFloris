@@ -76,6 +76,25 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         }.getOrNull()
     }
 
+    fun copyReplayFixtureFileToShareCache(): File? {
+        if (!traceFile.exists() || traceFile.length() <= 0L) {
+            return null
+        }
+        val fixtures = runCatching {
+            SwiftKeyTraceFixtureExporter.exportSuggestionFixtures(traceFile.readText())
+        }.getOrDefault(emptyList())
+        if (fixtures.isEmpty()) {
+            return null
+        }
+        val exportDir = File(appContext.cacheDir, TraceExportCacheDir)
+        exportDir.mkdirs()
+        val exportFile = File(exportDir, ReplayFixtureFileName)
+        return runCatching {
+            exportFile.writeText(fixtures.joinToString(separator = "\n", postfix = "\n"))
+            exportFile
+        }.getOrNull()
+    }
+
     fun recordSuggestion(
         content: EditorContent,
         context: SwiftKeyDecoderContext,
@@ -198,6 +217,7 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
     private companion object {
         const val EnableFileName = "swiftkey_trace.enabled"
         const val TraceFileName = "swiftkey_typing_traces.jsonl"
+        const val ReplayFixtureFileName = "swiftkey_trace_replay_cases.jsonl"
         const val TraceExportCacheDir = "swiftkey-trace-export"
         const val MaxPreviousWordsInTrace = 3
     }

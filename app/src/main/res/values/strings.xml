@@ -684,6 +684,10 @@
     <string name="settings__typing_stats__trace_share__summary" comment="Action row summary">Exports the local JSONL replay file for debugging.</string>
     <string name="settings__typing_stats__trace_share_empty__toast" comment="Toast shown when trace sharing is requested without a trace file">No typing trace has been captured yet.</string>
     <string name="settings__typing_stats__trace_share_failed__toast" comment="Toast shown when trace sharing fails">Could not share the typing trace.</string>
+    <string name="settings__typing_stats__trace_fixture_share" comment="Action row title">Share replay fixtures</string>
+    <string name="settings__typing_stats__trace_fixture_share__summary" comment="Action row summary">Exports sanitized JSONL fixture cases derived from the trace.</string>
+    <string name="settings__typing_stats__trace_fixture_share_empty__toast" comment="Toast shown when fixture sharing is requested without convertible trace events">No replay fixtures could be created from this trace.</string>
+    <string name="settings__typing_stats__trace_fixture_share_failed__toast" comment="Toast shown when fixture sharing fails">Could not share replay fixtures.</string>
     <string name="settings__typing_stats__trace_clear" comment="Action row title">Clear typing trace</string>
     <string name="settings__typing_stats__trace_clear__summary" comment="Action row summary">Deletes the local replay file from this device.</string>
     <string name="settings__typing_stats__trace_clear__toast" comment="Toast shown after clearing local trace capture file">Typing trace cleared.</string>

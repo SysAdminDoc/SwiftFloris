@@ -77,13 +77,24 @@ fun TypingStatsScreen() = FlorisScreen {
         }
     }
 
-    fun shareTraceFile() {
+    fun shareTraceFile(asReplayFixtures: Boolean = false) {
         scope.launch {
             val exportFile = withContext(Dispatchers.IO) {
-                SwiftKeyTypingTraceRecorder(context).copyTraceFileToShareCache()
+                val recorder = SwiftKeyTypingTraceRecorder(context)
+                if (asReplayFixtures) {
+                    recorder.copyReplayFixtureFileToShareCache()
+                } else {
+                    recorder.copyTraceFileToShareCache()
+                }
             }
             if (exportFile == null) {
-                context.showLongToast(R.string.settings__typing_stats__trace_share_empty__toast)
+                context.showLongToast(
+                    if (asReplayFixtures) {
+                        R.string.settings__typing_stats__trace_fixture_share_empty__toast
+                    } else {
+                        R.string.settings__typing_stats__trace_share_empty__toast
+                    }
+                )
                 return@launch
             }
             runCatching {
@@ -95,7 +106,13 @@ fun TypingStatsScreen() = FlorisScreen {
                     .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 context.startActivity(shareIntent)
             }.onFailure {
-                context.showLongToast(R.string.settings__typing_stats__trace_share_failed__toast)
+                context.showLongToast(
+                    if (asReplayFixtures) {
+                        R.string.settings__typing_stats__trace_fixture_share_failed__toast
+                    } else {
+                        R.string.settings__typing_stats__trace_share_failed__toast
+                    }
+                )
             }
         }
     }
@@ -224,6 +241,12 @@ fun TypingStatsScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__typing_stats__trace_share__summary),
                 enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
                 onClick = { shareTraceFile() },
+            )
+            Preference(
+                title = stringRes(R.string.settings__typing_stats__trace_fixture_share),
+                summary = stringRes(R.string.settings__typing_stats__trace_fixture_share__summary),
+                enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
+                onClick = { shareTraceFile(asReplayFixtures = true) },
             )
             Preference(
                 title = stringRes(R.string.settings__typing_stats__trace_clear),
