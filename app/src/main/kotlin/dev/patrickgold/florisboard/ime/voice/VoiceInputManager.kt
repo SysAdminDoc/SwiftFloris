@@ -238,6 +238,8 @@ class VoiceInputManager(private val context: Context) {
         modelPreference: VoiceModelPreference,
         ramProfile: VoiceDeviceRamProfile = VoiceModelSelector.detectDeviceRamProfile(context),
         commandModeRequested: Boolean = false,
+        hasEmbeddedWhisperModel: Boolean = false,
+        hasVoskStreamingModel: Boolean = false,
     ): VoiceRecognitionEngineSelection {
         return VoiceRecognitionEngineSelector.select(
             request = VoiceRecognitionEngineRequest(
@@ -247,8 +249,8 @@ class VoiceInputManager(private val context: Context) {
                 commandModeRequested = commandModeRequested,
             ),
             availability = VoiceRecognitionEngineAvailability(
-                hasEmbeddedWhisperModel = false,
-                hasVoskStreamingModel = false,
+                hasEmbeddedWhisperModel = hasEmbeddedWhisperModel,
+                hasVoskStreamingModel = hasVoskStreamingModel,
                 hasSwiftFlorisMicrophonePermission = isSwiftFlorisMicrophonePermissionGranted(),
                 externalVoiceInputReady = isVoiceInputReadyForHandoff(),
             ),
