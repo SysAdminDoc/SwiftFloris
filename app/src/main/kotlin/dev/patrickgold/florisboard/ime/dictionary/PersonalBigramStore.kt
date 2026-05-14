@@ -143,6 +143,23 @@ class PersonalBigramStore private constructor(private val context: Context) {
     }
 
     /**
+     * Scores [currWord] as a next-word continuation after [prevWord]. The result is
+     * normalized against the most common learned continuation for the same previous
+     * word, so it can be blended with dictionary and touch evidence by the decoder.
+     */
+    suspend fun score(prevWord: String, currWord: String, locale: FlorisLocale): Double {
+        val prev = normalize(prevWord)
+        val curr = normalize(currWord)
+        if (prev.isEmpty() || curr.isEmpty()) return 0.0
+        val table = ensureLoaded(locale.languageTag())
+        val nextMap = synchronized(table) { table[prev]?.toMap() } ?: return 0.0
+        val count = nextMap[curr] ?: return 0.0
+        val maxCount = nextMap.values.maxOrNull() ?: return 0.0
+        if (maxCount <= 0) return 0.0
+        return (count.toDouble() / maxCount.toDouble()).coerceIn(0.0, 1.0)
+    }
+
+    /**
      * Forces an immediate flush of [localeTag]'s table to disk. Called by the
      * commit-count threshold and from the IME service shutdown path.
      */

@@ -161,6 +161,63 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         (hello.score.total > fello.score.total) shouldBe true
     }
 
+    test("scoreCandidates uses dictionary frequency as a lexical prior") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "th",
+                signals = mapOf(
+                    "there" to SwiftKeyCandidateSignals(dictionaryFrequency = 0.92),
+                    "thrum" to SwiftKeyCandidateSignals(dictionaryFrequency = 0.10),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("thrum", confidence = 0.94),
+                candidate("there", confidence = 0.48),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("th", "there", "thrum")
+    }
+
+    test("scoreCandidates lets personal phrase context beat generic confidence") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "",
+                signals = mapOf(
+                    "brown" to SwiftKeyCandidateSignals(contextProbability = 1.0),
+                    "bring" to SwiftKeyCandidateSignals(contextProbability = 0.0),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("bring", confidence = 0.95),
+                candidate("brown", confidence = 0.40),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("brown", "bring")
+    }
+
+    test("scoreCandidates demotes a previously rejected autocorrect pair") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "teh",
+                signals = mapOf(
+                    "the" to SwiftKeyCandidateSignals(rejectionPenalty = 1.0),
+                    "ten" to SwiftKeyCandidateSignals(rejectionPenalty = 0.0),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("the", confidence = 0.98, autoCommit = true),
+                candidate("ten", confidence = 0.52, autoCommit = true),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("teh", "ten", "the")
+    }
+
     test("spatial evidence does not make spacebar replace a known typed word") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext(
@@ -225,12 +282,14 @@ private fun decoderContext(
     maxCandidateCount: Int = 8,
     typedWordKnown: Boolean = false,
     touchEvidence: TouchDecoderEvidence? = null,
+    signals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
 ): SwiftKeyDecoderContext {
     return SwiftKeyDecoderContext(
         currentWord = currentWord,
         maxCandidateCount = maxCandidateCount,
         typedWordKnown = typedWordKnown,
         touchEvidence = touchEvidence,
+        candidateSignals = signals,
     )
 }
 

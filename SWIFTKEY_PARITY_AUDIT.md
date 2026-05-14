@@ -23,15 +23,16 @@ Primary references:
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
-- Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
+- Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
+- A disabled-by-default local trace recorder can capture scored candidate order and accepted/rejected autocorrect events to JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
 
 ## Gaps That Still Matter
 
 1. Spacebar semantics need to stay centered on the middle prediction.
    SwiftKey exposes three modes: insert space, complete current word, or always insert prediction. SwiftFloris now has all three user-facing modes, including Quick prediction insert, but still needs broader real-world tuning around empty fields and low-confidence next-word candidates.
 
-2. Candidate ranking is still heuristic, not a unified decoder.
-   The app now has a central scorer and a first spatial evidence signal, but it does not yet combine dictionary frequency, personal phrase frequency, language prior, rejection history, and context probability in one scored lattice.
+2. Candidate ranking is still heuristic, but it now has the right decoder inputs.
+   The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
 
 3. Touch correction still resolves one key before NLP.
    Gap rescue, persisted adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs stronger accepted/rejected-correction priors and multi-edit path scoring.
@@ -63,6 +64,6 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 
 - Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
-- Fold dictionary frequency and personal phrase probability into the same decoder score.
-- Add deterministic replay tests for row-gap taps, multi-edit typos, rejected corrections, multilingual words, glide paths, and next-word prediction.
+- Promote debug JSONL traces into replay fixtures so score weights can be tuned from accepted/rejected events.
+- Add deterministic replay tests for row-gap taps, multi-edit typos, multilingual words, glide paths, and next-word prediction.
 - Define a model boundary for ONNX/NNAPI candidate rescoring so the heuristic decoder remains the always-available fallback.
