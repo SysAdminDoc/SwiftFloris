@@ -609,6 +609,32 @@ class NlpManager(context: Context) {
                 } ?: 0.0,
             )
         }
+        val candidateKeys = candidates.asSequence()
+            .filterIsInstance<WordSuggestionCandidate>()
+            .mapNotNull { candidate -> candidate.text.toString().normalizedCandidateSignalKey() }
+            .distinct()
+            .toList()
+        val contextLocaleHasTypedPrefixCandidate = typedWordKey
+            ?.takeIf { key -> key.length >= MinLanguageSwitchPrefixLength }
+            ?.let { prefix ->
+                var found = false
+                for (contextLocale in locales) {
+                    if ((contextLanguageScores[contextLocale] ?: 0.0) <= 0.0) {
+                        continue
+                    }
+                    for (candidateKey in candidateKeys) {
+                        if (candidateKey != prefix &&
+                            candidateKey.startsWith(prefix) &&
+                            frequencyForWordInLocale(suggestionProvider, subtype, contextLocale, candidateKey) > 0.0
+                        ) {
+                            found = true
+                            break
+                        }
+                    }
+                    if (found) break
+                }
+                found
+            } ?: false
 
         return buildMap {
             for (candidate in candidates) {
@@ -633,6 +659,17 @@ class NlpManager(context: Context) {
                     typedWordKnownByUserDictionary = typedWordKnownByUserDictionary,
                     candidateMatchesTypedWord = typedWordKey == key,
                     candidateIsEligibleForAutoCommit = candidate.isEligibleForAutoCommit,
+                    candidateCompletesTypedWord = typedWordKey?.let { typedKey ->
+                        typedKey.length >= MinLanguageSwitchPrefixLength &&
+                            key != typedKey &&
+                            key.startsWith(typedKey)
+                    } ?: false,
+                    candidateConflictsWithTypedPrefix = typedWordKey?.let { typedKey ->
+                        typedKey.length >= MinLanguageSwitchPrefixLength &&
+                            key != typedKey &&
+                            !key.startsWith(typedKey)
+                    } ?: false,
+                    contextLocaleHasTypedPrefixCandidate = contextLocaleHasTypedPrefixCandidate,
                 )
                 val dictionaryFrequency = languageSignal.dictionaryFrequency
                 val bigramProbability = previousWords.prev1?.let { prev1 ->
@@ -772,6 +809,7 @@ class NlpManager(context: Context) {
     private companion object {
         const val BigramContextWeight = 0.75
         const val MaxColdStartContextCandidates = 16
+        const val MinLanguageSwitchPrefixLength = 2
     }
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
