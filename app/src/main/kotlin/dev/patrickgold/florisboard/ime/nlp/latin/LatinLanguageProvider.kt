@@ -574,6 +574,7 @@ internal data class LatinSuggestion(
 internal object LatinDictionarySuggester {
     private const val MinCompletionLength = 2
     private const val MinCorrectionLength = 3
+    private const val MinCorrectionOverCompletionLength = 4
     private const val MaxTwoEditWordLength = 8
     // Frequency threshold (0.0–1.0, normalized from a 0–255 dictionary count).
     // SwiftKey-style behavior: only auto-replace the user's typed word when the candidate is
@@ -610,7 +611,7 @@ internal object LatinDictionarySuggester {
         val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount)
         val correctionCandidates = if (!dictionary.contains(normalizedWord) && normalizedWord.length >= MinCorrectionLength) {
             corrections(normalizedWord, dictionary, maxCandidateCount).map { candidate ->
-                if (completionCandidates.isNotEmpty()) {
+                if (shouldDeferCorrectionForActiveCompletion(normalizedWord, completionCandidates, candidate)) {
                     candidate.copy(isEligibleForAutoCommit = false)
                 } else {
                     candidate
@@ -619,16 +620,45 @@ internal object LatinDictionarySuggester {
         } else {
             emptyList()
         }
+        val primaryCorrections = correctionCandidates.filter { candidate ->
+            shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
+        }
+        val secondaryCorrections = correctionCandidates.filterNot { candidate ->
+            shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
+        }
 
         val seen = mutableSetOf<String>()
         return buildList {
+            primaryCorrections.forEach { candidate ->
+                if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
+            }
             completionCandidates.forEach { candidate ->
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
-            correctionCandidates.forEach { candidate ->
+            secondaryCorrections.forEach { candidate ->
                 if (seen.add(candidate.text.lowercase())) add(candidate.withTypedCase(rawWord))
             }
         }.take(maxCandidateCount)
+    }
+
+    private fun shouldDeferCorrectionForActiveCompletion(
+        normalizedWord: String,
+        completionCandidates: List<LatinSuggestion>,
+        correctionCandidate: LatinSuggestion,
+    ): Boolean {
+        if (completionCandidates.isEmpty()) return false
+        if (normalizedWord.length < MinCorrectionOverCompletionLength) return true
+        return correctionCandidate.text.length < normalizedWord.length
+    }
+
+    private fun shouldPromoteCorrectionBeforeCompletions(
+        normalizedWord: String,
+        completionCandidates: List<LatinSuggestion>,
+        correctionCandidate: LatinSuggestion,
+    ): Boolean {
+        if (completionCandidates.isEmpty()) return false
+        if (!correctionCandidate.isEligibleForAutoCommit) return false
+        return !correctionCandidate.text.startsWith(normalizedWord)
     }
 
     fun corrections(

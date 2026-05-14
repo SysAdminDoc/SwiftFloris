@@ -32,6 +32,8 @@ class LatinDictionarySuggesterTest : FunSpec({
         "we've" to 235,
         "won't" to 240,
         "the" to 255,
+        "this" to 252,
+        "those" to 248,
         "there" to 220,
         "their" to 215,
         "then" to 210,
@@ -111,11 +113,11 @@ class LatinDictionarySuggesterTest : FunSpec({
     }
 
     test("suggest returns frequency-ranked prefix completions") {
-        // "they're" lives in the dictionary at frequency 240 and is a valid prefix
-        // completion of "th"; it correctly ranks above "there" (220) and "their" (215).
+        // Prefix completions remain frequency-ranked; "this" and "those" outrank
+        // the lower-frequency "they're", "there", and "their" entries.
         val suggestions = LatinDictionarySuggester.suggest("th", dictionary, maxCandidateCount = 3)
 
-        suggestions.map { it.text } shouldBe listOf("the", "they're", "there")
+        suggestions.map { it.text } shouldBe listOf("the", "this", "those")
         suggestions.any { it.isEligibleForAutoCommit } shouldBe false
     }
 
@@ -124,6 +126,13 @@ class LatinDictionarySuggesterTest : FunSpec({
 
         suggestions.first().text shouldBe "there"
         suggestions.first().isEligibleForAutoCommit shouldBe false
+    }
+
+    test("suggest promotes high confidence correction ahead of prefix completion for misspelling") {
+        val suggestions = LatinDictionarySuggester.suggest("Thos", dictionary, maxCandidateCount = 3)
+
+        suggestions.map { it.text } shouldBe listOf("This", "Those")
+        suggestions.first().isEligibleForAutoCommit shouldBe true
     }
 
     test("suggest preserves typed capitalization") {
