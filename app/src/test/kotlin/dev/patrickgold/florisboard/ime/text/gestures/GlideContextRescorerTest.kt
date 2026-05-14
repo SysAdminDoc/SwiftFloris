@@ -77,6 +77,7 @@ class GlideContextRescorerTest : FunSpec({
             "contraction before going from were",
             "preposition before the",
             "contraction before be",
+            "contraction before like",
             "weak context no override",
             "long word no override",
             "punctuated next word no override",
@@ -95,7 +96,7 @@ class GlideContextRescorerTest : FunSpec({
 
         metrics.caseCount shouldBe fixtureCases.size
         metrics.replacementHitCount shouldBe metrics.caseCount
-        metrics.caseCountByTag.getValue(GlideContextRescueTag) shouldBe 4
+        metrics.caseCountByTag.getValue(GlideContextRescueTag) shouldBe 5
         metrics.replacementHitCountByTag.getValue(GlideContextRescueTag) shouldBe
             metrics.caseCountByTag.getValue(GlideContextRescueTag)
         metrics.caseCountByTag.getValue(GlideNoOpTag) shouldBe 3
