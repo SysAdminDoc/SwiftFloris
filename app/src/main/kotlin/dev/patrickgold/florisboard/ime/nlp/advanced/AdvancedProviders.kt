@@ -149,6 +149,24 @@ internal object AdvancedPredictionEngine {
     }
 }
 
+private const val MaxAdvancedRuntimeDictionaryWords = 120_000
+
+private fun loadAdvancedRuntimeDictionary(context: Context, assetName: String): Set<String> {
+    val words = HashSet<String>(MaxAdvancedRuntimeDictionaryWords)
+    context.assets.open(assetName).use { stream ->
+        BufferedReader(InputStreamReader(stream)).use { reader ->
+            while (words.size < MaxAdvancedRuntimeDictionaryWords) {
+                val line = reader.readLine() ?: break
+                val word = line.trim().lowercase()
+                if (word.isNotEmpty()) {
+                    words.add(word)
+                }
+            }
+        }
+    }
+    return words
+}
+
 /**
  * Advanced spell checker and autocorrect provider using dictionary-based spell checking
  * and edit distance algorithms for robust error detection and correction.
@@ -208,18 +226,7 @@ class AdvancedSpellingProvider(private val context: Context) : SpellingProvider 
     private fun loadDictionary(language: String) {
         try {
             val assetName = "dictionaries/${language}.txt"
-            val words = mutableSetOf<String>()
-
-            context.assets.open(assetName).use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    reader.forEachLine { line ->
-                        val word = line.trim().lowercase()
-                        if (word.isNotEmpty()) {
-                            words.add(word)
-                        }
-                    }
-                }
-            }
+            val words = loadAdvancedRuntimeDictionary(context, assetName)
 
             dictionaryCache[language] = words
             android.util.Log.d("AdvancedSpelling", "Loaded dictionary for $language: ${words.size} words")
@@ -354,15 +361,7 @@ class AdvancedPredictionProvider(private val context: Context) : SuggestionProvi
 
             // Load dictionary for word completion
             val dictAsset = "dictionaries/${language}.txt"
-            val words = mutableSetOf<String>()
-            context.assets.open(dictAsset).use { stream ->
-                BufferedReader(InputStreamReader(stream)).use { reader ->
-                    reader.forEachLine { line ->
-                        val word = line.trim().lowercase()
-                        if (word.isNotEmpty()) words.add(word)
-                    }
-                }
-            }
+            val words = loadAdvancedRuntimeDictionary(context, dictAsset)
             dictionaryCache[language] = words
 
             android.util.Log.d("AdvancedPrediction", "Loaded language model for $language")
