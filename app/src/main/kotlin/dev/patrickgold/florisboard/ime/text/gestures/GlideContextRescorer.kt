@@ -16,39 +16,53 @@
 
 package dev.patrickgold.florisboard.ime.text.gestures
 
+internal data class GlideContextTuning(
+    val maxRecoverableWordLength: Int = 4,
+    val maxCandidatesToRescore: Int = 4,
+    val rankStepPenalty: Double = 0.12,
+    val contextWeight: Double = 0.55,
+    val minContextScore: Double = 0.35,
+    val minSwitchMargin: Double = 0.10,
+) {
+    companion object {
+        val Default = GlideContextTuning()
+    }
+}
+
 internal object GlideContextRescorer {
     fun chooseReplacement(
         committedWord: String,
         candidateWords: List<String>,
         nextWord: String,
         contextScores: Map<String, Double>,
+        tuning: GlideContextTuning = GlideContextTuning.Default,
     ): String? {
         val committed = normalizeGlideWordForContext(committedWord) ?: return null
         normalizeGlideWordForContext(nextWord) ?: return null
-        if (committed.length > MaxRecoverableWordLength) return null
+        if (committed.length > tuning.maxRecoverableWordLength) return null
 
         val candidates = candidateWords
             .mapNotNull { word ->
                 normalizeGlideWordForContext(word)?.let { normalized -> normalized to word }
             }
             .distinctBy { it.first }
-            .take(MaxCandidatesToRescore)
+            .take(tuning.maxCandidatesToRescore)
         if (candidates.size < 2 || candidates.none { it.first == committed }) return null
 
         val current = candidates.first { it.first == committed }
-        val currentScore = gestureRankPrior(candidates.indexOf(current)) +
-            contextScore(current.first, contextScores) * ContextWeight
+        val currentScore = gestureRankPrior(candidates.indexOf(current), tuning) +
+            contextScore(current.first, contextScores) * tuning.contextWeight
         val best = candidates
             .filter { it.first != committed }
             .map { candidate ->
-                val score = gestureRankPrior(candidates.indexOf(candidate)) +
-                    contextScore(candidate.first, contextScores) * ContextWeight
+                val score = gestureRankPrior(candidates.indexOf(candidate), tuning) +
+                    contextScore(candidate.first, contextScores) * tuning.contextWeight
                 candidate to score
             }
             .maxByOrNull { it.second }
             ?: return null
         val bestContext = contextScore(best.first.first, contextScores)
-        return if (bestContext >= MinContextScore && best.second >= currentScore + MinSwitchMargin) {
+        return if (bestContext >= tuning.minContextScore && best.second >= currentScore + tuning.minSwitchMargin) {
             best.first.second
         } else {
             null
@@ -64,18 +78,11 @@ internal object GlideContextRescorer {
         return normalized
     }
 
-    private fun gestureRankPrior(index: Int): Double {
-        return (1.0 - index.coerceAtLeast(0) * RankStepPenalty).coerceAtLeast(0.0)
+    private fun gestureRankPrior(index: Int, tuning: GlideContextTuning): Double {
+        return (1.0 - index.coerceAtLeast(0) * tuning.rankStepPenalty).coerceAtLeast(0.0)
     }
 
     private fun contextScore(word: String, contextScores: Map<String, Double>): Double {
         return contextScores[word]?.coerceIn(0.0, 1.0) ?: 0.0
     }
-
-    private const val MaxRecoverableWordLength = 4
-    private const val MaxCandidatesToRescore = 4
-    private const val RankStepPenalty = 0.12
-    private const val ContextWeight = 0.55
-    private const val MinContextScore = 0.35
-    private const val MinSwitchMargin = 0.10
 }

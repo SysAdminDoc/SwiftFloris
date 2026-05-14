@@ -343,6 +343,40 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         (hello.score.spatialLikelihood < 0.28) shouldBe true
     }
 
+    test("candidate tuning can evaluate spatial threshold changes") {
+        val context = decoderContext(
+            currentWord = "gello",
+            touchEvidence = touchEvidence(
+                sample("g", "h" to 0.74),
+                sample("e"),
+                sample("l"),
+                sample("l"),
+                sample("o"),
+            ),
+        )
+        val fallback = listOf(
+            candidate("fello", confidence = 0.99),
+            candidate("hello", confidence = 0.40),
+        )
+
+        val defaultScored = SwiftKeyCandidateRanker.scoreCandidates(
+            context = context,
+            preferred = emptyList(),
+            fallback = fallback,
+        )
+        val conservativeScored = SwiftKeyCandidateRanker.scoreCandidates(
+            context = context,
+            preferred = emptyList(),
+            fallback = fallback,
+            tuning = SwiftKeyCandidateTuning(spatialCorrectionScoreThreshold = 0.80),
+        )
+
+        defaultScored.first { it.candidate.text == "hello" }.score.role shouldBe
+            SwiftKeyCandidateRole.SpatialCorrection
+        conservativeScored.first { it.candidate.text == "hello" }.score.role shouldBe
+            SwiftKeyCandidateRole.Other
+    }
+
     test("spatial evidence does not make spacebar replace a known typed word") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext(

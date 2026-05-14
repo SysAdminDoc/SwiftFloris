@@ -100,6 +100,13 @@ class GlideContextRescorerTest : FunSpec({
         metrics.caseCountByTag.getValue(GlideNoOpTag) shouldBe 3
         metrics.replacementHitCountByTag.getValue(GlideNoOpTag) shouldBe
             metrics.caseCountByTag.getValue(GlideNoOpTag)
+
+        val strictMetrics = GlideContextReplayMetrics.from(
+            fixtureCases.map {
+                it.replay(tuning = GlideContextTuning(minContextScore = 0.90))
+            }
+        )
+        (strictMetrics.replacementHitCount < metrics.replacementHitCount) shouldBe true
     }
 })
 
@@ -147,7 +154,9 @@ private data class GlideContextReplayMetrics(
     }
 }
 
-private fun GlideContextReplayCase.replay(): GlideContextReplayOutcome {
+private fun GlideContextReplayCase.replay(
+    tuning: GlideContextTuning = GlideContextTuning.Default,
+): GlideContextReplayOutcome {
     return GlideContextReplayOutcome(
         case = this,
         replacement = GlideContextRescorer.chooseReplacement(
@@ -155,6 +164,7 @@ private fun GlideContextReplayCase.replay(): GlideContextReplayOutcome {
             candidateWords = candidateWords,
             nextWord = nextWord,
             contextScores = contextScores,
+            tuning = tuning,
         ),
     )
 }
