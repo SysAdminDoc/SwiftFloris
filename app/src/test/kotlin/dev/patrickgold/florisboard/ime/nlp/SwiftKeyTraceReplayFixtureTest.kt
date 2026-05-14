@@ -46,6 +46,8 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "accepted correction prior promotion",
             "rejected spatial correction demotion",
             "phrase continuation after let me",
+            "same-prefix bilingual literal protection",
+            "secondary-language auto-commit protection",
         )
     }
 
@@ -69,11 +71,16 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.spacebarHitCount shouldBe metrics.spacebarAssertionCount
         metrics.roleHitCount shouldBe metrics.roleAssertionCount
         metrics.typedLiteralProtectionMissCount shouldBe 0
+        metrics.caseCountByTag.getValue(BilingualTokenProtectionTag) shouldBe 2
+        metrics.fullRankingHitCountByTag.getValue(BilingualTokenProtectionTag) shouldBe
+            metrics.caseCountByTag.getValue(BilingualTokenProtectionTag)
+        metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0
     }
 })
 
 private data class TraceReplayCase(
     val name: String,
+    val tags: Set<String>,
     val context: SwiftKeyDecoderContext,
     val preferred: List<SuggestionCandidate>,
     val fallback: List<SuggestionCandidate>,
@@ -98,21 +105,41 @@ private data class ReplayOutcomeMetrics(
     val roleAssertionCount: Int,
     val roleHitCount: Int,
     val typedLiteralProtectionMissCount: Int,
+    val caseCountByTag: Map<String, Int>,
+    val fullRankingHitCountByTag: Map<String, Int>,
+    val typedLiteralProtectionMissCountByTag: Map<String, Int>,
 ) {
     companion object {
         fun from(outcomes: List<TraceReplayOutcome>): ReplayOutcomeMetrics {
             var roleAssertions = 0
             var roleHits = 0
             var typedLiteralProtectionMisses = 0
+            val caseCountsByTag = mutableMapOf<String, Int>()
+            val fullRankingHitsByTag = mutableMapOf<String, Int>()
+            val typedLiteralProtectionMissesByTag = mutableMapOf<String, Int>()
             for (outcome in outcomes) {
+                val fullRankingHit = outcome.rankedText == outcome.case.expectedRankedText
+                val typedLiteralProtectionMiss =
+                    outcome.case.typedLiteralProtectionExpected() && outcome.spacebarText != null
                 for ((text, expectedRole) in outcome.case.expectedRolesByText) {
                     roleAssertions += 1
                     if (outcome.rolesByText[text] == expectedRole) {
                         roleHits += 1
                     }
                 }
-                if (outcome.case.typedLiteralProtectionExpected() && outcome.spacebarText != null) {
+                if (typedLiteralProtectionMiss) {
                     typedLiteralProtectionMisses += 1
+                }
+                for (tag in outcome.case.tags) {
+                    caseCountsByTag.increment(tag)
+                    if (fullRankingHit) {
+                        fullRankingHitsByTag.increment(tag)
+                    }
+                    if (typedLiteralProtectionMiss) {
+                        typedLiteralProtectionMissesByTag.increment(tag)
+                    } else {
+                        typedLiteralProtectionMissesByTag.putIfAbsent(tag, 0)
+                    }
                 }
             }
             return ReplayOutcomeMetrics(
@@ -125,6 +152,9 @@ private data class ReplayOutcomeMetrics(
                 roleAssertionCount = roleAssertions,
                 roleHitCount = roleHits,
                 typedLiteralProtectionMissCount = typedLiteralProtectionMisses,
+                caseCountByTag = caseCountsByTag,
+                fullRankingHitCountByTag = fullRankingHitsByTag,
+                typedLiteralProtectionMissCountByTag = typedLiteralProtectionMissesByTag,
             )
         }
     }
@@ -183,6 +213,7 @@ private object SwiftKeyTraceReplayFixtureParser {
         val signals = parseSignals(scored)
         return TraceReplayCase(
             name = json.getString("name"),
+            tags = json.getArrayOrNull("tags")?.toStringSet().orEmpty(),
             context = SwiftKeyDecoderContext(
                 currentWord = currentWord,
                 maxCandidateCount = json.getInt("maxCandidateCount", 8),
@@ -267,6 +298,10 @@ private object SwiftKeyTraceReplayFixtureParser {
         return map { it.jsonPrimitive.content }
     }
 
+    private fun JsonArray.toStringSet(): Set<String> {
+        return mapTo(linkedSetOf()) { it.jsonPrimitive.content }
+    }
+
     private fun JsonObject.toStringMap(): Map<String, String> {
         return entries.associate { (key, value) -> key to value.jsonPrimitive.content }
     }
@@ -312,3 +347,9 @@ private object SwiftKeyTraceReplayFixtureParser {
         return value.jsonObject
     }
 }
+
+private fun MutableMap<String, Int>.increment(key: String) {
+    put(key, getOrDefault(key, 0) + 1)
+}
+
+private const val BilingualTokenProtectionTag = "bilingual-token-protection"

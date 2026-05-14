@@ -51,10 +51,10 @@ Primary references:
    Current support now checks the current token across active locales and lowers wrong-language correction confidence when a token is valid elsewhere. The next step is language posterior scoring from trailing words, shared-spelling handling, and broader bilingual replay fixtures.
 
 6. Flow needs broader real-world tuning.
-   Current Flow can commit through space and now has conservative following-context rescue for short ambiguous words. SwiftKey-like glide still needs richer path fixtures, adaptive-touch weighting inside the gesture candidate list, and neural/beam-search-style rescoring to match SwiftKey on longer or multilingual swipes.
+   Current Flow can commit through space and now has conservative following-context rescue for short ambiguous words. The new glide replay fixture guards both successful context rescues and no-op safety cases. SwiftKey-like glide still needs richer real path fixtures, adaptive-touch weighting inside the gesture candidate list, and neural/beam-search-style rescoring to match SwiftKey on longer or multilingual swipes.
 
-7. Trust UX is improving but still needs richer categories.
-   SwiftKey exposes personalization/back-up concepts. SwiftFloris intentionally avoids network sync, and Typing stats now makes local phrase history, correction memory, adaptive touch, and local trace capture visible, resettable, and shareable by user action. Replay tests now expose aggregate accuracy metrics; remaining trust work is broader fixture coverage for glide and bilingual typing.
+7. Trust UX is improving but still needs more real-world traces.
+   SwiftKey exposes personalization/back-up concepts. SwiftFloris intentionally avoids network sync, and Typing stats now makes local phrase history, correction memory, adaptive touch, and local trace capture visible, resettable, and shareable by user action. Replay tests now expose aggregate accuracy metrics plus bilingual/glide category guards; remaining trust work is larger fixture coverage from real local traces.
 
 ## Immediate Implementation Direction
 
