@@ -63,9 +63,10 @@
 - Item 3 and Item 8 are now connected: Typing stats can enable, share, and clear local JSONL trace capture, and the checked-in replay fixture set adds `thos -> this` plus phrase-context prediction coverage.
 - Item 3 now has aggregate replay outcome metrics: full-ranking hits, spacebar-action hits, expected role hits, and typed-literal protection misses are derived from the JSONL fixture set and guarded in tests.
 - Item 3 and Item 5 now have category-specific replay guards: suggestion JSONL fixtures tag bilingual token-protection cases, and glide context has a separate JSONL fixture set with aggregate metrics for short-word rescue and conservative no-op behavior.
+- Item 2 and Item 5 now have explicit tuning boundaries: candidate scoring and glide context rescue expose default-preserving tuning objects, and replay tests prove conservative variants are caught by aggregate metrics before production defaults change.
 
 ## Current Slice
 
 Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to use the expanded replay set to tune correction thresholds and glide rescoring.
 
-Current next step: use the aggregate and category metrics to tune autocommit thresholds, accepted/rejected correction priors, and short-glide rescoring constants; add more real local traces before changing constants with broad typing impact.
+Current next step: capture/add more real local traces for undo/retype loops, longer glide ambiguity, and mixed-language typing, then use the tuning objects to justify any production default changes with before/after replay metrics.

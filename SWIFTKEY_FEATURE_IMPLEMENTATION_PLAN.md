@@ -249,10 +249,11 @@ The eighteenth implementation slice starts tuning from replay evidence:
 
 The nineteenth implementation slice should tune the scorer itself:
 
-- Use the aggregate replay metrics to sweep autocommit thresholds and spatial/accepted/rejected correction constants.
-- Prefer threshold changes only when they improve new fixtures without weakening typed-literal protection.
-- Use the new glide and bilingual fixture categories as guardrails before changing constants that affect those paths.
-- Acceptance: the replay set demonstrates a measurable improvement before constants move.
+- `SwiftKeyCandidateTuning` now exposes candidate weights, spatial threshold, accepted-correction boost, and rejected-correction penalty with current defaults preserved.
+- `GlideContextTuning` now exposes short-glide rescue length, candidate cap, rank prior, context weight, minimum context score, and switch margin with current defaults preserved.
+- Replay tests run deliberately conservative tuning variants and verify the aggregate metrics detect degraded spatial role hits and lost glide rescues.
+- Remaining work: use real trace failures to choose better default values, not just prove bad variants are detectable.
+- Acceptance: the replay set demonstrates a measurable improvement before constants move. This is partially met by the tuneable scorer boundary and regression-detection tests.
 
 ## Twentieth Slice
 

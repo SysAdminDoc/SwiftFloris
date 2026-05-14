@@ -41,6 +41,27 @@ internal data class SwiftKeyScoredCandidate(
     val score: SwiftKeyCandidateScore,
 )
 
+internal data class SwiftKeyCandidateTuning(
+    val roleWeight: Double = 22.0,
+    val spatialWeight: Double = 28.0,
+    val sourceWeight: Double = 14.0,
+    val confidenceWeight: Double = 8.0,
+    val dictionaryWeight: Double = 12.0,
+    val contextWeight: Double = 20.0,
+    val languageWeight: Double = 8.0,
+    val acceptedCorrectionWeight: Double = 7.0,
+    val editWeight: Double = 5.0,
+    val completionWeight: Double = 3.0,
+    val rejectionWeight: Double = 32.0,
+    val spatialCorrectionScoreThreshold: Double = 0.28,
+    val acceptedCorrectionSpatialBoost: Double = 0.46,
+    val rejectedCorrectionSpatialPenalty: Double = 0.58,
+) {
+    companion object {
+        val Default = SwiftKeyCandidateTuning()
+    }
+}
+
 internal data class SwiftKeyCandidateScore(
     val role: SwiftKeyCandidateRole,
     val rolePriority: Double,
@@ -55,34 +76,24 @@ internal data class SwiftKeyCandidateScore(
     val acceptedCorrectionConfidence: Double,
     val rejectionPenalty: Double,
     val lengthPenalty: Double,
+    val tuning: SwiftKeyCandidateTuning = SwiftKeyCandidateTuning.Default,
 ) {
     val total: Double =
-        evidence(rolePriority / MaxRolePriority) * RoleWeight +
-            evidence(spatialLikelihood) * SpatialWeight +
-            sourceAffinity * SourceWeight +
-            evidence(providerConfidence) * ConfidenceWeight +
-            evidence(dictionaryFrequency) * DictionaryWeight +
-            evidence(contextProbability) * ContextWeight +
-            evidence(languageConfidence) * LanguageWeight +
-            evidence(acceptedCorrectionConfidence) * AcceptedCorrectionWeight +
-            evidence(editProximity) * EditWeight +
-            evidence(completionAffinity) * CompletionWeight -
-            rejectionPenalty.coerceIn(0.0, 1.0) * RejectionWeight -
+        evidence(rolePriority / MaxRolePriority) * tuning.roleWeight +
+            evidence(spatialLikelihood) * tuning.spatialWeight +
+            sourceAffinity * tuning.sourceWeight +
+            evidence(providerConfidence) * tuning.confidenceWeight +
+            evidence(dictionaryFrequency) * tuning.dictionaryWeight +
+            evidence(contextProbability) * tuning.contextWeight +
+            evidence(languageConfidence) * tuning.languageWeight +
+            evidence(acceptedCorrectionConfidence) * tuning.acceptedCorrectionWeight +
+            evidence(editProximity) * tuning.editWeight +
+            evidence(completionAffinity) * tuning.completionWeight -
+            rejectionPenalty.coerceIn(0.0, 1.0) * tuning.rejectionWeight -
             lengthPenalty
 
     private companion object {
         const val MaxRolePriority = 5.0
-        const val RoleWeight = 22.0
-        const val SpatialWeight = 28.0
-        const val SourceWeight = 14.0
-        const val ConfidenceWeight = 8.0
-        const val DictionaryWeight = 12.0
-        const val ContextWeight = 20.0
-        const val LanguageWeight = 8.0
-        const val AcceptedCorrectionWeight = 7.0
-        const val EditWeight = 5.0
-        const val CompletionWeight = 3.0
-        const val RejectionWeight = 32.0
         val LogDenominator: Double = ln(10.0)
 
         fun evidence(value: Double): Double {
@@ -112,6 +123,7 @@ internal object SwiftKeyCandidateRanker {
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
         reranker: NeuralCandidateReranker = NeuralCandidateReranker.Disabled,
+        tuning: SwiftKeyCandidateTuning = SwiftKeyCandidateTuning.Default,
     ): List<SuggestionCandidate> {
         if (context.maxCandidateCount <= 0) {
             return emptyList()
@@ -127,6 +139,7 @@ internal object SwiftKeyCandidateRanker {
             preferred = preferred,
             fallback = fallback,
             reranker = reranker,
+            tuning = tuning,
         )
 
         val typedLiteral = WordSuggestionCandidate(
@@ -172,6 +185,7 @@ internal object SwiftKeyCandidateRanker {
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
         reranker: NeuralCandidateReranker = NeuralCandidateReranker.Disabled,
+        tuning: SwiftKeyCandidateTuning = SwiftKeyCandidateTuning.Default,
     ): List<SwiftKeyScoredCandidate> {
         val currentWord = context.currentWord.trim()
         val typedWordKey = currentWord.normalizedCandidateKey()
@@ -184,6 +198,7 @@ internal object SwiftKeyCandidateRanker {
                 currentWord = currentWord,
                 touchEvidence = context.touchEvidence,
                 signals = context.candidateSignals,
+                tuning = tuning,
             )
         } + fallback.mapIndexed { index, candidate ->
             scoredCandidate(
@@ -194,6 +209,7 @@ internal object SwiftKeyCandidateRanker {
                 currentWord = currentWord,
                 touchEvidence = context.touchEvidence,
                 signals = context.candidateSignals,
+                tuning = tuning,
             )
         }).sortedWith(ScoredCandidateComparator)
         return safeRerank(context, heuristicRanking, reranker)
@@ -246,6 +262,7 @@ internal object SwiftKeyCandidateRanker {
         preferred: List<SuggestionCandidate>,
         fallback: List<SuggestionCandidate>,
         reranker: NeuralCandidateReranker,
+        tuning: SwiftKeyCandidateTuning,
     ): List<SuggestionCandidate> {
         return scoreCandidates(
             context = SwiftKeyDecoderContext(
@@ -257,6 +274,7 @@ internal object SwiftKeyCandidateRanker {
             preferred = preferred,
             fallback = fallback,
             reranker = reranker,
+            tuning = tuning,
         ).map { it.candidate }
     }
 
@@ -301,14 +319,15 @@ internal object SwiftKeyCandidateRanker {
         currentWord: String,
         touchEvidence: TouchDecoderEvidence?,
         signals: Map<String, SwiftKeyCandidateSignals>,
+        tuning: SwiftKeyCandidateTuning,
     ): SwiftKeyScoredCandidate {
         val candidateKey = candidate.text.toString().normalizedCandidateKey()
         val signal = signals[candidateKey] ?: SwiftKeyCandidateSignals()
         val rawSpatialLikelihood = touchEvidence?.spatialReplacementScore(candidate.text, currentWord)
             ?.coerceIn(0.0, 1.0)
             ?: 0.0
-        val spatialLikelihood = outcomeAdjustedSpatialLikelihood(rawSpatialLikelihood, signal)
-        val role = candidate.role(typedWordKey, spatialLikelihood)
+        val spatialLikelihood = outcomeAdjustedSpatialLikelihood(rawSpatialLikelihood, signal, tuning)
+        val role = candidate.role(typedWordKey, spatialLikelihood, tuning)
         val score = SwiftKeyCandidateScore(
             role = role,
             rolePriority = role.priority,
@@ -323,6 +342,7 @@ internal object SwiftKeyCandidateRanker {
             acceptedCorrectionConfidence = signal.acceptedCorrectionConfidence,
             rejectionPenalty = signal.rejectionPenalty,
             lengthPenalty = lengthPenalty(candidate.text.length),
+            tuning = tuning,
         )
         return SwiftKeyScoredCandidate(
             candidate = candidate,
@@ -335,20 +355,25 @@ internal object SwiftKeyCandidateRanker {
     private fun outcomeAdjustedSpatialLikelihood(
         rawSpatialLikelihood: Double,
         signal: SwiftKeyCandidateSignals,
+        tuning: SwiftKeyCandidateTuning,
     ): Double {
         val acceptedBoost = signal.acceptedCorrectionConfidence.coerceIn(0.0, 1.0) *
-            AcceptedCorrectionSpatialBoost
+            tuning.acceptedCorrectionSpatialBoost
         val rejectedPenalty = signal.rejectionPenalty.coerceIn(0.0, 1.0) *
-            RejectedCorrectionSpatialPenalty
+            tuning.rejectedCorrectionSpatialPenalty
         return (rawSpatialLikelihood + acceptedBoost - rejectedPenalty).coerceIn(0.0, 1.0)
     }
 
-    private fun SuggestionCandidate.role(typedWordKey: String, touchScore: Double): SwiftKeyCandidateRole {
+    private fun SuggestionCandidate.role(
+        typedWordKey: String,
+        touchScore: Double,
+        tuning: SwiftKeyCandidateTuning,
+    ): SwiftKeyCandidateRole {
         val key = text.toString().normalizedCandidateKey()
         return when {
             key.isBlank() -> SwiftKeyCandidateRole.Other
             typedWordKey.isNotBlank() && key == typedWordKey -> SwiftKeyCandidateRole.TypedLiteral
-            touchScore >= SpatialCorrectionScoreThreshold -> SwiftKeyCandidateRole.SpatialCorrection
+            touchScore >= tuning.spatialCorrectionScoreThreshold -> SwiftKeyCandidateRole.SpatialCorrection
             isEligibleForAutoCommit -> SwiftKeyCandidateRole.AutoCorrection
             typedWordKey.isNotBlank() && key.startsWith(typedWordKey) -> SwiftKeyCandidateRole.Completion
             else -> SwiftKeyCandidateRole.Other
@@ -413,9 +438,6 @@ internal object SwiftKeyCandidateRanker {
     }
 
     private const val TypedLiteralConfidence = 0.62
-    private const val SpatialCorrectionScoreThreshold = 0.28
-    private const val AcceptedCorrectionSpatialBoost = 0.46
-    private const val RejectedCorrectionSpatialPenalty = 0.58
 
     private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
         .thenByDescending { it.score.rolePriority }

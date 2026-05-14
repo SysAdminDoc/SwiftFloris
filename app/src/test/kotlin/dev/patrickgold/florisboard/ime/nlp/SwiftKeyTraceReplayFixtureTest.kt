@@ -75,6 +75,15 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.fullRankingHitCountByTag.getValue(BilingualTokenProtectionTag) shouldBe
             metrics.caseCountByTag.getValue(BilingualTokenProtectionTag)
         metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0
+
+        val conservativeSpatialMetrics = ReplayOutcomeMetrics.from(
+            cases.map {
+                it.replay(
+                    tuning = SwiftKeyCandidateTuning(spatialCorrectionScoreThreshold = 0.99),
+                )
+            }
+        )
+        (conservativeSpatialMetrics.roleHitCount < metrics.roleHitCount) shouldBe true
     }
 })
 
@@ -160,16 +169,20 @@ private data class ReplayOutcomeMetrics(
     }
 }
 
-private fun TraceReplayCase.replay(): TraceReplayOutcome {
+private fun TraceReplayCase.replay(
+    tuning: SwiftKeyCandidateTuning = SwiftKeyCandidateTuning.Default,
+): TraceReplayOutcome {
     val ranked = SwiftKeyCandidateRanker.rank(
         context = context,
         preferred = preferred,
         fallback = fallback,
+        tuning = tuning,
     )
     val scored = SwiftKeyCandidateRanker.scoreCandidates(
         context = context,
         preferred = preferred,
         fallback = fallback,
+        tuning = tuning,
     )
     return TraceReplayOutcome(
         case = this,
