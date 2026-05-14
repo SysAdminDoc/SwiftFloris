@@ -5,10 +5,10 @@
     Privacy posture: this is the "no cloud, no telemetry" keyboard. The
     user dictionary (floris_user_dictionary) records every word the
     personal-learning pipeline has promoted from the user's typing and is
-    therefore deliberately omitted from cloud-backup. Device-transfer is
-    a deliberate user action (Google's direct phone-to-phone setup flow,
-    not a silent upload), so it keeps the dictionary so a transferring
-    user does not lose their adaptive vocabulary.
+    therefore deliberately omitted from cloud-backup. It is also omitted
+    from device-transfer because the SQLCipher database key is protected
+    by Android Keystore material that cannot be treated as portable backup
+    state. A restored encrypted DB without its key is worse than no DB.
 -->
 <data-extraction-rules>
     <cloud-backup>
@@ -26,8 +26,5 @@
         <include
             domain="file"
             path="ime"/>
-        <include
-            domain="database"
-            path="floris_user_dictionary"/>
     </device-transfer>
 </data-extraction-rules>

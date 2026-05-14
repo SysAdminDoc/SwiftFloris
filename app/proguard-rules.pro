@@ -27,3 +27,6 @@
 
 # @Serializable and @Polymorphic are used at runtime for polymorphic serialization.
 -keepattributes RuntimeVisibleAnnotations,AnnotationDefault
+
+# SQLCipher loads native-backed database classes reflectively through androidx.sqlite.
+-keep class net.zetetic.database.** { *; }
