@@ -74,6 +74,7 @@ class GlideContextRescorerTest : FunSpec({
     test("checked-in glide context fixtures cover SwiftKey-like rescoring gaps") {
         fixtureCases.map { it.name } shouldContainAll listOf(
             "contraction before going",
+            "contraction before going from were",
             "preposition before the",
             "contraction before be",
             "weak context no override",
@@ -94,7 +95,7 @@ class GlideContextRescorerTest : FunSpec({
 
         metrics.caseCount shouldBe fixtureCases.size
         metrics.replacementHitCount shouldBe metrics.caseCount
-        metrics.caseCountByTag.getValue(GlideContextRescueTag) shouldBe 3
+        metrics.caseCountByTag.getValue(GlideContextRescueTag) shouldBe 4
         metrics.replacementHitCountByTag.getValue(GlideContextRescueTag) shouldBe
             metrics.caseCountByTag.getValue(GlideContextRescueTag)
         metrics.caseCountByTag.getValue(GlideNoOpTag) shouldBe 3

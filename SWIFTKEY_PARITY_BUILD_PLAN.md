@@ -65,9 +65,10 @@
 - Item 3 and Item 5 now have category-specific replay guards: suggestion JSONL fixtures tag bilingual token-protection cases, and glide context has a separate JSONL fixture set with aggregate metrics for short-word rescue and conservative no-op behavior.
 - Item 2 and Item 5 now have explicit tuning boundaries: candidate scoring and glide context rescue expose default-preserving tuning objects, and replay tests prove conservative variants are caught by aggregate metrics before production defaults change.
 - Item 3 and Item 8 now have a fixture export bridge: Typing stats can share sanitized replay fixtures converted from the local trace file, preserving candidate evidence and accepted/rejected outcomes while dropping timing and surrounding-context metadata.
+- Items 3, 4, and 5 are now connected more tightly: cold-start phrase priors feed partial-word candidate scoring, checked-in replay fixtures guard `let me kn -> know`, and glide context fixtures cover a longer contraction rescue (`were` + `going` -> `we're`). Undo/retype handling also keeps a manually restored word literal after an autocorrect rejection instead of allowing a different replacement to take over the same word slot.
 
 ## Current Slice
 
 Keep expanding items 2, 3, 4, 5, and 6 until every SwiftKey-like typing decision has a replay case. The next concrete work is to use the expanded replay set to tune correction thresholds and glide rescoring.
 
-Current next step: use exported replay fixtures from real device typing to add undo/retype loops, longer glide ambiguity, and mixed-language cases, then use the tuning objects to justify any production default changes with before/after replay metrics.
+Current next step: keep promoting real exported trace failures into checked-in fixtures, especially active-locale switching and multi-word autocorrect repairs, then use the tuning objects to justify any production default changes with before/after replay metrics.

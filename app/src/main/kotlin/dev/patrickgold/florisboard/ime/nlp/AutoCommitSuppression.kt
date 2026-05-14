@@ -82,6 +82,20 @@ internal class AutoCommitSuppression {
         return shouldSuppress
     }
 
+    fun shouldKeepTypedLiteral(
+        currentWord: CharSequence,
+        currentWordStart: Int?,
+    ): Boolean {
+        val rejected = rejectedAutoCommit ?: return false
+        val current = normalizeWord(currentWord) ?: return false
+        val shouldKeepLiteral = current == rejected.original &&
+            rejected.isSameWordSlot(currentWordStart)
+        if (shouldKeepLiteral) {
+            rejectedAutoCommit = rejected.copy(hasSuppressed = true)
+        }
+        return shouldKeepLiteral
+    }
+
     fun rejectedPairPenalty(
         currentWord: CharSequence,
         candidateText: CharSequence,
@@ -90,10 +104,7 @@ internal class AutoCommitSuppression {
         val rejected = rejectedAutoCommit ?: return 0.0
         val current = normalizeWord(currentWord) ?: return 0.0
         val candidate = normalizeWord(candidateText) ?: return 0.0
-        val isSameWordSlot = rejected.wordStart == null ||
-            currentWordStart == null ||
-            rejected.wordStart == currentWordStart
-        if (!isSameWordSlot || current != rejected.original) {
+        if (!rejected.isSameWordSlot(currentWordStart) || current != rejected.original) {
             return 0.0
         }
         return if (candidate == rejected.corrected) 1.0 else 0.0
@@ -146,7 +157,11 @@ internal class AutoCommitSuppression {
         val corrected: String,
         val wordStart: Int?,
         val hasSuppressed: Boolean = false,
-    )
+    ) {
+        fun isSameWordSlot(currentWordStart: Int?): Boolean {
+            return wordStart == null || currentWordStart == null || wordStart == currentWordStart
+        }
+    }
 
     private companion object {
         fun normalizeWord(text: CharSequence): String? {
