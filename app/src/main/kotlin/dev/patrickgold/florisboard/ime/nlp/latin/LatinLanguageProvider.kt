@@ -218,11 +218,6 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         } else {
             emptyList()
         }
-        // Tier 2: when the trigram + bigram tiers returned fewer than maxCandidateCount,
-        // fill the remaining slots with high-frequency dictionary words. This ensures a
-        // never-empty suggestion strip on cold-start (Day 1) and after sentence-ending
-        // punctuation.
-        val remainingSlots = maxCandidateCount - (trigramHits.size + bigramHits.size)
         val seen = HashSet<String>(maxCandidateCount * 3)
         val merged = ArrayList<Pair<String, Double>>(maxCandidateCount)
         trigramHits.forEachIndexed { index, word ->
@@ -235,7 +230,18 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 merged.add(word to (0.55 - 0.05 * index))
             }
         }
-        if (remainingSlots > 0) {
+        // Tier 2: curated cold-start priors supply SwiftKey-like sentence starts
+        // and common short continuations before personal history is rich enough.
+        ColdStartNextWordPriors.suggest(
+            textBeforeCursor = before,
+            languageCode = subtype.primaryLocale.language,
+            maxCandidateCount = maxCandidateCount,
+        ).forEach { prior ->
+            if (merged.size < maxCandidateCount && seen.add(prior.word.lowercase())) {
+                merged.add(prior.word to prior.confidence)
+            }
+        }
+        if (merged.size < maxCandidateCount) {
             val dict = dictionaryStore.dictionaryForLanguage(subtype.primaryLocale.language)
             val bootstrap = dict.topByFrequency(maxCandidateCount * 2)
             for (word in bootstrap) {
@@ -258,8 +264,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
 
     private fun applySentenceCase(word: String, textBeforeCursor: String): String {
         if (word.isEmpty()) return word
+        if (word.equals("i", ignoreCase = true)) return "I"
+        if (word.startsWith("i'", ignoreCase = true)) {
+            return "I" + word.drop(1)
+        }
         val isSentenceStart = textBeforeCursor.isBlank() ||
-            textBeforeCursor.trimEnd().lastOrNull()?.let { it == '.' || it == '!' || it == '?' } == true
+            textBeforeCursor.trimEnd().lastOrNull()?.let { it == '.' || it == '!' || it == '?' || it == '\n' } == true
         return if (isSentenceStart) {
             word.replaceFirstChar { it.uppercaseChar() }
         } else {

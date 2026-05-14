@@ -21,11 +21,13 @@ Primary references:
 - Flow-style glide typing exists, including Flow Through Space support.
 - Personal dictionary learning, personal bigram/trigram next-word prediction, incognito gating, password-field learning suppression, and local-only learning all exist.
 - Personal bigram/trigram prediction is now recency-aware: learned phrase files keep a last-seen timestamp, older files are migrated safely, and recent continuations can outrank stale high-count history.
+- Cold-start English next-word prediction now has a small local prior model for sentence starts and common short continuations, so empty fields and fresh installs no longer rely only on raw dictionary frequency.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
 - Tap-up events now emit transient nearby-key evidence into the SwiftKey-style ranker, so adjacent-key mistakes can be corrected by spatial likelihood instead of only by resolved-key text.
 - Candidate ranking now produces an explicit score object with role, spatial likelihood, source affinity, provider confidence, dictionary frequency, personal context probability, language confidence, rejection penalty, edit proximity, completion affinity, and length penalty, with replay tests covering the highest-risk SwiftKey-like behaviors.
-- A disabled-by-default local trace recorder can capture scored candidate order and accepted/rejected autocorrect events to JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
+- A disabled-by-default local trace recorder can capture scored candidate order, previous words, touch evidence, candidate source/index, auto-commit eligibility, and accepted/rejected autocorrect events to JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
+- A no-op `NeuralCandidateReranker` boundary now sits behind the scorer, giving a future local ONNX/TFLite model a safe integration point without changing the no-network baseline.
 
 ## Gaps That Still Matter
 
@@ -33,13 +35,13 @@ Primary references:
    SwiftKey exposes three modes: insert space, complete current word, or always insert prediction. SwiftFloris now has all three user-facing modes, including Quick prediction insert, but still needs broader real-world tuning around empty fields and low-confidence next-word candidates.
 
 2. Candidate ranking is still heuristic, but it now has the right decoder inputs.
-   The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
+   The app now combines dictionary frequency, personal phrase context, language confidence, rejection history, provider confidence, role, and spatial likelihood in one scored lattice, with a neural-reranker seam ready for a future local model. The remaining gap is calibration from real typing traces rather than hand-tuned weights.
 
 3. Touch correction still resolves one key before NLP.
    Gap rescue, persisted adaptive offsets, and transient nearby-key evidence now help, but the touch model still needs stronger accepted/rejected-correction priors and multi-edit path scoring.
 
 4. Next-word prediction needs richer context.
-   Personal bigram/trigram prediction now has recency/frequency decay, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and stronger cold-start language-model priors.
+   Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors, but a SwiftKey-level feel still needs phrase-level continuation beyond three words and broader context priors.
 
 5. Multilingual detection should operate per word across active languages.
    Current support works when a subtype carries multiple locales. The next step is language posterior scoring from recent words, plus safer suppression when a token is valid in any enabled language.
@@ -65,7 +67,7 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 
 - Add offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Score multi-character edits from the spatial evidence instead of only equal-length adjacent replacements.
-- Promote debug JSONL traces into replay fixtures so score weights can be tuned from accepted/rejected events.
+- Promote debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
 - Add deterministic replay tests for row-gap taps, multi-edit typos, multilingual words, glide paths, and next-word prediction.
-- Add sentence-position priors and cold-start phrase priors so good next-word behavior exists before personal history is rich.
-- Define a model boundary for ONNX/NNAPI candidate rescoring so the heuristic decoder remains the always-available fallback.
+- Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
+- Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.

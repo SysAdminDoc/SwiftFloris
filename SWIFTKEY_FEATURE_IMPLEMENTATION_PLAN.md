@@ -146,7 +146,7 @@ The eighth implementation slice should move from synthetic replay to field-tunab
 
 - Add a debug-only typing trace recorder that captures typed text, candidate order, selected candidate, touch evidence, context words, and rejection events without network upload. The first trace recorder is now present and writes local JSONL when `<filesDir>/swiftkey_trace.enabled` exists.
 - Add recency decay to personal bigram/trigram scoring so recent user phrases can beat stale history without unbounded growth. This is now implemented with backward-compatible TSV migration and a shared 21-day half-life scorer for personal n-grams.
-- Add a `NeuralCandidateReranker` interface behind the current scorer. Keep the heuristic scorer as the always-on fallback and make any ONNX/TFLite model optional.
+- Add a `NeuralCandidateReranker` interface behind the current scorer. This boundary now exists with a disabled no-op implementation, safe heuristic backfill, and tests proving a future local model can reorder scored candidates without becoming a hard dependency.
 - Acceptance: ranking changes can be evaluated against recorded local traces before enabling more aggressive neural or context scoring.
 
 ## Ninth Slice
@@ -155,6 +155,17 @@ The ninth implementation slice should turn recorded local evidence into safer tu
 
 - Convert selected `swiftkey_typing_traces.jsonl` rows into deterministic replay fixtures that preserve typed text, context words, candidate order, selected candidate, correction acceptance, and rejection events.
 - Add replay coverage for row-gap taps, multi-edit typos, mixed-language tokens, short glide ambiguity, and next-word prediction in empty fields.
-- Add sentence-position priors so cold-start predictions can prefer likely starts such as "I", "The", "This", and "What" without requiring personal history first.
-- Define the optional `NeuralCandidateReranker` contract, with heuristic pass-through as the default implementation and no model dependency in the base APK.
+- Add sentence-position priors so cold-start predictions can prefer likely starts such as "I", "The", "This", and "What" without requiring personal history first. The first English prior layer is now implemented for sentence starts and common short continuations, and is gated to English locales.
+- Enrich trace JSON with previous words, touch evidence, auto-commit eligibility, candidate source, and candidate index so local traces contain enough structure to become replay fixtures.
+- Define the optional `NeuralCandidateReranker` contract, with heuristic pass-through as the default implementation and no model dependency in the base APK. This is now implemented at the scorer boundary.
 - Acceptance: every future scorer weight change can be checked against real local traces plus synthetic SwiftKey-parity cases.
+
+## Tenth Slice
+
+The tenth implementation slice should close the trace-to-replay loop:
+
+- Add a checked-in anonymized JSONL fixture format for selected local traces.
+- Build a parser that turns suggestion trace events into `ReplayRankerCase` instances.
+- Add deterministic cases for row-gap taps, multi-edit typos, mixed-language words, short glide ambiguity, and empty-field next-word insertion.
+- Add a tiny benchmark-style unit test that verifies a replay batch can run without Android framework dependencies.
+- Acceptance: score tuning can be driven by captured local behavior instead of manually crafted examples only.
