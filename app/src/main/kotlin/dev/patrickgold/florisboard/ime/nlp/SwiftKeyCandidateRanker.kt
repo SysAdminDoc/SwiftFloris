@@ -30,6 +30,7 @@ internal data class SwiftKeyCandidateSignals(
     val dictionaryFrequency: Double = 0.0,
     val contextProbability: Double = 0.0,
     val languageConfidence: Double = 1.0,
+    val acceptedCorrectionConfidence: Double = 0.0,
     val rejectionPenalty: Double = 0.0,
 )
 
@@ -51,6 +52,7 @@ internal data class SwiftKeyCandidateScore(
     val dictionaryFrequency: Double,
     val contextProbability: Double,
     val languageConfidence: Double,
+    val acceptedCorrectionConfidence: Double,
     val rejectionPenalty: Double,
     val lengthPenalty: Double,
 ) {
@@ -62,6 +64,7 @@ internal data class SwiftKeyCandidateScore(
             evidence(dictionaryFrequency) * DictionaryWeight +
             evidence(contextProbability) * ContextWeight +
             evidence(languageConfidence) * LanguageWeight +
+            evidence(acceptedCorrectionConfidence) * AcceptedCorrectionWeight +
             evidence(editProximity) * EditWeight +
             evidence(completionAffinity) * CompletionWeight -
             rejectionPenalty.coerceIn(0.0, 1.0) * RejectionWeight -
@@ -76,6 +79,7 @@ internal data class SwiftKeyCandidateScore(
         const val DictionaryWeight = 12.0
         const val ContextWeight = 20.0
         const val LanguageWeight = 8.0
+        const val AcceptedCorrectionWeight = 7.0
         const val EditWeight = 5.0
         const val CompletionWeight = 3.0
         const val RejectionWeight = 32.0
@@ -298,12 +302,13 @@ internal object SwiftKeyCandidateRanker {
         touchEvidence: TouchDecoderEvidence?,
         signals: Map<String, SwiftKeyCandidateSignals>,
     ): SwiftKeyScoredCandidate {
-        val spatialLikelihood = touchEvidence?.spatialReplacementScore(candidate.text, currentWord)
-            ?.coerceIn(0.0, 1.0)
-            ?: 0.0
-        val role = candidate.role(typedWordKey, spatialLikelihood)
         val candidateKey = candidate.text.toString().normalizedCandidateKey()
         val signal = signals[candidateKey] ?: SwiftKeyCandidateSignals()
+        val rawSpatialLikelihood = touchEvidence?.spatialReplacementScore(candidate.text, currentWord)
+            ?.coerceIn(0.0, 1.0)
+            ?: 0.0
+        val spatialLikelihood = outcomeAdjustedSpatialLikelihood(rawSpatialLikelihood, signal)
+        val role = candidate.role(typedWordKey, spatialLikelihood)
         val score = SwiftKeyCandidateScore(
             role = role,
             rolePriority = role.priority,
@@ -315,6 +320,7 @@ internal object SwiftKeyCandidateRanker {
             dictionaryFrequency = signal.dictionaryFrequency,
             contextProbability = signal.contextProbability,
             languageConfidence = signal.languageConfidence,
+            acceptedCorrectionConfidence = signal.acceptedCorrectionConfidence,
             rejectionPenalty = signal.rejectionPenalty,
             lengthPenalty = lengthPenalty(candidate.text.length),
         )
@@ -324,6 +330,17 @@ internal object SwiftKeyCandidateRanker {
             source = source,
             score = score,
         )
+    }
+
+    private fun outcomeAdjustedSpatialLikelihood(
+        rawSpatialLikelihood: Double,
+        signal: SwiftKeyCandidateSignals,
+    ): Double {
+        val acceptedBoost = signal.acceptedCorrectionConfidence.coerceIn(0.0, 1.0) *
+            AcceptedCorrectionSpatialBoost
+        val rejectedPenalty = signal.rejectionPenalty.coerceIn(0.0, 1.0) *
+            RejectedCorrectionSpatialPenalty
+        return (rawSpatialLikelihood + acceptedBoost - rejectedPenalty).coerceIn(0.0, 1.0)
     }
 
     private fun SuggestionCandidate.role(typedWordKey: String, touchScore: Double): SwiftKeyCandidateRole {
@@ -397,6 +414,8 @@ internal object SwiftKeyCandidateRanker {
 
     private const val TypedLiteralConfidence = 0.62
     private const val SpatialCorrectionScoreThreshold = 0.28
+    private const val AcceptedCorrectionSpatialBoost = 0.46
+    private const val RejectedCorrectionSpatialPenalty = 0.58
 
     private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
         .thenByDescending { it.score.rolePriority }

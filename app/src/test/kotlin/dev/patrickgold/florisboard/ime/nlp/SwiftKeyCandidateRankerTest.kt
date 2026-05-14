@@ -298,6 +298,51 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         ranked.map { it.text.toString() } shouldBe listOf("teh", "ten", "the")
     }
 
+    test("accepted correction priors can promote a learned typed-corrected pair") {
+        val ranked = SwiftKeyCandidateRanker.rank(
+            context = decoderContext(
+                currentWord = "gello",
+                signals = mapOf(
+                    "hello" to SwiftKeyCandidateSignals(acceptedCorrectionConfidence = 0.67),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("fello", confidence = 0.99),
+                candidate("hello", confidence = 0.42),
+            ),
+        )
+
+        ranked.map { it.text.toString() } shouldBe listOf("gello", "hello", "fello")
+    }
+
+    test("rejected correction priors lower spatial confidence before role selection") {
+        val scored = SwiftKeyCandidateRanker.scoreCandidates(
+            context = decoderContext(
+                currentWord = "gello",
+                touchEvidence = touchEvidence(
+                    sample("g", "h" to 0.78),
+                    sample("e"),
+                    sample("l"),
+                    sample("l"),
+                    sample("o"),
+                ),
+                signals = mapOf(
+                    "hello" to SwiftKeyCandidateSignals(rejectionPenalty = 1.0),
+                ),
+            ),
+            preferred = emptyList(),
+            fallback = listOf(
+                candidate("fello", confidence = 0.90),
+                candidate("hello", confidence = 0.80),
+            ),
+        )
+
+        val hello = scored.first { it.candidate.text == "hello" }
+        hello.score.role shouldBe SwiftKeyCandidateRole.Other
+        (hello.score.spatialLikelihood < 0.28) shouldBe true
+    }
+
     test("spatial evidence does not make spacebar replace a known typed word") {
         val candidates = SwiftKeyCandidateRanker.rank(
             context = decoderContext(

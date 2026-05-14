@@ -109,6 +109,7 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
             .put("dictionaryFrequency", score.dictionaryFrequency)
             .put("contextProbability", score.contextProbability)
             .put("languageConfidence", score.languageConfidence)
+            .put("acceptedCorrectionConfidence", score.acceptedCorrectionConfidence)
             .put("rejectionPenalty", score.rejectionPenalty)
             .put("editProximity", score.editProximity)
             .put("completionAffinity", score.completionAffinity)

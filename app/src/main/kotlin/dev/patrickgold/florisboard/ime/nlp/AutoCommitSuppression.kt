@@ -16,9 +16,15 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+internal data class AutoCommitCorrectionPair(
+    val original: String,
+    val corrected: String,
+)
+
 internal class AutoCommitSuppression {
     private var acceptedAutoCommit: AcceptedAutoCommit? = null
     private var rejectedAutoCommit: RejectedAutoCommit? = null
+    private var lastRejectedPair: AutoCommitCorrectionPair? = null
 
     fun rememberAccepted(
         originalText: CharSequence,
@@ -46,8 +52,18 @@ internal class AutoCommitSuppression {
             corrected = accepted.corrected,
             wordStart = accepted.wordStart,
         )
+        lastRejectedPair = AutoCommitCorrectionPair(
+            original = accepted.original,
+            corrected = accepted.corrected,
+        )
         acceptedAutoCommit = null
         return true
+    }
+
+    fun consumeLastRejectedPair(): AutoCommitCorrectionPair? {
+        return lastRejectedPair.also {
+            lastRejectedPair = null
+        }
     }
 
     fun shouldSuppress(

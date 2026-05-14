@@ -56,6 +56,16 @@ class AutoCommitSuppressionTest : FunSpec({
         suppression.rejectedPairPenalty(currentWord = "teh", candidateText = "ten", currentWordStart = 0) shouldBe 0.0
     }
 
+    test("exposes the rejected pair once for outcome learning") {
+        val suppression = AutoCommitSuppression()
+
+        suppression.rememberAccepted(originalText = "teh", correctedText = "the", wordStart = 0)
+        suppression.rejectAccepted(textBeforeSelection = "the ", cursorPosition = 4) shouldBe true
+
+        suppression.consumeLastRejectedPair() shouldBe AutoCommitCorrectionPair("teh", "the")
+        suppression.consumeLastRejectedPair() shouldBe null
+    }
+
     test("keeps rejection active while user edits back to the original word") {
         val suppression = AutoCommitSuppression()
 

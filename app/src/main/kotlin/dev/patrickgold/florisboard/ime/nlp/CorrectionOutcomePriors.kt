@@ -1,0 +1,236 @@
+/*
+ * Copyright (C) 2026 SwiftFloris Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.ime.nlp
+
+import android.content.Context
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import java.io.File
+
+internal data class CorrectionOutcomeSignal(
+    val acceptedConfidence: Double = 0.0,
+    val rejectedConfidence: Double = 0.0,
+)
+
+/**
+ * Local, bounded evidence of correction outcomes. This stores only normalized
+ * typed/corrected pairs so the scorer can distinguish corrections the user
+ * keeps accepting from corrections they repeatedly undo.
+ */
+internal class CorrectionOutcomePriors private constructor(
+    private val storageFile: File?,
+) {
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val entries = LinkedHashMap<String, OutcomeEntry>(MaxEntries, 0.75f, true)
+    private var loaded = storageFile == null
+
+    @Synchronized
+    fun recordAccepted(originalText: CharSequence, correctedText: CharSequence) {
+        val key = pairKey(originalText, correctedText) ?: return
+        ensureLoadedLocked()
+        val entry = entries.getOrPut(key) { OutcomeEntry() }
+        entry.acceptedCount = (entry.acceptedCount + 1).coerceAtMost(MaxCount)
+        if (entry.rejectedCount > 0) {
+            entry.rejectedCount -= 1
+        }
+        entry.lastSeenMs = System.currentTimeMillis()
+        trimLocked()
+        persistLocked()
+    }
+
+    @Synchronized
+    fun recordRejected(originalText: CharSequence, correctedText: CharSequence) {
+        val key = pairKey(originalText, correctedText) ?: return
+        ensureLoadedLocked()
+        val entry = entries.getOrPut(key) { OutcomeEntry() }
+        if (entry.acceptedCount > 0) {
+            entry.acceptedCount -= 1
+        }
+        entry.rejectedCount = (entry.rejectedCount + 1).coerceAtMost(MaxCount)
+        entry.lastSeenMs = System.currentTimeMillis()
+        trimLocked()
+        persistLocked()
+    }
+
+    @Synchronized
+    fun signal(originalText: CharSequence, correctedText: CharSequence): CorrectionOutcomeSignal {
+        val key = pairKey(originalText, correctedText) ?: return CorrectionOutcomeSignal()
+        ensureLoadedLocked()
+        val entry = entries[key] ?: return CorrectionOutcomeSignal()
+        return CorrectionOutcomeSignal(
+            acceptedConfidence = (entry.acceptedCount.toDouble() / AcceptedCountForFullConfidence)
+                .coerceIn(0.0, 1.0),
+            rejectedConfidence = (entry.rejectedCount.toDouble() / RejectedCountForFullConfidence)
+                .coerceIn(0.0, 1.0),
+        )
+    }
+
+    @Synchronized
+    fun reset() {
+        ensureLoadedLocked()
+        entries.clear()
+        persistLocked()
+    }
+
+    private fun ensureLoadedLocked() {
+        if (loaded) return
+        loaded = true
+        val file = storageFile ?: return
+        if (!file.exists() || file.length() <= 0L) return
+        runCatching {
+            file.bufferedReader().useLines { lines ->
+                for (line in lines) {
+                    val parts = line.split('\t')
+                    if (parts.size != 5) continue
+                    val key = keyFromNormalized(parts[0], parts[1]) ?: continue
+                    val accepted = parts[2].toIntOrNull()?.coerceIn(0, MaxCount) ?: continue
+                    val rejected = parts[3].toIntOrNull()?.coerceIn(0, MaxCount) ?: continue
+                    val lastSeen = parts[4].toLongOrNull()?.takeIf { it > 0L } ?: continue
+                    if (accepted == 0 && rejected == 0) continue
+                    entries[key] = OutcomeEntry(
+                        acceptedCount = accepted,
+                        rejectedCount = rejected,
+                        lastSeenMs = lastSeen,
+                    )
+                }
+            }
+            trimLocked()
+        }
+    }
+
+    private fun trimLocked() {
+        if (entries.size <= MaxEntries) return
+        val keep = entries.entries
+            .sortedWith(
+                compareByDescending<Map.Entry<String, OutcomeEntry>> { it.value.lastSeenMs }
+                    .thenByDescending { it.value.acceptedCount + it.value.rejectedCount }
+            )
+            .take(MaxEntries)
+            .map { it.key }
+            .toHashSet()
+        entries.keys.removeAll { it !in keep }
+    }
+
+    private fun persistLocked() {
+        val file = storageFile ?: return
+        val snapshot = entries.mapNotNull { (key, entry) ->
+            val separatorIndex = key.indexOf(PairSeparator)
+            if (separatorIndex <= 0 || separatorIndex >= key.lastIndex) {
+                null
+            } else {
+                OutcomeSnapshot(
+                    original = key.substring(0, separatorIndex),
+                    corrected = key.substring(separatorIndex + 1),
+                    acceptedCount = entry.acceptedCount,
+                    rejectedCount = entry.rejectedCount,
+                    lastSeenMs = entry.lastSeenMs,
+                )
+            }
+        }
+        ioScope.launch {
+            runCatching {
+                file.parentFile?.mkdirs()
+                val tmp = File(file.parentFile, file.name + ".tmp")
+                tmp.bufferedWriter().use { writer ->
+                    for (row in snapshot) {
+                        if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
+                        writer.write(row.original)
+                        writer.write('\t'.code)
+                        writer.write(row.corrected)
+                        writer.write('\t'.code)
+                        writer.write(row.acceptedCount.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.rejectedCount.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.lastSeenMs.toString())
+                        writer.newLine()
+                    }
+                }
+                if (!tmp.renameTo(file)) {
+                    file.delete()
+                    tmp.renameTo(file)
+                }
+            }
+        }
+    }
+
+    private data class OutcomeEntry(
+        var acceptedCount: Int = 0,
+        var rejectedCount: Int = 0,
+        var lastSeenMs: Long = System.currentTimeMillis(),
+    )
+
+    private data class OutcomeSnapshot(
+        val original: String,
+        val corrected: String,
+        val acceptedCount: Int,
+        val rejectedCount: Int,
+        val lastSeenMs: Long,
+    )
+
+    companion object {
+        private const val FileName = "correction_outcome_priors.tsv"
+        private const val PairSeparator = '\u001f'
+        private const val MaxEntries = 1024
+        private const val MaxCount = 8
+        private const val AcceptedCountForFullConfidence = 3.0
+        private const val RejectedCountForFullConfidence = 2.0
+
+        @Volatile
+        private var instance: CorrectionOutcomePriors? = null
+
+        fun get(context: Context): CorrectionOutcomePriors {
+            instance?.let { return it }
+            synchronized(this) {
+                instance?.let { return it }
+                val file = File(context.applicationContext.filesDir, FileName)
+                return CorrectionOutcomePriors(file).also { instance = it }
+            }
+        }
+
+        fun inMemory(): CorrectionOutcomePriors {
+            return CorrectionOutcomePriors(storageFile = null)
+        }
+
+        private fun pairKey(originalText: CharSequence, correctedText: CharSequence): String? {
+            val original = normalizeWord(originalText) ?: return null
+            val corrected = normalizeWord(correctedText) ?: return null
+            return keyFromNormalized(original, corrected)
+        }
+
+        private fun keyFromNormalized(original: String, corrected: String): String? {
+            if (original == corrected) return null
+            if (original.isBlank() || corrected.isBlank()) return null
+            return "$original$PairSeparator$corrected"
+        }
+
+        private fun normalizeWord(text: CharSequence): String? {
+            val normalized = text
+                .toString()
+                .trim()
+                .trim { char: Char -> !char.isLetterOrDigit() && char != '\'' && char != '\u2019' }
+                .lowercase()
+            if (normalized.isBlank() || normalized.none { it.isLetterOrDigit() }) return null
+            if (normalized.any { char -> !char.isLetterOrDigit() && char != '\'' && char != '\u2019' }) {
+                return null
+            }
+            return normalized
+        }
+    }
+}
