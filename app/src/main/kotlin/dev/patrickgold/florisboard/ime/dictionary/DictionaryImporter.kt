@@ -82,12 +82,22 @@ class DictionaryImporter {
             return DictionaryImportFormat.XML
         }
         if (asText.contains(",")) {
-            // Heuristic for CSV: at least one comma in the first kilobyte and
-            // the first line has the shape `word,number,...`.
-            val firstLine = asText.lineSequence().firstOrNull().orEmpty()
-            val parts = firstLine.split(",")
-            if (parts.size >= 2 && parts[1].trim().toIntOrNull() != null) {
-                return DictionaryImportFormat.CSV
+            // Heuristic for CSV: at least one comma in the first kilobyte
+            // and at least one of the first two lines either looks like
+            // our known header (`word,frequency...`) OR has the shape
+            // `<word>,<int>,...`. The two-line tolerance covers files
+            // whose first line is a header that doesn't tokenize as data.
+            val lines = asText.lineSequence().take(2).toList()
+            for (line in lines) {
+                val parts = line.split(",")
+                if (parts.size < 2) continue
+                if (parts[0].trim().lowercase() == "word" &&
+                    parts[1].trim().lowercase() == "frequency") {
+                    return DictionaryImportFormat.CSV
+                }
+                if (parts[1].trim().toIntOrNull() != null) {
+                    return DictionaryImportFormat.CSV
+                }
             }
         }
         return DictionaryImportFormat.UNKNOWN
