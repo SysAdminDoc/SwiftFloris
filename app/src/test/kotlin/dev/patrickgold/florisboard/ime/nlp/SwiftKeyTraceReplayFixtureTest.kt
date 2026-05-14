@@ -48,6 +48,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "phrase continuation after let me",
             "partial phrase continuation after let me",
             "multi-word autocorrect repair",
+            "three-word run-together phrase repair",
             "same-prefix bilingual literal protection",
             "secondary-language auto-commit protection",
             "bilingual context completion follows active language",
@@ -81,8 +82,8 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0
         metrics.caseCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
         metrics.fullRankingHitCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
-        metrics.caseCountByTag.getValue(MultiWordRepairTag) shouldBe 1
-        metrics.fullRankingHitCountByTag.getValue(MultiWordRepairTag) shouldBe 1
+        metrics.caseCountByTag.getValue(MultiWordRepairTag) shouldBe 2
+        metrics.fullRankingHitCountByTag.getValue(MultiWordRepairTag) shouldBe 2
         metrics.caseCountByTag.getValue(BilingualContextTag) shouldBe 2
         metrics.fullRankingHitCountByTag.getValue(BilingualContextTag) shouldBe 2
 
