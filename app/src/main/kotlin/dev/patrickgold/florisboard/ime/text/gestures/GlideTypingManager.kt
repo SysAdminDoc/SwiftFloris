@@ -37,6 +37,7 @@ import kotlin.math.min
 class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     companion object {
         private const val MAX_SUGGESTION_COUNT = 8
+        private const val CONTEXT_RESCORE_WINDOW_MS = 6_000L
     }
 
     private val prefs by FlorisPreferenceStore
@@ -47,6 +48,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var glideTypingClassifier = StatisticalGlideTypingClassifier(context)
     private var lastTime = System.currentTimeMillis()
+    private var pendingContextRescore: PendingGlideCommit? = null
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
         updateSuggestionsAsync(MAX_SUGGESTION_COUNT, true) {
@@ -66,6 +68,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
 
     override fun onGlideCancelled() {
         glideTypingClassifier.clear()
+        pendingContextRescore = null
     }
 
     override fun onGlideAddPoint(point: GlideTypingGesture.Detector.Position) {
@@ -118,10 +121,56 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
 
                 nlpManager.suggestDirectly(suggestionList)
                 if (commit && suggestions.isNotEmpty()) {
+                    maybeRescorePreviousGlide(suggestions.first())
                     keyboardManager.commitGesture(suggestions.first())
+                    rememberPendingGlideCommit(suggestions)
                 }
                 callback.invoke(true)
             }
         }
     }
+
+    private suspend fun maybeRescorePreviousGlide(nextWord: String) {
+        val pending = pendingContextRescore ?: return
+        if (System.currentTimeMillis() - pending.timestampMs > CONTEXT_RESCORE_WINDOW_MS) {
+            pendingContextRescore = null
+            return
+        }
+        val normalizedNext = GlideContextRescorer.normalizeGlideWordForContext(nextWord) ?: return
+        val contextScores = pending.candidates
+            .mapNotNull { candidate ->
+                val normalizedCandidate = GlideContextRescorer.normalizeGlideWordForContext(candidate)
+                    ?: return@mapNotNull null
+                normalizedCandidate to nlpManager.nextWordContextScore(
+                    previousWord = normalizedCandidate,
+                    nextWord = normalizedNext,
+                )
+            }
+            .toMap()
+        val replacement = GlideContextRescorer.chooseReplacement(
+            committedWord = pending.committedWord,
+            candidateWords = pending.candidates,
+            nextWord = nextWord,
+            contextScores = contextScores,
+        ) ?: return
+        keyboardManager.replaceLastGestureWordForContext(
+            expectedWord = pending.committedWord,
+            replacementWord = replacement,
+        )
+    }
+
+    private fun rememberPendingGlideCommit(suggestions: List<CharSequence>) {
+        val committed = suggestions.firstOrNull()?.toString()?.takeIf { it.isNotBlank() } ?: return
+        pendingContextRescore = PendingGlideCommit(
+            committedWord = keyboardManager.fixCase(committed),
+            candidates = suggestions.map { it.toString() },
+            timestampMs = System.currentTimeMillis(),
+        )
+    }
+
+    private data class PendingGlideCommit(
+        val committedWord: String,
+        val candidates: List<String>,
+        val timestampMs: Long,
+    )
 }

@@ -30,6 +30,7 @@ import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
+import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
@@ -490,6 +491,21 @@ class NlpManager(context: Context) {
         val value = runBlocking { providerRegistry.suggestionProvider(subtype).getFrequencyForWord(subtype, word) }
         frequencyCache.put(cacheKey, value)
         return value
+    }
+
+    suspend fun nextWordContextScore(previousWord: String, nextWord: String): Double {
+        val locale = subtypeManager.activeSubtype.primaryLocale
+        val personalScore = PersonalBigramStore.get(appContext).score(previousWord, nextWord, locale)
+        val coldStartScore = ColdStartNextWordPriors
+            .suggest(
+                textBeforeCursor = "${previousWord.trim()} ",
+                languageCode = locale.language,
+                maxCandidateCount = 8,
+            )
+            .firstOrNull { prior -> prior.word.equals(nextWord, ignoreCase = true) }
+            ?.confidence
+            ?: 0.0
+        return maxOf(personalScore, coldStartScore).coerceIn(0.0, 1.0)
     }
 
     private fun userDictionarySuggestions(

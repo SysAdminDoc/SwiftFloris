@@ -392,6 +392,24 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         learnIfAllowed(cased)
     }
 
+    fun replaceLastGestureWordForContext(expectedWord: String, replacementWord: String): Boolean {
+        val casedReplacement = replacementWord.matchCaseOf(expectedWord)
+        return editorInstance.replaceCurrentGestureWord(expectedWord, casedReplacement)
+    }
+
+    private fun String.matchCaseOf(source: String): String {
+        val locale = subtypeManager.activeSubtype.primaryLocale.base
+        return when {
+            source.isNotBlank() && source.all { char -> !char.isLetter() || char.isUpperCase() } -> {
+                uppercase(locale)
+            }
+            source.firstOrNull()?.isUpperCase() == true -> {
+                replaceFirstChar { char -> char.uppercase(locale) }
+            }
+            else -> this
+        }
+    }
+
     /**
      * Changes a word to the current case.
      * eg if [KeyboardState.isUppercase] is true, abc -> ABC

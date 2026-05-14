@@ -331,6 +331,18 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
     }
 
+    fun replaceCurrentGestureWord(expectedText: String, replacementText: String): Boolean {
+        if (expectedText.isBlank() || replacementText.isBlank() || activeInfo.isRawInputEditor) return false
+        val content = activeContent
+        val activeWord = content.composingText.ifBlank { content.currentWordText }
+        if (!activeWord.sameGestureWordAs(expectedText)) return false
+        return if (content.composing.isValid) {
+            super.finalizeComposingText(replacementText)
+        } else {
+            false
+        }
+    }
+
     /**
      * Commits the given [ClipboardItem]. If the clip data is text (incl. HTML), it delegates to [commitText].
      * If the item has a content URI (and the EditText supports it), the item is committed as rich data.
@@ -619,6 +631,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
              (punctuationRule.symbolsPrecedingPhantomSpace.contains(textBefore[textBefore.length - 1]) ||
                  textBefore[textBefore.length - 1].isLetterOrDigit()) &&
              (punctuationRule.symbolsFollowingPhantomSpace.contains(text[0]) || text[0].isLetterOrDigit())
+    }
+
+    private fun String.sameGestureWordAs(other: String): Boolean {
+        return normalizedGestureWord() == other.normalizedGestureWord()
+    }
+
+    private fun String.normalizedGestureWord(): String {
+        return trim()
+            .trim { char -> !char.isLetter() && char != '\'' && char != '\u2019' }
+            .lowercase()
     }
 
     class AutoSpaceState {

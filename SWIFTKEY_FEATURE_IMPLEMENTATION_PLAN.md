@@ -191,9 +191,18 @@ The twelfth implementation slice turns correction outcomes into spatial priors:
 
 ## Thirteenth Slice
 
-The thirteenth implementation slice should improve Flow/glide parity:
+The thirteenth implementation slice improves Flow/glide parity:
 
-- Add a short-glide ambiguity replay fixture where the previous glide candidate is unclear until the next word starts.
-- Keep the previous Flow candidate recoverable long enough for following context to rescore it.
+- Add a short-glide ambiguity replay fixture where the previous glide candidate is unclear until the next word starts. This is now covered by `GlideContextRescorerTest`.
+- Keep the previous Flow candidate recoverable long enough for following context to rescore it. This is now implemented with a bounded pending Flow commit window in `GlideTypingManager`.
 - Feed adaptive touch offsets and correction outcome priors into the Flow candidate scorer where available.
-- Acceptance: short Flow words can be corrected by immediate phrase context instead of being locked too early.
+- Acceptance: short Flow words can be corrected by immediate phrase context instead of being locked too early. The first shipped behavior rescues short ambiguous words from personal/cold-start next-word context before the next glide commit lands.
+
+## Fourteenth Slice
+
+The fourteenth implementation slice should close the multilingual parity gap:
+
+- Add per-token language posterior scoring across active subtype locales, using current token evidence plus the trailing word context.
+- Feed that language posterior into `SwiftKeyCandidateRanker` so recognized mixed-language words stay literal and wrong-language corrections lose auto-commit authority.
+- Add checked-in replay cases for bilingual sentences, shared-spelling words, and wrong-language near misses.
+- Acceptance: bilingual typing feels closer to SwiftKey because normal mixed-language words no longer require manual keyboard switching or repeated correction rejection.
