@@ -236,9 +236,18 @@ The seventeenth implementation slice makes parity tuning more evidence-driven:
 
 ## Eighteenth Slice
 
-The eighteenth implementation slice should tune from the replay evidence:
+The eighteenth implementation slice starts tuning from replay evidence:
 
-- Add more real trace fixtures for glide ambiguity, bilingual same-prefix words, and correction undo/retype loops.
-- Use the expanded fixture set to adjust autocommit thresholds and accepted/rejected correction priors with fewer manual constants.
-- Add stats for replay outcomes: how often the middle candidate, spacebar candidate, and typed literal match the expected SwiftKey-like action.
-- Acceptance: scoring changes improve fixture outcomes without regressing known-word protection or user-rejected corrections.
+- Replay fixture tests now derive aggregate metrics for full-ranking hits, spacebar-action hits, expected role hits, and typed-literal protection misses.
+- The metric test currently requires the fixture set to stay perfect, which gives threshold changes a single regression signal before broader tuning.
+- Remaining work: add more real trace fixtures for glide ambiguity, bilingual same-prefix words, and correction undo/retype loops.
+- Acceptance: scoring changes improve fixture outcomes without regressing known-word protection or user-rejected corrections. This is now partially met by the aggregate metrics layer.
+
+## Nineteenth Slice
+
+The nineteenth implementation slice should tune the scorer itself:
+
+- Use the aggregate replay metrics to sweep autocommit thresholds and spatial/accepted/rejected correction constants.
+- Prefer threshold changes only when they improve new fixtures without weakening typed-literal protection.
+- Add fixture categories for glide context rescue and bilingual token protection before changing constants that affect those paths.
+- Acceptance: the replay set demonstrates a measurable improvement before constants move.
