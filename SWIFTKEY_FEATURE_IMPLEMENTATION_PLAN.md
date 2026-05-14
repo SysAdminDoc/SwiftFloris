@@ -240,8 +240,10 @@ The eighteenth implementation slice starts tuning from replay evidence:
 
 - Replay fixture tests now derive aggregate metrics for full-ranking hits, spacebar-action hits, expected role hits, and typed-literal protection misses.
 - The metric test currently requires the fixture set to stay perfect, which gives threshold changes a single regression signal before broader tuning.
-- Remaining work: add more real trace fixtures for glide ambiguity, bilingual same-prefix words, and correction undo/retype loops.
-- Acceptance: scoring changes improve fixture outcomes without regressing known-word protection or user-rejected corrections. This is now partially met by the aggregate metrics layer.
+- Suggestion fixtures now support tags and include a `bilingual-token-protection` category for same-prefix bilingual words and secondary-language auto-commit protection.
+- Glide context rescoring now has a separate checked-in JSONL replay fixture with aggregate hit metrics for rescue and no-op categories.
+- Remaining work: add more real trace fixtures for correction undo/retype loops and longer multilingual/glide ambiguity.
+- Acceptance: scoring changes improve fixture outcomes without regressing known-word protection or user-rejected corrections. This is now partially met by aggregate metrics plus category-specific bilingual/glide guards.
 
 ## Nineteenth Slice
 
@@ -249,5 +251,14 @@ The nineteenth implementation slice should tune the scorer itself:
 
 - Use the aggregate replay metrics to sweep autocommit thresholds and spatial/accepted/rejected correction constants.
 - Prefer threshold changes only when they improve new fixtures without weakening typed-literal protection.
-- Add fixture categories for glide context rescue and bilingual token protection before changing constants that affect those paths.
+- Use the new glide and bilingual fixture categories as guardrails before changing constants that affect those paths.
 - Acceptance: the replay set demonstrates a measurable improvement before constants move.
+
+## Twentieth Slice
+
+The twentieth implementation slice should expand real-world replay traces:
+
+- Capture and anonymize more local traces from device typing sessions using the Typing stats trace controls.
+- Add fixture categories for undo/retype loops, phrase-continuation mistakes, longer glide ambiguity, and active-locale switching.
+- Compare aggregate metrics before and after any scoring change so tuning is evidence-led rather than constant guessing.
+- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome.
