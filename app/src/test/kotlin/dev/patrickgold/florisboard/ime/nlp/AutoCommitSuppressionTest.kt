@@ -46,6 +46,16 @@ class AutoCommitSuppressionTest : FunSpec({
         suppression.shouldSuppress(currentWord = "teh", candidateText = "ten", currentWordStart = 0) shouldBe false
     }
 
+    test("keeps the manually restored word literal after an autocorrect rejection") {
+        val suppression = AutoCommitSuppression()
+
+        suppression.rememberAccepted(originalText = "teh", correctedText = "the", wordStart = 0)
+        suppression.rejectAccepted(textBeforeSelection = "the ", cursorPosition = 4) shouldBe true
+
+        suppression.shouldKeepTypedLiteral(currentWord = "teh", currentWordStart = 0) shouldBe true
+        suppression.shouldSuppress(currentWord = "teh", candidateText = "ten", currentWordStart = 0) shouldBe false
+    }
+
     test("exposes rejected pair penalty without suppressing unrelated candidates") {
         val suppression = AutoCommitSuppression()
 

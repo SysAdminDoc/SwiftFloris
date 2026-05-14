@@ -261,6 +261,9 @@ The twentieth implementation slice should expand real-world replay traces:
 
 - Typing stats can now share sanitized replay fixtures derived from local trace capture, not just the raw diagnostic trace.
 - `SwiftKeyTraceFixtureExporter` drops timestamps, cursor lengths, and previous-word context while preserving replay-relevant candidate evidence and accepted/rejected outcomes.
-- Remaining work: capture more local traces from device typing sessions and add fixture categories for undo/retype loops, phrase-continuation mistakes, longer glide ambiguity, and active-locale switching.
+- Cold-start phrase priors now feed candidate scoring while a partial word is being typed, and replay fixtures cover `let me kn -> know` instead of only blank-field `let me -> know`.
+- Undo/retype behavior now keeps a restored word literal after backspace rejects an autocorrect, so a different replacement cannot take over the same word slot.
+- Longer Flow ambiguity now has a checked-in contraction rescue case for `were` + `going` -> `we're`.
+- Remaining work: capture more local traces from device typing sessions and add fixture categories for active-locale switching and multi-word autocorrect repairs.
 - Compare aggregate metrics before and after any scoring change so tuning is evidence-led rather than constant guessing.
-- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome. This is partially met by the fixture export workflow.
+- Acceptance: each new failure mode has a checked-in fixture and a measured before/after outcome. This is now partially met by fixture export, partial phrase scoring, restored-word suppression, and longer glide contraction replay coverage.

@@ -57,6 +57,26 @@ internal object ColdStartNextWordPriors {
             }
     }
 
+    fun score(
+        textBeforeCursor: String,
+        languageCode: String,
+        candidateWord: String,
+        maxCandidateCount: Int = 16,
+    ): Double {
+        val normalizedCandidate = candidateWord
+            .trim()
+            .lowercase()
+            .replace('\u2019', '\'')
+        if (normalizedCandidate.isBlank()) return 0.0
+        return suggest(
+            textBeforeCursor = textBeforeCursor,
+            languageCode = languageCode,
+            maxCandidateCount = maxCandidateCount,
+        ).firstOrNull { prior ->
+            prior.word.equals(normalizedCandidate, ignoreCase = true)
+        }?.confidence ?: 0.0
+    }
+
     private fun isSentenceStart(textBeforeCursor: String): Boolean {
         val trimmed = textBeforeCursor.trimEnd()
         if (trimmed.isEmpty()) return true
@@ -117,6 +137,9 @@ internal object ColdStartNextWordPriors {
         "it" to listOf("is", "was", "will", "looks", "sounds"),
         "you" to listOf("can", "are", "have", "will", "should"),
         "we" to listOf("can", "are", "have", "will", "need"),
+        "we're" to listOf("going", "not", "still", "ready"),
+        "we'll" to listOf("be", "send", "check", "try"),
+        "you're" to listOf("going", "not", "right", "welcome"),
         "they" to listOf("are", "were", "will", "have"),
         "he" to listOf("is", "was", "will", "has"),
         "she" to listOf("is", "was", "will", "has"),

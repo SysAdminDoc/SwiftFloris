@@ -46,6 +46,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "accepted correction prior promotion",
             "rejected spatial correction demotion",
             "phrase continuation after let me",
+            "partial phrase continuation after let me",
             "same-prefix bilingual literal protection",
             "secondary-language auto-commit protection",
         )
@@ -75,6 +76,8 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.fullRankingHitCountByTag.getValue(BilingualTokenProtectionTag) shouldBe
             metrics.caseCountByTag.getValue(BilingualTokenProtectionTag)
         metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0
+        metrics.caseCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
+        metrics.fullRankingHitCountByTag.getValue(PhraseContextCompletionTag) shouldBe 1
 
         val conservativeSpatialMetrics = ReplayOutcomeMetrics.from(
             cases.map {
@@ -366,3 +369,4 @@ private fun MutableMap<String, Int>.increment(key: String) {
 }
 
 private const val BilingualTokenProtectionTag = "bilingual-token-protection"
+private const val PhraseContextCompletionTag = "phrase-context-completion"

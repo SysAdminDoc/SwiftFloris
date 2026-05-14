@@ -335,6 +335,13 @@ class NlpManager(context: Context) {
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
+        if (autoCommitSuppression.shouldKeepTypedLiteral(
+                currentWord = currentWord,
+                currentWordStart = currentWordStart,
+            )
+        ) {
+            return null
+        }
 
         // ROADMAP §6 N5.4 — Personal-dictionary shortcut auto-replace runs *before*
         // the in-strip auto-commit candidate and the English contraction fallback,
@@ -365,6 +372,13 @@ class NlpManager(context: Context) {
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
+        if (autoCommitSuppression.shouldKeepTypedLiteral(
+                currentWord = currentWord,
+                currentWordStart = currentWordStart,
+            )
+        ) {
+            return null
+        }
 
         if (autoCorrectEnabled) {
             userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
@@ -574,6 +588,7 @@ class NlpManager(context: Context) {
             locales.any { locale -> dictionaryManager.isKnownUserDictionaryWord(key, locale) }
         } ?: false
         val previousWords = previousWordsForContext(content, currentWord)
+        val contextPrefix = contextPrefixForCandidateScoring(content, currentWord)
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
 
@@ -609,9 +624,16 @@ class NlpManager(context: Context) {
                 } else {
                     0.0
                 }
+                val coldStartProbability = ColdStartNextWordPriors.score(
+                    textBeforeCursor = contextPrefix,
+                    languageCode = locale.language,
+                    candidateWord = candidateText,
+                    maxCandidateCount = maxOf(MaxColdStartContextCandidates, candidates.size),
+                )
                 val contextProbability = maxOf(
                     bigramProbability * BigramContextWeight,
                     trigramProbability,
+                    coldStartProbability,
                 ).coerceIn(0.0, 1.0)
                 val languageConfidence = if (localeCount <= 1) 1.0 else languageSignal.languageConfidence
                 val outcomeSignal = correctionOutcomePriors.signal(
@@ -704,15 +726,20 @@ class NlpManager(context: Context) {
     }
 
     private fun previousWordsForContext(content: EditorContent, currentWord: String): PreviousWords {
+        val before = contextPrefixForCandidateScoring(content, currentWord)
+        return PreviousWords(
+            prev2 = previousWordOf(before, depth = 2),
+            prev1 = previousWordOf(before, depth = 1),
+        )
+    }
+
+    private fun contextPrefixForCandidateScoring(content: EditorContent, currentWord: String): String {
         var before = content.textBeforeSelection
         val activeWord = currentWord.trim()
         if (activeWord.isNotEmpty() && before.endsWith(activeWord)) {
             before = before.dropLast(activeWord.length)
         }
-        return PreviousWords(
-            prev2 = previousWordOf(before, depth = 2),
-            prev1 = previousWordOf(before, depth = 1),
-        )
+        return before
     }
 
     private fun previousWordOf(textBeforeCursor: String, depth: Int = 1): String? {
@@ -749,6 +776,7 @@ class NlpManager(context: Context) {
 
     private companion object {
         const val BigramContextWeight = 0.75
+        const val MaxColdStartContextCandidates = 16
     }
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {

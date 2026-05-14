@@ -21,7 +21,7 @@ Primary references:
 - Flow-style glide typing exists, including Flow Through Space support.
 - Personal dictionary learning, personal bigram/trigram next-word prediction, incognito gating, password-field learning suppression, and local-only learning all exist.
 - Personal bigram/trigram prediction is now recency-aware: learned phrase files keep a last-seen timestamp, older files are migrated safely, and recent continuations can outrank stale high-count history.
-- Cold-start English next-word prediction now has a small local prior model for sentence starts, common short continuations, and selected two-/three-word phrase continuations, so empty fields and fresh installs no longer rely only on raw dictionary frequency.
+- Cold-start English next-word prediction now has a small local prior model for sentence starts, common short continuations, and selected two-/three-word phrase continuations, and those priors now feed partial-word candidate scoring as well as blank next-word prediction.
 - Multilingual suggestion merging exists for multiple locales on the same subtype and suppresses wrong-language autocorrect when the typed word is recognized by an enabled locale.
 - Known-word detection and candidate language confidence now score across every active subtype locale, so a word recognized only by a secondary language can still occupy the middle literal slot and resist wrong-language correction.
 - Adaptive touch learning exists, trains on successful tap-up rather than raw touch-down, and now persists per-subtype touch offsets across restarts.
@@ -45,7 +45,7 @@ Primary references:
    Gap rescue, persisted adaptive offsets, transient nearby-key evidence, adjacent transposition scoring, bounded insertion/deletion path scoring, accepted/rejected outcome priors, and first-pass short-glide context rescue now help. The remaining touch gap is broader real-trace calibration plus richer gesture fixtures.
 
 4. Next-word prediction needs broader phrase coverage.
-   Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors for sentence starts, one-word continuations, and selected phrase continuations. A SwiftKey-level feel still needs broader phrase coverage, domain adaptation, and trace-calibrated ranking.
+   Personal bigram/trigram prediction now has recency/frequency decay and English cold-start priors for sentence starts, one-word continuations, and selected phrase continuations. Cold-start phrase context now promotes typed completions like `know` after `Let me kn` before personal history exists. A SwiftKey-level feel still needs broader phrase coverage, domain adaptation, and trace-calibrated ranking.
 
 5. Multilingual detection should keep adding context.
    Current support now checks the current token across active locales and lowers wrong-language correction confidence when a token is valid elsewhere. The next step is language posterior scoring from trailing words, shared-spelling handling, and broader bilingual replay fixtures.
@@ -72,6 +72,6 @@ Expand the scorer/replay foundation before attaching an optional neural reranker
 - Keep tuning offset priors from accepted corrections and rejected corrections rather than successful taps only.
 - Keep expanding bounded multi-edit scoring from checked-in trace evidence rather than hand-tuning weights.
 - Keep promoting debug JSONL traces into checked-in replay fixtures so score weights can be tuned from accepted/rejected events.
-- Add deterministic replay tests for multilingual words, longer glide paths, and next-word prediction.
+- Add deterministic replay tests for active-locale switching and multi-word autocorrect repairs; partial phrase completions and longer Flow contraction rescue are now covered.
 - Expand sentence-position priors and cold-start phrase priors beyond the first English seed set.
 - Attach a local ONNX/NNAPI candidate rescoring implementation behind the existing reranker boundary once trace fixtures can prove it improves ordering.

@@ -61,6 +61,28 @@ class ColdStartNextWordPriorsTest : FunSpec({
         suggestions.map { it.word } shouldBe listOf("possible", "i", "we")
     }
 
+    test("scores partial-word candidates against cold-start phrase context") {
+        ColdStartNextWordPriors.score(
+            textBeforeCursor = "Let me ",
+            languageCode = "en-US",
+            candidateWord = "know",
+        ) shouldBe 0.44
+
+        ColdStartNextWordPriors.score(
+            textBeforeCursor = "Let me ",
+            languageCode = "en-US",
+            candidateWord = "you",
+        ) shouldBe 0.0
+    }
+
+    test("scores common contraction continuations for glide rescoring") {
+        ColdStartNextWordPriors.score(
+            textBeforeCursor = "We're ",
+            languageCode = "en-US",
+            candidateWord = "going",
+        ) shouldBe 0.44
+    }
+
     test("does not inject English priors for non-English languages") {
         ColdStartNextWordPriors.suggest(
             textBeforeCursor = "",

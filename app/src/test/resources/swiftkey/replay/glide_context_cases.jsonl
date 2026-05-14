@@ -1,4 +1,5 @@
 {"name":"contraction before going","tags":["glide-context-rescue"],"committedWord":"in","candidateWords":["in","I'm","on"],"nextWord":"going","contextScores":{"i'm":0.44,"in":0.0},"expectedReplacement":"I'm"}
+{"name":"contraction before going from were","tags":["glide-context-rescue","glide-contraction-rescue"],"committedWord":"were","candidateWords":["were","we're","where","we"],"nextWord":"going","contextScores":{"we're":0.44,"were":0.0,"where":0.0},"expectedReplacement":"we're"}
 {"name":"preposition before the","tags":["glide-context-rescue"],"committedWord":"in","candidateWords":["in","on","I'm"],"nextWord":"the","contextScores":{"on":0.72,"in":0.0},"expectedReplacement":"on"}
 {"name":"contraction before be","tags":["glide-context-rescue"],"committedWord":"ill","candidateWords":["ill","I'll","all"],"nextWord":"be","contextScores":{"i'll":0.80,"ill":0.0},"expectedReplacement":"I'll"}
 {"name":"weak context no override","tags":["glide-no-op"],"committedWord":"to","candidateWords":["to","go","too"],"nextWord":"the","contextScores":{"go":0.30,"to":0.22},"expectedReplacement":null}
