@@ -53,6 +53,22 @@ class MultilingualTokenScorerTest : FunSpec({
         signal.languageConfidence shouldBeLessThan 0.4
     }
 
+    test("shared-spelling typed words damp one-language corrections") {
+        val signal = MultilingualTokenScorer.score(
+            localeEvidence = listOf(
+                TokenLocaleEvidence(typedFrequency = 0.58, candidateFrequency = 0.74),
+                TokenLocaleEvidence(typedFrequency = 0.91, candidateFrequency = 0.0),
+            ),
+            typedWordKnownByUserDictionary = false,
+            candidateMatchesTypedWord = false,
+            candidateIsEligibleForAutoCommit = true,
+        )
+
+        signal.typedWordKnown shouldBe true
+        signal.dictionaryFrequency shouldBe 0.74
+        signal.languageConfidence shouldBe 0.52
+    }
+
     test("single-language typing keeps full language confidence") {
         val signal = MultilingualTokenScorer.score(
             localeEvidence = listOf(

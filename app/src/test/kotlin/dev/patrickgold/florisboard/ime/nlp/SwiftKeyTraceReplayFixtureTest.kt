@@ -51,6 +51,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
             "three-word run-together phrase repair",
             "same-prefix bilingual literal protection",
             "secondary-language auto-commit protection",
+            "shared-spelling bilingual literal protection",
             "bilingual context completion follows active language",
             "same-sentence language switch follows current token",
         )
@@ -76,7 +77,7 @@ class SwiftKeyTraceReplayFixtureTest : FunSpec({
         metrics.spacebarHitCount shouldBe metrics.spacebarAssertionCount
         metrics.roleHitCount shouldBe metrics.roleAssertionCount
         metrics.typedLiteralProtectionMissCount shouldBe 0
-        metrics.caseCountByTag.getValue(BilingualTokenProtectionTag) shouldBe 2
+        metrics.caseCountByTag.getValue(BilingualTokenProtectionTag) shouldBe 3
         metrics.fullRankingHitCountByTag.getValue(BilingualTokenProtectionTag) shouldBe
             metrics.caseCountByTag.getValue(BilingualTokenProtectionTag)
         metrics.typedLiteralProtectionMissCountByTag[BilingualTokenProtectionTag] shouldBe 0

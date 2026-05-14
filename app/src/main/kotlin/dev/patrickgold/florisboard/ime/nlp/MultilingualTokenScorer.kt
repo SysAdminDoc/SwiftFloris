@@ -40,6 +40,7 @@ internal object MultilingualTokenScorer {
     ): MultilingualTokenSignal {
         val typedKnownByDictionary = localeEvidence.any { it.typedFrequency > 0.0 }
         val typedWordKnown = typedWordKnownByUserDictionary || typedKnownByDictionary
+        val typedKnownLocaleCount = localeEvidence.count { it.typedFrequency > 0.0 }
         val dictionaryFrequency = localeEvidence.maxOfOrNull { it.candidateFrequency.coerceIn(0.0, 1.0) } ?: 0.0
         val candidateKnown = dictionaryFrequency > 0.0
         val sameLocaleAsTypedWord = localeEvidence.any { evidence ->
@@ -52,6 +53,7 @@ internal object MultilingualTokenScorer {
         val languageConfidence = when {
             localeEvidence.size <= 1 -> 1.0
             candidateMatchesTypedWord && typedWordKnown -> 1.0
+            typedKnownLocaleCount > 1 && typedWordKnown && candidateKnown -> 0.52
             typedWordKnown && candidateKnown && sameLocaleAsTypedWord -> 0.92
             typedWordKnown && candidateKnown -> 0.32
             typedWordKnown && candidateIsEligibleForAutoCommit -> 0.20
