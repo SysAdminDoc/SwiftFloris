@@ -21,12 +21,12 @@ The English dictionary is a merge of three sources:
    These words are included for spell-check membership (so legitimate uncommon words don't get red-squiggled or
    silently auto-corrected), but ranked below the curated corpus so autocorrect still prefers high-frequency forms.
 
-3. **Low-priority supplemental expansion (~183k additional words, freq band 48-96).** Stored in
-   `../ime/dict/en_supplemental.json` and merged at runtime for English. Most entries come from SCOWL's larger
-   `70` and `80` word-list tiers. A small maintained `utils/english_modern_terms.txt` list adds current technical,
-   healthcare, Android, and AI vocabulary not covered by SCOWL 2020.
+3. **Low-priority supplemental expansion (~404k additional words, freq band 32-96).** Stored in
+   `../ime/dict/en_supplemental.json` and merged at runtime for English. Most entries come from SCOWL's broad
+   `70`, `80`, and `95` word-list tiers. A small maintained `utils/english_modern_terms.txt` list adds current
+   technical, healthcare, Android, keyboard-layout, and AI vocabulary not covered by SCOWL 2020.
 
-Total merged plain English list: ~299k words.
+Total merged plain English list: ~520k words.
 
 Profanity is filtered using the
 [LDNOOBW English bad-words list](https://github.com/LDNOOBW/List-of-Dirty-Naughty-Obscene-and-Otherwise-Bad-Words)
