@@ -94,12 +94,15 @@ fun QuickActionButton(
     // display name we already render in tile mode (e.g. "Voice input", "Clipboard",
     // "Settings"); falls back to the tooltip the QuickAction supplies so every
     // smartbar slot announces something descriptive instead of "button".
-    val actionA11yLabel = remember(action, evaluator) {
-        action.computeDisplayName(evaluator = evaluator).ifBlank {
-            action.computeTooltip(evaluator).ifBlank { "Action" }
-        }
+    // computeDisplayName / computeTooltip are themselves @Composable
+    // (they resolve string resources via LocalContext), so we evaluate
+    // them inside the composition rather than inside a remember{} body.
+    val actionDisplayName = action.computeDisplayName(evaluator = evaluator)
+    val actionTooltip = action.computeTooltip(evaluator)
+    val actionA11yLabel = actionDisplayName.ifBlank {
+        actionTooltip.ifBlank { "Action" }
     }
-    PlainTooltip(action.computeTooltip(evaluator), enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
+    PlainTooltip(actionTooltip, enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
         SnyggBox(
             elementName = elementName,
             attributes = attributes,
