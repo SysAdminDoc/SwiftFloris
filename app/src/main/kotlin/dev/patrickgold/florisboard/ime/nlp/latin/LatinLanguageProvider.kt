@@ -662,6 +662,19 @@ internal object LatinDictionarySuggester {
             dictionary = dictionary,
             languageCode = languageCode,
         )?.let { return listOf(it) }
+        // ROADMAP §7 Next-3.3a — single-letter proper-noun completion. When
+        // the user types a single capital letter (e.g. "F"), surface the
+        // most common dictionary words starting with that letter case-matched
+        // ("For", "From", "Foo", ...). Skip the path for lowercase single
+        // letters so the strip doesn't flood with low-signal completions
+        // every time the user begins typing a normal word. The SwiftKey/Gboard
+        // "proper-noun completion" surface is the explicit target.
+        if (normalizedWord.length == 1 &&
+            rawWord.isNotEmpty() &&
+            rawWord.first().isUpperCase()
+        ) {
+            return singleLetterProperNounCompletions(normalizedWord, rawWord, dictionary, maxCandidateCount)
+        }
         if (normalizedWord.length < MinCompletionLength) return emptyList()
 
         val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount)
@@ -696,6 +709,51 @@ internal object LatinDictionarySuggester {
             }
         }.take(maxCandidateCount)
     }
+
+    /**
+     * ROADMAP §7 Next-3.3a — single-letter proper-noun completion helper.
+     * Returns the top-frequency dictionary words starting with [normalizedWord]
+     * (single lowercase letter, e.g. "f"), case-matched against [rawWord] via
+     * [withTypedCase] (so "F" → "For" not "for"). Single-letter words "a" and
+     * "i" are skipped because they're the typed letter itself; otherwise we
+     * surface up to [maxCandidateCount] candidates ranked by dictionary frequency.
+     * Never returns auto-commit candidates — single-letter prefixes carry too
+     * much ambiguity to autocommit safely.
+     */
+    private fun singleLetterProperNounCompletions(
+        normalizedWord: String,
+        rawWord: String,
+        dictionary: LatinDictionarySnapshot,
+        maxCandidateCount: Int,
+    ): List<LatinSuggestion> {
+        if (normalizedWord.length != 1) return emptyList()
+        val prefix = normalizedWord.first()
+        val seen = HashSet<String>(maxCandidateCount * 2)
+        val result = ArrayList<LatinSuggestion>(maxCandidateCount)
+        // Use the cached topByFrequency list so we don't sort the whole 117k-word
+        // dictionary on every keystroke; this lives behind `by lazy` in the snapshot.
+        for (word in dictionary.topByFrequency(SingleLetterCandidatePool)) {
+            if (result.size >= maxCandidateCount) break
+            if (word.length < 2) continue                     // skip the typed letter itself
+            if (word.first().lowercaseChar() != prefix) continue
+            val lowered = word.lowercase()
+            if (!seen.add(lowered)) continue
+            result += LatinSuggestion(
+                text = word,
+                confidence = correctionConfidence(dictionary.frequencyFor(word), distance = 1) - 0.10,
+                isEligibleForAutoCommit = false,
+            ).withTypedCase(rawWord)
+        }
+        return result
+    }
+
+    /**
+     * How many of the top-frequency dictionary words to scan when synthesising
+     * single-letter completions. 2,048 covers virtually every letter's top-N
+     * useful completions on a typical SCOWL-merged dictionary while staying
+     * within the lazy-cache budget.
+     */
+    private const val SingleLetterCandidatePool = 2048
 
     private fun shouldDeferCorrectionForActiveCompletion(
         normalizedWord: String,
