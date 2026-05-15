@@ -81,6 +81,28 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("ng") shouldBe "ང"
     }
 
+    test("Khmer table maps 'k' to ក and digit 7 to ៧") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToKhmer)
+        xlit.transliterate("k") shouldBe "ក"
+        xlit.transliterate("7") shouldBe "៧"
+    }
+
+    test("Thai table maps 'k' to ก and digit 3 to ๓") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToThai)
+        xlit.transliterate("k") shouldBe "ก"
+        xlit.transliterate("3") shouldBe "๓"
+    }
+
+    test("Khmer two-letter ASCII digraph 'ng' wins over 'n'+'g' (greedy match)") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToKhmer)
+        xlit.transliterate("ng") shouldBe "ង"
+    }
+
+    test("Khmer + Thai tables both report sane sizes") {
+        val tables = listOf(IndicScriptTable.ItransToKhmer, IndicScriptTable.ItransToThai)
+        tables.forEach { (it.size() > 25) shouldBe true }
+    }
+
     test("Burmese + Lao + Tibetan tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.ItransToBurmese,
