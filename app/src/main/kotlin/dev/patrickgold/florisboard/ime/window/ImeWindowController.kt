@@ -101,6 +101,12 @@ class ImeWindowController(
     val isWindowShown: StateFlow<Boolean>
         field = MutableStateFlow(false)
 
+    /**
+     * One-shot onboarding visibility for the floating-window drag and resize affordances.
+     */
+    val floatingOnboardingVisible: StateFlow<Boolean>
+        field = MutableStateFlow(false)
+
     private val updateConfigMutex = Mutex()
 
     init {
@@ -183,7 +189,10 @@ class ImeWindowController(
      * b) The active root insets do not change while the update in ongoing. A snapshot of the active root insets
      *    will be taken once before any update attempt, and any inset change afterward will not be reflected.
      */
-    fun updateWindowConfig(function: (ImeWindowConfig) -> ImeWindowConfig) {
+    fun updateWindowConfig(
+        afterUpdate: (ImeWindowConfig) -> Unit = { },
+        function: (ImeWindowConfig) -> ImeWindowConfig,
+    ) {
         val rootInsets = activeRootInsets.value
         val typeGuess = rootInsets.formFactor.typeGuess
         scope.launch {
@@ -192,6 +201,7 @@ class ImeWindowController(
                 val newWindowConfig = activeWindowConfig.updateAndGet(function)
                 val byType = prefs.keyboard.windowConfig.get()
                 prefs.keyboard.windowConfig.set(byType.plus(typeGuess to newWindowConfig))
+                afterUpdate(newWindowConfig)
             }
         }
     }
@@ -262,12 +272,43 @@ class ImeWindowController(
     }
 
     fun onWindowShown(): Boolean {
-        return isWindowShown.compareAndSet(expect = false, update = true)
+        val didShow = isWindowShown.compareAndSet(expect = false, update = true)
+        if (didShow) {
+            scope.launch {
+                val currentMode = activeWindowConfig.value.mode
+                val startInFloatingMode = prefs.keyboard.startInFloatingMode.get()
+                if (startInFloatingMode && currentMode != ImeWindowMode.FLOATING) {
+                    updateWindowConfig(
+                        afterUpdate = { queueFloatingOnboardingIfNeeded(ImeWindowMode.FLOATING) },
+                    ) { config ->
+                        config.copy(mode = ImeWindowMode.FLOATING)
+                    }
+                } else {
+                    queueFloatingOnboardingIfNeeded(currentMode)
+                }
+            }
+        }
+        return didShow
     }
 
     fun onWindowHidden(): Boolean {
         editor.disable()
+        dismissFloatingOnboarding()
         return isWindowShown.compareAndSet(expect = true, update = false)
+    }
+
+    fun dismissFloatingOnboarding() {
+        floatingOnboardingVisible.value = false
+    }
+
+    private fun queueFloatingOnboardingIfNeeded(windowMode: ImeWindowMode) {
+        scope.launch {
+            val alreadyShown = prefs.keyboard.floatingOnboardingShown.get()
+            if (FloatingModeOnboarding.shouldShow(windowMode, alreadyShown)) {
+                prefs.keyboard.floatingOnboardingShown.set(true)
+                floatingOnboardingVisible.value = true
+            }
+        }
     }
 
     private fun doComputeWindowSpec(
@@ -313,7 +354,9 @@ class ImeWindowController(
      */
     inner class Actions {
         fun toggleFloatingWindow() {
-            updateWindowConfig { config ->
+            updateWindowConfig(
+                afterUpdate = { config -> queueFloatingOnboardingIfNeeded(config.mode) },
+            ) { config ->
                 val newMode = when (config.mode) {
                     ImeWindowMode.FIXED -> ImeWindowMode.FLOATING
                     ImeWindowMode.FLOATING -> ImeWindowMode.FIXED

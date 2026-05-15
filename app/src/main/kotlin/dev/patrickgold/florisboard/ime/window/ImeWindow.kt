@@ -53,6 +53,10 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.coerceAtLeast
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.roundToIntRect
@@ -74,9 +78,11 @@ import org.florisboard.lib.compose.drawBorder
 import org.florisboard.lib.compose.drawableRes
 import org.florisboard.lib.compose.fold
 import org.florisboard.lib.compose.ifIsInstance
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggIconButton
+import org.florisboard.lib.snygg.ui.SnyggText
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 /**
@@ -181,7 +187,51 @@ fun BoxScope.ImeWindow() {
         ProvideKeyboardRowBaseHeight {
             ImeInnerWindow()
         }
+        FloatingOnboardingTooltip()
         ImeWindowResizeHandlesFloating()
+    }
+}
+
+@Composable
+private fun BoxScope.FloatingOnboardingTooltip() {
+    val windowController = LocalWindowController.current
+    val windowSpec by windowController.activeWindowSpec.collectAsState()
+    val visible by windowController.floatingOnboardingVisible.collectAsState()
+
+    val isVisible = visible && windowSpec is ImeWindowSpec.Floating
+    val tooltipText = stringRes(R.string.ime__floating_onboarding_tooltip)
+
+    LaunchedEffect(isVisible) {
+        if (isVisible) {
+            delay(FloatingModeOnboarding.AUTO_DISMISS_MILLIS)
+            windowController.dismissFloatingOnboarding()
+        }
+    }
+
+    if (isVisible) {
+        SnyggBox(
+            elementName = FlorisImeUi.KeyPopupBox.elementName,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .fillMaxWidth(0.92f)
+                .padding(top = 8.dp)
+                .semantics {
+                    contentDescription = tooltipText
+                    role = Role.Button
+                }
+                .pointerInput(Unit) {
+                    detectTapGestures {
+                        windowController.dismissFloatingOnboarding()
+                    }
+                },
+        ) {
+            SnyggText(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .padding(horizontal = 14.dp, vertical = 10.dp),
+                text = tooltipText,
+            )
+        }
     }
 }
 

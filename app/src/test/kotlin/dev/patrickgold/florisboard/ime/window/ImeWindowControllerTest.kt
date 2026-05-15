@@ -70,6 +70,45 @@ class ImeWindowControllerTest : FunSpec({
         }
     }
 
+    context("floating onboarding") {
+        test("preference round-trips through datastore") {
+            val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+
+            prefs.keyboard.floatingOnboardingShown.get() shouldBe false
+            prefs.keyboard.floatingOnboardingShown.set(true)
+            prefs.keyboard.floatingOnboardingShown.get() shouldBe true
+            prefs.keyboard.floatingOnboardingShown.set(false)
+            prefs.keyboard.floatingOnboardingShown.get() shouldBe false
+        }
+
+        test("visibility predicate only allows first floating entry") {
+            FloatingModeOnboarding.AUTO_DISMISS_MILLIS shouldBe 4_000L
+            FloatingModeOnboarding.shouldShow(ImeWindowMode.FLOATING, alreadyShown = false) shouldBe true
+            FloatingModeOnboarding.shouldShow(ImeWindowMode.FIXED, alreadyShown = false) shouldBe false
+            FloatingModeOnboarding.shouldShow(ImeWindowMode.FLOATING, alreadyShown = true) shouldBe false
+        }
+
+        test("onWindowShown applies floating default and queues onboarding once") {
+            val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+            prefs.keyboard.startInFloatingMode.set(true)
+            val windowController = ImeWindowController(prefs, backgroundScope)
+
+            windowController.onWindowShown() shouldBe true
+
+            windowController.activeWindowSpec.first { it is ImeWindowSpec.Floating }
+                .shouldBeInstanceOf<ImeWindowSpec.Floating>()
+            windowController.floatingOnboardingVisible.first { it } shouldBe true
+            prefs.keyboard.floatingOnboardingShown.get() shouldBe true
+
+            windowController.dismissFloatingOnboarding()
+            windowController.floatingOnboardingVisible.value shouldBe false
+            windowController.onWindowHidden() shouldBe true
+            windowController.onWindowShown() shouldBe true
+            windowController.activeWindowSpec.first { it is ImeWindowSpec.Floating }
+            windowController.floatingOnboardingVisible.value shouldBe false
+        }
+    }
+
     context("for all root insets") {
         test("for all fixed window configs in prefs") {
             checkAll(

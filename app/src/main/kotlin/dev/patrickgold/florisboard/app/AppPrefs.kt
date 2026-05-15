@@ -668,11 +668,19 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          *  the existing fixed-mode default. The user can still toggle at
          *  runtime via the existing TOGGLE_COMPACT_LAYOUT / window-mode
          *  controls. The actual `ImeWindowController` initial-state read
-         *  happens in `ImeWindowController.startSession` and falls back to
+         *  happens in `ImeWindowController.onWindowShown` and falls back to
          *  the stored `ImeWindowConfig` when this preference is false (the
          *  pre-existing behaviour). */
         val startInFloatingMode = boolean(
             key = "keyboard__start_in_floating_mode",
+            default = false,
+        )
+        /** ROADMAP §10 Next-7.1a — one-shot floating-window onboarding.
+         *  False means the next floating-mode entry shows the drag/resize
+         *  tooltip and immediately marks this flag true. Settings exposes
+         *  a reset action for QA and user rediscovery. */
+        val floatingOnboardingShown = boolean(
+            key = "keyboard__floating_onboarding_shown",
             default = false,
         )
         /** ROADMAP §7 Next-7.2 — split-keyboard layout-mode foundation.
