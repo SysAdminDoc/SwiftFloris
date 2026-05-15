@@ -651,6 +651,17 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "keyboard__start_in_floating_mode",
             default = false,
         )
+        /** ROADMAP §7 Next-7.2 — split-keyboard layout-mode foundation.
+         *  When true and the current form factor is wide enough (see
+         *  [ImeWindowConstraints.Fixed.Split.minTabletWidthDp]), the IME
+         *  routes the fixed-mode renderer through the `Fixed.SPLIT`
+         *  sub-mode instead of `Fixed.NORMAL`. Narrow phones simply
+         *  ignore the preference because the split is not viable there.
+         *  The actual key-rect distribution lands in Next-7.2a. */
+        val splitKeyboardEnabled = boolean(
+            key = "keyboard__split_keyboard_enabled",
+            default = false,
+        )
         val landscapeInputUiMode = enum(
             key = "keyboard__landscape_input_ui_mode",
             default = LandscapeInputUiMode.DYNAMICALLY_SHOW,

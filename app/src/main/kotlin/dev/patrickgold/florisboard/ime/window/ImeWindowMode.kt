@@ -55,7 +55,27 @@ enum class ImeWindowMode {
         /**
          * TODO Placeholder, to be implemented in the future.
          */
-        THUMBS;
+        THUMBS,
+
+        /**
+         * ROADMAP §7 Next-7.2 — split-keyboard mode for tablet landscape.
+         *
+         * The layout is divided into a left half and a right half, each
+         * sized to one thumb's reach when the user holds the tablet
+         * two-handed in landscape. A configurable gutter sits between
+         * the two halves (default 80 dp). The split is enabled by the
+         * runtime check in [ImeWindowConstraints.Fixed.Split] — it only
+         * becomes selectable when the available width is wide enough
+         * to host both halves with the minimum gutter.
+         *
+         * This mode shadows SwiftKey's split layout and the long-standing
+         * AnySoftKeyboard #1952 / HeliBoard #326 requests for the same
+         * affordance. Renderer + key-rect distribution wiring lands in
+         * the follow-up Next-7.2a slice; this enum entry pins the
+         * window-mode plumbing so preferences and constraints can be
+         * landed independently from the layout-engine integration.
+         */
+        SPLIT;
     }
 
     /**
