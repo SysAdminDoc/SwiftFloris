@@ -433,6 +433,36 @@ class FlorisImeService : LifecycleInputMethodService() {
         editorInstance.handleStartInput(editorInfo)
     }
 
+    /**
+     * ROADMAP §7 Next-4.1 — stylus handwriting entry point. Android 14+
+     * routes a stylus motion-event landing on an editor with
+     * `setAutoHandwritingEnabled(true)` (the default on Android 14+) into
+     * this callback. The IME has the choice of:
+     *
+     *  - returning without action (default — the stylus event falls through
+     *    to the standard input path, which is exactly the current SwiftFloris
+     *    behaviour while a real on-device recognizer is being scoped under
+     *    Next-4.2);
+     *  - invoking a real stroke recogniser (Google ML Kit Digital Ink,
+     *    custom ICU-LM model, etc.) and `currentInputConnection.commitText`
+     *    the recognised result; or
+     *  - showing a handwriting overlay UI via `setInkWindow`.
+     *
+     * Logging-only for v1.7.x; the recogniser slot lands as Next-4.2.
+     * Wiring this override now reserves the surface so language-pack /
+     * preference plumbing can ship ahead of the recogniser bring-up.
+     */
+    @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    override fun onStartStylusHandwriting(): Boolean {
+        flogInfo { "Stylus handwriting session started (Next-4.1 stub; recogniser pending Next-4.2)" }
+        // Return false: we acknowledge the stylus event but don't yet have a
+        // recogniser running, so the system falls back to the standard
+        // touch-input path. Once Next-4.2 (Google ML Kit Digital Ink) lands,
+        // flip to `super.onStartStylusHandwriting()` and start a real
+        // recognition session.
+        return false
+    }
+
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
         flogInfo { "restarting=$restarting info=${info?.debugSummarize()}" }
         super.onStartInputView(info, restarting)

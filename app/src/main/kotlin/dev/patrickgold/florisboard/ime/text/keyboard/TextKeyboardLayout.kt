@@ -365,6 +365,9 @@ private fun TextKeyButton(
     debugShowTouchBoundaries: Boolean,
     reducedMotion: Boolean,
 ) = with(LocalDensity.current) {
+    // ROADMAP §6 N8.3a — context needed for the localized
+    // `keyContentDescription` string-resource lookups.
+    val context = LocalContext.current
     val attributes = mapOf(
         FlorisImeUi.Attr.Code to key.computedData.code,
         FlorisImeUi.Attr.Mode to evaluator.keyboard.mode.toString(),
@@ -382,8 +385,10 @@ private fun TextKeyButton(
     // label when present (covers letters, numbers, punctuation) and falls back to
     // a stable code-derived label for special keys (Shift, Backspace, Enter, Space,
     // arrow keys, etc.) so screen-reader users hear the key's purpose, not "button".
-    val keyDescription = remember(key.computedData.code, key.label, key.hintedLabel) {
-        keyContentDescription(key.computedData.code, key.label, key.hintedLabel)
+    // §6 N8.3a — localized via string resources (Crowdin pipeline) instead of
+    // the hard-coded English fallback when [context] is present.
+    val keyDescription = remember(key.computedData.code, key.label, key.hintedLabel, context) {
+        keyContentDescription(context, key.computedData.code, key.label, key.hintedLabel)
     }
     // ROADMAP §6 N3.4 — pressed-key 1.03× scale-up over 60ms gives the keypress
     // visible "depress" feedback SwiftKey/Gboard ship without changing the
@@ -510,58 +515,65 @@ private fun TextKeyButton(
  *    with no further context, which Gboard / SwiftKey users have complained
  *    about at length on the FlorisBoard tracker).
  */
-internal fun keyContentDescription(code: Int, label: String?, hintedLabel: String? = null): String {
-    // §6 N8.3 — long-press hint announcement. When a key surfaces a hintedLabel
-    // (the small glyph in the top-right corner — typically an alt-char that
-    // appears on long-press), TalkBack appends "Alternative: <hint>" so the
-    // screen-reader user knows extra characters are available without sighted
-    // visual feedback. This mirrors how Samsung Keyboard / Gboard announce alt
-    // glyphs to TalkBack.
+internal fun keyContentDescription(
+    context: android.content.Context,
+    code: Int,
+    label: String?,
+    hintedLabel: String? = null,
+): String {
+    // §6 N8.3 + N8.3a — Localized TalkBack description. Each special-key
+    // label resolves to a Crowdin-routed string resource so non-English
+    // users get localised announcements instead of the hard-coded English
+    // fallback. Letter / number / punctuation keys use the visible label
+    // directly (already locale-correct since it's the typed glyph).
+    val res = context.resources
     val hintSuffix = if (!hintedLabel.isNullOrBlank() && hintedLabel.length <= 4) {
-        ", alternative: $hintedLabel"
+        res.getString(dev.patrickgold.florisboard.R.string.a11y__key__alternative_suffix, hintedLabel)
     } else {
         ""
     }
     if (!label.isNullOrBlank() && label.length <= 4 && label.all { !it.isISOControl() }) {
         return label + hintSuffix
     }
-    return when (code) {
-        KeyCode.SHIFT -> "Shift"
-        KeyCode.DELETE -> "Backspace"
-        KeyCode.DELETE_WORD -> "Delete word"
-        KeyCode.FORWARD_DELETE -> "Forward delete"
-        KeyCode.FORWARD_DELETE_WORD -> "Forward delete word"
-        KeyCode.ENTER -> "Enter"
-        KeyCode.SPACE -> "Space"
-        KeyCode.TAB -> "Tab"
-        KeyCode.ESCAPE -> "Escape"
-        KeyCode.ARROW_LEFT -> "Arrow left"
-        KeyCode.ARROW_RIGHT -> "Arrow right"
-        KeyCode.ARROW_UP -> "Arrow up"
-        KeyCode.ARROW_DOWN -> "Arrow down"
-        KeyCode.MOVE_START_OF_LINE -> "Move to start of line"
-        KeyCode.MOVE_END_OF_LINE -> "Move to end of line"
-        KeyCode.MOVE_START_OF_PAGE -> "Move to start of page"
-        KeyCode.MOVE_END_OF_PAGE -> "Move to end of page"
-        KeyCode.LANGUAGE_SWITCH -> "Switch language"
-        KeyCode.SHOW_SUBTYPE_PICKER -> "Language picker"
-        KeyCode.IME_NEXT_SUBTYPE -> "Next language"
-        KeyCode.IME_PREV_SUBTYPE -> "Previous language"
-        KeyCode.SYSTEM_INPUT_METHOD_PICKER -> "Choose input method"
-        KeyCode.IME_HIDE_UI -> "Hide keyboard"
-        KeyCode.IME_UI_MODE_TEXT -> "Text mode"
-        KeyCode.IME_UI_MODE_MEDIA -> "Emoji and media"
-        KeyCode.IME_UI_MODE_CLIPBOARD -> "Clipboard"
-        KeyCode.UNDO -> "Undo"
-        KeyCode.REDO -> "Redo"
-        KeyCode.VIEW_CHARACTERS -> "Letters"
-        KeyCode.VIEW_SYMBOLS -> "Symbols"
-        KeyCode.VIEW_SYMBOLS2 -> "More symbols"
-        KeyCode.VIEW_NUMERIC -> "Numbers"
-        KeyCode.VIEW_NUMERIC_ADVANCED -> "Numeric"
-        KeyCode.SETTINGS -> "Settings"
-        else -> (label?.takeIf { it.isNotBlank() } ?: "Key") + hintSuffix
+    val resId = when (code) {
+        KeyCode.SHIFT -> dev.patrickgold.florisboard.R.string.a11y__key__shift
+        KeyCode.DELETE -> dev.patrickgold.florisboard.R.string.a11y__key__delete
+        KeyCode.DELETE_WORD -> dev.patrickgold.florisboard.R.string.a11y__key__delete_word
+        KeyCode.FORWARD_DELETE -> dev.patrickgold.florisboard.R.string.a11y__key__forward_delete
+        KeyCode.FORWARD_DELETE_WORD -> dev.patrickgold.florisboard.R.string.a11y__key__forward_delete_word
+        KeyCode.ENTER -> dev.patrickgold.florisboard.R.string.a11y__key__enter
+        KeyCode.SPACE -> dev.patrickgold.florisboard.R.string.a11y__key__space
+        KeyCode.TAB -> dev.patrickgold.florisboard.R.string.a11y__key__tab
+        KeyCode.ESCAPE -> dev.patrickgold.florisboard.R.string.a11y__key__escape
+        KeyCode.ARROW_LEFT -> dev.patrickgold.florisboard.R.string.a11y__key__arrow_left
+        KeyCode.ARROW_RIGHT -> dev.patrickgold.florisboard.R.string.a11y__key__arrow_right
+        KeyCode.ARROW_UP -> dev.patrickgold.florisboard.R.string.a11y__key__arrow_up
+        KeyCode.ARROW_DOWN -> dev.patrickgold.florisboard.R.string.a11y__key__arrow_down
+        KeyCode.MOVE_START_OF_LINE -> dev.patrickgold.florisboard.R.string.a11y__key__move_start_of_line
+        KeyCode.MOVE_END_OF_LINE -> dev.patrickgold.florisboard.R.string.a11y__key__move_end_of_line
+        KeyCode.MOVE_START_OF_PAGE -> dev.patrickgold.florisboard.R.string.a11y__key__move_start_of_page
+        KeyCode.MOVE_END_OF_PAGE -> dev.patrickgold.florisboard.R.string.a11y__key__move_end_of_page
+        KeyCode.LANGUAGE_SWITCH -> dev.patrickgold.florisboard.R.string.a11y__key__language_switch
+        KeyCode.SHOW_SUBTYPE_PICKER -> dev.patrickgold.florisboard.R.string.a11y__key__subtype_picker
+        KeyCode.IME_NEXT_SUBTYPE -> dev.patrickgold.florisboard.R.string.a11y__key__next_subtype
+        KeyCode.IME_PREV_SUBTYPE -> dev.patrickgold.florisboard.R.string.a11y__key__prev_subtype
+        KeyCode.SYSTEM_INPUT_METHOD_PICKER -> dev.patrickgold.florisboard.R.string.a11y__key__input_method_picker
+        KeyCode.IME_HIDE_UI -> dev.patrickgold.florisboard.R.string.a11y__key__hide_ui
+        KeyCode.IME_UI_MODE_TEXT -> dev.patrickgold.florisboard.R.string.a11y__key__ime_text
+        KeyCode.IME_UI_MODE_MEDIA -> dev.patrickgold.florisboard.R.string.a11y__key__ime_media
+        KeyCode.IME_UI_MODE_CLIPBOARD -> dev.patrickgold.florisboard.R.string.a11y__key__ime_clipboard
+        KeyCode.UNDO -> dev.patrickgold.florisboard.R.string.a11y__key__undo
+        KeyCode.REDO -> dev.patrickgold.florisboard.R.string.a11y__key__redo
+        KeyCode.VIEW_CHARACTERS -> dev.patrickgold.florisboard.R.string.a11y__key__view_characters
+        KeyCode.VIEW_SYMBOLS -> dev.patrickgold.florisboard.R.string.a11y__key__view_symbols
+        KeyCode.VIEW_SYMBOLS2 -> dev.patrickgold.florisboard.R.string.a11y__key__view_symbols2
+        KeyCode.VIEW_NUMERIC -> dev.patrickgold.florisboard.R.string.a11y__key__view_numeric
+        KeyCode.VIEW_NUMERIC_ADVANCED -> dev.patrickgold.florisboard.R.string.a11y__key__view_numeric_advanced
+        KeyCode.SETTINGS -> dev.patrickgold.florisboard.R.string.a11y__key__settings
+        else -> return (label?.takeIf { it.isNotBlank() }
+            ?: res.getString(dev.patrickgold.florisboard.R.string.a11y__key__generic)) + hintSuffix
     }
+    return res.getString(resId) + hintSuffix
 }
 
 @Suppress("unused_parameter")

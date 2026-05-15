@@ -97,6 +97,14 @@ fun KeyboardScreen() = FlorisScreen {
                             key = BottomRowPreset.Minimal.toJson(),
                             label = stringRes(R.string.pref__keyboard__bottom_row_preset__minimal),
                         ),
+                        entry(
+                            // ROADMAP §7 Next-8.1a — programmer-mode bottom-row preset.
+                            // Surfaces Tab + Esc + bracket/brace popup directly in the
+                            // main letter view (complements the Next-8.2 CODE smartbar
+                            // profile that auto-activates on terminal/IDE packages).
+                            key = BottomRowPreset.Programmer.toJson(),
+                            label = "Programmer",
+                        ),
                     )
                 },
             )
