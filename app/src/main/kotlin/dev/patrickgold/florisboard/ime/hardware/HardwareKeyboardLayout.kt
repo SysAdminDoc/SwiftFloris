@@ -73,4 +73,6 @@ data class HardwareKeyEntry(
     val capsLock: Boolean = false,
     /** Dead-key trigger codepoint when this slot starts a dead-key composition. */
     val deadKeyTrigger: Int? = null,
+    /** Optional visual label override from LDML `<displays>` entries. */
+    val displayLabel: String? = null,
 )
