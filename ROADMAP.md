@@ -439,6 +439,8 @@ Closed-source GeezIME owns the niche today [STD-GEEZ]. Apache-2 SERA implementat
 
 User points SwiftFloris at home Ollama / LM Studio over Tailscale; default off; never invoked silently [O7]. Expose MCP-tool-server protocol for composable agent surfaces (calendar, weather, SMS — same toolset Deskdrop's 17 tools demonstrate).
 
+- ✅ **L7 contract** shipped 2026-05-15 (foundation). New `ime/mcp/` package: `McpBridgeContract` pins the bind-time Intent action (`dev.patrickgold.florisboard.action.BIND_MCP_DAEMON`), the signature-protected `permission.BIND_MCP`, the `<meta-data>` keys for tool-catalog + protocol-version discovery, and the 4 MB payload cap; `McpToolDescriptor` mirrors the upstream MCP spec's `tools/list` entry shape (name + description + JSON-Schema parameter spec); `McpToolResult` is the cross-package result envelope distinguishing success (`payloadJson != null`) from failure (`isError && errorMessage != null`). AIDL bring-up + the in-IME `McpClient` + the addon-enumerator discovery ride in L7.1–L7.4. Stays **on-device only** by hard contract — the daemon binds locally over Android service-binding, never a network socket, so the §1 no-network promise holds even when an MCP daemon is installed. `McpBridgeContractTest` covers the constant namespace, payload cap, and `McpToolDescriptor` / `McpToolResult` validation surfaces.
+
 ### L8. Keyman LDML keyboard importer (2,500+ language coverage)
 
 Single biggest layout-coverage moat per import. Keyman has 1,000 keyboards spanning 2,500+ languages under MIT [O15]. Importer parses LDML keyboards XML → SwiftFloris layout JSON.
@@ -447,6 +449,8 @@ Single biggest layout-coverage moat per import. Keyman has 1,000 keyboards spann
 
 Typewise's honeycomb won CES Innovation 2021+2022 [C5]; T9 vacated by TouchPal collapse [C8]; Colemak/Dvorak/Workman are perennial requests. Layout engine work converges here.
 
+- ✅ **L9 audit shipped 2026-05-15.** `app/src/main/assets/ime/keyboard/org.florisboard.layouts/layouts/characters/` already ships: `qwerty.json`, `colemak.json`, `colemak_dh.json`, `colemak_dhm.json`, `dvorak.json`, `dvorak_de.json`, `dvorak_es.json`, `dvorak_se.json`, `workman.json` — Colemak / Dvorak / Workman are **already in tree** from the FlorisBoard upstream layout pack. Remaining L9 work (honeycomb-hex + T9-shaped layouts) requires a new layout-engine renderer that draws non-rectangular key rects; that's L9.1 which lands when the renderer changes are scoped.
+
 ### L10. WebAuthn passkey injection from IME
 
 When `autofillHints="password"` is focused, IME directly drives passkey ceremony — no other OSS keyboard ships this [AI WILD-WEBAUTHN].
@@ -454,6 +458,8 @@ When `autofillHints="password"` is focused, IME directly drives passkey ceremony
 ### L11. Espanso config import + native snippet engine
 
 Espanso is the de facto Linux/macOS text expander [AI19]; native parser of `~/.config/espanso/match/*.yml` would make SwiftFloris the only IME with cross-platform expander interop. Tasker intent endpoints (`swiftfloris.action.INSERT_TEXT`, `…INSERT_CLIP`, `…SWITCH_LAYOUT`, `…TRIGGER_VOICE`) ride alongside [STD-TASKER].
+
+- ✅ **L11 parser** shipped 2026-05-15. New `ime/snippet/EspansoMatchParser.parse(yaml)` consumes the `matches:` list shape from `~/.config/espanso/match/base.yml`: inline scalar / single-quoted / double-quoted strings, escaped `\n` + `\t` in inline values, literal `|` and folded `>` block scalars with indent-stripping termination, full-line `#` comments outside block scalars, and silent-skip of blank-trigger rows. Snakeyaml would pull a 600KB+ runtime; this hand-rolled parser stays under 200 lines and covers the 95% case (Espanso `vars:` interpolation, regex triggers, image/clipboard/form matches deferred to L11a). `EspansoMatchParserTest` covers seven cases including the literal-block multi-line shape and quote-stripping. The Tasker intent surface lands as L11.1 alongside the in-IME snippet engine that consumes these matches.
 
 ### L12. WhisperInput-style streaming voice + WordStyles
 
