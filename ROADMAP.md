@@ -524,6 +524,63 @@ WordStyles (FUTO v0.1.25) renders typed text as styled images [O5] — niche but
 
 ---
 
+## 10.5. External-Work Backlog (post-v1.8.2)
+
+After three autonomous ROADMAP passes (v1.8.0 / v1.8.1 / v1.8.2) every NEXT- and LATER-tier item has at least a working scaffold + tests + a clear adapter pattern in tree. What remains is **external work** that requires one of: an upstream library release, a separate addon APK that ships heavy native runtime, a real dataset extraction, an interactive Compose UI screen, or a hardware-locked benchmark run.
+
+Each entry below lists: the **scaffold seam** (file path), the **blocker** (what specifically needs to happen), the **acceptance criteria** for closing it, and a cross-reference to `docs/AI_PROMPTS_EXTERNAL_WORK.md` for a self-contained AI prompt you can paste into a fresh chat to make progress.
+
+### A. Upstream-release waits
+
+| Item | Scaffold seam | Blocker | Acceptance |
+|---|---|---|---|
+| **N1.1** Open-source glide-typing | `prefs.glide.engine` flag (Next placeholder) | HeliBoard NLnet R&D grant Jun 2025 → Jun 2026 [NLNET-GT]. Library not yet released as a drop-in for the closed Google `swypelibs` blob; HeliBoard v3.7-beta1 ships opt-in gesture-data collection. Watch the [issue tracker](https://github.com/Helium314/HeliBoard/issues/2226). | Drop-in replaces `swypelibs` blob; glide accuracy meets or exceeds the current `GlideTypingManager.statistical` heuristic on a 1,000-trace eval set. |
+| **N1.2** CleverKeys-architecture port | `ime/nlp/cleverkeys/` (not yet present — created when library lands) | CleverKeys roadmap targets Q2-Q3 2026 for multi-layout / multi-script gesture model. Code is GPL-3.0 → architecture-borrow only. Tracked at [CK-DEEPWIKI](https://deepwiki.com/cleverkeys/cleverkeys). | Train an Apache-2.0 model from N1.1 dataset, ship via ONNX Runtime Mobile. |
+| **N10.1** Noto Color Emoji 17.0 | `androidx-emoji2 = "1.6.0"` in `libs.versions.toml` | Either: (a) `androidx.emoji2` 1.7.0+ published with Emoji 17, OR (b) ship `NotoColorEmoji.ttf` v17 directly + route through `EmojiCompat.Config(BundledEmojiCompatConfig)`. Track [emoji2 releases](https://developer.android.com/jetpack/androidx/releases/emoji2). | Emoji 17 glyphs (Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) render correctly in the palette. |
+| **Next-12.2 plugin** | `app/build.gradle.kts:30` — `// alias(libs.plugins.roborazzi)` | Roborazzi 1.44.0-stable releases with AGP-9 compat (active line is `1.44.0-alpha03`). Currently 1.43.x's `TestedExtension` API doesn't compile against AGP 9.0.0. | Plugin alias uncommented; `:app:recordRoborazziDebug` + `:app:verifyRoborazziDebug` tasks light up; CI runs verify on every PR. |
+
+### B. Out-of-tree addon APKs (heavy native runtime)
+
+Each of these moves real-runtime work into a sibling repo so the base APK stays lean and the §1 no-INTERNET promise holds across third-party addons.
+
+| Item | Scaffold seam | Blocker | Acceptance |
+|---|---|---|---|
+| **L1.1a** LiteRT-LM smart-compose | `ime/smartcompose/SmartComposeProvider` | Need `addons/smart-compose-litert/` APK with the LiteRT-LM `.so` libs + a Gemma 3 1B int4 model + a `SmartComposeProvider` implementation registered via `setActive`. ~25-40 MB APK depending on model. | Smart-compose ghost-text inserts on space in editors when the addon is installed; reverts cleanly to bigram chain when uninstalled. |
+| **L2.1a** Bergamot translator | `ime/translate/InlineTranslator` | Need `addons/translator-bergamot/` APK with the Marian WASM runtime + at least the EN↔ES + EN↔FR + EN↔DE Mozilla model bundles (~17 MB per pair). | Translation chip in smartbar produces translated text; per-pair download UI surfaces installed pairs. |
+| **L3.1 + L3.2** librime CJK | `ime/cjk/CjkInputProvider` | JNI to librime C++ (BSD-3). Use fcitx5-android's wrapper as reference (Apache-2.0 — conceptual borrow only). `addons/cjk-librime/` APK with librime + at least Pinyin Simplified + Jyutping + Zhuyin schemas. Compose candidate-row UI consuming the facade. | Typing `nihao` surfaces `你好` etc. in the candidate row; commit + history works. |
+| **L3.3** Japanese + Korean | `ime/cjk/CjkInputProvider` (`mozc_ja` + `hangul_2bul` enum slots already present) | Two more addons: mozc (BSD-3) for Japanese, jamo-style 2-bul for Korean. FUTO ships both — design reference only, no code copy. | Both schemas surface candidates; Hangul auto-stacks correctly. |
+| **L10 addon** Passkey adapter | `ime/passkey/PasskeyAdapter` | `addons/passkey-adapter/` APK with an Activity that owns the Android Credential Manager `getCredential` call + returns a `PasskeyAssertionRequest`. Activity-bound flow can't live in the IME service. | Focusing a WebAuthn-friendly field (rpId + challenge in `EditorInfo.extras`) surfaces a "Use passkey" chip; tapping it runs the ceremony + commits the assertion via `commitContent`. |
+| **Next-4.2a** ML Kit Digital Ink | `ime/handwriting/StrokeRecognizer` | `addons/handwriting-mlkit/` APK with `com.google.mlkit:digital-ink-recognition` + bundled model files (user-installed via file picker — same pattern as `VoiceModelManager`). | Stylus strokes recognise to text in the smartbar candidate row on Pixel Tablet / S25 Ultra; per-subtype refinement comes online (Next-4.3a). |
+
+### C. Dataset extractions + dictionary packs
+
+| Item | Scaffold seam | Blocker | Acceptance |
+|---|---|---|---|
+| **Next-3.2 SUBTLEX full table** | `assets/freq/en.tsv` (~1k seed entries) | Extract the full SUBTLEX-US (~75k entries) + de + es + fr + pt subtitle-frequency tables from the [SUBTLEX corpora](http://crr.ugent.be/programs-data/subtitle-frequencies) per the rspeer/wordfreq pipeline. Move to a Next-10.3 dictionary-pack addon to keep base APK lean. | Auto-correction ranking measurably better on conversational text (e.g. `recieved` → `received` confidence ≥ 0.92 in dictionary-coverage tests). |
+| **Next-3.1b** KenLM trie body parser | `ime/nlp/kenlm/KenLmTrieReader` | Implement Bhiksha-encoded next-pointer decoding + quantised probability/backoff table reads. Reference: [kpu/kenlm `lm/trie.hh`](https://github.com/kpu/kenlm/blob/master/lm/trie.hh). Or JNI to the upstream C++ library. | `KenLmReader.score(words: List<String>): Float` returns sane log-prob values for a real edugp/kenlm Hungarian model from HF; matches the `query` reference tool's output within 1e-3. |
+| **Next-10.3 Polish addon** | `docs/addons/dictionary-pack-spec.md` (descriptor schema in tree) | Build `addons/dictionary-pack-polish/` APK: extract OpenSubtitles 2024 PL + Wiktionary PL frequency lists into a `.fldic` file + a Zipf `.tsv`. CC-BY-SA attribution in the addon. | Polish subtype loads dictionary from the addon; vocabulary > 250k words; user dictionary handoff works. |
+| **L4.2 Nastaliq font** | `ime/bidi/PersianUrduNormalizer` | Bundle the [Noto Nastaliq Urdu](https://fonts.google.com/noto/specimen/Noto+Nastaliq+Urdu) font as an asset + route Urdu subtype text through it. Asset = ~480 KB. | Urdu rendering uses Nastaliq forms instead of fallback Naskh. |
+
+### D. In-IME integration work (no external dep, but heavier)
+
+| Item | Scaffold seam | Notes | Acceptance |
+|---|---|---|---|
+| **Next-2.5** Rambler streaming-voice cleanup | `StreamingVoiceTranscriptBuffer` | Gates on L1.1a addon. Pass committed-text through Gemma 3 270M rewrite on hold-and-release. | Hold-mic + ramble → clean polished text; user toggle in Settings → Voice. |
+| **Next-5.1a** Automerge-rs JNI | `ime/sync/PersonalDictionaryCrdt` + `Merger` | Current merge engine is observed-add / LWW-delete (good enough for personal dict). Real Automerge gives richer CRDT semantics + the standard wire format. JNI to automerge-rs. | Three-device cluster converges; merge is associative + idempotent under property tests. |
+| **Next-5.3a** Sync UI screen | `ime/sync/SyncChannel` taxonomy | Compose `SettingsSyncScreen` — channel picker, pairing-QR display, recipient-public-key entry. | User can pair two phones via QR + see sync activity. |
+| **Next-7.1a** Floating-mode onboarding | `prefs.keyboard.startInFloatingMode` | First-launch tooltip — "Drag the handle to move; pinch corner to resize." Use the existing tooltip dependency. | Tooltip appears once after first floating-mode entry; dismissable + remembered. |
+| **Next-7.2 renderer wire-up** | `SplitKeyboardLayoutCalculator` | Plumb the per-row geometry into the actual key-rect emission inside `TextKeyboardLayout` + the touch-hit routing inside `KeyboardManager`. | Enabling `prefs.keyboard.splitKeyboardEnabled` on a tablet renders the split layout with correct touch targets. |
+| **Next-9.4a** Pinned-groups palette row | `EmojiPinGroupStore` | Add a "Pinned groups" Compose row to `EmojiPaletteView` displaying user-pinned emoji groups. Long-press → "Pin to group…" sheet. | User can pin a set of emoji to a named group + recall from the palette. |
+| **Next-12.1 benchmark numbers** | `benchmark/KeyboardLatencyBenchmark` | Run on a clocks-locked device (Pixel 6 / S25 Ultra); record before/after numbers in release notes. | Benchmark report committed to `docs/BENCHMARKS.md` with imeFirstRender / suggestionStripRecomposition / dictionaryColdLoad / themeSwitch numbers. |
+| **L7.1-7.4** AIDL MCP daemon | `ime/mcp/McpBridgeContract` | Implement the AIDL interface that `bindService` returns + the `McpClient` consuming it from the IME side + the addon enumerator discovery path. | A reference MCP daemon APK can register and the IME calls its tools. |
+| **L8.2** LDML `<displays>` | `ime/hardware/KeymanLdmlParser` | Extend the parser to surface `<displays>` visual-glyph hints (display-text different from output-text) — common in Khmer / Lao / Tibetan keyboards. | Test fixture with a `<displays>` block round-trips via the parser into `HardwareKeyEntry.displayLabel`. |
+| **L9.2** Honeycomb hex layout | (new layout-engine renderer) | Layout JSON file + a non-rectangular renderer that draws hexagonal key rects + hit-testing geometry. Typewise's pattern. | Hex layout selectable in subtype settings; touch-hit works correctly across hex tessellation. |
+| **L11.1 receiver** | `ime/tasker/TaskerIntentContract` | Implement `TaskerActionReceiver` (a signed-permission-protected `BroadcastReceiver` declared in `AndroidManifest.xml`) that dispatches to `KeyboardManager` actions. | Sending `swiftfloris.action.INSERT_TEXT` via `adb shell am broadcast` inserts text. |
+
+**See [`docs/AI_PROMPTS_EXTERNAL_WORK.md`](docs/AI_PROMPTS_EXTERNAL_WORK.md) for one self-contained AI prompt per item above. Paste any of those into a fresh chat to make progress.**
+
+---
+
 ## 11. Cross-Cutting Concerns (every category named, none silently dropped)
 
 This section guarantees nothing fell through the cracks. Each is either represented in §6/§7/§8, scheduled below, or explicitly out of scope with reason.
