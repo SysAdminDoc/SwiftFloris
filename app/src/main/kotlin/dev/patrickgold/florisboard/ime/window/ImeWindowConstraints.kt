@@ -232,6 +232,38 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
                 )
             }
         }
+
+        /**
+         * ROADMAP §7 Next-7.2 — split-keyboard constraints (foundation).
+         *
+         * Carries the same keyboard-height envelope as [Normal] but
+         * exposes a gutter calculation that the renderer will consume
+         * once the split-layout slice lands. [minTabletWidthDp] is the
+         * smallest viable form-factor width at which split should be
+         * offered — narrower screens cannot host two reachable halves
+         * without collapsing the gutter below the user's thumb-stride.
+         */
+        class Split(rootInsets: ImeInsets.Root) : Fixed(rootInsets) {
+            override val defaultProps by calculation {
+                ImeWindowProps.Fixed(
+                    keyboardHeight = defKeyboardHeight,
+                    paddingLeft = 0.dp,
+                    paddingRight = 0.dp,
+                    paddingBottom = 0.dp,
+                )
+            }
+
+            /** Default gutter (gap) between the left and right halves. */
+            val defaultGutter: Dp = 80.dp
+
+            /** Minimum viable form-factor width for split-keyboard mode. */
+            val minTabletWidthDp: Dp = 600.dp
+
+            /** True when the current root width can host the split safely. */
+            val isViable: Boolean by calculation {
+                rootBounds.width >= minTabletWidthDp
+            }
+        }
     }
 
     sealed class Floating(rootInsets: ImeInsets.Root) : ImeWindowConstraints(rootInsets) {
@@ -356,6 +388,7 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
                 ImeWindowMode.Fixed.NORMAL -> Fixed.Normal(rootInsets)
                 ImeWindowMode.Fixed.COMPACT -> Fixed.Compact(rootInsets)
                 ImeWindowMode.Fixed.THUMBS -> Fixed.Thumbs(rootInsets)
+                ImeWindowMode.Fixed.SPLIT -> Fixed.Split(rootInsets)
             }
         }
 
