@@ -114,8 +114,27 @@ data class BottomRowPreset(
                 BottomRowKey.ENTER,
             )
         )
+        /** ROADMAP §7 Next-8.1a — Programmer bottom row. Surfaces Tab + Esc
+         *  + symbols / arrow / brace key cluster directly in the main
+         *  letter-keyboard view, so terminal / IDE users on Termux /
+         *  JuiceSSH / Acode don't have to keep flipping to the symbol
+         *  layer for the keys they hit most. Complements Next-8.1 +
+         *  Next-8.2's CODE smartbar profile (which only adds smartbar slots,
+         *  not in-keyboard keys). User selects this preset under
+         *  Settings → Keyboard → Bottom-row preset → "Programmer". */
+        val Programmer = BottomRowPreset(
+            listOf(
+                BottomRowKey.VIEW_SYMBOLS,
+                BottomRowKey.TAB,
+                BottomRowKey.ESCAPE,
+                BottomRowKey.SPACE,
+                BottomRowKey.PERIOD,
+                BottomRowKey.SLASH,
+                BottomRowKey.ENTER,
+            )
+        )
 
-        val Presets = listOf(SwiftKey, Language, Voice, Settings, Minimal)
+        val Presets = listOf(SwiftKey, Language, Voice, Settings, Minimal, Programmer)
 
         fun fromJsonOverride(rawValue: String): BottomRowPreset? {
             return when {
@@ -143,7 +162,16 @@ enum class BottomRowKey {
     SETTINGS,
     SPACE,
     PERIOD,
-    ENTER;
+    ENTER,
+
+    // ROADMAP §7 Next-8.1a — Programmer-mode keys for the Programmer
+    // bottom-row preset. TAB / ESCAPE are character keys (codes 9 / 27)
+    // that commit literal `\t` / ESC to the focused editor; SLASH is
+    // the bracket / brace launcher with a popup that exposes the full
+    // code-symbol cluster on long-press.
+    TAB,
+    ESCAPE,
+    SLASH;
 
     internal fun toTextKeyData(hasDedicatedVoice: Boolean): TextKeyData {
         return when (this) {
@@ -173,6 +201,28 @@ enum class BottomRowKey {
                 code = KeyCode.ENTER,
                 label = "enter",
                 groupId = KeyData.GROUP_ENTER,
+            )
+            TAB -> TextKeyData.TAB
+            ESCAPE -> TextKeyData.ESCAPE
+            SLASH -> TextKeyData(
+                code = 47,
+                label = "/",
+                popup = PopupSet<AbstractKeyData>(
+                    main = TextKeyData(code = 92, label = "\\"),
+                    relevant = listOf(
+                        TextKeyData(code = 123, label = "{"),
+                        TextKeyData(code = 125, label = "}"),
+                        TextKeyData(code = 91, label = "["),
+                        TextKeyData(code = 93, label = "]"),
+                        TextKeyData(code = 40, label = "("),
+                        TextKeyData(code = 41, label = ")"),
+                        TextKeyData(code = 60, label = "<"),
+                        TextKeyData(code = 62, label = ">"),
+                        TextKeyData(code = 124, label = "|"),
+                        TextKeyData(code = 96, label = "`"),
+                        TextKeyData(code = 126, label = "~"),
+                    ),
+                ),
             )
         }
     }

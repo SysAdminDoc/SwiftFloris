@@ -1537,4 +1537,45 @@
         <item quantity="other">{v} candidates</item>
     </plurals>
 
+    <!-- ROADMAP §6 N8.3a — i18n string resources for TalkBack key labels.
+         Routed through Crowdin so non-English users get localised
+         announcements instead of the hard-coded English fallbacks. -->
+    <string name="a11y__key__shift">Shift</string>
+    <string name="a11y__key__delete">Backspace</string>
+    <string name="a11y__key__delete_word">Delete word</string>
+    <string name="a11y__key__forward_delete">Forward delete</string>
+    <string name="a11y__key__forward_delete_word">Forward delete word</string>
+    <string name="a11y__key__enter">Enter</string>
+    <string name="a11y__key__space">Space</string>
+    <string name="a11y__key__tab">Tab</string>
+    <string name="a11y__key__escape">Escape</string>
+    <string name="a11y__key__arrow_left">Arrow left</string>
+    <string name="a11y__key__arrow_right">Arrow right</string>
+    <string name="a11y__key__arrow_up">Arrow up</string>
+    <string name="a11y__key__arrow_down">Arrow down</string>
+    <string name="a11y__key__move_start_of_line">Move to start of line</string>
+    <string name="a11y__key__move_end_of_line">Move to end of line</string>
+    <string name="a11y__key__move_start_of_page">Move to start of page</string>
+    <string name="a11y__key__move_end_of_page">Move to end of page</string>
+    <string name="a11y__key__language_switch">Switch language</string>
+    <string name="a11y__key__subtype_picker">Language picker</string>
+    <string name="a11y__key__next_subtype">Next language</string>
+    <string name="a11y__key__prev_subtype">Previous language</string>
+    <string name="a11y__key__input_method_picker">Choose input method</string>
+    <string name="a11y__key__hide_ui">Hide keyboard</string>
+    <string name="a11y__key__ime_text">Text mode</string>
+    <string name="a11y__key__ime_media">Emoji and media</string>
+    <string name="a11y__key__ime_clipboard">Clipboard</string>
+    <string name="a11y__key__undo">Undo</string>
+    <string name="a11y__key__redo">Redo</string>
+    <string name="a11y__key__view_characters">Letters</string>
+    <string name="a11y__key__view_symbols">Symbols</string>
+    <string name="a11y__key__view_symbols2">More symbols</string>
+    <string name="a11y__key__view_numeric">Numbers</string>
+    <string name="a11y__key__view_numeric_advanced">Numeric</string>
+    <string name="a11y__key__settings">Settings</string>
+    <string name="a11y__key__generic">Key</string>
+    <!-- Format placeholder: the alt-glyph itself; produces "a, alternative: à" -->
+    <string name="a11y__key__alternative_suffix">, alternative: %1$s</string>
+
 </resources>
