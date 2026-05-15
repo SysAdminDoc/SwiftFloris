@@ -50,8 +50,9 @@ import org.xml.sax.InputSource
  * SwiftFloris maps each `<key>` to a [HardwareKeyEntry] keyed by ISO
  * position so the [HardwareKeyboardLayout] surface (Next-6.4) can
  * consume Keyman output without a second cross-format intermediate.
- * Future L8.x slices extend to the LDML `<transforms>` (dead-key +
- * ligature sequencer) and `<displays>` (visual-glyph hints) sub-trees.
+ * L8.x follow-up slices extend that base import with LDML `<transforms>`
+ * (dead-key + ligature sequencer) and `<displays>` (visual-glyph hints)
+ * sub-trees.
  *
  * Uses `javax.xml.parsers.DocumentBuilderFactory` (in the JVM stdlib —
  * works in both Android and pure-JVM unit tests; no external
@@ -101,6 +102,7 @@ object KeymanLdmlParser {
             }
         }
 
+        val displayOverrides = parseDisplayOverrides(root)
         val scancodeMap = LinkedHashMap<Int, HardwareKeyEntry>()
         val keyNodes = root.getElementsByTagName("key")
         var sequentialIndex = 0
@@ -108,16 +110,24 @@ object KeymanLdmlParser {
             val node = keyNodes.item(i) as? Element ?: continue
             val id = node.getAttribute("id")
             if (id.isBlank()) continue
-            val output = node.getAttribute("output").takeIf { it.isNotEmpty() }
-            val shiftOutput = node.getAttribute("longPress").takeIf { it.isNotEmpty() }
-                ?: node.getAttribute("shift").takeIf { it.isNotEmpty() }
+            val output = node.getAttribute("output").takeIf { it.isNotEmpty() }?.decodeLdmlEscapes()
+            val shiftOutput = (
+                node.getAttribute("longPress").takeIf { it.isNotEmpty() }
+                    ?: node.getAttribute("shift").takeIf { it.isNotEmpty() }
+                )?.decodeLdmlEscapes()
             val normalCp = output?.codePointAt(0)
             val shiftCp = shiftOutput?.codePointAt(0)
             if (normalCp == null && shiftCp == null) continue
+            val displayLabel = displayOverrides.labelFor(
+                keyId = id,
+                normalOutput = output,
+                shiftOutput = shiftOutput,
+            )
             scancodeMap[0x100 + sequentialIndex] = HardwareKeyEntry(
                 virtualKeyName = id,
                 normal = normalCp,
                 shift = shiftCp,
+                displayLabel = displayLabel,
             )
             sequentialIndex++
         }
@@ -133,4 +143,96 @@ object KeymanLdmlParser {
     @Suppress("unused")
     private val Node.elementOrNull: Element?
         get() = this as? Element
+
+    private fun parseDisplayOverrides(root: Element): DisplayOverrides {
+        val byOutput = LinkedHashMap<String, String>()
+        val byKeyId = LinkedHashMap<String, String>()
+        val displayNodes = root.getElementsByTagName("display")
+        for (i in 0 until displayNodes.length) {
+            val node = displayNodes.item(i) as? Element ?: continue
+            val displayLabel = node.getAttribute("display")
+                .takeIf { it.isNotEmpty() }
+                ?.decodeLdmlEscapes()
+                ?: continue
+            val outputTarget = firstNonBlankAttribute(node, "to", "output")?.decodeLdmlEscapes()
+            val keyTarget = firstNonBlankAttribute(node, "keyId", "id")
+            if (outputTarget != null && outputTarget != displayLabel) {
+                byOutput[outputTarget] = displayLabel
+            }
+            if (keyTarget != null) {
+                byKeyId[keyTarget] = displayLabel
+            }
+        }
+        return DisplayOverrides(byOutput = byOutput, byKeyId = byKeyId)
+    }
+
+    private fun firstNonBlankAttribute(node: Element, vararg names: String): String? {
+        for (name in names) {
+            val value = node.getAttribute(name)
+            if (value.isNotBlank()) return value
+        }
+        return null
+    }
+
+    private data class DisplayOverrides(
+        val byOutput: Map<String, String>,
+        val byKeyId: Map<String, String>,
+    ) {
+        fun labelFor(
+            keyId: String,
+            normalOutput: String?,
+            shiftOutput: String?,
+        ): String? {
+            byKeyId[keyId]?.let { return it }
+            normalOutput?.let { byOutput[it] }?.let { return it }
+            shiftOutput?.let { byOutput[it] }?.let { return it }
+            return null
+        }
+    }
+
+    private fun String.decodeLdmlEscapes(): String {
+        if ('\\' !in this) return this
+        val decoded = StringBuilder(length)
+        var index = 0
+        while (index < length) {
+            if (this[index] == '\\' && index + 1 < length && this[index + 1] == 'u') {
+                val braced = decodeBracedUnicodeEscape(index)
+                if (braced != null) {
+                    decoded.appendCodePoint(braced.codePoint)
+                    index = braced.nextIndex
+                    continue
+                }
+                val fixed = decodeFixedUnicodeEscape(index)
+                if (fixed != null) {
+                    decoded.appendCodePoint(fixed.codePoint)
+                    index = fixed.nextIndex
+                    continue
+                }
+            }
+            decoded.append(this[index])
+            index++
+        }
+        return decoded.toString()
+    }
+
+    private fun String.decodeBracedUnicodeEscape(startIndex: Int): UnicodeEscape? {
+        if (startIndex + 2 >= length || this[startIndex + 2] != '{') return null
+        val closeIndex = indexOf('}', startIndex = startIndex + 3)
+        if (closeIndex < 0) return null
+        val hex = substring(startIndex + 3, closeIndex)
+        val codePoint = hex.toIntOrNull(16)?.takeIf { Character.isValidCodePoint(it) } ?: return null
+        return UnicodeEscape(codePoint = codePoint, nextIndex = closeIndex + 1)
+    }
+
+    private fun String.decodeFixedUnicodeEscape(startIndex: Int): UnicodeEscape? {
+        if (startIndex + 6 > length) return null
+        val hex = substring(startIndex + 2, startIndex + 6)
+        val codePoint = hex.toIntOrNull(16)?.takeIf { Character.isValidCodePoint(it) } ?: return null
+        return UnicodeEscape(codePoint = codePoint, nextIndex = startIndex + 6)
+    }
+
+    private data class UnicodeEscape(
+        val codePoint: Int,
+        val nextIndex: Int,
+    )
 }

@@ -752,6 +752,8 @@ echoed text via the IME's preview row.
 
 ### D9 — L8.2: LDML `<displays>` parser extension
 
+**Status:** ✅ Shipped 2026-05-15. Preserved below as historical implementation prompt.
+
 ```
 SwiftFloris at `~/repos/SwiftFloris` has a Keyman LDML parser at
 `ime/hardware/KeymanLdmlParser` covering `<keys>`. Many real Keyman

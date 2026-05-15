@@ -86,4 +86,108 @@ class KeymanLdmlParserTest : FunSpec({
         layout.scancodeMap.values.shouldNotBeEmpty()
         layout.scancodeMap.size shouldBe 1
     }
+
+    test("display override with to attribute labels the matching key output") {
+        val ldml = """
+            <keyboard locale="km-KH">
+              <keys>
+                <key id="A01" output="ក"/>
+                <key id="A02" output="ខ"/>
+              </keys>
+              <displays>
+                <display to="ក" display="ka"/>
+              </displays>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        layout.scancodeMap.values.first { it.virtualKeyName == "A01" }.displayLabel shouldBe "ka"
+        layout.scancodeMap.values.first { it.virtualKeyName == "A02" }.displayLabel shouldBe null
+    }
+
+    test("display override with output attribute supports current LDML keyboard syntax") {
+        val ldml = """
+            <keyboard locale="lo-LA">
+              <keys>
+                <key id="A01" output="\u{0303}"/>
+              </keys>
+              <displays>
+                <display output="\u{0303}" display="\u{25CC}\u{0303}"/>
+              </displays>
+            </keyboard>
+        """.trimIndent()
+        val key = KeymanLdmlParser.parse(ldml).scancodeMap.values.single()
+        key.normal shouldBe 0x0303
+        key.displayLabel shouldBe "◌̃"
+    }
+
+    test("display override with keyId labels the matching key id") {
+        val ldml = """
+            <keyboard locale="bo-CN">
+              <keys>
+                <key id="E01" output="་"/>
+                <key id="E02" output="།"/>
+              </keys>
+              <displays>
+                <display keyId="E02" display="shad"/>
+              </displays>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        layout.scancodeMap.values.first { it.virtualKeyName == "E01" }.displayLabel shouldBe null
+        layout.scancodeMap.values.first { it.virtualKeyName == "E02" }.displayLabel shouldBe "shad"
+    }
+
+    test("display override with id attribute supports legacy draft key targeting") {
+        val ldml = """
+            <keyboard locale="x-test">
+              <keys>
+                <key id="shiftLayer" output="⇧"/>
+              </keys>
+              <displays>
+                <display id="shiftLayer" display="Shift"/>
+              </displays>
+            </keyboard>
+        """.trimIndent()
+        val key = KeymanLdmlParser.parse(ldml).scancodeMap.values.single()
+        key.displayLabel shouldBe "Shift"
+    }
+
+    test("unmatched shared display maps do not create synthetic key entries") {
+        val ldml = """
+            <keyboard locale="km-KH">
+              <keys>
+                <key id="A01" output="ក"/>
+              </keys>
+              <displays>
+                <display to="ឃ" display="kho"/>
+                <display keyId="missing" display="Missing"/>
+              </displays>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        layout.scancodeMap.size shouldBe 1
+        layout.scancodeMap.values.single().displayLabel shouldBe null
+    }
+
+    test("Burmese display fixture round-trips combining medial label") {
+        val ldml = """
+            <keyboard locale="my-MM">
+              <names>
+                <name value="Myanmar Visual"/>
+              </names>
+              <keys>
+                <key id="C01" output="ြ"/>
+                <key id="C02" output="က"/>
+              </keys>
+              <displays>
+                <display to="ြ" display="◌ြ"/>
+              </displays>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        layout.locale shouldBe "my-MM"
+        layout.name shouldBe "Myanmar Visual"
+        layout.scancodeMap.values.first { it.virtualKeyName == "C01" }.displayLabel shouldBe "◌ြ"
+        layout.scancodeMap.values.first { it.virtualKeyName == "C02" }.displayLabel shouldBe null
+    }
 })
