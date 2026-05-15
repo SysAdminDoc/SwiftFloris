@@ -2,7 +2,7 @@
   "$": "ime.extension.theme",
   "meta": {
     "id": "org.florisboard.themes",
-    "version": "0.2.0",
+    "version": "0.3.0",
     "title": "FlorisBoard default themes",
     "description": "Default themes (both day and night) for the keyboard UI",
     "maintainers": [ "patrickgold <patrick@patrickgold.dev>", "lm41 <lm41@lm41.xyz>" ],
@@ -79,6 +79,48 @@
       "id": "floris_pure_night_borderless",
       "label": "Floris Pure Night (Borderless)",
       "authors": [ "serebit" ],
+      "isNight": true
+    },
+    {
+      "id": "m3e_nord_light",
+      "label": "Nord (M3 Expressive)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": false
+    },
+    {
+      "id": "m3e_swiftkey_pure_light",
+      "label": "SwiftKey Pure (M3 Expressive, Light)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": false
+    },
+    {
+      "id": "m3e_nord_dark",
+      "label": "Nord (M3 Expressive, Dark)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": true
+    },
+    {
+      "id": "m3e_tokyo_night",
+      "label": "Tokyo Night (M3 Expressive)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": true
+    },
+    {
+      "id": "m3e_dracula",
+      "label": "Dracula (M3 Expressive)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": true
+    },
+    {
+      "id": "m3e_catppuccin_mocha",
+      "label": "Catppuccin Mocha (M3 Expressive)",
+      "authors": [ "SwiftFloris" ],
+      "isNight": true
+    },
+    {
+      "id": "m3e_swiftkey_pure_dark",
+      "label": "SwiftKey Pure (M3 Expressive, Dark)",
+      "authors": [ "SwiftFloris" ],
       "isNight": true
     }
   ]
