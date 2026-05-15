@@ -521,6 +521,99 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Mongolian (U+1800 block).
+         * Mongolian is a Brahmic-derived script written **vertically**
+         * historically, but the Unicode block carries the consonant +
+         * vowel + digit inventory used for both vertical Mongolian and
+         * Hudum Mongolian Cyrillic transliteration. Digits U+1810..U+1819.
+         * The script does not carry anusvara / visarga concepts — slots
+         * map to the Mongolian "Sibe" delimiter (U+1806) which is the
+         * closest punctuation analogue.
+         */
+        val LatinToMongolian: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Mongolian",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ᠠ", "e" to "ᠡ",
+                    "i" to "ᠢ", "o" to "ᠣ", "u" to "ᠤ",
+                ),
+                consonants = mapOf(
+                    "k" to "ᠺ", "g" to "ᠭ", "ng" to "ᠩ",
+                    "ch" to "ᠴ", "j" to "ᠵ",
+                    "t" to "ᠲ", "d" to "ᠳ", "n" to "ᠨ",
+                    "p" to "ᠫ", "b" to "ᠪ", "m" to "ᠮ",
+                    "r" to "ᠷ", "l" to "ᠯ", "v" to "ᠸ", "y" to "ᠶ",
+                    "s" to "ᠰ", "h" to "ᠬ",
+                ),
+                digits = "᠐᠑᠒᠓᠔᠕᠖᠗᠘᠙",
+                anusvara = "᠆", visarga = "᠆",
+            ),
+        )
+
+        /**
+         * ITRANS → Javanese (U+A980 block).
+         * Javanese is a Brahmic-derived Indonesian / Sundanese family
+         * script with the standard vowel + consonant skeleton. Digits
+         * U+A9D0..U+A9D9. Anusvara maps to Javanese "Cecak" (U+A981);
+         * visarga maps to "Wignyan" (U+A983).
+         */
+        val ItransToJavanese: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Javanese",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ꦄ", "aa" to "ꦄꦴ", "A" to "ꦄꦴ",
+                    "i" to "ꦆ", "ii" to "ꦇ", "I" to "ꦇ",
+                    "u" to "ꦈ", "uu" to "ꦈꦴ", "U" to "ꦈꦴ",
+                    "e" to "ꦌ", "o" to "ꦎ",
+                ),
+                consonants = mapOf(
+                    "k" to "ꦏ", "kh" to "ꦑ", "g" to "ꦒ", "gh" to "ꦓ",
+                    "ng" to "ꦔ",
+                    "ch" to "ꦕ", "j" to "ꦗ",
+                    "T" to "ꦛ", "Th" to "ꦜ", "D" to "ꦝ", "Dh" to "ꦞ", "N" to "ꦟ",
+                    "t" to "ꦠ", "th" to "ꦡ", "d" to "ꦢ", "dh" to "ꦣ", "n" to "ꦤ",
+                    "p" to "ꦥ", "ph" to "ꦦ", "b" to "ꦧ", "bh" to "ꦨ", "m" to "ꦩ",
+                    "y" to "ꦪ", "r" to "ꦫ", "l" to "ꦭ", "v" to "ꦮ",
+                    "sh" to "ꦯ", "s" to "ꦱ", "h" to "ꦲ",
+                ),
+                digits = "꧐꧑꧒꧓꧔꧕꧖꧗꧘꧙",
+                anusvara = "ꦁ", visarga = "ꦃ",
+            ),
+        )
+
+        /**
+         * ITRANS → Sundanese (U+1B80 block).
+         * Sundanese is a Western-Javanese / Indonesian Brahmic script
+         * close to Javanese but with its own native code points + digits
+         * U+1BB0..U+1BB9. Both anusvara + visarga collapse to the
+         * Sundanese pamaaeh (U+1BAA), which is the script's pasangan
+         * vowel-killer mark — closest functional analogue.
+         */
+        val ItransToSundanese: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Sundanese",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ᮃ", "i" to "ᮄ",
+                    "u" to "ᮅ", "e" to "ᮆ", "o" to "ᮇ",
+                ),
+                consonants = mapOf(
+                    "k" to "ᮊ", "g" to "ᮌ", "ng" to "ᮍ",
+                    "ch" to "ᮎ", "j" to "ᮏ",
+                    "T" to "ᮒ", "D" to "ᮓ", "N" to "ᮔ",
+                    "t" to "ᮒ", "d" to "ᮓ", "n" to "ᮔ",
+                    "p" to "ᮕ", "b" to "ᮘ", "m" to "ᮙ",
+                    "y" to "ᮚ", "r" to "ᮛ", "l" to "ᮜ", "v" to "ᮝ",
+                    "s" to "ᮞ", "h" to "ᮠ",
+                ),
+                digits = "᮰᮱᮲᮳᮴᮵᮶᮷᮸᮹",
+                anusvara = "᮪", visarga = "᮪",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
