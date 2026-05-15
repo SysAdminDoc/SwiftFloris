@@ -572,6 +572,8 @@ converges to the same `Set<EntryKey>` regardless of merge order.
 
 ### D3 — Next-5.3a: Settings → Sync Compose screen
 
+**Status:** Shipped 2026-05-15. Preserved below as the historical implementation prompt.
+
 ```
 SwiftFloris at `~/repos/SwiftFloris` has a sync-channel taxonomy
 (`ime/sync/SyncChannel`) + the QR-pairing payload

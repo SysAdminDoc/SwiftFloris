@@ -65,7 +65,8 @@ sealed class SyncChannel {
     /**
      * Generic local-folder channel: the user picks any directory and
      * lets a sync app (Nextcloud, Resilio, Dropbox via FolderSync) mirror
-     * it. The IME just reads / writes JSON in [absolutePath].
+     * it. The IME just reads / writes JSON in [absolutePath], which may be
+     * a POSIX-style absolute path or an Android SAF content URI.
      */
     @Serializable
     data class LocalFolder(val absolutePath: String, val displayLabel: String) : SyncChannel() {
@@ -77,8 +78,8 @@ sealed class SyncChannel {
         override val channelId: String get() = "swiftfloris:folder:$absolutePath"
         init {
             require(absolutePath.isNotBlank()) { "absolutePath must not be blank" }
-            require(absolutePath.startsWith("/")) {
-                "absolutePath must be an absolute filesystem path"
+            require(isSupportedLocalFolderLocation(absolutePath)) {
+                "absolutePath must be an absolute filesystem path or SAF content URI"
             }
         }
     }
@@ -130,7 +131,9 @@ sealed class SyncChannel {
                     Syncthing(folder)
                 }
                 "folder" -> {
-                    val path = parts.getOrNull(2)?.takeIf { it.startsWith("/") } ?: return Disabled
+                    val path = parts.getOrNull(2)
+                        ?.takeIf { isSupportedLocalFolderLocation(it) }
+                        ?: return Disabled
                     LocalFolder(path, displayLabel = "Local folder")
                 }
                 "manual-export" -> ManualExport
@@ -139,6 +142,10 @@ sealed class SyncChannel {
             }
         }
     }
+}
+
+private fun isSupportedLocalFolderLocation(value: String): Boolean {
+    return value.startsWith("/") || value.startsWith("content://")
 }
 
 @Serializable

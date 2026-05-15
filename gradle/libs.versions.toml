@@ -25,6 +25,7 @@ mikepenz-aboutlibraries = "14.0.1"
 patrickgold-compose-tooltip = "0.2.0-rc02"
 patrickgold-jetpref = "0.3.0"
 sqlcipher-android = "4.16.0"
+zxing-core = "3.5.3"
 
 # Testing
 androidx-benchmark = "1.4.1"
@@ -77,6 +78,7 @@ patrickgold-jetpref-datastore-model-processor = { module = "dev.patrickgold.jetp
 patrickgold-jetpref-datastore-ui = { module = "dev.patrickgold.jetpref:jetpref-datastore-ui", version.ref = "patrickgold-jetpref" }
 patrickgold-jetpref-material-ui = { module = "dev.patrickgold.jetpref:jetpref-material-ui", version.ref = "patrickgold-jetpref" }
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher-android" }
+zxing-core = { module = "com.google.zxing:core", version.ref = "zxing-core" }
 
 # Testing
 androidx-benchmark-macro = { module = "androidx.benchmark:benchmark-macro-junit4", version.ref = "androidx-benchmark" }
