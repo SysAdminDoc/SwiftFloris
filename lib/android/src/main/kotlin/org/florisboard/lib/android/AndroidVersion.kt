@@ -83,4 +83,14 @@ object AndroidVersion {
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.VANILLA_ICE_CREAM
     inline val ATMOST_API35_V
         get() = Build.VERSION.SDK_INT <= Build.VERSION_CODES.VANILLA_ICE_CREAM
+
+    /** Android 16 (Baklava). API 36 introduced the PWLE haptic envelope API
+     *  (`VibrationEffect.WaveformEnvelopeBuilder` + `Vibrator.areEnvelopeEffectsSupported`),
+     *  16 KB memory pages as a hard requirement for Google Play submissions
+     *  (already covered by AGP 9 + NDK 29 toolchain pins), and the AOSP-cadence
+     *  switch to Q2/Q4-only source publishes. SwiftFloris's Vibrator wrapper
+     *  guards the PWLE path on this check. */
+    inline val ATLEAST_API36_BAKLAVA
+        @ChecksSdkIntAtLeast(api = 36)
+        get() = Build.VERSION.SDK_INT >= 36
 }
