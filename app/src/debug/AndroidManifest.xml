@@ -10,5 +10,20 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <profileable android:shell="true"/>
+
+        <!--
+            ROADMAP §7 Next-12.2a — Roborazzi screenshot-test host.
+            Declared in the debug overlay only so it never reaches release
+            builds. `exported=false` keeps it unreachable to external
+            apps even on debug devices.
+        -->
+        <activity
+            android:name="dev.patrickgold.florisboard.screenshot.RoborazziHostActivity"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
     </application>
 </manifest>

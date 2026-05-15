@@ -143,5 +143,186 @@ class IndicScriptTable(
                 "|" to "।", "||" to "॥",
             ),
         )
+
+        /** ITRANS → Bengali (U+0980 block; Bengali / Assamese). */
+        val ItransToBengali: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Bengali",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "অ", "aa" to "আ", "A" to "আ",
+                    "i" to "ই", "ii" to "ঈ", "I" to "ঈ",
+                    "u" to "উ", "uu" to "ঊ", "U" to "ঊ",
+                    "e" to "এ", "ai" to "ঐ",
+                    "o" to "ও", "au" to "ঔ",
+                ),
+                consonants = mapOf(
+                    "k" to "ক", "kh" to "খ", "g" to "গ", "gh" to "ঘ",
+                    "ch" to "চ", "Ch" to "ছ", "j" to "জ", "jh" to "ঝ",
+                    "T" to "ট", "Th" to "ঠ", "D" to "ড", "Dh" to "ঢ", "N" to "ণ",
+                    "t" to "ত", "th" to "থ", "d" to "দ", "dh" to "ধ", "n" to "ন",
+                    "p" to "প", "ph" to "ফ", "b" to "ব", "bh" to "ভ", "m" to "ম",
+                    "y" to "য", "r" to "র", "l" to "ল",
+                    "sh" to "শ", "Sh" to "ষ", "s" to "স", "h" to "হ",
+                ),
+                digits = "০১২৩৪৫৬৭৮৯",
+                anusvara = "ং", visarga = "ঃ",
+            ),
+        )
+
+        /** ITRANS → Tamil (U+0B80 block). Tamil has no aspirated stops. */
+        val ItransToTamil: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Tamil",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "அ", "aa" to "ஆ", "A" to "ஆ",
+                    "i" to "இ", "ii" to "ஈ", "I" to "ஈ",
+                    "u" to "உ", "uu" to "ஊ", "U" to "ஊ",
+                    "e" to "எ", "ee" to "ஏ",
+                    "ai" to "ஐ", "o" to "ஒ", "oo" to "ஓ", "au" to "ஔ",
+                ),
+                consonants = mapOf(
+                    "k" to "க", "ng" to "ங",
+                    "ch" to "ச", "nj" to "ஞ",
+                    "T" to "ட", "N" to "ண",
+                    "t" to "த", "n" to "ந",
+                    "p" to "ப", "m" to "ம",
+                    "y" to "ய", "r" to "ர", "l" to "ல", "v" to "வ",
+                    "zh" to "ழ", "L" to "ள",
+                    "R" to "ற", "n2" to "ன",
+                    "j" to "ஜ", "sh" to "ஷ", "s" to "ஸ", "h" to "ஹ",
+                ),
+                digits = "௦௧௨௩௪௫௬௭௮௯",
+                anusvara = "ஃ", visarga = "ஃ",
+            ),
+        )
+
+        /** ITRANS → Telugu (U+0C00 block). */
+        val ItransToTelugu: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Telugu",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "అ", "aa" to "ఆ", "A" to "ఆ",
+                    "i" to "ఇ", "ii" to "ఈ", "I" to "ఈ",
+                    "u" to "ఉ", "uu" to "ఊ", "U" to "ఊ",
+                    "e" to "ఎ", "ee" to "ఏ", "ai" to "ఐ",
+                    "o" to "ఒ", "oo" to "ఓ", "au" to "ఔ",
+                ),
+                consonants = mapOf(
+                    "k" to "క", "kh" to "ఖ", "g" to "గ", "gh" to "ఘ",
+                    "ch" to "చ", "Ch" to "ఛ", "j" to "జ", "jh" to "ఝ",
+                    "T" to "ట", "Th" to "ఠ", "D" to "డ", "Dh" to "ఢ", "N" to "ణ",
+                    "t" to "త", "th" to "థ", "d" to "ద", "dh" to "ధ", "n" to "న",
+                    "p" to "ప", "ph" to "ఫ", "b" to "బ", "bh" to "భ", "m" to "మ",
+                    "y" to "య", "r" to "ర", "l" to "ల", "v" to "వ",
+                    "sh" to "శ", "Sh" to "ష", "s" to "స", "h" to "హ",
+                ),
+                digits = "౦౧౨౩౪౫౬౭౮౯",
+                anusvara = "ం", visarga = "ః",
+            ),
+        )
+
+        /** ITRANS → Gujarati (U+0A80 block). */
+        val ItransToGujarati: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Gujarati",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "અ", "aa" to "આ", "A" to "આ",
+                    "i" to "ઇ", "ii" to "ઈ", "I" to "ઈ",
+                    "u" to "ઉ", "uu" to "ઊ", "U" to "ઊ",
+                    "e" to "એ", "ai" to "ઐ",
+                    "o" to "ઓ", "au" to "ઔ",
+                ),
+                consonants = mapOf(
+                    "k" to "ક", "kh" to "ખ", "g" to "ગ", "gh" to "ઘ",
+                    "ch" to "ચ", "Ch" to "છ", "j" to "જ", "jh" to "ઝ",
+                    "T" to "ટ", "Th" to "ઠ", "D" to "ડ", "Dh" to "ઢ", "N" to "ણ",
+                    "t" to "ત", "th" to "થ", "d" to "દ", "dh" to "ધ", "n" to "ન",
+                    "p" to "પ", "ph" to "ફ", "b" to "બ", "bh" to "ભ", "m" to "મ",
+                    "y" to "ય", "r" to "ર", "l" to "લ", "v" to "વ",
+                    "sh" to "શ", "Sh" to "ષ", "s" to "સ", "h" to "હ",
+                ),
+                digits = "૦૧૨૩૪૫૬૭૮૯",
+                anusvara = "ં", visarga = "ઃ",
+            ),
+        )
+
+        /** ITRANS → Gurmukhi (U+0A00 block; Punjabi script). */
+        val ItransToGurmukhi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Gurmukhi",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ਅ", "aa" to "ਆ", "A" to "ਆ",
+                    "i" to "ਇ", "ii" to "ਈ", "I" to "ਈ",
+                    "u" to "ਉ", "uu" to "ਊ", "U" to "ਊ",
+                    "e" to "ਏ", "ai" to "ਐ",
+                    "o" to "ਓ", "au" to "ਔ",
+                ),
+                consonants = mapOf(
+                    "k" to "ਕ", "kh" to "ਖ", "g" to "ਗ", "gh" to "ਘ",
+                    "ch" to "ਚ", "Ch" to "ਛ", "j" to "ਜ", "jh" to "ਝ",
+                    "T" to "ਟ", "Th" to "ਠ", "D" to "ਡ", "Dh" to "ਢ", "N" to "ਣ",
+                    "t" to "ਤ", "th" to "ਥ", "d" to "ਦ", "dh" to "ਧ", "n" to "ਨ",
+                    "p" to "ਪ", "ph" to "ਫ", "b" to "ਬ", "bh" to "ਭ", "m" to "ਮ",
+                    "y" to "ਯ", "r" to "ਰ", "l" to "ਲ", "v" to "ਵ",
+                    "sh" to "ਸ਼", "s" to "ਸ", "h" to "ਹ",
+                ),
+                digits = "੦੧੨੩੪੫੬੭੮੯",
+                anusvara = "ਂ", visarga = "ਃ",
+            ),
+        )
+
+        /** ITRANS → Kannada (U+0C80 block). */
+        val ItransToKannada: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Kannada",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ಅ", "aa" to "ಆ", "A" to "ಆ",
+                    "i" to "ಇ", "ii" to "ಈ", "I" to "ಈ",
+                    "u" to "ಉ", "uu" to "ಊ", "U" to "ಊ",
+                    "e" to "ಎ", "ee" to "ಏ", "ai" to "ಐ",
+                    "o" to "ಒ", "oo" to "ಓ", "au" to "ಔ",
+                ),
+                consonants = mapOf(
+                    "k" to "ಕ", "kh" to "ಖ", "g" to "ಗ", "gh" to "ಘ",
+                    "ch" to "ಚ", "Ch" to "ಛ", "j" to "ಜ", "jh" to "ಝ",
+                    "T" to "ಟ", "Th" to "ಠ", "D" to "ಡ", "Dh" to "ಢ", "N" to "ಣ",
+                    "t" to "ತ", "th" to "ಥ", "d" to "ದ", "dh" to "ಧ", "n" to "ನ",
+                    "p" to "ಪ", "ph" to "ಫ", "b" to "ಬ", "bh" to "ಭ", "m" to "ಮ",
+                    "y" to "ಯ", "r" to "ರ", "l" to "ಲ", "v" to "ವ",
+                    "sh" to "ಶ", "Sh" to "ಷ", "s" to "ಸ", "h" to "ಹ",
+                ),
+                digits = "೦೧೨೩೪೫೬೭೮೯",
+                anusvara = "ಂ", visarga = "ಃ",
+            ),
+        )
+
+        /** Common Indic table builder — keeps each per-script table
+         *  concise + audit-able. */
+        private fun buildIndicMappings(
+            vowels: Map<String, String>,
+            consonants: Map<String, String>,
+            digits: String,
+            anusvara: String,
+            visarga: String,
+        ): Map<String, String> {
+            val map = LinkedHashMap<String, String>(vowels.size + consonants.size + 12)
+            map.putAll(vowels)
+            map.putAll(consonants)
+            for ((i, char) in digits.withIndex()) {
+                if (i > 9) break
+                map[i.toString()] = char.toString()
+            }
+            map["M"] = anusvara
+            map["H"] = visarga
+            map["|"] = "।"
+            map["||"] = "॥"
+            return map
+        }
     }
 }

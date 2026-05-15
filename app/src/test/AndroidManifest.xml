@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    ROADMAP §7 Next-12.2a — Test-only AndroidManifest overlay.
+
+    Robolectric's `createComposeRule()` is internally backed by
+    `ActivityScenario.launch(ComponentActivity::class)`, which itself
+    needs the activity declared in the merged manifest. The :app
+    module's production manifest only declares the IME service, so
+    ComponentActivity is "unresolvable" — the same failure shape
+    documented in https://github.com/robolectric/robolectric/pull/4736.
+
+    This test-tier manifest adds a stub declaration so Roborazzi
+    captures work. The file is *only* picked up by the unit-test
+    classpath (Android stops merging it on `assembleDebug` / release
+    builds), so it never reaches a shipped APK.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application>
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            android:exported="false"
+            tools:node="merge">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+    </application>
+</manifest>

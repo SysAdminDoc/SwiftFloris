@@ -1,0 +1,67 @@
+[
+  [
+    { "code":   49, "label": "1", "popup": { "relevant": [
+      { "code":   46, "label": "." },
+      { "code":   44, "label": "," },
+      { "code":   33, "label": "!" },
+      { "code":   63, "label": "?" }
+    ] } },
+    { "code":   50, "label": "2", "popup": { "relevant": [
+      { "code":   97, "label": "a" },
+      { "code":   98, "label": "b" },
+      { "code":   99, "label": "c" }
+    ] } },
+    { "code":   51, "label": "3", "popup": { "relevant": [
+      { "code":  100, "label": "d" },
+      { "code":  101, "label": "e" },
+      { "code":  102, "label": "f" }
+    ] } }
+  ],
+  [
+    { "code":   52, "label": "4", "popup": { "relevant": [
+      { "code":  103, "label": "g" },
+      { "code":  104, "label": "h" },
+      { "code":  105, "label": "i" }
+    ] } },
+    { "code":   53, "label": "5", "popup": { "relevant": [
+      { "code":  106, "label": "j" },
+      { "code":  107, "label": "k" },
+      { "code":  108, "label": "l" }
+    ] } },
+    { "code":   54, "label": "6", "popup": { "relevant": [
+      { "code":  109, "label": "m" },
+      { "code":  110, "label": "n" },
+      { "code":  111, "label": "o" }
+    ] } }
+  ],
+  [
+    { "code":   55, "label": "7", "popup": { "relevant": [
+      { "code":  112, "label": "p" },
+      { "code":  113, "label": "q" },
+      { "code":  114, "label": "r" },
+      { "code":  115, "label": "s" }
+    ] } },
+    { "code":   56, "label": "8", "popup": { "relevant": [
+      { "code":  116, "label": "t" },
+      { "code":  117, "label": "u" },
+      { "code":  118, "label": "v" }
+    ] } },
+    { "code":   57, "label": "9", "popup": { "relevant": [
+      { "code":  119, "label": "w" },
+      { "code":  120, "label": "x" },
+      { "code":  121, "label": "y" },
+      { "code":  122, "label": "z" }
+    ] } }
+  ],
+  [
+    { "code":   42, "label": "*", "popup": { "relevant": [
+      { "code":   35, "label": "#" },
+      { "code":   38, "label": "&" }
+    ] } },
+    { "code":   48, "label": "0", "popup": { "relevant": [
+      { "code":   32, "label": "space" },
+      { "code":   43, "label": "+" }
+    ] } },
+    { "code":   35, "label": "#" }
+  ]
+]

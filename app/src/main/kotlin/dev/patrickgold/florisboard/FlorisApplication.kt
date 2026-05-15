@@ -37,6 +37,8 @@ import dev.patrickgold.florisboard.ime.nlp.NlpManager
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
 import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
 import dev.patrickgold.florisboard.ime.theme.PerAppAccentController
+import dev.patrickgold.florisboard.ime.wordstyles.WordStylesCanvasRenderer
+import dev.patrickgold.florisboard.ime.wordstyles.WordStylesRendererRegistry
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
@@ -104,6 +106,12 @@ class FlorisApplication : Application() {
             )
             CrashUtility.install(this)
             FlorisEmojiCompat.init(this)
+            // ROADMAP §7 L12.1 — register the Android Canvas WordStyles
+            // renderer at app boot so the smartbar quick-action sees a
+            // working renderer without needing the L12 addon to be
+            // installed. Out-of-tree addon variants can still override
+            // via WordStylesRendererRegistry.setActive(...).
+            WordStylesRendererRegistry.setActive(WordStylesCanvasRenderer(this))
             flogError { "native module disabled, skipping dummy test" }
             // Originally: flogError { "dummy result: ${dummyAdd(3,4)}" }
 
