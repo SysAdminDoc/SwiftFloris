@@ -383,11 +383,18 @@ internal class LatinDictionaryStore(
 
     private suspend fun loadSpecificDictionary(languageCode: String): LatinDictionarySnapshot? {
         val base = loadFirstDictionary(languageCode) ?: return null
-        return if (languageCode == DefaultLanguageCode) {
+        val merged = if (languageCode == DefaultLanguageCode) {
             base.mergeWith(loadSupplementalEnglishFrequencies())
         } else {
             base
         }
+        // ROADMAP §7 Next-3.2 — overlay subtitle-derived Zipf table for this
+        // language. Missing asset is tolerated: the snapshot then carries
+        // `ZipfFrequencyTable.Empty` and `frequencyFor` falls back to pure
+        // SCOWL frequencies (current behaviour).
+        val zipfTsv = readAsset.read(zipfAssetPath(languageCode))
+        val zipfTable = ZipfFrequencyTable.parse(languageCode, zipfTsv)
+        return merged.withZipfTable(zipfTable)
     }
 
     private suspend fun loadFirstDictionary(languageCode: String): LatinDictionarySnapshot? {
@@ -493,6 +500,9 @@ internal class LatinDictionaryStore(
                 )
             }
         }
+
+        fun zipfAssetPath(language: String): String =
+            "freq/${normalizeLanguageCode(language)}.tsv"
     }
 }
 
@@ -502,12 +512,30 @@ internal data class LatinDictionarySnapshot(
     val correctionWords: Collection<String> = frequencies.keys,
     val distanceTwoCorrectionWords: Collection<String> = correctionWords,
     val glideWords: List<String> = buildGlideWords(frequencies),
+    val zipfTable: ZipfFrequencyTable = ZipfFrequencyTable.Empty,
 ) {
     val isLoaded: Boolean get() = frequencies.isNotEmpty()
 
     fun contains(word: String): Boolean = frequencies.containsKey(word)
 
-    fun frequencyFor(word: String): Double = frequencies.getOrDefault(word, 0).coerceIn(0, 255) / 255.0
+    /**
+     * Returns a usage-weighted frequency in `[0, 1]`. SCOWL provides the
+     * baseline spelling-list signal, and the Zipf overlay (ROADMAP §7 Next-3.2)
+     * adjusts the ranking with conversational frequency derived from subtitle
+     * corpora. When the Zipf table is empty (no `assets/freq/<lang>.tsv` for
+     * this language), this reduces to the pure SCOWL ratio that shipped
+     * before Next-3.2.
+     */
+    fun frequencyFor(word: String): Double {
+        val scowl = frequencies.getOrDefault(word, 0).coerceIn(0, 255) / 255.0
+        return zipfTable.blendedFrequency(word, scowl)
+    }
+
+    /** Return a copy with the supplied Zipf overlay (used at load time). */
+    fun withZipfTable(table: ZipfFrequencyTable): LatinDictionarySnapshot {
+        if (table === zipfTable) return this
+        return copy(zipfTable = table)
+    }
 
     /**
      * Lazily-built SymSpell delete-index over the high-confidence correction vocabulary.
