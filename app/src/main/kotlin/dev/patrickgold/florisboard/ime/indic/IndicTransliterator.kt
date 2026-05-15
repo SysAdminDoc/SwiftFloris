@@ -276,6 +276,85 @@ class IndicScriptTable(
             ),
         )
 
+        /** ITRANS → Malayalam (U+0D00 block). */
+        val ItransToMalayalam: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Malayalam",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "അ", "aa" to "ആ", "A" to "ആ",
+                    "i" to "ഇ", "ii" to "ഈ", "I" to "ഈ",
+                    "u" to "ഉ", "uu" to "ഊ", "U" to "ഊ",
+                    "e" to "എ", "ee" to "ഏ",
+                    "ai" to "ഐ", "o" to "ഒ", "oo" to "ഓ", "au" to "ഔ",
+                ),
+                consonants = mapOf(
+                    "k" to "ക", "kh" to "ഖ", "g" to "ഗ", "gh" to "ഘ",
+                    "ch" to "ച", "Ch" to "ഛ", "j" to "ജ", "jh" to "ഝ",
+                    "T" to "ട", "Th" to "ഠ", "D" to "ഡ", "Dh" to "ഢ", "N" to "ണ",
+                    "t" to "ത", "th" to "ഥ", "d" to "ദ", "dh" to "ധ", "n" to "ന",
+                    "p" to "പ", "ph" to "ഫ", "b" to "ബ", "bh" to "ഭ", "m" to "മ",
+                    "y" to "യ", "r" to "ര", "l" to "ല", "v" to "വ", "L" to "ള",
+                    "sh" to "ശ", "Sh" to "ഷ", "s" to "സ", "h" to "ഹ",
+                ),
+                digits = "൦൧൨൩൪൫൬൭൮൯",
+                anusvara = "ം", visarga = "ഃ",
+            ),
+        )
+
+        /** ITRANS → Odia (U+0B00 block; formerly known as Oriya). */
+        val ItransToOdia: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Odia",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ଅ", "aa" to "ଆ", "A" to "ଆ",
+                    "i" to "ଇ", "ii" to "ଈ", "I" to "ଈ",
+                    "u" to "ଉ", "uu" to "ଊ", "U" to "ଊ",
+                    "e" to "ଏ", "ai" to "ଐ",
+                    "o" to "ଓ", "au" to "ଔ",
+                ),
+                consonants = mapOf(
+                    "k" to "କ", "kh" to "ଖ", "g" to "ଗ", "gh" to "ଘ",
+                    "ch" to "ଚ", "Ch" to "ଛ", "j" to "ଜ", "jh" to "ଝ",
+                    "T" to "ଟ", "Th" to "ଠ", "D" to "ଡ", "Dh" to "ଢ", "N" to "ଣ",
+                    "t" to "ତ", "th" to "ଥ", "d" to "ଦ", "dh" to "ଧ", "n" to "ନ",
+                    "p" to "ପ", "ph" to "ଫ", "b" to "ବ", "bh" to "ଭ", "m" to "ମ",
+                    "y" to "ଯ", "r" to "ର", "l" to "ଲ", "v" to "ଵ",
+                    "sh" to "ଶ", "Sh" to "ଷ", "s" to "ସ", "h" to "ହ",
+                ),
+                digits = "୦୧୨୩୪୫୬୭୮୯",
+                anusvara = "ଂ", visarga = "ଃ",
+            ),
+        )
+
+        /** ITRANS → Sinhala (U+0D80 block). */
+        val ItransToSinhala: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Sinhala",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "අ", "aa" to "ආ", "A" to "ආ",
+                    "i" to "ඉ", "ii" to "ඊ", "I" to "ඊ",
+                    "u" to "උ", "uu" to "ඌ", "U" to "ඌ",
+                    "e" to "එ", "ee" to "ඒ",
+                    "ai" to "ඓ", "o" to "ඔ", "oo" to "ඕ", "au" to "ඖ",
+                ),
+                consonants = mapOf(
+                    "k" to "ක", "kh" to "ඛ", "g" to "ග", "gh" to "ඝ",
+                    "ch" to "ච", "Ch" to "ඡ", "j" to "ජ", "jh" to "ඣ",
+                    "T" to "ට", "Th" to "ඨ", "D" to "ඩ", "Dh" to "ඪ", "N" to "ණ",
+                    "t" to "ත", "th" to "ථ", "d" to "ද", "dh" to "ධ", "n" to "න",
+                    "p" to "ප", "ph" to "ඵ", "b" to "බ", "bh" to "භ", "m" to "ම",
+                    "y" to "ය", "r" to "ර", "l" to "ල", "v" to "ව",
+                    "sh" to "ශ", "Sh" to "ෂ", "s" to "ස", "h" to "හ",
+                ),
+                // Sinhala uses Western Arabic numerals; no script-native digits in current Unicode.
+                digits = "0123456789",
+                anusvara = "ං", visarga = "ඃ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
