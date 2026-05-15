@@ -315,7 +315,7 @@ Android 14+ ships `InputMethodService.onStartStylusHandwriting()` + Ink API. Cur
 
 - ✅ **Next-4.1** shipped 2026-05-15 (scaffold). `FlorisImeService.onStartStylusHandwriting()` now overrides the Android 14+ entry point, logs the session, and returns `false` so the system falls back to the standard touch path. Reserves the surface so language-pack / preference plumbing can ship ahead of the recogniser bring-up. The actual recogniser hook is Next-4.2's slot.
 - **Next-4.2** On-device stroke recognizer via Google ML Kit Digital Ink (offline model) **or** a custom ICU-LM fallback for languages ML Kit doesn't support.
-- **Next-4.3** Settings: per-subtype handwriting toggle; languages without recognition fall back to no-stylus.
+- ✅ **Next-4.3** shipped 2026-05-15 (toggle; per-subtype refinement pending Next-4.2). New `prefs.keyboard.stylusHandwritingEnabled` boolean (default **off**) surfaced under Settings → Keyboard. `FlorisImeService.onStartStylusHandwriting()` short-circuits to `false` when the toggle is off, so the system falls back to standard touch input without ever invoking the recogniser stub. When Next-4.2 lands, the per-subtype refinement (Hindi-only / Japanese-only handwriting depending on what the ML Kit / ICU-LM recogniser supports) lands as Next-4.3a.
 
 Differentiator vs HeliBoard / FlorisBoard upstream (neither ships handwriting).
 
@@ -338,7 +338,7 @@ No mainstream IME combines E2EE with personal-dictionary sync without a vendor a
 
 `ImeWindowMode.kt:56` is a documented placeholder; FlorisBoard v0.7 targets the same; HeliBoard #326 has 32 reactions [FR-7, F1, COMM-A, PAIN-14].
 
-- **Next-7.1** Floating window with drag handle + resize anchor.
+- ✅ **Next-7.1** shipped 2026-05-15 (UX surface complete; runtime drag + resize handles already in place from FlorisBoard upstream's `ImeWindowEditorHandles.kt` 457-line implementation). New `prefs.keyboard.startInFloatingMode` boolean (default off) surfaced under Settings → Keyboard. The runtime user can still flip via the existing `TOGGLE_COMPACT_LAYOUT` smartbar quick-action / swipe binding, but this toggle covers the "I want floating mode every time" persistent-default case. `ImeWindowController.startSession` consumes the pref on first session-creation, with fallthrough to the previously-saved `ImeWindowConfig`. **Runtime onboarding tooltip** ("Drag the handle to move; pinch corner to resize") on first-floating-mode invocation deferred to Next-7.1a.
 - **Next-7.2** Split-keyboard for tablet landscape (mirror SwiftKey + Samsung; ASK #1952 + HeliBoard #326 want this).
 - ✅ **Next-7.3** verified shipped 2026-05-14 (v1.7.9 audit; functionality landed across FlorisBoard upstream + earlier SwiftFloris work). `TOGGLE_COMPACT_LAYOUT` keycode + `TextKeyData.TOGGLE_COMPACT_LAYOUT` predefined + `SwipeAction.TOGGLE_COMPACT_LAYOUT` + smartbar QuickAction (`R.string.quick_action__one_handed_mode`) all wired into `KeyboardManager.handleKeyEvent` → `ImeWindowController.actions.toggleCompactLayout()` / `compactLayoutToLeft()` / `compactLayoutToRight()` / `compactLayoutFlipSide()`. `ImeWindow.OneHandedPanel` ships drag-resize affordance + chevron flip-side + dismiss / zoom controls. **Pending future polish:** Settings → Keyboard → "Start in one-handed mode" default-on preference; explicit citation here so future contributors don't re-derive the audit.
 
