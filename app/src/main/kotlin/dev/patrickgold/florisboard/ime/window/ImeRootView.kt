@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.window
 import android.annotation.SuppressLint
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.platform.AbstractComposeView
 import androidx.compose.ui.unit.LayoutDirection
@@ -26,6 +28,7 @@ import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.theme.FlorisImeTheme
+import dev.patrickgold.florisboard.ime.theme.LocalPerAppAccent
 import org.florisboard.lib.compose.ProvideLocalizedResources
 
 /**
@@ -57,9 +60,17 @@ class ImeRootView(val ims: FlorisImeService) : AbstractComposeView(ims) {
 
     @Composable
     override fun Content() {
+        // ROADMAP §7 Next-11.3a — surface the per-app accent flow into the
+        // IME compose tree. Snygg theme tokens are *not* (yet) post-processed
+        // here; instead, individual Compose surfaces (smartbar, candidate
+        // strip, future M3 Expressive theme regen) opt-in by reading
+        // `LocalPerAppAccent.current`. `null` = no per-app override, fall
+        // through to the theme's `--primary` token.
+        val perAppAccent by ims.perAppAccentController.activeAccent.collectAsState()
         CompositionLocalProvider(
             LocalInputFeedbackController provides ims.inputFeedbackController,
             LocalWindowController provides ims.windowController,
+            LocalPerAppAccent provides perAppAccent,
         ) {
             ProvideLocalizedResources(
                 resourcesContext = ims.resourcesContext,

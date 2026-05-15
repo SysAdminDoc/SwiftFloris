@@ -45,6 +45,7 @@ import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.LocalTimePickerPreference
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.ui.isMaterialYou
 import org.florisboard.lib.color.ColorMappings
 import org.florisboard.lib.compose.stringRes
@@ -136,6 +137,19 @@ fun ThemeScreen() = FlorisScreen {
                 onClick = {
                     navController.navigate(Routes.Ext.List(ExtensionListScreenType.EXT_THEME, showUpdate = true))
                 },
+            )
+
+            // ROADMAP §7 Next-11.3a — surface the per-app adaptive accent
+            // toggle. Off by default (matches §1 privacy-by-default stance).
+            // Compose surfaces that opt-in read `LocalPerAppAccent.current`
+            // and fall through to the active Snygg theme's `--primary` token
+            // when the toggle is off (or when the resolver finds no usable
+            // accent in the active editor's app icon).
+            SwitchPreference(
+                pref = prefs.theme.perAppAccentEnabled,
+                icon = Icons.Default.ColorLens,
+                title = "Tint to active app's icon",
+                summary = "When typing in an app, tint the keyboard accent to match the dominant color of that app's launcher icon. All on-device — no extra permissions, no network.",
             )
         }
     }
