@@ -26,6 +26,16 @@ plugins {
     alias(libs.plugins.mikepenz.aboutlibraries)
     alias(libs.plugins.kotest)
     alias(libs.plugins.kotlinx.kover)
+    // Roborazzi Gradle plugin is deliberately *not* applied here: the
+    // current 1.43.x release line uses the AGP `TestedExtension` API
+    // that AGP 9.0.0 removed, so applying the plugin fails the build.
+    // The capture API (`captureRoboImage`) still works as a pure
+    // testImplementation dependency — Roborazzi tasks (`recordRoborazzi`,
+    // `verifyRoborazzi`) can be invoked manually via the standard JUnit
+    // entry points, and the plugin can be re-enabled once Roborazzi
+    // ships an AGP-9-compatible release (1.44.0-stable expected to land
+    // the new variant API).
+    // alias(libs.plugins.roborazzi)
 }
 
 val projectMinSdk: String by project
@@ -315,6 +325,22 @@ dependencies {
     testImplementation(libs.kotlin.test.junit5)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
+
+    // ROADMAP §7 Next-12.2 — Roborazzi Compose screenshot regression suite.
+    // Robolectric-backed so the snapshots run on the JVM (no device, no
+    // emulator), which makes them cheap to run on every CI pull request.
+    // junit-vintage-engine lets the JUnit-4-style Robolectric tests run
+    // under the project-wide `useJUnitPlatform()` runner alongside the
+    // Kotest 5 suites.
+    testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.ext)
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    testImplementation("androidx.test:runner:1.7.0")
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine:5.13.1")
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
 }

@@ -33,6 +33,8 @@ androidx-test-espresso = "3.7.0"
 androidx-test-uiautomator = "2.3.0"
 kotest = "6.1.11"
 kotlinx-kover = "0.9.8"
+roborazzi = "1.39.0"
+robolectric = "4.14.1"
 turbine = "1.2.1"
 
 
@@ -86,6 +88,10 @@ kotest-property = { module = "io.kotest:kotest-property", version.ref = "kotest"
 kotest-runner-junit5 = { module = "io.kotest:kotest-runner-junit5", version.ref = "kotest" }
 kotlin-test-junit5 = { module = "org.jetbrains.kotlin:kotlin-test-junit5", version.ref = "kotlin" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
+roborazzi = { module = "io.github.takahirom.roborazzi:roborazzi", version.ref = "roborazzi" }
+roborazzi-compose = { module = "io.github.takahirom.roborazzi:roborazzi-compose", version.ref = "roborazzi" }
+roborazzi-junit-rule = { module = "io.github.takahirom.roborazzi:roborazzi-junit-rule", version.ref = "roborazzi" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 turbine = { module = "app.cash.turbine:turbine", version.ref = "turbine" }
 
 
@@ -104,3 +110,4 @@ mikepenz-aboutlibraries = { id = "com.mikepenz.aboutlibraries.plugin.android", v
 # Testing
 kotest = { id = "io.kotest", version.ref = "kotest" }
 kotlinx-kover = { id = "org.jetbrains.kotlinx.kover", version.ref = "kotlinx-kover" }
+roborazzi = { id = "io.github.takahirom.roborazzi", version.ref = "roborazzi" }
