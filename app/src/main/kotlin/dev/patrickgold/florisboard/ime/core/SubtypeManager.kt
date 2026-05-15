@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.core
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.CurrencySet
+import dev.patrickgold.florisboard.ime.keyboard.LayoutType
+import dev.patrickgold.florisboard.ime.keyboard.extCoreLayout
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
@@ -161,6 +163,37 @@ class SubtypeManager(context: Context) {
             }
             persistNewSubtypeList(newSubtypeList)
         }
+    }
+
+    /**
+     * Switches only the active subtype's character layout while preserving locale, NLP,
+     * punctuation, and all non-character layout mappings.
+     */
+    fun switchActiveSubtypeCharactersLayout(layoutId: String): Boolean {
+        val subtypeList = subtypes
+        val cachedActiveSubtype = activeSubtype
+        val index = subtypeList.indexOfFirst { cachedActiveSubtype.id == it.id }
+        if (index !in subtypeList.indices) {
+            return false
+        }
+
+        val updatedLayoutMap = cachedActiveSubtype.layoutMap.copy(
+            layoutType = LayoutType.CHARACTERS,
+            componentName = extCoreLayout(layoutId),
+        ) ?: return false
+        val updatedSubtype = cachedActiveSubtype.copy(layoutMap = updatedLayoutMap)
+        val newSubtypeList = subtypeList.mapIndexed { n, subtype ->
+            if (n == index) {
+                updatedSubtype
+            } else {
+                subtype
+            }
+        }
+
+        subtypes = newSubtypeList
+        activeSubtype = updatedSubtype
+        persistNewSubtypeList(newSubtypeList)
+        return true
     }
 
     /**
