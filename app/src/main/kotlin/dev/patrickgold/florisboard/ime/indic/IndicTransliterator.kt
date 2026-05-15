@@ -454,6 +454,73 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * ITRANS → Khmer / Cambodian (U+1780 block).
+         * Khmer is Brahmic-derived (Pali / Sanskrit liturgical pedigree)
+         * so the [buildIndicMappings] shape carries over. Native Khmer
+         * digits live at U+17E0..U+17E9; the visarga slot maps to the
+         * Khmer reah-muk (U+17C7). Khmer has no native anusvara, so
+         * `M` maps to the niggahita (U+17C6).
+         */
+        val ItransToKhmer: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Khmer",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "អ", "aa" to "អា", "A" to "អា",
+                    "i" to "ឥ", "ii" to "ឦ", "I" to "ឦ",
+                    "u" to "ឧ", "uu" to "ឩ", "U" to "ឩ",
+                    "e" to "ឯ", "o" to "ឱ", "au" to "ឳ",
+                ),
+                consonants = mapOf(
+                    "k" to "ក", "kh" to "ខ", "g" to "គ", "gh" to "ឃ",
+                    "ng" to "ង",
+                    "ch" to "ច", "Ch" to "ឆ", "j" to "ជ", "jh" to "ឈ",
+                    "T" to "ដ", "Th" to "ឋ", "D" to "ឌ", "Dh" to "ឍ", "N" to "ណ",
+                    "t" to "ត", "th" to "ថ", "d" to "ទ", "dh" to "ធ", "n" to "ន",
+                    "p" to "ប", "ph" to "ផ", "b" to "ព", "bh" to "ភ", "m" to "ម",
+                    "y" to "យ", "r" to "រ", "l" to "ល", "v" to "វ",
+                    "sh" to "ឝ", "Sh" to "ឞ", "s" to "ស", "h" to "ហ",
+                ),
+                digits = "០១២៣៤៥៦៧៨៩",
+                anusvara = "ំ", visarga = "ះ",
+            ),
+        )
+
+        /**
+         * ITRANS → Thai (U+0E00 block).
+         * Thai is a sister-script to Lao with its own Brahmic-derived
+         * consonant set and tone-marker conventions (those handled at
+         * the IME layer, not the transliterator). Native Thai digits
+         * U+0E50..U+0E59. Thai lacks native anusvara/visarga code
+         * points distinct from existing marks, so both map to the
+         * Thai niggahita (U+0E4D).
+         */
+        val ItransToThai: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Thai",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "อ", "aa" to "อา", "A" to "อา",
+                    "i" to "อิ", "ii" to "อี", "I" to "อี",
+                    "u" to "อุ", "uu" to "อู", "U" to "อู",
+                    "e" to "เอ", "o" to "โอ", "au" to "เอา",
+                ),
+                consonants = mapOf(
+                    "k" to "ก", "kh" to "ข", "g" to "ค", "gh" to "ฆ",
+                    "ng" to "ง",
+                    "ch" to "จ", "Ch" to "ฉ", "j" to "ช", "jh" to "ฌ",
+                    "T" to "ฎ", "Th" to "ฏ", "D" to "ฑ", "Dh" to "ฒ", "N" to "ณ",
+                    "t" to "ต", "th" to "ถ", "d" to "ด", "dh" to "ธ", "n" to "น",
+                    "p" to "ป", "ph" to "ผ", "b" to "บ", "bh" to "ภ", "m" to "ม",
+                    "y" to "ย", "r" to "ร", "l" to "ล", "v" to "ว",
+                    "sh" to "ศ", "Sh" to "ษ", "s" to "ส", "h" to "ห",
+                ),
+                digits = "๐๑๒๓๔๕๖๗๘๙",
+                anusvara = "ํ", visarga = "ํ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
