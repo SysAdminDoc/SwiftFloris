@@ -112,6 +112,26 @@ class FlorisApplication : Application() {
             // installed. Out-of-tree addon variants can still override
             // via WordStylesRendererRegistry.setActive(...).
             WordStylesRendererRegistry.setActive(WordStylesCanvasRenderer(this))
+            // ROADMAP §0 P1 (debug-only) — wire the debug
+            // SmartComposeProvider via reflection so release builds
+            // never reference it. The class only exists in
+            // app/src/debug/kotlin/ so Class.forName throws on
+            // release; we swallow that and stay on the default no-op
+            // provider.
+            if (BuildConfig.DEBUG) {
+                try {
+                    val klass = Class.forName(
+                        "dev.patrickgold.florisboard.debug.DebugSmartComposeProvider",
+                    )
+                    val instance = klass.getField("INSTANCE").get(null)
+                        as dev.patrickgold.florisboard.ime.smartcompose.SmartComposeProvider
+                    dev.patrickgold.florisboard.ime.smartcompose
+                        .SmartComposeProviderRegistry.setActive(instance)
+                } catch (_: Throwable) {
+                    // Release / non-debug — leave the default no-op
+                    // provider in place.
+                }
+            }
             flogError { "native module disabled, skipping dummy test" }
             // Originally: flogError { "dummy result: ${dummyAdd(3,4)}" }
 
