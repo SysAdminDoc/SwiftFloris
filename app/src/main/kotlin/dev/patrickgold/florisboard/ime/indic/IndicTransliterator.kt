@@ -355,6 +355,105 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * ITRANS → Burmese / Myanmar (U+1000 block).
+         * Burmese is a Brahmic-derived script (Tibeto-Burman) — same
+         * vowel + consonant + digit shape as the Indic tables, so it
+         * slots cleanly into [buildIndicMappings]. Aspirated stops use
+         * the canonical Myanmar aspirate-marker form. Digits use the
+         * native Myanmar digit code points U+1040..U+1049.
+         */
+        val ItransToBurmese: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Burmese",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "အ", "aa" to "အာ", "A" to "အာ",
+                    "i" to "ဣ", "ii" to "ဤ", "I" to "ဤ",
+                    "u" to "ဥ", "uu" to "ဦ", "U" to "ဦ",
+                    "e" to "ဧ", "o" to "ဩ", "au" to "ဪ",
+                ),
+                consonants = mapOf(
+                    "k" to "က", "kh" to "ခ", "g" to "ဂ", "gh" to "ဃ",
+                    "ch" to "စ", "Ch" to "ဆ", "j" to "ဇ", "jh" to "ဈ",
+                    "T" to "ဋ", "Th" to "ဌ", "D" to "ဍ", "Dh" to "ဎ", "N" to "ဏ",
+                    "t" to "တ", "th" to "ထ", "d" to "ဒ", "dh" to "ဓ", "n" to "န",
+                    "p" to "ပ", "ph" to "ဖ", "b" to "ဗ", "bh" to "ဘ", "m" to "မ",
+                    "y" to "ယ", "r" to "ရ", "l" to "လ", "v" to "ဝ",
+                    "sh" to "သျှ", "s" to "သ", "h" to "ဟ",
+                ),
+                digits = "၀၁၂၃၄၅၆၇၈၉",
+                anusvara = "ံ", visarga = "း",
+            ),
+        )
+
+        /**
+         * ITRANS → Lao (U+0E80 block).
+         * Lao is a sister script to Thai; it shares the Brahmic
+         * consonant + vowel skeleton, so [buildIndicMappings] applies
+         * with Lao-specific glyphs. Digits use Lao-native code points
+         * U+0ED0..U+0ED9. Lao traditionally has no anusvara/visarga
+         * separately marked, so we map both `M`/`H` to the Lao niggahita
+         * (U+0ECD) which is the closest visual + phonetic analogue.
+         */
+        val ItransToLao: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Lao",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ອ", "aa" to "ອາ", "A" to "ອາ",
+                    "i" to "ອິ", "ii" to "ອີ", "I" to "ອີ",
+                    "u" to "ອຸ", "uu" to "ອູ", "U" to "ອູ",
+                    "e" to "ເອ", "o" to "ໂອ", "au" to "ເອົາ",
+                ),
+                consonants = mapOf(
+                    "k" to "ກ", "kh" to "ຂ", "g" to "ຄ",
+                    "ng" to "ງ",
+                    "ch" to "ຈ", "Ch" to "ສ", "j" to "ຊ",
+                    "T" to "ດ", "Th" to "ຖ", "D" to "ທ",
+                    "t" to "ຕ", "th" to "ຖ", "d" to "ດ", "n" to "ນ",
+                    "p" to "ປ", "ph" to "ຜ", "b" to "ບ", "bh" to "ພ", "m" to "ມ",
+                    "y" to "ຍ", "r" to "ຣ", "l" to "ລ", "v" to "ວ",
+                    "s" to "ສ", "h" to "ຫ",
+                ),
+                digits = "໐໑໒໓໔໕໖໗໘໙",
+                anusvara = "ໍ", visarga = "ໍ",
+            ),
+        )
+
+        /**
+         * ITRANS → Tibetan / Bod-yig (U+0F00 block).
+         * Tibetan is Brahmic-derived but uses syllable-final delimiters
+         * (the tsheg `་`) in real text — that detail is handled by the
+         * caller, not the table. The table itself ships the base
+         * consonant + vowel inventory and the native Tibetan digit
+         * code points U+0F20..U+0F29.
+         */
+        val ItransToTibetan: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Tibetan",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ཨ", "aa" to "ཨཱ", "A" to "ཨཱ",
+                    "i" to "ཨི", "ii" to "ཨཱི", "I" to "ཨཱི",
+                    "u" to "ཨུ", "uu" to "ཨཱུ", "U" to "ཨཱུ",
+                    "e" to "ཨེ", "o" to "ཨོ",
+                ),
+                consonants = mapOf(
+                    "k" to "ཀ", "kh" to "ཁ", "g" to "ག", "gh" to "གྷ",
+                    "ng" to "ང",
+                    "ch" to "ཅ", "Ch" to "ཆ", "j" to "ཇ", "jh" to "ཛྷ",
+                    "T" to "ཊ", "Th" to "ཋ", "D" to "ཌ", "Dh" to "ཌྷ", "N" to "ཎ",
+                    "t" to "ཏ", "th" to "ཐ", "d" to "ད", "dh" to "དྷ", "n" to "ན",
+                    "p" to "པ", "ph" to "ཕ", "b" to "བ", "bh" to "བྷ", "m" to "མ",
+                    "y" to "ཡ", "r" to "ར", "l" to "ལ", "v" to "ཝ",
+                    "sh" to "ཤ", "Sh" to "ཥ", "s" to "ས", "h" to "ཧ",
+                ),
+                digits = "༠༡༢༣༤༥༦༧༨༩",
+                anusvara = "ཾ", visarga = "ཿ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",

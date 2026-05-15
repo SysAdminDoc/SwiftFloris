@@ -56,4 +56,37 @@ class IndicScriptExtendedTest : FunSpec({
         )
         tables.forEach { (it.size() > 30) shouldBe true }
     }
+
+    test("Burmese table maps 'k' to က and digit 5 to ၅") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToBurmese)
+        xlit.transliterate("k") shouldBe "က"
+        xlit.transliterate("5") shouldBe "၅"
+    }
+
+    test("Lao table maps 'k' to ກ and digit 9 to ໙") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToLao)
+        xlit.transliterate("k") shouldBe "ກ"
+        xlit.transliterate("9") shouldBe "໙"
+    }
+
+    test("Tibetan table maps 'k' to ཀ and digit 0 to ༠") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToTibetan)
+        xlit.transliterate("k") shouldBe "ཀ"
+        xlit.transliterate("0") shouldBe "༠"
+    }
+
+    test("Tibetan two-letter ASCII digraphs win over the single-char prefix (greedy match)") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToTibetan)
+        // 'ng' must produce ང, not nga / n+g, because greedy longest match.
+        xlit.transliterate("ng") shouldBe "ང"
+    }
+
+    test("Burmese + Lao + Tibetan tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.ItransToBurmese,
+            IndicScriptTable.ItransToLao,
+            IndicScriptTable.ItransToTibetan,
+        )
+        tables.forEach { (it.size() > 25) shouldBe true }
+    }
 })
