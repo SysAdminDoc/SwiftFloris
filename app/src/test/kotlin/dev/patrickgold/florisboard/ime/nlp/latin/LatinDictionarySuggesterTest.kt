@@ -178,6 +178,28 @@ class LatinDictionarySuggesterTest : FunSpec({
         suggestions.first().text shouldBe "RECEIVED"
     }
 
+    // ROADMAP §7 Next-3.3a — single-letter proper-noun completion.
+    // Capital single-letter prefixes ("F") surface high-frequency dictionary
+    // words starting with that letter, case-matched. Lowercase single letters
+    // ("f") return nothing (avoids flooding the strip).
+    test("single capital letter surfaces dictionary completions case-matched") {
+        val suggestions = LatinDictionarySuggester.suggest("T", dictionary, maxCandidateCount = 4)
+
+        // All returned candidates must start with "T", be length >= 2, and
+        // none should auto-commit (single-letter prefix is too ambiguous).
+        suggestions.isNotEmpty() shouldBe true
+        suggestions.all { it.text.startsWith("T") } shouldBe true
+        suggestions.all { it.text.length >= 2 } shouldBe true
+        suggestions.all { !it.isEligibleForAutoCommit } shouldBe true
+    }
+
+    test("single lowercase letter returns no completions") {
+        val suggestions = LatinDictionarySuggester.suggest("t", dictionary, maxCandidateCount = 4)
+        // Lowercase single letter should NOT trigger the proper-noun completion
+        // path — would flood the strip every time the user begins a normal word.
+        suggestions shouldBe emptyList()
+    }
+
     test("suggest ignores non-word tokens") {
         LatinDictionarySuggester.suggest("123", dictionary, maxCandidateCount = 4) shouldBe emptyList()
         LatinDictionarySuggester.suggest("mail@example.com", dictionary, maxCandidateCount = 4) shouldBe emptyList()
