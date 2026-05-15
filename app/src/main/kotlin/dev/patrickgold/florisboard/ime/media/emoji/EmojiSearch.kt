@@ -21,9 +21,19 @@ import java.util.Locale
 object EmojiSearch {
     private const val DEFAULT_MAX_RESULTS = 96
 
+    /**
+     * Search emoji by name / Emojibase keyword / **custom user tag**
+     * (ROADMAP §7 Next-9.4 — emoji search-by-tag). Custom tags carry
+     * the highest non-trivial priority so a user-tagged 🦋 with
+     * "freedom" wins over a generic emoji whose name merely *contains*
+     * "freedom". When [customTagStore] is null, the search falls back
+     * to the bundled-name + Emojibase-keyword behaviour shipped in
+     * v1.7.8.
+     */
     fun results(
         mappings: EmojiDataByCategory,
         query: String,
+        customTagStore: CustomEmojiTagStore? = null,
         maxResults: Int = DEFAULT_MAX_RESULTS,
     ): List<EmojiSet> {
         val normalizedQuery = query.normalizedForEmojiSearch()
@@ -34,7 +44,8 @@ object EmojiSearch {
             .flatMap { (_, emojiSets) -> emojiSets.asSequence() }
             .distinctBy { emojiSet -> emojiSet.base().value }
             .mapNotNull { emojiSet ->
-                val score = score(emojiSet, normalizedQuery) ?: return@mapNotNull null
+                val score = score(emojiSet, normalizedQuery, customTagStore)
+                    ?: return@mapNotNull null
                 ScoredEmojiSet(emojiSet, score)
             }
             .sortedWith(
@@ -47,19 +58,32 @@ object EmojiSearch {
             .toList()
     }
 
-    private fun score(emojiSet: EmojiSet, query: String): Int? {
+    private fun score(
+        emojiSet: EmojiSet,
+        query: String,
+        customTagStore: CustomEmojiTagStore?,
+    ): Int? {
         var bestScore: Int? = null
         for (emoji in emojiSet.emojis) {
             val name = emoji.name.normalizedForEmojiSearch()
             val keywords = emoji.keywords.map { it.normalizedForEmojiSearch() }
+            val customTags = customTagStore?.tagsFor(emoji.value)
+                ?.map { it.normalizedForEmojiSearch() }
+                ?: emptyList()
             val score = when {
                 emoji.value == query -> 0
                 name == query -> 1
-                keywords.any { it == query } -> 2
-                name.wordStartsWith(query) -> 3
-                keywords.any { it.wordStartsWith(query) } -> 4
-                name.contains(query) -> 5
-                keywords.any { it.contains(query) } -> 6
+                // ROADMAP §7 Next-9.4 — custom tag exact match. User
+                // intent is explicit (they typed the tag themselves) so
+                // it ranks above bundled Emojibase keyword matches.
+                customTags.any { it == query } -> 2
+                keywords.any { it == query } -> 3
+                customTags.any { it.wordStartsWith(query) } -> 4
+                name.wordStartsWith(query) -> 5
+                keywords.any { it.wordStartsWith(query) } -> 6
+                customTags.any { it.contains(query) } -> 7
+                name.contains(query) -> 8
+                keywords.any { it.contains(query) } -> 9
                 else -> null
             }
             if (score != null && (bestScore == null || score < bestScore)) {
