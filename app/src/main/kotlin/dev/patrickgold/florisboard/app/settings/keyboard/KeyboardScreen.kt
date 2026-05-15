@@ -16,7 +16,10 @@
 
 package dev.patrickgold.florisboard.app.settings.keyboard
 
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
@@ -36,6 +39,7 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.datastore.ui.listPrefEntries
+import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -45,6 +49,8 @@ fun KeyboardScreen() = FlorisScreen {
     previewFieldVisible = true
 
     val navController = LocalNavController.current
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
 
     content {
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_rows_and_hints__label)) {
@@ -184,8 +190,19 @@ fun KeyboardScreen() = FlorisScreen {
             // smartbar quick-action / swipe binding.
             SwitchPreference(
                 pref = prefs.keyboard.startInFloatingMode,
-                title = "Start in floating mode",
-                summary = "Open the keyboard as a movable / resizable floating window every time it appears. Runtime toggle via the one-handed quick-action remains available.",
+                title = stringRes(R.string.pref__keyboard__start_in_floating_mode__label),
+                summary = stringRes(R.string.pref__keyboard__start_in_floating_mode__summary),
+            )
+            val floatingOnboardingResetToast = stringRes(R.string.pref__keyboard__floating_onboarding_reset__toast)
+            Preference(
+                title = stringRes(R.string.pref__keyboard__floating_onboarding_reset__label),
+                summary = stringRes(R.string.pref__keyboard__floating_onboarding_reset__summary),
+                onClick = {
+                    scope.launch {
+                        prefs.keyboard.floatingOnboardingShown.set(false)
+                        Toast.makeText(context, floatingOnboardingResetToast, Toast.LENGTH_SHORT).show()
+                    }
+                },
             )
             // ROADMAP §7 Next-4.3 — stylus handwriting toggle. Off by default
             // until the recogniser (Next-4.2) lands.

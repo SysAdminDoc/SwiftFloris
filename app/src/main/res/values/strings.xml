@@ -689,6 +689,12 @@
     <string name="pref__keyboard__landscape_input_ui_mode__label" comment="Preference value">Landscape fullscreen input</string>
     <string name="pref__keyboard__key_spacing__label" comment="Preference title">Key spacing factor</string>
     <string name="pref__keyboard__keyboard_height_multiplier__label" comment="Preference title">Keyboard height</string>
+    <string name="pref__keyboard__start_in_floating_mode__label" comment="Preference title">Start in floating mode</string>
+    <string name="pref__keyboard__start_in_floating_mode__summary" comment="Preference summary">Open the keyboard as a movable and resizable floating window every time it appears.</string>
+    <string name="pref__keyboard__floating_onboarding_reset__label" comment="Preference action title">Reset floating-mode tip</string>
+    <string name="pref__keyboard__floating_onboarding_reset__summary" comment="Preference action summary">Show the drag and resize tip the next time floating mode opens.</string>
+    <string name="pref__keyboard__floating_onboarding_reset__toast" comment="Toast shown after resetting floating-mode onboarding">Floating-mode tip reset.</string>
+    <string name="ime__floating_onboarding_tooltip" comment="One-shot IME tooltip for floating mode">Drag the handle to move; pinch the corner to resize.</string>
     <string name="pref__keyboard__group_keypress__label" comment="Preference group title">Feedback &amp; previews</string>
     <string name="pref__keyboard__popup_enabled__label" comment="Preference title">Popup Visibility</string>
     <string name="pref__keyboard__popup_enabled__summary" comment="Preference summary">Show popup when you press a key</string>
