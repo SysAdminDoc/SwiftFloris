@@ -67,6 +67,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -264,9 +265,16 @@ fun TextKeyboardLayout(
         val keyMarginH by remember { derivedStateOf { windowSpec.keyMarginH.toPx() } }
         val keyMarginV by remember { derivedStateOf { windowSpec.keyMarginV.toPx() } }
 
+        // ROADMAP §0 P3-renderer wire-up — detect split-keyboard mode
+        // so the layout post-pass shifts the right half of every row.
+        val splitMode = windowSpec is dev.patrickgold.florisboard.ime.window.ImeWindowSpec.Fixed &&
+            (windowSpec as dev.patrickgold.florisboard.ime.window.ImeWindowSpec.Fixed).fixedMode ==
+                dev.patrickgold.florisboard.ime.window.ImeWindowMode.Fixed.SPLIT
+        val splitGutterPx = if (splitMode) 80.dp.toPx() else 0f
+
         val desiredKey = remember(
             keyboard, keyboardWidth, keyboardHeight, keyMarginH, keyMarginV,
-            keyboardRowBaseHeight, evaluator
+            keyboardRowBaseHeight, evaluator, splitMode
         ) {
             TextKey(data = TextKeyData.UNSPECIFIED).also { desiredKey ->
                 desiredKey.touchBounds.apply {
@@ -284,6 +292,9 @@ fun TextKeyboardLayout(
                 }
                 desiredKey.visibleBounds.applyFrom(desiredKey.touchBounds).deflateBy(keyMarginH, keyMarginV)
                 keyboard.layout(keyboardWidth, keyboardHeight, desiredKey, true)
+                if (splitMode && keyboard.mode == KeyboardMode.CHARACTERS) {
+                    SplitGutterPostPass.apply(keyboard, splitGutterPx)
+                }
             }
         }
 
