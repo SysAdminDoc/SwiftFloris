@@ -284,16 +284,55 @@ class NlpManager(context: Context) {
                     rankedCandidates = wordSuggestions,
                 )
             }
+            // ROADMAP §0 P1 — Smart-Compose inline ghost-text. When a
+            // SmartComposeProvider addon is bound, ask it for a multi-token
+            // continuation given the preceding text. The default no-op
+            // provider returns NoSuggestion, so this path is invisible
+            // until the L1.1a addon is installed.
+            val ghostTextCandidate = if (suggestionsEnabled) {
+                buildGhostTextCandidate(subtype, content, currentWord)
+            } else {
+                null
+            }
             internalSuggestionsGuard.withLock {
                 if (internalSuggestions.first < requestId) {
                     activeCandidateSignals = candidateSignals
                     internalSuggestions = requestId to buildList {
                         addAll(wordSuggestions)
                         addAll(emojiSuggestions)
+                        ghostTextCandidate?.let { add(it) }
                     }
                 }
             }
         }
+    }
+
+    private fun buildGhostTextCandidate(
+        subtype: Subtype,
+        content: EditorContent,
+        currentWord: String,
+    ): GhostTextSuggestionCandidate? {
+        val provider = dev.patrickgold.florisboard.ime.smartcompose
+            .SmartComposeProviderRegistry.active
+        val locale = subtype.primaryLocale.languageTag()
+        if (!provider.isReady(locale)) return null
+        val context = dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext(
+            precedingText = content.textBeforeSelection.toString(),
+            composingPrefix = currentWord,
+            locale = locale,
+            editorPackageName = null,
+        )
+        val result = provider.predictNextTokens(context, maxCandidates = 1)
+        val top = (result as? dev.patrickgold.florisboard.ime.smartcompose
+            .SmartComposeResult.Suggestion)?.candidates?.firstOrNull()
+            ?: return null
+        if (top.confidence < 0.45f) return null
+        return GhostTextSuggestionCandidate(
+            text = top.text,
+            confidence = top.confidence.toDouble(),
+            tokenCount = top.tokenCount,
+            sourceProvider = null,
+        )
     }
 
     fun suggestDirectly(suggestions: List<SuggestionCandidate>) {

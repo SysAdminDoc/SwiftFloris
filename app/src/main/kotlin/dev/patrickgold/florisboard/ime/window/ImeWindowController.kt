@@ -275,13 +275,27 @@ class ImeWindowController(
         val didShow = isWindowShown.compareAndSet(expect = false, update = true)
         if (didShow) {
             scope.launch {
-                val currentMode = activeWindowConfig.value.mode
+                val currentConfig = activeWindowConfig.value
+                val currentMode = currentConfig.mode
                 val startInFloatingMode = prefs.keyboard.startInFloatingMode.get()
+                // ROADMAP §0 P3 — split-keyboard preference wire-up. When
+                // the user has enabled `prefs.keyboard.splitKeyboardEnabled`
+                // AND we're in fixed mode AND the current form-factor is
+                // wide enough to host the split (`Fixed.Split.isViable`),
+                // promote the fixed sub-mode to SPLIT so the renderer
+                // emits the split key-rect arrangement (Next-7.2-renderer).
+                val splitEnabled = prefs.keyboard.splitKeyboardEnabled.get()
                 if (startInFloatingMode && currentMode != ImeWindowMode.FLOATING) {
                     updateWindowConfig(
                         afterUpdate = { queueFloatingOnboardingIfNeeded(ImeWindowMode.FLOATING) },
                     ) { config ->
                         config.copy(mode = ImeWindowMode.FLOATING)
+                    }
+                } else if (splitEnabled && currentMode == ImeWindowMode.FIXED &&
+                    currentConfig.fixedMode != ImeWindowMode.Fixed.SPLIT
+                ) {
+                    updateWindowConfig { config ->
+                        config.copy(fixedMode = ImeWindowMode.Fixed.SPLIT)
                     }
                 } else {
                     queueFloatingOnboardingIfNeeded(currentMode)

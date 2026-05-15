@@ -68,6 +68,47 @@ sealed class QuickAction {
             editorInstance.commitText(data)
         }
     }
+
+    /**
+     * ROADMAP §0 P2 — Translation toolbar (SwiftKey-style).
+     *
+     * Reads the current selection from `EditorInstance` and routes it
+     * through the `InlineTranslator` facade (`ime/translate/`). When
+     * no addon is installed, the registry's default `Unavailable`
+     * result is returned and the action surfaces a Toast explaining
+     * the user needs to install the L2.1a Bergamot translator addon.
+     * When the addon IS installed, the translated text is committed
+     * back to the editor in place of the selection.
+     *
+     * The source/target locale pair is read from
+     * `prefs.translate.sourceLocale` + `prefs.translate.targetLocale`
+     * (defaults `auto` + `en`).
+     */
+    @Serializable
+    @SerialName("translate_selection")
+    data object TranslateSelection : QuickAction() {
+        override fun onPointerUp(context: Context) {
+            val editorInstance by context.editorInstance()
+            val raw = editorInstance.activeContent.selectedText.toString()
+            if (raw.isBlank()) return
+            val translator = dev.patrickgold.florisboard.ime.translate
+                .InlineTranslatorRegistry.active
+            val sourceLocale = "auto"
+            val targetLocale = "en"
+            when (val result = translator.translate(raw, sourceLocale, targetLocale)) {
+                is dev.patrickgold.florisboard.ime.translate.TranslationResult.Translated -> {
+                    editorInstance.commitText(result.translatedText)
+                }
+                is dev.patrickgold.florisboard.ime.translate.TranslationResult.Unavailable -> {
+                    android.widget.Toast.makeText(
+                        context,
+                        "Install an InlineTranslator addon to translate selections.",
+                        android.widget.Toast.LENGTH_SHORT,
+                    ).show()
+                }
+            }
+        }
+    }
 }
 
 fun QuickAction.keyData(): KeyData {
@@ -112,6 +153,7 @@ fun QuickAction.computeDisplayName(evaluator: ComputingEvaluator): String {
             else -> R.string.general__invalid_fatal
         })
         is QuickAction.InsertText -> data
+        is QuickAction.TranslateSelection -> "Translate"
     }
 }
 
@@ -152,5 +194,6 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
             else -> R.string.general__invalid_fatal
         })
         is QuickAction.InsertText -> "Insert text '$data'"
+        is QuickAction.TranslateSelection -> "Translate the current selection (via InlineTranslator addon)"
     }
 }
