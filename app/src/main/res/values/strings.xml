@@ -169,6 +169,7 @@
     <string name="settings__home__media_summary" comment="Home screen preference summary">Emoji history, emoji suggestions, and media behavior</string>
     <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Personal words used by suggestions, correction, and spell checking</string>
     <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
+    <string name="settings__home__sync_summary" comment="Home screen preference summary">Pair devices and choose a local sync folder or manual export flow</string>
     <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
     <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
     <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
@@ -280,6 +281,34 @@
     <string name="settings__voice_input__language_catalan">Catalan</string>
     <string name="settings__voice_input__language_finnish">Finnish</string>
     <string name="settings__voice_input__language_indonesian">Indonesian</string>
+    <string name="settings__sync__title" comment="Title of Sync settings screen">Sync</string>
+    <string name="settings__sync__group_channel" comment="Sync settings group title">Sync channel</string>
+    <string name="settings__sync__channel_syncthing" comment="Sync channel option">Syncthing folder</string>
+    <string name="settings__sync__channel_syncthing_summary" comment="Sync channel option summary">Use a shared Syncthing folder name. SwiftFloris never opens a network connection.</string>
+    <string name="settings__sync__channel_local_folder" comment="Sync channel option">Local folder</string>
+    <string name="settings__sync__channel_local_folder_summary" comment="Sync channel option summary">Pick an Android document-tree folder mirrored by Syncthing, Nextcloud, or another local tool.</string>
+    <string name="settings__sync__channel_manual_export" comment="Sync channel option">Manual export</string>
+    <string name="settings__sync__channel_manual_export_summary" comment="Sync channel option summary">Create a one-shot sync file that can be shared through Android.</string>
+    <string name="settings__sync__channel_disabled" comment="Sync channel option">Disabled</string>
+    <string name="settings__sync__channel_disabled_summary" comment="Sync channel option summary">Keep personal dictionary data only on this device.</string>
+    <string name="settings__sync__group_pairing" comment="Sync settings group title">Pairing</string>
+    <string name="settings__sync__pair_new_device" comment="Sync pairing action">Pair a new device</string>
+    <string name="settings__sync__pair_new_device_summary" comment="Sync pairing action summary">Generate a QR payload containing this device public key and selected sync channel.</string>
+    <string name="settings__sync__receive_pairing" comment="Sync pairing action">Receive pairing</string>
+    <string name="settings__sync__receive_pairing_summary" comment="Sync pairing action summary">Scan another device QR code, or paste the payload when no scanner app is installed.</string>
+    <string name="settings__sync__qr_ready" comment="Sync pairing QR status">Pairing QR ready</string>
+    <string name="settings__sync__qr_ready_summary" comment="Sync pairing QR status summary">Show this QR code to the other SwiftFloris device. It contains no private key.</string>
+    <string name="settings__sync__group_devices" comment="Sync settings group title">Paired devices</string>
+    <string name="settings__sync__no_paired_devices" comment="Sync settings empty state">No paired devices yet.</string>
+    <string name="settings__sync__syncthing_dialog_title" comment="Sync dialog title">Syncthing folder</string>
+    <string name="settings__sync__syncthing_folder_label" comment="Sync dialog field label">Folder name</string>
+    <string name="settings__sync__paste_pairing_payload_title" comment="Sync dialog title">Paste pairing payload</string>
+    <string name="settings__sync__paste_pairing_payload_label" comment="Sync dialog field label">Pairing JSON</string>
+    <string name="settings__sync__folder_selected" comment="Sync toast">Sync folder selected.</string>
+    <string name="settings__sync__manual_export_target_selected" comment="Sync toast">Manual export target selected.</string>
+    <string name="settings__sync__pairing_received" comment="Sync toast">Pairing device saved.</string>
+    <string name="settings__sync__pairing_invalid" comment="Sync toast">Could not read that pairing payload.</string>
+    <string name="settings__sync__scanner_missing" comment="Sync toast">Scanner app not found. Paste the payload manually.</string>
     <string name="enum__voice_recognition_engine_preference__auto" comment="Voice recognition engine preference option">Auto</string>
     <string name="enum__voice_recognition_engine_preference__auto__description" comment="Voice recognition engine preference description">Prefer local dictation when installed, Vosk for streaming command mode and low-RAM devices, then external voice keyboard fallback.</string>
     <string name="enum__voice_recognition_engine_preference__embedded_whisper" comment="Voice recognition engine preference option">Embedded Whisper</string>

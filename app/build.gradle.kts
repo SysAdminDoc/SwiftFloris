@@ -311,6 +311,7 @@ dependencies {
     implementation(libs.patrickgold.jetpref.datastore.ui)
     implementation(libs.patrickgold.jetpref.material.ui)
     implementation(libs.sqlcipher.android)
+    implementation(libs.zxing.core)
 
     implementation(projects.lib.android)
     implementation(projects.lib.color)

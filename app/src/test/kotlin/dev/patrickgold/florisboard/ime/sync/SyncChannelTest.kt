@@ -40,6 +40,16 @@ class SyncChannelTest : FunSpec({
         parsed.absolutePath shouldBe "/storage/emulated/0/Sync/SwiftFloris"
     }
 
+    test("LocalFolder accepts SAF content uri folders from the settings picker") {
+        val original = SyncChannel.LocalFolder(
+            absolutePath = "content://com.android.externalstorage.documents/tree/primary%3ASync",
+            displayLabel = "Sync",
+        )
+        val parsed = SyncChannel.parse(original.channelId)
+            .shouldBeInstanceOf<SyncChannel.LocalFolder>()
+        parsed.absolutePath shouldBe "content://com.android.externalstorage.documents/tree/primary%3ASync"
+    }
+
     test("ManualExport and Disabled singletons parse back to themselves") {
         SyncChannel.parse("swiftfloris:manual-export") shouldBe SyncChannel.ManualExport
         SyncChannel.parse("swiftfloris:disabled") shouldBe SyncChannel.Disabled
@@ -60,7 +70,7 @@ class SyncChannelTest : FunSpec({
         shouldThrow<IllegalArgumentException> { SyncChannel.Syncthing("   ") }
     }
 
-    test("LocalFolder constructor enforces an absolute path") {
+    test("LocalFolder constructor enforces a supported local folder location") {
         shouldThrow<IllegalArgumentException> {
             SyncChannel.LocalFolder("relative/path", "x")
         }

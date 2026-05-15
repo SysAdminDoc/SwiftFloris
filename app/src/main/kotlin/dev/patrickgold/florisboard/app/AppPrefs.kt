@@ -562,6 +562,30 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    val sync = Sync()
+    inner class Sync {
+        val channelId = string(
+            key = "sync__channel_id",
+            default = "swiftfloris:disabled",
+        )
+        val clusterId = string(
+            key = "sync__cluster_id",
+            default = "",
+        )
+        val deviceId = string(
+            key = "sync__device_id",
+            default = "",
+        )
+        val pairedDevicesJson = string(
+            key = "sync__paired_devices_json",
+            default = "[]",
+        )
+        val manualExportTargetUri = string(
+            key = "sync__manual_export_target_uri",
+            default = "",
+        )
+    }
+
     val keyboard = Keyboard()
     inner class Keyboard {
         val windowConfig = custom(
