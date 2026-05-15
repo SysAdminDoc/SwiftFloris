@@ -1,0 +1,43 @@
+[
+  [
+    { "code": 0x1300, "label": "ጀ" },
+    { "code": 0x1208, "label": "ለ" },
+    { "code": 0x1218, "label": "መ" },
+    { "code": 0x1230, "label": "ሰ" },
+    { "code": 0x1228, "label": "ረ" },
+    { "code": 0x1270, "label": "ተ" },
+    { "code": 0x12A8, "label": "ከ" },
+    { "code": 0x12D8, "label": "ዘ" },
+    { "code": 0x12F0, "label": "ደ" },
+    { "code": 0x1240, "label": "ቀ" }
+  ],
+  [
+    { "code": 0x1200, "label": "ሀ" },
+    { "code": 0x1210, "label": "ሐ" },
+    { "code": 0x1260, "label": "በ" },
+    { "code": 0x1290, "label": "ነ" },
+    { "code": 0x12C8, "label": "ወ" },
+    { "code": 0x12E8, "label": "የ" },
+    { "code": 0x1308, "label": "ገ" },
+    { "code": 0x1320, "label": "ጠ" },
+    { "code": 0x1348, "label": "ፈ" }
+  ],
+  [
+    { "code":   -1, "label": "shift", "type": "modifier" },
+    { "code": 0x12A0, "label": "አ" },
+    { "code": 0x1238, "label": "ሠ" },
+    { "code": 0x1278, "label": "ቸ" },
+    { "code": 0x1328, "label": "ጨ" },
+    { "code": 0x1298, "label": "ኘ" },
+    { "code": 0x12E0, "label": "ዠ" },
+    { "code": 0x1330, "label": "ጰ" },
+    { "code":   -7, "label": "delete", "type": "enter_editing" }
+  ],
+  [
+    { "code": -202, "label": "view_symbols", "type": "system_gui" },
+    { "code":   44, "label": "," },
+    { "code":   32, "label": "space" },
+    { "code": 0x1362, "label": "።" },
+    { "code":   10, "label": "enter", "type": "enter_editing" }
+  ]
+]

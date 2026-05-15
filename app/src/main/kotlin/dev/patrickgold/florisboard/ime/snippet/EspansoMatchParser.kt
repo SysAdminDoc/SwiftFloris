@@ -184,12 +184,114 @@ object EspansoMatchParser {
 
 /**
  * One parsed Espanso match: a `trigger` → `replace` mapping.
+ *
+ * ROADMAP §7 L11a — extended-match shapes the parser doesn't surface
+ * yet are captured here as nullable fields so a future parser
+ * extension can populate them without breaking the existing
+ * triggerstring→replacement contract:
+ *  - [regex] — when non-null, this match is regex-driven and [trigger]
+ *    is empty. Espanso's `regex: "p[ae]rty"` shape.
+ *  - [vars] — values bound at expansion time (e.g. `{{date}}` →
+ *    formatted today). Engine integration lives in [EspansoVarsExpander].
+ *  - [isWordSensitive] — whether the match requires a word boundary.
+ *  - [passive] — whether the match should not auto-expand and instead
+ *    show up only in the smartbar's expander list.
  */
 data class EspansoMatch(
     val trigger: String,
     val replace: String,
+    val regex: String? = null,
+    val vars: List<EspansoVar> = emptyList(),
+    val isWordSensitive: Boolean = false,
+    val passive: Boolean = false,
 ) {
     init {
-        require(trigger.isNotBlank()) { "trigger must not be blank" }
+        // Either a literal trigger or a regex must be set.
+        require(trigger.isNotBlank() || !regex.isNullOrBlank()) {
+            "either trigger or regex must be set on an EspansoMatch"
+        }
+    }
+}
+
+/**
+ * One named variable in an Espanso match. Mirrors Espanso's
+ * `vars: - name: date type: date params: format: "%Y-%m-%d"`
+ * shape.
+ */
+data class EspansoVar(
+    val name: String,
+    val type: String,
+    val params: Map<String, String> = emptyMap(),
+) {
+    init {
+        require(name.isNotBlank()) { "var name must not be blank" }
+        require(type.isNotBlank()) { "var type must not be blank" }
+    }
+}
+
+/**
+ * ROADMAP §7 L11a — Espanso vars expander.
+ *
+ * Walks an Espanso match's [EspansoMatch.replace] template, finds
+ * every `{{name}}` placeholder, and substitutes the resolved value
+ * from the match's [EspansoMatch.vars] list. Built-in var types
+ * supported at the scaffold tier:
+ *
+ *  - **date**: today's date formatted via Java's [java.time.format.DateTimeFormatter]
+ *    pattern (default `yyyy-MM-dd`).
+ *  - **clipboard**: the current clipboard primary text. The caller
+ *    passes the clipboard provider as a `(() -> String?)` so the
+ *    expander stays platform-neutral.
+ *  - **echo**: a literal string from `params.echo` — useful for
+ *    parameterising sub-templates.
+ *  - **random**: choose a random line from `params.choices`
+ *    (semicolon-separated list).
+ *
+ * Other Espanso var types (shell, script, form) require process
+ * execution / interactive UI and are intentionally not surfaced here.
+ */
+object EspansoVarsExpander {
+
+    fun expand(
+        match: EspansoMatch,
+        clipboardProvider: () -> String? = { null },
+        nowProvider: () -> java.time.LocalDateTime = { java.time.LocalDateTime.now() },
+        randomProvider: (List<String>) -> String? = { choices -> choices.randomOrNull() },
+    ): String {
+        if (match.vars.isEmpty()) return match.replace
+        val resolved = match.vars.associateBy({ it.name }) { v ->
+            resolveVar(v, clipboardProvider, nowProvider, randomProvider)
+        }
+        val placeholder = Regex("\\{\\{\\s*([A-Za-z0-9_]+)\\s*\\}\\}")
+        return placeholder.replace(match.replace) { mr ->
+            val name = mr.groupValues[1]
+            resolved[name] ?: mr.value
+        }
+    }
+
+    private fun resolveVar(
+        v: EspansoVar,
+        clipboardProvider: () -> String?,
+        nowProvider: () -> java.time.LocalDateTime,
+        randomProvider: (List<String>) -> String?,
+    ): String {
+        return when (v.type) {
+            "date" -> {
+                val pattern = v.params["format"] ?: "yyyy-MM-dd"
+                runCatching {
+                    nowProvider().format(java.time.format.DateTimeFormatter.ofPattern(pattern))
+                }.getOrDefault("")
+            }
+            "clipboard" -> clipboardProvider().orEmpty()
+            "echo" -> v.params["echo"].orEmpty()
+            "random" -> {
+                val choices = v.params["choices"]?.split(';')
+                    ?.map { it.trim() }
+                    ?.filter { it.isNotEmpty() }
+                    .orEmpty()
+                if (choices.isEmpty()) "" else randomProvider(choices).orEmpty()
+            }
+            else -> ""
+        }
     }
 }
