@@ -179,6 +179,21 @@ fun KeyboardScreen() = FlorisScreen {
                 max = 150,
                 stepIncrement = 5,
             )
+            // ROADMAP §7 Next-7.1 — floating-mode default toggle. The user can
+            // still flip at runtime via the existing TOGGLE_COMPACT_LAYOUT
+            // smartbar quick-action / swipe binding.
+            SwitchPreference(
+                pref = prefs.keyboard.startInFloatingMode,
+                title = "Start in floating mode",
+                summary = "Open the keyboard as a movable / resizable floating window every time it appears. Runtime toggle via the one-handed quick-action remains available.",
+            )
+            // ROADMAP §7 Next-4.3 — stylus handwriting toggle. Off by default
+            // until the recogniser (Next-4.2) lands.
+            SwitchPreference(
+                pref = prefs.keyboard.stylusHandwritingEnabled,
+                title = "Stylus handwriting",
+                summary = "Android 14+ devices with a compatible stylus can write directly into text fields. Recogniser support is staged; this toggle reserves the system entry point.",
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_keypress__label)) {

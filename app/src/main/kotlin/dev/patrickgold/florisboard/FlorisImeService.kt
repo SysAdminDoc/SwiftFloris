@@ -454,6 +454,11 @@ class FlorisImeService : LifecycleInputMethodService() {
      */
     @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onStartStylusHandwriting(): Boolean {
+        // ROADMAP §7 Next-4.3 — gate on the user's stylus-handwriting toggle.
+        // When the toggle is off (default), short-circuit so the system
+        // falls back to standard touch input without ever calling into our
+        // recogniser stub.
+        if (!prefs.keyboard.stylusHandwritingEnabled.get()) return false
         flogInfo { "Stylus handwriting session started (Next-4.1 stub; recogniser pending Next-4.2)" }
         // Return false: we acknowledge the stylus event but don't yet have a
         // recogniser running, so the system falls back to the standard

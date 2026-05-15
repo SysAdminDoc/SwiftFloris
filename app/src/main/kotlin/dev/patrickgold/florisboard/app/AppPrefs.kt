@@ -629,6 +629,28 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "keyboard__keyboard_height_multiplier_landscape",
             default = 100,
         )
+        /** ROADMAP §7 Next-4.3 — stylus handwriting per-subtype toggle.
+         *  When false the IME does not request the system stylus-handwriting
+         *  delegate even on Android 14+ devices with a compatible stylus; the
+         *  field falls back to standard touch input. Recogniser plumbing is
+         *  Next-4.2's slot, so the toggle currently only gates Next-4.1's
+         *  `onStartStylusHandwriting()` callback. */
+        val stylusHandwritingEnabled = boolean(
+            key = "keyboard__stylus_handwriting_enabled",
+            default = false,
+        )
+        /** ROADMAP §7 Next-7.1 — floating-mode default. When true the IME
+         *  starts in floating mode on first show; when false it starts in
+         *  the existing fixed-mode default. The user can still toggle at
+         *  runtime via the existing TOGGLE_COMPACT_LAYOUT / window-mode
+         *  controls. The actual `ImeWindowController` initial-state read
+         *  happens in `ImeWindowController.startSession` and falls back to
+         *  the stored `ImeWindowConfig` when this preference is false (the
+         *  pre-existing behaviour). */
+        val startInFloatingMode = boolean(
+            key = "keyboard__start_in_floating_mode",
+            default = false,
+        )
         val landscapeInputUiMode = enum(
             key = "keyboard__landscape_input_ui_mode",
             default = LandscapeInputUiMode.DYNAMICALLY_SHOW,
