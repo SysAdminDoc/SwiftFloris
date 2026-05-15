@@ -815,6 +815,8 @@ produces correct output across the tessellation pattern.
 
 ### D11 — L11.1: Tasker receiver wire-up
 
+**Status:** Shipped 2026-05-15. Preserved below as the historical implementation prompt.
+
 ```
 SwiftFloris at `~/repos/SwiftFloris` has the Tasker intent contract
 (`ime/tasker/TaskerIntentContract`) with four actions
