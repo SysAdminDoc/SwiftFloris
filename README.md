@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.2-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
+![Version](https://img.shields.io/badge/version-v1.8.3-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
 
 **SwiftFloris** is a privacy-first Android keyboard app inspired by Microsoft SwiftKey, built on FlorisBoard's proven IME architecture with modern Material Design 3, offline gesture typing, and secure voice input.
 

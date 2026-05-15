@@ -169,3 +169,36 @@ data class EmojiSuggestionCandidate(
     override val text = emoji.value
     override val secondaryText = if (showName) emoji.name else null
 }
+
+/**
+ * ROADMAP §0 P1 — Smart-Compose inline ghost-text candidate.
+ *
+ * Carried alongside ordinary word candidates so the smartbar can render
+ * a multi-token continuation ("…to the meeting") visually distinct from
+ * the regular suggestion strip (Gboard's gray italic + swipe-space-to-
+ * accept pattern). [tokenCount] declares how many whitespace-separated
+ * tokens the candidate represents, so the IME can implement
+ * partial-accept semantics (tap-once = first token, swipe-space =
+ * full continuation).
+ *
+ * When no [dev.patrickgold.florisboard.ime.smartcompose.SmartComposeProvider]
+ * is bound (the default no-op state), no ghost-text candidate is ever
+ * emitted and the smartbar renders exactly as before.
+ */
+data class GhostTextSuggestionCandidate(
+    override val text: CharSequence,
+    override val confidence: Double,
+    val tokenCount: Int = 1,
+    override val sourceProvider: SuggestionProvider? = null,
+) : SuggestionCandidate {
+    init {
+        require(text.isNotEmpty()) { "ghost-text candidate must not be empty" }
+        require(confidence in 0.0..1.0) { "confidence must be in [0, 1]; was $confidence" }
+        require(tokenCount in 1..32) { "tokenCount must be in 1..32; was $tokenCount" }
+    }
+
+    override val secondaryText: CharSequence? = null
+    override val isEligibleForAutoCommit: Boolean = false
+    override val isEligibleForUserRemoval: Boolean = false
+    override val icon: ImageVector? = null
+}

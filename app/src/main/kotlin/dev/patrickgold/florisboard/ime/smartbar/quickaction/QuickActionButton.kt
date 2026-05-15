@@ -171,6 +171,18 @@ fun QuickActionButton(
                             text = action.data.firstOrNull().toString().ifBlank { "?" },
                         )
                     }
+
+                    is QuickAction.TranslateSelection -> {
+                        SnyggText(
+                            elementName = "$elementName-text",
+                            attributes = attributes,
+                            selector = selector,
+                            // Single-glyph label so the button fits a
+                            // standard quick-action slot. The full
+                            // tooltip surfaces on long-press.
+                            text = "\uD83C\uDF10",
+                        )
+                    }
                 }
 
                 // Render additional info if this is a tile
