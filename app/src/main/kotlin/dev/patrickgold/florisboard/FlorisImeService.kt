@@ -300,6 +300,7 @@ class FlorisImeService : LifecycleInputMethodService() {
     private val nlpManager by nlpManager()
     private val subtypeManager by subtypeManager()
     private val themeManager by themeManager()
+    val perAppAccentController by perAppAccentController()
     val voiceInputManager by lazy { VoiceInputManager(this) }
 
     val windowController = ImeWindowController(prefs, lifecycleScope)
@@ -445,6 +446,11 @@ class FlorisImeService : LifecycleInputMethodService() {
             editorInstance.handleStartInputView(editorInfo, isRestart = restarting)
         }
         applyFlagSecureForCurrentField(editorInfo)
+        // ROADMAP §7 Next-11.3a — per-app adaptive accent. Publish the active
+        // editor's package name to the controller so any Compose surface
+        // subscribed to `LocalPerAppAccent` can retint. Cheap; no-op when
+        // the user toggle is off.
+        perAppAccentController.setActiveEditorPackage(editorInfo.packageName)
     }
 
     /**

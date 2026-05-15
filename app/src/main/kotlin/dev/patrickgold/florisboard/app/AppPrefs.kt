@@ -842,6 +842,16 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             default = Color.Unspecified,
             serializer = ColorPreferenceSerializer,
         )
+        /** ROADMAP §7 Next-11.3 + Next-11.3a — Per-app adaptive accent.
+         *  When enabled, the keyboard's accent token tints toward the dominant
+         *  saturated color of the foreground editor's app icon (resolved via
+         *  PerAppAccentResolver). Default off because the feature reads
+         *  installed-package icons (still no extra permission required, but
+         *  defaulting opt-in matches the §1 privacy-by-default stance). */
+        val perAppAccentEnabled = boolean(
+            key = "theme__per_app_accent_enabled",
+            default = false,
+        )
         val sunriseTime = localTime(
             key = "theme__sunrise_time",
             default = LocalTime(6, 0),
