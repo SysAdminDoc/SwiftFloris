@@ -103,6 +103,33 @@ class IndicScriptExtendedTest : FunSpec({
         tables.forEach { (it.size() > 25) shouldBe true }
     }
 
+    test("Mongolian table maps 'a' to ᠠ and digit 5 to ᠕") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToMongolian)
+        xlit.transliterate("a") shouldBe "ᠠ"
+        xlit.transliterate("5") shouldBe "᠕"
+    }
+
+    test("Javanese table maps 'k' to ꦏ and digit 7 to ꧗") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToJavanese)
+        xlit.transliterate("k") shouldBe "ꦏ"
+        xlit.transliterate("7") shouldBe "꧗"
+    }
+
+    test("Sundanese table maps 'k' to ᮊ and digit 0 to ᮰") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToSundanese)
+        xlit.transliterate("k") shouldBe "ᮊ"
+        xlit.transliterate("0") shouldBe "᮰"
+    }
+
+    test("Mongolian + Javanese + Sundanese tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToMongolian,
+            IndicScriptTable.ItransToJavanese,
+            IndicScriptTable.ItransToSundanese,
+        )
+        tables.forEach { (it.size() > 20) shouldBe true }
+    }
+
     test("Burmese + Lao + Tibetan tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.ItransToBurmese,
