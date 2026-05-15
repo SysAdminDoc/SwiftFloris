@@ -68,6 +68,10 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
         val showName = prefs.emoji.suggestionCandidateShowName.get()
         val query = validateInputQuery(content.composingText) ?: return emptyList()
         val emojis = cachedEmojiMappings.get(subtype.primaryLocale)?.get(preferredSkinTone) ?: emptyList()
+        // ROADMAP §7 Next-9.4 — custom user tags participate in predict-by-tag
+        // ranking. User tags carry the highest weight (1.0) because the user
+        // typed them themselves and wants them to win.
+        val customTagStore = CustomEmojiTagStore.get(context)
         val candidates = withContext(Dispatchers.Default) {
             emojis.parallelStream()
                 .map { emoji ->
@@ -75,7 +79,10 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
                     val keywordWeight = emoji.keywords
                         .any { it.contains(query, ignoreCase = true) }
                         .let { if (it) 1.0 else 0.0 }
-                    emoji to (nameWeight * 0.7 + keywordWeight * 0.3)
+                    val customTagWeight = customTagStore.tagsFor(emoji.value)
+                        .any { it.contains(query, ignoreCase = true) }
+                        .let { if (it) 1.0 else 0.0 }
+                    emoji to (nameWeight * 0.55 + keywordWeight * 0.25 + customTagWeight * 0.20)
                 }
                 .sorted { (_, a), (_, b) -> b.compareTo(a) }
                 .limit(maxCandidateCount.toLong())
