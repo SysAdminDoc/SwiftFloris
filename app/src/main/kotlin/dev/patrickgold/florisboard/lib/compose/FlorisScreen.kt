@@ -41,6 +41,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.paneTitle
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
@@ -152,8 +154,13 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
 
         val scrollBehavior = TopAppBarDefaults.pinnedScrollBehavior()
 
+        // Matrix #11 — Android 16 pane-aware accessibility migration. Setting `paneTitle` on the Scaffold root
+        // makes TalkBack announce the new screen name when the user navigates into it, without relying on the
+        // deprecated disruptive `TYPE_ANNOUNCEMENT` events that Android 16 (API 36) discourages.
         Scaffold(
-            modifier = Modifier.nestedScroll(scrollBehavior.nestedScrollConnection),
+            modifier = Modifier
+                .nestedScroll(scrollBehavior.nestedScrollConnection)
+                .semantics { if (title.isNotBlank()) paneTitle = title },
             containerColor = colorScheme.background,
             topBar = { FlorisAppBar(title, navigationIcon.takeIf { navigationIconVisible }, actions, scrollBehavior) },
             bottomBar = bottomBar,
