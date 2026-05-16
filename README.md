@@ -1,102 +1,29 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.46-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange)
+![Version](https://img.shields.io/badge/version-v1.8.46-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey)
 
-**SwiftFloris** is a privacy-first Android keyboard app inspired by Microsoft SwiftKey, built on FlorisBoard's proven IME architecture with modern Material Design 3, offline gesture typing, and secure voice input.
+**SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
-> **Zero cloud processing. Zero telemetry. All features work offline.**
+> **Zero cloud processing. Zero telemetry. Zero account. All features work offline.**
 
-## Key Highlights
+## Highlights
 
-| Feature | Capability | Privacy |
-|---------|-----------|---------|
-| **Gesture Typing** | Drag to type entire words | 100% offline |
-| **Voice Input** | Speech-to-text with FUTO | 100% offline, no cloud |
-| **Spell Check** | Multi-language corrections | Local dictionary only |
-| **Clipboard** | Encrypted history (50 items) | AES-256 GCM, on-device only |
-| **Themes** | 4 professional color schemes | No telemetry |
+| Area | What's in v1.8.46 | Privacy posture |
+|------|-------------------|-----------------|
+| **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
+| **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
+| **Scripts** | Devanagari + Bengali + Tamil + Telugu + ... (63-script transliteration coverage); RTL Arabic shaper, Persian / Urdu / Hebrew normalisers | On-device |
+| **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
+| **Voice input** | FUTO Voice Input handoff (preferred), Vosk streaming fallback, RAM-aware model selector, local Whisper/Vosk model manager | No audio leaves the device |
+| **Clipboard** | History with pinning + per-app source tag; SQLCipher-encrypted personal dictionary | On-device |
+| **Themes** | SwiftKey Pure light + dark + M3 Expressive, Nord, Tokyo Night, Dracula, Catppuccin Mocha, Snygg theme engine, per-app accent | No telemetry |
+| **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
+| **Migration** | Gboard / FlorisBoard / SwiftKey JSON export importer; Keyman LDML + Windows KLC hardware-keyboard imports | All file-system based |
+| **CI / build** | No-network gate, OSV dep scan, reproducible-build toolchain pins, Roborazzi visual-regression scaffold, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
 
-## Features
+## Distribution
 
-### 🎤 Voice Input (v1.5.0)
-
-Powered by **FUTO Voice Input** — a privacy-respecting, on-device speech recognizer:
-
-- ✅ **100% Offline** — No internet required, no audio uploaded
-- ✅ **16+ Languages** — EN, DE, FR, ES, IT, PT, JP, KR, ZH, RU, PL, SV, NL, TR, and more
-- ✅ **Based on Whisper** — OpenAI's open-source speech model
-- ✅ **Works on Debloated ROMs** — Independent of Google Play Services
-- ✅ **Lightweight** — Efficient local processing on any Android device
-
-**Setup**: [FUTO Voice Input Guide](FUTO_VOICE_INPUT.md)
-
-### 🎯 Gesture/Swipe Typing (v1.4.0)
-
-Type entire words by dragging your finger across the keyboard:
-
-- ✅ **Live word prediction** during gesture motion
-- ✅ **Configurable sensitivity** (0-100% adjustment)
-- ✅ **Visual trail** with fade animation
-- ✅ **Fully offline** — no API calls, completely private
-- ✅ **Intelligent corrections** with automatic backspace handling
-
-**Guide**: [Gesture Typing Best Practices](GESTURE_TYPING.md)
-
-### ⌨️ Core Typing Features
-
-- **Auto-Capitalization** — Intelligent sentence-aware capitalization after `.`, `!`, `?`
-- **Spell Checking** — Edit-distance algorithm (Levenshtein distance ≤2)
-- **Word Suggestions** — Context-aware predictions with bigram analysis
-- **Multiple Layouts** — QWERTY, QWERTZ, AZERTY, and locale-specific
-- **Haptic Feedback** — Enhanced vibration with user adjustment
-- **Multi-Language** — Full support for 100+ languages via FlorisBoard
-
-### 📋 Clipboard History
-
-Encrypted, secure clipboard with quick-access:
-
-- **AES-256 GCM encryption** — Military-grade protection
-- **Per-app tracking** — See which app each clip came from
-- **Max 50 items** — Auto-cleanup of old entries
-- **One-tap insert** — Quickly paste recent clips
-- **Local storage only** — No cloud sync, no network access
-
-### 🎨 Themes (4 Included)
-
-1. **Nord** — Arctic, north-bluish palette
-2. **Tokyo Night** — Neon-inspired vibrant colors
-3. **Dracula** — Dark, elegant purple and pink
-4. **Catppuccin Mocha** — Warm, modern aesthetic
-
-All themes support:
-- Dark/light mode auto-switching
-- Material Design 3 adaptive colors
-- Custom accent colors
-- Full theme editor for fine-tuning
-
-### ⚙️ Customization
-
-**Keyboard Settings**
-- Keyboard layouts and subtypes
-- Key size and spacing
-- Sound and vibration feedback
-- Gesture detection sensitivity
-- Dictionary management
-
-**Display & Appearance**
-- 4 theme packs with variants
-- Light/dark mode toggle
-- Adaptive icon system
-- Custom gesture trail duration
-
-**Advanced**
-- Clipboard history encryption
-- Physical keyboard support
-- Theme editor (create custom themes)
-- Language pack manager
-- Backup and restore (full settings export)
-
-## Installation
+SwiftFloris ships through GitHub Releases (canonical), and is targeted at F-Droid (reproducible-build verification in progress) and Obtainium for auto-updates. It is **not** on Google Play by design — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture.
 
 ### Option A — Obtainium (recommended for auto-updates)
 
@@ -112,12 +39,9 @@ Open the link above on a device with Obtainium installed (or paste it into Obtai
 
 ### Option B — GitHub Releases (manual)
 
-1. Download the latest APK from [Releases](https://github.com/SysAdminDoc/SwiftFloris/releases)
-2. Install on your Android device (Android 8.0+)
-3. **Also install FUTO Voice Input** for voice input feature:
-   - [Google Play Store](https://play.google.com/store/apps/details?id=org.futo.voiceinput)
-   - [F-Droid](https://f-droid.org/app/org.futo.voiceinput)
-   - [FUTO Website](https://voiceinput.futo.org/)
+1. Download the latest APK from [Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
+2. Install on your Android device (Android 8.0+).
+3. (Optional) Install [FUTO Voice Input](https://voiceinput.futo.org/) for the preferred offline dictation path. SwiftFloris also ships a Vosk fallback that works without FUTO.
 
 ### Option C — Manual Build
 
@@ -130,235 +54,229 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ### Enable as Default Keyboard
 
-1. Open **Settings** → **System** → **Languages & input**
-2. Tap **Virtual keyboard** (or **On-screen keyboard**)
-3. Select **SwiftFloris**
-4. Grant permissions as prompted
+1. Open **Settings → System → Languages & input**.
+2. Tap **Virtual keyboard** (or **On-screen keyboard**).
+3. Select **SwiftFloris** and grant permissions as prompted.
 
-> **Tip**: Grant **RECORD_AUDIO** permission to use voice input with FUTO Voice Input
+## Migrating from SwiftKey
+
+Microsoft is retiring the SwiftKey cloud account stack and the `data.swiftkey.com` export endpoint on **2026-05-31**. SwiftFloris v1.8.46 imports the `swiftkey-cloud.json` export directly through Settings → Personal dictionary → Import. See [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md) for the full migration walk-through and the cutoff-driven timeline.
 
 ## Documentation
 
-- **[FUTO Voice Input Setup](FUTO_VOICE_INPUT.md)** — Complete voice input guide with troubleshooting
-- **[Gesture Typing Guide](GESTURE_TYPING.md)** — Swipe typing tips, best practices, FAQ
-- **[Complete Features](FEATURES.md)** — Detailed feature inventory and implementation status
-- **[Multilingual Support](MULTILINGUAL.md)** — Multi-language spell checking guide
-- **[Changelog](CHANGELOG.md)** — Release notes for all versions
+Project-internal docs all live in the repository:
+
+- [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md) — SwiftKey account-retirement migration paths.
+- [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — privacy / security threat model and mitigations.
+- [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) — pinned toolchain and F-Droid rebuild plan.
+- [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — Macrobenchmark trace sections and regression threshold contract.
+- [`docs/INLINE_AUTOFILL.md`](docs/INLINE_AUTOFILL.md) — inline-autofill matrix and password-manager verification.
+- [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md) — Tasker intent contract.
+- [`docs/FONTS.md`](docs/FONTS.md) — bundled fonts (Nastaliq + Naskh fallback).
+- [`GESTURE_TYPING_MULTILINGUAL.md`](GESTURE_TYPING_MULTILINGUAL.md) — multilingual gesture-typing guide.
+- [`FUTO_VOICE_INPUT_TROUBLESHOOTING.md`](FUTO_VOICE_INPUT_TROUBLESHOOTING.md) — FUTO Voice Input setup + recovery actions.
+- [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.2).
+- `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
 
-**Technology**
-- **Jetpack Compose** — Declarative, reactive UI
-- **Material Design 3** — Modern Android design system
-- **Kotlin + Coroutines** — Async operations, type-safe
-- **Room Database** — Settings and preferences persistence
-- **Encrypted SharedPreferences** — Secure storage for sensitive data
+**Language and build**
 
-**Minimum Requirements**
-- **Android 8.0+ (SDK 26)**
-- **Min Target: Android 15 (SDK 36)**
-- **Gradle 8.x**, Java 17+, Kotlin 2.0+
+- Kotlin 2.3.21, Compose BOM 2026.03.01, Material 3 + material-kolor.
+- AGP 9.0.0, Gradle 9.4.1, JDK 17.
+- KSP, Room 2.8.4, SQLCipher 4.16.0.
+- Kotest 6.1.11 unit-test runner; Roborazzi 1.55.0 for screenshot regressions.
+- minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16, with Android 17 / API 37 behavior gates wired).
+- Crowdin pipeline for translations.
+- No `INTERNET` permission in the manifest (CI-enforced).
+
+**Module layout**
+
+```
+:app                       — IME + Settings UI + addon facades
+lib/android                — Android utility extensions
+lib/color                  — color math
+lib/compose                — Compose helpers
+lib/kotlin                 — pure-Kotlin utilities
+lib/snygg                  — Snygg theme engine
+:benchmark                 — Macrobenchmark module (present on disk, not yet wired in settings)
+:lib:native                — placeholder for future native add-ons (commented out)
+```
+
+The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard/ime/{keyboard,nlp,theme,ext,emoji,mcp,voice,bidi,dictionary,kenlm}`.
 
 ## Building
 
 ### Prerequisites
+
 ```bash
-# Install Android SDK 26+ (Android Studio)
-# Install Java 17 or later
-# Install Gradle 8.x (included with Android Studio)
+# Android SDK 36 (compile/target)
+# JDK 17+
+# Gradle 9.4.1 (use the bundled wrapper)
 ```
 
-### Build Commands
+### Build commands
+
 ```bash
-# Debug build (for testing)
+# Debug build
 ./gradlew assembleDebug
 
 # Release build (unsigned)
 ./gradlew assembleRelease
 
-# Clean build
+# Clean
 ./gradlew clean
 
-# Run tests
+# Unit tests (Kotest)
 ./gradlew test
+
+# Roborazzi screenshot verify (visual-regression CI)
+./gradlew :app:verifyRoborazziDebug
 ```
 
-**Signed Release Build**
+**Signed release build**
+
 ```bash
-# Requires keystore.jks with proper alias and password
-./gradlew assembleRelease -Pandroid.injected.signing.store.file=keystore.jks \
+./gradlew assembleRelease \
+  -Pandroid.injected.signing.store.file=keystore.jks \
   -Pandroid.injected.signing.store.password=$STORE_PASS \
   -Pandroid.injected.signing.key.alias=$KEY_ALIAS \
   -Pandroid.injected.signing.key.password=$KEY_PASS
 ```
 
+See [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) for the toolchain pins that match the published APK fingerprints.
+
 ## Permissions
 
-SwiftFloris requests these Android permissions:
-
 | Permission | Purpose | Required? |
-|-----------|---------|-----------|
-| `INPUT_METHOD` | IME functionality | ✅ Yes |
+|------------|---------|-----------|
+| `INPUT_METHOD` | IME service binding | ✅ Yes |
 | `VIBRATE` | Haptic feedback | Optional |
-| `RECORD_AUDIO` | Voice input with FUTO | Optional (needed for voice) |
-| `BIND_NOTIFICATION_LISTENER` | App-aware features | Optional |
+| `RECORD_AUDIO` | Voice input (FUTO handoff or Vosk fallback) | Optional |
+| `BIND_NOTIFICATION_LISTENER` | App-aware smartbar features | Optional |
 
-> **Privacy note**: SwiftFloris never connects to the internet. All permissions are used locally on your device.
+> **Privacy note:** SwiftFloris does not request `INTERNET`. CI validates this on every build.
 
 ## Privacy & Security
 
-### Data Handling
-- ✅ **No cloud sync** — Everything stays on your device
-- ✅ **No telemetry** — No usage tracking or analytics
-- ✅ **No ads** — Open-source, no advertising
-- ✅ **No accounts** — No login or registration needed
-- ✅ **Offline-first** — Works without internet connection
+### Posture
 
-### Encryption
-- **Clipboard history** — AES-256 GCM encryption
-- **Settings** — Encrypted SharedPreferences
-- **Voice input** — Handled entirely by FUTO (offline processing)
+- **No `INTERNET` permission**, no cloud sync, no account, no telemetry, no ads.
+- **Apache-2.0 only** in the main app. GPL / AGPL / Source-First code cannot be linked into `:app`; it can only ship as a clearly-isolated optional addon under its own license.
+- **No closed-source blobs.** No `libjni_latinimegoogle.so`-style glide binaries. Reproducible builds with toolchain pinning.
+
+### Encryption and sensitive-field handling
+
+- **Personal dictionary:** SQLCipher-encrypted Room database.
+- **IME window:** `FLAG_SECURE` set on password fields so the keyboard is excluded from screenshots and screen-recording overlays.
+- **Long-press popups:** suppressed on every `KeyVariation.PASSWORD` (Android 17 password-visibility behavior closed on the IME side as of v1.8.44).
+- **Personalized learning:** clipboard write / dictionary learn paths skip password and `IME_FLAG_NO_PERSONALIZED_LEARNING` fields.
+- **Opt-in addon surfaces (smart-compose, translation, MCP):** every invocation runs through `SensitiveFieldGuard` first; sensitive fields short-circuit to a safe no-result.
+- **Personal dictionary backup:** excluded from cloud-backup paths; device-transfer kept.
+
+Full posture: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
 
 ### Open Source
-- [GitHub](https://github.com/SysAdminDoc/SwiftFloris) — Full source code available
-- [Apache License 2.0](LICENSE) — Permissive, community-friendly license
-- Auditable — Security researchers can review the code
 
-## Performance
+- [GitHub](https://github.com/SysAdminDoc/SwiftFloris) — Full source code available.
+- [Apache License 2.0](LICENSE) — Permissive, audit-friendly.
 
-Typical latencies on mid-range Android device:
+## Multilingual support
 
-| Operation | Latency | Notes |
-|-----------|---------|-------|
-| Auto-capitalization | <5ms | No I/O required |
-| Spell check suggestion | <100ms | Dictionary cache |
-| Word prediction | <50ms | LRU + bigram cache |
-| Gesture recognition | <200ms | End-to-end |
-| Voice transcription | 2-10s | Depends on FUTO model |
-| Clipboard paste | <200ms | Depends on text size |
+SwiftFloris ships first-class **bilingual subtype presets** for SwiftKey-style EN+ES / EN+FR / EN+DE typing, plus per-token language identification over Latin-script subtypes (EN / ES / FR / DE / IT / PT). The multilingual ranker refuses to autocommit when the two strongest plausible replacement candidates come from different enrolled languages, so cross-language autocorrects stop bleeding into the wrong sentence.
+
+For non-Latin scripts, the transliteration layer currently covers **63 scripts** ranging from Devanagari, Bengali, Tamil, Telugu, Gujarati, Gurmukhi, Kannada, Malayalam, Odia, Sinhala (Indic) through Khmer, Burmese, Lao, Thai, Tibetan, Mongolian, Javanese, Sundanese (Brahmic) into Arabic with FE70-FEFC connected-form shaping, Persian / Urdu / Hebrew normalisers, and historical scripts such as Phoenician, Imperial Aramaic, Avestan, and 20th-century constructed alphabets (Adlam, N'Ko, Cherokee, Vai, Bassa Vah, Mende Kikakui, Pahawh Hmong, Nyiakeng Puachue Hmong, Wancho, Medefaidrin).
+
+Inline translation has the cache + language detector + sentence tokenizer + language-pack manager + router shipped on the IME side; the Bergamot WASM runtime addon is the outstanding piece tracked as L2.1a in the roadmap.
+
+## MCP daemon bridge
+
+SwiftFloris is the first FOSS Android keyboard to ship an end-to-end MCP (Model Context Protocol) daemon bridge. It binds **local-only** to MCP daemons advertised by other apps on the device (no network, no cloud), surfaces them in Settings → MCP daemon bridge, and lets users enable / disable individual daemons. The bridge is opt-in by construction: tool invocations route through the same `SensitiveFieldGuard` as smart-compose and translation, so password fields cannot trigger remote tool calls.
+
+The full bridge spans `IMcpDaemon.aidl` (Binder surface), `AndroidMcpClient` (JSON envelope translation), `McpServiceConnectionManager` (per-daemon bind lifecycle), `McpAndroidDiscoverer` (PackageManager discovery), `McpDispatchRouter` (registry → guard → tool → response), and the Settings screen that lists bound daemons + per-daemon switches.
+
+## Tasker integration
+
+SwiftFloris exposes a Tasker intent contract for INSERT_TEXT / INSERT_CLIP / SWITCH_LAYOUT / TRIGGER_VOICE actions. See [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md).
+
+## Performance and benchmarks
+
+Six Macrobenchmark trace sections are emitted from production code paths:
+
+- `swiftfloris.ime.firstRender` (`FlorisImeService.onCreateInputView`)
+- `swiftfloris.nlp.suggest` (`LatinLanguageProvider.suggest`)
+- `swiftfloris.smartbar.candidates.recompose` (`CandidatesRow` body)
+- `swiftfloris.theme.switch` (`ThemeManager.updateActiveTheme`)
+- `swiftfloris.dict.load` (`loadSpecificDictionary`)
+- `swiftfloris.nlp.symspell.build` (lazy index init)
+
+Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section that produced them.
 
 ## Testing
 
-### What's Tested
-- ✅ Auto-capitalization (sentence-aware)
-- ✅ Spell checking and suggestions
-- ✅ Gesture typing (all directions)
-- ✅ Voice input (with FUTO)
-- ✅ Clipboard encryption/decryption
-- ✅ Theme switching (all 4 themes)
-- ✅ Haptic feedback
+- **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
+- **Visual regression:** Roborazzi 1.55.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR with `continue-on-error: true` during the bootstrap window; baseline PNG capture is in progress.
+- **Macrobenchmark:** trace sections wired in production hot paths; device-number capture is tracked separately.
+- **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 
-### Device Tested On
-- **Android 16** (Samsung device, debloated ROM)
-- **Google Pixel** (recommended for full compatibility)
+## Recent releases
 
-## Project Structure
+The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-```
-SwiftFloris/
-├── app/
-│   ├── src/main/
-│   │   ├── kotlin/dev/patrickgold/florisboard/
-│   │   │   ├── FlorisApplication.kt       (App entry point)
-│   │   │   ├── FlorisImeService.kt        (IME service)
-│   │   │   ├── ime/
-│   │   │   │   ├── keyboard/              (Layout & rendering)
-│   │   │   │   ├── input/                 (Input processing)
-│   │   │   │   ├── clipboard/             (History feature)
-│   │   │   │   ├── voice/                 (Voice input)
-│   │   │   │   ├── nlp/                   (Spell check, predictions)
-│   │   │   │   └── theme/                 (Theming system)
-│   │   │   └── app/
-│   │   │       ├── FlorisAppActivity.kt   (Settings activity)
-│   │   │       └── settings/              (Settings screens)
-│   │   └── res/
-│   │       ├── drawable/                  (Icons, logos)
-│   │       └── values/                    (Colors, strings, themes)
-│   └── build.gradle.kts
-├── settings.gradle.kts
-├── CHANGELOG.md                            (Release notes)
-├── FEATURES.md                             (Detailed features)
-├── FUTO_VOICE_INPUT.md                     (Voice input guide)
-├── GESTURE_TYPING.md                       (Gesture typing guide)
-└── README.md                               (This file)
-```
+- **v1.8.46** (2026-05-16) — SwiftKey `swiftkey-cloud.json` import parser ahead of the 2026-05-31 account retirement. New `DictionaryImportFormat.JSON` + tolerant `parseSwiftKeyJson`. ([notes](RELEASE_NOTES_v1.8.46.md))
+- **v1.8.45** (2026-05-16) — Android 17 IME-visibility restore across configuration changes. ([notes](RELEASE_NOTES_v1.8.45.md))
+- **v1.8.44** (2026-05-16) — Long-press popup guard on password fields (`KeyVariation.PASSWORD`). ([notes](RELEASE_NOTES_v1.8.44.md))
+- **v1.8.43** (2026-05-16) — Roborazzi plugin unblocked at 1.55.0; visual-regression CI step added. ([notes](RELEASE_NOTES_v1.8.43.md))
+- **v1.8.42** (2026-05-16) — Kotlin 2.3.20 → 2.3.21 bug-fix bump. ([notes](RELEASE_NOTES_v1.8.42.md))
+- **v1.8.41** (2026-05-16) — Auto-return to letter keyboard after apostrophe in symbols panel. ([notes](RELEASE_NOTES_v1.8.41.md))
+- **v1.8.40** (2026-05-16) — Per-daemon enable / disable for the MCP bridge in Settings. ([notes](RELEASE_NOTES_v1.8.40.md))
+- **v1.8.35–v1.8.39** — Full MCP daemon bridge: AIDL surface, AndroidMcpClient, per-daemon bind lifecycle, discoverer, IME-startup wire-up, Settings UI.
+- **v1.8.34** — Macrobenchmark trace instrumentation across six production hot paths.
+- **v1.8.31–v1.8.33** — Honeycomb hex renderer (`HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader`).
+- **v1.8.0–v1.8.30** — Smart-compose / inline-translation router stack, KenLM reader pipeline, 63-script transliteration build-out, addon scaffold sweep, SwiftKey-parity slices.
+- **v1.7.x** — Multilingual hot-switch, bigram + trigram next-word, adaptive touch, SymSpell d1+d2, Flow Through Space, encrypted personal dictionary.
+- **v1.6.0** — Personal-learning dictionary + 117k SCOWL English + SwiftKey design tokens.
+- **v1.5.0** — FUTO Voice Input integration (replacing Google Speech Recognizer).
+
+See [`ROADMAP.md`](ROADMAP.md) §3 for the full reconciled version table back to v1.1.0.
 
 ## Contributing
 
-We welcome contributions! Areas for enhancement:
+SwiftFloris welcomes contributions in:
 
-- 🎨 Additional themes and color schemes
-- 🌍 New language support for spell checking
-- 🔧 Performance optimizations
-- 🐛 Bug fixes and stability improvements
-- 📚 Documentation and guides
-- ♿ Accessibility improvements
+- 🎨 Themes and design tokens (Snygg engine).
+- 🌍 Dictionary packs and transliteration tables for additional scripts.
+- 🔧 Performance work (Macrobenchmark device-number capture, glide-typing engine).
+- 🐛 Bug fixes; especially anything in [GitHub Issues](https://github.com/SysAdminDoc/SwiftFloris/issues).
+- 📚 Docs and migration guides.
+- ♿ Accessibility improvements.
 
-**How to contribute**:
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/my-feature`)
-3. Make your changes
-4. Test on a real device
-5. Submit a pull request with a clear description
+**How to contribute**
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+1. Fork the repository.
+2. Create a feature branch (`git checkout -b feature/my-feature`).
+3. Make your changes; keep them within the philosophy in [`ROADMAP.md`](ROADMAP.md) §1 (no network, no telemetry, Apache-2.0 main app, no closed blobs).
+4. Run `./gradlew test`. Add tests for new behavior.
+5. Submit a pull request with a clear description.
 
 ## Troubleshooting
 
 ### Gesture typing not working?
-→ See [Gesture Typing Guide](GESTURE_TYPING.md#troubleshooting)
+
+See [Multilingual Gesture Typing](GESTURE_TYPING_MULTILINGUAL.md). Gesture typing currently uses the bounded statistical engine for EN / DE / ES / FR / IT / PT; the neural / open-glide path is gated on the HeliBoard NLnet release.
 
 ### Voice input unavailable?
-→ See [FUTO Voice Input Guide](FUTO_VOICE_INPUT.md#troubleshooting)
-- Ensure FUTO Voice Input is installed from Play Store or F-Droid
-- Check microphone permissions in Settings
-- Verify your ROM hasn't removed the speech recognizer
 
-### Keyboard crashes or locks up?
-- Clear app cache: Settings → Apps → SwiftFloris → Storage → Clear Cache
-- Reinstall the app
-- Check device storage (need ~100MB free)
+See [FUTO Voice Input Troubleshooting](FUTO_VOICE_INPUT_TROUBLESHOOTING.md). SwiftFloris does not record audio itself; it hands off to the user-installed FUTO Voice Input app or to the bundled Vosk streaming engine. Make sure microphone permission is granted on whichever IME you've configured for dictation.
 
-### Spell checking not working?
-- Ensure dictionary is loaded: Settings → Languages → Dictionary Manager
-- Check language is enabled for your locale
-- Enable spell checking in Settings → Typing
+### Keyboard crashes on emoji insertion?
+
+This matches [issue #1](https://github.com/SysAdminDoc/SwiftFloris/issues/1). Triage is tracked in `ROADMAP.md` §6 (N3 polish + emoji crash regression row). If you can reproduce, please attach the device model, Android build, ROM, and a logcat capture to the issue.
 
 ### Theme changes not applying?
-- Force close the keyboard app
-- Open a new text field to reload the keyboard
-- Try a different theme to test
 
-## Changelog
-
-**[v1.5.0](CHANGELOG.md#150--2026-05-04)** — May 4, 2026
-- ✅ FUTO Voice Input integration (100% offline, 16+ languages)
-- ✅ Removed Google Speech Services (no longer needed)
-- ✅ Added comprehensive voice input documentation
-
-**[v1.4.0](CHANGELOG.md#140--2026-05-05)** — Gesture Typing
-- ✅ Gesture/swipe typing enabled by default
-- ✅ Configurable sensitivity (0-100%)
-- ✅ Visual trail with fade animation
-- ✅ Comprehensive gesture typing guide
-
-**[v1.3.0](CHANGELOG.md#130--2026-05-04)** — Voice Input & Multilingual
-- ✅ Voice-to-text input integration
-- ✅ Multi-language spell checking infrastructure
-- ✅ Enhanced haptic feedback
-
-**[v1.2.0](CHANGELOG.md#120--2026-05-04)** — Auto-Capitalization Fix
-- ✅ Fixed auto-cap for subsequent sentences
-- ✅ Proper SHIFTED_AUTOMATIC state handling
-- ✅ Production-ready v1.2.0 release
-
-**[v1.1.0](CHANGELOG.md#110--2026-01-05)** — Initial Release
-- ✅ FlorisBoard foundation
-- ✅ SwiftKey-inspired branding
-- ✅ 4 premium themes
-- ✅ Encrypted clipboard history
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed release notes.
+Force-close the keyboard via Settings → Apps → SwiftFloris → Force stop, then re-open a text field. If a theme imported from an extension package fails, check Settings → Extensions for the asset's status — the asset resolver canonicalises paths and rejects anything outside the loaded theme directory.
 
 ## License
 
@@ -380,17 +298,16 @@ limitations under the License.
 
 ## Acknowledgments
 
-- **FlorisBoard** — Solid IME architecture and foundation
-- **FUTO** — Privacy-first voice input technology
-- **Jetpack Compose** and **Material Design 3** — Modern Android UI
-- **OpenAI Whisper** — Speech recognition engine (used by FUTO)
-- Open-source community — Inspiration and contributions
+- **FlorisBoard** — Solid IME architecture and Snygg theme engine.
+- **FUTO** — Privacy-first voice input, available as a separate app.
+- **SCOWL** — English word list.
+- **Bergamot, librime, KenLM, LiteRT-LM** — Open-source language stacks that the addon scaffolds target.
+- **HeliBoard, AnySoftKeyboard, Unexpected Keyboard, Thumb-Key, fcitx5-android, Trime, OpenBoard** — Adjacent open-source keyboards that this project learns from.
+- **Jetpack Compose** and **Material Design 3** — Modern Android UI.
 
 ## Status
 
-🚀 **Active Development** — SwiftFloris is actively maintained with regular updates.
-
-**v1.5.0** is stable and ready for production use. We welcome feedback, bug reports, and contributions!
+🚀 **Active development.** Current release: **v1.8.46** (2026-05-16). Migration window for SwiftKey users closes **2026-05-31**.
 
 ---
 
@@ -401,7 +318,10 @@ limitations under the License.
 | **GitHub** | https://github.com/SysAdminDoc/SwiftFloris |
 | **Issues** | https://github.com/SysAdminDoc/SwiftFloris/issues |
 | **Releases** | https://github.com/SysAdminDoc/SwiftFloris/releases |
+| **Roadmap** | [ROADMAP.md](ROADMAP.md) |
+| **SwiftKey migration** | [docs/MIGRATE_FROM_SWIFTKEY.md](docs/MIGRATE_FROM_SWIFTKEY.md) |
+| **Threat model** | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) |
 | **FUTO Voice** | https://voiceinput.futo.org/ |
-| **FlorisBoard** | https://github.com/florisboard/florisboard |
+| **FlorisBoard upstream** | https://github.com/florisboard/florisboard |
 
-**Made with ❤️ for privacy and offline-first computing**
+**Made for privacy and offline-first computing.**
