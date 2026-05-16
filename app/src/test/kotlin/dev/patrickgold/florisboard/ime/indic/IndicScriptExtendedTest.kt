@@ -299,6 +299,31 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("nga") shouldBe "ᜅ"
     }
 
+    test("Wancho table maps 'a' to 𞋀 (Unicode 12, supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToWancho)
+        xlit.transliterate("a") shouldBe "𞋀"
+    }
+
+    test("Nyiakeng Puachue Hmong table maps 'ch' digraph to 𞄈 over 'c' alone") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToNyiakengPuachueHmong)
+        xlit.transliterate("ch") shouldBe "𞄈"
+        xlit.transliterate("c") shouldBe "𞄇"
+    }
+
+    test("Medefaidrin table maps 'a' to 𖹠 (Oberi Okaime script)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToMedefaidrin)
+        xlit.transliterate("a") shouldBe "𖹠"
+    }
+
+    test("Wancho + Nyiakeng Puachue Hmong + Medefaidrin tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToWancho,
+            IndicScriptTable.LatinToNyiakengPuachueHmong,
+            IndicScriptTable.LatinToMedefaidrin,
+        )
+        tables.forEach { (it.size() > 20) shouldBe true }
+    }
+
     test("Tagbanwa + Buhid + Baybayin Philippine scripts all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToTagbanwa,

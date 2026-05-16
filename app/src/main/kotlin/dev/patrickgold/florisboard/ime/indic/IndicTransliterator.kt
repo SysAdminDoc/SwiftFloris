@@ -1290,6 +1290,71 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Wancho (U+1E2C0 block).
+         * Wancho is a 20th-century alphabet for the Wancho Naga
+         * language of Arunachal Pradesh, India + Myanmar. Created by
+         * Banwang Losu c. 2001. Encoded in Unicode 12 (March 2019).
+         * Supplementary plane.
+         */
+        val LatinToWancho: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Wancho",
+            mappings = mapOf(
+                "a" to "𞋀", "b" to "𞋁", "c" to "𞋂", "d" to "𞋃",
+                "e" to "𞋄", "f" to "𞋅", "g" to "𞋆", "h" to "𞋇",
+                "i" to "𞋈", "j" to "𞋉", "k" to "𞋊", "l" to "𞋋",
+                "m" to "𞋌", "n" to "𞋍", "o" to "𞋎", "p" to "𞋏",
+                "q" to "𞋐", "r" to "𞋑", "s" to "𞋒", "t" to "𞋓",
+                "u" to "𞋔", "v" to "𞋕", "w" to "𞋖", "x" to "𞋗",
+                "y" to "𞋘", "z" to "𞋙",
+            ),
+        )
+
+        /**
+         * Latin → Nyiakeng Puachue Hmong (U+1E100 block).
+         * Sister of Pahawh Hmong (shipped v1.8.16) — a separate
+         * Hmong-language script created by Reverend Chervang Kong
+         * Vang in the 1980s. Encoded in Unicode 12. Supplementary
+         * plane.
+         */
+        val LatinToNyiakengPuachueHmong: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "NyiakengPuachueHmong",
+            mappings = mapOf(
+                "a" to "𞄀", "e" to "𞄁", "i" to "𞄂", "o" to "𞄃", "u" to "𞄄",
+                "y" to "𞄅", "b" to "𞄆", "c" to "𞄇",
+                "ch" to "𞄈", "d" to "𞄉", "dh" to "𞄊",
+                "f" to "𞄋", "g" to "𞄌", "h" to "𞄍",
+                "k" to "𞄏", "kh" to "𞄐", "l" to "𞄑",
+                "m" to "𞄒", "n" to "𞄓", "ny" to "𞄔",
+                "p" to "𞄕", "ph" to "𞄖", "r" to "𞄗",
+                "s" to "𞄘", "t" to "𞄙", "th" to "𞄚",
+                "v" to "𞄛", "w" to "𞄜", "z" to "𞄝",
+            ),
+        )
+
+        /**
+         * Latin → Medefaidrin (U+16E40 block).
+         * Medefaidrin is a 20th-century constructed alphabet used by
+         * the Oberi Okaime Christian community in southeast Nigeria.
+         * Created c. 1930 by Michael Ukpong + Akpan Akpan Udofia.
+         * Encoded in Unicode 11. Supplementary plane.
+         */
+        val LatinToMedefaidrin: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Medefaidrin",
+            mappings = mapOf(
+                "a" to "𖹠", "b" to "𖹡", "c" to "𖹢", "d" to "𖹣",
+                "e" to "𖹤", "f" to "𖹥", "g" to "𖹦", "h" to "𖹧",
+                "i" to "𖹨", "j" to "𖹩", "k" to "𖹪", "l" to "𖹫",
+                "m" to "𖹬", "n" to "𖹭", "o" to "𖹮", "p" to "𖹯",
+                "q" to "𖹰", "r" to "𖹱", "s" to "𖹲", "t" to "𖹳",
+                "u" to "𖹴", "v" to "𖹵", "w" to "𖹶", "x" to "𖹷",
+                "y" to "𖹸", "z" to "𖹹",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
