@@ -71,7 +71,13 @@ object GeezSeraTransliterator {
      * the table that a real Amharic word ("ሰላም" = "selam" = peace)
      * round-trips correctly.
      */
-    private val table: Map<String, String> = buildMap {
+    /**
+     * Shared SERA → Ge'ez mapping. Exposed as `internal` so dialect
+     * subclasses ([TigrinyaSeraTransliterator] etc.) can compose
+     * extension tables on top without re-deriving the radical × vowel
+     * grid.
+     */
+    internal val table: Map<String, String> = buildMap {
         // Each consonant has seven vowel forms: ä u i a e ə o.
         // Per the Unicode Ethiopic block (U+1200–U+137F), the radical
         // base is at the 1st (ä) position; subsequent forms follow.
@@ -138,5 +144,35 @@ object GeezSeraTransliterator {
         put("9", "\u1371") // ፱
     }
 
-    private val maxKeyLength: Int = table.keys.maxOfOrNull { it.length } ?: 1
+    internal val maxKeyLength: Int = table.keys.maxOfOrNull { it.length } ?: 1
+
+    /**
+     * Greedy longest-match transliteration against an arbitrary
+     * lookup [otherTable]. Used by dialect-specific subclasses to
+     * compose dialect extras over the shared Ge'ez table.
+     */
+    internal fun transliterateWith(latin: String, otherTable: Map<String, String>): String {
+        if (latin.isEmpty()) return ""
+        val maxKey = otherTable.keys.maxOfOrNull { it.length } ?: 1
+        val output = StringBuilder(latin.length)
+        var i = 0
+        while (i < latin.length) {
+            var matched = false
+            for (keyLen in maxKey downTo 1) {
+                if (i + keyLen > latin.length) continue
+                val candidate = latin.substring(i, i + keyLen)
+                otherTable[candidate]?.let {
+                    output.append(it)
+                    i += keyLen
+                    matched = true
+                }
+                if (matched) break
+            }
+            if (!matched) {
+                output.append(latin[i])
+                i++
+            }
+        }
+        return output.toString()
+    }
 }

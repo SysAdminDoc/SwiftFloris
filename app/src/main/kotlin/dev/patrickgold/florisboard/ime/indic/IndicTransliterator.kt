@@ -614,6 +614,96 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Adlam (U+1E900 block).
+         * Adlam is a West African alphabetic script created in the 1980s
+         * for the Fulani / Pulaar language. Unlike the rest of L5's
+         * Brahmic-derived tables it's a true alphabet — no vowels-as-
+         * dependent-signs concept — but the `buildIndicMappings` shape
+         * still applies (consonant + "vowel" + digit + symbolic). Native
+         * Adlam digits are in U+1E950..U+1E959 (supplementary plane).
+         */
+        val LatinToAdlam: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Adlam",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𞤢", "e" to "𞤫", "i" to "𞤭", "o" to "𞤮", "u" to "𞤵",
+                ),
+                consonants = mapOf(
+                    "b" to "𞤦", "p" to "𞤨", "t" to "𞤼", "d" to "𞤣",
+                    "k" to "𞤳", "g" to "𞤺", "f" to "𞤬", "v" to "𞤰",
+                    "s" to "𞤧", "z" to "𞤶", "h" to "𞤸",
+                    "m" to "𞤥", "n" to "𞤲", "ng" to "𞤺",
+                    "y" to "𞤴", "r" to "𞤪", "l" to "𞤤", "w" to "𞤱",
+                ),
+                digits = "𞥐𞥑𞥒𞥓𞥔𞥕𞥖𞥗𞥘𞥙",
+                anusvara = "𞥃", visarga = "𞥄",
+            ),
+        )
+
+        /**
+         * Latin → N'Ko (U+07C0 block).
+         * N'Ko is a West African alphabetic script created in 1949 for
+         * the Manding language family (Bambara / Maninka / Dyula). It
+         * runs right-to-left. The IME-side bidi handler routes runs
+         * through the existing `RtlBidiResolver` once the subtype is
+         * active. Native N'Ko digits are U+07C0..U+07C9.
+         */
+        val LatinToNKo: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "NKo",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ߊ", "e" to "ߋ", "i" to "ߌ", "o" to "ߐ", "u" to "ߎ",
+                ),
+                consonants = mapOf(
+                    "b" to "ߓ", "p" to "ߔ", "t" to "ߕ", "d" to "ߘ",
+                    "k" to "ߞ", "g" to "ߜ", "f" to "ߝ",
+                    "s" to "ߛ", "z" to "ߖ", "h" to "ߤ",
+                    "m" to "ߡ", "n" to "ߣ",
+                    "y" to "ߦ", "r" to "ߙ", "l" to "ߟ", "w" to "ߥ",
+                    "ch" to "ߗ", "j" to "ߖ",
+                ),
+                digits = "߀߁߂߃߄߅߆߇߈߉",
+                anusvara = "߽", visarga = "߽",
+            ),
+        )
+
+        /**
+         * Latin → Cherokee (U+13A0 block).
+         * Cherokee is the only indigenous-North-American script in
+         * mainstream Unicode use. It's a *syllabary* — each character
+         * represents a CV syllable, not an alphabet — so the mapping
+         * uses Romanised syllables (`ga`, `ka`, `ho`, etc.) rather than
+         * consonant+vowel marks. Falls outside `buildIndicMappings`
+         * because there's no anusvara / visarga / native digit concept;
+         * digits fall through to Western Arabic.
+         */
+        val LatinToCherokee: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Cherokee",
+            mappings = mapOf(
+                // Six-vowel set: a, e, i, o, u, v (ʌ in IPA).
+                "a" to "Ꭰ", "e" to "Ꭱ", "i" to "Ꭲ", "o" to "Ꭳ", "u" to "Ꭴ", "v" to "Ꭵ",
+                "ga" to "Ꭶ", "ka" to "Ꭷ", "ge" to "Ꭸ", "gi" to "Ꭹ", "go" to "Ꭺ",
+                "gu" to "Ꭻ", "gv" to "Ꭼ",
+                "ha" to "Ꭽ", "he" to "Ꭾ", "hi" to "Ꭿ", "ho" to "Ꮀ", "hu" to "Ꮁ", "hv" to "Ꮂ",
+                "la" to "Ꮃ", "le" to "Ꮄ", "li" to "Ꮅ", "lo" to "Ꮆ", "lu" to "Ꮇ", "lv" to "Ꮈ",
+                "ma" to "Ꮉ", "me" to "Ꮊ", "mi" to "Ꮋ", "mo" to "Ꮌ", "mu" to "Ꮍ",
+                "na" to "Ꮎ", "hna" to "Ꮏ", "nah" to "Ꮐ",
+                "ne" to "Ꮑ", "ni" to "Ꮒ", "no" to "Ꮓ", "nu" to "Ꮔ", "nv" to "Ꮕ",
+                "qua" to "Ꮖ", "que" to "Ꮗ", "qui" to "Ꮘ", "quo" to "Ꮙ", "quu" to "Ꮚ", "quv" to "Ꮛ",
+                "sa" to "Ꮜ", "se" to "Ꮝ", "si" to "Ꮞ", "so" to "Ꮟ", "su" to "Ꮠ", "sv" to "Ꮡ",
+                "da" to "Ꮣ", "ta" to "Ꮤ", "de" to "Ꮥ", "te" to "Ꮦ", "di" to "Ꮧ",
+                "ti" to "Ꮨ", "do" to "Ꮩ", "du" to "Ꮪ", "dv" to "Ꮫ",
+                "tla" to "Ꮬ", "tle" to "Ꮭ", "tli" to "Ꮮ", "tlo" to "Ꮯ", "tlu" to "Ꮰ", "tlv" to "Ꮱ",
+                "tsa" to "Ꮲ", "tse" to "Ꮳ", "tsi" to "Ꮴ", "tso" to "Ꮵ", "tsu" to "Ꮶ", "tsv" to "Ꮷ",
+                "wa" to "Ꮸ", "we" to "Ꮹ", "wi" to "Ꮺ", "wo" to "Ꮻ", "wu" to "Ꮼ", "wv" to "Ꮽ",
+                "ya" to "Ꮾ", "ye" to "Ꮿ", "yi" to "Ᏸ", "yo" to "Ᏹ", "yu" to "Ᏺ", "yv" to "Ᏻ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
@@ -652,9 +742,15 @@ class IndicScriptTable(
             val map = LinkedHashMap<String, String>(vowels.size + consonants.size + 12)
             map.putAll(vowels)
             map.putAll(consonants)
-            for ((i, char) in digits.withIndex()) {
-                if (i > 9) break
-                map[i.toString()] = char.toString()
+            // Iterate by code point, not by char, so supplementary-plane
+            // digit blocks (Adlam U+1E950..) round-trip correctly.
+            var digitIndex = 0
+            var byteIdx = 0
+            while (byteIdx < digits.length && digitIndex <= 9) {
+                val cp = digits.codePointAt(byteIdx)
+                map[digitIndex.toString()] = String(Character.toChars(cp))
+                byteIdx += Character.charCount(cp)
+                digitIndex++
             }
             map["M"] = anusvara
             map["H"] = visarga

@@ -121,6 +121,38 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("0") shouldBe "᮰"
     }
 
+    test("Adlam table maps 'b' to 𞤦 and digit 4 to 𞥔") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToAdlam)
+        xlit.transliterate("b") shouldBe "𞤦"
+        xlit.transliterate("4") shouldBe "𞥔"
+    }
+
+    test("NKo table maps 'b' to ߓ and digit 2 to ߂") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToNKo)
+        xlit.transliterate("b") shouldBe "ߓ"
+        xlit.transliterate("2") shouldBe "߂"
+    }
+
+    test("Cherokee table maps the romanised syllable 'tla' to the single Cherokee glyph Ꮬ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToCherokee)
+        xlit.transliterate("tla") shouldBe "Ꮬ"
+        xlit.transliterate("a") shouldBe "Ꭰ"
+    }
+
+    test("Cherokee 'qua' wins greedy over 'q'+rest (longest-match)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToCherokee)
+        xlit.transliterate("qua") shouldBe "Ꮖ"
+    }
+
+    test("Adlam + NKo + Cherokee tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToAdlam,
+            IndicScriptTable.LatinToNKo,
+            IndicScriptTable.LatinToCherokee,
+        )
+        tables.forEach { (it.size() > 20) shouldBe true }
+    }
+
     test("Mongolian + Javanese + Sundanese tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToMongolian,
