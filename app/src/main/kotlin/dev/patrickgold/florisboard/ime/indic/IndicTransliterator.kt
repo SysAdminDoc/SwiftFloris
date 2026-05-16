@@ -1427,6 +1427,103 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * ITRANS → Modi (U+11600 block).
+         * Modi is a Brahmic-derived script historically used for the
+         * Marathi language in western India c. 13th-20th century.
+         * Replaced by Devanagari in modern Marathi but undergoing
+         * cultural revival. Supplementary plane. Native digits
+         * U+11650..U+11659.
+         */
+        val ItransToModi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Modi",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑘀", "aa" to "𑘁", "A" to "𑘁",
+                    "i" to "𑘂", "ii" to "𑘃", "I" to "𑘃",
+                    "u" to "𑘄", "uu" to "𑘅", "U" to "𑘅",
+                    "e" to "𑘊", "ai" to "𑘋", "o" to "𑘌", "au" to "𑘍",
+                ),
+                consonants = mapOf(
+                    "k" to "𑘎", "kh" to "𑘏", "g" to "𑘐", "gh" to "𑘑",
+                    "ch" to "𑘓", "Ch" to "𑘔", "j" to "𑘕", "jh" to "𑘖",
+                    "T" to "𑘘", "Th" to "𑘙", "D" to "𑘚", "Dh" to "𑘛", "N" to "𑘜",
+                    "t" to "𑘝", "th" to "𑘞", "d" to "𑘟", "dh" to "𑘠", "n" to "𑘡",
+                    "p" to "𑘢", "ph" to "𑘣", "b" to "𑘤", "bh" to "𑘥", "m" to "𑘦",
+                    "y" to "𑘧", "r" to "𑘨", "l" to "𑘩", "v" to "𑘪",
+                    "sh" to "𑘫", "Sh" to "𑘬", "s" to "𑘭", "h" to "𑘮",
+                ),
+                digits = "𑙐𑙑𑙒𑙓𑙔𑙕𑙖𑙗𑙘𑙙",
+                anusvara = "𑘽", visarga = "𑘾",
+            ),
+        )
+
+        /**
+         * ITRANS → Sharada (U+11180 block).
+         * Sharada is a Brahmic-derived script historically used for
+         * Sanskrit + Kashmiri in northern India c. 8th-20th century.
+         * Replaced by Devanagari + Perso-Arabic for modern Kashmiri
+         * but retained in liturgical contexts. Supplementary plane.
+         * Native digits U+111D0..U+111D9.
+         */
+        val ItransToSharada: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Sharada",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑆃", "aa" to "𑆄", "A" to "𑆄",
+                    "i" to "𑆅", "ii" to "𑆆", "I" to "𑆆",
+                    "u" to "𑆇", "uu" to "𑆈", "U" to "𑆈",
+                    "e" to "𑆍", "ai" to "𑆎", "o" to "𑆏", "au" to "𑆐",
+                ),
+                consonants = mapOf(
+                    "k" to "𑆑", "kh" to "𑆒", "g" to "𑆓", "gh" to "𑆔",
+                    "ch" to "𑆖", "Ch" to "𑆗", "j" to "𑆘", "jh" to "𑆙",
+                    "T" to "𑆛", "Th" to "𑆜", "D" to "𑆝", "Dh" to "𑆞", "N" to "𑆟",
+                    "t" to "𑆠", "th" to "𑆡", "d" to "𑆢", "dh" to "𑆣", "n" to "𑆤",
+                    "p" to "𑆥", "ph" to "𑆦", "b" to "𑆧", "bh" to "𑆨", "m" to "𑆩",
+                    "y" to "𑆪", "r" to "𑆫", "l" to "𑆬", "v" to "𑆮",
+                    "sh" to "𑆯", "Sh" to "𑆰", "s" to "𑆱", "h" to "𑆲",
+                ),
+                digits = "𑇐𑇑𑇒𑇓𑇔𑇕𑇖𑇗𑇘𑇙",
+                anusvara = "𑆀", visarga = "𑆂",
+            ),
+        )
+
+        /**
+         * ITRANS → Takri (U+11680 block).
+         * Takri is a Brahmic-derived script historically used for
+         * Dogri / Chambeali / Kishtwari / Bilaspuri in the Punjab +
+         * Himachal Pradesh + Jammu hills c. 16th-20th century.
+         * Replaced by Devanagari + Perso-Arabic in modern usage but
+         * undergoing limited revival.  Supplementary plane.  Native
+         * digits U+116C0..U+116C9.
+         */
+        val ItransToTakri: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Takri",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑚀", "aa" to "𑚁", "A" to "𑚁",
+                    "i" to "𑚂", "ii" to "𑚃", "I" to "𑚃",
+                    "u" to "𑚄", "uu" to "𑚅", "U" to "𑚅",
+                    "e" to "𑚆", "ai" to "𑚇", "o" to "𑚈", "au" to "𑚉",
+                ),
+                consonants = mapOf(
+                    "k" to "𑚊", "kh" to "𑚋", "g" to "𑚌", "gh" to "𑚍",
+                    "ch" to "𑚏", "Ch" to "𑚐", "j" to "𑚑", "jh" to "𑚒",
+                    "T" to "𑚔", "Th" to "𑚕", "D" to "𑚖", "Dh" to "𑚗", "N" to "𑚘",
+                    "t" to "𑚙", "th" to "𑚚", "d" to "𑚛", "dh" to "𑚜", "n" to "𑚝",
+                    "p" to "𑚞", "ph" to "𑚟", "b" to "𑚠", "bh" to "𑚡", "m" to "𑚢",
+                    "y" to "𑚣", "r" to "𑚤", "l" to "𑚥", "v" to "𑚦",
+                    "sh" to "𑚧", "Sh" to "𑚨", "s" to "𑚩", "h" to "𑚪",
+                ),
+                digits = "𑛀𑛁𑛂𑛃𑛄𑛅𑛆𑛇𑛈𑛉",
+                anusvara = "𑚭", visarga = "𑚳",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
