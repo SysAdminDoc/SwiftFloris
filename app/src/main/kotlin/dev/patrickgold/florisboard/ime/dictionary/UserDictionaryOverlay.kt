@@ -173,11 +173,11 @@ class UserDictionaryOverlay private constructor() {
          * SwiftKey-style "instant remember" — a word the user typed even
          * once lands near the top of the frequency scale so it surfaces
          * in the suggestion strip the very next time its prefix is
-         * typed.  240 / 255 ≈ 0.94 weight; after 2 re-uses we hit cap
-         * and the candidate becomes auto-commit eligible (confidence
-         * crosses `AutoCommitMinFrequency = 0.78`).
+         * typed (245 / 255 ≈ 0.96 weight). The **second** commit hits
+         * the cap and the word is fully remembered (no further ranking
+         * change from reuse).
          */
-        const val INITIAL_FREQUENCY: Int = 240
+        const val INITIAL_FREQUENCY: Int = 245
         const val INCREMENT: Int = 5
         const val MAX_FREQUENCY: Int = 250
         const val MIN_LENGTH: Int = 3

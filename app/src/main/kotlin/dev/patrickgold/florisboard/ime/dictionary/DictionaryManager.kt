@@ -42,13 +42,12 @@ private const val CONTAINS_MATCH_PRIORITY = 2
  *
  * SwiftKey-style "instant remember" — set high enough that a single
  * commit makes the word the top suggestion for its prefix and removes
- * the spell-check underline. 240 / 255 ≈ 0.94 weight, just below the
- * AutoCommit floor; two re-uses cross the threshold so the word
- * becomes the auto-commit default. Kept in sync with
- * [UserDictionaryOverlay.INITIAL_FREQUENCY] so disk + in-memory
- * agree on the per-word weight.
+ * the spell-check underline. 245 / 255 ≈ 0.96 weight; the second
+ * commit hits the cap and the word is fully remembered. Kept in
+ * sync with [UserDictionaryOverlay.INITIAL_FREQUENCY] so disk +
+ * in-memory agree on the per-word weight.
  */
-private const val LEARN_INITIAL_FREQUENCY = 240
+private const val LEARN_INITIAL_FREQUENCY = 245
 /** Frequency increment applied each time an existing learned word is reinforced. */
 private const val LEARN_INCREMENT = 5
 /** Cap learned-word frequency at the top tier so a much-typed word ties with
