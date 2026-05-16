@@ -22,6 +22,9 @@ out/
 build/
 release/
 
+# Kotlin compiler daemon scratch
+.kotlin/
+
 # Local configuration file (sdk path, etc)
 local.properties
 

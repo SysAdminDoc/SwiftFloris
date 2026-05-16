@@ -20,28 +20,37 @@ import android.content.Context
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import org.florisboard.lib.kotlin.io.subFile
 import org.florisboard.lib.snygg.value.SnyggAssetResolver
+import java.io.File
 import java.net.URI
 
 class FlorisAssetResolver(val context: Context, val themeInfo: ThemeManager.ThemeInfo) : SnyggAssetResolver {
     override fun resolveAbsolutePath(uri: String) = runCatching {
-        val uri = URI.create(uri)
-        require(uri.scheme == "flex")
-        require(uri.authority.isNullOrEmpty())
         val baseDir = checkNotNull(themeInfo.loadedDir) { "Loaded directory was null" }
-        val basePath = baseDir.canonicalPath
-        val canonicalFile = baseDir.subFile(uri.path).canonicalFile
-        val canonicalPath = canonicalFile.path
-        check(canonicalPath.startsWith(basePath)) {
-            "Calculated path '$canonicalPath' does not start with base path '$basePath'"
-        }
-        check(canonicalFile.exists()) {
-            "Calculated path '$canonicalPath' does not exist"
-        }
-        check(canonicalFile.isFile()) {
-            "Calculated path '$canonicalPath' is not a file"
-        }
-        canonicalPath
+        resolveFlexAssetPath(baseDir, uri).getOrThrow()
     }.onFailure { exception ->
         flogError { "FlorisAssetResolver failed to resolve URI '$uri'\n  error: ${exception.message}\n  with:  $themeInfo" }
     }
+}
+
+internal fun resolveFlexAssetPath(baseDir: File, rawUri: String) = runCatching {
+    val uri = URI.create(rawUri)
+    require(uri.scheme == "flex") { "Expected flex URI scheme" }
+    require(uri.authority.isNullOrEmpty()) { "Expected flex URI without authority" }
+    val relativePath = uri.path.orEmpty().removePrefix("/")
+    require(relativePath.isNotBlank()) { "Expected non-empty flex URI path" }
+
+    val canonicalBase = baseDir.canonicalFile
+    val canonicalFile = canonicalBase.subFile(relativePath).canonicalFile
+    val basePath = canonicalBase.toPath()
+    val filePath = canonicalFile.toPath()
+    check(filePath.startsWith(basePath)) {
+        "Calculated path '$canonicalFile' does not stay within base path '$canonicalBase'"
+    }
+    check(canonicalFile.exists()) {
+        "Calculated path '$canonicalFile' does not exist"
+    }
+    check(canonicalFile.isFile()) {
+        "Calculated path '$canonicalFile' is not a file"
+    }
+    canonicalFile.path
 }

@@ -80,6 +80,21 @@ class CacheManager(context: Context) {
             return sanitized ?: fallbackName
         }
 
+        internal fun uniqueImportFileName(fileName: String, usedNames: Set<String>, dir: FsDir): String {
+            fun isAvailable(name: String): Boolean {
+                return name !in usedNames && !dir.subFile(name).exists()
+            }
+            if (isAvailable(fileName)) return fileName
+            val dotIndex = fileName.lastIndexOf('.').takeIf { it > 0 && it < fileName.lastIndex }
+            val stem = dotIndex?.let { fileName.substring(0, it) } ?: fileName
+            val ext = dotIndex?.let { fileName.substring(it) } ?: ""
+            for (n in 2..999) {
+                val candidate = "$stem-$n$ext"
+                if (isAvailable(candidate)) return candidate
+            }
+            return "$stem-${UUID.randomUUID()}$ext"
+        }
+
         private fun Cursor.getStringOrNull(columnName: String): String? {
             val index = getColumnIndex(columnName)
             return if (index >= 0 && !isNull(index)) getString(index) else null
@@ -105,6 +120,7 @@ class CacheManager(context: Context) {
         val contentResolver = appContext.contentResolver ?: error("Content resolver is null.")
         val workspace = ImporterWorkspace(uuid = UUID.randomUUID().toString()).also { it.mkdirs() }
         try {
+            val usedFileNames = mutableSetOf<String>()
             workspace.inputFileInfos = buildList {
                 for ((index, uri) in uriList.withIndex()) {
                     val fallbackFileName = "import-${index + 1}"
@@ -115,7 +131,12 @@ class CacheManager(context: Context) {
                             null to null
                         }
                     } ?: (null to null)
-                    val fileName = sanitizeImportFileName(displayName ?: uri.lastPathSegment, fallbackFileName)
+                    val fileName = uniqueImportFileName(
+                        fileName = sanitizeImportFileName(displayName ?: uri.lastPathSegment, fallbackFileName),
+                        usedNames = usedFileNames,
+                        dir = workspace.inputDir,
+                    )
+                    usedFileNames += fileName
                     val file = workspace.inputDir.subFile(fileName)
                     contentResolver.readToFile(uri, file)
                     val ext = runCatching {

@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.lib.cache
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.nio.file.Files
 
 class CacheManagerTest : FunSpec({
     test("sanitizeImportFileName strips path traversal and unsafe characters") {
@@ -28,5 +29,20 @@ class CacheManagerTest : FunSpec({
     test("sanitizeImportFileName falls back for blank or unusable names") {
         CacheManager.sanitizeImportFileName("...", "fallback.flex") shouldBe "fallback.flex"
         CacheManager.sanitizeImportFileName(null, "fallback.flex") shouldBe "fallback.flex"
+    }
+
+    test("uniqueImportFileName preserves multiple same-named imports instead of overwriting") {
+        val dir = Files.createTempDirectory("cache-imports").toFile()
+        try {
+            dir.resolve("theme-2.flex").writeText("existing")
+
+            CacheManager.uniqueImportFileName(
+                fileName = "theme.flex",
+                usedNames = setOf("theme.flex"),
+                dir = dir,
+            ) shouldBe "theme-3.flex"
+        } finally {
+            dir.deleteRecursively()
+        }
     }
 })

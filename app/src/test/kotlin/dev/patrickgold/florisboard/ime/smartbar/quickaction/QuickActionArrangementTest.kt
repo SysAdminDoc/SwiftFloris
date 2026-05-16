@@ -165,4 +165,19 @@ class QuickActionArrangementTest : FunSpec({
             beforeDistinct.distinct() shouldBe afterDistinct
         }
     }
+
+    test("serializer falls back to the default arrangement for corrupted preference JSON") {
+        QuickActionArrangement.Serializer.deserialize("{not-json") shouldBe QuickActionArrangement.Default
+    }
+
+    test("serializer removes duplicate actions when reading persisted preferences") {
+        val arrangement = QuickActionArrangement(
+            stickyAction = QuickAction.InsertKey(TextKeyData.SETTINGS),
+            dynamicActions = listOf(QuickAction.InsertKey(TextKeyData.SETTINGS)),
+            hiddenActions = listOf(QuickAction.InsertKey(TextKeyData.CLIPBOARD_COPY)),
+        )
+        val encoded = QuickActionJsonConfig.encodeToString(arrangement)
+
+        QuickActionArrangement.Serializer.deserialize(encoded) shouldBe arrangement.distinct()
+    }
 })

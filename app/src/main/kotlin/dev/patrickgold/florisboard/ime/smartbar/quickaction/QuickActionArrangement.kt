@@ -98,11 +98,13 @@ data class QuickActionArrangement(
 
     object Serializer : PreferenceSerializer<QuickActionArrangement> {
         override fun serialize(value: QuickActionArrangement): String {
-            return QuickActionJsonConfig.encodeToString(value)
+            return QuickActionJsonConfig.encodeToString(value.distinct())
         }
 
         override fun deserialize(value: String): QuickActionArrangement {
-            return QuickActionJsonConfig.decodeFromString(value)
+            return runCatching {
+                QuickActionJsonConfig.decodeFromString<QuickActionArrangement>(value).distinct()
+            }.getOrDefault(Default)
         }
     }
 }

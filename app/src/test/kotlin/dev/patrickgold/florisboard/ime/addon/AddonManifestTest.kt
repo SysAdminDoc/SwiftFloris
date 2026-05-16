@@ -131,4 +131,15 @@ class AddonManifestTest : FunSpec({
             "android.permission.CHANGE_WIFI_STATE",
         )
     }
+
+    test("AddonEnumerator permission screening treats a null requestedPermissions array as safe") {
+        AddonEnumerator.firstRejectedNetworkPermission(
+            requestedPermissions = null,
+            networkPermissionsRejected = AddonEnumerator.DefaultNetworkPermissions,
+        ) shouldBe null
+        AddonEnumerator.firstRejectedNetworkPermission(
+            requestedPermissions = arrayOf("android.permission.INTERNET"),
+            networkPermissionsRejected = AddonEnumerator.DefaultNetworkPermissions,
+        ) shouldBe "android.permission.INTERNET"
+    }
 })

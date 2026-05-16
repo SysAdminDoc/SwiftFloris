@@ -48,8 +48,6 @@ inline fun ContentResolver.read(uri: Uri, maxSize: Long = Long.MAX_VALUE, block:
         callsInPlace(block, InvocationKind.EXACTLY_ONCE)
     }
     require(maxSize > 0) { "Argument `maxSize` must be greater than 0" }
-    val inputStream = this.openInputStream(uri)
-        ?: error("Cannot open input stream for given uri '$uri'")
     val assetFileDescriptor = this.openAssetFileDescriptor(uri, "r")
         ?: error("Cannot open asset file descriptor for given uri '$uri'")
     assetFileDescriptor.use {
@@ -60,13 +58,15 @@ inline fun ContentResolver.read(uri: Uri, maxSize: Long = Long.MAX_VALUE, block:
             }
         }
     }
+    val inputStream = this.openInputStream(uri)
+        ?: error("Cannot open input stream for given uri '$uri'")
     inputStream.use(block)
 }
 
-inline fun ContentResolver.readToFile(uri: Uri, file: FsFile) {
-    this.read(uri) { inStream ->
+inline fun ContentResolver.readToFile(uri: Uri, file: FsFile, maxSize: Long = Long.MAX_VALUE) {
+    this.read(uri, maxSize) { inStream ->
         file.outputStream().use { outStream ->
-            inStream.copyTo(outStream)
+            inStream.copyToLimited(outStream, maxSize)
         }
     }
 }
@@ -117,5 +117,25 @@ inline fun ContentResolver.writeText(uri: Uri, block: (BufferedWriter) -> Unit) 
 inline fun ContentResolver.writeAllText(uri: Uri, text: String) {
     this.write(uri) { outStream ->
         outStream.bufferedWriter().use { it.write(text) }
+    }
+}
+
+fun InputStream.copyToLimited(out: OutputStream, maxBytes: Long): Long {
+    require(maxBytes > 0) { "Argument `maxBytes` must be greater than 0" }
+    if (maxBytes == Long.MAX_VALUE) {
+        return copyTo(out)
+    }
+    var copied = 0L
+    val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+    while (true) {
+        val read = read(buffer)
+        if (read < 0) {
+            return copied
+        }
+        copied += read
+        if (copied > maxBytes) {
+            error("Input stream exceeds maximum size of $maxBytes bytes!")
+        }
+        out.write(buffer, 0, read)
     }
 }

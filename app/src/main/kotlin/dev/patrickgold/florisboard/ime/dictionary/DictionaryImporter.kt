@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.dictionary
 
+import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.util.zip.ZipInputStream
 import kotlinx.serialization.json.Json
@@ -68,9 +69,9 @@ class DictionaryImporter {
         val sniffed = sniff.copyOf(read.coerceAtLeast(0))
         return when (detectFormat(sniffed)) {
             DictionaryImportFormat.ZIP -> parseZip(buffered)
-            DictionaryImportFormat.XML -> parseGboardXml(buffered.bufferedReader().readText())
-            DictionaryImportFormat.CSV -> parseCsv(buffered.bufferedReader().readText())
-            DictionaryImportFormat.JSON -> parseSwiftKeyJson(buffered.bufferedReader().readText())
+            DictionaryImportFormat.XML -> parseGboardXml(buffered.readUtf8TextLimited("XML dictionary import"))
+            DictionaryImportFormat.CSV -> parseCsv(buffered.readUtf8TextLimited("CSV dictionary import"))
+            DictionaryImportFormat.JSON -> parseSwiftKeyJson(buffered.readUtf8TextLimited("SwiftKey JSON dictionary import"))
             DictionaryImportFormat.UNKNOWN -> throw DictionaryImportException(
                 "Unrecognised dictionary format. Supported: Gboard PersonalDictionary.zip, " +
                     "FlorisBoard/HeliBoard .flbackup, SwiftKey swiftkey-cloud.json, " +
@@ -120,20 +121,25 @@ class DictionaryImporter {
     internal fun parseZip(stream: InputStream): List<PersonalDictionaryEntry> {
         var found = mutableListOf<PersonalDictionaryEntry>()
         ZipInputStream(stream).use { zis ->
+            var entryCount = 0
             while (true) {
                 val entry = zis.nextEntry ?: break
+                entryCount++
+                if (entryCount > MAX_ZIP_ENTRIES) {
+                    throw DictionaryImportException(
+                        "Zip archive contains too many files; expected a small dictionary export.",
+                    )
+                }
                 val name = entry.name.lowercase()
                 // Skip directories and Mac-style hidden files.
                 if (entry.isDirectory) continue
                 if (name.startsWith("__macosx/")) continue
                 when {
                     name.endsWith(".xml") -> {
-                        val bytes = zis.readBytes()
-                        found += parseGboardXml(String(bytes, Charsets.UTF_8))
+                        found += parseGboardXml(zis.readUtf8TextLimited("Zip entry ${entry.name}"))
                     }
                     name.endsWith(".csv") -> {
-                        val bytes = zis.readBytes()
-                        found += parseCsv(String(bytes, Charsets.UTF_8))
+                        found += parseCsv(zis.readUtf8TextLimited("Zip entry ${entry.name}"))
                     }
                     name.endsWith(".json") -> {
                         // Two cases:
@@ -144,8 +150,7 @@ class DictionaryImporter {
                         //      parser tolerates that shape by returning an
                         //      empty list (no `predictions` / `shortcuts` /
                         //      `words` keys present).
-                        val bytes = zis.readBytes()
-                        found += parseSwiftKeyJson(String(bytes, Charsets.UTF_8))
+                        found += parseSwiftKeyJson(zis.readUtf8TextLimited("Zip entry ${entry.name}"))
                     }
                     name.endsWith(".db") || name.endsWith(".sqlite") -> {
                         // FlorisBoard backup with raw SQLite snapshot: not
@@ -163,7 +168,7 @@ class DictionaryImporter {
         }
         if (found.isEmpty()) {
             throw DictionaryImportException(
-                "Zip archive contains no recognisable dictionary file (looking for *.xml or *.csv).",
+                "Zip archive contains no recognisable dictionary file (looking for *.xml, *.csv, or *.json).",
             )
         }
         return found
@@ -189,6 +194,7 @@ class DictionaryImporter {
                 shortcut = shortcut,
                 locale = locale,
             )
+            checkEntryLimit(result.size)
         }
         return result
     }
@@ -205,7 +211,7 @@ class DictionaryImporter {
         val result = mutableListOf<PersonalDictionaryEntry>()
         val startIndex = if (rows[0].startsWith("word", ignoreCase = true)) 1 else 0
         for (i in startIndex..rows.lastIndex) {
-            val cells = rows[i].split(",").map { it.trim() }
+            val cells = splitCsvLine(rows[i]).map { it.trim() }
             if (cells.size < 2) continue
             val word = cells[0].takeIf { it.isNotBlank() } ?: continue
             val frequency = cells[1].toIntOrNull()?.coerceIn(0, 255) ?: 128
@@ -217,6 +223,7 @@ class DictionaryImporter {
                 shortcut = shortcut,
                 locale = locale,
             )
+            checkEntryLimit(result.size)
         }
         return result
     }
@@ -249,15 +256,22 @@ class DictionaryImporter {
     internal fun parseSwiftKeyJson(json: String): List<PersonalDictionaryEntry> {
         val parsed = runCatching { Json.parseToJsonElement(json) }.getOrNull() ?: return emptyList()
         val out = mutableListOf<PersonalDictionaryEntry>()
-        collectSwiftKeyEntries(parsed, out)
+        collectSwiftKeyEntries(parsed, out, depth = 0)
         return out
     }
 
-    private fun collectSwiftKeyEntries(element: JsonElement, sink: MutableList<PersonalDictionaryEntry>) {
+    private fun collectSwiftKeyEntries(
+        element: JsonElement,
+        sink: MutableList<PersonalDictionaryEntry>,
+        depth: Int,
+    ) {
+        if (depth > MAX_JSON_DEPTH) {
+            throw DictionaryImportException("SwiftKey JSON dictionary is nested too deeply to import safely.")
+        }
         when (element) {
             is JsonArray -> {
                 for (child in element) {
-                    collectSwiftKeyEntries(child, sink)
+                    collectSwiftKeyEntries(child, sink, depth + 1)
                 }
             }
             is JsonObject -> {
@@ -269,6 +283,7 @@ class DictionaryImporter {
                         shortcut = swiftKeyShortcutField(element),
                         locale = swiftKeyLocaleField(element),
                     )
+                    checkEntryLimit(sink.size)
                     return
                 }
                 // Not an entry itself — recurse into nested arrays and objects so
@@ -276,7 +291,7 @@ class DictionaryImporter {
                 // (`user_data` / `predictions` / `shortcuts` / `words` / ...).
                 for ((_, value) in element) {
                     if (value is JsonArray || value is JsonObject) {
-                        collectSwiftKeyEntries(value, sink)
+                        collectSwiftKeyEntries(value, sink, depth + 1)
                     }
                 }
             }
@@ -312,6 +327,59 @@ class DictionaryImporter {
             return s
         }
         return null
+    }
+
+    private fun splitCsvLine(line: String): List<String> {
+        val cells = mutableListOf<String>()
+        val current = StringBuilder()
+        var inQuotes = false
+        var i = 0
+        while (i < line.length) {
+            val c = line[i]
+            when {
+                c == '"' && inQuotes && i + 1 < line.length && line[i + 1] == '"' -> {
+                    current.append('"')
+                    i++
+                }
+                c == '"' -> {
+                    inQuotes = !inQuotes
+                }
+                c == ',' && !inQuotes -> {
+                    cells += current.toString()
+                    current.clear()
+                }
+                else -> current.append(c)
+            }
+            i++
+        }
+        cells += current.toString()
+        return cells
+    }
+
+    private fun InputStream.readUtf8TextLimited(label: String): String {
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var totalBytes = 0L
+        while (true) {
+            val read = read(buffer)
+            if (read < 0) break
+            totalBytes += read
+            if (totalBytes > MAX_IMPORT_FILE_BYTES) {
+                throw DictionaryImportException(
+                    "$label exceeds the ${MAX_IMPORT_FILE_BYTES / (1024 * 1024)} MiB safety limit.",
+                )
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toString(Charsets.UTF_8.name())
+    }
+
+    private fun checkEntryLimit(size: Int) {
+        if (size > MAX_IMPORTED_ENTRIES) {
+            throw DictionaryImportException(
+                "Dictionary import contains more than $MAX_IMPORTED_ENTRIES entries; split the file and retry.",
+            )
+        }
     }
 
     private fun parseAttributes(raw: String): Map<String, String> {
@@ -355,6 +423,10 @@ class DictionaryImporter {
 
     companion object {
         private const val MAX_SNIFF_BYTES = 1024
+        private const val MAX_IMPORT_FILE_BYTES = 16L * 1024L * 1024L
+        private const val MAX_IMPORTED_ENTRIES = 50_000
+        private const val MAX_JSON_DEPTH = 64
+        private const val MAX_ZIP_ENTRIES = 256
         private val ENTRY_REGEX = Regex(
             pattern = "<entry\\s+([^/>]*)/>",
             options = setOf(RegexOption.IGNORE_CASE),
