@@ -38,7 +38,7 @@ package dev.patrickgold.florisboard.ime.nlp.kenlm
  *  - `UNKNOWN` → throws [IllegalArgumentException] so the caller can
  *    safely default to the existing bigram chain.
  */
-sealed interface KenLmScorer {
+interface KenLmScorer {
     val modelType: KenLmModelType
     val maxOrder: Int
     fun score(history: List<String>, tail: String): Float

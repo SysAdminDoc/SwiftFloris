@@ -180,6 +180,33 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("dz") shouldBe "𐍗"
     }
 
+    test("Phoenician table maps 'a' to 𐤀 and 'sh' to 𐤔 (supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToPhoenician)
+        xlit.transliterate("a") shouldBe "𐤀"
+        xlit.transliterate("sh") shouldBe "𐤔"
+    }
+
+    test("Imperial Aramaic table maps 'a' to 𐡀 and 'sh' to 𐡔") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToImperialAramaic)
+        xlit.transliterate("a") shouldBe "𐡀"
+        xlit.transliterate("sh") shouldBe "𐡔"
+    }
+
+    test("Avestan table maps 'a' to 𐬀 and aspirated 'kh' to 𐬑") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToAvestan)
+        xlit.transliterate("a") shouldBe "𐬀"
+        xlit.transliterate("kh") shouldBe "𐬑"
+    }
+
+    test("Phoenician + Imperial Aramaic + Avestan tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToPhoenician,
+            IndicScriptTable.LatinToImperialAramaic,
+            IndicScriptTable.LatinToAvestan,
+        )
+        tables.forEach { (it.size() > 18) shouldBe true }
+    }
+
     test("Samaritan + Mandaic + Old Permic tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToSamaritan,
