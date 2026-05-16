@@ -36,6 +36,8 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.florisboard.subtypeManager
+import org.florisboard.lib.android.AndroidKeyguardManager
+import org.florisboard.lib.android.systemServiceOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -899,6 +901,7 @@ class NlpManager(context: Context) {
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
         private var lastClipboardItemId: Long = -1
+        private val keyguardManager = context.systemServiceOrNull(AndroidKeyguardManager::class)
 
         override val providerId = "org.florisboard.nlp.providers.clipboard"
 
@@ -919,6 +922,18 @@ class NlpManager(context: Context) {
         ): List<SuggestionCandidate> {
             // Check if enabled
             if (!prefs.clipboard.suggestionEnabled.get()) return emptyList()
+
+            // Suppress on locked screen. Matches the existing UI-side gate in `ClipboardInputLayout` so a recently
+            // copied 2FA code / OTP / password / address never surfaces in the smartbar above the keyboard while the
+            // device is behind the lock screen. See `ClipboardSuggestionLockGate`.
+            val keyguard = keyguardManager
+            if (keyguard != null && ClipboardSuggestionLockGate.shouldSuppress(
+                    isDeviceLocked = keyguard.isDeviceLocked,
+                    isKeyguardLocked = keyguard.isKeyguardLocked,
+                )
+            ) {
+                return emptyList()
+            }
 
             val currentItem = validateClipboardItem(clipboardManager.primaryClip, lastClipboardItemId, content.text)
                 ?: return emptyList()
