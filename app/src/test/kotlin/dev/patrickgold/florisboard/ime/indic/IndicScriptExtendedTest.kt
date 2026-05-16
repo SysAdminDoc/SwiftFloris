@@ -368,6 +368,32 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("k") shouldBe "𑈊"
     }
 
+    test("Multani table maps 'k' to 𑊅") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToMultani)
+        xlit.transliterate("k") shouldBe "𑊅"
+    }
+
+    test("Masaram Gondi table maps 'k' to 𑴌 and digit 5 to 𑵕") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToMasaramGondi)
+        xlit.transliterate("k") shouldBe "𑴌"
+        xlit.transliterate("5") shouldBe "𑵕"
+    }
+
+    test("Gunjala Gondi table maps 'k' to 𑵲 and digit 9 to 𑶩") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToGunjalaGondi)
+        xlit.transliterate("k") shouldBe "𑵲"
+        xlit.transliterate("9") shouldBe "𑶩"
+    }
+
+    test("Multani + Masaram Gondi + Gunjala Gondi tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.ItransToMultani,
+            IndicScriptTable.LatinToMasaramGondi,
+            IndicScriptTable.LatinToGunjalaGondi,
+        )
+        tables.forEach { (it.size() > 18) shouldBe true }
+    }
+
     test("Kaithi + Mahajani + Khojki tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.ItransToKaithi,
