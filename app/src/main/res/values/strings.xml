@@ -706,6 +706,8 @@
     <string name="pref__keyboard__space_bar_switches_to_characters__summary" comment="Preference summary">Automatically switches back to characters when in symbols or numeric</string>
     <string name="pref__keyboard__auto_return_after_apostrophe__label" comment="Preference title">Return to letters after apostrophe</string>
     <string name="pref__keyboard__auto_return_after_apostrophe__summary" comment="Preference summary">After tapping the apostrophe in the symbols panel, automatically switch back to the letter keyboard so contractions finish without a manual mode change</string>
+    <string name="pref__keyboard__quote_auto_close_enabled__label" comment="Preference title">Auto-close quotes</string>
+    <string name="pref__keyboard__quote_auto_close_enabled__summary" comment="Preference summary">After typing an opening quote (", \', «, „, “, ‘, 「, 『), automatically insert the matching closing quote and place the cursor between them. Suppressed in password, email, and URL fields, and skipped for apostrophes and foot/inch shorthand</string>
     <string name="pref__keyboard__incognito_indicator__label" comment="Preference title">Incognito indicator</string>
 
     <!-- Smartbar strings -->
