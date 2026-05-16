@@ -240,6 +240,18 @@ class DictionaryManager private constructor(context: Context) {
      * Safe to call from any thread; the heavy DAO scan is dispatched onto
      * the IO scope and the function returns immediately.
      */
+    /**
+     * Drop the in-memory overlay for [locale] and re-hydrate from the
+     * current DAO snapshot. Called by Settings → User Dictionary after
+     * a manual insert / update / delete so the IME's suggest path picks
+     * up the change without waiting for an organic learn-cycle to
+     * refresh the overlay. Idempotent + async.
+     */
+    fun rebuildOverlay(locale: FlorisLocale) {
+        UserDictionaryOverlay.get().clearLocale(locale)
+        hydrateOverlay(locale)
+    }
+
     fun hydrateOverlay(locale: FlorisLocale) {
         if (!prefs.dictionary.enableFlorisUserDictionary.get()) return
         val overlay = UserDictionaryOverlay.get()
