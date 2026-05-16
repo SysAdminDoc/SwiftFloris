@@ -198,6 +198,32 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("kh") shouldBe "𐬑"
     }
 
+    test("Carian table maps 'a' to 𐊠 (supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToCarian)
+        xlit.transliterate("a") shouldBe "𐊠"
+    }
+
+    test("Lycian table maps 'a' to 𐊀 and aspirated 'th' to 𐊈") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToLycian)
+        xlit.transliterate("a") shouldBe "𐊀"
+        xlit.transliterate("th") shouldBe "𐊈"
+    }
+
+    test("Lydian table maps 'a' to 𐤠 and 'ng' digraph to 𐤵 (greedy match)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToLydian)
+        xlit.transliterate("a") shouldBe "𐤠"
+        xlit.transliterate("ng") shouldBe "𐤵"
+    }
+
+    test("Carian + Lycian + Lydian tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToCarian,
+            IndicScriptTable.LatinToLycian,
+            IndicScriptTable.LatinToLydian,
+        )
+        tables.forEach { (it.size() > 18) shouldBe true }
+    }
+
     test("Phoenician + Imperial Aramaic + Avestan tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToPhoenician,

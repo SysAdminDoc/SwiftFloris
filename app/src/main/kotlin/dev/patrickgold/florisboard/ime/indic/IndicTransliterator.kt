@@ -902,6 +902,70 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Carian (U+102A0 block).
+         * Carian is an Indo-European Anatolian language script used
+         * in southwest Asia Minor c. 7th–3rd century BCE. RTL.
+         * Supplementary plane. 45-letter alphabet with some letters
+         * borrowed from Greek + some original.
+         */
+        val LatinToCarian: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Carian",
+            mappings = mapOf(
+                "a" to "𐊠", "b" to "𐊨", "g" to "𐊼", "d" to "𐊅",
+                "e" to "𐊢", "v" to "𐊵", "z" to "𐋄",
+                "i" to "𐊹", "k" to "𐊨", "l" to "𐊣",
+                "m" to "𐊪", "n" to "𐊵", "o" to "𐊫",
+                "p" to "𐊨", "q" to "𐊴", "r" to "𐊥",
+                "s" to "𐊰", "t" to "𐊭", "u" to "𐊲",
+                "y" to "𐊨", "w" to "𐊿",
+            ),
+        )
+
+        /**
+         * Latin → Lycian (U+10280 block).
+         * Lycian is an Anatolian language script used in southwest
+         * Asia Minor c. 5th–4th century BCE, predominantly carved on
+         * stone tomb inscriptions. RTL. Supplementary plane.
+         */
+        val LatinToLycian: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Lycian",
+            mappings = mapOf(
+                "a" to "𐊀", "b" to "𐊁", "g" to "𐊂", "d" to "𐊃",
+                "e" to "𐊄", "v" to "𐊅", "z" to "𐊆",
+                "h" to "𐊇", "th" to "𐊈", "i" to "𐊉",
+                "j" to "𐊊", "k" to "𐊋", "l" to "𐊌",
+                "m" to "𐊍", "n" to "𐊎", "o" to "𐊏",
+                "p" to "𐊐", "kh" to "𐊑", "r" to "𐊒",
+                "s" to "𐊓", "t" to "𐊔", "u" to "𐊕",
+                "f" to "𐊖", "x" to "𐊗", "q" to "𐊘",
+            ),
+        )
+
+        /**
+         * Latin → Lydian (U+10920 block).
+         * Lydian is the Anatolian language script used at Sardis
+         * c. 7th–3rd century BCE, often written boustrophedon
+         * (alternating direction line-by-line). RTL by default.
+         * Supplementary plane.
+         */
+        val LatinToLydian: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Lydian",
+            mappings = mapOf(
+                "a" to "𐤠", "b" to "𐤡", "g" to "𐤢", "d" to "𐤣",
+                "e" to "𐤤", "v" to "𐤥", "i" to "𐤦",
+                "y" to "𐤧", "k" to "𐤨", "l" to "𐤩",
+                "m" to "𐤪", "n" to "𐤫", "o" to "𐤬",
+                "r" to "𐤭", "s" to "𐤮", "t" to "𐤯",
+                "u" to "𐤰", "f" to "𐤱", "q" to "𐤲",
+                "S" to "𐤳", "T" to "𐤴", "ng" to "𐤵",
+                "c" to "𐤶", "p" to "𐤷",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
