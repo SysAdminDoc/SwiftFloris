@@ -704,6 +704,81 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Coptic (U+2C80 block).
+         * Coptic is the liturgical script of the Coptic Orthodox Church
+         * and a true alphabet (uppercase + lowercase letter pairs). The
+         * IME-side uses lowercase forms by default. No native digit
+         * inventory — Coptic uses Greek-letter numerals at the
+         * application layer; we leave Western Arabic digits as the
+         * fallback for typing speed.
+         */
+        val LatinToCoptic: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Coptic",
+            mappings = mapOf(
+                "a" to "ⲁ", "b" to "ⲃ", "g" to "ⲅ", "d" to "ⲇ",
+                "e" to "ⲉ", "v" to "ⲋ", "z" to "ⲍ",
+                "ee" to "ⲏ", "th" to "ⲑ", "i" to "ⲓ",
+                "k" to "ⲕ", "l" to "ⲗ", "m" to "ⲙ", "n" to "ⲛ",
+                "ks" to "ⳉ", "o" to "ⲟ", "p" to "ⲡ", "r" to "ⲣ",
+                "s" to "ⲥ", "t" to "ⲧ", "u" to "ⲩ", "f" to "ⲫ",
+                "kh" to "ⲭ", "ps" to "ⲯ", "oo" to "ⲱ",
+                // Coptic-specific extras (no Greek precursor).
+                "sh" to "ϣ", "F" to "ϥ", "kj" to "ϫ", "hh" to "ϩ", "ti" to "ϯ",
+            ),
+        )
+
+        /**
+         * Latin → Georgian Mkhedruli (U+10D0 block).
+         * Georgian Mkhedruli is the modern civilian script. Native
+         * Georgian digit code points exist (U+10D0..) but real-world
+         * use is essentially zero — Georgian uses Western Arabic
+         * digits in all current settings, so we leave them as
+         * fallback.  This table covers the 33-letter modern alphabet.
+         */
+        val LatinToGeorgian: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Georgian",
+            mappings = mapOf(
+                "a" to "ა", "b" to "ბ", "g" to "გ", "d" to "დ",
+                "e" to "ე", "v" to "ვ", "z" to "ზ",
+                "T" to "თ", "i" to "ი",
+                "k" to "კ", "l" to "ლ", "m" to "მ", "n" to "ნ",
+                "o" to "ო", "p" to "პ", "J" to "ჟ", "r" to "რ",
+                "s" to "ს", "t" to "ტ", "u" to "უ",
+                "f" to "ფ",
+                "q" to "ქ", "G" to "ღ", "K" to "ყ",
+                "S" to "შ", "C" to "ჩ", "c" to "ც", "Z" to "ძ",
+                "w" to "წ", "W" to "ჭ",
+                "x" to "ხ", "j" to "ჯ", "h" to "ჰ",
+            ),
+        )
+
+        /**
+         * Latin → Glagolitic (U+2C00 block).
+         * Glagolitic is the predecessor of Cyrillic, still used in
+         * limited Croatian + Old Church Slavonic liturgical settings.
+         * Round-tower / square-tower variants both live in the same
+         * Unicode block. We ship lowercase letter mappings only —
+         * uppercase Glagolitic glyphs differ minimally from lowercase
+         * and the IME's existing shift state handles the casing toggle.
+         */
+        val LatinToGlagolitic: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Glagolitic",
+            mappings = mapOf(
+                "a" to "ⰰ", "b" to "ⰱ", "v" to "ⰲ", "g" to "ⰳ",
+                "d" to "ⰴ", "e" to "ⰵ", "zh" to "ⰶ", "z" to "ⰷ",
+                "i" to "ⰹ", "j" to "ⰺ",
+                "k" to "ⰽ", "l" to "ⰾ", "m" to "ⰿ", "n" to "ⱀ",
+                "o" to "ⱁ", "p" to "ⱂ", "r" to "ⱃ", "s" to "ⱄ",
+                "t" to "ⱅ", "u" to "ⱆ", "f" to "ⱇ",
+                "h" to "ⱈ", "c" to "ⱌ", "ch" to "ⱍ", "sh" to "ⱎ",
+                "y" to "ⱏ", "ye" to "ⱔ", "yu" to "ⱓ", "ya" to "ⱑ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",

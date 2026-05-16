@@ -144,6 +144,33 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("qua") shouldBe "Ꮖ"
     }
 
+    test("Coptic table maps 'a' to ⲁ and 'sh' to the Coptic-extra ϣ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToCoptic)
+        xlit.transliterate("a") shouldBe "ⲁ"
+        xlit.transliterate("sh") shouldBe "ϣ"
+    }
+
+    test("Georgian Mkhedruli table maps 'a' to ა and case-sensitive 'T' to თ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToGeorgian)
+        xlit.transliterate("a") shouldBe "ა"
+        xlit.transliterate("T") shouldBe "თ"
+    }
+
+    test("Glagolitic table maps 'a' to ⰰ and 'sh' to ⱎ (greedy digraph)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToGlagolitic)
+        xlit.transliterate("a") shouldBe "ⰰ"
+        xlit.transliterate("sh") shouldBe "ⱎ"
+    }
+
+    test("Coptic + Georgian + Glagolitic tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToCoptic,
+            IndicScriptTable.LatinToGeorgian,
+            IndicScriptTable.LatinToGlagolitic,
+        )
+        tables.forEach { (it.size() > 20) shouldBe true }
+    }
+
     test("Adlam + NKo + Cherokee tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToAdlam,
