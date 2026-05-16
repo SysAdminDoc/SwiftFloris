@@ -16,36 +16,62 @@
 
 package dev.patrickgold.florisboard.app.settings.mcp
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.PlayCircleOutline
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
+import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import org.florisboard.lib.compose.stringRes
+import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import kotlinx.coroutines.launch
+import org.florisboard.lib.compose.stringRes
 
 /**
- * ROADMAP §10.5 L7.6 — Settings → Privacy → MCP daemon bridge.
+ * ROADMAP §10.5 L7.6 + L7.6b — Settings → MCP daemon bridge.
  *
- * Read-only listing of every MCP daemon the IME bound to at startup
- * (via [dev.patrickgold.florisboard.ime.mcp.McpServiceLifecycle.start]),
- * plus the tools each daemon advertises. Per-daemon enable / disable
- * + a runtime re-scan rides as the L7.6b sub-slice.
+ * Reads `McpDaemonRegistry.active()` once on entry — the registry is
+ * rebuilt at IME service startup, so the snapshot is stable for the
+ * life of the screen. Per-daemon enable / disable writes back to
+ * [dev.patrickgold.florisboard.app.AppPrefs.Mcp.disabledDaemonPackages]
+ * via the [DisabledDaemonSet] codec. The router consults the same
+ * pref before forwarding any `callTool` request so disabled daemons
+ * stay bound but receive no traffic.
  *
- * The screen reads `McpDaemonRegistry.active()` once on entry — the
- * registry is rebuilt at IME service startup, so the snapshot is
- * stable for the life of the screen.
+ * Runtime re-scan + NlpManager smart-compose wire-up ride as
+ * L7.6c / L7.7 in subsequent slices.
  */
 @Composable
 fun McpSettingsScreen() = FlorisScreen {
     title = stringRes(R.string.settings__mcp__title)
     previewFieldVisible = false
 
+    val prefs by FlorisPreferenceStore
+    val scope = rememberCoroutineScope()
+
     val activeDaemons = McpDaemonRegistry.active()
+    val disabledSerialized by prefs.mcp.disabledDaemonPackages.observeAsState()
+    val disabledSet = remember(disabledSerialized) {
+        DisabledDaemonSet.parse(disabledSerialized)
+    }
 
     content {
         PreferenceGroup(title = stringRes(R.string.settings__mcp__group_status)) {
@@ -56,11 +82,12 @@ fun McpSettingsScreen() = FlorisScreen {
                     summary = stringRes(R.string.settings__mcp__status_no_daemons_summary),
                 )
             } else {
+                val activeCount = activeDaemons.keys.count { it.packageName !in disabledSet }
                 Preference(
                     icon = Icons.Default.Extension,
                     title = stringRes(R.string.settings__mcp__status_bound_title),
                     summary = stringRes(R.string.settings__mcp__status_bound_summary)
-                        .replace("{count}", activeDaemons.size.toString()),
+                        .replace("{count}", "$activeCount/${activeDaemons.size}"),
                 )
             }
         }
@@ -68,7 +95,21 @@ fun McpSettingsScreen() = FlorisScreen {
         if (activeDaemons.isNotEmpty()) {
             PreferenceGroup(title = stringRes(R.string.settings__mcp__group_daemons)) {
                 for ((_, entry) in activeDaemons) {
-                    DaemonRow(entry)
+                    DaemonRow(
+                        entry = entry,
+                        isEnabled = entry.key.packageName !in disabledSet,
+                        onEnabledChange = { enabled ->
+                            scope.launch {
+                                val current = prefs.mcp.disabledDaemonPackages.get()
+                                val next = if (enabled) {
+                                    DisabledDaemonSet.remove(current, entry.key.packageName)
+                                } else {
+                                    DisabledDaemonSet.add(current, entry.key.packageName)
+                                }
+                                prefs.mcp.disabledDaemonPackages.set(next)
+                            }
+                        },
+                    )
                 }
             }
         }
@@ -76,9 +117,13 @@ fun McpSettingsScreen() = FlorisScreen {
 }
 
 @Composable
-private fun DaemonRow(entry: DaemonEntry) {
+private fun DaemonRow(
+    entry: DaemonEntry,
+    isEnabled: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+) {
     Preference(
-        icon = Icons.Default.PlayCircleOutline,
+        icon = if (isEnabled) Icons.Default.PlayCircleOutline else Icons.Default.Block,
         title = entry.key.packageName,
         summary = buildString {
             append(stringRes(R.string.settings__mcp__daemon_protocol).replace(
@@ -94,6 +139,9 @@ private fun DaemonRow(entry: DaemonEntry) {
                 append("\n")
                 append(entry.tools.joinToString(separator = ", ") { it.name })
             }
+        },
+        trailing = {
+            Switch(checked = isEnabled, onCheckedChange = onEnabledChange)
         },
     )
 }

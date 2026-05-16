@@ -45,6 +45,7 @@ import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 class McpDispatchRouter(
     private val client: McpClient,
     private val registryView: RegistryView = RegistryView.from(),
+    private val isDaemonDisabled: (DaemonKey) -> Boolean = { false },
 ) {
 
     fun dispatch(request: Request): Response {
@@ -59,6 +60,11 @@ class McpDispatchRouter(
         }
         val resolved = registryView.findTool(request.toolName)
             ?: return Response.Suppressed(reason = "tool ${request.toolName} not registered")
+        if (isDaemonDisabled(resolved.daemon)) {
+            return Response.Suppressed(
+                reason = "daemon ${resolved.daemon.packageName} disabled by user",
+            )
+        }
         val callResp = client.callTool(
             daemonKey = resolved.daemon,
             toolName = request.toolName,
