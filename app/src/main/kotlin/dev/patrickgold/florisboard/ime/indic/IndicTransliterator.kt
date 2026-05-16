@@ -1032,6 +1032,73 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Bassa Vah (U+16AD0 block).
+         * Bassa Vah is a 20th-century alphabet for the Bassa language
+         * of Liberia. Supplementary plane.  35 letters. Created by
+         * Thomas Flo Lewis c. 1900.
+         */
+        val LatinToBassaVah: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "BassaVah",
+            mappings = mapOf(
+                "a" to "𖫭", "e" to "𖫮", "i" to "𖫯", "o" to "𖫰",
+                "u" to "𖫱", "v" to "𖫲",
+                "b" to "𖫐", "p" to "𖫑", "v2" to "𖫒",
+                "f" to "𖫓", "d" to "𖫔", "t" to "𖫕", "th" to "𖫖",
+                "dh" to "𖫗", "z" to "𖫘", "s" to "𖫙", "g" to "𖫚",
+                "k" to "𖫛", "h" to "𖫜", "j" to "𖫝", "c" to "𖫞",
+                "m" to "𖫟", "n" to "𖫠", "ng" to "𖫡",
+                "w" to "𖫢", "y" to "𖫣",
+            ),
+        )
+
+        /**
+         * Latin → Mende Kikakui (U+1E800 block).
+         * Mende Kikakui is a 20th-century syllabary for the Mende
+         * language of Sierra Leone + Liberia. Supplementary plane.
+         * RTL. 195 syllables; this table ships representative CV
+         * combinations.
+         */
+        val LatinToMendeKikakui: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "MendeKikakui",
+            mappings = mapOf(
+                "a" to "𞠀", "i" to "𞠁", "u" to "𞠂",
+                "e" to "𞠃", "o" to "𞠄",
+                "ka" to "𞠅", "ki" to "𞠆", "ku" to "𞠇", "ke" to "𞠈", "ko" to "𞠉",
+                "wa" to "𞠊", "wi" to "𞠋", "wu" to "𞠌",
+                "ma" to "𞠐", "mi" to "𞠑", "mu" to "𞠒", "me" to "𞠓", "mo" to "𞠔",
+                "ba" to "𞠕", "bi" to "𞠖", "bu" to "𞠗",
+                "sa" to "𞠘", "si" to "𞠙", "su" to "𞠚",
+                "ta" to "𞠛", "ti" to "𞠜", "tu" to "𞠝",
+            ),
+        )
+
+        /**
+         * Latin → Pahawh Hmong (U+16B00 block).
+         * Pahawh Hmong is a 20th-century writing system for the
+         * Hmong language created by Shong Lue Yang c. 1959.
+         * Supplementary plane. Uses both consonants + vowels
+         * (uniquely among modern Mande/Asian-origin scripts).
+         */
+        val LatinToPahawhHmong: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "PahawhHmong",
+            mappings = mapOf(
+                "a" to "𖬀", "e" to "𖬁", "i" to "𖬂",
+                "o" to "𖬃", "u" to "𖬄", "v" to "𖬅",
+                "k" to "𖬉", "kh" to "𖬊", "g" to "𖬋",
+                "gh" to "𖬌", "ng" to "𖬍",
+                "ch" to "𖬔", "chh" to "𖬕", "j" to "𖬖",
+                "n" to "𖬗", "ny" to "𖬘",
+                "t" to "𖬙", "th" to "𖬚", "d" to "𖬛",
+                "p" to "𖬜", "ph" to "𖬝", "b" to "𖬞",
+                "s" to "𖬟", "x" to "𖬠", "r" to "𖬡",
+                "h" to "𖬢", "m" to "𖬣", "f" to "𖬤",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
