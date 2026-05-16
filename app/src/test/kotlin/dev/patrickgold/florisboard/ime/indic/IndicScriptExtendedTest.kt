@@ -351,6 +351,32 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("0") shouldBe "𑛀"
     }
 
+    test("Kaithi table maps 'k' to 𑂍 (supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToKaithi)
+        xlit.transliterate("k") shouldBe "𑂍"
+    }
+
+    test("Mahajani table maps 'k' to 𑅕 and digit 7 still passes Western through") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToMahajani)
+        xlit.transliterate("k") shouldBe "𑅕"
+        // Mahajani has no native digits in current Unicode — Western fallback.
+        xlit.transliterate("7") shouldBe "7"
+    }
+
+    test("Khojki table maps 'k' to 𑈊") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToKhojki)
+        xlit.transliterate("k") shouldBe "𑈊"
+    }
+
+    test("Kaithi + Mahajani + Khojki tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.ItransToKaithi,
+            IndicScriptTable.ItransToMahajani,
+            IndicScriptTable.ItransToKhojki,
+        )
+        tables.forEach { (it.size() > 20) shouldBe true }
+    }
+
     test("Modi + Sharada + Takri tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.ItransToModi,

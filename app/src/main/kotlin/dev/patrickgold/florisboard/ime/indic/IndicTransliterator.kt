@@ -1524,6 +1524,100 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * ITRANS → Kaithi (U+11080 block).
+         * Kaithi is a historical Brahmic-derived script of the
+         * Bhojpuri / Magahi / Maithili / Awadhi / Bagheli languages
+         * of north-central India. Used c. 16th-20th century before
+         * Devanagari displaced it. Supplementary plane.
+         */
+        val ItransToKaithi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Kaithi",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑂃", "aa" to "𑂄", "A" to "𑂄",
+                    "i" to "𑂅", "ii" to "𑂆", "I" to "𑂆",
+                    "u" to "𑂇", "uu" to "𑂈", "U" to "𑂈",
+                    "e" to "𑂉", "ai" to "𑂊", "o" to "𑂋", "au" to "𑂌",
+                ),
+                consonants = mapOf(
+                    "k" to "𑂍", "kh" to "𑂎", "g" to "𑂏", "gh" to "𑂐",
+                    "ch" to "𑂒", "Ch" to "𑂓", "j" to "𑂔", "jh" to "𑂕",
+                    "T" to "𑂗", "Th" to "𑂘", "D" to "𑂙", "Dh" to "𑂚", "N" to "𑂛",
+                    "t" to "𑂞", "th" to "𑂟", "d" to "𑂠", "dh" to "𑂡", "n" to "𑂢",
+                    "p" to "𑂣", "ph" to "𑂤", "b" to "𑂥", "bh" to "𑂦", "m" to "𑂧",
+                    "y" to "𑂨", "r" to "𑂩", "l" to "𑂪", "v" to "𑂫",
+                    "sh" to "𑂬", "Sh" to "𑂭", "s" to "𑂮", "h" to "𑂯",
+                ),
+                digits = "𑂐𑂑𑂒𑂓𑂔𑂕𑂖𑂗𑂘𑂙",
+                anusvara = "𑂁", visarga = "𑂂",
+            ),
+        )
+
+        /**
+         * ITRANS → Mahajani (U+11150 block).
+         * Mahajani is a historical Brahmic-derived script used for
+         * Hindi / Punjabi / Marwari in the 19th-20th century by
+         * north-Indian merchant communities for account-keeping +
+         * commercial correspondence. Replaced by Devanagari.
+         * Supplementary plane.
+         */
+        val ItransToMahajani: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Mahajani",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑅐", "aa" to "𑅐", "A" to "𑅐",
+                    "i" to "𑅑", "ii" to "𑅑", "I" to "𑅑",
+                    "u" to "𑅒", "uu" to "𑅒", "U" to "𑅒",
+                    "e" to "𑅓", "o" to "𑅔",
+                ),
+                consonants = mapOf(
+                    "k" to "𑅕", "kh" to "𑅖", "g" to "𑅗",
+                    "ch" to "𑅘", "j" to "𑅚",
+                    "T" to "𑅛", "D" to "𑅝", "N" to "𑅞",
+                    "t" to "𑅟", "th" to "𑅟", "d" to "𑅠", "n" to "𑅡",
+                    "p" to "𑅢", "ph" to "𑅢", "b" to "𑅣", "m" to "𑅤",
+                    "y" to "𑅥", "r" to "𑅦", "l" to "𑅩", "v" to "𑅪",
+                    "s" to "𑅫", "h" to "𑅬",
+                ),
+                digits = "0123456789",  // No native Mahajani digits.
+                anusvara = "𑅧", visarga = "𑅨",
+            ),
+        )
+
+        /**
+         * ITRANS → Khojki (U+11200 block).
+         * Khojki is a historical Brahmic-derived script of the
+         * Khoja Muslim community of Sindh + Gujarat, used for
+         * Sindhi + Gujarati religious literature c. 16th-20th
+         * century. Supplementary plane.
+         */
+        val ItransToKhojki: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Khojki",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑈀", "aa" to "𑈁", "A" to "𑈁",
+                    "i" to "𑈂", "ii" to "𑈃", "I" to "𑈃",
+                    "u" to "𑈄", "uu" to "𑈅", "U" to "𑈅",
+                    "e" to "𑈆", "ai" to "𑈇", "o" to "𑈈", "au" to "𑈉",
+                ),
+                consonants = mapOf(
+                    "k" to "𑈊", "kh" to "𑈋", "g" to "𑈌", "gh" to "𑈍",
+                    "ch" to "𑈏", "Ch" to "𑈐", "j" to "𑈑", "jh" to "𑈒",
+                    "T" to "𑈔", "Th" to "𑈕", "D" to "𑈖", "Dh" to "𑈗", "N" to "𑈘",
+                    "t" to "𑈙", "th" to "𑈚", "d" to "𑈛", "dh" to "𑈜", "n" to "𑈝",
+                    "p" to "𑈟", "ph" to "𑈠", "b" to "𑈡", "bh" to "𑈢", "m" to "𑈣",
+                    "y" to "𑈤", "r" to "𑈥", "l" to "𑈦", "v" to "𑈧",
+                    "sh" to "𑈨", "Sh" to "𑈩", "s" to "𑈪", "h" to "𑈫",
+                ),
+                digits = "0123456789",  // No native Khojki digits in current Unicode.
+                anusvara = "𑈵", visarga = "𑈶",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
