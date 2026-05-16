@@ -315,6 +315,33 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("a") shouldBe "𖹠"
     }
 
+    test("Saurashtra table maps 'k' to ꢒ and digit 5 to ꣕") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToSaurashtra)
+        xlit.transliterate("k") shouldBe "ꢒ"
+        xlit.transliterate("5") shouldBe "꣕"
+    }
+
+    test("Kayah Li table maps 'k' to ꤊ and 'ng' digraph greedy") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToKayahLi)
+        xlit.transliterate("k") shouldBe "ꤊ"
+        xlit.transliterate("ng") shouldBe "ꤍ"
+    }
+
+    test("Rejang table maps 'k' to ꤰ and 'ngg' triple-char digraph greedy") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToRejang)
+        xlit.transliterate("k") shouldBe "ꤰ"
+        xlit.transliterate("ngg") shouldBe "ꥃ"
+    }
+
+    test("Saurashtra + Kayah Li + Rejang tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.ItransToSaurashtra,
+            IndicScriptTable.LatinToKayahLi,
+            IndicScriptTable.LatinToRejang,
+        )
+        tables.forEach { (it.size() > 18) shouldBe true }
+    }
+
     test("Wancho + Nyiakeng Puachue Hmong + Medefaidrin tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToWancho,

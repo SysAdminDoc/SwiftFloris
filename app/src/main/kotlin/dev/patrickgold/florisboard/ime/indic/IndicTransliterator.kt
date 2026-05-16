@@ -1355,6 +1355,78 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * ITRANS → Saurashtra (U+A880 block).
+         * Saurashtra is a Brahmic-derived script for the Saurashtra
+         * language (Tamil Nadu, India). Active in modern Saurashtra
+         * community publishing. Native digits U+A8D0..U+A8D9.
+         */
+        val ItransToSaurashtra: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Saurashtra",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "ꢂ", "aa" to "ꢃ", "A" to "ꢃ",
+                    "i" to "ꢄ", "ii" to "ꢅ", "I" to "ꢅ",
+                    "u" to "ꢆ", "uu" to "ꢇ", "U" to "ꢇ",
+                    "e" to "ꢊ", "ai" to "ꢋ", "o" to "ꢌ", "au" to "ꢍ",
+                ),
+                consonants = mapOf(
+                    "k" to "ꢒ", "kh" to "ꢓ", "g" to "ꢔ", "gh" to "ꢕ",
+                    "ch" to "ꢗ", "Ch" to "ꢘ", "j" to "ꢙ", "jh" to "ꢚ",
+                    "T" to "ꢜ", "Th" to "ꢝ", "D" to "ꢞ", "Dh" to "ꢟ", "N" to "ꢠ",
+                    "t" to "ꢡ", "th" to "ꢢ", "d" to "ꢣ", "dh" to "ꢤ", "n" to "ꢥ",
+                    "p" to "ꢦ", "ph" to "ꢧ", "b" to "ꢨ", "bh" to "ꢩ", "m" to "ꢪ",
+                    "y" to "ꢫ", "r" to "ꢬ", "l" to "ꢮ", "v" to "ꢯ",
+                    "sh" to "ꢰ", "Sh" to "ꢱ", "s" to "ꢲ", "h" to "ꢳ",
+                ),
+                digits = "꣐꣑꣒꣓꣔꣕꣖꣗꣘꣙",
+                anusvara = "ꢀ", visarga = "ꢁ",
+            ),
+        )
+
+        /**
+         * Latin → Kayah Li (U+A900 block).
+         * Kayah Li is a Brahmic-derived script for the Kayah / Karen
+         * languages of Myanmar + Thailand. Native digits
+         * U+A900..U+A909.
+         */
+        val LatinToKayahLi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "KayahLi",
+            mappings = mapOf(
+                "k" to "ꤊ", "kh" to "ꤋ", "g" to "ꤌ",
+                "ng" to "ꤍ",
+                "ch" to "ꤏ", "j" to "ꤐ",
+                "ny" to "ꤑ", "t" to "ꤒ", "th" to "ꤓ", "d" to "ꤔ",
+                "n" to "ꤕ",
+                "p" to "ꤖ", "ph" to "ꤗ", "b" to "ꤘ", "m" to "ꤙ",
+                "y" to "ꤚ", "r" to "ꤛ", "l" to "ꤜ", "w" to "ꤝ",
+                "s" to "ꤞ", "h" to "ꤟ",
+            ),
+        )
+
+        /**
+         * Latin → Rejang (U+A930 block).
+         * Rejang is a Brahmic-derived script for the Rejang language
+         * of Sumatra, Indonesia. 23 consonants + vowel signs.
+         */
+        val LatinToRejang: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Rejang",
+            mappings = mapOf(
+                "k" to "ꤰ", "g" to "ꤱ",
+                "ng" to "ꤲ", "t" to "ꤳ", "d" to "ꤴ",
+                "n" to "ꤵ",
+                "p" to "ꤶ", "b" to "ꤷ", "m" to "ꤸ",
+                "c" to "ꤹ", "j" to "ꤺ", "ny" to "ꤻ",
+                "s" to "ꤼ", "r" to "ꤽ", "l" to "ꤾ",
+                "y" to "ꤿ", "w" to "ꥀ", "h" to "ꥁ",
+                "mb" to "ꥂ", "ngg" to "ꥃ", "nd" to "ꥄ",
+                "nyj" to "ꥅ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
