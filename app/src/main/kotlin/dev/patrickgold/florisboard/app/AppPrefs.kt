@@ -158,6 +158,18 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "clipboard__clear_primary_clip_affects_history_if_unpinned",
             default = true,
         )
+
+        /**
+         * ROADMAP matrix #33 — toggle for the clipboard history search box. When `true`, the clipboard panel
+         * exposes a search bar that filters the visible history via [dev.patrickgold.florisboard.ime.clipboard
+         * .ClipboardHistoryFilter]. The actual filter is privacy-neutral (no network, no logging) so the toggle
+         * exists primarily as a UI density preference — users on small phones may prefer the extra row of
+         * tiles over the search affordance.
+         */
+        val historySearchEnabled = boolean(
+            key = "clipboard__history_search_enabled",
+            default = true,
+        )
     }
 
     val correction = Correction()
