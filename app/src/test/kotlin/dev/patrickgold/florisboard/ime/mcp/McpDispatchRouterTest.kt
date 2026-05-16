@@ -178,4 +178,52 @@ class McpDispatchRouterTest : FunSpec({
         disabledQueryCount shouldBe 0  // Never reached the disabled-check.
         mcp.calls shouldBe 0
     }
+
+    test("isToolDisabled=true short-circuits to Suppressed with the per-tool reason (matrix #38)") {
+        val mcp = CountingMcp(successCall())
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isToolDisabled = { d, t -> d == daemon && t == "calendar.next" },
+        )
+        val resp = router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        val suppressed = resp as McpDispatchRouter.Response.Suppressed
+        suppressed.reason shouldBe "tool calendar.next on daemon com.example.mcp disabled by user"
+        mcp.calls shouldBe 0
+    }
+
+    test("isToolDisabled lambda is not consulted when isDaemonDisabled already short-circuits") {
+        val mcp = CountingMcp(successCall())
+        var toolGateCount = 0
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isDaemonDisabled = { true },
+            isToolDisabled = { _, _ -> toolGateCount++; true },
+        )
+        router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        toolGateCount shouldBe 0
+        mcp.calls shouldBe 0
+    }
+
+    test("isToolDisabled lambda lets non-matching (daemon,tool) pairs through to the client") {
+        val mcp = CountingMcp(successCall())
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isToolDisabled = { _, t -> t == "other.tool" },
+        )
+        val resp = router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        (resp is McpDispatchRouter.Response.Completed) shouldBe true
+        mcp.calls shouldBe 1
+    }
 })
