@@ -944,7 +944,18 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                                 nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
                             }
                             editorInstance.commitChar(text)
-                            
+
+                            // N15.2 Gboard parity — after committing the apostrophe from a symbols
+                            // panel, auto-flip back to the letter keyboard so contractions
+                            // (e.g. "don't", "I'm") finish without a manual mode switch.
+                            if (ApostropheReturnGate.shouldReturnToCharacters(
+                                    committedText = text,
+                                    currentMode = activeState.keyboardMode,
+                                    autoReturnEnabled = prefs.keyboard.autoReturnAfterApostrophe.get(),
+                                )) {
+                                activeState.keyboardMode = KeyboardMode.CHARACTERS
+                            }
+
                             // Reset SHIFTED_AUTOMATIC after it's been applied to a character
                             if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
                                 UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
