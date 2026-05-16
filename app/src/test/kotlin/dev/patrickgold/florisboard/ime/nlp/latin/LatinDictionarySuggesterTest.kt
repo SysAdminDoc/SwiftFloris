@@ -272,6 +272,26 @@ class LatinDictionarySuggesterTest : FunSpec({
         )
         without.map { it.text } shouldBe withEmptyOverlay.map { it.text }
     }
+
+    test("overlay-completion demotes SCOWL primary corrections — instant remember") {
+        // Scenario: user typed "foobar" once → in overlay at high freq. Now
+        // types the prefix "foob". SCOWL has "food" / "foot" / "fool" as
+        // edit-distance-1 corrections of "foob"; those would normally rank
+        // ahead of completions as primary corrections. With an overlay
+        // completion present, all corrections demote to secondary —
+        // "foobar" comes first.
+        val dict = latinDictionary(
+            "food" to 200, "foot" to 190, "fool" to 180, "for" to 250,
+        )
+        val overlay = mapOf("foobar" to 240)
+        val suggestions = LatinDictionarySuggester.suggest(
+            rawWord = "foob",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        suggestions.first().text shouldBe "foobar"
+    }
 })
 
 private fun latinDictionary(vararg words: Pair<String, Int>): LatinDictionarySnapshot {
