@@ -162,6 +162,33 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("sh") shouldBe "ⱎ"
     }
 
+    test("Samaritan table maps 'a' to ࠀ and 'sh' to ࠔ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToSamaritan)
+        xlit.transliterate("a") shouldBe "ࠀ"
+        xlit.transliterate("sh") shouldBe "ࠔ"
+    }
+
+    test("Mandaic table maps 'a' to ࡀ and 'sh' to ࡔ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToMandaic)
+        xlit.transliterate("a") shouldBe "ࡀ"
+        xlit.transliterate("sh") shouldBe "ࡔ"
+    }
+
+    test("Old Permic table maps 'a' to 𐍐 (supplementary plane round-trip)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToOldPermic)
+        xlit.transliterate("a") shouldBe "𐍐"
+        xlit.transliterate("dz") shouldBe "𐍗"
+    }
+
+    test("Samaritan + Mandaic + Old Permic tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToSamaritan,
+            IndicScriptTable.LatinToMandaic,
+            IndicScriptTable.LatinToOldPermic,
+        )
+        tables.forEach { (it.size() > 18) shouldBe true }
+    }
+
     test("Coptic + Georgian + Glagolitic tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToCoptic,
