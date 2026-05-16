@@ -742,6 +742,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "keyboard__auto_return_after_apostrophe",
             default = true,
         )
+        val quoteAutoCloseEnabled = boolean(
+            key = "keyboard__quote_auto_close_enabled",
+            default = true,
+        )
         val incognitoDisplayMode = enum(
             key = "keyboard__incognito_indicator",
             default = IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD,

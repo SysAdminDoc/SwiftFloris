@@ -945,6 +945,27 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                             }
                             editorInstance.commitChar(text)
 
+                            // Matrix #32 — quote / speech-mark auto-close. Insert the matching closer and move
+                            // the cursor between the two so the user can keep typing inside the quoted region.
+                            // The gate suppresses on sensitive fields (password / URI / email), on mid-word
+                            // contexts, when the next char is already the closer (avoid double-up), and on
+                            // single-quote apostrophe / foot-shorthand contexts.
+                            val content = editorInstance.activeContent
+                            val closer = QuoteAutoCloseGate.closerFor(
+                                typedChar = text,
+                                precedingText = content.textBeforeSelection,
+                                followingText = content.textAfterSelection,
+                                variation = activeState.keyVariation,
+                                autoCloseEnabled = prefs.keyboard.quoteAutoCloseEnabled.get(),
+                            )
+                            if (closer != null) {
+                                if (editorInstance.commitText(closer)) {
+                                    val afterCloser = editorInstance.activeContent.selection
+                                    val cursor = afterCloser.end - closer.length
+                                    editorInstance.setSelection(cursor, cursor)
+                                }
+                            }
+
                             // N15.2 Gboard parity — after committing the apostrophe from a symbols
                             // panel, auto-flip back to the letter keyboard so contractions
                             // (e.g. "don't", "I'm") finish without a manual mode switch.
