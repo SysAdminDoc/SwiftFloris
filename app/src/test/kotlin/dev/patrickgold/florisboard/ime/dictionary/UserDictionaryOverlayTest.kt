@@ -150,4 +150,19 @@ class UserDictionaryOverlayTest : FunSpec({
         overlay.contains("bar", es) shouldBe false
         overlay.isHydrated(en) shouldBe false
     }
+
+    test("clearLocale resets hydrated flag so the next hydrate fires") {
+        val overlay = UserDictionaryOverlay.get()
+        overlay.hydrateLocale(en, listOf("alpha" to 100))
+        overlay.isHydrated(en) shouldBe true
+        // First hydrate is locked in; a second hydrate call would no-op.
+        overlay.hydrateLocale(en, listOf("beta" to 200))
+        overlay.contains("beta", en) shouldBe false
+        // After clearLocale, the next hydrateLocale runs again.
+        overlay.clearLocale(en)
+        overlay.isHydrated(en) shouldBe false
+        overlay.hydrateLocale(en, listOf("beta" to 200))
+        overlay.contains("beta", en) shouldBe true
+        overlay.contains("alpha", en) shouldBe false  // old data dropped
+    }
 })

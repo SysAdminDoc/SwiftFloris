@@ -387,6 +387,14 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                         } else {
                             userDictionaryDao()?.update(entry)
                         }
+                        // ROADMAP §7 Next-3 — keep the in-memory overlay in
+                        // sync with manual DAO edits so the IME's suggest()
+                        // path picks up the change on the next keystroke.
+                        entry.locale?.let { tag ->
+                            dev.patrickgold.florisboard.ime.dictionary
+                                .DictionaryManager.default()
+                                .rebuildOverlay(FlorisLocale.fromTag(tag))
+                        }
                         userDictionaryEntryForDialog = null
                         buildUi()
                     }
@@ -402,6 +410,11 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 },
                 onNeutral = {
                     userDictionaryDao()?.delete(wordEntry)
+                    wordEntry.locale?.let { tag ->
+                        dev.patrickgold.florisboard.ime.dictionary
+                            .DictionaryManager.default()
+                            .rebuildOverlay(FlorisLocale.fromTag(tag))
+                    }
                     userDictionaryEntryForDialog = null
                     buildUi()
                 },
