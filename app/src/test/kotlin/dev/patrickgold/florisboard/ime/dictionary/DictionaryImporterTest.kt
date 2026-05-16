@@ -163,6 +163,131 @@ class DictionaryImporterTest : FunSpec({
             DictionaryImportFormat.CSV
         importer.detectFormat("this is just prose, not a dictionary".toByteArray()) shouldBe
             DictionaryImportFormat.UNKNOWN
+        importer.detectFormat("{ \"predictions\": [] }".toByteArray()) shouldBe
+            DictionaryImportFormat.JSON
+        importer.detectFormat("[ { \"word\": \"omw\" } ]".toByteArray()) shouldBe
+            DictionaryImportFormat.JSON
+    }
+
+    // ROADMAP §6 N16.2 — SwiftKey `swiftkey-cloud.json` import tests.
+
+    test("parseSwiftKeyJson: predictions+shortcuts envelope is the canonical case") {
+        val json = """
+            {
+              "predictions": [
+                { "word": "omw", "frequency": 240, "locale": "en" },
+                { "word": "brb", "frequency": 220, "language": "en" }
+              ],
+              "shortcuts": [
+                { "word": "thank you", "shortcut": "ty", "locale": "en" }
+              ]
+            }
+        """.trimIndent()
+
+        val result = importer.parseSwiftKeyJson(json)
+
+        result shouldHaveSize 3
+        result[0] shouldBe PersonalDictionaryEntry("omw", 240, null, "en")
+        result[1] shouldBe PersonalDictionaryEntry("brb", 220, null, "en")
+        result[2] shouldBe PersonalDictionaryEntry("thank you", 128, "ty", "en")
+    }
+
+    test("parseSwiftKeyJson: user_data envelope wrapping") {
+        val json = """
+            {
+              "user_data": {
+                "predictions": [
+                  { "text": "gracias", "frequency": 200, "lang": "es" }
+                ]
+              }
+            }
+        """.trimIndent()
+
+        val result = importer.parseSwiftKeyJson(json)
+
+        result shouldHaveSize 1
+        result[0] shouldBe PersonalDictionaryEntry("gracias", 200, null, "es")
+    }
+
+    test("parseSwiftKeyJson: bare array of entries") {
+        val json = """
+            [
+              { "word": "omw", "frequency": 240, "locale": "en" },
+              { "word": "tomorrow", "frequency": 180, "locale": "en" }
+            ]
+        """.trimIndent()
+
+        val result = importer.parseSwiftKeyJson(json)
+
+        result shouldHaveSize 2
+        result[0] shouldBe PersonalDictionaryEntry("omw", 240, null, "en")
+        result[1] shouldBe PersonalDictionaryEntry("tomorrow", 180, null, "en")
+    }
+
+    test("parseSwiftKeyJson: tolerates missing frequency and locale (defaults to 128 / null)") {
+        val json = """{ "words": [{ "word": "hello" }] }"""
+
+        val result = importer.parseSwiftKeyJson(json)
+
+        result shouldHaveSize 1
+        result[0] shouldBe PersonalDictionaryEntry("hello", 128, null, null)
+    }
+
+    test("parseSwiftKeyJson: clamps out-of-range frequency to [0,255]") {
+        val json = """
+            [
+              { "word": "low", "frequency": -50 },
+              { "word": "high", "frequency": 9999 }
+            ]
+        """.trimIndent()
+
+        val result = importer.parseSwiftKeyJson(json)
+
+        result shouldHaveSize 2
+        result[0].frequency shouldBe 0
+        result[1].frequency shouldBe 255
+    }
+
+    test("parseSwiftKeyJson: malformed JSON returns empty list (not throw)") {
+        // FlorisBoard backup manifest JSON sitting in the same zip alongside
+        // CSV/XML must not abort the overall import. The parser silently
+        // returns an empty list when the JSON is bad OR when it has no
+        // recognisable entries.
+        val result = importer.parseSwiftKeyJson("{ this is not json")
+        result shouldHaveSize 0
+    }
+
+    test("parseSwiftKeyJson: empty array/object yields no entries") {
+        importer.parseSwiftKeyJson("[]") shouldHaveSize 0
+        importer.parseSwiftKeyJson("{}") shouldHaveSize 0
+        importer.parseSwiftKeyJson("{ \"predictions\": [] }") shouldHaveSize 0
+    }
+
+    test("parseSwiftKeyJson: drops entries with blank or missing word field") {
+        val json = """
+            [
+              { "word": "" },
+              { "word": "   " },
+              { "frequency": 128 },
+              { "word": "valid", "frequency": 200 }
+            ]
+        """.trimIndent()
+
+        val result = importer.parseSwiftKeyJson(json)
+
+        result shouldHaveSize 1
+        result[0].word shouldBe "valid"
+    }
+
+    test("import(): detects a bare SwiftKey JSON stream and routes it") {
+        val json = """
+            { "predictions": [{ "word": "swiftkeyport", "frequency": 200, "locale": "en" }] }
+        """.trimIndent().toByteArray(Charsets.UTF_8)
+
+        val result = importer.import(ByteArrayInputStream(json))
+
+        result shouldHaveSize 1
+        result[0] shouldBe PersonalDictionaryEntry("swiftkeyport", 200, null, "en")
     }
 })
 

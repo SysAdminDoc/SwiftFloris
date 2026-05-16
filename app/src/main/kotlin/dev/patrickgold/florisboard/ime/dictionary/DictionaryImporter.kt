@@ -18,6 +18,11 @@ package dev.patrickgold.florisboard.ime.dictionary
 
 import java.io.InputStream
 import java.util.zip.ZipInputStream
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonArray
+import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 
 /**
  * ROADMAP §7 Next-6.1 + Next-6.2 — personal-dictionary importers.
@@ -65,9 +70,11 @@ class DictionaryImporter {
             DictionaryImportFormat.ZIP -> parseZip(buffered)
             DictionaryImportFormat.XML -> parseGboardXml(buffered.bufferedReader().readText())
             DictionaryImportFormat.CSV -> parseCsv(buffered.bufferedReader().readText())
+            DictionaryImportFormat.JSON -> parseSwiftKeyJson(buffered.bufferedReader().readText())
             DictionaryImportFormat.UNKNOWN -> throw DictionaryImportException(
                 "Unrecognised dictionary format. Supported: Gboard PersonalDictionary.zip, " +
-                    "FlorisBoard/HeliBoard .flbackup, or word,frequency,shortcut,locale CSV.",
+                    "FlorisBoard/HeliBoard .flbackup, SwiftKey swiftkey-cloud.json, " +
+                    "or word,frequency,shortcut,locale CSV.",
             )
         }
     }
@@ -80,6 +87,13 @@ class DictionaryImporter {
         val asText = String(sniff, Charsets.UTF_8).trimStart()
         if (asText.startsWith("<?xml") || asText.startsWith("<userdictionary")) {
             return DictionaryImportFormat.XML
+        }
+        // ROADMAP §6 N16.2 — SwiftKey `swiftkey-cloud.json` export starts with
+        // either a top-level `{` (envelope object) or `[` (bare entry array).
+        // Detect before the CSV branch because a JSON array of strings could
+        // technically contain a comma.
+        if (asText.startsWith("{") || asText.startsWith("[")) {
+            return DictionaryImportFormat.JSON
         }
         if (asText.contains(",")) {
             // Heuristic for CSV: at least one comma in the first kilobyte
@@ -122,10 +136,16 @@ class DictionaryImporter {
                         found += parseCsv(String(bytes, Charsets.UTF_8))
                     }
                     name.endsWith(".json") -> {
-                        // FlorisBoard backup manifest — descriptive only, the
-                        // actual dictionary entries live in a CSV/XML sibling.
-                        // We skip the manifest; if no dictionary file follows
-                        // we throw below.
+                        // Two cases:
+                        //   1. SwiftKey `swiftkey-cloud.json` — the actual
+                        //      dictionary export. Parse it.
+                        //   2. FlorisBoard backup manifest — descriptive only,
+                        //      the entries live in a CSV/XML sibling. The
+                        //      parser tolerates that shape by returning an
+                        //      empty list (no `predictions` / `shortcuts` /
+                        //      `words` keys present).
+                        val bytes = zis.readBytes()
+                        found += parseSwiftKeyJson(String(bytes, Charsets.UTF_8))
                     }
                     name.endsWith(".db") || name.endsWith(".sqlite") -> {
                         // FlorisBoard backup with raw SQLite snapshot: not
@@ -201,6 +221,99 @@ class DictionaryImporter {
         return result
     }
 
+    /**
+     * ROADMAP §6 N16.2 — SwiftKey `swiftkey-cloud.json` export parser.
+     *
+     * SwiftKey's cloud export is JSON. The exact wire shape was lightly
+     * documented and not officially specified, and the upstream
+     * `data.swiftkey.com` endpoint retires 2026-05-31 [SK-RETIRE], so this
+     * parser is intentionally tolerant about the surrounding envelope and
+     * keys: anywhere it finds an object with a `word`-class key (`word` /
+     * `text` / `string`) it lifts that entry into a
+     * [PersonalDictionaryEntry]. The frequency comes from any of
+     * `frequency` / `count` / `rank`; locale from any of `locale` /
+     * `language` / `lang`; shortcut from `shortcut` / `expansion`. Missing
+     * fields collapse to the same defaults the Gboard XML / CSV paths use
+     * (frequency=128, locale=null, shortcut=null).
+     *
+     * Envelope shapes covered:
+     *  * `{ "predictions": [...], "shortcuts": [...] }` — recurse both keys.
+     *  * `{ "user_data": { "predictions": [...] } }` — recurse the wrapped key.
+     *  * `{ "words": [...] }` — single key bag.
+     *  * `[ { "word": "..." }, ... ]` — bare array.
+     *
+     * Any other shape returns an empty list instead of throwing, so a
+     * FlorisBoard backup manifest JSON sitting in the same zip doesn't
+     * abort the whole import.
+     */
+    internal fun parseSwiftKeyJson(json: String): List<PersonalDictionaryEntry> {
+        val parsed = runCatching { Json.parseToJsonElement(json) }.getOrNull() ?: return emptyList()
+        val out = mutableListOf<PersonalDictionaryEntry>()
+        collectSwiftKeyEntries(parsed, out)
+        return out
+    }
+
+    private fun collectSwiftKeyEntries(element: JsonElement, sink: MutableList<PersonalDictionaryEntry>) {
+        when (element) {
+            is JsonArray -> {
+                for (child in element) {
+                    collectSwiftKeyEntries(child, sink)
+                }
+            }
+            is JsonObject -> {
+                val word = swiftKeyWordField(element)
+                if (word != null) {
+                    sink += PersonalDictionaryEntry(
+                        word = word,
+                        frequency = swiftKeyFrequencyField(element),
+                        shortcut = swiftKeyShortcutField(element),
+                        locale = swiftKeyLocaleField(element),
+                    )
+                    return
+                }
+                // Not an entry itself — recurse into nested arrays and objects so
+                // we find entries wrapped in arbitrary envelope keys
+                // (`user_data` / `predictions` / `shortcuts` / `words` / ...).
+                for ((_, value) in element) {
+                    if (value is JsonArray || value is JsonObject) {
+                        collectSwiftKeyEntries(value, sink)
+                    }
+                }
+            }
+            else -> { /* primitive at the top level: ignore */ }
+        }
+    }
+
+    private fun swiftKeyWordField(obj: JsonObject): String? {
+        return swiftKeyStringField(obj, listOf("word", "text", "string"))?.takeIf { it.isNotBlank() }
+    }
+
+    private fun swiftKeyShortcutField(obj: JsonObject): String? {
+        return swiftKeyStringField(obj, listOf("shortcut", "expansion"))?.takeIf { it.isNotBlank() }
+    }
+
+    private fun swiftKeyLocaleField(obj: JsonObject): String? {
+        return swiftKeyStringField(obj, listOf("locale", "language", "lang"))?.takeIf { it.isNotBlank() }
+    }
+
+    private fun swiftKeyFrequencyField(obj: JsonObject): Int {
+        for (key in listOf("frequency", "count", "rank")) {
+            val v = obj[key] ?: continue
+            val asInt = (v as? JsonPrimitive)?.content?.toIntOrNull() ?: continue
+            return asInt.coerceIn(0, 255)
+        }
+        return 128
+    }
+
+    private fun swiftKeyStringField(obj: JsonObject, keys: List<String>): String? {
+        for (key in keys) {
+            val v = obj[key] ?: continue
+            val s = (v as? JsonPrimitive)?.content ?: continue
+            return s
+        }
+        return null
+    }
+
     private fun parseAttributes(raw: String): Map<String, String> {
         val result = mutableMapOf<String, String>()
         var i = 0
@@ -253,6 +366,8 @@ enum class DictionaryImportFormat {
     ZIP,
     XML,
     CSV,
+    /** ROADMAP §6 N16.2 — SwiftKey `swiftkey-cloud.json` export. */
+    JSON,
     UNKNOWN,
 }
 
