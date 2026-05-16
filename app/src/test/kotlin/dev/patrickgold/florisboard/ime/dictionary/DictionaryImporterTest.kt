@@ -94,6 +94,20 @@ class DictionaryImporterTest : FunSpec({
         result[2] shouldBe PersonalDictionaryEntry("gracias", 200, null, "es")
     }
 
+    test("imports quoted CSV fields containing commas and escaped quotes") {
+        val csv = """
+            word,frequency,shortcut,locale
+            "hello, world",200,hw,en
+            "say ""yes""",180,yes,en
+        """.trimIndent()
+
+        val result = importer.parseCsv(csv)
+
+        result shouldHaveSize 2
+        result[0] shouldBe PersonalDictionaryEntry("hello, world", 200, "hw", "en")
+        result[1] shouldBe PersonalDictionaryEntry("say \"yes\"", 180, "yes", "en")
+    }
+
     test("imports a CSV payload without a header row") {
         val csv = """
             yolo,200,,en
@@ -288,6 +302,30 @@ class DictionaryImporterTest : FunSpec({
 
         result shouldHaveSize 1
         result[0] shouldBe PersonalDictionaryEntry("swiftkeyport", 200, null, "en")
+    }
+
+    test("parseSwiftKeyJson rejects pathologically deep envelopes") {
+        val nested = buildString {
+            repeat(70) { append("""{"wrap":""") }
+            append("""{"word":"too-deep"}""")
+            repeat(70) { append("}") }
+        }
+
+        shouldThrow<DictionaryImportException> {
+            importer.parseSwiftKeyJson(nested)
+        }
+    }
+
+    test("zip import parses SwiftKey JSON entries") {
+        val zipBytes = makeZip(
+            "swiftkey-cloud.json" to """{ "words": [{ "word": "portable", "frequency": 200 }] }"""
+                .toByteArray(Charsets.UTF_8),
+        )
+
+        val result = importer.import(ByteArrayInputStream(zipBytes))
+
+        result shouldHaveSize 1
+        result[0].word shouldBe "portable"
     }
 })
 

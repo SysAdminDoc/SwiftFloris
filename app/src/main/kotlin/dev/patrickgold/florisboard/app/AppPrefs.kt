@@ -1022,7 +1022,7 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                     }
                 }
 
-                val arrangement = QuickActionJsonConfig.decodeFromString<QuickActionArrangement>(entry.rawValue)
+                val arrangement = QuickActionArrangement.Serializer.deserialize(entry.rawValue)
                 var newArrangement = arrangement.copy(
                     stickyAction = arrangement.stickyAction?.let{ migrateAction(it) },
                     dynamicActions = arrangement.dynamicActions.map { migrateAction(it) },

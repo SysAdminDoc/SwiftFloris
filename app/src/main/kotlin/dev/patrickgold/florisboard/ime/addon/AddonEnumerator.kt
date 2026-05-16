@@ -64,6 +64,13 @@ class AddonEnumerator(
         /** Convenience: the IME's own package name, used to skip self-scan. */
         private const val SCAN_FLAGS_BASE =
             PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS
+
+        internal fun firstRejectedNetworkPermission(
+            requestedPermissions: Array<String>?,
+            networkPermissionsRejected: Set<String>,
+        ): String? {
+            return requestedPermissions.orEmpty().firstOrNull { it in networkPermissionsRejected }
+        }
     }
 
     /**
@@ -128,11 +135,9 @@ class AddonEnumerator(
             ?: return AddonVerdict.NotAnAddon
         val type = AddonType.fromMetadata(typeRaw)
             ?: return AddonVerdict.Rejected("unknown addon-type=$typeRaw")
-        if (info.requestedPermissions != null) {
-            val banned = info.requestedPermissions!!.firstOrNull { it in networkPermissionsRejected }
-            if (banned != null) {
-                return AddonVerdict.Rejected("declares banned network permission $banned")
-            }
+        val banned = firstRejectedNetworkPermission(info.requestedPermissions)
+        if (banned != null) {
+            return AddonVerdict.Rejected("declares banned network permission $banned")
         }
         val descriptorRes = meta.getInt(AddonContract.MetadataKey.ADDON_DESCRIPTOR, 0)
         if (descriptorRes == 0) {
@@ -186,6 +191,10 @@ class AddonEnumerator(
         } catch (_: Throwable) {
             null
         }
+    }
+
+    internal fun firstRejectedNetworkPermission(requestedPermissions: Array<String>?): String? {
+        return AddonEnumerator.firstRejectedNetworkPermission(requestedPermissions, networkPermissionsRejected)
     }
 }
 

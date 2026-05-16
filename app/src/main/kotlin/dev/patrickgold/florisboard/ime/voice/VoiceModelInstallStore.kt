@@ -22,6 +22,7 @@ import android.net.Uri
 import android.provider.OpenableColumns
 import java.io.File
 import java.io.InputStream
+import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -35,6 +36,7 @@ data class VoiceModelInstallState(
 class VoiceModelInstallStore(
     private val rootDir: File,
 ) {
+    @Synchronized
     fun state(entry: VoiceModelCatalogEntry): VoiceModelInstallState {
         val dir = entry.modelDir()
         val files = dir.listFiles()?.filter { it.isFile }.orEmpty()
@@ -47,42 +49,89 @@ class VoiceModelInstallStore(
         )
     }
 
+    @Synchronized
     fun states(entries: List<VoiceModelCatalogEntry>): Map<String, VoiceModelInstallState> {
         return entries.associate { entry -> entry.id to state(entry) }
     }
 
+    @Synchronized
     fun install(
         entry: VoiceModelCatalogEntry,
         displayName: String?,
         inputStream: InputStream,
     ): VoiceModelInstallState {
+        rootDir.mkdirs()
         val dir = entry.modelDir()
-        dir.deleteRecursively()
-        dir.mkdirs()
+        val stagingDir = File(rootDir, ".${entry.id}.installing-${UUID.randomUUID()}").canonicalFile
+        stagingDir.deleteRecursively()
+        check(stagingDir.mkdirs()) { "Unable to create temporary model install directory." }
         val targetName = sanitizeArtifactName(displayName, entry.artifactFileName)
-        val tmpFile = File(dir, "$targetName.tmp")
-        val targetFile = File(dir, targetName)
-        inputStream.use { input ->
-            tmpFile.outputStream().use { output ->
-                input.copyTo(output)
+        val tmpFile = File(stagingDir, "$targetName.tmp")
+        val targetFile = File(stagingDir, targetName)
+        try {
+            inputStream.use { input ->
+                tmpFile.outputStream().use { output ->
+                    input.copyTo(output)
+                }
             }
+            if (!tmpFile.renameTo(targetFile)) {
+                tmpFile.copyTo(targetFile, overwrite = true)
+                tmpFile.delete()
+            }
+            activateStagedInstall(dir, stagingDir)
+            return state(entry)
+        } catch (cause: Throwable) {
+            stagingDir.deleteRecursively()
+            throw cause
         }
-        if (!tmpFile.renameTo(targetFile)) {
-            tmpFile.copyTo(targetFile, overwrite = true)
-            tmpFile.delete()
-        }
-        return state(entry)
     }
 
+    @Synchronized
     fun delete(entry: VoiceModelCatalogEntry): Boolean {
         return entry.modelDir().deleteRecursively()
     }
 
     private fun VoiceModelCatalogEntry.modelDir(): File {
-        return File(rootDir, id)
+        require(SafeModelIdPattern.matches(id)) { "Invalid voice model id '$id'." }
+        val canonicalRoot = rootDir.canonicalFile
+        val dir = File(canonicalRoot, id).canonicalFile
+        check(dir.toPath().startsWith(canonicalRoot.toPath())) {
+            "Voice model directory escaped the install root."
+        }
+        return dir
+    }
+
+    private fun activateStagedInstall(targetDir: File, stagingDir: File) {
+        val backupDir = File(rootDir, ".${targetDir.name}.previous-${UUID.randomUUID()}").canonicalFile
+        backupDir.deleteRecursively()
+        try {
+            if (targetDir.exists() && !targetDir.renameTo(backupDir)) {
+                error("Unable to move existing voice model aside for replacement.")
+            }
+            if (!stagingDir.renameTo(targetDir)) {
+                restorePreviousInstall(targetDir, backupDir)
+                error("Unable to activate voice model artifact.")
+            }
+            backupDir.deleteRecursively()
+        } catch (cause: Throwable) {
+            if (stagingDir.exists()) {
+                stagingDir.deleteRecursively()
+            }
+            throw cause
+        }
+    }
+
+    private fun restorePreviousInstall(targetDir: File, backupDir: File) {
+        if (!backupDir.exists()) return
+        targetDir.deleteRecursively()
+        if (!backupDir.renameTo(targetDir)) {
+            backupDir.copyRecursively(targetDir, overwrite = true)
+            backupDir.deleteRecursively()
+        }
     }
 
     companion object {
+        private val SafeModelIdPattern = Regex("""[A-Za-z0-9][A-Za-z0-9._-]{0,127}""")
         private val UnsafeArtifactNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
 
         internal fun sanitizeArtifactName(displayName: String?, fallbackName: String): String {

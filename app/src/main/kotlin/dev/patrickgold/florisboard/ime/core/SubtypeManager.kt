@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.ime.keyboard.extCoreLayout
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
+import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -63,7 +64,12 @@ class SubtypeManager(context: Context) {
         prefs.localization.subtypes.asFlow().collectLatestIn(scope) { listRaw ->
             flogDebug { listRaw }
             val list = if (listRaw.isNotBlank()) {
-                SubtypeJsonConfig.decodeFromString<List<Subtype>>(listRaw)
+                runCatching {
+                    SubtypeJsonConfig.decodeFromString<List<Subtype>>(listRaw)
+                }.getOrElse { cause ->
+                    flogError { "SubtypeManager: failed to decode persisted subtypes: ${cause.message}" }
+                    emptyList()
+                }
             } else {
                 emptyList()
             }

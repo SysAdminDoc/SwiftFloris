@@ -16,9 +16,12 @@
 
 package dev.patrickgold.florisboard.ime.voice
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.io.ByteArrayInputStream
+import java.io.IOException
+import java.io.InputStream
 import java.nio.file.Files
 
 class VoiceModelInstallStoreTest : FunSpec({
@@ -58,4 +61,57 @@ class VoiceModelInstallStoreTest : FunSpec({
 
         root.deleteRecursively()
     }
+
+    test("failed replacement keeps the previously installed model intact") {
+        val root = Files.createTempDirectory("voice-models").toFile()
+        val store = VoiceModelInstallStore(root)
+        val model = VoiceModelCatalog.byId("vosk-en-us-small-0-15")!!
+        try {
+            store.install(
+                entry = model,
+                displayName = "old.zip",
+                inputStream = ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)),
+            )
+
+            shouldThrow<IOException> {
+                store.install(
+                    entry = model,
+                    displayName = "new.zip",
+                    inputStream = FailingInputStream(failAfterBytes = 2),
+                )
+            }
+
+            val state = store.state(model)
+            state.installed shouldBe true
+            state.diskBytes shouldBe 4L
+            state.artifactName shouldBe "old.zip"
+            root.resolve(model.id).resolve("old.zip").readBytes().toList() shouldBe
+                byteArrayOf(1, 2, 3, 4).toList()
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("model ids must not escape the install root") {
+        val root = Files.createTempDirectory("voice-models").toFile()
+        val store = VoiceModelInstallStore(root)
+        val bad = VoiceModelCatalog.byId("vosk-en-us-small-0-15")!!.copy(id = "../escape")
+        try {
+            shouldThrow<IllegalArgumentException> {
+                store.state(bad)
+            }
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 })
+
+private class FailingInputStream(private val failAfterBytes: Int) : InputStream() {
+    private var emitted = 0
+
+    override fun read(): Int {
+        if (emitted >= failAfterBytes) throw IOException("simulated read failure")
+        emitted++
+        return emitted
+    }
+}

@@ -62,13 +62,14 @@ import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.io.parentDir
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
 import org.florisboard.lib.kotlin.mimeTypeFilterOf
 
 const val FONTS = "fonts"
 const val IMAGES = "images"
+
+private const val MaxEditorAssetImportBytes = 25L * 1024L * 1024L
 
 val MIME_TYPES = mapOf(
     FONTS to mimeTypeFilterOf(
@@ -82,6 +83,34 @@ val MIME_TYPES = mapOf(
         "image/*",
     ),
 )
+
+internal object ExtensionEditorFileNames {
+    private val UnsafeFileNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
+
+    fun sanitizeFileName(displayName: String?, fallbackName: String): String {
+        val sanitized = displayName
+            ?.substringAfterLast('/')
+            ?.substringAfterLast('\\')
+            ?.replace(UnsafeFileNameChars, "_")
+            ?.trim()
+            ?.trim('.')
+            ?.take(160)
+            ?.takeIf { it.isNotBlank() }
+        return sanitized ?: fallbackName
+    }
+
+    fun safeFileIn(dir: File, inputName: String): File? {
+        val name = inputName.trim()
+        if (name.isBlank() || name == "." || name == "..") return null
+        if (name.contains('/') || name.contains('\\')) return null
+        if (name.any { it.isISOControl() }) return null
+        val canonicalDir = dir.canonicalFile
+        val candidate = canonicalDir.subFile(name).canonicalFile
+        return candidate.takeIf { file ->
+            file.parentFile?.canonicalFile?.toPath() == canonicalDir.toPath()
+        }
+    }
+}
 
 @Composable
 fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = FlorisScreen {
@@ -116,19 +145,23 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
             onResult = { uri ->
                 currentImportResult = runCatching {
                     checkNotNull(uri) { "" }
-                    val tempFile = context.cacheDir.subFile("temp_${UUID.randomUUID()}")
-                    context.contentResolver.readToFile(uri, tempFile)
                     val mimeType = context.contentResolver.getType(uri)
                     val filter = MIME_TYPES[currentImportDest!!]!!
                     check(filter.matches(mimeType)) {
                         "Given file mime type was '$mimeType', expected one of ${filter.types}"
                     }
-                    val fileName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME)).use { cursor ->
+                    val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME)).use { cursor ->
                         if (cursor == null || !cursor.moveToFirst()) return@use null
                         val name = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                        cursor.getString(name)
+                        if (name >= 0 && !cursor.isNull(name)) cursor.getString(name) else null
                     }
-                    tempFile to fileName.orEmpty()
+                    val fileName = ExtensionEditorFileNames.sanitizeFileName(
+                        displayName ?: uri.lastPathSegment,
+                        fallbackName = "asset-${UUID.randomUUID()}",
+                    )
+                    val tempFile = context.cacheDir.subFile("temp_${UUID.randomUUID()}")
+                    context.contentResolver.readToFile(uri, tempFile, MaxEditorAssetImportBytes)
+                    tempFile to fileName
                 }
             },
         )
@@ -196,8 +229,13 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                         version++
                     },
                     onConfirm = {
-                        val newFile = file.parentFile!!.subFile(fileNameInput).canonicalFile
-                        if (newFile.parentFile != file.canonicalFile.parentFile) {
+                        val parent = file.parentFile
+                        val newFile = if (parent != null) {
+                            ExtensionEditorFileNames.safeFileIn(parent, fileNameInput)
+                        } else {
+                            null
+                        }
+                        if (newFile == null) {
                             context.showLongToastSync(R.string.ext__editor__files__rename_invalid)
                             return@JetPrefAlertDialog
                         }
@@ -257,8 +295,8 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                     val fileName = fileNameInput.trim()
                     val dir = workspace.extDir.subDir(dest)
                     dir.mkdirs()
-                    val file = dir.subFile(fileName)
-                    if (file.parentDir != workspace.extDir.subDir(dest)) {
+                    val file = ExtensionEditorFileNames.safeFileIn(dir, fileName)
+                    if (file == null) {
                         context.showShortToastSync(R.string.ext__editor__files__rename_invalid)
                     } else if (file.exists()) {
                         context.showShortToastSync(R.string.ext__editor__files__rename_exists)
