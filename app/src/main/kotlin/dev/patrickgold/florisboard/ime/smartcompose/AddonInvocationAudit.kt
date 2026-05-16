@@ -58,6 +58,19 @@ object AddonInvocationAudit {
         val surface: Surface,
         val outcome: Outcome,
         val reason: String? = null,
+        /**
+         * Optional subject identifier for the invocation, scoped to the [surface].
+         * - `SMART_COMPOSE`: editor package name (e.g. `com.slack`) so users can see which apps actually drove
+         *   completion requests.
+         * - `TRANSLATION`: language-pair key (e.g. `en->de`) so the audit reflects which pairs were exercised.
+         * - `MCP`: `<daemonPackage>::<toolName>` so the per-tool gate (matrix #38) shows up in the log alongside
+         *   the per-daemon disable reason.
+         *
+         * Like [reason], this is intentionally categorical and must never contain user-typed text, candidate
+         * suggestions, translated content, tool parameters, or tool results. The routers are responsible for
+         * passing only the safe identifier.
+         */
+        val subject: String? = null,
     )
 
     private val MAX_RECORDS: Int = 256
@@ -75,6 +88,7 @@ object AddonInvocationAudit {
         surface: Surface,
         outcome: Outcome,
         reason: String? = null,
+        subject: String? = null,
         timestampMillis: Long = System.currentTimeMillis(),
     ) {
         require(outcome == Outcome.ACCEPTED || !reason.isNullOrBlank()) {
@@ -86,6 +100,7 @@ object AddonInvocationAudit {
             surface = surface,
             outcome = outcome,
             reason = if (outcome == Outcome.ACCEPTED) null else reason,
+            subject = subject?.takeIf { it.isNotBlank() },
         )
         synchronized(lock) {
             while (ring.size >= MAX_RECORDS) ring.removeFirst()

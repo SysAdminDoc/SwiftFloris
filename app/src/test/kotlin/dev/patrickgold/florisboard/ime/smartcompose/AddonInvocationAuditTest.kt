@@ -94,4 +94,37 @@ class AddonInvocationAuditTest : FunSpec({
         AddonInvocationAudit.snapshot() shouldBe emptyList()
         AddonInvocationAudit.totalCount() shouldBe 0L
     }
+
+    test("subject captures the categorical identifier on MCP records (matrix #38 follow-up)") {
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.MCP,
+            outcome = AddonInvocationAudit.Outcome.SUPPRESSED,
+            reason = "tool calendar.next on daemon com.example.mcp disabled by user",
+            subject = "com.example.mcp::calendar.next",
+        )
+        val record = AddonInvocationAudit.snapshot().single()
+        record.subject shouldBe "com.example.mcp::calendar.next"
+    }
+
+    test("subject captures the language-pair on TRANSLATION records") {
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.TRANSLATION,
+            outcome = AddonInvocationAudit.Outcome.ACCEPTED,
+            subject = "en->de",
+        )
+        AddonInvocationAudit.snapshot().single().subject shouldBe "en->de"
+    }
+
+    test("subject defaults to null on unannotated records and blank subject is normalised to null") {
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.SMART_COMPOSE,
+            outcome = AddonInvocationAudit.Outcome.ACCEPTED,
+        )
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.SMART_COMPOSE,
+            outcome = AddonInvocationAudit.Outcome.ACCEPTED,
+            subject = "   ",
+        )
+        AddonInvocationAudit.snapshot().all { it.subject == null } shouldBe true
+    }
 })
