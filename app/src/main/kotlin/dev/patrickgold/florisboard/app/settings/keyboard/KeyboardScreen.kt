@@ -242,6 +242,11 @@ fun KeyboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__keyboard__space_bar_switches_to_characters__label),
                 summary = stringRes(R.string.pref__keyboard__space_bar_switches_to_characters__summary),
             )
+            SwitchPreference(
+                prefs.keyboard.autoReturnAfterApostrophe,
+                title = stringRes(R.string.pref__keyboard__auto_return_after_apostrophe__label),
+                summary = stringRes(R.string.pref__keyboard__auto_return_after_apostrophe__summary),
+            )
         }
     }
 }

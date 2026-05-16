@@ -704,6 +704,8 @@
     <string name="pref__keyboard__long_press_delay__label" comment="Preference title">Long key press delay</string>
     <string name="pref__keyboard__space_bar_switches_to_characters__label" comment="Preference title">Space bar switches to characters</string>
     <string name="pref__keyboard__space_bar_switches_to_characters__summary" comment="Preference summary">Automatically switches back to characters when in symbols or numeric</string>
+    <string name="pref__keyboard__auto_return_after_apostrophe__label" comment="Preference title">Return to letters after apostrophe</string>
+    <string name="pref__keyboard__auto_return_after_apostrophe__summary" comment="Preference summary">After tapping the apostrophe in the symbols panel, automatically switch back to the letter keyboard so contractions finish without a manual mode change</string>
     <string name="pref__keyboard__incognito_indicator__label" comment="Preference title">Incognito indicator</string>
 
     <!-- Smartbar strings -->
