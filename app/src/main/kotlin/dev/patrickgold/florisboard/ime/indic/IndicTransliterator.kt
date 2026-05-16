@@ -1163,6 +1163,77 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Soyombo (U+11A50 block).
+         * Soyombo is a 17th-century alphabetic script created by the
+         * Mongolian lama Zanabazar for writing Sanskrit, Tibetan, and
+         * Mongolian. The Soyombo symbol on the Mongolian flag derives
+         * from this script. Supplementary plane.
+         */
+        val LatinToSoyombo: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Soyombo",
+            mappings = mapOf(
+                "a" to "𑩐", "i" to "𑩑", "u" to "𑩒",
+                "k" to "𑪅", "kh" to "𑪆", "g" to "𑪇",
+                "ch" to "𑪊", "j" to "𑪋",
+                "T" to "𑪎", "Th" to "𑪏", "D" to "𑪐",
+                "t" to "𑪓", "th" to "𑪔", "d" to "𑪕",
+                "n" to "𑪗", "p" to "𑪘", "ph" to "𑪙",
+                "b" to "𑪚", "m" to "𑪜",
+                "y" to "𑪝", "r" to "𑪞", "l" to "𑪟",
+                "s" to "𑪡", "h" to "𑪢",
+            ),
+        )
+
+        /**
+         * Latin → Marchen (U+11C70 block).
+         * Marchen is the historical script of the Bon religion (Tibet),
+         * used between the 17th and 20th centuries for liturgical
+         * texts. Brahmic-derived. Supplementary plane.
+         */
+        val LatinToMarchen: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Marchen",
+            mappings = mapOf(
+                "k" to "𑱰", "kh" to "𑱱", "g" to "𑱲",
+                "ng" to "𑱳",
+                "c" to "𑱴", "ch" to "𑱵", "j" to "𑱶",
+                "ny" to "𑱷",
+                "t" to "𑱸", "th" to "𑱹", "d" to "𑱺", "n" to "𑱻",
+                "p" to "𑱼", "ph" to "𑱽", "b" to "𑱾", "m" to "𑱿",
+                "ts" to "𑲀", "tsh" to "𑲁", "dz" to "𑲂",
+                "y" to "𑲄", "r" to "𑲅", "l" to "𑲆",
+                "sh" to "𑲇", "s" to "𑲈", "h" to "𑲉",
+            ),
+        )
+
+        /**
+         * Latin → Chakma (U+11100 block).
+         * Chakma is the Brahmic-derived script of the Chakma language
+         * (Chittagong Hill Tracts, Bangladesh + Tripura, India). Still
+         * in active use; recently revived in education + literature.
+         * Supplementary plane.
+         */
+        val LatinToChakma: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Chakma",
+            mappings = mapOf(
+                "k" to "𑄇", "kh" to "𑄈", "g" to "𑄉", "gh" to "𑄊",
+                "ng" to "𑄋",
+                "c" to "𑄌", "ch" to "𑄍", "j" to "𑄎", "jh" to "𑄏",
+                "ny" to "𑄐",
+                "T" to "𑄑", "Th" to "𑄒", "D" to "𑄓", "Dh" to "𑄔",
+                "N" to "𑄕",
+                "t" to "𑄖", "th" to "𑄗", "d" to "𑄘", "dh" to "𑄙",
+                "n" to "𑄚",
+                "p" to "𑄛", "ph" to "𑄜", "b" to "𑄝", "bh" to "𑄞",
+                "m" to "𑄟",
+                "y" to "𑄠", "r" to "𑄢", "l" to "𑄣", "w" to "𑄤",
+                "sh" to "𑄥",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
