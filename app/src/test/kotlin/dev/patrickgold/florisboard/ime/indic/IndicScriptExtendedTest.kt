@@ -264,6 +264,32 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("nga") shouldBe "ᜥ"
     }
 
+    test("Soyombo table maps 'a' to 𑩐 (supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToSoyombo)
+        xlit.transliterate("a") shouldBe "𑩐"
+    }
+
+    test("Marchen table maps 'k' to 𑱰 and 'ts' digraph to 𑲀") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToMarchen)
+        xlit.transliterate("k") shouldBe "𑱰"
+        xlit.transliterate("ts") shouldBe "𑲀"
+    }
+
+    test("Chakma table maps 'k' to 𑄇 and 'sh' digraph to 𑄥") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToChakma)
+        xlit.transliterate("k") shouldBe "𑄇"
+        xlit.transliterate("sh") shouldBe "𑄥"
+    }
+
+    test("Soyombo + Marchen + Chakma tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToSoyombo,
+            IndicScriptTable.LatinToMarchen,
+            IndicScriptTable.LatinToChakma,
+        )
+        tables.forEach { (it.size() > 15) shouldBe true }
+    }
+
     test("Tifinagh + Vithkuqi + Hanunoo tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToTifinagh,
