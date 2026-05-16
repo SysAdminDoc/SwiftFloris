@@ -173,6 +173,11 @@ fun GesturesScreen() = FlorisScreen {
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
             )
             ListPreference(
+                prefs.gestures.spaceBarSwipeDown,
+                title = stringRes(R.string.pref__gestures__space_bar_swipe_down__label),
+                entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+            )
+            ListPreference(
                 prefs.gestures.spaceBarSwipeLeft,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_left__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),

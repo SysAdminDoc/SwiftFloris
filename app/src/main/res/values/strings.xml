@@ -882,6 +882,7 @@
     <string name="pref__gestures__swipe_left__label" comment="Preference title">Swipe left</string>
     <string name="pref__gestures__swipe_right__label" comment="Preference title">Swipe right</string>
     <string name="pref__gestures__space_bar_swipe_up__label" comment="Preference title">Space bar swipe up</string>
+    <string name="pref__gestures__space_bar_swipe_down__label" comment="Preference title">Space bar swipe down</string>
     <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Space bar swipe left</string>
     <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Space bar swipe right</string>
     <string name="pref__gestures__space_bar_long_press__label" comment="Preference title">Space bar long press</string>

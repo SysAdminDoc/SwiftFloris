@@ -343,6 +343,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "gestures__space_bar_swipe_up",
             default = SwipeAction.NO_ACTION,
         )
+        // Matrix #15 — downward vertical swipe on the space bar. Defaults to NO_ACTION so existing users
+        // see no behavior change; matrix #14 (continuous vertical trackpad) adds the MOVE_CURSOR_DOWN
+        // continuous-drag path on top of this dispatch.
+        val spaceBarSwipeDown = enum(
+            key = "gestures__space_bar_swipe_down",
+            default = SwipeAction.NO_ACTION,
+        )
         val spaceBarSwipeLeft = enum(
             key = "gestures__space_bar_swipe_left",
             default = SwipeAction.MOVE_CURSOR_LEFT,
