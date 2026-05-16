@@ -71,6 +71,7 @@ import dev.patrickgold.florisboard.app.settings.localization.SelectLocaleScreen
 import dev.patrickgold.florisboard.app.settings.localization.SubtypeEditorScreen
 import dev.patrickgold.florisboard.app.settings.media.MediaScreen
 import dev.patrickgold.florisboard.app.settings.smartbar.SmartbarScreen
+import dev.patrickgold.florisboard.app.settings.mcp.McpSettingsScreen
 import dev.patrickgold.florisboard.app.settings.sync.SyncSettingsScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreenAction
@@ -166,6 +167,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/sync")
         object Sync
+
+        @Serializable
+        @Deeplink("settings/mcp")
+        object Mcp
 
         @Serializable
         @Deeplink("settings/dictionary/user-dictionary")
@@ -321,6 +326,7 @@ object Routes {
 
             composableWithDeepLink(Settings.Dictionary::class) { DictionaryScreen() }
             composableWithDeepLink(Settings.Sync::class) { SyncSettingsScreen() }
+            composableWithDeepLink(Settings.Mcp::class) { McpSettingsScreen() }
             composableWithDeepLink(Settings.UserDictionary::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.UserDictionary>()
                 UserDictionaryScreen(payload.type)
