@@ -67,6 +67,14 @@ Addons → "Why was X rejected?" surface can replay the decision). This
 keeps the §1 no-network philosophy intact even when the user installs
 third-party addons.
 
+**Universal addon APK validation contract.** Beyond the banned-permission
+list, every addon APK must also satisfy the 16 KB native-library
+alignment requirement and the bundle-size / signing-certificate / receiver
+checks documented in [`apk-validation.md`](apk-validation.md). Addon repos
+should adopt [`scripts/verify-addon-apk.sh`](../../scripts/verify-addon-apk.sh)
+as a CI gate so failures surface before publication rather than at user
+enrolment time.
+
 ## 2. Descriptor JSON (`res/raw/dict_descriptor.json`)
 
 ```json
