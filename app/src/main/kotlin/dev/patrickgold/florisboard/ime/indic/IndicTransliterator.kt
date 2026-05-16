@@ -1099,6 +1099,70 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Tifinagh (U+2D30 block).
+         * Tifinagh is the consonantal alphabet used by the Berber /
+         * Amazigh languages across North Africa (Morocco, Algeria,
+         * Libya, Niger, Mali). Modern revival uses the standardized
+         * Neo-Tifinagh form (this table).
+         */
+        val LatinToTifinagh: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Tifinagh",
+            mappings = mapOf(
+                "a" to "ⴰ", "b" to "ⴱ", "g" to "ⴳ", "d" to "ⴷ",
+                "f" to "ⴼ", "k" to "ⴽ", "h" to "ⵀ",
+                "x" to "ⵅ", "q" to "ⵇ",
+                "i" to "ⵉ", "j" to "ⵊ", "l" to "ⵍ", "m" to "ⵎ",
+                "n" to "ⵏ", "u" to "ⵓ", "p" to "ⵒ",
+                "r" to "ⵔ", "gh" to "ⵖ",
+                "s" to "ⵙ", "c" to "ⵛ",
+                "t" to "ⵜ", "w" to "ⵡ", "y" to "ⵢ", "z" to "ⵣ",
+            ),
+        )
+
+        /**
+         * Latin → Vithkuqi (U+10570 block).
+         * Vithkuqi is a 19th-century alphabet for Albanian created
+         * by Naum Veqilharxhi in 1844, used briefly before being
+         * replaced by the modern Latin Albanian alphabet. Encoded
+         * in Unicode 14 (Sept 2021). Supplementary plane.
+         */
+        val LatinToVithkuqi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Vithkuqi",
+            mappings = mapOf(
+                "a" to "𐕰", "b" to "𐕱", "c" to "𐕲", "d" to "𐕳",
+                "e" to "𐕴", "f" to "𐕵", "g" to "𐕶", "h" to "𐕷",
+                "i" to "𐕸", "j" to "𐕹", "k" to "𐕺", "l" to "𐕻",
+                "m" to "𐕽", "n" to "𐕾", "o" to "𐕿", "p" to "𐖀",
+                "q" to "𐖁", "r" to "𐖂", "s" to "𐖃", "t" to "𐖄",
+                "u" to "𐖅", "v" to "𐖆", "x" to "𐖇", "y" to "𐖈",
+                "z" to "𐖉",
+            ),
+        )
+
+        /**
+         * Latin → Hanunoo (U+1720 block).
+         * Hanunoo is one of the four surviving Brahmic-derived
+         * scripts of the Philippines (alongside Tagbanwa, Buhid, and
+         * Baybayin). Still in active use by the Mangyan people of
+         * Mindoro. Vertical bottom-to-top traditionally; encoded
+         * horizontally in Unicode.
+         */
+        val LatinToHanunoo: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Hanunoo",
+            mappings = mapOf(
+                "a" to "ᜠ", "i" to "ᜡ", "u" to "ᜢ",
+                "ka" to "ᜣ", "ga" to "ᜤ", "nga" to "ᜥ",
+                "ta" to "ᜦ", "da" to "ᜧ", "na" to "ᜨ",
+                "pa" to "ᜩ", "ba" to "ᜪ", "ma" to "ᜫ",
+                "ya" to "ᜬ", "ra" to "ᜭ", "la" to "ᜮ",
+                "wa" to "ᜯ", "sa" to "ᜰ", "ha" to "ᜱ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
