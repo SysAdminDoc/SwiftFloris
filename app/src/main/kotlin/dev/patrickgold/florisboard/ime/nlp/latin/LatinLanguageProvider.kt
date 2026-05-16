@@ -109,7 +109,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         ) {
             return SpellingResult.validWord()
         }
-        val corrections = LatinDictionarySuggester.corrections(normalizedWord, dictionary, maxSuggestionCount)
+        // Lazy hydration so the overlay reflects the user's saved vocab
+        // when spell() runs — same idempotent path as suggest().
+        dev.patrickgold.florisboard.ime.dictionary.DictionaryManager.default()
+            .hydrateOverlay(subtype.primaryLocale)
+        val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
+            .get()
+            .snapshotFor(subtype.primaryLocale)
+        val corrections = LatinDictionarySuggester.corrections(
+            word = normalizedWord,
+            dictionary = dictionary,
+            maxCandidateCount = maxSuggestionCount,
+            userOverlay = overlay,
+        )
         return SpellingResult.typo(
             suggestions = corrections.map { it.text }.toTypedArray(),
             isHighConfidenceResult = corrections.firstOrNull()?.isEligibleForAutoCommit == true,
@@ -741,7 +753,12 @@ internal object LatinDictionarySuggester {
             !isKnownInOverlay &&
             normalizedWord.length >= MinCorrectionLength
         ) {
-            corrections(normalizedWord, dictionary, maxCandidateCount).map { candidate ->
+            corrections(
+                word = normalizedWord,
+                dictionary = dictionary,
+                maxCandidateCount = maxCandidateCount,
+                userOverlay = userOverlay,
+            ).map { candidate ->
                 if (shouldDeferCorrectionForActiveCompletion(normalizedWord, completionCandidates, candidate)) {
                     candidate.copy(isEligibleForAutoCommit = false)
                 } else {
@@ -857,15 +874,29 @@ internal object LatinDictionarySuggester {
         word: String,
         dictionary: LatinDictionarySnapshot,
         maxCandidateCount: Int,
+        userOverlay: Map<String, Int> = emptyMap(),
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || word.length < MinCorrectionLength || !dictionary.isLoaded) return emptyList()
         val oneEditCandidates = knownEdits1(word, dictionary)
-        val candidateDistances = if (oneEditCandidates.isNotEmpty()) {
+        val scowlCandidates = if (oneEditCandidates.isNotEmpty()) {
             oneEditCandidates.map { it to 1 }
         } else if (word.length <= MaxTwoEditWordLength) {
             knownEdits2(word, dictionary)
         } else {
             emptyList()
+        }
+        // ROADMAP §7 Next-3 — also scan the user-overlay for edit-distance
+        // candidates so a typo of a learned word ("Patrk" → "Patrick")
+        // surfaces the user's word as the correction. The overlay is small
+        // (typically a few hundred entries per locale even for heavy users)
+        // so a linear scan is faster than building a delete-index for it.
+        val overlayCandidates = overlayEditDistanceCandidates(word, userOverlay)
+        val candidateDistances = if (scowlCandidates.isEmpty()) {
+            overlayCandidates
+        } else if (overlayCandidates.isEmpty()) {
+            scowlCandidates
+        } else {
+            scowlCandidates + overlayCandidates
         }
 
         return candidateDistances
@@ -874,13 +905,16 @@ internal object LatinDictionarySuggester {
             .distinctBy { (candidate, _) -> candidate }
             .sortedWith(
                 compareBy<Pair<String, Int>> { (_, distance) -> distance }
-                    .thenByDescending { (candidate, _) -> dictionary.frequencyFor(candidate) }
+                    .thenByDescending { (candidate, _) ->
+                        blendedFrequencyForCorrection(candidate, dictionary, userOverlay)
+                    }
                     .thenBy { (candidate, _) -> candidate.length }
                     .thenBy { (candidate, _) -> candidate }
             )
             .take(maxCandidateCount)
             .mapIndexed { index, (candidate, distance) ->
-                val frequency = dictionary.frequencyFor(candidate)
+                val frequency =
+                    blendedFrequencyForCorrection(candidate, dictionary, userOverlay)
                 val autoCommitThreshold = when (distance) {
                     1 -> AutoCommitMinFrequency
                     2 -> AutoCommitMinFrequencyDistance2
@@ -896,6 +930,71 @@ internal object LatinDictionarySuggester {
                 )
             }
             .toList()
+    }
+
+    /**
+     * Pure linear scan over the user-overlay returning `(word, distance)`
+     * pairs for every overlay word within edit-distance 1 or 2 of the
+     * typed [word]. Returns empty when the overlay is empty.
+     */
+    private fun overlayEditDistanceCandidates(
+        word: String,
+        userOverlay: Map<String, Int>,
+    ): List<Pair<String, Int>> {
+        if (userOverlay.isEmpty()) return emptyList()
+        val maxDistance = if (word.length <= MaxTwoEditWordLength) 2 else 1
+        val out = ArrayList<Pair<String, Int>>(4)
+        for (key in userOverlay.keys) {
+            // Length-based prune first — distance is at least |len(a) - len(b)|.
+            if (kotlin.math.abs(key.length - word.length) > maxDistance) continue
+            val d = boundedLevenshtein(word, key, maxDistance)
+            if (d in 1..maxDistance) out.add(key to d)
+        }
+        return out
+    }
+
+    /**
+     * Bounded Levenshtein distance — returns [maxDistance] + 1 as soon as
+     * the rolling-row minimum exceeds [maxDistance], short-circuiting most
+     * comparisons for the common case of clearly-different strings.
+     */
+    private fun boundedLevenshtein(a: String, b: String, maxDistance: Int): Int {
+        val n = a.length
+        val m = b.length
+        if (kotlin.math.abs(n - m) > maxDistance) return maxDistance + 1
+        val prev = IntArray(m + 1) { it }
+        val curr = IntArray(m + 1)
+        for (i in 1..n) {
+            curr[0] = i
+            var rowMin = i
+            for (j in 1..m) {
+                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
+                curr[j] = minOf(
+                    curr[j - 1] + 1,
+                    prev[j] + 1,
+                    prev[j - 1] + cost,
+                )
+                if (curr[j] < rowMin) rowMin = curr[j]
+            }
+            if (rowMin > maxDistance) return maxDistance + 1
+            for (j in 0..m) prev[j] = curr[j]
+        }
+        return prev[m]
+    }
+
+    /**
+     * Frequency lookup for correction ranking that consults the user-overlay
+     * as a fallback. Overlay-only words (not in SCOWL) get their stored
+     * frequency; words in both pick the higher signal.
+     */
+    private fun blendedFrequencyForCorrection(
+        word: String,
+        dictionary: LatinDictionarySnapshot,
+        userOverlay: Map<String, Int>,
+    ): Double {
+        val scowl = dictionary.frequencyFor(word)
+        val overlay = (userOverlay[word] ?: 0).coerceIn(0, 255) / 255.0
+        return maxOf(scowl, overlay)
     }
 
     fun normalizeWord(rawWord: String): String? {

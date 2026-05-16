@@ -292,6 +292,71 @@ class LatinDictionarySuggesterTest : FunSpec({
         )
         suggestions.first().text shouldBe "foobar"
     }
+
+    test("typo of an overlay-only word autocorrects to the learned form") {
+        // User taught the keyboard "patrick" — types a typo "patrik".
+        // SCOWL doesn't know "patrick"; previously the corrector would
+        // surface "patrol" / "patron" / etc. instead. Now the overlay
+        // participates in the correction candidate pool so "patrick"
+        // wins.
+        val dict = latinDictionary(
+            "patrol" to 180, "patron" to 160, "pattern" to 200, "party" to 220,
+        )
+        val overlay = mapOf("patrick" to 245)
+        val corrections = LatinDictionarySuggester.corrections(
+            word = "patrik",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        // "patrick" is distance 1 from "patrik" (insert 'c'); SCOWL words
+        // are distance ≥ 2.  Distance-1 candidate wins.
+        corrections.first().text shouldBe "patrick"
+        corrections.first().isEligibleForAutoCommit shouldBe true
+    }
+
+    test("overlay edit-distance scan respects MaxTwoEditWordLength cap") {
+        // Long word + overlay candidate at distance 2 should be skipped
+        // (matches SCOWL's distance-2 length cap).
+        val dict = latinDictionary("for" to 250)
+        val overlay = mapOf("verylongwordform" to 245)
+        val corrections = LatinDictionarySuggester.corrections(
+            word = "verylongwordfor",  // length 15, > MaxTwoEditWordLength
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        // The overlay word is distance 1 (insert 'm'); distance 1 still
+        // allowed even past the distance-2 length cap.
+        corrections.firstOrNull()?.text shouldBe "verylongwordform"
+    }
+
+    test("overlay-only correction with no SCOWL matches still surfaces") {
+        // SCOWL has nothing relevant — only the overlay can save us.
+        val dict = latinDictionary("for" to 250)
+        val overlay = mapOf("foobaz" to 245)
+        val corrections = LatinDictionarySuggester.corrections(
+            word = "foobax",  // distance 1 from "foobaz"
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        corrections.first().text shouldBe "foobaz"
+    }
+
+    test("empty overlay leaves correction output identical to overlay-less path") {
+        val dict = latinDictionary(
+            "for" to 250, "form" to 240, "force" to 220,
+        )
+        val a = LatinDictionarySuggester.corrections("fo", dict, maxCandidateCount = 4)
+        val b = LatinDictionarySuggester.corrections(
+            word = "fo",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = emptyMap(),
+        )
+        a.map { it.text } shouldBe b.map { it.text }
+    }
 })
 
 private fun latinDictionary(vararg words: Pair<String, Int>): LatinDictionarySnapshot {
