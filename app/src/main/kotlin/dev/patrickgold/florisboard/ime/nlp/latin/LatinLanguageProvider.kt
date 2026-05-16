@@ -101,6 +101,14 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         if (dictionary.contains(normalizedWord)) {
             return SpellingResult.validWord()
         }
+        // ROADMAP §7 Next-3 — words the user has typed before are valid,
+        // regardless of whether SCOWL knows them. This is what stops the
+        // spell-checker from underlining the user's own learned vocabulary.
+        if (dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+                .contains(normalizedWord, subtype.primaryLocale)
+        ) {
+            return SpellingResult.validWord()
+        }
         val corrections = LatinDictionarySuggester.corrections(normalizedWord, dictionary, maxSuggestionCount)
         return SpellingResult.typo(
             suggestions = corrections.map { it.text }.toTypedArray(),
@@ -126,11 +134,19 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             suggestMultilingual(currentWord, locales, maxCandidateCount)
         } else {
             val languageCode = LatinDictionaryStore.normalizeLanguageCode(subtype.primaryLocale.language)
+            // Lazy hydrate so a process restart picks up the user's vocabulary
+            // on the first suggest after typing resumes. Idempotent + async.
+            dev.patrickgold.florisboard.ime.dictionary.DictionaryManager.default()
+                .hydrateOverlay(subtype.primaryLocale)
+            val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
+                .get()
+                .snapshotFor(subtype.primaryLocale)
             LatinDictionarySuggester.suggest(
                 rawWord = currentWord,
                 dictionary = dictionary(subtype),
                 maxCandidateCount = maxCandidateCount,
                 languageCode = languageCode,
+                userOverlay = overlay,
             ).map { candidate ->
                 WordSuggestionCandidate(
                     text = candidate.text,
@@ -156,13 +172,22 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val perLocale = locales.map { locale ->
             val langCode = LatinDictionaryStore.normalizeLanguageCode(locale.language)
             val dict = dictionaryStore.dictionaryForLanguage(locale.language)
+            dev.patrickgold.florisboard.ime.dictionary.DictionaryManager.default()
+                .hydrateOverlay(locale)
+            val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
+                .get()
+                .snapshotFor(locale)
             val cands = LatinDictionarySuggester.suggest(
                 rawWord = rawWord,
                 dictionary = dict,
                 maxCandidateCount = maxCandidateCount,
                 languageCode = langCode,
+                userOverlay = overlay,
             )
-            PerLocale(recognised = dict.contains(normalized), candidates = cands)
+            PerLocale(
+                recognised = dict.contains(normalized) || overlay.containsKey(normalized),
+                candidates = cands,
+            )
         }
         val anyRecognised = perLocale.any { it.recognised }
         val merged = HashMap<String, Pair<SuggestionCandidate, Double>>()
@@ -682,6 +707,7 @@ internal object LatinDictionarySuggester {
         dictionary: LatinDictionarySnapshot,
         maxCandidateCount: Int,
         languageCode: String = LatinDictionaryStore.DefaultLanguageCode,
+        userOverlay: Map<String, Int> = emptyMap(),
     ): List<LatinSuggestion> {
         if (maxCandidateCount <= 0 || !dictionary.isLoaded) return emptyList()
         val normalizedWord = normalizeWord(rawWord) ?: return emptyList()
@@ -705,8 +731,16 @@ internal object LatinDictionarySuggester {
         }
         if (normalizedWord.length < MinCompletionLength) return emptyList()
 
-        val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount)
-        val correctionCandidates = if (!dictionary.contains(normalizedWord) && normalizedWord.length >= MinCorrectionLength) {
+        val completionCandidates = completions(normalizedWord, dictionary, maxCandidateCount, userOverlay)
+        // ROADMAP §7 Next-3 — when the user has typed [normalizedWord] before
+        // (overlay carries it under any frequency), treat it as a known word so
+        // we skip running corrections against it.  Otherwise the ranker would
+        // happily replace a user-typed proper noun with a SCOWL look-alike.
+        val isKnownInOverlay = userOverlay.containsKey(normalizedWord)
+        val correctionCandidates = if (!dictionary.contains(normalizedWord) &&
+            !isKnownInOverlay &&
+            normalizedWord.length >= MinCorrectionLength
+        ) {
             corrections(normalizedWord, dictionary, maxCandidateCount).map { candidate ->
                 if (shouldDeferCorrectionForActiveCompletion(normalizedWord, completionCandidates, candidate)) {
                     candidate.copy(isEligibleForAutoCommit = false)
@@ -887,24 +921,61 @@ internal object LatinDictionarySuggester {
         prefix: String,
         dictionary: LatinDictionarySnapshot,
         maxCandidateCount: Int,
+        userOverlay: Map<String, Int> = emptyMap(),
     ): List<LatinSuggestion> {
-        return wordsWithPrefix(prefix, dictionary.sortedWords)
+        // Merge SCOWL prefix-matches with user-overlay prefix-matches so
+        // user-typed words compete for the candidate slots. Dedup via a set
+        // because a SCOWL word the user has also typed shouldn't appear twice.
+        val scowlMatches = wordsWithPrefix(prefix, dictionary.sortedWords)
+        val overlayMatches = if (userOverlay.isEmpty()) {
+            emptyList()
+        } else {
+            userOverlay.keys.filter { it.startsWith(prefix) }
+        }
+        val merged = LinkedHashSet<String>(scowlMatches.size + overlayMatches.size)
+        merged.addAll(scowlMatches)
+        merged.addAll(overlayMatches)
+        return merged
             .asSequence()
             .filter { it.length > prefix.length }
             .sortedWith(
-                compareByDescending<String> { dictionary.frequencyFor(it) }
+                compareByDescending<String> { blendedFrequencyFor(it, dictionary, userOverlay) }
                     .thenBy { it.length }
                     .thenBy { it }
             )
             .take(maxCandidateCount)
             .map { word ->
+                val blended = blendedFrequencyFor(word, dictionary, userOverlay)
                 LatinSuggestion(
                     text = word,
-                    confidence = (0.2 + dictionary.frequencyFor(word) * 0.6).coerceIn(0.0, 1.0),
+                    confidence = (0.2 + blended * 0.6).coerceIn(0.0, 1.0),
                     isEligibleForAutoCommit = false,
                 )
             }
             .toList()
+    }
+
+    /**
+     * ROADMAP §7 Next-3 — blended SCOWL + user-overlay weight on the same
+     * `[0, 1]` scale as [LatinDictionarySnapshot.frequencyFor]. Picks the
+     * **max** of the two signals (rather than an additive blend) so:
+     *
+     *  - A word the user has typed lots of times (overlay freq → 250) ranks
+     *    above its SCOWL look-alikes for the same prefix.
+     *  - A word that's both common in SCOWL and typed by the user still
+     *    uses the SCOWL signal if SCOWL says it's a top-1000 word.
+     *  - A word ONLY in the overlay (proper noun the user invented) ranks
+     *    using its overlay frequency alone.
+     */
+    private fun blendedFrequencyFor(
+        word: String,
+        dictionary: LatinDictionarySnapshot,
+        userOverlay: Map<String, Int>,
+    ): Double {
+        val scowl = dictionary.frequencyFor(word)
+        if (userOverlay.isEmpty()) return scowl
+        val overlay = (userOverlay[word] ?: 0).coerceIn(0, 255) / 255.0
+        return maxOf(scowl, overlay)
     }
 
     private fun wordsWithPrefix(prefix: String, sortedWords: List<String>): List<String> {

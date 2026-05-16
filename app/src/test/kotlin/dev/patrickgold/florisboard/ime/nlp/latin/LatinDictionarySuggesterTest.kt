@@ -204,6 +204,74 @@ class LatinDictionarySuggesterTest : FunSpec({
         LatinDictionarySuggester.suggest("123", dictionary, maxCandidateCount = 4) shouldBe emptyList()
         LatinDictionarySuggester.suggest("mail@example.com", dictionary, maxCandidateCount = 4) shouldBe emptyList()
     }
+
+    test("user-overlay surfaces a word the SCOWL dict has never seen") {
+        val dict = latinDictionary(
+            "for" to 250, "form" to 240, "force" to 220,
+        )
+        val overlay = mapOf("foobaz" to 240)
+        val suggestions = LatinDictionarySuggester.suggest(
+            rawWord = "foob",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        // "foobaz" is in the overlay but not the SCOWL dict — it must appear
+        // first because it's the only true prefix-completion of "foob".
+        suggestions.first().text shouldBe "foobaz"
+    }
+
+    test("user-overlay boosts a word above lower-ranked SCOWL completions") {
+        val dict = latinDictionary(
+            "foo" to 60,        // SCOWL low frequency
+            "food" to 90,       // SCOWL low-medium
+            "foot" to 100,      // SCOWL medium
+        )
+        // User has typed "foobar" many times — overlay freq high.
+        val overlay = mapOf("foobar" to 240)
+        val suggestions = LatinDictionarySuggester.suggest(
+            rawWord = "foo",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        // "foobar" outranks the lower-frequency SCOWL completions.
+        suggestions.first().text shouldBe "foobar"
+    }
+
+    test("user-overlay treats overlay-known word as not-a-typo (skips corrections)") {
+        val dict = latinDictionary(
+            "for" to 250, "form" to 240, "force" to 220,
+        )
+        val overlay = mapOf("foobaz" to 200)
+        val suggestions = LatinDictionarySuggester.suggest(
+            rawWord = "foobaz",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = overlay,
+        )
+        // The typed word is recognised via overlay — should NOT be replaced
+        // with "for"/"form"/"force" autocorrect.
+        val autoCommitTexts = suggestions
+            .filter { it.isEligibleForAutoCommit }
+            .map { it.text }
+        autoCommitTexts.contains("foobaz") shouldBe false
+        autoCommitTexts.contains("for") shouldBe false
+    }
+
+    test("empty user-overlay leaves suggestions identical to overlay-less path") {
+        val dict = latinDictionary(
+            "for" to 250, "form" to 240, "force" to 220,
+        )
+        val without = LatinDictionarySuggester.suggest("fo", dict, maxCandidateCount = 4)
+        val withEmptyOverlay = LatinDictionarySuggester.suggest(
+            rawWord = "fo",
+            dictionary = dict,
+            maxCandidateCount = 4,
+            userOverlay = emptyMap(),
+        )
+        without.map { it.text } shouldBe withEmptyOverlay.map { it.text }
+    }
 })
 
 private fun latinDictionary(vararg words: Pair<String, Int>): LatinDictionarySnapshot {
