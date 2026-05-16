@@ -23,6 +23,7 @@ import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.displayCutoutPadding
 import androidx.compose.foundation.layout.imePadding
@@ -40,7 +41,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.ViewCompat
-import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
@@ -103,7 +103,12 @@ class FlorisAppActivity : ComponentActivity() {
             setKeepOnScreenCondition { !appContext.preferenceStoreLoaded.value }
         }
         super.onCreate(savedInstanceState)
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        // Matrix #12 — Android 16 edge-to-edge migration. `targetSdk 36` forces edge-to-edge by default; we opt
+        // in explicitly via the modern `enableEdgeToEdge()` API so the activity carries the same behavior across
+        // pre-API-36 builds too, and so the `SystemBarStyle` is set deliberately (transparent bars). This also
+        // covers the old `setDecorFitsSystemWindows(false)` contract that the inset-aware Scaffold path already
+        // depends on inside `FlorisScreen`.
+        enableEdgeToEdge()
 
         // ROADMAP §6 N13.2 — Android 17 (API 37) no longer auto-restores soft-IME
         // visibility across configuration changes for apps that don't handle the

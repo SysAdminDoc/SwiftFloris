@@ -26,6 +26,22 @@ The base IME `FlorisScreen` Scaffold already wires `paneTitle = title` from the 
 Settings screen inherits the pane-title contract for free. New full-screen surfaces should build on top of
 `FlorisScreen` rather than constructing their own Scaffold.
 
+## Android 16 edge-to-edge (ROADMAP matrix #12)
+
+`targetSdk 36` makes edge-to-edge the default for the Settings activity. `FlorisAppActivity.onCreate` opts in
+explicitly via the modern `androidx.activity.enableEdgeToEdge()` API rather than the older
+`WindowCompat.setDecorFitsSystemWindows(window, false)` call — `enableEdgeToEdge()` carries the same behavior
+across pre-API-36 builds and lets the call-site name the intended `SystemBarStyle` deliberately.
+
+The inset-aware Scaffold path inside `FlorisScreen` already consumes the `innerPadding` provided by Material3's
+Scaffold, so every Settings screen built on top of `FlorisScreen` handles status / navigation / IME insets
+without per-screen edits. The `previewKeyboardField` floating-IME preview path inside Settings → Theme is the
+one surface that needs explicit attention because it overlays the bottom edge; that is handled by the existing
+`PreviewKeyboardField` composable's own inset math.
+
+Screenshot baselines (matrix #6) should cover at least one settings screen in both portrait and landscape to
+pin the edge-to-edge rendering — that test lands when the Roborazzi baseline capture lands.
+
 ## Other a11y contracts SwiftFloris pins
 
 - **48 dp touch targets (WCAG 2.5.5).** The IME enforces a minimum 48 dp touch-target size via the existing
