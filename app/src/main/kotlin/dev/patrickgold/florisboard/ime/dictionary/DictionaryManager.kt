@@ -161,6 +161,9 @@ class DictionaryManager private constructor(context: Context) {
             .trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
         if (cleaned.isBlank()) return false
         val normalized = cleaned.lowercase()
+        // Drop the in-memory overlay entry immediately so the next suggest
+        // can't surface the forgotten word from the ranker.
+        UserDictionaryOverlay.get().forget(normalized, locale)
         val dao = florisUserDictionaryDao() ?: return false
         // Synchronous-on-IO inside a runBlocking is acceptable here because the long-press
         // removal path expects an immediate boolean acknowledgement before re-running suggest.
@@ -191,6 +194,12 @@ class DictionaryManager private constructor(context: Context) {
         if (cleaned.any { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }) return
         val normalized = cleaned.lowercase()
 
+        // Bump the in-memory overlay first so the next keystroke's
+        // suggest() already ranks this word higher — the IO write below is
+        // just for durability across process restarts. ROADMAP §7 Next-3
+        // ranker tie-in.
+        UserDictionaryOverlay.get().learn(normalized, locale)
+
         ioScope.launch {
             val dao = florisUserDictionaryDao() ?: return@launch
             val existingMatches = dao.queryExactFuzzyLocale(normalized, locale)
@@ -212,6 +221,26 @@ class DictionaryManager private constructor(context: Context) {
                     ),
                 )
             }
+        }
+    }
+
+    /**
+     * Populate the in-memory [UserDictionaryOverlay] for [locale] from the
+     * disk-backed Floris user-dictionary DAO. Idempotent — the overlay
+     * tracks which locales have been hydrated and skips the second call.
+     * Safe to call from any thread; the heavy DAO scan is dispatched onto
+     * the IO scope and the function returns immediately.
+     */
+    fun hydrateOverlay(locale: FlorisLocale) {
+        if (!prefs.dictionary.enableFlorisUserDictionary.get()) return
+        val overlay = UserDictionaryOverlay.get()
+        if (overlay.isHydrated(locale)) return
+        ioScope.launch {
+            val dao = florisUserDictionaryDao() ?: return@launch
+            val pairs = runCatching {
+                dao.queryAll(locale).map { entry -> entry.word.lowercase() to entry.freq }
+            }.getOrDefault(emptyList())
+            overlay.hydrateLocale(locale, pairs)
         }
     }
 
