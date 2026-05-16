@@ -247,6 +247,32 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("p") shouldBe "𖬜"
     }
 
+    test("Tifinagh table maps 'a' to ⴰ and 'gh' digraph to ⵖ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToTifinagh)
+        xlit.transliterate("a") shouldBe "ⴰ"
+        xlit.transliterate("gh") shouldBe "ⵖ"
+    }
+
+    test("Vithkuqi table maps 'a' to 𐕰 (supplementary plane, Unicode 14)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToVithkuqi)
+        xlit.transliterate("a") shouldBe "𐕰"
+    }
+
+    test("Hanunoo table maps 'a' to ᜠ and 'nga' CV-syllable greedy") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToHanunoo)
+        xlit.transliterate("a") shouldBe "ᜠ"
+        xlit.transliterate("nga") shouldBe "ᜥ"
+    }
+
+    test("Tifinagh + Vithkuqi + Hanunoo tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToTifinagh,
+            IndicScriptTable.LatinToVithkuqi,
+            IndicScriptTable.LatinToHanunoo,
+        )
+        tables.forEach { (it.size() > 15) shouldBe true }
+    }
+
     test("Bassa Vah + Mende Kikakui + Pahawh Hmong tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToBassaVah,
