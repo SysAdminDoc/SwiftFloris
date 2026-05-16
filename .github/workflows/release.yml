@@ -79,6 +79,62 @@ jobs:
       - name: Lint debug
         run: ./gradlew :app:lintDebug
 
+      # ROADMAP matrix #9 + #44 — capture OSV scan status into the release body so each
+      # tag carries a dated "OSV scan: ..." appendix. `continue-on-error: true` ensures
+      # the release still ships if OSV reports something — the result is recorded either
+      # way so users can reason about how stale / clean the dep tree was on release day.
+      # See `docs/SECURITY.md` for the policy.
+      - name: Generate Gradle dependency tree for OSV scan
+        run: ./gradlew :app:dependencies --configuration releaseRuntimeClasspath > gradle-deps.txt
+
+      - name: Run OSV-Scanner against the release tree
+        id: osv-scan
+        continue-on-error: true
+        run: |
+          set +e
+          curl -sSL -o osv-scanner "https://github.com/google/osv-scanner/releases/download/v2.0.2/osv-scanner_linux_amd64"
+          chmod +x osv-scanner
+          ./osv-scanner --recursive --skip-git --format=json ./ > osv-result.json
+          osv_exit=$?
+          echo "osv-exit=$osv_exit" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Summarise OSV result into release appendix
+        run: |
+          scan_date=$(date -u +"%Y-%m-%d")
+          scanner_version="osv-scanner v2.0.2"
+          if [ -s osv-result.json ]; then
+            vuln_count=$(python3 -c "import json;d=json.load(open('osv-result.json'));n=sum(len(p.get('vulnerabilities', [])) for r in d.get('results', []) for p in r.get('packages', []));print(n)")
+          else
+            vuln_count=0
+          fi
+          {
+            echo ""
+            echo "---"
+            echo ""
+            echo "### Security scan (OSV)"
+            echo ""
+            echo "- **Scan date (UTC):** $scan_date"
+            echo "- **Scanner:** $scanner_version"
+            if [ "$vuln_count" = "0" ]; then
+              echo "- **Result:** 0 known vulnerabilities in the \`releaseRuntimeClasspath\` of \`:app\`."
+            else
+              echo "- **Result:** $vuln_count advisory match(es) — see \`osv-result.json\` in the workflow artifacts. A clean scan today does not imply forever-immunity; see [\`docs/SECURITY.md\`](https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/SECURITY.md)."
+            fi
+            echo ""
+            echo "Reproduce locally: \`./gradlew :app:dependencies --configuration releaseRuntimeClasspath > gradle-deps.txt && osv-scanner --recursive --skip-git ./\`. See [\`docs/SECURITY.md\`](https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/SECURITY.md) for what \"clean\" means and doesn't mean."
+          } > RELEASE_OSV_SUMMARY.md
+
+      - name: Upload OSV scan artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: swiftfloris-v${{ inputs.version }}-osv
+          path: |
+            osv-result.json
+            gradle-deps.txt
+            RELEASE_OSV_SUMMARY.md
+
       - name: Decode keystore
         id: decode-keystore
         if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
@@ -137,20 +193,33 @@ jobs:
         run: |
           tag="v${{ inputs.version }}"
           notes="RELEASE_NOTES_v${{ inputs.version }}.md"
-          notes_arg=""
+          # Compose the release body: prefer the per-version RELEASE_NOTES file when present, fall back to autogen,
+          # then append the OSV scan appendix produced earlier (matrix #9 + #44).
+          body_file="$(mktemp)"
           if [ -f "$notes" ]; then
-            notes_arg="--notes-file $notes"
-          else
-            notes_arg="--generate-notes"
+            cat "$notes" > "$body_file"
+          fi
+          if [ -f RELEASE_OSV_SUMMARY.md ]; then
+            cat RELEASE_OSV_SUMMARY.md >> "$body_file"
           fi
           draft_arg=""
           if [ "${{ inputs.draft }}" = "true" ]; then
             draft_arg="--draft"
           fi
-          gh release create "$tag" \
-            "${{ steps.locate-apk.outputs.apk-path }}" \
-            "${{ steps.sha.outputs.manifest-path }}" \
-            --title "SwiftFloris v${{ inputs.version }}" \
-            $notes_arg \
-            $draft_arg \
-            --target ${{ github.ref_name }}
+          if [ -s "$body_file" ]; then
+            gh release create "$tag" \
+              "${{ steps.locate-apk.outputs.apk-path }}" \
+              "${{ steps.sha.outputs.manifest-path }}" \
+              --title "SwiftFloris v${{ inputs.version }}" \
+              --notes-file "$body_file" \
+              $draft_arg \
+              --target ${{ github.ref_name }}
+          else
+            gh release create "$tag" \
+              "${{ steps.locate-apk.outputs.apk-path }}" \
+              "${{ steps.sha.outputs.manifest-path }}" \
+              --title "SwiftFloris v${{ inputs.version }}" \
+              --generate-notes \
+              $draft_arg \
+              --target ${{ github.ref_name }}
+          fi
