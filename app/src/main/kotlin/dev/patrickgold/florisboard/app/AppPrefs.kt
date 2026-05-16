@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHairStyle
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
+import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
@@ -805,6 +806,28 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         val subtypes = string(
             key = "localization__subtypes",
             default = "[]",
+        )
+    }
+
+    val privacy = Privacy()
+    inner class Privacy {
+        /**
+         * ROADMAP matrix #37 — addon consent state for the smart-compose surface. Defaults to
+         * `NEEDS_PROMPT` so the IME presents a one-time consent dialog on first invocation rather than
+         * silently running addon code on the user's behalf. The router consults this via the
+         * [AddonConsentState.allowsInvocation] predicate; only `GRANTED` lets invocations through.
+         */
+        val smartComposeConsent = enum(
+            key = "privacy__addon_consent_smart_compose",
+            default = AddonConsentState.NEEDS_PROMPT,
+        )
+        val translationConsent = enum(
+            key = "privacy__addon_consent_translation",
+            default = AddonConsentState.NEEDS_PROMPT,
+        )
+        val mcpConsent = enum(
+            key = "privacy__addon_consent_mcp",
+            default = AddonConsentState.NEEDS_PROMPT,
         )
     }
 
