@@ -97,6 +97,7 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.showShortToast
+import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.header
@@ -180,6 +181,16 @@ fun EmojiPaletteView(
         EmojiSearch.results(emojiMappings, searchQuery)
     }
     val scope = rememberCoroutineScope()
+
+    // ROADMAP §7 Next-9.4a — pinned-emoji-groups palette row state. Tracks
+    // a version counter so the chip strip rebuilds when learn/forget calls
+    // mutate the underlying EmojiPinGroupStore.
+    var pinnedGroupsVersion by remember { mutableIntStateOf(0) }
+    val pinnedGroupChips = remember(pinnedGroupsVersion) {
+        PinnedGroupChip.fromStoreSnapshot(
+            EmojiPinGroupStore.get(context).snapshot(),
+        )
+    }
 
     @Composable
     fun GridHeader(text: String) {
@@ -459,13 +470,37 @@ fun EmojiPaletteView(
                         }
                     }
                     else -> key(emojiMapping) {
-                        LazyVerticalGrid(
-                            modifier = Modifier
-                                .fillMaxSize()
-                                .florisScrollbar(lazyGridState),
-                            columns = GridCells.Adaptive(minSize = EmojiBaseWidth),
-                            state = lazyGridState,
-                        ) {
+                        Column(modifier = Modifier.fillMaxSize()) {
+                            // ROADMAP §7 Next-9.4a — pinned-emoji-groups chip row
+                            // (only on the RECENTLY_USED tab; other tabs would clutter).
+                            if (category == EmojiCategory.RECENTLY_USED && pinnedGroupChips.isNotEmpty()) {
+                                PinnedGroupsPaletteRow(
+                                    groups = pinnedGroupChips,
+                                    onGroupTapped = { groupName ->
+                                        val emojis = EmojiPinGroupStore.get(context).emojisFor(groupName)
+                                        for (emojiText in emojis) {
+                                            keyboardManager.inputEventDispatcher.sendDownUp(
+                                                Emoji(value = emojiText, name = groupName, keywords = emptyList()),
+                                            )
+                                        }
+                                    },
+                                    onGroupLongPressed = { groupName ->
+                                        // Sheet integration lands in a follow-up; surface a
+                                        // toast acknowledgement for now so long-press is
+                                        // discoverable.
+                                        context.showShortToastSync(
+                                            "Long-press menu for '$groupName' is coming soon",
+                                        )
+                                    },
+                                )
+                            }
+                            LazyVerticalGrid(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .florisScrollbar(lazyGridState),
+                                columns = GridCells.Adaptive(minSize = EmojiBaseWidth),
+                                state = lazyGridState,
+                            ) {
                             if (emojiMapping.pinned.isNotEmpty()) {
                                 header("header_pinned") {
                                     GridHeader(text = stringRes(R.string.emoji__history__pinned))
@@ -487,7 +522,8 @@ fun EmojiPaletteView(
                                     EmojiKeyWrapper(emojiSet)
                                 }
                             }
-                        }
+                            }  // close LazyVerticalGrid
+                        }  // close Column
                     }
                 }
             }
