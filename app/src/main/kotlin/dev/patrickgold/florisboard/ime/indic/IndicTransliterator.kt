@@ -838,6 +838,70 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Phoenician (U+10900 block).
+         * Phoenician is the parent script of every Western alphabet
+         * (Aramaic / Greek / Latin / Hebrew / Arabic / Cyrillic).  RTL.
+         * Supplementary plane.  22-letter consonantal alphabet.
+         */
+        val LatinToPhoenician: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Phoenician",
+            mappings = mapOf(
+                "a" to "𐤀", "b" to "𐤁", "g" to "𐤂", "d" to "𐤃",
+                "h" to "𐤄", "w" to "𐤅", "z" to "𐤆", "kh" to "𐤇",
+                "T" to "𐤈", "y" to "𐤉", "k" to "𐤊", "l" to "𐤋",
+                "m" to "𐤌", "n" to "𐤍", "s" to "𐤎", "ay" to "𐤏",
+                "p" to "𐤐", "ts" to "𐤑", "q" to "𐤒", "r" to "𐤓",
+                "sh" to "𐤔", "t" to "𐤕",
+            ),
+        )
+
+        /**
+         * Latin → Imperial Aramaic (U+10840 block).
+         * The state script of the Achaemenid Empire and the lineal
+         * ancestor of Square Hebrew, Syriac, Arabic, and Mongolian.
+         * RTL.  Supplementary plane.
+         */
+        val LatinToImperialAramaic: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "ImperialAramaic",
+            mappings = mapOf(
+                "a" to "𐡀", "b" to "𐡁", "g" to "𐡂", "d" to "𐡃",
+                "h" to "𐡄", "w" to "𐡅", "z" to "𐡆", "kh" to "𐡇",
+                "T" to "𐡈", "y" to "𐡉", "k" to "𐡊", "l" to "𐡋",
+                "m" to "𐡌", "n" to "𐡍", "s" to "𐡎", "ay" to "𐡏",
+                "p" to "𐡐", "ts" to "𐡑", "q" to "𐡒", "r" to "𐡓",
+                "sh" to "𐡔", "t" to "𐡕",
+            ),
+        )
+
+        /**
+         * Latin → Avestan (U+10B00 block).
+         * Avestan is the liturgical script of Zoroastrianism, used to
+         * write Old / Middle Iranian Avestan texts (the *Yasna*).
+         * RTL.  Supplementary plane. Includes vowel characters
+         * separate from consonants — a true alphabet rather than a
+         * pure abjad.
+         */
+        val LatinToAvestan: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Avestan",
+            mappings = mapOf(
+                "a" to "𐬀", "aa" to "𐬁", "A" to "𐬁",
+                "i" to "𐬌", "ii" to "𐬍", "I" to "𐬍",
+                "u" to "𐬎", "uu" to "𐬏", "U" to "𐬏",
+                "e" to "𐬉", "o" to "𐬋",
+                "k" to "𐬐", "kh" to "𐬑", "g" to "𐬔", "gh" to "𐬕",
+                "ch" to "𐬗", "j" to "𐬘",
+                "t" to "𐬙", "th" to "𐬚", "d" to "𐬛", "dh" to "𐬜",
+                "p" to "𐬞", "ph" to "𐬟", "b" to "𐬠", "f" to "𐬡",
+                "n" to "𐬥", "m" to "𐬨",
+                "y" to "𐬫", "r" to "𐬭", "v" to "𐬬", "w" to "𐬎",
+                "s" to "𐬯", "z" to "𐬰", "h" to "𐬵",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
