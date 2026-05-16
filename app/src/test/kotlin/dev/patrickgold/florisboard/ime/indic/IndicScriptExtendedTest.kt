@@ -333,6 +333,33 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("ngg") shouldBe "ꥃ"
     }
 
+    test("Modi table maps 'k' to 𑘎 and digit 3 to 𑙓 (supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToModi)
+        xlit.transliterate("k") shouldBe "𑘎"
+        xlit.transliterate("3") shouldBe "𑙓"
+    }
+
+    test("Sharada table maps 'k' to 𑆑 and digit 7 to 𑇗") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToSharada)
+        xlit.transliterate("k") shouldBe "𑆑"
+        xlit.transliterate("7") shouldBe "𑇗"
+    }
+
+    test("Takri table maps 'k' to 𑚊 and digit 0 to 𑛀") {
+        val xlit = IndicTransliterator(IndicScriptTable.ItransToTakri)
+        xlit.transliterate("k") shouldBe "𑚊"
+        xlit.transliterate("0") shouldBe "𑛀"
+    }
+
+    test("Modi + Sharada + Takri tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.ItransToModi,
+            IndicScriptTable.ItransToSharada,
+            IndicScriptTable.ItransToTakri,
+        )
+        tables.forEach { (it.size() > 30) shouldBe true }
+    }
+
     test("Saurashtra + Kayah Li + Rejang tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.ItransToSaurashtra,
