@@ -315,6 +315,9 @@ class FlorisImeService : LifecycleInputMethodService() {
     private val wallpaperChangeReceiver = WallpaperChangeReceiver()
     private var wallpaperReceiverRegistered = false
 
+    /** ROADMAP §10.5 L7.5b — MCP daemon bridge lifecycle, owned by the IME service. */
+    private var mcpLifecycle: dev.patrickgold.florisboard.ime.mcp.McpServiceLifecycle? = null
+
     init {
         setTheme(R.style.FlorisImeTheme)
     }
@@ -361,6 +364,18 @@ class FlorisImeService : LifecycleInputMethodService() {
             wallpaperReceiverRegistered = true
         } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "Failed to register wallpaper change receiver: $e" }
+        }
+
+        // ROADMAP §10.5 L7.5b — discover any installed MCP daemons, bind to
+        // each, and install the AndroidMcpClient into the registry so the
+        // smart-compose path can call MCP tools. Failure here must not abort
+        // IME startup — McpServiceLifecycle.start internally tolerates
+        // discovery failures.
+        try {
+            mcpLifecycle = dev.patrickgold.florisboard.ime.mcp
+                .McpServiceLifecycle.start(applicationContext)
+        } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "MCP bridge startup failed: $e" }
         }
     }
 
@@ -412,6 +427,12 @@ class FlorisImeService : LifecycleInputMethodService() {
         // Guard each teardown step independently so a single failure (e.g. unregistering
         // a receiver that was never registered because onCreate threw before reaching it)
         // doesn't abort the rest of cleanup and leak references.
+        try {
+            mcpLifecycle?.stop()
+            mcpLifecycle = null
+        } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "mcpLifecycle.stop() failed: $e" }
+        }
         try { voiceInputManager.destroy() } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "voiceInputManager.destroy() failed: $e" }
         }
