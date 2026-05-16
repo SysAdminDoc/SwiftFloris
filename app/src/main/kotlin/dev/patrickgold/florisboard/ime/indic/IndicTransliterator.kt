@@ -779,6 +779,65 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Samaritan (U+0800 block).
+         * Samaritan is a descendant of Paleo-Hebrew used by the
+         * Samaritan community for liturgical Hebrew. RTL.  No native
+         * digit inventory in current Unicode usage; Western Arabic
+         * digits fall through unchanged.
+         */
+        val LatinToSamaritan: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Samaritan",
+            mappings = mapOf(
+                "a" to "ࠀ", "b" to "ࠁ", "g" to "ࠂ", "d" to "ࠃ",
+                "h" to "ࠄ", "v" to "ࠅ", "z" to "ࠆ", "kh" to "ࠇ",
+                "T" to "ࠈ", "y" to "ࠉ", "k" to "ࠊ", "l" to "ࠋ",
+                "m" to "ࠌ", "n" to "ࠍ", "s" to "ࠎ", "ay" to "ࠏ",
+                "p" to "ࠐ", "ts" to "ࠑ", "q" to "ࠒ", "r" to "ࠓ",
+                "sh" to "ࠔ", "t" to "ࠕ",
+            ),
+        )
+
+        /**
+         * Latin → Mandaic (U+0840 block).
+         * Mandaic is the liturgical script of the Mandaean religion,
+         * historically used in southern Iraq + Iran. RTL.  No native
+         * digit inventory; Western Arabic digits fall through.
+         */
+        val LatinToMandaic: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Mandaic",
+            mappings = mapOf(
+                "a" to "ࡀ", "b" to "ࡁ", "g" to "ࡂ", "d" to "ࡃ",
+                "h" to "ࡄ", "u" to "ࡅ", "z" to "ࡆ", "kh" to "ࡇ",
+                "T" to "ࡈ", "y" to "ࡉ", "k" to "ࡊ", "l" to "ࡋ",
+                "m" to "ࡌ", "n" to "ࡍ", "s" to "ࡎ", "e" to "ࡏ",
+                "p" to "ࡐ", "tsd" to "ࡑ", "q" to "ࡒ", "r" to "ࡓ",
+                "sh" to "ࡔ", "t" to "ࡕ",
+            ),
+        )
+
+        /**
+         * Latin → Old Permic (U+10350 block).
+         * Old Permic is a 14th-century clergy alphabet for the Komi
+         * (Permic) language family, modeled after the Greek alphabet
+         * + ligature-style additions. Supplementary plane (uses
+         * surrogate pairs). No digits.
+         */
+        val LatinToOldPermic: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "OldPermic",
+            mappings = mapOf(
+                "a" to "𐍐", "b" to "𐍑", "g" to "𐍒", "d" to "𐍓",
+                "e" to "𐍔", "zh" to "𐍕", "z" to "𐍖", "dz" to "𐍗",
+                "i" to "𐍘", "l" to "𐍙", "k" to "𐍚",
+                "m" to "𐍛", "n" to "𐍜", "o" to "𐍝", "p" to "𐍞",
+                "r" to "𐍟", "s" to "𐍠", "t" to "𐍡", "u" to "𐍢",
+                "ch" to "𐍣", "sh" to "𐍤", "ja" to "𐍥",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
