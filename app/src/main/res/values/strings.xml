@@ -170,6 +170,7 @@
     <string name="settings__home__dictionary_summary" comment="Home screen preference summary">Personal words used by suggestions, correction, and spell checking</string>
     <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
     <string name="settings__home__sync_summary" comment="Home screen preference summary">Pair devices and choose a local sync folder or manual export flow</string>
+    <string name="settings__home__mcp_summary" comment="Home screen preference summary">On-device bridge to local MCP tool servers — never opens a network connection</string>
     <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
     <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
     <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
@@ -1612,5 +1613,16 @@
     <string name="a11y__key__generic">Key</string>
     <!-- Format placeholder: the alt-glyph itself; produces "a, alternative: à" -->
     <string name="a11y__key__alternative_suffix">, alternative: %1$s</string>
+
+    <!-- L7.6 MCP daemon bridge settings screen -->
+    <string name="settings__mcp__title" comment="Title of the MCP daemon bridge settings screen">MCP daemon bridge</string>
+    <string name="settings__mcp__group_status" comment="MCP settings group title">Status</string>
+    <string name="settings__mcp__group_daemons" comment="MCP settings group title">Bound daemons</string>
+    <string name="settings__mcp__status_no_daemons" comment="MCP status row title when no daemons are installed">No MCP daemons installed</string>
+    <string name="settings__mcp__status_no_daemons_summary" comment="MCP status row summary when no daemons are installed">Install a sibling app that advertises an MCP service; SwiftFloris will discover it at the next IME service start. The bridge is local-only and never opens a network connection.</string>
+    <string name="settings__mcp__status_bound_title" comment="MCP status row title when daemons are bound">MCP bridge active</string>
+    <string name="settings__mcp__status_bound_summary" comment="MCP status row summary when daemons are bound; {count} = number">Currently bound to {count} daemon(s). The bridge is local-only and never opens a network connection.</string>
+    <string name="settings__mcp__daemon_protocol" comment="MCP daemon row protocol-version fragment; {version} = integer">Protocol v{version}</string>
+    <string name="settings__mcp__daemon_tools_count" comment="MCP daemon row tools-count fragment; {count} = integer">{count} tool(s)</string>
 
 </resources>
