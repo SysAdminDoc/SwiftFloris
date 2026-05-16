@@ -146,4 +146,36 @@ class McpDispatchRouterTest : FunSpec({
         (resp is McpDispatchRouter.Response.Suppressed) shouldBe true
         mcp.calls shouldBe 0
     }
+
+    test("isDaemonDisabled=true short-circuits to Suppressed before the client is invoked") {
+        val mcp = CountingMcp(successCall())
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isDaemonDisabled = { it == daemon },
+        )
+        val resp = router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        val suppressed = resp as McpDispatchRouter.Response.Suppressed
+        suppressed.reason shouldBe "daemon com.example.mcp disabled by user"
+        mcp.calls shouldBe 0
+    }
+
+    test("isDaemonDisabled lambda is consulted only after the tool resolves") {
+        val mcp = CountingMcp(successCall())
+        var disabledQueryCount = 0
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(emptyMap()),  // No tool registered.
+            isDaemonDisabled = { disabledQueryCount++; true },
+        )
+        router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        disabledQueryCount shouldBe 0  // Never reached the disabled-check.
+        mcp.calls shouldBe 0
+    }
 })

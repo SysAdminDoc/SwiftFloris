@@ -586,6 +586,22 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    val mcp = Mcp()
+    inner class Mcp {
+        /**
+         * ROADMAP §10.5 L7.6b — newline-separated list of MCP daemon package
+         * names the user has disabled. `McpDispatchRouter` consults this set
+         * before forwarding a `callTool` request; daemons in the set are
+         * still bound but never receive traffic. Storing as a single string
+         * (`\n` joined) avoids the need for a `Set<String>` JetPref type
+         * that doesn't ship in this version of the datastore.
+         */
+        val disabledDaemonPackages = string(
+            key = "mcp__disabled_daemon_packages",
+            default = "",
+        )
+    }
+
     val keyboard = Keyboard()
     inner class Keyboard {
         val windowConfig = custom(
