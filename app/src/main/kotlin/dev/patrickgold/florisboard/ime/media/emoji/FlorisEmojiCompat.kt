@@ -27,6 +27,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -35,12 +36,27 @@ import kotlinx.coroutines.launch
  * it. This keeps the common path to one EmojiCompat metadata graph while preserving compatibility for editors that
  * explicitly ask for replace-all behavior.
  *
- * TODO: investigate how AOSP-like ROMs without any GMS services installed handle backwards emoji compatibility. Same
- *  goes for newer Huawei devices, which are subjected to no Google services. (Probably these devices rely on the good
- *  old method of just querying the system painter, which we already use as a fallback in the palette logic).
+ * ## Fallback contract on GMS-less devices
  *
- * TODO: investigate if having two instances of EmojiCompat causes other logic issues or if there's a better way of
- *  achieving the same result than the current implementation does.
+ * `DefaultEmojiCompatConfig.create(context)` returns `null` whenever the device has no emoji-font provider installed.
+ * That covers:
+ *  - AOSP-derived ROMs without Google Play Services and without microG (LineageOS without microG, /e/OS without GMS,
+ *    GrapheneOS without sandboxed Play Services).
+ *  - Huawei devices on HMS-only firmwares (no GMS).
+ *  - Stripped firmwares that have intentionally removed Play Services and any AOSP downloadable-fonts provider.
+ *
+ * In that case the per-instance load is skipped and the [InstanceHandler.loadState] transitions directly to
+ * [EmojiCompatLoadState.Unavailable]. The [InstanceHandler.publishedInstanceFlow] stays at `null` and consumers must
+ * treat that as "fall back to the system font painter for glyph availability checks". `EmojiPaletteView` already does
+ * exactly that via `Paint.hasGlyph(...)`, so the no-GMS path is non-fatal by construction.
+ *
+ * ## Why two EmojiCompat instances
+ *
+ * Some editors set `EditorInfo.extras.EDITOR_INFO_REPLACE_ALL_KEY = true`, which asks the IME to actively replace
+ * already-rendered system emoji glyphs with the EmojiCompat-managed ones. That mode requires its own EmojiCompat
+ * instance because `setReplaceAll(...)` is a per-Config flag baked into the metadata graph at load time. Carrying both
+ * a `replaceAll=false` (the default) and a `replaceAll=true` instance is the smallest correct implementation; the
+ * replace-all instance is created lazily so apps that never ask for it do not pay the load cost.
  */
 object FlorisEmojiCompat {
     private lateinit var instanceNoReplace: InstanceHandler
@@ -59,8 +75,12 @@ object FlorisEmojiCompat {
                 return
             }
             val appContext = context.applicationContext
-            instanceNoReplace = InstanceHandler(appContext, replaceAll = false)
-            instanceReplaceAll = InstanceHandler(appContext, replaceAll = true)
+            instanceNoReplace = InstanceHandler(replaceAll = false) {
+                defaultConfigFor(appContext, replaceAll = false)
+            }
+            instanceReplaceAll = InstanceHandler(replaceAll = true) {
+                defaultConfigFor(appContext, replaceAll = true)
+            }
             initialized = true
         }
         instanceNoReplace.ensureLoad(scope)
@@ -71,18 +91,12 @@ object FlorisEmojiCompat {
      * [setAsDefaultInstance] is true. Calling this method before [init] will cause an exception to be thrown.
      *
      * @return A state flow providing the latest EmojiCompat instance for given args. The flow may provide null if
-     *  EmojiCompat is still loading or if it has failed.
+     *  EmojiCompat is still loading, has failed, or is unavailable on this device (no GMS / no font provider). Callers
+     *  must treat `null` as a fall-back-to-system-painter signal.
      */
     @SuppressLint("RestrictedApi", "VisibleForTests")
     fun getAsFlow(replaceAll: Boolean, setAsDefaultInstance: Boolean = true): StateFlow<EmojiCompat?> {
-        check(initialized && ::instanceNoReplace.isInitialized && ::instanceReplaceAll.isInitialized) {
-            "${FlorisEmojiCompat::class.simpleName} has not been initialized. Call init(context) before getAsFlow()."
-        }
-        val handler = if (replaceAll) {
-            instanceReplaceAll
-        } else {
-            instanceNoReplace
-        }
+        val handler = handlerFor(replaceAll)
         if (setAsDefaultInstance) {
             handler.setAsDefaultWhenAvailable()
         }
@@ -90,11 +104,38 @@ object FlorisEmojiCompat {
         return handler.publishedInstanceFlow
     }
 
-    private class InstanceHandler(
-        private val context: Context,
-        private val replaceAll: Boolean = false,
+    /**
+     * Exposes the load state for the requested instance. Consumers can observe transitions between
+     * [EmojiCompatLoadState.Loading], [EmojiCompatLoadState.Loaded], [EmojiCompatLoadState.Failed], and
+     * [EmojiCompatLoadState.Unavailable]. Calling this method before [init] will cause an exception to be thrown.
+     */
+    fun loadStateFlow(replaceAll: Boolean): StateFlow<EmojiCompatLoadState> {
+        return handlerFor(replaceAll).loadStateFlow
+    }
+
+    private fun handlerFor(replaceAll: Boolean): InstanceHandler {
+        check(initialized && ::instanceNoReplace.isInitialized && ::instanceReplaceAll.isInitialized) {
+            "${FlorisEmojiCompat::class.simpleName} has not been initialized. Call init(context) before using it."
+        }
+        return if (replaceAll) instanceReplaceAll else instanceNoReplace
+    }
+
+    @SuppressLint("RestrictedApi")
+    private fun defaultConfigFor(appContext: Context, replaceAll: Boolean): EmojiCompat.Config? {
+        return DefaultEmojiCompatConfig.create(appContext)?.apply {
+            setReplaceAll(replaceAll)
+            setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
+        }
+    }
+
+    internal class InstanceHandler(
+        private val replaceAll: Boolean,
+        private val configProvider: () -> EmojiCompat.Config?,
     ) {
         val publishedInstanceFlow = MutableStateFlow<EmojiCompat?>(null)
+
+        private val mutableLoadState = MutableStateFlow<EmojiCompatLoadState>(EmojiCompatLoadState.Loading)
+        val loadStateFlow: StateFlow<EmojiCompatLoadState> = mutableLoadState.asStateFlow()
 
         @Volatile private var loadStarted = false
         @Volatile private var setAsDefaultWhenLoaded = false
@@ -105,6 +146,7 @@ object FlorisEmojiCompat {
                 flogInfo { "EmojiCompat(replaceAll=$replaceAll) successfully loaded!" }
                 val loadedInstance = instance ?: return
                 publishedInstanceFlow.value = loadedInstance
+                mutableLoadState.value = EmojiCompatLoadState.Loaded
                 if (setAsDefaultWhenLoaded) {
                     setAsDefault(loadedInstance)
                 }
@@ -113,13 +155,12 @@ object FlorisEmojiCompat {
             override fun onFailed(throwable: Throwable?) {
                 super.onFailed(throwable)
                 flogError { "EmojiCompat(replaceAll=$replaceAll) failed to load: $throwable" }
+                mutableLoadState.value = EmojiCompatLoadState.Failed
             }
         }
 
         private val config: EmojiCompat.Config? by lazy(LazyThreadSafetyMode.SYNCHRONIZED) {
-            DefaultEmojiCompatConfig.create(context)?.apply {
-                setReplaceAll(replaceAll)
-                setMetadataLoadStrategy(EmojiCompat.LOAD_STRATEGY_MANUAL)
+            configProvider()?.apply {
                 registerInitCallback(initCallback)
             }
         }
@@ -158,6 +199,7 @@ object FlorisEmojiCompat {
             val emojiCompat = instance
             if (emojiCompat == null) {
                 flogError { "EmojiCompat(replaceAll=$replaceAll) default config is unavailable" }
+                mutableLoadState.value = EmojiCompatLoadState.Unavailable
                 return
             }
             emojiCompat.load()
@@ -176,4 +218,23 @@ object FlorisEmojiCompat {
             EmojiCompat.reset(instance)
         }
     }
+}
+
+/**
+ * Public load state for an [androidx.emoji2.text.EmojiCompat] instance managed by [FlorisEmojiCompat].
+ *
+ * - [Loading]: the load has been started but neither succeeded nor failed yet.
+ * - [Loaded]: the instance is available via [FlorisEmojiCompat.getAsFlow].
+ * - [Failed]: the load was attempted but the EmojiCompat runtime reported a failure callback. The fallback contract is
+ *   the same as [Unavailable] — consumers should treat the published instance as `null` and use a system-painter glyph
+ *   check.
+ * - [Unavailable]: no EmojiCompat config could be built. This is the GMS-less / no-font-provider device path.
+ *
+ * @see FlorisEmojiCompat.loadStateFlow
+ */
+sealed class EmojiCompatLoadState {
+    object Loading : EmojiCompatLoadState()
+    object Loaded : EmojiCompatLoadState()
+    object Failed : EmojiCompatLoadState()
+    object Unavailable : EmojiCompatLoadState()
 }
