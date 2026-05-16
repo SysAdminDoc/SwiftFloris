@@ -1618,6 +1618,93 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * ITRANS → Multani (U+11280 block).
+         * Multani is a historical Brahmic-derived script for the
+         * Multani / Saraiki language of southern Punjab, used by
+         * Hindu merchant communities c. 16th-20th century. Replaced
+         * by Perso-Arabic. Supplementary plane. No native digit code
+         * points — Western Arabic digits fall through.
+         */
+        val ItransToMultani: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "ITRANS",
+            targetScript = "Multani",
+            mappings = mapOf(
+                "a" to "𑊀", "aa" to "𑊁", "A" to "𑊁",
+                "i" to "𑊂", "u" to "𑊃", "e" to "𑊄",
+                "k" to "𑊅", "kh" to "𑊆", "g" to "𑊇",
+                "ch" to "𑊈", "j" to "𑊊",
+                "n" to "𑊋", "T" to "𑊌", "Th" to "𑊍",
+                "t" to "𑊏", "d" to "𑊐", "dh" to "𑊑",
+                "p" to "𑊒", "ph" to "𑊓", "b" to "𑊔", "m" to "𑊕",
+                "y" to "𑊖", "r" to "𑊗", "l" to "𑊘", "v" to "𑊙",
+                "s" to "𑊚", "h" to "𑊛",
+            ),
+        )
+
+        /**
+         * Latin → Masaram Gondi (U+11D00 block).
+         * Masaram Gondi is a 20th-century alphabet for the Gondi
+         * language family of central India, created in 1928 by
+         * Munshi Mangal Singh Masaram. Encoded in Unicode 10.
+         * Supplementary plane. Native digits U+11D50..U+11D59.
+         */
+        val LatinToMasaramGondi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "MasaramGondi",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑴀", "aa" to "𑴁", "A" to "𑴁",
+                    "i" to "𑴂", "ii" to "𑴃", "I" to "𑴃",
+                    "u" to "𑴄", "uu" to "𑴅", "U" to "𑴅",
+                    "e" to "𑴈", "ai" to "𑴉", "o" to "𑴊", "au" to "𑴋",
+                ),
+                consonants = mapOf(
+                    "k" to "𑴌", "kh" to "𑴍", "g" to "𑴎", "gh" to "𑴏",
+                    "ch" to "𑴑", "Ch" to "𑴒", "j" to "𑴓", "jh" to "𑴔",
+                    "T" to "𑴖", "Th" to "𑴗", "D" to "𑴘", "Dh" to "𑴙", "N" to "𑴚",
+                    "t" to "𑴛", "th" to "𑴜", "d" to "𑴝", "dh" to "𑴞", "n" to "𑴟",
+                    "p" to "𑴠", "ph" to "𑴡", "b" to "𑴢", "bh" to "𑴣", "m" to "𑴤",
+                    "y" to "𑴥", "r" to "𑴦", "l" to "𑴧", "v" to "𑴨",
+                    "sh" to "𑴩", "Sh" to "𑴪", "s" to "𑴫", "h" to "𑴬",
+                ),
+                digits = "𑵐𑵑𑵒𑵓𑵔𑵕𑵖𑵗𑵘𑵙",
+                anusvara = "𑴺", visarga = "𑴽",
+            ),
+        )
+
+        /**
+         * Latin → Gunjala Gondi (U+11D60 block).
+         * Gunjala Gondi is a 20th-century alphabet for the Gondi
+         * language family of central India, created in 1928 by
+         * Pandit Ravula Bhima Bhoi. Distinct from Masaram Gondi but
+         * used by the same language community. Encoded in Unicode
+         * 11. Supplementary plane. Native digits U+11DA0..U+11DA9.
+         */
+        val LatinToGunjalaGondi: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "GunjalaGondi",
+            mappings = buildIndicMappings(
+                vowels = mapOf(
+                    "a" to "𑵠", "aa" to "𑵡", "A" to "𑵡",
+                    "i" to "𑵢", "ii" to "𑵣", "I" to "𑵣",
+                    "u" to "𑵤", "uu" to "𑵥", "U" to "𑵥",
+                    "e" to "𑵧", "ai" to "𑵨", "o" to "𑵪", "au" to "𑵫",
+                ),
+                consonants = mapOf(
+                    "k" to "𑵲", "g" to "𑵳",
+                    "ch" to "𑵴", "j" to "𑵵",
+                    "T" to "𑵶", "D" to "𑵷", "N" to "𑵸",
+                    "t" to "𑵹", "d" to "𑵺", "n" to "𑵻",
+                    "p" to "𑵼", "b" to "𑵽", "m" to "𑵾",
+                    "y" to "𑵿", "r" to "𑶀", "l" to "𑶁", "v" to "𑶂",
+                    "s" to "𑶃", "h" to "𑶄",
+                ),
+                digits = "𑶠𑶡𑶢𑶣𑶤𑶥𑶦𑶧𑶨𑶩",
+                anusvara = "𑶖", visarga = "𑶗",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",
