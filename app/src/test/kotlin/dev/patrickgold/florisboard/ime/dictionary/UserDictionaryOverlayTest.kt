@@ -35,13 +35,14 @@ class UserDictionaryOverlayTest : FunSpec({
         overlay.frequencyFor("hello", en) shouldBe UserDictionaryOverlay.INITIAL_FREQUENCY
     }
 
-    test("learn() called repeatedly bumps frequency by INCREMENT each time") {
+    test("learn() called repeatedly bumps frequency by INCREMENT each time (capped at MAX)") {
         val overlay = UserDictionaryOverlay.get()
         overlay.learn("foo", en)
         overlay.learn("foo", en)
         overlay.learn("foo", en)
-        val expected = UserDictionaryOverlay.INITIAL_FREQUENCY +
-            UserDictionaryOverlay.INCREMENT * 2
+        val expected = (UserDictionaryOverlay.INITIAL_FREQUENCY +
+            UserDictionaryOverlay.INCREMENT * 2)
+            .coerceAtMost(UserDictionaryOverlay.MAX_FREQUENCY)
         overlay.frequencyFor("foo", en) shouldBe expected
     }
 
