@@ -37,6 +37,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
 import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
+import dev.patrickgold.florisboard.ime.mcp.DisabledToolSet
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.observeAsState
@@ -72,6 +73,10 @@ fun McpSettingsScreen() = FlorisScreen {
     val disabledSet = remember(disabledSerialized) {
         DisabledDaemonSet.parse(disabledSerialized)
     }
+    val disabledToolsSerialized by prefs.mcp.disabledTools.observeAsState()
+    val disabledToolSet = remember(disabledToolsSerialized) {
+        DisabledToolSet.parse(disabledToolsSerialized)
+    }
 
     content {
         PreferenceGroup(title = stringRes(R.string.settings__mcp__group_status)) {
@@ -95,9 +100,10 @@ fun McpSettingsScreen() = FlorisScreen {
         if (activeDaemons.isNotEmpty()) {
             PreferenceGroup(title = stringRes(R.string.settings__mcp__group_daemons)) {
                 for ((_, entry) in activeDaemons) {
+                    val daemonEnabled = entry.key.packageName !in disabledSet
                     DaemonRow(
                         entry = entry,
-                        isEnabled = entry.key.packageName !in disabledSet,
+                        isEnabled = daemonEnabled,
                         onEnabledChange = { enabled ->
                             scope.launch {
                                 val current = prefs.mcp.disabledDaemonPackages.get()
@@ -110,10 +116,61 @@ fun McpSettingsScreen() = FlorisScreen {
                             }
                         },
                     )
+                    // Matrix #38 follow-up — per-tool toggle row under each daemon. Per-tool switches are
+                    // greyed out while the parent daemon is disabled (the daemon switch wins), but the
+                    // per-tool persisted state is preserved across re-enables so users do not lose their
+                    // per-tool decisions when they momentarily mute a daemon.
+                    for (tool in entry.tools) {
+                        val toolEnabled = !DisabledToolSet.contains(
+                            disabledToolsSerialized,
+                            entry.key.packageName,
+                            tool.name,
+                        )
+                        ToolRow(
+                            daemonPackage = entry.key.packageName,
+                            toolName = tool.name,
+                            toolDescription = tool.description,
+                            isEnabled = toolEnabled && daemonEnabled,
+                            isInteractive = daemonEnabled,
+                            onEnabledChange = { enabled ->
+                                scope.launch {
+                                    val current = prefs.mcp.disabledTools.get()
+                                    val next = if (enabled) {
+                                        DisabledToolSet.remove(current, entry.key.packageName, tool.name)
+                                    } else {
+                                        DisabledToolSet.add(current, entry.key.packageName, tool.name)
+                                    }
+                                    prefs.mcp.disabledTools.set(next)
+                                }
+                            },
+                        )
+                    }
                 }
             }
         }
     }
+}
+
+@Composable
+private fun ToolRow(
+    daemonPackage: String,
+    toolName: String,
+    toolDescription: String,
+    isEnabled: Boolean,
+    isInteractive: Boolean,
+    onEnabledChange: (Boolean) -> Unit,
+) {
+    Preference(
+        title = "$daemonPackage / $toolName",
+        summary = if (toolDescription.isBlank()) null else toolDescription,
+        trailing = {
+            Switch(
+                checked = isEnabled,
+                onCheckedChange = onEnabledChange,
+                enabled = isInteractive,
+            )
+        },
+    )
 }
 
 @Composable
