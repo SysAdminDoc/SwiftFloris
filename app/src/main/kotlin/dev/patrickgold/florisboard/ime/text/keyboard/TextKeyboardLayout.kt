@@ -1150,6 +1150,49 @@ private class TextKeyboardLayoutController(
                         action != SwipeAction.NO_ACTION
                     }
                 }
+                // Matrix #14 — free-movement spacebar trackpad. When the user has bound the up or down
+                // space-bar swipe to MOVE_CURSOR_UP / MOVE_CURSOR_DOWN, the TOUCH_MOVE path dispatches
+                // continuous arrow-up / arrow-down events as the finger drags vertically — mirroring the
+                // existing horizontal cursor-drag path. For any other binding the action fires once on
+                // TOUCH_UP via the matrix #15 dispatch below.
+                SwipeGesture.Direction.UP -> {
+                    val action = prefs.gestures.spaceBarSwipeUp.get()
+                    if (action == SwipeAction.MOVE_CURSOR_UP) {
+                        abs(event.relUnitCountY).let {
+                            val count = if (!pointer.hasTriggeredGestureMove) it - 1 else it
+                            if (count > 0) {
+                                inputFeedbackController?.gestureMovingSwipe(TextKeyData.SPACE)
+                                if (!pointer.hasTriggeredMassSelection) {
+                                    pointer.hasTriggeredMassSelection = true
+                                    editorInstance.massSelection.begin()
+                                }
+                                keyboardManager.handleArrow(KeyCode.ARROW_UP, count)
+                            }
+                        }
+                        true
+                    } else {
+                        action != SwipeAction.NO_ACTION
+                    }
+                }
+                SwipeGesture.Direction.DOWN -> {
+                    val action = prefs.gestures.spaceBarSwipeDown.get()
+                    if (action == SwipeAction.MOVE_CURSOR_DOWN) {
+                        abs(event.relUnitCountY).let {
+                            val count = if (!pointer.hasTriggeredGestureMove) it - 1 else it
+                            if (count > 0) {
+                                inputFeedbackController?.gestureMovingSwipe(TextKeyData.SPACE)
+                                if (!pointer.hasTriggeredMassSelection) {
+                                    pointer.hasTriggeredMassSelection = true
+                                    editorInstance.massSelection.begin()
+                                }
+                                keyboardManager.handleArrow(KeyCode.ARROW_DOWN, count)
+                            }
+                        }
+                        true
+                    } else {
+                        action != SwipeAction.NO_ACTION
+                    }
+                }
                 else -> false
             }
             SwipeGesture.Type.TOUCH_UP -> when (event.direction) {
@@ -1183,6 +1226,36 @@ private class TextKeyboardLayoutController(
                                 false
                             }
                         }
+                    }
+                }
+                // Matrix #15 — vertical cursor actions / trackpad navigation keys on space-bar swipe.
+                // Discrete one-shot dispatch for any bound action (including the new spaceBarSwipeDown
+                // pref) that isn't already being handled continuously by the TOUCH_MOVE arms above.
+                SwipeGesture.Direction.UP -> {
+                    val action = prefs.gestures.spaceBarSwipeUp.get()
+                    when {
+                        action == SwipeAction.NO_ACTION -> {
+                            if (event.absUnitCountY < -6) {
+                                keyboardManager.executeSwipeAction(action)
+                                true
+                            } else false
+                        }
+                        action != SwipeAction.MOVE_CURSOR_UP -> {
+                            keyboardManager.executeSwipeAction(action)
+                            true
+                        }
+                        else -> false
+                    }
+                }
+                SwipeGesture.Direction.DOWN -> {
+                    val action = prefs.gestures.spaceBarSwipeDown.get()
+                    when {
+                        action == SwipeAction.NO_ACTION -> false
+                        action != SwipeAction.MOVE_CURSOR_DOWN -> {
+                            keyboardManager.executeSwipeAction(action)
+                            true
+                        }
+                        else -> false
                     }
                 }
                 else -> {
