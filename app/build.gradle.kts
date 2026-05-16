@@ -184,6 +184,12 @@ configure<ApplicationExtension> {
     testOptions {
         unitTests {
             isIncludeAndroidResources = true
+            // ROADMAP §7 Next-12.1 — production code calls `android.os.Trace`
+            // for Macrobenchmark/Perfetto instrumentation. The Android JVM
+            // stubs throw "Method not mocked" by default; flipping
+            // returnDefaultValues lets `Trace.beginSection` / `endSection`
+            // return their stub defaults so unit tests don't trip on tracing.
+            isReturnDefaultValues = true
         }
         unitTests.all {
             it.useJUnitPlatform()

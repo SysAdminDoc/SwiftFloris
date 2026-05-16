@@ -24,6 +24,7 @@ import android.inputmethodservice.ExtractEditText
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
+import android.os.Trace
 import android.util.Size
 import android.view.KeyEvent
 import android.view.View
@@ -364,11 +365,16 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onCreateInputView(): View? {
-        super.installViewTreeOwners()
-        val content = window.window!!.findViewById<ViewGroup>(android.R.id.content)
-        content.addView(ImeRootView(this))
-        // Disable the default input view placement
-        return null
+        Trace.beginSection("swiftfloris.ime.firstRender")
+        try {
+            super.installViewTreeOwners()
+            val content = window.window!!.findViewById<ViewGroup>(android.R.id.content)
+            content.addView(ImeRootView(this))
+            // Disable the default input view placement
+            return null
+        } finally {
+            Trace.endSection()
+        }
     }
 
     override fun onCreateCandidatesView(): View? {

@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
+import android.os.Trace
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -81,6 +82,12 @@ val CandidatesRowScrollbarHeight = 2.dp
 
 @Composable
 fun CandidatesRow(modifier: Modifier = Modifier) {
+    // ROADMAP §7 Next-12.1 — Macrobenchmark trace section. Compose forbids
+    // try/finally around composable invocations, so we use sequential
+    // Trace.beginSection / Trace.endSection calls flanking the body.
+    // `android.os.Trace` tolerates a missing endSection if recomposition
+    // throws — Perfetto just reports an unclosed section.
+    Trace.beginSection("swiftfloris.smartbar.candidates.recompose")
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
@@ -210,6 +217,7 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
             }
         }
     }
+    Trace.endSection()
 }
 
 /**

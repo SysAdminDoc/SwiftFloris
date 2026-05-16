@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.nlp.latin
 
 import android.content.Context
+import android.os.Trace
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
@@ -133,6 +134,20 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         content: EditorContent,
         maxCandidateCount: Int,
         allowPossiblyOffensive: Boolean,
+        isPrivateSession: Boolean,
+    ): List<SuggestionCandidate> {
+        Trace.beginSection("swiftfloris.nlp.suggest")
+        try {
+            return suggestImpl(subtype, content, maxCandidateCount, isPrivateSession)
+        } finally {
+            Trace.endSection()
+        }
+    }
+
+    private suspend fun suggestImpl(
+        subtype: Subtype,
+        content: EditorContent,
+        maxCandidateCount: Int,
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
         val currentWord = content.currentWordText.ifBlank { content.composingText }
@@ -419,6 +434,15 @@ internal class LatinDictionaryStore(
     }
 
     private suspend fun loadSpecificDictionary(languageCode: String): LatinDictionarySnapshot? {
+        Trace.beginSection("swiftfloris.dict.load")
+        try {
+            return loadSpecificDictionaryImpl(languageCode)
+        } finally {
+            Trace.endSection()
+        }
+    }
+
+    private suspend fun loadSpecificDictionaryImpl(languageCode: String): LatinDictionarySnapshot? {
         val base = loadFirstDictionary(languageCode) ?: return null
         val merged = if (languageCode == DefaultLanguageCode) {
             base.mergeWith(loadSupplementalEnglishFrequencies())
@@ -582,7 +606,12 @@ internal data class LatinDictionarySnapshot(
      * correction candidates.
      */
     val symSpellIndex: SymSpellIndex by lazy {
-        SymSpellIndex.build(correctionWords)
+        Trace.beginSection("swiftfloris.nlp.symspell.build")
+        try {
+            SymSpellIndex.build(correctionWords)
+        } finally {
+            Trace.endSection()
+        }
     }
 
     /**
@@ -591,7 +620,12 @@ internal data class LatinDictionarySnapshot(
      * on rare words that should only block false autocorrect, not drive corrections.
      */
     val symSpellDistance2Index: SymSpellIndex by lazy {
-        SymSpellIndex.build(distanceTwoCorrectionWords, maxDistance = 2)
+        Trace.beginSection("swiftfloris.nlp.symspell.build")
+        try {
+            SymSpellIndex.build(distanceTwoCorrectionWords, maxDistance = 2)
+        } finally {
+            Trace.endSection()
+        }
     }
 
     private val topByFrequencyCache: List<String> by lazy {

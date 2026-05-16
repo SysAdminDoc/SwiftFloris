@@ -22,6 +22,7 @@ import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.os.Trace
 import androidx.annotation.RequiresApi
 import androidx.autofill.inline.UiVersions
 import androidx.autofill.inline.common.ImageViewStyle
@@ -121,25 +122,34 @@ class ThemeManager(context: Context) {
      * callback receivers about the new theme.
      */
     suspend fun updateActiveTheme(action: () -> Unit = { }) = activeThemeGuard.withLock {
+        Trace.beginSection("swiftfloris.theme.switch")
+        try {
+            updateActiveThemeLocked(action)
+        } finally {
+            Trace.endSection()
+        }
+    }
+
+    private suspend fun updateActiveThemeLocked(action: () -> Unit) {
         action()
         previewThemeInfo.value?.let { previewThemeInfo ->
             _activeThemeInfo.value = previewThemeInfo
-            return@withLock
+            return
         }
         val activeName = evaluateActiveThemeName()
         val cachedInfo = cachedThemeInfos.find { it.name == activeName }
         if (cachedInfo != null) {
             _activeThemeInfo.value = cachedInfo
-            return@withLock
+            return
         }
         val themeExt = extensionManager.getExtensionById(activeName.extensionId) as? ThemeExtension
         val themeExtRef = themeExt?.sourceRef
         if (themeExtRef == null) {
-            return@withLock
+            return
         }
         val themeConfig = themeExt.themes.find { it.id == activeName.componentId }
         if (themeConfig == null) {
-            return@withLock
+            return
         }
         val loadedDir = appContext.cacheDir.subDir("loaded").subDir(UUID.randomUUID().toString())
         runCatching {
