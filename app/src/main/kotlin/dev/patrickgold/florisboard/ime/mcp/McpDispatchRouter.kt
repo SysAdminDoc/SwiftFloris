@@ -46,6 +46,7 @@ class McpDispatchRouter(
     private val client: McpClient,
     private val registryView: RegistryView = RegistryView.from(),
     private val isDaemonDisabled: (DaemonKey) -> Boolean = { false },
+    private val isToolDisabled: (DaemonKey, String) -> Boolean = { _, _ -> false },
 ) {
 
     fun dispatch(request: Request): Response {
@@ -63,6 +64,11 @@ class McpDispatchRouter(
         if (isDaemonDisabled(resolved.daemon)) {
             return Response.Suppressed(
                 reason = "daemon ${resolved.daemon.packageName} disabled by user",
+            )
+        }
+        if (isToolDisabled(resolved.daemon, request.toolName)) {
+            return Response.Suppressed(
+                reason = "tool ${request.toolName} on daemon ${resolved.daemon.packageName} disabled by user",
             )
         }
         val callResp = client.callTool(

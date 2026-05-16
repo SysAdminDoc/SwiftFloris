@@ -600,6 +600,21 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "mcp__disabled_daemon_packages",
             default = "",
         )
+
+        /**
+         * ROADMAP matrix #38 — newline-separated list of MCP tools the user has
+         * disabled at per-tool granularity. Entries are formatted as
+         * `<daemonPackageName>::<toolName>`. `McpDispatchRouter` consults this
+         * set after the daemon-disabled gate; a disabled tool short-circuits to
+         * `Response.Suppressed("tool X on daemon Y disabled by user")`. Per-tool
+         * disables stack with per-daemon disables (disabling a whole daemon
+         * implicitly disables every tool it advertises). Codec lives in
+         * [dev.patrickgold.florisboard.ime.mcp.DisabledToolSet].
+         */
+        val disabledTools = string(
+            key = "mcp__disabled_tools",
+            default = "",
+        )
     }
 
     val keyboard = Keyboard()
