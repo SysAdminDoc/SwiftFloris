@@ -26,16 +26,13 @@ plugins {
     alias(libs.plugins.mikepenz.aboutlibraries)
     alias(libs.plugins.kotest)
     alias(libs.plugins.kotlinx.kover)
-    // Roborazzi Gradle plugin is deliberately *not* applied here: the
-    // current 1.43.x release line uses the AGP `TestedExtension` API
-    // that AGP 9.0.0 removed, so applying the plugin fails the build.
-    // The capture API (`captureRoboImage`) still works as a pure
-    // testImplementation dependency — Roborazzi tasks (`recordRoborazzi`,
-    // `verifyRoborazzi`) can be invoked manually via the standard JUnit
-    // entry points, and the plugin can be re-enabled once Roborazzi
-    // ships an AGP-9-compatible release (1.44.0-stable expected to land
-    // the new variant API).
-    // alias(libs.plugins.roborazzi)
+    // Roborazzi 1.55.0 (Jan 2026 line) ships AGP-9 support via PR #782,
+    // so the Gradle plugin is now applied. This lights up the
+    // `:app:recordRoborazziDebug` (baseline capture) and
+    // `:app:verifyRoborazziDebug` (regression verify) tasks so CI can
+    // gate every PR on a visual diff. Baseline images live under
+    // `app/src/test/snapshots/images/` per Roborazzi convention.
+    alias(libs.plugins.roborazzi)
 }
 
 val projectMinSdk: String by project
