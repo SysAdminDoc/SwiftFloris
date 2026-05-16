@@ -1234,6 +1234,62 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Tagbanwa (U+1760 block).
+         * Tagbanwa is one of the four Philippine Brahmic scripts
+         * (alongside Buhid, Hanunoo, Baybayin). Still in active use
+         * by the Tagbanwa people of Palawan.
+         */
+        val LatinToTagbanwa: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Tagbanwa",
+            mappings = mapOf(
+                "a" to "ᝠ", "i" to "ᝡ", "u" to "ᝢ",
+                "ka" to "ᝣ", "ga" to "ᝤ", "nga" to "ᝥ",
+                "ta" to "ᝦ", "da" to "ᝧ", "na" to "ᝨ",
+                "pa" to "ᝩ", "ba" to "ᝪ", "ma" to "ᝫ",
+                "ya" to "ᝬ", "la" to "ᝮ", "wa" to "ᝯ",
+                "sa" to "ᝰ",
+            ),
+        )
+
+        /**
+         * Latin → Buhid (U+1740 block).
+         * Buhid is the second of the four Philippine Brahmic scripts,
+         * still in use by the Buhid Mangyan people of Mindoro.
+         */
+        val LatinToBuhid: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Buhid",
+            mappings = mapOf(
+                "a" to "ᝀ", "i" to "ᝁ", "u" to "ᝂ",
+                "ka" to "ᝃ", "ga" to "ᝄ", "nga" to "ᝅ",
+                "ta" to "ᝆ", "da" to "ᝇ", "na" to "ᝈ",
+                "pa" to "ᝉ", "ba" to "ᝊ", "ma" to "ᝋ",
+                "ya" to "ᝌ", "ra" to "ᝍ", "la" to "ᝎ",
+                "wa" to "ᝏ", "sa" to "ᝐ", "ha" to "ᝑ",
+            ),
+        )
+
+        /**
+         * Latin → Baybayin / Tagalog (U+1700 block).
+         * Baybayin is the historical script of the Tagalog language
+         * (pre-Spanish-colonial Philippines), currently undergoing a
+         * cultural revival in the Philippines.
+         */
+        val LatinToBaybayin: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Baybayin",
+            mappings = mapOf(
+                "a" to "ᜀ", "i" to "ᜁ", "u" to "ᜂ",
+                "ka" to "ᜃ", "ga" to "ᜄ", "nga" to "ᜅ",
+                "ta" to "ᜆ", "da" to "ᜇ", "na" to "ᜈ",
+                "pa" to "ᜉ", "ba" to "ᜊ", "ma" to "ᜋ",
+                "ya" to "ᜌ", "ra" to "ᜍ", "la" to "ᜎ",
+                "wa" to "ᜏ", "sa" to "ᜐ", "ha" to "ᜑ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",

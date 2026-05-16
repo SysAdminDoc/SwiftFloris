@@ -281,6 +281,33 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("sh") shouldBe "𑄥"
     }
 
+    test("Tagbanwa table maps 'a' to ᝠ and 'nga' CV-syllable greedy") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToTagbanwa)
+        xlit.transliterate("a") shouldBe "ᝠ"
+        xlit.transliterate("nga") shouldBe "ᝥ"
+    }
+
+    test("Buhid table maps 'a' to ᝀ and 'ka' to ᝃ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToBuhid)
+        xlit.transliterate("a") shouldBe "ᝀ"
+        xlit.transliterate("ka") shouldBe "ᝃ"
+    }
+
+    test("Baybayin table maps 'a' to ᜀ and 'nga' to ᜅ") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToBaybayin)
+        xlit.transliterate("a") shouldBe "ᜀ"
+        xlit.transliterate("nga") shouldBe "ᜅ"
+    }
+
+    test("Tagbanwa + Buhid + Baybayin Philippine scripts all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToTagbanwa,
+            IndicScriptTable.LatinToBuhid,
+            IndicScriptTable.LatinToBaybayin,
+        )
+        tables.forEach { (it.size() > 14) shouldBe true }
+    }
+
     test("Soyombo + Marchen + Chakma tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToSoyombo,
