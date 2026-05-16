@@ -47,6 +47,7 @@ class SmartComposeRouter(
     private val minConfidence: Float = SmartComposeResultFilter.DEFAULT_MIN_CONFIDENCE,
     private val bypassCache: Boolean = false,
     cacheCapacity: Int = SmartComposeCache.DEFAULT_CAPACITY,
+    private val isConsentGranted: () -> Boolean = { true },
 ) {
     private val cache: SmartComposeCache? = if (bypassCache) null else SmartComposeCache(
         delegate = provider,
@@ -54,7 +55,7 @@ class SmartComposeRouter(
     )
 
     /**
-     * End-to-end predict path: guard → truncate → cache → provider
+     * End-to-end predict path: consent → guard → truncate → cache → provider
      * → filter. Returns whatever the dispatcher should hand to the
      * ghost-text overlay.
      */
@@ -64,6 +65,11 @@ class SmartComposeRouter(
         imeOptions: Int,
         maxCandidates: Int = 3,
     ): SmartComposeResult {
+        // Matrix #37 — consent gate. NEEDS_PROMPT / DENIED short-circuit to NoSuggestion; the IME's UI layer
+        // owns the consent-dialog flow that flips the pref to GRANTED on user accept.
+        if (!isConsentGranted()) {
+            return SmartComposeResult.NoSuggestion
+        }
         if (SensitiveFieldGuard.isSensitive(inputType, imeOptions)) {
             return SmartComposeResult.NoSuggestion
         }

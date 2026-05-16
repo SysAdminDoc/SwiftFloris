@@ -47,9 +47,15 @@ class McpDispatchRouter(
     private val registryView: RegistryView = RegistryView.from(),
     private val isDaemonDisabled: (DaemonKey) -> Boolean = { false },
     private val isToolDisabled: (DaemonKey, String) -> Boolean = { _, _ -> false },
+    private val isConsentGranted: () -> Boolean = { true },
 ) {
 
     fun dispatch(request: Request): Response {
+        // Matrix #37 — consent gate. NEEDS_PROMPT / DENIED short-circuits with the "consent required" reason
+        // so the IME's UI layer can drive the consent-dialog flow before any tool ever fires.
+        if (!isConsentGranted()) {
+            return Response.Suppressed(reason = "consent required")
+        }
         if (SensitiveFieldGuard.isSensitive(request.inputType, request.imeOptions)) {
             return Response.Suppressed(reason = "sensitive field")
         }

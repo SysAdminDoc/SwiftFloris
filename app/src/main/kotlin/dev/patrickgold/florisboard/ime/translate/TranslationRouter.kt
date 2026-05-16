@@ -50,6 +50,7 @@ class TranslationRouter(
     private val packManager: PackManagerView,
     private val bypassCache: Boolean = false,
     cacheCapacity: Int = TranslationCache.DEFAULT_CAPACITY,
+    private val isConsentGranted: () -> Boolean = { true },
 ) {
 
     private val cache: TranslationCache? = if (bypassCache) null else TranslationCache(
@@ -63,6 +64,11 @@ class TranslationRouter(
      * or a structured failure reason.
      */
     fun translate(request: Request): Response {
+        // Matrix #37 — consent gate. NEEDS_PROMPT / DENIED short-circuits with the "consent required" reason
+        // so the IME's UI layer can drive the consent-dialog flow.
+        if (!isConsentGranted()) {
+            return Response.Suppressed(reason = "consent required")
+        }
         if (SensitiveFieldGuard.isSensitive(request.inputType, request.imeOptions)) {
             return Response.Suppressed(reason = "sensitive field")
         }

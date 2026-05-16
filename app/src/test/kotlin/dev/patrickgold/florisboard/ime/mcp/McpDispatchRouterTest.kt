@@ -226,4 +226,51 @@ class McpDispatchRouterTest : FunSpec({
         (resp is McpDispatchRouter.Response.Completed) shouldBe true
         mcp.calls shouldBe 1
     }
+
+    test("missing consent short-circuits before any other check (matrix #37)") {
+        val mcp = CountingMcp(successCall())
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isConsentGranted = { false },
+        )
+        val resp = router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        val suppressed = resp as McpDispatchRouter.Response.Suppressed
+        suppressed.reason shouldBe "consent required"
+        mcp.calls shouldBe 0
+    }
+
+    test("consent gate beats sensitive-field gate — consent reason wins on a password field too") {
+        val mcp = CountingMcp(successCall())
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isConsentGranted = { false },
+        )
+        val resp = router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+            inputType = 0x81,
+        ))
+        (resp as McpDispatchRouter.Response.Suppressed).reason shouldBe "consent required"
+        mcp.calls shouldBe 0
+    }
+
+    test("granted consent lets requests pass through to the existing gates and client") {
+        val mcp = CountingMcp(successCall())
+        val router = McpDispatchRouter(
+            client = mcp,
+            registryView = FakeRegistry(mapOf("calendar.next" to resolved)),
+            isConsentGranted = { true },
+        )
+        val resp = router.dispatch(McpDispatchRouter.Request(
+            toolName = "calendar.next",
+            parameterJson = "{}",
+        ))
+        (resp is McpDispatchRouter.Response.Completed) shouldBe true
+        mcp.calls shouldBe 1
+    }
 })
