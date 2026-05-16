@@ -39,7 +39,10 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
@@ -79,6 +82,12 @@ val LocalNavController = staticCompositionLocalOf<NavController> {
     error("LocalNavController not initialized")
 }
 
+// ROADMAP §6 N13.2 — bundle key used by `FlorisAppActivity` to round-trip the soft-IME
+// visibility across a configuration change so Android 17 (API 37) builds can re-show
+// the IME after `onCreate`. Pre-Android-17 the platform still restores the IME itself,
+// so reading this back is a benign idempotent no-op.
+const val SAVED_KEY_IME_VISIBLE = "swiftfloris.app.ime_visible"
+
 class FlorisAppActivity : ComponentActivity() {
     private val prefs by FlorisPreferenceStore
     private val appContext by appContext()
@@ -95,6 +104,22 @@ class FlorisAppActivity : ComponentActivity() {
         }
         super.onCreate(savedInstanceState)
         WindowCompat.setDecorFitsSystemWindows(window, false)
+
+        // ROADMAP §6 N13.2 — Android 17 (API 37) no longer auto-restores soft-IME
+        // visibility across configuration changes for apps that don't handle the
+        // change themselves [STD-A17-BEHAVIOR]. FlorisAppActivity has no
+        // `android:configChanges` set, so it recreates on rotation, and a focused
+        // text-input surface in Settings (search bars, dictionary editor) would
+        // appear with the IME closed even though the user had it open. Restore the
+        // IME explicitly here when the activity is recreated and the saved bundle
+        // remembers it was visible. Pre-Android-17 builds also benefit (the call
+        // is a no-op when the IME is already visible).
+        if (savedInstanceState?.getBoolean(SAVED_KEY_IME_VISIBLE, false) == true) {
+            window?.decorView?.post {
+                WindowInsetsControllerCompat(window, window.decorView)
+                    .show(WindowInsetsCompat.Type.ime())
+            }
+        }
 
         prefs.other.settingsTheme.asFlow().collectIn(lifecycleScope) {
             appTheme = it
@@ -137,6 +162,18 @@ class FlorisAppActivity : ComponentActivity() {
             }
             onNewIntent(intent)
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        // ROADMAP §6 N13.2 — snapshot whether the soft IME is currently visible so
+        // the post-rotation `onCreate` can restore it. Window may be null during
+        // some teardown paths so probe defensively. WindowInsetsCompat collapses
+        // the API-26..API-30 platform variants into a single `Type.ime()` accessor.
+        val imeVisible = window?.decorView?.let { decor ->
+            ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())
+        } ?: false
+        outState.putBoolean(SAVED_KEY_IME_VISIBLE, imeVisible)
     }
 
     override fun onPause() {
