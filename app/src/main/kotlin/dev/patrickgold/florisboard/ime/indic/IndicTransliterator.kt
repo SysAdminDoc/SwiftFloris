@@ -966,6 +966,72 @@ class IndicScriptTable(
             ),
         )
 
+        /**
+         * Latin → Caucasian Albanian (U+10530 block).
+         * Caucasian Albanian is a 4th-7th century alphabet for the
+         * Udi language family (Caucasus region, ancestor of modern
+         * Udi). Supplementary plane. 52 letters.
+         */
+        val LatinToCaucasianAlbanian: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "CaucasianAlbanian",
+            mappings = mapOf(
+                "a" to "𐔰", "b" to "𐔱", "g" to "𐔲", "d" to "𐔳",
+                "e" to "𐔴", "z" to "𐔵", "i" to "𐔻",
+                "k" to "𐔿", "l" to "𐕀", "m" to "𐕁", "n" to "𐕂",
+                "o" to "𐕃", "p" to "𐕄", "r" to "𐕅", "s" to "𐕆",
+                "t" to "𐕇", "u" to "𐕈", "f" to "𐕉",
+                "x" to "𐕊", "y" to "𐕋", "w" to "𐕌",
+                "c" to "𐕍", "ch" to "𐕎",
+                "sh" to "𐕓", "h" to "𐕔",
+            ),
+        )
+
+        /**
+         * Latin → Elbasan (U+10500 block).
+         * Elbasan is an 18th-century Albanian alphabet used briefly
+         * for Christian liturgical texts before being replaced by
+         * the modern Latin-based Albanian alphabet. Supplementary
+         * plane.
+         */
+        val LatinToElbasan: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Elbasan",
+            mappings = mapOf(
+                "a" to "𐔀", "b" to "𐔂", "g" to "𐔃", "d" to "𐔄",
+                "e" to "𐔅", "z" to "𐔆", "i" to "𐔉",
+                "k" to "𐔋", "l" to "𐔌", "m" to "𐔌", "n" to "𐔍",
+                "o" to "𐔒", "p" to "𐔓", "r" to "𐔔", "s" to "𐔕",
+                "t" to "𐔖", "u" to "𐔘", "y" to "𐔚",
+                "f" to "𐔁",
+                "h" to "𐔇", "c" to "𐔝",
+            ),
+        )
+
+        /**
+         * Latin → Vai (U+A500 block).
+         * Vai is a West African syllabary used in Liberia + Sierra
+         * Leone (Vai language, Mande family). 200+ syllable glyphs.
+         * This table ships a representative subset of the most
+         * common CV-syllable combinations; the IME's syllable-input
+         * mode handles the long-tail composition.
+         */
+        val LatinToVai: IndicScriptTable = IndicScriptTable(
+            sourceScheme = "Latin",
+            targetScript = "Vai",
+            mappings = mapOf(
+                "a" to "ꔀ", "e" to "ꔍ", "i" to "ꔦ", "o" to "ꕈ", "u" to "ꖉ",
+                "pa" to "ꕒ", "pe" to "ꕓ", "pi" to "ꕔ", "po" to "ꕕ", "pu" to "ꕖ",
+                "ba" to "ꓱ", "be" to "ꓲ", "bi" to "ꓳ", "bo" to "ꓴ", "bu" to "ꓵ",
+                "ta" to "ꕴ", "te" to "ꕵ", "ti" to "ꕶ", "to" to "ꕷ", "tu" to "ꕸ",
+                "ka" to "ꕪ", "ke" to "ꕫ", "ki" to "ꕬ", "ko" to "ꕭ", "ku" to "ꕮ",
+                "ma" to "ꖀ", "me" to "ꖁ", "mi" to "ꖂ", "mo" to "ꖃ", "mu" to "ꖄ",
+                "na" to "ꖆ", "ne" to "ꖇ", "ni" to "ꖈ", "no" to "ꖉ", "nu" to "ꖊ",
+                "sa" to "ꕢ", "se" to "ꕣ", "si" to "ꕤ", "so" to "ꕥ", "su" to "ꕦ",
+                "wa" to "ꕮ",
+            ),
+        )
+
         /** ITRANS → Kannada (U+0C80 block). */
         val ItransToKannada: IndicScriptTable = IndicScriptTable(
             sourceScheme = "ITRANS",

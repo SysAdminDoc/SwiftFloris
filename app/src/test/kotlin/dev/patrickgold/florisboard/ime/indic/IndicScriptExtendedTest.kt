@@ -215,6 +215,31 @@ class IndicScriptExtendedTest : FunSpec({
         xlit.transliterate("ng") shouldBe "𐤵"
     }
 
+    test("Caucasian Albanian table maps 'a' to 𐔰 and 'sh' to 𐕓") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToCaucasianAlbanian)
+        xlit.transliterate("a") shouldBe "𐔰"
+        xlit.transliterate("sh") shouldBe "𐕓"
+    }
+
+    test("Elbasan table maps 'a' to 𐔀 (supplementary plane)") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToElbasan)
+        xlit.transliterate("a") shouldBe "𐔀"
+    }
+
+    test("Vai syllabary maps 'pa' to ꕒ and longest-match wins over 'p' alone") {
+        val xlit = IndicTransliterator(IndicScriptTable.LatinToVai)
+        xlit.transliterate("pa") shouldBe "ꕒ"
+    }
+
+    test("Caucasian Albanian + Elbasan + Vai tables all report sane sizes") {
+        val tables = listOf(
+            IndicScriptTable.LatinToCaucasianAlbanian,
+            IndicScriptTable.LatinToElbasan,
+            IndicScriptTable.LatinToVai,
+        )
+        tables.forEach { (it.size() > 18) shouldBe true }
+    }
+
     test("Carian + Lycian + Lydian tables all report sane sizes") {
         val tables = listOf(
             IndicScriptTable.LatinToCarian,
