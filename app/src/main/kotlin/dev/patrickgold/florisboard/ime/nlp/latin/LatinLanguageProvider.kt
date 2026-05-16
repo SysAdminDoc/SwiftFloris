@@ -751,11 +751,27 @@ internal object LatinDictionarySuggester {
         } else {
             emptyList()
         }
-        val primaryCorrections = correctionCandidates.filter { candidate ->
-            shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
+        // ROADMAP §7 Next-3 — when any completion candidate is a word the
+        // user has typed before (lives in the overlay), demote SCOWL
+        // primary corrections to secondary. The user explicitly taught the
+        // keyboard this word; we don't want a SCOWL edit-distance neighbour
+        // (e.g. "food" for "foob…") jumping ahead of "foobar" just because
+        // the SCOWL word is more common in the general corpus.
+        val hasOverlayCompletion = userOverlay.isNotEmpty() &&
+            completionCandidates.any { userOverlay.containsKey(it.text.lowercase()) }
+        val primaryCorrections = if (hasOverlayCompletion) {
+            emptyList()
+        } else {
+            correctionCandidates.filter { candidate ->
+                shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
+            }
         }
-        val secondaryCorrections = correctionCandidates.filterNot { candidate ->
-            shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
+        val secondaryCorrections = if (hasOverlayCompletion) {
+            correctionCandidates
+        } else {
+            correctionCandidates.filterNot { candidate ->
+                shouldPromoteCorrectionBeforeCompletions(normalizedWord, completionCandidates, candidate)
+            }
         }
 
         val seen = mutableSetOf<String>()

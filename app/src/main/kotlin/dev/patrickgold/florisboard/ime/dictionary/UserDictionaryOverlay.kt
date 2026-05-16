@@ -132,7 +132,12 @@ class UserDictionaryOverlay private constructor() {
         val map = perLocale.getOrPut(key) { ConcurrentHashMap() }
         for ((word, freq) in entries) {
             val normalized = normalise(word) ?: continue
-            val clamped = freq.coerceIn(INITIAL_FREQUENCY, MAX_FREQUENCY)
+            // Preserve whatever frequency the DAO has — entries written by
+            // older builds may sit anywhere on the 1..255 scale; clamping
+            // them up to INITIAL_FREQUENCY would mass-promote forgotten /
+            // imported words to top-tier. Just keep the value in the legal
+            // 1..MAX_FREQUENCY range.
+            val clamped = freq.coerceIn(1, MAX_FREQUENCY)
             map.putIfAbsent(normalized, clamped)
         }
     }
@@ -164,8 +169,16 @@ class UserDictionaryOverlay private constructor() {
     }
 
     companion object {
-        const val INITIAL_FREQUENCY: Int = 80
-        const val INCREMENT: Int = 6
+        /**
+         * SwiftKey-style "instant remember" — a word the user typed even
+         * once lands near the top of the frequency scale so it surfaces
+         * in the suggestion strip the very next time its prefix is
+         * typed.  240 / 255 ≈ 0.94 weight; after 2 re-uses we hit cap
+         * and the candidate becomes auto-commit eligible (confidence
+         * crosses `AutoCommitMinFrequency = 0.78`).
+         */
+        const val INITIAL_FREQUENCY: Int = 240
+        const val INCREMENT: Int = 5
         const val MAX_FREQUENCY: Int = 250
         const val MIN_LENGTH: Int = 3
         const val MAX_LENGTH: Int = 32

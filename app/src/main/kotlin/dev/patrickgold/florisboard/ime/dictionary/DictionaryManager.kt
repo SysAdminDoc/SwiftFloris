@@ -37,12 +37,22 @@ private const val SHORTCUT_MATCH_PRIORITY = 0
 private const val PREFIX_MATCH_PRIORITY = 1
 private const val CONTAINS_MATCH_PRIORITY = 2
 
-/** Frequency starting point assigned to a freshly-learned word. */
-private const val LEARN_INITIAL_FREQUENCY = 80
+/**
+ * Frequency starting point assigned to a freshly-learned word.
+ *
+ * SwiftKey-style "instant remember" — set high enough that a single
+ * commit makes the word the top suggestion for its prefix and removes
+ * the spell-check underline. 240 / 255 ≈ 0.94 weight, just below the
+ * AutoCommit floor; two re-uses cross the threshold so the word
+ * becomes the auto-commit default. Kept in sync with
+ * [UserDictionaryOverlay.INITIAL_FREQUENCY] so disk + in-memory
+ * agree on the per-word weight.
+ */
+private const val LEARN_INITIAL_FREQUENCY = 240
 /** Frequency increment applied each time an existing learned word is reinforced. */
-private const val LEARN_INCREMENT = 6
-/** Cap learned-word frequency below the canonical-corpus top-tier (255) so curated
- *  high-frequency words still rank first when both are equally prefix-matched. */
+private const val LEARN_INCREMENT = 5
+/** Cap learned-word frequency at the top tier so a much-typed word ties with
+ *  SCOWL's most common words. */
 private const val LEARN_MAX_FREQUENCY = 250
 /** Minimum word length for auto-learning. Single chars and digrams are noise. */
 private const val LEARN_MIN_LENGTH = 3
