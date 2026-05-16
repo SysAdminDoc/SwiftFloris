@@ -299,6 +299,16 @@ fun TextKeyboardLayout(
         }
 
         val desiredKeyHack = rememberUpdatedState(desiredKey) // TODO quick'n'dirty hack
+        // ROADMAP §6 N13.3 — suppress every long-press popup (basic + extended)
+        // when the active editor variation is PASSWORD / VISIBLE_PASSWORD /
+        // WEB_PASSWORD (all three collapse to `KeyVariation.PASSWORD` in
+        // `EditorInstance.handleStartInputView`). The Android 17 (API 37)
+        // `show_passwords_physical` setting deliberately separates external-keyboard
+        // and on-screen password rendering [STD-A17-BEHAVIOR], so the IME-side gate
+        // here has to fire regardless of input source (touch *or* hardware key
+        // event). `rememberUpdatedState(evaluator)` keeps the predicate reading the
+        // live evaluator instead of the one captured at the first recomposition.
+        val evaluatorHack = rememberUpdatedState(evaluator)
         val popupUiController = rememberPopupUiController(
             key1 = keyboard,
             key2 = Unit, // TODO quick'n'dirty hack
@@ -324,7 +334,9 @@ fun TextKeyboardLayout(
                 }
             },
             isSuitableForBasicPopup = { key ->
-                if (key is TextKey) {
+                if (PasswordFieldPopupGate.shouldSuppressPopups(evaluatorHack.value.state.keyVariation)) {
+                    false
+                } else if (key is TextKey) {
                     val keyCode = key.computedData.code
                     val keyType = key.computedData.type
                     val numeric = keyboard.mode == KeyboardMode.NUMERIC ||
@@ -336,7 +348,9 @@ fun TextKeyboardLayout(
                 }
             },
             isSuitableForExtendedPopup = { key ->
-                if (key is TextKey) {
+                if (PasswordFieldPopupGate.shouldSuppressPopups(evaluatorHack.value.state.keyVariation)) {
+                    false
+                } else if (key is TextKey) {
                     val keyCode = key.computedData.code
                     keyCode > KeyCode.SPACE && keyCode != KeyCode.CJK_SPACE || ExceptionsForKeyCodes.contains(keyCode)
                 } else {
