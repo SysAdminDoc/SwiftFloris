@@ -48,7 +48,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 
 | # | Item | Impact | Cost | Urg. | Score | Rationale |
 |---|---|---|---|---|---|---|
-| 16 | **AGP 9.0.0 → 9.2.x + Compose BOM 2026.03.01 → 2026.05.00** | 3 | 2 | 2 | **4.0** | After bump-batch B lands; needs R8 rules audit |
+| 16 | ✅ **Shipped v1.8.74:** AGP 9.0.0 → 9.2.1 + Compose BOM 2026.03.01 → 2026.05.00 | 3 | 2 | 2 | **4.0** | Google Maven / Android Studio patch notes checked; R8 keepattributes audit required no rule changes |
 | 17 | **Dedicated arrow-keys row preset** (SwiftKey-parity P24) | 3 | 2 | 2 | **4.0** | Small UX gain; `BottomRowPreset.Programmer` already provides scaffolding |
 | 18 | **Calendar quick-insert (P9)** — `QuickAction.InsertCalendarEvent` + `CalendarContract.Instances` | 4 | 3 | 1 | **3.0** | SwiftKey-parity; permission-gated |
 | 19 | **Tasks quick-insert (P10)** — `QuickAction.InsertTask` + `Intent.ACTION_INSERT` | 3 | 2 | 1 | **3.5** | SwiftKey-parity; no permission |
@@ -119,7 +119,7 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 
 ### v1.8.61+ (post-migration window — Phase C / D)
 
-- **Bump-batch B** (#12) shipped v1.8.71; AGP 9.2.x remains #16.
+- **Bump-batch C** (#16) shipped v1.8.74; Android 17 compile/target SDK remains separate from the AGP / BOM bump.
 - **Phase C1 (split renderer)** (#23) — opens Phase C.
 - **Calendar / Tasks quick-insert** (#18, #19).
 - **AAA high-contrast theme + Animated theme** (#21, #20) — wraps Phase C.

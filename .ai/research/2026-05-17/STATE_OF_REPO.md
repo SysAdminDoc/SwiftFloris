@@ -5,7 +5,7 @@
 **Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.73. The notable dependency deltas are
+HEAD to v1.8.74. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
@@ -17,6 +17,8 @@ while `swiftfloris-statistical` is production default until an open library
 and permissive dataset land. v1.8.73 moved local root JVM crash/replay logs
 under `.ai/local-crash-logs/2026-05-16/` and added a CI guard against
 committed root `hs_err_pid*.log` / `replay_pid*.log` files.
+v1.8.74 updates AGP to `9.2.1` and Compose BOM to `2026.05.00`; compile /
+target SDK remain 36.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -48,10 +50,10 @@ Operative invariants (load-bearing — touched by build gates):
 | Item | Pinned value | Source |
 |---|---|---|
 | versionName / versionCode | 1.8.73 / 1873 | [gradle.properties](../../../gradle.properties#L18-L19) |
-| AGP | 9.0.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
+| AGP | 9.2.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
-| Compose BOM | 2026.03.01 | [libs.versions.toml](../../../gradle/libs.versions.toml#L7) |
+| Compose BOM | 2026.05.00 | [libs.versions.toml](../../../gradle/libs.versions.toml#L7) |
 | AndroidX Core | 1.18.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L8) |
 | AndroidX Activity | 1.13.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L4) |
 | AndroidX Navigation | 2.9.7 | [libs.versions.toml](../../../gradle/libs.versions.toml#L12) |
@@ -81,7 +83,8 @@ companion [SECURITY_AND_DEPENDENCY_REVIEW.md](SECURITY_AND_DEPENDENCY_REVIEW.md)
 The same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 corrects the most drift-prone items: Activity 1.13.0 is stable, AGP target
 is 9.2.x. KSP target 2.3.8 shipped in v1.8.69; Roborazzi 1.60.0 and
-Robolectric 4.16.1 shipped in v1.8.71.
+Robolectric 4.16.1 shipped in v1.8.71; AGP 9.2.1 and Compose BOM 2026.05.00
+shipped in v1.8.74.
 
 ## 3. Module layout
 
@@ -209,8 +212,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 89 tags in repo after the v1.8.73 release tag; local release tags now run
-  through `v1.8.73`. Push remains a maintainer-host task because this VM
+- 90 tags in repo after the v1.8.74 release tag; local release tags now run
+  through `v1.8.74`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -287,8 +290,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.73).
-  The local tag stream was recovered through `v1.8.73`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.74).
+  The local tag stream was recovered through `v1.8.74`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

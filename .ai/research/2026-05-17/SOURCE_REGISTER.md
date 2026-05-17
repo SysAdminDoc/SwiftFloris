@@ -167,9 +167,12 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - https://developer.android.com/about/versions/17/behavior-changes-17 — API 37 behavior changes
 - https://developer.android.com/about/versions/17/behavior-changes-all — All apps
 - https://developer.android.com/build/releases/agp-9-1-0-release-notes — AGP 9.1
+- https://developer.android.com/build/releases/agp-9-2-0-release-notes — AGP 9.2 baseline and R8 keepattributes behavior
+- https://androidstudio.googleblog.com/2026/05/ — Android Studio Panda 4 Patch 1 / AGP 9.2.1 patch note
 - https://android-developers.googleblog.com/2025/07/transition-to-16-kb-page-sizes-android-apps-games-android-studio.html — 16 KB pages
 - https://android-developers.googleblog.com/2026/02/the-first-beta-of-android-17.html — Android 17 Beta 1
 - https://android-developers.googleblog.com/2026/04/jetpack-compose-april-2026-updates.html — Compose 2026.05.00
+- https://developer.android.com/jetpack/androidx/releases/compose — Compose release stream
 - https://source.android.com/docs/security/bulletin/2026/2026-04-01 — Android Security Bulletin
 
 ### 2.7 Compose / Jetpack / Kotlin
@@ -207,7 +210,7 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - https://repo.maven.apache.org/maven2/io/github/takahirom/roborazzi/roborazzi/maven-metadata.xml — Roborazzi 1.60.0
 - https://plugins.gradle.org/m2/io/github/takahirom/roborazzi/io.github.takahirom.roborazzi.gradle.plugin/maven-metadata.xml — Roborazzi Gradle plugin 1.60.0
 - https://repo.maven.apache.org/maven2/org/robolectric/robolectric/maven-metadata.xml — Robolectric 4.16.1
-- https://api.osv.dev/v1/querybatch — v1.8.71 OSV spot-check for Roborazzi / Robolectric targets
+- https://api.osv.dev/v1/querybatch — v1.8.71 OSV spot-check for Roborazzi / Robolectric targets; v1.8.74 spot-check for AGP 9.2.1 / Compose BOM 2026.05.00
 - https://repo.maven.apache.org/maven2/com/google/crypto/tink/tink-android/maven-metadata.xml — Tink Android 1.21.0
 - https://github.com/LeanBitLab/LeanType — LeanType active HeliBoard fork
 - https://github.com/LeanBitLab/LeanType/releases/tag/v3.7.9 — LeanType v3.7.9 release
@@ -286,8 +289,8 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 |---|---|---|
 | Direct competitor repos | 14 | Yes — every OSS Android keyboard with non-trivial mindshare covered |
 | Commercial competitor docs | 8 | Yes — SwiftKey, Gboard, Samsung, Apple, Typewise, Chrooma, Grammarly, Tap |
-| Android platform docs | 6 | Yes — API 37 + AGP + Security Bulletin + Compose |
-| Jetpack/library release pages | 11 | Yes — every pinned dep checked |
+| Android platform docs | 9 | Yes — API 37 + AGP + Android Studio patch notes + Security Bulletin + Compose |
+| Jetpack/library release pages | 12 | Yes — every pinned dep checked |
 | LLM / on-device-AI | 6 | Reasonably saturated; FunctionGemma + LiteRT-LM 0.10/0.11 status verified |
 | NLP / language | 8 | KenLM license verified (LGPL) — material correction to ROADMAP |
 | Voice | 5 | Yes — whisper.cpp, Vosk, FUTO covered |

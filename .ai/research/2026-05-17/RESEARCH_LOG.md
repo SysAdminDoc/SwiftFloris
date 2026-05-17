@@ -197,6 +197,13 @@ or one-competitor additions, not a new roadmap pillar.
   `replay_pid11584.log`, `replay_pid15604.log`, `replay_pid4860.log`). They
   were moved to `.ai/local-crash-logs/2026-05-16/`, and a tracked CI guard was
   added so force-added root logs fail future pushes / PRs.
+- **v1.8.74 continuation dependency metadata check:** The autonomous loop
+  re-fetched Google Maven metadata for AGP and Compose BOM, checked Android
+  Studio Panda 4 Patch 1 notes, opened the AGP 9.2 release notes and Compose
+  release stream, ran OSV querybatch for the two target coordinates, and
+  audited active R8 `-keepattributes` rules before shipping Bump-batch C. This
+  confirmed AGP `9.2.1` and Compose BOM `2026.05.00` as stable targets while
+  leaving AGP `9.3.0-alpha05` on the preview side of the line.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

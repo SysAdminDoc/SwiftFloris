@@ -44,11 +44,11 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.73)
+## 3. Stack at HEAD (v1.8.74)
 
 ```
-Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
-AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · KSP 2.3.8
+Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
+AGP 9.2.1 · Gradle 9.4.1 · JDK 17 · KSP 2.3.8
 minSdk 26 (Android 8.0) · targetSdk/compileSdk 36 (Android 16; API 37 gates wired)
 Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · Coroutines 1.11.0 · Coil 3.4.0 · ZXing 3.5.4
 Kotest 6.1.11 · Roborazzi 1.60.0 (plugin active) · Robolectric 4.16.1
@@ -59,10 +59,10 @@ Crowdin localization · No INTERNET permission · 1000+ unit tests
 The [.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md](.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md)
 plus the fifth-pass correction in
 [.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md](.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md)
-flag several pins as materially behind: AGP 9.0.0 → 9.2.x and Compose BOM
-2026.03.01 → 2026.05.00. Bump-batch A shipped in v1.8.69:
+flag several pins as materially behind. Bump-batch A shipped in v1.8.69:
 coroutines 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4,
-and AboutLibraries 14.0.1 → 14.2.0. The
+and AboutLibraries 14.0.1 → 14.2.0. Bump-batch C shipped in v1.8.74:
+AGP 9.0.0 → 9.2.1 and Compose BOM 2026.03.01 → 2026.05.00. The
 `androidx-security-crypto:1.1.0-alpha06` migration shipped in v1.8.68:
 local encrypted preference payloads now use Tink Android + direct
 AndroidKeystore wrapping, with one-shot AndroidX encrypted-preference
@@ -84,6 +84,10 @@ v1.8.73 was a repo-hygiene guardrail: ignored local JVM crash/replay logs were
 moved out of the repo root, and CI now runs
 `scripts/check-no-root-crash-logs.sh` to reject committed root
 `hs_err_pid*.log` / `replay_pid*.log` files.
+
+v1.8.74 was Bump-batch C: Android Gradle Plugin 9.2.1 and Compose BOM
+2026.05.00. `compileSdk` / `targetSdk` intentionally remain 36 until the
+Android 17 behavior-gate checklist is closed.
 
 ## 4. Module layout
 
@@ -112,7 +116,7 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.73`
+  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.74`
   are tagged with their release commits. The tags still need to be
   pushed from the maintainer host because this VM cannot push to
   `SysAdminDoc/SwiftFloris`.

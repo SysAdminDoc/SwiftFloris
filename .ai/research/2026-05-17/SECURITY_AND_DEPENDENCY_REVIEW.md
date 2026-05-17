@@ -24,11 +24,11 @@ Bump-batch B: Roborazzi 1.60.0 and Robolectric 4.16.1.
 
 | Pin | Current pin | Latest stable (2026-05-17) | Delta | Action |
 |---|---|---|---|---|
-| **AGP** | 9.0.0 | **9.2.x / 9.2.1 metadata** | Behind one minor+ | Bump after Roborazzi 1.60.0 + R8 rules audit |
+| **AGP** | 9.2.1 | **9.2.1 stable** (`9.3.0-alpha05` preview skipped) | Current on stable line | ✅ shipped v1.8.74 after R8 keepattributes audit |
 | **Kotlin** | 2.3.21 | 2.3.21 (2.4.0-RC out) | Current | Keep |
 | KSP | 2.3.8 | **2.3.8** | Current | ✅ shipped v1.8.69 |
 | **androidx-activity** | **1.13.0** | **1.13.0 stable** | Current | Keep |
-| **compose-bom** | 2026.03.01 | **2026.05.00** | Behind one BOM | Bump (no regressions reported) |
+| **compose-bom** | 2026.05.00 | **2026.05.00** | Current | ✅ shipped v1.8.74 |
 | androidx-core | 1.18.0 | 1.18.0 | Current | Keep |
 | androidx-emoji2 | 1.6.0 | 1.6.0 | Current | Keep (Emoji 17 still gated on 1.7) |
 | androidx-navigation | 2.9.7 | 2.9.7 (navigation3 1.1.0 also stable) | Current | Consider navigation3 evaluation |
@@ -252,8 +252,8 @@ maintainer build host must run the visual/test suite before publishing.
 
 ### Bump-batch C (build toolchain)
 
-1. **AGP** 9.0.0 → **9.2.x** (9.2.1 in Google Maven metadata)
-2. **Compose BOM** 2026.03.01 → **2026.05.00**
+1. ✅ **AGP** 9.0.0 → **9.2.1** shipped v1.8.74
+2. ✅ **Compose BOM** 2026.03.01 → **2026.05.00** shipped v1.8.74
 
 **Acceptance criteria:** Bump-batch B must land first. ProGuard /
 `proguard-rules.pro` audit for R8 keep-attributes / annotation stripping
