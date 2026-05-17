@@ -1,9 +1,11 @@
 # Changeset Summary — 2026-05-17 Research Run
 
-This research run created **15 new files** across three passes and
-**modified zero existing source / build files**. Nothing in `ROADMAP.md`,
+This research run created **17 new files** across four passes and
+**modified zero source / build / test files**. Nothing in `ROADMAP.md`,
 `IMPROVEMENT_PLAN.md`, the per-release notes, the build files, or any
-source file under `app/` or `lib/` was touched. All output is additive.
+source file under `app/` or `lib/` was touched. The README and one
+research-run companion file were modified for accuracy fixes only
+(version badge bumps + theme count correction + recent-releases append).
 
 - Pass 1 created 11 files (root: `PROJECT_CONTEXT.md`,
   `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`; nine artifacts under

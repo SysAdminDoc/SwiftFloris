@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.52-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.58-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -29,7 +29,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.52 | Privacy posture |
+| Area | What's in v1.8.58 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -37,7 +37,7 @@
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
 | **Voice input** | FUTO Voice Input handoff (preferred), Vosk streaming fallback, RAM-aware model selector, local Whisper/Vosk model manager | No audio leaves the device |
 | **Clipboard** | History with pinning + per-app source tag; SQLCipher-encrypted personal dictionary | On-device |
-| **Themes** | SwiftKey Pure light + dark + M3 Expressive, Nord, Tokyo Night, Dracula, Catppuccin Mocha, Snygg theme engine, per-app accent | No telemetry |
+| **Themes** | 19 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent | No telemetry |
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
 | **Migration** | Gboard / FlorisBoard / SwiftKey JSON export importer; Keyman LDML + Windows KLC hardware-keyboard imports | All file-system based |
 | **CI / build** | No-network gate, OSV dep scan, reproducible-build toolchain pins, Roborazzi visual-regression scaffold, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
@@ -81,7 +81,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## Migrating from SwiftKey
 
-Full step-by-step paths are in [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md); the headline contract — `swiftkey-cloud.json` ingestion through **Settings → Personal dictionary → Import** — landed in [v1.8.46](RELEASE_NOTES_v1.8.46.md), the cumulative-byte hardening of the JSON parser in [v1.8.48](RELEASE_NOTES_v1.8.48.md), and the parity-roadmap reference for the **2026-05-31** cutoff lives in [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md).
+Full step-by-step paths are in [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md); the headline contract — `swiftkey-cloud.json` ingestion through **Settings → Personal dictionary → Import** — landed in [v1.8.46](RELEASE_NOTES_v1.8.46.md), the cumulative-byte hardening of the JSON parser in [v1.8.48](RELEASE_NOTES_v1.8.48.md), the post-import confirmation + rollback in [v1.8.53](RELEASE_NOTES_v1.8.53.md), the encrypted-blob export codec primitive in [v1.8.54](RELEASE_NOTES_v1.8.54.md), and the parity-roadmap reference for the **2026-05-31** cutoff lives in [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md).
 
 ## Documentation
 
@@ -245,6 +245,12 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.58** (2026-05-17) — Phase D2: generic task-creation quick action (`QuickAction.InsertTask`). On-device replacement for SwiftKey's Microsoft-To-Do tile via `Intent.ACTION_SEND` chooser; works with Tasks.org / OpenTasks / Google Tasks / Joplin / Notion / Markor. `SensitiveFieldGuard` gate. ([notes](RELEASE_NOTES_v1.8.58.md))
+- **v1.8.57** (2026-05-17) — Phase C2: SwiftKey "Modes → Arrow keys" parity via new `BottomRowPreset.Navigation` (← ↑ space ↓ → enter). ([notes](RELEASE_NOTES_v1.8.57.md))
+- **v1.8.56** (2026-05-17) — Phase B4: same-sentence language-switch hardening via geometric-decay weighted blend in `TrailingContextLanguageBlend`. ([notes](RELEASE_NOTES_v1.8.56.md))
+- **v1.8.55** (2026-05-17) — Phase B3: shared-spelling bilingual handling — sub-floor `0.30` confidence on one-locale candidates overwriting shared typed words. ([notes](RELEASE_NOTES_v1.8.55.md))
+- **v1.8.54** (2026-05-17) — Phase A3 codec primitive: encrypted-blob personal-dictionary export envelope (AES-256-GCM + PBKDF2-HMAC-SHA-256 at OWASP-2025's 600 000 iterations). ([notes](RELEASE_NOTES_v1.8.54.md))
+- **v1.8.53** (2026-05-17) — Phase A2: post-import confirmation + rollback dialog + wired `DictionaryImporter` into Settings UI. ([notes](RELEASE_NOTES_v1.8.53.md))
 - **v1.8.52** (2026-05-17) — SwiftKey migration outreach push: README banner + opening pitch lead with the 2026-05-31 cutoff, badge promoted, parity-roadmap permalink linked. ([notes](RELEASE_NOTES_v1.8.52.md))
 - **v1.8.51** (2026-05-17) — N14.3 + N14.4 Compose BOM + Gradle wrapper dependency-pin audits. New audit-log table in `docs/DEPENDENCY_TRIAGE.md`. ([notes](RELEASE_NOTES_v1.8.51.md))
 - **v1.8.50** (2026-05-17) — N17.1 emoji-picker crash triage; root-caused to `Paint.hasGlyph("")` and closed with three defensive filters. ([notes](RELEASE_NOTES_v1.8.50.md))
@@ -334,7 +340,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.52** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
+🚀 **Active development.** Current release: **v1.8.58** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
 
 ---
 
