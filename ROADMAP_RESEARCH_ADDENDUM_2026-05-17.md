@@ -223,7 +223,7 @@ new N16-extension.
 Register already names this as the one-shot opportunity but has no
 checklist for the marketing slice.
 
-**Body:**
+**Historical proposed body:**
 
 > - 2026-05-25 — soft pre-launch comms: README banner already up;
 >   add a "see you on 5/30" pin to the GitHub repo description.
@@ -279,8 +279,14 @@ must inform the user at first interaction.
 
 **Where:** ROADMAP §6 N4 (Customizable bottom row + smartbar).
 
-**Why now:** SwiftKey-parity P24 still open. `BottomRowPreset.Programmer`
-already provides the scaffolding for a separate `BottomRowPreset.ArrowsRow`.
+**Status:** ✅ shipped 2026-05-17 in v1.8.57. The implementation is named
+`BottomRowPreset.Navigation` rather than `ArrowsRow`, and it surfaces
+ARROW_LEFT / ARROW_UP / SPACE / ARROW_DOWN / ARROW_RIGHT / ENTER from
+Settings → Keyboard → Bottom-row preset.
+
+**Why it mattered:** SwiftKey-parity P24 was a small, high-confidence UX gap.
+`BottomRowPreset.Programmer` already provided the scaffolding for a separate
+navigation-focused preset.
 
 **Body:**
 
@@ -502,7 +508,7 @@ but does not require a roadmap change.
 | §A.7 FunctionGemma named target | 🔄 |
 | §B.1 Migration outreach checklist | 🟢 |
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
-| §B.3 Arrows-row preset (N4.4) | 🟢 |
+| §B.3 Arrows-row preset (N4.4) | ✅ v1.8.57 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
 | §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.74; push pending from maintainer host |
 | Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |

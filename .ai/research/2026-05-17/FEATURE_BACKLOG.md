@@ -21,11 +21,11 @@ graduate into recommended next-slice work live in
 | §8 L1 LiteRT-LM + Gemma 3 270M | **FunctionGemma 270M shipped Jan 2026** as the function-calling variant. Should be the named model target for any agentic tool-use Smart Compose |
 | §8 L1 MediaPipe LLM Inference | **Officially deprecated by Google** on Android. ROADMAP should explicitly REJECT MediaPipe to prevent re-proposal |
 | §4 "Upstream drift" thesis | **FlorisBoard frozen on v0.6.0-alpha02 since 2025-01-23**. SwiftFloris is **lapping a stalled upstream**, not drifting from a moving target. Update framing |
-| §6 N4.2 / §7 P24 — Dedicated arrow-keys row | SwiftKey-parity P24 still open. `BottomRowPreset.Programmer` exists; dedicated arrows-row preset not yet wired |
-| §7 P9 — Calendar quick-insert | SwiftKey-parity gap; no Android-side hook today. `CalendarContract.Instances` + new `QuickAction.InsertCalendarEvent`. New |
-| §7 P10 — Tasks quick-insert | SwiftKey-parity gap; `Intent.ACTION_INSERT` against Tasks.org / OpenTasks / Google Tasks. New |
-| §6 / §7 — Animated themes (P14) | New gap; `Snygg` engine needs animated-bg primitive |
-| §6 / §7 — AAA high-contrast theme (P15) | New gap; new Snygg theme sheet at WCAG 2.0 AAA contrast |
+| §6 N4.2 / §7 P24 — Dedicated arrow-keys row | ✅ shipped v1.8.57 as `BottomRowPreset.Navigation` |
+| §7 P9 — Calendar quick-insert | ✅ shipped v1.8.64 with `QuickAction.InsertCalendarEvent`, `CalendarContract.Instances`, explicit `READ_CALENDAR`, and IME-local picker |
+| §7 P10 — Tasks quick-insert | ✅ shipped v1.8.58 with `QuickAction.InsertTask` chooser flow and `SensitiveFieldGuard` |
+| §6 / §7 — Animated themes (P14) | ✅ shipped v1.8.63 as `aurora_animated` with GenericShape renderer and reduced-motion gate |
+| §6 / §7 — AAA high-contrast theme (P15) | ✅ shipped v1.8.63 as `swiftkey_high_contrast` with WCAG AAA contrast tests |
 | §6 N3.x — typing-stats accuracy-delta (P26) | New; compute "x % fewer corrections accepted this week" from `CorrectionOutcomePriors` |
 
 ## 2. New ideas not yet in ROADMAP

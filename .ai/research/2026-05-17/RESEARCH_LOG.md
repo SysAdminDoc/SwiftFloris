@@ -204,6 +204,11 @@ or one-competitor additions, not a new roadmap pillar.
   audited active R8 `-keepattributes` rules before shipping Bump-batch C. This
   confirmed AGP `9.2.1` and Compose BOM `2026.05.00` as stable targets while
   leaving AGP `9.3.0-alpha05` on the preview side of the line.
+- **Tier-2 matrix reconciliation after v1.8.74:** Rows #17-#23 and #25 were
+  compared against `ROADMAP.md`, `PROJECT_CONTEXT.md`, and the top-level
+  reconciliation table in `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`. Code work
+  had already shipped in v1.8.56-v1.8.67, so the matrix/backlog/addendum were
+  updated instead of reimplementing those slices.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could
