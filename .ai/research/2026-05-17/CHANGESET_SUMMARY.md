@@ -579,3 +579,46 @@ banned-network-permission scan were run. The focused Gradle suite was
 attempted and stopped at the known VM blocker: `JAVA_HOME` is not set and no
 `java` command is on PATH, so maintainer-host Gradle verification remains
 required before publishing.
+
+---
+
+## 16. v1.8.73 continuation — root crash/replay log cleanup + CI guard
+
+The autonomous development loop then shipped Tier-1 prioritization items #14
+and #15 as `ROADMAP.md` N18.1.
+
+**Local files moved (ignored, not committed):**
+
+- `hs_err_pid15604.log`
+- `hs_err_pid4860.log`
+- `replay_pid11584.log`
+- `replay_pid15604.log`
+- `replay_pid4860.log`
+
+Destination: `.ai/local-crash-logs/2026-05-16/`
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.73.md`
+- `.ai/local-crash-logs/README.md`
+- `scripts/check-no-root-crash-logs.sh`
+
+**Files updated:**
+
+- `.github/workflows/android.yml` → runs the root crash/replay log guard before
+  Java / Gradle setup
+- `gradle.properties` → `projectVersionCode=1873`,
+  `projectVersionName=1.8.73`
+- `README.md`, `ROADMAP.md`, `IMPROVEMENT_PLAN.md`,
+  `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `STATE_OF_REPO.md`, `SOURCE_REGISTER.md`, and
+  `RESEARCH_LOG.md` → release/context updates for v1.8.73
+
+**Verification note:** root scan showed no remaining root
+`hs_err_pid*.log` / `replay_pid*.log` files after the move.
+`bash scripts/check-no-root-crash-logs.sh`, `git diff --check`, and manifest
+banned-network-permission scan were run. The focused Gradle suite was
+attempted and stopped at the known VM blocker: `JAVA_HOME` is not set and no
+`java` command is on PATH, so maintainer-host Gradle verification remains
+required before publishing.

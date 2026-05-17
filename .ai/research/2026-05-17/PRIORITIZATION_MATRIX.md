@@ -41,8 +41,8 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 11 | **EU AI Act explainer copy in `docs/PRIVACY_AND_AI.md`** | 3 | 1 | 4 | **10.0** | Companion to #7/#8; one new doc |
 | 12 | ✅ **Shipped v1.8.71:** Bump-batch B (Roborazzi 1.55→1.60, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.2 bump (Tier-2); enables baseline capture |
 | 13 | **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** | 4 | 1 | 2 | **10.0** | Shipped by the research run; keep as the required onboarding pattern |
-| 14 | **Move stale crash logs / replay logs out of repo root** (3.0+ MB across 3 files) | 2 | 1 | 2 | **6.0** | Repo hygiene; reduces fresh-clone bloat |
-| 15 | **CI step: detect committed `hs_err_pid*.log` / `replay_pid*.log`** | 2 | 1 | 2 | **6.0** | Prevents recurrence |
+| 14 | ✅ **Shipped v1.8.73:** Move stale crash logs / replay logs out of repo root | 2 | 1 | 2 | **6.0** | Five ignored local logs moved to `.ai/local-crash-logs/2026-05-16/` |
+| 15 | ✅ **Shipped v1.8.73:** CI step: detect committed `hs_err_pid*.log` / `replay_pid*.log` | 2 | 1 | 2 | **6.0** | `scripts/check-no-root-crash-logs.sh` runs in `android.yml` before Gradle setup |
 
 ## Tier 2 — Recommended near-term (score 3.5 – 4.9)
 
