@@ -38,7 +38,7 @@ then `AGENTS.md`, then tool-specific supplements such as `CLAUDE.md`.
 |---|---|---|---|
 | `ROADMAP.md` | 340 K | v5.3 fifth-pass delta; bodies updated through v1.8.58 | The full picture: NOW / NEXT / LATER tiers, rejected list, risk register, glossary, sources appendix |
 | `ROADMAP.md.backup-v2` | 22 K | Pre-v5.0 snapshot | Historical only; treat as audit trail |
-| `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` | 37 K | 2026-05-17 (Phase A/B in flight) | Active SwiftKey-parity sprint plan; supersedes the four earlier `SWIFTKEY_*` docs |
+| `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` | 37 K | 2026-05-17 (Phase A/B in flight) | Active SwiftKey-parity sprint plan; supersedes the five earlier `SWIFTKEY_*` docs |
 | `SWIFTKEY_PARITY_AUDIT.md` | 9.8 K | Pre-2026-05-17 audit | Reconciled into the parity roadmap |
 | `SWIFTKEY_PARITY_BUILD_PLAN.md` | 11 K | Pre-2026-05-17 plan | Reconciled into the parity roadmap |
 | `SWIFTKEY_PARITY_RESEARCH.md` | 8.6 K | Pre-2026-05-17 research | Reconciled into the parity roadmap |
@@ -101,19 +101,19 @@ metadata is v1.8.58.
 ### 2.1 `SWIFTKEY_PARITY_*` proliferation (5 files)
 
 `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` declares it supersedes the prior
-four `SWIFTKEY_*` docs (line 8: *"This document supersedes the earlier
+five `SWIFTKEY_*` docs (line 8: *"This document supersedes the earlier
 `SWIFTKEY_PARITY_AUDIT.md`, `SWIFTKEY_PARITY_RESEARCH.md`,
 `SWIFTKEY_PARITY_BUILD_PLAN.md`, `SWIFTKEY_AI_RESEARCH.md`, and
 `SWIFTKEY_FEATURE_IMPLEMENTATION_PLAN.md`"*).
 
-**Resolution:** keep the four superseded files intact as audit trail but
+**Resolution:** keep the five superseded files intact as audit trail but
 add a top-of-file pointer to each. This is non-destructive and gives
 future contributors a single jumping-off point.
 
-**Action recommended (not done here, to preserve commits):** prepend each
-of the four superseded files with a 5-line "SUPERSEDED on 2026-05-17 by
-SWIFTKEY_PARITY_ROADMAP_2026-05-17.md" banner. Not yet applied — see
-[CHANGESET_SUMMARY.md](CHANGESET_SUMMARY.md).
+**Applied in continuation:** each of the five superseded files now has a
+5-line "SUPERSEDED — 2026-05-17" banner pointing to
+`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`, `ROADMAP.md`, and
+`PROJECT_CONTEXT.md`; see [CHANGESET_SUMMARY.md](CHANGESET_SUMMARY.md).
 
 ### 2.2 Latest version is 1.8.58 (HEAD); README was caught up in later pass
 
@@ -237,19 +237,19 @@ surface blocks the next slice. README lag was closed by the later same-day
 pass. The remaining release-tracking lag is git tags: latest tag v1.8.40
 vs HEAD v1.8.58.
 
-## 5. Pointer plan (recommended, not applied)
+## 5. Pointer plan (applied for superseded SwiftKey docs)
 
-Suggested non-destructive pointers to land at the next release:
+Non-destructive pointers applied for the superseded SwiftKey files:
 
-| File | New first-line banner |
+| File | Applied top-of-file banner |
 |---|---|
 | `SWIFTKEY_PARITY_AUDIT.md` | `> Superseded 2026-05-17 by SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` |
 | `SWIFTKEY_PARITY_BUILD_PLAN.md` | (same) |
 | `SWIFTKEY_PARITY_RESEARCH.md` | (same) |
 | `SWIFTKEY_AI_RESEARCH.md` | (same) |
 | `SWIFTKEY_FEATURE_IMPLEMENTATION_PLAN.md` | (same) |
-| `ROADMAP.md.backup-v2` | `> Historical roadmap snapshot. Current plan in ROADMAP.md` |
-| `README.md.bak` | `> Historical README snapshot. Current in README.md` |
+| `ROADMAP.md.backup-v2` | Recommended only: `> Historical roadmap snapshot. Current plan in ROADMAP.md` |
+| `README.md.bak` | Recommended only: `> Historical README snapshot. Current in README.md` |
 
 These were not applied by this research run to keep the commit diff focused
 on additive artifacts.

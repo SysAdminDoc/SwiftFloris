@@ -1,5 +1,11 @@
 # SwiftKey Feature Implementation Plan
 
+> **SUPERSEDED — 2026-05-17.**
+> Retained for audit/history only.
+> Canonical SwiftKey parity planning now lives in `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`.
+> Use `ROADMAP.md` and `PROJECT_CONTEXT.md` for current implementation state.
+> Do not treat this file as the active plan.
+
 **Goal:** make SwiftFloris match the parts of SwiftKey that matter for everyday typing: forgiving touch, confident autocorrect, strong next-word prediction, smooth Flow-style glide typing, multilingual typing without mode churn, and clear local-only personalization.
 
 **Non-goals:** Microsoft account sync, Copilot, cloud stickers, telemetry, network permission, or proprietary model/code reuse.

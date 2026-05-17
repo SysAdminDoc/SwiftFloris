@@ -1,5 +1,11 @@
 # SwiftKey Typing Parity Audit
 
+> **SUPERSEDED — 2026-05-17.**
+> Retained for audit/history only.
+> Canonical SwiftKey parity planning now lives in `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`.
+> Use `ROADMAP.md` and `PROJECT_CONTEXT.md` for current implementation state.
+> Do not treat this file as the active plan.
+
 Audited against current Microsoft SwiftKey support docs on prediction behavior, spacebar autocorrect, Flow, multilingual typing, and privacy/data handling.
 
 Primary references:

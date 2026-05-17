@@ -96,7 +96,7 @@ graduate into recommended next-slice work live in
 | **`CONTRIBUTING.md`** — README §Contributing covers the basics but a separate file is the convention | Outstanding |
 | **Consolidate root-level `*MULTILINGUAL.md`, `VOICE_*.md`, `FUTO_VOICE_*.md` into `docs/`** | ROADMAP §11 flagged; outstanding |
 | **Move `app-release-v1.5.2.apk` (9.7 MB) and `hs_err_pid*.log` / `replay_pid*.log` (8+ MB) out of repo root** | Currently in root; bloat for fresh clones |
-| **Add SUPERSEDED banners to the four superseded `SWIFTKEY_*` docs** | Per MEMORY_CONSOLIDATION §5 pointer plan |
+| **Add SUPERSEDED banners to the five superseded `SWIFTKEY_*` docs** | ✅ applied docs-only; all files named by `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` now point to the canonical roadmap |
 | **Tag every shipped release** (catch-up: v1.8.41 … v1.8.58 → 18 tags missing) | `git tag --sort=-creatordate` shows v1.8.40 as the most recent tag |
 
 ### 2.7 Long-tail (track but no commit needed yet)

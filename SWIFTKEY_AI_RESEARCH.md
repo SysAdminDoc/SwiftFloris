@@ -1,5 +1,11 @@
 # SwiftKey AI Parity Research
 
+> **SUPERSEDED — 2026-05-17.**
+> Retained for audit/history only.
+> Canonical SwiftKey parity planning now lives in `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`.
+> Use `ROADMAP.md` and `PROJECT_CONTEXT.md` for current implementation state.
+> Do not treat this file as the active plan.
+
 **Date:** 2026-05-13
 
 ## Source-backed targets
