@@ -25,6 +25,7 @@ import kotlin.math.min
 import kotlin.math.pow
 
 private const val WcagAaTextContrast = 4.5
+private const val WcagAaaTextContrast = 7.0
 
 class ThemeContrastTest : FunSpec({
     test("Tokyo Night keyboard text tokens meet WCAG AA contrast") {
@@ -60,22 +61,66 @@ class ThemeContrastTest : FunSpec({
             ),
         )
     }
+
+    test("SwiftKey High Contrast stylesheet text tokens meet WCAG AAA contrast") {
+        val colors = loadSnyggDefines("swiftkey_high_contrast.json")
+
+        assertTextContrast(
+            colors = colors,
+            minContrast = WcagAaaTextContrast,
+            textSurfacePairs = listOf(
+                "--on-background" to "--background",
+                "--on-background" to "--background-variant",
+                "--on-surface" to "--surface",
+                "--on-surface" to "--surface-variant",
+                "--on-surface" to "--popup-surface",
+                "--on-surface" to "--focused-popup-surface",
+                "--on-surface-variant" to "--surface",
+                "--on-primary" to "--primary",
+                "--on-primary" to "--primary-variant",
+            ),
+        )
+    }
+
+    test("SwiftKey High Contrast and Aurora Animated are registered bundled stylesheets") {
+        val manifest = locateThemeExtensionManifest().readText()
+        manifest.contains("\"version\": \"0.4.0\"") shouldBe true
+        manifest.contains("\"id\": \"swiftkey_high_contrast\"") shouldBe true
+        manifest.contains("\"label\": \"SwiftKey High Contrast (AAA)\"") shouldBe true
+        manifest.contains("\"id\": \"aurora_animated\"") shouldBe true
+        manifest.contains("\"label\": \"Aurora Animated\"") shouldBe true
+        locateBundledStylesheet("swiftkey_high_contrast.json").exists() shouldBe true
+        locateBundledStylesheet("aurora_animated.json").exists() shouldBe true
+    }
 })
 
 private fun assertTextContrast(
     colors: Map<String, ColorRgb>,
     textTokens: List<String>,
     surfaceTokens: List<String>,
+    minContrast: Double = WcagAaTextContrast,
 ) {
-    textTokens.forEach { textToken ->
-        surfaceTokens.forEach { surfaceToken ->
-            val contrast = contrastRatio(
-                foreground = colors.getValue(textToken),
-                background = colors.getValue(surfaceToken),
-            )
-            withClue("$textToken on $surfaceToken contrast ${"%.2f".format(contrast)}") {
-                (contrast >= WcagAaTextContrast) shouldBe true
-            }
+    assertTextContrast(
+        colors = colors,
+        minContrast = minContrast,
+        textSurfacePairs = textTokens.flatMap { textToken ->
+            surfaceTokens.map { surfaceToken -> textToken to surfaceToken }
+        },
+    )
+}
+
+private fun assertTextContrast(
+    colors: Map<String, ColorRgb>,
+    minContrast: Double,
+    textSurfacePairs: List<Pair<String, String>>,
+) {
+    textSurfacePairs.forEach { (textToken, surfaceToken) ->
+        val contrast = contrastRatio(
+            foreground = colors.getValue(textToken),
+            background = colors.getValue(surfaceToken),
+        )
+        withClue("$textToken on $surfaceToken contrast ${"%.2f".format(contrast)}") {
+            (contrast >= minContrast) shouldBe true
         }
     }
 }
@@ -110,6 +155,37 @@ private fun locateColorResource(fileName: String): File {
 }
 
 private val ColorResourceRegex = Regex("""<color\s+name="([^"]+)">\s*([^<]+)\s*</color>""")
+
+private fun loadSnyggDefines(fileName: String): Map<String, ColorRgb> {
+    val file = locateBundledStylesheet(fileName)
+    val body = StylesheetDefinesRegex.find(file.readText())?.groupValues?.get(1)
+        ?: error("Missing @defines block in ${file.path}")
+    return SnyggDefineColorRegex.findAll(body)
+        .associate { match ->
+            match.groupValues[1] to parseColor(match.groupValues[2])
+        }
+}
+
+private fun locateThemeExtensionManifest(): File {
+    val candidates = listOf(
+        File("app/src/main/assets/ime/theme/org.florisboard.themes/extension.json"),
+        File("src/main/assets/ime/theme/org.florisboard.themes/extension.json"),
+    )
+    return candidates.firstOrNull { it.exists() }
+        ?: error("theme extension manifest not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateBundledStylesheet(fileName: String): File {
+    val candidates = listOf(
+        File("app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets/$fileName"),
+        File("src/main/assets/ime/theme/org.florisboard.themes/stylesheets/$fileName"),
+    )
+    return candidates.firstOrNull { it.exists() }
+        ?: error("$fileName not reachable from working directory ${File(".").absolutePath}")
+}
+
+private val StylesheetDefinesRegex = Regex(""""@defines"\s*:\s*\{([\s\S]*?)\n\s*\}""")
+private val SnyggDefineColorRegex = Regex(""""(--[^"]+)"\s*:\s*"(#[0-9a-fA-F]{6,8})"""")
 
 private data class ColorRgb(val red: Int, val green: Int, val blue: Int)
 

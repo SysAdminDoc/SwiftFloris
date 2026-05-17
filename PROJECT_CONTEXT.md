@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.62)
+## 3. Stack at HEAD (v1.8.63)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -53,7 +53,7 @@ minSdk 26 (Android 8.0) · targetSdk/compileSdk 36 (Android 16; API 37 gates wir
 Room 2.8.4 · SQLCipher 4.16.0 · Coil 3.4.0
 Kotest 6.1.11 · Roborazzi 1.55.0 (plugin active) · Robolectric 4.14.1
 NDK 29.0.14206865 · Build Tools 36.0.0
-Crowdin localization · No INTERNET permission · 998+ unit tests
+Crowdin localization · No INTERNET permission · 1000+ unit tests
 ```
 
 The [.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md](.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md)
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.62`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.63`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -153,11 +153,15 @@ Phase C/D opened in the same release window:
   `CorrectionOutcomePriors.accuracyDelta()` backs the Settings → Typing
   stats row for current-week accepted corrections versus last week
 - ✅ C1 — Split-keyboard renderer wire-up inside `TextKeyboardLayout`
-  (shipped v1.8.62, HEAD) — split mode now pre-shrinks the base layout by
+  (shipped v1.8.62) — split mode now pre-shrinks the base layout by
   the active gutter, post-shifts right-half key bounds back into the final
   container, rejects non-viable narrow roots, and refuses nearest-key rescue
   inside the gutter
-- C3 — High-Contrast AAA theme + animated theme (open)
+- ✅ C3 — High-Contrast AAA theme + animated theme (shipped v1.8.63, HEAD) —
+  `swiftkey_high_contrast` registers an AAA-tested Snygg stylesheet with
+  explicit key / popup / inline-chip borders; `aurora_animated` registers a
+  Snygg palette plus reduced-motion-aware Compose `GenericShape` background
+  bands gated by `LocalActiveThemeName`
 - D1 — Calendar quick-insert (P9) (open)
 
 ## 8. AI / model surfaces — current state

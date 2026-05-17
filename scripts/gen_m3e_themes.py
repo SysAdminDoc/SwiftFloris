@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """
-ROADMAP §7 Next-11.1 — M3 Expressive theme regen.
+ROADMAP §7 Next-11.1 + SwiftKey parity C3 — bundled theme regen.
 
 Takes the well-tested swift_slate.json baseline (~500 lines, full Snygg
 selector coverage) and re-skins it with palettes for Nord, Tokyo Night,
-Dracula, Catppuccin Mocha, and "SwiftKey Pure (M3E)". The @defines block
-is the only thing that changes, plus `--shape-chip` is moved off the
-pill/stadium shape to comply with the project's no-pill-backdrop rule
-(`rounded-corner(50%)` -> `rounded-corner(12dp)`).
+Dracula, Catppuccin Mocha, "SwiftKey Pure (M3E)", SwiftKey High Contrast,
+and Aurora Animated. Most themes only change the @defines block; high
+contrast also overrides a few key / popup rules so alt-glyphs and key
+boundaries keep visible outlines.
 
 Idempotent: re-running overwrites the generated files. Theme entries in
 extension.json are managed manually (see surrounding doc comment).
@@ -24,10 +24,10 @@ REPO_ROOT = pathlib.Path(__file__).resolve().parents[1]
 THEME_ROOT = REPO_ROOT / "app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets"
 BASELINE = THEME_ROOT / "swift_slate.json"
 
-# M3 Expressive token palettes. We keep the original variable names so the
-# 400+ downstream selectors don't need touching; the M3E layer is reflected
-# in the *values* (expanded role hues, container tones) and in the shape
-# overrides at the end of each palette.
+# Bundled token palettes. We keep the original variable names so the 400+
+# downstream selectors don't need touching; the M3E layer is reflected in the
+# values (expanded role hues, container tones) and in the shape overrides at
+# the end of each palette.
 PALETTES: Dict[str, Dict[str, str]] = {
     # Nord — frost + polar night, light variant.
     "m3e_nord_light": {
@@ -189,14 +189,102 @@ PALETTES: Dict[str, Dict[str, str]] = {
         "--on-surface": "#e1e6f0",
         "--on-surface-variant": "#9aa6b3",
     },
+    # SwiftKey parity C3/P15 — explicit AAA-targeted high-contrast palette.
+    # Every text/background pair used by the keyboard is intentionally either
+    # white-on-near-black or black-on-bright-yellow, so ThemeContrastTest can
+    # pin WCAG AAA instead of the existing AA floor.
+    "swiftkey_high_contrast": {
+        "--primary": "#ffd400",
+        "--primary-variant": "#e6bf00",
+        "--secondary": "#00e5ff",
+        "--secondary-variant": "#00b8d4",
+        "--background": "#000000",
+        "--background-variant": "#080808",
+        "--surface": "#101010",
+        "--surface-variant": "#1a1a1a",
+        "--popup-surface": "#000000",
+        "--focused-popup-surface": "#1a1a1a",
+        "--drag-marker": "#ff3b30",
+        "--spacer-color": "rgba(255, 255, 255, 0.42)",
+        "--one-hand-background": "#000000",
+        "--one-hand-foreground": "#ffffff",
+        "--incognito-icon-color": "#ffffff24",
+        "--on-primary": "#000000",
+        "--on-background": "#ffffff",
+        "--on-background-disabled": "#ffffff80",
+        "--on-surface": "#ffffff",
+        "--on-surface-variant": "#ffffff",
+    },
+    # SwiftKey parity C3/P14 — static Snygg palette paired with the runtime
+    # GenericShape morph in AuroraAnimatedThemeBackground.
+    "aurora_animated": {
+        "--primary": "#7dd3fc",
+        "--primary-variant": "#38bdf8",
+        "--secondary": "#c084fc",
+        "--secondary-variant": "#a855f7",
+        "--background": "#07111f",
+        "--background-variant": "#0b1729",
+        "--surface": "#172033",
+        "--surface-variant": "#22324f",
+        "--popup-surface": "#111c32",
+        "--focused-popup-surface": "#21304d",
+        "--drag-marker": "#f472b6",
+        "--spacer-color": "rgba(226, 232, 240, 0.26)",
+        "--one-hand-background": "#0b1729",
+        "--one-hand-foreground": "#eff6ff",
+        "--incognito-icon-color": "#ffffff14",
+        "--on-primary": "#06121f",
+        "--on-background": "#eff6ff",
+        "--on-background-disabled": "#eff6ff55",
+        "--on-surface": "#f8fafc",
+        "--on-surface-variant": "#cbd5e1",
+    },
 }
 
-# Shape tokens common to every M3E theme. The chip shape moves off the
-# pill/stadium (50%) to a 12dp corner per the project's no-pill rule.
+# Shape tokens common to generated bundled themes. The chip shape moves off
+# the pill/stadium (50%) to a 12dp corner per the project's no-pill rule.
 SHAPE_TOKENS = {
     "--shape": "rounded-corner(12dp, 12dp, 12dp, 12dp)",
     "--shape-variant": "rounded-corner(16dp, 16dp, 16dp, 16dp)",
     "--shape-chip": "rounded-corner(12dp, 12dp, 12dp, 12dp)",
+}
+
+RULE_OVERRIDES: Dict[str, Dict[str, Dict[str, str]]] = {
+    "swiftkey_high_contrast": {
+        "key": {
+            "border-color": "var(--on-surface)",
+            "border-width": "1dp",
+            "shadow-elevation": "0dp",
+        },
+        "key:pressed": {
+            "border-color": "var(--primary)",
+            "border-width": "2dp",
+        },
+        "key[code=10]": {
+            "border-color": "var(--on-primary)",
+            "border-width": "1dp",
+        },
+        "key[code=10]:pressed": {
+            "border-color": "var(--on-primary)",
+            "border-width": "2dp",
+        },
+        "key-hint": {
+            "foreground": "var(--on-surface)",
+        },
+        "key-popup-box": {
+            "border-color": "var(--on-surface)",
+            "border-width": "1dp",
+            "shadow-elevation": "0dp",
+        },
+        "key-popup-element:focus": {
+            "border-color": "var(--primary)",
+            "border-width": "2dp",
+        },
+        "inline-autofill-chip": {
+            "border-color": "var(--on-surface)",
+            "border-width": "1dp",
+        },
+    },
 }
 
 
@@ -217,6 +305,8 @@ def main() -> None:
     for theme_id, palette in PALETTES.items():
         sheet = json.loads(json.dumps(baseline))  # deep copy
         sheet["@defines"] = build_defines(palette)
+        for rule, properties in RULE_OVERRIDES.get(theme_id, {}).items():
+            sheet.setdefault(rule, {}).update(properties)
         out = THEME_ROOT / f"{theme_id}.json"
         # Stable formatting so subsequent runs are clean no-ops on git.
         out.write_text(
@@ -224,7 +314,7 @@ def main() -> None:
             encoding="utf-8",
         )
         written += 1
-    print(f"Wrote {written} M3 Expressive theme stylesheets to {THEME_ROOT}")
+    print(f"Wrote {written} bundled theme stylesheets to {THEME_ROOT}")
 
 
 if __name__ == "__main__":

@@ -11,13 +11,13 @@ This document supersedes the earlier `SWIFTKEY_PARITY_AUDIT.md`, `SWIFTKEY_PARIT
 
 ## 0. Executive summary
 
-SwiftFloris already covers **the overwhelming majority** of SwiftKey's typing surface: tap typing, glide/flow, multilingual hot-switch (bilingual presets + per-token language id), adaptive touch, instant-remember personal dictionary, three-slot prediction strip with rejection semantics, FUTO voice handoff + Vosk streaming, encrypted clipboard with shortcuts, emoji palette with predictions, SwiftKey-Pure themes, one-handed / floating window modes, accessibility WCAG AA-or-better contrast, signing-fingerprint trust UI, and a 2026-05-31-timed SwiftKey-cloud-JSON importer.
+SwiftFloris already covers **the overwhelming majority** of SwiftKey's typing surface: tap typing, glide/flow, multilingual hot-switch (bilingual presets + per-token language id), adaptive touch, instant-remember personal dictionary, three-slot prediction strip with rejection semantics, FUTO voice handoff + Vosk streaming, encrypted clipboard with shortcuts, emoji palette with predictions, SwiftKey-Pure themes, SwiftKey High Contrast (AAA), Aurora Animated, one-handed / floating window modes, accessibility WCAG AA-or-better contrast, signing-fingerprint trust UI, and a 2026-05-31-timed SwiftKey-cloud-JSON importer.
 
 **Real remaining gaps fall into four buckets:**
 
 1. **Decoder calibration** — the heuristic ranker has the right inputs (touch, n-gram, language posterior, rejection priors) but is hand-tuned, not trace-tuned; a local ONNX/TFLite reranker boundary exists (`NeuralCandidateReranker`) but no model is plugged in.
 2. **AI surfaces (Copilot / Tone / Designer)** — SwiftKey ships GPT-4 Turbo cloud + DALL-E 3 inline; SwiftFloris will instead ship a local Gemma 3 270M Q4 + a local rewrite/tone router (already scaffolded), and Designer-style image generation stays out of scope for §1 reasons.
-3. **Tablet polish** — split renderer C1 is now shipped; remaining visual polish is theme/accessibility parity.
+3. **Tablet polish** — split renderer C1 and C3 theme/accessibility parity are now shipped; remaining Phase C evidence is manual visual / frame-timing capture.
 4. **Trust UI / migration funnel** — typing stats screen and SwiftKey cloud JSON importer both ship, but the migration-window outreach (N16.1) and the resilient post-migration personal-dictionary handoff are still pending evidence.
 
 Everything that needs `INTERNET` permission — Microsoft account sync, OneDrive backup, Copilot chat, DALL-E inline image creation, Cloud Clipboard, Bing search — is **explicitly out of scope** per §1 of the main `ROADMAP.md`. Several of those have an on-device replacement on the roadmap (Gemma 3 → SmartCompose, Bergamot → Translation, Syncthing CRDT → Sync), so users get the *capability* without the cloud round-trip.
@@ -58,7 +58,7 @@ Sourced from Microsoft Support, the Play listing, and 2024–2026 press / blog c
 - **Location** — share current location.
 - **Number row** toggle.
 - **Search** — Bing search inline in the toolbar (variously rebranded as Copilot search).
-- **Themes** — gallery + animated themes (Cogs, Zig Zag, Snowy Sky, Shooting Stars, Bubble Gum on iOS; static gallery on Android).
+- **Themes** — gallery + animated themes (Cogs, Zig Zag, Snowy Sky, Shooting Stars, Bubble Gum on iOS; SwiftFloris now ships Aurora Animated as the first local animated theme).
 - **Cloud Clipboard** — syncs copied items across signed-in devices via Microsoft account.
 
 ### 1.3 Window / layout modes
@@ -129,7 +129,7 @@ Mapped against the same SwiftKey buckets so the gap analysis is direct.
 | Location | **Not shipped.** Privacy-sensitive — gate carefully. |
 | Number row toggle | Yes — present in keyboard settings. |
 | Search | **Out of scope** (Bing = cloud; local search has no semantic anchor). |
-| Themes gallery | 13 bundled themes including SwiftKey Pure (Light/Dark/M3 Expressive), Nord, Tokyo Night, Dracula, Catppuccin Mocha. Snygg theme engine accepts user-imported themes. Animated themes **not shipped**. |
+| Themes gallery | 21 bundled themes including SwiftKey Pure (Light/Dark/M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Nord, Tokyo Night, Dracula, Catppuccin Mocha, Swift Glacier/Slate, Floris Day/Night, and borderless variants. Snygg theme engine accepts user-imported themes. |
 | Cloud Clipboard | **Replaced by** Next-5 CRDT personal-dictionary sync over Syncthing (E2EE, no vendor). Clipboard sync ride-along not yet wired. |
 
 ### 2.3 Window / layout modes
@@ -156,7 +156,7 @@ Mapped against the same SwiftKey buckets so the gap analysis is direct.
 
 | SwiftKey item | SwiftFloris status |
 |---|---|
-| High-contrast theme | `ThemeContrastTest` pins Catppuccin Mocha + Tokyo Night to WCAG 2.1 AA 4.5:1; SwiftKey Pure light + dark pass. **No dedicated AAA high-contrast theme yet.** |
+| High-contrast theme | `swiftkey_high_contrast` shipped v1.8.63 with explicit key/popup/inline-chip borders. `ThemeContrastTest` now pins its Snygg text/background token pairs to WCAG AAA 7.0:1; Catppuccin Mocha + Tokyo Night remain pinned at WCAG 2.1 AA 4.5:1. |
 | TalkBack support including alternative-char announce | `keyContentDescription(context, code, label, hintedLabel)` resolves through Crowdin-routed `R.string.a11y__key__*` strings; appends `", alternative: <hint>"` for hinted alt-glyphs. |
 | 48dp WCAG touch-target floor | `TouchTargetWcagTest` pins WCAG 2.5.5 AAA for portrait, 24dp WCAG 2.5.8 AA for landscape. |
 | Resize keyboard | Height slider + floating mode drag/resize handles. |
@@ -192,8 +192,8 @@ Each row is one gap with effort estimate, philosophy gate, and reuse hook. Statu
 | P11 | **Cloud Clipboard** (cross-device clipboard sync) | Out by §1 as a Microsoft-account feature. Local-only replacement = ride-along on Next-5 CRDT sync. | 🟡 | Roadmap re-use | Next-5 CRDT sync over Syncthing. |
 | P12 | **OneDrive learned-words backup** | Out by §1. Local-only replacement = personal-dictionary export to plain CSV/JSON + Syncthing sync. | 🟢 | Partly shipped | Already exports via `UserDictionaryDatabase.exportCombinedList`; needs encrypted-blob option for Syncthing carry. |
 | P13 | **Decoder calibration from real traces** | `SwiftKeyTypingTraceRecorder` + replay fixtures + `SwiftKeyCandidateTuning` + `GlideContextTuning` exist; need actual field traces to tune the constants. | 🟡 | In-progress | `SwiftKeyTraceFixtureExporter` ships traces from device. |
-| P14 | **Animated themes** (Cogs, Zig Zag, Snowy Sky, etc.) | Static SwiftKey Pure + M3 Expressive themes shipped. Snygg theme engine doesn't have animated-bg primitive. | 🟢 | New | Snygg engine extension; pure asset work. |
-| P15 | **AAA high-contrast theme** | WCAG AA met; no explicit AAA-targeted theme like SwiftKey's High Contrast. | 🟢 | New | New Snygg theme sheet. |
+| P14 | **Animated themes** (Cogs, Zig Zag, Snowy Sky, etc.) | `aurora_animated` shipped v1.8.63 as the first local animated theme: normal Snygg stylesheet plus reduced-motion-aware Compose `GenericShape` morph background. | ✅ | Shipped | `AuroraAnimatedThemeBackground` + `LocalActiveThemeName`. |
+| P15 | **AAA high-contrast theme** | `swiftkey_high_contrast` shipped v1.8.63; `ThemeContrastTest` pins core key-class text/background pairs at WCAG AAA 7.0:1. | ✅ | Shipped | Generated Snygg theme sheet + manifest registration. |
 | P16 | **Outreach push for SwiftKey migration window** (cutoff 2026-05-31) | Migration importer + doc shipped; the Reddit / GH-Releases pin / README badge is the marketing slice. | 🟢 | New | N16.1 in §6 of ROADMAP. |
 | P17 | **Resilient post-migration personal-dictionary handoff** | Imported SwiftKey words land in personal-dict, but no UX confirms "X words imported from your SwiftKey export" + no rollback. | 🟢 | New | `PersonalDictionaryImportSummary` + Settings → Personal dictionary → Import result page. |
 | P18 | **"Always insert prediction" mode parity audit on empty fields** | Quick prediction insert shipped, but real-world tuning on empty fields + low-confidence next-word candidates still flagged in audit. | 🟢 | In-progress | Gate calibration on P13. |
@@ -203,7 +203,7 @@ Each row is one gap with effort estimate, philosophy gate, and reuse hook. Statu
 | P22 | **Long-press alt-character popup TalkBack contract parity** | `keyContentDescription` includes `", alternative: <hint>"`; SwiftKey announces "alternative characters available" + slide-and-wait. Verify our Talkback emission matches semantics. | 🟢 | In-progress | N8.3 / N8.3a. |
 | P23 | **Number row toggle reachable from settings** | Yes — already a settings toggle. | ✅ | Done | — |
 | P24 | **Dedicated arrow-keys row** | Not in a default profile; covered by Programmer bottom-row preset + CODE smartbar profile. | 🟢 | New | New `BottomRowPreset.ArrowsRow` or smartbar layer toggle. |
-| P25 | **Themes — animated** | See P14. | (same as P14) | New | (same as P14) |
+| P25 | **Themes — animated** | See P14. | ✅ | Shipped | See P14. |
 | P26 | **Personalization "Stats" — typing accuracy delta** | TypingStats covers learned counts + disk; SwiftKey shows an accuracy-improvement number. Compute locally from `CorrectionOutcomePriors`. | ✅ | Shipped v1.8.59 | `CorrectionOutcomePriors` + `TypingStatsScreen`. |
 
 ---
@@ -230,13 +230,13 @@ Close the heuristic-to-neural transition path while keeping the heuristic decode
 - ✅ **B4 (P20)** shipped 2026-05-17 (v1.8.56). The 4-word trailing context window (`MaxLanguageContextWords = 4`) was already in place; the missing piece was the alpha-blend itself. New pure-Kotlin `TrailingContextLanguageBlend.score(contextWordsOldestFirst, freqLookup, decay)` helper implements a geometric-decay weighted average where the most-recent word weighs 1.0 and each word further back is scaled by `TrailingContextDecay = 0.7` per step (so weight[0]=1.0, [1]=0.7, [2]=0.49, [3]=0.343 — roughly 3× preference for the most-recent word over the oldest). `NlpManager.candidateSignals` `contextLanguageScores` now routes each active locale through the helper instead of taking `maxOf(...)` across the window — a single early trailing word in any locale no longer locks in the signal so mid-sentence switches transition smoothly. 8 new tests cover empty / single-word / all-same / recent-in-locale / oldest-in-locale / decay-1.0 / decay-0.0 / decay-out-of-range / regression-vs-MAX cases. Replay fixtures unaffected (they supply pre-computed signals).
 - **B5 (P13 continued)** — Decoder field calibration. Convert ≥ 50 captured-locally `swiftkey_trace.jsonl` rows into the checked-in fixture set via `SwiftKeyTraceFixtureExporter`; use the new fixtures to validate any `SwiftKeyCandidateTuning` constant move. Cost: M (mostly fixture curation).
 
-### Phase C — Split renderer (v1.8.56 – v1.8.62)
+### Phase C — Split renderer and visual parity (v1.8.56 – v1.8.63)
 
 Closes the last SwiftKey-only visual feature SwiftFloris still doesn't ship fully.
 
 - ✅ **C1 (P3)** shipped 2026-05-17 (v1.8.62). `TextKeyboardSplitLayout` now resolves the viable `Fixed.SPLIT` gutter for character keyboards, clamps it, and makes `TextKeyboardLayout` lay out rows at `keyboardWidth - gutter` before `SplitGutterPostPass.apply(...)` shifts the right half back into the final container. `ImeWindowController` refuses split promotion on non-viable roots and demotes persisted split configs to `Fixed.NORMAL` there. `TextKeyboard.isPointInSplitGutter(...)` blocks adaptive nearest-key rescue inside the generated gutter, so gutter taps don't fire adjacent keys.
 - ✅ **C2 (P24)** shipped 2026-05-17 (v1.8.57). New `BottomRowPreset.Navigation` surfaces ARROW_LEFT / ARROW_UP / SPACE / ARROW_DOWN / ARROW_RIGHT / ENTER — Period and symbols-view dropped to fit the four arrows; ENTER stays so commit-after-navigation works without a layout flip; space bar shrinks proportionally. 4 new `BottomRowKey` enum values (ARROW_LEFT/UP/DOWN/RIGHT) map to the existing predefined `TextKeyData.ARROW_*` constants — the runtime cursor-movement path (`KeyboardManager.onInputKeyUp`) is already wired. New "Arrow keys" entry in Settings → Keyboard → Bottom-row preset alongside the existing Programmer / Voice / Language / etc. presets. 3 new `BottomRowPresetTest` cases pin the key-code ordering, JSON round-trip, and registry inclusion (so a future preset that forgets to update `BottomRowPreset.Presets` gets flagged).
-- **C3 (P14 + P15)** — Two new bundled themes: **SwiftKey High Contrast (AAA)** (4.5:1 + alt-glyph outline) and **Aurora Animated** (the first Snygg animated-bg theme; pure GenericShape morph, no extra dep). Cost: S each.
+- ✅ **C3 (P14 + P15)** shipped 2026-05-17 (v1.8.63). Two new bundled themes: **SwiftKey High Contrast (AAA)** and **Aurora Animated**. High Contrast is generated from `swift_slate.json`, adds explicit key / popup / inline-chip borders, and is covered by `ThemeContrastTest` at WCAG AAA 7.0:1 for core key-class text/background pairs. Aurora Animated is a normal Snygg stylesheet plus the first bundled animated-bg runtime layer: `AuroraAnimatedThemeBackground` draws three translucent Compose `GenericShape` morph bands behind the keyboard, gated by `LocalActiveThemeName`, with Android reduced-motion freezing it to the first frame. No extra dependency, permission, network surface, or remote asset.
 
 ### Phase D — Productivity surfaces (v1.8.57 – v1.8.59)
 

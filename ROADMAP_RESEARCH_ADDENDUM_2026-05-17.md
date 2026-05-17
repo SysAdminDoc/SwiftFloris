@@ -12,15 +12,15 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at write time:** v1.8.62 — Phase C1 split-keyboard renderer wire-up.
-(The research run started at v1.8.55; v1.8.56-62 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1.)
+**HEAD at write time:** v1.8.63 — Phase C3 bundled High Contrast / Aurora themes.
+(The research run started at v1.8.55; v1.8.56-63 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-62 releases
+## 0. Reconciliation with concurrent v1.8.56-63 releases
 
-While this research run was in flight, seven releases landed that
+While this research run was in flight, eight releases landed that
 implemented several recommendations:
 
 | Recommendation in this addendum | Shipped as |
@@ -32,8 +32,9 @@ implemented several recommendations:
 | §B.1 — Multilingual sentence-position priors seed (P13 partial) | ✅ **v1.8.60 — Phase B1** — EN/CS/DE/ES/FR/IT/PT cold-start priors plus top-1,000 wordfreq Zipf seed overlays for CS/DE/ES/FR/IT/PT |
 | Phase B2 quick-prediction-insert tuning (P18) | ✅ **v1.8.61 — Phase B2** — configurable weighted-confidence floor plus same-path plain-space suppression for blank-current-word prediction insertion |
 | Phase C1 split-keyboard renderer (P3) | ✅ **v1.8.62 — Phase C1** — viable split gutter rendering in `TextKeyboardLayout` plus gutter-aware touch behavior |
+| Phase C3 bundled themes (P14/P15) | ✅ **v1.8.63 — Phase C3** — `swiftkey_high_contrast` AAA-tested stylesheet + `aurora_animated` GenericShape background renderer |
 
-These seven are removed from this addendum's open commitments. The
+These eight are removed from this addendum's open commitments. The
 remaining items below are still open and still recommended.
 
 ---
@@ -275,7 +276,7 @@ repo apps reproducible; SwiftFloris's pin matrix is in place but
 **Where:** ROADMAP §6 N16 (the existing migration-related cluster — or
 §12 Operating Cadence).
 
-**Why now:** latest tag `v1.8.40`; HEAD `v1.8.62`. **22 missing tags**
+**Why now:** latest tag `v1.8.40`; HEAD `v1.8.63`. **23 missing tags**
 since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
 release.yml triggers on `workflow_dispatch` not on tag-push, so the
 release stream is decoupled from tags. Tags are still the canonical
@@ -283,7 +284,7 @@ shipped-commit anchor for forks / audit.
 
 **Body:**
 
-> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.62
+> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.63
 > from its corresponding `gradle.properties`-bumping commit. Tags push
 > only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
 > blocked from the dev VM per the established workflow). Establish a
@@ -339,7 +340,7 @@ missing piece.
 **Body:**
 
 > **Next-12.6 (NEW)** Capture Roborazzi baseline PNGs for each of the
-> 13 bundled themes against (a) the QWERTY letter keyboard,
+> 21 bundled themes against (a) the QWERTY letter keyboard,
 > (b) the suggestion strip with 3 candidates, (c) the smartbar with
 > the CODE profile active, and (d) the emoji palette. Removes the
 > `continue-on-error: true` from `:app:verifyRoborazziDebug` in
