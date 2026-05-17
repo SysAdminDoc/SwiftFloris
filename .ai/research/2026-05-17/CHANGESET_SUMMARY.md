@@ -582,6 +582,22 @@ required before publishing.
 
 ---
 
+## 17. Tier-1 matrix reconciliation
+
+After v1.8.73, the autonomous loop reconciled stale Tier-1 matrix rows that
+were already satisfied by earlier commits:
+
+- #7 first-run AI-features explainer → shipped v1.8.66
+- #8 Settings → About AI-features explainer → shipped v1.8.66
+- #11 `docs/PRIVACY_AND_AI.md` explainer copy → shipped v1.8.66
+- #13 `PROJECT_CONTEXT.md` / `AGENTS.md` / `CLAUDE.md` pointer pattern →
+  present from the research run
+
+No version bump was needed because this was documentation-state
+reconciliation only; no app, CI, or release metadata changed.
+
+---
+
 ## 16. v1.8.73 continuation — root crash/replay log cleanup + CI guard
 
 The autonomous development loop then shipped Tier-1 prioritization items #14

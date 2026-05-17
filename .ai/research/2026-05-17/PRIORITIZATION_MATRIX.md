@@ -34,13 +34,13 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 4 | ✅ **Shipped v1.8.69:** Bump-batch A (kotlinx-coroutines 1.11.0, KSP 2.3.8, zxing 3.5.4, aboutlibraries 14.2.0; keep activity 1.13.0) | 3 | 1 | 3 | **9.0** | Low-risk patch/minor updates; Activity downgrade retired by fifth-pass evidence |
 | 5 | ✅ **Shipped v1.8.70:** README release-hygiene maintenance (badge + Highlights table + Recent releases stay in lockstep) | 3 | 1 | 4 | **10.0** | README front door now current through v1.8.70 |
 | 6 | ✅ **Local tag catch-up:** release tags `v1.8.41` … `v1.8.69` backfilled from matching version-bump commits | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; remaining step is pushing tags from the maintainer host |
-| 7 | **First-run "AI features in this keyboard" explainer surface** (EU AI Act Article 50, due 2 Aug 2026) | 4 | 2 | 4 | **6.0** | Regulatory cutoff in ~10 weeks; small UI slice; reinforces wedge |
-| 8 | **Settings → About re-openable "AI features" explainer** (same content, persistent) | 3 | 1 | 4 | **10.0** | Companion to #7; small |
+| 7 | ✅ **Shipped v1.8.66:** First-run "AI features in this keyboard" explainer surface | 4 | 2 | 4 | **6.0** | `SetupScreen` starts with Review local AI features; `AiFeatureDisclosureCatalogTest` pins the surface |
+| 8 | ✅ **Shipped v1.8.66:** Settings → About re-openable "AI features" explainer | 3 | 1 | 4 | **10.0** | Settings → About → AI features in this keyboard reopens the same local-only disclosure |
 | 9 | ✅ **Shipped v1.8.72:** HeliBoard NLnet slip-base-case plan (N1.1 is additive; N1.3 statistical is production default) | 4 | 2 | 4 | **6.0** | Re-checked HeliBoard `#2226`, releases, NLnet page, and gesture-data wiki; no open library/dataset yet, data collection still active |
 | 10 | ✅ **Shipped v1.8.70:** README "Grammarly Android keyboard discontinued" migration callout | 3 | 1 | 3 | **9.0** | Grammarly Android transition framed as compatible overlay; SwiftFloris remains no-network |
-| 11 | **EU AI Act explainer copy in `docs/PRIVACY_AND_AI.md`** | 3 | 1 | 4 | **10.0** | Companion to #7/#8; one new doc |
+| 11 | ✅ **Shipped v1.8.66:** EU AI Act explainer copy in `docs/PRIVACY_AND_AI.md` | 3 | 1 | 4 | **10.0** | Canonical long-form disclosure exists and is linked from setup/About |
 | 12 | ✅ **Shipped v1.8.71:** Bump-batch B (Roborazzi 1.55→1.60, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.2 bump (Tier-2); enables baseline capture |
-| 13 | **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** | 4 | 1 | 2 | **10.0** | Shipped by the research run; keep as the required onboarding pattern |
+| 13 | ✅ **Shipped by research run:** `PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files | 4 | 1 | 2 | **10.0** | Root context + generic agent instructions + Claude-specific pointer file are present |
 | 14 | ✅ **Shipped v1.8.73:** Move stale crash logs / replay logs out of repo root | 2 | 1 | 2 | **6.0** | Five ignored local logs moved to `.ai/local-crash-logs/2026-05-16/` |
 | 15 | ✅ **Shipped v1.8.73:** CI step: detect committed `hs_err_pid*.log` / `replay_pid*.log` | 2 | 1 | 2 | **6.0** | `scripts/check-no-root-crash-logs.sh` runs in `android.yml` before Gradle setup |
 
@@ -99,13 +99,13 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 ### v1.8.56 (this week — wraps Phase B / opens Phase C)
 
 - **Phase B4** (#22): same-sentence language switch hardening — extend trailing context 2→4 words; alpha-blend on per-locale evidence.
-- **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** (#13).
+- **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** (#13) are present and reconciled.
 - **Bump-batch A** (#4) low-risk dep bumps; shipped v1.8.69. Keep Activity 1.13.0.
 - **README release-hygiene maintenance** (#5; shipped through v1.8.70, then keep current).
 
 ### v1.8.57 (next week — migration-window prep)
 
-- **EU AI Act Article 50 first-run + Settings → About explainer** (#7, #8, #11).
+- **EU AI Act Article 50 first-run + Settings → About explainer** (#7, #8, #11) shipped v1.8.66.
 - **Tag catch-up** (#6; 29 tags) — local tags `v1.8.41` through `v1.8.69`
   were backfilled; push tags from the maintainer host.
 - **README "Galaxy AI" + "Grammarly discontinued" callouts** (#2, #10) —

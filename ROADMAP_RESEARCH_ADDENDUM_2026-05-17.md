@@ -513,4 +513,4 @@ but does not require a roadmap change.
 | §F new §10 rejections | 🔄 |
 | §G.1 HeliBoard slip-risk promote | ✅ v1.8.72 |
 | §G.2 Tink-migration risk | ✅ v1.8.68 |
-| §G.3 EU AI Act risk | 🔴 |
+| §G.3 EU AI Act risk | ✅ v1.8.66 |
