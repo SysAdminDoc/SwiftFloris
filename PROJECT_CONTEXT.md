@@ -34,7 +34,7 @@ them requires changing both the relevant code *and* the gate.
 |---|---|
 | No `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, `CHANGE_WIFI_STATE` permission | [Gradle task `verifyNoInternetPermission`](app/build.gradle.kts) runs as part of `preBuild` on every variant; CI re-runs it; `:app:assembleDebug` fails if violated |
 | Apache-2.0 main app | `LICENSE`, `NOTICE`, `LICENSES/`; addons under their own license live in a separate APK (signature-protected `permission.REGISTER_ADDON`) |
-| No closed-source `.so` blobs | Reproducible-build pin matrix in [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md); F-Droid verified-tier target |
+| No closed-source `.so` blobs | Reproducible-build pin matrix + build-twice APK self-check in [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md); F-Droid verified-tier target |
 | No vendor account, no telemetry | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) |
 | Personal dictionary encrypted at rest | SQLCipher 4.16.0 + `PersonalDictionaryEncryptionTest` |
 | Personal dictionary excluded from cloud-backup | `backup_rules.xml` (read by `<application android:dataExtractionRules android:fullBackupContent>`) |
@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.66)
+## 3. Stack at HEAD (v1.8.67)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.66`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.67`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -133,6 +133,11 @@ first-run AI/ML transparency disclosure before IME enablement, and
 Settings → About → **AI features in this keyboard** reopens the same
 local-only/no-account/no-telemetry explanation with links to
 `docs/PRIVACY_AND_AI.md`, `docs/THREAT_MODEL.md`, and this context file.
+
+Roadmap addendum N12.5 shipped in v1.8.67: `.github/workflows/reproducible-build.yml`
+now runs `scripts/verify-reproducible-apk.sh`, which builds release APKs
+from two clean worktrees at the same commit and fails on byte drift before
+F-Droid's rebuilder becomes the first detector.
 
 Phase B (touch & decoder calibration):
 
