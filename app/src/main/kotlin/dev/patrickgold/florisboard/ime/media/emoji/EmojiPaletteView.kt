@@ -155,8 +155,21 @@ fun EmojiPaletteView(
         fullEmojiMappings.byCategory.mapValues { (_, emojiSetList) ->
             emojiSetList.mapNotNull { emojiSet ->
                 emojiSet.emojis.filter { emoji ->
-                    emojiCompatInstance?.getEmojiMatch(emoji.value, metadataVersion) == EmojiCompat.EMOJI_SUPPORTED ||
-                        systemFontPaint.hasGlyph(emoji.value)
+                    // ROADMAP §6 N17.1 — defensive guard against empty
+                    // emoji.value. `Paint.hasGlyph("")` throws
+                    // IllegalArgumentException ("hasGlyph called with empty
+                    // string"); EmojiCompat.getEmojiMatch on an empty
+                    // CharSequence is also documented to throw. Empty
+                    // values can leak in through (a) malformed history
+                    // JSON via Emoji.ValueOnlySerializer (a `""` entry
+                    // round-trips silently), (b) an asset-data line that
+                    // somehow shipped without a base codepoint. We filter
+                    // those out before they hit either downstream
+                    // function so the palette never crashes on render.
+                    emoji.value.isNotEmpty() && (
+                        emojiCompatInstance?.getEmojiMatch(emoji.value, metadataVersion) == EmojiCompat.EMOJI_SUPPORTED ||
+                            systemFontPaint.hasGlyph(emoji.value)
+                    )
                 }.let { if (it.isEmpty()) null else EmojiSet(it) }
             }
         }
@@ -426,9 +439,18 @@ fun EmojiPaletteView(
                     // emoji changes for the user when in recently used category.
                     remember(recentlyUsedVersion) {
                         val data = prefs.emoji.historyData.get()
+                        // ROADMAP §6 N17.1 — drop history entries with an
+                        // empty `value`. They can leak in through Emoji
+                        // .ValueOnlySerializer when a corrupt persisted
+                        // history JSON round-trips a `""` entry. The
+                        // palette grid would otherwise render invisible
+                        // tap targets and the long-press popup would
+                        // commit an empty string into the editor.
                         EmojiMappingForView(
-                            pinned = data.pinned.map { EmojiSet(listOf(it)) },
-                            recent = data.recent.map { EmojiSet(listOf(it)) },
+                            pinned = data.pinned.filter { it.value.isNotEmpty() }
+                                .map { EmojiSet(listOf(it)) },
+                            recent = data.recent.filter { it.value.isNotEmpty() }
+                                .map { EmojiSet(listOf(it)) },
                             simple = emptyList(),
                         )
                     }
