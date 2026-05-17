@@ -360,3 +360,42 @@ checks for the new Linux-facing files, and static grep over the workflow/script
 references. Bash, Java, and the Android SDK are absent on this VM, so the shell
 syntax check and actual two-release-build self-check must run on GitHub Actions
 or the maintainer build host.
+
+---
+
+## 10. v1.8.68 continuation — N7.6 Tink / AndroidKeystore migration
+
+The autonomous development loop then shipped
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §A.2 / §G.2 as `ROADMAP.md` N7.6.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.68.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCrypto.kt`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1868`,
+  `projectVersionName=1.8.68`
+- `gradle/libs.versions.toml` / `app/build.gradle.kts` → removed
+  `androidx.security:security-crypto:1.1.0-alpha06`, added
+  `com.google.crypto.tink:tink-android:1.21.0`
+- `FlorisUserDictionaryEncryption.kt` → SQLCipher passphrase now uses the
+  shared Tink / AndroidKeystore wrapper and one-shot legacy AndroidX encrypted
+  preference migration
+- `ClipboardHistoryManager.kt` → legacy encrypted clipboard-history store now
+  uses the shared Tink wrapper with legacy AndroidX migration and in-memory
+  fallback on Keystore failure
+- `PersonalDictionaryEncryptionTest.kt` → pins the Tink wrapper, dependency,
+  legacy parser, and clipboard-history migration contracts
+- `NOTICE`, `docs/SECURITY.md`, `docs/THREAT_MODEL.md`, `README.md`,
+  `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`, and
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` → release/version/context updates
+  for v1.8.68
+
+**Verification note:** local verification used `git diff --check`, source greps
+confirming AndroidX Security Crypto removal from app source/build files, Tink
+wrapper presence checks, and the no-network permission grep. Java and the
+Android SDK are absent on this VM, so the focused
+`PersonalDictionaryEncryptionTest` and release assembly must run on the
+maintainer build host.

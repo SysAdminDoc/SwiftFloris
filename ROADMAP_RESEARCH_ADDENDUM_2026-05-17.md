@@ -12,15 +12,15 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at write time:** v1.8.67 — N12.5 reproducible-build self-verification CI.
-(The research run started at v1.8.55; v1.8.56-67 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check.)
+**HEAD at latest reconciliation:** v1.8.68 — N7.6 Tink / AndroidKeystore encrypted-preference migration.
+(The research run started at v1.8.55; v1.8.56-68 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-67 releases
+## 0. Reconciliation with concurrent v1.8.56-68 releases
 
-While this research run was in flight, twelve releases landed that
+While this research run was in flight, thirteen releases landed that
 implemented several recommendations:
 
 | Recommendation in this addendum | Shipped as |
@@ -37,8 +37,9 @@ implemented several recommendations:
 | Phase A3 encrypted dictionary export/import wiring (P12) | ✅ **v1.8.65 — Phase A3** — Settings **Export encrypted** passphrase flow, `.sfexp` create-document write, `SFEXP1` import sniffing, decrypt, and `PersonalDictionaryImportBatch` summary/rollback routing |
 | §B.2 EU AI Act transparency surface (N8.7) | ✅ **v1.8.66 — N8.7** — first-run setup disclosure, Settings → About → **AI features in this keyboard**, docs links, and catalog test coverage |
 | §B.4 Reproducible-build self-verification CI (N12.5) | ✅ **v1.8.67 — N12.5** — build-twice clean-worktree release APK workflow, byte compare, and drift manifests |
+| §A.2 / §G.2 — AndroidX Security Crypto deprecated API surface (N7.6) | ✅ **v1.8.68 — N7.6** — removed AndroidX Security Crypto, added Tink Android 1.21.0, and migrated SQLCipher passphrase + legacy clipboard-history encrypted-preference payloads |
 
-These twelve are removed from this addendum's open commitments. Historical
+These thirteen are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
 are no longer open.
 
@@ -76,11 +77,26 @@ in-`:app`. Cited in [.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md �
 **Issue:** fifth-pass verification corrected the earlier wording:
 `androidx.security:security-crypto:1.1.0` did ship, but the AndroidX
 release notes deprecate the APIs in favor of platform APIs and direct
-Android Keystore use. SwiftFloris is still pinned to older
-`1.1.0-alpha06`; `EncryptedSharedPreferences` remains the wrong long-term
+Android Keystore use. SwiftFloris was still pinned to older
+`1.1.0-alpha06`; `EncryptedSharedPreferences` remained the wrong long-term
 primitive for SQLCipher-passphrase wrapping.
 
-**Resolution:** add a new ROADMAP item:
+**Status:** ✅ shipped 2026-05-17 in v1.8.68. The implementation went one
+step broader than the original SQLCipher-only wording because
+`ClipboardHistoryManager` also depended on AndroidX Security Crypto:
+
+- `androidx.security:security-crypto:1.1.0-alpha06` removed from
+  `app/build.gradle.kts`.
+- `com.google.crypto.tink:tink-android:1.21.0` added.
+- New `TinkStringPreferenceCrypto` wraps local preference bytes / strings
+  with Tink `Aead`, AndroidKeystore-held AES-256-GCM keys, and
+  `prefsFile:key` associated data.
+- SQLCipher passphrase storage migrates from `sqlcipher_passphrase_v1` to
+  `sqlcipher_passphrase_tink_v1`.
+- Legacy clipboard history migrates from `clipboard_history` to
+  `clipboard_history_tink_v1`.
+
+Original ROADMAP item:
 
 > **N7.6 (NEW)** Replace `androidx-security-crypto` with Google Tink
 > (`com.google.crypto.tink:tink-android`, Apache-2.0). Wrap the SQLCipher
@@ -293,7 +309,7 @@ repo apps reproducible; SwiftFloris's pin matrix is in place but
 **Where:** ROADMAP §6 N16 (the existing migration-related cluster — or
 §12 Operating Cadence).
 
-**Why now:** latest tag `v1.8.40`; HEAD `v1.8.67`. **27 missing tags**
+**Why now:** latest tag `v1.8.40`; HEAD `v1.8.68`. **28 missing tags**
 since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
 release.yml triggers on `workflow_dispatch` not on tag-push, so the
 release stream is decoupled from tags. Tags are still the canonical
@@ -301,7 +317,7 @@ shipped-commit anchor for forks / audit.
 
 **Body:**
 
-> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.67
+> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.68
 > from its corresponding `gradle.properties`-bumping commit. Tags push
 > only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
 > blocked from the dev VM per the established workflow). Establish a
@@ -428,7 +444,7 @@ The following should be added with reasoning to prevent re-litigation:
 
 | New risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| `androidx-security-crypto:1.1.0-alpha06` keeps SQLCipher-passphrase wrapping on deprecated AndroidX Security APIs even though 1.1.0 stable exists | High (already true) | Medium (no crash, but security hygiene + key-rotation issues + F-Droid review smell) | Migrate to Google Tink + AndroidKeystoreV1 (see §A.2 / new N7.6 item) |
+| `androidx-security-crypto:1.1.0-alpha06` kept SQLCipher-passphrase wrapping on deprecated AndroidX Security APIs even though 1.1.0 stable exists | ✅ resolved in v1.8.68 | Medium before fix (no crash, but security hygiene + key-rotation issues + F-Droid review smell) | Migrated to Google Tink + direct AndroidKeystore wrapping; also covered legacy clipboard-history encrypted preferences |
 
 ### G.3 New row — EU AI Act Article 50 cutoff
 
@@ -458,7 +474,7 @@ but does not require a roadmap change.
 | Item | Status |
 |---|---|
 | §A.1 KenLM license boundary | 🔄 |
-| §A.2 Tink migration (new N7.6) | 🟢 |
+| §A.2 Tink migration (new N7.6) | ✅ v1.8.68 |
 | §A.3 activity 1.13.0 downgrade retired | 🔄 |
 | §A.4 Bump-batches A/B/C | 🟢 (A); 🟢 (B); 🟡 on B (C) |
 | §A.5 Upstream-lap framing | 🔄 |
@@ -476,5 +492,5 @@ but does not require a roadmap change.
 | §E.1 Per-app tone profile promotion | 🟡 on addon-side KenLM |
 | §F new §10 rejections | 🔄 |
 | §G.1 HeliBoard slip-risk promote | 🔴 |
-| §G.2 Tink-migration risk | 🔴 |
+| §G.2 Tink-migration risk | ✅ v1.8.68 |
 | §G.3 EU AI Act risk | 🔴 |

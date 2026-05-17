@@ -25,6 +25,7 @@ mikepenz-aboutlibraries = "14.0.1"
 patrickgold-compose-tooltip = "0.2.0-rc02"
 patrickgold-jetpref = "0.3.0"
 sqlcipher-android = "4.16.0"
+tink-android = "1.21.0"
 zxing-core = "3.5.3"
 
 # Testing
@@ -78,6 +79,7 @@ patrickgold-jetpref-datastore-model-processor = { module = "dev.patrickgold.jetp
 patrickgold-jetpref-datastore-ui = { module = "dev.patrickgold.jetpref:jetpref-datastore-ui", version.ref = "patrickgold-jetpref" }
 patrickgold-jetpref-material-ui = { module = "dev.patrickgold.jetpref:jetpref-material-ui", version.ref = "patrickgold-jetpref" }
 sqlcipher-android = { module = "net.zetetic:sqlcipher-android", version.ref = "sqlcipher-android" }
+tink-android = { module = "com.google.crypto.tink:tink-android", version.ref = "tink-android" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing-core" }
 
 # Testing

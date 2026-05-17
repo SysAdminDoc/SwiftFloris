@@ -4,6 +4,11 @@
 **HEAD:** `e62ba34` — docs: research run 2026-05-17 — fourth pass: README catch-up + PRIVACY_AND_AI.md + subsystem inspection
 **Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
+**Continuation note:** autonomous development after this reconnaissance moved
+HEAD to v1.8.68. The notable dependency delta is
+`androidx.security:security-crypto:1.1.0-alpha06` removed and
+`com.google.crypto.tink:tink-android:1.21.0` added for N7.6.
+
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
 repo vs. what changed in the world.
@@ -44,7 +49,7 @@ Operative invariants (load-bearing — touched by build gates):
 | AndroidX Room | 2.8.4 | [libs.versions.toml](../../../gradle/libs.versions.toml#L14) |
 | AndroidX SQLite | 2.6.2 | [libs.versions.toml](../../../gradle/libs.versions.toml#L15) |
 | AndroidX emoji2 | 1.6.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L10) |
-| androidx-security-crypto | 1.1.0-alpha06 | [app/build.gradle.kts](../../../app/build.gradle.kts#L299) (inline) |
+| Tink Android | 1.21.0 | [libs.versions.toml](../../../gradle/libs.versions.toml) (added after initial reconnaissance in v1.8.68; replaced inline `androidx-security-crypto`) |
 | SQLCipher Android | 4.16.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L27) |
 | Coil | 3.4.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L18) |
 | material-kolor | 4.1.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L23) |

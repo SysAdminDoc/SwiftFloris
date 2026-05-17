@@ -30,10 +30,10 @@ here so the next reviewer can see why they're being re-emphasized; the
 |---|---|---|---|---|---|---|
 | 1 | **2026-05-30 pinned GitHub release** (SwiftKey-cutoff day-of) with `docs/MIGRATE_FROM_SWIFTKEY.md` front-and-center | 5 | 1 | 5 | **15.0** | One-shot opportunity; ROADMAP §14 Risk Register named it. Concrete day-of checklist closes the gap |
 | 2 | **README "Galaxy AI Writing Tools work with SwiftFloris" callout** | 3 | 1 | 4 | **10.0** | Verified 2026-05-12 fact; migration-window-aligned |
-| 3 | **Replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystoreV1** | 4 | 2 | 3 | **5.5** | API surface is deprecated; security regression risk; well-defined contract via existing test |
+| 3 | ✅ **Shipped v1.8.68:** replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystore | 4 | 2 | 3 | **5.5** | API surface was deprecated; `PersonalDictionaryEncryptionTest` now pins the Tink wrapper + one-shot legacy migration |
 | 4 | **Bump-batch A** (kotlinx-coroutines 1.10.2→1.11.0, KSP 2.3.5→2.3.8, zxing 3.5.3→3.5.4, aboutlibraries 14.0.1→14.2.0; keep activity 1.13.0) | 3 | 1 | 3 | **9.0** | Low-risk patch/minor updates; Activity downgrade retired by fifth-pass evidence |
 | 5 | **README v1.8.58 release-hygiene maintenance** (badge + Highlights table + Recent releases stay in lockstep) | 3 | 1 | 4 | **10.0** | Version catch-up shipped in the fourth pass; keep the migration-window front door current through 2026-05-31 |
-| 6 | **Tag every shipped release (v1.8.41 … v1.8.58, 18 missing)** | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; tag cadence has slipped |
+| 6 | **Tag every shipped release (v1.8.41 … v1.8.68, 28 missing)** | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; tag cadence has slipped |
 | 7 | **First-run "AI features in this keyboard" explainer surface** (EU AI Act Article 50, due 2 Aug 2026) | 4 | 2 | 4 | **6.0** | Regulatory cutoff in ~10 weeks; small UI slice; reinforces wedge |
 | 8 | **Settings → About re-openable "AI features" explainer** (same content, persistent) | 3 | 1 | 4 | **10.0** | Companion to #7; small |
 | 9 | **HeliBoard NLnet slip-base-case plan** (move N1.1 from "wait-and-integrate" to "ship N1.3-quality classifier; integrate N1.1 when it lands") | 4 | 2 | 4 | **6.0** | Library probably slips; N1.3 statistical is already shipped — frame as the default, not the placeholder |
@@ -112,7 +112,7 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 ### v1.8.58–v1.8.60 (the migration window itself — 2026-05-28 to 2026-05-31)
 
 - **2026-05-30 pinned release** (#1) with `docs/MIGRATE_FROM_SWIFTKEY.md` link + Obtainium URL above the fold.
-- **Tink migration of androidx-security-crypto** (#3) — separate slice (risk-isolated).
+- **Tink migration of androidx-security-crypto** (#3) — shipped v1.8.68.
 - **HeliBoard NLnet slip-base-case plan** (#9) — update ROADMAP §6 N1.1 framing.
 
 ### v1.8.61+ (post-migration window — Phase C / D)

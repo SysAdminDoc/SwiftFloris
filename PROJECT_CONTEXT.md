@@ -36,7 +36,7 @@ them requires changing both the relevant code *and* the gate.
 | Apache-2.0 main app | `LICENSE`, `NOTICE`, `LICENSES/`; addons under their own license live in a separate APK (signature-protected `permission.REGISTER_ADDON`) |
 | No closed-source `.so` blobs | Reproducible-build pin matrix + build-twice APK self-check in [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md); F-Droid verified-tier target |
 | No vendor account, no telemetry | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) |
-| Personal dictionary encrypted at rest | SQLCipher 4.16.0 + `PersonalDictionaryEncryptionTest` |
+| Personal dictionary encrypted at rest | SQLCipher 4.16.0 + Tink / AndroidKeystore passphrase wrapper + `PersonalDictionaryEncryptionTest` |
 | Personal dictionary excluded from cloud-backup | `backup_rules.xml` (read by `<application android:dataExtractionRules android:fullBackupContent>`) |
 | `FLAG_SECURE` on password fields | `FlorisImeService.applyFlagSecureForCurrentField` (N7.2) |
 | 16 KB native page alignment | CI `zipalign -c -P 16 -v 4` step (Next-12.4); AGP 9 + NDK 29 produce aligned `.so` by default |
@@ -44,13 +44,13 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.67)
+## 3. Stack at HEAD (v1.8.68)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
 AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · KSP 2.3.5
 minSdk 26 (Android 8.0) · targetSdk/compileSdk 36 (Android 16; API 37 gates wired)
-Room 2.8.4 · SQLCipher 4.16.0 · Coil 3.4.0
+Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · Coil 3.4.0
 Kotest 6.1.11 · Roborazzi 1.55.0 (plugin active) · Robolectric 4.14.1
 NDK 29.0.14206865 · Build Tools 36.0.0
 Crowdin localization · No INTERNET permission · 1000+ unit tests
@@ -61,11 +61,11 @@ plus the fifth-pass correction in
 [.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md](.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md)
 flag several pins as materially behind: AGP 9.0.0 → 9.2.x, Roborazzi
 1.55.0 → 1.60.0, Robolectric 4.14.1 → 4.16.1, Compose BOM
-2026.03.01 → 2026.05.00, KSP 2.3.5 → 2.3.8, and
-`androidx-security-crypto:1.1.0-alpha06` should migrate to Tink /
-Android Keystore because the stable `security-crypto` line exists but
-all APIs are deprecated. `androidx-activity 1.13.0` is stable; do **not**
-downgrade it.
+2026.03.01 → 2026.05.00, and KSP 2.3.5 → 2.3.8. The
+`androidx-security-crypto:1.1.0-alpha06` migration shipped in v1.8.68:
+local encrypted preference payloads now use Tink Android + direct
+AndroidKeystore wrapping, with one-shot AndroidX encrypted-preference
+migration. `androidx-activity 1.13.0` is stable; do **not** downgrade it.
 
 ## 4. Module layout
 
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.67`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.68`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -138,6 +138,12 @@ Roadmap addendum N12.5 shipped in v1.8.67: `.github/workflows/reproducible-build
 now runs `scripts/verify-reproducible-apk.sh`, which builds release APKs
 from two clean worktrees at the same commit and fails on byte drift before
 F-Droid's rebuilder becomes the first detector.
+
+Roadmap addendum N7.6 shipped in v1.8.68: AndroidX Security Crypto was
+removed from `:app`. `TinkStringPreferenceCrypto` now wraps local encrypted
+preference payloads with Tink `Aead` + AndroidKeystore-held AES-256-GCM keys,
+and migrates legacy AndroidX encrypted-preference strings for the SQLCipher
+personal-dictionary passphrase and legacy clipboard-history store.
 
 Phase B (touch & decoder calibration):
 
