@@ -39,7 +39,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 9 | **HeliBoard NLnet slip-base-case plan** (move N1.1 from "wait-and-integrate" to "ship N1.3-quality classifier; integrate N1.1 when it lands") | 4 | 2 | 4 | **6.0** | Library probably slips; N1.3 statistical is already shipped — frame as the default, not the placeholder |
 | 10 | ✅ **Shipped v1.8.70:** README "Grammarly Android keyboard discontinued" migration callout | 3 | 1 | 3 | **9.0** | Grammarly Android transition framed as compatible overlay; SwiftFloris remains no-network |
 | 11 | **EU AI Act explainer copy in `docs/PRIVACY_AND_AI.md`** | 3 | 1 | 4 | **10.0** | Companion to #7/#8; one new doc |
-| 12 | **Bump-batch B** (Roborazzi 1.55→1.60, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.2 bump (Tier-2); enables baseline capture |
+| 12 | ✅ **Shipped v1.8.71:** Bump-batch B (Roborazzi 1.55→1.60, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.2 bump (Tier-2); enables baseline capture |
 | 13 | **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** | 4 | 1 | 2 | **10.0** | Shipped by the research run; keep as the required onboarding pattern |
 | 14 | **Move stale crash logs / replay logs out of repo root** (3.0+ MB across 3 files) | 2 | 1 | 2 | **6.0** | Repo hygiene; reduces fresh-clone bloat |
 | 15 | **CI step: detect committed `hs_err_pid*.log` / `replay_pid*.log`** | 2 | 1 | 2 | **6.0** | Prevents recurrence |
@@ -119,7 +119,7 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 
 ### v1.8.61+ (post-migration window — Phase C / D)
 
-- **Bump-batch B + AGP 9.2.x** (#12 + #16).
+- **Bump-batch B** (#12) shipped v1.8.71; AGP 9.2.x remains #16.
 - **Phase C1 (split renderer)** (#23) — opens Phase C.
 - **Calendar / Tasks quick-insert** (#18, #19).
 - **AAA high-contrast theme + Animated theme** (#21, #20) — wraps Phase C.

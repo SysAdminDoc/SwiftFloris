@@ -499,3 +499,41 @@ the known `ROADMAP.md` CRLF warning. The focused Gradle suite was attempted
 and stopped at the known VM blocker: `JAVA_HOME` is not set and no `java`
 command is on PATH, so maintainer-host Gradle verification remains required
 before publishing.
+
+---
+
+## 14. v1.8.71 continuation — Bump-batch B
+
+The autonomous development loop then shipped
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §A.4 / `ROADMAP.md` N14.6.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.71.md`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1871`,
+  `projectVersionName=1.8.71`
+- `gradle/libs.versions.toml` →
+  `roborazzi=1.60.0`, `robolectric=4.16.1`
+- `docs/DEPENDENCY_TRIAGE.md` → audit-log row for Bump-batch B
+- `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `STATE_OF_REPO.md`,
+  `SECURITY_AND_DEPENDENCY_REVIEW.md`, `SOURCE_REGISTER.md`, and
+  `RESEARCH_LOG.md` → release/version/context updates for v1.8.71
+
+**Sources re-checked before editing:**
+
+- Maven Central Roborazzi metadata: latest/release `1.60.0`
+- Gradle Plugin Portal Roborazzi plugin metadata: latest/release `1.60.0`
+- Maven Central Robolectric metadata: latest/release `4.16.1`
+- OSV querybatch: zero vulnerabilities for updated Roborazzi core / Compose /
+  JUnit-rule artifacts and Robolectric
+
+**Verification note:** no app code, permissions, or runtime behavior changed.
+`git diff --check` and manifest banned-network-permission scan were run.
+The focused Gradle suite was attempted and stopped at the known VM blocker:
+`JAVA_HOME` is not set and no `java` command is on PATH, so maintainer-host
+Gradle verification remains required before publishing.

@@ -196,7 +196,9 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - https://dl.google.com/dl/android/maven2/androidx/security/security-crypto/maven-metadata.xml — Security Crypto stable 1.1.0 exists
 - https://repo.maven.apache.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml — KSP 2.3.8
 - https://repo.maven.apache.org/maven2/io/github/takahirom/roborazzi/roborazzi/maven-metadata.xml — Roborazzi 1.60.0
+- https://plugins.gradle.org/m2/io/github/takahirom/roborazzi/io.github.takahirom.roborazzi.gradle.plugin/maven-metadata.xml — Roborazzi Gradle plugin 1.60.0
 - https://repo.maven.apache.org/maven2/org/robolectric/robolectric/maven-metadata.xml — Robolectric 4.16.1
+- https://api.osv.dev/v1/querybatch — v1.8.71 OSV spot-check for Roborazzi / Robolectric targets
 - https://repo.maven.apache.org/maven2/com/google/crypto/tink/tink-android/maven-metadata.xml — Tink Android 1.21.0
 - https://github.com/LeanBitLab/LeanType — LeanType active HeliBoard fork
 - https://github.com/LeanBitLab/LeanType/releases/tag/v3.7.9 — LeanType v3.7.9 release

@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.70-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.71-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.70 | Privacy posture |
+| Area | What's in v1.8.71 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -125,7 +125,8 @@ Project-internal docs all live in the repository:
 - Kotlin 2.3.21, Compose BOM 2026.03.01, Material 3 + material-kolor.
 - AGP 9.0.0, Gradle 9.4.1, JDK 17.
 - KSP 2.3.8, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0.
-- Kotest 6.1.11 unit-test runner; Roborazzi 1.55.0 for screenshot regressions.
+- Kotest 6.1.11 unit-test runner; Roborazzi 1.60.0 and Robolectric 4.16.1
+  for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16, with Android 17 / API 37 behavior gates wired).
 - Crowdin pipeline for translations.
 - No `INTERNET` permission in the manifest (CI-enforced).
@@ -256,7 +257,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
-- **Visual regression:** Roborazzi 1.55.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR with `continue-on-error: true` during the bootstrap window; baseline PNG capture is in progress.
+- **Visual regression:** Roborazzi 1.60.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR with `continue-on-error: true` during the bootstrap window; baseline PNG capture is in progress.
 - **Macrobenchmark:** trace sections wired in production hot paths; device-number capture is tracked separately.
 - **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 
@@ -264,6 +265,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.71** (2026-05-17) — Bump-batch B: Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1`; no app code, permissions, or runtime behavior changed. ([notes](RELEASE_NOTES_v1.8.71.md))
 - **v1.8.70** (2026-05-17) — README migration-window follow-up: Samsung / Grammarly keyboard-workflow callouts, Galaxy AI Writing Assist compatibility note for One UI 7+, Grammarly Keyboard replacement note, and release-front-door refresh. ([notes](RELEASE_NOTES_v1.8.70.md))
 - **v1.8.69** (2026-05-17) — Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and AboutLibraries `14.2.0`; beta AboutLibraries `15.0.0-b01` intentionally skipped. ([notes](RELEASE_NOTES_v1.8.69.md))
 - **v1.8.68** (2026-05-17) — N7.6 Tink / AndroidKeystore migration: removed AndroidX Security Crypto, added shared Tink encrypted-preference wrapper, migrated SQLCipher passphrase and legacy clipboard-history payloads one time when old keysets remain readable. ([notes](RELEASE_NOTES_v1.8.68.md))
@@ -371,7 +373,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.70** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
+🚀 **Active development.** Current release: **v1.8.71** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
 
 ---
 

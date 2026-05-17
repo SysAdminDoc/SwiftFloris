@@ -5,12 +5,13 @@
 **Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.70. The notable dependency deltas are
+HEAD to v1.8.71. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
 AboutLibraries `14.2.0`. v1.8.70 is docs-only README migration-window
-messaging; it changes no app code or permission surface.
+messaging; it changes no app code or permission surface. v1.8.71 updates
+Roborazzi to `1.60.0` and Robolectric to `4.16.1`.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -41,7 +42,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.70 / 1870 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.71 / 1871 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.0.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
@@ -61,8 +62,8 @@ Operative invariants (load-bearing — touched by build gates):
 | kotlinx-coroutines | 1.11.0 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
 | kotlinx-serialization-json | 1.11.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L21) |
 | Kotest | 6.1.11 | [libs.versions.toml](../../../gradle/libs.versions.toml#L35) |
-| Roborazzi | 1.55.0 (plugin **active**) | [libs.versions.toml](../../../gradle/libs.versions.toml#L37) |
-| Robolectric | 4.14.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L38) |
+| Roborazzi | 1.60.0 (plugin **active**) | [libs.versions.toml](../../../gradle/libs.versions.toml) |
+| Robolectric | 4.16.1 | [libs.versions.toml](../../../gradle/libs.versions.toml) |
 | Build Tools | 36.0.0 | [tools.versions.toml](../../../gradle/tools.versions.toml#L2) |
 | NDK | 29.0.14206865 | [tools.versions.toml](../../../gradle/tools.versions.toml#L5) |
 | JDK | 17 | [tools.versions.toml](../../../gradle/tools.versions.toml#L4) |
@@ -74,7 +75,8 @@ Whether any of the above is materially behind 2026-05-17 latest is in the
 companion [SECURITY_AND_DEPENDENCY_REVIEW.md](SECURITY_AND_DEPENDENCY_REVIEW.md).
 The same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 corrects the most drift-prone items: Activity 1.13.0 is stable, AGP target
-is 9.2.x and Roborazzi target is 1.60.0. KSP target 2.3.8 shipped in v1.8.69.
+is 9.2.x. KSP target 2.3.8 shipped in v1.8.69; Roborazzi 1.60.0 and
+Robolectric 4.16.1 shipped in v1.8.71.
 
 ## 3. Module layout
 
@@ -202,8 +204,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 86 tags in repo after the v1.8.70 release tag; local release tags now run
-  through `v1.8.70`. Push remains a maintainer-host task because this VM
+- 87 tags in repo after the v1.8.71 release tag; local release tags now run
+  through `v1.8.71`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -241,7 +243,7 @@ Notable receivers/providers:
 | Surface | Framework | Approx count |
 |---|---|---|
 | Unit (Kotest) | `:app:testDebugUnitTest` | 998+ (HEAD; growing) |
-| Visual regression | Roborazzi 1.55.0 (plugin active) | scaffold + a few suites; baselines still bootstrap state per workflow `continue-on-error: true` |
+| Visual regression | Roborazzi 1.60.0 (plugin active) | scaffold + a few suites; baselines still bootstrap state per workflow `continue-on-error: true` |
 | Macrobenchmark | androidx-benchmark 1.4.1 | 4 tests scaffolded in `:benchmark`, not yet in `settings.gradle.kts` |
 | Replay fixtures | `swiftkey/replay/trace_replay_cases.jsonl` | pinned ranker behaviors |
 | Property tests | Kotest property | LatinSuggester (11 invariants), Multilingual, GlideRescorer |
@@ -280,8 +282,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.70).
-  The local tag stream was recovered through `v1.8.70`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.71).
+  The local tag stream was recovered through `v1.8.71`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.70 (released 2026-05-17 — README migration-window follow-up. Added Samsung / Grammarly keyboard-workflow callouts while keeping SwiftFloris's no-network posture explicit. **Previous version, v1.8.69** (released 2026-05-17 — Bump-batch A; see `RELEASE_NOTES_v1.8.69.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.71 (released 2026-05-17 — Bump-batch B. Updated Roborazzi to 1.60.0 and Robolectric to 4.16.1 for visual/JVM test harness freshness. **Previous version, v1.8.70** (released 2026-05-17 — README migration-window follow-up; see `RELEASE_NOTES_v1.8.70.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -33,6 +33,10 @@ This delta supersedes the stale dependency guidance in the first-pass
   layer on One UI 7+, while Grammarly's Android keyboard replacement is framed
   as an overlay that can sit above SwiftFloris without changing SwiftFloris's
   no-network behavior.
+- Bump-batch B shipped in v1.8.71: Roborazzi `1.55.0` → `1.60.0` and
+  Robolectric `4.14.1` → `4.16.1`, verified against Maven / Gradle Plugin
+  Portal metadata and OSV querybatch. AGP `9.2.x` + Compose BOM `2026.05.00`
+  remain the next dependency batch after maintainer-host visual/unit tests.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -45,7 +49,7 @@ This delta supersedes the stale dependency guidance in the first-pass
 
 ### Phase 0 state memo
 
-SwiftFloris is a Kotlin/Android IME fork of FlorisBoard, built with Gradle Kotlin DSL, AGP 9.0.0, Kotlin 2.3.21, Compose BOM 2026.03.01, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0, coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, Roborazzi 1.55.0, minSdk 26, target/compile SDK 36, and no `INTERNET` permission. The active runtime entry points are `FlorisApplication`, `FlorisImeService`, `FlorisAppActivity`, the spell-checker service, inline-autofill support, Tasker receiver, and local addon/MCP surfaces. The repo has mature shipped surfaces for autocorrect, multilingual scoring, user dictionary overlays, privacy gates, voice handoff, local-only addon facades, MCP daemon binding, honeycomb/T9/WordStyles scaffolds, SwiftKey visual parity, Android 16/17 readiness slices, and CI guardrails.
+SwiftFloris is a Kotlin/Android IME fork of FlorisBoard, built with Gradle Kotlin DSL, AGP 9.0.0, Kotlin 2.3.21, Compose BOM 2026.03.01, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0, coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, Roborazzi 1.60.0, Robolectric 4.16.1, minSdk 26, target/compile SDK 36, and no `INTERNET` permission. The active runtime entry points are `FlorisApplication`, `FlorisImeService`, `FlorisAppActivity`, the spell-checker service, inline-autofill support, Tasker receiver, and local addon/MCP surfaces. The repo has mature shipped surfaces for autocorrect, multilingual scoring, user dictionary overlays, privacy gates, voice handoff, local-only addon facades, MCP daemon binding, honeycomb/T9/WordStyles scaffolds, SwiftKey visual parity, Android 16/17 readiness slices, and CI guardrails.
 
 The current constraint set is load-bearing: zero network/account/telemetry, Apache-2.0-compatible main app, no closed swipe blobs, reproducible-build posture, and addon isolation for heavy native/ML stacks. The main live gaps are not "basic keyboard" gaps; they are release hygiene for the v1.8.46 migration slice, emoji crash triage, Roborazzi baseline hardening, device-number benchmark collection, F-Droid verified rebuild completion, and real native/addon bring-up for smart compose/translation/CJK/handwriting/passkeys. SwiftKey export capture moved from urgent gap to shipped parser work in v1.8.46, but public migration documentation and release distribution still need to land before the 2026-05-31 account retirement.
 
@@ -173,9 +177,9 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.70 reality, observed)
+## 2. State of the Repo (v1.8.71 reality, observed)
 
-**Stack:** Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.55.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
+**Stack:** Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
 **Modules:** `:app` plus `lib/{android,color,compose,kotlin,snygg}` are included in `settings.gradle.kts`. `:benchmark` exists on disk but is not included in the active settings file and still carries an older SDK/Java profile; `:lib:native` is also commented out. Treat both as roadmap surfaces, not production modules, until settings + CI wire them back in.
 
@@ -205,10 +209,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.70, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.71, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.71 | 2026-05-17 | Bump-batch B. Updated Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1` after checking Maven Central / Gradle Plugin Portal metadata and OSV querybatch. This prepares the visual/JVM test harness for the later AGP 9.2.x + Compose BOM 2026.05.00 batch. No app code, permissions, network surface, or runtime behavior changed. | `RELEASE_NOTES_v1.8.71.md` |
 | v1.8.70 | 2026-05-17 | README migration-window follow-up. Added Samsung / Grammarly users callout: One UI 7+ Galaxy AI Writing Assist can remain a separate Samsung selected-text layer while SwiftFloris stays the default no-network keyboard, and Grammarly for Android can replace the old Grammarly Keyboard without SwiftFloris sending text to Grammarly. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.70.md` |
 | v1.8.69 | 2026-05-17 | Bump-batch A. Updated `kotlinx-coroutines` 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4, and AboutLibraries 14.0.1 → stable 14.2.0 after re-checking Maven Central / Gradle Plugin Portal metadata. AboutLibraries 15.0.0-b01 exists but is beta and intentionally skipped. No app code, permissions, network surface, or runtime feature behavior changed. | `RELEASE_NOTES_v1.8.69.md` |
 | v1.8.68 | 2026-05-17 | N7.6 Tink / AndroidKeystore migration. Removed `androidx.security:security-crypto:1.1.0-alpha06`, added `com.google.crypto.tink:tink-android:1.21.0`, and introduced `TinkStringPreferenceCrypto` for AndroidKeystore-held AES-256-GCM wrapping. SQLCipher passphrase storage moved to `sqlcipher_passphrase_tink_v1`; legacy AndroidX encrypted-preference passphrases migrate once. Legacy clipboard-history storage moved to `clipboard_history_tink_v1` with the same one-shot migration and in-memory fallback on Keystore failure. | `RELEASE_NOTES_v1.8.68.md` |
@@ -513,6 +518,7 @@ v5.0 stranded the Roborazzi plugin alias behind a "wait for 1.44.0-stable" gate;
 - ✅ **N14.3** audit shipped 2026-05-17 (v1.8.51). The current `androidx-compose-bom = "2026.03.01"` pin is on the published March-2026 patch-01 line; no later patch is announced as of this audit. No Roborazzi visual-regression or macrobenchmark surface forces an out-of-band bump. The actual version-bump is a separate slice gated on the cadence policy in `docs/DEPENDENCY_TRIAGE.md` (Roborazzi + macrobenchmark evidence run); this slice is the audit + audit-log entry that pins the next review window.
 - ✅ **N14.4** audit shipped 2026-05-17 (v1.8.51). The current `gradle-wrapper.properties` pin is on `gradle-9.4.1-bin.zip` with `distributionSha256Sum=2ab2958f...` — the wrapper still verifies. The reproducible-builds contract from `docs/REPRODUCIBLE_BUILDS.md` requires any bump to update the SHA-256 in lockstep so the verify path stays correct; the bump itself is gated on `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` on the maintainer's local box per the cadence policy. Audit-log entry added so a future contributor doesn't redo this analysis from scratch.
 - ✅ **N14.5 / Bump-batch A** shipped 2026-05-17 (v1.8.69). Low-risk dependency refresh only: `kotlinx-coroutines` 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4, AboutLibraries 14.0.1 → stable 14.2.0. Re-checked Maven Central / Gradle Plugin Portal metadata before applying; AboutLibraries 15.0.0-b01 is present but beta and intentionally skipped. Gradle verification remains blocked on this VM by missing Java, so `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the maintainer build host.
+- ✅ **N14.6 / Bump-batch B** shipped 2026-05-17 (v1.8.71). Visual/JVM test harness refresh only: Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1`. Maven Central and Gradle Plugin Portal metadata both report Roborazzi `1.60.0` as latest/release; Maven Central reports Robolectric `4.16.1` as latest/release. OSV querybatch returned zero vulnerabilities for the updated Roborazzi core / Compose / JUnit-rule artifacts and Robolectric. Gradle verification remains blocked on this VM by missing Java, so `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the maintainer build host.
 
 ### N15. Gboard 2026 parity polish (new v5.1 theme)
 
@@ -1235,4 +1241,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.70 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batch A, local tag catch-up, and the Samsung / Grammarly README migration-window callouts. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose/Roborazzi dependency batches are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.71 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B, local tag catch-up, and the Samsung / Grammarly README migration-window callouts. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose dependency batches are implemented, whichever comes first.*
