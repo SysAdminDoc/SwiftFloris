@@ -5,13 +5,16 @@
 **Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.71. The notable dependency deltas are
+HEAD to v1.8.72. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
 AboutLibraries `14.2.0`. v1.8.70 is docs-only README migration-window
 messaging; it changes no app code or permission surface. v1.8.71 updates
-Roborazzi to `1.60.0` and Robolectric to `4.16.1`.
+Roborazzi to `1.60.0` and Robolectric to `4.16.1`. v1.8.72 is docs-only
+glide-strategy correction: HeliBoard / NLnet open-glide remains additive,
+while `swiftfloris-statistical` is production default until an open library
+and permissive dataset land.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -42,7 +45,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.71 / 1871 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.72 / 1872 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.0.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
@@ -204,8 +207,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 87 tags in repo after the v1.8.71 release tag; local release tags now run
-  through `v1.8.71`. Push remains a maintainer-host task because this VM
+- 88 tags in repo after the v1.8.72 release tag; local release tags now run
+  through `v1.8.72`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -271,8 +274,8 @@ production paths. The 37 markers are design debt:
 
 | Missing thing | Reason |
 |---|---|
-| `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/**`, `.windsurfrules` | No AI-tool-specific instruction files have been written; the project relies on `ROADMAP.md` + `IMPROVEMENT_PLAN.md` as the canonical context. **Gap.** |
-| `PROJECT_CONTEXT.md` | Doesn't exist yet — written for the first time by this research run. |
+| `.cursor/rules/**`, `.windsurfrules` | Not present; `AGENTS.md`, `CLAUDE.md`, and `PROJECT_CONTEXT.md` now carry the agent context. |
+| `PROJECT_CONTEXT.md` | Present at repo root as the canonical consolidated project memory written by this research run. |
 | `ARCHITECTURE.md` | Flagged in ROADMAP §11 as a planned doc once N11 finishes; not yet present. |
 | `CHANGELOG.md` | Per-release `RELEASE_NOTES_v*.md` files supersede this; no combined changelog by design. |
 | `CONTRIBUTING.md` | Not present; contribution flow is documented in `README.md` §Contributing. |
@@ -282,8 +285,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.71).
-  The local tag stream was recovered through `v1.8.71`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.72).
+  The local tag stream was recovered through `v1.8.72`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

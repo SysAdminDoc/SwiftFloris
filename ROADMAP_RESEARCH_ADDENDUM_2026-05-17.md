@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.71 — Bump-batch B.
+**HEAD at latest reconciliation:** v1.8.72 — HeliBoard / NLnet slip-base-case roadmap correction.
 (The research run started at v1.8.55; v1.8.56-71 shipped concurrently in the
 same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B + README Samsung / Grammarly callouts.)
 
@@ -41,6 +41,7 @@ implemented several recommendations:
 | §A.4 / Tier-1 #4 — Bump-batch A | ✅ **v1.8.69 — N14.5** — coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, AboutLibraries stable 14.2.0 |
 | Tier-1 #2 / #5 / #10 — README Samsung / Grammarly migration-window callouts + release-front-door hygiene | ✅ **v1.8.70 — N16.4** — Galaxy AI Writing Assist framed as optional Samsung layer on One UI 7+; Grammarly Keyboard replacement framed as an overlay above SwiftFloris |
 | §A.4 / Tier-1 #12 — Bump-batch B | ✅ **v1.8.71 — N14.6** — Roborazzi 1.60.0 + Robolectric 4.16.1 |
+| §G.1 / Tier-1 #9 — HeliBoard slip-risk promote | ✅ **v1.8.72 — N1.1** — statistical glide is production default; HeliBoard open-glide remains additive |
 
 These sixteen are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
@@ -437,7 +438,7 @@ The following should be added with reasoning to prevent re-litigation:
 
 ## G. ROADMAP §14 (Risk Register) — updated rows
 
-### G.1 HeliBoard NLnet slip risk — promote to "High"
+### G.1 HeliBoard NLnet slip risk — promote to "High" (shipped v1.8.72)
 
 **Current row:**
 
@@ -446,6 +447,15 @@ The following should be added with reasoning to prevent re-litigation:
 **Updated:**
 
 > | HeliBoard NLnet open-glide library slips past 2026-06-01 deadline | **High (now base case)** | Medium (delays N1.1; keeps SwiftFloris on the bounded statistical classifier) | Reframe N1.3 statistical as the *production* default, not the placeholder. Plan N1.1 integration as additive once the library lands. Gesture-data accrual via HeliBoard's data-gathering feed already started; whether the dataset gets a permissive release is the second-order risk |
+
+**v1.8.72 implementation note:** re-checked HeliBoard `#2226`, HeliBoard
+releases, the NLnet project page, and the gesture-data contribution wiki on
+2026-05-17. The latest HeliBoard release remains `v3.9` from 2026-03-29,
+`#2226` remains open, and the public workflow is still collecting gesture
+data with the existing proprietary library. `ROADMAP.md` now treats
+`swiftfloris-statistical` as production default and keeps `heliboard-open` as
+a future `prefs.glide.engine` option only after a permissive library + dataset
+land and pass the N1.4 replay benchmark.
 
 ### G.2 New row — `androidx-security-crypto` deprecated API surface
 
@@ -491,7 +501,7 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | 🟢 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.70; push pending from maintainer host |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.72; push pending from maintainer host |
 | Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |
 | §C.1 User-imported sticker folder (Next-9.5) | 🟢 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
@@ -499,6 +509,6 @@ but does not require a roadmap change.
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |
 | §E.1 Per-app tone profile promotion | 🟡 on addon-side KenLM |
 | §F new §10 rejections | 🔄 |
-| §G.1 HeliBoard slip-risk promote | 🔴 |
+| §G.1 HeliBoard slip-risk promote | ✅ v1.8.72 |
 | §G.2 Tink-migration risk | ✅ v1.8.68 |
 | §G.3 EU AI Act risk | 🔴 |

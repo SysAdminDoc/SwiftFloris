@@ -26,7 +26,8 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
-| [RELEASE_NOTES_v1.8.58.md](../../../RELEASE_NOTES_v1.8.58.md) | Current HEAD release metadata — Phase D2 task-creation quick action |
+| [RELEASE_NOTES_v1.8.72.md](../../../RELEASE_NOTES_v1.8.72.md) | v1.8.72 HeliBoard / NLnet slip-base-case roadmap correction |
+| [RELEASE_NOTES_v1.8.58.md](../../../RELEASE_NOTES_v1.8.58.md) | Phase D2 task-creation quick action |
 | [RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md) | Initial-pass HEAD release — Phase B3 shared-spelling bilingual handling |
 | [RELEASE_NOTES_v1.8.54.md](../../../RELEASE_NOTES_v1.8.54.md) | Phase A3 codec primitive (AES-256-GCM + PBKDF2-HMAC-SHA-256) |
 | [RELEASE_NOTES_v1.8.53.md](../../../RELEASE_NOTES_v1.8.53.md) | Phase A2 post-import confirmation + rollback |
@@ -75,9 +76,11 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 ### 1.6 Git state
 
 - `git log --oneline -30` — HEAD commit subjects
-- `git tag --sort=-creatordate` — 56 tags, latest v1.8.40 (lags HEAD)
+- `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
+  backfilled local tags through `v1.8.72` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
-- `git branch --show-current` — `master`, 40 ahead of `origin/master`
+- `git branch --show-current` — `master`; continuation commits leave the local
+  branch ahead of `origin/master` because this VM cannot push to the remote
 
 ---
 
@@ -99,10 +102,12 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 ### 2.2 HeliBoard / NLnet
 
-- https://github.com/Helium314/HeliBoard
-- https://github.com/Helium314/HeliBoard/issues/2226 — NLnet open glide
+- https://github.com/HeliBorg/HeliBoard — HeliBoard current repository; latest release still v3.9 as of 2026-05-17 re-check
+- https://github.com/HeliBorg/HeliBoard/issues/2226 — NLnet open glide; issue still open, updated 2026-05-11 via GitHub API re-check
 - https://nlnet.nl/project/GestureTyping/ — NLnet funding page
 - https://github.com/HeliBorg/HeliBoard/releases — v3.7 / v3.8 / v3.9 release dates
+- https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9 — latest HeliBoard release, published 2026-03-29 via GitHub API re-check
+- https://github.com/HeliBorg/HeliBoard/wiki/Tutorial:-How-to-Contribute-Gesture-Data — gesture-data collection wiki; data collection period ends 2026-11-30
 
 ### 2.3 FUTO
 

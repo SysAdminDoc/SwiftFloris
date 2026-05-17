@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.71)
+## 3. Stack at HEAD (v1.8.72)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -75,6 +75,11 @@ how Samsung One UI 7+ Galaxy AI Writing Assist and Grammarly for Android can
 coexist with SwiftFloris as the no-network default keyboard. No app code or
 permission surface changed.
 
+v1.8.72 was a docs-only glide-strategy correction: HeliBoard / NLnet
+open-glide remains an additive future integration path, while
+`swiftfloris-statistical` is the production glide engine until a permissive
+open library and dataset land and beat the N1.4 replay benchmark.
+
 ## 4. Module layout
 
 ```
@@ -102,9 +107,10 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` / `v1.8.71` are
-  tagged with their release commits. The tags still need to be pushed
-  from the maintainer host because this VM cannot push to `SysAdminDoc/SwiftFloris`.
+  `gradle.properties` version-bump commits, and `v1.8.70` / `v1.8.71` /
+  `v1.8.72` are tagged with their release commits. The tags still need to be
+  pushed from the maintainer host because this VM cannot push to
+  `SysAdminDoc/SwiftFloris`.
 
 ## 6. Roadmap structure (where to put what)
 

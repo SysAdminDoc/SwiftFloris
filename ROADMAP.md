@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.71 (released 2026-05-17 — Bump-batch B. Updated Roborazzi to 1.60.0 and Robolectric to 4.16.1 for visual/JVM test harness freshness. **Previous version, v1.8.70** (released 2026-05-17 — README migration-window follow-up; see `RELEASE_NOTES_v1.8.70.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.72 (released 2026-05-17 — roadmap correction. HeliBoard / NLnet open-glide integration is now an additive future track; SwiftFloris's shipped statistical glide classifier is the production path until a permissive open library and dataset exist. **Previous version, v1.8.71** (released 2026-05-17 — Bump-batch B; see `RELEASE_NOTES_v1.8.71.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -25,9 +25,9 @@ This delta supersedes the stale dependency guidance in the first-pass
   `1.11.0`, AboutLibraries `14.2.0`, and ZXing `3.5.4`.
 - Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
   2026-05-17 from their matching `gradle.properties` version-bump commits
-  so Obtainium / fork audit anchors are no longer stale locally; v1.8.70 is
-  tagged with its README release commit. The remaining distribution step is
-  pushing those tags from the maintainer host.
+  so Obtainium / fork audit anchors are no longer stale locally; v1.8.70,
+  v1.8.71, and v1.8.72 are tagged with their release commits. The remaining
+  distribution step is pushing those tags from the maintainer host.
 - v1.8.70 refreshed README migration-window messaging for Samsung and
   Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
   layer on One UI 7+, while Grammarly's Android keyboard replacement is framed
@@ -37,6 +37,12 @@ This delta supersedes the stale dependency guidance in the first-pass
   Robolectric `4.14.1` → `4.16.1`, verified against Maven / Gradle Plugin
   Portal metadata and OSV querybatch. AGP `9.2.x` + Compose BOM `2026.05.00`
   remain the next dependency batch after maintainer-host visual/unit tests.
+- HeliBoard / NLnet open-glide integration was reframed in v1.8.72 after a
+  2026-05-17 upstream re-check: HeliBoard latest release is still `v3.9`
+  (2026-03-29), issue `#2226` remains open, and the public user-facing work
+  is still gesture-data gathering. SwiftFloris's statistical classifier is
+  therefore the production glide path; N1.1 becomes an additive integration
+  gate for a future permissive open library/dataset.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -177,7 +183,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.71 reality, observed)
+## 2. State of the Repo (v1.8.72 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -209,10 +215,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.71, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.72, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.72 | 2026-05-17 | Roadmap correction for HeliBoard / NLnet slip-base-case planning. Re-checked HeliBoard `#2226`, releases, the NLnet project page, and the gesture-data contribution wiki: latest release is still `v3.9`, the open-glide issue remains open, and the public workflow still depends on collecting gesture data with the existing proprietary library. N1.1 is now an additive future integration track; SwiftFloris's `StatisticalGlideTypingClassifier` remains the production glide path until a permissive open library and dataset are available. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.72.md` |
 | v1.8.71 | 2026-05-17 | Bump-batch B. Updated Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1` after checking Maven Central / Gradle Plugin Portal metadata and OSV querybatch. This prepares the visual/JVM test harness for the later AGP 9.2.x + Compose BOM 2026.05.00 batch. No app code, permissions, network surface, or runtime behavior changed. | `RELEASE_NOTES_v1.8.71.md` |
 | v1.8.70 | 2026-05-17 | README migration-window follow-up. Added Samsung / Grammarly users callout: One UI 7+ Galaxy AI Writing Assist can remain a separate Samsung selected-text layer while SwiftFloris stays the default no-network keyboard, and Grammarly for Android can replace the old Grammarly Keyboard without SwiftFloris sending text to Grammarly. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.70.md` |
 | v1.8.69 | 2026-05-17 | Bump-batch A. Updated `kotlinx-coroutines` 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4, and AboutLibraries 14.0.1 → stable 14.2.0 after re-checking Maven Central / Gradle Plugin Portal metadata. AboutLibraries 15.0.0-b01 exists but is beta and intentionally skipped. No app code, permissions, network surface, or runtime feature behavior changed. | `RELEASE_NOTES_v1.8.69.md` |
@@ -340,9 +347,11 @@ Twenty-one bundled themes now ship. Each item below is small enough to land in a
 
 ### N1. Glide-typing breadth without the GApps blob
 
-The single highest-leverage gap. Four credible paths; pick one in this order of preference:
+The single highest-leverage gap. The production default is now N1.3
+(`swiftfloris-statistical`); N1.1 / N1.2 remain additive upgrade paths when
+their external blockers clear.
 
-- **N1.1** Wait-and-integrate: monitor [HeliBoard NLnet open-glide project](https://github.com/HeliBorg/HeliBoard/issues/2226) [H1, NLNET-GT, COMM-3]. **Status 2026-05-16:** NLnet-funded R&D project formally runs Jun 2025 → Jun 1 2026 [NLNET-GT]; HeliBoard v3.7-beta1 (2026-02-22) shipped **optional gesture data gathering** matching the NLnet plan to collect volunteer samples [H1], and v3.9 preserved gesture-data gathering through backup restore [GH-HELIBOARD-RELEASES]. Library not yet released as a drop-in for the closed Google `swypelibs` blob, but data accrual is live, putting library release in the H2 2026 window. SwiftFloris stays on the wait-and-integrate path; integration gate is a `prefs.glide.engine` flag (`heliboard-open` | `swiftfloris-statistical`). Integration cost: M when library lands.
+- **N1.1** Additive HeliBoard / NLnet open-glide integration: monitor [HeliBoard NLnet open-glide project](https://github.com/HeliBorg/HeliBoard/issues/2226) [H1, NLNET-GT, COMM-3]. **Status 2026-05-17:** NLnet still describes the goal as a separately-developed open-source gesture library with an AOSP-compatible drop-in layer [NLNET-GT], but HeliBoard `#2226` remains open and its latest public status says the active work is data gathering / passive-mode tuning, not a released library. HeliBoard latest release is still `v3.9` (2026-03-29); v3.7-beta1 introduced optional gesture-data gathering and v3.9 fixed / preserved that gathering flow [GH-HELIBOARD-RELEASES]. The wiki now says volunteer data collection runs until 2026-11-30 and still requires loading the existing proprietary gesture library [H1-GESTURE-DATA]. **Planning change:** SwiftFloris no longer treats this as the default production path. The shipped `swiftfloris-statistical` engine remains the default; `heliboard-open` stays behind a future `prefs.glide.engine` flag only after a permissively-licensed library + dataset land and beat the current classifier on the N1.4 replay benchmark. Integration cost: M when library lands.
 - **N1.2** Port-CleverKeys-architecture: CleverKeys ships a 5.4MB encoder + 7.4MB decoder ONNX transformer that handles 11 languages with sub-200ms beam-search latency on Pixel 7 via XNNPACK [O1, AI4, CK-DEEPWIKI]. Code is **GPL-3.0** (re-confirmed 2026-05-14 — incompatible with the Apache-2.0 main-app ceiling); cannot directly link, but the *architecture and training repo* are public reference. CleverKeys's own roadmap targets multi-layout / multi-script gesture model in **Q2-Q3 2026** [CK-DEEPWIKI] — once that drops, the architectural reference for non-QWERTY layouts becomes much more useful. Plan: train an Apache-2.0 model from the eventual HeliBoard NLnet dataset (N1.1) and ship via ONNX Runtime Mobile. Cost: L.
 - ✅ **N1.3** shipped 2026-05-14. The existing `StatisticalGlideTypingClassifier` now consumes a bounded high-confidence glide vocabulary from each imported per-language dictionary instead of the full long-tail recognition map: frequency `80+`, length `2..24`, max `120k` words per language. This keeps rare recognition-only words from polluting swipe candidates while preserving broad EN/DE/ES/FR/IT/PT coverage. Settings → Gestures now shows per-language glide quality and engine labels (`Expanded statistical dictionary` / `Imported statistical dictionary`, `Statistical`) so users can see the current non-neural state while the HeliBoard neural/open-glide path remains pending.
 - ✅ **N1.4 schema** shipped 2026-05-16. New `SwipeTraceRecord` data class (word + layout + samples + optional languageTag + source attribution) with `@Serializable` derivation, plus `SwipeTraceSample(x, y, t)` carrying normalised `[0.0, 1.0]` coordinates and relative-millisecond timestamps. New `SwipeTraceImporter.parse(input)` auto-detects JSON-Array vs JSON-Lines and tolerates malformed lines (silently dropped so a partially-corrupted dataset never blocks the benchmark run). 10 new `SwipeTraceImporterTest` cases. **N1.4 dataset ingestion + benchmark numbers vs `StatisticalGlideTypingClassifier` remains the device-side follow-up:** run the importer over a downloaded FUTO MIT swipe corpus, compare classifier accuracy / latency against the FUTO nightly model, and publish results in `docs/BENCHMARKS.md`. **N1.4 description (kept):** FUTO v0.1.28 reports a swipe.futo.org data set with more than 1M swipes and a nightly model competitive with major keyboards; the public Hugging Face data card marks the filtered volunteer data MIT and in the `1M<n<10M` size class [FUTO-V0-1-28, HF-FUTO-SWIPE]. Do not ingest FUTO Source-First app code; do import the MIT swipe traces into the SwiftFloris replay/glide benchmark harness and compare against `StatisticalGlideTypingClassifier` before training any ONNX model.
@@ -797,7 +806,7 @@ Each entry below lists: the **scaffold seam** (file path), the **blocker** (what
 
 | Item | Scaffold seam | Blocker | Acceptance |
 |---|---|---|---|
-| **N1.1** Open-source glide-typing | `prefs.glide.engine` flag (Next placeholder) | HeliBoard NLnet R&D grant Jun 2025 → Jun 2026 [NLNET-GT]. Library not yet released as a drop-in for the closed Google `swypelibs` blob; HeliBoard v3.7-beta1 ships opt-in gesture-data collection. Watch the [issue tracker](https://github.com/Helium314/HeliBoard/issues/2226). | Drop-in replaces `swypelibs` blob; glide accuracy meets or exceeds the current `GlideTypingManager.statistical` heuristic on a 1,000-trace eval set. |
+| **N1.1** Open-source glide-typing | `prefs.glide.engine` flag (Next placeholder; default remains `swiftfloris-statistical`) | HeliBoard NLnet R&D grant Jun 2025 → Jun 2026 [NLNET-GT]. As of 2026-05-17, no drop-in open library is released; HeliBoard `#2226` remains open, `v3.9` is still latest, and gesture data collection runs through 2026-11-30 [GH-HELIBOARD-RELEASES, H1-GESTURE-DATA]. | A permissively-licensed drop-in replaces `swypelibs`; glide accuracy meets or exceeds the current `GlideTypingManager.statistical` heuristic on a 1,000-trace eval set. |
 | **N1.2** CleverKeys-architecture port | `ime/nlp/cleverkeys/` (not yet present — created when library lands) | CleverKeys roadmap targets Q2-Q3 2026 for multi-layout / multi-script gesture model. Code is GPL-3.0 → architecture-borrow only. Tracked at [CK-DEEPWIKI](https://deepwiki.com/cleverkeys/cleverkeys). | Train an Apache-2.0 model from N1.1 dataset, ship via ONNX Runtime Mobile. |
 | **N10.1** Noto Color Emoji 17.0 | `androidx-emoji2 = "1.6.0"` in `libs.versions.toml` | Either: (a) `androidx.emoji2` 1.7.0+ published with Emoji 17, OR (b) ship `NotoColorEmoji.ttf` v17 directly + route through `EmojiCompat.Config(BundledEmojiCompatConfig)`. Track [emoji2 releases](https://developer.android.com/jetpack/androidx/releases/emoji2). | Emoji 17 glyphs (Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) render correctly in the palette. |
 | **Next-12.2 plugin / N14.1** | `app/build.gradle.kts:30` — was `// alias(libs.plugins.roborazzi)` | ✅ **CLOSED 2026-05-16 (v1.8.43).** Roborazzi **1.55.0** bumped in `gradle/libs.versions.toml`; `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:verifyRoborazziDebug` added to `.github/workflows/android.yml` (bootstrap window: `continue-on-error: true` until baselines are recorded via `recordRoborazziDebug` on a maintainer push). **Moved to §3 Recently Shipped.** | n/a |
@@ -893,7 +902,7 @@ These came up in research but don't fit SwiftFloris; calling them out so future 
 | Risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
 | FlorisBoard upstream merges back the v0.6 glide work and obviates N1 | Medium | Medium | Re-base; ship per-language polish on top |
-| HeliBoard's NLnet glide drop ships first and becomes the de facto OSS swipe lib | High | Low (good for users; we adopt it; positive outcome) | Plan N1.1 as the default path |
+| HeliBoard's NLnet glide drop ships first and becomes the de facto OSS swipe lib | Medium | Low (good for users; we adopt it; positive outcome) | N1.1 remains ready as an additive integration path behind `prefs.glide.engine` once a permissive open library + dataset land |
 | Gemma 3 270M licensing changes break L1 plan | Low | Medium | Have Phi-3 / Llama 3.2 1B fallback on stand-by; LiteRT-LM is model-agnostic |
 | F-Droid reproducible-build verification fails due to Gradle/AGP/NDK churn | Medium | Low | Pin everything in `gradle.properties`; subscribe to F-Droid Reproducible Builds discussion; address per release |
 | ~~The two `TODO("…")` runtime stubs get hit in the wild~~ — **Resolved in v1.7.0 (N11.1/N11.2/N11.3)**; preserved here as audit trail | n/a | Resolved | n/a |
@@ -904,7 +913,7 @@ These came up in research but don't fit SwiftFloris; calling them out so future 
 | Microsoft SwiftKey account-retirement cutoff 2026-05-31 [SK-RETIRE] consumes user attention; SwiftFloris missing the migration window means defectors land on FUTO / HeliBoard / CleverType instead | High | Medium (one-shot opportunity) | Ship a release-day blog + reddit thread on 2026-05-31 with `docs/MIGRATE_FROM_SWIFTKEY.md` and the Obtainium URL front-and-center; pin a GitHub release the same day; consider a v1.7.10 marketing-only retag if v1.7.9 doesn't sign by then |
 | AOSP 2026 cadence change [STD-AOSP-2026] (source published only Q2 + Q4) extends the gap between SwiftFloris seeing new platform APIs and being able to test against them | Medium | Low | Switch upstream tracking to `android-latest-release` branch as Google now recommends; treat developer previews as the API-discovery surface, AOSP drops as the integration window |
 | LiteRT-LM migration [STD-LITERT-LM] forces L1 to retarget if MediaPipe LLM Inference path was already chosen | Low (we hadn't started) | Low | L1.1 retargeted to LiteRT-LM as of v5.0; no code yet to migrate |
-| HeliBoard NLnet open-glide deadline 2026-06-01 [NLNET-GT] slips | Medium | Medium (delays N1.1, keeps SwiftFloris on the bounded statistical classifier) | Keep N1.3 path live and quality-improve the statistical classifier; the bounded-dictionary slice in v1.7.x is already a meaningful improvement over the FlorisBoard upstream baseline |
+| HeliBoard NLnet open-glide deadline 2026-06-01 [NLNET-GT] slips | High (base case as of v1.8.72) | Medium (delays N1.1, keeps SwiftFloris on the bounded statistical classifier) | Treat N1.3 / `swiftfloris-statistical` as production, not placeholder; improve it with N1.4 replay benchmarks, then integrate N1.1 only when a permissive open library + dataset land |
 
 ---
 
@@ -1177,7 +1186,8 @@ Every item, before being marked complete:
 - [CLEVERKEYS-V1-4] [CleverKeys v1.4.0 release page](https://github.com/tribixbite/CleverKeys/releases/tag/v1.4.0); [CleverKeys F-Droid page](https://f-droid.org/packages/tribixbite.cleverkeys/) — Apr 26 2026 release: tensor reuse in beam search (-90% allocations), user-configurable XNNPACK thread count (1-8), batched beam decoding toggle, ONNX inference native memory-leak fix. Multi-layout / multi-script model still on the Q2-Q3 2026 roadmap, not yet shipped.
 - [STD-EMOJI17-RELEASE] [Unicode 17.0 emoji list — Emojipedia](https://emojipedia.org/unicode-17.0); [Android 16 QPR3 adds 163 new Emoji 17 — FindArticles](https://www.findarticles.com/android-16-qpr3-adds-163-new-emoji-with-unicode-17-support/); [Support modern emoji — Android Developers](https://developer.android.com/develop/ui/views/text-and-emoji/emoji2); [emoji2 release notes](https://developer.android.com/jetpack/androidx/releases/emoji2) — Android 16 QPR3 March 2026 ships 163 Unicode 17 emoji + sequences (Ballet Dancers, multiple skin-tone variants for People with Bunny Ears + Wrestling). emoji2 1.7.0 NOT yet released; Emoji 16 still the latest documented Jetpack support. **Bundling `NotoColorEmoji.ttf` v17 directly may now be the right N10.1 path.**
 - [GH-FLORISBOARD-RELEASES] [FlorisBoard Releases](https://github.com/florisboard/florisboard/releases) — v0.6.0-alpha02 + v0.6.0-alpha01 shipping; v0.5.2 last 0.5; alpha cadence active.
-- [GH-HELIBOARD-RELEASES] [HeliBoard Releases](https://github.com/HeliBorg/HeliBoard/releases); [HeliBoard v3.9](https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9) — v3.9 published 2026-03-29; incognito icon responsiveness and backup-restore handling for gesture-data gathering; NLnet library drop still queued for Jun 1 2026 deadline.
+- [GH-HELIBOARD-RELEASES] [HeliBoard Releases](https://github.com/HeliBorg/HeliBoard/releases); [HeliBoard v3.9](https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9); [HeliBoard #2226](https://github.com/HeliBorg/HeliBoard/issues/2226) — re-checked 2026-05-17: latest release is still v3.9, issue #2226 remains open, and the public status is gesture-data gathering / passive-mode tuning rather than a released open library.
+- [H1-GESTURE-DATA] [HeliBoard gesture-data contribution wiki](https://github.com/HeliBorg/HeliBoard/wiki/Tutorial:-How-to-Contribute-Gesture-Data) — edited 2026-03-06; says the data collection period ends 2026-11-30 and contributors still need to load an appropriate gesture typing library before gathering data.
 - [GH-SWIFTF-ISSUE-1] [SwiftFloris issue #1 — Choosing an emoji crashes the board](https://github.com/SysAdminDoc/SwiftFloris/issues/1) — open local issue requiring Now-tier crash triage.
 
 ### New sources (v5.2, 2026-05-16)
@@ -1241,4 +1251,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.71 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B, local tag catch-up, and the Samsung / Grammarly README migration-window callouts. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose dependency batches are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.72 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B, local tag catch-up, the Samsung / Grammarly README migration-window callouts, and the HeliBoard / NLnet slip-base-case roadmap correction. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose dependency batches are implemented, whichever comes first.*

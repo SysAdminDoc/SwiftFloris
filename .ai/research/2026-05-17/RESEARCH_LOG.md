@@ -184,6 +184,14 @@ or one-competitor additions, not a new roadmap pillar.
 
 ## 4. Limits / known gaps in this pass
 
+- **v1.8.72 continuation re-check:** Before shipping the HeliBoard / NLnet
+  slip-base-case roadmap correction, the autonomous loop re-opened the NLnet
+  Gesture Typing page, HeliBoard `#2226`, HeliBoard releases, and the
+  gesture-data contribution wiki. A GitHub API check reported latest release
+  `v3.9` (`published_at=2026-03-29T10:21:58Z`) and issue `#2226` still open
+  (`updated_at=2026-05-11T18:48:16Z`). This confirmed the planning change:
+  `swiftfloris-statistical` is the production glide path; HeliBoard open-glide
+  is additive until a permissive library and dataset actually land.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could
