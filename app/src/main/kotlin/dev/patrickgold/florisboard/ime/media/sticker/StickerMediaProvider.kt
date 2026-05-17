@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.media.sticker
 
+import android.content.ClipDescription
 import android.content.ContentProvider
 import android.content.ContentResolver
 import android.content.ContentValues
@@ -46,13 +47,13 @@ class StickerMediaProvider : ContentProvider() {
     override fun onCreate(): Boolean = true
 
     override fun getType(uri: Uri): String? {
-        return stickerFor(uri)?.let { BundledStickerRepository.MimeType }
+        return stickerFor(uri)?.mimeType
     }
 
     override fun getStreamTypes(uri: Uri, mimeTypeFilter: String): Array<String>? {
         val sticker = stickerFor(uri) ?: return null
-        return if (mimeTypeFilter == "*/*" || mimeTypeFilter == BundledStickerRepository.MimeType || mimeTypeFilter == "image/*") {
-            arrayOf(BundledStickerRepository.MimeType)
+        return if (ClipDescription.compareMimeTypes(sticker.mimeType, mimeTypeFilter)) {
+            arrayOf(sticker.mimeType)
         } else {
             null
         }
@@ -66,14 +67,14 @@ class StickerMediaProvider : ContentProvider() {
         sortOrder: String?,
     ): Cursor? {
         val sticker = stickerFor(uri) ?: return null
-        val file = ensureStickerFile(sticker)
+        val size = sticker.sourceUri?.let { sizeOfSourceUri(it) } ?: ensureStickerFile(sticker).length()
         val columns = projection ?: arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
         return MatrixCursor(columns).apply {
             val row = newRow()
             for (column in columns) {
                 when (column) {
                     OpenableColumns.DISPLAY_NAME -> row.add(sticker.displayName)
-                    OpenableColumns.SIZE -> row.add(file.length())
+                    OpenableColumns.SIZE -> row.add(size)
                     else -> row.add(null)
                 }
             }
@@ -85,6 +86,10 @@ class StickerMediaProvider : ContentProvider() {
             throw FileNotFoundException("Stickers are read-only")
         }
         val sticker = stickerFor(uri) ?: throw FileNotFoundException("Unknown sticker URI: $uri")
+        sticker.sourceUri?.let { sourceUri ->
+            return context!!.contentResolver.openFileDescriptor(Uri.parse(sourceUri), "r")
+                ?: throw FileNotFoundException("Cannot open sticker URI: $sourceUri")
+        }
         val file = ensureStickerFile(sticker)
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
     }
@@ -104,6 +109,9 @@ class StickerMediaProvider : ContentProvider() {
     private fun stickerFor(uri: Uri): Sticker? {
         val segments = uri.pathSegments
         if (segments.size != 3 || segments[0] != "stickers") return null
+        if (segments[1] == UserStickerRepository.PackId) {
+            return UserStickerRepository.stickerForEncodedDocument(context!!, segments[2])
+        }
         return BundledStickerRepository.find(packId = segments[1], stickerId = segments[2])
     }
 
@@ -113,5 +121,13 @@ class StickerMediaProvider : ContentProvider() {
             StickerRenderer.renderPng(sticker, file)
         }
         return file
+    }
+
+    private fun sizeOfSourceUri(sourceUri: String): Long? {
+        return runCatching {
+            context!!.contentResolver.openFileDescriptor(Uri.parse(sourceUri), "r")?.use { pfd ->
+                pfd.statSize.takeIf { it >= 0L }
+            }
+        }.getOrNull()
     }
 }

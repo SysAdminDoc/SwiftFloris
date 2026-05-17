@@ -28,9 +28,12 @@ data class Sticker(
     @param:ColorInt val backgroundColor: Int,
     @param:ColorInt val accentColor: Int,
     @param:ColorInt val textColor: Int = 0xFFFFFFFF.toInt(),
+    val mimeType: String = "image/png",
+    val sourceUri: String? = null,
+    val displayName: String = "$label.png",
 ) {
     val fileName: String = "${packId}_$id.png"
-    val displayName: String = "$label.png"
+    val commitMimeTypes: List<String> = listOf(mimeType)
 }
 
 data class StickerPack(

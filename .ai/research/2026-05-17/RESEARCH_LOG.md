@@ -222,6 +222,13 @@ or one-competitor additions, not a new roadmap pillar.
   `HardwareKeyboardRuntimeMapper`, pure event-info tests for KLC/macOS/source
   fallbacks, and a `KeyboardManager.onHardwareKeyDown(...)` dispatch hook that
   checks mapped printable keys before built-in Space / Enter / Shift handling.
+- **v1.8.77 / Tier-3 #29 implementation:** Next-9.5 user-imported sticker
+  folders were implemented by adding `prefs.sticker.userFolderUri`,
+  `UserStickerRepository`, Settings → Emoji & stickers SAF picker / clear
+  action, imported-pack preview decoding in `StickerPaletteView`, and
+  `StickerMediaProvider` proxy reads for user sticker documents. Focused Gradle
+  verification was attempted and stopped at the known VM blocker (`JAVA_HOME` /
+  `java` missing).
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

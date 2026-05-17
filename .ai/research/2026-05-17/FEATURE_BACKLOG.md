@@ -61,8 +61,8 @@ graduate into recommended next-slice work live in
 
 | Idea | Source / competitor that ships it |
 |---|---|
-| **User-imported sticker folder** (`~/Pictures/Stickers/*.webp` → inline via `commitContent`) | No keyboard surveyed offers this. High value × low cost |
-| **Local sticker / emoji-pack import via SAF** | Builds on Next-9.4 emoji pin groups |
+| **User-imported sticker folder** (`~/Pictures/Stickers/*.webp` → inline via `commitContent`) | ✅ shipped v1.8.77 with Settings → Emoji & stickers SAF picker, `UserStickerRepository`, imported-pack previews, and provider proxy commits |
+| **Local sticker / emoji-pack import via SAF** | Partially shipped v1.8.77 for user image folders; explicit pack manifests / delete-from-folder remain follow-ups |
 | **`.kmp` Keyman package runtime** (extend Next-6.4 / L8 importer) | Keyman engine MIT; 1,000+ minority-language layouts |
 | **CleverKeys-architecture re-train, Apache-2.0** (once a permissive glide dataset lands) | CleverKeys is in F-Droid working; architecture is public on `tribixbite/CleverKeys-ML` |
 | **HeliBoard dictionary downloader UI** for user-supplied n-gram packs | HeliBoard's killer ecosystem feature; closest peer pattern |

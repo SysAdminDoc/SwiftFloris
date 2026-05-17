@@ -66,7 +66,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 
 | # | Item | Impact | Cost | Urg. | Score | Rationale |
 |---|---|---|---|---|---|---|
-| 29 | **User-imported sticker folder** | 4 | 2 | 1 | **4.5** | High value × low cost; no competitor offers it — but no immediate urgency |
+| 29 | ✅ **Shipped v1.8.77:** User-imported sticker folder | 4 | 2 | 1 | **4.5** | Settings → Emoji & stickers persists a SAF folder URI; `UserStickerRepository` enumerates local image files into an Imported pack; `StickerMediaProvider` proxies rich-content commits |
 | 30 | **Roborazzi baseline capture for all 13 bundled themes** | 3 | 2 | 1 | **3.5** | After bump-batch B |
 | 31 | **`ARCHITECTURE.md`** consolidating per-package docs | 3 | 2 | 1 | **3.5** | ROADMAP §11 outstanding |
 | 32 | **`CONTRIBUTING.md`** | 2 | 1 | 1 | **5.0** | Small; convention |
@@ -126,6 +126,9 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 - Rows #17-#23 and #25 were reconciled as already shipped by the concurrent
   v1.8.56-v1.8.67 implementation stream. Remaining true open Tier-2 rows:
   #24 lint baseline refresh (maintainer host with Java required).
+- Tier-3 #29 shipped in v1.8.77 as the read-only SAF user-sticker folder
+  foundation. Delete-from-folder / explicit sticker-pack manifests remain
+  future polish, not blockers for the imported-pack surface.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

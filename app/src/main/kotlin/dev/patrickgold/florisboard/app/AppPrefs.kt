@@ -397,6 +397,14 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    val sticker = Sticker()
+    inner class Sticker {
+        val userFolderUri = string(
+            key = "sticker__user_folder_uri",
+            default = "",
+        )
+    }
+
     val glide = Glide()
     inner class Glide {
         val enabled = boolean(

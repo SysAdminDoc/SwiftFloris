@@ -11,7 +11,7 @@
     <string name="one_handed__move_end_btn_content_description" comment="Content description for the one-handed move to right button">Move keyboard to the right.</string>
 
     <!-- Media strings -->
-    <string name="settings__media__title">Emojis</string>
+    <string name="settings__media__title">Emoji &amp; stickers</string>
     <string name="media__tab__emojis" comment="Tab description for emojis in the media UI">Emojis</string>
     <string name="media__tab__emoticons" comment="Tab description for emoticons in the media UI">Emoticons</string>
     <string name="media__tab__kaomoji" comment="Tab description for kaomoji in the media UI">Kaomoji</string>
@@ -59,6 +59,14 @@
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
     <string name="sticker__unsupported_message" comment="State shown when the active app does not accept image insertion from the keyboard">This app does not accept sticker images.</string>
     <string name="sticker__commit_failed" comment="Toast shown when sticker insertion fails">Sticker could not be inserted here.</string>
+    <string name="prefs__media__stickers__title" comment="Preference group title">Stickers</string>
+    <string name="prefs__media__stickers_folder" comment="Preference title">Imported sticker folder</string>
+    <string name="prefs__media__stickers_folder__summary_empty" comment="Preference summary">Choose a local folder of PNG, WebP, JPEG, or GIF files to show as a sticker pack.</string>
+    <string name="prefs__media__stickers_folder__summary_selected" comment="Preference summary">Using {folder}</string>
+    <string name="prefs__media__stickers_folder_clear" comment="Preference title">Remove imported sticker folder</string>
+    <string name="prefs__media__stickers_folder_clear__summary" comment="Preference summary">Keep bundled stickers and stop showing the selected folder.</string>
+    <string name="prefs__media__stickers_folder_selected" comment="Toast shown after choosing an imported sticker folder">Sticker folder selected.</string>
+    <string name="prefs__media__stickers_folder_cleared" comment="Toast shown after clearing the imported sticker folder">Sticker folder removed.</string>
 
     <!-- Quick action strings -->
     <string name="quick_action__arrow_up" comment="Please mind the limited available space for the quick action strings">Arrow up</string>

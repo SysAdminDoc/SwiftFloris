@@ -16,7 +16,13 @@
 
 package dev.patrickgold.florisboard.app.settings.media
 
+import android.content.Intent
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Image
+import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.EmojiSymbols
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Text
@@ -26,6 +32,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
@@ -34,6 +41,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistoryHelper
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
@@ -53,9 +61,27 @@ fun MediaScreen() = FlorisScreen {
     iconSpaceReserved = true
 
     val prefs by FlorisPreferenceStore
+    val context = LocalContext.current
+    val userStickerFolderUri by prefs.sticker.userFolderUri.collectAsState()
 
     var shouldDelete by remember { mutableStateOf<ShouldDelete?>(null) }
     val scope = rememberCoroutineScope()
+    val folderSelectedText = stringRes(R.string.prefs__media__stickers_folder_selected)
+    val folderClearedText = stringRes(R.string.prefs__media__stickers_folder_cleared)
+    val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        if (uri != null) {
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                )
+            }
+            scope.launch {
+                prefs.sticker.userFolderUri.set(uri.toString())
+            }
+            Toast.makeText(context, folderSelectedText, Toast.LENGTH_SHORT).show()
+        }
+    }
 
     content {
         PreferenceGroup(title = stringRes(R.string.prefs__media__emoji_defaults__title)) {
@@ -168,6 +194,36 @@ fun MediaScreen() = FlorisScreen {
                 max = 10,
                 stepIncrement = 1,
                 enabledIf = { prefs.emoji.suggestionEnabled.isTrue() },
+            )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.prefs__media__stickers__title)) {
+            Preference(
+                icon = Icons.Default.Image,
+                title = stringRes(R.string.prefs__media__stickers_folder),
+                summary = if (userStickerFolderUri.isBlank()) {
+                    stringRes(R.string.prefs__media__stickers_folder__summary_empty)
+                } else {
+                    stringRes(
+                        R.string.prefs__media__stickers_folder__summary_selected,
+                        "folder" to userStickerFolderUri.substringAfterLast(':').substringAfterLast('/'),
+                    )
+                },
+                onClick = {
+                    folderLauncher.launch(null)
+                },
+            )
+            Preference(
+                icon = Icons.Outlined.Delete,
+                title = stringRes(R.string.prefs__media__stickers_folder_clear),
+                summary = stringRes(R.string.prefs__media__stickers_folder_clear__summary),
+                enabledIf = { userStickerFolderUri.isNotBlank() },
+                onClick = {
+                    scope.launch {
+                        prefs.sticker.userFolderUri.set("")
+                    }
+                    Toast.makeText(context, folderClearedText, Toast.LENGTH_SHORT).show()
+                },
             )
         }
     }
