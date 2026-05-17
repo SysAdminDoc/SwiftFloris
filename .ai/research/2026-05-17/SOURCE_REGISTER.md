@@ -26,6 +26,7 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
+| [RELEASE_NOTES_v1.8.80.md](../../../RELEASE_NOTES_v1.8.80.md) | v1.8.80 SQLCipher provider migration plan |
 | [RELEASE_NOTES_v1.8.79.md](../../../RELEASE_NOTES_v1.8.79.md) | v1.8.79 honeycomb hex layout wire-up |
 | [RELEASE_NOTES_v1.8.78.md](../../../RELEASE_NOTES_v1.8.78.md) | v1.8.78 Keyman `.kmp` package import foundation |
 | [RELEASE_NOTES_v1.8.72.md](../../../RELEASE_NOTES_v1.8.72.md) | v1.8.72 HeliBoard / NLnet slip-base-case roadmap correction |
@@ -36,7 +37,7 @@ source, the citation is here.
 | [RELEASE_NOTES_v1.8.53.md](../../../RELEASE_NOTES_v1.8.53.md) | Phase A2 post-import confirmation + rollback |
 | [RELEASE_NOTES_v1.8.52.md](../../../RELEASE_NOTES_v1.8.52.md) | Phase A1 migration outreach + README badge |
 
-(81 per-release notes total in repo root — full list in
+(82 per-release notes total in repo root — full list in
 [STATE_OF_REPO.md](STATE_OF_REPO.md))
 
 ### 1.3 Build / config
@@ -59,6 +60,7 @@ source, the citation is here.
 |---|---|
 | [docs/SECURITY.md](../../../docs/SECURITY.md) | OSV-scanner + dep-review + dated security appendix |
 | [docs/THREAT_MODEL.md](../../../docs/THREAT_MODEL.md) | Threat actors, surfaces, mitigations |
+| [docs/SQLCIPHER_PROVIDER_MIGRATION.md](../../../docs/SQLCIPHER_PROVIDER_MIGRATION.md) | SQLCipher provider migration triggers, OpenSSL proof-of-concept path, 16 KB verification gates, rollback plan |
 | [docs/REPRODUCIBLE_BUILDS.md](../../../docs/REPRODUCIBLE_BUILDS.md) | Toolchain pin matrix, F-Droid verifier recipe |
 | [docs/MIGRATE_FROM_SWIFTKEY.md](../../../docs/MIGRATE_FROM_SWIFTKEY.md) | Three migration paths |
 | [docs/AI_PROMPTS_EXTERNAL_WORK.md](../../../docs/AI_PROMPTS_EXTERNAL_WORK.md) | External-work prompts |
@@ -93,7 +95,7 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 - `git log --oneline -30` — HEAD commit subjects
 - `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
-  backfilled local tags through `v1.8.79` (push still pending from maintainer host)
+  backfilled local tags through `v1.8.80` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
 - `git branch --show-current` — `master`; continuation commits leave the local
   branch ahead of `origin/master` because this VM cannot push to the remote
@@ -208,6 +210,10 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 ### 2.8 SQLCipher / EncryptedSharedPreferences
 
 - https://www.zetetic.net/blog/2026/05/12/sqlcipher-4.16.0-release/ — release notes
+- https://www.zetetic.net/blog/2026/03/17/sqlcipher-4.14.0-release/ — LibTomCrypt restored for SQLCipher Android Community Edition
+- https://github.com/sqlcipher/sqlcipher-android — default LibTomCrypt provider and OpenSSL source-build path
+- https://www.zetetic.net/blog/2025/06/26/sqlcipher-for-android-16kb-page-size-support/ — modern sqlcipher-android 16 KB support since 4.6.1
+- https://developer.android.com/guide/practices/page-sizes — Android 16 KB native-library verification and AGP / NDK guidance
 - https://github.com/sqlcipher/sqlcipher/issues/564 — LibTomCrypt deprecation
 - https://discuss.zetetic.net/t/new-cve-2025-29087reported-is-sqlcipher-effected/6892 — SQLite CVE-2025-29087 not exploitable in SQLCipher
 - https://github.com/ed-george/encrypted-shared-preferences — maintained fork

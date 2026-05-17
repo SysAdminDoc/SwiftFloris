@@ -42,7 +42,7 @@ Bump-batch B: Roborazzi 1.60.0 and Robolectric 4.16.1.
 | material-kolor | 4.1.1 | 4.1.1 | Current | Keep |
 | **mikepenz-aboutlibraries** | 14.2.0 | **14.2.0 stable** (`15.0.0-b01` beta exists) | Current | ✅ shipped v1.8.69 |
 | jetpref | 0.3.0 | 0.3.x | Current | Keep |
-| sqlcipher-android | 4.16.0 | 4.16.0 (released 2026-05-12) | Current | Keep — plan LibTomCrypt deprecation (§3) |
+| sqlcipher-android | 4.16.0 | 4.16.0 (released 2026-05-12) | Current | Keep — provider watch / OpenSSL proof-of-concept plan shipped in v1.8.80 (§3) |
 | **zxing-core** | 3.5.4 | **3.5.4** | Current | ✅ shipped v1.8.69 |
 | **roborazzi** | 1.60.0 | **1.60.0** | Current | ✅ shipped v1.8.71 |
 | **robolectric** | 4.16.1 | **4.16.1** | Current | ✅ shipped v1.8.71 |
@@ -102,19 +102,35 @@ References:
 - https://proandroiddev.com/goodbye-encryptedsharedpreferences-a-2026-migration-guide-4b819b4a537a
 - https://github.com/tink-crypto/tink-java
 
-## 3. SQLCipher 4.16.0 — LibTomCrypt deprecation
+## 3. SQLCipher 4.16.0 — provider migration watch
 
 `sqlcipher-android:4.16.0` (released 2026-05-12 by Zetetic) is current. The
-underlying SQLCipher core has announced LibTomCrypt (the default crypto
-provider on Android) will be removed in a future release; the project will
-migrate to OpenSSL/BoringSSL exclusively.
+earlier provider-risk finding needs nuance after the same-day implementation
+follow-up: SQLCipher issue `#564` did announce LibTomCrypt / NSS provider
+deprecation, but SQLCipher 4.14.0 restored LibTomCrypt for Community Edition
+Android builds after community feedback, and SQLCipher 4.16.0 still lists
+Android Community non-FIPS packages as LibTomCrypt-based.
 
-**Action:** plan a separate slice to evaluate the OpenSSL/BoringSSL build
-of `sqlcipher-android`, ensure 16 KB page-aligned `.so` (handled by AGP 9
-+ NDK 29 automatically), and document the migration. Not urgent — Zetetic
-has not announced the removal release.
+The `sqlcipher-android` README documents the supported source-build escape
+hatch: provide ABI-specific OpenSSL `libcrypto.a` files and build with
+`SQLCIPHER_CFLAGS` containing `-DSQLCIPHER_CRYPTO_OPENSSL` and
+`-DSQLITE_HAS_CODEC`. Zetetic also documents that the modern
+`sqlcipher-android` library has supported Android 16 KB page sizes since 4.6.1;
+SwiftFloris is already on AGP 9.2.1 and NDK 29, matching Android's default
+16 KB-compatible tooling guidance.
 
-Reference: https://github.com/sqlcipher/sqlcipher/issues/564
+**Status:** ✅ planning slice shipped in v1.8.80. The production dependency
+stays on the Maven Central Community AAR for now. The migration triggers,
+OpenSSL proof-of-concept steps, verification matrix, and rollback plan live in
+[docs/SQLCIPHER_PROVIDER_MIGRATION.md](../../../docs/SQLCIPHER_PROVIDER_MIGRATION.md).
+
+References:
+- https://github.com/sqlcipher/sqlcipher/issues/564
+- https://www.zetetic.net/blog/2026/03/17/sqlcipher-4.14.0-release/
+- https://www.zetetic.net/blog/2026/05/12/sqlcipher-4.16.0-release/
+- https://github.com/sqlcipher/sqlcipher-android
+- https://www.zetetic.net/blog/2025/06/26/sqlcipher-for-android-16kb-page-size-support/
+- https://developer.android.com/guide/practices/page-sizes
 
 ## 4. License compatibility verification
 

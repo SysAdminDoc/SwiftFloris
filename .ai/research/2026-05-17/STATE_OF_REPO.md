@@ -5,7 +5,7 @@
 **Branch:** `master`, ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.79. The notable dependency deltas are
+HEAD to v1.8.80. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
@@ -23,9 +23,10 @@ hardware-keyboard import stack, v1.8.76 adds the Android runtime mapper for
 imported hardware-keyboard layouts, v1.8.77 adds the user-imported sticker
 folder over the existing rich-content provider path, v1.8.78 adds the
 Keyman `.kmp` package intake/classifier foundation without executing compiled
-`.kmx` bytecode or JavaScript in `:app`, and v1.8.79 wires the bundled
+`.kmx` bytecode or JavaScript in `:app`, v1.8.79 wires the bundled
 honeycomb character layout into production `TextKeyboardLayout` with clipped
-hex key surfaces and hex-aware hit testing.
+hex key surfaces and hex-aware hit testing, and v1.8.80 documents the
+SQLCipher provider migration readiness plan without changing the runtime AAR.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -56,7 +57,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.79 / 1879 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.80 / 1880 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.2.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
@@ -95,7 +96,8 @@ shipped in v1.8.74; the macOS `.keylayout` parser shipped in v1.8.75; the
 hardware-keyboard runtime mapper shipped in v1.8.76; the user-imported sticker
 folder shipped in v1.8.77; Keyman `.kmp` package metadata intake and LDML-in-package
 extraction shipped in v1.8.78; the honeycomb hex layout production wire-up
-shipped in v1.8.79.
+shipped in v1.8.79; the SQLCipher provider migration readiness plan shipped
+in v1.8.80.
 
 A docs-only contributor-onboarding batch followed v1.8.77: root
 `ARCHITECTURE.md` now captures the module/runtime/package map and root
@@ -122,6 +124,12 @@ v1.8.79 then implemented the honeycomb hex layout production wire-up:
 hex tessellation, `TextKeyboardLayout` clips the real Snygg key surface to
 `HoneycombHexShape`, and the hit tester rejects bounding-box corners and
 inter-key gaps.
+
+v1.8.80 then implemented the SQLCipher provider migration planning slice:
+`docs/SQLCIPHER_PROVIDER_MIGRATION.md` records the current LibTomCrypt-based
+Android Community AAR state, the OpenSSL source-build escape hatch, migration
+triggers, 16 KB page-size gates, verification expectations, and rollback
+rules. `docs/SECURITY.md` now links that plan.
 
 ## 3. Module layout
 
@@ -249,8 +257,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 95 tags in repo after the v1.8.79 release tag; local release tags now run
-  through `v1.8.79`. Push remains a maintainer-host task because this VM
+- 96 tags in repo after the v1.8.80 release tag; local release tags now run
+  through `v1.8.80`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -327,8 +335,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.79).
-  The local tag stream was recovered through `v1.8.79`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.80).
+  The local tag stream was recovered through `v1.8.80`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

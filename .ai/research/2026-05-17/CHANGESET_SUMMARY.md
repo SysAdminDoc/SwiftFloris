@@ -983,3 +983,34 @@ scan, root JVM crash/replay tracked-file guard, and a focused Gradle test
 command were run. Gradle stopped at the known VM blocker: `JAVA_HOME` is not
 set and no `java` command is on PATH, so maintainer-host Gradle verification
 remains required before publishing.
+
+## 28. v1.8.80 continuation — SQLCipher provider migration plan
+
+Implemented Tier-3 #36 as a docs/security planning slice:
+
+- `docs/SQLCIPHER_PROVIDER_MIGRATION.md`
+  - New readiness plan for a possible future move from the stock SQLCipher
+    Android Community AAR's LibTomCrypt provider to an OpenSSL-backed build.
+  - Records the corrected upstream state, migration triggers, proof-of-concept
+    build path, 16 KB page-size gates, `PersonalDictionaryEncryptionTest`
+    expectations, and rollback rules.
+- `docs/SECURITY.md`
+  - Added a SQLCipher crypto-provider watch section and linked the migration
+    plan.
+- `.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md`
+  - Corrected the earlier "LibTomCrypt removal" premise: SQLCipher issue `#564`
+    announced deprecation, but Zetetic restored LibTomCrypt for Android
+    Community builds in 4.14.0 and 4.16.0 still lists Android Community
+    packages as LibTomCrypt-based.
+- `RELEASE_NOTES_v1.8.80.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and the
+  `.ai/research/2026-05-17/` register/backlog/prioritization/state files
+  - Release/context updates for v1.8.80.
+- `gradle.properties`
+  - `projectVersionCode=1880`, `projectVersionName=1.8.80`.
+
+**Verification note:** docs-only change. Local verification used `git diff
+--check`, the manifest banned-network-permission scan, root JVM crash/replay
+tracked-file guard, and checked Markdown links for the new SQLCipher plan.
+Gradle remains blocked by the missing Java toolchain and was not required for
+this planning slice.
