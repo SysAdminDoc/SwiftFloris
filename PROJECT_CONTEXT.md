@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.80)
+## 3. Stack at HEAD (v1.8.81)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -127,6 +127,15 @@ dependency stays on the stock `sqlcipher-android` Community AAR, but
 OpenSSL provider state, migration triggers, OpenSSL proof-of-concept steps,
 16 KB page-size gates, verification requirements, and rollback rules.
 
+v1.8.81 ships the Next-10.3a addon catalog foundation. `AddonRegistry`
+reconciles `AddonEnumerator` snapshots into process-live addon state, preserves
+first-seen signing-certificate pins, rejects package-name hijacks with changed
+certificates, and exposes deterministic addon lookups. `DictionaryPackCatalog`
+validates enrolled dictionary-pack descriptor JSON, rejects missing/malformed/
+future-schema descriptors, exposes per-language catalog entries, and produces
+`AddonProvenanceReport`s for the future Settings → Addons UI and dictionary
+asset-mounting slice.
+
 ## 4. Module layout
 
 ```
@@ -154,7 +163,7 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.80`
+  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.81`
   are tagged with their release commits. The tags still need to be
   pushed from the maintainer host because this VM cannot push to
   `SysAdminDoc/SwiftFloris`.

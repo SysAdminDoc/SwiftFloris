@@ -65,7 +65,7 @@ graduate into recommended next-slice work live in
 | **Local sticker / emoji-pack import via SAF** | Partially shipped v1.8.77 for user image folders; explicit pack manifests / delete-from-folder remain follow-ups |
 | **`.kmp` Keyman package runtime** (extend Next-6.4 / L8 importer) | ✅ partially shipped v1.8.78 for safe package metadata intake, LDML-in-package extraction, and package classification; compiled `.kmx` / `.js` runtime remains future addon work |
 | **CleverKeys-architecture re-train, Apache-2.0** (once a permissive glide dataset lands) | CleverKeys is in F-Droid working; architecture is public on `tribixbite/CleverKeys-ML` |
-| **HeliBoard dictionary downloader UI** for user-supplied n-gram packs | HeliBoard's killer ecosystem feature; closest peer pattern |
+| **HeliBoard dictionary downloader UI** for user-supplied n-gram packs | Partially shipped v1.8.81 for the Next-10.3a addon catalog foundation (`AddonRegistry` + `DictionaryPackCatalog`); Settings UI / install-hint list and asset mounting remain |
 | **LeanType-style Offline / Offline Lite onboarding split** without separate base-APK flavors | LeanType proves demand for offline AI keyboard SKUs; SwiftFloris should express the same choice through signed addon onboarding, not `INTERNET` in `:app` |
 | **Hardware-keyboard floating candidate panel** for transliteration engine | fcitx5-android pattern |
 | **Hardware-keyboard runtime mapper** (Next-6.4b: `InputManager` / `KeyEvent.getDeviceId(...)` mapping) | ✅ shipped v1.8.76 with `HardwareKeyboardRuntimeMapper` and `KeyboardManager` dispatch hook |

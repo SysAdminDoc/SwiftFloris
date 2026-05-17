@@ -250,6 +250,15 @@ or one-competitor additions, not a new roadmap pillar.
   OpenSSL is the documented source-build escape hatch, and
   `docs/SQLCIPHER_PROVIDER_MIGRATION.md` now records the migration triggers,
   proof-of-concept path, verification gates, and rollback rules.
+- **v1.8.81 / Next-10.3a implementation:** the open Tier-3 #38 dependency was
+  decomposed into the addon-catalog prerequisite before UI work. Existing
+  `AddonContract`, `AddonEnumerator`, `DictionaryPackDescriptor`, and
+  `AddonProvenanceReport` code/tests were inspected, then `AddonRegistry` and
+  `DictionaryPackCatalog` were added with pure Kotest coverage for
+  signing-certificate pin reconciliation, package-name hijack rejection,
+  descriptor rejection, provenance handoff, and language lookup. Focused Gradle
+  verification was attempted and stopped at the known VM blocker (`JAVA_HOME` /
+  `java` missing).
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local
