@@ -321,6 +321,46 @@ class DictionaryImporterTest : FunSpec({
         result shouldHaveSize 1
         result[0].word shouldBe "portable"
     }
+
+    // Hardening: a UTF-8 BOM in front of a JSON / XML / CSV payload would
+    // previously route to UNKNOWN because the BOM character survives
+    // `trimStart()`. Detection should strip the BOM before pattern-matching.
+    test("detectFormat strips a UTF-8 BOM before classifying") {
+        val bom = byteArrayOf(0xEF.toByte(), 0xBB.toByte(), 0xBF.toByte())
+        importer.detectFormat(bom + "<?xml version=\"1.0\"?><userdictionary/>".toByteArray()) shouldBe
+            DictionaryImportFormat.XML
+        importer.detectFormat(bom + "{ \"words\": [] }".toByteArray()) shouldBe
+            DictionaryImportFormat.JSON
+        importer.detectFormat(bom + "word,frequency\nomw,240".toByteArray()) shouldBe
+            DictionaryImportFormat.CSV
+    }
+
+    // Regression: the old header-detection heuristic dropped the first entry
+    // when a user's dictionary literally contained the word "word".
+    test("parseCsv preserves the word 'word' when no header row is present") {
+        val csv = "word,200,wd,en\nfollowup,150,,en"
+
+        val result = importer.parseCsv(csv)
+
+        result shouldHaveSize 2
+        result[0] shouldBe PersonalDictionaryEntry("word", 200, "wd", "en")
+        result[1] shouldBe PersonalDictionaryEntry("followup", 150, null, "en")
+    }
+
+    test("parseGboardXml decodes decimal and hex numeric entities") {
+        val xml = """
+            <userdictionary>
+                <entry word="caf&#233;" frequency="200"/>
+                <entry word="A&#x42;C" frequency="180"/>
+            </userdictionary>
+        """.trimIndent()
+
+        val result = importer.parseGboardXml(xml)
+
+        result shouldHaveSize 2
+        result[0].word shouldBe "café"
+        result[1].word shouldBe "ABC"
+    }
 })
 
 private fun makeZip(vararg entries: Pair<String, ByteArray>): ByteArray {

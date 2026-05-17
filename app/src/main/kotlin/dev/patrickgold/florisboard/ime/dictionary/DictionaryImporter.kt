@@ -85,7 +85,11 @@ class DictionaryImporter {
             // PK zip magic — Gboard zip OR FlorisBoard .flbackup zip.
             return DictionaryImportFormat.ZIP
         }
-        val asText = String(sniff, Charsets.UTF_8).trimStart()
+        // Some exporters (Notepad, Excel) emit a UTF-8 BOM ahead of the
+        // payload. `trimStart()` does not consume the BOM character, so
+        // strip it explicitly before pattern-matching so BOMed files
+        // route to the correct parser.
+        val asText = String(sniff, Charsets.UTF_8).removePrefix(UTF8_BOM).trimStart()
         if (asText.startsWith("<?xml") || asText.startsWith("<userdictionary")) {
             return DictionaryImportFormat.XML
         }
@@ -119,7 +123,9 @@ class DictionaryImporter {
     }
 
     internal fun parseZip(stream: InputStream): List<PersonalDictionaryEntry> {
-        var found = mutableListOf<PersonalDictionaryEntry>()
+        val found = mutableListOf<PersonalDictionaryEntry>()
+        val cumulativeBytes = LongHolder()
+        var sawCandidateEntry = false
         ZipInputStream(stream).use { zis ->
             var entryCount = 0
             while (true) {
@@ -136,10 +142,16 @@ class DictionaryImporter {
                 if (name.startsWith("__macosx/")) continue
                 when {
                     name.endsWith(".xml") -> {
-                        found += parseGboardXml(zis.readUtf8TextLimited("Zip entry ${entry.name}"))
+                        sawCandidateEntry = true
+                        found += parseGboardXml(
+                            zis.readUtf8TextLimited("Zip entry ${entry.name}", cumulativeBytes),
+                        )
                     }
                     name.endsWith(".csv") -> {
-                        found += parseCsv(zis.readUtf8TextLimited("Zip entry ${entry.name}"))
+                        sawCandidateEntry = true
+                        found += parseCsv(
+                            zis.readUtf8TextLimited("Zip entry ${entry.name}", cumulativeBytes),
+                        )
                     }
                     name.endsWith(".json") -> {
                         // Two cases:
@@ -150,7 +162,10 @@ class DictionaryImporter {
                         //      parser tolerates that shape by returning an
                         //      empty list (no `predictions` / `shortcuts` /
                         //      `words` keys present).
-                        found += parseSwiftKeyJson(zis.readUtf8TextLimited("Zip entry ${entry.name}"))
+                        sawCandidateEntry = true
+                        found += parseSwiftKeyJson(
+                            zis.readUtf8TextLimited("Zip entry ${entry.name}", cumulativeBytes),
+                        )
                     }
                     name.endsWith(".db") || name.endsWith(".sqlite") -> {
                         // FlorisBoard backup with raw SQLite snapshot: not
@@ -167,11 +182,27 @@ class DictionaryImporter {
             }
         }
         if (found.isEmpty()) {
+            // Distinguish "we saw an XML/CSV/JSON candidate but it carried no
+            // entries" (e.g. a FlorisBoard manifest sitting alongside a real
+            // payload that turned out to be empty) from "the archive had no
+            // candidate files at all" so the caller can surface the right
+            // recovery copy.
             throw DictionaryImportException(
-                "Zip archive contains no recognisable dictionary file (looking for *.xml, *.csv, or *.json).",
+                if (sawCandidateEntry) {
+                    "Zip archive contains a dictionary file but no entries were recognised."
+                } else {
+                    "Zip archive contains no recognisable dictionary file " +
+                        "(looking for *.xml, *.csv, or *.json)."
+                },
             )
         }
         return found
+    }
+
+    /** Mutable long holder used to track cumulative bytes read across the
+     *  per-entry stream reads inside a single [parseZip] pass. */
+    private class LongHolder {
+        var value: Long = 0L
     }
 
     internal fun parseGboardXml(xml: String): List<PersonalDictionaryEntry> {
@@ -201,15 +232,22 @@ class DictionaryImporter {
 
     internal fun parseCsv(csv: String): List<PersonalDictionaryEntry> {
         // Format: `word,frequency,shortcut,locale`. Empty shortcut / locale
-        // → null. First line may be a header (`word,frequency,...`); skip
-        // it if any cell isn't a plausible value.
+        // → null. The first line is a header only when its second column is
+        // literally `frequency` (case-insensitive); we previously treated
+        // any first row whose first column started with "word" as a header,
+        // which dropped the legitimate entry `word,5,…` when a user
+        // actually wanted to learn the dictionary word "word".
         val rows = csv.lineSequence()
-            .map { it.trim() }
+            .map { it.removePrefix(UTF8_BOM).trim() }
             .filter { it.isNotEmpty() }
             .toList()
         if (rows.isEmpty()) return emptyList()
         val result = mutableListOf<PersonalDictionaryEntry>()
-        val startIndex = if (rows[0].startsWith("word", ignoreCase = true)) 1 else 0
+        val firstCells = splitCsvLine(rows[0]).map { it.trim() }
+        val isHeader = firstCells.size >= 2 &&
+            firstCells[0].equals("word", ignoreCase = true) &&
+            firstCells[1].equals("frequency", ignoreCase = true)
+        val startIndex = if (isHeader) 1 else 0
         for (i in startIndex..rows.lastIndex) {
             val cells = splitCsvLine(rows[i]).map { it.trim() }
             if (cells.size < 2) continue
@@ -356,22 +394,35 @@ class DictionaryImporter {
         return cells
     }
 
-    private fun InputStream.readUtf8TextLimited(label: String): String {
+    private fun InputStream.readUtf8TextLimited(
+        label: String,
+        cumulative: LongHolder = LongHolder(),
+    ): String {
         val out = ByteArrayOutputStream()
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
-        var totalBytes = 0L
+        var entryBytes = 0L
         while (true) {
             val read = read(buffer)
             if (read < 0) break
-            totalBytes += read
-            if (totalBytes > MAX_IMPORT_FILE_BYTES) {
+            entryBytes += read
+            cumulative.value += read
+            if (entryBytes > MAX_IMPORT_FILE_BYTES) {
                 throw DictionaryImportException(
                     "$label exceeds the ${MAX_IMPORT_FILE_BYTES / (1024 * 1024)} MiB safety limit.",
                 )
             }
+            if (cumulative.value > MAX_IMPORT_FILE_BYTES) {
+                // Cumulative cap across the whole archive — without this a
+                // 256-entry zip of 16 MiB-each entries could push 4 GiB
+                // through the importer before the per-entry cap fired on
+                // any single file.
+                throw DictionaryImportException(
+                    "Dictionary archive exceeds the ${MAX_IMPORT_FILE_BYTES / (1024 * 1024)} MiB total safety limit.",
+                )
+            }
             out.write(buffer, 0, read)
         }
-        return out.toString(Charsets.UTF_8.name())
+        return out.toString(Charsets.UTF_8)
     }
 
     private fun checkEntryLimit(size: Int) {
@@ -403,7 +454,8 @@ class DictionaryImporter {
             i++
             val valueStart = i
             while (i < raw.length && raw[i] != quote) i++
-            if (i > raw.length) break
+            // Note: when no closing quote exists, `i == raw.length` here and
+            // we still grab the remaining substring as a best-effort value.
             val value = raw.substring(valueStart, i)
             if (i < raw.length) i++  // skip closing quote
             result[name] = unescapeXml(value)
@@ -413,7 +465,30 @@ class DictionaryImporter {
 
     private fun unescapeXml(raw: String): String {
         if ('&' !in raw) return raw
-        return raw
+        // Decimal / hex numeric character references (`&#65;`, `&#x41;`)
+        // are part of the XML 1.0 grammar and Android's UserDictionary
+        // exporter is known to emit them for non-ASCII code points. Decode
+        // them ahead of the named-entity substitutions so they pass
+        // through without being garbled.
+        val numeric = NUMERIC_ENTITY_REGEX.replace(raw) { match ->
+            val hexDigits = match.groupValues[1]
+            val decDigits = match.groupValues[2]
+            val codePoint = if (hexDigits.isNotEmpty()) {
+                hexDigits.toIntOrNull(16)
+            } else {
+                decDigits.toIntOrNull(10)
+            }
+            if (codePoint == null || codePoint !in 0..0x10FFFF) {
+                match.value
+            } else {
+                try {
+                    String(Character.toChars(codePoint))
+                } catch (_: IllegalArgumentException) {
+                    match.value
+                }
+            }
+        }
+        return numeric
             .replace("&amp;", "&")
             .replace("&lt;", "<")
             .replace("&gt;", ">")
@@ -431,6 +506,11 @@ class DictionaryImporter {
             pattern = "<entry\\s+([^/>]*)/>",
             options = setOf(RegexOption.IGNORE_CASE),
         )
+        private val NUMERIC_ENTITY_REGEX = Regex("&#(?:[xX]([0-9a-fA-F]+)|([0-9]+));")
+        // U+FEFF zero-width no-break space (UTF-8 BOM after decoding). Spelled
+        // out as an escape sequence so the source file itself does not need
+        // to carry a BOM-bearing literal.
+        private const val UTF8_BOM = "\uFEFF"
     }
 }
 

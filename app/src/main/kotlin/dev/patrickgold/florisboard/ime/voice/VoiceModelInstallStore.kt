@@ -61,8 +61,9 @@ class VoiceModelInstallStore(
         inputStream: InputStream,
     ): VoiceModelInstallState {
         rootDir.mkdirs()
+        sweepStaleStagingDirs()
         val dir = entry.modelDir()
-        val stagingDir = File(rootDir, ".${entry.id}.installing-${UUID.randomUUID()}").canonicalFile
+        val stagingDir = File(rootDir, "$STAGING_PREFIX${entry.id}-${UUID.randomUUID()}").canonicalFile
         stagingDir.deleteRecursively()
         check(stagingDir.mkdirs()) { "Unable to create temporary model install directory." }
         val targetName = sanitizeArtifactName(displayName, entry.artifactFileName)
@@ -86,6 +87,21 @@ class VoiceModelInstallStore(
         }
     }
 
+    /** Best-effort cleanup of staging/backup directories left behind by a
+     *  prior crashed install. Names are anchored to our own prefixes so we
+     *  never sweep a real model directory even if a future model id were
+     *  introduced that incidentally collides with the prefix. */
+    private fun sweepStaleStagingDirs() {
+        val children = rootDir.listFiles() ?: return
+        for (child in children) {
+            if (!child.isDirectory) continue
+            val name = child.name
+            if (name.startsWith(STAGING_PREFIX) || name.startsWith(BACKUP_PREFIX)) {
+                runCatching { child.deleteRecursively() }
+            }
+        }
+    }
+
     @Synchronized
     fun delete(entry: VoiceModelCatalogEntry): Boolean {
         return entry.modelDir().deleteRecursively()
@@ -102,7 +118,7 @@ class VoiceModelInstallStore(
     }
 
     private fun activateStagedInstall(targetDir: File, stagingDir: File) {
-        val backupDir = File(rootDir, ".${targetDir.name}.previous-${UUID.randomUUID()}").canonicalFile
+        val backupDir = File(rootDir, "$BACKUP_PREFIX${targetDir.name}-${UUID.randomUUID()}").canonicalFile
         backupDir.deleteRecursively()
         try {
             if (targetDir.exists() && !targetDir.renameTo(backupDir)) {
@@ -133,6 +149,13 @@ class VoiceModelInstallStore(
     companion object {
         private val SafeModelIdPattern = Regex("""[A-Za-z0-9][A-Za-z0-9._-]{0,127}""")
         private val UnsafeArtifactNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
+        // Dotted prefixes keep these out of `state()`'s `listFiles()` filter
+        // (it skips non-files) but more importantly they make the leftover
+        // dirs unambiguously ours so the sweeper never touches a real
+        // model directory. `SafeModelIdPattern` requires the first char
+        // to be alphanumeric so genuine model ids cannot collide.
+        private const val STAGING_PREFIX = ".swiftfloris-staging-"
+        private const val BACKUP_PREFIX = ".swiftfloris-backup-"
 
         internal fun sanitizeArtifactName(displayName: String?, fallbackName: String): String {
             val sanitized = displayName

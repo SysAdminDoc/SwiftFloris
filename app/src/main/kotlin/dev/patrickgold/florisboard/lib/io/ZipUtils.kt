@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.lib.io
 
 import android.content.Context
 import android.net.Uri
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import org.florisboard.lib.android.copyRecursively
 import org.florisboard.lib.android.write
 import org.florisboard.lib.kotlin.io.FsDir
@@ -146,15 +147,27 @@ object ZipUtils {
             while (flexEntries.hasMoreElements()) {
                 val flexEntry = flexEntries.nextElement()
                 if (flexEntry.name.length > 255) {
+                    flogWarning {
+                        "ZipUtils.unzip skipping entry: name longer than 255 chars (src=$srcFile, name=${flexEntry.name})"
+                    }
                     continue
                 }
                 val flexEntryFile = FsFile(dstDir, flexEntry.name)
                 val canonicalDestinationDirPath = dstDir.canonicalPath
                 val canonicalDestinationFilePath = flexEntryFile.canonicalPath
                 if (canonicalDestinationFilePath.length > 1023) {
+                    flogWarning {
+                        "ZipUtils.unzip skipping entry: destination path > 1023 chars (src=$srcFile, name=${flexEntry.name})"
+                    }
                     continue
                 }
                 if (!canonicalDestinationFilePath.startsWith(canonicalDestinationDirPath + FsFile.separator)) {
+                    // Zip-slip guard: silently dropping makes import bugs
+                    // hard to diagnose. Log so audit/CI can flag malicious
+                    // archives.
+                    flogWarning {
+                        "ZipUtils.unzip skipping entry: would escape destination root (src=$srcFile, name=${flexEntry.name})"
+                    }
                     continue
                 }
                 if (flexEntry.isDirectory) {
@@ -168,6 +181,10 @@ object ZipUtils {
                     )
                     if (copiedBytes > 0L) {
                         totalUnzippedBytes += copiedBytes
+                    } else if (flexEntry.size > 0L) {
+                        flogWarning {
+                            "ZipUtils.unzip skipped oversized entry (src=$srcFile, name=${flexEntry.name}, size=${flexEntry.size})"
+                        }
                     }
                 }
             }
@@ -185,22 +202,30 @@ object ZipUtils {
         }
         dstFile.parentFile?.mkdirs()
         var copiedBytes = 0L
+        var exceededBound = false
         val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
         this.getInputStream(srcEntry).use { inStream ->
             dstFile.outputStream().use { outStream ->
                 while (true) {
                     val readBytes = inStream.read(buffer)
-                    if (readBytes < 0) {
-                        return copiedBytes
-                    }
+                    if (readBytes < 0) break
                     copiedBytes += readBytes
                     if (copiedBytes > maxEntryBytes || copiedBytes > maxRemainingArchiveBytes) {
-                        dstFile.delete()
-                        return 0L
+                        // Stop writing — must break out (rather than delete
+                        // mid-`use`) so the output stream is closed before
+                        // we try to delete the file. Some filesystems
+                        // reject `delete()` on a still-open handle.
+                        exceededBound = true
+                        break
                     }
                     outStream.write(buffer, 0, readBytes)
                 }
             }
         }
+        if (exceededBound) {
+            dstFile.delete()
+            return 0L
+        }
+        return copiedBytes
     }
 }

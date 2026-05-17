@@ -375,21 +375,22 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
                 null,
                 null
             ) ?: return listOf()
-            if (cursor.count <= 0) {
-                return listOf()
-            }
-            val localeIndex = cursor.getColumnIndex(UserDictionary.Words.LOCALE)
-            val retList = mutableSetOf<FlorisLocale?>()
-            while (cursor.moveToNext()) {
-                val localeStr = cursor.getString(localeIndex)
-                if (localeStr == null) {
-                    retList.add(null)
-                } else {
-                    retList.add(FlorisLocale.fromTag(localeStr))
+            cursor.use { c ->
+                if (c.count <= 0) {
+                    return listOf()
                 }
+                val localeIndex = c.getColumnIndex(UserDictionary.Words.LOCALE)
+                val retList = mutableSetOf<FlorisLocale?>()
+                while (c.moveToNext()) {
+                    val localeStr = c.getString(localeIndex)
+                    if (localeStr == null) {
+                        retList.add(null)
+                    } else {
+                        retList.add(FlorisLocale.fromTag(localeStr))
+                    }
+                }
+                return retList.toList()
             }
-            cursor.close()
-            return retList.toList()
         }
 
         private fun queryResolver(selection: String?, selectionArgs: Array<out String>?, sortOrder: String?): List<UserDictionaryEntry> {
@@ -401,7 +402,12 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
                 selectionArgs,
                 sortOrder
             ) ?: return listOf()
-            return parseEntries(cursor).also { cursor.close() }
+            // `cursor.use {}` closes the cursor even if `parseEntries` throws.
+            // The previous `.also { cursor.close() }` chain leaked the cursor
+            // on any RuntimeException from parseEntries (Robolectric / OEM
+            // content-provider implementations sometimes throw on
+            // `getString` for malformed rows).
+            return cursor.use { parseEntries(it) }
         }
 
         private fun parseEntries(cursor: Cursor): List<UserDictionaryEntry> {

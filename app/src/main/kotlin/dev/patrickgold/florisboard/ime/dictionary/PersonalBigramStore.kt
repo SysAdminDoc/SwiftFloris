@@ -217,7 +217,11 @@ class PersonalBigramStore private constructor(private val context: Context) {
     suspend fun totalEntryCount(): Int {
         val localeTags = buildSet {
             context.filesDir.listFiles { _, name ->
-                name.startsWith("personal_bigrams_") && name.endsWith(".tsv")
+                // Strict `.tsv` suffix so we don't pick up a leftover
+                // `personal_bigrams_<tag>.tsv.tmp` from a crashed flush and
+                // then later try to ensureLoaded("<tag>.tsv") with a
+                // mismatched tag.
+                name.startsWith("personal_bigrams_") && name.endsWith(".tsv") && !name.endsWith(".tsv.tmp")
             }?.forEach { file ->
                 add(file.name.removePrefix("personal_bigrams_").removeSuffix(".tsv"))
             }
@@ -359,6 +363,8 @@ class PersonalBigramStore private constructor(private val context: Context) {
             synchronized(lastSeenByLocale) { lastSeenByLocale.clear() }
             pendingCommits = 0
             runCatching {
+                // Match the loose prefix so leftover `.tmp` flushes from a
+                // prior crashed save are cleaned up by reset too.
                 context.filesDir.listFiles { _, name -> name.startsWith("personal_bigrams_") }
                     ?.forEach { it.delete() }
             }

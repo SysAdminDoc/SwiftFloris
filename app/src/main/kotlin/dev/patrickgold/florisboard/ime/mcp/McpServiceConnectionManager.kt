@@ -21,7 +21,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.os.IBinder
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * ROADMAP §10.5 L7.4b — per-daemon `bindService` lifecycle owner.
@@ -55,6 +57,16 @@ class McpServiceConnectionManager(
     private val appContext: Context,
     private val table: BindingTable = BindingTable(),
 ) {
+    /**
+     * Per-daemon count of `onBindingDied` rebind attempts. Reset on a
+     * successful [onServiceConnected]. Once a daemon trips
+     * [MAX_REBIND_ATTEMPTS] consecutive deaths without ever connecting we
+     * stop trying — the daemon's manifest may be misconfigured, the
+     * package may be permission-blocked, or the user may have uninstalled
+     * the providing app mid-session. Without this cap a continuously
+     * crashing daemon would burn battery and log noise forever.
+     */
+    private val rebindAttempts = ConcurrentHashMap<DaemonKey, AtomicInteger>()
 
     /**
      * Returns the current live binder for [daemonKey], or null when no
@@ -86,6 +98,7 @@ class McpServiceConnectionManager(
     /** Unbind from the daemon. Safe to call when not bound. */
     fun unbind(daemonKey: DaemonKey) {
         val connection = table.removeBinding(daemonKey) ?: return
+        rebindAttempts.remove(daemonKey)
         runCatching { appContext.unbindService(connection) }
     }
 
@@ -107,6 +120,10 @@ class McpServiceConnectionManager(
     ) : ServiceConnection {
 
         override fun onServiceConnected(name: ComponentName, binder: IBinder) {
+            // Successful connect resets the death counter so a daemon that
+            // is flaky for a single user-session window doesn't get
+            // permanently muted.
+            rebindAttempts.remove(daemonKey)
             table.onConnected(daemonKey, binder)
         }
 
@@ -116,9 +133,28 @@ class McpServiceConnectionManager(
 
         override fun onBindingDied(name: ComponentName) {
             table.onDisconnected(daemonKey)
-            // Android contract: rebind after onBindingDied.
+            // Snapshot the death counter BEFORE unbind clears it; unbind()
+            // removes the rebindAttempts entry as part of its normal
+            // "binding is gone" cleanup, which would otherwise reset our
+            // accounting and let a flapping daemon loop forever.
+            val attempt = rebindAttempts.getOrPut(daemonKey) { AtomicInteger(0) }
+                .incrementAndGet()
             unbind(daemonKey)
-            bind(daemonKey)
+            if (attempt > MAX_REBIND_ATTEMPTS) {
+                flogWarning {
+                    "MCP daemon ${daemonKey.packageName} binding died $attempt times " +
+                        "consecutively; giving up until next manual bind."
+                }
+                return
+            }
+            // Restore the counter that unbind() just dropped, then attempt
+            // the rebind. Wrap in runCatching so a SecurityException
+            // (signature checks tightened, daemon package uninstalled) does
+            // not escape into the system's binder dispatch.
+            rebindAttempts[daemonKey] = AtomicInteger(attempt)
+            runCatching { bind(daemonKey) }.onFailure { e ->
+                flogWarning { "MCP daemon ${daemonKey.packageName} rebind threw: $e" }
+            }
         }
 
         override fun onNullBinding(name: ComponentName) {
@@ -165,5 +201,13 @@ class McpServiceConnectionManager(
             val connection: ServiceConnection,
             val binder: IBinder?,
         )
+    }
+
+    companion object {
+        /** Bounded retry budget for `onBindingDied`. Three attempts
+         *  matches Android's own pattern guidance for "the binding cannot
+         *  be re-established" — beyond that we stop trying so a
+         *  misbehaving daemon does not pin the IME process awake. */
+        const val MAX_REBIND_ATTEMPTS: Int = 3
     }
 }

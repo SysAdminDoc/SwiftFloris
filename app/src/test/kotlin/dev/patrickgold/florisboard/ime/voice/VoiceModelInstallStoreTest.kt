@@ -104,6 +104,31 @@ class VoiceModelInstallStoreTest : FunSpec({
             root.deleteRecursively()
         }
     }
+
+    // Hardening: a JVM crash between staging-write and rename can leave
+    // `.swiftfloris-staging-…` / `.swiftfloris-backup-…` directories on
+    // disk. The next install must sweep them; otherwise they accumulate
+    // forever.
+    test("install sweeps stale staging and backup directories") {
+        val root = Files.createTempDirectory("voice-models").toFile()
+        val store = VoiceModelInstallStore(root)
+        val model = VoiceModelCatalog.byId("whisper-en-tiny-en")!!
+        val stale1 = java.io.File(root, ".swiftfloris-staging-whisper-en-tiny-en-old1").apply { mkdirs() }
+        val stale2 = java.io.File(root, ".swiftfloris-backup-whisper-en-tiny-en-old2").apply { mkdirs() }
+        try {
+            store.install(
+                entry = model,
+                displayName = model.artifactFileName,
+                inputStream = ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)),
+            )
+
+            stale1.exists() shouldBe false
+            stale2.exists() shouldBe false
+            root.resolve(model.id).resolve(model.artifactFileName).exists() shouldBe true
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 })
 
 private class FailingInputStream(private val failAfterBytes: Int) : InputStream() {

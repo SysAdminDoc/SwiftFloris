@@ -59,7 +59,13 @@ class AndroidMcpClient(
         parameterJson: String,
         timeoutMillis: Long,
     ): McpToolCallResponse {
-        if (parameterJson.length.toLong() > McpBridgeContract.MAX_PAYLOAD_BYTES) {
+        // Char length is a cheap upper bound — when it's already over the
+        // payload cap, the UTF-8 byte length cannot be smaller, so we can
+        // short-circuit without re-encoding. Otherwise re-check the encoded
+        // length because a 4-byte-per-char string (`length` cheap-bound)
+        // would otherwise slip through the bytes cap.
+        val parameterBytes = parameterJson.toByteArray(Charsets.UTF_8).size.toLong()
+        if (parameterBytes > McpBridgeContract.MAX_PAYLOAD_BYTES) {
             return McpToolCallResponse(
                 correlationId = nextCorrelationId(),
                 toolName = toolName,
@@ -120,16 +126,41 @@ class AndroidMcpClient(
                 errorCode = McpErrorCode.TOOL_INTERNAL_ERROR,
             )
         }
-        return try {
+        // Defend against a misbehaving / malicious daemon shipping an
+        // oversized response that would otherwise force the IME to
+        // allocate megabytes of UTF-16 just to throw it away on the decode
+        // line. The contract's cap applies symmetrically to both sides.
+        if (responseJson.length.toLong() > McpBridgeContract.MAX_PAYLOAD_BYTES) {
+            return McpToolCallResponse(
+                correlationId = correlationId,
+                toolName = toolName,
+                errorMessage = "daemon response exceeds MAX_PAYLOAD_BYTES",
+                errorCode = McpErrorCode.PAYLOAD_TOO_LARGE,
+            )
+        }
+        val decoded = try {
             McpEnvelopeCodec.decodeResponse(responseJson)
         } catch (e: Throwable) {
-            McpToolCallResponse(
+            return McpToolCallResponse(
                 correlationId = correlationId,
                 toolName = toolName,
                 errorMessage = "failed to decode response: ${e.message}",
                 errorCode = McpErrorCode.TOOL_INTERNAL_ERROR,
             )
         }
+        // Verify the daemon echoed the correlation id we issued. A
+        // mismatched id means the daemon either reused a stale response
+        // for a different call or is actively trying to confuse the IME;
+        // either way the response cannot be trusted.
+        if (decoded.correlationId != correlationId) {
+            return McpToolCallResponse(
+                correlationId = correlationId,
+                toolName = toolName,
+                errorMessage = "daemon response correlationId mismatch",
+                errorCode = McpErrorCode.TOOL_INTERNAL_ERROR,
+            )
+        }
+        return decoded
     }
 
     override fun nextCorrelationId(): String = "mcp-android-${counter.getAndIncrement()}"
