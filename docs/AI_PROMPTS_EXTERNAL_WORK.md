@@ -373,13 +373,14 @@ in the smartbar candidate row; falls back gracefully when no addon.
 ### C1 — Next-3.2 full SUBTLEX overlay
 
 ```
-SwiftFloris at `~/repos/SwiftFloris` ships ~1,000 English Zipf
-frequencies at `app/src/main/assets/freq/en.tsv` as a seed table.
-Build the full SUBTLEX-extracted overlays for the top 6 languages.
+SwiftFloris at `~/repos/SwiftFloris` ships ~1,000 Zipf frequencies each
+at `app/src/main/assets/freq/{en,cs,de,es,fr,it,pt}.tsv` as seed tables.
+Build the full SUBTLEX-extracted overlays for the top release languages.
 
 Your task:
 1. Clone https://github.com/rspeer/wordfreq locally.
-2. For each of EN / DE / ES / FR / PT / IT, extract the SUBTLEX Zipf
+2. For each of EN / DE / ES / FR / PT / IT (and CS if a compatible
+   source table is available), extract the SUBTLEX Zipf
    table (rspeer/wordfreq calls these `subtlex_<lang>.large`) to a
    TSV file matching the `word<TAB>zipf` format the existing
    `ZipfFrequencyTable.parse` consumes.
@@ -387,15 +388,16 @@ Your task:
    APK. Move them to a new dictionary-pack addon at
    `~/repos/SwiftFloris-addons/dictionary-pack-zipf/` following the
    spec at `docs/addons/dictionary-pack-spec.md`.
-4. The addon's `DictionaryPackDescriptor` lists 6 language entries.
+4. The addon's `DictionaryPackDescriptor` lists one language entry per
+   full table.
 5. Verify by running `:app:testDebugUnitTest --tests
    "*LatinDictionaryStore*"` against a synthetic asset reader that
    returns the new tables: `frequencyFor("okay")` should be > 0
    (Zipf-only fallback) and `frequencyFor("the")` should blend to
    ~ 0.6*scowl + 0.4*1.0 = > 0.9.
 
-Acceptance: tests pass; addon APK size ~ 8 MB across all 6 tables
-(plain text TSV gzip-compresses well).
+Acceptance: tests pass; addon APK size stays small enough for optional
+dictionary-pack distribution (plain text TSV gzip-compresses well).
 ```
 
 ---

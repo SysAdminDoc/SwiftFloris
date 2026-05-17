@@ -89,10 +89,50 @@ class ColdStartNextWordPriorsTest : FunSpec({
         ) shouldBe 0.44
     }
 
-    test("does not inject English priors for non-English languages") {
+    test("suggests localized sentence starts for bundled Latin languages") {
         ColdStartNextWordPriors.suggest(
             textBeforeCursor = "",
-            languageCode = "de",
+            languageCode = "de-DE",
+            maxCandidateCount = 4,
+        ).map { it.word } shouldBe listOf("ich", "das", "die", "der")
+
+        ColdStartNextWordPriors.suggest(
+            textBeforeCursor = "",
+            languageCode = "es",
+            maxCandidateCount = 4,
+        ).map { it.word } shouldBe listOf("yo", "el", "la", "qué")
+
+        ColdStartNextWordPriors.suggest(
+            textBeforeCursor = "",
+            languageCode = "cs",
+            maxCandidateCount = 4,
+        ).map { it.word } shouldBe listOf("já", "to", "co", "jak")
+    }
+
+    test("uses localized phrase continuations before generic dictionary bootstrap") {
+        ColdStartNextWordPriors.suggest(
+            textBeforeCursor = "Muchas gracias ",
+            languageCode = "es-MX",
+            maxCandidateCount = 3,
+        ).map { it.word } shouldBe listOf("por", "de", "otra")
+
+        ColdStartNextWordPriors.score(
+            textBeforeCursor = "Merci beaucoup ",
+            languageCode = "fr",
+            candidateWord = "pour",
+        ) shouldBe 0.44
+
+        ColdStartNextWordPriors.score(
+            textBeforeCursor = "Bom dia ",
+            languageCode = "pt-BR",
+            candidateWord = "como",
+        ) shouldBe 0.44
+    }
+
+    test("does not inject priors for unsupported languages") {
+        ColdStartNextWordPriors.suggest(
+            textBeforeCursor = "",
+            languageCode = "nl",
             maxCandidateCount = 4,
         ) shouldBe emptyList()
     }

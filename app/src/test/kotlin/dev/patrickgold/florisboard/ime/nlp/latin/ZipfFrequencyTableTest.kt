@@ -20,6 +20,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.doubles.plusOrMinus
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.shouldBe
+import java.io.File
 
 class ZipfFrequencyTableTest : FunSpec({
     test("empty table is a passthrough for SCOWL frequency") {
@@ -90,4 +91,30 @@ class ZipfFrequencyTableTest : FunSpec({
         ZipfFrequencyTable.parse("en", "") shouldBe ZipfFrequencyTable.Empty
         ZipfFrequencyTable.parse("en", "   \n  \n") shouldBe ZipfFrequencyTable.Empty
     }
+
+    test("bundled multilingual Zipf seed tables parse and expose common words") {
+        val expectedWords = mapOf(
+            "cs" to "že",
+            "de" to "und",
+            "es" to "que",
+            "fr" to "est",
+            "it" to "che",
+            "pt" to "que",
+        )
+
+        expectedWords.forEach { (language, expectedWord) ->
+            val rawTsv = bundledFreqAsset("$language.tsv")?.readText()
+            val table = ZipfFrequencyTable.parse(language, rawTsv)
+
+            table.size shouldBe 1000
+            (table.zipfFor(expectedWord) != null) shouldBe true
+        }
+    }
 })
+
+private fun bundledFreqAsset(fileName: String): File? {
+    return listOf(
+        File("src/main/assets/freq/$fileName"),
+        File("app/src/main/assets/freq/$fileName"),
+    ).firstOrNull { it.isFile }
+}
