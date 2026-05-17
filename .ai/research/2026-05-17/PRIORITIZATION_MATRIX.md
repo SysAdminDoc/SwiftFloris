@@ -49,15 +49,15 @@ here so the next reviewer can see why they're being re-emphasized; the
 | # | Item | Impact | Cost | Urg. | Score | Rationale |
 |---|---|---|---|---|---|---|
 | 16 | ✅ **Shipped v1.8.74:** AGP 9.0.0 → 9.2.1 + Compose BOM 2026.03.01 → 2026.05.00 | 3 | 2 | 2 | **4.0** | Google Maven / Android Studio patch notes checked; R8 keepattributes audit required no rule changes |
-| 17 | **Dedicated arrow-keys row preset** (SwiftKey-parity P24) | 3 | 2 | 2 | **4.0** | Small UX gain; `BottomRowPreset.Programmer` already provides scaffolding |
-| 18 | **Calendar quick-insert (P9)** — `QuickAction.InsertCalendarEvent` + `CalendarContract.Instances` | 4 | 3 | 1 | **3.0** | SwiftKey-parity; permission-gated |
-| 19 | **Tasks quick-insert (P10)** — `QuickAction.InsertTask` + `Intent.ACTION_INSERT` | 3 | 2 | 1 | **3.5** | SwiftKey-parity; no permission |
-| 20 | **Animated theme (P14)** — first Snygg animated-bg primitive ("Aurora Animated") | 3 | 2 | 1 | **3.5** | Polish; opens the door for community-contributed animated themes |
-| 21 | **AAA high-contrast theme (P15)** — new Snygg sheet | 3 | 1 | 2 | **8.0** | Low cost; accessibility gain |
-| 22 | **Phase B4 (Next-3 hardening)** — extend `TypingContextExtractor.previousWordListBeforeCurrentWord` 2→4 word context | 4 | 2 | 2 | **5.0** | Next slice in active Phase B sprint |
-| 23 | **Phase C1 (P3 renderer)** — split-keyboard gutter wire-up into `TextKeyboardLayout.layout(...)` | 4 | 3 | 1 | **3.0** | Active sprint follow-on; tablet-only audience |
+| 17 | ✅ **Shipped v1.8.57:** Dedicated arrow-keys row preset (SwiftKey-parity P24) | 3 | 2 | 2 | **4.0** | `BottomRowPreset.Navigation` surfaces arrow keys from Settings → Keyboard |
+| 18 | ✅ **Shipped v1.8.64:** Calendar quick-insert (P9) | 4 | 3 | 1 | **3.0** | `QuickAction.InsertCalendarEvent`, `CalendarContract.Instances`, explicit `READ_CALENDAR` grant, and IME-local picker |
+| 19 | ✅ **Shipped v1.8.58:** Tasks quick-insert (P10) | 3 | 2 | 1 | **3.5** | `QuickAction.InsertTask` sends through the Android chooser and respects `SensitiveFieldGuard` |
+| 20 | ✅ **Shipped v1.8.63:** Animated theme (P14) | 3 | 2 | 1 | **3.5** | `aurora_animated` uses the GenericShape background renderer and reduced-motion gate |
+| 21 | ✅ **Shipped v1.8.63:** AAA high-contrast theme (P15) | 3 | 1 | 2 | **8.0** | `swiftkey_high_contrast` is registered and pinned by theme contrast tests |
+| 22 | ✅ **Shipped v1.8.56:** Phase B4 same-sentence language-switch hardening | 4 | 2 | 2 | **5.0** | `TrailingContextLanguageBlend` replaced MAX-over-window scoring with geometric decay |
+| 23 | ✅ **Shipped v1.8.62:** Phase C1 split-keyboard renderer | 4 | 3 | 1 | **3.0** | `TextKeyboardSplitLayout` + gutter-aware layout/touch routing shipped |
 | 24 | **Lint baseline refresh** | 2 | 1 | 1 | **5.0** | IMPROVEMENT_PLAN counter from 2026-05-05 is stale |
-| 25 | **Reproducible-build verification CI job** (build twice, diff APKs) | 3 | 2 | 1 | **3.5** | F-Droid verified-tier prep |
+| 25 | ✅ **Shipped v1.8.67:** Reproducible-build verification CI job | 3 | 2 | 1 | **3.5** | `.github/workflows/reproducible-build.yml` builds twice and diffs release APKs |
 | 26 | **Add SUPERSEDED banners to 4 superseded `SWIFTKEY_*` docs** | 2 | 1 | 1 | **5.0** | Per MEMORY_CONSOLIDATION §5 |
 | 27 | **macOS `.keylayout` (XML) parser** (Next-6.4a follow-up) | 3 | 2 | 1 | **3.5** | Closes the cross-format hardware-keyboard pipeline |
 | 28 | **Hardware-keyboard runtime mapper (Next-6.4b)** — `InputManager` + `KeyEvent.getDeviceId(...)` | 4 | 3 | 1 | **3.0** | Adjacent to #27; makes the parsers actually useful at runtime |
@@ -120,9 +120,13 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 ### v1.8.61+ (post-migration window — Phase C / D)
 
 - **Bump-batch C** (#16) shipped v1.8.74; Android 17 compile/target SDK remains separate from the AGP / BOM bump.
-- **Phase C1 (split renderer)** (#23) — opens Phase C.
-- **Calendar / Tasks quick-insert** (#18, #19).
-- **AAA high-contrast theme + Animated theme** (#21, #20) — wraps Phase C.
+- **Phase C1 (split renderer)** (#23) shipped v1.8.62.
+- **Calendar / Tasks quick-insert** (#18, #19) shipped v1.8.64 and v1.8.58.
+- **AAA high-contrast theme + Animated theme** (#21, #20) shipped v1.8.63.
+- Rows #17-#23 and #25 were reconciled as already shipped by the concurrent
+  v1.8.56-v1.8.67 implementation stream. Remaining true open Tier-2 rows:
+  #24 lint baseline refresh, #26 superseded SwiftKey doc banners,
+  #27 macOS `.keylayout` parser, and #28 hardware-keyboard runtime mapper.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

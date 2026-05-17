@@ -681,3 +681,34 @@ Google Maven metadata checks, and OSV querybatch were run. The focused Gradle
 suite was attempted and stopped at the known VM blocker: `JAVA_HOME` is not set
 and no `java` command is on PATH, so maintainer-host Gradle verification
 remains required before publishing.
+
+---
+
+## 19. Tier-2 matrix reconciliation
+
+After v1.8.74, the autonomous loop reconciled stale Tier-2 matrix rows that
+were already satisfied by earlier releases:
+
+- #17 dedicated arrow-keys row preset → shipped v1.8.57 as
+  `BottomRowPreset.Navigation`
+- #18 calendar quick-insert → shipped v1.8.64
+- #19 tasks quick-insert → shipped v1.8.58
+- #20 animated theme → shipped v1.8.63
+- #21 AAA high-contrast theme → shipped v1.8.63
+- #22 Phase B4 same-sentence language-switch hardening → shipped v1.8.56
+- #23 Phase C1 split-keyboard renderer → shipped v1.8.62
+- #25 reproducible-build verification CI job → shipped v1.8.67
+
+**Files updated:**
+
+- `PRIORITIZATION_MATRIX.md` → rows #17-#23 and #25 marked shipped, and the
+  next-release mapping now names #24, #26, #27, and #28 as the remaining true
+  open Tier-2 rows
+- `FEATURE_BACKLOG.md` → raw backlog rows for the SwiftKey-parity slices marked
+  shipped
+- `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` → B.3 status changed from open to
+  v1.8.57 with the implementation-name correction
+- `RESEARCH_LOG.md` → reconciliation note added
+
+No version bump was needed because this was documentation-state reconciliation
+only; no app, CI, dependency, permission, or runtime behavior changed.
