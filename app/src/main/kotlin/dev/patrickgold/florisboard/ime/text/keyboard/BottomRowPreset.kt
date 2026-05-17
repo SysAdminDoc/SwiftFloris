@@ -134,7 +134,26 @@ data class BottomRowPreset(
             )
         )
 
-        val Presets = listOf(SwiftKey, Language, Voice, Settings, Minimal, Programmer)
+        /** SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — dedicated arrow-keys
+         *  bottom row. SwiftKey ships a "Modes → Arrow keys" affordance
+         *  that swaps the standard bottom row for ← ↑ ↓ → so cursor
+         *  navigation doesn't need the space-bar trackpad gesture or a
+         *  hardware-keyboard handoff. The space bar shrinks but stays
+         *  present (the user still needs to type spaces between
+         *  navigation hops). Period stays for sentence punctuation; the
+         *  symbols-view toggle is dropped to fit the four arrows. */
+        val Navigation = BottomRowPreset(
+            listOf(
+                BottomRowKey.ARROW_LEFT,
+                BottomRowKey.ARROW_UP,
+                BottomRowKey.SPACE,
+                BottomRowKey.ARROW_DOWN,
+                BottomRowKey.ARROW_RIGHT,
+                BottomRowKey.ENTER,
+            )
+        )
+
+        val Presets = listOf(SwiftKey, Language, Voice, Settings, Minimal, Programmer, Navigation)
 
         fun fromJsonOverride(rawValue: String): BottomRowPreset? {
             return when {
@@ -171,7 +190,16 @@ enum class BottomRowKey {
     // code-symbol cluster on long-press.
     TAB,
     ESCAPE,
-    SLASH;
+    SLASH,
+
+    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow keys for the
+    // Navigation bottom-row preset. Reuse the existing TextKeyData
+    // arrow constants so the runtime cursor-movement path is already
+    // wired (KeyboardManager.onInputKeyUp dispatches ARROW_*).
+    ARROW_LEFT,
+    ARROW_UP,
+    ARROW_DOWN,
+    ARROW_RIGHT;
 
     internal fun toTextKeyData(hasDedicatedVoice: Boolean): TextKeyData {
         return when (this) {
@@ -224,6 +252,10 @@ enum class BottomRowKey {
                     ),
                 ),
             )
+            ARROW_LEFT -> TextKeyData.ARROW_LEFT
+            ARROW_RIGHT -> TextKeyData.ARROW_RIGHT
+            ARROW_UP -> TextKeyData.ARROW_UP
+            ARROW_DOWN -> TextKeyData.ARROW_DOWN
         }
     }
 }

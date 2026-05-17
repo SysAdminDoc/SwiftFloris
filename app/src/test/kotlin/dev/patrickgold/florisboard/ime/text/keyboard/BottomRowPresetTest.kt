@@ -79,4 +79,31 @@ class BottomRowPresetTest : FunSpec({
         )
         row.first { it.code == 44 }.popup shouldBe null
     }
+
+    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow-keys bottom-row
+    // preset.
+
+    test("Navigation preset surfaces left / up / down / right arrows around a shrunken spacebar") {
+        BottomRowPreset.Navigation.toTextKeyDataRow().map { it.code }.shouldContainExactly(
+            KeyCode.ARROW_LEFT,
+            KeyCode.ARROW_UP,
+            KeyCode.SPACE,
+            KeyCode.ARROW_DOWN,
+            KeyCode.ARROW_RIGHT,
+            KeyCode.ENTER,
+        )
+    }
+
+    test("Navigation preset round-trips through the JSON override codec") {
+        val encoded = BottomRowPreset.Navigation.toJson()
+
+        BottomRowPreset.fromJsonOverride(encoded) shouldBe BottomRowPreset.Navigation
+    }
+
+    test("Navigation preset is registered in the public Presets list") {
+        // The Settings → Keyboard → Bottom-row preset picker iterates
+        // `Presets` to expose its options; a future contributor that
+        // forgets to register a new preset there gets caught here.
+        (BottomRowPreset.Navigation in BottomRowPreset.Presets) shouldBe true
+    }
 })
