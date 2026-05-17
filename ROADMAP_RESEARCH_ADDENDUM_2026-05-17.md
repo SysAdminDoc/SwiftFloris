@@ -12,15 +12,15 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at write time:** v1.8.65 — Phase A3 encrypted dictionary export/import wiring.
-(The research run started at v1.8.55; v1.8.56-65 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring.)
+**HEAD at write time:** v1.8.66 — N8.7 Article 50 AI transparency surface.
+(The research run started at v1.8.55; v1.8.56-66 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-65 releases
+## 0. Reconciliation with concurrent v1.8.56-66 releases
 
-While this research run was in flight, ten releases landed that
+While this research run was in flight, eleven releases landed that
 implemented several recommendations:
 
 | Recommendation in this addendum | Shipped as |
@@ -35,9 +35,11 @@ implemented several recommendations:
 | Phase C3 bundled themes (P14/P15) | ✅ **v1.8.63 — Phase C3** — `swiftkey_high_contrast` AAA-tested stylesheet + `aurora_animated` GenericShape background renderer |
 | Phase D1 calendar quick-insert (P9) | ✅ **v1.8.64 — Phase D1** — `QuickAction.InsertCalendarEvent`, `CalendarContract.Instances` reader, explicit `READ_CALENDAR` request, and IME-local agenda picker |
 | Phase A3 encrypted dictionary export/import wiring (P12) | ✅ **v1.8.65 — Phase A3** — Settings **Export encrypted** passphrase flow, `.sfexp` create-document write, `SFEXP1` import sniffing, decrypt, and `PersonalDictionaryImportBatch` summary/rollback routing |
+| §B.2 EU AI Act transparency surface (N8.7) | ✅ **v1.8.66 — N8.7** — first-run setup disclosure, Settings → About → **AI features in this keyboard**, docs links, and catalog test coverage |
 
-These ten are removed from this addendum's open commitments. The
-remaining items below are still open and still recommended.
+These eleven are removed from this addendum's open commitments. Historical
+sections below are preserved in place; rows with a **Status: shipped** marker
+are no longer open.
 
 ---
 
@@ -220,6 +222,12 @@ checklist for the marketing slice.
 
 ### B.2 N8.7 — EU AI Act Article 50 transparency surface (2 Aug 2026)
 
+**Status:** ✅ shipped 2026-05-17 in v1.8.66. `SetupScreen` now starts with
+`Steps.AiFeatures` before IME enablement, `prefs.internal.aiFeaturesExplainerSeen`
+stores the one-time acknowledgement, `Routes.Settings.AiFeatures` exposes a
+reopenable Settings → About screen, and `AiFeatureDisclosureCatalogTest` pins
+the first-run surface inventory.
+
 **Where:** ROADMAP §6 N8 (Accessibility scoped pass — accessibility is
 the closest existing surface, though this is privacy/regulatory not a11y;
 could also land in §11 Privacy Hardening).
@@ -278,7 +286,7 @@ repo apps reproducible; SwiftFloris's pin matrix is in place but
 **Where:** ROADMAP §6 N16 (the existing migration-related cluster — or
 §12 Operating Cadence).
 
-**Why now:** latest tag `v1.8.40`; HEAD `v1.8.65`. **25 missing tags**
+**Why now:** latest tag `v1.8.40`; HEAD `v1.8.66`. **26 missing tags**
 since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
 release.yml triggers on `workflow_dispatch` not on tag-push, so the
 release stream is decoupled from tags. Tags are still the canonical
@@ -286,7 +294,7 @@ shipped-commit anchor for forks / audit.
 
 **Body:**
 
-> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.65
+> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.66
 > from its corresponding `gradle.properties`-bumping commit. Tags push
 > only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
 > blocked from the dev VM per the established workflow). Establish a

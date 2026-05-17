@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.65)
+## 3. Stack at HEAD (v1.8.66)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.65`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.66`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -127,6 +127,12 @@ Phase A of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` is sized for this:
 - ✅ A2 — Post-import confirmation + rollback (shipped v1.8.53)
 - ✅ A3 — Encrypted-blob export/import round-trip (codec shipped v1.8.54; Settings wiring shipped v1.8.65)
 - ⏳ Marketing-side completion (Reddit thread + 2026-05-30 pinned release)
+
+Roadmap addendum N8.7 also shipped in v1.8.66: setup now starts with a
+first-run AI/ML transparency disclosure before IME enablement, and
+Settings → About → **AI features in this keyboard** reopens the same
+local-only/no-account/no-telemetry explanation with links to
+`docs/PRIVACY_AND_AI.md`, `docs/THREAT_MODEL.md`, and this context file.
 
 Phase B (touch & decoder calibration):
 
@@ -178,6 +184,7 @@ Phase C/D opened in the same release window:
 | **Inline translation** | ✅ facade + cache + router + language-pack manager shipped; Bergamot WASM addon (L2.1a) outstanding |
 | **Voice** | ✅ FUTO Voice Input handoff (preferred) + Vosk streaming fallback + RAM-aware model selector + local Whisper/Vosk model manager |
 | **Stylus handwriting** | ✅ facade + toggle shipped (Next-4.1/4.2/4.3); recogniser ships in `addons/handwriting-mlkit/` (Next-4.2a, external) |
+| **AI transparency surface** | ✅ first-run setup explainer + Settings → About screen shipped v1.8.66; `docs/PRIVACY_AND_AI.md` is the canonical long-form disclosure |
 | **MCP daemon bridge** | ✅ shipped end-to-end (AIDL + Android client + discovery + service lifecycle + Settings + per-daemon enable/disable + per-tool switches) |
 | **WebAuthn passkey injection** | ✅ detector + adapter contract shipped (L10); ceremony in addon (external) |
 | **CJK Pinyin / Jyutping / Zhuyin / Mozc** | ⚠️ facade only; gated on librime JNI addon (L3) |

@@ -294,3 +294,39 @@ Audit pass against the prompt's hard completion criteria:
   fresh size + content audit (last full audit predates this run).
 - Run `:app:dependencies` locally and diff against the version-catalog
   pins (transitive surface not surveyed this run).
+
+---
+
+## 8. v1.8.66 continuation — N8.7 Article 50 transparency surface
+
+The autonomous development loop then shipped the local-code portion of
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §B.2 / `ROADMAP.md` N8.7.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.66.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/about/AiFeatureDisclosure.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/about/AiFeaturesScreen.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/about/AiFeatureDisclosureCatalogTest.kt`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1866`,
+  `projectVersionName=1.8.66`
+- `AppPrefs.kt` → new persisted
+  `internal__ai_features_explainer_seen` setup acknowledgement
+- `SetupScreen.kt` → first setup step now reviews local AI features before
+  IME enablement
+- `Routes.kt` / `AboutScreen.kt` → reopenable Settings → About →
+  **AI features in this keyboard** route
+- `strings.xml` / `strings_dont_translate.xml` → disclosure strings and
+  GitHub doc URLs
+- `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`, and
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` → HEAD/current release moved
+  to v1.8.66 and N8.7 marked shipped
+
+**Verification note:** this VM still has no Java on PATH, so Gradle cannot
+run locally. The release notes record the focused Gradle target for the
+maintainer build host. Local verification was limited to source inspection,
+`git diff --check`, the no-network permission grep, and post-commit git
+integrity checks.

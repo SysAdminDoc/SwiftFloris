@@ -313,7 +313,7 @@ persons:
 2. Mark AI-generated synthetic content (text/audio/image/video) in a
    machine-readable format.
 
-SwiftFloris's response:
+SwiftFloris's response (shipped in the app UI in v1.8.66):
 
 - This file is the **first-interaction explainer surface**. The
   first-run flow links here once; Settings → About → "AI features in

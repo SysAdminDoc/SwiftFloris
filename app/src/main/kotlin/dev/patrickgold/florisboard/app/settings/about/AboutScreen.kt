@@ -151,6 +151,12 @@ fun AboutScreen() = FlorisScreen {
             onClick = { context.launchUrl(R.string.florisboard__privacy_policy_url) },
         )
         Preference(
+            icon = Icons.Outlined.Info,
+            title = stringRes(R.string.about__ai_features__title),
+            summary = stringRes(R.string.about__ai_features__summary),
+            onClick = { navController.navigate(Routes.Settings.AiFeatures) },
+        )
+        Preference(
             icon = Icons.Outlined.Description,
             title = stringRes(R.string.about__project_license__title),
             summary = stringRes(R.string.about__project_license__summary, "license_name" to "Apache 2.0"),
