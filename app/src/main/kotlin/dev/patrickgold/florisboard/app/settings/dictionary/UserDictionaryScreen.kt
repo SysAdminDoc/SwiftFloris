@@ -50,9 +50,13 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryImportException
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryImporter
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MIN
+import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportBatch
+import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportResult
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDao
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryValidation
@@ -101,6 +105,11 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     var languageList by remember { mutableStateOf(emptyList<FlorisLocale>()) }
     var wordList by remember { mutableStateOf(emptyList<UserDictionaryEntry>()) }
     var userDictionaryEntryForDialog by remember { mutableStateOf<UserDictionaryEntry?>(null) }
+    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import summary
+    // confirmation surface. Holds the result of the most recent
+    // successful modular DictionaryImporter run so the user can
+    // see what landed and optionally roll the inserts back.
+    var importSummary by remember { mutableStateOf<PersonalDictionaryImportResult?>(null) }
 
     fun userDictionaryDao(): UserDictionaryDao? {
         return when (type) {
@@ -152,12 +161,50 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 }
                 return@rememberLauncherForActivityResult
             }
-            runCatching {
-                db.importCombinedList(context, uri)
-            }.onSuccess {
-                buildUi()
+            val dao = userDictionaryDao()
+            if (dao == null) {
                 scope.launch {
-                    context.showLongToast(R.string.settings__udm__dictionary_import_success)
+                    context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+                }
+                return@rememberLauncherForActivityResult
+            }
+            // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — try the modular
+            // DictionaryImporter first (SwiftKey JSON / Gboard XML / CSV /
+            // zip envelope detection by byte sniff, ROADMAP §6 N16.2). On
+            // any DictionaryImportException — including "unknown format" —
+            // fall through to the legacy semicolon-key=value combined-list
+            // path so existing FlorisBoard backups keep importing.
+            runCatching {
+                val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
+                    val importer = DictionaryImporter()
+                    importer.import(stream)
+                } ?: throw DictionaryImportException("Could not read selected file.")
+                val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
+                    val sniffBuffer = ByteArray(1024)
+                    val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
+                    DictionaryImporter().detectFormat(sniffBuffer.copyOf(sniffed))
+                }
+                PersonalDictionaryImportBatch.import(
+                    parsedEntries = parsed,
+                    dao = dao,
+                    format = format,
+                )
+            }.recoverCatching { modularError ->
+                if (modularError !is DictionaryImportException) throw modularError
+                // Legacy combined-list path. No summary surface for this
+                // branch because the legacy importer doesn't return ids;
+                // we still emit the success toast for compatibility with
+                // the pre-v1.8.53 UX.
+                db.importCombinedList(context, uri)
+                null
+            }.onSuccess { result ->
+                buildUi()
+                if (result != null) {
+                    importSummary = result
+                } else {
+                    scope.launch {
+                        context.showLongToast(R.string.settings__udm__dictionary_import_success)
+                    }
                 }
             }.onFailure { error ->
                 scope.launch {
@@ -453,6 +500,31 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     }
                 }
             }
+        }
+
+        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import summary.
+        // Renders only when the modular DictionaryImporter path returned
+        // a result (the legacy combined-list path stays on its toast).
+        val summary = importSummary
+        if (summary != null) {
+            PersonalDictionaryImportSummaryDialog(
+                result = summary,
+                onKeep = { importSummary = null },
+                onRollback = {
+                    val deleted = PersonalDictionaryImportBatch.rollback(
+                        result = summary,
+                        dao = userDictionaryDao() ?: return@PersonalDictionaryImportSummaryDialog,
+                    )
+                    importSummary = null
+                    buildUi()
+                    scope.launch {
+                        context.showLongToast(
+                            R.string.settings__udm__import_summary__rollback_done,
+                            "count" to deleted,
+                        )
+                    }
+                },
+            )
         }
     }
 }
