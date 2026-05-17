@@ -59,7 +59,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 24 | **Lint baseline refresh** | 2 | 1 | 1 | **5.0** | Still open; attempted here but blocked by missing `JAVA_HOME` / `java` on PATH |
 | 25 | ✅ **Shipped v1.8.67:** Reproducible-build verification CI job | 3 | 2 | 1 | **3.5** | `.github/workflows/reproducible-build.yml` builds twice and diffs release APKs |
 | 26 | ✅ **Shipped docs-only:** Add SUPERSEDED banners to 5 superseded `SWIFTKEY_*` docs | 2 | 1 | 1 | **5.0** | Applied to every file named by `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` |
-| 27 | **macOS `.keylayout` (XML) parser** (Next-6.4a follow-up) | 3 | 2 | 1 | **3.5** | Closes the cross-format hardware-keyboard pipeline |
+| 27 | ✅ **Shipped v1.8.75:** macOS `.keylayout` (XML) parser (Next-6.4a) | 3 | 2 | 1 | **3.5** | `MacKeylayoutParser` normalizes key maps and modifier maps into `HardwareKeyboardLayout` |
 | 28 | **Hardware-keyboard runtime mapper (Next-6.4b)** — `InputManager` + `KeyEvent.getDeviceId(...)` | 4 | 3 | 1 | **3.0** | Adjacent to #27; makes the parsers actually useful at runtime |
 
 ## Tier 3 — Recommended later (score 2.0 – 3.4)
@@ -125,8 +125,8 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 - **AAA high-contrast theme + Animated theme** (#21, #20) shipped v1.8.63.
 - Rows #17-#23 and #25 were reconciled as already shipped by the concurrent
   v1.8.56-v1.8.67 implementation stream. Remaining true open Tier-2 rows:
-  #24 lint baseline refresh (maintainer host with Java required),
-  #27 macOS `.keylayout` parser, and #28 hardware-keyboard runtime mapper.
+  #24 lint baseline refresh (maintainer host with Java required) and
+  #28 hardware-keyboard runtime mapper.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

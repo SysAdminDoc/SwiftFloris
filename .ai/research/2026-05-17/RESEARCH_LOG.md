@@ -213,6 +213,11 @@ or one-competitor additions, not a new roadmap pillar.
   baseline refresh and failed at the known missing-Java host blocker. The loop
   then moved to #26 and applied superseded-document banners to all five
   SwiftKey files named by `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`.
+- **v1.8.75 / Tier-2 #27 implementation:** Next-6.4a was implemented by reading
+  the existing `HardwareKeyboardLayout`, `KlcLayoutParser`, `KeymanLdmlParser`,
+  and their tests, then adding a matching XXE-hardened macOS `.keylayout`
+  parser plus focused Kotest coverage. Gradle verification was attempted and
+  remains blocked by missing `JAVA_HOME` / `java` on PATH.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could
