@@ -192,6 +192,11 @@ or one-competitor additions, not a new roadmap pillar.
   (`updated_at=2026-05-11T18:48:16Z`). This confirmed the planning change:
   `swiftfloris-statistical` is the production glide path; HeliBoard open-glide
   is additive until a permissive library and dataset actually land.
+- **v1.8.73 continuation repo-hygiene check:** Root scan found five ignored
+  local JVM crash/replay logs (`hs_err_pid15604.log`, `hs_err_pid4860.log`,
+  `replay_pid11584.log`, `replay_pid15604.log`, `replay_pid4860.log`). They
+  were moved to `.ai/local-crash-logs/2026-05-16/`, and a tracked CI guard was
+  added so force-added root logs fail future pushes / PRs.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

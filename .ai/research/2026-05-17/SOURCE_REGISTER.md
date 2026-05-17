@@ -27,6 +27,7 @@ source, the citation is here.
 | File | Used for |
 |---|---|
 | [RELEASE_NOTES_v1.8.72.md](../../../RELEASE_NOTES_v1.8.72.md) | v1.8.72 HeliBoard / NLnet slip-base-case roadmap correction |
+| [RELEASE_NOTES_v1.8.73.md](../../../RELEASE_NOTES_v1.8.73.md) | v1.8.73 repository hygiene / CI guardrail |
 | [RELEASE_NOTES_v1.8.58.md](../../../RELEASE_NOTES_v1.8.58.md) | Phase D2 task-creation quick action |
 | [RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md) | Initial-pass HEAD release — Phase B3 shared-spelling bilingual handling |
 | [RELEASE_NOTES_v1.8.54.md](../../../RELEASE_NOTES_v1.8.54.md) | Phase A3 codec primitive (AES-256-GCM + PBKDF2-HMAC-SHA-256) |
@@ -46,6 +47,9 @@ source, the citation is here.
 | [settings.gradle.kts](../../../settings.gradle.kts) | Module includes (and the two commented-out modules) |
 | [app/build.gradle.kts](../../../app/build.gradle.kts) | App-level config, signing config, `verifyNoInternetPermission` gate, ksp/Roborazzi/Kover wiring |
 | [app/src/main/AndroidManifest.xml](../../../app/src/main/AndroidManifest.xml) | Permissions, signature-protected permission, queries, services, receivers, providers |
+| [.github/workflows/android.yml](../../../.github/workflows/android.yml) | CI path; v1.8.73 root crash/replay log guard step |
+| [scripts/check-no-root-crash-logs.sh](../../../scripts/check-no-root-crash-logs.sh) | v1.8.73 guard against committed root `hs_err_pid*.log` / `replay_pid*.log` files |
+| [.ai/local-crash-logs/README.md](../../local-crash-logs/README.md) | Local ignored crash/replay log archive policy |
 
 ### 1.4 Documentation
 
@@ -77,7 +81,7 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 - `git log --oneline -30` — HEAD commit subjects
 - `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
-  backfilled local tags through `v1.8.72` (push still pending from maintainer host)
+  backfilled local tags through `v1.8.73` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
 - `git branch --show-current` — `master`; continuation commits leave the local
   branch ahead of `origin/master` because this VM cannot push to the remote

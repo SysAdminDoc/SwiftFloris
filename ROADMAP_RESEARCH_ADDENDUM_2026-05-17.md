@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.72 — HeliBoard / NLnet slip-base-case roadmap correction.
+**HEAD at latest reconciliation:** v1.8.73 — repository hygiene guardrail.
 (The research run started at v1.8.55; v1.8.56-71 shipped concurrently in the
 same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B + README Samsung / Grammarly callouts.)
 
@@ -42,6 +42,7 @@ implemented several recommendations:
 | Tier-1 #2 / #5 / #10 — README Samsung / Grammarly migration-window callouts + release-front-door hygiene | ✅ **v1.8.70 — N16.4** — Galaxy AI Writing Assist framed as optional Samsung layer on One UI 7+; Grammarly Keyboard replacement framed as an overlay above SwiftFloris |
 | §A.4 / Tier-1 #12 — Bump-batch B | ✅ **v1.8.71 — N14.6** — Roborazzi 1.60.0 + Robolectric 4.16.1 |
 | §G.1 / Tier-1 #9 — HeliBoard slip-risk promote | ✅ **v1.8.72 — N1.1** — statistical glide is production default; HeliBoard open-glide remains additive |
+| Tier-1 #14/#15 — root crash/replay log cleanup + CI guard | ✅ **v1.8.73 — N18.1** — logs moved out of root; committed root logs fail CI |
 
 These sixteen are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
@@ -501,8 +502,9 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | 🟢 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.72; push pending from maintainer host |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.73; push pending from maintainer host |
 | Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |
+| Tier-1 root crash/replay log cleanup + CI guard | ✅ v1.8.73 |
 | §C.1 User-imported sticker folder (Next-9.5) | 🟢 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |

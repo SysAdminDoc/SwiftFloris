@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.72 (released 2026-05-17 — roadmap correction. HeliBoard / NLnet open-glide integration is now an additive future track; SwiftFloris's shipped statistical glide classifier is the production path until a permissive open library and dataset exist. **Previous version, v1.8.71** (released 2026-05-17 — Bump-batch B; see `RELEASE_NOTES_v1.8.71.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.73 (released 2026-05-17 — repository hygiene guardrail. Root JVM crash/replay logs moved out of the repo root and CI now rejects committed `hs_err_pid*.log` / `replay_pid*.log` files. **Previous version, v1.8.72** (released 2026-05-17 — HeliBoard / NLnet slip-base-case correction; see `RELEASE_NOTES_v1.8.72.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -25,8 +25,8 @@ This delta supersedes the stale dependency guidance in the first-pass
   `1.11.0`, AboutLibraries `14.2.0`, and ZXing `3.5.4`.
 - Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
   2026-05-17 from their matching `gradle.properties` version-bump commits
-  so Obtainium / fork audit anchors are no longer stale locally; v1.8.70,
-  v1.8.71, and v1.8.72 are tagged with their release commits. The remaining
+  so Obtainium / fork audit anchors are no longer stale locally; v1.8.70
+  through v1.8.73 are tagged with their release commits. The remaining
   distribution step is pushing those tags from the maintainer host.
 - v1.8.70 refreshed README migration-window messaging for Samsung and
   Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
@@ -43,6 +43,11 @@ This delta supersedes the stale dependency guidance in the first-pass
   is still gesture-data gathering. SwiftFloris's statistical classifier is
   therefore the production glide path; N1.1 becomes an additive integration
   gate for a future permissive open library/dataset.
+- Repository hygiene guardrails shipped in v1.8.73: local root
+  `hs_err_pid*.log` / `replay_pid*.log` files moved under
+  `.ai/local-crash-logs/2026-05-16/`, and `.github/workflows/android.yml`
+  now runs `scripts/check-no-root-crash-logs.sh` so forced-added logs fail
+  quickly in CI.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -183,7 +188,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.72 reality, observed)
+## 2. State of the Repo (v1.8.73 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -211,14 +216,15 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 - `LanguagePackExtension` and `HanShapeBasedLanguageProvider` still carry multi-type/loading/locking TODO/FIXME notes that matter once external dictionary-pack addons move past descriptors.
 - ✅ `FlorisEmojiCompat` GMS/no-GMS audit closed 2026-05-16: explicit `EmojiCompatLoadState` (Loading/Loaded/Failed/Unavailable) sealed class plus `loadStateFlow(replaceAll)` make the GMS-less fallback path part of the public contract; the existing palette null-check + `Paint.hasGlyph` fallback already covered the case but is now formally documented. Issue #1 emoji-selection crash triage still pending (needs repro trace; the audit found no non-null-safe `EmojiCompat` call site, so the crash root cause is elsewhere — likely the palette grid recomposition path).
 
-**CI / distribution today:** CI runs wrapper validation, no-network verification, unit tests, lint, debug assembly, 16 KB alignment guard, reproducible-release-APK self-check, artifact uploads, dependency review, and OSV scan. Release workflow can sign with secrets and publish artifacts, but the public GitHub Release stream is stale relative to tags. Obtainium setup is documented; F-Droid metadata submission and external rebuild result remain pending.
+**CI / distribution today:** CI runs wrapper validation, no-network verification, root crash/replay log guard, unit tests, lint, debug assembly, 16 KB alignment guard, reproducible-release-APK self-check, artifact uploads, dependency review, and OSV scan. Release workflow can sign with secrets and publish artifacts, but the public GitHub Release stream is stale relative to tags. Obtainium setup is documented; F-Droid metadata submission and external rebuild result remain pending.
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.72, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.73, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.73 | 2026-05-17 | Repository hygiene guardrail. Moved five local root JVM crash/replay logs into `.ai/local-crash-logs/2026-05-16/`, added `scripts/check-no-root-crash-logs.sh`, and wired it into `.github/workflows/android.yml` before Java / Gradle setup so committed root `hs_err_pid*.log` / `replay_pid*.log` files fail CI quickly. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.73.md` |
 | v1.8.72 | 2026-05-17 | Roadmap correction for HeliBoard / NLnet slip-base-case planning. Re-checked HeliBoard `#2226`, releases, the NLnet project page, and the gesture-data contribution wiki: latest release is still `v3.9`, the open-glide issue remains open, and the public workflow still depends on collecting gesture data with the existing proprietary library. N1.1 is now an additive future integration track; SwiftFloris's `StatisticalGlideTypingClassifier` remains the production glide path until a permissive open library and dataset are available. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.72.md` |
 | v1.8.71 | 2026-05-17 | Bump-batch B. Updated Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1` after checking Maven Central / Gradle Plugin Portal metadata and OSV querybatch. This prepares the visual/JVM test harness for the later AGP 9.2.x + Compose BOM 2026.05.00 batch. No app code, permissions, network surface, or runtime behavior changed. | `RELEASE_NOTES_v1.8.71.md` |
 | v1.8.70 | 2026-05-17 | README migration-window follow-up. Added Samsung / Grammarly users callout: One UI 7+ Galaxy AI Writing Assist can remain a separate Samsung selected-text layer while SwiftFloris stays the default no-network keyboard, and Grammarly for Android can replace the old Grammarly Keyboard without SwiftFloris sending text to Grammarly. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.70.md` |
@@ -549,6 +555,19 @@ Three Gboard 2026 features that shipped or rolled out during the v5.0 window —
 ### N17. Emoji crash triage (tracked repo issue)
 
 - ✅ **N17.1** shipped 2026-05-17 (v1.8.50). Triage landed on `Paint.hasGlyph("")` throwing `IllegalArgumentException("hasGlyph called with empty string")` and aborting the palette render. Two paths can leak an empty-value `Emoji` into the pipeline: (a) `Emoji.ValueOnlySerializer.deserialize(decoder)` round-trips a `""` JSON entry into `Emoji(value = "")` without validation, and (b) `EmojiData.loadEmojiDataMap(...)` accepted a malformed `;...;...;...` asset row with a blank first column. Three defensive fixes: (1) `EmojiPaletteView.emojiMappings` now skips any `emoji.value.isEmpty()` before calling either `EmojiCompat.getEmojiMatch` or `Paint.hasGlyph(...)`; (2) the history-mapping branch (`prefs.emoji.historyData` pinned / recent → `EmojiSet`) filters out empty-value entries before constructing the recently-used grid so it cannot render invisible / commit-empty tap targets; (3) `EmojiData.loadEmojiDataMap` now `continue`s past data lines whose first column trims to empty so a future contributor / addon-supplied asset can't crash the IME this way. New `EmojiHistoryEmptyValueTest` pins the four contract layers (serializer permissive round-trip, history deserialiser tolerance, EmojiSet wrap, palette-side filter snippet) so the regression stays caught without Robolectric. [GH-SWIFTF-ISSUE-1]
+
+### N18. Repository hygiene guardrails
+
+- ✅ **N18.1** shipped 2026-05-17 (v1.8.73). Moved five ignored local
+  root diagnostics (`hs_err_pid15604.log`, `hs_err_pid4860.log`,
+  `replay_pid11584.log`, `replay_pid15604.log`, `replay_pid4860.log`) into
+  `.ai/local-crash-logs/2026-05-16/` so the repo root stays scan-friendly.
+  Added `.ai/local-crash-logs/README.md` to document that these are
+  machine-local ignored files, not source artifacts. Added
+  `scripts/check-no-root-crash-logs.sh` and wired it into
+  `.github/workflows/android.yml` before Java / Gradle setup; the script fails
+  if root `hs_err_pid*.log` or `replay_pid*.log` files are ever committed via
+  `git add -f`. Closes the 2026-05-17 prioritization matrix #14 + #15 batch.
 
 ---
 
@@ -1251,4 +1270,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.72 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B, local tag catch-up, the Samsung / Grammarly README migration-window callouts, and the HeliBoard / NLnet slip-base-case roadmap correction. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose dependency batches are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.73 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, and the root crash/replay-log CI guardrail. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose dependency batches are implemented, whichever comes first.*
