@@ -183,6 +183,24 @@ fun QuickActionButton(
                             text = "\uD83C\uDF10",
                         )
                     }
+
+                    is QuickAction.InsertTask -> {
+                        SnyggText(
+                            elementName = "$elementName-text",
+                            attributes = attributes,
+                            selector = selector,
+                            text = "Task",
+                        )
+                    }
+
+                    is QuickAction.InsertCalendarEvent -> {
+                        SnyggText(
+                            elementName = "$elementName-text",
+                            attributes = attributes,
+                            selector = selector,
+                            text = "Cal",
+                        )
+                    }
                 }
 
                 // Render additional info if this is a tile

@@ -40,6 +40,7 @@ val QuickActionJsonConfig = Json(DefaultJsonConfig) {
             // quick action, the on-device replacement for SwiftKey's
             // Microsoft-To-Do toolbar tile.
             subclass(QuickAction.InsertTask::class, QuickAction.InsertTask.serializer())
+            subclass(QuickAction.InsertCalendarEvent::class, QuickAction.InsertCalendarEvent.serializer())
             defaultDeserializer { QuickAction.InsertKey.serializer() }
         }
     }
@@ -97,6 +98,8 @@ data class QuickActionArrangement(
                 QuickAction.InsertKey(TextKeyData.IME_HIDE_UI),
             ),
             hiddenActions = listOf(
+                QuickAction.InsertTask,
+                QuickAction.InsertCalendarEvent,
             ),
         )
     }

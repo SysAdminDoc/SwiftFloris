@@ -30,6 +30,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.calendarQuickInsertManager
+import dev.patrickgold.florisboard.ime.calendar.CalendarAgendaPickerPanel
+import dev.patrickgold.florisboard.ime.calendar.CalendarAgendaPickerState
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsStyleCache
 import dev.patrickgold.florisboard.ime.smartbar.Smartbar
@@ -46,10 +49,12 @@ fun TextInputLayout(
 ) {
     val context = LocalContext.current
     val keyboardManager by context.keyboardManager()
+    val calendarQuickInsertManager by context.calendarQuickInsertManager()
 
     val prefs by FlorisPreferenceStore
 
     val state by keyboardManager.activeState.collectAsState()
+    val calendarPickerState by calendarQuickInsertManager.pickerState.collectAsState()
     val evaluator by keyboardManager.activeEvaluator.collectAsState()
 
     InlineSuggestionsStyleCache()
@@ -60,7 +65,12 @@ fun TextInputLayout(
             .wrapContentHeight(),
     ) {
         Smartbar()
-        if (state.isActionsOverflowVisible) {
+        if (calendarPickerState != CalendarAgendaPickerState.Hidden) {
+            CalendarAgendaPickerPanel(
+                state = calendarPickerState,
+                manager = calendarQuickInsertManager,
+            )
+        } else if (state.isActionsOverflowVisible) {
             QuickActionsOverflowPanel()
         } else {
             Box {

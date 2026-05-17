@@ -8,6 +8,10 @@
     <!-- Permission needed to create notifications on devices running Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Permission requested only from the Calendar quick-insert action. Lets
+         users insert local agenda event titles + date/time from the smartbar. -->
+    <uses-permission android:name="android.permission.READ_CALENDAR"/>
+
     <!-- ROADMAP §7 Next-10.1 — signature-protected permission addons must hold
          to fire REGISTER_ADDON broadcasts. Only packages co-signed with the
          same key as the IME (or whitelisted by the user via Settings → Addons)
@@ -148,6 +152,13 @@
         <!-- Voice Input Setup Activity -->
         <activity
             android:name="dev.patrickgold.florisboard.ime.voice.VoiceInputSetupActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@style/FlorisAppTheme.Transparent"/>
+
+        <!-- Calendar Permission Activity -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.calendar.CalendarPermissionActivity"
             android:excludeFromRecents="true"
             android:exported="false"
             android:theme="@style/FlorisAppTheme.Transparent"/>
