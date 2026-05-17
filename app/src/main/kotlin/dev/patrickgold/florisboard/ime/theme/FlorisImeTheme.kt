@@ -63,6 +63,7 @@ fun FlorisImeTheme(content: @Composable () -> Unit) {
     MaterialTheme {
         CompositionLocalProvider(
             LocalTextStyle provides TextStyle.Default,
+            LocalActiveThemeName provides activeThemeInfo.name,
         ) {
             ProvideSnyggTheme(
                 snyggTheme = snyggTheme,

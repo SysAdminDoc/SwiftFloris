@@ -183,6 +183,7 @@ fun BoxScope.ImeWindow() {
         supportsBackgroundImage = true,
         allowClip = false,
     ) {
+        AuroraAnimatedThemeBackground()
         OneHandedPanel()
         ProvideKeyboardRowBaseHeight {
             ImeInnerWindow()
