@@ -95,9 +95,18 @@ data class EmojiData(
                         // Assume it is a data line
                         val data = line.split(";")
                         if (data.size == 3) {
+                            val value = data[0].trim()
+                            // ROADMAP §6 N17.1 — reject malformed asset lines
+                            // whose codepoint column is blank. Downstream
+                            // Paint.hasGlyph("") throws and crashes the
+                            // palette on first render; the bundled assets
+                            // SHOULDN'T contain such lines but a future
+                            // contributor / addon-supplied asset should
+                            // never be able to crash the IME this way.
+                            if (value.isEmpty()) continue
                             val base = emojiEditorList?.first()
                             val emoji = Emoji(
-                                value = data[0].trim(),
+                                value = value,
                                 name = base?.name ?: data[1].trim(),
                                 keywords = data[2].split("|").map { it.trim() },
                             )
