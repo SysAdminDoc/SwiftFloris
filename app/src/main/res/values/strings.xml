@@ -259,6 +259,7 @@
     <string name="settings__voice_input__voice_command_capitalize_next_word" comment="Voice command action label">Capitalize next word</string>
     <string name="settings__voice_input__voice_command_go_to_start" comment="Voice command action label">Go to start</string>
     <string name="settings__voice_input__voice_command_go_to_end" comment="Voice command action label">Go to end</string>
+    <string name="settings__voice_input__voice_command_remove_item_from_list" comment="Voice command action label">Remove item from list</string>
     <string name="settings__voice_input__group_language_packs" comment="Voice input settings group title">Supported FUTO voice languages</string>
     <string name="settings__voice_input__language_pack_handoff_title" comment="Voice input language pack information title">Language selection happens in FUTO</string>
     <string name="settings__voice_input__language_pack_handoff_summary" comment="Voice input language pack information summary">Android voice keyboard handoff does not let SwiftFloris force a FUTO language. Select and download models in FUTO, then use the voice action from SwiftFloris.</string>
