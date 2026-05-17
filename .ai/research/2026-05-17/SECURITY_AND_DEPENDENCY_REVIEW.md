@@ -10,6 +10,11 @@ Source data: dep-research Agent run on 2026-05-17, corrected by the
 same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 (see [SOURCE_REGISTER.md §2.7-2.8](SOURCE_REGISTER.md)).
 
+**Continuation note:** v1.8.68 shipped the AndroidX Security Crypto
+migration. `androidx.security:security-crypto:1.1.0-alpha06` is no longer
+declared in `:app`; `com.google.crypto.tink:tink-android:1.21.0` is now
+the runtime crypto dependency for local encrypted-preference wrapping.
+
 ---
 
 ## 1. Version delta table
@@ -40,7 +45,7 @@ same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 | **robolectric** | 4.14.1 | **4.16.1** | Materially behind | Bump (SDK 36 + JDK 21 fidelity) |
 | kotest | 6.1.11 | 6.1.11 | Current | Keep |
 | androidx-benchmark | 1.4.1 | 1.4.1 | Current | Keep |
-| **androidx-security-crypto** | **1.1.0-alpha06** | **1.1.0 stable, APIs deprecated** | **Deprecated API surface** | **Migrate** (§2) |
+| **Tink Android** | **1.21.0** | **1.21.0** | **Current** | **Keep** — replaced deprecated AndroidX Security Crypto in v1.8.68 |
 | Build Tools | 36.0.0 | 36.0.0 | Current | Keep |
 | NDK | 29.0.14206865 | 29.x | Current | Keep — 16 KB alignment automatic since AGP 8.5.1 + NDK r28 |
 | JDK | 17 | 17 (21 LTS available) | Current | Keep until Compose tooling forces 21 |
@@ -51,18 +56,24 @@ same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 Fifth-pass verification corrected the first-pass wording: stable
 `androidx.security:security-crypto:1.1.0` exists. The material issue is
 that AndroidX release notes deprecate the APIs in favor of platform APIs
-and direct Android Keystore use, while SwiftFloris is still pinned to
+and direct Android Keystore use, while SwiftFloris was still pinned to
 older `1.1.0-alpha06`. `EncryptedSharedPreferences` also carries
 key-rotation concerns for this use case.
 
-SwiftFloris uses this library in [app/build.gradle.kts](../../../app/build.gradle.kts#L299)
+SwiftFloris previously used this library in [app/build.gradle.kts](../../../app/build.gradle.kts)
 inline: `implementation("androidx.security:security-crypto:1.1.0-alpha06")`.
 
-The library is used to protect the SQLCipher passphrase via
+The library was used to protect the SQLCipher passphrase via
 `EncryptedSharedPreferences` + `MasterKey` (per ROADMAP §6 N7.4 and the
 `PersonalDictionaryEncryptionTest` contract).
 
-### Recommended migration (one-shot, single PR)
+**Status:** ✅ shipped in v1.8.68. The replacement is
+`TinkStringPreferenceCrypto`, backed by `com.google.crypto.tink:tink-android:1.21.0`
+and direct AndroidKeystore AES-256-GCM keys. The implementation also migrated
+legacy clipboard-history encrypted preferences because that path used the same
+deprecated AndroidX Security Crypto dependency.
+
+### Implemented migration (one-shot, single PR)
 
 1. Replace `androidx-security-crypto` with **Google Tink**
    (`com.google.crypto.tink:tink-android`, Apache-2.0; target 1.21.0 as
@@ -245,12 +256,12 @@ behavior before the AGP 9.2 merge.
 
 ### Bump-batch D (security migration)
 
-1. **androidx-security-crypto** → **Google Tink + AndroidKeystoreV1**
-   (replace, do not bump)
+1. ✅ **v1.8.68 shipped:** **androidx-security-crypto** →
+   **Google Tink + direct AndroidKeystore wrapping** (replace, do not bump)
 
 **Acceptance criteria:** `PersonalDictionaryEncryptionTest` rewritten to
 the new contract; migration path detects + rewraps the old shape;
-existing v1.8.55 installs upgrade cleanly.
+existing installs upgrade cleanly.
 
 ## 10. Other recommended hardening
 

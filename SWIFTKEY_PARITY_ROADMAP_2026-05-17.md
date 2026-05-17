@@ -120,7 +120,7 @@ Mapped against the same SwiftKey buckets so the gap analysis is direct.
 | Tone (professional/casual/polite) | `RewriteProvider` shape supports tone-tagged rewrites; UI surface deferred to the addon. |
 | Image creator / Designer (DALL-E 3) | **Out of scope** (§1 — cloud, GPL/non-commercial models on-device too large + ethically loaded). |
 | Translator | `ime/translate/InlineTranslator` + `TranslationRouter` + `TranslationCache` + `LanguageDetector` + `SentenceTokenizer` + `TranslationLanguagePackManager` + `QuickAction.TranslateSelection` smartbar action. Bergamot WASM runtime addon (L2.1a) outstanding. |
-| Clipboard with pinning + shortcuts | SQLCipher-encrypted clipboard with history + pinning + per-app source tag (`ClipboardManager`); shortcut auto-replace via personal-dictionary `shortcut` column wired in `NlpManager.getAutoCommitCandidate`. |
+| Clipboard with pinning + shortcuts | Tink / AndroidKeystore-wrapped clipboard history with pinning + per-app source tag (`ClipboardManager`); shortcut auto-replace via personal-dictionary `shortcut` column wired in `NlpManager.getAutoCommitCandidate`. |
 | GIFs | **Out of scope** (Tenor/Giphy needs network; explicit rejection in §10 of ROADMAP.md). Local sticker packs cover the static-reaction case. |
 | Stickers | `StickerRenderer` + `StickerMediaProvider` + bundled "Swift reactions" / "Quick replies" packs; commit via `commitContent(InputContentInfoCompat)`. Animated stickers via `coil-gif` decoder. |
 | Calendar | **Not shipped.** New gap. |

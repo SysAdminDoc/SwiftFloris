@@ -31,7 +31,7 @@
 # SQLCipher loads native-backed database classes reflectively through androidx.sqlite.
 -keep class net.zetetic.database.** { *; }
 
-# ROADMAP §6 N7.4 — SQLCipher pulls in Google Tink which references
+# ROADMAP §6 N7.6 — SQLCipher key wrapping uses Google Tink, which references
 # errorprone + javax.annotation classes that aren't on the Android classpath.
 # These are compile-time annotations only; R8 warns about missing classes but
 # the runtime is unaffected. Suppress so release builds succeed without

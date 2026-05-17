@@ -34,6 +34,15 @@ Full corpus-sized subtitle frequency tables are intentionally left to optional
 dictionary-pack addons so the base APK stays lean.
 
 ================================================================================
+Runtime crypto dependency attribution
+================================================================================
+
+SwiftFloris uses Google Tink Android (`com.google.crypto.tink:tink-android`) to
+wrap local encrypted-preference payloads with AndroidKeystore-held keys. Tink is
+distributed under the Apache License, Version 2.0.
+Project home: https://github.com/tink-crypto/tink-java
+
+================================================================================
 Bundled profanity filter attribution
 ================================================================================
 

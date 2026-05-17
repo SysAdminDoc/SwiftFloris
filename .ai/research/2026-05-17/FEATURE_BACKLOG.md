@@ -51,7 +51,7 @@ graduate into recommended next-slice work live in
 
 | Idea | Source |
 |---|---|
-| **Replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystoreV1** | AndroidX Security Crypto 1.1.0 exists, but APIs are deprecated. `PersonalDictionaryEncryptionTest` is the contract |
+| ✅ **Shipped v1.8.68:** replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystore | AndroidX Security Crypto 1.1.0 exists, but APIs are deprecated. `PersonalDictionaryEncryptionTest` now pins the shared Tink wrapper and one-shot legacy migration contract |
 | **Reproducible-build verification CI job** (build twice, compare APK checksums) | F-Droid verified-tier launch 2025-05; SwiftFloris can self-verify before fdroiddata submission |
 | **R8 rules audit** before AGP 9.2.x bump | AGP 9.2 / R8 release notes |
 | **OpenSSL/BoringSSL SQLCipher provider migration plan** | LibTomCrypt deprecation announced by Zetetic |

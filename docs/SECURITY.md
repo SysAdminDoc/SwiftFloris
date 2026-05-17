@@ -7,6 +7,8 @@ This document explains SwiftFloris's release-time security posture, the dependen
 
 - SwiftFloris does not request the `INTERNET` permission. CI verifies this on every build via
   `:app:verifyNoInternetPermission`.
+- Local sensitive stores use Android platform keys: clipboard history and the SQLCipher personal-dictionary
+  passphrase are wrapped with Tink `Aead` and AndroidKeystore-held AES-256-GCM keys.
 - The Gradle dependency tree is scanned for known CVEs on a weekly cron, on every change to a version-bearing build
   file, and again at release time.
 - Every GitHub Release body carries an "OSV scan" appendix that records the scanner version, the date the scan ran,
@@ -21,6 +23,22 @@ security check is for the version they have installed.
 See [`docs/THREAT_MODEL.md`](THREAT_MODEL.md) for the broader threat model (data-at-rest, addon isolation, MCP
 binding scope, password-field handling). This document is narrower: it covers only the dependency / supply-chain side
 of the security posture.
+
+## Local key storage
+
+As of v1.8.68, SwiftFloris no longer depends on AndroidX Security Crypto's deprecated
+`EncryptedSharedPreferences` APIs. `TinkStringPreferenceCrypto` uses Tink Android `1.21.0`, creates
+AndroidKeystore-held AES-256-GCM wrapping keys, and binds ciphertext to the `prefsFile:key` associated-data tuple.
+Reads of existing ciphertext do not generate replacement Keystore keys; missing keys fail closed and writes are the
+only path that create a new wrapper key.
+
+The helper is used for:
+
+- The SQLCipher personal-dictionary passphrase (`sqlcipher_passphrase_tink_v1`).
+- The legacy in-process clipboard-history store (`clipboard_history_tink_v1`).
+
+Legacy AndroidX encrypted-preference payloads are read only for one-shot migration when their keysets are still
+recoverable. The normal runtime dependency is now `com.google.crypto.tink:tink-android`.
 
 ## Dependency scanning
 

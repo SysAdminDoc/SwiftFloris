@@ -18,18 +18,19 @@ package dev.patrickgold.florisboard.ime.dictionary
 
 import android.content.Context
 import android.content.SharedPreferences
-import android.util.Base64
 import android.util.Log
-import androidx.security.crypto.EncryptedSharedPreferences
-import androidx.security.crypto.MasterKey
+import dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCrypto
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.io.File
 import java.security.SecureRandom
+import java.util.Base64
 
 private const val TAG = "FlorisUserDictCrypto"
 private const val SQLCIPHER_LIBRARY = "sqlcipher"
 private const val KEY_PREFS_FILE = "floris_user_dictionary_key"
-private const val KEY_PREF = "sqlcipher_passphrase_v1"
+private const val KEY_PREF_TINK = "sqlcipher_passphrase_tink_v1"
+private const val KEYSTORE_ALIAS = "swiftfloris_user_dictionary_sqlcipher_passphrase_v1"
+private const val LEGACY_KEY_PREF = "sqlcipher_passphrase_v1"
 private const val PASSPHRASE_BYTES = 64
 private val SQLITE_HEADER = "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
 
@@ -62,32 +63,54 @@ internal object FlorisUserDictionaryEncryption {
     }
 
     private fun getOrCreatePassphrase(context: Context): ByteArray {
-        val prefs = encryptedPrefs(context)
-        val stored = prefs.getString(KEY_PREF, null)
+        val appContext = context.applicationContext ?: context
+        val prefs = TinkStringPreferenceCrypto.sharedPreferences(appContext, KEY_PREFS_FILE)
+
+        val stored = TinkStringPreferenceCrypto.readBytes(
+            prefs = prefs,
+            prefsFileName = KEY_PREFS_FILE,
+            key = KEY_PREF_TINK,
+            keystoreAlias = KEYSTORE_ALIAS,
+        )
         if (stored != null) {
-            return Base64.decode(stored, Base64.NO_WRAP)
+            return stored
         }
+
+        val legacyPassphrase = TinkStringPreferenceCrypto.readLegacyEncryptedString(
+            context = appContext,
+            prefs = prefs,
+            prefsFileName = KEY_PREFS_FILE,
+            legacyKey = LEGACY_KEY_PREF,
+            logTag = TAG,
+        )?.let { Base64.getDecoder().decode(it) }
+        if (legacyPassphrase != null) {
+            persistWrappedPassphrase(prefs, legacyPassphrase)
+            return legacyPassphrase
+        }
+
+        if (TinkStringPreferenceCrypto.legacyKeysetsExist(prefs)) {
+            error("Could not migrate legacy encrypted user dictionary passphrase")
+        }
+
         val passphrase = ByteArray(PASSPHRASE_BYTES)
         SecureRandom().nextBytes(passphrase)
-        val storedSuccessfully = prefs.edit()
-            .putString(KEY_PREF, Base64.encodeToString(passphrase, Base64.NO_WRAP))
-            .commit()
-        check(storedSuccessfully) {
-            "Could not persist encrypted user dictionary passphrase"
-        }
+        persistWrappedPassphrase(prefs, passphrase)
         return passphrase
     }
 
-    private fun encryptedPrefs(context: Context): SharedPreferences {
-        val masterKey = MasterKey.Builder(context)
-            .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
-            .build()
-        return EncryptedSharedPreferences.create(
-            context,
-            KEY_PREFS_FILE,
-            masterKey,
-            EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
-            EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM,
+    private fun persistWrappedPassphrase(
+        prefs: SharedPreferences,
+        passphrase: ByteArray,
+    ) {
+        val storedSuccessfully = TinkStringPreferenceCrypto.writeBytes(
+            prefs = prefs,
+            prefsFileName = KEY_PREFS_FILE,
+            key = KEY_PREF_TINK,
+            keystoreAlias = KEYSTORE_ALIAS,
+            value = passphrase,
         )
+        check(storedSuccessfully) {
+            "Could not persist encrypted user dictionary passphrase"
+        }
     }
 }
