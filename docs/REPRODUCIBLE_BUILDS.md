@@ -1,7 +1,8 @@
 # SwiftFloris Reproducible Builds
 
-**Status:** Toolchain pinned, awaiting F-Droid submission for verified ✔ badge.
-**Roadmap §:** 6 N6.3.
+**Status:** Toolchain pinned, self-verification CI added, awaiting F-Droid
+submission for verified ✔ badge.
+**Roadmap §:** 6 N6.3 + addendum N12.5.
 
 This document explains how SwiftFloris pins every reproducible-build input so a
 third party can rebuild the published APK byte-for-byte (modulo signing) and
@@ -32,6 +33,20 @@ The release CI pipeline runs in `ubuntu-latest` (`.github/workflows/release.yml`
 with `actions/setup-java@v4` pinning `java-version: 17 distribution: temurin`.
 Gradle caching is wired but doesn't affect output bytes (cache hits restore
 identical artifacts).
+
+## Self-verification CI
+
+`scripts/verify-reproducible-apk.sh` is the repository-local "build twice,
+compare APK bytes" guard. It creates two detached Git worktrees at the same
+commit, updates submodules, runs release assembly in both clean trees with
+Gradle build cache disabled and tasks re-run, then compares the two APKs
+byte-for-byte.
+
+`.github/workflows/reproducible-build.yml` runs this verifier on
+`workflow_dispatch`, and on pushes / pull requests that touch app, Gradle,
+workflow, or reproducible-build documentation surfaces. On mismatch, the
+script writes per-entry SHA-256 manifests excluding `META-INF/` so maintainers
+can tell whether the drift is payload content or signing / ZIP metadata.
 
 ## What can still drift?
 
@@ -67,6 +82,12 @@ apkdiff() {
 apkdiff "$APK_LOCAL"     > local.txt
 apkdiff "$APK_PUBLISHED" > published.txt
 diff local.txt published.txt && echo "Reproducible ✔"
+```
+
+To run the in-repo self-check locally on a Linux host:
+
+```bash
+bash scripts/verify-reproducible-apk.sh
 ```
 
 ## F-Droid submission

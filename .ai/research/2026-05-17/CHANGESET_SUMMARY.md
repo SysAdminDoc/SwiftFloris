@@ -330,3 +330,33 @@ run locally. The release notes record the focused Gradle target for the
 maintainer build host. Local verification was limited to source inspection,
 `git diff --check`, the no-network permission grep, and post-commit git
 integrity checks.
+
+---
+
+## 9. v1.8.67 continuation — N12.5 reproducible-build self-check
+
+The autonomous development loop then shipped the local-code portion of
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §B.4 / `ROADMAP.md` N12.5.
+
+**Files added:**
+
+- `.github/workflows/reproducible-build.yml`
+- `scripts/verify-reproducible-apk.sh`
+- `RELEASE_NOTES_v1.8.67.md`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1867`,
+  `projectVersionName=1.8.67`
+- `docs/REPRODUCIBLE_BUILDS.md` → documents the build-twice self-check
+  and workflow trigger surface
+- `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`, and
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` → HEAD/current release moved
+  to v1.8.67 and N12.5 marked shipped
+
+**Verification note:** local verification used `git diff --check`, YAML parse
+validation for `.github/workflows/reproducible-build.yml`, LF-only line-ending
+checks for the new Linux-facing files, and static grep over the workflow/script
+references. Bash, Java, and the Android SDK are absent on this VM, so the shell
+syntax check and actual two-release-build self-check must run on GitHub Actions
+or the maintainer build host.
