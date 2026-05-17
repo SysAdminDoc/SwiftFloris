@@ -537,3 +537,45 @@ The autonomous development loop then shipped
 The focused Gradle suite was attempted and stopped at the known VM blocker:
 `JAVA_HOME` is not set and no `java` command is on PATH, so maintainer-host
 Gradle verification remains required before publishing.
+
+---
+
+## 15. v1.8.72 continuation — HeliBoard / NLnet slip-base-case correction
+
+The autonomous development loop then shipped Tier-1 prioritization item #9:
+make the HeliBoard / NLnet slip scenario the planning base case instead of
+treating N1.1 as the default production glide path.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.72.md`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1872`,
+  `projectVersionName=1.8.72`
+- `README.md` → version/front-door refresh and v1.8.72 Recent releases entry
+- `ROADMAP.md` → N1.1 reframed as additive HeliBoard / NLnet integration,
+  N1.3 statistical glide marked production default, risk-register row promoted
+  to high/base-case, and source appendix refreshed
+- `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PROJECT_CONTEXT.md`, `AGENTS.md`, `PRIORITIZATION_MATRIX.md`,
+  `STATE_OF_REPO.md`, `SOURCE_REGISTER.md`, and `RESEARCH_LOG.md` →
+  release/context updates for v1.8.72
+
+**Sources re-checked before editing:**
+
+- HeliBoard `#2226`: still open, updated 2026-05-11 via GitHub API
+- HeliBoard releases / latest-release API: latest remains `v3.9`, published
+  2026-03-29
+- NLnet Gesture Typing page: still describes a separate open-source gesture
+  library with an AOSP-compatible drop-in layer
+- HeliBoard gesture-data wiki: data collection period ends 2026-11-30 and
+  contributors still need an appropriate gesture typing library to gather data
+
+**Verification note:** documentation-only release; no app code, permissions,
+dependencies, or runtime behavior changed. `git diff --check` and manifest
+banned-network-permission scan were run. The focused Gradle suite was
+attempted and stopped at the known VM blocker: `JAVA_HOME` is not set and no
+`java` command is on PATH, so maintainer-host Gradle verification remains
+required before publishing.

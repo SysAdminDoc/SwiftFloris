@@ -36,7 +36,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 6 | ✅ **Local tag catch-up:** release tags `v1.8.41` … `v1.8.69` backfilled from matching version-bump commits | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; remaining step is pushing tags from the maintainer host |
 | 7 | **First-run "AI features in this keyboard" explainer surface** (EU AI Act Article 50, due 2 Aug 2026) | 4 | 2 | 4 | **6.0** | Regulatory cutoff in ~10 weeks; small UI slice; reinforces wedge |
 | 8 | **Settings → About re-openable "AI features" explainer** (same content, persistent) | 3 | 1 | 4 | **10.0** | Companion to #7; small |
-| 9 | **HeliBoard NLnet slip-base-case plan** (move N1.1 from "wait-and-integrate" to "ship N1.3-quality classifier; integrate N1.1 when it lands") | 4 | 2 | 4 | **6.0** | Library probably slips; N1.3 statistical is already shipped — frame as the default, not the placeholder |
+| 9 | ✅ **Shipped v1.8.72:** HeliBoard NLnet slip-base-case plan (N1.1 is additive; N1.3 statistical is production default) | 4 | 2 | 4 | **6.0** | Re-checked HeliBoard `#2226`, releases, NLnet page, and gesture-data wiki; no open library/dataset yet, data collection still active |
 | 10 | ✅ **Shipped v1.8.70:** README "Grammarly Android keyboard discontinued" migration callout | 3 | 1 | 3 | **9.0** | Grammarly Android transition framed as compatible overlay; SwiftFloris remains no-network |
 | 11 | **EU AI Act explainer copy in `docs/PRIVACY_AND_AI.md`** | 3 | 1 | 4 | **10.0** | Companion to #7/#8; one new doc |
 | 12 | ✅ **Shipped v1.8.71:** Bump-batch B (Roborazzi 1.55→1.60, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.2 bump (Tier-2); enables baseline capture |
@@ -115,7 +115,7 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 
 - **2026-05-30 pinned release** (#1) with `docs/MIGRATE_FROM_SWIFTKEY.md` link + Obtainium URL above the fold.
 - **Tink migration of androidx-security-crypto** (#3) — shipped v1.8.68.
-- **HeliBoard NLnet slip-base-case plan** (#9) — update ROADMAP §6 N1.1 framing.
+- **HeliBoard NLnet slip-base-case plan** (#9) shipped v1.8.72 — ROADMAP §6 N1.1 now treats `swiftfloris-statistical` as production default and HeliBoard open-glide as additive.
 
 ### v1.8.61+ (post-migration window — Phase C / D)
 
