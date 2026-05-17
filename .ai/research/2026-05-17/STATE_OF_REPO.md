@@ -1,11 +1,11 @@
 # SwiftFloris — State of the Repo
 
 **Research date:** 2026-05-17
-**HEAD:** `e62ba34` — docs: research run 2026-05-17 — fourth pass: README catch-up + PRIVACY_AND_AI.md + subsystem inspection
-**Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
+**Initial research HEAD:** `e62ba34` — docs: research run 2026-05-17 — fourth pass: README catch-up + PRIVACY_AND_AI.md + subsystem inspection
+**Branch:** `master`, ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.77. The notable dependency deltas are
+HEAD to v1.8.78. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
@@ -20,8 +20,10 @@ committed root `hs_err_pid*.log` / `replay_pid*.log` files.
 v1.8.74 updates AGP to `9.2.1` and Compose BOM to `2026.05.00`; compile /
 target SDK remain 36. v1.8.75 adds the macOS `.keylayout` XML parser for the
 hardware-keyboard import stack, v1.8.76 adds the Android runtime mapper for
-imported hardware-keyboard layouts, and v1.8.77 adds the user-imported sticker
-folder over the existing rich-content provider path.
+imported hardware-keyboard layouts, v1.8.77 adds the user-imported sticker
+folder over the existing rich-content provider path, and v1.8.78 adds the
+Keyman `.kmp` package intake/classifier foundation without executing compiled
+`.kmx` bytecode or JavaScript in `:app`.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -52,7 +54,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.73 / 1873 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.78 / 1878 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.2.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
@@ -89,7 +91,8 @@ is 9.2.x. KSP target 2.3.8 shipped in v1.8.69; Roborazzi 1.60.0 and
 Robolectric 4.16.1 shipped in v1.8.71; AGP 9.2.1 and Compose BOM 2026.05.00
 shipped in v1.8.74; the macOS `.keylayout` parser shipped in v1.8.75; the
 hardware-keyboard runtime mapper shipped in v1.8.76; the user-imported sticker
-folder shipped in v1.8.77.
+folder shipped in v1.8.77; Keyman `.kmp` package metadata intake and LDML-in-package
+extraction shipped in v1.8.78.
 
 A docs-only contributor-onboarding batch followed v1.8.77: root
 `ARCHITECTURE.md` now captures the module/runtime/package map and root
@@ -102,6 +105,12 @@ The next docs-only repo-hygiene batch moved root multilingual / voice guides
 under `docs/`: `docs/GESTURE_TYPING_MULTILINGUAL.md`,
 `docs/GESTURE_TYPING_MULTILINGUAL_RESEARCH.md`,
 `docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`, and `docs/VOICE_COMMANDS.md`.
+
+v1.8.78 then implemented the Keyman `.kmp` package import foundation:
+`KeymanPackageParser` reads ZIP-compatible package containers, normalizes
+`kmp.json`, records file metadata, extracts LDML XML through
+`KeymanLdmlParser`, and classifies packages as LDML-ready, lexical-only,
+mixed, metadata-only, invalid, or compiled-engine-required.
 
 ## 3. Module layout
 
@@ -229,8 +238,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 93 tags in repo after the v1.8.77 release tag; local release tags now run
-  through `v1.8.77`. Push remains a maintainer-host task because this VM
+- 94 tags in repo after the v1.8.78 release tag; local release tags now run
+  through `v1.8.78`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -307,8 +316,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.77).
-  The local tag stream was recovered through `v1.8.77`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.78).
+  The local tag stream was recovered through `v1.8.78`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

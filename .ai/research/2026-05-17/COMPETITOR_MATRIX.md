@@ -232,7 +232,7 @@ ships somewhere else.
 | Project | License | Why it matters | SwiftFloris stance |
 |---|---|---|---|
 | **Joplin Voice Typing** (in-app) | AGPL-3.0 (Joplin) | Per-context custom Whisper model + glossary | Reference for ROADMAP Next-2.3 model manager |
-| **Keyman** (keymanapp/keyman) | MIT | **1,000+ minority-language layouts** in public Keyman cloud catalog. `.kmp` package installer | SwiftFloris already imports LDML (L8). `.kmp` runtime would extend reach dramatically |
+| **Keyman** (keymanapp/keyman) | MIT | **1,000+ minority-language layouts** in public Keyman cloud catalog. `.kmp` package installer | SwiftFloris imports LDML (L8) and v1.8.78 adds safe `.kmp` metadata/LDML package intake. Compiled `.kmx` / `.js` runtime remains the high-value future addon |
 | **Trinity / WhisperInput stand-alone keyboard** | mixed | Voice-only IME | SwiftFloris integrates voice inside the keyboard (Next-2) |
 
 ---
@@ -269,7 +269,7 @@ ships somewhere else.
 |---|---|---|---|---|
 | 1 | **User-imported sticker folder** (`~/Pictures/Stickers/*.webp` / `*.png` → inline via `commitContent`) | High | Low | No OSS keyboard offers this. Reuses `StickerMediaProvider` already in tree |
 | 2 | **Offline GIF browser** (bundled Tenor cache via APK split + user-imported folder) | High | Med | CleverKeys ships offline GIF; no network required |
-| 3 | **`.kmp` Keyman package runtime** (extend Next-6.4 / L8 importer) | Med–High (linguistic minorities) | Med | Keyman MIT engine; SwiftFloris already has LDML pathway |
+| 3 | **`.kmp` Keyman package runtime** (extend v1.8.78 package intake) | Med–High (linguistic minorities) | Med | Package metadata + LDML-in-package intake now shipped; compiled `.kmx` / `.js` execution remains addon/runtime work |
 | 4 | **Calendar quick-insert (P9)** and **Tasks quick-insert (P10)** | Med | S each | `CalendarContract.Instances` + `Intent.ACTION_INSERT` against Tasks.org / Google Tasks |
 | 5 | **Dedicated arrow-keys row preset (P24)** | Med | S | New `BottomRowPreset.ArrowsRow` |
 | 6 | **3×3 thumb-grid alt layout** (Thumb-Key parity, optional) | Med | Med | Layout-engine work; valuable for one-handed/foldable |

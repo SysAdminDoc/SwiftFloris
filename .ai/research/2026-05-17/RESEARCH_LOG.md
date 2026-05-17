@@ -229,6 +229,13 @@ or one-competitor additions, not a new roadmap pillar.
   `StickerMediaProvider` proxy reads for user sticker documents. Focused Gradle
   verification was attempted and stopped at the known VM blocker (`JAVA_HOME` /
   `java` missing).
+- **v1.8.78 / Tier-3 #34 partial implementation:** official Keyman package
+  docs were re-checked for `.kmp` ZIP-compatible packages, registered MIME
+  type, `kmp.json` metadata, and the keyboard-vs-lexical-model package split.
+  `KeymanPackageParser` now provides safe package intake, metadata
+  normalization, LDML-in-package extraction, and package-status classification.
+  Focused Gradle verification was attempted and stopped at the known VM blocker
+  (`JAVA_HOME` / `java` missing).
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local

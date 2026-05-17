@@ -916,3 +916,31 @@ finds no remaining `*MULTILINGUAL*.md`, `VOICE_*.md`, or `FUTO_*.md` files.
 validation, manifest no-network scan, and root crash-log tracked-file guard.
 Gradle remains blocked by the missing Java toolchain and was not required for
 this docs-only move.
+
+## 26. v1.8.78 continuation — Keyman `.kmp` package import foundation
+
+Implemented Tier-3 #34 as the safe intake/classifier layer for Keyman package
+files:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/KeymanPackageParser.kt`
+  - New ZIP-compatible `.kmp` parser with `kmp.json` metadata normalization,
+    package option/file/keyboard/language/example/lexical-model models, LDML
+    XML extraction via `KeymanLdmlParser`, package-status classification, and
+    unsafe traversal / absolute / drive-letter path skipping.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/hardware/KeymanPackageParserTest.kt`
+  - New tests for metadata parsing, compiled-keyboard classification, LDML
+    extraction, lexical-model classification, mixed package detection, unsafe
+    path skipping, and invalid ZIP fallback.
+- `RELEASE_NOTES_v1.8.78.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and the
+  `.ai/research/2026-05-17/` register/backlog/prioritization/state files
+  - Release/context updates for v1.8.78 and explicit note that compiled
+    `.kmx` / `.js` execution remains future addon/runtime work.
+- `gradle.properties`
+  - `projectVersionCode=1878`, `projectVersionName=1.8.78`.
+
+**Verification note:** `git diff --check`, the manifest banned-network-permission
+scan, root JVM crash/replay tracked-file guard, and a focused Gradle test
+command were run. Gradle stopped at the known VM blocker: `JAVA_HOME` is not
+set and no `java` command is on PATH, so maintainer-host Gradle verification
+remains required before publishing.

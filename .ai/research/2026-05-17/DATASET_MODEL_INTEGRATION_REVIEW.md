@@ -63,7 +63,7 @@ not by producing separate networked and non-networked base APK flavors.
 | **MCP daemon bridge** | `IMcpDaemon.aidl` + `AndroidMcpClient` + `McpServiceConnectionManager` + `McpAndroidDiscoverer` + `McpDispatchRouter` + Settings → MCP daemon bridge | n/a (binder contract only; daemons supply their own licenses) | Shipped v1.8.35-1.8.40; per-daemon enable/disable v1.8.40; per-tool switches v1.8.x |
 | **Calendar / Tasks quick-insert** (P9 / P10) | `QuickAction.InsertCalendarEvent` + `QuickAction.InsertTask` proposed | n/a (intent contract only) | **Not shipped; new gap surfaced by SWIFTKEY_PARITY_ROADMAP_2026-05-17.md** |
 | **WebAuthn passkey adapter** (L10) | `PasskeyAdapter` interface + `PasskeyFieldDetector` | (adapter; addon implements the ceremony) | Detector + adapter shipped v1.8.x; Activity-bound Credential Manager ceremony in `addons/passkey-adapter/` (external work) |
-| **Hardware-keyboard layouts** | `KlcLayoutParser` + `KeymanLdmlParser` + `HardwareKeyboardLayout` | MIT (Keyman engine); KLC is just a format | KLC + LDML parsers shipped; runtime mapper for live HW keyboards (Next-6.4b) is external work |
+| **Hardware-keyboard layouts** | `KlcLayoutParser` + `KeymanLdmlParser` + `MacKeylayoutParser` + `KeymanPackageParser` + `HardwareKeyboardLayout` + `HardwareKeyboardRuntimeMapper` | MIT (Keyman engine); KLC/macOS keylayout are file formats | KLC + LDML parsers shipped; macOS `.keylayout` parser shipped v1.8.75; runtime mapper shipped v1.8.76; safe Keyman `.kmp` package intake / LDML-in-package extraction shipped v1.8.78. Compiled `.kmx` / `.js` runtime remains future addon work |
 | **Syncthing CRDT pairing** (N5) | `PersonalDictionaryCrdt` + `PairingPayload` + `SyncChannel` + Settings → Sync | (no external service binding; channel pluggable) | CRDT model + merger + pairing payload + channel taxonomy + SAF folder + manual export all shipped v1.8.x |
 | **Tenor / Giphy** | (rejected) | n/a | §10 reject — local sticker packs only |
 | **Bing / Copilot / Gemini API** | (rejected) | n/a | §10 reject — MCP daemon bridge is the opt-in escape valve |
@@ -85,7 +85,7 @@ not by producing separate networked and non-networked base APK flavors.
 | Smart Compose / Tone | ⚠️ facade + provider boundary; gated on L1 LiteRT-LM addon |
 | Per-app accent / theme | ✅ shipped (`PerAppAccentResolver` + `PerAppAccentController`) |
 | Per-app smartbar profile | ✅ shipped (`SmartbarActionProfiles`: CHAT / CODE / EMAIL / PASSWORD) |
-| Hardware-keyboard layout import | ⚠️ parsers shipped; runtime mapper outstanding |
+| Hardware-keyboard layout import | ✅ KLC / LDML / macOS parsers + Android runtime mapper shipped; `.kmp` compiled runtime remains addon-scoped |
 | Personal-dictionary E2EE sync between user's own devices | ⚠️ CRDT shipped; transport implementation outstanding |
 
 ## 6. License-cleanliness audit (one screen)

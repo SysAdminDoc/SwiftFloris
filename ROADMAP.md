@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.77 (released 2026-05-17 — user-imported sticker folder. Settings → Emoji & stickers can persist a local SAF folder URI, enumerate PNG / WebP / JPEG / GIF documents into an Imported sticker pack, preview them locally, and commit them through the existing rich-content provider path. **Previous version, v1.8.76** (released 2026-05-17 — hardware-keyboard runtime mapper; see `RELEASE_NOTES_v1.8.76.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.78 (released 2026-05-17 — Keyman `.kmp` package import foundation. `KeymanPackageParser` safely opens `.kmp` ZIP packages, normalizes `kmp.json` metadata, extracts LDML XML layouts when present, classifies lexical-model-only and compiled-engine-required packages, and skips unsafe entry paths. **Previous version, v1.8.77** (released 2026-05-17 — user-imported sticker folder; see `RELEASE_NOTES_v1.8.77.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -26,7 +26,7 @@ This delta supersedes the stale dependency guidance in the first-pass
 - Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
   2026-05-17 from their matching `gradle.properties` version-bump commits
   so Obtainium / fork audit anchors are no longer stale locally; v1.8.70
-  through v1.8.77 are tagged with their release commits. The remaining
+  through v1.8.78 are tagged with their release commits. The remaining
   distribution step is pushing those tags from the maintainer host.
 - v1.8.70 refreshed README migration-window messaging for Samsung and
   Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
@@ -66,6 +66,10 @@ This delta supersedes the stale dependency guidance in the first-pass
   image files into an Imported sticker pack, `StickerPaletteView` decodes local
   previews, and `StickerMediaProvider` proxies commits through the existing
   `commitContent` path without adding network or gallery permissions.
+- Tier-3 #34 partial shipped in v1.8.78: `.kmp` Keyman package intake now has
+  a safe parser/classifier foundation. This does **not** execute compiled
+  `.kmx` bytecode or JavaScript in `:app`; those packages are explicitly marked
+  `CompiledEngineRequired` until a compatible addon/runtime lands.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -104,7 +108,7 @@ This table is the Phase 2/3 normalization layer. It does not replace the 95+ exi
 
 | # | Feature / idea | Cat. | Sources | Prev. | Fit | I/E/R | Depends | Novelty | Tier | Placement rationale |
 |---:|---|---|---|---|---|---|---|---|---|---|
-| 1 | README/version/release-note parity sweep | docs / distribution | `[INT-README]`, `[INT-ROADMAP]` | table-stakes | strong | 4/1/1 | release artifacts | parity | Recently Shipped | ✅ Refreshed through v1.8.77 — `README.md` / `ROADMAP.md` now track the current stack, target SDK, themes, MCP bridge, multilingual scripts, hardware-keyboard import/runtime slices, local sticker import, encryption posture, release-note links, and local tag stream; broken doc links remain removed. |
+| 1 | README/version/release-note parity sweep | docs / distribution | `[INT-README]`, `[INT-ROADMAP]` | table-stakes | strong | 4/1/1 | release artifacts | parity | Recently Shipped | ✅ Refreshed through v1.8.78 — `README.md` / `ROADMAP.md` now track the current stack, target SDK, themes, MCP bridge, multilingual scripts, hardware-keyboard import/runtime slices, local sticker import, Keyman `.kmp` package intake, encryption posture, release-note links, and local tag stream; broken doc links remain removed. |
 | 2 | Publish v1.8.46 GitHub release artifacts | distribution | `[INT-REL]`, `[SK-RETIRE-2026]` | table-stakes | strong | 5/1/1 | signing workflow | parity | Now | SwiftKey users have a dated cutoff; a stale public release stream kills adoption trust. |
 | 3 | SwiftKey export JSON importer | migration / data | `[COMM-SWIFTKEY-ONEDRIVE]`, `[COMMUNITY-SWIFTKEY-ONEDRIVE]`, `[INT-REL]` | rare/time-sensitive | strong | 5/2/2 | sample export | leapfrog | Recently Shipped | v1.8.46 landed the tolerant JSON parser; the remaining work is release/distribution/docs, not parser discovery. |
 | 4 | Emoji picker crash regression for issue #1 | reliability / testing | `[GH-SWIFTF-ISSUE-1]`, `[DEP-EMOJI2-2026]` | table-stakes | strong | 5/2/1 | repro trace | parity | Now | Emoji insertion is core keyboard behavior; public crash reports outrank speculative feature work. |
@@ -128,7 +132,7 @@ This table is the Phase 2/3 normalization layer. It does not replace the 95+ exi
 | 22 | librime/Rime CJK addon | i18n / plugin ecosystem | `[OSS-FCITX-GH]`, `[OSS-TRIME-GH]`, `[OSS-RIME]`, `[FUTO-V0-1-28]` | common outside Latin | strong | 5/5/3 | native addon | parity | Next | CJK support is table-stakes globally and the Rime ecosystem is the proven offline path. |
 | 23 | Fcitx-style engine pack API | plugin ecosystem / i18n | `[OSS-FCITX-GH]`, `[STD-FLORIS-EXT]` | rare on Android | strong | 4/5/3 | dictionary/addon contracts | leapfrog | Later | Useful architecture, but SwiftFloris should finish one real Rime/Bergamot add-on before generalizing engines. |
 | 24 | Rime schema import UI | migration / i18n | `[OSS-TRIME-GH]`, `[OSS-RIME]` | common in Rime world | strong | 4/3/2 | L3 addon | parity | Later | Schema import matters after the CJK runtime exists, not before. |
-| 25 | Keyman LDML pack import expansion | i18n / migration | `[OSS-KEYMAN]`, `[OSS-DIVVUN-GH]` | common in minority-language IMEs | strong | 4/4/2 | existing LDML parser | leapfrog | Later | High mission fit for underserved languages but lower urgency than crash/release work. |
+| 25 | Keyman LDML / `.kmp` pack import expansion | i18n / migration | `[OSS-KEYMAN]`, `[OSS-DIVVUN-GH]` | common in minority-language IMEs | strong | 4/4/2 | existing LDML parser + `.kmp` package parser | leapfrog | Partially Shipped | ✅ v1.8.78 adds `KeymanPackageParser`: safe ZIP/package metadata intake for `.kmp`, LDML-in-package extraction, lexical-model/mixed-package classification, compiled-engine-required classification, and unsafe entry skipping. Remaining work is the actual compiled `.kmx` / `.js` runtime path, likely addon-scoped. |
 | 26 | Indic Keyboard / Divvun language-pack backlog | i18n | `[OSS-INDIC-GH]`, `[OSS-DIVVUN-GH]` | common | strong | 4/3/2 | dictionary pack spec | parity | Later | Treat as pack work so the base APK remains lean and license/attribution stays isolated. |
 | 27 | Unexpected Keyboard script-first layout picker | UX / i18n | `[OSS-UNEXPECTED-GH]` | uncommon | medium | 3/2/1 | subtype editor | parity | Partially Shipped | ✅ 2026-05-16 — new `LayoutScript` enum (27 buckets including LATIN / CYRILLIC / GREEK / HEBREW / ARABIC / ARMENIAN / GEORGIAN / DEVANAGARI / BENGALI / GURMUKHI / GUJARATI / TAMIL / TELUGU / KANNADA / MALAYALAM / ODIA / SINHALA / THAI / LAO / KHMER / BURMESE / TIBETAN / CJK / KOREAN_HANGUL / JAPANESE / ETHIOPIC / CHEROKEE / OTHER). `LayoutScriptClassifier.classify(locale)` maps a `FlorisLocale` to its dominant script (with overrides for Yiddish→Hebrew, Ladino→Hebrew, etc.). `groupByScript(presets)` returns an order-preserving `Map<LayoutScript, List<SubtypePreset>>` keyed by script-first appearance. 12 new `LayoutScriptClassifierTest` cases pin each bucket + the OTHER fallback + the case-insensitive code lookup + the grouping order. Settings → Localization UI wire-up tracked as a follow-up — the data layer ships here as additive (no behavior change to the existing locale-alphabetical picker). |
 | 28 | Thumb-Key YAML/layout validation before apply | reliability / UX | `[OSS-THUMB-GH]` | uncommon | medium | 3/2/1 | custom layout editor | parity | Under Consideration | Valuable if SwiftFloris exposes raw layout import; otherwise not user-facing. |
@@ -206,7 +210,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.77 reality, observed)
+## 2. State of the Repo (v1.8.78 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor · AGP 9.2.1 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -214,7 +218,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 **Source size:** 624+ tracked Kotlin files repo-wide, with the main IME work concentrated in `app/src/main/kotlin/dev/patrickgold/florisboard/ime/{keyboard,nlp,theme,ext,emoji,mcp,voice,bidi,dictionary,kenlm,calendar}`. The v1.8.40 release line reported **998 unit tests** at HEAD, and v1.8.41-v1.8.69 pushed the suite past **1000+ unit tests** with targeted gates around apostrophe auto-return, password-field popup suppression, Roborazzi task wiring, Kotlin reproducibility drift, Android 17 IME visibility restore, split rendering, bundled theme contrast/registration, calendar quick-insert formatting/serialization, encrypted dictionary export/import round-trip parsing, AI-feature disclosure catalog coverage, and the Tink encrypted-preference migration contract. Production TODO/FIXME markers are now mostly design debt rather than crash stubs: language-capability hard-coding in `FlorisLocale`, loader/locking notes in language-pack extensions, emoji-compat GMS/no-GMS cleanup, honeycomb/layout constraint comments, and unsupported mutating calls in read-only media providers. **No known production `TODO()` crash stub remains.**
 
-**Active components (v1.8.77):**
+**Active components (v1.8.78):**
 - **Core keyboard:** FlorisBoard-derived layouts, QWERTY/QWERTZ/AZERTY and locale variants, bottom-row presets, split/floating/one-handed foundations, SwiftKey Pure themes, M3 Expressive themes, SwiftKey High Contrast (AAA), Aurora Animated, Snygg theme engine, per-app smartbar profiles, CODE profile, inline autofill slot, keyboard-height/font-size controls, haptics, popup polish, reduced-motion gating, and accessibility labels.
 - **Prediction / correction:** 117k-word SCOWL English dictionary, contraction autocorrect, SymSpell d1 + bounded d2, adaptive touch model, personal bigram/trigram stores, typed-word overlay with instant remember, overlay typo correction, user-dictionary edit invalidation, capitalization-aware completions, single-letter proper-noun completions, and remove-from-predictions overlay.
 - **Multilingual input:** bilingual subtype presets, per-token Latin language identification, multilingual token scoring, top-two straddle guard, phrase priors, multi-word repair, 63-script transliteration coverage, RTL/BiDi pipeline, sentence tokenizer, inline translation facade/cache/router/language-pack manager, and CJK/librime facade without native backend yet.
@@ -225,12 +229,12 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 - **Privacy / security:** Gradle no-network gate, password-field learning/clipboard/FLAG_SECURE defenses, SQLCipher personal dictionary with Tink / AndroidKeystore passphrase wrapping, Tink-wrapped legacy clipboard-history storage, addon sensitive-field guard, in-memory addon audit ring, local-only MCP binding, threat model, signing fingerprint surface, dependency scan workflow, reproducible-build docs, and 16 KB APK alignment check.
 
 **Stubbed / under-investigated (current blockers):**
-- ✅ `ROADMAP.md` / `README.md` parity has been refreshed through v1.8.77:
+- ✅ `ROADMAP.md` / `README.md` parity has been refreshed through v1.8.78:
   broken doc links were removed, release-note links match local files, and the
   stack / target-SDK / themes / MCP / multilingual / hardware-keyboard sections
   track the current manifest and version metadata.
 - GitHub Releases still need to be checked against the current local tag stream
-  (`v1.8.77` at this snapshot); publication remains a maintainer-host task
+  (`v1.8.78` at this snapshot); publication remains a maintainer-host task
   because this VM cannot push to `SysAdminDoc/SwiftFloris`.
 - `:benchmark` and `:lib:native` are present-but-detached. Macrobenchmark trace sections are emitted from production paths, but device-number collection is still external work; embedded Whisper remains impossible until the native module is intentionally revived.
 - Roborazzi is now externally unblocked and the plugin alias is active, but the screenshot baseline is still in a bootstrap state. Record baseline PNGs and remove `continue-on-error` so screenshot regressions stop relying on manual review.
@@ -243,10 +247,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.77, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.78, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.78 | 2026-05-17 | Tier-3 #34 Keyman `.kmp` package import foundation. Added `KeymanPackageParser`, package metadata models, safe ZIP entry validation, `kmp.json` normalization, LDML XML extraction through `KeymanLdmlParser`, package-status classification for LDML-ready / lexical-model-only / mixed / metadata-only / compiled-engine-required packages, and `KeymanPackageParserTest`. Compiled `.kmx` / `.js` execution remains explicitly outside `:app` until an addon/runtime path lands. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.78.md` |
 | v1.8.77 | 2026-05-17 | Next-9.5 user-imported sticker folder. Added `prefs.sticker.userFolderUri`, Settings → Emoji & stickers SAF tree picker / clear action, `UserStickerRepository` for local PNG / WebP / JPEG / GIF document enumeration, imported-pack preview decoding in `StickerPaletteView`, and `StickerMediaProvider` proxy reads for user sticker content URIs. New `UserStickerRepositoryTest` covers supported-file filtering, extension fallback, empty-folder handling, caps, and duplicate URI collapse. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.77.md` |
 | v1.8.76 | 2026-05-17 | Next-6.4b hardware-keyboard runtime mapper. Added `HardwareKeyboardRuntimeMapper`, device-id layout binding, detached-device pruning via `InputManager.getInputDeviceIds()`, direct scan/key-code resolution, PC set-1 KLC fallbacks, macOS ANSI virtual-key fallbacks, source-name fallback, and `KeyboardManager.onHardwareKeyDown(...)` dispatch that commits mapped printable characters through the normal editor path before built-in Space / Enter / Shift handling. New `HardwareKeyboardRuntimeMapperTest` covers fallbacks, direct precedence, Ctrl/Meta suppression, and prune behavior. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.76.md` |
 | v1.8.75 | 2026-05-17 | Next-6.4a macOS `.keylayout` parser. Added `MacKeylayoutParser`, an XXE-hardened XML importer that selects the referenced `<keyMapSet>`, maps normal / Shift / Option-as-AltGr / Shift+Option slots through `<modifierMap>`, captures action-backed dead-key outputs, and returns `HardwareKeyboardLayout.Empty` for blank, malformed, non-keyboard, or DOCTYPE-bearing XML. New `MacKeylayoutParserTest` covers metadata, modifier slots, map-set selection, fallback mapping, dead keys, malformed XML, and XXE rejection. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.75.md` |
@@ -781,6 +786,7 @@ User points SwiftFloris at home Ollama / LM Studio over Tailscale; default off; 
 Single biggest layout-coverage moat per import. Keyman has 1,000 keyboards spanning 2,500+ languages under MIT [O15]. Importer parses LDML keyboards XML → SwiftFloris layout JSON.
 
 - ✅ **L8 parser** shipped 2026-05-15. New `ime/hardware/KeymanLdmlParser.parse(xml)` uses `javax.xml.parsers.DocumentBuilderFactory` (JVM stdlib, zero external dep) to convert LDML keyboard XML into a `HardwareKeyboardLayout` (reusing the Next-6.4 cross-format target type). Parses the `<keyboard locale>` + `<names>` + `<keys>` sub-tree; each `<key id="A01" output="ሰ" longPress="ሠ">` becomes one `HardwareKeyEntry`. **OWASP XXE-hardened** — disables DOCTYPE, external general / parameter entities, XInclude, entity-reference expansion (addon-supplied LDML crosses the addon-IME trust boundary). Tolerates malformed XML by returning Empty rather than throwing. `KeymanLdmlParserTest` covers seven invariants including XXE-relevant defenses. L8.1 added `<transforms>` dead-key / ligature sequencing; L8.2 added `<displays>` visual-glyph labels via `HardwareKeyEntry.displayLabel`.
+- ✅ **L8.3 / Tier-3 #34 partial** shipped 2026-05-17 (v1.8.78). New `ime/hardware/KeymanPackageParser.parse(...)` opens `.kmp` ZIP-compatible Keyman packages, reads `kmp.json`, records contained files, extracts any LDML XML layouts through the existing `KeymanLdmlParser`, skips traversal / absolute / drive-letter entry paths, and classifies packages as `LdmlReady`, `LexicalModelOnly`, `MixedPackageUnsupported`, `MetadataOnly`, `Invalid`, or `CompiledEngineRequired`. This is the safe intake/classifier layer only: compiled `.kmx` bytecode and `.js` keyboard execution remain future addon/runtime work, not a hidden dependency in `:app`.
 
 ### L9. Honeycomb / hexagonal / T9 / Colemak / Dvorak / Workman alt layouts
 
@@ -1299,4 +1305,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.77 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, the root crash/replay-log CI guardrail, the macOS `.keylayout` parser, the hardware-keyboard runtime mapper, and the user-imported sticker folder. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.78 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, the root crash/replay-log CI guardrail, the macOS `.keylayout` parser, the hardware-keyboard runtime mapper, the user-imported sticker folder, and the Keyman `.kmp` package import foundation. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, when the compiled Keyman addon/runtime path is scoped, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*

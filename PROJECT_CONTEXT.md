@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.77)
+## 3. Stack at HEAD (v1.8.78)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -105,6 +105,14 @@ an Imported pack, `StickerPaletteView` decodes local previews, and
 rich-content `commitContent` path. No network, account, or broad media-library
 permission was added.
 
+v1.8.78 ships the Tier-3 #34 Keyman `.kmp` package import foundation.
+`KeymanPackageParser` opens ZIP-compatible `.kmp` packages, normalizes
+`kmp.json` metadata, extracts any LDML XML layouts through `KeymanLdmlParser`,
+skips unsafe package paths, and classifies lexical-model-only, mixed,
+metadata-only, invalid, LDML-ready, and compiled-engine-required packages.
+Compiled `.kmx` / `.js` keyboard execution remains future addon/runtime work,
+not an in-`:app` dependency.
+
 ## 4. Module layout
 
 ```
@@ -132,7 +140,7 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.77`
+  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.78`
   are tagged with their release commits. The tags still need to be
   pushed from the maintainer host because this VM cannot push to
   `SysAdminDoc/SwiftFloris`.
