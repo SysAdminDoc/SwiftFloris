@@ -1118,13 +1118,51 @@ trust store:
   `docs/addons/dictionary-pack-spec.md`, and the `.ai/research/2026-05-17/`
   state/register/backlog/prioritization/log files
   - Release/context updates for v1.8.83 and explicit note that Settings →
-    Addons UI/install hints and asset mounting remain next slices.
+    Addons UI/install hints and asset mounting remained next slices at that
+    release. The read-only status/rescan UI shipped in v1.8.84.
 - `gradle.properties`
   - `projectVersionCode=1883`, `projectVersionName=1.8.83`.
 
 **Verification note:** local verification used `git diff --check`, the manifest
 banned-network-permission scan, and the root JVM crash/replay tracked-file
 guard. A focused Gradle test command for the addon startup tests was attempted,
+but Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no
+`java` command is on PATH, so maintainer-host Gradle verification remains
+required.
+
+## 32. v1.8.84 continuation — Settings Addons status surface
+
+Implemented Next-10.3d as the read-only Settings status/rescan layer for addon
+enrolment:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/addons/AddonsSettingsScreen.kt`
+  - New Settings → Addons screen that reads `AddonRegistryStore`, observes
+    `prefs.addon.signingCertPins`, shows accepted/rejected/pinned counts, lists
+    accepted addon package/type/version/license/size/signing-fingerprint details,
+    lists rejected package reasons, and shows local-only install guidance.
+  - Manual "Rescan installed addons" action runs `AddonEnumerator` on
+    `Dispatchers.Default`, reuses `AddonRegistryStartup.reconcile(...)`,
+    updates `AddonRegistryStore`, and persists canonical signing pins only when
+    the trust set changes.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt`
+  - Added `Routes.Settings.Addons`, deep link `ui://florisboard/settings/addons`,
+    and `AddonsSettingsScreen()` navigation.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/HomeScreen.kt`
+  - Added the Addons row under Data & extensions.
+- `app/src/main/res/values/strings.xml`
+  - Added English source strings for the Addons screen and Home summary.
+- `RELEASE_NOTES_v1.8.84.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `docs/addons/dictionary-pack-spec.md`, and the `.ai/research/2026-05-17/`
+  state/register/backlog/prioritization/log files
+  - Release/context updates for v1.8.84 and explicit note that signing-pin
+    revoke/reset UX plus dictionary asset mounting remain next slices.
+- `gradle.properties`
+  - `projectVersionCode=1884`, `projectVersionName=1.8.84`.
+
+**Verification note:** local verification used `git diff --check`, the manifest
+banned-network-permission scan, and the root JVM crash/replay tracked-file
+guard. A Gradle compile command for the Addons settings screen was attempted,
 but Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no
 `java` command is on PATH, so maintainer-host Gradle verification remains
 required.

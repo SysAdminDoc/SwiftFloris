@@ -26,6 +26,7 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
+| [RELEASE_NOTES_v1.8.84.md](../../../RELEASE_NOTES_v1.8.84.md) | v1.8.84 Settings Addons status surface |
 | [RELEASE_NOTES_v1.8.83.md](../../../RELEASE_NOTES_v1.8.83.md) | v1.8.83 addon registry startup wiring |
 | [RELEASE_NOTES_v1.8.82.md](../../../RELEASE_NOTES_v1.8.82.md) | v1.8.82 addon signing-pin persistence |
 | [RELEASE_NOTES_v1.8.81.md](../../../RELEASE_NOTES_v1.8.81.md) | v1.8.81 addon catalog foundation |
@@ -40,7 +41,7 @@ source, the citation is here.
 | [RELEASE_NOTES_v1.8.53.md](../../../RELEASE_NOTES_v1.8.53.md) | Phase A2 post-import confirmation + rollback |
 | [RELEASE_NOTES_v1.8.52.md](../../../RELEASE_NOTES_v1.8.52.md) | Phase A1 migration outreach + README badge |
 
-(91 per-release notes total in repo root — full list in
+(92 per-release notes total in repo root — full list in
 [STATE_OF_REPO.md](STATE_OF_REPO.md))
 
 ### 1.3 Build / config
@@ -97,6 +98,7 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/DictionaryPackCatalog.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonSigningPinSet.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryStartup.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/addons/AddonsSettingsScreen.kt`
 - `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryTest.kt`
 - `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/DictionaryPackCatalogTest.kt`
 - `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonSigningPinSetTest.kt`
@@ -106,7 +108,7 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 - `git log --oneline -30` — HEAD commit subjects
 - `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
-  backfilled local tags through `v1.8.83` (push still pending from maintainer host)
+  backfilled local tags through `v1.8.84` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
 - `git branch --show-current` — `master`; continuation commits leave the local
   branch ahead of `origin/master` because this VM cannot push to the remote
