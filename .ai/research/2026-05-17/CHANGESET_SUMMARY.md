@@ -1,15 +1,24 @@
 # Changeset Summary — 2026-05-17 Research Run
 
-This research run created **14 new files** across two passes and
+This research run created **15 new files** across three passes and
 **modified zero existing source / build files**. Nothing in `ROADMAP.md`,
 `IMPROVEMENT_PLAN.md`, the per-release notes, the build files, or any
 source file under `app/` or `lib/` was touched. All output is additive.
 
-The first pass created 11 files; the second pass added 3 more (`AGENTS.md`,
-`CLAUDE.md`, `SECOND_PASS_FINDINGS.md`) and minor in-place corrections
-to two prior pass-1 artifacts (`MEMORY_CONSOLIDATION.md` §2.6 L7 row
-verified ✅; `PROJECT_CONTEXT.md` and `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`
-bumped HEAD references v1.8.55 → v1.8.58).
+- Pass 1 created 11 files (root: `PROJECT_CONTEXT.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`; nine artifacts under
+  `.ai/research/2026-05-17/`).
+- Pass 2 added 3 more (`AGENTS.md`, `CLAUDE.md`,
+  `SECOND_PASS_FINDINGS.md`) and minor in-place corrections to two
+  prior pass-1 artifacts.
+- Pass 3 added 1 more (`THIRD_PASS_FINDINGS.md`) and closes the
+  SECOND_PASS_FINDINGS §10 "did not cover" backlog: asset audit,
+  workflow audit, theme count, test count, release-notes/ROADMAP
+  coverage, tag-lag delta, plus 10 verified external facts (LiteRT-LM
+  0.11.0 GA, Compose BOM 2026.05.00, Kotlin 2.4 still RC, Android 17
+  GA expected June 2026, SwiftKey cutoff confirmed no-extension, 16 KB
+  enforcement landed May 1, Obtainium healthy, AOSP cadence verbatim
+  citation, Roborazzi 1.60.0, HeliBoard NLnet update).
 
 **Concurrent-release reconciliation:** during this research run, three
 releases shipped on master (v1.8.56 Phase B4, v1.8.57 Phase C2 arrow-keys
