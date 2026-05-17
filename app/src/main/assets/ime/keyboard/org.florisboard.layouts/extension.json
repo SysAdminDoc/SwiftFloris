@@ -219,6 +219,12 @@
         "direction": "ltr"
       },
       {
+        "id": "honeycomb",
+        "label": "Honeycomb",
+        "authors": [ "SwiftFloris Contributors" ],
+        "direction": "ltr"
+      },
+      {
         "id": "hebrew",
         "label": "עברית",
         "authors": [ "Antony" ],

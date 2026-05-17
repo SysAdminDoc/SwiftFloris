@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.BottomRowPreset
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboard
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardLayoutStyle
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
@@ -294,6 +295,15 @@ class LayoutManager(context: Context) {
         }
 
         val array = Array(computedArrangement.size) { computedArrangement[it] }
+        val layoutStyle = if (
+            keyboardMode == KeyboardMode.CHARACTERS &&
+            mainLayout?.meta?.id == HONEYCOMB_LAYOUT_ID
+        ) {
+            TextKeyboardLayoutStyle.Honeycomb
+        } else {
+            TextKeyboardLayoutStyle.Standard
+        }
+
         return TextKeyboard(
             arrangement = array,
             mode = keyboardMode,
@@ -302,7 +312,8 @@ class LayoutManager(context: Context) {
             }.getOrNull()?.mapping,
             extendedPopupMappingDefault = extendedPopupsDefault.await().onFailure {
                 flogWarning(LogTopic.LAYOUT_MANAGER) { it.toString() }
-            }.getOrNull()?.mapping
+            }.getOrNull()?.mapping,
+            layoutStyle = layoutStyle,
         )
     }
 
@@ -393,5 +404,9 @@ class LayoutManager(context: Context) {
      */
     fun onDestroy() {
         ioScope.cancel()
+    }
+
+    companion object {
+        private const val HONEYCOMB_LAYOUT_ID = "honeycomb"
     }
 }

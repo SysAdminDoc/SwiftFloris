@@ -209,7 +209,7 @@ ships somewhere else.
   - **Hexagonal honeycomb key layout** — claims 70 % larger keys, 4× fewer typos (CES Innovation 2021+2022)
   - One-click translate / proofread / tone / shorten / extend / inclusive-language rewriter
   - 40-language coverage
-- ROADMAP L9 already lists "honeycomb-hex"; the existing `HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` components in tree (v1.8.31-33) are the foundation; layout-engine wire-up is the open slice.
+- ROADMAP L9 already lists "honeycomb-hex"; the existing `HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` components in tree (v1.8.31-33) became a production layout path in v1.8.79 via `TextKeyboardLayoutStyle.Honeycomb`, `TextKeyboard.layoutHoneycomb(...)`, clipped Snygg key surfaces, and hex-aware hit testing.
 
 ### 2.6 Chrooma Keyboard
 
@@ -276,7 +276,7 @@ ships somewhere else.
 | 7 | **Hardware-keyboard floating candidate panel** for transliteration engine | Med | Med | fcitx5-android pattern; engine already in tree |
 | 8 | **Local sticker / emoji-pack import via SAF** (`Settings → Media → Import sticker pack`) | Med | S | Builds on Next-9.4 emoji pin groups |
 | 9 | **README "Galaxy AI Writing Tools work with SwiftFloris"** talking-point | Low (marketing) | XS | Samsung One UI 7 decouple — recent verified fact |
-| 10 | **Honeycomb-hex layout wire-up** (HoneycombHex* components already in tree) | Med | Med-High | ROADMAP L9.1; geometry rework |
+| 10 | ✅ **Honeycomb-hex layout wire-up** (HoneycombHex* components already in tree) | Med | Med-High | Shipped v1.8.79; remaining work is visual/device baseline evidence, not layout selection or hit routing |
 
 ---
 

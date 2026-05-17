@@ -36,7 +36,10 @@ class TextKeyboard(
     override val mode: KeyboardMode,
     val extendedPopupMapping: PopupMapping?,
     val extendedPopupMappingDefault: PopupMapping?,
+    val layoutStyle: TextKeyboardLayoutStyle = TextKeyboardLayoutStyle.Standard,
 ) : Keyboard() {
+    private var honeycombCells: List<HoneycombKeyCell> = emptyList()
+
     val rowCount: Int
         get() = arrangement.size
 
@@ -44,6 +47,8 @@ class TextKeyboard(
         get() = arrangement.sumOf { it.size }
 
     override fun getKeyForPos(pointerX: Float, pointerY: Float): TextKey? {
+        honeycombKeyForPos(pointerX, pointerY)?.let { return it }
+        if (layoutStyle == TextKeyboardLayoutStyle.Honeycomb) return null
         for (key in keys()) {
             if (key.touchBounds.contains(pointerX, pointerY)) {
                 return key
@@ -53,6 +58,9 @@ class TextKeyboard(
     }
 
     fun getNearestKeyForPos(pointerX: Float, pointerY: Float): TextKey? {
+        if (layoutStyle == TextKeyboardLayoutStyle.Honeycomb) {
+            return honeycombKeyForPos(pointerX, pointerY)
+        }
         if (isPointInSplitGutter(pointerX, pointerY)) return null
         var bestKey: TextKey? = null
         var bestDistanceSq = Float.POSITIVE_INFINITY
@@ -146,11 +154,21 @@ class TextKeyboard(
         extendTouchBoundariesDownwards: Boolean,
     ) {
         if (arrangement.isEmpty()) return
+        honeycombCells = emptyList()
 
         val desiredTouchBounds = desiredKey.touchBounds
         val desiredVisibleBounds = desiredKey.visibleBounds
         if (desiredTouchBounds.isEmpty() || desiredVisibleBounds.isEmpty()) return
         if (keyboardWidth.isNaN() || keyboardHeight.isNaN()) return
+        if (layoutStyle == TextKeyboardLayoutStyle.Honeycomb && mode == KeyboardMode.CHARACTERS) {
+            layoutHoneycomb(
+                keyboardWidth = keyboardWidth,
+                keyboardHeight = keyboardHeight,
+                marginH = abs(desiredTouchBounds.width - desiredVisibleBounds.width) / 2.0f,
+                marginV = abs(desiredTouchBounds.height - desiredVisibleBounds.height) / 2.0f,
+            )
+            return
+        }
         val rowMarginH = abs(desiredTouchBounds.width - desiredVisibleBounds.width)
         val rowMarginV = (keyboardHeight - desiredTouchBounds.height * rowCount.toFloat()) / (rowCount - 1).coerceAtLeast(1).toFloat()
 
@@ -247,6 +265,68 @@ class TextKeyboard(
         }
     }
 
+    private fun layoutHoneycomb(
+        keyboardWidth: Float,
+        keyboardHeight: Float,
+        marginH: Float,
+        marginV: Float,
+    ) {
+        val rows = rows().asSequence().toList()
+        val rowCount = rows.size
+        if (rowCount == 0) return
+        val columnCounts = rows.map { it.size }
+        if (columnCounts.any { it <= 0 }) return
+
+        val maxColumnUnits = columnCounts.mapIndexed { rowIndex, count ->
+            count.toFloat() + if (rowIndex % 2 == 1) 0.5f else 0.0f
+        }.maxOrNull() ?: return
+        val heightUnits = 2.0f + 1.5f * (rowCount - 1).toFloat()
+        val radiusByWidth = keyboardWidth / (HoneycombTessellation.SQRT_3 * maxColumnUnits)
+        val radiusByHeight = keyboardHeight / heightUnits
+        val radius = min(radiusByWidth, radiusByHeight)
+            .takeIf { it.isFinite() && it > 0.0f }
+            ?: return
+        val columnStride = radius * HoneycombTessellation.SQRT_3
+        val rowStride = radius * 1.5f
+        val layoutWidth = columnStride * maxColumnUnits
+        val layoutHeight = radius * 2.0f + rowStride * (rowCount - 1).toFloat()
+        val originX = ((keyboardWidth - layoutWidth) / 2.0f).coerceAtLeast(0.0f)
+        val originY = ((keyboardHeight - layoutHeight) / 2.0f).coerceAtLeast(0.0f)
+        val cells = mutableListOf<HoneycombKeyCell>()
+
+        for ((rowIndex, row) in rows.withIndex()) {
+            val rowOffsetX = if (rowIndex % 2 == 1) columnStride / 2.0f else 0.0f
+            for ((colIndex, key) in row.withIndex()) {
+                val left = originX + rowOffsetX + colIndex * columnStride
+                val top = originY + rowIndex * rowStride
+                key.touchBounds.apply {
+                    this.left = left
+                    this.top = top
+                    this.right = left + columnStride
+                    this.bottom = top + radius * 2.0f
+                }
+                key.visibleBounds.applyFrom(key.touchBounds)
+                if (marginH > 0.0f || marginV > 0.0f) {
+                    key.visibleBounds.deflateBy(
+                        marginH.coerceAtMost(key.visibleBounds.width / 3.0f),
+                        marginV.coerceAtMost(key.visibleBounds.height / 3.0f),
+                    )
+                }
+                cells += HoneycombKeyCell(
+                    key = key,
+                )
+            }
+        }
+        honeycombCells = cells
+    }
+
+    private fun honeycombKeyForPos(pointerX: Float, pointerY: Float): TextKey? {
+        if (honeycombCells.isEmpty()) return null
+        return honeycombCells.firstOrNull { cell ->
+            cell.key.isEnabled && cell.key.isVisible && cell.contains(pointerX, pointerY)
+        }?.key
+    }
+
     override fun keys(): Iterator<TextKey> {
         return TextKeyboardIterator(arrangement)
     }
@@ -280,5 +360,28 @@ class TextKeyboard(
     companion object {
         private const val GapRescueDistanceFactor = 0.32f
         private const val NearbyKeyDistanceLimit = 1.65f
+    }
+}
+
+enum class TextKeyboardLayoutStyle {
+    Standard,
+    Honeycomb,
+}
+
+private data class HoneycombKeyCell(
+    val key: TextKey,
+) {
+    fun contains(pointerX: Float, pointerY: Float): Boolean {
+        val bounds = key.touchBounds
+        if (!bounds.contains(pointerX, pointerY)) return false
+        val radius = min(bounds.width / 2.0f, bounds.height / HoneycombTessellation.SQRT_3)
+        if (radius <= 0.0f) return false
+        val halfHeight = radius * HoneycombTessellation.SQRT_3 / 2.0f
+        val dx = abs(pointerX - (bounds.left + bounds.width / 2.0f))
+        val dy = abs(pointerY - (bounds.top + bounds.height / 2.0f))
+        if (dy > halfHeight || dx > radius) return false
+        if (dx <= radius / 2.0f) return true
+        val edgeY = halfHeight * (2.0f - 2.0f * dx / radius)
+        return dy <= edgeY
     }
 }

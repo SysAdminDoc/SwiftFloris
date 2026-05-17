@@ -38,9 +38,8 @@ import androidx.compose.ui.unit.LayoutDirection
  *    (60° at every vertex) so the tessellation looks right.
  *
  * Companion to [HoneycombTessellation] (shipped v1.8.4) which owns
- * the grid math; this Shape is what TextKeyboardLayout's hex-mode
- * call site will use to clip each key's backdrop. The renderer
- * wire-up is the remaining L9.2 sub-task.
+ * the grid math. Since v1.8.79, [TextKeyboardLayout]'s honeycomb
+ * path clips each production Snygg key backdrop through this shape.
  *
  * Reference: Red Blob Games — Hexagonal Grids
  * (https://www.redblobgames.com/grids/hexagons/).

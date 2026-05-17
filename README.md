@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.78-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.79-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.78 | Privacy posture |
+| Area | What's in v1.8.79 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -57,6 +57,7 @@
 | **Themes** | 21 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent | No telemetry |
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
 | **Migration** | Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
+| **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose | On-device, no account, no telemetry |
 | **CI / build** | No-network gate, OSV dep scan, reproducible-build toolchain pins + build-twice APK self-check, Roborazzi visual-regression scaffold, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
 
@@ -271,6 +272,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.79** (2026-05-17) — Honeycomb hex layout wire-up: the bundled honeycomb character layout is registered for subtype selection, routed through `TextKeyboardLayoutStyle.Honeycomb`, clipped to `HoneycombHexShape`, and hit-tested against the actual hex instead of rectangular bounding boxes. ([notes](RELEASE_NOTES_v1.8.79.md))
 - **v1.8.78** (2026-05-17) — Keyman `.kmp` package import foundation: safe ZIP/package parser for `kmp.json`, keyboard/language/example metadata, LDML-in-package extraction, lexical-model classification, compiled-engine-required classification, and unsafe entry skipping. ([notes](RELEASE_NOTES_v1.8.78.md))
 - **v1.8.77** (2026-05-17) — User-imported sticker folder: Settings → Emoji & stickers can persist a local SAF folder URI, enumerate supported image files into an Imported sticker pack, preview them in the sticker grid, and commit them through the existing rich-content provider path. ([notes](RELEASE_NOTES_v1.8.77.md))
 - **v1.8.76** (2026-05-17) — Hardware-keyboard runtime mapping: imported layouts can bind to Android hardware `deviceId` values, resolve `KeyEvent` scan/key codes through KLC/macOS fallbacks, and commit mapped printable characters through `KeyboardManager`. ([notes](RELEASE_NOTES_v1.8.76.md))
@@ -312,7 +314,7 @@ The full release stream lives in the `RELEASE_NOTES_v*.md` files in the reposito
 - **v1.8.40** (2026-05-16) — Per-daemon enable / disable for the MCP bridge in Settings. ([notes](RELEASE_NOTES_v1.8.40.md))
 - **v1.8.35–v1.8.39** — Full MCP daemon bridge: AIDL surface, AndroidMcpClient, per-daemon bind lifecycle, discoverer, IME-startup wire-up, Settings UI.
 - **v1.8.34** — Macrobenchmark trace instrumentation across six production hot paths.
-- **v1.8.31–v1.8.33** — Honeycomb hex renderer (`HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader`).
+- **v1.8.31–v1.8.33, v1.8.79** — Honeycomb hex renderer foundation (`HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader`) and production `TextKeyboardLayout` wire-up.
 - **v1.8.0–v1.8.30** — Smart-compose / inline-translation router stack, KenLM reader pipeline, 63-script transliteration build-out, addon scaffold sweep, SwiftKey-parity slices.
 - **v1.7.x** — Multilingual hot-switch, bigram + trigram next-word, adaptive touch, SymSpell d1+d2, Flow Through Space, encrypted personal dictionary.
 - **v1.6.0** — Personal-learning dictionary + 117k SCOWL English + SwiftKey design tokens.
@@ -375,7 +377,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.78** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
+🚀 **Active development.** Current release: **v1.8.79** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
 
 ---
 

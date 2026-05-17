@@ -5,7 +5,7 @@
 **Branch:** `master`, ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.78. The notable dependency deltas are
+HEAD to v1.8.79. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
@@ -21,9 +21,11 @@ v1.8.74 updates AGP to `9.2.1` and Compose BOM to `2026.05.00`; compile /
 target SDK remain 36. v1.8.75 adds the macOS `.keylayout` XML parser for the
 hardware-keyboard import stack, v1.8.76 adds the Android runtime mapper for
 imported hardware-keyboard layouts, v1.8.77 adds the user-imported sticker
-folder over the existing rich-content provider path, and v1.8.78 adds the
+folder over the existing rich-content provider path, v1.8.78 adds the
 Keyman `.kmp` package intake/classifier foundation without executing compiled
-`.kmx` bytecode or JavaScript in `:app`.
+`.kmx` bytecode or JavaScript in `:app`, and v1.8.79 wires the bundled
+honeycomb character layout into production `TextKeyboardLayout` with clipped
+hex key surfaces and hex-aware hit testing.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -54,7 +56,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.78 / 1878 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.79 / 1879 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.2.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
@@ -92,7 +94,8 @@ Robolectric 4.16.1 shipped in v1.8.71; AGP 9.2.1 and Compose BOM 2026.05.00
 shipped in v1.8.74; the macOS `.keylayout` parser shipped in v1.8.75; the
 hardware-keyboard runtime mapper shipped in v1.8.76; the user-imported sticker
 folder shipped in v1.8.77; Keyman `.kmp` package metadata intake and LDML-in-package
-extraction shipped in v1.8.78.
+extraction shipped in v1.8.78; the honeycomb hex layout production wire-up
+shipped in v1.8.79.
 
 A docs-only contributor-onboarding batch followed v1.8.77: root
 `ARCHITECTURE.md` now captures the module/runtime/package map and root
@@ -111,6 +114,14 @@ v1.8.78 then implemented the Keyman `.kmp` package import foundation:
 `kmp.json`, records file metadata, extracts LDML XML through
 `KeymanLdmlParser`, and classifies packages as LDML-ready, lexical-only,
 mixed, metadata-only, invalid, or compiled-engine-required.
+
+v1.8.79 then implemented the honeycomb hex layout production wire-up:
+`extension.json` registers the bundled `honeycomb` character layout,
+`LayoutManager` marks it as `TextKeyboardLayoutStyle.Honeycomb`,
+`TextKeyboard.layoutHoneycomb(...)` positions real `TextKey` instances in the
+hex tessellation, `TextKeyboardLayout` clips the real Snygg key surface to
+`HoneycombHexShape`, and the hit tester rejects bounding-box corners and
+inter-key gaps.
 
 ## 3. Module layout
 
@@ -238,8 +249,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 94 tags in repo after the v1.8.78 release tag; local release tags now run
-  through `v1.8.78`. Push remains a maintainer-host task because this VM
+- 95 tags in repo after the v1.8.79 release tag; local release tags now run
+  through `v1.8.79`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -316,8 +327,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.78).
-  The local tag stream was recovered through `v1.8.78`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.79).
+  The local tag stream was recovered through `v1.8.79`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

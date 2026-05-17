@@ -36,15 +36,14 @@ import kotlin.math.sqrt
  *  - Column stride = `keyRadius * sqrt(3)` (horizontal spacing).
  *  - Even rows are offset by half a column-stride from odd rows.
  *
- * The renderer integrates by:
+ * The production renderer integrates by:
  *  1. Computing `keyRadius` from the row width divided by the row's
  *     `keyCount` (or a fixed dp value from theme).
  *  2. Calling [centerOf] for each `(row, col)` pair.
  *  3. Calling [containsPoint] for touch hit-testing.
  *
- * Full P3-equivalent renderer integration is the L9.2-renderer slice;
- * this geometry helper is the pure-math seam so the integration can
- * be unit-tested in isolation.
+ * v1.8.79 wires the same geometry into [TextKeyboard.layoutHoneycomb]
+ * and the production [TextKeyboardLayout] hit-test/rendering path.
  */
 class HoneycombTessellation(
     val keyRadius: Float,
