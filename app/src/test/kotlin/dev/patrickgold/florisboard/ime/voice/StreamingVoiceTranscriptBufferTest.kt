@@ -78,4 +78,105 @@ class StreamingVoiceTranscriptBufferTest : FunSpec({
         update.committedText shouldBe ""
         update.visibleText shouldBe "again"
     }
+
+    // ROADMAP §6 N15.3 — Smart Edit voice REMOVE_ITEM_FROM_LIST buffer
+    // excision tests.
+
+    test("removeCommittedItem excises a single matching item from a comma-separated segment") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples, bread, eggs"))
+
+        val result = buffer.removeCommittedItem("bread")
+
+        result.didChange shouldBe true
+        result.removedCount shouldBe 1
+        result.newCommittedText shouldBe "apples eggs"
+        buffer.committedSegmentsSnapshot() shouldBe listOf("apples eggs")
+    }
+
+    test("removeCommittedItem strips a dangling 'and' connector after removal") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("eggs and bread"))
+
+        val result = buffer.removeCommittedItem("bread")
+
+        result.didChange shouldBe true
+        result.newCommittedText shouldBe "eggs"
+    }
+
+    test("removeCommittedItem is case-insensitive but preserves segment casing for non-matches") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("Apples, Bread, Eggs"))
+
+        val result = buffer.removeCommittedItem("BREAD")
+
+        result.didChange shouldBe true
+        result.newCommittedText shouldBe "Apples Eggs"
+    }
+
+    test("removeCommittedItem reports no-op when the item is absent") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples bread"))
+
+        val result = buffer.removeCommittedItem("grapes")
+
+        result.didChange shouldBe false
+        result.removedCount shouldBe 0
+        result.newCommittedText shouldBe "apples bread"
+        buffer.committedSegmentsSnapshot() shouldBe listOf("apples bread")
+    }
+
+    test("removeCommittedItem refuses to clear the buffer on blank / whitespace input") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples bread"))
+
+        buffer.removeCommittedItem("").didChange shouldBe false
+        buffer.removeCommittedItem("   ").didChange shouldBe false
+        buffer.committedSegmentsSnapshot() shouldBe listOf("apples bread")
+    }
+
+    test("removeCommittedItem handles a multi-word item phrase") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples, almond butter, eggs"))
+
+        val result = buffer.removeCommittedItem("almond butter")
+
+        result.didChange shouldBe true
+        result.removedCount shouldBe 1
+        result.newCommittedText shouldBe "apples eggs"
+    }
+
+    test("removeCommittedItem walks across multiple committed segments") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples bread"))
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples bread eggs"))
+        // After cumulative-suffix logic: segments = ["apples bread", "eggs"]
+        // Now add a fresh sentence:
+        buffer.reset()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples"))
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples bread"))
+        // Segments now hold the cumulative-suffix carve: ["apples", "bread"]
+
+        val result = buffer.removeCommittedItem("apples")
+
+        result.didChange shouldBe true
+        // Only the segment that contained "apples" is touched; the
+        // empty segment is dropped so the rebuilt committed text is
+        // just "bread".
+        buffer.committedSegmentsSnapshot() shouldBe listOf("bread")
+        result.newCommittedText shouldBe "bread"
+    }
+
+    test("removeCommittedItem tolerates an item argument with trailing punctuation") {
+        val buffer = StreamingVoiceTranscriptBuffer()
+        buffer.accept(VoiceTranscriptChunk.finalResult("apples bread eggs"))
+
+        // Caller (parser.extractRaw) may return "bread." when the
+        // utterance was "no longer want bread."; the buffer should
+        // still match.
+        val result = buffer.removeCommittedItem("bread.")
+
+        result.didChange shouldBe true
+        result.newCommittedText shouldBe "apples eggs"
+    }
 })

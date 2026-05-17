@@ -25,7 +25,7 @@ class VoiceCommandExecutorTest : FunSpec({
         val executor = VoiceCommandExecutor(actions)
 
         VoiceCommandAction.entries.forEach { action ->
-            executor.execute(match(action)).successful shouldBe true
+            executor.execute(matchFor(action)).successful shouldBe true
         }
 
         actions.calls shouldBe listOf(
@@ -39,6 +39,7 @@ class VoiceCommandExecutorTest : FunSpec({
             "capitalizeNextWord",
             "goToStart",
             "goToEnd",
+            "removeItemFromList:apples",
         )
     }
 
@@ -51,6 +52,64 @@ class VoiceCommandExecutorTest : FunSpec({
         result.successful shouldBe false
         result.failureReason shouldBe VoiceCommandFailureReason.NO_TEXT_TO_DELETE
     }
+
+    // ROADMAP §6 N15.3 — Smart Edit voice REMOVE_ITEM_FROM_LIST executor tests.
+
+    test("REMOVE_ITEM_FROM_LIST short-circuits when argument is null") {
+        val actions = RecordingVoiceCommandActions()
+        val result = VoiceCommandExecutor(actions).execute(
+            VoiceCommandMatch(
+                action = VoiceCommandAction.REMOVE_ITEM_FROM_LIST,
+                spokenText = "no longer want",
+                matchedPhrase = "no longer want",
+                matchedAlias = null,
+                confidence = 1.0,
+                argument = null,
+            ),
+        )
+
+        result.successful shouldBe false
+        result.failureReason shouldBe VoiceCommandFailureReason.ACTION_REJECTED
+        // The action sink must NOT have been called when the parser
+        // failed to extract an argument — otherwise we'd hand the
+        // editor an empty string and risk excising the wrong text.
+        actions.calls shouldBe emptyList()
+    }
+
+    test("REMOVE_ITEM_FROM_LIST short-circuits when argument is whitespace") {
+        val actions = RecordingVoiceCommandActions()
+        val result = VoiceCommandExecutor(actions).execute(
+            VoiceCommandMatch(
+                action = VoiceCommandAction.REMOVE_ITEM_FROM_LIST,
+                spokenText = "scratch    ",
+                matchedPhrase = "scratch",
+                matchedAlias = null,
+                confidence = 1.0,
+                argument = "   ",
+            ),
+        )
+
+        result.successful shouldBe false
+        result.failureReason shouldBe VoiceCommandFailureReason.ACTION_REJECTED
+        actions.calls shouldBe emptyList()
+    }
+
+    test("REMOVE_ITEM_FROM_LIST forwards trimmed argument to the action sink") {
+        val actions = RecordingVoiceCommandActions()
+        val result = VoiceCommandExecutor(actions).execute(
+            VoiceCommandMatch(
+                action = VoiceCommandAction.REMOVE_ITEM_FROM_LIST,
+                spokenText = "no longer want apples",
+                matchedPhrase = "no longer want",
+                matchedAlias = null,
+                confidence = 1.0,
+                argument = "  apples  ",
+            ),
+        )
+
+        result.successful shouldBe true
+        actions.calls shouldBe listOf("removeItemFromList:apples")
+    }
 })
 
 private fun match(action: VoiceCommandAction): VoiceCommandMatch {
@@ -61,6 +120,17 @@ private fun match(action: VoiceCommandAction): VoiceCommandMatch {
         matchedAlias = null,
         confidence = 1.0,
     )
+}
+
+/** Helper that adds the required argument for REMOVE_ITEM_FROM_LIST so the
+ *  loop-every-action test doesn't trip the new short-circuit guard. */
+private fun matchFor(action: VoiceCommandAction): VoiceCommandMatch {
+    val base = match(action)
+    return if (action == VoiceCommandAction.REMOVE_ITEM_FROM_LIST) {
+        base.copy(argument = "apples")
+    } else {
+        base
+    }
 }
 
 private class RecordingVoiceCommandActions(
@@ -79,6 +149,8 @@ private class RecordingVoiceCommandActions(
     override fun capitalizeNextWord(): VoiceCommandActionResult = record("capitalizeNextWord")
     override fun goToStart(): VoiceCommandActionResult = record("goToStart")
     override fun goToEnd(): VoiceCommandActionResult = record("goToEnd")
+    override fun removeItemFromList(item: String): VoiceCommandActionResult =
+        record("removeItemFromList:$item")
 
     private fun record(name: String): VoiceCommandActionResult {
         calls.add(name)

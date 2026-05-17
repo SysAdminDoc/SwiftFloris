@@ -71,4 +71,63 @@ class VoiceCommandParserTest : FunSpec({
         parser.parse("go to stat", minimumConfidence = 0.50)?.action shouldBe VoiceCommandAction.GO_TO_START
         parser.parse("go to stat", minimumConfidence = 0.95) shouldBe null
     }
+
+    // ROADMAP §6 N15.3 — Smart Edit voice REMOVE_ITEM_FROM_LIST parser tests.
+
+    test("parses 'no longer want X' as REMOVE_ITEM_FROM_LIST with the noun as argument") {
+        val match = parser.parse("no longer want apples")
+
+        match?.action shouldBe VoiceCommandAction.REMOVE_ITEM_FROM_LIST
+        match?.argument shouldBe "apples"
+        match?.confidence shouldBe 1.0
+    }
+
+    test("preserves the original casing of the argument") {
+        val match = parser.parse("no longer want Apples")
+
+        match?.argument shouldBe "Apples"
+    }
+
+    test("parses 'remove X from the list' and 'remove X from list' variants") {
+        parser.parse("remove apples from the list")?.argument shouldBe "apples"
+        parser.parse("remove apples from list")?.argument shouldBe "apples"
+        parser.parse("delete apples from the list")?.argument shouldBe "apples"
+    }
+
+    test("parses 'scratch X' with single-word and multi-word items") {
+        parser.parse("scratch apples")?.argument shouldBe "apples"
+        parser.parse("scratch almond butter")?.argument shouldBe "almond butter"
+    }
+
+    test("does not classify 'remove that' as a REMOVE_ITEM_FROM_LIST (DELETE_THAT alias wins)") {
+        // "remove that" is an alias for DELETE_THAT and must keep that
+        // shape so the existing built-in command surface stays
+        // unaffected by the new parameterised path.
+        val match = parser.parse("remove that")
+
+        match?.action shouldBe VoiceCommandAction.DELETE_THAT
+        match?.argument shouldBe null
+    }
+
+    test("rejects parameterised patterns with stopword-only arguments") {
+        // "scratch the" / "remove the from the list" must NOT excise
+        // the whole list; the argument is rejected upstream.
+        parser.parse("scratch the") shouldBe null
+        parser.parse("remove the from the list") shouldBe null
+    }
+
+    test("rejects 'scratch' on its own with no item") {
+        // "scratch" with no argument is a legitimate utterance the user
+        // might say; the command must not fire because we have no item
+        // to remove.
+        parser.parse("scratch") shouldBe null
+    }
+
+    test("does not fire on long ambient utterances that happen to contain the pattern") {
+        // Plain dictation ("delete the old message after lunch") must
+        // NOT be classified as REMOVE_ITEM_FROM_LIST just because it
+        // starts with "delete" — the suffix anchor protects against
+        // false positives.
+        parser.parse("delete the old message after lunch") shouldBe null
+    }
 })

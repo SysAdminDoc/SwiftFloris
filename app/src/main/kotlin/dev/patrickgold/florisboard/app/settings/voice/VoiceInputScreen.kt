@@ -589,18 +589,23 @@ private fun VoiceCommandEditDialog(
             }
             DialogProperty(text = stringRes(R.string.settings__voice_input__custom_command_action_label)) {
                 Column {
-                    VoiceCommandAction.entries.forEach { candidate ->
-                        JetPrefListItem(
-                            modifier = Modifier.rippleClickable { action = candidate },
-                            icon = {
-                                RadioButton(
-                                    selected = action == candidate,
-                                    onClick = null,
-                                )
-                            },
-                            text = stringRes(candidate.labelRes()),
-                        )
-                    }
+                    // REMOVE_ITEM_FROM_LIST is parameterised — it requires an
+                    // argument extracted from the spoken utterance — and is
+                    // not assignable as a fixed-phrase custom command.
+                    VoiceCommandAction.entries
+                        .filter { it != VoiceCommandAction.REMOVE_ITEM_FROM_LIST }
+                        .forEach { candidate ->
+                            JetPrefListItem(
+                                modifier = Modifier.rippleClickable { action = candidate },
+                                icon = {
+                                    RadioButton(
+                                        selected = action == candidate,
+                                        onClick = null,
+                                    )
+                                },
+                                text = stringRes(candidate.labelRes()),
+                            )
+                        }
                 }
             }
         }
@@ -807,6 +812,8 @@ private fun VoiceCommandAction.labelRes(): Int {
             R.string.settings__voice_input__voice_command_capitalize_next_word
         VoiceCommandAction.GO_TO_START -> R.string.settings__voice_input__voice_command_go_to_start
         VoiceCommandAction.GO_TO_END -> R.string.settings__voice_input__voice_command_go_to_end
+        VoiceCommandAction.REMOVE_ITEM_FROM_LIST ->
+            R.string.settings__voice_input__voice_command_remove_item_from_list
     }
 }
 

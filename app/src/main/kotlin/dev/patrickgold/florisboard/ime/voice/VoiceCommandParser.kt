@@ -34,6 +34,20 @@ class VoiceCommandParser(
             return null
         }
 
+        // ROADMAP §6 N15.3 — parameterised "remove <item>" patterns must
+        // run before the fixed-phrase matcher: an utterance like
+        // "no longer want apples" would otherwise edit-distance-collapse
+        // to one of the unrelated fixed phrases ("undo", "redo") because
+        // the matcher walks the whole utterance. Parameterised match
+        // requires an exact prefix so false positives stay contained;
+        // when no parameterised pattern fits, we fall through to the
+        // existing fixed-phrase ranker untouched.
+        parameterisedMatch(spokenText, normalizedSpokenText)?.let { match ->
+            if (match.confidence >= minimumConfidence.coerceIn(0.0, 1.0)) {
+                return match
+            }
+        }
+
         val bestMatch = (additionalCommands.map { CommandCandidate(command = it, priority = 1) } +
             commands.map { CommandCandidate(command = it, priority = 0) })
             .flatMap { candidate ->
@@ -60,6 +74,41 @@ class VoiceCommandParser(
             ?.match
 
         return bestMatch?.takeIf { it.confidence >= minimumConfidence.coerceIn(0.0, 1.0) }
+    }
+
+    /**
+     * ROADMAP §6 N15.3 — Smart-Edit-voice REMOVE_ITEM_FROM_LIST parser.
+     *
+     * Recognises one of a small set of prefix / suffix patterns where the
+     * spoken text shape is unambiguous about the speaker wanting to remove
+     * a named item from the dictated stream so far ("no longer want
+     * apples", "remove apples from the list", "scratch apples"). The
+     * extracted argument is the noun phrase between the pattern's anchor
+     * tokens.
+     *
+     * Confidence is fixed at 1.0 for an exact pattern match because the
+     * anchor tokens themselves disambiguate — partial matches just don't
+     * fire (the user has time to retry). The argument is preserved with
+     * its original casing so the executor can do a case-insensitive find
+     * against the committed buffer but still render the original phrase
+     * back in any "Removed 'X'" feedback line.
+     */
+    internal fun parameterisedMatch(rawSpokenText: String, normalizedSpokenText: String): VoiceCommandMatch? {
+        for (pattern in RemoveItemPatterns) {
+            val argument = pattern.extract(normalizedSpokenText) ?: continue
+            // Pull the matching argument back out of the raw text so the
+            // executor can display the original casing in any UX line.
+            val rawArgument = pattern.extractRaw(rawSpokenText) ?: argument
+            return VoiceCommandMatch(
+                action = VoiceCommandAction.REMOVE_ITEM_FROM_LIST,
+                spokenText = rawSpokenText,
+                matchedPhrase = pattern.canonicalPhrase,
+                matchedAlias = null,
+                confidence = 1.0,
+                argument = rawArgument,
+            )
+        }
+        return null
     }
 
     fun parse(
@@ -135,6 +184,45 @@ class VoiceCommandParser(
         private val ApostropheRegex = "[']".toRegex()
         private val NonWordRegex = "[^a-z0-9\\s]".toRegex()
         private val WhitespaceRegex = "\\s+".toRegex()
+
+        // ROADMAP §6 N15.3 — Smart Edit voice REMOVE_ITEM_FROM_LIST patterns.
+        // Each pattern's `prefix` + optional `suffix` must match the
+        // normalised utterance literally; everything between becomes the
+        // argument. Order matters — earliest match wins, so put the most
+        // specific / longest-prefix patterns first.
+        internal val RemoveItemPatterns: List<RemoveItemPattern> = listOf(
+            RemoveItemPattern(canonicalPhrase = "no longer want", prefix = "no longer want"),
+            RemoveItemPattern(canonicalPhrase = "no longer need", prefix = "no longer need"),
+            RemoveItemPattern(
+                canonicalPhrase = "remove <item> from the list",
+                prefix = "remove",
+                suffix = "from the list",
+            ),
+            RemoveItemPattern(
+                canonicalPhrase = "remove <item> from list",
+                prefix = "remove",
+                suffix = "from list",
+            ),
+            RemoveItemPattern(
+                canonicalPhrase = "delete <item> from the list",
+                prefix = "delete",
+                suffix = "from the list",
+            ),
+            RemoveItemPattern(
+                canonicalPhrase = "delete <item> from list",
+                prefix = "delete",
+                suffix = "from list",
+            ),
+            RemoveItemPattern(canonicalPhrase = "scratch", prefix = "scratch"),
+        )
+
+        // Conservative single-word stopword set rejected as an argument
+        // so an utterance like "remove the from the list" or "scratch
+        // the" can't excise committed text by accident. Real list items
+        // ("apples", "bread") never end up on this list.
+        internal val BlockedArguments: Set<String> = setOf(
+            "the", "a", "an", "this", "that", "it", "them", "those", "these",
+        )
     }
 
     private data class CommandCandidate(
@@ -146,6 +234,67 @@ class VoiceCommandParser(
         val match: VoiceCommandMatch,
         val priority: Int,
     )
+
+    /** Internal anchor-token pattern for parameterised commands. */
+    internal data class RemoveItemPattern(
+        val canonicalPhrase: String,
+        val prefix: String,
+        val suffix: String = "",
+    ) {
+        /**
+         * Returns the argument (the item to remove) extracted from a
+         * lowercased / normalised utterance, or null when the pattern's
+         * anchor tokens don't match.
+         */
+        fun extract(normalizedSpokenText: String): String? {
+            if (!normalizedSpokenText.startsWith("$prefix ") && normalizedSpokenText != prefix) {
+                return null
+            }
+            val afterPrefix = normalizedSpokenText.removePrefix(prefix).trim()
+            val argument = if (suffix.isEmpty()) {
+                afterPrefix
+            } else {
+                if (!afterPrefix.endsWith(" $suffix") && afterPrefix != suffix) {
+                    return null
+                }
+                afterPrefix.removeSuffix(suffix).trim()
+            }
+            // Reject blank / single-stopword arguments.
+            if (argument.isBlank()) return null
+            if (argument in BlockedArguments) return null
+            return argument
+        }
+
+        /**
+         * Best-effort extraction of the argument from the *original* raw
+         * text so the executor can echo the user's casing back in the
+         * UI ("Removed 'Apples'" instead of "Removed 'apples'"). Falls
+         * back to null when the raw text can't be matched against the
+         * same anchor tokens; the caller then uses the normalised
+         * argument as the canonical form.
+         */
+        fun extractRaw(rawSpokenText: String): String? {
+            val collapsed = rawSpokenText.trim()
+            val lowerCollapsed = collapsed.lowercase()
+            if (!lowerCollapsed.startsWith("$prefix ") && lowerCollapsed != prefix) {
+                return null
+            }
+            val afterPrefixRaw = collapsed.substring(prefix.length).trim().trimStart { c ->
+                // Trim leading punctuation introduced by the recogniser
+                // ("no longer want, apples" → "apples").
+                !c.isLetterOrDigit()
+            }
+            val argument = if (suffix.isEmpty()) {
+                afterPrefixRaw
+            } else {
+                val lowerSuffix = " $suffix"
+                val idx = afterPrefixRaw.lowercase().lastIndexOf(lowerSuffix)
+                if (idx < 0) return null
+                afterPrefixRaw.substring(0, idx).trim()
+            }
+            return argument.takeIf { it.isNotBlank() }
+        }
+    }
 }
 
 data class VoiceCommandDefinition(
@@ -218,6 +367,13 @@ data class VoiceCommandMatch(
     val matchedPhrase: String,
     val matchedAlias: String?,
     val confidence: Double,
+    /**
+     * Optional argument extracted from a parameterised command
+     * (currently only [VoiceCommandAction.REMOVE_ITEM_FROM_LIST]).
+     * Null for every fixed-phrase command. Preserves the original
+     * casing so UX feedback ("Removed 'Apples'") reads naturally.
+     */
+    val argument: String? = null,
 )
 
 @Serializable
@@ -232,4 +388,12 @@ enum class VoiceCommandAction {
     CAPITALIZE_NEXT_WORD,
     GO_TO_START,
     GO_TO_END,
+
+    /**
+     * ROADMAP §6 N15.3 — Smart Edit voice. Walks the dictated-list
+     * buffer and excises a named item ("no longer want apples").
+     * Always carries [VoiceCommandMatch.argument]; the executor refuses
+     * to run if the argument is null / blank.
+     */
+    REMOVE_ITEM_FROM_LIST,
 }
