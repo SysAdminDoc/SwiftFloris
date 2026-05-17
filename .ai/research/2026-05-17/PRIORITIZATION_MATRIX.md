@@ -33,7 +33,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 3 | ✅ **Shipped v1.8.68:** replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystore | 4 | 2 | 3 | **5.5** | API surface was deprecated; `PersonalDictionaryEncryptionTest` now pins the Tink wrapper + one-shot legacy migration |
 | 4 | ✅ **Shipped v1.8.69:** Bump-batch A (kotlinx-coroutines 1.11.0, KSP 2.3.8, zxing 3.5.4, aboutlibraries 14.2.0; keep activity 1.13.0) | 3 | 1 | 3 | **9.0** | Low-risk patch/minor updates; Activity downgrade retired by fifth-pass evidence |
 | 5 | **README v1.8.58 release-hygiene maintenance** (badge + Highlights table + Recent releases stay in lockstep) | 3 | 1 | 4 | **10.0** | Version catch-up shipped in the fourth pass; keep the migration-window front door current through 2026-05-31 |
-| 6 | **Tag every shipped release (v1.8.41 … v1.8.69, 29 missing)** | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; tag cadence has slipped |
+| 6 | ✅ **Local tag catch-up:** release tags `v1.8.41` … `v1.8.69` backfilled from matching version-bump commits | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; remaining step is pushing tags from the maintainer host |
 | 7 | **First-run "AI features in this keyboard" explainer surface** (EU AI Act Article 50, due 2 Aug 2026) | 4 | 2 | 4 | **6.0** | Regulatory cutoff in ~10 weeks; small UI slice; reinforces wedge |
 | 8 | **Settings → About re-openable "AI features" explainer** (same content, persistent) | 3 | 1 | 4 | **10.0** | Companion to #7; small |
 | 9 | **HeliBoard NLnet slip-base-case plan** (move N1.1 from "wait-and-integrate" to "ship N1.3-quality classifier; integrate N1.1 when it lands") | 4 | 2 | 4 | **6.0** | Library probably slips; N1.3 statistical is already shipped — frame as the default, not the placeholder |
@@ -106,7 +106,8 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 ### v1.8.57 (next week — migration-window prep)
 
 - **EU AI Act Article 50 first-run + Settings → About explainer** (#7, #8, #11).
-- **Tag catch-up** (#6; 18 tags) — done in parallel to a release, low risk.
+- **Tag catch-up** (#6; 29 tags) — local tags `v1.8.41` through `v1.8.69`
+  were backfilled; push tags from the maintainer host.
 - **README "Galaxy AI" + "Grammarly discontinued" callouts** (#2, #10).
 
 ### v1.8.58–v1.8.60 (the migration window itself — 2026-05-28 to 2026-05-31)

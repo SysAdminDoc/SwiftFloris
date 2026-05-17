@@ -60,10 +60,11 @@ from the open list.
 **Post-research continuation reconciliation:** v1.8.59 Phase D3,
 v1.8.60 Phase B1, v1.8.61 Phase B2, v1.8.62 Phase C1, v1.8.63 Phase C3,
 v1.8.64 Phase D1, and v1.8.65 Phase A3 Settings wiring subsequently
-shipped from the same SwiftKey-parity plan. `PROJECT_CONTEXT.md`,
-`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`, `ROADMAP.md`, and
-`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` now reflect HEAD = v1.8.65
-and the tag catch-up gap as 25 releases after `v1.8.40`.
+shipped from the same SwiftKey-parity plan. v1.8.66 through v1.8.69 then
+shipped the AI transparency surface, reproducible-build self-check, Tink
+encrypted-preference migration, and Bump-batch A. The later release-tag
+catch-up backfilled local tags `v1.8.41` through `v1.8.69`; only pushing
+those tags from the maintainer host remains.
 
 **v1.8.63 continuation files:** `app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets/{swiftkey_high_contrast,aurora_animated}.json`,
 `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/ActiveThemeLocals.kt`,
@@ -208,7 +209,7 @@ In rough priority order, with reference to
 | Order | Commit suggestion | Files touched |
 |---|---|---|
 | 1 | `docs: research run 2026-05-17 fifth pass corrections` | This research run as one commit |
-| 2 | `chore(repo): tag v1.8.41 … v1.8.58 (18-tag catch-up)` | git tags only |
+| 2 | ✅ `chore(repo): tag v1.8.41 ... v1.8.69 (29-tag catch-up)` | local git tags only; push pending from maintainer host |
 | 3 | `chore(deps): bump-batch A (coroutines 1.11, KSP 2.3.8, zxing 3.5.4, aboutlibraries 14.2; keep activity 1.13.0)` | `gradle/libs.versions.toml` + a new release note |
 | 4 | `feat(setup): EU AI Act Article 50 first-run explainer + Settings → About surface` | `app/setup/` + `docs/PRIVACY_AND_AI.md` |
 | 5 | `feat(repo): PROJECT_CONTEXT pointer in AGENTS.md + CLAUDE.md` | New `AGENTS.md` + `CLAUDE.md` |
@@ -432,3 +433,34 @@ re-checked before applying the bumps. Local verification used
 grep. Java and the Android SDK are absent on this VM, so
 `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the
 maintainer build host.
+
+---
+
+## 12. Release-tag catch-up continuation
+
+The autonomous development loop then completed the release-metadata portion of
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §B.5 / `ROADMAP.md` N16.3.
+
+**Local tags created:**
+
+- `v1.8.41` through `v1.8.69`
+
+**Validation before tagging:**
+
+- Every proposed tag target was checked against the commit's
+  `gradle.properties`.
+- Each tag's `projectVersionName` matched the tag name without the leading
+  `v`.
+- Each tag's `projectVersionCode` matched the expected `18xx` code.
+
+**Files updated:**
+
+- `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `STATE_OF_REPO.md`, and this file now record
+  the local tag backfill.
+
+**Verification note:** this was intentionally a metadata-only slice. No app
+version bump or release note was created because the app release remains
+`v1.8.69`. Tags were not pushed from this VM; the maintainer host still needs
+to push the `v1.8.41`...`v1.8.69` refs.
