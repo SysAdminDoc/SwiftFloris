@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.64)
+## 3. Stack at HEAD (v1.8.65)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.64`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.65`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -125,7 +125,7 @@ Phase A of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` is sized for this:
 
 - ✅ A1 — README outreach pivot (shipped v1.8.52)
 - ✅ A2 — Post-import confirmation + rollback (shipped v1.8.53)
-- ✅ A3 — Encrypted-blob export codec (shipped v1.8.54)
+- ✅ A3 — Encrypted-blob export/import round-trip (codec shipped v1.8.54; Settings wiring shipped v1.8.65)
 - ⏳ Marketing-side completion (Reddit thread + 2026-05-30 pinned release)
 
 Phase B (touch & decoder calibration):
@@ -162,7 +162,7 @@ Phase C/D opened in the same release window:
   explicit key / popup / inline-chip borders; `aurora_animated` registers a
   Snygg palette plus reduced-motion-aware Compose `GenericShape` background
   bands gated by `LocalActiveThemeName`
-- ✅ D1 — Calendar quick-insert (shipped v1.8.64, HEAD) —
+- ✅ D1 — Calendar quick-insert (shipped v1.8.64) —
   `QuickAction.InsertCalendarEvent` reads local `CalendarContract.Instances`
   for today + next 7 days, requests `READ_CALENDAR` only after explicit tap,
   and shows an IME-local picker that inserts selected event title + date/time

@@ -1,13 +1,14 @@
 # Migrating from Microsoft SwiftKey to SwiftFloris
 
-**TL;DR:** There is no smooth path. Microsoft does not provide a usable
-local export of SwiftKey's personalized learning data. The honest options
-are (a) re-train SwiftFloris's personal dictionary by typing for ~2 weeks
-on the same device, (b) restore from a `Microsoft account → OneDrive`
-backup *if* you previously enabled SwiftKey Cloud (which SwiftFloris
-philosophy rejects, so you probably did not), or (c) on a rooted device
-only, pull the raw SQLite databases and convert the entries via the
-recipe below.
+**TL;DR:** If you can still access [`data.swiftkey.com`](https://data.swiftkey.com)
+before Microsoft's **2026-05-31** shutdown, export `swiftkey-cloud.json` and
+import it in SwiftFloris via **Settings → Personal dictionary → Import**. If you
+miss that window, Microsoft does not provide a usable local export of SwiftKey's
+personalized learning data. The honest fallback options are (a) re-train
+SwiftFloris's personal dictionary by typing for ~2 weeks on the same device,
+(b) restore from a `Microsoft account → OneDrive` backup *if* you previously
+enabled SwiftKey Cloud, or (c) on a rooted device only, pull the raw databases
+and convert visible entries via the recipe below.
 
 This document exists because v1.7.0's privacy posture (no `INTERNET`
 permission, no account requirement, no cloud sync) makes a polished
@@ -26,6 +27,19 @@ adaptive retraining, which is small and time-bounded.
 | Microsoft is forcing SwiftKey users onto a Microsoft account by 2026-05-31 [C2]. | The *only* official exit path Microsoft will provide is "stay signed in" — which is not an exit path. |
 
 ## The supported paths
+
+### Path 0 — Export `swiftkey-cloud.json` before 2026-05-31
+
+Before the cutoff, use Microsoft's data export endpoint to download
+`swiftkey-cloud.json`, then choose it from SwiftFloris **Settings → Personal
+dictionary → Import**. SwiftFloris parses the tolerant SwiftKey JSON shapes,
+shows the import summary, and lets you undo newly inserted rows.
+
+After your words are in SwiftFloris, **Settings → Personal dictionary → Export
+encrypted** creates a passphrase-protected `.sfexp` file you can move with
+Syncthing, USB, or another user-chosen channel. Importing the same file on
+another SwiftFloris device asks for the passphrase and keeps the same
+summary/rollback flow.
 
 ### Path A — Just retrain SwiftFloris (recommended for almost everyone)
 
@@ -129,9 +143,10 @@ hour.
 
 | Source | Status | Tracking |
 |---|---|---|
-| Microsoft SwiftKey | This document only. | Next-6.3 — shipped 2026-05-14. |
-| Google Gboard | One-click CSV importer from `PersonalDictionary.zip` export (Google Takeout). | Next-6.1 — in flight. |
-| HeliBoard / FlorisBoard upstream | Backup file (`.flbackup` zip archive) imports the personal-dictionary, custom-layouts, and theme directly — same Room schema. | Next-6.2 — in flight. |
+| Microsoft SwiftKey | `swiftkey-cloud.json` import before the 2026-05-31 endpoint shutdown; retrain/root fallback after cutoff. | v1.8.46 parser + v1.8.53 Settings import wiring. |
+| SwiftFloris device-to-device | Passphrase-encrypted `.sfexp` export/import for the personal dictionary. | v1.8.54 codec + v1.8.65 Settings wiring. |
+| Google Gboard | XML / CSV import from `PersonalDictionary.zip` export (Google Takeout). | v1.8.x importer path. |
+| HeliBoard / FlorisBoard upstream | Backup file (`.flbackup` zip archive) imports supported personal-dictionary payloads through the modular importer. | v1.8.x importer path. |
 | Hardware-keyboard layouts (Windows `.klc` / macOS `.keylayout`) | Build-time conversion via KLFC. | Next-6.4 — pending. |
 
 So if you are coming from Gboard, HeliBoard, or FlorisBoard upstream you

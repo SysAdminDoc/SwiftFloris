@@ -72,10 +72,13 @@ class DictionaryImporter {
             DictionaryImportFormat.XML -> parseGboardXml(buffered.readUtf8TextLimited("XML dictionary import"))
             DictionaryImportFormat.CSV -> parseCsv(buffered.readUtf8TextLimited("CSV dictionary import"))
             DictionaryImportFormat.JSON -> parseSwiftKeyJson(buffered.readUtf8TextLimited("SwiftKey JSON dictionary import"))
+            DictionaryImportFormat.FLORIS -> parseFlorisCombinedList(
+                buffered.readUtf8TextLimited("SwiftFloris personal dictionary export"),
+            )
             DictionaryImportFormat.UNKNOWN -> throw DictionaryImportException(
                 "Unrecognised dictionary format. Supported: Gboard PersonalDictionary.zip, " +
                     "FlorisBoard/HeliBoard .flbackup, SwiftKey swiftkey-cloud.json, " +
-                    "or word,frequency,shortcut,locale CSV.",
+                    "SwiftFloris combined-list export, or word,frequency,shortcut,locale CSV.",
             )
         }
     }
@@ -100,6 +103,9 @@ class DictionaryImporter {
         if (asText.startsWith("{") || asText.startsWith("[")) {
             return DictionaryImportFormat.JSON
         }
+        if (looksLikeFlorisCombinedList(asText)) {
+            return DictionaryImportFormat.FLORIS
+        }
         if (asText.contains(",")) {
             // Heuristic for CSV: at least one comma in the first kilobyte
             // and at least one of the first two lines either looks like
@@ -120,6 +126,10 @@ class DictionaryImporter {
             }
         }
         return DictionaryImportFormat.UNKNOWN
+    }
+
+    internal fun parseFlorisCombinedList(text: String): List<PersonalDictionaryEntry> {
+        return UserDictionaryCombinedListCodec.decode(text)
     }
 
     internal fun parseZip(stream: InputStream): List<PersonalDictionaryEntry> {
@@ -367,6 +377,20 @@ class DictionaryImporter {
         return null
     }
 
+    private fun looksLikeFlorisCombinedList(text: String): Boolean {
+        val lines = text.lineSequence()
+            .map { it.trimStart() }
+            .filter { it.isNotEmpty() }
+            .take(2)
+            .toList()
+        val first = lines.firstOrNull() ?: return false
+        return first.startsWith("dictionary=", ignoreCase = true) ||
+            lines.any { line ->
+                line.startsWith("w=", ignoreCase = true) ||
+                    line.startsWith("word=", ignoreCase = true)
+            }
+    }
+
     private fun splitCsvLine(line: String): List<String> {
         val cells = mutableListOf<String>()
         val current = StringBuilder()
@@ -520,6 +544,8 @@ enum class DictionaryImportFormat {
     CSV,
     /** ROADMAP §6 N16.2 — SwiftKey `swiftkey-cloud.json` export. */
     JSON,
+    /** SwiftFloris / legacy Floris semicolon key-value personal dictionary export. */
+    FLORIS,
     UNKNOWN,
 }
 

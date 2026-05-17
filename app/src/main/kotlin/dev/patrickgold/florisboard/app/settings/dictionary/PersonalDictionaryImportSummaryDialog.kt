@@ -112,6 +112,7 @@ private fun DictionaryImportFormat.labelRes(): Int {
         DictionaryImportFormat.XML -> R.string.settings__udm__import_summary__format__xml
         DictionaryImportFormat.CSV -> R.string.settings__udm__import_summary__format__csv
         DictionaryImportFormat.ZIP -> R.string.settings__udm__import_summary__format__zip
+        DictionaryImportFormat.FLORIS -> R.string.settings__udm__import_summary__format__floris
         DictionaryImportFormat.UNKNOWN -> R.string.settings__udm__import_summary__format__unknown
     }
 }

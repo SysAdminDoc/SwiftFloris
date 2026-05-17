@@ -120,6 +120,41 @@ class DictionaryImporterTest : FunSpec({
         result[0].word shouldBe "yolo"
     }
 
+    test("imports a SwiftFloris combined-list payload") {
+        val combinedList = """
+            dictionary=my-personal-dictionary.clb;date=1710000000000;generated-by=dev.patrickgold.florisboard;version=1
+             w=omw;f=240;l=en;s=omw
+             w=gracias;f=200;l=es
+             w=global;f=180;l=null
+        """.trimIndent()
+
+        val result = importer.parseFlorisCombinedList(combinedList)
+
+        result shouldHaveSize 3
+        result[0] shouldBe PersonalDictionaryEntry("omw", 240, "omw", "en")
+        result[1] shouldBe PersonalDictionaryEntry("gracias", 200, null, "es")
+        result[2] shouldBe PersonalDictionaryEntry("global", 180, null, null)
+    }
+
+    test("SwiftFloris combined-list preserves equals signs in values") {
+        val combinedList = """
+            dictionary=my-personal-dictionary.clb;date=1710000000000;generated-by=dev.patrickgold.florisboard;version=1
+             w=token=value;f=240;l=en;s=t=value
+        """.trimIndent()
+
+        val result = importer.parseFlorisCombinedList(combinedList)
+
+        result shouldHaveSize 1
+        result[0] shouldBe PersonalDictionaryEntry("token=value", 240, "t=value", "en")
+    }
+
+    test("SwiftFloris combined-list parser accepts a headerless entry stream") {
+        val result = importer.parseFlorisCombinedList("w=solo;f=180;l=en")
+
+        result shouldHaveSize 1
+        result[0] shouldBe PersonalDictionaryEntry("solo", 180, null, "en")
+    }
+
     test("detects Gboard zip and extracts the XML inside") {
         // ROADMAP §7 Next-6.1 — end-to-end on a synthetic
         // PersonalDictionary.zip fixture matching what Google Takeout
@@ -175,6 +210,8 @@ class DictionaryImporterTest : FunSpec({
             DictionaryImportFormat.XML
         importer.detectFormat("word,frequency\nomw,240".toByteArray()) shouldBe
             DictionaryImportFormat.CSV
+        importer.detectFormat("dictionary=my-personal-dictionary.clb\n w=omw;f=240;l=en".toByteArray()) shouldBe
+            DictionaryImportFormat.FLORIS
         importer.detectFormat("this is just prose, not a dictionary".toByteArray()) shouldBe
             DictionaryImportFormat.UNKNOWN
         importer.detectFormat("{ \"predictions\": [] }".toByteArray()) shouldBe
@@ -296,6 +333,18 @@ class DictionaryImporterTest : FunSpec({
 
         result shouldHaveSize 1
         result[0] shouldBe PersonalDictionaryEntry("swiftkeyport", 200, null, "en")
+    }
+
+    test("import(): detects a SwiftFloris combined-list stream and routes it") {
+        val combinedList = """
+            dictionary=my-personal-dictionary.sfexp;date=1710000000000;generated-by=dev.patrickgold.florisboard;version=1
+             w=portable;f=200;l=en
+        """.trimIndent().toByteArray(Charsets.UTF_8)
+
+        val result = importer.import(ByteArrayInputStream(combinedList))
+
+        result shouldHaveSize 1
+        result[0] shouldBe PersonalDictionaryEntry("portable", 200, null, "en")
     }
 
     test("parseSwiftKeyJson rejects pathologically deep envelopes") {

@@ -17,7 +17,9 @@
 package dev.patrickgold.florisboard.ime.dictionary
 
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import java.io.ByteArrayInputStream
 import java.security.SecureRandom
 
 class EncryptedDictionaryExportTest : io.kotest.core.spec.style.FunSpec({
@@ -48,6 +50,31 @@ class EncryptedDictionaryExportTest : io.kotest.core.spec.style.FunSpec({
         )
 
         decrypted shouldBe plaintext
+    }
+
+    test("encrypted SwiftFloris combined-list export decrypts into the importer") {
+        val plaintext = UserDictionaryCombinedListCodec.encode(
+            entries = listOf(
+                UserDictionaryEntry(id = 1, word = "omw", freq = 240, locale = "en", shortcut = "omw"),
+                UserDictionaryEntry(id = 2, word = "gracias", freq = 200, locale = "es", shortcut = null),
+            ),
+            dictionaryName = "my-personal-dictionary.sfexp",
+            generatedBy = "dev.patrickgold.florisboard",
+            timestampMillis = 1710000000000L,
+        ).toByteArray(Charsets.UTF_8)
+        val envelope = EncryptedDictionaryExport.encrypt(
+            plaintext = plaintext,
+            passphrase = "portable vault".toCharArray(),
+            iterations = testIterations,
+            secureRandom = fixedRandom(),
+        )
+        val decrypted = EncryptedDictionaryExport.decrypt(envelope, "portable vault".toCharArray())
+
+        val imported = DictionaryImporter().import(ByteArrayInputStream(decrypted))
+
+        imported shouldHaveSize 2
+        imported[0] shouldBe PersonalDictionaryEntry("omw", 240, "omw", "en")
+        imported[1] shouldBe PersonalDictionaryEntry("gracias", 200, null, "es")
     }
 
     test("decrypt with the wrong passphrase fails with BAD_PASSPHRASE (not a generic error)") {
