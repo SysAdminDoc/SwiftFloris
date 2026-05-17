@@ -28,6 +28,7 @@ import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
+import dev.patrickgold.florisboard.ime.calendar.CalendarQuickInsertManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorInstance
@@ -83,6 +84,7 @@ class FlorisApplication : Application() {
     val preferenceStoreLoaded = MutableStateFlow(false)
 
     val cacheManager = lazy { CacheManager(this) }
+    val calendarQuickInsertManager = lazy { CalendarQuickInsertManager(this) }
     val clipboardManager = lazy { ClipboardManager(this) }
     val editorInstance = lazy { EditorInstance(this) }
     val extensionManager = lazy { ExtensionManager(this) }
@@ -194,6 +196,8 @@ private tailrec fun Context.florisApplication(): FlorisApplication {
 fun Context.appContext() = lazyOf(this.florisApplication())
 
 fun Context.cacheManager() = this.florisApplication().cacheManager
+
+fun Context.calendarQuickInsertManager() = this.florisApplication().calendarQuickInsertManager
 
 fun Context.clipboardManager() = this.florisApplication().clipboardManager
 

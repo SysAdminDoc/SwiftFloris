@@ -19,7 +19,9 @@ package dev.patrickgold.florisboard.ime.smartbar.quickaction
 import android.content.Context
 import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.calendarQuickInsertManager
 import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.calendar.CalendarPermissionActivity
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
@@ -177,6 +179,31 @@ sealed class QuickAction {
             }
         }
     }
+
+    /**
+     * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D1 — calendar quick-insert.
+     *
+     * Reads upcoming agenda entries from Android's local CalendarProvider
+     * (`CalendarContract.Instances`) and shows an IME-local picker. The
+     * READ_CALENDAR runtime permission is requested only when the user taps
+     * this explicit action; the base APK still has no network permission.
+     */
+    @Serializable
+    @SerialName("insert_calendar_event")
+    data object InsertCalendarEvent : QuickAction() {
+        override fun onPointerUp(context: Context) {
+            val manager by context.calendarQuickInsertManager()
+            if (manager.hasReadCalendarPermission()) {
+                manager.openPicker()
+            } else if (!CalendarPermissionActivity.launch(context)) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Calendar permission is required to insert agenda events.",
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
 }
 
 fun QuickAction.keyData(): KeyData {
@@ -223,6 +250,7 @@ fun QuickAction.computeDisplayName(evaluator: ComputingEvaluator): String {
         is QuickAction.InsertText -> data
         is QuickAction.TranslateSelection -> "Translate"
         is QuickAction.InsertTask -> "Add task"
+        is QuickAction.InsertCalendarEvent -> "Insert event"
     }
 }
 
@@ -265,5 +293,6 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
         is QuickAction.InsertText -> "Insert text '$data'"
         is QuickAction.TranslateSelection -> "Translate the current selection (via InlineTranslator addon)"
         is QuickAction.InsertTask -> "Send current selection to a task / note app (Tasks.org, OpenTasks, Google Tasks, Joplin, etc.)"
+        is QuickAction.InsertCalendarEvent -> "Pick a local calendar event and insert its title and date/time"
     }
 }

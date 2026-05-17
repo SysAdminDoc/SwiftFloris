@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.63)
+## 3. Stack at HEAD (v1.8.64)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.63`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.64`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -157,12 +157,15 @@ Phase C/D opened in the same release window:
   the active gutter, post-shifts right-half key bounds back into the final
   container, rejects non-viable narrow roots, and refuses nearest-key rescue
   inside the gutter
-- ✅ C3 — High-Contrast AAA theme + animated theme (shipped v1.8.63, HEAD) —
+- ✅ C3 — High-Contrast AAA theme + animated theme (shipped v1.8.63) —
   `swiftkey_high_contrast` registers an AAA-tested Snygg stylesheet with
   explicit key / popup / inline-chip borders; `aurora_animated` registers a
   Snygg palette plus reduced-motion-aware Compose `GenericShape` background
   bands gated by `LocalActiveThemeName`
-- D1 — Calendar quick-insert (P9) (open)
+- ✅ D1 — Calendar quick-insert (shipped v1.8.64, HEAD) —
+  `QuickAction.InsertCalendarEvent` reads local `CalendarContract.Instances`
+  for today + next 7 days, requests `READ_CALENDAR` only after explicit tap,
+  and shows an IME-local picker that inserts selected event title + date/time
 
 ## 8. AI / model surfaces — current state
 

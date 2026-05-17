@@ -180,4 +180,20 @@ class QuickActionArrangementTest : FunSpec({
 
         QuickActionArrangement.Serializer.deserialize(encoded) shouldBe arrangement.distinct()
     }
+
+    test("default arrangement exposes task and calendar quick actions in the hidden editor pool") {
+        QuickAction.InsertTask in QuickActionArrangement.Default shouldBe true
+        QuickAction.InsertCalendarEvent in QuickActionArrangement.Default shouldBe true
+    }
+
+    test("serializer round-trips calendar quick action") {
+        val arrangement = QuickActionArrangement(
+            stickyAction = null,
+            dynamicActions = listOf(QuickAction.InsertCalendarEvent),
+            hiddenActions = listOf(QuickAction.InsertTask),
+        )
+        val encoded = QuickActionJsonConfig.encodeToString(arrangement)
+
+        QuickActionArrangement.Serializer.deserialize(encoded) shouldBe arrangement
+    }
 })
