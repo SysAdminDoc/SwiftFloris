@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.74)
+## 3. Stack at HEAD (v1.8.75)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -89,6 +89,11 @@ v1.8.74 was Bump-batch C: Android Gradle Plugin 9.2.1 and Compose BOM
 2026.05.00. `compileSdk` / `targetSdk` intentionally remain 36 until the
 Android 17 behavior-gate checklist is closed.
 
+v1.8.75 shipped the Next-6.4a macOS `.keylayout` parser. The hardware-layout
+import stack now has Windows KLC, Keyman LDML, and macOS XML parsers feeding the
+same `HardwareKeyboardLayout` target; the Android `InputManager` /
+`KeyEvent.getDeviceId(...)` runtime mapper remains the next adjacent follow-up.
+
 ## 4. Module layout
 
 ```
@@ -116,7 +121,7 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.74`
+  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.75`
   are tagged with their release commits. The tags still need to be
   pushed from the maintainer host because this VM cannot push to
   `SysAdminDoc/SwiftFloris`.

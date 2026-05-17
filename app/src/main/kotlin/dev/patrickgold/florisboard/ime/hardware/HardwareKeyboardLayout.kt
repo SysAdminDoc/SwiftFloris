@@ -26,7 +26,7 @@ package dev.patrickgold.florisboard.ime.hardware
  * the cross-format target representation.
  *
  * Once paired with the Android `InputManager.getInputDeviceIds()` flow
- * (Phase Next-6.4a — pending), the IME will be able to remap physical
+ * (Phase Next-6.4b — pending), the IME will be able to remap physical
  * keystrokes through one of these layouts when a USB / Bluetooth
  * hardware keyboard is attached to the device.
  */
@@ -35,7 +35,7 @@ data class HardwareKeyboardLayout(
     val name: String,
     /** ISO 639-1 + 3166-1 locale tag, e.g. `"en-US"` or `"de-DE"`. */
     val locale: String,
-    /** Scancode → key entry. Scancode is the Windows hardware scan code. */
+    /** Platform key code / scancode → key entry. */
     val scancodeMap: Map<Int, HardwareKeyEntry>,
 ) {
     /** Source format the layout was imported from. */
@@ -57,7 +57,7 @@ data class HardwareKeyboardLayout(
  * resolved through a follow-up dead-key composition pass at input time.
  */
 data class HardwareKeyEntry(
-    /** Windows VK_ name from the KLC file, e.g. `"VK_A"` or `"OEM_3"`. */
+    /** Source key identifier, e.g. `"VK_A"`, `"OEM_3"`, `"MAC_0"`, or `"A01"`. */
     val virtualKeyName: String,
     /** Output codepoint with no modifier active. */
     val normal: Int? = null,

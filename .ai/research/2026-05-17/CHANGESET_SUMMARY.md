@@ -744,3 +744,44 @@ so all five were updated.
 
 No version bump was needed because this was documentation-state cleanup only;
 no app, CI, dependency, permission, or runtime behavior changed.
+
+---
+
+## 21. v1.8.75 continuation — macOS `.keylayout` parser
+
+The autonomous loop shipped Tier-2 prioritization item #27 as ROADMAP
+Next-6.4a.
+
+**Files added:**
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/MacKeylayoutParser.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/hardware/MacKeylayoutParserTest.kt`
+- `RELEASE_NOTES_v1.8.75.md`
+
+**Files updated:**
+
+- `HardwareKeyboardLayout.kt` → Next-6.4b is now the remaining Android runtime
+  mapper follow-up
+- `gradle.properties` → `projectVersionCode=1875`,
+  `projectVersionName=1.8.75`
+- `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `FEATURE_BACKLOG.md`, `STATE_OF_REPO.md`, and
+  `RESEARCH_LOG.md` → release/context updates for v1.8.75
+
+**Implementation notes:**
+
+- `MacKeylayoutParser` uses an XXE-hardened `DocumentBuilderFactory`, matching
+  the Keyman LDML parser's trust-boundary posture.
+- It selects the `<keyMapSet>` referenced by `<layouts>`, maps normal / Shift /
+  Option-as-AltGr / Shift+Option modifier slots, ignores command/control-only
+  maps, and falls back to indexes 0/1/2/3 if no modifier map is present.
+- It captures action-backed dead-key outputs when the `<action>` exposes a
+  `<when output="...">` value.
+- It returns `HardwareKeyboardLayout.Empty` for blank, malformed,
+  non-keyboard-root, no-key, or DOCTYPE-bearing XML.
+
+**Verification note:** `git diff --check`, a manifest banned-network-permission
+scan, and a focused Gradle test command were run. Gradle stopped at the known VM
+blocker: `JAVA_HOME` is not set and no `java` command is on PATH, so
+maintainer-host Gradle verification remains required before publishing.

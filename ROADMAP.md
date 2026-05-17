@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.74 (released 2026-05-17 — Bump-batch C. Android Gradle Plugin updated to 9.2.1 and Compose BOM to 2026.05.00 after Google Maven / Android Studio patch-note / OSV / R8-rule checks. **Previous version, v1.8.73** (released 2026-05-17 — repository hygiene guardrail; see `RELEASE_NOTES_v1.8.73.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.75 (released 2026-05-17 — macOS `.keylayout` parser. XXE-hardened XML import now normalizes macOS key maps, modifier maps, and action-backed dead keys into `HardwareKeyboardLayout`. **Previous version, v1.8.74** (released 2026-05-17 — Bump-batch C; see `RELEASE_NOTES_v1.8.74.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -26,7 +26,7 @@ This delta supersedes the stale dependency guidance in the first-pass
 - Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
   2026-05-17 from their matching `gradle.properties` version-bump commits
   so Obtainium / fork audit anchors are no longer stale locally; v1.8.70
-  through v1.8.74 are tagged with their release commits. The remaining
+  through v1.8.75 are tagged with their release commits. The remaining
   distribution step is pushing those tags from the maintainer host.
 - v1.8.70 refreshed README migration-window messaging for Samsung and
   Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
@@ -52,6 +52,10 @@ This delta supersedes the stale dependency guidance in the first-pass
   and Compose BOM `2026.03.01` → `2026.05.00`. R8 keepattributes audit found
   no active wildcard rule requiring a change. Gradle verification still belongs
   on the maintainer host because this VM has no Java on PATH.
+- Next-6.4a shipped in v1.8.75: `MacKeylayoutParser` now handles macOS
+  `.keylayout` XML files with the same XXE-hardened posture as the Keyman LDML
+  importer. Android `InputManager` / `KeyEvent.getDeviceId(...)` runtime
+  mapping remains the separate Next-6.4b follow-up.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -192,7 +196,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.74 reality, observed)
+## 2. State of the Repo (v1.8.75 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor · AGP 9.2.1 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -224,10 +228,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.74, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.75, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.75 | 2026-05-17 | Next-6.4a macOS `.keylayout` parser. Added `MacKeylayoutParser`, an XXE-hardened XML importer that selects the referenced `<keyMapSet>`, maps normal / Shift / Option-as-AltGr / Shift+Option slots through `<modifierMap>`, captures action-backed dead-key outputs, and returns `HardwareKeyboardLayout.Empty` for blank, malformed, non-keyboard, or DOCTYPE-bearing XML. New `MacKeylayoutParserTest` covers metadata, modifier slots, map-set selection, fallback mapping, dead keys, malformed XML, and XXE rejection. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.75.md` |
 | v1.8.74 | 2026-05-17 | Bump-batch C. Updated Android Gradle Plugin `9.0.0` → `9.2.1` and Compose BOM `2026.03.01` → `2026.05.00` after checking Google Maven metadata, Android Studio Panda 4 Patch 1 notes, Compose release metadata, OSV querybatch, and R8 keepattributes rules. AGP `9.3.0-alpha05` exists but is preview and intentionally skipped. No app code, permissions, network surface, or runtime behavior changed. | `RELEASE_NOTES_v1.8.74.md` |
 | v1.8.73 | 2026-05-17 | Repository hygiene guardrail. Moved five local root JVM crash/replay logs into `.ai/local-crash-logs/2026-05-16/`, added `scripts/check-no-root-crash-logs.sh`, and wired it into `.github/workflows/android.yml` before Java / Gradle setup so committed root `hs_err_pid*.log` / `replay_pid*.log` files fail CI quickly. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.73.md` |
 | v1.8.72 | 2026-05-17 | Roadmap correction for HeliBoard / NLnet slip-base-case planning. Re-checked HeliBoard `#2226`, releases, the NLnet project page, and the gesture-data contribution wiki: latest release is still `v3.9`, the open-glide issue remains open, and the public workflow still depends on collecting gesture data with the existing proprietary library. N1.1 is now an additive future integration track; SwiftFloris's `StatisticalGlideTypingClassifier` remains the production glide path until a permissive open library and dataset are available. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.72.md` |
@@ -632,7 +637,7 @@ No mainstream IME combines E2EE with personal-dictionary sync without a vendor a
 - ✅ **Next-6.1** shipped 2026-05-14 (v1.7.9). New `DictionaryImporter.parseGboardXml(xml)` + `parseZip(stream)` consumes Google Takeout's `PersonalDictionary.zip` (XML inside zip; `<userdictionary><entry word="..." shortcut="..." locale="..." frequency="..."/></userdictionary>` shape). Schema detection routes by structure (PK magic bytes / `<?xml` / first-line shape), not file extension. XML entity decoding for `&amp;` / `&lt;` etc. Frequency clamped 0..255. Closes [PAIN-2, PAIN-18, MIG-GBOARD].
 - ✅ **Next-6.2** shipped 2026-05-14 (v1.7.9). Same `DictionaryImporter` path handles FlorisBoard CSV (`word,frequency,shortcut,locale` with optional header). `.flbackup` zip containing a raw `.db` / `.sqlite` SQLite snapshot is **explicitly routed to a future in-app importer path** — JVM-side can't open a SQLite database without Android's runtime, so the JVM importer raises a clear `DictionaryImportException` directing the user to Settings → Personal dictionary → Import .flbackup. The CSV+JSON manifest layout is fully supported; SQLite-snapshot routing is the v1.8 follow-up.
 - ✅ **Next-6.3** shipped 2026-05-14 (v1.7.9). New `docs/MIGRATE_FROM_SWIFTKEY.md` writes up the three available paths (retrain SwiftFloris, redownload via Microsoft account then re-export, root-only `sqlite3` extraction with sample one-line `adb` recipe) and explicitly refuses to ship a SwiftKey-cloud OAuth helper (violates §1 no-network). Times directly into the **Microsoft SwiftKey account-retirement cutoff of 2026-05-31** [SK-RETIRE] — the migration window is open right now. Closes [MIG-SK, C2].
-- ✅ **Next-6.4** shipped 2026-05-15 (parser scaffold). New `HardwareKeyboardLayout` + `HardwareKeyEntry` data classes pin the cross-format target representation. `KlcLayoutParser.parse(klcText)` consumes Windows `.klc` exports (Microsoft Keyboard Layout Creator): tolerates the BOM, comments (`//` + `;`), tab-and-space-delimited columns, dead-key `@` suffix, `%` / `-1` no-output slots, and the canonical `SC VK_NAME CAP NORMAL SHIFT CTRL ALTGR SHIFT+ALTGR` row shape. Captures `KBD`'s display name + `LOCALENAME` metadata; intentionally skips `DEADKEY` / `KEYNAME` / `LIGATURE` sections at the scaffold tier. `KlcLayoutParserTest` covers six cases (metadata extraction, alpha rows, OEM punctuation, dead-key trigger detection, Empty fallback when no LAYOUT rows resolve, tolerant skip of malformed rows). macOS `.keylayout` (XML) parser + Android `InputManager`/`KeyEvent.getDeviceId(...)` runtime mapper land in Next-6.4a + Next-6.4b respectively. [MIG-KLFC]
+- ✅ **Next-6.4** shipped 2026-05-15 (parser scaffold). New `HardwareKeyboardLayout` + `HardwareKeyEntry` data classes pin the cross-format target representation. `KlcLayoutParser.parse(klcText)` consumes Windows `.klc` exports (Microsoft Keyboard Layout Creator): tolerates the BOM, comments (`//` + `;`), tab-and-space-delimited columns, dead-key `@` suffix, `%` / `-1` no-output slots, and the canonical `SC VK_NAME CAP NORMAL SHIFT CTRL ALTGR SHIFT+ALTGR` row shape. Captures `KBD`'s display name + `LOCALENAME` metadata; intentionally skips `DEADKEY` / `KEYNAME` / `LIGATURE` sections at the scaffold tier. `KlcLayoutParserTest` covers six cases (metadata extraction, alpha rows, OEM punctuation, dead-key trigger detection, Empty fallback when no LAYOUT rows resolve, tolerant skip of malformed rows). ✅ **Next-6.4a** shipped 2026-05-17 (v1.8.75): `MacKeylayoutParser.parse(xml)` consumes macOS `.keylayout` XML, selects the referenced `<keyMapSet>`, maps normal / Shift / Option-as-AltGr / Shift+Option modifier slots, captures action-backed dead-key outputs, and uses XXE-hardened XML parsing with Empty fallback for blank, malformed, non-keyboard, or DOCTYPE-bearing files. Android `InputManager` / `KeyEvent.getDeviceId(...)` runtime mapper lands in Next-6.4b. [MIG-KLFC]
 
 ### Next-7. Floating + split + one-handed window modes (FlorisBoard upstream parity)
 
@@ -1276,4 +1281,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.74 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, and the root crash/replay-log CI guardrail. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.75 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, the root crash/replay-log CI guardrail, and the macOS `.keylayout` parser. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*

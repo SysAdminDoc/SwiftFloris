@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.74 — Bump-batch C.
+**HEAD at latest reconciliation:** v1.8.75 — macOS `.keylayout` parser.
 (The research run started at v1.8.55; v1.8.56-71 shipped concurrently in the
 same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B + README Samsung / Grammarly callouts.)
 
@@ -44,6 +44,7 @@ implemented several recommendations:
 | §G.1 / Tier-1 #9 — HeliBoard slip-risk promote | ✅ **v1.8.72 — N1.1** — statistical glide is production default; HeliBoard open-glide remains additive |
 | Tier-1 #14/#15 — root crash/replay log cleanup + CI guard | ✅ **v1.8.73 — N18.1** — logs moved out of root; committed root logs fail CI |
 | Tier-2 #16 — Bump-batch C | ✅ **v1.8.74 — N14.7** — AGP 9.2.1 + Compose BOM 2026.05.00 |
+| Tier-2 #27 — macOS `.keylayout` parser | ✅ **v1.8.75 — Next-6.4a** — XXE-hardened parser normalizes macOS key maps and modifier maps into `HardwareKeyboardLayout` |
 
 These shipped items are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
@@ -510,7 +511,7 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | ✅ v1.8.57 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.74; push pending from maintainer host |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.75; push pending from maintainer host |
 | Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |
 | Tier-1 root crash/replay log cleanup + CI guard | ✅ v1.8.73 |
 | §C.1 User-imported sticker folder (Next-9.5) | 🟢 |
