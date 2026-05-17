@@ -26,6 +26,7 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
+| [RELEASE_NOTES_v1.8.78.md](../../../RELEASE_NOTES_v1.8.78.md) | v1.8.78 Keyman `.kmp` package import foundation |
 | [RELEASE_NOTES_v1.8.72.md](../../../RELEASE_NOTES_v1.8.72.md) | v1.8.72 HeliBoard / NLnet slip-base-case roadmap correction |
 | [RELEASE_NOTES_v1.8.73.md](../../../RELEASE_NOTES_v1.8.73.md) | v1.8.73 repository hygiene / CI guardrail |
 | [RELEASE_NOTES_v1.8.58.md](../../../RELEASE_NOTES_v1.8.58.md) | Phase D2 task-creation quick action |
@@ -76,12 +77,14 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/lib/FlorisLocale.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/KeymanPackageParser.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/hardware/KeymanPackageParserTest.kt`
 
 ### 1.6 Git state
 
 - `git log --oneline -30` — HEAD commit subjects
 - `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
-  backfilled local tags through `v1.8.73` (push still pending from maintainer host)
+  backfilled local tags through `v1.8.78` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
 - `git branch --show-current` — `master`; continuation commits leave the local
   branch ahead of `origin/master` because this VM cannot push to the remote
@@ -138,6 +141,9 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - https://cleverkeys.app/ — CleverKeys project site
 - https://github.com/keymanapp/keyman — v18.0.249 (2026-03-27); v19.0 alphas in May 2026
 - https://github.com/keymanapp/keyboards
+- https://help.keyman.com/developer/current-version/reference/file-types/kmp — `.kmp` package purpose, ZIP-compatible contents, registered MIME type
+- https://help.keyman.com/developer/current-version/reference/file-types/metadata — `kmp.json` / `kmp.inf` metadata shape and keyboard / lexical-model package fields
+- https://help.keyman.com/developer/19.0/guides/distribute/packages — package distribution guide; packages contain metadata and should not mix keyboards with lexical models
 - https://github.com/alex-vt/WhisperInput
 - https://github.com/klausw/hackerskeyboard/issues/875 — Hacker's Keyboard stalled
 
