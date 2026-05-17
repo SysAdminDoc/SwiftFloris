@@ -1054,3 +1054,38 @@ banned-network-permission scan, and the root JVM crash/replay tracked-file
 guard. A focused Gradle test command for the new addon tests was attempted, but
 Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no `java`
 command is on PATH, so maintainer-host Gradle verification remains required.
+
+## 30. v1.8.82 continuation — addon signing-pin persistence
+
+Implemented Next-10.3b as the persisted trust-store prerequisite for addon
+startup wiring and Settings → Addons:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonSigningPinSet.kt`
+  - New newline-string codec for `packageName=SHA-256` signing certificate
+    pins.
+  - Ignores malformed/corrupt preference lines, encodes sorted validated pins,
+    and preserves first-seen trust for already-pinned packages.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistry.kt`
+  - Added `fromPinnedSigningPinSet(...)` and `pinnedSigningPinSet()` helpers so
+    the pure registry can round-trip through persisted pins without depending on
+    JetPref.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt`
+  - Added `prefs.addon.signingCertPins` (`addon__signing_cert_pins`) as the
+    durable preference key for future registry startup/Settings wiring.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonSigningPinSetTest.kt`
+  - Covers parsing, malformed-line tolerance, deterministic encoding,
+    first-seen preservation, and registry codec round-trip.
+- `RELEASE_NOTES_v1.8.82.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and the
+  `.ai/research/2026-05-17/` register/backlog/prioritization/state files
+  - Release/context updates for v1.8.82 and explicit note that startup
+    persistence wiring, Settings revoke/reset UI, install hints, and asset
+    mounting remain next slices.
+- `gradle.properties`
+  - `projectVersionCode=1882`, `projectVersionName=1.8.82`.
+
+**Verification note:** local verification used `git diff --check`, the manifest
+banned-network-permission scan, and the root JVM crash/replay tracked-file
+guard. A focused Gradle test command for the addon pin tests was attempted, but
+Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no `java`
+command is on PATH, so maintainer-host Gradle verification remains required.

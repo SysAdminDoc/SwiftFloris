@@ -105,6 +105,10 @@ class AddonRegistry(
     @Synchronized
     fun pinnedSigningCertificates(): Map<String, String> = pinnedSigningCertificates.toMap()
 
+    @Synchronized
+    fun pinnedSigningPinSet(): AddonSigningPinSet =
+        AddonSigningPinSet(pinnedSigningCertificates)
+
     /**
      * Clears process-live addon state without clearing signing pins. Used when
      * the IME wants a clean rescan after package changes.
@@ -127,6 +131,9 @@ class AddonRegistry(
     )
 
     companion object {
+        fun fromPinnedSigningPinSet(pinSet: AddonSigningPinSet): AddonRegistry =
+            AddonRegistry(initialPinnedSigningCertificates = pinSet.asMap())
+
         val DisplayOrder: Comparator<AddonManifest> =
             compareBy<AddonManifest> { it.type.metadataValue }
                 .thenBy { it.displayName.lowercase(Locale.ROOT) }

@@ -75,7 +75,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 35 | ✅ **Shipped v1.8.79:** Honeycomb-hex layout wire-up | 3 | 4 | 1 | **1.75** | Bundled `honeycomb` layout now selectable; production `TextKeyboardLayout` clips Snygg keys to `HoneycombHexShape`; `TextKeyboard` uses hex geometry and hex-aware hit testing |
 | 36 | ✅ **Shipped v1.8.80:** OpenSSL/BoringSSL SQLCipher provider migration plan | 3 | 3 | 1 | **2.33** | `docs/SQLCIPHER_PROVIDER_MIGRATION.md` now records the corrected provider state, OpenSSL proof-of-concept path, triggers, 16 KB gates, and rollback rules |
 | 37 | **Self-hosted ACRA opt-in endpoint** | 2 | 3 | 1 | **1.67** | §9 Under Consideration; demand-gated |
-| 38 | **Partially shipped v1.8.81:** HeliBoard dictionary downloader UI pattern | 4 | 3 | 1 | **3.0** | Strategic; Next-10.3a addon catalog foundation landed (`AddonRegistry` + `DictionaryPackCatalog`); Settings UI / install-hint list and asset mounting remain |
+| 38 | **Partially shipped v1.8.81-v1.8.82:** HeliBoard dictionary downloader UI pattern | 4 | 3 | 1 | **3.0** | Strategic; Next-10.3a addon catalog foundation landed (`AddonRegistry` + `DictionaryPackCatalog`), and v1.8.82 adds persisted signing pins; startup persistence wiring, Settings UI / install-hint list, and asset mounting remain |
 
 ## Tier 4 — Track but don't commit (score < 2.0)
 
@@ -148,6 +148,10 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
   foundation: live-state signing-pin reconciliation plus dictionary-pack
   descriptor/provenance validation. The downloader UI remains open until the
   Settings surface and APK asset mounting land.
+- Next-10.3b shipped in v1.8.82 as the persisted signing-pin foundation:
+  `AddonSigningPinSet` plus `prefs.addon.signingCertPins`. The remaining gap is
+  wiring startup scans through the persisted key, then building the Settings
+  UI/install-hint and asset-mounting slices.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.
