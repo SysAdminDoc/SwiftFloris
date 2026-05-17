@@ -3,7 +3,8 @@
 **Research date:** 2026-05-17
 
 This file inventories every AI-instruction, memory, planning, and changelog
-file in the repo, and reconciles them against the v1.8.55 HEAD reality.
+file in the repo, and reconciles them against the current v1.8.58 HEAD
+reality after same-day research corrections.
 Where two files conflict, the resolution is recorded here. Where a file is
 stale but harmless, it is left intact with a pointer.
 
@@ -11,12 +12,12 @@ stale but harmless, it is left intact with a pointer.
 
 ## 1. Files inventoried
 
-### 1.1 AI-instruction / agent files (none found in repo)
+### 1.1 AI-instruction / agent files
 
 | Checked path | Present? |
 |---|---|
-| `AGENTS.md` | ❌ |
-| `CLAUDE.md` | ❌ |
+| `AGENTS.md` | ✅ — canonical cross-agent instruction file; read first after `PROJECT_CONTEXT.md` |
+| `CLAUDE.md` | ✅ — Claude-specific supplement pointing back to `AGENTS.md` / `PROJECT_CONTEXT.md` |
 | `GEMINI.md` | ❌ |
 | `COPILOT_INSTRUCTIONS.md` / `.github/copilot-instructions.md` | ❌ |
 | `.claude/` | ❌ |
@@ -24,19 +25,18 @@ stale but harmless, it is left intact with a pointer.
 | `.cursor/rules/**` | ❌ |
 | `.cursorrules` | ❌ |
 | `.windsurfrules` | ❌ |
-| `.ai/` (pre-existing) | ❌ — created by this research run |
+| `.ai/` | ✅ — created by the research run; contains date-scoped artifacts |
 
-**Finding:** the project has no tool-specific AI-instruction files. AI
-contributors today rely on `ROADMAP.md` + `IMPROVEMENT_PLAN.md` +
-`docs/AI_PROMPTS_EXTERNAL_WORK.md` for context. This research run
-introduces [`PROJECT_CONTEXT.md`](../../../PROJECT_CONTEXT.md) as the
-canonical project-context file that a future AI session can read first.
+**Finding:** the first-pass inventory found no instruction files, then the
+research sequence added `PROJECT_CONTEXT.md`, `AGENTS.md`, and
+`CLAUDE.md`. Future AI sessions should read `PROJECT_CONTEXT.md` first,
+then `AGENTS.md`, then tool-specific supplements such as `CLAUDE.md`.
 
 ### 1.2 Planning / roadmap / research markdown (12 files)
 
 | File | Bytes | Last logical update | Authoritative for |
 |---|---|---|---|
-| `ROADMAP.md` | 340 K | "v5.2 (2026-05-16)" header; bodies updated through v1.8.55 | The full picture: NOW / NEXT / LATER tiers, rejected list, risk register, glossary, sources appendix |
+| `ROADMAP.md` | 340 K | v5.3 fifth-pass delta; bodies updated through v1.8.58 | The full picture: NOW / NEXT / LATER tiers, rejected list, risk register, glossary, sources appendix |
 | `ROADMAP.md.backup-v2` | 22 K | Pre-v5.0 snapshot | Historical only; treat as audit trail |
 | `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` | 37 K | 2026-05-17 (Phase A/B in flight) | Active SwiftKey-parity sprint plan; supersedes the four earlier `SWIFTKEY_*` docs |
 | `SWIFTKEY_PARITY_AUDIT.md` | 9.8 K | Pre-2026-05-17 audit | Reconciled into the parity roadmap |
@@ -50,14 +50,14 @@ canonical project-context file that a future AI session can read first.
 | `FUTO_VOICE_INPUT_TROUBLESHOOTING.md` | 5.9 K | v1.5.x | User-facing troubleshooting guide; matches current handoff path |
 | `VOICE_COMMANDS.md` | 4.3 K | Continually updated | Voice-command grammar reference; current as of Next-2.4 |
 
-### 1.3 Per-release notes (80 files at root)
+### 1.3 Per-release notes (80+ files at root)
 
 Pattern `RELEASE_NOTES_v<MAJOR>.<MINOR>.<PATCH>.md`. **Memory rule (per
 user's auto-memory):** "per-release file pattern" is the canonical changelog
 style. There is no rolled-up `CHANGELOG.md` and there should not be — each
 release's contract is to ship one note describing intent, files touched,
-tests added, and Definition-of-Done evidence. Latest file:
-[RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md).
+tests added, and Definition-of-Done evidence. Latest observed release
+metadata is v1.8.58.
 
 ### 1.4 Internal documentation in `docs/`
 
@@ -115,21 +115,20 @@ of the four superseded files with a 5-line "SUPERSEDED on 2026-05-17 by
 SWIFTKEY_PARITY_ROADMAP_2026-05-17.md" banner. Not yet applied — see
 [CHANGESET_SUMMARY.md](CHANGESET_SUMMARY.md).
 
-### 2.2 Latest version is 1.8.55 (HEAD) but README says 1.8.52
+### 2.2 Latest version is 1.8.58 (HEAD); README was caught up in later pass
 
-[README.md](../../../README.md) badges + body refer to **v1.8.52**, while
-`gradle.properties` declares **v1.8.55** and HEAD's commit subject ships
-**v1.8.55**. ROADMAP §2 already states the right version.
+[README.md](../../../README.md) lagged during the first pass, but later
+same-day work caught the public README up through the v1.8.58 release
+metadata. `gradle.properties` declares **v1.8.58** and the root roadmap
+current-version block now matches.
 
-**Resolution:** README catches up at the next release. Not a contradiction
-in roadmap intent, just a documentation lag of 3 patches. Recommend bumping
-the README badge + Highlights table + Recent releases section to v1.8.55
-at the next release boundary.
+**Resolution:** no open conflict after the fourth/fifth pass; keep release
+notes and README in lockstep on future release slices.
 
-### 2.3 Latest git tag is v1.8.40, HEAD is v1.8.55
+### 2.3 Latest git tag is v1.8.40, HEAD is v1.8.58
 
 `git tag --sort=-creatordate` shows `v1.8.40` as the most recent tag. HEAD
-is `v1.8.55`. **15 releases have shipped without a git tag.**
+is `v1.8.58`. **18 releases have shipped without a git tag.**
 
 **Resolution:** the per-release notes + `gradle.properties` bump are the
 release contract; tagging is an aspirational secondary step that has
@@ -137,7 +136,7 @@ fallen behind. The `release.yml` GitHub Action expects a `workflow_dispatch`
 with a version input — until that workflow is dispatched from a tag, no
 tag lands.
 
-Recommend a quick catch-up: tag every shipped release (v1.8.41 … v1.8.55)
+Recommend a quick catch-up: tag every shipped release (v1.8.41 … v1.8.58)
 from its corresponding commit hash, then push tags. This is reversible and
 costs only the commits' bytes in `refs/tags/`. The user controls the
 remote (per memory: pushes to SysAdminDoc/SwiftFloris fail 403 from this VM),
@@ -175,8 +174,8 @@ native runtime) is sound. No change needed.
 
 | ROADMAP claim | Observed | Reconciled? |
 |---|---|---|
-| §0 "v1.8.55 reality" — "618+ tracked Kotlin files repo-wide" | `find . -name '*.kt'` piped to `wc -l` ≈ 652 (incl. tests + lib) | ✅ within drift |
-| §3 "v1.8.55 latest release" | `gradle.properties` = 1.8.55, HEAD subject = v1.8.55 | ✅ |
+| §0 "v1.8.x reality" — "618+ tracked Kotlin files repo-wide" | `find . -name '*.kt'` piped to `wc -l` ≈ 652 (incl. tests + lib) | ✅ within drift |
+| §3 "v1.8.58 latest release" | `gradle.properties` = 1.8.58, HEAD metadata = v1.8.58 | ✅ |
 | §6 N7.1 — "verifyNoInternetPermission" Gradle task | Present in [app/build.gradle.kts](../../../app/build.gradle.kts#L227) | ✅ |
 | §6 N7.4 — SQLCipher 4.16.0 | Pinned in [libs.versions.toml](../../../gradle/libs.versions.toml#L27) | ✅ |
 | §7 Next-10.1 — `permission.REGISTER_ADDON` signature-protected | Declared in [AndroidManifest.xml](../../../app/src/main/AndroidManifest.xml#L17) | ✅ |
@@ -234,9 +233,9 @@ These items are reflected as actionable additions in
 ## 4. Open conflicts (none material)
 
 After reconciling the §2 items above, no contradiction in the AI-memory
-surface blocks the next slice. The remaining "conflicts" are documentation
-lag (README v1.8.52 vs HEAD v1.8.55) and tag lag (v1.8.40 vs v1.8.55),
-both of which catch up on the next push cycle.
+surface blocks the next slice. README lag was closed by the later same-day
+pass. The remaining release-tracking lag is git tags: latest tag v1.8.40
+vs HEAD v1.8.58.
 
 ## 5. Pointer plan (recommended, not applied)
 

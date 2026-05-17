@@ -51,9 +51,9 @@ graduate into recommended next-slice work live in
 
 | Idea | Source |
 |---|---|
-| **Replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystoreV1** | Library dead-end at alpha07. `PersonalDictionaryEncryptionTest` is the contract |
+| **Replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystoreV1** | AndroidX Security Crypto 1.1.0 exists, but APIs are deprecated. `PersonalDictionaryEncryptionTest` is the contract |
 | **Reproducible-build verification CI job** (build twice, compare APK checksums) | F-Droid verified-tier launch 2025-05; SwiftFloris can self-verify before fdroiddata submission |
-| **R8 rules audit** before AGP 9.1.1 bump (`-repackageclasses` default change) | AGP 9.1 release notes |
+| **R8 rules audit** before AGP 9.2.x bump | AGP 9.2 / R8 release notes |
 | **OpenSSL/BoringSSL SQLCipher provider migration plan** | LibTomCrypt deprecation announced by Zetetic |
 | **Lint baseline refresh** (IMPROVEMENT_PLAN counter from 2026-05-05 is stale) | Self-evident |
 
@@ -66,6 +66,7 @@ graduate into recommended next-slice work live in
 | **`.kmp` Keyman package runtime** (extend Next-6.4 / L8 importer) | Keyman engine MIT; 1,000+ minority-language layouts |
 | **CleverKeys-architecture re-train, Apache-2.0** (once a permissive glide dataset lands) | CleverKeys is in F-Droid working; architecture is public on `tribixbite/CleverKeys-ML` |
 | **HeliBoard dictionary downloader UI** for user-supplied n-gram packs | HeliBoard's killer ecosystem feature; closest peer pattern |
+| **LeanType-style Offline / Offline Lite onboarding split** without separate base-APK flavors | LeanType proves demand for offline AI keyboard SKUs; SwiftFloris should express the same choice through signed addon onboarding, not `INTERNET` in `:app` |
 | **Hardware-keyboard floating candidate panel** for transliteration engine | fcitx5-android pattern |
 | **Hardware-keyboard runtime mapper** (Next-6.4b: `InputManager` / `KeyEvent.getDeviceId(...)` mapping) | Already in ROADMAP but not in current Now/Next; promote |
 | **3×3 thumb-grid alt layout** (Thumb-Key parity) | Optional, niche but useful for foldable / one-handed |
@@ -96,7 +97,7 @@ graduate into recommended next-slice work live in
 | **Consolidate root-level `*MULTILINGUAL.md`, `VOICE_*.md`, `FUTO_VOICE_*.md` into `docs/`** | ROADMAP §11 flagged; outstanding |
 | **Move `app-release-v1.5.2.apk` (9.7 MB) and `hs_err_pid*.log` / `replay_pid*.log` (8+ MB) out of repo root** | Currently in root; bloat for fresh clones |
 | **Add SUPERSEDED banners to the four superseded `SWIFTKEY_*` docs** | Per MEMORY_CONSOLIDATION §5 pointer plan |
-| **Tag every shipped release** (catch-up: v1.8.41 … v1.8.55 → 15 tags missing) | `git tag --sort=-creatordate` shows v1.8.40 as the most recent tag |
+| **Tag every shipped release** (catch-up: v1.8.41 … v1.8.58 → 18 tags missing) | `git tag --sort=-creatordate` shows v1.8.40 as the most recent tag |
 
 ### 2.7 Long-tail (track but no commit needed yet)
 

@@ -30,17 +30,17 @@ here so the next reviewer can see why they're being re-emphasized; the
 |---|---|---|---|---|---|---|
 | 1 | **2026-05-30 pinned GitHub release** (SwiftKey-cutoff day-of) with `docs/MIGRATE_FROM_SWIFTKEY.md` front-and-center | 5 | 1 | 5 | **15.0** | One-shot opportunity; ROADMAP §14 Risk Register named it. Concrete day-of checklist closes the gap |
 | 2 | **README "Galaxy AI Writing Tools work with SwiftFloris" callout** | 3 | 1 | 4 | **10.0** | Verified 2026-05-12 fact; migration-window-aligned |
-| 3 | **Replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystoreV1** | 4 | 2 | 3 | **5.5** | Library is a dead-end; security regression risk; well-defined contract via existing test |
-| 4 | **Bump-batch A** (kotlinx-coroutines 1.10.2→1.11.0, KSP 2.3.5→2.3.7, zxing 3.5.3→3.5.4, aboutlibraries 14.0.1→14.2.0, activity 1.13.0→1.12.4 [downgrade off RC]) | 3 | 1 | 3 | **9.0** | Low risk; downgrades off an RC; small hardening |
-| 5 | **README v1.8.55 catch-up** (badge + Highlights table + Recent releases) | 3 | 1 | 4 | **10.0** | Currently shows v1.8.52; migration-window-aligned to look current |
-| 6 | **Tag every shipped release (v1.8.41 … v1.8.55, 15 missing)** | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; tag cadence has slipped |
+| 3 | **Replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystoreV1** | 4 | 2 | 3 | **5.5** | API surface is deprecated; security regression risk; well-defined contract via existing test |
+| 4 | **Bump-batch A** (kotlinx-coroutines 1.10.2→1.11.0, KSP 2.3.5→2.3.8, zxing 3.5.3→3.5.4, aboutlibraries 14.0.1→14.2.0; keep activity 1.13.0) | 3 | 1 | 3 | **9.0** | Low-risk patch/minor updates; Activity downgrade retired by fifth-pass evidence |
+| 5 | **README v1.8.58 release-hygiene maintenance** (badge + Highlights table + Recent releases stay in lockstep) | 3 | 1 | 4 | **10.0** | Version catch-up shipped in the fourth pass; keep the migration-window front door current through 2026-05-31 |
+| 6 | **Tag every shipped release (v1.8.41 … v1.8.58, 18 missing)** | 3 | 1 | 3 | **9.0** | Required for Obtainium auto-update reliability; tag cadence has slipped |
 | 7 | **First-run "AI features in this keyboard" explainer surface** (EU AI Act Article 50, due 2 Aug 2026) | 4 | 2 | 4 | **6.0** | Regulatory cutoff in ~10 weeks; small UI slice; reinforces wedge |
 | 8 | **Settings → About re-openable "AI features" explainer** (same content, persistent) | 3 | 1 | 4 | **10.0** | Companion to #7; small |
 | 9 | **HeliBoard NLnet slip-base-case plan** (move N1.1 from "wait-and-integrate" to "ship N1.3-quality classifier; integrate N1.1 when it lands") | 4 | 2 | 4 | **6.0** | Library probably slips; N1.3 statistical is already shipped — frame as the default, not the placeholder |
 | 10 | **README "Grammarly Android keyboard discontinued" migration callout** | 3 | 1 | 3 | **9.0** | Smaller pool but same fatigue; pairs with SwiftKey callout |
 | 11 | **EU AI Act explainer copy in `docs/PRIVACY_AND_AI.md`** | 3 | 1 | 4 | **10.0** | Companion to #7/#8; one new doc |
-| 12 | **Bump-batch B** (Roborazzi 1.55→1.59, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.1 bump (Tier-2); enables baseline capture |
-| 13 | **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** | 4 | 1 | 2 | **10.0** | Closes the AI-instruction-file gap MEMORY_CONSOLIDATION §1.1 noted |
+| 12 | **Bump-batch B** (Roborazzi 1.55→1.60, Robolectric 4.14.1→4.16.1) | 3 | 1 | 2 | **8.0** | Required before AGP 9.2 bump (Tier-2); enables baseline capture |
+| 13 | **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** | 4 | 1 | 2 | **10.0** | Shipped by the research run; keep as the required onboarding pattern |
 | 14 | **Move stale crash logs / replay logs out of repo root** (3.0+ MB across 3 files) | 2 | 1 | 2 | **6.0** | Repo hygiene; reduces fresh-clone bloat |
 | 15 | **CI step: detect committed `hs_err_pid*.log` / `replay_pid*.log`** | 2 | 1 | 2 | **6.0** | Prevents recurrence |
 
@@ -48,7 +48,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 
 | # | Item | Impact | Cost | Urg. | Score | Rationale |
 |---|---|---|---|---|---|---|
-| 16 | **AGP 9.0.0 → 9.1.1 + Compose BOM 2026.03.01 → 2026.05.00** | 3 | 2 | 2 | **4.0** | After bump-batch B lands; needs R8 rules audit |
+| 16 | **AGP 9.0.0 → 9.2.x + Compose BOM 2026.03.01 → 2026.05.00** | 3 | 2 | 2 | **4.0** | After bump-batch B lands; needs R8 rules audit |
 | 17 | **Dedicated arrow-keys row preset** (SwiftKey-parity P24) | 3 | 2 | 2 | **4.0** | Small UX gain; `BottomRowPreset.Programmer` already provides scaffolding |
 | 18 | **Calendar quick-insert (P9)** — `QuickAction.InsertCalendarEvent` + `CalendarContract.Instances` | 4 | 3 | 1 | **3.0** | SwiftKey-parity; permission-gated |
 | 19 | **Tasks quick-insert (P10)** — `QuickAction.InsertTask` + `Intent.ACTION_INSERT` | 3 | 2 | 1 | **3.5** | SwiftKey-parity; no permission |
@@ -100,13 +100,13 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 
 - **Phase B4** (#22): same-sentence language switch hardening — extend trailing context 2→4 words; alpha-blend on per-locale evidence.
 - **`PROJECT_CONTEXT.md` + `AGENTS.md` + `CLAUDE.md` pointer files** (#13).
-- **Bump-batch A** (#4) low-risk dep bumps + activity 1.13.0 RC downgrade.
-- **README v1.8.56 catch-up** (#5; combines naturally with the release).
+- **Bump-batch A** (#4) low-risk dep bumps; keep Activity 1.13.0.
+- **README release-hygiene maintenance** (#5; shipped through v1.8.58, then keep current).
 
 ### v1.8.57 (next week — migration-window prep)
 
 - **EU AI Act Article 50 first-run + Settings → About explainer** (#7, #8, #11).
-- **Tag catch-up** (#6; 15 tags) — done in parallel to a release, low risk.
+- **Tag catch-up** (#6; 18 tags) — done in parallel to a release, low risk.
 - **README "Galaxy AI" + "Grammarly discontinued" callouts** (#2, #10).
 
 ### v1.8.58–v1.8.60 (the migration window itself — 2026-05-28 to 2026-05-31)
@@ -117,7 +117,7 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 
 ### v1.8.61+ (post-migration window — Phase C / D)
 
-- **Bump-batch B + AGP 9.1.1** (#12 + #16).
+- **Bump-batch B + AGP 9.2.x** (#12 + #16).
 - **Phase C1 (split renderer)** (#23) — opens Phase C.
 - **Calendar / Tasks quick-insert** (#18, #19).
 - **AAA high-contrast theme + Animated theme** (#21, #20) — wraps Phase C.

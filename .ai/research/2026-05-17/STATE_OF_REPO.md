@@ -1,8 +1,8 @@
 # SwiftFloris — State of the Repo
 
 **Research date:** 2026-05-17
-**HEAD:** `5ebcba1` — Release v1.8.55 — Phase B3: shared-spelling bilingual handling
-**Branch:** `master`, 40 commits ahead of `origin/master` (push fails 403 from this VM by design — see memory)
+**HEAD:** `e62ba34` — docs: research run 2026-05-17 — fourth pass: README catch-up + PRIVACY_AND_AI.md + subsystem inspection
+**Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -33,7 +33,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.55 / 1855 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.58 / 1858 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.0.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.5 | [libs.versions.toml](../../../gradle/libs.versions.toml#L22) |
@@ -64,6 +64,9 @@ Operative invariants (load-bearing — touched by build gates):
 
 Whether any of the above is materially behind 2026-05-17 latest is in the
 companion [SECURITY_AND_DEPENDENCY_REVIEW.md](SECURITY_AND_DEPENDENCY_REVIEW.md).
+The same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
+corrects the most drift-prone items: Activity 1.13.0 is stable, AGP target
+is 9.2.x, Roborazzi target is 1.60.0, and KSP target is 2.3.8.
 
 ## 3. Module layout
 
@@ -191,9 +194,10 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 56 tags in repo (`v1.0.0` … `v1.8.40`); HEAD = v1.8.55 (tags lag commits).
+- 56 tags in repo (`v1.0.0` … `v1.8.40`); HEAD = v1.8.58 (tags lag commits).
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
-- README declares v1.8.52 (stale by 3 patches vs HEAD).
+- README was caught up by the later same-day pass; keep it in lockstep
+  with future release notes.
 - `app-release-v1.5.2.apk` (9.7 MB) stays in repo root as a historical anchor;
   newer signed APKs live in `release/` (v1.5.3, v1.7.6, v1.7.7).
 - Versioning is strict semver; minor bumps on each feature; major bumps held
@@ -266,7 +270,7 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~40 patch releases in May 2026 alone (v1.8.16 … v1.8.55).
+- **Tag cadence:** ~40 patch releases in May 2026 alone (v1.8.16 … v1.8.58).
   HEAD is squarely in a SwiftKey-parity sprint (Phase A/B of
   `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`).
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14

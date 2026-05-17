@@ -12,14 +12,15 @@ failed searches, and saturation notes for this autonomous research run.
 1. Listed repo root → discovered 80+ release notes, 340 KB ROADMAP.md, no
    AGENTS/CLAUDE files, no .ai/ or .claude/ folders.
 2. `git status -uno`, `git log --oneline -30`, `git tag --sort=-creatordate`
-   → confirmed HEAD v1.8.55 on `master`, 40 commits ahead of origin (per
-   memory: push to SysAdminDoc/SwiftFloris fails 403 from this VM).
+   → initial pass confirmed HEAD v1.8.55 on `master`, 40 commits ahead of
+   origin. Later same-day passes observed HEAD v1.8.58, 47 commits ahead.
 3. Module + source tree mapped via `find ... -type d` + `wc -l` on Kotlin
    files. 396 app/main + 159 app/test + 97 lib = 652 .kt files. Top-15
    largest sources captured.
 4. Read [README.md](../../../README.md), [IMPROVEMENT_PLAN.md](../../../IMPROVEMENT_PLAN.md),
    [SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](../../../SWIFTKEY_PARITY_ROADMAP_2026-05-17.md),
-   [RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md),
+   [RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md)
+   (later passes also reconciled v1.8.56-v1.8.58),
    [app/build.gradle.kts](../../../app/build.gradle.kts),
    [gradle.properties](../../../gradle.properties),
    [gradle/libs.versions.toml](../../../gradle/libs.versions.toml),
@@ -38,7 +39,7 @@ Three `general-purpose` Agent calls launched in parallel:
 |---|---|---|---|
 | 1 | FlorisBoard upstream + HeliBoard NLnet + LiteRT-LM | ✅ | FlorisBoard frozen on v0.6.0-alpha02 since 2025-01-23; HeliBoard NLnet library not yet released ~14 days before deadline; MediaPipe LLM Inference deprecated; FunctionGemma 270M shipped Jan 2026 |
 | 2 | Competitor matrix (14 OSS + 8 commercial + adjacent) | ✅ | CleverKeys neural-swipe shipping on F-Droid; Samsung Galaxy AI decoupled from Samsung Keyboard; Grammarly Android keyboard discontinued; FUTO v0.1.28 added CJK |
-| 3 | Dependency + security review (every pin) | ✅ | androidx-activity 1.13.0 is RC not stable; AGP 9.1.1 / Roborazzi 1.59.0 / Robolectric 4.16.1 all behind; KenLM is LGPL (not Apache-2.0-compatible — material ROADMAP correction); androidx-security-crypto dead-end; EU AI Act Article 50 due 2 Aug 2026 |
+| 3 | Dependency + security review (every pin) | ✅ | Initial pass found AGP / Roborazzi / Robolectric drift, KenLM LGPL incompatibility, AndroidX Security Crypto migration need, and EU AI Act Article 50 due 2 Aug 2026. Fifth pass corrected the Activity and dependency-target details: Activity 1.13.0 is stable, AGP target is 9.2.x, Roborazzi target is 1.60.0, KSP target is 2.3.8. |
 
 All three agents finished within ~4 minutes of dispatch, in parallel.
 
@@ -62,6 +63,26 @@ After agents returned:
    [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md),
    [CHANGESET_SUMMARY.md](CHANGESET_SUMMARY.md).
 
+### Phase 3 — Same-day fifth-pass correction
+
+The fifth pass re-opened the drift-prone sources most likely to have
+changed or been misread: AndroidX Activity, AndroidX Security Crypto,
+Google Maven metadata for AGP / Compose / Activity, Maven Central
+metadata for KSP / Roborazzi / Robolectric / coroutines /
+AboutLibraries / ZXing / Tink, and current competitor release pages.
+
+Corrections recorded in
+[FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md):
+
+- Activity 1.13.0 is stable; remove the downgrade recommendation.
+- Security Crypto 1.1.0 exists, but APIs are deprecated; keep the Tink /
+  Android Keystore migration for the right reason.
+- Dependency batches update to AGP 9.2.x, KSP 2.3.8, Roborazzi 1.60.0,
+  Robolectric 4.16.1, Compose BOM 2026.05.00, coroutines 1.11.0,
+  AboutLibraries 14.2.0, ZXing 3.5.4, and Tink Android 1.21.0.
+- LeanType was added to the competitor matrix as an active HeliBoard fork
+  with Standard / Offline / Offline Lite APK lines.
+
 ---
 
 ## 2. Search strategies used
@@ -83,6 +104,8 @@ After agents returned:
 - `AGP 9.1 R8 repackageclasses` — bump implications
 - `Roborazzi 1.59 AGP 9` — visual-regression upgrade path
 - `androidx-security-crypto deprecation 2025` — JetSec status
+- `LeanBitLab LeanType v3.7.9 offline ONNX keyboard` — fifth-pass
+  competitor addition
 - `SQLCipher 4.16 LibTomCrypt deprecation` — crypto provider drift
 - `KenLM license LGPL Apache-2.0 compatible` — license verification
 - `EU AI Act Article 50 transparency 2026` — regulatory cutoff
@@ -131,9 +154,9 @@ Saturation across the three external passes is reached when:
   upstream agent achieved this.
 
 For one-pass research against a heavily-sourced project, this is enough.
-A second pass would only re-fetch the unverified dates above and check
-whether AGP 9.1.1 vs 9.1.0 patch number is current. Not justified by
-expected information yield.
+A fifth pass did re-fetch those drift-prone dependency targets. The
+remaining saturation signal is now stronger: new findings were corrective
+or one-competitor additions, not a new roadmap pillar.
 
 ---
 
