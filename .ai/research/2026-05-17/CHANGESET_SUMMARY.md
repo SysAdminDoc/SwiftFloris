@@ -1,9 +1,15 @@
 # Changeset Summary — 2026-05-17 Research Run
 
-This research run created **11 new files** and **modified zero existing
-files**. Nothing in `ROADMAP.md`, `IMPROVEMENT_PLAN.md`, the per-release
-notes, the build files, or any source file under `app/` or `lib/` was
-touched. All output is additive.
+This research run created **14 new files** across two passes and
+**modified zero existing source / build files**. Nothing in `ROADMAP.md`,
+`IMPROVEMENT_PLAN.md`, the per-release notes, the build files, or any
+source file under `app/` or `lib/` was touched. All output is additive.
+
+The first pass created 11 files; the second pass added 3 more (`AGENTS.md`,
+`CLAUDE.md`, `SECOND_PASS_FINDINGS.md`) and minor in-place corrections
+to two prior pass-1 artifacts (`MEMORY_CONSOLIDATION.md` §2.6 L7 row
+verified ✅; `PROJECT_CONTEXT.md` and `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`
+bumped HEAD references v1.8.55 → v1.8.58).
 
 **Concurrent-release reconciliation:** during this research run, three
 releases shipped on master (v1.8.56 Phase B4, v1.8.57 Phase C2 arrow-keys
@@ -12,6 +18,34 @@ items this research run was preparing to recommend. `PROJECT_CONTEXT.md`
 §7 and `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §0 were updated to
 reflect HEAD = v1.8.58 and to remove the three closed recommendations
 from the open list.
+
+**Second-pass deep-dives** verified or concretized seven items the first
+pass left thin:
+
+1. Source-code verification of L1 / L2 / L7 facade contracts (closes
+   `MEMORY_CONSOLIDATION.md §2.6 ⚠️` marker).
+2. **Tink migration recipe** — exact API surface, artifact pin
+   (`com.google.crypto.tink:tink-android:1.19.0`), atomic+idempotent
+   migration code pattern, test recipe.
+3. **FunctionGemma 270M mobile bundle** is **INT8 at 289 MB**, not 135 MB.
+   LiteRT-LM Kotlin loading API still undocumented in the model card.
+4. **ML Kit Digital Ink F-Droid friction** is fundamental — the
+   recognizer library binary itself is closed-source. F-Droid eligibility
+   requires a two-SKU plan with an OSS-CRNN-based alternative addon.
+5. **Bergamot upstream is C++/WASM only, no Android assets.** The real
+   Android distributable is `DavidVentura/firefox-translator` (MPL-2.0,
+   JNI-based, on F-Droid).
+6. **Android 17 IME visibility** — exact migration recipe; v1.8.45's
+   shipped fix is consistent with the documented behavior.
+7. **F-Droid Reproducible Builds 2026 process** — `verification.f-droid.org`,
+   required `Binaries:` + `AllowedAPKSigningKeys:` YAML, common failure
+   modes; concrete recommendation to add `vcsInfo.enabled = false`.
+8. **SCOWL 2020.12.07 → 2026.02.25 + ESDB SQLite future format;
+   wordfreq officially in sunset; CC-100 as the non-English Zipf-overlay
+   source.**
+
+See [SECOND_PASS_FINDINGS.md](SECOND_PASS_FINDINGS.md) for the full deep-dive
+material and seven new ROADMAP item proposals.
 
 The deliberate non-destructive posture honors the prompt's rule:
 *"Do not destructively rewrite project files. Prefer creating canonical

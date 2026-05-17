@@ -175,12 +175,12 @@ native runtime) is sound. No change needed.
 
 | ROADMAP claim | Observed | Reconciled? |
 |---|---|---|
-| §0 "v1.8.55 reality" — "618+ tracked Kotlin files repo-wide" | `find . -name '*.kt' | wc -l` ≈ 652 (incl. tests + lib) | ✅ within drift |
+| §0 "v1.8.55 reality" — "618+ tracked Kotlin files repo-wide" | `find . -name '*.kt'` piped to `wc -l` ≈ 652 (incl. tests + lib) | ✅ within drift |
 | §3 "v1.8.55 latest release" | `gradle.properties` = 1.8.55, HEAD subject = v1.8.55 | ✅ |
 | §6 N7.1 — "verifyNoInternetPermission" Gradle task | Present in [app/build.gradle.kts](../../../app/build.gradle.kts#L227) | ✅ |
 | §6 N7.4 — SQLCipher 4.16.0 | Pinned in [libs.versions.toml](../../../gradle/libs.versions.toml#L27) | ✅ |
 | §7 Next-10.1 — `permission.REGISTER_ADDON` signature-protected | Declared in [AndroidManifest.xml](../../../app/src/main/AndroidManifest.xml#L17) | ✅ |
-| §8 L7 — `dev.patrickgold.florisboard.action.BIND_MCP_DAEMON` | Need to verify in `ime/mcp/` (not inspected this pass) | ⚠️ unverified; future pass |
+| §8 L7 — `dev.patrickgold.florisboard.action.BIND_MCP_DAEMON` | Verified in [`ime/mcp/McpBridgeContract.kt:49`](../../../app/src/main/kotlin/dev/patrickgold/florisboard/ime/mcp/McpBridgeContract.kt#L48-L49) — `ACTION_BIND_MCP_DAEMON` constant exact match. 13 MCP source files + 13 MCP test files in tree | ✅ (second-pass verified 2026-05-17) |
 | Parity §A2 — `PersonalDictionaryImportBatch` shipped v1.8.53 | Commit `b062127` "Phase A2: post-import confirmation + rollback + wire DictionaryImporter into Settings UI" | ✅ |
 | Parity §A3 — encrypted-blob personal-dictionary export codec | Commit `6a47f83` "Phase A3 codec primitive: encrypted-blob personal dictionary export envelope (AES-256-GCM + PBKDF2-HMAC-SHA-256)" — UI wiring still pending | ✅ codec shipped; UI is the open slice |
 | Parity §B3 — shared-spelling bilingual handling | Commit `5ebcba1` (HEAD) — `MultilingualTokenScorer` new branch for one-locale candidate, score `0.30` | ✅ |
