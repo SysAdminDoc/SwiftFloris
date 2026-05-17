@@ -209,6 +209,10 @@ or one-competitor additions, not a new roadmap pillar.
   reconciliation table in `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`. Code work
   had already shipped in v1.8.56-v1.8.67, so the matrix/backlog/addendum were
   updated instead of reimplementing those slices.
+- **Tier-2 #24/#26 continuation:** `:app:lintDebug` was attempted for the lint
+  baseline refresh and failed at the known missing-Java host blocker. The loop
+  then moved to #26 and applied superseded-document banners to all five
+  SwiftKey files named by `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

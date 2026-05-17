@@ -163,10 +163,10 @@ this run:
 - `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` — already current.
 - `SWIFTKEY_PARITY_AUDIT.md`, `SWIFTKEY_PARITY_BUILD_PLAN.md`,
   `SWIFTKEY_PARITY_RESEARCH.md`, `SWIFTKEY_AI_RESEARCH.md`,
-  `SWIFTKEY_FEATURE_IMPLEMENTATION_PLAN.md` — superseded but kept intact
-  for audit trail.
+  `SWIFTKEY_FEATURE_IMPLEMENTATION_PLAN.md` — superseded but kept as audit
+  trail. A later continuation added top-of-file banners; see section 20.
   [MEMORY_CONSOLIDATION.md §5](MEMORY_CONSOLIDATION.md) records the
-  proposed SUPERSEDED-banner additions; not applied this run.
+  non-destructive pointer plan.
 - `IMPROVEMENT_PLAN.md` — counter from 2026-05-05 is slightly stale but
   not load-bearing; refresh is a side-quest for a future workstream commit.
 - Per-release notes (`RELEASE_NOTES_v*.md`) — never modified after
@@ -712,3 +712,35 @@ were already satisfied by earlier releases:
 
 No version bump was needed because this was documentation-state reconciliation
 only; no app, CI, dependency, permission, or runtime behavior changed.
+
+---
+
+## 20. Docs-only Tier-2 #26 — superseded SwiftKey banners
+
+The autonomous loop attempted Tier-2 #24 (`:app:lintDebug`) first, but it is
+blocked on this VM by the known Gradle host issue: `JAVA_HOME` is not set and no
+`java` command is on PATH. The loop then shipped the next implementable Tier-2
+row, #26.
+
+**Files updated with a 5-line `SUPERSEDED — 2026-05-17` banner:**
+
+- `SWIFTKEY_PARITY_AUDIT.md`
+- `SWIFTKEY_PARITY_BUILD_PLAN.md`
+- `SWIFTKEY_PARITY_RESEARCH.md`
+- `SWIFTKEY_AI_RESEARCH.md`
+- `SWIFTKEY_FEATURE_IMPLEMENTATION_PLAN.md`
+
+Although the original matrix row said "4 superseded docs," the canonical
+`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` supersession sentence names five files,
+so all five were updated.
+
+**Project-state files updated:**
+
+- `MEMORY_CONSOLIDATION.md` → marks the pointer plan applied for the five
+  superseded SwiftKey files
+- `PRIORITIZATION_MATRIX.md` → keeps #24 open with the Java blocker and marks
+  #26 shipped docs-only
+- `FEATURE_BACKLOG.md` → marks the banner task applied
+
+No version bump was needed because this was documentation-state cleanup only;
+no app, CI, dependency, permission, or runtime behavior changed.

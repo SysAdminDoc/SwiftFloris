@@ -1,5 +1,11 @@
 # SwiftKey Parity Build Plan
 
+> **SUPERSEDED — 2026-05-17.**
+> Retained for audit/history only.
+> Canonical SwiftKey parity planning now lives in `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`.
+> Use `ROADMAP.md` and `PROJECT_CONTEXT.md` for current implementation state.
+> Do not treat this file as the active plan.
+
 **Goal:** close the remaining typing-behavior gap with SwiftKey while keeping SwiftFloris offline, local-first, and maintainable.
 
 ## Build Order
