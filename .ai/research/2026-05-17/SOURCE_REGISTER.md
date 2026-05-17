@@ -141,10 +141,13 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - https://www.neowin.net/news/psa-microsoft-is-deleting-swiftkey-accounts-this-month-here-is-what-you-need-to-do/ — May 2026 PSA
 - https://support.microsoft.com/en-us/swiftkey-keyboard/microsoft-swiftkey-keyboard-data-portal — `data.swiftkey.com` description
 - https://9to5google.com/2026/05/12/gemini-intelligence-announcement/ — Gemini Intelligence wave (Gboard Rambler etc.)
+- https://www.samsung.com/us/support/answer/ANS10000943/ — Samsung Writing Assist support guide
 - https://www.sammobile.com/news/one-ui-7-0-galaxy-ai-writing-tools-any-keyboard/ — Samsung One UI 7 decouple
+- https://9to5google.com/2025/01/31/one-ui-7-galaxy-ai-writing-features-without-samsung-keyboard/ — One UI 7 Writing Assist outside Samsung Keyboard
 - https://discuss.grapheneos.org/d/26041-google-disabled-voice-typing-on-gboard-without-network-access — Gboard offline-voice regression
 - https://www.apkmirror.com/apk/typewise/typewise-keyboard-big-keys-privacy-swipe/typewise-custom-keyboard-4-4-44-release/ — Typewise v4.4.44
 - https://www.clevertype.co/post/best-ai-keyboard-alternatives-to-grammarly-for-android-iphone — Grammarly keyboard Android discontinuation
+- https://support.grammarly.com/hc/en-us/articles/25028519116429-Error-Grammarly-Assistant-is-not-enabled-right-now — Grammarly Keyboard for Android transition to Grammarly for Android
 - https://www.windowscentral.com/swiftkey-adds-location-and-calendar-sharing-its-toolbar-feature — SwiftKey toolbar history
 - https://techcommunity.microsoft.com/t5/microsoft-to-do-blog/add-tasks-to-your-to-do-list-right-in-the-swiftkey-keyboard/ba-p/3143221 — SwiftKey + To Do
 - https://appleinsider.com/articles/25/08/22/inside-ios-26-genmoji-tapbacks-smarter-ai-deeper-customization — Apple Genmoji

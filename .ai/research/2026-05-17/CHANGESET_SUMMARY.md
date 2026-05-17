@@ -464,3 +464,38 @@ The autonomous development loop then completed the release-metadata portion of
 version bump or release note was created because the app release remains
 `v1.8.69`. Tags were not pushed from this VM; the maintainer host still needs
 to push the `v1.8.41`...`v1.8.69` refs.
+
+---
+
+## 13. v1.8.70 continuation — README migration-window callouts
+
+The autonomous development loop then shipped Tier-1 README migration-window
+callouts from `PRIORITIZATION_MATRIX.md` #2 / #5 / #10 as `ROADMAP.md` N16.4.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.70.md`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1870`,
+  `projectVersionName=1.8.70`
+- `README.md` → version/front-door refresh, Samsung / Grammarly users callout,
+  and v1.8.70 Recent releases entry
+- `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `STATE_OF_REPO.md`, `SOURCE_REGISTER.md`,
+  and `RESEARCH_LOG.md` → release/context updates for v1.8.70
+
+**Sources re-checked before editing:**
+
+- Samsung Writing Assist support guide
+- SamMobile / 9to5Google One UI 7 keyboard-agnostic Writing Assist coverage
+- Grammarly support page for the Grammarly Keyboard for Android transition
+
+**Verification note:** documentation-only release; no app code, permissions,
+dependencies, or runtime behavior changed. `git diff --check` passed with only
+the known `ROADMAP.md` CRLF warning. The focused Gradle suite was attempted
+and stopped at the known VM blocker: `JAVA_HOME` is not set and no `java`
+command is on PATH, so maintainer-host Gradle verification remains required
+before publishing.

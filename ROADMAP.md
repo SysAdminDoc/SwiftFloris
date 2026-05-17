@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.69 (released 2026-05-17 — Bump-batch A. Updated coroutines to 1.11.0, KSP to 2.3.8, ZXing to 3.5.4, and AboutLibraries to stable 14.2.0; AboutLibraries 15.0.0-b01 is beta and intentionally skipped. **Previous version, v1.8.68** (released 2026-05-17 — N7.6 Tink / AndroidKeystore migration; see `RELEASE_NOTES_v1.8.68.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.70 (released 2026-05-17 — README migration-window follow-up. Added Samsung / Grammarly keyboard-workflow callouts while keeping SwiftFloris's no-network posture explicit. **Previous version, v1.8.69** (released 2026-05-17 — Bump-batch A; see `RELEASE_NOTES_v1.8.69.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -25,8 +25,14 @@ This delta supersedes the stale dependency guidance in the first-pass
   `1.11.0`, AboutLibraries `14.2.0`, and ZXing `3.5.4`.
 - Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
   2026-05-17 from their matching `gradle.properties` version-bump commits
-  so Obtainium / fork audit anchors are no longer stale locally. The remaining
-  distribution step is pushing those tags from the maintainer host.
+  so Obtainium / fork audit anchors are no longer stale locally; v1.8.70 is
+  tagged with its README release commit. The remaining distribution step is
+  pushing those tags from the maintainer host.
+- v1.8.70 refreshed README migration-window messaging for Samsung and
+  Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
+  layer on One UI 7+, while Grammarly's Android keyboard replacement is framed
+  as an overlay that can sit above SwiftFloris without changing SwiftFloris's
+  no-network behavior.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -167,7 +173,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.69 reality, observed)
+## 2. State of the Repo (v1.8.70 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.55.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -199,10 +205,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.69, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.70, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.70 | 2026-05-17 | README migration-window follow-up. Added Samsung / Grammarly users callout: One UI 7+ Galaxy AI Writing Assist can remain a separate Samsung selected-text layer while SwiftFloris stays the default no-network keyboard, and Grammarly for Android can replace the old Grammarly Keyboard without SwiftFloris sending text to Grammarly. No app code, permissions, dependencies, or runtime behavior changed. | `RELEASE_NOTES_v1.8.70.md` |
 | v1.8.69 | 2026-05-17 | Bump-batch A. Updated `kotlinx-coroutines` 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4, and AboutLibraries 14.0.1 → stable 14.2.0 after re-checking Maven Central / Gradle Plugin Portal metadata. AboutLibraries 15.0.0-b01 exists but is beta and intentionally skipped. No app code, permissions, network surface, or runtime feature behavior changed. | `RELEASE_NOTES_v1.8.69.md` |
 | v1.8.68 | 2026-05-17 | N7.6 Tink / AndroidKeystore migration. Removed `androidx.security:security-crypto:1.1.0-alpha06`, added `com.google.crypto.tink:tink-android:1.21.0`, and introduced `TinkStringPreferenceCrypto` for AndroidKeystore-held AES-256-GCM wrapping. SQLCipher passphrase storage moved to `sqlcipher_passphrase_tink_v1`; legacy AndroidX encrypted-preference passphrases migrate once. Legacy clipboard-history storage moved to `clipboard_history_tink_v1` with the same one-shot migration and in-memory fallback on Keystore failure. | `RELEASE_NOTES_v1.8.68.md` |
 | v1.8.67 | 2026-05-17 | N12.5 reproducible-build self-verification CI. Added `.github/workflows/reproducible-build.yml` and `scripts/verify-reproducible-apk.sh`: two detached clean worktrees at the same commit, submodule update, cache-disabled `clean :app:assembleRelease` in both trees, byte-for-byte APK comparison, and per-entry SHA-256 manifests on drift so maintainers can separate payload drift from signing / ZIP metadata drift. | `RELEASE_NOTES_v1.8.67.md` |
@@ -522,6 +529,7 @@ Three Gboard 2026 features that shipped or rolled out during the v5.0 window —
 - ⏳ **N16.1** README + opening pitch slice shipped 2026-05-17 (v1.8.52). New `SwiftKey migration` Shields badge in the top badge row captioned "window closes 2026-05-31" in red; new banner block above the Highlights table walks the visitor through the two no-cloud migration paths in three sentences each; existing "Migrating from SwiftKey" section consolidated and pointed at `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`; "Recent releases" + emoji-crash troubleshooting + status-line all bumped to v1.8.52. **Remaining marketing-side actions:** one-shot Reddit thread on r/SwiftKey + r/HeliBoard + r/FlorisBoard + r/PrivacyGuides with the Obtainium URL + `MIGRATE_FROM_SWIFTKEY.md` permalink; pin a GitHub release on 2026-05-30 (last business day before cutoff). **Engineering side closed; marketing side stays open per `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` Phase A1.**
 - ✅ **N16.2** shipped 2026-05-16 (v1.8.46). `DictionaryImporter` now recognises and parses SwiftKey's `swiftkey-cloud.json` export: new `DictionaryImportFormat.JSON` enum value + `parseSwiftKeyJson(json)` entry point + envelope auto-detection in both the standalone `import(InputStream)` byte-sniff path and the `parseZip(stream)` `.json` entry branch. Because the exact wire shape was lightly documented and `data.swiftkey.com` retires 2026-05-31 [SK-RETIRE] (15 days from this update), the parser is **deliberately tolerant**: it walks every nested JSON array/object and lifts any object that carries a `word`-class field (`word` / `text` / `string`) into a `PersonalDictionaryEntry`, picking up `frequency` / `count` / `rank` for frequency (clamped to [0,255], defaults to 128), `shortcut` / `expansion` for the shortcut field, and `locale` / `language` / `lang` for the locale. Covers the three envelope shapes most commonly observed in user exports: `{ "predictions": [...], "shortcuts": [...] }`, `{ "user_data": { "predictions": [...] } }`, and a bare `[ { "word": "..." }, ... ]` array. Malformed JSON returns an empty list (defensive — so a FlorisBoard backup-manifest JSON sitting in the same zip as the dictionary CSV doesn't abort the whole import). 10 new `DictionaryImporterTest` cases (envelope canonical, user_data wrapping, bare array, missing-fields tolerance, out-of-range frequency clamping, malformed-JSON no-throw, empty array/object, blank-word filtering, end-to-end `import()` byte-sniff routing, and the JSON detector additions).
 - ✅ **N16.3** shipped 2026-05-17 (release metadata only). The 29 missing local release tags `v1.8.41` through `v1.8.69` were backfilled from their corresponding `gradle.properties` version-bump commits after validating every commit's `projectVersionName` and `projectVersionCode`. This resolves the local Obtainium / fork-audit tag gap without creating a new app release. The tags are not pushed from this VM; the maintainer host still needs to run `git push --tags` or push the individual `v1.8.41`...`v1.8.69` refs.
+- ✅ **N16.4** shipped 2026-05-17 (v1.8.70). README migration-window follow-up for adjacent keyboard workflows: Galaxy users on One UI 7+ can keep SwiftFloris as default and intentionally invoke Galaxy AI Writing Assist through Samsung's selected-text UI; Grammarly users are told that Grammarly's old Android keyboard is being replaced by Grammarly for Android, which can integrate above any keyboard. The copy explicitly preserves the privacy boundary: SwiftFloris itself does not call Samsung, Grammarly, or any network service.
 
 ### N17. Emoji crash triage (tracked repo issue)
 
@@ -1227,4 +1235,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.69 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, and Bump-batch A. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose/Roborazzi dependency batches are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.70 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batch A, local tag catch-up, and the Samsung / Grammarly README migration-window callouts. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose/Roborazzi dependency batches are implemented, whichever comes first.*

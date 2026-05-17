@@ -11,7 +11,7 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 ## Read this first
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, the v1.8.69
+   project context. Pins the load-bearing invariants, the v1.8.70
    stack, the module layout, the roadmap-file routing, and the current
    sprint state.
 2. [`ROADMAP.md`](ROADMAP.md) — full roadmap with history; ~340 KB,
@@ -76,7 +76,7 @@ and Definition-of-Done evidence.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump
 in lockstep with the release-notes commit. Tag the release commit at the
-same time. Local release tags were backfilled through `v1.8.69` on
+same time. Local release tags are current through `v1.8.70` as of
 2026-05-17; push tags from the maintainer host because this VM cannot push
 to `SysAdminDoc/SwiftFloris`.
 

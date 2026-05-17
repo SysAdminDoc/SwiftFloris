@@ -12,13 +12,13 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.69 — Bump-batch A dependency refresh.
-(The research run started at v1.8.55; v1.8.56-69 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batch A.)
+**HEAD at latest reconciliation:** v1.8.70 — README migration-window follow-up.
+(The research run started at v1.8.55; v1.8.56-70 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batch A + README Samsung / Grammarly callouts.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-69 releases
+## 0. Reconciliation with concurrent v1.8.56-70 releases
 
 While this research run was in flight, fourteen releases landed that
 implemented several recommendations:
@@ -39,8 +39,9 @@ implemented several recommendations:
 | §B.4 Reproducible-build self-verification CI (N12.5) | ✅ **v1.8.67 — N12.5** — build-twice clean-worktree release APK workflow, byte compare, and drift manifests |
 | §A.2 / §G.2 — AndroidX Security Crypto deprecated API surface (N7.6) | ✅ **v1.8.68 — N7.6** — removed AndroidX Security Crypto, added Tink Android 1.21.0, and migrated SQLCipher passphrase + legacy clipboard-history encrypted-preference payloads |
 | §A.4 / Tier-1 #4 — Bump-batch A | ✅ **v1.8.69 — N14.5** — coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, AboutLibraries stable 14.2.0 |
+| Tier-1 #2 / #5 / #10 — README Samsung / Grammarly migration-window callouts + release-front-door hygiene | ✅ **v1.8.70 — N16.4** — Galaxy AI Writing Assist framed as optional Samsung layer on One UI 7+; Grammarly Keyboard replacement framed as an overlay above SwiftFloris |
 
-These fourteen are removed from this addendum's open commitments. Historical
+These fifteen are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
 are no longer open.
 
@@ -489,7 +490,8 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | 🟢 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.69; push pending from maintainer host |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.70; push pending from maintainer host |
+| Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |
 | §C.1 User-imported sticker folder (Next-9.5) | 🟢 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
