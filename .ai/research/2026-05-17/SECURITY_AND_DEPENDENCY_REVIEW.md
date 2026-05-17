@@ -15,7 +15,8 @@ migration. `androidx.security:security-crypto:1.1.0-alpha06` is no longer
 declared in `:app`; `com.google.crypto.tink:tink-android:1.21.0` is now
 the runtime crypto dependency for local encrypted-preference wrapping.
 v1.8.69 then shipped Bump-batch A: coroutines 1.11.0, KSP 2.3.8,
-ZXing 3.5.4, and AboutLibraries stable 14.2.0.
+ZXing 3.5.4, and AboutLibraries stable 14.2.0. v1.8.71 shipped
+Bump-batch B: Roborazzi 1.60.0 and Robolectric 4.16.1.
 
 ---
 
@@ -43,8 +44,8 @@ ZXing 3.5.4, and AboutLibraries stable 14.2.0.
 | jetpref | 0.3.0 | 0.3.x | Current | Keep |
 | sqlcipher-android | 4.16.0 | 4.16.0 (released 2026-05-12) | Current | Keep — plan LibTomCrypt deprecation (§3) |
 | **zxing-core** | 3.5.4 | **3.5.4** | Current | ✅ shipped v1.8.69 |
-| **roborazzi** | 1.55.0 | **1.60.0** | Materially behind | Bump (required before AGP 9.2) |
-| **robolectric** | 4.14.1 | **4.16.1** | Materially behind | Bump (SDK 36 + JDK 21 fidelity) |
+| **roborazzi** | 1.60.0 | **1.60.0** | Current | ✅ shipped v1.8.71 |
+| **robolectric** | 4.16.1 | **4.16.1** | Current | ✅ shipped v1.8.71 |
 | kotest | 6.1.11 | 6.1.11 | Current | Keep |
 | androidx-benchmark | 1.4.1 | 1.4.1 | Current | Keep |
 | **Tink Android** | **1.21.0** | **1.21.0** | **Current** | **Keep** — replaced deprecated AndroidX Security Crypto in v1.8.68 |
@@ -239,13 +240,15 @@ No action required; cited for context.
 **Acceptance criteria:** `:app:testDebugUnitTest`, `:app:lintDebug`,
 `:app:assembleDebug` green; 16KB alignment check still passes.
 
-### Bump-batch B (visual-regression infrastructure)
+### Bump-batch B (visual-regression infrastructure, shipped v1.8.71)
 
-1. **roborazzi** 1.55.0 → **1.60.0**
-2. **robolectric** 4.14.1 → **4.16.1**
+1. ✅ **roborazzi** 1.55.0 → **1.60.0**
+2. ✅ **robolectric** 4.14.1 → **4.16.1**
 
 **Acceptance criteria:** existing Roborazzi snapshot tests still pass;
 `:app:recordRoborazziDebug` runs cleanly; baseline-PNG capture can resume.
+Local Gradle verification is blocked on this VM by missing Java, so the
+maintainer build host must run the visual/test suite before publishing.
 
 ### Bump-batch C (build toolchain)
 

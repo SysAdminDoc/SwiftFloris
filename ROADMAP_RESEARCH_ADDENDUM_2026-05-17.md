@@ -12,15 +12,15 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.70 — README migration-window follow-up.
-(The research run started at v1.8.55; v1.8.56-70 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batch A + README Samsung / Grammarly callouts.)
+**HEAD at latest reconciliation:** v1.8.71 — Bump-batch B.
+(The research run started at v1.8.55; v1.8.56-71 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B + README Samsung / Grammarly callouts.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-70 releases
+## 0. Reconciliation with concurrent v1.8.56-71 releases
 
-While this research run was in flight, fourteen releases landed that
+While this research run was in flight, sixteen releases landed that
 implemented several recommendations:
 
 | Recommendation in this addendum | Shipped as |
@@ -40,8 +40,9 @@ implemented several recommendations:
 | §A.2 / §G.2 — AndroidX Security Crypto deprecated API surface (N7.6) | ✅ **v1.8.68 — N7.6** — removed AndroidX Security Crypto, added Tink Android 1.21.0, and migrated SQLCipher passphrase + legacy clipboard-history encrypted-preference payloads |
 | §A.4 / Tier-1 #4 — Bump-batch A | ✅ **v1.8.69 — N14.5** — coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, AboutLibraries stable 14.2.0 |
 | Tier-1 #2 / #5 / #10 — README Samsung / Grammarly migration-window callouts + release-front-door hygiene | ✅ **v1.8.70 — N16.4** — Galaxy AI Writing Assist framed as optional Samsung layer on One UI 7+; Grammarly Keyboard replacement framed as an overlay above SwiftFloris |
+| §A.4 / Tier-1 #12 — Bump-batch B | ✅ **v1.8.71 — N14.6** — Roborazzi 1.60.0 + Robolectric 4.16.1 |
 
-These fifteen are removed from this addendum's open commitments. Historical
+These sixteen are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
 are no longer open.
 
@@ -136,14 +137,14 @@ SwiftFloris-specific regression. Bump-batch A no longer includes Activity.
 | Compose BOM | 2026.03.01 | 2026.05.00 | bump alongside AGP |
 | kotlinx-coroutines | 1.11.0 | 1.11.0 | ✅ shipped v1.8.69 |
 | KSP | 2.3.8 | 2.3.8 | ✅ shipped v1.8.69 |
-| Roborazzi | 1.55.0 | 1.60.0 | bump before AGP 9.2 |
-| Robolectric | 4.14.1 | 4.16.1 | bump for SDK 36 / JDK 21 fidelity |
+| Roborazzi | 1.60.0 | 1.60.0 | ✅ shipped v1.8.71 |
+| Robolectric | 4.16.1 | 4.16.1 | ✅ shipped v1.8.71 |
 | aboutlibraries | 14.2.0 | 14.2.0 stable (`15.0.0-b01` beta exists) | ✅ shipped v1.8.69 |
 | zxing-core | 3.5.4 | 3.5.4 | ✅ shipped v1.8.69 |
 
 **Resolution:** Tier-1 #4 (Bump-batch A: low risk) shipped in v1.8.69;
-Tier-1 #12 (Bump-batch B: visual-regression infrastructure), and Tier-2 #16
-(Bump-batch C: build toolchain) to
+Tier-1 #12 (Bump-batch B: visual-regression infrastructure) shipped in
+v1.8.71; Tier-2 #16 (Bump-batch C: build toolchain) remains in
 [PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md).
 
 ### A.5 FlorisBoard upstream is frozen on v0.6.0-alpha02
@@ -482,7 +483,7 @@ but does not require a roadmap change.
 | §A.1 KenLM license boundary | 🔄 |
 | §A.2 Tink migration (new N7.6) | ✅ v1.8.68 |
 | §A.3 activity 1.13.0 downgrade retired | 🔄 |
-| §A.4 Bump-batches A/B/C | ✅ v1.8.69 (A); 🟢 (B); 🟡 on B (C) |
+| §A.4 Bump-batches A/B/C | ✅ v1.8.69 (A); ✅ v1.8.71 (B); 🟡 on B (C) |
 | §A.5 Upstream-lap framing | 🔄 |
 | §A.6 MediaPipe rejection | 🔄 |
 | §A.7 FunctionGemma named target | 🔄 |

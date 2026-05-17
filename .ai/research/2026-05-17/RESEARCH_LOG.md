@@ -107,6 +107,8 @@ Corrections recorded in
 - `androidx-activity 1.13.0 stable` — RC vs stable status
 - `AGP 9.1 R8 repackageclasses` — bump implications
 - `Roborazzi 1.59 AGP 9` — visual-regression upgrade path
+- `Roborazzi 1.60.0 Maven metadata Robolectric 4.16.1 Maven metadata OSV` —
+  v1.8.71 Bump-batch B source refresh
 - `androidx-security-crypto deprecation 2025` — JetSec status
 - `LeanBitLab LeanType v3.7.9 offline ONNX keyboard` — fifth-pass
   competitor addition
