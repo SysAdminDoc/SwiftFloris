@@ -842,6 +842,19 @@
     <string name="settings__udm__dictionary_import_failure" comment="Message for dictionary import failure">Could not import user dictionary: {error_message}</string>
     <string name="settings__udm__dictionary_export_failure" comment="Message for dictionary export failure">Could not export user dictionary: {error_message}</string>
     <string name="settings__udm__dictionary_store_unavailable" comment="Message shown when the selected user dictionary storage is unavailable">Dictionary storage is not available right now.</string>
+    <string name="settings__udm__encrypted_export" comment="Menu action for exporting the user dictionary as a passphrase-encrypted file">Export encrypted</string>
+    <string name="settings__udm__encrypted_dictionary_export_success" comment="Message for encrypted dictionary export success">Encrypted user dictionary exported.</string>
+    <string name="settings__udm__encrypted_export__dialog_title" comment="Title of the encrypted dictionary export passphrase dialog">Export encrypted dictionary</string>
+    <string name="settings__udm__encrypted_export__dialog_message" comment="Body text of the encrypted dictionary export passphrase dialog">Choose a passphrase for this file. SwiftFloris cannot recover it if you forget it.</string>
+    <string name="settings__udm__encrypted_import__dialog_title" comment="Title of the encrypted dictionary import passphrase dialog">Import encrypted dictionary</string>
+    <string name="settings__udm__encrypted_import__dialog_message" comment="Body text of the encrypted dictionary import passphrase dialog">Enter the passphrase used when this dictionary file was exported.</string>
+    <string name="settings__udm__encrypted_dictionary__passphrase" comment="Label for the encrypted dictionary passphrase field">Passphrase</string>
+    <string name="settings__udm__encrypted_dictionary__confirm_passphrase" comment="Label for the encrypted dictionary passphrase confirmation field">Confirm passphrase</string>
+    <string name="settings__udm__encrypted_dictionary__passphrase_mismatch" comment="Validation message when the encrypted export passphrases differ">Passphrases do not match.</string>
+    <string name="settings__udm__encrypted_dictionary__bad_passphrase" comment="Encrypted dictionary error shown for wrong passphrase or tampered ciphertext">Wrong passphrase or the file was modified.</string>
+    <string name="settings__udm__encrypted_dictionary__unsupported_version" comment="Encrypted dictionary error shown for a newer unsupported file version">This encrypted dictionary was created by a newer SwiftFloris version.</string>
+    <string name="settings__udm__encrypted_dictionary__oversized" comment="Encrypted dictionary error shown when the file exceeds the safety limit">This encrypted dictionary is larger than SwiftFloris can safely import.</string>
+    <string name="settings__udm__encrypted_dictionary__corrupt" comment="Encrypted dictionary error shown for malformed or truncated files">This encrypted dictionary file is corrupt or incomplete.</string>
     <string name="settings__udm__import_summary__title" comment="Title of the post-import confirmation dialog">Import complete</string>
     <string name="settings__udm__import_summary__inserted" comment="Summary line of newly inserted words. Placeholder is the integer count.">Added {count} new words</string>
     <string name="settings__udm__import_summary__updated" comment="Summary line of in-place updated words. Placeholder is the integer count.">Updated {count} existing words</string>
@@ -851,6 +864,7 @@
     <string name="settings__udm__import_summary__format__xml" comment="Source-format label for Gboard XML imports">Gboard XML export</string>
     <string name="settings__udm__import_summary__format__csv" comment="Source-format label for CSV imports">CSV file</string>
     <string name="settings__udm__import_summary__format__zip" comment="Source-format label for zip-archive imports">Zip archive</string>
+    <string name="settings__udm__import_summary__format__floris" comment="Source-format label for SwiftFloris combined-list imports">SwiftFloris dictionary export</string>
     <string name="settings__udm__import_summary__format__unknown" comment="Source-format label for unknown / legacy imports">Personal dictionary file</string>
     <string name="settings__udm__import_summary__source" comment="Caption showing the detected source format. Placeholder is the format label.">Imported from: {format}</string>
     <string name="settings__udm__import_summary__rollback" comment="Action button on the post-import dialog that undoes the import">Undo import</string>

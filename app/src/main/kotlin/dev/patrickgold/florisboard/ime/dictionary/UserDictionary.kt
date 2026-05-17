@@ -138,83 +138,157 @@ interface UserDictionaryDatabase {
 
     fun importCombinedList(context: Context, uri: Uri) {
         context.contentResolver.readText(uri) { src ->
-            var isFirstLine = true
-            src.forEachLine { line ->
-                if (isFirstLine) {
-                    // Ignore
-                    isFirstLine = false
-                } else {
-                    var word: String? = null
-                    var freq: Int? = null
-                    var locale: String? = null
-                    var shortcut: String? = null
-                    for (property in line.split(';')) {
-                        val keyValuePair = property.split('=')
-                        check(keyValuePair.size == 2) { "Error at source line `$line`: Key-Value pair expected, but either only key or too many values provided" }
-                        val key = keyValuePair[0].trim().lowercase()
-                        val value = keyValuePair[1].trim()
-                        when (key) {
-                            "w", "word" -> word = value.ifBlank { null }
-                            "f", "freq" -> {
-                                val number = value.toIntOrNull(10)
-                                checkNotNull(number) { "Error at source line `$line`: Freq is not a valid decimal number" }
-                                check(number in FREQUENCY_MIN..FREQUENCY_MAX) {
-                                    "Error at source line `$line`: Freq not within range of $FREQUENCY_MIN and $FREQUENCY_MAX"
-                                }
-                                freq = number
-                            }
-                            "l", "locale" -> locale = when (value) {
-                                "all", "null", "" -> null
-                                else -> value.ifBlank { null }
-                            }
-                            "s", "shortcut" -> shortcut = value.ifBlank { null }
-                        }
-                    }
-                    checkNotNull(word) { "Error at source line `$line`: Word cannot be empty or missing" }
-                    checkNotNull(freq) { "Error at source line `$line`: Freq cannot be empty or missing" }
-                    val alreadyExistingEntries = userDictionaryDao().queryExact(
-                        word, locale?.let { FlorisLocale.fromTag(it) },
-                    )
-                    if (alreadyExistingEntries.isNotEmpty()) {
-                        userDictionaryDao().update(UserDictionaryEntry(alreadyExistingEntries[0].id, word, freq, locale, shortcut))
-                    } else {
-                        userDictionaryDao().insert(UserDictionaryEntry(0, word, freq, locale, shortcut))
-                    }
-                }
-            }
+            importCombinedListEntries(UserDictionaryCombinedListCodec.decodeLines(src.lineSequence()))
         }
     }
 
     fun exportCombinedList(context: Context, uri: Uri) {
         context.contentResolver.writeText(uri) { dst ->
-            StringBuilder().apply {
-                append("dictionary=")
-                append(uri.lastPathSegment)
-                append(";date=")
-                append(System.currentTimeMillis())
-                append(";generated-by=")
-                append(context.packageName)
-                append(";version=1")
-                appendLine()
-                dst.write(toString())
-            }
-            for (entry in userDictionaryDao().queryAll()) {
-                StringBuilder().apply {
-                    append(" w=")
-                    append(entry.word)
-                    append(";f=")
-                    append(entry.freq)
-                    append(";l=")
-                    append(entry.locale) // always append locale even if null
-                    if (entry.shortcut != null) {
-                        append(";s=")
-                        append(entry.shortcut)
-                    }
-                    appendLine()
-                    dst.write(toString())
-                }
+            dst.write(exportCombinedListText(context, uri))
+        }
+    }
+
+    fun importCombinedListText(text: String) {
+        importCombinedListEntries(UserDictionaryCombinedListCodec.decode(text))
+    }
+
+    fun exportCombinedListText(
+        context: Context,
+        uri: Uri,
+        timestampMillis: Long = System.currentTimeMillis(),
+    ): String {
+        return UserDictionaryCombinedListCodec.encode(
+            entries = userDictionaryDao().queryAll(),
+            dictionaryName = uri.lastPathSegment,
+            generatedBy = context.packageName,
+            timestampMillis = timestampMillis,
+        )
+    }
+
+    fun exportEncryptedCombinedList(
+        context: Context,
+        uri: Uri,
+        passphrase: CharArray,
+    ) {
+        val plaintext = exportCombinedListText(context, uri).toByteArray(Charsets.UTF_8)
+        val envelope = try {
+            EncryptedDictionaryExport.encrypt(plaintext, passphrase)
+        } finally {
+            plaintext.fill(0)
+        }
+        val outputStream = context.contentResolver.openOutputStream(uri)
+            ?: error("Could not open export destination for writing.")
+        outputStream.use { stream ->
+            stream.write(envelope)
+        }
+    }
+
+    private fun importCombinedListEntries(entries: List<PersonalDictionaryEntry>) {
+        for (entry in entries) {
+            val locale = entry.locale
+            val alreadyExistingEntries = userDictionaryDao().queryExact(
+                entry.word,
+                locale?.let { FlorisLocale.fromTag(it) },
+            )
+            val row = UserDictionaryEntry(
+                id = alreadyExistingEntries.firstOrNull()?.id ?: 0,
+                word = entry.word,
+                freq = entry.frequency,
+                locale = locale,
+                shortcut = entry.shortcut,
+            )
+            if (alreadyExistingEntries.isNotEmpty()) {
+                userDictionaryDao().update(row)
+            } else {
+                userDictionaryDao().insert(row)
             }
         }
+    }
+}
+
+object UserDictionaryCombinedListCodec {
+    fun encode(
+        entries: List<UserDictionaryEntry>,
+        dictionaryName: String?,
+        generatedBy: String,
+        timestampMillis: Long,
+    ): String {
+        return buildString {
+            append("dictionary=")
+            append(dictionaryName)
+            append(";date=")
+            append(timestampMillis)
+            append(";generated-by=")
+            append(generatedBy)
+            append(";version=1")
+            appendLine()
+            for (entry in entries) {
+                append(" w=")
+                append(entry.word)
+                append(";f=")
+                append(entry.freq)
+                append(";l=")
+                append(entry.locale) // always append locale even if null
+                if (entry.shortcut != null) {
+                    append(";s=")
+                    append(entry.shortcut)
+                }
+                appendLine()
+            }
+        }
+    }
+
+    fun decode(text: String): List<PersonalDictionaryEntry> {
+        return decodeLines(text.lineSequence())
+    }
+
+    fun decodeLines(lines: Sequence<String>): List<PersonalDictionaryEntry> {
+        val entries = mutableListOf<PersonalDictionaryEntry>()
+        var isFirstLine = true
+        lines.forEach { line ->
+            if (isFirstLine) {
+                isFirstLine = false
+                // Header line: dictionary=<name>;date=<millis>;generated-by=<package>;version=1
+                if (line.trimStart().startsWith("dictionary=", ignoreCase = true)) {
+                    return@forEach
+                }
+            }
+            var word: String? = null
+            var freq: Int? = null
+            var locale: String? = null
+            var shortcut: String? = null
+            for (property in line.split(';')) {
+                val keyValuePair = property.split('=', limit = 2)
+                check(keyValuePair.size == 2) {
+                    "Error at source line `$line`: Key-Value pair expected, but either only key or too many values provided"
+                }
+                val key = keyValuePair[0].trim().lowercase()
+                val value = keyValuePair[1].trim()
+                when (key) {
+                    "w", "word" -> word = value.ifBlank { null }
+                    "f", "freq" -> {
+                        val number = value.toIntOrNull(10)
+                        checkNotNull(number) { "Error at source line `$line`: Freq is not a valid decimal number" }
+                        check(number in FREQUENCY_MIN..FREQUENCY_MAX) {
+                            "Error at source line `$line`: Freq not within range of $FREQUENCY_MIN and $FREQUENCY_MAX"
+                        }
+                        freq = number
+                    }
+                    "l", "locale" -> locale = when (value) {
+                        "all", "null", "" -> null
+                        else -> value.ifBlank { null }
+                    }
+                    "s", "shortcut" -> shortcut = value.ifBlank { null }
+                }
+            }
+            entries += PersonalDictionaryEntry(
+                word = checkNotNull(word) { "Error at source line `$line`: Word cannot be empty or missing" },
+                frequency = checkNotNull(freq) { "Error at source line `$line`: Freq cannot be empty or missing" },
+                locale = locale,
+                shortcut = shortcut,
+            )
+        }
+        return entries
     }
 }
 

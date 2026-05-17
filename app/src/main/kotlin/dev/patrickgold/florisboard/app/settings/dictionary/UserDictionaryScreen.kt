@@ -16,9 +16,12 @@
 
 package dev.patrickgold.florisboard.app.settings.dictionary
 
+import android.net.Uri
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
@@ -30,12 +33,16 @@ import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -46,6 +53,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -53,10 +63,13 @@ import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryImportException
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryImporter
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
+import dev.patrickgold.florisboard.ime.dictionary.EncryptedDictionaryException
+import dev.patrickgold.florisboard.ime.dictionary.EncryptedDictionaryExport
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MIN
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportBatch
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportResult
+import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDatabase
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDao
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryValidation
@@ -68,8 +81,12 @@ import dev.patrickgold.florisboard.lib.util.launchActivity
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisEmptyState
@@ -80,6 +97,8 @@ import org.florisboard.lib.compose.stringRes
 private val AllLanguagesLocale = FlorisLocale.from(language = "zz")
 private val UserDictionaryEntryToAdd = UserDictionaryEntry(id = 0, "", 255, null, null)
 private const val UserDictionaryMediaType = "text/plain"
+private const val EncryptedUserDictionaryMediaType = "application/octet-stream"
+private const val EncryptedUserDictionaryDefaultFileName = "my-personal-dictionary.sfexp"
 private const val SystemUserDictionaryUiIntentAction = "android.settings.USER_DICTIONARY_SETTINGS"
 
 enum class UserDictionaryType(val id: String) {
@@ -110,6 +129,9 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     // successful modular DictionaryImporter run so the user can
     // see what landed and optionally roll the inserts back.
     var importSummary by remember { mutableStateOf<PersonalDictionaryImportResult?>(null) }
+    var encryptedExportDialogVisible by rememberSaveable { mutableStateOf(false) }
+    var encryptedImportUri by remember { mutableStateOf<Uri?>(null) }
+    var pendingEncryptedExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
 
     fun userDictionaryDao(): UserDictionaryDao? {
         return when (type) {
@@ -145,74 +167,182 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
         }
     }
 
+    fun userDictionaryDatabase(): UserDictionaryDatabase? {
+        return when (type) {
+            UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDatabase()
+            UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
+        }
+    }
+
+    fun encryptedDictionaryErrorMessage(error: Throwable): String {
+        return when ((error as? EncryptedDictionaryException)?.reason) {
+            EncryptedDictionaryExport.FailureReason.BAD_PASSPHRASE ->
+                context.stringRes(R.string.settings__udm__encrypted_dictionary__bad_passphrase)
+            EncryptedDictionaryExport.FailureReason.UNSUPPORTED_VERSION ->
+                context.stringRes(R.string.settings__udm__encrypted_dictionary__unsupported_version)
+            EncryptedDictionaryExport.FailureReason.OVERSIZED ->
+                context.stringRes(R.string.settings__udm__encrypted_dictionary__oversized)
+            EncryptedDictionaryExport.FailureReason.CORRUPT_HEADER,
+            EncryptedDictionaryExport.FailureReason.NOT_AN_ENVELOPE,
+            EncryptedDictionaryExport.FailureReason.TRUNCATED ->
+                context.stringRes(R.string.settings__udm__encrypted_dictionary__corrupt)
+            null -> error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()
+        }
+    }
+
+    fun handleImportSuccess(result: PersonalDictionaryImportResult?) {
+        buildUi()
+        if (result != null) {
+            importSummary = result
+        } else {
+            scope.launch {
+                context.showLongToast(R.string.settings__udm__dictionary_import_success)
+            }
+        }
+    }
+
+    fun handleImportFailure(error: Throwable) {
+        scope.launch {
+            context.showLongToast(
+                R.string.settings__udm__dictionary_import_failure,
+                "error_message" to encryptedDictionaryErrorMessage(error),
+            )
+        }
+    }
+
+    fun detectEncryptedEnvelope(uri: Uri): Boolean {
+        return context.contentResolver.openInputStream(uri)?.use { stream ->
+            val sniffBuffer = ByteArray(EncryptedDictionaryExport.MAGIC.size)
+            val sniffed = stream.read(sniffBuffer).coerceAtLeast(0)
+            EncryptedDictionaryExport.isEncryptedEnvelope(sniffBuffer.copyOf(sniffed))
+        } ?: false
+    }
+
+    fun readEncryptedEnvelopeBytes(uri: Uri): ByteArray {
+        val limit = EncryptedDictionaryExport.HEADER_SIZE +
+            EncryptedDictionaryExport.MAX_PAYLOAD_BYTES +
+            (EncryptedDictionaryExport.GCM_TAG_BITS / 8)
+        val input = context.contentResolver.openInputStream(uri)
+            ?: throw DictionaryImportException("Could not read selected file.")
+        input.use { stream ->
+            val out = ByteArrayOutputStream()
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            var total = 0
+            while (true) {
+                val read = stream.read(buffer)
+                if (read < 0) break
+                total += read
+                if (total > limit) {
+                    throw EncryptedDictionaryException(EncryptedDictionaryExport.FailureReason.OVERSIZED)
+                }
+                out.write(buffer, 0, read)
+            }
+            return out.toByteArray()
+        }
+    }
+
+    fun importPlainDictionary(uri: Uri) {
+        val db = userDictionaryDatabase()
+        if (db == null) {
+            scope.launch {
+                context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+            }
+            return
+        }
+        val dao = userDictionaryDao()
+        if (dao == null) {
+            scope.launch {
+                context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+            }
+            return
+        }
+        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — try the modular
+        // importer first (SwiftKey JSON / Gboard XML / CSV / zip /
+        // SwiftFloris combined-list detection by byte sniff). On any
+        // DictionaryImportException, fall through to the legacy URI-based
+        // combined-list path so older FlorisBoard backups keep importing.
+        runCatching {
+            val importer = DictionaryImporter()
+            val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
+                importer.import(stream)
+            } ?: throw DictionaryImportException("Could not read selected file.")
+            val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
+                val sniffBuffer = ByteArray(1024)
+                val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
+                importer.detectFormat(sniffBuffer.copyOf(sniffed))
+            }
+            PersonalDictionaryImportBatch.import(
+                parsedEntries = parsed,
+                dao = dao,
+                format = format,
+            )
+        }.recoverCatching { modularError ->
+            if (modularError !is DictionaryImportException) throw modularError
+            db.importCombinedList(context, uri)
+            null
+        }.onSuccess { result ->
+            handleImportSuccess(result)
+        }.onFailure { error ->
+            handleImportFailure(error)
+        }
+    }
+
+    fun importEncryptedDictionary(uri: Uri, passphrase: CharArray) {
+        val dao = userDictionaryDao()
+        if (dao == null) {
+            passphrase.fill('\u0000')
+            scope.launch {
+                context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+            }
+            return
+        }
+        scope.launch {
+            try {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        val envelope = readEncryptedEnvelopeBytes(uri)
+                        val plaintext = EncryptedDictionaryExport.decrypt(envelope, passphrase)
+                        try {
+                            val importer = DictionaryImporter()
+                            val parsed = importer.import(ByteArrayInputStream(plaintext))
+                            val sniff = plaintext.copyOf(minOf(plaintext.size, 1024))
+                            val format = importer.detectFormat(sniff)
+                            PersonalDictionaryImportBatch.import(
+                                parsedEntries = parsed,
+                                dao = dao,
+                                format = format,
+                            )
+                        } finally {
+                            plaintext.fill(0)
+                        }
+                    }
+                }.onSuccess { result ->
+                    handleImportSuccess(result)
+                }.onFailure { error ->
+                    handleImportFailure(error)
+                }
+            } finally {
+                passphrase.fill('\u0000')
+            }
+        }
+    }
+
     val importDictionary = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             // If uri is null it indicates that the selection activity was cancelled (mostly
             // by pressing the back button), so we don't display an error message here.
             if (uri == null) return@rememberLauncherForActivityResult
-            val db = when (type) {
-                UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDatabase()
-                UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
-            }
-            if (db == null) {
-                scope.launch {
-                    context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
-                }
+            val isEncrypted = runCatching {
+                detectEncryptedEnvelope(uri)
+            }.getOrElse { error ->
+                handleImportFailure(error)
                 return@rememberLauncherForActivityResult
             }
-            val dao = userDictionaryDao()
-            if (dao == null) {
-                scope.launch {
-                    context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
-                }
-                return@rememberLauncherForActivityResult
-            }
-            // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — try the modular
-            // DictionaryImporter first (SwiftKey JSON / Gboard XML / CSV /
-            // zip envelope detection by byte sniff, ROADMAP §6 N16.2). On
-            // any DictionaryImportException — including "unknown format" —
-            // fall through to the legacy semicolon-key=value combined-list
-            // path so existing FlorisBoard backups keep importing.
-            runCatching {
-                val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
-                    val importer = DictionaryImporter()
-                    importer.import(stream)
-                } ?: throw DictionaryImportException("Could not read selected file.")
-                val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
-                    val sniffBuffer = ByteArray(1024)
-                    val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
-                    DictionaryImporter().detectFormat(sniffBuffer.copyOf(sniffed))
-                }
-                PersonalDictionaryImportBatch.import(
-                    parsedEntries = parsed,
-                    dao = dao,
-                    format = format,
-                )
-            }.recoverCatching { modularError ->
-                if (modularError !is DictionaryImportException) throw modularError
-                // Legacy combined-list path. No summary surface for this
-                // branch because the legacy importer doesn't return ids;
-                // we still emit the success toast for compatibility with
-                // the pre-v1.8.53 UX.
-                db.importCombinedList(context, uri)
-                null
-            }.onSuccess { result ->
-                buildUi()
-                if (result != null) {
-                    importSummary = result
-                } else {
-                    scope.launch {
-                        context.showLongToast(R.string.settings__udm__dictionary_import_success)
-                    }
-                }
-            }.onFailure { error ->
-                scope.launch {
-                    context.showLongToast(
-                        R.string.settings__udm__dictionary_import_failure,
-                        "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
-                    )
-                }
+            if (isEncrypted) {
+                encryptedImportUri = uri
+            } else {
+                importPlainDictionary(uri)
             }
         },
     )
@@ -245,6 +375,44 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                         R.string.settings__udm__dictionary_export_failure,
                         "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
                     )
+                }
+            }
+        },
+    )
+
+    val exportEncryptedDictionary = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument(EncryptedUserDictionaryMediaType),
+        onResult = { uri ->
+            val passphrase = pendingEncryptedExportPassphrase
+            pendingEncryptedExportPassphrase = null
+            if (uri == null || passphrase == null) {
+                passphrase?.fill('\u0000')
+                return@rememberLauncherForActivityResult
+            }
+            val db = userDictionaryDatabase()
+            if (db == null) {
+                passphrase.fill('\u0000')
+                scope.launch {
+                    context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+                }
+                return@rememberLauncherForActivityResult
+            }
+            scope.launch {
+                try {
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            db.exportEncryptedCombinedList(context, uri, passphrase)
+                        }
+                    }.onSuccess {
+                        context.showLongToast(R.string.settings__udm__encrypted_dictionary_export_success)
+                    }.onFailure { error ->
+                        context.showLongToast(
+                            R.string.settings__udm__dictionary_export_failure,
+                            "error_message" to encryptedDictionaryErrorMessage(error),
+                        )
+                    }
+                } finally {
+                    passphrase.fill('\u0000')
                 }
             }
         },
@@ -299,6 +467,13 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     expanded = false
                 },
                 text = { Text(text = stringRes(R.string.action__export)) },
+            )
+            DropdownMenuItem(
+                onClick = {
+                    encryptedExportDialogVisible = true
+                    expanded = false
+                },
+                text = { Text(text = stringRes(R.string.settings__udm__encrypted_export)) },
             )
             if (type == UserDictionaryType.SYSTEM) {
                 DropdownMenuItem(
@@ -502,9 +677,9 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             }
         }
 
-        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import summary.
-        // Renders only when the modular DictionaryImporter path returned
-        // a result (the legacy combined-list path stays on its toast).
+        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — post-import summary.
+        // Renders when the modular DictionaryImporter path returned a
+        // result, including decrypted SwiftFloris combined-list exports.
         val summary = importSummary
         if (summary != null) {
             PersonalDictionaryImportSummaryDialog(
@@ -527,4 +702,114 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             )
         }
     }
+
+    if (encryptedExportDialogVisible) {
+        DictionaryPassphraseDialog(
+            title = stringRes(R.string.settings__udm__encrypted_export__dialog_title),
+            message = stringRes(R.string.settings__udm__encrypted_export__dialog_message),
+            confirmLabel = stringRes(R.string.action__export),
+            requireConfirmation = true,
+            onDismiss = {
+                encryptedExportDialogVisible = false
+            },
+            onConfirm = { passphrase ->
+                encryptedExportDialogVisible = false
+                pendingEncryptedExportPassphrase?.fill('\u0000')
+                pendingEncryptedExportPassphrase = passphrase.toCharArray()
+                exportEncryptedDictionary.launch(EncryptedUserDictionaryDefaultFileName)
+            },
+        )
+    }
+
+    encryptedImportUri?.let { uri ->
+        DictionaryPassphraseDialog(
+            title = stringRes(R.string.settings__udm__encrypted_import__dialog_title),
+            message = stringRes(R.string.settings__udm__encrypted_import__dialog_message),
+            confirmLabel = stringRes(R.string.action__import),
+            requireConfirmation = false,
+            onDismiss = {
+                encryptedImportUri = null
+            },
+            onConfirm = { passphrase ->
+                encryptedImportUri = null
+                importEncryptedDictionary(uri, passphrase.toCharArray())
+            },
+        )
+    }
+}
+
+@Composable
+private fun DictionaryPassphraseDialog(
+    title: String,
+    message: String,
+    confirmLabel: String,
+    requireConfirmation: Boolean,
+    onDismiss: () -> Unit,
+    onConfirm: (String) -> Unit,
+) {
+    var passphrase by rememberSaveable { mutableStateOf("") }
+    var passphraseConfirmation by rememberSaveable { mutableStateOf("") }
+    val mismatch = requireConfirmation &&
+        passphraseConfirmation.isNotEmpty() &&
+        passphrase != passphraseConfirmation
+    val canConfirm = passphrase.isNotBlank() &&
+        (!requireConfirmation || passphrase == passphraseConfirmation)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = title) },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                Text(text = message)
+                OutlinedTextField(
+                    value = passphrase,
+                    onValueChange = { passphrase = it },
+                    label = { Text(text = stringRes(R.string.settings__udm__encrypted_dictionary__passphrase)) },
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Password,
+                        imeAction = if (requireConfirmation) ImeAction.Next else ImeAction.Done,
+                    ),
+                )
+                if (requireConfirmation) {
+                    OutlinedTextField(
+                        value = passphraseConfirmation,
+                        onValueChange = { passphraseConfirmation = it },
+                        label = {
+                            Text(text = stringRes(R.string.settings__udm__encrypted_dictionary__confirm_passphrase))
+                        },
+                        singleLine = true,
+                        visualTransformation = PasswordVisualTransformation(),
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Password,
+                            imeAction = ImeAction.Done,
+                        ),
+                    )
+                    if (mismatch) {
+                        Text(
+                            text = stringRes(R.string.settings__udm__encrypted_dictionary__passphrase_mismatch),
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall,
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(passphrase) },
+                enabled = canConfirm,
+            ) {
+                Text(text = confirmLabel)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text(text = stringRes(R.string.action__cancel))
+            }
+        },
+    )
 }

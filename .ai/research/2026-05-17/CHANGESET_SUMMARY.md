@@ -12,8 +12,9 @@ touched.
 > shipped the Phase B1 multilingual sentence-position prior seed, v1.8.61
 > shipped Phase B2 quick-prediction-insert threshold tuning, v1.8.62
 > shipped Phase C1 split-keyboard renderer wire-up, v1.8.63 shipped
-> Phase C3 bundled High Contrast / Aurora themes, and v1.8.64 shipped
-> Phase D1 calendar quick-insert. Those
+> Phase C3 bundled High Contrast / Aurora themes, v1.8.64 shipped
+> Phase D1 calendar quick-insert, and v1.8.65 shipped Phase A3 encrypted
+> dictionary export/import Settings wiring. Those
 > follow-ups touched runtime source, tests, strings, bundled Zipf assets,
 > `NOTICE`, theme stylesheets, `gradle.properties`, release notes, `README.md`,
 > `PROJECT_CONTEXT.md`, `ROADMAP.md`,
@@ -21,8 +22,8 @@ touched.
 > `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`. The historical sections below
 > describe the original research run; see `RELEASE_NOTES_v1.8.59.md`,
 > `RELEASE_NOTES_v1.8.60.md`, `RELEASE_NOTES_v1.8.61.md`, and
-> `RELEASE_NOTES_v1.8.62.md`, `RELEASE_NOTES_v1.8.63.md`, and
-> `RELEASE_NOTES_v1.8.64.md` for the
+> `RELEASE_NOTES_v1.8.62.md`, `RELEASE_NOTES_v1.8.63.md`,
+> `RELEASE_NOTES_v1.8.64.md`, and `RELEASE_NOTES_v1.8.65.md` for the
 > implementation changes.
 
 - Pass 1 created 11 files (root: `PROJECT_CONTEXT.md`,
@@ -57,11 +58,12 @@ reflect HEAD = v1.8.58 and to remove the three closed recommendations
 from the open list.
 
 **Post-research continuation reconciliation:** v1.8.59 Phase D3,
-v1.8.60 Phase B1, v1.8.61 Phase B2, v1.8.62 Phase C1, v1.8.63 Phase C3, and v1.8.64 Phase D1 subsequently
+v1.8.60 Phase B1, v1.8.61 Phase B2, v1.8.62 Phase C1, v1.8.63 Phase C3,
+v1.8.64 Phase D1, and v1.8.65 Phase A3 Settings wiring subsequently
 shipped from the same SwiftKey-parity plan. `PROJECT_CONTEXT.md`,
 `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`, `ROADMAP.md`, and
-`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` now reflect HEAD = v1.8.64
-and the tag catch-up gap as 24 releases after `v1.8.40`.
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` now reflect HEAD = v1.8.65
+and the tag catch-up gap as 25 releases after `v1.8.40`.
 
 **v1.8.63 continuation files:** `app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets/{swiftkey_high_contrast,aurora_animated}.json`,
 `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/ActiveThemeLocals.kt`,
@@ -78,6 +80,15 @@ and `RELEASE_NOTES_v1.8.64.md` were added. `AndroidManifest.xml`,
 `QuickActionArrangement.kt`, `QuickActionButton.kt`, `TextInputLayout.kt`,
 `QuickActionArrangementTest.kt`, `gradle.properties`, and the release/context
 docs were updated.
+
+**v1.8.65 continuation files:** `RELEASE_NOTES_v1.8.65.md` was added.
+`UserDictionaryScreen.kt`, `UserDictionary.kt`, `DictionaryImporter.kt`,
+`PersonalDictionaryImportSummaryDialog.kt`, `DictionaryImporterTest.kt`,
+`EncryptedDictionaryExportTest.kt`, `strings.xml`,
+`docs/MIGRATE_FROM_SWIFTKEY.md`, `docs/PRIVACY_AND_AI.md`,
+`gradle.properties`, and
+the release/context docs were updated for the encrypted dictionary
+export/import round-trip.
 
 **Second-pass deep-dives** verified or concretized seven items the first
 pass left thin:

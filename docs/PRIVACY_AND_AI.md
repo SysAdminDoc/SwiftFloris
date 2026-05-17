@@ -277,7 +277,7 @@ To prevent re-litigation, here is the explicit non-list (see
 | Cloud translator (MS / Google / DeepL) | Cloud — Bergamot addon is the local replacement |
 | Tenor / Giphy GIF search | Cloud + telemetry — bundled local sticker packs are the offline equivalent |
 | Cloud Clipboard sync via vendor | §1 — Next-5 CRDT over Syncthing is the local replacement |
-| OneDrive learned-words backup | §1 — personal-dictionary export to CSV/JSON is the local replacement |
+| OneDrive learned-words backup | §1 — personal-dictionary export to plain CSV/combined-list or passphrase-encrypted `.sfexp` is the local replacement |
 | In-keyboard ads / sponsored content | Trust posture |
 | Closed-source `libjni_latinimegoogle.so` blob | Audit posture |
 | MediaPipe LLM Inference (deprecated by Google) | Use LiteRT-LM addon path instead |
