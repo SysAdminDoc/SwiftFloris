@@ -98,6 +98,11 @@ AI-assisted contribution, and licensing expectations. README, AGENTS,
 PROJECT_CONTEXT, ROADMAP, the PR template, and the research backlog now point at
 those files.
 
+The next docs-only repo-hygiene batch moved root multilingual / voice guides
+under `docs/`: `docs/GESTURE_TYPING_MULTILINGUAL.md`,
+`docs/GESTURE_TYPING_MULTILINGUAL_RESEARCH.md`,
+`docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`, and `docs/VOICE_COMMANDS.md`.
+
 ## 3. Module layout
 
 From [settings.gradle.kts](../../../settings.gradle.kts):

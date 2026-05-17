@@ -233,6 +233,11 @@ or one-competitor additions, not a new roadmap pillar.
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local
   invariants, and marked the docs backlog / prioritization rows shipped.
+- **Docs-only Tier-3 #33 implementation:** Moved root-level multilingual and
+  voice guides into `docs/` (`GESTURE_TYPING_MULTILINGUAL.md`,
+  `GESTURE_TYPING_MULTILINGUAL_RESEARCH.md`,
+  `FUTO_VOICE_INPUT_TROUBLESHOOTING.md`, `VOICE_COMMANDS.md`) and updated
+  README / roadmap / memory-consolidation references.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

@@ -70,7 +70,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 30 | **Roborazzi baseline capture for all 13 bundled themes** | 3 | 2 | 1 | **3.5** | After bump-batch B |
 | 31 | ✅ **Shipped docs-only 2026-05-17:** `ARCHITECTURE.md` consolidating per-package docs | 3 | 2 | 1 | **3.5** | Root architecture map now covers modules, runtime entrypoints, package ownership, media/addon boundaries, security, CI, and tests |
 | 32 | ✅ **Shipped docs-only 2026-05-17:** `CONTRIBUTING.md` | 2 | 1 | 1 | **5.0** | Root contributor guide now covers setup, project rules, verification, release notes, PRs, AI-assisted work, and licensing |
-| 33 | **Consolidate root-level `*MULTILINGUAL.md` / `VOICE_*.md` / `FUTO_*.md` into `docs/`** | 2 | 2 | 1 | **2.5** | Repo hygiene; ROADMAP §11 flagged |
+| 33 | ✅ **Shipped docs-only 2026-05-17:** Consolidate root-level `*MULTILINGUAL.md` / `VOICE_*.md` / `FUTO_*.md` into `docs/` | 2 | 2 | 1 | **2.5** | Multilingual gesture, multilingual research, FUTO voice troubleshooting, and voice-command docs moved under `docs/` with internal links updated |
 | 34 | **`.kmp` Keyman package runtime** | 4 | 4 | 1 | **2.25** | High value (1,000+ minority-language layouts) but large engineering cost |
 | 35 | **Honeycomb-hex layout wire-up** | 3 | 4 | 1 | **1.75** | Components in tree but geometry rework is expensive |
 | 36 | **OpenSSL/BoringSSL SQLCipher provider migration plan** | 3 | 3 | 1 | **2.33** | Not urgent; Zetetic has not announced LibTomCrypt removal release |
@@ -133,6 +133,9 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
   root `ARCHITECTURE.md`, root `CONTRIBUTING.md`, README documentation links,
   and the PR-template checklist now point contributors at SwiftFloris-specific
   invariants instead of upstream FlorisBoard-only guidance.
+- Tier-3 #33 shipped as a docs-only repo-hygiene move: root multilingual and
+  voice guides now live under `docs/`, and root pattern scans find no remaining
+  `*MULTILINGUAL*.md`, `VOICE_*.md`, or `FUTO_*.md` files.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

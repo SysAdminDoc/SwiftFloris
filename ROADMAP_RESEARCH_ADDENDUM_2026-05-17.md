@@ -518,6 +518,7 @@ but does not require a roadmap change.
 | Tier-1 root crash/replay log cleanup + CI guard | ✅ v1.8.73 |
 | §C.1 User-imported sticker folder (Next-9.5) | ✅ v1.8.77 |
 | Tier-3 architecture / contributing docs | ✅ docs-only 2026-05-17 |
+| Tier-3 root multilingual / voice docs consolidation | ✅ docs-only 2026-05-17 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |

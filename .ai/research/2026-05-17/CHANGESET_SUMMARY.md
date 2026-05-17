@@ -894,3 +894,25 @@ Implemented Tier-3 #31 / #32 as a contributor-onboarding documentation batch:
 `git diff --check`, new-doc / PR-template link-target existence checks, and the
 same no-network / root crash-log tracked-file guards. Gradle is still blocked on this VM by
 missing `JAVA_HOME` / `java` and is not required for the docs-only batch.
+
+## 25. Docs-only continuation — root multilingual and voice doc consolidation
+
+Implemented Tier-3 #33 as a repo-hygiene documentation move:
+
+- `GESTURE_TYPING_MULTILINGUAL.md` →
+  `docs/GESTURE_TYPING_MULTILINGUAL.md`
+- `GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` →
+  `docs/GESTURE_TYPING_MULTILINGUAL_RESEARCH.md`
+- `FUTO_VOICE_INPUT_TROUBLESHOOTING.md` →
+  `docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`
+- `VOICE_COMMANDS.md` → `docs/VOICE_COMMANDS.md`
+
+Updated README troubleshooting / documentation links, ROADMAP §7 / §11 doc
+references, and research memory/backlog/prioritization notes. A root scan now
+finds no remaining `*MULTILINGUAL*.md`, `VOICE_*.md`, or `FUTO_*.md` files.
+
+**Verification note:** docs-only move. Local verification used `git diff
+--check`, root-pattern scan, internal reference grep, local checked-doc link
+validation, manifest no-network scan, and root crash-log tracked-file guard.
+Gradle remains blocked by the missing Java toolchain and was not required for
+this docs-only move.
