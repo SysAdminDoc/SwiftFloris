@@ -238,6 +238,8 @@ Tasks:
 - [ ] Keep future commits scoped to one logical improvement.
 - [x] Add root `ARCHITECTURE.md` and `CONTRIBUTING.md` entry points for
   package/runtime orientation and contributor verification expectations.
+- [x] Move root multilingual / voice guides into `docs/` and update internal
+  links.
 - [x] Keep JVM crash/replay logs out of the repo root and committed history
   (v1.8.73 moved local logs to `.ai/local-crash-logs/2026-05-16/` and added
   `scripts/check-no-root-crash-logs.sh` to CI).

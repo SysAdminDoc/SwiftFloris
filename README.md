@@ -115,8 +115,9 @@ Project-internal docs all live in the repository:
 - [`docs/INLINE_AUTOFILL.md`](docs/INLINE_AUTOFILL.md) — inline-autofill matrix and password-manager verification.
 - [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md) — Tasker intent contract.
 - [`docs/FONTS.md`](docs/FONTS.md) — bundled fonts (Nastaliq + Naskh fallback).
-- [`GESTURE_TYPING_MULTILINGUAL.md`](GESTURE_TYPING_MULTILINGUAL.md) — multilingual gesture-typing guide.
-- [`FUTO_VOICE_INPUT_TROUBLESHOOTING.md`](FUTO_VOICE_INPUT_TROUBLESHOOTING.md) — FUTO Voice Input setup + recovery actions.
+- [`docs/GESTURE_TYPING_MULTILINGUAL.md`](docs/GESTURE_TYPING_MULTILINGUAL.md) — multilingual gesture-typing guide.
+- [`docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`](docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md) — FUTO Voice Input setup + recovery actions.
+- [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
 - [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.3).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
@@ -330,11 +331,11 @@ binding, Apache-2.0-compatible `:app` code, and no closed-source blobs.
 
 ### Gesture typing not working?
 
-See [Multilingual Gesture Typing](GESTURE_TYPING_MULTILINGUAL.md). Gesture typing currently uses the bounded statistical engine for EN / DE / ES / FR / IT / PT; the neural / open-glide path is gated on the HeliBoard NLnet release.
+See [Multilingual Gesture Typing](docs/GESTURE_TYPING_MULTILINGUAL.md). Gesture typing currently uses the bounded statistical engine for EN / DE / ES / FR / IT / PT; the neural / open-glide path is gated on the HeliBoard NLnet release.
 
 ### Voice input unavailable?
 
-See [FUTO Voice Input Troubleshooting](FUTO_VOICE_INPUT_TROUBLESHOOTING.md). SwiftFloris does not record audio itself; it hands off to the user-installed FUTO Voice Input app or to the bundled Vosk streaming engine. Make sure microphone permission is granted on whichever IME you've configured for dictation.
+See [FUTO Voice Input Troubleshooting](docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md). SwiftFloris does not record audio itself; it hands off to the user-installed FUTO Voice Input app or to the bundled Vosk streaming engine. Make sure microphone permission is granted on whichever IME you've configured for dictation.
 
 ### Keyboard crashes on emoji insertion?
 

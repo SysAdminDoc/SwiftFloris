@@ -45,10 +45,10 @@ then `AGENTS.md`, then tool-specific supplements such as `CLAUDE.md`.
 | `SWIFTKEY_AI_RESEARCH.md` | 4.5 K | Pre-2026-05-17 | Reconciled into the parity roadmap |
 | `SWIFTKEY_FEATURE_IMPLEMENTATION_PLAN.md` | 23 K | Pre-2026-05-17 | Reconciled into the parity roadmap |
 | `IMPROVEMENT_PLAN.md` | 21 K | 2026-05-05 | Execution-focused quality plan (test, lint, perf, a11y, build); 15 workstreams; alongside ROADMAP, not subordinate to it |
-| `GESTURE_TYPING_MULTILINGUAL.md` | 4.9 K | v1.7.x | User-facing guide; behavior frozen as of N1.3 |
-| `GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` | 4.6 K | Pre-N1 | Research backing for the multilingual gesture decision |
-| `FUTO_VOICE_INPUT_TROUBLESHOOTING.md` | 5.9 K | v1.5.x | User-facing troubleshooting guide; matches current handoff path |
-| `VOICE_COMMANDS.md` | 4.3 K | Continually updated | Voice-command grammar reference; current as of Next-2.4 |
+| `docs/GESTURE_TYPING_MULTILINGUAL.md` | 4.9 K | v1.7.x | User-facing guide; behavior frozen as of N1.3 |
+| `docs/GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` | 4.6 K | Pre-N1 | Research backing for the multilingual gesture decision |
+| `docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md` | 5.9 K | v1.5.x | User-facing troubleshooting guide; matches current handoff path |
+| `docs/VOICE_COMMANDS.md` | 4.3 K | Continually updated | Voice-command grammar reference; current as of Next-2.4 |
 
 ### 1.3 Per-release notes (80+ files at root)
 
@@ -85,9 +85,11 @@ metadata is v1.8.58.
 - `LICENSES/SCOWL-Copyright.txt` — verbatim SCOWL license
 - `README.md` — front door
 - `README.md.bak` — superseded; retained for diff
-- `FUTO_VOICE_INPUT_TROUBLESHOOTING.md`, `VOICE_COMMANDS.md`,
-  `GESTURE_TYPING_MULTILINGUAL.md` — user-facing guides at root (ROADMAP §11
-  flags a future consolidation into `docs/`)
+- `docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`, `docs/VOICE_COMMANDS.md`,
+  `docs/GESTURE_TYPING_MULTILINGUAL.md`, and
+  `docs/GESTURE_TYPING_MULTILINGUAL_RESEARCH.md` — user-facing and research
+  guides consolidated under `docs/` by the 2026-05-17 docs-only repo-hygiene
+  batch
 - `SwiftFloris_icon.png`, `generate_icon.py` — branding assets
 - `hs_err_pid*.log`, `replay_pid*.log` — JVM crash logs from earlier debug
   sessions; **should be deleted** (3+ MB of build noise in repo root)
