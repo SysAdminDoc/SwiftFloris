@@ -109,6 +109,74 @@ sealed class QuickAction {
             }
         }
     }
+
+    /**
+     * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D2 — generic task-creation
+     * quick action, the on-device replacement for SwiftKey's
+     * Microsoft-To-Do toolbar tile.
+     *
+     * SwiftKey's tile is hard-bound to Microsoft accounts; this
+     * action uses the cross-app `Intent.ACTION_SEND` pattern so any
+     * installed task / note app that registers a SEND filter
+     * (Tasks.org, OpenTasks, Google Tasks, Joplin, Notion, Markor,
+     * etc.) surfaces in the share sheet. No new permission is
+     * requested — the user picks the destination per-tap.
+     *
+     * Routes the editor's current selection through `EXTRA_TEXT`;
+     * when the selection is empty, sends a blank text/plain
+     * intent so the user can still type the task title in the
+     * destination app.
+     *
+     * Sensitive-field guard: same predicate the smart-compose /
+     * translation / MCP surfaces use. A password / no-personalised-
+     * learning field never has its contents handed off to another
+     * app, even on an explicit tap — the user can always copy the
+     * non-sensitive part separately.
+     */
+    @Serializable
+    @SerialName("insert_task")
+    data object InsertTask : QuickAction() {
+        override fun onPointerUp(context: Context) {
+            val editorInstance by context.editorInstance()
+            val activeInfo = editorInstance.activeInfo
+            if (dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard.isSensitive(
+                    inputType = activeInfo.inputAttributes.raw,
+                    imeOptions = activeInfo.imeOptions.raw,
+                )
+            ) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Sending tasks from sensitive fields is blocked.",
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+                return
+            }
+            val selection = editorInstance.activeContent.selectedText.toString()
+            val title = selection.ifBlank {
+                editorInstance.activeContent.textBeforeSelection.toString().trim().takeLast(140)
+            }
+            val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(android.content.Intent.EXTRA_TEXT, title)
+                // The IME service isn't an Activity; the chooser must
+                // start a new task. The chooser itself adds the
+                // FLAG_ACTIVITY_NEW_DOCUMENT it needs.
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            val chooser = android.content.Intent.createChooser(sendIntent, "Add to tasks").apply {
+                addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
+            }
+            try {
+                context.startActivity(chooser)
+            } catch (e: android.content.ActivityNotFoundException) {
+                android.widget.Toast.makeText(
+                    context,
+                    "Install a task or note app to use this action.",
+                    android.widget.Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+    }
 }
 
 fun QuickAction.keyData(): KeyData {
@@ -154,6 +222,7 @@ fun QuickAction.computeDisplayName(evaluator: ComputingEvaluator): String {
         })
         is QuickAction.InsertText -> data
         is QuickAction.TranslateSelection -> "Translate"
+        is QuickAction.InsertTask -> "Add task"
     }
 }
 
@@ -195,5 +264,6 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
         })
         is QuickAction.InsertText -> "Insert text '$data'"
         is QuickAction.TranslateSelection -> "Translate the current selection (via InlineTranslator addon)"
+        is QuickAction.InsertTask -> "Send current selection to a task / note app (Tasks.org, OpenTasks, Google Tasks, Joplin, etc.)"
     }
 }
