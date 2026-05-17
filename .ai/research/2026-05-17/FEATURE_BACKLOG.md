@@ -68,7 +68,7 @@ graduate into recommended next-slice work live in
 | **HeliBoard dictionary downloader UI** for user-supplied n-gram packs | HeliBoard's killer ecosystem feature; closest peer pattern |
 | **LeanType-style Offline / Offline Lite onboarding split** without separate base-APK flavors | LeanType proves demand for offline AI keyboard SKUs; SwiftFloris should express the same choice through signed addon onboarding, not `INTERNET` in `:app` |
 | **Hardware-keyboard floating candidate panel** for transliteration engine | fcitx5-android pattern |
-| **Hardware-keyboard runtime mapper** (Next-6.4b: `InputManager` / `KeyEvent.getDeviceId(...)` mapping) | Already in ROADMAP but not in current Now/Next; promote |
+| **Hardware-keyboard runtime mapper** (Next-6.4b: `InputManager` / `KeyEvent.getDeviceId(...)` mapping) | ✅ shipped v1.8.76 with `HardwareKeyboardRuntimeMapper` and `KeyboardManager` dispatch hook |
 | **3×3 thumb-grid alt layout** (Thumb-Key parity) | Optional, niche but useful for foldable / one-handed |
 | **Honeycomb-hex layout wire-up** | `HoneycombHex*` components in tree; geometry wire-up is the open slice |
 | **macOS `.keylayout` (XML) parser** (Next-6.4a) | ✅ shipped v1.8.75 with `MacKeylayoutParser` |

@@ -25,10 +25,9 @@ package dev.patrickgold.florisboard.ime.hardware
  * `KlcLayoutParser` / `MacKeylayoutParser` classes; this data class is
  * the cross-format target representation.
  *
- * Once paired with the Android `InputManager.getInputDeviceIds()` flow
- * (Phase Next-6.4b — pending), the IME will be able to remap physical
- * keystrokes through one of these layouts when a USB / Bluetooth
- * hardware keyboard is attached to the device.
+ * The v1.8.76 runtime mapper pairs these descriptors with Android hardware
+ * device IDs so the IME can remap physical keystrokes from USB / Bluetooth
+ * hardware keyboards through one of these layouts.
  */
 data class HardwareKeyboardLayout(
     /** Display name, e.g. `"US Dvorak"` or `"German (T2)"`. */

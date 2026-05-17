@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.keyboard
 
 import android.content.Context
+import android.hardware.input.InputManager
 import android.icu.lang.UCharacter
 import android.view.KeyEvent
 import android.widget.Toast
@@ -40,6 +41,8 @@ import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.ImeOptions
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
 import dev.patrickgold.florisboard.ime.editor.OperationUnit
+import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayout
+import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardRuntimeMapper
 import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
@@ -95,6 +98,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val extensionManager by context.extensionManager()
     private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
+    private val hardwareKeyboardRuntimeMapper = HardwareKeyboardRuntimeMapper {
+        appContext.systemService(InputManager::class).inputDeviceIds
+    }
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val layoutManager = LayoutManager(context)
@@ -1035,7 +1041,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
+    fun setHardwareKeyboardLayoutForDevice(deviceId: Int, layout: HardwareKeyboardLayout) {
+        hardwareKeyboardRuntimeMapper.setLayoutForDevice(deviceId, layout)
+    }
+
+    fun clearHardwareKeyboardLayoutForDevice(deviceId: Int) {
+        hardwareKeyboardRuntimeMapper.clearLayoutForDevice(deviceId)
+    }
+
     fun onHardwareKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        hardwareKeyboardRuntimeMapper.pruneDetachedLayouts()
+        if (handleMappedHardwareKey(event)) return true
         when (keyCode) {
             KeyEvent.KEYCODE_SPACE -> {
                 handleHardwareKeyboardSpace()
@@ -1051,6 +1067,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
             else -> return false
         }
+    }
+
+    private fun handleMappedHardwareKey(event: KeyEvent?): Boolean {
+        val mapped = hardwareKeyboardRuntimeMapper.map(event) ?: return false
+        if (!UCharacter.isUAlphabetic(mapped.codePoint)) {
+            nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
+        }
+        return editorInstance.commitChar(mapped.text)
     }
 
     fun onHardwareKeyUp(keyCode: Int, event: KeyEvent?): Boolean {

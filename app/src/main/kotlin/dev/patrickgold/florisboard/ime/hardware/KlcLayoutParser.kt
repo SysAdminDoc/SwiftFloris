@@ -38,10 +38,8 @@ package dev.patrickgold.florisboard.ime.hardware
  * dead-key trigger. The parser produces a normalized [HardwareKeyboardLayout]
  * containing only the keys with at least one bound slot.
  *
- * The wiring from this descriptor into Android's [`InputManager`] /
- * `KeyEvent.getDeviceId(...)` routing lands in Next-6.4a; this commit pins
- * the parser so the import path and its tests can ship independently from
- * the runtime mapper.
+ * The v1.8.76 runtime mapper wires this descriptor into Android device-ID
+ * routing; this parser keeps the import path independently testable.
  */
 object KlcLayoutParser {
 
