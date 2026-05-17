@@ -34,7 +34,7 @@ private fun record(
     outcome: AddonInvocationAudit.Outcome,
     reason: String? = null,
     subject: String? = null,
-    timestampMillis: Long = 1_747_401_600_000L,
+    timestampMillis: Long = 1_778_947_200_000L,
 ): AddonInvocationAudit.Record = AddonInvocationAudit.Record(
     sequence = sequence,
     timestampMillis = timestampMillis,
@@ -48,7 +48,7 @@ class AddonAuditExportTest : FunSpec({
 
     test("buildBundle emits the schema version + exported timestamp + counts") {
         val bundle = AddonAuditExport.buildBundle(
-            nowMillis = 1_747_401_600_000L,
+            nowMillis = 1_778_947_200_000L,
             records = emptyList(),
             totalCount = 0L,
         )
@@ -62,7 +62,7 @@ class AddonAuditExportTest : FunSpec({
 
     test("records carry sequence + UTC ISO timestamp + surface + outcome + reason + subject") {
         val bundle = AddonAuditExport.buildBundle(
-            nowMillis = 1_747_401_600_000L,
+            nowMillis = 1_778_947_200_000L,
             records = listOf(
                 record(
                     sequence = 42L,
@@ -88,7 +88,7 @@ class AddonAuditExportTest : FunSpec({
 
     test("ACCEPTED records omit the reason field entirely (not just null)") {
         val bundle = AddonAuditExport.buildBundle(
-            nowMillis = 1_747_401_600_000L,
+            nowMillis = 1_778_947_200_000L,
             records = listOf(
                 record(
                     sequence = 1L,
