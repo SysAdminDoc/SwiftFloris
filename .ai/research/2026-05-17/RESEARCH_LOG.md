@@ -259,6 +259,13 @@ or one-competitor additions, not a new roadmap pillar.
   descriptor rejection, provenance handoff, and language lookup. Focused Gradle
   verification was attempted and stopped at the known VM blocker (`JAVA_HOME` /
   `java` missing).
+- **v1.8.82 / Next-10.3b implementation:** continued the same addon thread by
+  adding the persistable signing-pin layer. `AppPrefs.kt` was inspected for the
+  existing string-backed preference pattern used by MCP disabled tools and sync
+  paired-device JSON. `AddonSigningPinSet` now parses/encodes the
+  `packageName=SHA-256` newline format, `prefs.addon.signingCertPins` is the
+  durable key, and `AddonRegistry` can round-trip through the codec. Focused
+  Gradle verification was attempted and stopped at the known VM blocker.
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local

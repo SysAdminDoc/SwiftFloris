@@ -154,12 +154,18 @@ pinned. If the addon's signing certificate changes between IME launches
 subsequent enumerations. To rotate signing keys an addon author should
 publish a new package-name rather than re-signing under the same name.
 
+As of v1.8.82, the persisted pin format is implemented by
+`AddonSigningPinSet` and stored at `prefs.addon.signingCertPins` as one
+`packageName=SHA-256` entry per line. The raw preference is not meant to be
+user-edited; Settings should expose provenance plus revoke/reset actions once
+the Addons screen lands.
+
 ## 6. Reference implementation
 
 A minimal reference dictionary-pack project will live at
 `addons/dictionary-pack-polish/` in a sibling repo once the Polish
 dataset extraction lands. Until then, the descriptor + manifest layout
 documented here is fully sufficient to build a working pack against the
-current IME (`v1.8.81+`). Validation can be exercised in unit tests via
+current IME (`v1.8.82+`). Validation can be exercised in unit tests via
 `DictionaryPackDescriptor.parse(rawJson)` and `DictionaryPackCatalog.build(...)`
 — see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.

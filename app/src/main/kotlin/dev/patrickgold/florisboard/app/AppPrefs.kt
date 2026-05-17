@@ -649,6 +649,24 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
         )
     }
 
+    val addon = Addon()
+    inner class Addon {
+        /**
+         * ROADMAP §7 Next-10.3b — newline-separated addon signing-certificate
+         * pins. Entries are formatted as `<packageName>=<SHA-256 fingerprint>`
+         * and parsed by [dev.patrickgold.florisboard.ime.addon.AddonSigningPinSet].
+         *
+         * This is intentionally not user-editable text in Settings. The future
+         * Settings → Addons surface can show provenance and reset/revoke pins
+         * through a safer UI, but the raw value exists only so `AddonRegistry`
+         * can persist first-enrolment trust across restarts.
+         */
+        val signingCertPins = string(
+            key = "addon__signing_cert_pins",
+            default = "",
+        )
+    }
+
     val keyboard = Keyboard()
     inner class Keyboard {
         val windowConfig = custom(
