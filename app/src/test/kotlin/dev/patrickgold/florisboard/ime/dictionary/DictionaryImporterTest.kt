@@ -95,11 +95,11 @@ class DictionaryImporterTest : FunSpec({
     }
 
     test("imports quoted CSV fields containing commas and escaped quotes") {
-        val csv = """
-            word,frequency,shortcut,locale
-            "hello, world",200,hw,en
-            "say ""yes""",180,yes,en
-        """.trimIndent()
+        val csv = listOf(
+            "word,frequency,shortcut,locale",
+            "\"hello, world\",200,hw,en",
+            "\"say \"\"yes\"\"\",180,yes,en",
+        ).joinToString("\n")
 
         val result = importer.parseCsv(csv)
 
@@ -224,12 +224,10 @@ class DictionaryImporterTest : FunSpec({
     }
 
     test("parseSwiftKeyJson: bare array of entries") {
-        val json = """
-            [
-              { "word": "omw", "frequency": 240, "locale": "en" },
-              { "word": "tomorrow", "frequency": 180, "locale": "en" }
-            ]
-        """.trimIndent()
+        val json = """[
+            { "word": "omw", "frequency": 240, "locale": "en" },
+            { "word": "tomorrow", "frequency": 180, "locale": "en" }
+        ]"""
 
         val result = importer.parseSwiftKeyJson(json)
 
@@ -248,12 +246,10 @@ class DictionaryImporterTest : FunSpec({
     }
 
     test("parseSwiftKeyJson: clamps out-of-range frequency to [0,255]") {
-        val json = """
-            [
-              { "word": "low", "frequency": -50 },
-              { "word": "high", "frequency": 9999 }
-            ]
-        """.trimIndent()
+        val json = """[
+            { "word": "low", "frequency": -50 },
+            { "word": "high", "frequency": 9999 }
+        ]"""
 
         val result = importer.parseSwiftKeyJson(json)
 
@@ -278,14 +274,12 @@ class DictionaryImporterTest : FunSpec({
     }
 
     test("parseSwiftKeyJson: drops entries with blank or missing word field") {
-        val json = """
-            [
-              { "word": "" },
-              { "word": "   " },
-              { "frequency": 128 },
-              { "word": "valid", "frequency": 200 }
-            ]
-        """.trimIndent()
+        val json = """[
+            { "word": "" },
+            { "word": "   " },
+            { "frequency": 128 },
+            { "word": "valid", "frequency": 200 }
+        ]"""
 
         val result = importer.parseSwiftKeyJson(json)
 

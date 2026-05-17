@@ -26,6 +26,24 @@ Collect output from
 | `dictionaryColdLoad` (SCOWL 117k load) | _pending_ | _pending_ | `swiftfloris.dict.load` + `swiftfloris.nlp.symspell.build`: _pending_ |
 | `themeSwitch` (Snygg stylesheet swap) | _pending_ | _pending_ | `swiftfloris.theme.switch`: _pending_ |
 
+## Glide trace benchmark — pending first corpus run
+
+ROADMAP N1.4 now has the JVM-side replay and reporting pieces:
+`SwipeTraceImporter` loads JSON Array / JSON Lines traces,
+`SwipeTraceReplay.toPointerData(...)` maps normalized samples into
+`GlideTypingGesture.Detector.PointerData`, and
+`SwipeTraceBenchmark.evaluate(...)` computes top-1 / top-3 / top-N
+accuracy, failures, average predictor latency, and capped miss samples.
+
+The remaining evidence step needs the MIT-licensed FUTO swipe corpus
+downloaded outside the repo and a device or host runner that wires the
+records into `StatisticalGlideTypingClassifier`.
+
+| Corpus | Engine | Records | Top-1 | Top-3 | Top-N | Avg latency | Notes |
+|---|---|---:|---:|---:|---:|---:|---|
+| FUTO MIT swipe corpus | `StatisticalGlideTypingClassifier` | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | Requires corpus download + replay runner |
+| FUTO nightly reference model | _external reference_ | _pending_ | _pending_ | _pending_ | _pending_ | _pending_ | Record from published run only; do not ingest FUTO app code |
+
 ## Trace-section naming convention
 
 Every production hot path that we benchmark wraps itself with

@@ -36,14 +36,14 @@ package dev.patrickgold.florisboard.ime.editor
  *
  * ## Globbing
  *
- * The matching follows Android's `ClipDescription.compareMimeTypes` semantics: `image/*` matches every
- * `image/png`, `image/jpeg`, `image/webp`, etc. The pure helper does its own lightweight glob match so the
+ * The matching follows Android's `ClipDescription.compareMimeTypes` semantics: an image wildcard matches every
+ * concrete image type such as PNG, JPEG, and WebP. The pure helper does its own lightweight glob match so the
  * full Android type-resolution chain (which depends on `MimeTypeMap` and `ContentResolver` lookups) is not
  * needed at this layer.
  */
 object EditorContentMimeMatrix {
 
-    /** Common image MIME types in order of preference (PNG → WebP → JPEG → GIF → fallback `image/*`). */
+    /** Common image MIME types in order of preference (PNG → WebP → JPEG → GIF). */
     val PREFERRED_IMAGE_MIMES: List<String> = listOf(
         "image/png",
         "image/webp",
@@ -66,7 +66,7 @@ object EditorContentMimeMatrix {
 
     /**
      * @return true if [editorMimeTypes] declares acceptance for any of [PREFERRED_IMAGE_MIMES] or
-     *  for the broader `image/*` glob.
+     *  for the broader image wildcard glob.
      */
     fun acceptsImages(editorMimeTypes: List<String>): Boolean {
         return PREFERRED_IMAGE_MIMES.any { editorMimeType ->
@@ -92,9 +92,9 @@ object EditorContentMimeMatrix {
     /**
      * @return true if [candidate] matches any entry in [editorMimeTypes] under glob semantics.
      *  - Exact equality matches.
-     *  - `image/*` on the editor side matches any `image/X` candidate.
-     *  - `* /*` on the editor side matches any candidate.
-     *  - The reverse direction (candidate `image/*` against an editor `image/png`) does NOT match here —
+     *  - An image wildcard on the editor side matches any concrete image candidate.
+     *  - A wildcard editor type with any major and any subtype matches any candidate.
+     *  - The reverse direction (candidate image wildcard against an editor PNG type) does NOT match here —
      *    we conservatively interpret the editor side as authoritative.
      */
     fun isAccepted(candidate: String, editorMimeTypes: List<String>): Boolean {
