@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.60 (released 2026-05-17 — Phase B1 of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: multilingual sentence-position priors seed. `ColdStartNextWordPriors` now covers EN/CS/DE/ES/FR/IT/PT sentence starts and short phrase continuations, and `assets/freq/` includes top-1,000 `rspeer/wordfreq` Zipf seed overlays for CS/DE/ES/FR/IT/PT beside the existing English table. **Previous version, v1.8.59** (released 2026-05-17 — Phase D3: typing-stats accuracy-delta number; see `RELEASE_NOTES_v1.8.59.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.61 (released 2026-05-17 — Phase B2 of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: quick-prediction-insert threshold tuning. Blank-current-word spacebar prediction insertion now requires a cold-start, sentence-boundary, or newline trigger plus a configurable weighted-confidence floor; plain-space suppression uses the same ranker decision. **Previous version, v1.8.60** (released 2026-05-17 — Phase B1: multilingual sentence-position priors seed; see `RELEASE_NOTES_v1.8.60.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -163,7 +163,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.60 reality, observed)
+## 2. State of the Repo (v1.8.61 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor · AGP 9.0.0 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Kotest 6.1.11 · KSP · Roborazzi 1.55.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -195,10 +195,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.60, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.61, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.61 | 2026-05-17 | Phase B2 of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: quick-prediction-insert threshold tuning. `SwiftKeyCandidateRanker` now gates blank-current-word prediction insertion behind a configurable weighted-confidence floor (`confidence * recency-weight >= 0.40` by default) and only allows the trigger at cold start, after `.`, `!`, `?`, or after newline. `NlpManager.shouldSuppressPlainSpaceForPrediction()` now delegates to the same ranker path, so rejected predictions no longer swallow a normal space. Property-style coverage sweeps context × confidence × recency. | `RELEASE_NOTES_v1.8.61.md` |
 | v1.8.60 | 2026-05-17 | Phase B1 of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: multilingual sentence-position priors seed. `ColdStartNextWordPriors` now supports localized sentence-start, one-word, two-word, and three-word priors for EN/CS/DE/ES/FR/IT/PT. Added top-1,000 `rspeer/wordfreq` Zipf seed overlays for CS/DE/ES/FR/IT/PT and attribution in `NOTICE`. | `RELEASE_NOTES_v1.8.60.md` |
 | v1.8.59 | 2026-05-17 | Phase D3 of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: typing-stats accuracy-delta number. `CorrectionOutcomePriors` now stores bounded weekly `#week` metadata rows beside the existing accepted/rejected pair priors, and `accuracyDelta()` compares current-week accepted corrections with the previous week. Settings → Typing → Typing stats surfaces "Accepted corrections this week" with no-data, no-baseline, fewer, more, and unchanged summaries. No new permissions, dependencies, or network surfaces. | `RELEASE_NOTES_v1.8.59.md` |
 | v1.8.58 | 2026-05-17 | Phase D2 of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: generic task-creation quick action (`QuickAction.InsertTask`) — on-device replacement for SwiftKey's Microsoft-To-Do tile. Uses `Intent.ACTION_SEND` + `Intent.createChooser` so any installed task / note app (Tasks.org, OpenTasks, Google Tasks, Joplin, etc.) surfaces without hard-coded per-app contracts. `SensitiveFieldGuard` blocks sensitive fields. `FLAG_ACTIVITY_NEW_TASK` set; ActivityNotFoundException falls back to install-helper Toast. Registered in `QuickActionJsonConfig` polymorphic codec. | `RELEASE_NOTES_v1.8.58.md` |
@@ -1209,4 +1210,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.60 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, `androidx-security-crypto`, and the LeanType competitor addition. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose/Roborazzi dependency batches are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.61 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, `androidx-security-crypto`, and the LeanType competitor addition. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, or when AGP/Compose/Roborazzi dependency batches are implemented, whichever comes first.*

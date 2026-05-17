@@ -19,6 +19,10 @@ package dev.patrickgold.florisboard.ime.nlp
 import dev.patrickgold.florisboard.ime.media.emoji.Emoji
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.property.Arb
+import io.kotest.property.arbitrary.element
+import io.kotest.property.arbitrary.int
+import io.kotest.property.checkAll
 
 class SwiftKeyCandidateRankerTest : FunSpec({
     test("rank keeps the typed literal visible before autocorrect candidates") {
@@ -514,6 +518,118 @@ class SwiftKeyCandidateRankerTest : FunSpec({
             candidates = candidates,
             quickPredictionInsert = true,
         )?.text shouldBe "hello"
+    }
+
+    test("quick prediction insert rejects low-confidence blank-context predictions") {
+        val candidates = listOf(
+            candidate("maybe", confidence = 0.39),
+            candidate("the", confidence = 0.39),
+            candidate("this", confidence = 0.39),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = candidates,
+            quickPredictionInsert = true,
+            textBeforeCursor = "",
+        ) shouldBe null
+    }
+
+    test("quick prediction insert allows cold-start and sentence-boundary predictions above the floor") {
+        val contexts = listOf("", "Done. ", "Done! ", "Done? ", "Done\n")
+        val candidates = listOf(
+            candidate("maybe", confidence = 0.41),
+            candidate("the", confidence = 0.41),
+            candidate("this", confidence = 0.41),
+        )
+
+        contexts.forEach { textBeforeCursor ->
+            SwiftKeyCandidateRanker.selectSpacebarCandidate(
+                currentWord = "",
+                candidates = candidates,
+                quickPredictionInsert = true,
+                textBeforeCursor = textBeforeCursor,
+            )?.text shouldBe "the"
+        }
+    }
+
+    test("quick prediction insert lets strong recent context lift a borderline candidate") {
+        val candidates = listOf(
+            candidate("maybe", confidence = 0.30),
+            candidate("brown", confidence = 0.30),
+            candidate("bring", confidence = 0.30),
+        )
+        val signals = mapOf(
+            "brown" to SwiftKeyCandidateSignals(contextProbability = 1.0),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = candidates,
+            quickPredictionInsert = true,
+            textBeforeCursor = "the quick. ",
+            candidateSignals = signals,
+        )?.text shouldBe "brown"
+    }
+
+    test("quick prediction insert honors a raised configurable floor") {
+        val candidates = listOf(
+            candidate("maybe", confidence = 0.45),
+            candidate("target", confidence = 0.45),
+            candidate("this", confidence = 0.45),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = candidates,
+            quickPredictionInsert = true,
+            textBeforeCursor = "",
+            quickPredictionInsertTuning = QuickPredictionInsertTuning(minWeightedConfidence = 0.50),
+        ) shouldBe null
+    }
+
+    test("quick prediction insert follows the weighted floor across context and recency") {
+        checkAll(
+            Arb.element(listOf("", "Done. ", "Done! ", "Done? ", "Done\n", "hello ", "hello, ")),
+            Arb.int(0..100),
+            Arb.int(0..100),
+        ) { textBeforeCursor, confidencePercent, recencyPercent ->
+            val confidence = confidencePercent / 100.0
+            val recency = recencyPercent / 100.0
+            val candidates = listOf(
+                candidate("maybe", confidence = 0.99),
+                candidate("target", confidence = confidence),
+                candidate("this", confidence = 0.99),
+            )
+            val signals = mapOf(
+                "target" to SwiftKeyCandidateSignals(contextProbability = recency),
+            )
+            val result = SwiftKeyCandidateRanker.selectSpacebarCandidate(
+                currentWord = "",
+                candidates = candidates,
+                quickPredictionInsert = true,
+                textBeforeCursor = textBeforeCursor,
+                candidateSignals = signals,
+            )?.text?.toString()
+            val allowedContext = textBeforeCursor in listOf("", "Done. ", "Done! ", "Done? ", "Done\n")
+            val weightedConfidence = confidence * (1.0 + recency * 0.35)
+            result shouldBe if (allowedContext && weightedConfidence >= 0.40) "target" else null
+        }
+    }
+
+    test("quick prediction insert does not suppress a plain space after non-boundary punctuation") {
+        val candidates = listOf(
+            candidate("maybe", confidence = 0.90),
+            candidate("the", confidence = 0.90),
+            candidate("this", confidence = 0.90),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = candidates,
+            quickPredictionInsert = true,
+            textBeforeCursor = "hello, ",
+        ) shouldBe null
     }
 
     test("disabled neural reranker preserves heuristic order") {
