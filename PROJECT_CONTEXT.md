@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.82)
+## 3. Stack at HEAD (v1.8.83)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -142,6 +142,13 @@ pin format with malformed-line tolerance and first-seen preservation,
 `prefs.addon.signingCertPins` is the durable JetPref key, and `AddonRegistry`
 can round-trip through the codec without depending on JetPref directly.
 
+v1.8.83 ships the Next-10.3c addon registry startup wiring.
+`FlorisImeService` scans installed addon manifests on startup through
+`AddonEnumerator`, `AddonRegistryStartup` reconciles that snapshot against the
+persisted signing-pin string, `AddonRegistryStore` publishes the active
+process-wide registry, and canonical pins are written back only when first-seen
+addons or malformed stored lines change the trust set.
+
 ## 4. Module layout
 
 ```
@@ -169,7 +176,7 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.82`
+  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.83`
   are tagged with their release commits. The tags still need to be
   pushed from the maintainer host because this VM cannot push to
   `SysAdminDoc/SwiftFloris`.
