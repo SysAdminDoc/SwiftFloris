@@ -146,6 +146,55 @@ class AndroidMcpClientTest : FunSpec({
         (a == b) shouldBe false
         a.startsWith("mcp-android-") shouldBe true
     }
+
+    // Hardening: a daemon that echoes a different correlation id than the
+    // one the client issued has either reused a stale response or is
+    // actively trying to confuse the IME. Treat the response as untrusted.
+    test("callTool rejects a daemon response with a mismatched correlationId") {
+        val daemon = FakeMcpDaemon { request ->
+            McpToolCallResponse(
+                correlationId = request.correlationId + "-spoofed",
+                toolName = request.toolName,
+                payloadJson = """{"echo":"hi"}""",
+                errorCode = McpErrorCode.OK,
+            )
+        }
+        val client = AndroidMcpClient(binderLookup = { binderReturning(daemon) })
+
+        val response = client.callTool(daemonKey, "tools/echo", """{"in":"hi"}""")
+
+        response.errorCode shouldBe McpErrorCode.TOOL_INTERNAL_ERROR
+        response.errorMessage shouldContain "correlationId mismatch"
+    }
+
+    test("callTool rejects an oversized response from the daemon") {
+        val giant = "x".repeat((McpBridgeContract.MAX_PAYLOAD_BYTES + 1).toInt())
+        val daemon = FakeMcpDaemon { _ -> giant }
+        val client = AndroidMcpClient(binderLookup = { binderReturning(daemon) })
+
+        val response = client.callTool(daemonKey, "tools/echo", "{}")
+
+        response.errorCode shouldBe McpErrorCode.PAYLOAD_TOO_LARGE
+    }
+
+    test("callTool counts payload size in UTF-8 bytes, not char length") {
+        // A 4-byte UTF-8 emoji has length 2 in UTF-16. Exploiting this to
+        // smuggle a payload past the cap was previously possible because
+        // the gate compared char length to byte cap.
+        val singleEmoji = "😀"  // 😀 — 4 UTF-8 bytes, 2 UTF-16 chars
+        val justOverByteCap = singleEmoji.repeat(
+            (McpBridgeContract.MAX_PAYLOAD_BYTES / 4 + 1).toInt(),
+        )
+        // Sanity-check the test fixture: char length must be ≤ cap while
+        // UTF-8 byte length must be > cap so the bug-and-fix demarcation
+        // actually exercises this code path.
+        (justOverByteCap.length.toLong() < McpBridgeContract.MAX_PAYLOAD_BYTES) shouldBe true
+        val client = AndroidMcpClient(binderLookup = { error("must not be called") })
+
+        val response = client.callTool(daemonKey, "tools/echo", justOverByteCap)
+
+        response.errorCode shouldBe McpErrorCode.PAYLOAD_TOO_LARGE
+    }
 })
 
 /**

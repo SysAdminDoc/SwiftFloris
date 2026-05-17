@@ -423,10 +423,13 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onDestroy() {
-        super.onDestroy()
-        // Guard each teardown step independently so a single failure (e.g. unregistering
-        // a receiver that was never registered because onCreate threw before reaching it)
-        // doesn't abort the rest of cleanup and leak references.
+        // Run our cleanup BEFORE super.onDestroy() — the lifecycle scope is
+        // cancelled by super and any callbacks scheduled on it would be
+        // dropped, so we tear down owned resources first while everything
+        // is still wired up. Guard each step independently so a single
+        // failure (e.g. unregistering a receiver that was never registered
+        // because onCreate threw before reaching it) doesn't abort the rest
+        // of cleanup and leak references.
         try {
             mcpLifecycle?.stop()
             mcpLifecycle = null
@@ -450,6 +453,7 @@ class FlorisImeService : LifecycleInputMethodService() {
             wallpaperReceiverRegistered = false
         }
         FlorisImeServiceReference = WeakReference(null)
+        super.onDestroy()
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
