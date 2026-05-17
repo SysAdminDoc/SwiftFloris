@@ -218,6 +218,10 @@ or one-competitor additions, not a new roadmap pillar.
   and their tests, then adding a matching XXE-hardened macOS `.keylayout`
   parser plus focused Kotest coverage. Gradle verification was attempted and
   remains blocked by missing `JAVA_HOME` / `java` on PATH.
+- **v1.8.76 / Tier-2 #28 implementation:** Next-6.4b was implemented by adding
+  `HardwareKeyboardRuntimeMapper`, pure event-info tests for KLC/macOS/source
+  fallbacks, and a `KeyboardManager.onHardwareKeyDown(...)` dispatch hook that
+  checks mapped printable keys before built-in Space / Enter / Shift handling.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

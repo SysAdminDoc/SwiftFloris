@@ -785,3 +785,45 @@ Next-6.4a.
 scan, and a focused Gradle test command were run. Gradle stopped at the known VM
 blocker: `JAVA_HOME` is not set and no `java` command is on PATH, so
 maintainer-host Gradle verification remains required before publishing.
+
+---
+
+## 22. v1.8.76 continuation — hardware-keyboard runtime mapper
+
+The autonomous loop shipped Tier-2 prioritization item #28 as ROADMAP
+Next-6.4b.
+
+**Files added:**
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/HardwareKeyboardRuntimeMapper.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/hardware/HardwareKeyboardRuntimeMapperTest.kt`
+- `RELEASE_NOTES_v1.8.76.md`
+
+**Files updated:**
+
+- `KeyboardManager.kt` → hardware key-down dispatch now checks the runtime
+  mapper before built-in Space / Enter / Shift handling
+- `KlcLayoutParser.kt` → comment corrected so Android runtime mapping points at
+  Next-6.4b
+- `gradle.properties` → `projectVersionCode=1876`,
+  `projectVersionName=1.8.76`
+- `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `FEATURE_BACKLOG.md`, `STATE_OF_REPO.md`, and
+  `RESEARCH_LOG.md` → release/context updates for v1.8.76
+
+**Implementation notes:**
+
+- Runtime bindings are per Android hardware keyboard `deviceId`.
+- `pruneDetachedLayouts()` removes stale bindings based on an
+  `InputManager.getInputDeviceIds()` provider.
+- Mapping order is direct scan code, direct Android key code, PC set-1 scan code
+  fallback for KLC layouts, macOS ANSI virtual-key fallback for `.keylayout`
+  imports, then source virtual-key name fallback.
+- Ctrl / Meta modified events are intentionally ignored so shortcuts such as
+  Ctrl+A stay available to the editor/app.
+
+**Verification note:** `git diff --check`, a manifest banned-network-permission
+scan, and a focused Gradle test command were run. Gradle stopped at the known VM
+blocker: `JAVA_HOME` is not set and no `java` command is on PATH, so
+maintainer-host Gradle verification remains required before publishing.

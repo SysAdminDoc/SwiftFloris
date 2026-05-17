@@ -30,8 +30,8 @@ import org.xml.sax.InputSource
  * one or more `<keyMapSet>` blocks, and a `<modifierMap>` that maps
  * modifier combinations to key-map indexes. This parser normalizes the
  * common ANSI/ISO key-map shape into [HardwareKeyboardLayout], using the
- * macOS virtual key code as the map key until the Android runtime mapper
- * (Next-6.4b) translates attached-device key codes at input time.
+ * macOS virtual key code as the map key; the v1.8.76 runtime mapper translates
+ * attached-device key codes at input time.
  *
  * Like [KeymanLdmlParser], this parser is XXE-hardened because imported
  * layout files cross a user/addon trust boundary.

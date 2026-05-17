@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.75-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.76-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.75 | Privacy posture |
+| Area | What's in v1.8.76 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -267,6 +267,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.76** (2026-05-17) — Hardware-keyboard runtime mapping: imported layouts can bind to Android hardware `deviceId` values, resolve `KeyEvent` scan/key codes through KLC/macOS fallbacks, and commit mapped printable characters through `KeyboardManager`. ([notes](RELEASE_NOTES_v1.8.76.md))
 - **v1.8.75** (2026-05-17) — Hardware-keyboard import: added an XXE-hardened macOS `.keylayout` XML parser that normalizes key maps, modifier maps, and action-backed dead keys into `HardwareKeyboardLayout`. ([notes](RELEASE_NOTES_v1.8.75.md))
 - **v1.8.74** (2026-05-17) — Bump-batch C: Android Gradle Plugin `9.0.0` → `9.2.1` and Compose BOM `2026.03.01` → `2026.05.00`; R8 keepattributes audit required no rule changes. ([notes](RELEASE_NOTES_v1.8.74.md))
 - **v1.8.73** (2026-05-17) — Repo hygiene: local root JVM crash/replay logs moved to `.ai/local-crash-logs/2026-05-16/`, and CI now rejects committed root `hs_err_pid*.log` / `replay_pid*.log` files. ([notes](RELEASE_NOTES_v1.8.73.md))
@@ -379,7 +380,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.75** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
+🚀 **Active development.** Current release: **v1.8.76** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
 
 ---
 
