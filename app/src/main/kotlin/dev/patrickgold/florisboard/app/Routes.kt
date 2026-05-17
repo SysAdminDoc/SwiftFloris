@@ -54,6 +54,7 @@ import dev.patrickgold.florisboard.app.settings.about.AboutScreen
 import dev.patrickgold.florisboard.app.settings.about.AiFeaturesScreen
 import dev.patrickgold.florisboard.app.settings.about.ProjectLicenseScreen
 import dev.patrickgold.florisboard.app.settings.about.ThirdPartyLicensesScreen
+import dev.patrickgold.florisboard.app.settings.addons.AddonsSettingsScreen
 import dev.patrickgold.florisboard.app.settings.advanced.BackupScreen
 import dev.patrickgold.florisboard.app.settings.advanced.OtherScreen
 import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardScreen
@@ -172,6 +173,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/mcp")
         object Mcp
+
+        @Serializable
+        @Deeplink("settings/addons")
+        object Addons
 
         @Serializable
         @Deeplink("settings/dictionary/user-dictionary")
@@ -332,6 +337,7 @@ object Routes {
             composableWithDeepLink(Settings.Dictionary::class) { DictionaryScreen() }
             composableWithDeepLink(Settings.Sync::class) { SyncSettingsScreen() }
             composableWithDeepLink(Settings.Mcp::class) { McpSettingsScreen() }
+            composableWithDeepLink(Settings.Addons::class) { AddonsSettingsScreen() }
             composableWithDeepLink(Settings.UserDictionary::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.UserDictionary>()
                 UserDictionaryScreen(payload.type)

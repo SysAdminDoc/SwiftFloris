@@ -75,7 +75,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 35 | ✅ **Shipped v1.8.79:** Honeycomb-hex layout wire-up | 3 | 4 | 1 | **1.75** | Bundled `honeycomb` layout now selectable; production `TextKeyboardLayout` clips Snygg keys to `HoneycombHexShape`; `TextKeyboard` uses hex geometry and hex-aware hit testing |
 | 36 | ✅ **Shipped v1.8.80:** OpenSSL/BoringSSL SQLCipher provider migration plan | 3 | 3 | 1 | **2.33** | `docs/SQLCIPHER_PROVIDER_MIGRATION.md` now records the corrected provider state, OpenSSL proof-of-concept path, triggers, 16 KB gates, and rollback rules |
 | 37 | **Self-hosted ACRA opt-in endpoint** | 2 | 3 | 1 | **1.67** | §9 Under Consideration; demand-gated |
-| 38 | **Partially shipped v1.8.81-v1.8.83:** HeliBoard dictionary downloader UI pattern | 4 | 3 | 1 | **3.0** | Strategic; Next-10.3a addon catalog foundation landed (`AddonRegistry` + `DictionaryPackCatalog`), v1.8.82 adds persisted signing pins, and v1.8.83 wires IME-startup scan/reconcile/publish; Settings UI / install-hint list and asset mounting remain |
+| 38 | **Partially shipped v1.8.81-v1.8.84:** HeliBoard dictionary downloader UI pattern | 4 | 3 | 1 | **3.0** | Strategic; Next-10.3a addon catalog foundation landed (`AddonRegistry` + `DictionaryPackCatalog`), v1.8.82 adds persisted signing pins, v1.8.83 wires IME-startup scan/reconcile/publish, and v1.8.84 adds Settings status/rescan UI; signing-pin revoke/reset UX and asset mounting remain |
 
 ## Tier 4 — Track but don't commit (score < 2.0)
 
@@ -154,7 +154,12 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 - Next-10.3c shipped in v1.8.83 as the startup reconciliation slice:
   `FlorisImeService` runs `AddonEnumerator`, `AddonRegistryStartup` reconciles
   through persisted pins, and `AddonRegistryStore` publishes the process-live
-  registry. The remaining gap is Settings UI/install hints and asset mounting.
+  registry. Settings status/rescan UI shipped immediately after in v1.8.84.
+- Next-10.3d shipped in v1.8.84 as the read-only Settings status slice:
+  `Routes.Settings.Addons`, Home entry, accepted/rejected rows, pinned-count
+  status, install guidance, and manual rescan through `AddonRegistryStartup`.
+  The remaining gap is destructive signing-pin revoke/reset UX plus dictionary
+  asset mounting.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

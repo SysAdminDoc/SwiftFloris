@@ -143,6 +143,9 @@ process-live addon state, keep first-seen signing certificate pins, reject
 changed-certificate package hijacks, publish `AddonRegistryStore`, and clean
 malformed stored pin lines; `DictionaryPackCatalog` then validates the
 descriptor JSON and produces provenance rows for Settings.
+As of v1.8.84, Settings → Addons can display the accepted/rejected snapshot and
+manually rescan installed addon APKs through the same startup reconciliation
+path. Asset mounting still waits for the next loader slice.
 The next loader slice mounts the addon's `assets/` via the standard
 [`PackageManager#getResourcesForApplication`](https://developer.android.com/reference/android/content/pm/PackageManager#getResourcesForApplication(java.lang.String))
 + `AssetManager` flow — no extraction, no temp-file copy, no permission
@@ -159,10 +162,10 @@ publish a new package-name rather than re-signing under the same name.
 As of v1.8.82, the persisted pin format is implemented by
 `AddonSigningPinSet` and stored at `prefs.addon.signingCertPins` as one
 `packageName=SHA-256` entry per line. The raw preference is not meant to be
-user-edited; Settings should expose provenance plus revoke/reset actions once
-the Addons screen lands. As of v1.8.83, startup writes back the canonical pin
-string only when first-seen addons or malformed stored lines change the trust
-set.
+user-edited; Settings → Addons exposes read-only provenance/status in v1.8.84,
+and revoke/reset actions remain a later slice. As of v1.8.83, startup writes
+back the canonical pin string only when first-seen addons or malformed stored
+lines change the trust set.
 
 ## 6. Reference implementation
 
@@ -170,6 +173,6 @@ A minimal reference dictionary-pack project will live at
 `addons/dictionary-pack-polish/` in a sibling repo once the Polish
 dataset extraction lands. Until then, the descriptor + manifest layout
 documented here is fully sufficient to build a working pack against the
-current IME (`v1.8.83+`). Validation can be exercised in unit tests via
+current IME (`v1.8.84+`). Validation can be exercised in unit tests via
 `DictionaryPackDescriptor.parse(rawJson)` and `DictionaryPackCatalog.build(...)`
 — see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.

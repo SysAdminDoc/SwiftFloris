@@ -273,6 +273,13 @@ or one-competitor additions, not a new roadmap pillar.
   publishes the live registry, and malformed stored pin lines are cleaned when
   startup persists the canonical pin string. Focused Gradle verification was
   attempted and stopped at the known VM blocker.
+- **v1.8.84 / Next-10.3d implementation:** added the read-only Settings →
+  Addons surface. The Home screen now links to `Routes.Settings.Addons`;
+  `AddonsSettingsScreen` reads `AddonRegistryStore`, observes
+  `prefs.addon.signingCertPins`, lists accepted/rejected addons, shows install
+  guidance, and manually rescans through `AddonEnumerator` +
+  `AddonRegistryStartup`. Focused Gradle verification was attempted and stopped
+  at the known VM blocker.
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local

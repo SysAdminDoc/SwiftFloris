@@ -5,7 +5,7 @@
 **Branch:** `master`, ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.83. The notable dependency deltas are
+HEAD to v1.8.84. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
 `com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
 Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
@@ -30,8 +30,9 @@ SQLCipher provider migration readiness plan without changing the runtime AAR,
 and v1.8.81 adds the addon catalog foundation (`AddonRegistry` live state plus
 `DictionaryPackCatalog` descriptor/provenance validation). v1.8.82 adds the
 persisted addon signing-pin foundation (`AddonSigningPinSet` plus
-`prefs.addon.signingCertPins`), and v1.8.83 wires IME startup scan/reconcile/
-publish through that persisted trust store.
+`prefs.addon.signingCertPins`), v1.8.83 wires IME startup scan/reconcile/
+publish through that persisted trust store, and v1.8.84 adds the Settings →
+Addons read-only status/rescan surface.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -62,7 +63,7 @@ Operative invariants (load-bearing — touched by build gates):
 
 | Item | Pinned value | Source |
 |---|---|---|
-| versionName / versionCode | 1.8.83 / 1883 | [gradle.properties](../../../gradle.properties#L18-L19) |
+| versionName / versionCode | 1.8.84 / 1884 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.2.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
 | KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
@@ -103,7 +104,8 @@ folder shipped in v1.8.77; Keyman `.kmp` package metadata intake and LDML-in-pac
 extraction shipped in v1.8.78; the honeycomb hex layout production wire-up
 shipped in v1.8.79; the SQLCipher provider migration readiness plan shipped
 in v1.8.80; the addon catalog foundation shipped in v1.8.81; persisted addon
-signing pins shipped in v1.8.82; startup reconciliation shipped in v1.8.83.
+signing pins shipped in v1.8.82; startup reconciliation shipped in v1.8.83;
+Settings → Addons status/rescan UI shipped in v1.8.84.
 
 A docs-only contributor-onboarding batch followed v1.8.77: root
 `ARCHITECTURE.md` now captures the module/runtime/package map and root
@@ -158,6 +160,12 @@ reconciles discovered manifests against the persisted signing pins,
 `AddonRegistryStore` publishes the active process-wide registry, and startup
 writes back canonical pins only when first-seen addons or malformed stored lines
 change the trust set.
+
+v1.8.84 then implemented the Next-10.3d Settings status slice:
+`Routes.Settings.Addons` and the Home screen expose `AddonsSettingsScreen`,
+which shows accepted/rejected/pinned counts, accepted addon package/type/version/
+license/size/signing-fingerprint details, rejected addon reasons, install
+guidance, and a manual rescan action that reuses `AddonRegistryStartup`.
 
 ## 3. Module layout
 
@@ -285,8 +293,8 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 99 tags in repo after the v1.8.83 release tag; local release tags now run
-  through `v1.8.83`. Push remains a maintainer-host task because this VM
+- 100 tags in repo after the v1.8.84 release tag; local release tags now run
+  through `v1.8.84`. Push remains a maintainer-host task because this VM
   cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
@@ -363,8 +371,8 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.83).
-  The local tag stream was recovered through `v1.8.83`; future release notes
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.84).
+  The local tag stream was recovered through `v1.8.84`; future release notes
   commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +

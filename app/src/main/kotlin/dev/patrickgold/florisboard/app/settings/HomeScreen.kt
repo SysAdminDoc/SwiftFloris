@@ -180,6 +180,12 @@ fun HomeScreen() = FlorisScreen {
                 onClick = { navController.navigate(Routes.Settings.Mcp) },
             )
             Preference(
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.settings__addons__title),
+                summary = stringRes(R.string.settings__home__addons_summary),
+                onClick = { navController.navigate(Routes.Settings.Addons) },
+            )
+            Preference(
                 icon = Icons.Default.Archive,
                 title = stringRes(R.string.backup_and_restore__back_up__title),
                 summary = stringRes(R.string.settings__home__backup_summary),

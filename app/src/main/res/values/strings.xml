@@ -179,6 +179,7 @@
     <string name="settings__home__extensions_summary" comment="Home screen preference summary">Manage keyboard, theme, and language extensions</string>
     <string name="settings__home__sync_summary" comment="Home screen preference summary">Pair devices and choose a local sync folder or manual export flow</string>
     <string name="settings__home__mcp_summary" comment="Home screen preference summary">On-device bridge to local MCP tool servers — never opens a network connection</string>
+    <string name="settings__home__addons_summary" comment="Home screen preference summary">Installed dictionary, language, theme, layout, and popup-mapping addon APKs</string>
     <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
     <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
     <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
@@ -1705,5 +1706,23 @@
     <string name="settings__mcp__status_bound_summary" comment="MCP status row summary when daemons are bound; {count} = number">Currently bound to {count} daemon(s). The bridge is local-only and never opens a network connection.</string>
     <string name="settings__mcp__daemon_protocol" comment="MCP daemon row protocol-version fragment; {version} = integer">Protocol v{version}</string>
     <string name="settings__mcp__daemon_tools_count" comment="MCP daemon row tools-count fragment; {count} = integer">{count} tool(s)</string>
+    <string name="settings__addons__title" comment="Title of the Addons settings screen">Addons</string>
+    <string name="settings__addons__group_status" comment="Addons settings group title">Status</string>
+    <string name="settings__addons__group_installed" comment="Addons settings group title">Installed addons</string>
+    <string name="settings__addons__group_rejected" comment="Addons settings group title">Rejected addons</string>
+    <string name="settings__addons__group_install" comment="Addons settings group title">Install guidance</string>
+    <string name="settings__addons__status_title" comment="Addons status row title">Addon registry</string>
+    <string name="settings__addons__status_summary" comment="Addons status row summary; {accepted}, {rejected}, {pinned} = numbers">Accepted: {accepted} · Rejected: {rejected} · Pinned certificates: {pinned}</string>
+    <string name="settings__addons__rescan" comment="Addons settings action title">Rescan installed addons</string>
+    <string name="settings__addons__rescan_running" comment="Addons settings action title while scan is running">Scanning installed addons…</string>
+    <string name="settings__addons__rescan_summary" comment="Addons settings action summary">Runs the same no-network and signing-certificate checks used by IME startup.</string>
+    <string name="settings__addons__rescan_failed" comment="Addons settings error row title">Addon scan failed</string>
+    <string name="settings__addons__none_installed" comment="Addons settings empty-state title">No addon APKs accepted</string>
+    <string name="settings__addons__none_installed_summary" comment="Addons settings empty-state summary">Install a sibling addon APK that declares the SwiftFloris addon metadata, then rescan or restart the IME service.</string>
+    <string name="settings__addons__installed_summary" comment="Installed addon row summary; {type}, {version}, {license}, {size} = values">Type: {type} · Version: {version} · License: {license} · Size: {size}</string>
+    <string name="settings__addons__fingerprint_summary" comment="Installed addon row fingerprint fragment; {fingerprint} = SHA-256 certificate fingerprint">Signing SHA-256: {fingerprint}</string>
+    <string name="settings__addons__rejected_summary" comment="Rejected addon row summary; {package} = package name, {reason} = rejection reason">Package: {package}\nReason: {reason}</string>
+    <string name="settings__addons__install_title" comment="Addons install guidance row title">Install trusted local addons only</string>
+    <string name="settings__addons__install_summary" comment="Addons install guidance row summary">SwiftFloris accepts addon APKs only when they declare supported metadata, avoid all network permissions, and keep their first-seen signing certificate. Dictionary asset mounting and revoke/reset controls land in the next slices.</string>
 
 </resources>
