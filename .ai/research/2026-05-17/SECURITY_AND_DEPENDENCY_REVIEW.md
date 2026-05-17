@@ -6,8 +6,9 @@ pinned version** in `gradle/libs.versions.toml` and `gradle/tools.versions.toml`
 against the latest stable as of 2026-05-17, plus license-compatibility,
 CVE, and policy-cutoff items.
 
-Source data: dep-research Agent run on 2026-05-17 (see
-[SOURCE_REGISTER.md §2.7-2.8](SOURCE_REGISTER.md)).
+Source data: dep-research Agent run on 2026-05-17, corrected by the
+same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
+(see [SOURCE_REGISTER.md §2.7-2.8](SOURCE_REGISTER.md)).
 
 ---
 
@@ -15,10 +16,10 @@ Source data: dep-research Agent run on 2026-05-17 (see
 
 | Pin | Current pin | Latest stable (2026-05-17) | Delta | Action |
 |---|---|---|---|---|
-| **AGP** | 9.0.0 | **9.1.1** | Behind one minor | Bump after Roborazzi 1.59.0 + R8 rules audit |
+| **AGP** | 9.0.0 | **9.2.x / 9.2.1 metadata** | Behind one minor+ | Bump after Roborazzi 1.60.0 + R8 rules audit |
 | **Kotlin** | 2.3.21 | 2.3.21 (2.4.0-RC out) | Current | Keep |
-| KSP | 2.3.5 | **2.3.7** | Behind 2 patches | Bump alongside Kotlin |
-| **androidx-activity** | **1.13.0 (RC)** | 1.12.4 stable; 1.13.0-rc01 | **Pinning an RC** | **Downgrade to 1.12.4** or wait for 1.13.0 GA |
+| KSP | 2.3.5 | **2.3.8** | Behind 3 patches | Bump alongside Kotlin |
+| **androidx-activity** | **1.13.0** | **1.13.0 stable** | Current | Keep |
 | **compose-bom** | 2026.03.01 | **2026.05.00** | Behind one BOM | Bump (no regressions reported) |
 | androidx-core | 1.18.0 | 1.18.0 | Current | Keep |
 | androidx-emoji2 | 1.6.0 | 1.6.0 | Current | Keep (Emoji 17 still gated on 1.7) |
@@ -35,22 +36,24 @@ Source data: dep-research Agent run on 2026-05-17 (see
 | jetpref | 0.3.0 | 0.3.x | Current | Keep |
 | sqlcipher-android | 4.16.0 | 4.16.0 (released 2026-05-12) | Current | Keep — plan LibTomCrypt deprecation (§3) |
 | **zxing-core** | 3.5.3 | **3.5.4** | Behind one patch | Bump (small hardening) |
-| **roborazzi** | 1.55.0 | **1.59.0** | Materially behind | Bump (required before AGP 9.1) |
+| **roborazzi** | 1.55.0 | **1.60.0** | Materially behind | Bump (required before AGP 9.2) |
 | **robolectric** | 4.14.1 | **4.16.1** | Materially behind | Bump (SDK 36 + JDK 21 fidelity) |
 | kotest | 6.1.11 | 6.1.11 | Current | Keep |
 | androidx-benchmark | 1.4.1 | 1.4.1 | Current | Keep |
-| **androidx-security-crypto** | **1.1.0-alpha06** | **None (deprecated)** | **Dead-end artifact** | **Migrate** (§2) |
+| **androidx-security-crypto** | **1.1.0-alpha06** | **1.1.0 stable, APIs deprecated** | **Deprecated API surface** | **Migrate** (§2) |
 | Build Tools | 36.0.0 | 36.0.0 | Current | Keep |
 | NDK | 29.0.14206865 | 29.x | Current | Keep — 16 KB alignment automatic since AGP 8.5.1 + NDK r28 |
 | JDK | 17 | 17 (21 LTS available) | Current | Keep until Compose tooling forces 21 |
 | Gradle wrapper | 9.4.1 | 9.4.x | Current | Keep |
 
-## 2. Critical issue: `androidx-security-crypto:1.1.0-alpha06` is a dead-end
+## 2. Critical issue: `androidx-security-crypto:1.1.0-alpha06` is deprecated API surface
 
-Status: **no stable 1.1.0 will ever ship.** Google deprecated the entire
-`androidx.security:security-crypto` artifact at `1.1.0-alpha07` (April 2025)
-and directed devs to platform Keystore + DataStore + Tink.
-EncryptedSharedPreferences has unresolved key-rotation issues.
+Fifth-pass verification corrected the first-pass wording: stable
+`androidx.security:security-crypto:1.1.0` exists. The material issue is
+that AndroidX release notes deprecate the APIs in favor of platform APIs
+and direct Android Keystore use, while SwiftFloris is still pinned to
+older `1.1.0-alpha06`. `EncryptedSharedPreferences` also carries
+key-rotation concerns for this use case.
 
 SwiftFloris uses this library in [app/build.gradle.kts](../../../app/build.gradle.kts#L299)
 inline: `implementation("androidx.security:security-crypto:1.1.0-alpha06")`.
@@ -62,7 +65,8 @@ The library is used to protect the SQLCipher passphrase via
 ### Recommended migration (one-shot, single PR)
 
 1. Replace `androidx-security-crypto` with **Google Tink**
-   (`com.google.crypto.tink:tink-android`, Apache-2.0, currently 1.18+).
+   (`com.google.crypto.tink:tink-android`, Apache-2.0; target 1.21.0 as
+   of the fifth pass).
    Use `Aead` (single-key) to wrap the SQLCipher passphrase; persist the
    wrapped passphrase in plain `SharedPreferences`; protect the wrapping
    key via `AndroidKeystoreV1` KMS client (built into Tink).
@@ -215,17 +219,16 @@ No action required; cited for context.
 ### Bump-batch A (low risk, ship soon)
 
 1. **kotlinx-coroutines** 1.10.2 → **1.11.0**
-2. **KSP** 2.3.5 → **2.3.7**
+2. **KSP** 2.3.5 → **2.3.8**
 3. **zxing-core** 3.5.3 → **3.5.4**
 4. **aboutlibraries** 14.0.1 → **14.2.0**
-5. **androidx-activity** 1.13.0 → **1.12.4** (downgrade off the RC)
 
 **Acceptance criteria:** `:app:testDebugUnitTest`, `:app:lintDebug`,
 `:app:assembleDebug` green; 16KB alignment check still passes.
 
 ### Bump-batch B (visual-regression infrastructure)
 
-1. **roborazzi** 1.55.0 → **1.59.0**
+1. **roborazzi** 1.55.0 → **1.60.0**
 2. **robolectric** 4.14.1 → **4.16.1**
 
 **Acceptance criteria:** existing Roborazzi snapshot tests still pass;
@@ -233,12 +236,12 @@ No action required; cited for context.
 
 ### Bump-batch C (build toolchain)
 
-1. **AGP** 9.0.0 → **9.1.1**
+1. **AGP** 9.0.0 → **9.2.x** (9.2.1 in Google Maven metadata)
 2. **Compose BOM** 2026.03.01 → **2026.05.00**
 
 **Acceptance criteria:** Bump-batch B must land first. ProGuard /
-`proguard-rules.pro` audit for R8 `-repackageclasses` default change in
-AGP 9.1.
+`proguard-rules.pro` audit for R8 keep-attributes / annotation stripping
+behavior before the AGP 9.2 merge.
 
 ### Bump-batch D (security migration)
 
@@ -253,6 +256,6 @@ existing v1.8.55 installs upgrade cleanly.
 
 - **Reproducible-build verification job** in CI (build twice, compare).
 - **Local EU AI Act transparency surface** (see §7).
-- **R8 rules audit** before AGP 9.1.1 bump.
+- **R8 rules audit** before AGP 9.2.x bump.
 - **OpenSSL/BoringSSL SQLCipher provider plan** (see §3).
 - **Local lint baseline refresh** (count is from 2026-05-05; drifted).

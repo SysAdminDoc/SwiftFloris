@@ -12,7 +12,7 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
-| [README.md](../../../README.md) | v1.8.52 baseline; feature highlights; permissions; multilingual; MCP; Tasker; perf; tests |
+| [README.md](../../../README.md) | Initial v1.8.52 baseline plus later v1.8.58 catch-up; feature highlights; permissions; multilingual; MCP; Tasker; perf; tests |
 | [ROADMAP.md](../../../ROADMAP.md) | §0 SwiftKey tracker, §1 philosophy, §2 state-of-repo, §3 shipped log, §4 thesis, §5 tier system, §6 NOW (N1-N17), §7 NEXT (Next-1 to Next-12), §8 LATER (L1-L12), §9 Under Consideration, §10 Rejected, §10.5 External-Work Backlog, §11 Cross-Cutting Concerns, §12 Cadence, §13 Adjacent Wins, §14 Risk Register, §15 Definition of Done, §16 Glossary, Appendix |
 | [SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](../../../SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) | Phase A/B/C/D/E plan, gap matrix P1-P26, cross-refs back to ROADMAP §6/§7/§8 |
 | [IMPROVEMENT_PLAN.md](../../../IMPROVEMENT_PLAN.md) | 15 workstreams (test, lint, pure-core extraction, input hardening, trust states, a11y, perf, CI, repo hygiene, UX polish, keyboard polish, l10n, privacy/data integrity, build/dep hygiene, manual QA) |
@@ -26,7 +26,8 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
-| [RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md) | HEAD release — Phase B3 shared-spelling bilingual handling |
+| [RELEASE_NOTES_v1.8.58.md](../../../RELEASE_NOTES_v1.8.58.md) | Current HEAD release metadata — Phase D2 task-creation quick action |
+| [RELEASE_NOTES_v1.8.55.md](../../../RELEASE_NOTES_v1.8.55.md) | Initial-pass HEAD release — Phase B3 shared-spelling bilingual handling |
 | [RELEASE_NOTES_v1.8.54.md](../../../RELEASE_NOTES_v1.8.54.md) | Phase A3 codec primitive (AES-256-GCM + PBKDF2-HMAC-SHA-256) |
 | [RELEASE_NOTES_v1.8.53.md](../../../RELEASE_NOTES_v1.8.53.md) | Phase A2 post-import confirmation + rollback |
 | [RELEASE_NOTES_v1.8.52.md](../../../RELEASE_NOTES_v1.8.52.md) | Phase A1 migration outreach + README badge |
@@ -161,15 +162,15 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 ### 2.7 Compose / Jetpack / Kotlin
 
-- https://developer.android.com/jetpack/androidx/releases/activity — activity 1.12.4 stable, 1.13.0-rc01
-- https://developer.android.com/jetpack/androidx/releases/security — security-crypto deprecated at 1.1.0-alpha07
+- https://developer.android.com/jetpack/androidx/releases/activity — fifth-pass correction: Activity 1.13.0 is stable
+- https://developer.android.com/jetpack/androidx/releases/security — security-crypto 1.1.0 exists, but APIs are deprecated
 - https://developer.android.com/jetpack/androidx/releases/navigation3 — navigation3 1.1.0
 - https://mvnrepository.com/artifact/androidx.compose/compose-bom/versions — BOM versions
 - https://github.com/JetBrains/kotlin/releases/tag/v2.3.21 — Kotlin 2.3.21
 - https://kotlinlang.org/docs/whatsnew-eap.html — Kotlin 2.4 EAP
-- https://github.com/google/ksp/releases — KSP 2.3.7
+- https://github.com/google/ksp/releases — KSP 2.3.x line (fifth-pass Maven metadata target: 2.3.8)
 - https://github.com/Kotlin/kotlinx.coroutines/releases — coroutines 1.11.0
-- https://github.com/takahirom/roborazzi/releases — Roborazzi 1.59.0
+- https://github.com/takahirom/roborazzi/releases — Roborazzi line (fifth-pass Maven metadata target: 1.60.0)
 - https://github.com/robolectric/robolectric/releases — Robolectric 4.16.1
 - https://github.com/mikepenz/AboutLibraries/releases — aboutlibraries 14.2.0
 - https://github.com/zxing/zxing/releases — zxing-core 3.5.4
@@ -182,6 +183,20 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - https://github.com/ed-george/encrypted-shared-preferences — maintained fork
 - https://proandroiddev.com/goodbye-encryptedsharedpreferences-a-2026-migration-guide-4b819b4a537a — migration guide
 - https://github.com/tink-crypto/tink-java — Tink
+
+### 2.8a Fifth-pass dependency metadata corrections
+
+- https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml — AGP metadata target 9.2.1 / 9.2.x line
+- https://developer.android.com/build/releases/gradle-plugin — Android Gradle Plugin release notes
+- https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml — Compose BOM 2026.05.00
+- https://dl.google.com/dl/android/maven2/androidx/activity/activity-compose/maven-metadata.xml — Activity release 1.13.0
+- https://dl.google.com/dl/android/maven2/androidx/security/security-crypto/maven-metadata.xml — Security Crypto stable 1.1.0 exists
+- https://repo.maven.apache.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml — KSP 2.3.8
+- https://repo.maven.apache.org/maven2/io/github/takahirom/roborazzi/roborazzi/maven-metadata.xml — Roborazzi 1.60.0
+- https://repo.maven.apache.org/maven2/org/robolectric/robolectric/maven-metadata.xml — Robolectric 4.16.1
+- https://repo.maven.apache.org/maven2/com/google/crypto/tink/tink-android/maven-metadata.xml — Tink Android 1.21.0
+- https://github.com/LeanBitLab/LeanType — LeanType active HeliBoard fork
+- https://github.com/LeanBitLab/LeanType/releases/tag/v3.7.9 — LeanType v3.7.9 release
 
 ### 2.9 On-device LLM / LiteRT-LM / Gemma
 

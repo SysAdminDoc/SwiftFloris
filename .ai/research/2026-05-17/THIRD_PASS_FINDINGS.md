@@ -11,6 +11,12 @@ The third pass made **zero code changes**. It surfaced **3 new stale-data
 items** (README theme count, ROADMAP test count, git tag stream lag)
 that the maintainer can correct on the next release.
 
+**Later-pass note:** the fourth pass corrected the README catch-up items
+through v1.8.58. The fifth pass updates the open tag-lag count to
+v1.8.41-v1.8.58 (18 missing tags). Treat the older tag/readme counts
+below as historical evidence from the third-pass snapshot, not current
+open recommendations.
+
 ---
 
 ## 1. In-tree asset audit (closes SECOND_PASS_FINDINGS §10 line 2)

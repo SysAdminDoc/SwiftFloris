@@ -59,15 +59,16 @@ If KenLM-in-addon proves heavy, the Apache-2.0 alternative is
 **SentencePiece** (`google/sentencepiece`), which the project could adopt
 in-`:app`. Cited in [.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md §4](.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md#4-license-compatibility-verification).
 
-### A.2 `androidx-security-crypto:1.1.0-alpha06` is a dead-end artifact
+### A.2 `androidx-security-crypto:1.1.0-alpha06` is a deprecated-API artifact
 
 **Where:** [app/build.gradle.kts](app/build.gradle.kts#L299) inline pin.
 
-**Issue:** Google deprecated `androidx.security:security-crypto` at
-`1.1.0-alpha07` (April 2025). No stable will ship.
-`EncryptedSharedPreferences` has unresolved key-rotation issues. The
-library is used by SwiftFloris to protect the SQLCipher passphrase
-(per ROADMAP §6 N7.4 + `PersonalDictionaryEncryptionTest`).
+**Issue:** fifth-pass verification corrected the earlier wording:
+`androidx.security:security-crypto:1.1.0` did ship, but the AndroidX
+release notes deprecate the APIs in favor of platform APIs and direct
+Android Keystore use. SwiftFloris is still pinned to older
+`1.1.0-alpha06`; `EncryptedSharedPreferences` remains the wrong long-term
+primitive for SQLCipher-passphrase wrapping.
 
 **Resolution:** add a new ROADMAP item:
 
@@ -83,16 +84,17 @@ library is used by SwiftFloris to protect the SQLCipher passphrase
 This is captured as Tier-1 #3 in
 [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md).
 
-### A.3 `androidx-activity 1.13.0` is the RC, not stable
+### A.3 `androidx-activity 1.13.0` is stable — downgrade retired
 
 **Where:** [gradle/libs.versions.toml](gradle/libs.versions.toml#L4)
 `androidx-activity = "1.13.0"`.
 
-**Issue:** 1.13.0 is `1.13.0-rc01`. Current **stable** is **1.12.4**
-(released 2026-02-11). Pinning an RC in `:app` is risky.
+**Correction:** fifth-pass verification against AndroidX release notes
+and Google Maven metadata shows `1.13.0` is the stable release. The
+first-pass recommendation to downgrade to `1.12.4` is wrong.
 
-**Resolution:** downgrade to 1.12.4 (or wait for 1.13.0 GA). Captured
-in Bump-batch A in [SECURITY_AND_DEPENDENCY_REVIEW.md §9](.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md#9-recommended-dependency-bumps-pr-sized-batches).
+**Resolution:** keep `androidx-activity = "1.13.0"` unless tests reveal a
+SwiftFloris-specific regression. Bump-batch A no longer includes Activity.
 
 ### A.4 Multiple deps materially behind
 
@@ -102,11 +104,11 @@ in Bump-batch A in [SECURITY_AND_DEPENDENCY_REVIEW.md §9](.ai/research/2026-05-
 
 | Pin | Current | Latest | Action |
 |---|---|---|---|
-| AGP | 9.0.0 | 9.1.1 | bump after dep + Roborazzi bumps |
+| AGP | 9.0.0 | 9.2.x / 9.2.1 metadata | bump after dep + Roborazzi bumps and R8 audit |
 | Compose BOM | 2026.03.01 | 2026.05.00 | bump alongside AGP |
 | kotlinx-coroutines | 1.10.2 | 1.11.0 | bump alongside Kotlin |
-| KSP | 2.3.5 | 2.3.7 | bump alongside Kotlin |
-| Roborazzi | 1.55.0 | 1.59.0 | bump before AGP 9.1 |
+| KSP | 2.3.5 | 2.3.8 | bump alongside Kotlin |
+| Roborazzi | 1.55.0 | 1.60.0 | bump before AGP 9.2 |
 | Robolectric | 4.14.1 | 4.16.1 | bump for SDK 36 / JDK 21 fidelity |
 | aboutlibraries | 14.0.1 | 14.2.0 | bump |
 | zxing-core | 3.5.3 | 3.5.4 | bump |
@@ -269,7 +271,7 @@ repo apps reproducible; SwiftFloris's pin matrix is in place but
 **Where:** ROADMAP §6 N16 (the existing migration-related cluster — or
 §12 Operating Cadence).
 
-**Why now:** latest tag `v1.8.40`; HEAD `v1.8.55`. **15 missing tags**
+**Why now:** latest tag `v1.8.40`; HEAD `v1.8.58`. **18 missing tags**
 since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
 release.yml triggers on `workflow_dispatch` not on tag-push, so the
 release stream is decoupled from tags. Tags are still the canonical
@@ -277,7 +279,7 @@ shipped-commit anchor for forks / audit.
 
 **Body:**
 
-> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.55
+> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.58
 > from its corresponding `gradle.properties`-bumping commit. Tags push
 > only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
 > blocked from the dev VM per the established workflow). Establish a
@@ -400,11 +402,11 @@ The following should be added with reasoning to prevent re-litigation:
 
 > | HeliBoard NLnet open-glide library slips past 2026-06-01 deadline | **High (now base case)** | Medium (delays N1.1; keeps SwiftFloris on the bounded statistical classifier) | Reframe N1.3 statistical as the *production* default, not the placeholder. Plan N1.1 integration as additive once the library lands. Gesture-data accrual via HeliBoard's data-gathering feed already started; whether the dataset gets a permissive release is the second-order risk |
 
-### G.2 New row — `androidx-security-crypto` dead-end
+### G.2 New row — `androidx-security-crypto` deprecated API surface
 
 | New risk | Likelihood | Impact | Mitigation |
 |---|---|---|---|
-| `androidx-security-crypto:1.1.0-alpha06` is a deprecated alpha (no stable will ship); SQLCipher-passphrase wrapping is on a dead-end | High (already true) | Medium (no crash, but security hygiene + key-rotation issues + F-Droid review smell) | Migrate to Google Tink + AndroidKeystoreV1 (see §A.2 / new N7.6 item) |
+| `androidx-security-crypto:1.1.0-alpha06` keeps SQLCipher-passphrase wrapping on deprecated AndroidX Security APIs even though 1.1.0 stable exists | High (already true) | Medium (no crash, but security hygiene + key-rotation issues + F-Droid review smell) | Migrate to Google Tink + AndroidKeystoreV1 (see §A.2 / new N7.6 item) |
 
 ### G.3 New row — EU AI Act Article 50 cutoff
 
@@ -434,7 +436,7 @@ but does not require a roadmap change.
 |---|---|
 | §A.1 KenLM license boundary | 🔄 |
 | §A.2 Tink migration (new N7.6) | 🟢 |
-| §A.3 activity 1.13.0 downgrade | 🟢 |
+| §A.3 activity 1.13.0 downgrade retired | 🔄 |
 | §A.4 Bump-batches A/B/C | 🟢 (A); 🟢 (B); 🟡 on B (C) |
 | §A.5 Upstream-lap framing | 🔄 |
 | §A.6 MediaPipe rejection | 🔄 |

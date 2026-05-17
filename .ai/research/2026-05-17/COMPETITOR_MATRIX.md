@@ -2,8 +2,9 @@
 
 **Research date:** 2026-05-17
 **Method:** WebSearch + WebFetch over each project's repo, release page, and
-2025-2026 press coverage. Items marked **unverified** where one source
-returned a year that could not be cross-confirmed.
+2025-2026 press coverage, with a fifth-pass refresh for LeanType and
+dependency-adjacent competitor updates. Items marked **unverified** where
+one source returned a year that could not be cross-confirmed.
 
 This matrix exists to keep SwiftFloris's positioning honest: every gap
 SwiftFloris closes against SwiftKey/Gboard should be cross-checked against
@@ -28,6 +29,26 @@ ships somewhere else.
   - Gesture-data-gathering opt-in research feed (Active + passive modes)
   - Multiple already-imported n-gram packs (currently must be side-loaded into SwiftFloris)
 - **Strategic implication:** HeliBoard is the closest OSS peer and the de-facto AOSP-LatinIME successor. SwiftFloris differentiation is the SwiftKey-parity ranker stack, the encrypted personal dict, the MCP bridge, and the no-INTERNET CI gate. The NLnet swipe library is **the** integration target — and the base-case timeline now slips past 2026-06-01.
+
+### 1.1a LeanType (LeanBitLab/LeanType)
+
+- **License:** GPL-3.0 — cannot vendor into `:app`
+- **Latest:** v3.7.9, 2026-05-17 ([Releases](https://github.com/LeanBitLab/LeanType/releases/tag/v3.7.9))
+- **Positioning:** Active HeliBoard fork with AI-assisted proofreading /
+  translation packaging.
+- **Distribution model:** Standard APK (cloud providers + `INTERNET`),
+  Offline APK (no `INTERNET`, manual offline ONNX model setup), Offline
+  Lite APK (no `INTERNET`, no AI).
+- **Features SwiftFloris should study:**
+  - Offline AI model onboarding and user expectations.
+  - How users understand "offline" vs "offline lite" capability splits.
+  - Proofreading / translation surfaces that stay useful without a
+    vendor account.
+- **Strategic implication:** LeanType validates the market demand for an
+  "offline AI keyboard" even though its GPL code cannot be reused. The
+  SwiftFloris response should be stronger: keep the base APK no-network
+  and express AI capability through optional signed addon APKs instead
+  of separate `INTERNET`/no-`INTERNET` base flavors.
 
 ### 1.2 AnySoftKeyboard
 

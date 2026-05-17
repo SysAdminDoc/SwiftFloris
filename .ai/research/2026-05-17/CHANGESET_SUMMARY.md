@@ -1,11 +1,11 @@
 # Changeset Summary — 2026-05-17 Research Run
 
-This research run created **17 new files** across four passes and
-**modified zero source / build / test files**. Nothing in `ROADMAP.md`,
-`IMPROVEMENT_PLAN.md`, the per-release notes, the build files, or any
-source file under `app/` or `lib/` was touched. The README and one
-research-run companion file were modified for accuracy fixes only
-(version badge bumps + theme count correction + recent-releases append).
+This research run created **18 new files** across five passes and
+**modified zero source / build / test files**. The fifth pass added a
+small `ROADMAP.md` v5.3 delta and corrected research artifacts for
+dependency and competitor drift. `IMPROVEMENT_PLAN.md`, per-release
+notes, build files, and source files under `app/` or `lib/` were not
+touched.
 
 - Pass 1 created 11 files (root: `PROJECT_CONTEXT.md`,
   `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`; nine artifacts under
@@ -21,6 +21,14 @@ research-run companion file were modified for accuracy fixes only
   GA expected June 2026, SwiftKey cutoff confirmed no-extension, 16 KB
   enforcement landed May 1, Obtainium healthy, AOSP cadence verbatim
   citation, Roborazzi 1.60.0, HeliBoard NLnet update).
+- Pass 4 added 1 more (`FOURTH_PASS_FINDINGS.md`) and reconciled README,
+  privacy/AI documentation, and selected subsystem inspection with the
+  v1.8.58 state.
+- Pass 5 added 1 more (`FIFTH_PASS_FINDINGS.md`) and corrected stale
+  dependency guidance: Activity 1.13.0 is stable, Security Crypto 1.1.0
+  exists but APIs are deprecated, AGP target is 9.2.x, KSP target is
+  2.3.8, Roborazzi target is 1.60.0, and LeanType is now in the
+  competitor matrix.
 
 **Concurrent-release reconciliation:** during this research run, three
 releases shipped on master (v1.8.56 Phase B4, v1.8.57 Phase C2 arrow-keys
@@ -71,21 +79,27 @@ consolidated files and adding pointers from older files."*
 | Path | Purpose |
 |---|---|
 | [PROJECT_CONTEXT.md](../../../PROJECT_CONTEXT.md) | Single-page consolidated project context. Designed as the fastest read for an AI session, new contributor, or maintainer-context refresh. References `ROADMAP.md`, `IMPROVEMENT_PLAN.md`, the parity roadmap, and every research artifact this run produced |
-| [ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) | Actionable additions, corrections, and reframings keyed to existing `ROADMAP.md` sections. Recommended-but-not-yet-applied; flows into the next `ROADMAP.md` (v5.3) refresh |
+| [AGENTS.md](../../../AGENTS.md) | Canonical cross-agent instruction file with hard invariants, read order, local environment notes, and Definition-of-Done expectations |
+| [CLAUDE.md](../../../CLAUDE.md) | Claude-specific supplement that keeps tool-specific workflow advice out of `AGENTS.md` |
+| [ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) | Actionable additions, corrections, and reframings keyed to existing `ROADMAP.md` sections. Fifth-pass corrections are now mirrored into the root `ROADMAP.md` v5.3 delta |
 
 ### 1.2 Research-run artifacts (under `.ai/research/2026-05-17/`)
 
 | Path | Purpose |
 |---|---|
 | [STATE_OF_REPO.md](STATE_OF_REPO.md) | Local reconnaissance: identity, invariants, version pins, module layout, source size, subsystem map, CI/workflows, release stream, permissions, tests, TODO inventory, what's intentionally absent |
-| [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) | Inventory of every AI / planning / memory file in repo, plus reconciliation against v1.8.55 HEAD reality. Identifies the AI-instruction-file gap, the five superseded SWIFTKEY_* docs, the tag-lag, the README version-lag, and the open conflicts (none material) |
+| [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) | Inventory of every AI / planning / memory file in repo, plus reconciliation against v1.8.58 HEAD reality. Identifies the agent-instruction files, the five superseded SWIFTKEY_* docs, tag lag, and open conflicts (none material) |
 | [SOURCE_REGISTER.md](SOURCE_REGISTER.md) | Every local and external source consulted during the run, organized by topic. ~100 URLs across 15 source classes |
 | [RESEARCH_LOG.md](RESEARCH_LOG.md) | Search strategies, tools used, parallel-agent dispatch, saturation notes, and known gaps in this pass |
-| [COMPETITOR_MATRIX.md](COMPETITOR_MATRIX.md) | 14 OSS + 8 commercial + 4 adjacent keyboards as of May 2026, with version + license + features-SwiftFloris-doesn't-have + strategic implications. Ends with "features SwiftFloris has uniquely" + "features all major competitors ship that SwiftFloris is missing" + "10 feature opportunities sorted by impact ÷ cost" |
+| [COMPETITOR_MATRIX.md](COMPETITOR_MATRIX.md) | 15 OSS + 8 commercial + 4 adjacent keyboards as of May 2026, with version + license + features-SwiftFloris-doesn't-have + strategic implications. Fifth pass added LeanType |
 | [SECURITY_AND_DEPENDENCY_REVIEW.md](SECURITY_AND_DEPENDENCY_REVIEW.md) | Every pinned version checked against latest stable; license-compatibility verification (KenLM is LGPL — material correction); CVE status; F-Droid verified-tier path; EU AI Act Article 50 cutoff; recommended bump-batches and security additions |
 | [DATASET_MODEL_INTEGRATION_REVIEW.md](DATASET_MODEL_INTEGRATION_REVIEW.md) | Datasets currently bundled vs referenced; models referenced (Gemma 3, FunctionGemma, Whisper, Vosk, Bergamot, librime, ML Kit, CleverKeys, NLLB-200); integrations surfaced; coverage map; license-cleanliness audit |
 | [FEATURE_BACKLOG.md](FEATURE_BACKLOG.md) | Raw harvested ideas: 11 with updated-evidence-only against existing ROADMAP items + 33 new ideas across distribution / privacy / dependency / feature-opportunities / testing / docs + 6 long-tail tracked + 6 rejected-with-reasoning |
 | [PRIORITIZATION_MATRIX.md](PRIORITIZATION_MATRIX.md) | Every backlog item scored on impact × urgency / cost; sorted into Tier 1 (≥ 5.0), Tier 2 (3.5–4.9), Tier 3 (2.0–3.4), Tier 4 (track only); ends with recommended next-three-releases mapping |
+| [SECOND_PASS_FINDINGS.md](SECOND_PASS_FINDINGS.md) | Deep-dive corrections for Tink migration, FunctionGemma size, ML Kit / Bergamot distribution, F-Droid reproducibility, and dataset drift |
+| [THIRD_PASS_FINDINGS.md](THIRD_PASS_FINDINGS.md) | Third-pass verification over assets, workflow, README/theme counts, tags, and additional external facts |
+| [FOURTH_PASS_FINDINGS.md](FOURTH_PASS_FINDINGS.md) | Fourth-pass README / privacy / subsystem reconciliation against the current v1.8.58 state |
+| [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md) | Fifth-pass dependency corrections and LeanType competitor addition |
 | **CHANGESET_SUMMARY.md** | This file |
 
 ## 2. Files NOT touched
@@ -93,11 +107,6 @@ consolidated files and adding pointers from older files."*
 The following files exist in the repo and were **deliberately not modified**
 this run:
 
-- `README.md` — currently shows v1.8.52; HEAD is v1.8.55. Catch-up belongs
-  in the next release's commit, not a research-run commit.
-- `ROADMAP.md` — 340 KB; non-destructive policy. Recommended changes
-  flow through `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` into the next
-  `v5.3` refresh.
 - `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` — already current.
 - `SWIFTKEY_PARITY_AUDIT.md`, `SWIFTKEY_PARITY_BUILD_PLAN.md`,
   `SWIFTKEY_PARITY_RESEARCH.md`, `SWIFTKEY_AI_RESEARCH.md`,
@@ -120,12 +129,15 @@ The recommended bump-batches A/B/C, the Tink migration, and all other
 code-touching items live in `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`
 §A/§B/§C/§D as **commitments**, not yet **commits**.
 
+Root `ROADMAP.md`, `PROJECT_CONTEXT.md`, and the research artifacts were
+modified only for planning/context corrections; no runtime behavior changed.
+
 ## 3. Why the research run is non-destructive by design
 
-- The user is in the middle of an active SwiftKey-parity sprint (Phase
-  A/B); HEAD is 14 days from the 2026-05-31 cutoff. The cost of an
-  unintended `ROADMAP.md` rewrite during this window is high; the cost
-  of an additive `_ADDENDUM_` file is zero.
+- The user is in the middle of an active SwiftKey-parity sprint; HEAD is
+  close to the 2026-05-31 cutoff. The cost of an unintended `ROADMAP.md`
+  rewrite during this window is high, so the fifth pass added only a
+  bounded v5.3 delta and left the historical body intact.
 - The user controls the remote push (per memory: `git push` to
   `SysAdminDoc/SwiftFloris` fails 403 from this VM). Research-run output
   should be reviewable as one or two clean commits on the user's main
@@ -133,8 +145,8 @@ code-touching items live in `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`
 - `ROADMAP.md` is heavily sourced and load-bearing. Mechanical
   rewriting would lose the auditability that makes it useful.
 - `.ai/research/<YYYY-MM-DD>/` is the right place for research-time
-  artifacts; promoting research findings into `ROADMAP.md` is a separate,
-  intentional action (the next `v5.3` refresh).
+  artifacts; root `ROADMAP.md` should receive only narrow deltas once the
+  findings have been checked for contradictions.
 
 ## 4. Recommended follow-up commits (NOT made this run)
 
@@ -143,15 +155,15 @@ In rough priority order, with reference to
 
 | Order | Commit suggestion | Files touched |
 |---|---|---|
-| 1 | `feat(roadmap): research addendum 2026-05-17 + project context + research run artifacts` | This research run as one commit |
-| 2 | `chore(repo): tag v1.8.41 … v1.8.55 (15-tag catch-up)` | git tags only |
-| 3 | `chore(deps): bump-batch A (coroutines 1.11, KSP 2.3.7, zxing 3.5.4, aboutlibraries 14.2, activity → 1.12.4 stable)` | `gradle/libs.versions.toml` + a new `RELEASE_NOTES_v1.8.56.md` |
+| 1 | `docs: research run 2026-05-17 fifth pass corrections` | This research run as one commit |
+| 2 | `chore(repo): tag v1.8.41 … v1.8.58 (18-tag catch-up)` | git tags only |
+| 3 | `chore(deps): bump-batch A (coroutines 1.11, KSP 2.3.8, zxing 3.5.4, aboutlibraries 14.2; keep activity 1.13.0)` | `gradle/libs.versions.toml` + a new release note |
 | 4 | `feat(setup): EU AI Act Article 50 first-run explainer + Settings → About surface` | `app/setup/` + `docs/PRIVACY_AND_AI.md` |
 | 5 | `feat(repo): PROJECT_CONTEXT pointer in AGENTS.md + CLAUDE.md` | New `AGENTS.md` + `CLAUDE.md` |
 | 6 | `chore(repo): remove stale crash + replay logs from repo root` | `hs_err_pid*.log` + `replay_pid*.log` |
 | 7 | `chore(deps): replace androidx-security-crypto with Tink + AndroidKeystoreV1` (separate slice — risk-isolated) | `app/build.gradle.kts` + `KeyManager.kt` paths + `PersonalDictionaryEncryptionTest` rewrite |
-| 8 | `chore(deps): bump-batch B (Roborazzi 1.59 + Robolectric 4.16.1)` | versions catalog + a sweep over Roborazzi tests |
-| 9 | `chore(deps): bump-batch C (AGP 9.1.1 + Compose BOM 2026.05.00)` | versions catalog + R8 rules audit |
+| 8 | `chore(deps): bump-batch B (Roborazzi 1.60 + Robolectric 4.16.1)` | versions catalog + a sweep over Roborazzi tests |
+| 9 | `chore(deps): bump-batch C (AGP 9.2.x + Compose BOM 2026.05.00)` | versions catalog + R8 rules audit |
 | 10 | The Phase B4 same-sentence-language-switch hardening slice in `MultilingualTokenScorer` + `TypingContextExtractor` | `app/src/main/kotlin/.../ime/nlp/` |
 
 Commit #1 is what should land next. The remaining commits flow at the
@@ -206,8 +218,8 @@ Audit pass against the prompt's hard completion criteria:
    [RESEARCH_LOG.md §2.4](RESEARCH_LOG.md).
 6. **Roadmap updated/improved:**
    ✅ as an additive **addendum**
-   ([ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)),
-   not a rewrite of `ROADMAP.md`. This preserves the
+   ([ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md))
+   plus a bounded root `ROADMAP.md` v5.3 delta. This preserves the
    *"do not destructively rewrite project files"* rule and the 340 KB of
    sourced history that the user has built.
 7. **Self-audit passes:** This list.

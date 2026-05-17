@@ -43,6 +43,16 @@ Reviews each against current upstream state and re-checks license fitness.
 | **CleverKeys glide ONNX** (13 MB transformer) | **GPL-3.0** | Architectural reference only | **Cannot link.** Could re-train an Apache-2.0 model against the same architecture once a permissive dataset lands (HeliBoard NLnet target). |
 | **NLLB-200 distilled-600M** | CC-BY-NC-4.0 | Not in ROADMAP | Reference for the broader offline-NMT landscape (RTranslator uses it). NC license rules it out for SwiftFloris in any tier. |
 
+### Fifth-pass model / packaging note: LeanType
+
+LeanType's Offline APK line advertises no `INTERNET` permission plus
+offline ONNX proofreading / translation models with manual model setup.
+Its GPL-3.0 code cannot be reused, but the packaging pattern is useful
+evidence: users understand and seek a no-network AI keyboard tier.
+SwiftFloris should keep a stronger boundary by leaving the base APK
+networkless and installing model runtimes through signed optional addons,
+not by producing separate networked and non-networked base APK flavors.
+
 ## 4. Integrations currently surfaced
 
 | Integration | Surface | License | Status |

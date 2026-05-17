@@ -57,11 +57,15 @@ Crowdin localization · No INTERNET permission · 998+ unit tests
 ```
 
 The [.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md](.ai/research/2026-05-17/SECURITY_AND_DEPENDENCY_REVIEW.md)
-review flags several pins as materially behind: AGP 9.0.0 → 9.1.1,
-Roborazzi 1.55.0 → 1.59.0, Robolectric 4.14.1 → 4.16.1, Compose BOM
-2026.03.01 → 2026.05.00, and `androidx-security-crypto:1.1.0-alpha06` is
-a **dead-end artifact** (migrate to Tink). Also: **`androidx-activity
-1.13.0` is the RC, not stable** — current stable is 1.12.4.
+plus the fifth-pass correction in
+[.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md](.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md)
+flag several pins as materially behind: AGP 9.0.0 → 9.2.x, Roborazzi
+1.55.0 → 1.60.0, Robolectric 4.14.1 → 4.16.1, Compose BOM
+2026.03.01 → 2026.05.00, KSP 2.3.5 → 2.3.8, and
+`androidx-security-crypto:1.1.0-alpha06` should migrate to Tink /
+Android Keystore because the stable `security-crypto` line exists but
+all APIs are deprecated. `androidx-activity 1.13.0` is stable; do **not**
+downgrade it.
 
 ## 4. Module layout
 
