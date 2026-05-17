@@ -436,6 +436,7 @@ class NlpManager(context: Context) {
             currentWord = currentWord,
             candidates = activeCandidates,
             quickPredictionInsert = quickPredictionInsertEnabled,
+            textBeforeCursor = content.textBeforeSelection,
             candidateSignals = activeCandidateSignals,
         ) ?: return if (autoCorrectEnabled) {
             immediateAutoCommitCandidate(currentWord, currentWordStart)
@@ -460,7 +461,13 @@ class NlpManager(context: Context) {
         if (content.autoCommitWord().isNotBlank()) {
             return false
         }
-        return activeCandidates.any { it is WordSuggestionCandidate }
+        return SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "",
+            candidates = activeCandidates,
+            quickPredictionInsert = true,
+            textBeforeCursor = content.textBeforeSelection,
+            candidateSignals = activeCandidateSignals,
+        ) != null
     }
 
     private fun userDictionaryShortcutAutoCommitCandidate(

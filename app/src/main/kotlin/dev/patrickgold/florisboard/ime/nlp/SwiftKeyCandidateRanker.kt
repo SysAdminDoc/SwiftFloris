@@ -35,6 +35,15 @@ internal data class SwiftKeyCandidateSignals(
     val candidateLanguage: String? = null,
 )
 
+internal data class QuickPredictionInsertTuning(
+    val minWeightedConfidence: Double = 0.40,
+    val maxContextRecencyBoost: Double = 0.35,
+) {
+    companion object {
+        val Default = QuickPredictionInsertTuning()
+    }
+}
+
 internal data class SwiftKeyScoredCandidate(
     val candidate: SuggestionCandidate,
     val originalIndex: Int,
@@ -220,12 +229,19 @@ internal object SwiftKeyCandidateRanker {
         currentWord: String,
         candidates: List<SuggestionCandidate>,
         quickPredictionInsert: Boolean = false,
+        textBeforeCursor: String = "",
         candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
+        quickPredictionInsertTuning: QuickPredictionInsertTuning = QuickPredictionInsertTuning.Default,
     ): SuggestionCandidate? {
         val typedWordKey = currentWord.trim().normalizedCandidateKey()
         if (!currentWord.trim().isWordLike() || typedWordKey.isBlank()) {
             return if (quickPredictionInsert) {
-                nextWordSpacebarCandidate(candidates)
+                nextWordSpacebarCandidate(
+                    textBeforeCursor = textBeforeCursor,
+                    candidates = candidates,
+                    candidateSignals = candidateSignals,
+                    tuning = quickPredictionInsertTuning,
+                )
             } else {
                 null
             }
@@ -289,12 +305,50 @@ internal object SwiftKeyCandidateRanker {
         return topLanguages.size >= 2 && topLanguages[0].second != topLanguages[1].second
     }
 
-    private fun nextWordSpacebarCandidate(candidates: List<SuggestionCandidate>): SuggestionCandidate? {
+    private fun nextWordSpacebarCandidate(
+        textBeforeCursor: String,
+        candidates: List<SuggestionCandidate>,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals>,
+        tuning: QuickPredictionInsertTuning,
+    ): SuggestionCandidate? {
         val middleCandidate = candidates.getOrNull(1)
         if (middleCandidate is WordSuggestionCandidate) {
-            return middleCandidate
+            return middleCandidate.takeIf {
+                quickPredictionInsertAllowed(textBeforeCursor, it, candidateSignals, tuning)
+            }
         }
-        return candidates.firstOrNull { it is WordSuggestionCandidate }
+        return candidates
+            .filterIsInstance<WordSuggestionCandidate>()
+            .firstOrNull { candidate ->
+                quickPredictionInsertAllowed(textBeforeCursor, candidate, candidateSignals, tuning)
+            }
+    }
+
+    private fun quickPredictionInsertAllowed(
+        textBeforeCursor: String,
+        candidate: WordSuggestionCandidate,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals>,
+        tuning: QuickPredictionInsertTuning,
+    ): Boolean {
+        if (!quickPredictionContextAllowsInsert(textBeforeCursor)) return false
+        val key = candidate.text.toString().normalizedCandidateKey()
+        if (key.isBlank()) return false
+        val signal = candidateSignals[key] ?: SwiftKeyCandidateSignals()
+        val recencyWeight = 1.0 + signal.contextProbability.coerceIn(0.0, 1.0) *
+            tuning.maxContextRecencyBoost.coerceAtLeast(0.0)
+        val weightedConfidence = candidate.confidence.coerceIn(0.0, 1.0) * recencyWeight
+        return weightedConfidence >= tuning.minWeightedConfidence.coerceIn(0.0, 1.0)
+    }
+
+    private fun quickPredictionContextAllowsInsert(textBeforeCursor: String): Boolean {
+        val spacesTrimmed = textBeforeCursor.trimEnd(' ', '\t', '\r')
+        if (spacesTrimmed.isEmpty()) return true
+        if (spacesTrimmed.last() == '\n') return true
+
+        val trimmed = textBeforeCursor.trimEnd()
+        if (trimmed.isEmpty()) return true
+        val last = trimmed.last()
+        return last in SentenceTerminators
     }
 
     private fun rankedCandidates(
@@ -482,6 +536,7 @@ internal object SwiftKeyCandidateRanker {
     private const val TypedLiteralConfidence = 0.62
     private const val MinAutoCommitLanguageConfidence = 0.40
     private const val MinStraddleLanguageConfidence = 0.50
+    private val SentenceTerminators = setOf('.', '!', '?')
 
     private val ScoredCandidateComparator = compareByDescending<SwiftKeyScoredCandidate> { it.score.total }
         .thenByDescending { it.score.rolePriority }
