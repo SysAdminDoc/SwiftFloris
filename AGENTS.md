@@ -11,7 +11,7 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 ## Read this first
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, the v1.8.61
+   project context. Pins the load-bearing invariants, the v1.8.62
    stack, the module layout, the roadmap-file routing, and the current
    sprint state.
 2. [`ROADMAP.md`](ROADMAP.md) — full roadmap with history; ~340 KB,
@@ -76,7 +76,7 @@ and Definition-of-Done evidence.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump
 in lockstep with the release-notes commit. Tag the release commit (the
-tag stream currently lags HEAD by 21 tags; see
+tag stream currently lags HEAD by 22 tags; see
 [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)

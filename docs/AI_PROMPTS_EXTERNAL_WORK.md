@@ -637,26 +637,28 @@ the tooltip; subsequent entries don't.
 ### D5 — Next-7.2: Split-keyboard renderer wire-up
 
 ```
-SwiftFloris at `~/repos/SwiftFloris` has the split-keyboard
-preference (`prefs.keyboard.splitKeyboardEnabled`), the window-mode
-sub-mode (`ImeWindowMode.Fixed.SPLIT`), the constraints class
-(`ImeWindowConstraints.Fixed.Split`), and the layout calculator
-(`SplitKeyboardLayoutCalculator.calculateRow`). What's missing is the
-actual renderer + touch-hit integration.
+STATUS: Shipped in v1.8.62. Keep this prompt for audit trail only.
 
-Your task:
+SwiftFloris at `~/repos/SwiftFloris` had the split-keyboard preference
+(`prefs.keyboard.splitKeyboardEnabled`), the window-mode sub-mode
+(`ImeWindowMode.Fixed.SPLIT`), the constraints class
+(`ImeWindowConstraints.Fixed.Split`), and the layout calculator
+(`SplitKeyboardLayoutCalculator.calculateRow`). v1.8.62 added the
+renderer + touch-hit integration through `TextKeyboardSplitLayout`,
+`TextKeyboardLayout`, `SplitGutterPostPass`, and
+`TextKeyboard.isPointInSplitGutter`.
+
+Shipped implementation:
 1. In `ime/text/keyboard/TextKeyboardLayout.kt`, when the active
    window mode is `Fixed.SPLIT` AND `ImeWindowConstraints.Fixed.Split
-   .isViable` returns true, emit per-key rectangles using the layout
-   calculator's output.
-2. Insert a fixed-width gutter spacer in each row between the left
-   half and the right half.
-3. In `ime/text/keyboard/KeyboardManager.handleKeyEvent`, ensure
-   touch hit-testing uses the new per-side rectangles (route via the
-   same row's geometry).
-4. Add a unit test that the split layout's total width equals the
-   non-split layout's total width on the same constraints.
-5. Document in `docs/SPLIT_KEYBOARD.md`.
+   .isViable` returns true, the renderer lays out rows at
+   `keyboardWidth - gutter` and applies the split post-pass.
+2. `SplitGutterPostPass` inserts the fixed-width gutter between each
+   row's left and right halves by shifting right-half bounds.
+3. `TextKeyboard.getNearestKeyForPos` refuses nearest-key rescue inside
+   `TextKeyboard.isPointInSplitGutter`.
+4. Unit tests pin final-width preservation and no-key gutter behavior.
+5. Release documentation lives in `RELEASE_NOTES_v1.8.62.md`.
 
 Acceptance: enabling `prefs.keyboard.splitKeyboardEnabled` on a
 tablet with width ≥ 600dp renders the split layout; touches in the

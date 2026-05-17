@@ -37,12 +37,10 @@ import dev.patrickgold.florisboard.lib.FlorisRect
  * this pass at the end of its layout phase; non-split keyboards
  * skip the call entirely and observe zero behaviour change.
  *
- * The TextKeyboardLayout-level wire-up (consulting the active window
- * mode + calling this helper) is a one-line addition to the existing
- * `keyboard.layout(...)` block — tracked as the v1.8.5 P3-final
- * integration slice. The math + behaviour-on-keys is pinned here
- * with unit tests so the wire-up is a no-thinking change once the
- * window-mode-aware callsite lands.
+ * The TextKeyboardLayout-level wire-up now pre-shrinks the base layout
+ * width by the active split gutter, then calls this helper so the right
+ * half lands back inside the final container and the touch hit-test has
+ * a real no-key gap.
  */
 object SplitGutterPostPass {
 

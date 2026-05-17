@@ -32,9 +32,9 @@ import androidx.compose.ui.unit.dp
  *  - QWERTY second row: a s d f g | h j k l → 5 / 4 split
  *  - Bottom row symbols and modifiers: caller-driven via [keyCount]
  *
- * The calculator only computes geometry — actual key-rect emission
- * lives in the existing layout-engine code which consumes this output
- * via the matching `ImeWindowConstraints.Fixed.Split` (Next-7.2 v1.8.0).
+ * The calculator only computes geometry. `TextKeyboardSplitLayout` and
+ * `SplitGutterPostPass` consume the same row-boundary contract when the
+ * active window spec is `ImeWindowMode.Fixed.SPLIT`.
  */
 object SplitKeyboardLayoutCalculator {
 

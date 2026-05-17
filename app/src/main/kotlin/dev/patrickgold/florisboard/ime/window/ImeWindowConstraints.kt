@@ -237,8 +237,8 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
          * ROADMAP §7 Next-7.2 — split-keyboard constraints (foundation).
          *
          * Carries the same keyboard-height envelope as [Normal] but
-         * exposes a gutter calculation that the renderer will consume
-         * once the split-layout slice lands. [minTabletWidthDp] is the
+         * exposes the gutter calculation consumed by the text-keyboard
+         * split renderer. [minTabletWidthDp] is the
          * smallest viable form-factor width at which split should be
          * offered — narrower screens cannot host two reachable halves
          * without collapsing the gutter below the user's thumb-stride.

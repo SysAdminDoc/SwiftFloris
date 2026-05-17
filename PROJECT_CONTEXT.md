@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.61)
+## 3. Stack at HEAD (v1.8.62)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.61`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.62`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -133,7 +133,7 @@ Phase B (touch & decoder calibration):
 - ✅ B1 — Sentence-position priors expansion seed (shipped v1.8.60) —
   `ColdStartNextWordPriors` now covers EN/CS/DE/ES/FR/IT/PT and
   `assets/freq/` includes top-1,000 Zipf seed overlays for CS/DE/ES/FR/IT/PT
-- ✅ B2 — Quick-prediction-insert tuning (shipped v1.8.61, HEAD) —
+- ✅ B2 — Quick-prediction-insert tuning (shipped v1.8.61) —
   blank-current-word spacebar insertion now requires cold-start, sentence
   boundary, or newline context plus a configurable weighted-confidence floor;
   plain-space suppression uses the same ranker decision
@@ -152,7 +152,11 @@ Phase C/D opened in the same release window:
 - ✅ D3 — Typing-stats accuracy-delta (shipped v1.8.59) —
   `CorrectionOutcomePriors.accuracyDelta()` backs the Settings → Typing
   stats row for current-week accepted corrections versus last week
-- C1 — Split-keyboard renderer wire-up inside `TextKeyboardLayout` (open)
+- ✅ C1 — Split-keyboard renderer wire-up inside `TextKeyboardLayout`
+  (shipped v1.8.62, HEAD) — split mode now pre-shrinks the base layout by
+  the active gutter, post-shifts right-half key bounds back into the final
+  container, rejects non-viable narrow roots, and refuses nearest-key rescue
+  inside the gutter
 - C3 — High-Contrast AAA theme + animated theme (open)
 - D1 — Calendar quick-insert (P9) (open)
 

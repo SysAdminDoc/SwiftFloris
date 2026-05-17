@@ -70,10 +70,9 @@ enum class ImeWindowMode {
          *
          * This mode shadows SwiftKey's split layout and the long-standing
          * AnySoftKeyboard #1952 / HeliBoard #326 requests for the same
-         * affordance. Renderer + key-rect distribution wiring lands in
-         * the follow-up Next-7.2a slice; this enum entry pins the
-         * window-mode plumbing so preferences and constraints can be
-         * landed independently from the layout-engine integration.
+         * affordance. Renderer + key-rect distribution wiring is handled
+         * by `TextKeyboardSplitLayout` + `SplitGutterPostPass`, while this
+         * enum entry pins the window-mode plumbing.
          */
         SPLIT;
     }

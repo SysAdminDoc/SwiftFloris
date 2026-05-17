@@ -117,6 +117,35 @@ class SplitGutterPostPassTest : FunSpec({
         snapshot.gutterMeasure shouldBe (80f plusOrMinus 1e-3f)
     }
 
+    test("pre-shrunk layout plus post-pass keeps the right edge inside the final width") {
+        val finalWidth = 1000f
+        val gutter = 80f
+        val layoutWidth = TextKeyboardSplitLayout.layoutWidthPx(finalWidth, gutter)
+        val keyboard = fixtureKeyboard(listOf(10), unitWidth = layoutWidth / 10f, rowHeight = 60f)
+
+        SplitGutterPostPass.apply(keyboard, gutterPx = gutter)
+
+        val row = keyboard.rows().next()
+        row.last().touchBounds.right shouldBe (finalWidth plusOrMinus 1e-3f)
+        SplitRowSnapshot.captureRow(rowIndex = 0, row = row.toList())
+            .gutterMeasure shouldBe (gutter plusOrMinus 1e-3f)
+    }
+
+    test("split gutter rejects nearest-key rescue") {
+        val finalWidth = 1000f
+        val gutter = 80f
+        val layoutWidth = TextKeyboardSplitLayout.layoutWidthPx(finalWidth, gutter)
+        val keyboard = fixtureKeyboard(listOf(10), unitWidth = layoutWidth / 10f, rowHeight = 60f)
+
+        SplitGutterPostPass.apply(keyboard, gutterPx = gutter)
+
+        val row = keyboard.rows().next()
+        val gutterCenterX = (row[4].touchBounds.right + row[5].touchBounds.left) / 2f
+        keyboard.isPointInSplitGutter(gutterCenterX, 30f) shouldBe true
+        keyboard.getKeyForPos(gutterCenterX, 30f) shouldBe null
+        keyboard.getNearestKeyForPos(gutterCenterX, 30f) shouldBe null
+    }
+
     test("an empty-arrangement keyboard is a no-op (defensive)") {
         val keyboard = TextKeyboard(
             arrangement = arrayOf(),
