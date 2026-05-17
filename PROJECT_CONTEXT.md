@@ -147,6 +147,7 @@ subsystem map in
 | A quality / a11y / perf / test / CI / release-hygiene workstream | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
 | A research finding that updates a prior roadmap claim | [ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) (this run's addendum) |
 | A security / dependency / crypto migration | [docs/SECURITY.md](docs/SECURITY.md) + [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) + [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md) |
+| Architecture or contributor workflow | [ARCHITECTURE.md](ARCHITECTURE.md) + [CONTRIBUTING.md](CONTRIBUTING.md) |
 | A UX / migration walkthrough | `docs/MIGRATE_FROM_SWIFTKEY.md`, `docs/INLINE_AUTOFILL.md`, `docs/TASKER_INTEGRATION.md` |
 | An external-research prompt for a fresh AI session | [docs/AI_PROMPTS_EXTERNAL_WORK.md](docs/AI_PROMPTS_EXTERNAL_WORK.md) |
 | Addon spec (theme / dict / language / layout / popup-mapping pack) | [docs/addons/](docs/addons/) |

@@ -229,6 +229,10 @@ or one-competitor additions, not a new roadmap pillar.
   `StickerMediaProvider` proxy reads for user sticker documents. Focused Gradle
   verification was attempted and stopped at the known VM blocker (`JAVA_HOME` /
   `java` missing).
+- **Docs-only Tier-3 #31 / #32 implementation:** Added root
+  `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
+  contributing pointers, updated the PR template to reference SwiftFloris local
+  invariants, and marked the docs backlog / prioritization rows shipped.
 - ROADMAP.md was sampled by section, not read end-to-end (340 KB exceeds
   the 25 K-token Read cap). The companion
   [MEMORY_CONSOLIDATION.md](MEMORY_CONSOLIDATION.md) records what could

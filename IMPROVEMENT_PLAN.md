@@ -236,6 +236,8 @@ Goal: Keep commits and release state understandable.
 Tasks:
 - [ ] Resolve whether the currently deleted markdown files are intentional before the next push.
 - [ ] Keep future commits scoped to one logical improvement.
+- [x] Add root `ARCHITECTURE.md` and `CONTRIBUTING.md` entry points for
+  package/runtime orientation and contributor verification expectations.
 - [x] Keep JVM crash/replay logs out of the repo root and committed history
   (v1.8.73 moved local logs to `.ai/local-crash-logs/2026-05-16/` and added
   `scripts/check-no-root-crash-logs.sh` to CI).

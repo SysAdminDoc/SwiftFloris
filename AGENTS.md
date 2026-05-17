@@ -14,18 +14,22 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
    project context. Pins the load-bearing invariants, the v1.8.77
    stack, the module layout, the roadmap-file routing, and the current
    sprint state.
-2. [`ROADMAP.md`](ROADMAP.md) — full roadmap with history; ~340 KB,
+2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,
+   package, runtime, privacy-boundary, and CI map.
+3. [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup,
+   verification, privacy, release-note, and PR expectations.
+4. [`ROADMAP.md`](ROADMAP.md) — full roadmap with history; ~340 KB,
    tiered NOW / NEXT / LATER / UNDER CONSIDERATION / REJECTED with
    sourced appendix.
-3. [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
+5. [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
    — current sprint plan (Phase A → E) timed to the 2026-05-31 SwiftKey
    account-retirement cutoff.
-4. [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused
+6. [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused
    quality / a11y / perf / test / build / release plan; 15 workstreams.
-5. [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
+7. [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
    — most recent research-run additions and corrections, not yet folded
    into `ROADMAP.md`.
-6. [`.ai/research/<YYYY-MM-DD>/`](.ai/research/) — full research-run
+8. [`.ai/research/<YYYY-MM-DD>/`](.ai/research/) — full research-run
    artifacts; the most recent date is the right entry point.
 
 If a change you're considering conflicts with `PROJECT_CONTEXT.md` §2
