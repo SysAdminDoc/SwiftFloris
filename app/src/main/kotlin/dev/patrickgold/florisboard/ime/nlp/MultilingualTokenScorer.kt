@@ -44,6 +44,15 @@ internal object MultilingualTokenScorer {
         val typedKnownLocaleCount = localeEvidence.count { it.typedFrequency > 0.0 }
         val dictionaryFrequency = localeEvidence.maxOfOrNull { it.candidateFrequency.coerceIn(0.0, 1.0) } ?: 0.0
         val candidateKnown = dictionaryFrequency > 0.0
+        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B3 — shared-spelling
+        // bilingual handling. When the typed word is recognised in
+        // multiple active locales (e.g. "no" in EN+ES), a candidate
+        // that's *only* known in ONE locale is a single-language
+        // overwrite of a shared literal — dangerous, must be
+        // suppressed harder than the generic shared-typed-word
+        // dampening. We measure the candidate's locale spread the
+        // same way we measure the typed word's.
+        val candidateKnownLocaleCount = localeEvidence.count { it.candidateFrequency > 0.0 }
         val sameLocaleAsTypedWord = localeEvidence.any { evidence ->
             evidence.typedFrequency > 0.0 && evidence.candidateFrequency > 0.0
         }
@@ -58,6 +67,17 @@ internal object MultilingualTokenScorer {
         val languageConfidence = when {
             localeEvidence.size <= 1 -> 1.0
             candidateMatchesTypedWord && typedWordKnown -> 1.0
+            // SWIFTKEY_PARITY_ROADMAP §B3 — typed word is shared across
+            // multiple locales AND the candidate is recognised in only
+            // one. This is the dangerous single-language overwrite case
+            // ("no" + EN candidate `on`). Push below the
+            // SwiftKeyCandidateRanker autocommit floor (0.40) so
+            // spacebar can never replace a shared-spelling literal with
+            // a one-language guess.
+            typedKnownLocaleCount > 1 && candidateKnown && candidateKnownLocaleCount == 1 -> SharedSpellingOneLocaleCandidateConfidence
+            // Both typed AND candidate are shared across locales — the
+            // candidate could plausibly be valid in either side of the
+            // bilingual sentence. Keep the existing moderate dampening.
             typedKnownLocaleCount > 1 && typedWordKnown && candidateKnown -> 0.52
             typedWordKnown && candidateKnown && sameLocaleAsTypedWord -> 0.92
             typedWordKnown && candidateKnown -> 0.32
@@ -86,4 +106,13 @@ internal object MultilingualTokenScorer {
     }
 
     private const val LanguageIdActiveThreshold = 0.80
+
+    /**
+     * SWIFTKEY_PARITY_ROADMAP §B3 — sub-floor (< 0.40, the
+     * SwiftKeyCandidateRanker `MinAutoCommitLanguageConfidence`)
+     * applied to a one-locale-only candidate that would otherwise
+     * overwrite a shared-spelling typed word at the spacebar slot.
+     * Internal visibility so tests can pin the exact value.
+     */
+    internal const val SharedSpellingOneLocaleCandidateConfidence: Double = 0.30
 }
