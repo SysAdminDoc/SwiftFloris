@@ -836,6 +836,20 @@
     <string name="settings__udm__dictionary_import_failure" comment="Message for dictionary import failure">Could not import user dictionary: {error_message}</string>
     <string name="settings__udm__dictionary_export_failure" comment="Message for dictionary export failure">Could not export user dictionary: {error_message}</string>
     <string name="settings__udm__dictionary_store_unavailable" comment="Message shown when the selected user dictionary storage is unavailable">Dictionary storage is not available right now.</string>
+    <string name="settings__udm__import_summary__title" comment="Title of the post-import confirmation dialog">Import complete</string>
+    <string name="settings__udm__import_summary__inserted" comment="Summary line of newly inserted words. Placeholder is the integer count.">Added {count} new words</string>
+    <string name="settings__udm__import_summary__updated" comment="Summary line of in-place updated words. Placeholder is the integer count.">Updated {count} existing words</string>
+    <string name="settings__udm__import_summary__skipped" comment="Summary line of skipped malformed entries. Placeholder is the integer count.">Skipped {count} malformed entries</string>
+    <string name="settings__udm__import_summary__no_changes" comment="Summary line shown when the import made no changes (e.g. empty input or only blank words).">No changes were made to your dictionary.</string>
+    <string name="settings__udm__import_summary__format__json" comment="Source-format label for SwiftKey JSON imports">SwiftKey JSON export</string>
+    <string name="settings__udm__import_summary__format__xml" comment="Source-format label for Gboard XML imports">Gboard XML export</string>
+    <string name="settings__udm__import_summary__format__csv" comment="Source-format label for CSV imports">CSV file</string>
+    <string name="settings__udm__import_summary__format__zip" comment="Source-format label for zip-archive imports">Zip archive</string>
+    <string name="settings__udm__import_summary__format__unknown" comment="Source-format label for unknown / legacy imports">Personal dictionary file</string>
+    <string name="settings__udm__import_summary__source" comment="Caption showing the detected source format. Placeholder is the format label.">Imported from: {format}</string>
+    <string name="settings__udm__import_summary__rollback" comment="Action button on the post-import dialog that undoes the import">Undo import</string>
+    <string name="settings__udm__import_summary__keep" comment="Action button on the post-import dialog that dismisses the dialog without undoing">Keep imported words</string>
+    <string name="settings__udm__import_summary__rollback_done" comment="Toast shown after a successful rollback. Placeholder is the integer count of rows deleted.">Removed {count} imported words.</string>
     <string name="settings__udm__dialog__title_add" comment="Label for the title (when in adding mode) in the user dictionary add/edit dialog">Add word</string>
     <string name="settings__udm__dialog__title_edit" comment="Label for the title (when in editing mode) in the user dictionary add/edit dialog">Edit word</string>
     <string name="settings__udm__dialog__word_label" comment="Label for the word in the user dictionary add/edit dialog">Word</string>
