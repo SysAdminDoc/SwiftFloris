@@ -34,17 +34,19 @@ internal object ColdStartNextWordPriors {
         languageCode: String,
         maxCandidateCount: Int,
     ): List<ColdStartNextWordPrior> {
-        if (maxCandidateCount <= 0 || LatinDictionaryStore.normalizeLanguageCode(languageCode) != "en") {
+        if (maxCandidateCount <= 0) {
             return emptyList()
         }
+        val priorSet = PriorSets[LatinDictionaryStore.normalizeLanguageCode(languageCode)]
+            ?: return emptyList()
         val words = when {
-            isSentenceStart(textBeforeCursor) -> SentenceStart
+            isSentenceStart(textBeforeCursor) -> priorSet.sentenceStart
             else -> {
                 val previousWords = previousWordsOf(textBeforeCursor, maxDepth = 3)
                 if (previousWords.isEmpty()) return emptyList()
-                PhraseContinuations[previousWords.takeLast(3).joinToString(" ")]
-                    ?: PhraseContinuations[previousWords.takeLast(2).joinToString(" ")]
-                    ?: Continuations[previousWords.last()].orEmpty()
+                priorSet.phraseContinuations[previousWords.takeLast(3).joinToString(" ")]
+                    ?: priorSet.phraseContinuations[previousWords.takeLast(2).joinToString(" ")]
+                    ?: priorSet.continuations[previousWords.last()].orEmpty()
             }
         }
         return words
@@ -112,6 +114,12 @@ internal object ColdStartNextWordPriors {
     private fun Char.isPriorWordChar(): Boolean {
         return isLetter() || this == '\'' || this == '\u2019' || this == '-'
     }
+
+    private data class PriorSet(
+        val sentenceStart: List<String>,
+        val continuations: Map<String, List<String>>,
+        val phraseContinuations: Map<String, List<String>>,
+    )
 
     private val SentenceTerminators = setOf('.', '!', '?', '\n')
 
@@ -207,5 +215,201 @@ internal object ColdStartNextWordPriors {
         "would you" to listOf("like", "be", "mind"),
         "would you like" to listOf("to", "me", "a"),
         "you should" to listOf("be", "try", "check"),
+    )
+
+    private val GermanSentenceStart = listOf(
+        "ich",
+        "das",
+        "die",
+        "der",
+        "wir",
+        "du",
+        "es",
+        "wie",
+    )
+
+    private val GermanContinuations = mapOf(
+        "ich" to listOf("bin", "habe", "werde", "kann", "denke"),
+        "das" to listOf("ist", "war", "wird", "sieht"),
+        "die" to listOf("ist", "sind", "haben", "werden"),
+        "der" to listOf("ist", "war", "wird", "hat"),
+        "wir" to listOf("sind", "haben", "werden", "können"),
+        "du" to listOf("bist", "hast", "kannst", "solltest"),
+        "es" to listOf("ist", "war", "wird", "gibt"),
+        "wie" to listOf("geht", "ist", "war", "kann"),
+        "vielen" to listOf("dank"),
+        "gute" to listOf("nacht", "idee", "reise"),
+    )
+
+    private val GermanPhraseContinuations = mapOf(
+        "ich bin" to listOf("nicht", "gleich", "da", "bereit"),
+        "ich habe" to listOf("eine", "den", "das"),
+        "ich werde" to listOf("das", "es", "morgen"),
+        "vielen dank" to listOf("für", "nochmal"),
+        "wie geht" to listOf("es", "das"),
+    )
+
+    private val SpanishSentenceStart = listOf(
+        "yo",
+        "el",
+        "la",
+        "qué",
+        "cómo",
+        "me",
+        "te",
+        "eso",
+    )
+
+    private val SpanishContinuations = mapOf(
+        "yo" to listOf("tengo", "voy", "puedo", "creo"),
+        "el" to listOf("día", "tiempo", "problema"),
+        "la" to listOf("verdad", "semana", "cosa"),
+        "qué" to listOf("tal", "pasa", "quieres"),
+        "cómo" to listOf("estás", "va", "fue"),
+        "me" to listOf("parece", "gusta", "puedes"),
+        "te" to listOf("puedo", "mando", "veo"),
+        "muchas" to listOf("gracias"),
+        "buenos" to listOf("días"),
+    )
+
+    private val SpanishPhraseContinuations = mapOf(
+        "muchas gracias" to listOf("por", "de", "otra"),
+        "buenos días" to listOf("a", "cómo"),
+        "yo voy" to listOf("a", "para"),
+        "yo tengo" to listOf("que", "una", "un"),
+        "cómo estás" to listOf("hoy", "tú"),
+    )
+
+    private val FrenchSentenceStart = listOf(
+        "je",
+        "le",
+        "la",
+        "ça",
+        "tu",
+        "nous",
+        "vous",
+        "comment",
+    )
+
+    private val FrenchContinuations = mapOf(
+        "je" to listOf("suis", "vais", "peux", "pense"),
+        "le" to listOf("temps", "jour", "problème"),
+        "la" to listOf("semaine", "suite", "vérité"),
+        "ça" to listOf("va", "marche", "serait"),
+        "tu" to listOf("peux", "as", "vas"),
+        "nous" to listOf("sommes", "avons", "allons"),
+        "vous" to listOf("pouvez", "avez", "êtes"),
+        "merci" to listOf("beaucoup", "pour"),
+        "s'il" to listOf("vous", "te"),
+    )
+
+    private val FrenchPhraseContinuations = mapOf(
+        "je suis" to listOf("désolé", "disponible", "en"),
+        "je vais" to listOf("le", "te", "faire"),
+        "merci beaucoup" to listOf("pour", "encore"),
+        "s'il vous" to listOf("plaît"),
+        "ça va" to listOf("être", "bien"),
+    )
+
+    private val ItalianSentenceStart = listOf(
+        "io",
+        "il",
+        "la",
+        "che",
+        "come",
+        "mi",
+        "ti",
+        "noi",
+    )
+
+    private val ItalianContinuations = mapOf(
+        "io" to listOf("sono", "ho", "posso", "penso"),
+        "il" to listOf("giorno", "tempo", "problema"),
+        "la" to listOf("settimana", "cosa", "verità"),
+        "che" to listOf("cosa", "ne", "succede"),
+        "come" to listOf("stai", "va", "posso"),
+        "mi" to listOf("sembra", "piace", "puoi"),
+        "ti" to listOf("posso", "mando", "vedo"),
+        "grazie" to listOf("per", "ancora"),
+        "buon" to listOf("giorno", "lavoro", "viaggio"),
+    )
+
+    private val ItalianPhraseContinuations = mapOf(
+        "io sono" to listOf("qui", "pronto", "sicuro"),
+        "io ho" to listOf("un", "una", "bisogno"),
+        "come stai" to listOf("oggi"),
+        "grazie per" to listOf("il", "la", "tutto"),
+        "buon giorno" to listOf("a", "come"),
+    )
+
+    private val PortugueseSentenceStart = listOf(
+        "eu",
+        "o",
+        "a",
+        "que",
+        "como",
+        "você",
+        "nós",
+        "isso",
+    )
+
+    private val PortugueseContinuations = mapOf(
+        "eu" to listOf("tenho", "vou", "posso", "acho"),
+        "o" to listOf("dia", "tempo", "problema"),
+        "a" to listOf("semana", "coisa", "verdade"),
+        "que" to listOf("bom", "tal", "você"),
+        "como" to listOf("você", "vai", "foi"),
+        "você" to listOf("pode", "tem", "vai"),
+        "nós" to listOf("temos", "vamos", "podemos"),
+        "muito" to listOf("obrigado", "bem"),
+        "bom" to listOf("dia", "trabalho"),
+    )
+
+    private val PortuguesePhraseContinuations = mapOf(
+        "eu tenho" to listOf("que", "uma", "um"),
+        "eu vou" to listOf("para", "fazer", "ver"),
+        "muito obrigado" to listOf("por", "mesmo"),
+        "bom dia" to listOf("como", "a"),
+        "como você" to listOf("está", "vai"),
+    )
+
+    private val CzechSentenceStart = listOf(
+        "já",
+        "to",
+        "co",
+        "jak",
+        "můžu",
+        "díky",
+        "my",
+        "ty",
+    )
+
+    private val CzechContinuations = mapOf(
+        "já" to listOf("jsem", "mám", "budu", "můžu"),
+        "to" to listOf("je", "bylo", "bude"),
+        "co" to listOf("je", "máme", "bude"),
+        "jak" to listOf("se", "to", "můžu"),
+        "můžu" to listOf("to", "se", "vám"),
+        "díky" to listOf("za", "moc"),
+        "my" to listOf("jsme", "máme", "budeme"),
+        "ty" to listOf("jsi", "máš", "budeš"),
+    )
+
+    private val CzechPhraseContinuations = mapOf(
+        "já jsem" to listOf("to", "tam", "rád"),
+        "já mám" to listOf("čas", "to", "jednu"),
+        "jak se" to listOf("máš", "daří"),
+        "díky za" to listOf("pomoc", "info", "všechno"),
+        "to je" to listOf("dobře", "super", "pravda"),
+    )
+
+    private val PriorSets = mapOf(
+        "en" to PriorSet(SentenceStart, Continuations, PhraseContinuations),
+        "cs" to PriorSet(CzechSentenceStart, CzechContinuations, CzechPhraseContinuations),
+        "de" to PriorSet(GermanSentenceStart, GermanContinuations, GermanPhraseContinuations),
+        "es" to PriorSet(SpanishSentenceStart, SpanishContinuations, SpanishPhraseContinuations),
+        "fr" to PriorSet(FrenchSentenceStart, FrenchContinuations, FrenchPhraseContinuations),
+        "it" to PriorSet(ItalianSentenceStart, ItalianContinuations, ItalianPhraseContinuations),
+        "pt" to PriorSet(PortugueseSentenceStart, PortugueseContinuations, PortuguesePhraseContinuations),
     )
 }

@@ -12,15 +12,15 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at write time:** v1.8.59 — Phase D3 typing-stats accuracy delta.
-(The research run started at v1.8.55; v1.8.56-59 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3.)
+**HEAD at write time:** v1.8.60 — Phase B1 multilingual sentence-position priors seed.
+(The research run started at v1.8.55; v1.8.56-60 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-59 releases
+## 0. Reconciliation with concurrent v1.8.56-60 releases
 
-While this research run was in flight, four releases landed that
+While this research run was in flight, five releases landed that
 implemented several recommendations:
 
 | Recommendation in this addendum | Shipped as |
@@ -29,8 +29,9 @@ implemented several recommendations:
 | §B.3 — Dedicated arrow-keys row preset (P24) | ✅ **v1.8.57 — Phase C2** — labeled `BottomRowPreset.Navigation` (with ARROW_LEFT / ARROW_UP / SPACE / ARROW_DOWN / ARROW_RIGHT / ENTER); equivalent to my N4.4 proposal modulo naming |
 | §C.2 — Tasks quick-insert (P10) (PRIORITIZATION_MATRIX Tier-2 #19) | ✅ **v1.8.58 — Phase D2** — `QuickAction.InsertTask` via `Intent.ACTION_SEND` chooser; `SensitiveFieldGuard` gate; works with Tasks.org / OpenTasks / Google Tasks / Joplin / Notion / Markor |
 | §C.4 — Personalization stats delta (P26) | ✅ **v1.8.59 — Phase D3** — `CorrectionOutcomePriors.accuracyDelta()` and Settings → Typing stats row for current-week accepted corrections versus last week |
+| §B.1 — Multilingual sentence-position priors seed (P13 partial) | ✅ **v1.8.60 — Phase B1** — EN/CS/DE/ES/FR/IT/PT cold-start priors plus top-1,000 wordfreq Zipf seed overlays for CS/DE/ES/FR/IT/PT |
 
-These four are removed from this addendum's open commitments. The
+These five are removed from this addendum's open commitments. The
 remaining items below are still open and still recommended.
 
 ---
@@ -272,7 +273,7 @@ repo apps reproducible; SwiftFloris's pin matrix is in place but
 **Where:** ROADMAP §6 N16 (the existing migration-related cluster — or
 §12 Operating Cadence).
 
-**Why now:** latest tag `v1.8.40`; HEAD `v1.8.59`. **19 missing tags**
+**Why now:** latest tag `v1.8.40`; HEAD `v1.8.60`. **20 missing tags**
 since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
 release.yml triggers on `workflow_dispatch` not on tag-push, so the
 release stream is decoupled from tags. Tags are still the canonical
@@ -280,7 +281,7 @@ shipped-commit anchor for forks / audit.
 
 **Body:**
 
-> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.59
+> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.60
 > from its corresponding `gradle.properties`-bumping commit. Tags push
 > only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
 > blocked from the dev VM per the established workflow). Establish a

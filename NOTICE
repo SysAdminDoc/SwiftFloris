@@ -21,6 +21,19 @@ The bundled English word frequency dictionary
    `LICENSES/SCOWL-Copyright.txt`. Project home: http://wordlist.aspell.net/
 
 ================================================================================
+Bundled Zipf frequency seed-table attribution
+================================================================================
+
+The bundled Zipf seed tables under `app/src/main/assets/freq/` were generated
+from `rspeer/wordfreq` 3.1.1 using `top_n_list()` and `zipf_frequency()`.
+The generated tables contain the top 1,000 local ranking entries for English,
+Czech, German, Spanish, French, Italian, and Portuguese. `wordfreq` is
+distributed under Apache-2.0; project home: https://github.com/rspeer/wordfreq/
+
+Full corpus-sized subtitle frequency tables are intentionally left to optional
+dictionary-pack addons so the base APK stays lean.
+
+================================================================================
 Bundled profanity filter attribution
 ================================================================================
 
