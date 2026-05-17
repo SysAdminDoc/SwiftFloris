@@ -13,6 +13,11 @@ still `v1.8.40`; HEAD release metadata is `v1.8.58`. `java` is not on
 PATH in this VM, so Gradle verification still belongs on the maintainer's
 build host.
 
+**Continuation note:** follow-on autonomous development shipped the Tink
+migration in v1.8.68 and Bump-batch A in v1.8.69. This file remains the
+source research snapshot; shipped items are marked below so future sessions
+do not re-open them.
+
 ---
 
 ## 1. Corrections to earlier 2026-05-17 research
@@ -62,14 +67,14 @@ Live Maven metadata on 2026-05-17 changed several earlier version targets:
 | AGP | 9.0.0 | 9.2.1 by Google Maven metadata; official 9.2 notes page documents the 9.2 baseline | Bump as a later toolchain slice after Roborazzi/Robolectric and R8 rules audit |
 | Compose BOM | 2026.03.01 | 2026.05.00 | Bump with toolchain slice |
 | Activity | 1.13.0 | 1.13.0 | Keep |
-| KSP | 2.3.5 | 2.3.8 | Bump in low-risk dep batch |
-| Coroutines | 1.10.2 | 1.11.0 | Bump in low-risk dep batch |
-| AboutLibraries | 14.0.1 | 14.2.0 stable; 15.0.0-a02 preview | Bump to 14.2.0, not alpha |
-| ZXing Core | 3.5.3 | 3.5.4 | Bump |
+| KSP | 2.3.8 | 2.3.8 | ✅ shipped v1.8.69 |
+| Coroutines | 1.11.0 | 1.11.0 | ✅ shipped v1.8.69 |
+| AboutLibraries | 14.2.0 | 14.2.0 stable; 15.0.0-b01 beta | ✅ shipped v1.8.69 |
+| ZXing Core | 3.5.4 | 3.5.4 | ✅ shipped v1.8.69 |
 | Roborazzi | 1.55.0 | 1.60.0 | Bump before removing CI `continue-on-error` |
 | Robolectric | 4.14.1 | 4.16.1 | Bump with Roborazzi |
 | SQLCipher Android | 4.16.0 | 4.16.0 | Keep |
-| Tink Android | not direct | 1.21.0 | Use as target for security migration |
+| Tink Android | 1.21.0 | 1.21.0 | ✅ shipped v1.8.68 |
 
 Sources:
 - https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/maven-metadata.xml
@@ -136,8 +141,8 @@ Sources:
 
 Recommended batches after this fifth pass:
 
-1. **Bump-batch A — low risk:** coroutines `1.10.2 -> 1.11.0`, KSP
-   `2.3.5 -> 2.3.8`, ZXing `3.5.3 -> 3.5.4`, AboutLibraries
+1. ✅ **Bump-batch A — shipped v1.8.69:** coroutines `1.10.2 -> 1.11.0`,
+   KSP `2.3.5 -> 2.3.8`, ZXing `3.5.3 -> 3.5.4`, AboutLibraries
    `14.0.1 -> 14.2.0`. No Activity downgrade.
 2. **Bump-batch B — visual/test infrastructure:** Roborazzi
    `1.55.0 -> 1.60.0`, Robolectric `4.14.1 -> 4.16.1`, then capture
@@ -170,4 +175,3 @@ added, and the toolchain-batch order updated.
 | Source saturation tested | Pass: new findings are corrections/new competitor only; no additional category revealed a new roadmap pillar |
 | Roadmap updated | Pass: `ROADMAP.md` now has a v5.3 fifth-pass section; `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` has a fifth-pass override |
 | Verification | Partial: markdown/source checks only; Gradle not run because `java` is not on PATH in this VM |
-

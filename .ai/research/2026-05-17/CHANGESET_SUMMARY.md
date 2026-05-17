@@ -399,3 +399,36 @@ wrapper presence checks, and the no-network permission grep. Java and the
 Android SDK are absent on this VM, so the focused
 `PersonalDictionaryEncryptionTest` and release assembly must run on the
 maintainer build host.
+
+---
+
+## 11. v1.8.69 continuation — Bump-batch A
+
+The autonomous development loop then shipped
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §A.4 / `ROADMAP.md` N14.5.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.69.md`
+
+**Files updated:**
+
+- `gradle.properties` → `projectVersionCode=1869`,
+  `projectVersionName=1.8.69`
+- `gradle/libs.versions.toml` →
+  `kotlinx-coroutines=1.11.0`, `ksp=2.3.8`,
+  `mikepenz-aboutlibraries=14.2.0`, `zxing-core=3.5.4`
+- `docs/DEPENDENCY_TRIAGE.md` → audit-log row for Bump-batch A and the
+  intentional AboutLibraries beta skip
+- `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `FIFTH_PASS_FINDINGS.md`, `PRIORITIZATION_MATRIX.md`,
+  `STATE_OF_REPO.md`, and `SECURITY_AND_DEPENDENCY_REVIEW.md` →
+  release/version/context updates for v1.8.69
+
+**Verification note:** Maven Central / Gradle Plugin Portal metadata was
+re-checked before applying the bumps. Local verification used
+`git diff --check`, dependency-version greps, and the no-network permission
+grep. Java and the Android SDK are absent on this VM, so
+`:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the
+maintainer build host.

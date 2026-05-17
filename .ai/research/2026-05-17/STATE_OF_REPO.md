@@ -5,9 +5,11 @@
 **Branch:** `master`, 47 commits ahead of `origin/master` (push fails 403 from this VM by design — see AGENTS/CLAUDE local notes)
 
 **Continuation note:** autonomous development after this reconnaissance moved
-HEAD to v1.8.68. The notable dependency delta is
+HEAD to v1.8.69. The notable dependency deltas are
 `androidx.security:security-crypto:1.1.0-alpha06` removed and
-`com.google.crypto.tink:tink-android:1.21.0` added for N7.6.
+`com.google.crypto.tink:tink-android:1.21.0` added for N7.6, plus
+Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and
+AboutLibraries `14.2.0`.
 
 This file is a pure reconnaissance memo. It captures what was observed locally
 before any external research, so future passes can tell what changed in the
@@ -41,7 +43,7 @@ Operative invariants (load-bearing — touched by build gates):
 | versionName / versionCode | 1.8.58 / 1858 | [gradle.properties](../../../gradle.properties#L18-L19) |
 | AGP | 9.0.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L3) |
 | Kotlin | 2.3.21 | [libs.versions.toml](../../../gradle/libs.versions.toml#L19) |
-| KSP | 2.3.5 | [libs.versions.toml](../../../gradle/libs.versions.toml#L22) |
+| KSP | 2.3.8 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
 | Compose BOM | 2026.03.01 | [libs.versions.toml](../../../gradle/libs.versions.toml#L7) |
 | AndroidX Core | 1.18.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L8) |
 | AndroidX Activity | 1.13.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L4) |
@@ -54,8 +56,8 @@ Operative invariants (load-bearing — touched by build gates):
 | Coil | 3.4.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L18) |
 | material-kolor | 4.1.1 | [libs.versions.toml](../../../gradle/libs.versions.toml#L23) |
 | jetpref | 0.3.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L26) |
-| ZXing core | 3.5.3 | [libs.versions.toml](../../../gradle/libs.versions.toml#L28) |
-| kotlinx-coroutines | 1.10.2 | [libs.versions.toml](../../../gradle/libs.versions.toml#L20) |
+| ZXing core | 3.5.4 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
+| kotlinx-coroutines | 1.11.0 | [libs.versions.toml](../../../gradle/libs.versions.toml) (updated after initial reconnaissance in v1.8.69) |
 | kotlinx-serialization-json | 1.11.0 | [libs.versions.toml](../../../gradle/libs.versions.toml#L21) |
 | Kotest | 6.1.11 | [libs.versions.toml](../../../gradle/libs.versions.toml#L35) |
 | Roborazzi | 1.55.0 (plugin **active**) | [libs.versions.toml](../../../gradle/libs.versions.toml#L37) |
@@ -71,7 +73,7 @@ Whether any of the above is materially behind 2026-05-17 latest is in the
 companion [SECURITY_AND_DEPENDENCY_REVIEW.md](SECURITY_AND_DEPENDENCY_REVIEW.md).
 The same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 corrects the most drift-prone items: Activity 1.13.0 is stable, AGP target
-is 9.2.x, Roborazzi target is 1.60.0, and KSP target is 2.3.8.
+is 9.2.x and Roborazzi target is 1.60.0. KSP target 2.3.8 shipped in v1.8.69.
 
 ## 3. Module layout
 
