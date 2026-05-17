@@ -25,9 +25,8 @@ import java.util.Locale
  * owns the next step: reconcile that snapshot with the signing-certificate
  * pins captured at first enrolment, expose deterministic lookup lists for UI
  * and runtime consumers, and keep stale pins even when an addon is temporarily
- * uninstalled. Persisting [pinnedSigningCertificates] is intentionally left to
- * the Settings/Datastore wire-up slice; the reconciliation rules are pure and
- * unit-testable here.
+ * uninstalled. Startup persistence is handled by [AddonRegistryStartup]; the
+ * reconciliation rules stay pure and unit-testable here.
  */
 class AddonRegistry(
     initialPinnedSigningCertificates: Map<String, String> = emptyMap(),

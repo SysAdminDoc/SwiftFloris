@@ -46,6 +46,9 @@ import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.ImeUiMode
+import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
+import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
+import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.input.InputFeedbackController
@@ -66,9 +69,11 @@ import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.lib.util.debugSummarize
 import dev.patrickgold.florisboard.lib.util.launchActivity
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidInternalR
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.showShortToastSync
@@ -376,6 +381,31 @@ class FlorisImeService : LifecycleInputMethodService() {
                 .McpServiceLifecycle.start(applicationContext)
         } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "MCP bridge startup failed: $e" }
+        }
+
+        startAddonRegistry()
+    }
+
+    private fun startAddonRegistry() {
+        lifecycleScope.launch(Dispatchers.Default) {
+            try {
+                val discovered = AddonEnumerator(applicationContext).snapshot()
+                val result = AddonRegistryStartup.reconcile(
+                    discovered = discovered,
+                    persistedSigningPinsRaw = prefs.addon.signingCertPins.get(),
+                )
+                AddonRegistryStore.setActive(result.registry)
+                if (result.signingPinsChanged) {
+                    prefs.addon.signingCertPins.set(result.encodedSigningPins)
+                }
+                flogInfo(LogTopic.IMS_EVENTS) {
+                    "Addon registry startup: accepted=${result.snapshot.accepted.size}, " +
+                        "rejected=${result.snapshot.rejected.size}, pinsChanged=${result.signingPinsChanged}"
+                }
+            } catch (e: Exception) {
+                AddonRegistryStore.reset()
+                flogWarning(LogTopic.IMS_EVENTS) { "Addon registry startup failed: $e" }
+            }
         }
     }
 

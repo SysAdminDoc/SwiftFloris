@@ -266,6 +266,13 @@ or one-competitor additions, not a new roadmap pillar.
   `packageName=SHA-256` newline format, `prefs.addon.signingCertPins` is the
   durable key, and `AddonRegistry` can round-trip through the codec. Focused
   Gradle verification was attempted and stopped at the known VM blocker.
+- **v1.8.83 / Next-10.3c implementation:** continued the addon thread by wiring
+  IME startup to the persisted trust store. `FlorisImeService` now runs
+  `AddonEnumerator` on `Dispatchers.Default`, `AddonRegistryStartup` reconciles
+  discovered manifests with `prefs.addon.signingCertPins`, `AddonRegistryStore`
+  publishes the live registry, and malformed stored pin lines are cleaned when
+  startup persists the canonical pin string. Focused Gradle verification was
+  attempted and stopped at the known VM blocker.
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local

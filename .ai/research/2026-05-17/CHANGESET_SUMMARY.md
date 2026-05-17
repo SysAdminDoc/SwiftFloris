@@ -1089,3 +1089,42 @@ banned-network-permission scan, and the root JVM crash/replay tracked-file
 guard. A focused Gradle test command for the addon pin tests was attempted, but
 Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no `java`
 command is on PATH, so maintainer-host Gradle verification remains required.
+
+## 31. v1.8.83 continuation — addon registry startup wiring
+
+Implemented Next-10.3c as the startup/publish layer for the persisted addon
+trust store:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryStartup.kt`
+  - New pure reconciler that accepts an `AddonEnumerator` manifest snapshot and
+    raw `prefs.addon.signingCertPins` string, builds an `AddonRegistry`, returns
+    the latest snapshot, emits the canonical pin string, and reports whether the
+    preference should be written back.
+  - `AddonRegistryStore` now holds the process-wide active registry for future
+    Settings/runtime consumers.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
+  - Runs addon startup reconciliation on `Dispatchers.Default` during
+    `onCreate()`.
+  - Publishes `AddonRegistryStore`, persists canonical signing pins only when
+    changed, logs accepted/rejected counts, and resets the store on startup
+    failure without aborting the IME.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistry.kt`
+  - Updated KDoc now that persistence is handled by `AddonRegistryStartup`.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryStartupTest.kt`
+  - Covers new-addon enrolment, changed-certificate rejection, corrupt stored
+    line cleanup, and registry store publish/reset.
+- `RELEASE_NOTES_v1.8.83.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `docs/addons/dictionary-pack-spec.md`, and the `.ai/research/2026-05-17/`
+  state/register/backlog/prioritization/log files
+  - Release/context updates for v1.8.83 and explicit note that Settings →
+    Addons UI/install hints and asset mounting remain next slices.
+- `gradle.properties`
+  - `projectVersionCode=1883`, `projectVersionName=1.8.83`.
+
+**Verification note:** local verification used `git diff --check`, the manifest
+banned-network-permission scan, and the root JVM crash/replay tracked-file
+guard. A focused Gradle test command for the addon startup tests was attempted,
+but Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no
+`java` command is on PATH, so maintainer-host Gradle verification remains
+required.
