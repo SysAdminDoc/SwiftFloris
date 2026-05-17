@@ -8,5 +8,6 @@ For each change in the pull request, a workflow is run, which produces a debug a
 
 ## Checklist
 
-- [ ] I have read and understood the [contribution guidelines](https://github.com/florisboard/florisboard/blob/main/CONTRIBUTING.md).
-- [ ] I have read and understood the [AI policy](https://github.com/florisboard/florisboard/blob/main/AI_POLICY.md).
+- [ ] I have read and understood the [SwiftFloris contribution guidelines](../CONTRIBUTING.md).
+- [ ] I have checked the base-app invariants in [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md): no network permission, no telemetry/account binding, Apache-2.0-compatible `:app`, and no closed blobs.
+- [ ] I have listed the exact Gradle/manual verification I ran, or explained why maintainer-host verification is still required.

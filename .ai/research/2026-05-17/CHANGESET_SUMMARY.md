@@ -865,3 +865,32 @@ scan, root JVM crash/replay tracked-file guard, and a focused Gradle test comman
 stopped at the known VM blocker: `JAVA_HOME` is not set and no `java` command is
 on PATH, so maintainer-host Gradle verification remains required before
 publishing.
+
+## 24. Docs-only continuation — architecture and contributing entry points
+
+Implemented Tier-3 #31 / #32 as a contributor-onboarding documentation batch:
+
+- `ARCHITECTURE.md`
+  - New root architecture map covering active modules, runtime entrypoints,
+    package ownership, typing/media/addon boundaries, security invariants,
+    build/CI, testing, and documentation routing.
+- `CONTRIBUTING.md`
+  - New root contributor guide covering setup, project rules, privacy and
+    permission expectations, verification commands, manual QA, release-note
+    expectations, PR shape, AI-assisted contributions, and licensing.
+- `README.md`
+  - Documentation list now links `ARCHITECTURE.md` and `CONTRIBUTING.md`.
+  - Contributing section now delegates to the root contributor guide and
+    restates the base-app invariants.
+- `.github/PULL_REQUEST_TEMPLATE.md`
+  - Replaced upstream FlorisBoard-only links with SwiftFloris-local checklist
+    items for contributor guidelines, invariants, and exact verification.
+- `AGENTS.md`, `PROJECT_CONTEXT.md`, `ROADMAP.md`, `IMPROVEMENT_PLAN.md`,
+  `FEATURE_BACKLOG.md`, `PRIORITIZATION_MATRIX.md`, and `RESEARCH_LOG.md`
+  - Marked the architecture / contributing docs batch as shipped and routed
+    future sessions to the new root files.
+
+**Verification note:** docs-only change. Local verification used
+`git diff --check`, new-doc / PR-template link-target existence checks, and the
+same no-network / root crash-log tracked-file guards. Gradle is still blocked on this VM by
+missing `JAVA_HOME` / `java` and is not required for the docs-only batch.

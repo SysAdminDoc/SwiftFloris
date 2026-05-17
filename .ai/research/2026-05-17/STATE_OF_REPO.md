@@ -91,6 +91,13 @@ shipped in v1.8.74; the macOS `.keylayout` parser shipped in v1.8.75; the
 hardware-keyboard runtime mapper shipped in v1.8.76; the user-imported sticker
 folder shipped in v1.8.77.
 
+A docs-only contributor-onboarding batch followed v1.8.77: root
+`ARCHITECTURE.md` now captures the module/runtime/package map and root
+`CONTRIBUTING.md` captures setup, invariants, verification, release-note, PR,
+AI-assisted contribution, and licensing expectations. README, AGENTS,
+PROJECT_CONTEXT, ROADMAP, the PR template, and the research backlog now point at
+those files.
+
 ## 3. Module layout
 
 From [settings.gradle.kts](../../../settings.gradle.kts):

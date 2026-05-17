@@ -92,8 +92,8 @@ graduate into recommended next-slice work live in
 |---|---|
 | **`PROJECT_CONTEXT.md` at root** | None today; this research run is producing it |
 | **`AGENTS.md` and/or `CLAUDE.md` pointer files** to `PROJECT_CONTEXT.md` + ROADMAP | None today; future AI sessions read these by convention |
-| **`ARCHITECTURE.md`** consolidating the per-package documentation | ROADMAP §11 flags it; outstanding |
-| **`CONTRIBUTING.md`** — README §Contributing covers the basics but a separate file is the convention | Outstanding |
+| **`ARCHITECTURE.md`** consolidating the per-package documentation | ✅ shipped docs-only 2026-05-17; root file now maps modules, runtime entrypoints, packages, media/addon boundaries, security, CI, and testing |
+| **`CONTRIBUTING.md`** — README §Contributing covers the basics but a separate file is the convention | ✅ shipped docs-only 2026-05-17; root file now covers setup, project rules, verification, release notes, PRs, AI-assisted work, and licensing |
 | **Consolidate root-level `*MULTILINGUAL.md`, `VOICE_*.md`, `FUTO_VOICE_*.md` into `docs/`** | ROADMAP §11 flagged; outstanding |
 | **Move `app-release-v1.5.2.apk` (9.7 MB) and `hs_err_pid*.log` / `replay_pid*.log` (8+ MB) out of repo root** | Currently in root; bloat for fresh clones |
 | **Add SUPERSEDED banners to the five superseded `SWIFTKEY_*` docs** | ✅ applied docs-only; all files named by `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` now point to the canonical roadmap |

@@ -68,8 +68,8 @@ here so the next reviewer can see why they're being re-emphasized; the
 |---|---|---|---|---|---|---|
 | 29 | ✅ **Shipped v1.8.77:** User-imported sticker folder | 4 | 2 | 1 | **4.5** | Settings → Emoji & stickers persists a SAF folder URI; `UserStickerRepository` enumerates local image files into an Imported pack; `StickerMediaProvider` proxies rich-content commits |
 | 30 | **Roborazzi baseline capture for all 13 bundled themes** | 3 | 2 | 1 | **3.5** | After bump-batch B |
-| 31 | **`ARCHITECTURE.md`** consolidating per-package docs | 3 | 2 | 1 | **3.5** | ROADMAP §11 outstanding |
-| 32 | **`CONTRIBUTING.md`** | 2 | 1 | 1 | **5.0** | Small; convention |
+| 31 | ✅ **Shipped docs-only 2026-05-17:** `ARCHITECTURE.md` consolidating per-package docs | 3 | 2 | 1 | **3.5** | Root architecture map now covers modules, runtime entrypoints, package ownership, media/addon boundaries, security, CI, and tests |
+| 32 | ✅ **Shipped docs-only 2026-05-17:** `CONTRIBUTING.md` | 2 | 1 | 1 | **5.0** | Root contributor guide now covers setup, project rules, verification, release notes, PRs, AI-assisted work, and licensing |
 | 33 | **Consolidate root-level `*MULTILINGUAL.md` / `VOICE_*.md` / `FUTO_*.md` into `docs/`** | 2 | 2 | 1 | **2.5** | Repo hygiene; ROADMAP §11 flagged |
 | 34 | **`.kmp` Keyman package runtime** | 4 | 4 | 1 | **2.25** | High value (1,000+ minority-language layouts) but large engineering cost |
 | 35 | **Honeycomb-hex layout wire-up** | 3 | 4 | 1 | **1.75** | Components in tree but geometry rework is expensive |
@@ -129,6 +129,10 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 - Tier-3 #29 shipped in v1.8.77 as the read-only SAF user-sticker folder
   foundation. Delete-from-folder / explicit sticker-pack manifests remain
   future polish, not blockers for the imported-pack surface.
+- Tier-3 #31 and #32 shipped as a docs-only contributor-onboarding batch:
+  root `ARCHITECTURE.md`, root `CONTRIBUTING.md`, README documentation links,
+  and the PR-template checklist now point contributors at SwiftFloris-specific
+  invariants instead of upstream FlorisBoard-only guidance.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

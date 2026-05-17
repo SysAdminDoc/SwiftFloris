@@ -105,6 +105,8 @@ Full step-by-step paths are in [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FR
 
 Project-internal docs all live in the repository:
 
+- [`ARCHITECTURE.md`](ARCHITECTURE.md) — module, package, runtime, security-boundary, and CI architecture map.
+- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup, verification, privacy, and release expectations.
 - [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md) — SwiftKey account-retirement migration paths.
 - [`docs/PRIVACY_AND_AI.md`](docs/PRIVACY_AND_AI.md) — AI/ML feature transparency and local-processing disclosure.
 - [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — privacy / security threat model and mitigations.
@@ -318,22 +320,11 @@ See [`ROADMAP.md`](ROADMAP.md) §3 for the full reconciled version table back to
 
 ## Contributing
 
-SwiftFloris welcomes contributions in:
-
-- 🎨 Themes and design tokens (Snygg engine).
-- 🌍 Dictionary packs and transliteration tables for additional scripts.
-- 🔧 Performance work (Macrobenchmark device-number capture, glide-typing engine).
-- 🐛 Bug fixes; especially anything in [GitHub Issues](https://github.com/SysAdminDoc/SwiftFloris/issues).
-- 📚 Docs and migration guides.
-- ♿ Accessibility improvements.
-
-**How to contribute**
-
-1. Fork the repository.
-2. Create a feature branch (`git checkout -b feature/my-feature`).
-3. Make your changes; keep them within the philosophy in [`ROADMAP.md`](ROADMAP.md) §1 (no network, no telemetry, Apache-2.0 main app, no closed blobs).
-4. Run `./gradlew test`. Add tests for new behavior.
-5. Submit a pull request with a clear description.
+SwiftFloris welcomes focused contributions in themes, dictionary packs,
+transliteration tables, performance work, bug fixes, accessibility, and docs.
+Before opening a PR, read [`CONTRIBUTING.md`](CONTRIBUTING.md) and keep the
+base-app invariants intact: no network permission, no telemetry, no account
+binding, Apache-2.0-compatible `:app` code, and no closed-source blobs.
 
 ## Troubleshooting
 
