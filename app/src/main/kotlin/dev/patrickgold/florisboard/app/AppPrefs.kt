@@ -740,7 +740,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
          *  routes the fixed-mode renderer through the `Fixed.SPLIT`
          *  sub-mode instead of `Fixed.NORMAL`. Narrow phones simply
          *  ignore the preference because the split is not viable there.
-         *  The actual key-rect distribution lands in Next-7.2a. */
+         *  `TextKeyboardSplitLayout` + `SplitGutterPostPass` perform the
+         *  actual key-rect distribution. */
         val splitKeyboardEnabled = boolean(
             key = "keyboard__split_keyboard_enabled",
             default = false,

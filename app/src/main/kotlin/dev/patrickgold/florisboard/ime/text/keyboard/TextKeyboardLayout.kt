@@ -67,7 +67,6 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -92,6 +91,8 @@ import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.ime.window.ImeWindowConstraints
+import dev.patrickgold.florisboard.ime.window.ImeWindowSpec
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisRect
@@ -265,20 +266,23 @@ fun TextKeyboardLayout(
         val keyMarginH by remember { derivedStateOf { windowSpec.keyMarginH.toPx() } }
         val keyMarginV by remember { derivedStateOf { windowSpec.keyMarginV.toPx() } }
 
-        // ROADMAP §0 P3-renderer wire-up — detect split-keyboard mode
-        // so the layout post-pass shifts the right half of every row.
-        val splitMode = windowSpec is dev.patrickgold.florisboard.ime.window.ImeWindowSpec.Fixed &&
-            (windowSpec as dev.patrickgold.florisboard.ime.window.ImeWindowSpec.Fixed).fixedMode ==
-                dev.patrickgold.florisboard.ime.window.ImeWindowMode.Fixed.SPLIT
-        val splitGutterPx = if (splitMode) 80.dp.toPx() else 0f
+        val splitConstraints = (windowSpec as? ImeWindowSpec.Fixed)
+            ?.constraints as? ImeWindowConstraints.Fixed.Split
+        val splitGutterPx = TextKeyboardSplitLayout.gutterPx(
+            keyboardMode = keyboard.mode,
+            windowSpec = windowSpec,
+            defaultGutterPx = splitConstraints?.defaultGutter?.toPx() ?: 0f,
+            keyboardWidthPx = keyboardWidth,
+        )
+        val layoutKeyboardWidth = TextKeyboardSplitLayout.layoutWidthPx(keyboardWidth, splitGutterPx)
 
         val desiredKey = remember(
-            keyboard, keyboardWidth, keyboardHeight, keyMarginH, keyMarginV,
-            keyboardRowBaseHeight, evaluator, splitMode
+            keyboard, keyboardWidth, layoutKeyboardWidth, keyboardHeight, keyMarginH, keyMarginV,
+            keyboardRowBaseHeight, evaluator, splitGutterPx
         ) {
             TextKey(data = TextKeyData.UNSPECIFIED).also { desiredKey ->
                 desiredKey.touchBounds.apply {
-                    width = keyboardWidth / 10f
+                    width = layoutKeyboardWidth / 10f
                     height = when (keyboard.mode) {
                         KeyboardMode.CHARACTERS,
                         KeyboardMode.NUMERIC_ADVANCED,
@@ -291,8 +295,8 @@ fun TextKeyboardLayout(
                     }
                 }
                 desiredKey.visibleBounds.applyFrom(desiredKey.touchBounds).deflateBy(keyMarginH, keyMarginV)
-                keyboard.layout(keyboardWidth, keyboardHeight, desiredKey, true)
-                if (splitMode && keyboard.mode == KeyboardMode.CHARACTERS) {
+                keyboard.layout(layoutKeyboardWidth, keyboardHeight, desiredKey, true)
+                if (splitGutterPx > 0f) {
                     SplitGutterPostPass.apply(keyboard, splitGutterPx)
                 }
             }

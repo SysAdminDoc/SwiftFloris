@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.window
 
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.IntRect
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.jetpref.datastore.jetprefDataStoreOf
@@ -27,6 +29,15 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.property.Arb
 import io.kotest.property.checkAll
 import kotlinx.coroutines.flow.first
+
+private fun rootInsets(widthDp: Int, heightDp: Int): ImeInsets.Root {
+    val boundsDp = DpRect(0.dp, 0.dp, widthDp.dp, heightDp.dp)
+    return ImeInsets.Root(
+        boundsDp = boundsDp,
+        boundsPx = IntRect(0, 0, widthDp, heightDp),
+        formFactor = ImeFormFactor.of(boundsDp),
+    )
+}
 
 class ImeWindowControllerTest : FunSpec({
     val tolerance = 1e-3f.dp
@@ -109,6 +120,59 @@ class ImeWindowControllerTest : FunSpec({
         }
     }
 
+    context("split keyboard viability") {
+        test("stored split mode falls back to fixed normal on narrow roots") {
+            val rootInsets = rootInsets(widthDp = 500, heightDp = 800)
+            val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+            prefs.keyboard.windowConfig.set(
+                mapOf(
+                    rootInsets.formFactor.typeGuess to ImeWindowConfig(
+                        mode = ImeWindowMode.FIXED,
+                        fixedMode = ImeWindowMode.Fixed.SPLIT,
+                    ),
+                ),
+            )
+            val windowController = ImeWindowController(prefs, backgroundScope)
+            windowController.updateRootInsets(rootInsets)
+
+            val spec = windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
+                .shouldBeInstanceOf<ImeWindowSpec.Fixed>()
+
+            spec.fixedMode shouldBe ImeWindowMode.Fixed.NORMAL
+        }
+
+        test("split preference promotes fixed mode only on viable roots") {
+            val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+            prefs.keyboard.splitKeyboardEnabled.set(true)
+            val windowController = ImeWindowController(prefs, backgroundScope)
+            windowController.updateRootInsets(rootInsets(widthDp = 800, heightDp = 700))
+            windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
+
+            windowController.onWindowShown() shouldBe true
+
+            val spec = windowController.activeWindowSpec.first {
+                it is ImeWindowSpec.Fixed && it.fixedMode == ImeWindowMode.Fixed.SPLIT
+            }.shouldBeInstanceOf<ImeWindowSpec.Fixed>()
+            spec.constraints.shouldBeInstanceOf<ImeWindowConstraints.Fixed.Split>()
+        }
+
+        test("split preference stays fixed normal on non-viable roots") {
+            val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+            prefs.keyboard.splitKeyboardEnabled.set(true)
+            val windowController = ImeWindowController(prefs, backgroundScope)
+            windowController.updateRootInsets(rootInsets(widthDp = 500, heightDp = 800))
+            val initialSpec = windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
+                .shouldBeInstanceOf<ImeWindowSpec.Fixed>()
+
+            windowController.onWindowShown() shouldBe true
+
+            initialSpec.fixedMode shouldBe ImeWindowMode.Fixed.NORMAL
+            windowController.activeWindowSpec.value
+                .shouldBeInstanceOf<ImeWindowSpec.Fixed>()
+                .fixedMode shouldBe ImeWindowMode.Fixed.NORMAL
+        }
+    }
+
     context("for all root insets") {
         test("for all fixed window configs in prefs") {
             checkAll(
@@ -123,8 +187,20 @@ class ImeWindowControllerTest : FunSpec({
                 val spec = windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
 
                 assertSoftly {
-                    val constraints = ImeWindowConstraints.of(rootInsets, windowConfig.fixedMode)
+                    val effectiveFixedMode = if (
+                        windowConfig.fixedMode == ImeWindowMode.Fixed.SPLIT &&
+                        !(ImeWindowConstraints.of(
+                            rootInsets,
+                            ImeWindowMode.Fixed.SPLIT,
+                        ) as ImeWindowConstraints.Fixed.Split).isViable
+                    ) {
+                        ImeWindowMode.Fixed.NORMAL
+                    } else {
+                        windowConfig.fixedMode
+                    }
+                    val constraints = ImeWindowConstraints.of(rootInsets, effectiveFixedMode)
                     val spec = spec.shouldBeInstanceOf<ImeWindowSpec.Fixed>()
+                    spec.fixedMode shouldBe effectiveFixedMode
                     spec.props.shouldBeConstrainedTo(constraints, tolerance)
                 }
             }

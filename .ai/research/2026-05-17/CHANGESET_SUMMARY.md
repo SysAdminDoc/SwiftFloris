@@ -9,16 +9,17 @@ touched.
 
 > **Post-research development continuation:** after the research run,
 > v1.8.59 shipped Phase D3 (typing-stats accuracy delta), and v1.8.60
-> shipped the Phase B1 multilingual sentence-position prior seed, and
-> v1.8.61 shipped Phase B2 quick-prediction-insert threshold tuning. Those
+> shipped the Phase B1 multilingual sentence-position prior seed, v1.8.61
+> shipped Phase B2 quick-prediction-insert threshold tuning, and v1.8.62
+> shipped Phase C1 split-keyboard renderer wire-up. Those
 > follow-ups touched runtime source, tests, strings, bundled Zipf assets,
 > `NOTICE`, `gradle.properties`, release notes, `README.md`,
 > `PROJECT_CONTEXT.md`, `ROADMAP.md`,
 > `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and
 > `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`. The historical sections below
 > describe the original research run; see `RELEASE_NOTES_v1.8.59.md`,
-> `RELEASE_NOTES_v1.8.60.md`, and `RELEASE_NOTES_v1.8.61.md` for the
-> implementation changes.
+> `RELEASE_NOTES_v1.8.60.md`, `RELEASE_NOTES_v1.8.61.md`, and
+> `RELEASE_NOTES_v1.8.62.md` for the implementation changes.
 
 - Pass 1 created 11 files (root: `PROJECT_CONTEXT.md`,
   `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`; nine artifacts under
@@ -52,11 +53,11 @@ reflect HEAD = v1.8.58 and to remove the three closed recommendations
 from the open list.
 
 **Post-research continuation reconciliation:** v1.8.59 Phase D3,
-v1.8.60 Phase B1, and v1.8.61 Phase B2 subsequently shipped from the
-same SwiftKey-parity plan. `PROJECT_CONTEXT.md`,
+v1.8.60 Phase B1, v1.8.61 Phase B2, and v1.8.62 Phase C1 subsequently
+shipped from the same SwiftKey-parity plan. `PROJECT_CONTEXT.md`,
 `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`, `ROADMAP.md`, and
-`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` now reflect HEAD = v1.8.61
-and the tag catch-up gap as 21 releases after `v1.8.40`.
+`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` now reflect HEAD = v1.8.62
+and the tag catch-up gap as 22 releases after `v1.8.40`.
 
 **Second-pass deep-dives** verified or concretized seven items the first
 pass left thin:

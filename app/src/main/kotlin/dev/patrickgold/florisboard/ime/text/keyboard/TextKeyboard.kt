@@ -20,6 +20,7 @@ import dev.patrickgold.florisboard.ime.keyboard.Key
 import dev.patrickgold.florisboard.ime.keyboard.Keyboard
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.popup.PopupMapping
+import dev.patrickgold.florisboard.ime.window.SplitKeyboardLayoutCalculator
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -52,6 +53,7 @@ class TextKeyboard(
     }
 
     fun getNearestKeyForPos(pointerX: Float, pointerY: Float): TextKey? {
+        if (isPointInSplitGutter(pointerX, pointerY)) return null
         var bestKey: TextKey? = null
         var bestDistanceSq = Float.POSITIVE_INFINITY
         for (key in keys()) {
@@ -80,6 +82,26 @@ class TextKeyboard(
             }
         }
         return bestKey
+    }
+
+    fun isPointInSplitGutter(pointerX: Float, pointerY: Float): Boolean {
+        for ((rowIndex, row) in rows().withIndex()) {
+            if (row.size < 2) continue
+            val (leftKeyCount, rightKeyCount) =
+                SplitKeyboardLayoutCalculator.qwertyBoundary(rowIndex, row.size)
+            if (leftKeyCount <= 0 || rightKeyCount <= 0 || leftKeyCount >= row.size) continue
+            val lastLeft = row[leftKeyCount - 1].touchBounds
+            val firstRight = row[leftKeyCount].touchBounds
+            if (firstRight.left <= lastLeft.right) continue
+            val rowTop = min(lastLeft.top, firstRight.top)
+            val rowBottom = max(lastLeft.bottom, firstRight.bottom)
+            if (pointerY >= rowTop && pointerY < rowBottom &&
+                pointerX >= lastLeft.right && pointerX < firstRight.left
+            ) {
+                return true
+            }
+        }
+        return false
     }
 
     internal fun getNearbyKeysForPos(

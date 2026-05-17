@@ -285,6 +285,7 @@ class ImeWindowController(
                 // promote the fixed sub-mode to SPLIT so the renderer
                 // emits the split key-rect arrangement (Next-7.2-renderer).
                 val splitEnabled = prefs.keyboard.splitKeyboardEnabled.get()
+                val splitViable = isSplitModeViable(activeRootInsets.value)
                 if (startInFloatingMode && currentMode != ImeWindowMode.FLOATING) {
                     updateWindowConfig(
                         afterUpdate = { queueFloatingOnboardingIfNeeded(ImeWindowMode.FLOATING) },
@@ -292,6 +293,7 @@ class ImeWindowController(
                         config.copy(mode = ImeWindowMode.FLOATING)
                     }
                 } else if (splitEnabled && currentMode == ImeWindowMode.FIXED &&
+                    splitViable &&
                     currentConfig.fixedMode != ImeWindowMode.Fixed.SPLIT
                 ) {
                     updateWindowConfig { config ->
@@ -332,8 +334,16 @@ class ImeWindowController(
     ): ImeWindowSpec {
         return when (windowConfig.mode) {
             ImeWindowMode.FIXED -> {
-                val constraints = ImeWindowConstraints.of(rootInsets, windowConfig.fixedMode)
-                val rawProps = windowConfig.fixedProps[windowConfig.fixedMode] ?: constraints.defaultProps
+                val fixedMode = if (
+                    windowConfig.fixedMode == ImeWindowMode.Fixed.SPLIT &&
+                    !isSplitModeViable(rootInsets)
+                ) {
+                    ImeWindowMode.Fixed.NORMAL
+                } else {
+                    windowConfig.fixedMode
+                }
+                val constraints = ImeWindowConstraints.of(rootInsets, fixedMode)
+                val rawProps = windowConfig.fixedProps[fixedMode] ?: constraints.defaultProps
                 // ROADMAP §6 N5.3 — apply user height scale before constrained() so the
                 // [min, max] keyboard-height clamp catches absurd slider values.
                 val scaledProps = rawProps.copy(
@@ -341,7 +351,7 @@ class ImeWindowController(
                 )
                 val props = scaledProps.constrained(constraints)
                 ImeWindowSpec.Fixed(
-                    fixedMode = windowConfig.fixedMode,
+                    fixedMode = fixedMode,
                     props = props,
                     userPreferredOptions = userPreferredOptions,
                     constraints = constraints,
@@ -361,6 +371,11 @@ class ImeWindowController(
                 )
             }
         }
+    }
+
+    private fun isSplitModeViable(rootInsets: ImeInsets.Root): Boolean {
+        val constraints = ImeWindowConstraints.of(rootInsets, ImeWindowMode.Fixed.SPLIT)
+        return constraints is ImeWindowConstraints.Fixed.Split && constraints.isViable
     }
 
     /**
