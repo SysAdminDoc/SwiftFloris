@@ -100,6 +100,10 @@ Corrections recorded in
 - `FUTO keyboard v0.1.28 Chinese Pinyin` — competitor feature drop
 - `Samsung One UI 7 Galaxy AI keyboard` — decoupling confirmation
 - `Grammarly Android keyboard discontinued` — market exit
+- `Samsung One UI 7 Galaxy AI writing tools any keyboard` — v1.8.70 README
+  callout source refresh
+- `Grammarly Android keyboard discontinued official support` — v1.8.70 README
+  callout source refresh
 - `androidx-activity 1.13.0 stable` — RC vs stable status
 - `AGP 9.1 R8 repackageclasses` — bump implications
 - `Roborazzi 1.59 AGP 9` — visual-regression upgrade path

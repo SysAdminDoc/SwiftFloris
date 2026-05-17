@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.69)
+## 3. Stack at HEAD (v1.8.70)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -68,6 +68,11 @@ and AboutLibraries 14.0.1 → 14.2.0. The
 local encrypted preference payloads now use Tink Android + direct
 AndroidKeystore wrapping, with one-shot AndroidX encrypted-preference
 migration. `androidx-activity 1.13.0` is stable; do **not** downgrade it.
+
+v1.8.70 is a docs-only migration-window follow-up: the README now explains
+how Samsung One UI 7+ Galaxy AI Writing Assist and Grammarly for Android can
+coexist with SwiftFloris as the no-network default keyboard. No app code or
+permission surface changed.
 
 ## 4. Module layout
 
@@ -96,7 +101,8 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits. The tags still need to be pushed
+  `gradle.properties` version-bump commits, and `v1.8.70` is tagged with
+  its README migration-window release commit. The tags still need to be pushed
   from the maintainer host because this VM cannot push to `SysAdminDoc/SwiftFloris`.
 
 ## 6. Roadmap structure (where to put what)
