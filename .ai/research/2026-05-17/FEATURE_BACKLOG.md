@@ -54,7 +54,7 @@ graduate into recommended next-slice work live in
 | ✅ **Shipped v1.8.68:** replace `androidx-security-crypto:1.1.0-alpha06` with Tink + AndroidKeystore | AndroidX Security Crypto 1.1.0 exists, but APIs are deprecated. `PersonalDictionaryEncryptionTest` now pins the shared Tink wrapper and one-shot legacy migration contract |
 | **Reproducible-build verification CI job** (build twice, compare APK checksums) | F-Droid verified-tier launch 2025-05; SwiftFloris can self-verify before fdroiddata submission |
 | **R8 rules audit** before AGP 9.2.x bump | AGP 9.2 / R8 release notes |
-| **OpenSSL/BoringSSL SQLCipher provider migration plan** | LibTomCrypt deprecation announced by Zetetic |
+| **OpenSSL/BoringSSL SQLCipher provider migration plan** | ✅ shipped v1.8.80 as `docs/SQLCIPHER_PROVIDER_MIGRATION.md`; current 4.16.0 Android Community AAR still uses LibTomCrypt, so OpenSSL is trigger-gated rather than immediate |
 | **Lint baseline refresh** (IMPROVEMENT_PLAN counter from 2026-05-05 is stale) | Self-evident |
 
 ### 2.4 Feature opportunities (competitor delta)

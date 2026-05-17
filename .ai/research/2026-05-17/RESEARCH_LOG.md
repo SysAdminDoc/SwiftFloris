@@ -112,7 +112,7 @@ Corrections recorded in
 - `androidx-security-crypto deprecation 2025` — JetSec status
 - `LeanBitLab LeanType v3.7.9 offline ONNX keyboard` — fifth-pass
   competitor addition
-- `SQLCipher 4.16 LibTomCrypt deprecation` — crypto provider drift
+- `SQLCipher 4.16 LibTomCrypt OpenSSL 16KB sqlcipher-android` — crypto provider drift and Android native-library packaging
 - `KenLM license LGPL Apache-2.0 compatible` — license verification
 - `EU AI Act Article 50 transparency 2026` — regulatory cutoff
 - `F-Droid Reproducible Builds verified 2026` — distribution path
@@ -243,6 +243,13 @@ or one-competitor additions, not a new roadmap pillar.
   lays out real keys in the hex tessellation, and hit testing follows the
   clipped hex shape. Focused Gradle verification was attempted and stopped at
   the known VM blocker (`JAVA_HOME` / `java` missing).
+- **v1.8.80 / Tier-3 #36 implementation:** official Zetetic SQLCipher 4.14.0
+  and 4.16.0 release notes, `sqlcipher-android` README, and Android 16 KB
+  page-size guidance were re-checked. The result is a readiness plan, not a
+  dependency swap: the current Android Community AAR still uses LibTomCrypt,
+  OpenSSL is the documented source-build escape hatch, and
+  `docs/SQLCIPHER_PROVIDER_MIGRATION.md` now records the migration triggers,
+  proof-of-concept path, verification gates, and rollback rules.
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local

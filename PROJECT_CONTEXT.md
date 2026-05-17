@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.79)
+## 3. Stack at HEAD (v1.8.80)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -121,6 +121,12 @@ hex tessellation, `TextKeyboardLayout` clips production Snygg key surfaces to
 `HoneycombHexShape`, and hit testing now uses the actual hex shape instead of
 rectangular bounding boxes.
 
+v1.8.80 ships the Tier-3 #36 SQLCipher provider migration plan. The runtime
+dependency stays on the stock `sqlcipher-android` Community AAR, but
+`docs/SQLCIPHER_PROVIDER_MIGRATION.md` now records the upstream LibTomCrypt /
+OpenSSL provider state, migration triggers, OpenSSL proof-of-concept steps,
+16 KB page-size gates, verification requirements, and rollback rules.
+
 ## 4. Module layout
 
 ```
@@ -148,7 +154,7 @@ subsystem map in
   tradeoffs that conflict with the no-telemetry posture)
 - **Tag cadence recovered locally** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
-  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.79`
+  `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.80`
   are tagged with their release commits. The tags still need to be
   pushed from the maintainer host because this VM cannot push to
   `SysAdminDoc/SwiftFloris`.

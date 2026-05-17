@@ -73,7 +73,7 @@ here so the next reviewer can see why they're being re-emphasized; the
 | 33 | ✅ **Shipped docs-only 2026-05-17:** Consolidate root-level `*MULTILINGUAL.md` / `VOICE_*.md` / `FUTO_*.md` into `docs/` | 2 | 2 | 1 | **2.5** | Multilingual gesture, multilingual research, FUTO voice troubleshooting, and voice-command docs moved under `docs/` with internal links updated |
 | 34 | ✅ **Partially shipped v1.8.78:** `.kmp` Keyman package import foundation | 4 | 4 | 1 | **2.25** | `KeymanPackageParser` now covers safe `.kmp` ZIP intake, `kmp.json` metadata, LDML-in-package extraction, and package-status classification; compiled `.kmx` / `.js` runtime remains the large future addon task |
 | 35 | ✅ **Shipped v1.8.79:** Honeycomb-hex layout wire-up | 3 | 4 | 1 | **1.75** | Bundled `honeycomb` layout now selectable; production `TextKeyboardLayout` clips Snygg keys to `HoneycombHexShape`; `TextKeyboard` uses hex geometry and hex-aware hit testing |
-| 36 | **OpenSSL/BoringSSL SQLCipher provider migration plan** | 3 | 3 | 1 | **2.33** | Not urgent; Zetetic has not announced LibTomCrypt removal release |
+| 36 | ✅ **Shipped v1.8.80:** OpenSSL/BoringSSL SQLCipher provider migration plan | 3 | 3 | 1 | **2.33** | `docs/SQLCIPHER_PROVIDER_MIGRATION.md` now records the corrected provider state, OpenSSL proof-of-concept path, triggers, 16 KB gates, and rollback rules |
 | 37 | **Self-hosted ACRA opt-in endpoint** | 2 | 3 | 1 | **1.67** | §9 Under Consideration; demand-gated |
 | 38 | **HeliBoard dictionary downloader UI pattern** | 4 | 3 | 1 | **3.0** | Strategic; depends on Next-10.3 addon catalog landing first |
 
@@ -141,6 +141,9 @@ Based on Tier-1 items + current Phase A/B SwiftKey-parity sprint:
 - Tier-3 #35 shipped in v1.8.79 as the honeycomb hex production wire-up. The
   remaining visual-baseline work is Roborazzi/device evidence, not the layout
   selection or hit-testing path.
+- Tier-3 #36 shipped in v1.8.80 as a docs/security planning slice. The current
+  SQLCipher Community AAR remains in place; the OpenSSL build path is now
+  documented and trigger-gated.
 
 This sequence respects the SwiftKey 2026-05-31 cutoff as the highest
 external-clock anchor.

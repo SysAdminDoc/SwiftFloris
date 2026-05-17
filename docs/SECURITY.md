@@ -40,6 +40,19 @@ The helper is used for:
 Legacy AndroidX encrypted-preference payloads are read only for one-shot migration when their keysets are still
 recoverable. The normal runtime dependency is now `com.google.crypto.tink:tink-android`.
 
+## SQLCipher crypto provider watch
+
+SwiftFloris currently uses the stock SQLCipher Android Community AAR. As of
+SQLCipher 4.16.0, Zetetic's Android Community provider matrix still lists
+LibTomCrypt for that artifact, while OpenSSL is the supported build path for
+commercial / enterprise non-FIPS packages and custom source builds. The
+provider-removal risk is tracked, but there is no immediate dependency swap in
+`:app`.
+
+The readiness plan, migration triggers, proof-of-concept build path, 16 KB
+alignment gates, and rollback rules live in
+[`docs/SQLCIPHER_PROVIDER_MIGRATION.md`](SQLCIPHER_PROVIDER_MIGRATION.md).
+
 ## Dependency scanning
 
 ### Weekly + on-change scan (`.github/workflows/dependency-scan.yml`)

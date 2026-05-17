@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-05-17
 **Supersedes:** ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 adds the fifth-pass correction layer from `.ai/research/2026-05-17/FIFTH_PASS_FINDINGS.md` without mechanically rewriting the historical body.
-**Current Version:** v1.8.79 (released 2026-05-17 — honeycomb hex layout wire-up. The bundled `honeycomb` character layout is now registered for subtype selection, routed through `TextKeyboardLayoutStyle.Honeycomb`, clipped to `HoneycombHexShape`, and hit-tested against the real hex shape instead of rectangular bounding boxes. **Previous version, v1.8.78** (released 2026-05-17 — Keyman `.kmp` package import foundation; see `RELEASE_NOTES_v1.8.78.md` and §3 below for preserved version history.)
+**Current Version:** v1.8.80 (released 2026-05-17 — SQLCipher provider migration plan. `docs/SQLCIPHER_PROVIDER_MIGRATION.md` documents the current LibTomCrypt-based Android Community AAR state, the OpenSSL proof-of-concept path, migration triggers, 16 KB page-size gates, and rollback rules without changing the runtime dependency. **Previous version, v1.8.79** (released 2026-05-17 — honeycomb hex layout wire-up; see `RELEASE_NOTES_v1.8.79.md` and §3 below for preserved version history.)
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream.
 
 ---
@@ -26,7 +26,7 @@ This delta supersedes the stale dependency guidance in the first-pass
 - Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
   2026-05-17 from their matching `gradle.properties` version-bump commits
   so Obtainium / fork audit anchors are no longer stale locally; v1.8.70
-  through v1.8.79 are tagged with their release commits. The remaining
+  through v1.8.80 are tagged with their release commits. The remaining
   distribution step is pushing those tags from the maintainer host.
 - v1.8.70 refreshed README migration-window messaging for Samsung and
   Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
@@ -75,6 +75,12 @@ This delta supersedes the stale dependency guidance in the first-pass
   `honeycomb` layout is selectable, `TextKeyboard` performs honeycomb geometry
   and hex-aware hit testing, and `TextKeyboardLayout` clips the real Snygg key
   surface to `HoneycombHexShape`.
+- Tier-3 #36 shipped in v1.8.80 as a security-planning correction: SQLCipher
+  issue `#564` announced LibTomCrypt / NSS deprecation, but Zetetic restored
+  LibTomCrypt for Android Community builds in 4.14.0 and 4.16.0 still lists it
+  as the Android Community provider. The project now has a documented OpenSSL
+  proof-of-concept path and migration triggers instead of a premature provider
+  swap.
 - LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
   with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
   cannot be copied into `:app`, but it validates the offline-AI keyboard
@@ -113,7 +119,7 @@ This table is the Phase 2/3 normalization layer. It does not replace the 95+ exi
 
 | # | Feature / idea | Cat. | Sources | Prev. | Fit | I/E/R | Depends | Novelty | Tier | Placement rationale |
 |---:|---|---|---|---|---|---|---|---|---|---|
-| 1 | README/version/release-note parity sweep | docs / distribution | `[INT-README]`, `[INT-ROADMAP]` | table-stakes | strong | 4/1/1 | release artifacts | parity | Recently Shipped | ✅ Refreshed through v1.8.79 — `README.md` / `ROADMAP.md` now track the current stack, target SDK, themes, MCP bridge, multilingual scripts, hardware-keyboard import/runtime slices, local sticker import, Keyman `.kmp` package intake, honeycomb hex layout wire-up, encryption posture, release-note links, and local tag stream; broken doc links remain removed. |
+| 1 | README/version/release-note parity sweep | docs / distribution | `[INT-README]`, `[INT-ROADMAP]` | table-stakes | strong | 4/1/1 | release artifacts | parity | Recently Shipped | ✅ Refreshed through v1.8.80 — `README.md` / `ROADMAP.md` now track the current stack, target SDK, themes, MCP bridge, multilingual scripts, hardware-keyboard import/runtime slices, local sticker import, Keyman `.kmp` package intake, honeycomb hex layout wire-up, SQLCipher provider planning, encryption posture, release-note links, and local tag stream; broken doc links remain removed. |
 | 2 | Publish v1.8.46 GitHub release artifacts | distribution | `[INT-REL]`, `[SK-RETIRE-2026]` | table-stakes | strong | 5/1/1 | signing workflow | parity | Now | SwiftKey users have a dated cutoff; a stale public release stream kills adoption trust. |
 | 3 | SwiftKey export JSON importer | migration / data | `[COMM-SWIFTKEY-ONEDRIVE]`, `[COMMUNITY-SWIFTKEY-ONEDRIVE]`, `[INT-REL]` | rare/time-sensitive | strong | 5/2/2 | sample export | leapfrog | Recently Shipped | v1.8.46 landed the tolerant JSON parser; the remaining work is release/distribution/docs, not parser discovery. |
 | 4 | Emoji picker crash regression for issue #1 | reliability / testing | `[GH-SWIFTF-ISSUE-1]`, `[DEP-EMOJI2-2026]` | table-stakes | strong | 5/2/1 | repro trace | parity | Now | Emoji insertion is core keyboard behavior; public crash reports outrank speculative feature work. |
@@ -215,7 +221,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 2. State of the Repo (v1.8.79 reality, observed)
+## 2. State of the Repo (v1.8.80 reality, observed)
 
 **Stack:** Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor · AGP 9.2.1 · Gradle 9.4.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
 
@@ -223,7 +229,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 **Source size:** 624+ tracked Kotlin files repo-wide, with the main IME work concentrated in `app/src/main/kotlin/dev/patrickgold/florisboard/ime/{keyboard,nlp,theme,ext,emoji,mcp,voice,bidi,dictionary,kenlm,calendar}`. The v1.8.40 release line reported **998 unit tests** at HEAD, and v1.8.41-v1.8.69 pushed the suite past **1000+ unit tests** with targeted gates around apostrophe auto-return, password-field popup suppression, Roborazzi task wiring, Kotlin reproducibility drift, Android 17 IME visibility restore, split rendering, bundled theme contrast/registration, calendar quick-insert formatting/serialization, encrypted dictionary export/import round-trip parsing, AI-feature disclosure catalog coverage, and the Tink encrypted-preference migration contract. Production TODO/FIXME markers are now mostly design debt rather than crash stubs: language-capability hard-coding in `FlorisLocale`, loader/locking notes in language-pack extensions, emoji-compat GMS/no-GMS cleanup, honeycomb/layout constraint comments, and unsupported mutating calls in read-only media providers. **No known production `TODO()` crash stub remains.**
 
-**Active components (v1.8.79):**
+**Active components (v1.8.80):**
 - **Core keyboard:** FlorisBoard-derived layouts, QWERTY/QWERTZ/AZERTY and locale variants, bottom-row presets, split/floating/one-handed foundations, SwiftKey Pure themes, M3 Expressive themes, SwiftKey High Contrast (AAA), Aurora Animated, Snygg theme engine, per-app smartbar profiles, CODE profile, inline autofill slot, keyboard-height/font-size controls, haptics, popup polish, reduced-motion gating, and accessibility labels.
 - **Prediction / correction:** 117k-word SCOWL English dictionary, contraction autocorrect, SymSpell d1 + bounded d2, adaptive touch model, personal bigram/trigram stores, typed-word overlay with instant remember, overlay typo correction, user-dictionary edit invalidation, capitalization-aware completions, single-letter proper-noun completions, and remove-from-predictions overlay.
 - **Multilingual input:** bilingual subtype presets, per-token Latin language identification, multilingual token scoring, top-two straddle guard, phrase priors, multi-word repair, 63-script transliteration coverage, RTL/BiDi pipeline, sentence tokenizer, inline translation facade/cache/router/language-pack manager, and CJK/librime facade without native backend yet.
@@ -234,12 +240,12 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 - **Privacy / security:** Gradle no-network gate, password-field learning/clipboard/FLAG_SECURE defenses, SQLCipher personal dictionary with Tink / AndroidKeystore passphrase wrapping, Tink-wrapped legacy clipboard-history storage, addon sensitive-field guard, in-memory addon audit ring, local-only MCP binding, threat model, signing fingerprint surface, dependency scan workflow, reproducible-build docs, and 16 KB APK alignment check.
 
 **Stubbed / under-investigated (current blockers):**
-- ✅ `ROADMAP.md` / `README.md` parity has been refreshed through v1.8.79:
+- ✅ `ROADMAP.md` / `README.md` parity has been refreshed through v1.8.80:
   broken doc links were removed, release-note links match local files, and the
   stack / target-SDK / themes / MCP / multilingual / hardware-keyboard sections
   track the current manifest and version metadata.
 - GitHub Releases still need to be checked against the current local tag stream
-  (`v1.8.79` at this snapshot); publication remains a maintainer-host task
+  (`v1.8.80` at this snapshot); publication remains a maintainer-host task
   because this VM cannot push to `SysAdminDoc/SwiftFloris`.
 - `:benchmark` and `:lib:native` are present-but-detached. Macrobenchmark trace sections are emitted from production paths, but device-number collection is still external work; embedded Whisper remains impossible until the native module is intentionally revived.
 - Roborazzi is now externally unblocked and the plugin alias is active, but the screenshot baseline is still in a bootstrap state. Record baseline PNGs and remove `continue-on-error` so screenshot regressions stop relying on manual review.
@@ -255,10 +261,11 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 
 ---
 
-## 3. Recently Shipped (v1.5.0 → v1.8.79, reconciled from prior ROADMAP v4.0 + release-note commits)
+## 3. Recently Shipped (v1.5.0 → v1.8.80, reconciled from prior ROADMAP v4.0 + release-note commits)
 
 | Version | Date | Headline | Source |
 |---|---|---|---|
+| v1.8.80 | 2026-05-17 | Tier-3 #36 SQLCipher provider migration plan. Added `docs/SQLCIPHER_PROVIDER_MIGRATION.md`, updated `docs/SECURITY.md`, and corrected the research security review: SQLCipher Android Community 4.16.0 still uses LibTomCrypt, while OpenSSL remains the documented source-build escape hatch. No runtime dependency changed; the plan now records migration triggers, proof-of-concept steps, 16 KB page-size gates, `PersonalDictionaryEncryptionTest` expectations, and rollback rules. | `RELEASE_NOTES_v1.8.80.md` |
 | v1.8.79 | 2026-05-17 | Tier-3 #35 honeycomb hex layout wire-up. Registered the bundled `honeycomb` character layout in `extension.json`, added `TextKeyboardLayoutStyle.Honeycomb`, taught `LayoutManager` to select it for the honeycomb layout id, positioned real `TextKey` instances through `TextKeyboard.layoutHoneycomb(...)`, clipped production Snygg key backdrops to `HoneycombHexShape`, and added hex-aware touch hit testing plus `TextKeyboardHoneycombLayoutTest`. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.79.md` |
 | v1.8.78 | 2026-05-17 | Tier-3 #34 Keyman `.kmp` package import foundation. Added `KeymanPackageParser`, package metadata models, safe ZIP entry validation, `kmp.json` normalization, LDML XML extraction through `KeymanLdmlParser`, package-status classification for LDML-ready / lexical-model-only / mixed / metadata-only / compiled-engine-required packages, and `KeymanPackageParserTest`. Compiled `.kmx` / `.js` execution remains explicitly outside `:app` until an addon/runtime path lands. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.78.md` |
 | v1.8.77 | 2026-05-17 | Next-9.5 user-imported sticker folder. Added `prefs.sticker.userFolderUri`, Settings → Emoji & stickers SAF tree picker / clear action, `UserStickerRepository` for local PNG / WebP / JPEG / GIF document enumeration, imported-pack preview decoding in `StickerPaletteView`, and `StickerMediaProvider` proxy reads for user sticker content URIs. New `UserStickerRepositoryTest` covers supported-file filtering, extension fallback, empty-folder handling, caps, and duplicate URI collapse. Gradle verification remains blocked on this VM by missing Java. | `RELEASE_NOTES_v1.8.77.md` |
@@ -1322,4 +1329,4 @@ Every item, before being marked complete:
 
 ---
 
-*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.79 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, the root crash/replay-log CI guardrail, the macOS `.keylayout` parser, the hardware-keyboard runtime mapper, the user-imported sticker folder, the Keyman `.kmp` package import foundation, and the honeycomb hex layout production wire-up. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, when the compiled Keyman addon/runtime path is scoped, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.80 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, the root crash/replay-log CI guardrail, the macOS `.keylayout` parser, the hardware-keyboard runtime mapper, the user-imported sticker folder, the Keyman `.kmp` package import foundation, the honeycomb hex layout production wire-up, and the SQLCipher provider migration plan. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, when the compiled Keyman addon/runtime path is scoped, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*

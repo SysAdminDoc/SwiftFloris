@@ -12,13 +12,13 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.79 — honeycomb hex layout wire-up.
-(The research run started at v1.8.55; v1.8.56-79 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B/C + README Samsung / Grammarly callouts + glide strategy correction + root crash-log guard + hardware-keyboard import/runtime follow-ups + user sticker folders + Keyman `.kmp` package intake + honeycomb hex layout production wire-up.)
+**HEAD at latest reconciliation:** v1.8.80 — SQLCipher provider migration plan.
+(The research run started at v1.8.55; v1.8.56-80 shipped concurrently in the
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B/C + README Samsung / Grammarly callouts + glide strategy correction + root crash-log guard + hardware-keyboard import/runtime follow-ups + user sticker folders + Keyman `.kmp` package intake + honeycomb hex layout production wire-up + SQLCipher provider migration plan.)
 
 ---
 
-## 0. Reconciliation with concurrent v1.8.56-79 releases
+## 0. Reconciliation with concurrent v1.8.56-80 releases
 
 While this research run was in flight, sixteen releases landed that
 implemented several recommendations:
@@ -49,6 +49,7 @@ implemented several recommendations:
 | Tier-3 #29 — User-imported sticker folder | ✅ **v1.8.77 — Next-9.5** — SAF folder picker, local image enumeration, imported sticker pack previews, provider proxy commits |
 | Tier-3 #34 — Keyman `.kmp` package import foundation | ✅ **partial v1.8.78 — L8.3 / Tier-3 #34** — safe ZIP/package metadata intake, LDML-in-package extraction, lexical-model/mixed/compiled-required classification; compiled `.kmx` / `.js` runtime remains future addon work |
 | Tier-3 #35 — Honeycomb hex layout wire-up | ✅ **v1.8.79 — L9.2 / Tier-3 #35** — selectable bundled honeycomb layout, production `TextKeyboardLayout` style, clipped hex key surfaces, and hex-aware hit testing |
+| Tier-3 #36 — SQLCipher OpenSSL/BoringSSL provider migration plan | ✅ **v1.8.80** — corrected the LibTomCrypt-removal premise against Zetetic 4.14/4.16 provider matrices, kept the stock AAR, and documented OpenSSL proof-of-concept triggers / gates |
 
 These shipped items are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
@@ -515,7 +516,7 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | ✅ v1.8.57 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.79; push pending from maintainer host |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.80; push pending from maintainer host |
 | Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |
 | Tier-1 root crash/replay log cleanup + CI guard | ✅ v1.8.73 |
 | §C.1 User-imported sticker folder (Next-9.5) | ✅ v1.8.77 |
@@ -523,6 +524,7 @@ but does not require a roadmap change.
 | Tier-3 root multilingual / voice docs consolidation | ✅ docs-only 2026-05-17 |
 | Tier-3 #34 Keyman `.kmp` package import foundation | ✅ partial v1.8.78; compiled runtime/addon remains |
 | Tier-3 #35 Honeycomb hex layout wire-up | ✅ v1.8.79 |
+| Tier-3 #36 SQLCipher provider migration plan | ✅ v1.8.80 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |
