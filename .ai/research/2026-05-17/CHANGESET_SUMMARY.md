@@ -944,3 +944,42 @@ scan, root JVM crash/replay tracked-file guard, and a focused Gradle test
 command were run. Gradle stopped at the known VM blocker: `JAVA_HOME` is not
 set and no `java` command is on PATH, so maintainer-host Gradle verification
 remains required before publishing.
+
+## 27. v1.8.79 continuation — honeycomb hex layout wire-up
+
+Implemented Tier-3 #35 as the production wire-up for the earlier honeycomb
+renderer foundation:
+
+- `app/src/main/assets/ime/keyboard/org.florisboard.layouts/extension.json`
+  - Registered the bundled `honeycomb` character layout for subtype layout
+    selection.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/LayoutManager.kt`
+  - Marks the bundled `honeycomb` character layout as
+    `TextKeyboardLayoutStyle.Honeycomb` before constructing `TextKeyboard`.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboard.kt`
+  - Added `TextKeyboardLayoutStyle`, `layoutHoneycomb(...)`, honeycomb cell
+    bookkeeping, and hex-aware exact / nearest hit testing.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt`
+  - Reuses the production Snygg `TextKeyButton` path while clipping honeycomb
+    key surfaces to `HoneycombHexShape`.
+- `HoneycombHexShape.kt`, `HoneycombTessellation.kt`, `HoneycombKeyboardRow.kt`,
+  and `HoneycombHexButton.kt`
+  - Updated stale comments that still described production wire-up as future
+    work.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardHoneycombLayoutTest.kt`
+  - Covers odd-row half-column offsets, center hits, bounding-box corner
+    rejection, and unchanged rectangular gap rescue for standard layouts.
+- `RELEASE_NOTES_v1.8.79.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and the
+  `.ai/research/2026-05-17/` register/backlog/prioritization/state files
+  - Release/context updates for v1.8.79 and explicit note that remaining
+    honeycomb work is visual/device evidence, not layout selection or
+    hit-routing.
+- `gradle.properties`
+  - `projectVersionCode=1879`, `projectVersionName=1.8.79`.
+
+**Verification note:** `git diff --check`, the manifest banned-network-permission
+scan, root JVM crash/replay tracked-file guard, and a focused Gradle test
+command were run. Gradle stopped at the known VM blocker: `JAVA_HOME` is not
+set and no `java` command is on PATH, so maintainer-host Gradle verification
+remains required before publishing.

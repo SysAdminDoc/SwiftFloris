@@ -70,7 +70,7 @@ graduate into recommended next-slice work live in
 | **Hardware-keyboard floating candidate panel** for transliteration engine | fcitx5-android pattern |
 | **Hardware-keyboard runtime mapper** (Next-6.4b: `InputManager` / `KeyEvent.getDeviceId(...)` mapping) | ✅ shipped v1.8.76 with `HardwareKeyboardRuntimeMapper` and `KeyboardManager` dispatch hook |
 | **3×3 thumb-grid alt layout** (Thumb-Key parity) | Optional, niche but useful for foldable / one-handed |
-| **Honeycomb-hex layout wire-up** | `HoneycombHex*` components in tree; geometry wire-up is the open slice |
+| **Honeycomb-hex layout wire-up** | ✅ shipped v1.8.79 with selectable bundled `honeycomb` layout, `TextKeyboardLayoutStyle.Honeycomb`, clipped hex key surfaces, and hex-aware hit testing |
 | **macOS `.keylayout` (XML) parser** (Next-6.4a) | ✅ shipped v1.8.75 with `MacKeylayoutParser` |
 | **First-run "import from device backup" hint** if a SwiftKey backup file is present in `~/Downloads/` | Reduces friction during the migration window |
 | **"Snygg theme tester" in-app preview screen** | Theme contributors currently have to install the theme to see it |

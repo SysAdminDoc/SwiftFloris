@@ -39,11 +39,11 @@ import androidx.compose.ui.unit.sp
  * hex-shaped backdrop (via [HoneycombHexShape]) instead of a rounded
  * rectangle.
  *
- * Intentionally minimal — defers theming (Snygg integration), input-
- * feedback hooks, popup rendering, and long-press preview-bubble work
- * to the future TextKeyboardLayout call-site wire-up. This composable
- * is the standalone widget the renderer can drop into a
- * `HoneycombTessellation` grid for the initial implementation.
+ * Intentionally minimal. The production v1.8.79 wire-up uses the
+ * normal Snygg `TextKeyButton` path with [HoneycombHexShape] clipping
+ * so input feedback, popups, and accessibility stay shared. This
+ * composable remains a lightweight standalone widget for isolated
+ * honeycomb previews or experiments.
  *
  * Adheres to the global "no pill / oval / fully-rounded backdrop"
  * rule: the backdrop is an actual hexagon (six straight edges, six

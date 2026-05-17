@@ -236,6 +236,13 @@ or one-competitor additions, not a new roadmap pillar.
   normalization, LDML-in-package extraction, and package-status classification.
   Focused Gradle verification was attempted and stopped at the known VM blocker
   (`JAVA_HOME` / `java` missing).
+- **v1.8.79 / Tier-3 #35 implementation:** the previously shipped honeycomb
+  renderer foundation was reconciled against the production keyboard path.
+  The bundled `honeycomb` layout is now registered in `extension.json`,
+  `LayoutManager` selects `TextKeyboardLayoutStyle.Honeycomb`, `TextKeyboard`
+  lays out real keys in the hex tessellation, and hit testing follows the
+  clipped hex shape. Focused Gradle verification was attempted and stopped at
+  the known VM blocker (`JAVA_HOME` / `java` missing).
 - **Docs-only Tier-3 #31 / #32 implementation:** Added root
   `ARCHITECTURE.md` and `CONTRIBUTING.md`, updated README documentation and
   contributing pointers, updated the PR template to reference SwiftFloris local

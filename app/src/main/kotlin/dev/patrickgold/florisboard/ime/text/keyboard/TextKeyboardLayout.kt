@@ -50,6 +50,7 @@ import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -371,6 +372,7 @@ fun TextKeyboardLayout(
                 textKey, evaluator, desiredKey,
                 debugShowTouchBoundaries,
                 reducedMotion = reducedMotion,
+                honeycombShape = keyboard.layoutStyle == TextKeyboardLayoutStyle.Honeycomb,
             )
         }
 
@@ -393,6 +395,7 @@ private fun TextKeyButton(
     desiredKey: TextKey,
     debugShowTouchBoundaries: Boolean,
     reducedMotion: Boolean,
+    honeycombShape: Boolean = false,
 ) = with(LocalDensity.current) {
     // ROADMAP §6 N8.3a — context needed for the localized
     // `keyContentDescription` string-resource lookups.
@@ -437,22 +440,25 @@ private fun TextKeyButton(
         },
         label = "TextKeyButton.pressScale",
     )
+    val keyModifier = Modifier
+        .requiredSize(size)
+        .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() }
+        .graphicsLayer {
+            scaleX = pressScale
+            scaleY = pressScale
+            transformOrigin = TransformOrigin.Center
+        }
+        .let { base -> if (honeycombShape) base.clip(HoneycombHexShape) else base }
+        .semantics {
+            contentDescription = keyDescription
+            role = Role.Button
+        }
+
     SnyggBox(
         FlorisImeUi.Key.elementName,
         attributes = attributes,
         selector = selector,
-        modifier = Modifier
-            .requiredSize(size)
-            .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() }
-            .graphicsLayer {
-                scaleX = pressScale
-                scaleY = pressScale
-                transformOrigin = TransformOrigin.Center
-            }
-            .semantics {
-                contentDescription = keyDescription
-                role = Role.Button
-            },
+        modifier = keyModifier,
     ) {
         val isTelPadKey = key.computedData.type == KeyType.NUMERIC && evaluator.keyboard.mode == KeyboardMode.PHONE
         val isVoiceCommaKey = evaluator.keyboard.mode == KeyboardMode.CHARACTERS && key.computedData.code == 44

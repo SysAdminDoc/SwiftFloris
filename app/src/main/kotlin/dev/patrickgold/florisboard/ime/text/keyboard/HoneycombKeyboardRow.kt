@@ -35,10 +35,10 @@ import androidx.compose.ui.unit.dp
  *
  * Sized by the caller via [modifier]. The composable computes the
  * key radius from `keyRadiusDp` (per-key dp size) and absolutely
- * positions each hex via Compose's `offset` modifier — this is the
- * minimal renderer slice. Full TextKeyboardLayout integration (touch
- * routing, theme + Snygg integration, popup support) lands in a
- * follow-up.
+ * positions each hex via Compose's `offset` modifier. The production
+ * TextKeyboardLayout integration shipped later in v1.8.79 by reusing
+ * the normal Snygg `TextKeyButton` path with [HoneycombHexShape]
+ * clipping, popup support, touch routing, and accessibility intact.
  *
  * @param rowLabels one inner list per row; each entry is the label
  *        for one hex in that row.

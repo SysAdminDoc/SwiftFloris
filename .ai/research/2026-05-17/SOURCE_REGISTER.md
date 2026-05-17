@@ -26,6 +26,7 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
+| [RELEASE_NOTES_v1.8.79.md](../../../RELEASE_NOTES_v1.8.79.md) | v1.8.79 honeycomb hex layout wire-up |
 | [RELEASE_NOTES_v1.8.78.md](../../../RELEASE_NOTES_v1.8.78.md) | v1.8.78 Keyman `.kmp` package import foundation |
 | [RELEASE_NOTES_v1.8.72.md](../../../RELEASE_NOTES_v1.8.72.md) | v1.8.72 HeliBoard / NLnet slip-base-case roadmap correction |
 | [RELEASE_NOTES_v1.8.73.md](../../../RELEASE_NOTES_v1.8.73.md) | v1.8.73 repository hygiene / CI guardrail |
@@ -35,7 +36,7 @@ source, the citation is here.
 | [RELEASE_NOTES_v1.8.53.md](../../../RELEASE_NOTES_v1.8.53.md) | Phase A2 post-import confirmation + rollback |
 | [RELEASE_NOTES_v1.8.52.md](../../../RELEASE_NOTES_v1.8.52.md) | Phase A1 migration outreach + README badge |
 
-(80 per-release notes total in repo root — full list in
+(81 per-release notes total in repo root — full list in
 [STATE_OF_REPO.md](STATE_OF_REPO.md))
 
 ### 1.3 Build / config
@@ -72,6 +73,14 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 - `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboard.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/HoneycombHexShape.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/HoneycombTessellation.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/HoneycombKeyboardRow.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/HoneycombHexButton.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/LayoutManager.kt`
+- `app/src/main/assets/ime/keyboard/org.florisboard.layouts/extension.json`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardHoneycombLayoutTest.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt`
@@ -84,7 +93,7 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 
 - `git log --oneline -30` — HEAD commit subjects
 - `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
-  backfilled local tags through `v1.8.78` (push still pending from maintainer host)
+  backfilled local tags through `v1.8.79` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
 - `git branch --show-current` — `master`; continuation commits leave the local
   branch ahead of `origin/master` because this VM cannot push to the remote
