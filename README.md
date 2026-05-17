@@ -1,14 +1,35 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.46-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey)
+![Version](https://img.shields.io/badge/version-v1.8.52-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
 > **Zero cloud processing. Zero telemetry. Zero account. All features work offline.**
 
+> ## ⚠️ SwiftKey users — your account-backed data is being deleted on **2026-05-31**
+>
+> Microsoft is retiring standalone SwiftKey accounts and shutting down the
+> [`data.swiftkey.com`](https://data.swiftkey.com) export endpoint on 2026-05-31. After that date your
+> non-Microsoft-account learned vocabulary, shortcuts, and clipboard sync are permanently gone.
+>
+> **Two no-cloud paths off SwiftKey:**
+>
+> 1. **Right now** (before the cutoff) — export `swiftkey-cloud.json` from
+>    [`data.swiftkey.com`](https://data.swiftkey.com), install SwiftFloris via the [Obtainium one-tap link](#option-a--obtainium-recommended-for-auto-updates) below,
+>    then in SwiftFloris go to **Settings → Personal dictionary → Import** and pick the file.
+>    SwiftFloris ingests the JSON shape directly (see [v1.8.46 release notes](RELEASE_NOTES_v1.8.46.md)
+>    and the [migration walk-through](docs/MIGRATE_FROM_SWIFTKEY.md)).
+> 2. **If you missed the cutoff** — your learned words are gone from the cloud but everything still
+>    in the on-device SwiftKey personal dictionary can still be re-typed; SwiftFloris's
+>    [instant-remember overlay](RELEASE_NOTES_v1.8.26.md) climbs the words back to the top of the
+>    prediction strip after a single use.
+>
+> SwiftFloris **never** binds your data to a Microsoft (or any other vendor) account, so the next
+> account-retirement notice that lands in your inbox won't include this app.
+
 ## Highlights
 
-| Area | What's in v1.8.46 | Privacy posture |
+| Area | What's in v1.8.52 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -60,7 +81,7 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## Migrating from SwiftKey
 
-Microsoft is retiring the SwiftKey cloud account stack and the `data.swiftkey.com` export endpoint on **2026-05-31**. SwiftFloris v1.8.46 imports the `swiftkey-cloud.json` export directly through Settings → Personal dictionary → Import. See [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md) for the full migration walk-through and the cutoff-driven timeline.
+Full step-by-step paths are in [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md); the headline contract — `swiftkey-cloud.json` ingestion through **Settings → Personal dictionary → Import** — landed in [v1.8.46](RELEASE_NOTES_v1.8.46.md), the cumulative-byte hardening of the JSON parser in [v1.8.48](RELEASE_NOTES_v1.8.48.md), and the parity-roadmap reference for the **2026-05-31** cutoff lives in [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md).
 
 ## Documentation
 
@@ -224,6 +245,12 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.52** (2026-05-17) — SwiftKey migration outreach push: README banner + opening pitch lead with the 2026-05-31 cutoff, badge promoted, parity-roadmap permalink linked. ([notes](RELEASE_NOTES_v1.8.52.md))
+- **v1.8.51** (2026-05-17) — N14.3 + N14.4 Compose BOM + Gradle wrapper dependency-pin audits. New audit-log table in `docs/DEPENDENCY_TRIAGE.md`. ([notes](RELEASE_NOTES_v1.8.51.md))
+- **v1.8.50** (2026-05-17) — N17.1 emoji-picker crash triage; root-caused to `Paint.hasGlyph("")` and closed with three defensive filters. ([notes](RELEASE_NOTES_v1.8.50.md))
+- **v1.8.49** (2026-05-17) — N15.3 Smart Edit voice REMOVE_ITEM_FROM_LIST: new parameterised voice-command type that excises a named item from the dictated buffer mid-stream. ([notes](RELEASE_NOTES_v1.8.49.md))
+- **v1.8.48** (2026-05-17) — Adversarial-input + lifecycle hardening pass across the SwiftKey JSON importer, MCP daemon bridge, IME service teardown, voice-model install, ZIP extraction, and DB cursor handling. ([notes](RELEASE_NOTES_v1.8.48.md))
+- **v1.8.47** (2026-05-16) — N1.4 FUTO swipe-trace replay and benchmark harness. ([notes](RELEASE_NOTES_v1.8.47.md))
 - **v1.8.46** (2026-05-16) — SwiftKey `swiftkey-cloud.json` import parser ahead of the 2026-05-31 account retirement. New `DictionaryImportFormat.JSON` + tolerant `parseSwiftKeyJson`. ([notes](RELEASE_NOTES_v1.8.46.md))
 - **v1.8.45** (2026-05-16) — Android 17 IME-visibility restore across configuration changes. ([notes](RELEASE_NOTES_v1.8.45.md))
 - **v1.8.44** (2026-05-16) — Long-press popup guard on password fields (`KeyVariation.PASSWORD`). ([notes](RELEASE_NOTES_v1.8.44.md))
@@ -272,7 +299,7 @@ See [FUTO Voice Input Troubleshooting](FUTO_VOICE_INPUT_TROUBLESHOOTING.md). Swi
 
 ### Keyboard crashes on emoji insertion?
 
-This matches [issue #1](https://github.com/SysAdminDoc/SwiftFloris/issues/1). Triage is tracked in `ROADMAP.md` §6 (N3 polish + emoji crash regression row). If you can reproduce, please attach the device model, Android build, ROM, and a logcat capture to the issue.
+Root-caused in **v1.8.50** (ROADMAP §6 N17.1, [release notes](RELEASE_NOTES_v1.8.50.md), [GitHub issue #1](https://github.com/SysAdminDoc/SwiftFloris/issues/1)). The trigger was `Paint.hasGlyph("")` aborting the palette render whenever an empty-value `Emoji` reached the initial filter pass. Three defensive filters landed at the palette, history-mapping, and asset-loader layers. If you still see this on v1.8.50+ please attach the device model, Android build, ROM, and a logcat capture to the issue.
 
 ### Theme changes not applying?
 
@@ -307,7 +334,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.46** (2026-05-16). Migration window for SwiftKey users closes **2026-05-31**.
+🚀 **Active development.** Current release: **v1.8.52** (2026-05-17). Migration window for SwiftKey users closes **2026-05-31** — 14 days from this release.
 
 ---
 

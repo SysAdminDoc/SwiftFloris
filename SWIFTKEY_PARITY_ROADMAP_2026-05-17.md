@@ -216,7 +216,7 @@ Each phase is bounded so a contributor can ship the whole phase as one slice and
 
 The SwiftKey-account cutoff is the only hard deadline this roadmap has; everything in Phase A protects the migration funnel.
 
-- **A1 (P16)** — SwiftKey migration outreach checklist. README badge + opening pitch lead with the SwiftKey angle; pin GitHub release on 2026-05-30; one-shot post on r/SwiftKey + r/PrivacyGuides + r/HeliBoard. Cost: XS, no code changes.
+- ⏳ **A1 (P16)** — SwiftKey migration outreach checklist. **README-side shipped 2026-05-17 (v1.8.52):** Shields badge captioned "window closes 2026-05-31" in red, banner block above Highlights table walking visitors through both no-cloud migration paths, status line bumps to v1.8.52 with the 14-days-remaining countdown. **Marketing-side still open** (Reddit thread + 2026-05-30 release pin) — see [v1.8.52 release notes](RELEASE_NOTES_v1.8.52.md). Cost: XS.
 - **A2 (P17)** — Post-import confirmation screen. After `DictionaryImporter.import()` succeeds, present a "Imported N words from your SwiftKey export" sheet with rollback (undo bulk-insert). Cost: S, new `PersonalDictionaryImportSummary` Compose screen.
 - **A3 (P12)** — Encrypted-blob export option on personal dictionary so users can carry their learned words off without touching plain CSV. Cost: S; piggyback on existing SQLCipher Room database.
 
