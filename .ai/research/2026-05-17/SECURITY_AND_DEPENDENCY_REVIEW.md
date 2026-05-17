@@ -14,6 +14,8 @@ same-day fifth pass in [FIFTH_PASS_FINDINGS.md](FIFTH_PASS_FINDINGS.md)
 migration. `androidx.security:security-crypto:1.1.0-alpha06` is no longer
 declared in `:app`; `com.google.crypto.tink:tink-android:1.21.0` is now
 the runtime crypto dependency for local encrypted-preference wrapping.
+v1.8.69 then shipped Bump-batch A: coroutines 1.11.0, KSP 2.3.8,
+ZXing 3.5.4, and AboutLibraries stable 14.2.0.
 
 ---
 
@@ -23,7 +25,7 @@ the runtime crypto dependency for local encrypted-preference wrapping.
 |---|---|---|---|---|
 | **AGP** | 9.0.0 | **9.2.x / 9.2.1 metadata** | Behind one minor+ | Bump after Roborazzi 1.60.0 + R8 rules audit |
 | **Kotlin** | 2.3.21 | 2.3.21 (2.4.0-RC out) | Current | Keep |
-| KSP | 2.3.5 | **2.3.8** | Behind 3 patches | Bump alongside Kotlin |
+| KSP | 2.3.8 | **2.3.8** | Current | ✅ shipped v1.8.69 |
 | **androidx-activity** | **1.13.0** | **1.13.0 stable** | Current | Keep |
 | **compose-bom** | 2026.03.01 | **2026.05.00** | Behind one BOM | Bump (no regressions reported) |
 | androidx-core | 1.18.0 | 1.18.0 | Current | Keep |
@@ -34,13 +36,13 @@ the runtime crypto dependency for local encrypted-preference wrapping.
 | androidx-sqlite | 2.6.2 | 2.6.2 | Current | Keep |
 | androidx-window | 1.5.1 | 1.5.1 | Current | Keep |
 | coil | 3.4.0 | 3.4.0 | Current | Keep |
-| **kotlinx-coroutines** | 1.10.2 | **1.11.0** | Behind one minor | Bump alongside Kotlin |
+| **kotlinx-coroutines** | 1.11.0 | **1.11.0** | Current | ✅ shipped v1.8.69 |
 | kotlinx-serialization-json | 1.11.0 | 1.11.0 | Current | Keep |
 | material-kolor | 4.1.1 | 4.1.1 | Current | Keep |
-| **mikepenz-aboutlibraries** | 14.0.1 | **14.2.0** | Behind 2 patches | Bump |
+| **mikepenz-aboutlibraries** | 14.2.0 | **14.2.0 stable** (`15.0.0-b01` beta exists) | Current | ✅ shipped v1.8.69 |
 | jetpref | 0.3.0 | 0.3.x | Current | Keep |
 | sqlcipher-android | 4.16.0 | 4.16.0 (released 2026-05-12) | Current | Keep — plan LibTomCrypt deprecation (§3) |
-| **zxing-core** | 3.5.3 | **3.5.4** | Behind one patch | Bump (small hardening) |
+| **zxing-core** | 3.5.4 | **3.5.4** | Current | ✅ shipped v1.8.69 |
 | **roborazzi** | 1.55.0 | **1.60.0** | Materially behind | Bump (required before AGP 9.2) |
 | **robolectric** | 4.14.1 | **4.16.1** | Materially behind | Bump (SDK 36 + JDK 21 fidelity) |
 | kotest | 6.1.11 | 6.1.11 | Current | Keep |
@@ -227,12 +229,12 @@ No action required; cited for context.
 
 ## 9. Recommended dependency bumps (PR-sized batches)
 
-### Bump-batch A (low risk, ship soon)
+### Bump-batch A (low risk, shipped v1.8.69)
 
-1. **kotlinx-coroutines** 1.10.2 → **1.11.0**
-2. **KSP** 2.3.5 → **2.3.8**
-3. **zxing-core** 3.5.3 → **3.5.4**
-4. **aboutlibraries** 14.0.1 → **14.2.0**
+1. ✅ **kotlinx-coroutines** 1.10.2 → **1.11.0**
+2. ✅ **KSP** 2.3.5 → **2.3.8**
+3. ✅ **zxing-core** 3.5.3 → **3.5.4**
+4. ✅ **aboutlibraries** 14.0.1 → **14.2.0** (stable; skipped `15.0.0-b01` beta)
 
 **Acceptance criteria:** `:app:testDebugUnitTest`, `:app:lintDebug`,
 `:app:assembleDebug` green; 16KB alignment check still passes.
