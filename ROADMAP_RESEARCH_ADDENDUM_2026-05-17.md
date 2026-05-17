@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.76 — hardware-keyboard runtime mapper.
+**HEAD at latest reconciliation:** v1.8.77 — user-imported sticker folder.
 (The research run started at v1.8.55; v1.8.56-71 shipped concurrently in the
 same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B + README Samsung / Grammarly callouts.)
 
@@ -46,6 +46,7 @@ implemented several recommendations:
 | Tier-2 #16 — Bump-batch C | ✅ **v1.8.74 — N14.7** — AGP 9.2.1 + Compose BOM 2026.05.00 |
 | Tier-2 #27 — macOS `.keylayout` parser | ✅ **v1.8.75 — Next-6.4a** — XXE-hardened parser normalizes macOS key maps and modifier maps into `HardwareKeyboardLayout` |
 | Tier-2 #28 — Hardware-keyboard runtime mapper | ✅ **v1.8.76 — Next-6.4b** — device-id layout binding + KLC/macOS/source-name runtime fallbacks |
+| Tier-3 #29 — User-imported sticker folder | ✅ **v1.8.77 — Next-9.5** — SAF folder picker, local image enumeration, imported sticker pack previews, provider proxy commits |
 
 These shipped items are removed from this addendum's open commitments. Historical
 sections below are preserved in place; rows with a **Status: shipped** marker
@@ -357,13 +358,13 @@ last open piece.
 
 **Body:**
 
-> **Next-9.5 (NEW)** Settings → Media → "Import sticker folder…" opens
-> SAF tree picker; selected URI persisted via `prefs.media.stickerFolder`;
-> `StickerMediaProvider` walks the folder for `.webp` / `.png` / `.gif`
-> and surfaces each as a sticker in the media panel. Long-press →
-> "Remove from this folder" (deletes the file via SAF). Reuses the
-> existing `commitContent(InputContentInfoCompat)` rich-content path.
-> Cost: M; pure surface-area work over existing primitives.
+> ✅ **Next-9.5 shipped in v1.8.77.** Settings → Emoji & stickers opens a
+> SAF tree picker; selected URI is persisted via `prefs.sticker.userFolderUri`;
+> `UserStickerRepository` walks the folder for `.png` / `.webp` / `.jpg` /
+> `.jpeg` / `.gif` documents and surfaces them as an Imported sticker pack in
+> the media panel. Reuses the existing `commitContent(InputContentInfoCompat)`
+> rich-content path through `StickerMediaProvider`. Long-press deletion from
+> the chosen folder remains a later explicit SAF write-flow polish item.
 
 ### C.2 Next-10.4 — HeliBoard-style dictionary downloader UI
 
@@ -512,10 +513,10 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | ✅ v1.8.57 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.76; push pending from maintainer host |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.77; push pending from maintainer host |
 | Tier-1 README Samsung / Grammarly callouts (N16.4) | ✅ v1.8.70 |
 | Tier-1 root crash/replay log cleanup + CI guard | ✅ v1.8.73 |
-| §C.1 User-imported sticker folder (Next-9.5) | 🟢 |
+| §C.1 User-imported sticker folder (Next-9.5) | ✅ v1.8.77 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |

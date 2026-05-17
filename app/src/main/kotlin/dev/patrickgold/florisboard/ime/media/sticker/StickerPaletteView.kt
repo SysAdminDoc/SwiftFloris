@@ -16,9 +16,13 @@
 
 package dev.patrickgold.florisboard.ime.media.sticker
 
+import android.graphics.BitmapFactory
+import android.net.Uri
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
@@ -35,9 +39,11 @@ import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -46,20 +52,28 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.editorInstance
+import dev.patrickgold.florisboard.ime.editor.EditorInstance
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import java.util.Locale
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
@@ -74,21 +88,32 @@ fun StickerPaletteView(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val prefs by FlorisPreferenceStore
     val editorInstance by context.editorInstance()
     val activeEditorInfo by editorInstance.activeInfoFlow.collectAsState()
     val inputFeedbackController = LocalInputFeedbackController.current
     val scope = rememberCoroutineScope()
-    val packs = remember { BundledStickerRepository.packs }
+    val userStickerFolderUri by prefs.sticker.userFolderUri.collectAsState()
+    var userStickerPack by remember { mutableStateOf<StickerPack?>(null) }
+    LaunchedEffect(context, userStickerFolderUri) {
+        userStickerPack = withContext(Dispatchers.IO) {
+            UserStickerRepository.loadPack(context, userStickerFolderUri)
+        }
+    }
+    val packs = remember(userStickerPack) {
+        BundledStickerRepository.packs + listOfNotNull(userStickerPack)
+    }
     var activePackIndex by remember { mutableIntStateOf(0) }
-    val activePack = packs[activePackIndex.coerceIn(packs.indices)]
-    val canInsertStickers = remember(activeEditorInfo.contentMimeTypes.toList()) {
-        editorInstance.canCommitMimeType(BundledStickerRepository.MimeType)
+    val selectedPackIndex = activePackIndex.coerceIn(packs.indices)
+    val activePack = packs[selectedPackIndex]
+    val canInsertStickers = remember(activeEditorInfo.contentMimeTypes.toList(), packs) {
+        packs.any { pack -> pack.stickers.any { sticker -> sticker.canCommitInEditor(editorInstance) } }
     }
 
     Column(modifier = modifier) {
         StickerPackTabRow(
             packs = packs,
-            selectedIndex = activePackIndex,
+            selectedIndex = selectedPackIndex,
             onSelected = { index ->
                 inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                 activePackIndex = index
@@ -114,12 +139,12 @@ fun StickerPaletteView(
             items(activePack.stickers, key = { sticker -> sticker.id }) { sticker ->
                 StickerTile(
                     sticker = sticker,
-                    enabled = canInsertStickers,
+                    enabled = sticker.canCommitInEditor(editorInstance),
                     onTap = {
                         inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                         val committed = editorInstance.commitRichContent(
                             uri = StickerMediaProvider.uriFor(sticker),
-                            mimeTypes = listOf(BundledStickerRepository.MimeType),
+                            mimeTypes = sticker.commitMimeTypes,
                             descriptionLabel = sticker.label,
                         )
                         if (!committed) {
@@ -197,12 +222,7 @@ private fun StickerTile(
                 )
             },
     ) {
-        Text(
-            modifier = Modifier.align(Alignment.Center),
-            text = sticker.emoji,
-            fontSize = 30.sp,
-            textAlign = TextAlign.Center,
-        )
+        StickerPreview(sticker = sticker)
         Text(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -216,4 +236,50 @@ private fun StickerTile(
             maxLines = 1,
         )
     }
+}
+
+@Composable
+private fun BoxScope.StickerPreview(sticker: Sticker) {
+    val sourceUri = sticker.sourceUri
+    if (sourceUri == null) {
+        Text(
+            modifier = Modifier.align(Alignment.Center),
+            text = sticker.emoji,
+            fontSize = 30.sp,
+            textAlign = TextAlign.Center,
+        )
+        return
+    }
+
+    val context = LocalContext.current
+    var bitmap by remember(sourceUri) { mutableStateOf<ImageBitmap?>(null) }
+    LaunchedEffect(sourceUri) {
+        bitmap = withContext(Dispatchers.IO) {
+            runCatching {
+                context.contentResolver.openInputStream(Uri.parse(sourceUri))?.use { stream ->
+                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                }
+            }.getOrNull()
+        }
+    }
+    val loaded = bitmap
+    if (loaded != null) {
+        Image(
+            bitmap = loaded,
+            contentDescription = null,
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop,
+        )
+    } else {
+        Text(
+            modifier = Modifier.align(Alignment.Center),
+            text = sticker.emoji,
+            fontSize = 20.sp,
+            textAlign = TextAlign.Center,
+        )
+    }
+}
+
+private fun Sticker.canCommitInEditor(editorInstance: EditorInstance): Boolean {
+    return commitMimeTypes.any { editorInstance.canCommitMimeType(it) }
 }

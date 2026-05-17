@@ -827,3 +827,41 @@ Next-6.4b.
 scan, and a focused Gradle test command were run. Gradle stopped at the known VM
 blocker: `JAVA_HOME` is not set and no `java` command is on PATH, so
 maintainer-host Gradle verification remains required before publishing.
+
+## 23. v1.8.77 continuation — user-imported sticker folder
+
+Implemented Tier-3 #29 / Next-9.5 as a local-only sticker import surface:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt`
+  - Adds `prefs.sticker.userFolderUri`.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/media/MediaScreen.kt`
+  - Adds a Settings → Emoji & stickers SAF tree picker and clear action for
+    the imported sticker folder.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/UserStickerRepository.kt`
+  - Enumerates local PNG / WebP / JPEG / GIF documents into an Imported sticker
+    pack with extension fallback, duplicate URI collapse, and a 240-item cap.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/StickerPaletteView.kt`
+  - Appends the Imported pack to bundled stickers and decodes local image
+    previews off the main thread.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/StickerMediaProvider.kt`
+  - Proxies user-sticker content through the existing provider authority so
+    commits continue to use `InputConnectionCompat.commitContent`.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/media/sticker/UserStickerRepositoryTest.kt`
+  - Covers supported-file filtering, MIME extension fallback, empty folders,
+    cap enforcement, and duplicate URI collapse.
+- `app/src/main/res/values/strings.xml`
+  - Adds sticker-folder settings strings and retitles the media screen to
+    Emoji & stickers.
+- `RELEASE_NOTES_v1.8.77.md`, `README.md`, `ROADMAP.md`,
+  `PROJECT_CONTEXT.md`, `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `STATE_OF_REPO.md`, `FEATURE_BACKLOG.md`, `PRIORITIZATION_MATRIX.md`, and
+  `RESEARCH_LOG.md`
+  - Release/context updates for v1.8.77.
+- `gradle.properties`
+  - `projectVersionCode=1877`, `projectVersionName=1.8.77`.
+
+**Verification note:** `git diff --check`, the manifest banned-network-permission
+scan, root JVM crash/replay tracked-file guard, and a focused Gradle test command were run. Gradle
+stopped at the known VM blocker: `JAVA_HOME` is not set and no `java` command is
+on PATH, so maintainer-host Gradle verification remains required before
+publishing.
