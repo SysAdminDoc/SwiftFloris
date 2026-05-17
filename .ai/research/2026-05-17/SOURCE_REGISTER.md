@@ -26,6 +26,7 @@ source, the citation is here.
 
 | File | Used for |
 |---|---|
+| [RELEASE_NOTES_v1.8.81.md](../../../RELEASE_NOTES_v1.8.81.md) | v1.8.81 addon catalog foundation |
 | [RELEASE_NOTES_v1.8.80.md](../../../RELEASE_NOTES_v1.8.80.md) | v1.8.80 SQLCipher provider migration plan |
 | [RELEASE_NOTES_v1.8.79.md](../../../RELEASE_NOTES_v1.8.79.md) | v1.8.79 honeycomb hex layout wire-up |
 | [RELEASE_NOTES_v1.8.78.md](../../../RELEASE_NOTES_v1.8.78.md) | v1.8.78 Keyman `.kmp` package import foundation |
@@ -37,7 +38,7 @@ source, the citation is here.
 | [RELEASE_NOTES_v1.8.53.md](../../../RELEASE_NOTES_v1.8.53.md) | Phase A2 post-import confirmation + rollback |
 | [RELEASE_NOTES_v1.8.52.md](../../../RELEASE_NOTES_v1.8.52.md) | Phase A1 migration outreach + README badge |
 
-(82 per-release notes total in repo root — full list in
+(83 per-release notes total in repo root — full list in
 [STATE_OF_REPO.md](STATE_OF_REPO.md))
 
 ### 1.3 Build / config
@@ -90,12 +91,16 @@ Sampled key paths verified for `ROADMAP.md` reconciliation:
 - `app/src/main/kotlin/dev/patrickgold/florisboard/lib/FlorisLocale.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/KeymanPackageParser.kt`
 - `app/src/test/kotlin/dev/patrickgold/florisboard/ime/hardware/KeymanPackageParserTest.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistry.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/DictionaryPackCatalog.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/DictionaryPackCatalogTest.kt`
 
 ### 1.6 Git state
 
 - `git log --oneline -30` — HEAD commit subjects
 - `git tag --sort=-creatordate` — initial research saw 56 tags; continuation
-  backfilled local tags through `v1.8.80` (push still pending from maintainer host)
+  backfilled local tags through `v1.8.81` (push still pending from maintainer host)
 - `git remote -v` — `origin = https://github.com/SysAdminDoc/SwiftFloris.git`
 - `git branch --show-current` — `master`; continuation commits leave the local
   branch ahead of `origin/master` because this VM cannot push to the remote

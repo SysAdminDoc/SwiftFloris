@@ -1014,3 +1014,43 @@ Implemented Tier-3 #36 as a docs/security planning slice:
 tracked-file guard, and checked Markdown links for the new SQLCipher plan.
 Gradle remains blocked by the missing Java toolchain and was not required for
 this planning slice.
+
+## 29. v1.8.81 continuation — addon catalog foundation
+
+Implemented Next-10.3a as the live-state / catalog prerequisite for the
+dictionary-pack addon and HeliBoard-style downloader work:
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistry.kt`
+  - New process-local live-state companion to `AddonEnumerator`.
+  - Pins first-seen signing certificates by package name, rejects changed-cert
+    package-name hijacks, keeps stale pins across uninstall gaps, and exposes
+    deterministic lookups by type, package, stable id, and dictionary-pack type.
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/DictionaryPackCatalog.kt`
+  - New pure catalog builder for enrolled dictionary-pack manifests plus
+    descriptor JSON.
+  - Rejects missing, malformed, and future-schema descriptors without crashing,
+    exposes language lookup, and attaches `AddonProvenanceReport`s for the
+    future Settings → Addons surface.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryTest.kt`
+  - Covers first-enrolment pinning, changed-cert rejection, stale-pin retention,
+    duplicate package collapse, runtime-state clearing, and lookup behavior.
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/DictionaryPackCatalogTest.kt`
+  - Covers compatible descriptor acceptance, language lookup, provenance handoff,
+    missing descriptor rejection, malformed JSON rejection, and future-schema
+    rejection.
+- `docs/addons/dictionary-pack-spec.md`
+  - Updated the routing/reference sections to name the v1.8.81 registry/catalog
+    layer and leave asset mounting as the next loader slice.
+- `RELEASE_NOTES_v1.8.81.md`, `README.md`, `ROADMAP.md`, `PROJECT_CONTEXT.md`,
+  `AGENTS.md`, `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and the
+  `.ai/research/2026-05-17/` register/backlog/prioritization/state files
+  - Release/context updates for v1.8.81 and explicit note that Settings UI,
+    persisted signing pins, and actual addon asset mounting remain next slices.
+- `gradle.properties`
+  - `projectVersionCode=1881`, `projectVersionName=1.8.81`.
+
+**Verification note:** local verification used `git diff --check`, the manifest
+banned-network-permission scan, and the root JVM crash/replay tracked-file
+guard. A focused Gradle test command for the new addon tests was attempted, but
+Gradle stopped at the known VM blocker: `JAVA_HOME` is not set and no `java`
+command is on PATH, so maintainer-host Gradle verification remains required.
