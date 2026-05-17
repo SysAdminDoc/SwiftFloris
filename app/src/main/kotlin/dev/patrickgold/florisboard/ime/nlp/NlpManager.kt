@@ -651,16 +651,29 @@ class NlpManager(context: Context) {
         )
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
+        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — same-sentence
+        // language-switch hardening. Previously this map took the
+        // MAX trailing-word frequency per locale across the 4-word
+        // window, which meant a single trailing word in any locale
+        // locked in that locale's signal and the next 3 words could
+        // not shift it. Real bilingual sentences mid-switch ("hello
+        // mi amigo cómo …") need the recent words to weigh more so
+        // the active language tracks the user's writing without
+        // flipping on the first recognised word. The geometric
+        // weighted average — recent words get full weight, older
+        // words decay per step back — is pulled out into
+        // `TrailingContextLanguageBlend` so it can be unit-tested
+        // independent of Android plumbing.
         val contextLanguageScores = buildMap {
             for (activeLocale in locales) {
-                var bestFrequency = 0.0
-                for (word in languageContextWords) {
-                    bestFrequency = maxOf(
-                        bestFrequency,
-                        frequencyForWordInLocale(suggestionProvider, subtype, activeLocale, word),
-                    )
-                }
-                put(activeLocale, bestFrequency)
+                val blended = TrailingContextLanguageBlend.score(
+                    contextWordsOldestFirst = languageContextWords,
+                    freqLookup = { word ->
+                        frequencyForWordInLocale(suggestionProvider, subtype, activeLocale, word)
+                    },
+                    decay = TrailingContextDecay,
+                )
+                put(activeLocale, blended)
             }
         }
         val languageIdScores = LatinScriptLanguageIdentifier.score(
@@ -897,6 +910,25 @@ class NlpManager(context: Context) {
         const val MaxLanguageContextWords = 4
         const val MinLanguageSwitchPrefixLength = 2
         const val CandidateLanguageTieTolerance = 0.0001
+
+        /**
+         * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — geometric decay
+         * factor for the trailing-word language-evidence blend. The
+         * most-recent word weighs 1.0 and each word further back is
+         * scaled by this factor:
+         *
+         *   weight[0] (most recent)    = 1.0
+         *   weight[1]                  = 0.7
+         *   weight[2]                  = 0.49
+         *   weight[3] (4 back, oldest) = 0.343
+         *
+         * Empirically — across the trailing-window length of 4 —
+         * 0.7 gives roughly a 3× preference for the most-recent
+         * word over the oldest one, which is enough to smoothly
+         * track a mid-sentence language switch without flipping
+         * the locale on the first recognised word.
+         */
+        const val TrailingContextDecay = 0.7
     }
 
     inner class ClipboardSuggestionProvider internal constructor(private val context: Context) : SuggestionProvider {
