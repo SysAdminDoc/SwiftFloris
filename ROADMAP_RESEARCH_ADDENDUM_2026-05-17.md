@@ -305,25 +305,29 @@ repo apps reproducible; SwiftFloris's pin matrix is in place but
 > embedded-commit-hash region. Catches reproducibility regressions
 > before F-Droid's rebuilder does. Cost: S.
 
-### B.5 N16.2 — Tag every shipped release (catch-up)
+### B.5 N16.3 — Tag every shipped release (catch-up)
 
 **Where:** ROADMAP §6 N16 (the existing migration-related cluster — or
 §12 Operating Cadence).
 
-**Why now:** latest tag `v1.8.40`; HEAD `v1.8.69`. **29 missing tags**
-since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
-release.yml triggers on `workflow_dispatch` not on tag-push, so the
-release stream is decoupled from tags. Tags are still the canonical
-shipped-commit anchor for forks / audit.
+**Status:** ✅ shipped locally 2026-05-17 as release metadata. This item was
+renumbered from the draft `N16.2` label because `ROADMAP.md` already uses
+`N16.2` for the SwiftKey `swiftkey-cloud.json` importer.
+
+**Why now:** latest tag was `v1.8.40`; HEAD was `v1.8.69`. **29 missing
+tags** since v1.8.40. Obtainium auto-update keys off GitHub Releases, but
+release.yml triggers on `workflow_dispatch` not on tag-push, so the release
+stream is decoupled from tags. Tags are still the canonical shipped-commit
+anchor for forks / audit.
 
 **Body:**
 
-> **N16.2 (NEW)** Tag every shipped release v1.8.41 through v1.8.69
-> from its corresponding `gradle.properties`-bumping commit. Tags push
-> only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
+> **N16.3 (SHIPPED LOCALLY)** Tag every shipped release v1.8.41 through
+> v1.8.69 from its corresponding `gradle.properties`-bumping commit. Tags
+> push only on the user's main host (push to `SysAdminDoc/SwiftFloris` is
 > blocked from the dev VM per the established workflow). Establish a
-> per-release "tag concurrently with the release notes commit" rule
-> going forward.
+> per-release "tag concurrently with the release notes commit" rule going
+> forward.
 
 ## C. New ROADMAP items (NEXT tier)
 
@@ -485,7 +489,7 @@ but does not require a roadmap change.
 | §B.2 EU AI Act surface (N8.7) | ✅ v1.8.66 |
 | §B.3 Arrows-row preset (N4.4) | 🟢 |
 | §B.4 Reproducible-build CI (N12.5) | ✅ v1.8.67 |
-| §B.5 Tag catch-up (N16.2) | 🟢 |
+| §B.5 Tag catch-up (N16.3) | ✅ local tags v1.8.41-v1.8.69; push pending from maintainer host |
 | §C.1 User-imported sticker folder (Next-9.5) | 🟢 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on Next-10.3 marketplace |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |

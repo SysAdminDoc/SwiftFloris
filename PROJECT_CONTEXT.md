@@ -94,9 +94,10 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.69`.
-  Catch-up tagging recommended (see
-  [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
+- **Tag cadence recovered locally** — release tags `v1.8.41` through
+  `v1.8.69` were backfilled on 2026-05-17 from their matching
+  `gradle.properties` version-bump commits. The tags still need to be pushed
+  from the maintainer host because this VM cannot push to `SysAdminDoc/SwiftFloris`.
 
 ## 6. Roadmap structure (where to put what)
 

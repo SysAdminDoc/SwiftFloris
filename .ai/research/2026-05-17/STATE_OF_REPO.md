@@ -201,7 +201,9 @@ screenshot/...    — Roborazzi capture rule scaffolding
 
 ## 7. Release stream
 
-- 56 tags in repo (`v1.0.0` … `v1.8.40`); HEAD = v1.8.58 (tags lag commits).
+- 85 tags in repo; local release tags now run through `v1.8.69` after the
+  2026-05-17 backfill of `v1.8.41`...`v1.8.69`. Push remains a maintainer-host
+  task because this VM cannot push to `SysAdminDoc/SwiftFloris`.
 - 80+ `RELEASE_NOTES_v*.md` files in repo root — per-release file pattern enforced.
 - README was caught up by the later same-day pass; keep it in lockstep
   with future release notes.
@@ -277,9 +279,9 @@ production paths. The 37 markers are design debt:
 
 ## 12. Active development signals
 
-- **Tag cadence:** ~40 patch releases in May 2026 alone (v1.8.16 … v1.8.58).
-  HEAD is squarely in a SwiftKey-parity sprint (Phase A/B of
-  `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`).
+- **Tag cadence:** ~50 patch releases in May 2026 alone (v1.8.16 … v1.8.69).
+  The local tag stream was recovered through `v1.8.69`; future release notes
+  commits should be tagged at the same time.
 - **Merge freeze pressure:** the 2026-05-31 SwiftKey account cutoff is **14
   days from HEAD**. Phase A items (migration importer + encryption envelope +
   rollback dialog) all landed before this research run.

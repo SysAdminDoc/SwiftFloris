@@ -75,9 +75,10 @@ should not be. Each note describes intent, files touched, tests added,
 and Definition-of-Done evidence.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump
-in lockstep with the release-notes commit. Tag the release commit (the
- tag stream currently lags HEAD by 29 tags; see
-[.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
+in lockstep with the release-notes commit. Tag the release commit at the
+same time. Local release tags were backfilled through `v1.8.69` on
+2026-05-17; push tags from the maintainer host because this VM cannot push
+to `SysAdminDoc/SwiftFloris`.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)
 
