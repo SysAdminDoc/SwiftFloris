@@ -77,4 +77,51 @@ class CorrectionOutcomePriorsTest : FunSpec({
 
         priors.entryCount() shouldBe 0
     }
+
+    test("accuracy delta compares accepted corrections this week against last week") {
+        var nowMs = weekStartMs(20)
+        val priors = CorrectionOutcomePriors.inMemory { nowMs }
+
+        repeat(10) { index ->
+            priors.recordAccepted("teh$index", "the$index")
+        }
+
+        nowMs = weekStartMs(21)
+        repeat(7) { index ->
+            priors.recordAccepted("gello$index", "hello$index")
+        }
+
+        val delta = priors.accuracyDelta()
+        delta.previousWeekAccepted shouldBe 10
+        delta.currentWeekAccepted shouldBe 7
+        delta.changePercent shouldBe 30
+        delta.trend shouldBe CorrectionAccuracyTrend.FEWER
+    }
+
+    test("accuracy delta reports no baseline until the previous week has accepted corrections") {
+        var nowMs = weekStartMs(5)
+        val priors = CorrectionOutcomePriors.inMemory { nowMs }
+
+        priors.accuracyDelta() shouldBe CorrectionAccuracyDelta(
+            currentWeekAccepted = 0,
+            previousWeekAccepted = 0,
+        )
+
+        priors.recordAccepted("teh", "the")
+        val delta = priors.accuracyDelta()
+
+        delta.currentWeekAccepted shouldBe 1
+        delta.previousWeekAccepted shouldBe 0
+        delta.changePercent shouldBe null
+        delta.trend shouldBe CorrectionAccuracyTrend.NO_BASELINE
+
+        nowMs = weekStartMs(6)
+        priors.recordAccepted("gello", "hello")
+
+        priors.accuracyDelta().trend shouldBe CorrectionAccuracyTrend.UNCHANGED
+    }
 })
+
+private fun weekStartMs(index: Long): Long {
+    return index * 7L * 24L * 60L * 60L * 1000L
+}

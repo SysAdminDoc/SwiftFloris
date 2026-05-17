@@ -7,6 +7,15 @@ dependency and competitor drift. `IMPROVEMENT_PLAN.md`, per-release
 notes, build files, and source files under `app/` or `lib/` were not
 touched.
 
+> **Post-research development continuation:** after the research run,
+> v1.8.59 shipped Phase D3 (typing-stats accuracy delta). That follow-up
+> touched runtime source, tests, strings, `gradle.properties`, release
+> notes, `README.md`, `PROJECT_CONTEXT.md`, `ROADMAP.md`,
+> `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`, and
+> `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`. The historical sections below
+> describe the original research run; see `RELEASE_NOTES_v1.8.59.md` for
+> the implementation changes.
+
 - Pass 1 created 11 files (root: `PROJECT_CONTEXT.md`,
   `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`; nine artifacts under
   `.ai/research/2026-05-17/`).

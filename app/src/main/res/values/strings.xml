@@ -782,6 +782,12 @@
     <string name="settings__typing_stats__phrase_pairs" comment="Stat row title">Phrase pairs learned</string>
     <string name="settings__typing_stats__phrase_triples" comment="Stat row title">Phrase triples learned</string>
     <string name="settings__typing_stats__correction_decisions" comment="Stat row title">Correction decisions learned</string>
+    <string name="settings__typing_stats__accuracy_delta" comment="Stat row title">Accepted corrections this week</string>
+    <string name="settings__typing_stats__accuracy_delta__none" comment="Stat row summary when no accepted corrections exist for this or the previous week">No accepted corrections recorded this week or last week.</string>
+    <string name="settings__typing_stats__accuracy_delta__no_baseline" comment="Stat row summary when this week has accepted corrections but last week has no baseline. The placeholder inserts the current accepted-correction count.">This week: {current}; no last-week baseline yet.</string>
+    <string name="settings__typing_stats__accuracy_delta__fewer" formatted="false" comment="Stat row summary when this week has fewer accepted corrections than last week. Placeholders insert percent, current count, and previous count.">{percent}% fewer than last week ({current} vs {previous}).</string>
+    <string name="settings__typing_stats__accuracy_delta__more" formatted="false" comment="Stat row summary when this week has more accepted corrections than last week. Placeholders insert percent, current count, and previous count.">{percent}% more than last week ({current} vs {previous}).</string>
+    <string name="settings__typing_stats__accuracy_delta__unchanged" comment="Stat row summary when this week has the same accepted-correction count as last week. The placeholder inserts the accepted-correction count.">No change from last week ({current} accepted corrections).</string>
     <string name="settings__typing_stats__adaptive_touch_samples" comment="Stat row title">Adaptive touch samples</string>
     <string name="settings__typing_stats__refresh" comment="Action row title">Refresh</string>
     <string name="settings__typing_stats__loading" comment="Placeholder shown while a stat is loading">Loading…</string>

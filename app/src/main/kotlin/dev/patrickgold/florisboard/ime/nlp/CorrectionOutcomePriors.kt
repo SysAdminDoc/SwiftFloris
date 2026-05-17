@@ -29,6 +29,33 @@ internal data class CorrectionOutcomeSignal(
     val rejectedConfidence: Double = 0.0,
 )
 
+internal enum class CorrectionAccuracyTrend {
+    NO_BASELINE,
+    FEWER,
+    MORE,
+    UNCHANGED,
+}
+
+internal data class CorrectionAccuracyDelta(
+    val currentWeekAccepted: Int,
+    val previousWeekAccepted: Int,
+) {
+    val changePercent: Int?
+        get() {
+            if (previousWeekAccepted <= 0) return null
+            val delta = kotlin.math.abs(currentWeekAccepted - previousWeekAccepted)
+            return ((delta * 100.0) / previousWeekAccepted).toInt()
+        }
+
+    val trend: CorrectionAccuracyTrend
+        get() = when {
+            previousWeekAccepted <= 0 -> CorrectionAccuracyTrend.NO_BASELINE
+            currentWeekAccepted < previousWeekAccepted -> CorrectionAccuracyTrend.FEWER
+            currentWeekAccepted > previousWeekAccepted -> CorrectionAccuracyTrend.MORE
+            else -> CorrectionAccuracyTrend.UNCHANGED
+        }
+}
+
 /**
  * Local, bounded evidence of correction outcomes. This stores only normalized
  * typed/corrected pairs so the scorer can distinguish corrections the user
@@ -36,9 +63,11 @@ internal data class CorrectionOutcomeSignal(
  */
 internal class CorrectionOutcomePriors private constructor(
     private val storageFile: File?,
+    private val nowProvider: () -> Long = { System.currentTimeMillis() },
 ) {
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val entries = LinkedHashMap<String, OutcomeEntry>(MaxEntries, 0.75f, true)
+    private val weeklyStats = LinkedHashMap<Long, WeeklyOutcomeEntry>(MaxWeeklyBuckets, 0.75f, true)
     private var loaded = storageFile == null
 
     @Synchronized
@@ -50,7 +79,10 @@ internal class CorrectionOutcomePriors private constructor(
         if (entry.rejectedCount > 0) {
             entry.rejectedCount -= 1
         }
-        entry.lastSeenMs = System.currentTimeMillis()
+        val now = nowProvider()
+        entry.lastSeenMs = now
+        val weeklyEntry = weeklyEntryLocked(now)
+        weeklyEntry.acceptedCount = (weeklyEntry.acceptedCount + 1).coerceAtMost(MaxWeeklyCount)
         trimLocked()
         persistLocked()
     }
@@ -64,7 +96,10 @@ internal class CorrectionOutcomePriors private constructor(
             entry.acceptedCount -= 1
         }
         entry.rejectedCount = (entry.rejectedCount + 1).coerceAtMost(MaxCount)
-        entry.lastSeenMs = System.currentTimeMillis()
+        val now = nowProvider()
+        entry.lastSeenMs = now
+        val weeklyEntry = weeklyEntryLocked(now)
+        weeklyEntry.rejectedCount = (weeklyEntry.rejectedCount + 1).coerceAtMost(MaxWeeklyCount)
         trimLocked()
         persistLocked()
     }
@@ -89,9 +124,20 @@ internal class CorrectionOutcomePriors private constructor(
     }
 
     @Synchronized
+    fun accuracyDelta(): CorrectionAccuracyDelta {
+        ensureLoadedLocked()
+        val currentWeek = weekIndex(nowProvider())
+        return CorrectionAccuracyDelta(
+            currentWeekAccepted = weeklyStats[currentWeek]?.acceptedCount ?: 0,
+            previousWeekAccepted = weeklyStats[currentWeek - 1]?.acceptedCount ?: 0,
+        )
+    }
+
+    @Synchronized
     fun reset() {
         ensureLoadedLocked()
         entries.clear()
+        weeklyStats.clear()
         persistLocked()
     }
 
@@ -99,6 +145,7 @@ internal class CorrectionOutcomePriors private constructor(
         val file = synchronized(this) {
             ensureLoadedLocked()
             entries.clear()
+            weeklyStats.clear()
             storageFile
         }
         withContext(Dispatchers.IO) {
@@ -117,6 +164,18 @@ internal class CorrectionOutcomePriors private constructor(
             file.bufferedReader().useLines { lines ->
                 for (line in lines) {
                     val parts = line.split('\t')
+                    if (parts.firstOrNull() == WeeklyMetaPrefix) {
+                        if (parts.size != 4) continue
+                        val week = parts[1].toLongOrNull() ?: continue
+                        val accepted = parts[2].toIntOrNull()?.coerceIn(0, MaxWeeklyCount) ?: continue
+                        val rejected = parts[3].toIntOrNull()?.coerceIn(0, MaxWeeklyCount) ?: continue
+                        if (accepted == 0 && rejected == 0) continue
+                        weeklyStats[week] = WeeklyOutcomeEntry(
+                            acceptedCount = accepted,
+                            rejectedCount = rejected,
+                        )
+                        continue
+                    }
                     if (parts.size != 5) continue
                     val key = keyFromNormalized(parts[0], parts[1]) ?: continue
                     val accepted = parts[2].toIntOrNull()?.coerceIn(0, MaxCount) ?: continue
@@ -135,16 +194,28 @@ internal class CorrectionOutcomePriors private constructor(
     }
 
     private fun trimLocked() {
-        if (entries.size <= MaxEntries) return
-        val keep = entries.entries
-            .sortedWith(
-                compareByDescending<Map.Entry<String, OutcomeEntry>> { it.value.lastSeenMs }
-                    .thenByDescending { it.value.acceptedCount + it.value.rejectedCount }
-            )
-            .take(MaxEntries)
-            .map { it.key }
-            .toHashSet()
-        entries.keys.removeAll { it !in keep }
+        if (entries.size > MaxEntries) {
+            val keep = entries.entries
+                .sortedWith(
+                    compareByDescending<Map.Entry<String, OutcomeEntry>> { it.value.lastSeenMs }
+                        .thenByDescending { it.value.acceptedCount + it.value.rejectedCount }
+                )
+                .take(MaxEntries)
+                .map { it.key }
+                .toHashSet()
+            entries.keys.removeAll { it !in keep }
+        }
+        if (weeklyStats.size > MaxWeeklyBuckets) {
+            val keepWeeks = weeklyStats.keys
+                .sortedDescending()
+                .take(MaxWeeklyBuckets)
+                .toHashSet()
+            weeklyStats.keys.removeAll { it !in keepWeeks }
+        }
+    }
+
+    private fun weeklyEntryLocked(nowMs: Long): WeeklyOutcomeEntry {
+        return weeklyStats.getOrPut(weekIndex(nowMs)) { WeeklyOutcomeEntry() }
     }
 
     private fun persistLocked() {
@@ -163,11 +234,32 @@ internal class CorrectionOutcomePriors private constructor(
                 )
             }
         }
+        val weeklySnapshot = weeklyStats.entries
+            .sortedByDescending { it.key }
+            .take(MaxWeeklyBuckets)
+            .map { (week, entry) ->
+                WeeklyOutcomeSnapshot(
+                    weekIndex = week,
+                    acceptedCount = entry.acceptedCount,
+                    rejectedCount = entry.rejectedCount,
+                )
+            }
         ioScope.launch {
             runCatching {
                 file.parentFile?.mkdirs()
                 val tmp = File(file.parentFile, file.name + ".tmp")
                 tmp.bufferedWriter().use { writer ->
+                    for (row in weeklySnapshot) {
+                        if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
+                        writer.write(WeeklyMetaPrefix)
+                        writer.write('\t'.code)
+                        writer.write(row.weekIndex.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.acceptedCount.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.rejectedCount.toString())
+                        writer.newLine()
+                    }
                     for (row in snapshot) {
                         if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
                         writer.write(row.original)
@@ -196,6 +288,11 @@ internal class CorrectionOutcomePriors private constructor(
         var lastSeenMs: Long = System.currentTimeMillis(),
     )
 
+    private data class WeeklyOutcomeEntry(
+        var acceptedCount: Int = 0,
+        var rejectedCount: Int = 0,
+    )
+
     private data class OutcomeSnapshot(
         val original: String,
         val corrected: String,
@@ -204,11 +301,21 @@ internal class CorrectionOutcomePriors private constructor(
         val lastSeenMs: Long,
     )
 
+    private data class WeeklyOutcomeSnapshot(
+        val weekIndex: Long,
+        val acceptedCount: Int,
+        val rejectedCount: Int,
+    )
+
     companion object {
         private const val FileName = "correction_outcome_priors.tsv"
+        private const val WeeklyMetaPrefix = "#week"
         private const val PairSeparator = '\u001f'
         private const val MaxEntries = 1024
         private const val MaxCount = 8
+        private const val MaxWeeklyBuckets = 8
+        private const val MaxWeeklyCount = 100_000
+        private const val WeekDurationMs = 7L * 24L * 60L * 60L * 1000L
         private const val AcceptedCountForFullConfidence = 3.0
         private const val RejectedCountForFullConfidence = 2.0
 
@@ -226,6 +333,10 @@ internal class CorrectionOutcomePriors private constructor(
 
         fun inMemory(): CorrectionOutcomePriors {
             return CorrectionOutcomePriors(storageFile = null)
+        }
+
+        fun inMemory(nowProvider: () -> Long): CorrectionOutcomePriors {
+            return CorrectionOutcomePriors(storageFile = null, nowProvider = nowProvider)
         }
 
         private fun pairKey(originalText: CharSequence, correctedText: CharSequence): String? {
@@ -251,6 +362,10 @@ internal class CorrectionOutcomePriors private constructor(
                 return null
             }
             return normalized
+        }
+
+        private fun weekIndex(nowMs: Long): Long {
+            return Math.floorDiv(nowMs, WeekDurationMs)
         }
     }
 }

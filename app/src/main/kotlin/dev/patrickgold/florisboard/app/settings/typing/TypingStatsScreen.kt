@@ -37,6 +37,8 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
+import dev.patrickgold.florisboard.ime.nlp.CorrectionAccuracyDelta
+import dev.patrickgold.florisboard.ime.nlp.CorrectionAccuracyTrend
 import dev.patrickgold.florisboard.ime.nlp.CorrectionOutcomePriors
 import dev.patrickgold.florisboard.ime.nlp.SwiftKeyTypingTraceRecorder
 import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
@@ -138,6 +140,11 @@ fun TypingStatsScreen() = FlorisScreen {
             Preference(
                 title = stringRes(R.string.settings__typing_stats__correction_decisions),
                 summary = stats?.correctionOutcomeCount?.toString()
+                    ?: stringRes(R.string.settings__typing_stats__loading),
+            )
+            Preference(
+                title = stringRes(R.string.settings__typing_stats__accuracy_delta),
+                summary = stats?.let { formatCorrectionAccuracyDelta(it.correctionAccuracyDelta) }
                     ?: stringRes(R.string.settings__typing_stats__loading),
             )
             Preference(
@@ -270,6 +277,7 @@ private data class TypingLearningStats(
     val trigramCount: Int,
     val trigramFileBytes: Long,
     val correctionOutcomeCount: Int,
+    val correctionAccuracyDelta: CorrectionAccuracyDelta,
     val adaptiveTouchSamples: Int,
     val traceCaptureEnabled: Boolean,
     val traceFileBytes: Long,
@@ -280,6 +288,7 @@ private suspend fun loadTypingLearningStats(context: Context): TypingLearningSta
     // the user hasn't opted into personal-dict yet, in which case we show 0.
     val dao = DictionaryManager.default().florisUserDictionaryDao()
     val allEntries = dao?.queryAll().orEmpty()
+    val correctionOutcomePriors = CorrectionOutcomePriors.get(context)
     val traceRecorder = SwiftKeyTypingTraceRecorder(context)
     return TypingLearningStats(
         personalDictCount = allEntries.size.toLong(),
@@ -291,11 +300,44 @@ private suspend fun loadTypingLearningStats(context: Context): TypingLearningSta
         bigramFileBytes = sumFilesWithPrefix(context, "personal_bigrams_"),
         trigramCount = PersonalTrigramStore.get(context).totalEntryCount(),
         trigramFileBytes = sumFilesWithPrefix(context, "personal_trigrams_"),
-        correctionOutcomeCount = CorrectionOutcomePriors.get(context).entryCount(),
+        correctionOutcomeCount = correctionOutcomePriors.entryCount(),
+        correctionAccuracyDelta = correctionOutcomePriors.accuracyDelta(),
         adaptiveTouchSamples = AdaptiveTouchModel.totalSampleCount(),
         traceCaptureEnabled = traceRecorder.isEnabled(),
         traceFileBytes = traceRecorder.traceFileSizeBytes(),
     )
+}
+
+@Composable
+private fun formatCorrectionAccuracyDelta(delta: CorrectionAccuracyDelta): String {
+    return when (delta.trend) {
+        CorrectionAccuracyTrend.NO_BASELINE -> {
+            if (delta.currentWeekAccepted == 0) {
+                stringRes(R.string.settings__typing_stats__accuracy_delta__none)
+            } else {
+                stringRes(
+                    R.string.settings__typing_stats__accuracy_delta__no_baseline,
+                    "current" to delta.currentWeekAccepted,
+                )
+            }
+        }
+        CorrectionAccuracyTrend.FEWER -> stringRes(
+            R.string.settings__typing_stats__accuracy_delta__fewer,
+            "percent" to (delta.changePercent ?: 0),
+            "current" to delta.currentWeekAccepted,
+            "previous" to delta.previousWeekAccepted,
+        )
+        CorrectionAccuracyTrend.MORE -> stringRes(
+            R.string.settings__typing_stats__accuracy_delta__more,
+            "percent" to (delta.changePercent ?: 0),
+            "current" to delta.currentWeekAccepted,
+            "previous" to delta.previousWeekAccepted,
+        )
+        CorrectionAccuracyTrend.UNCHANGED -> stringRes(
+            R.string.settings__typing_stats__accuracy_delta__unchanged,
+            "current" to delta.currentWeekAccepted,
+        )
+    }
 }
 
 private fun sumFilesWithPrefix(context: Context, prefix: String): Long {

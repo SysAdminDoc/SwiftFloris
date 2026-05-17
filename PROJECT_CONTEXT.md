@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.58)
+## 3. Stack at HEAD (v1.8.59)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.03.01 · Material 3 + material-kolor 4.1.1
@@ -92,7 +92,7 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.58`.
+- **Tag cadence has slipped** — latest git tag is `v1.8.40`, HEAD is `v1.8.59`.
   Catch-up tagging recommended (see
   [.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) #6).
 
@@ -141,13 +141,15 @@ Phase C/D opened in the same release window:
 - ✅ C2 — Arrow-keys bottom-row preset (shipped v1.8.57) — SwiftKey
   "Modes → Arrow keys" parity via new `BottomRowPreset.Navigation` +
   `BottomRowKey.ARROW_*`
-- ✅ D2 — Generic task-creation quick action (shipped v1.8.58, HEAD) —
+- ✅ D2 — Generic task-creation quick action (shipped v1.8.58) —
   `QuickAction.InsertTask` via `Intent.ACTION_SEND` chooser; works with
   Tasks.org / OpenTasks / Google Tasks / Joplin / Notion / Markor
+- ✅ D3 — Typing-stats accuracy-delta (shipped v1.8.59, HEAD) —
+  `CorrectionOutcomePriors.accuracyDelta()` backs the Settings → Typing
+  stats row for current-week accepted corrections versus last week
 - C1 — Split-keyboard renderer wire-up inside `TextKeyboardLayout` (open)
 - C3 — High-Contrast AAA theme + animated theme (open)
 - D1 — Calendar quick-insert (P9) (open)
-- D3 — Typing-stats accuracy-delta (P26) (open)
 
 ## 8. AI / model surfaces — current state
 
