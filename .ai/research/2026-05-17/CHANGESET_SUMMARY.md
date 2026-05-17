@@ -638,3 +638,46 @@ banned-network-permission scan were run. The focused Gradle suite was
 attempted and stopped at the known VM blocker: `JAVA_HOME` is not set and no
 `java` command is on PATH, so maintainer-host Gradle verification remains
 required before publishing.
+
+---
+
+## 18. v1.8.74 continuation — Bump-batch C build toolchain refresh
+
+The autonomous development loop shipped Tier-2 prioritization item #16 as
+`ROADMAP.md` N14.7.
+
+**Files added:**
+
+- `RELEASE_NOTES_v1.8.74.md`
+
+**Files updated:**
+
+- `gradle/libs.versions.toml` → Android Gradle Plugin `9.2.1` and Compose BOM
+  `2026.05.00`
+- `gradle.properties` → `projectVersionCode=1874`,
+  `projectVersionName=1.8.74`
+- `README.md`, `docs/DEPENDENCY_TRIAGE.md`, `ROADMAP.md`,
+  `PROJECT_CONTEXT.md`, `AGENTS.md`,
+  `ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`,
+  `PRIORITIZATION_MATRIX.md`, `STATE_OF_REPO.md`,
+  `SECURITY_AND_DEPENDENCY_REVIEW.md`, `SOURCE_REGISTER.md`, and
+  `RESEARCH_LOG.md` → release/context updates for v1.8.74
+
+**Sources re-checked before editing:**
+
+- Google Maven AGP metadata: `latest` / `release` is `9.3.0-alpha05`
+  preview; stable tail ends at `9.2.1`
+- Android Gradle Plugin 9.2 release notes and Android Studio Panda 4 Patch 1
+  notes for the AGP `9.2.1` patch line
+- Google Maven Compose BOM metadata: latest/release `2026.05.00`
+- Compose release stream
+- OSV querybatch for `com.android.tools.build:gradle:9.2.1` and
+  `androidx.compose:compose-bom:2026.05.00`
+- Active R8 `-keepattributes` rules in `app/proguard-rules.pro`
+
+**Verification note:** `git diff --check`, manifest banned-network-permission
+scan, root crash/replay-log guard, version-pin greps, R8 keepattributes grep,
+Google Maven metadata checks, and OSV querybatch were run. The focused Gradle
+suite was attempted and stopped at the known VM blocker: `JAVA_HOME` is not set
+and no `java` command is on PATH, so maintainer-host Gradle verification
+remains required before publishing.

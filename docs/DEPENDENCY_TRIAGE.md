@@ -53,12 +53,13 @@ https://developer.android.com/jetpack/androidx/releases/window.
 
 ## AGP 9.x → API 37 plan (matrix #43)
 
-`AGP 9.1+` and `Kotlin 2.x` are the load-bearing path to `targetSdk 37`. Recommended sequencing:
+`AGP 9.1+` and `Kotlin 2.x` are the load-bearing path to `targetSdk 37`. Current state:
+AGP `9.2.1` is shipped in v1.8.74, while `compileSdk` / `targetSdk` remain 36 until the
+Android 17 behavior-gate work is closed.
 
-1. Stay on AGP 9.0.0 + Kotlin 2.3.21 until upstream tags AGP 9.1.0 stable. Track the milestone in
-   https://issuetracker.google.com/issues?q=AGP%209.1.
-2. Bump AGP 9.0.0 → 9.1.0 in a dedicated PR. Re-run macrobenchmark + Roborazzi.
-3. After the AGP bump, raise `compileSdk` to 37 in `gradle/tools.versions.toml`. The Android 17 behavior change set
+1. Keep AGP on the current stable 9.2.x patch line; do not move to `9.3.0-alpha*`.
+2. Re-run macrobenchmark + Roborazzi on the maintainer build host after any AGP / Compose patch.
+3. After the behavior-gate work, raise `compileSdk` to 37 in `gradle/tools.versions.toml`. The Android 17 behavior change set
    (already partially closed by v1.8.44 password popup guard + v1.8.45 IME visibility restore) defines the
    `compileSdk = 37` task list.
 4. Raise `targetSdk` to 37 only after the full behavior-change set is closed. Bumping `targetSdk` exposes the app
@@ -82,6 +83,7 @@ https://developer.android.com/jetpack/androidx/releases/window.
 
 | Date | Pin audited | Conclusion |
 |------|-------------|------------|
+| 2026-05-17 (v1.8.74) | Bump-batch C: Android Gradle Plugin `9.2.1`, Compose BOM `2026.05.00` | Applied after checking Google Maven metadata, Android Studio Panda 4 Patch 1 notes, Compose release metadata, OSV querybatch, and R8 keepattributes rules. AGP `9.3.0-alpha05` exists but is preview and intentionally skipped. No app code, permissions, or runtime behavior changed. Full Gradle verification is still delegated to the maintainer build host because this VM has no Java on PATH. |
 | 2026-05-17 (v1.8.71) | Bump-batch B: Roborazzi `1.60.0`, Robolectric `4.16.1` | Applied after re-checking Maven Central / Gradle Plugin Portal metadata. OSV querybatch returned zero vulnerabilities for Roborazzi core / Compose / JUnit-rule and Robolectric at the target versions. No app code, permissions, or runtime behavior changed. Full Gradle verification is still delegated to the maintainer build host because this VM has no Java on PATH. |
 | 2026-05-17 (v1.8.69) | Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, AboutLibraries `14.2.0` | Applied after re-checking Maven Central / Gradle Plugin Portal metadata. AboutLibraries `15.0.0-b01` exists but is beta, so the stable line remains `14.2.0`. No app code, permissions, or runtime behavior changed. Full Gradle verification is still delegated to the maintainer build host because this VM has no Java on PATH. |
 | 2026-05-17 (v1.8.51) | `androidx-compose-bom = "2026.03.01"` (ROADMAP §6 N14.3) | Audit performed against the [Compose BOM release notes](https://developer.android.com/jetpack/androidx/releases/compose). Current pin is the published March 2026 patch-01 line; no later patch is announced as of this audit. No known crash / a11y / inset regression in the Roborazzi sample suite forces an out-of-band bump. The next scheduled audit window is the day a `2026.04.xx` patch publishes; the bump itself is a separate slice gated on the macrobenchmark + Roborazzi evidence run per the cadence policy above. |
