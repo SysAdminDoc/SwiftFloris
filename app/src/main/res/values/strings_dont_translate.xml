@@ -5,6 +5,9 @@
     <string name="florisboard__issue_tracker_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/issues</string>
     <string name="florisboard__privacy_policy_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris</string>
     <string name="florisboard__changelog_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/releases/v{version}</string>
+    <string name="florisboard__privacy_and_ai_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/PRIVACY_AND_AI.md</string>
+    <string name="florisboard__threat_model_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/THREAT_MODEL.md</string>
+    <string name="florisboard__project_context_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/PROJECT_CONTEXT.md</string>
     <string name="florisboard__commit_by_hash_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/commit/{hash}</string>
     <string name="florisboard__spell_checker_wiki_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/wiki</string>
     <string name="florisboard__theme_editor_wiki_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/wiki</string>

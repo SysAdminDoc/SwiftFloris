@@ -174,7 +174,7 @@
     <string name="settings__home__backup_summary" comment="Home screen preference summary">Export preferences, themes, keyboards, and optional clipboard data</string>
     <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
     <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
-    <string name="settings__home__about_summary" comment="Home screen preference summary">Version, privacy policy, source, and licenses</string>
+    <string name="settings__home__about_summary" comment="Home screen preference summary">Version, AI disclosures, privacy policy, source, and licenses</string>
 
     <string name="settings__localization__title" comment="Title of languages and Layout screen">Languages &amp; Layouts</string>
     <string name="settings__localization__group_display__label" comment="Preference group title">Display</string>
@@ -965,6 +965,33 @@
     <string name="about__repository__summary" comment="Preference summary">Source code, discussions, issues and info</string>
     <string name="about__privacy_policy__title" comment="Preference title">Privacy policy</string>
     <string name="about__privacy_policy__summary" comment="Preference summary">The privacy policy for this project</string>
+    <string name="about__ai_features__title" comment="Preference title">AI features in this keyboard</string>
+    <string name="about__ai_features__summary" comment="Preference summary">What runs on device, what data it sees, and how to turn each surface off</string>
+    <string name="about__ai_features__headline" comment="AI features screen headline">All AI/ML processing stays on this device</string>
+    <string name="about__ai_features__headline_summary" comment="AI features screen headline summary">SwiftFloris has no Internet permission, no vendor account, and no telemetry. The keyboard only uses local text, touch, voice, and addon state needed for the feature you enable.</string>
+    <string name="about__ai_features__processing_group" comment="Preference group title">Processing promise</string>
+    <string name="about__ai_features__local_processing_title" comment="Preference title">Local processing only</string>
+    <string name="about__ai_features__local_processing_summary" comment="Preference summary">Predictions, glide classification, voice hand-off, translation, and smart-compose routing run on your device or on an explicitly installed local addon.</string>
+    <string name="about__ai_features__no_accounts_title" comment="Preference title">No cloud account or telemetry</string>
+    <string name="about__ai_features__no_accounts_summary" comment="Preference summary">SwiftFloris does not sign in to Microsoft, Google, Grammarly, or other cloud services, and it cannot upload typing data because the app declares no network permission.</string>
+    <string name="about__ai_features__surfaces_group" comment="Preference group title">Feature surfaces</string>
+    <string name="about__ai_features__next_word_title" comment="Preference title">Next-word and next-phrase prediction</string>
+    <string name="about__ai_features__next_word_summary" comment="Preference summary">Uses local dictionaries and personal n-grams from non-sensitive fields. Turn it off in Settings → Typing → Suggestions.</string>
+    <string name="about__ai_features__glide_title" comment="Preference title">Glide typing</string>
+    <string name="about__ai_features__glide_summary" comment="Preference summary">Classifies swipe traces locally against installed language vocabularies. Turn it off in Settings → Gestures → Glide typing.</string>
+    <string name="about__ai_features__voice_title" comment="Preference title">Voice input</string>
+    <string name="about__ai_features__voice_summary" comment="Preference summary">Hands dictation to FUTO Voice Input or an installed local model; no audio is sent by SwiftFloris. Configure it in Settings → Voice input.</string>
+    <string name="about__ai_features__translation_title" comment="Preference title">Translation</string>
+    <string name="about__ai_features__translation_summary" comment="Preference summary">Routes text only to explicit local translation packs after consent. Manage packs in addon settings; consent is requested on first use.</string>
+    <string name="about__ai_features__smart_compose_title" comment="Preference title">Smart compose and rewrites</string>
+    <string name="about__ai_features__smart_compose_summary" comment="Preference summary">Uses local addon routing, sensitive-field guards, and consent gates before any generated text appears. Configure the surface in Smartbar settings.</string>
+    <string name="about__ai_features__docs_group" comment="Preference group title">Documentation</string>
+    <string name="about__ai_features__privacy_doc_title" comment="Preference title">Privacy and AI document</string>
+    <string name="about__ai_features__privacy_doc_summary" comment="Preference summary">Detailed per-feature inventory and SwiftKey/Gboard/Grammarly posture comparison</string>
+    <string name="about__ai_features__threat_model_title" comment="Preference title">Threat model</string>
+    <string name="about__ai_features__threat_model_summary" comment="Preference summary">Attacker scenarios, privacy invariants, and security hardening checklist</string>
+    <string name="about__ai_features__project_context_title" comment="Preference title">Project context</string>
+    <string name="about__ai_features__project_context_summary" comment="Preference summary">Current architecture, shipped guarantees, roadmap context, and handoff notes</string>
     <string name="about__project_license__title" comment="Preference title">Project license</string>
     <string name="about__project_license__summary" comment="Preference summary">SwiftFloris is licensed under {license_name}</string>
     <string name="about__project_license__error_license_text_failed" comment="Error text for license text loading failure">Error: Failed to load license text.\n-&gt; Reason: {error_message}</string>
@@ -979,6 +1006,12 @@
     <string name="setup__privacy_status_summary" comment="Privacy note summary shown during setup">SwiftFloris has no Internet permission. Setup only enables the Android input method and optional recovery alerts.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacy policy</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Repository</string>
+
+    <string name="setup__ai_features__title">Review local AI features</string>
+    <string name="setup__ai_features__description_p1">SwiftFloris uses on-device AI/ML surfaces for next-word prediction, glide typing, voice input, translation, and smart compose.</string>
+    <string name="setup__ai_features__description_p2">All processing stays on this device. No data leaves the device, no vendor account is required, and the app declares no Internet permission.</string>
+    <string name="setup__ai_features__acknowledge_btn">I understand</string>
+    <string name="setup__ai_features__open_details_btn">Read AI feature details</string>
 
     <string name="setup__enable_ime__title">Enable {app_name}</string>
     <string name="setup__enable_ime__description">Android keeps custom keyboards disabled until you approve them. Open keyboard settings and enable {app_name}.</string>

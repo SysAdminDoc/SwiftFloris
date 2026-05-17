@@ -51,6 +51,7 @@ import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
 import dev.patrickgold.florisboard.app.ext.ExtensionViewScreen
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.about.AboutScreen
+import dev.patrickgold.florisboard.app.settings.about.AiFeaturesScreen
 import dev.patrickgold.florisboard.app.settings.about.ProjectLicenseScreen
 import dev.patrickgold.florisboard.app.settings.about.ThirdPartyLicensesScreen
 import dev.patrickgold.florisboard.app.settings.advanced.BackupScreen
@@ -213,6 +214,10 @@ object Routes {
         object About
 
         @Serializable
+        @Deeplink("settings/about/ai-features")
+        object AiFeatures
+
+        @Serializable
         @Deeplink("settings/about/project-license")
         object ProjectLicense
 
@@ -344,6 +349,7 @@ object Routes {
             composableWithDeepLink(Settings.Restore::class) { RestoreScreen() }
 
             composableWithDeepLink(Settings.About::class) { AboutScreen() }
+            composableWithDeepLink(Settings.AiFeatures::class) { AiFeaturesScreen() }
             composableWithDeepLink(Settings.ProjectLicense::class) { ProjectLicenseScreen() }
             composableWithDeepLink(Settings.ThirdPartyLicenses::class) { ThirdPartyLicensesScreen() }
 
