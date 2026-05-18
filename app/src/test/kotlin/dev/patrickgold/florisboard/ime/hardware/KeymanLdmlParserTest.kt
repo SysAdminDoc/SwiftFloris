@@ -87,6 +87,56 @@ class KeymanLdmlParserTest : FunSpec({
         layout.scancodeMap.size shouldBe 1
     }
 
+    test("shift attribute is preferred over longPress for the shift slot") {
+        // When both are declared, LDML's shift= is the shift-modifier
+        // mapping and longPress= is a space-separated alternates list.
+        // shift= must win.
+        val ldml = """
+            <keyboard locale="x-test">
+              <keys>
+                <key id="A01" output="a" shift="A" longPress="ä á à"/>
+              </keys>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
+        a01.normal shouldBe 'a'.code
+        a01.shift shouldBe 'A'.code
+    }
+
+    test("multi-alternate longPress with no shift leaves shift slot null") {
+        // longPress with spaces is a list of alternates; none should be
+        // promoted into the shift slot (the alternates UX is a separate
+        // feature once HardwareKeyEntry grows a longPressAlternates field).
+        val ldml = """
+            <keyboard locale="x-test">
+              <keys>
+                <key id="A01" output="a" longPress="ä á à"/>
+              </keys>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
+        a01.normal shouldBe 'a'.code
+        a01.shift shouldBe null
+    }
+
+    test("single-alternate longPress with no shift remains usable as shift fallback") {
+        // Preserves the Amharic SERA-style backward-compat case where the
+        // LDML author used longPress as the shift workaround.
+        val ldml = """
+            <keyboard locale="x-test">
+              <keys>
+                <key id="A01" output="a" longPress="A"/>
+              </keys>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
+        a01.normal shouldBe 'a'.code
+        a01.shift shouldBe 'A'.code
+    }
+
     test("display override with to attribute labels the matching key output") {
         val ldml = """
             <keyboard locale="km-KH">

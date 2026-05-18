@@ -111,10 +111,37 @@ object KeymanLdmlParser {
             val id = node.getAttribute("id")
             if (id.isBlank()) continue
             val output = node.getAttribute("output").takeIf { it.isNotEmpty() }?.decodeLdmlEscapes()
-            val shiftOutput = (
-                node.getAttribute("longPress").takeIf { it.isNotEmpty() }
-                    ?: node.getAttribute("shift").takeIf { it.isNotEmpty() }
-                )?.decodeLdmlEscapes()
+            // LDML semantics:
+            //   shift=       — the shift-modifier mapping for this key.
+            //   longPress=   — a space-separated list of alternates surfaced
+            //                  on long-press (NOT a shift mapping).
+            // Previously this parser used `longPress` as the shift slot,
+            // falling back to `shift`. That picked the wrong slot whenever
+            // both were declared (real LDML keyboards use shift for the
+            // shift mapping and longPress for the alternates list) and
+            // promoted only the first long-press alternate to the shift
+            // slot when only longPress was set, masking the alternates UX.
+            //
+            // New behaviour:
+            //   1. If shift= is set, use it for the shift slot.
+            //   2. Else if longPress= contains exactly one whitespace-
+            //      separated value, use it for the shift slot. This
+            //      preserves the previously-shipped behaviour for LDML
+            //      keyboards (e.g. Amharic SERA) that authored single-
+            //      alternate longPress declarations as a shift workaround
+            //      before this parser learned the right semantics.
+            //   3. Else leave shift = null. A future release will route
+            //      multi-alternate longPress through a dedicated
+            //      `longPressAlternates: List<Int>` field on
+            //      HardwareKeyEntry once the long-press UI exists.
+            val shiftAttr = node.getAttribute("shift").takeIf { it.isNotEmpty() }
+            val longPressAttr = node.getAttribute("longPress").takeIf { it.isNotEmpty() }
+            val shiftRaw = when {
+                shiftAttr != null -> shiftAttr
+                longPressAttr != null && !longPressAttr.contains(' ') -> longPressAttr
+                else -> null
+            }
+            val shiftOutput = shiftRaw?.decodeLdmlEscapes()
             val normalCp = output?.codePointAt(0)
             val shiftCp = shiftOutput?.codePointAt(0)
             if (normalCp == null && shiftCp == null) continue
