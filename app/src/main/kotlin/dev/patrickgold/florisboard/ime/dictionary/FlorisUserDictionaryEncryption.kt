@@ -89,7 +89,29 @@ internal object FlorisUserDictionaryEncryption {
         }
 
         if (TinkStringPreferenceCrypto.legacyKeysetsExist(prefs)) {
-            error("Could not migrate legacy encrypted user dictionary passphrase")
+            // We saw a legacy AndroidX Security Crypto keyset in the prefs
+            // but `readLegacyEncryptedString` returned null, which means
+            // either the legacy value pref is missing OR the legacy
+            // decrypt failed (Android Keystore master key rotated, restored
+            // from a different device, keyset corrupt). Previous behaviour:
+            // `error(...)` — hard crash, IME unusable.
+            //
+            // Recovery path: log, clear the legacy keyset entries, and
+            // fall through to generate a fresh passphrase. We lose any
+            // existing personal-dictionary words encrypted under the now-
+            // unreadable key, but the IME continues to function with a
+            // fresh empty dictionary. Users who relied on the old dictionary
+            // can re-import their backup if they have one.
+            Log.w(
+                TAG,
+                "Legacy encrypted-prefs keyset exists but cannot be decrypted; " +
+                    "clearing and regenerating user dictionary passphrase. " +
+                    "Any existing encrypted dictionary will be inaccessible.",
+            )
+            prefs.edit()
+                .remove("__androidx_security_crypto_encrypted_prefs_key_keyset__")
+                .remove("__androidx_security_crypto_encrypted_prefs_value_keyset__")
+                .apply()
         }
 
         val passphrase = ByteArray(PASSPHRASE_BYTES)
