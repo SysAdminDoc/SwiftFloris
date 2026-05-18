@@ -114,7 +114,12 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
             ThemeExtensionDeleteNotice.DeleteFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__view__delete_failure),
-                secondaryText = lastDeleteErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable),
+                secondaryText = stringRes(
+                    R.string.ext__view__delete_failure_summary,
+                    "error_message" to (lastDeleteErrorMessage ?: stringRes(
+                        R.string.ext__import__error_details_unavailable,
+                    )),
+                ),
             )
         }
         FlorisInfoCard(

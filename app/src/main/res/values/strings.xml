@@ -213,6 +213,7 @@
     <string name="settings__localization__language_pack_delete_success">Language pack deleted</string>
     <string name="settings__localization__language_pack_delete_success_summary">The installed language pack list has been refreshed. Import it again if you removed the wrong pack.</string>
     <string name="settings__localization__language_pack_delete_failure">Could not delete language pack</string>
+    <string name="settings__localization__language_pack_delete_failure_summary">The language pack is still installed. Review the error, then retry after leaving keyboards or settings screens that may be using it. Details: {error_message}</string>
     <string name="settings__voice_input__title" comment="Title of Voice input settings screen">Voice input</string>
     <string name="settings__voice_input__status_ready" comment="Voice input status message">FUTO Voice Input is ready</string>
     <string name="settings__voice_input__status_ready_summary" comment="Voice input status summary">SwiftFloris can hand dictation to FUTO from the keyboard voice action.</string>
@@ -917,12 +918,14 @@
     <string name="settings__udm__entry_save_success" comment="Card title shown after a user dictionary word was saved">Dictionary word saved</string>
     <string name="settings__udm__entry_save_success_summary" comment="Card summary shown after a user dictionary word was saved">The dictionary list has been refreshed and suggestions can use this entry.</string>
     <string name="settings__udm__entry_save_failure" comment="Card title shown when a user dictionary word could not be saved">Could not save dictionary word</string>
+    <string name="settings__udm__entry_save_failure_summary" comment="Card summary shown when a user dictionary word could not be saved">The dictionary entry was not changed. Review the error, keep the dialog open, and try again. Details: {error_message}</string>
     <string name="settings__udm__entry_error_details_unavailable" comment="Fallback error detail when a user dictionary entry operation fails without a specific message">No additional error details were provided.</string>
     <string name="settings__udm__entry_delete_in_progress" comment="Card title shown while a user dictionary word is being deleted">Removing dictionary word</string>
     <string name="settings__udm__entry_delete_in_progress_summary" comment="Card summary shown while a user dictionary word is being deleted">Keep this screen open while SwiftFloris removes the selected entry.</string>
     <string name="settings__udm__entry_delete_success" comment="Card title shown after a user dictionary word was deleted">Dictionary word removed</string>
     <string name="settings__udm__entry_delete_success_summary" comment="Card summary shown after a user dictionary word was deleted">The word was removed from this dictionary and the suggestion overlay is being refreshed.</string>
     <string name="settings__udm__entry_delete_failure" comment="Card title shown when a user dictionary word could not be deleted">Could not remove dictionary word</string>
+    <string name="settings__udm__entry_delete_failure_summary" comment="Card summary shown when a user dictionary word could not be deleted">The dictionary entry is still present. Review the error, then retry or reopen the dictionary screen. Details: {error_message}</string>
 
     <string name="settings__gestures__title" comment="Title of Gestures screen">Gestures &amp; Glide typing</string>
     <string name="pref__glide__title" comment="Preference group title">Glide typing</string>
@@ -1110,6 +1113,7 @@
     <string name="backup_and_restore__back_up__cancelled_summary">No archive was saved. You can adjust the backup contents and try again.</string>
     <string name="backup_and_restore__back_up__failure_title">Backup failed</string>
     <string name="backup_and_restore__back_up__failure">Could not export backup archive: {error_message}</string>
+    <string name="backup_and_restore__back_up__failure_recovery">No backup archive was saved. Check available storage or choose another destination, then try again. Details: {error_message}</string>
     <string name="backup_and_restore__back_up__unknown_error">Unknown error</string>
     <string name="backup_and_restore__back_up__clipboard_privacy_warning_title">Sensitive clipboard items stay private</string>
     <string name="backup_and_restore__back_up__clipboard_privacy_warning_summary">Clipboard entries marked sensitive by apps are skipped even when clipboard history is selected.</string>
@@ -1141,6 +1145,7 @@
     <string name="backup_and_restore__restore__cancelled_summary">No data was changed. Select an archive and restore mode when you are ready.</string>
     <string name="backup_and_restore__restore__failure_title">Restore failed</string>
     <string name="backup_and_restore__restore__failure">Could not restore data: {error_message}</string>
+    <string name="backup_and_restore__restore__failure_recovery">Restore stopped before all selected data could be imported. Review the archive, select only the needed sections, or retry from a newer backup. Details: {error_message}</string>
     <string name="backup_and_restore__restore__unknown_error">Unknown error</string>
     <string name="backup_and_restore__restore__partial_failure_title">Restore finished with warnings</string>
     <string name="backup_and_restore__restore__partial_failure_summary">Restored {restored_count} section(s). {problem_count} selected section(s) were missing from the archive or could not be restored. Your recovery path is to review the selected archive and retry, or restore from a newer backup.</string>
@@ -1336,14 +1341,17 @@
     <string name="ext__editor__files__delete_success">File deleted</string>
     <string name="ext__editor__files__delete_success_summary">The file list has been refreshed. Save the extension to apply this archive change.</string>
     <string name="ext__editor__files__delete_failure">Could not delete file</string>
+    <string name="ext__editor__files__delete_failure_summary">The draft file was not deleted. Review the error, then retry before saving the extension. Details: {error_message}</string>
     <string name="ext__editor__files__rename_invalid">Use a valid file name in this folder</string>
     <string name="ext__editor__files__rename_exists">A file with this name already exists</string>
     <string name="ext__editor__files__rename_success">File renamed</string>
     <string name="ext__editor__files__rename_success_summary">References that point to the old file name may need to be updated before saving.</string>
     <string name="ext__editor__files__rename_failure">Could not rename file</string>
+    <string name="ext__editor__files__rename_failure_summary">The draft file was not renamed. Use a unique valid name in this folder, then try again. Details: {error_message}</string>
     <string name="ext__editor__files__import_success">File imported</string>
     <string name="ext__editor__files__import_success_summary">The file is now part of this extension draft. Save the extension to apply the archive change.</string>
     <string name="ext__editor__files__import_failure">Could not import file</string>
+    <string name="ext__editor__files__import_failure_summary">The draft file list was not changed. Review the error, then retry or choose a different file. Details: {error_message}</string>
     <string name="ext__editor__files__action_in_progress">Updating extension files</string>
     <string name="ext__editor__files__action_in_progress_summary">Keep this screen open while SwiftFloris copies, renames, or removes the selected archive file.</string>
     <string name="ext__editor__files__type_fonts">Fonts</string>
@@ -1351,6 +1359,7 @@
     <string name="ext__editor__save_in_progress">Saving extension</string>
     <string name="ext__editor__save_in_progress_summary">Keep this screen open while SwiftFloris writes the theme archive and refreshes the installed copy.</string>
     <string name="ext__editor__save_failure">Could not save extension</string>
+    <string name="ext__editor__save_failure_summary">The installed extension was not changed. Keep this draft open, review the error, then retry after freeing storage or fixing invalid files. Details: {error_message}</string>
     <string name="ext__editor__component_delete_confirm_title">Remove theme from draft?</string>
     <string name="ext__editor__component_delete_confirm_message">Remove "{component_name}" from this theme extension draft? Save the extension to apply the removal, or leave without saving to keep the installed theme unchanged.</string>
     <string name="ext__editor__component_delete_success">Theme removed from draft</string>
@@ -1369,6 +1378,7 @@
     <string name="ext__import__success_summary">SwiftFloris imported the selected extension files and refreshed the installed extension list.</string>
     <string name="ext__import__failure">Could not import extension: {error_message}</string>
     <string name="ext__import__failure_title">Import failed</string>
+    <string name="ext__import__failure_summary">No extension files were imported or updated. Review the error, choose the files again, and retry. Details: {error_message}</string>
     <string name="ext__import__ext_any" comment="Title of Importer screen for import of any supported SwiftFloris extension">Import extension</string>
     <string name="ext__import__ext_keyboard" comment="Title of Importer screen for keyboard extension import">Import keyboard extension</string>
     <string name="ext__import__ext_theme" comment="Title of Importer screen for theme extension import">Import theme extension</string>
@@ -1443,6 +1453,7 @@
     <string name="ext__view__delete_in_progress">Deleting extension</string>
     <string name="ext__view__delete_in_progress_summary">Keep this screen open while SwiftFloris removes the extension and refreshes installed themes.</string>
     <string name="ext__view__delete_failure">Could not delete extension</string>
+    <string name="ext__view__delete_failure_summary">The extension is still installed. Review the error, then retry after leaving screens that use this extension. Details: {error_message}</string>
     <string name="ext__check_updates__title">Check for Updates</string>
 
     <!-- Action strings -->

@@ -245,17 +245,26 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
             ExtensionEditorFileNotice.ImportFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__import_failure),
-                secondaryText = lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable),
+                secondaryText = stringRes(
+                    R.string.ext__editor__files__import_failure_summary,
+                    "error_message" to (lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable)),
+                ),
             )
             ExtensionEditorFileNotice.RenameFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__rename_failure),
-                secondaryText = lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable),
+                secondaryText = stringRes(
+                    R.string.ext__editor__files__rename_failure_summary,
+                    "error_message" to (lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable)),
+                ),
             )
             ExtensionEditorFileNotice.DeleteFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__delete_failure),
-                secondaryText = lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable),
+                secondaryText = stringRes(
+                    R.string.ext__editor__files__delete_failure_summary,
+                    "error_message" to (lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable)),
+                ),
             )
         }
 

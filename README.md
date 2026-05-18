@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.149-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.150-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.149 | Privacy posture |
+| Area | What's in v1.8.150 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -124,7 +124,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.46).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.47).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -276,6 +276,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.150** (2026-05-18) — Trust-state recovery microcopy: backup, restore, extension, language-pack, archive-file, and manual dictionary failure cards now state what stayed unchanged and provide a retry/recovery path with the technical detail. ([notes](RELEASE_NOTES_v1.8.150.md))
 - **v1.8.149** (2026-05-18) — Dictionary entry trust states: manual add/update/delete now show progress/result cards, run DAO writes off the main thread, refresh affected suggestion overlays, and block duplicate entry actions while work is running. ([notes](RELEASE_NOTES_v1.8.149.md))
 - **v1.8.148** (2026-05-18) — Extension archive file trust states: archive file import/rename/delete now show progress/result cards, do file work off the main thread, and block duplicate actions while work is running. ([notes](RELEASE_NOTES_v1.8.148.md))
 - **v1.8.147** (2026-05-18) — Theme extension trust states: theme editing now shows save progress/failure cards, confirms component removal with draft-state feedback, and installed extension deletion now shows progress/failure cards while blocking duplicate actions. ([notes](RELEASE_NOTES_v1.8.147.md))
@@ -415,7 +416,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.149** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.150** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

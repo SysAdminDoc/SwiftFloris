@@ -278,7 +278,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__import__failure_title),
                 secondaryText = stringRes(
-                    R.string.ext__import__failure,
+                    R.string.ext__import__failure_summary,
                     "error_message" to (lastImportErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable)),
                 ),
                 actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },

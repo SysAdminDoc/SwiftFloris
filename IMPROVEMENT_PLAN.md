@@ -68,6 +68,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Audited theme import/edit/delete states by adding theme-extension save progress/failure cards, confirmed component removal with draft-state feedback, installed extension delete progress/failure cards, duplicate-action blocking, and focused policy coverage.
 - 2026-05-18: Audited extension import/edit/delete states by adding extension archive file progress/success/failure cards, async file import/rename/delete work, duplicate-action blocking, and focused policy coverage.
 - 2026-05-18: Audited dictionary add/update/remove states by adding manual entry progress/success/failure cards, async DAO writes, duplicate-action blocking, and focused policy coverage.
+- 2026-05-18: Added calm recovery-path copy to backup, restore, extension import/edit/delete, archive-file, language-pack delete, and manual dictionary entry failure cards so visible errors explain what stayed unchanged and what to retry.
 
 ## Workstreams
 
@@ -176,7 +177,7 @@ Tasks:
 - [x] Audit theme import/edit/delete states.
 - [x] Audit extension import/edit/delete states.
 - [x] Audit dictionary add/remove states.
-- [ ] Add calm, specific microcopy for failure and recovery paths.
+- [x] Add calm, specific microcopy for failure and recovery paths.
 - [ ] Add disabled/busy states where repeated actions could corrupt state or confuse users.
 
 Acceptance criteria:
