@@ -12,9 +12,129 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.84 — Settings → Addons status surface.
+**HEAD at latest reconciliation:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
-same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B/C + README Samsung / Grammarly callouts + glide strategy correction + root crash-log guard + hardware-keyboard import/runtime follow-ups + user sticker folders + Keyman `.kmp` package intake + honeycomb hex layout production wire-up + SQLCipher provider migration plan + Next-10.3a addon catalog foundation + Next-10.3b signing-pin persistence + Next-10.3c startup reconciliation + Next-10.3d Settings status/rescan UI.)
+same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B/C + README Samsung / Grammarly callouts + glide strategy correction + root crash-log guard + hardware-keyboard import/runtime follow-ups + user sticker folders + Keyman `.kmp` package intake + honeycomb hex layout production wire-up + SQLCipher provider migration plan + Next-10.3a addon catalog foundation + Next-10.3b signing-pin persistence + Next-10.3c startup reconciliation + Next-10.3d Settings status/rescan UI. The sixth-pass v1.8.85-92 cross-subsystem hardening + per-feature follow-ups landed afterwards; see §0.b below.)
+
+---
+
+## 0.b Reconciliation with v1.8.85-92 sixth-pass hardening releases
+
+The sixth research pass ([`.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md))
+ran five parallel read-only research agents over the v1.8.75-84 slices
+plus the foundational privacy / build / CI infrastructure. Eight releases
+landed that implemented the findings:
+
+| Sixth-pass finding | Shipped as |
+|---|---|
+| `verifyNoInternetPermission` only scanned `app/src/**` source manifests — library AARs could re-add INTERNET via manifest merging and slip past the gate. Also did not honour `tools:node="remove"`. | ✅ **v1.8.85** — per-variant `verifyNoInternetPermissionMerged<Variant>` wired against AGP's `SingleArtifact.MERGED_MANIFEST`; `tools:node="remove" \| "removeAll"` exemption added. Hooked into `processManifest` (finalizedBy) and `assemble` (dependsOn). |
+| `android:dataExtractionRules` pointed at a `<full-backup-content>` schema file — wrong schema for Android 12+, system fell back to default-include-all for D2D transfer, carrying the SQLCipher personal-dictionary DB + Tink-wrapped passphrase prefs to a new device where they cannot decrypt. | ✅ **v1.8.85** — new `app/src/main/res/xml/data_extraction_rules.xml` with explicit `<exclude>` entries for every dictionary DB sidecar (.db, .db-journal, .db-wal, .db-shm), the wrap-key SharedPrefs, and the clipboard-history directory, in both `<cloud-backup>` and `<device-transfer>` rule sets. |
+| `ZipUtils.unzip` warned-and-continued on every guard — a malicious archive with one good entry + one zip-slip entry left the good entry on disk and the caller saw `Result.Success`. Also no entry-count cap. | ✅ **v1.8.85** (pre-canonical entry-name guard + 10_000-entry cap) and ✅ **v1.8.89** (split: abort-class throws `SecurityException` for unsafe-name / zip-slip / entry-count; benign anomalies still continue-with-warning). |
+| `HardwareKeyboardRuntimeMapper`'s `layoutsByDeviceId` was a plain `LinkedHashMap` touched from both the IME input thread and the settings UI thread — concurrent `put`+`remove` could corrupt the bucket array and throw `ConcurrentModificationException`. | ✅ **v1.8.85** — monitor lock around every mutation / read. |
+| `HardwareKeyboardRuntimeMapper.map()` rejected every `isCtrlPressed` event, but Android delivers PC-style AltGr as Ctrl+Alt, so AltGr-mapped characters on `.klc` imports were silently dropped. | ✅ **v1.8.85** — gate now rejects Ctrl only when Alt is *not* also pressed. |
+| `StickerPaletteView` called `BitmapFactory.decodeStream(stream)` with no `BitmapFactory.Options` — a 100k×100k PNG would allocate ~40 GB and crash the IME. | ✅ **v1.8.85** — two-pass decode (inJustDecodeBounds → reject > 8192 px → inSampleSize to ~512 px target edge). |
+| Sticker MIME-type spoof: SAF-declared `application/octet-stream` on `evil.png` fell through to extension-based MIME, so the recipient `commitContent` receiver saw `image/png` for arbitrary bytes. | ✅ **v1.8.85** — SAF MIME is now source of truth; extension fallback only when SAF returns null. |
+| Addon enumerator's bundle-size gate read APK file size (`File(sourceDir).length()`) and rejected legitimate 64MB+ theme/dictionary packs through `AddonManifest.init { require(...) }`. Category error — APK is never loaded into RAM by the IME. | ✅ **v1.8.85** — bundle-size field clamped to 0L at enrolment; real enforcement moves to asset-mount time (future Next-10.4). |
+| `scripts/verify-reproducible-apk.sh` top-level pass criterion was `cmp -s` on signed APKs, which can never be byte-identical (v2/v3 signing block has randomised padding) — every signed-build run failed. | ✅ **v1.8.85** — payload-entry-manifest pass criterion replaces the bytes-equal test, matching F-Droid rebuilder methodology. |
+| `validate-strings-no-translations.yml` (under `pull_request_target` with base-repo write token) interpolated PR-author filenames directly into `run:` shell blocks. | ✅ **v1.8.85** — every `${{ github.event.* }}` and step-output value passed via `env:`, referenced as `"$VAR"`; `gh api --paginate --jq` replaces hand-rolled `curl + jq` paginator; `set -euo pipefail` everywhere. |
+| CI workflows shipped with the default repo `GITHUB_TOKEN` (typically read-write). | ✅ **v1.8.85** — file-scope `permissions: { contents: read }` on `android.yml`, `crowdin-upload.yml`, `reproducible-build.yml`. |
+| `EditorInstance.handleStartInputView` hard-coded `keyVariation = NORMAL` for every `Type.NUMBER` field, bypassing every `keyVariation == PASSWORD` privacy gate for `TYPE_NUMBER_VARIATION_PASSWORD` (numeric-PIN / OTP entry — the IME-local clipboard history wrote PINs). | ✅ **v1.8.86** — numeric-PIN fields propagate `keyVariation = PASSWORD` while preserving `KeyboardMode.NUMERIC` for the layout. |
+| `DictionaryPassphraseDialog` was screen-recordable (no `FLAG_SECURE` on the host window while up) and the passphrase round-tripped through `savedInstanceState` via `rememberSaveable`. | ✅ **v1.8.87** — `DisposableEffect`-scoped `FLAG_SECURE` set on entry / cleared on dispose; passphrase storage changed to plain `remember`. |
+| `FlorisUserDictionaryEncryption.getOrCreatePassphrase` had a hard `error(...)` for the legacy-AndroidX-keyset-but-decrypt-failed edge case (Android Keystore master key rotated, partial pref restore) — IME crash on startup. | ✅ **v1.8.88** — recovery: log warning, clear unreadable legacy keyset prefs, fall through to fresh-passphrase generation. |
+| Sticker palette silently emptied the Imported tab when Android revoked the persistable SAF URI grant — no user signal. | ✅ **v1.8.90** — `UserStickerRepository.hasPersistableReadPermission` helper; Settings preference summary shows "Folder access lost. Tap to select again." Tap re-enters the folder picker. |
+| `AddonContract.kt` KDoc said the REGISTER broadcast receiver was *optional* — contradicting the Android 11+ `<queries>`-based visibility mechanism that the project's `AndroidManifest.xml`, `verify-addon-apk.sh`, and `docs/addons/apk-validation.md` all already enforce. | ✅ **v1.8.91** — KDoc now mandates the receiver and explains the intent-filter-as-visibility-mechanism. |
+| `KeymanLdmlParser` read `longPress=` first as the shift slot, falling back to `shift=` — but LDML defines `shift=` as the shift-modifier mapping and `longPress=` as a space-separated alternates list. Wrong slot was picked whenever both were declared; multi-alternate `longPress` poisoned the shift slot. | ✅ **v1.8.92** — new ordering: `shift=` wins; single-value `longPress=` falls through as legacy shift fallback (preserves Amharic-SERA-style backward-compat); multi-alternate `longPress=` leaves shift = null (await `longPressAlternates` field + long-press popup). Three new tests cover the case matrix. |
+
+The eight follow-up releases are tagged locally; push is blocked by the
+same VM 403 documented in [`AGENTS.md`](AGENTS.md).
+
+### 0.b.1 Sixth-pass open follow-up roster
+
+Surfaced by the v1.8.85 audit but deferred from the v1.8.85 – v1.8.92
+slice so each can land as its own per-PR commit on the standard cadence.
+Full priority-scored roster in
+[`.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md §3`](.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md);
+high-leverage items (score ≥ 5.0):
+
+- **F2** — `release.yml` keystore-decode hygiene (`printf %s` instead of
+  `echo`, `chmod 600`, `umask 077`).
+- **F4** — `verify-addon-apk.sh` upgrade to `set -eo pipefail` and
+  distinguish "no output" from "no match" so a broken `aapt2` can't
+  silently PASS.
+- **F9** — Pin `crowdin/github-action@v2` floating tag to a SHA.
+- **F10** — Pin `peter-evans/create-or-update-comment@v4` floating tag to
+  a SHA (TODO comment placed in v1.8.85).
+- **F12** — Lint smoke that `data_extraction_rules.xml` resolves cleanly,
+  pinning the v1.8.85 behaviour against accidental rewrite.
+
+### 0.b.2 Sixth-pass external delta — new commitments
+
+The 2-week external-research pass surfaced four genuinely new commitments
+not already in this addendum:
+
+1. **SwiftKey-refugee discovery (Tier-1, urgency 5 / 14 days).**
+   AlternativeTo, BGR, and Android Authority round-ups now name
+   HeliBoard / FUTO / FlorisBoard / AnySoftKeyboard as the
+   SwiftKey-migration escape route — **SwiftFloris is on none of them**.
+   This is the single highest-leverage outreach gap of the migration
+   window. Action: an outreach micro-slice (PR submissions to
+   AlternativeTo, comments on the BGR / Android Authority pieces, one
+   Reddit post in r/Swiftkey) before 2026-05-30. Citations:
+   <https://alternativeto.net/software/swiftkey/>,
+   <https://www.androidauthority.com/heliboard-gboard-alternative-3505462/>,
+   <https://www.bgr.com/2003971/android-keyboards-replace-google-gboard-swiftkey-heliboard/>.
+
+2. **F-Droid Reproducible-Builds Verified Tier (Tier-1, urgency 3).**
+   F-Droid Basic 2.0-alpha9 ships visible per-app reproducibility
+   badges; SwiftFloris's v1.8.67 reproducible-build self-check
+   (N12.5) plus the v1.8.85 entry-manifest pass criterion mean the
+   project is *one submission step* from being the visibly-reproducible
+   exemplar keyboard. Action: when F-Droid Basic 2.0 stable ships,
+   submit SwiftFloris's reproducible-build metadata to the F-Droid
+   data repository and request a rebuilder-anchored verification badge.
+   Citations: <https://f-droid.org/en/2025/05/21/making-reproducible-builds-visible.html>,
+   <https://nlnet.nl/project/Reproducible-F-Droid/>.
+
+3. **LiteRT-LM v0.11.0 as the concrete L1.1a target (Tier-2).**
+   LiteRT-LM v0.11.0 stable shipped 2026-05-07 with Gemma 4 multi-token
+   prediction (>2× decode on mobile GPU, zero quality loss). Gemma 4
+   shipped 2026-04-02 under **Apache 2.0**, aligning cleanly with the
+   `:app` license ceiling. Action: when ROADMAP §8 L1.1a moves out of
+   the gate, target LiteRT-LM v0.11+ and the Gemma 4 E2B checkpoint as
+   the canonical addon runtime. Citations:
+   <https://github.com/google-ai-edge/LiteRT-LM/releases>,
+   <https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/>.
+
+4. **Android 17 IME compliance slice (Tier-2, urgency 1 — June 2026
+   stable).** Android 17 stable lands in June 2026. The two IME-relevant
+   behaviors are (a) IME visibility no longer auto-restored across
+   unhandled config changes — host-app problem, but SwiftFloris should
+   confirm it's benign for the IME service; (b) new
+   `TextAttribute.setTextSuggestionSelected()` for CJKV candidate
+   selection a11y, wire behind the existing API 37 gate. **No
+   compileSdk bump required before stable.** Citations:
+   <https://developer.android.com/about/versions/17/release-notes>,
+   <https://developer.android.com/about/versions/17/behavior-changes-17>.
+
+### 0.b.3 Sixth-pass external delta — confirmed negative signal
+
+The sixth-pass external research confirmed three "no-op" findings:
+
+- **HeliBoard NLnet open-glide library:** no in-window milestone. L1.3
+  glide-engine swap remains correctly gated; do not pull forward.
+  Gesture-data window ends 2026-11-30, grant deadline 2026-06-01.
+  Source: <https://nlnet.nl/project/GestureTyping/>.
+- **Bergamot translator:** no new release in window; last tagged build
+  2024-09-20. L2.1a addon blocker unchanged.
+- **FlorisBoard upstream:** no release in window. Latest stable still
+  v0.5.2 (2024-11-28); alpha line stalled at v0.6.0-alpha02. Nothing
+  to cherry-pick.
+- **On-device LLM keyboard demand:** HN threads on on-device LLMs in
+  May 2026 do not request keyboard integration. Gboard's Gemini Nano
+  "Rambler" occupies the on-device-AI-keyboard mindshare on Pixel.
+  Keep L1.1a as Later / Under Consideration, **not Now**. Sources:
+  <https://news.ycombinator.com/item?id=47019133>,
+  <https://news.ycombinator.com/item?id=47016559>.
 
 ---
 
