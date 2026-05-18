@@ -33,11 +33,11 @@ import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -54,13 +54,15 @@ import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import java.io.File
 import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.query
 import org.florisboard.lib.android.readToFile
-import org.florisboard.lib.android.showLongToast
-import org.florisboard.lib.android.showLongToastSync
-import org.florisboard.lib.android.showShortToast
-import org.florisboard.lib.android.showShortToastSync
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
@@ -116,19 +118,41 @@ internal object ExtensionEditorFileNames {
 fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = FlorisScreen {
     title = stringRes(R.string.ext__editor__files__title)
 
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val invalidFileNameNotice = stringRes(R.string.ext__editor__files__rename_invalid)
+    val fileAlreadyExistsNotice = stringRes(R.string.ext__editor__files__rename_exists)
+    var isFileActionInProgress by rememberSaveable { mutableStateOf(false) }
+    var lastNotice by rememberSaveable { mutableStateOf<ExtensionEditorFileNotice?>(null) }
+    var lastNoticeDetail by rememberSaveable { mutableStateOf<String?>(null) }
+
+    fun startFileAction() {
+        isFileActionInProgress = true
+        lastNotice = null
+        lastNoticeDetail = null
+    }
+
+    fun finishFileAction(notice: ExtensionEditorFileNotice, detail: String? = null) {
+        isFileActionInProgress = false
+        lastNotice = notice
+        lastNoticeDetail = detail
+    }
+
     fun handleBackPress() {
-        workspace.currentAction = null
+        if (ExtensionEditorFilesPolicy.canLeave(isFileActionInProgress)) {
+            workspace.currentAction = null
+        }
     }
 
     navigationIcon {
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.Default.Close,
+            enabled = ExtensionEditorFilesPolicy.canLeave(isFileActionInProgress),
         )
     }
 
     content {
-        val context = LocalContext.current
         var version by rememberSaveable { mutableIntStateOf(0) }
         val fontFiles = remember(version) {
             workspace.extDir.subDir(FONTS).listFiles { it.isFile }.orEmpty().asList()
@@ -138,48 +162,107 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
         }
 
         var currentImportDest by remember { mutableStateOf<String?>(null) }
-        var currentImportResult by remember { mutableStateOf<Result<Pair<File, String>>?>(null) }
+        var currentImportResult by remember { mutableStateOf<Pair<File, String>?>(null) }
 
         val importLauncher = rememberLauncherForActivityResult(
             contract = ActivityResultContracts.GetContent(),
             onResult = { uri ->
-                currentImportResult = runCatching {
-                    checkNotNull(uri) { "" }
-                    val mimeType = context.contentResolver.getType(uri)
-                    val filter = MIME_TYPES[currentImportDest!!]!!
-                    check(filter.matches(mimeType)) {
-                        "Given file mime type was '$mimeType', expected one of ${filter.types}"
+                val dest = currentImportDest
+                if (uri == null || dest == null) {
+                    currentImportDest = null
+                    return@rememberLauncherForActivityResult
+                }
+                if (!ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)) {
+                    return@rememberLauncherForActivityResult
+                }
+                startFileAction()
+                scope.launch {
+                    val importResult = runCatching {
+                        withContext(Dispatchers.IO) {
+                            val mimeType = context.contentResolver.getType(uri)
+                            val filter = MIME_TYPES[dest]!!
+                            check(filter.matches(mimeType)) {
+                                "Given file mime type was '$mimeType', expected one of ${filter.types}"
+                            }
+                            val displayName = context.contentResolver.query(
+                                uri,
+                                arrayOf(OpenableColumns.DISPLAY_NAME),
+                            ).use { cursor ->
+                                if (cursor == null || !cursor.moveToFirst()) return@use null
+                                val name = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                                if (name >= 0 && !cursor.isNull(name)) cursor.getString(name) else null
+                            }
+                            val fileName = ExtensionEditorFileNames.sanitizeFileName(
+                                displayName ?: uri.lastPathSegment,
+                                fallbackName = "asset-${UUID.randomUUID()}",
+                            )
+                            val tempFile = context.cacheDir.subFile("temp_${UUID.randomUUID()}")
+                            context.contentResolver.readToFile(uri, tempFile, MaxEditorAssetImportBytes)
+                            tempFile to fileName
+                        }
                     }
-                    val displayName = context.contentResolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME)).use { cursor ->
-                        if (cursor == null || !cursor.moveToFirst()) return@use null
-                        val name = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-                        if (name >= 0 && !cursor.isNull(name)) cursor.getString(name) else null
+                    isFileActionInProgress = false
+                    importResult.onSuccess { result ->
+                        currentImportResult = result
+                        lastNotice = null
+                        lastNoticeDetail = null
+                    }.onFailure { error ->
+                        currentImportDest = null
+                        currentImportResult = null
+                        lastNotice = ExtensionEditorFileNotice.ImportFailure
+                        lastNoticeDetail = error.localizedMessage ?: error.message
                     }
-                    val fileName = ExtensionEditorFileNames.sanitizeFileName(
-                        displayName ?: uri.lastPathSegment,
-                        fallbackName = "asset-${UUID.randomUUID()}",
-                    )
-                    val tempFile = context.cacheDir.subFile("temp_${UUID.randomUUID()}")
-                    context.contentResolver.readToFile(uri, tempFile, MaxEditorAssetImportBytes)
-                    tempFile to fileName
                 }
             },
         )
-
-        LaunchedEffect(currentImportResult) {
-            val message = currentImportResult?.exceptionOrNull()?.message
-            if (!message.isNullOrBlank()) {
-                context.showLongToast(message)
-            }
-        }
 
         BackHandler {
             handleBackPress()
         }
 
+        when (ExtensionEditorFilesPolicy.resolveNotice(isFileActionInProgress, lastNotice)) {
+            ExtensionEditorFileNotice.None -> Unit
+            ExtensionEditorFileNotice.FileActionInProgress -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__action_in_progress),
+                secondaryText = stringRes(R.string.ext__editor__files__action_in_progress_summary),
+            )
+            ExtensionEditorFileNotice.ImportSuccess -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__import_success),
+                secondaryText = stringRes(R.string.ext__editor__files__import_success_summary),
+            )
+            ExtensionEditorFileNotice.RenameSuccess -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__rename_success),
+                secondaryText = stringRes(R.string.ext__editor__files__rename_success_summary),
+            )
+            ExtensionEditorFileNotice.DeleteSuccess -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__delete_success),
+                secondaryText = stringRes(R.string.ext__editor__files__delete_success_summary),
+            )
+            ExtensionEditorFileNotice.ImportFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__import_failure),
+                secondaryText = lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable),
+            )
+            ExtensionEditorFileNotice.RenameFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__rename_failure),
+                secondaryText = lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable),
+            )
+            ExtensionEditorFileNotice.DeleteFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__files__delete_failure),
+                secondaryText = lastNoticeDetail ?: stringRes(R.string.ext__import__error_details_unavailable),
+            )
+        }
+
         @Composable
         fun FileList(title: String, icon: ImageVector, files: List<File>, onAdd: () -> Unit) {
             var dialogFile by remember { mutableStateOf<File?>(null) }
+            val actionsEnabled = ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)
             ListItem(
                 headlineContent = {
                     Text(
@@ -195,7 +278,12 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                 },
                 trailingContent = {
                     IconButton(
-                        onClick = onAdd,
+                        enabled = actionsEnabled,
+                        onClick = {
+                            if (actionsEnabled) {
+                                onAdd()
+                            }
+                        },
                     ) {
                         Icon(Icons.Default.Add, null)
                     }
@@ -204,7 +292,9 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
             for (file in files) {
                 Preference(
                     onClick = {
-                        dialogFile = file
+                        if (actionsEnabled) {
+                            dialogFile = file
+                        }
                     },
                     icon = icon,
                     title = file.name,
@@ -220,15 +310,25 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                     neutralLabel = stringRes(R.string.action__delete),
                     allowOutsideDismissal = true,
                     onNeutral = {
-                        if (file.delete()) {
-                            context.showShortToastSync(R.string.ext__editor__files__delete_success)
-                        } else {
-                            context.showShortToastSync(R.string.ext__editor__files__delete_failure)
+                        if (!ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)) {
+                            return@JetPrefAlertDialog
                         }
                         dialogFile = null
-                        version++
+                        startFileAction()
+                        scope.launch {
+                            val deleted = withContext(Dispatchers.IO) {
+                                file.delete()
+                            }
+                            finishFileAction(ExtensionEditorFilesPolicy.deleteResult(deleted))
+                            if (deleted) {
+                                version++
+                            }
+                        }
                     },
                     onConfirm = {
+                        if (!ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)) {
+                            return@JetPrefAlertDialog
+                        }
                         val parent = file.parentFile
                         val newFile = if (parent != null) {
                             ExtensionEditorFileNames.safeFileIn(parent, fileNameInput)
@@ -236,21 +336,26 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                             null
                         }
                         if (newFile == null) {
-                            context.showLongToastSync(R.string.ext__editor__files__rename_invalid)
+                            lastNotice = ExtensionEditorFileNotice.RenameFailure
+                            lastNoticeDetail = invalidFileNameNotice
                             return@JetPrefAlertDialog
                         }
                         if (newFile.exists()) {
-                            context.showShortToastSync(R.string.ext__editor__files__rename_exists)
+                            lastNotice = ExtensionEditorFileNotice.RenameFailure
+                            lastNoticeDetail = fileAlreadyExistsNotice
                             return@JetPrefAlertDialog
                         }
-                        val success = file.renameTo(newFile)
-                        if (success) {
-                            context.showShortToastSync(R.string.ext__editor__files__rename_success)
-                        } else {
-                            context.showShortToastSync(R.string.ext__editor__files__rename_failure)
-                        }
                         dialogFile = null
-                        version++
+                        startFileAction()
+                        scope.launch {
+                            val renamed = withContext(Dispatchers.IO) {
+                                file.renameTo(newFile)
+                            }
+                            finishFileAction(ExtensionEditorFilesPolicy.renameResult(renamed))
+                            if (renamed) {
+                                version++
+                            }
+                        }
                     },
                     onDismiss = {
                         dialogFile = null
@@ -285,36 +390,54 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
         }
 
         val dest = currentImportDest
-        val result = currentImportResult?.getOrNull()
+        val result = currentImportResult
         if (dest != null && result != null) {
             var fileNameInput by rememberSaveable { mutableStateOf(result.second) }
             JetPrefAlertDialog(
                 title = stringRes(R.string.action__import_file),
                 confirmLabel = stringRes(R.string.action__add),
                 onConfirm = {
+                    if (!ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)) {
+                        return@JetPrefAlertDialog
+                    }
                     val fileName = fileNameInput.trim()
                     val dir = workspace.extDir.subDir(dest)
                     dir.mkdirs()
                     val file = ExtensionEditorFileNames.safeFileIn(dir, fileName)
                     if (file == null) {
-                        context.showShortToastSync(R.string.ext__editor__files__rename_invalid)
+                        lastNotice = ExtensionEditorFileNotice.ImportFailure
+                        lastNoticeDetail = invalidFileNameNotice
                     } else if (file.exists()) {
-                        context.showShortToastSync(R.string.ext__editor__files__rename_exists)
+                        lastNotice = ExtensionEditorFileNotice.ImportFailure
+                        lastNoticeDetail = fileAlreadyExistsNotice
                     } else {
                         val tempFile = result.first
-                        if (!tempFile.renameTo(file)) {
-                            context.showShortToastSync(R.string.ext__editor__files__import_failure)
-                            tempFile.delete()
-                        }
                         currentImportDest = null
                         currentImportResult = null
-                        version++
+                        startFileAction()
+                        scope.launch {
+                            val imported = withContext(Dispatchers.IO) {
+                                tempFile.renameTo(file).also { success ->
+                                    if (!success) {
+                                        tempFile.delete()
+                                    }
+                                }
+                            }
+                            finishFileAction(ExtensionEditorFilesPolicy.importResult(imported))
+                            if (imported) {
+                                version++
+                            }
+                        }
                     }
                 },
                 dismissLabel = stringRes(R.string.action__cancel),
                 onDismiss = {
                     val tempFile = result.first
-                    tempFile.delete()
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            tempFile.delete()
+                        }
+                    }
                     currentImportDest = null
                     currentImportResult = null
                 },
