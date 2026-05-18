@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.113 — voice setup intent hardening (seventh-pass follow-up closure for `VoiceInputSetupActivity` manifest + extras validation; the full seventh-pass shipped layer is v1.8.104 – v1.8.113, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.114 — external voice IME microphone gate (seventh-pass follow-up closure for per-external-IME `RECORD_AUDIO` validation; the full seventh-pass shipped layer is v1.8.104 – v1.8.114, documented in §0.c below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -20,7 +20,7 @@ same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Ph
 
 ---
 
-## 0.c Reconciliation with v1.8.104-113 seventh-pass audit releases
+## 0.c Reconciliation with v1.8.104-114 seventh-pass audit releases
 
 The user re-invoked the extreme-audit prompt after the sixth-pass
 roster closed. The seventh research pass dispatched three parallel
@@ -41,8 +41,9 @@ the eighth pass).
 | Clipboard follow-up G2 + G12: provider-backed image/video clipboard clones had no byte cap, and the modern API 28+ preview decode path did not reject oversized dimensions before allocation | ✅ **v1.8.111** — `ClipboardFileStorage.cloneUri` applies 32 MiB image / 128 MiB video copy caps and removes partial failed clones; `ClipboardPreviewImagePolicy` guards both `ImageDecoder` and `BitmapFactory` preview bounds before decode |
 | Clipboard follow-up G6: size-limit rotation and timed expiry deleted clipboard-history rows directly, bypassing `ClipboardItem.close(context)` and leaving provider-backed image/video cleanup to receiver-process lifetime | ✅ **v1.8.112** — automatic eviction routes through `ClipboardHistoryEviction.closeThenDelete(...)`, closing media items before Room row deletion |
 | Voice follow-up G7: `VoiceInputSetupActivity` needed its non-exported manifest state pinned and accepted arbitrary extras by falling back to `NO_ENABLED_PROVIDER` | ✅ **v1.8.113** — Robolectric manifest test pins `android:exported="false"` and `VoiceInputSetupIntentContract` rejects malformed setup extras |
+| Voice follow-up G8: `isVoiceInputReadyForHandoff()` treated every non-FUTO voice IME as ready without checking that package's microphone grant | ✅ **v1.8.114** — `ExternalVoiceInputHandoffPolicy` requires `RECORD_AUDIO` permission for each enabled external voice IME package |
 
-The v1.8.104 – v1.8.113 release notes are the per-release audit trail
+The v1.8.104 – v1.8.114 release notes are the per-release audit trail
 for this seventh-pass shipped layer.
 
 ### 0.c.1 Seventh-pass structural finding carried forward
@@ -75,8 +76,8 @@ high-leverage items (score ≥ 5.0):
   **v1.8.112**.
 - ✅ **G7** — `VoiceInputSetupActivity` `android:exported="false"` +
   validate Intent extras. Shipped in **v1.8.113**.
-- **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME
-  `RECORD_AUDIO` grant.
+- ✅ **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME
+  `RECORD_AUDIO` grant. Shipped in **v1.8.114**.
 - **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
   `item.isSensitive`.
 - ✅ **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
@@ -755,6 +756,7 @@ but does not require a roadmap change.
 | Seventh-pass G2 clipboard media clone caps | ✅ v1.8.111 |
 | Seventh-pass G6 clipboard rotation / expiry cleanup | ✅ v1.8.112 |
 | Seventh-pass G7 voice setup intent hardening | ✅ v1.8.113 |
+| Seventh-pass G8 external voice IME microphone gate | ✅ v1.8.114 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |

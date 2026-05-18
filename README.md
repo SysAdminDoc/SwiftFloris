@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.113-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.114-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -275,7 +275,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-- **v1.8.104 – v1.8.113** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields and exposes a durable Listening state, dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, and automatic clipboard history eviction now closes provider-backed media before deleting rows. ([latest notes](RELEASE_NOTES_v1.8.113.md))
+- **v1.8.104 – v1.8.114** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, and exposes a durable Listening state; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, and automatic clipboard history eviction now closes provider-backed media before deleting rows. ([latest notes](RELEASE_NOTES_v1.8.114.md))
 - **v1.8.85 – v1.8.103** (2026-05-17) — cross-subsystem hardening pass + 18 single-feature follow-up releases. v1.8.85 was an explicit AGENTS.md §6 one-time deviation that closed eleven privacy / security / reliability gaps (merged-manifest `verifyNoInternetPermission`, Android 12+ `data_extraction_rules.xml`, atomic `ZipUtils.unzip`, thread-safe `HardwareKeyboardRuntimeMapper`, sticker decoder OOM, sticker MIME spoof, addon enumerator size category-error, `verify-reproducible-apk.sh` payload-manifest pass criterion, CI workflow permissions, `pull_request_target` injection, AltGr); v1.8.86 – v1.8.102 then returned to per-PR scope and closed eleven of twelve F-roster items (FLAG_SECURE on numeric PIN + passphrase dialog, legacy-passphrase recovery, ZipUtils abort policy, SAF lost-grant UX, addon spec docs alignment, LDML `shift=` semantics, fastlane script hardening, SHA-pinned floating action tags, `release.yml` keystore hygiene, `verifyDataExtractionRules` build gate, sticker LRU + folder cap, `HardwareKeyEntry.longPressAlternates`); v1.8.103 closes the documentation half (README + PROJECT_CONTEXT version refresh, master index of the session's commits). The only sixth-pass F-item still open is F11 (Roborazzi visual baselines — needs Android SDK + on-device record). ([master index](RELEASE_NOTES_v1.8.103.md))
 - **v1.8.84** (2026-05-17) — Settings → Addons status surface: users can inspect accepted/rejected addon APKs, manually rescan through the startup reconciliation path, and review package/license/version/size/signing-fingerprint details. ([notes](RELEASE_NOTES_v1.8.84.md))
 - **v1.8.83** (2026-05-17) — Addon registry startup wiring: the IME now scans installed addon manifests at startup, reconciles them through persisted signing pins, publishes a process-wide registry, and cleans malformed stored pin lines. ([notes](RELEASE_NOTES_v1.8.83.md))
@@ -387,7 +387,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.113** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.114** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

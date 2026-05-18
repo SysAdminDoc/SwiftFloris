@@ -275,13 +275,15 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun isExternalVoiceInputMethodEnabled(): Boolean {
-        return enabledVoiceInputMethodPackages().any { it != BuildConfig.APPLICATION_ID }
+        return enabledExternalVoiceInputMethodPackages().isNotEmpty()
     }
 
     fun isVoiceInputReadyForHandoff(): Boolean {
-        val enabledExternalPackages = enabledVoiceInputMethodPackages().filter { it != BuildConfig.APPLICATION_ID }
-        return enabledExternalPackages.any { it != FUTO_PACKAGE_NAME } ||
-            (FUTO_PACKAGE_NAME in enabledExternalPackages && isFutoMicrophonePermissionGranted())
+        return ExternalVoiceInputHandoffPolicy.isReadyForHandoff(
+            enabledVoiceInputMethodPackages = enabledVoiceInputMethodPackages(),
+            selfPackageName = BuildConfig.APPLICATION_ID,
+            hasMicrophonePermission = ::isMicrophonePermissionGranted,
+        )
     }
 
     fun isFutoVoiceInputEnabled(): Boolean {
@@ -292,10 +294,14 @@ class VoiceInputManager(private val context: Context) {
         if (!isFutoVoiceInputInstalled()) {
             return false
         }
+        return isMicrophonePermissionGranted(FUTO_PACKAGE_NAME)
+    }
+
+    private fun isMicrophonePermissionGranted(packageName: String): Boolean {
         return try {
             context.packageManager.checkPermission(
                 android.Manifest.permission.RECORD_AUDIO,
-                FUTO_PACKAGE_NAME,
+                packageName,
             ) == PackageManager.PERMISSION_GRANTED
         } catch (_: RuntimeException) {
             false
@@ -364,11 +370,13 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun resolveSetupReason(): VoiceInputSetupReason {
+        val enabledExternalPackages = enabledExternalVoiceInputMethodPackages()
         return when {
             isVoiceInputReadyForHandoff() -> VoiceInputSetupReason.READY
-            !isFutoVoiceInputInstalled() -> VoiceInputSetupReason.FUTO_NOT_INSTALLED
-            isFutoVoiceInputEnabled() && !isFutoMicrophonePermissionGranted() ->
+            FUTO_PACKAGE_NAME in enabledExternalPackages && !isFutoMicrophonePermissionGranted() ->
                 VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED
+            enabledExternalPackages.isNotEmpty() -> VoiceInputSetupReason.NO_ENABLED_PROVIDER
+            !isFutoVoiceInputInstalled() -> VoiceInputSetupReason.FUTO_NOT_INSTALLED
             else -> VoiceInputSetupReason.FUTO_NOT_ENABLED
         }
     }
@@ -397,6 +405,23 @@ class VoiceInputManager(private val context: Context) {
                 }
             }
         }
+    }
+
+    private fun enabledExternalVoiceInputMethodPackages(): Set<String> {
+        return enabledVoiceInputMethodPackages().filterTo(mutableSetOf()) { it != BuildConfig.APPLICATION_ID }
+    }
+}
+
+internal object ExternalVoiceInputHandoffPolicy {
+    fun isReadyForHandoff(
+        enabledVoiceInputMethodPackages: Set<String>,
+        selfPackageName: String,
+        hasMicrophonePermission: (String) -> Boolean,
+    ): Boolean {
+        return enabledVoiceInputMethodPackages
+            .asSequence()
+            .filter { it != selfPackageName }
+            .any { hasMicrophonePermission(it) }
     }
 }
 
