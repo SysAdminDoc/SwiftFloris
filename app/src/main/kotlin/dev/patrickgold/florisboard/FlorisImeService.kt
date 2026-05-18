@@ -245,6 +245,25 @@ class FlorisImeService : LifecycleInputMethodService() {
      * @return true if the switch was successful
      */
     fun switchToVoiceInputMethod(showFailureToast: Boolean = true): Boolean {
+        // ROADMAP §6 N7.2 (extension) — refuse to hand off to an external
+        // voice IME when the focused field is sensitive. Mirrors the
+        // existing dictionary-learn, clipboard-cut/copy (v1.8.86 +
+        // v1.8.105), and smart-compose gates. Without this, a user
+        // tapping the voice key while in a password / numeric-PIN / web-
+        // password field would route their spoken credential through an
+        // external recogniser process that the IME's no-`INTERNET`
+        // contract does NOT extend to — voice IMEs typically have full
+        // network permission. The host app's sensitive-field declaration
+        // is the load-bearing privacy signal here; honour it.
+        val state = keyboardManager.activeState
+        if (state.keyVariation == dev.patrickgold.florisboard.ime.keyboard.KeyVariation.PASSWORD ||
+            state.isIncognitoMode
+        ) {
+            if (showFailureToast) {
+                showShortToastSync(R.string.voice_input__suppressed_on_sensitive_field)
+            }
+            return false
+        }
         val imm = systemServiceOrNull(InputMethodManager::class) ?: return false
         val candidates = mutableListOf<Pair<InputMethodInfo, InputMethodSubtype>>()
         for (el in imm.enabledInputMethodList) {
