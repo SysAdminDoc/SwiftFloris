@@ -226,7 +226,7 @@ Tasks:
 - [x] Measure first suggestion latency.
 - [x] Measure dictionary load and preload time.
 - [x] Measure candidate row recomposition hotspots.
-- [ ] Measure theme switching cost.
+- [x] Measure theme switching cost.
 - [ ] Measure backup/restore duration on representative archives.
 - [x] Add repeatable profiling notes using adb, simpleperf, Perfetto, or Compose tracing where appropriate.
 
@@ -264,6 +264,16 @@ Progress:
   0.326563 ms, median max recomposition 0.770365 ms, median total recomposition
   4.069529 ms, and paired median NLP suggestion body 0.339896 ms. Evidence:
   `docs/benchmark-results/baseline-2026-05-18-ime-candidate-row.json`.
+- 2026-05-18 (v1.8.163): theme switching is measured through benchmark-only
+  `ThemeManager` direct switch markers and
+  `tools/benchmark-ime-theme-switch.ps1`, which opens a focused benchmark input
+  field, switches across SwiftKey Pure Light, M3E Nord Dark, and M3E SwiftKey
+  Pure Dark while the IME is visible, and restores the previous IME. Samsung
+  SM-S938B / Android 16 baseline: median five direct switches per run, median
+  `swiftfloris.theme.switchMs` body 18.541197 ms, median max switch
+  19.587708 ms, median total switch time 57.505571 ms, median cold-step
+  19.221354 ms, median warm cached-step 0.2808075 ms, and zero load failures.
+  Evidence: `docs/benchmark-results/baseline-2026-05-18-ime-theme-switch.json`.
 
 Acceptance criteria:
 - Performance claims are backed by repeatable commands.
