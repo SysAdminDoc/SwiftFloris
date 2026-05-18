@@ -221,10 +221,18 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
     }
 
     /**
-     * Instructs the content provider to delete this URI. If not an image, is a noop
+     * Instructs the content provider to delete this URI. Covers both image AND
+     * video media items so a clear-history-all sequence reclaims the on-disk
+     * file AND revokes any outstanding `grantUriPermission` issued through the
+     * provider. The prior implementation only matched `ItemType.IMAGE`, leaving
+     * video files (committed via the v1.8.77 sticker-grade rich-content path
+     * and the system video clipboard) orphaned in `clipboardFilesDir` AND
+     * keeping per-receiver Uri grants live until receiver-process death — a
+     * storage leak AND a privacy leak in one. Text items remain a no-op
+     * because they have no provider-backed URI.
      */
     fun close(context: Context) {
-        if (type == ItemType.IMAGE) {
+        if (type == ItemType.IMAGE || type == ItemType.VIDEO) {
             tryOrNull { context.contentResolver.delete(this.uri!!, null, null) }
         }
     }
