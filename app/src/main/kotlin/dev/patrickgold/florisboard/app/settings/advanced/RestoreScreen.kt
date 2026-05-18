@@ -112,21 +112,27 @@ fun RestoreScreen() = FlorisScreen {
             } catch (e: FileNotFoundException) {
                 error("Invalid archive: either backup_metadata.json is missing or file is not a ZIP archive.")
             }
-            workspace.restoreWarningId = when {
-                workspace.metadata.versionCode != BuildConfig.VERSION_CODE -> {
-                    R.string.backup_and_restore__restore__metadata_warn_different_version
-                }
-                !workspace.metadata.packageName.startsWith(Restore.PACKAGE_NAME) -> {
-                    R.string.backup_and_restore__restore__metadata_warn_different_vendor
-                }
-                else -> null
-            }
-            workspace.restoreErrorId = when {
-                workspace.metadata.packageName.isBlank() || workspace.metadata.versionCode < Restore.MIN_VERSION_CODE -> {
-                    R.string.backup_and_restore__restore__metadata_error_invalid_metadata
-                }
-                else -> null
-            }
+            val workspaceFilesDir = workspace.outputDir.subDir("files")
+            val clipboardFilesDir = workspace.outputDir.subDir("clipboard")
+            val validation = BackupRestorePolicy.validateRestoreArchive(
+                metadata = workspace.metadata,
+                currentVersionCode = BuildConfig.VERSION_CODE,
+                minimumVersionCode = Restore.MIN_VERSION_CODE,
+                expectedPackagePrefix = Restore.PACKAGE_NAME,
+                hasRestorableContent = BackupRestorePolicy.hasRestorableContent(
+                    hasJetprefDatastore = workspace.outputDir
+                        .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
+                        .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
+                        .exists(),
+                    hasImeKeyboard = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).exists(),
+                    hasImeTheme = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH).exists(),
+                    hasClipboardTextItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME).exists(),
+                    hasClipboardImageItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME).exists(),
+                    hasClipboardVideoItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME).exists(),
+                ),
+            )
+            workspace.restoreWarningId = validation.warningId
+            workspace.restoreErrorId = validation.errorId
             workspace
         } catch (error: Throwable) {
             workspace.close()
@@ -292,10 +298,12 @@ fun RestoreScreen() = FlorisScreen {
                     }
                 },
                 text = stringRes(R.string.action__restore),
-                enabled = restoreWorkspace != null &&
-                    restoreWorkspace?.restoreErrorId == null &&
-                    restoreFilesSelector.atLeastOneSelected() &&
-                    !isRestoreInProgress,
+                enabled = BackupRestorePolicy.canStartRestore(
+                    hasWorkspace = restoreWorkspace != null,
+                    restoreErrorId = restoreWorkspace?.restoreErrorId,
+                    hasSelectedFiles = restoreFilesSelector.atLeastOneSelected(),
+                    isRestoreInProgress = isRestoreInProgress,
+                ),
             )
         }
     }

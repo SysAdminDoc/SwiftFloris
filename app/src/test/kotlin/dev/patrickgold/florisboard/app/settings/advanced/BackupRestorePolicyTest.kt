@@ -1,0 +1,171 @@
+/*
+ * Copyright (C) 2026 SwiftFloris Contributors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package dev.patrickgold.florisboard.app.settings.advanced
+
+import dev.patrickgold.florisboard.R
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
+
+class BackupRestorePolicyTest : FunSpec({
+    val validMetadata = Backup.Metadata(
+        packageName = "dev.patrickgold.florisboard.swiftfloris",
+        versionCode = 1933,
+        versionName = "1.8.133",
+        timestamp = 42L,
+    )
+
+    test("backup document result distinguishes success cancellation and failure") {
+        BackupRestorePolicy.classifyBackupDocumentResult(
+            uriSelected = true,
+            writeSucceeded = true,
+        ) shouldBe BackupDocumentResult.Success
+        BackupRestorePolicy.classifyBackupDocumentResult(
+            uriSelected = false,
+            writeSucceeded = false,
+        ) shouldBe BackupDocumentResult.Cancelled
+        BackupRestorePolicy.classifyBackupDocumentResult(
+            uriSelected = true,
+            writeSucceeded = false,
+        ) shouldBe BackupDocumentResult.Failure
+    }
+
+    test("backup can start only with selected files while idle") {
+        BackupRestorePolicy.canStartBackup(
+            hasSelectedFiles = true,
+            isBackupInProgress = false,
+        ) shouldBe true
+        BackupRestorePolicy.canStartBackup(
+            hasSelectedFiles = false,
+            isBackupInProgress = false,
+        ) shouldBe false
+        BackupRestorePolicy.canStartBackup(
+            hasSelectedFiles = true,
+            isBackupInProgress = true,
+        ) shouldBe false
+    }
+
+    test("restore archive validation accepts compatible archives with restorable content") {
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata,
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            hasRestorableContent = true,
+        ) shouldBe RestoreArchiveValidation(warningId = null, errorId = null)
+    }
+
+    test("restore archive validation rejects invalid archives") {
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(packageName = ""),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            hasRestorableContent = true,
+        ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_invalid_metadata
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(versionCode = Restore.MIN_VERSION_CODE - 1),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            hasRestorableContent = true,
+        ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_invalid_metadata
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata,
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            hasRestorableContent = false,
+        ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_nothing_to_restore
+    }
+
+    test("restore archive validation warns for version or vendor mismatches") {
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(versionCode = 1932),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            hasRestorableContent = true,
+        ).warningId shouldBe R.string.backup_and_restore__restore__metadata_warn_different_version
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(packageName = "com.example.keyboard"),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            hasRestorableContent = true,
+        ).warningId shouldBe R.string.backup_and_restore__restore__metadata_warn_different_vendor
+    }
+
+    test("restore can start only with valid workspace selection while idle") {
+        BackupRestorePolicy.canStartRestore(
+            hasWorkspace = true,
+            restoreErrorId = null,
+            hasSelectedFiles = true,
+            isRestoreInProgress = false,
+        ) shouldBe true
+        BackupRestorePolicy.canStartRestore(
+            hasWorkspace = false,
+            restoreErrorId = null,
+            hasSelectedFiles = true,
+            isRestoreInProgress = false,
+        ) shouldBe false
+        BackupRestorePolicy.canStartRestore(
+            hasWorkspace = true,
+            restoreErrorId = R.string.backup_and_restore__restore__metadata_error_invalid_metadata,
+            hasSelectedFiles = true,
+            isRestoreInProgress = false,
+        ) shouldBe false
+        BackupRestorePolicy.canStartRestore(
+            hasWorkspace = true,
+            restoreErrorId = null,
+            hasSelectedFiles = false,
+            isRestoreInProgress = false,
+        ) shouldBe false
+        BackupRestorePolicy.canStartRestore(
+            hasWorkspace = true,
+            restoreErrorId = null,
+            hasSelectedFiles = true,
+            isRestoreInProgress = true,
+        ) shouldBe false
+    }
+
+    test("restore operation classification covers success cancellation partial and failure") {
+        BackupRestorePolicy.classifyRestoreOperation(
+            selectedSections = 2,
+            restoredSections = 2,
+            missingSections = 0,
+            failedSections = 0,
+        ) shouldBe RestoreOperationResult.Success
+        BackupRestorePolicy.classifyRestoreOperation(
+            selectedSections = 0,
+            restoredSections = 0,
+            missingSections = 0,
+            failedSections = 0,
+        ) shouldBe RestoreOperationResult.Cancelled
+        BackupRestorePolicy.classifyRestoreOperation(
+            selectedSections = 3,
+            restoredSections = 2,
+            missingSections = 1,
+            failedSections = 0,
+        ) shouldBe RestoreOperationResult.PartialFailure
+        BackupRestorePolicy.classifyRestoreOperation(
+            selectedSections = 2,
+            restoredSections = 0,
+            missingSections = 1,
+            failedSections = 1,
+        ) shouldBe RestoreOperationResult.Failure
+    }
+})

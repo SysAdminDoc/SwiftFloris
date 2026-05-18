@@ -156,6 +156,10 @@ fun BackupScreen() = FlorisScreen {
         contract = ActivityResultContracts.CreateDocument("application/zip"),
         onResult = { uri ->
             if (uri == null) {
+                if (BackupRestorePolicy.classifyBackupDocumentResult(
+                    uriSelected = false,
+                    writeSucceeded = false,
+                ) != BackupDocumentResult.Cancelled) return@rememberLauncherForActivityResult
                 // User can modify checkboxes between cancellation and second
                 // trigger, so we make sure to clear out the previous workspace
                 backupWorkspace?.close()
@@ -321,7 +325,10 @@ fun BackupScreen() = FlorisScreen {
                 } else {
                     stringRes(R.string.action__back_up)
                 },
-                enabled = backupFilesSelector.atLeastOneSelected() && !isBackupInProgress,
+                enabled = BackupRestorePolicy.canStartBackup(
+                    hasSelectedFiles = backupFilesSelector.atLeastOneSelected(),
+                    isBackupInProgress = isBackupInProgress,
+                ),
             )
         }
     }
