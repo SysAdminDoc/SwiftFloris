@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.163).
+through v1.8.164).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.163)
+## 3. Stack at HEAD (v1.8.164)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.163** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.164** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup and
 performance-baseline layer.
@@ -479,6 +479,15 @@ Android 16 run records median five direct switches per run, median switch body
 18.541197 ms, median max 19.587708 ms, median total 57.505571 ms, median
 cold-step 19.221354 ms, median warm cached-step 0.2808075 ms, and zero load
 failures.
+
+v1.8.164 adds the backup/restore duration baseline. `BenchmarkBackupRestoreActivity`
+seeds a representative default backup profile inside the isolated benchmark app
+data (preferences plus keyboard/theme extension files), measures archive
+creation, then measures unzip/validation plus merge restore. The first SM-S938B
+/ Android 16 run records median backup create 12.653698 ms, median archive size
+22,034 bytes, median restore prepare 4.062604 ms, median restore apply
+5.727604 ms, median restore total 9.874167 ms, and 3/3 selected sections
+restored with zero missing or failed sections.
 
 ## 4. Module layout
 
