@@ -1,7 +1,7 @@
-# SwiftFloris Roadmap v5.22
+# SwiftFloris Roadmap v5.23
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.21 (2026-05-18, same-day). v5.0-v5.21 entries are preserved with shipped markers updated in-place; v5.22 records the Addons dictionary-pack catalog/install-hint polish after the asset-mounting slice. v5.0-v5.2 historical body is not rewritten.
+**Supersedes:** ROADMAP v5.22 (2026-05-18, same-day). v5.0-v5.22 entries are preserved with shipped markers updated in-place; v5.23 records a stale Next-9.5a/F7 status correction after re-verifying the v1.8.101 in-keyboard SAF lost-grant banner. v5.0-v5.2 historical body is not rewritten.
 **Current Version:** v1.8.126 (released 2026-05-18 — Addons dictionary catalog polish). **v1.8.104 – v1.8.126 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, one KenLM mmap-reader offset-boundary hardening, the Roborazzi baseline / CI hard-gate closure for F11, the Addons signing-pin revoke/reset UX slice, the Addons dictionary-pack asset-mounting slice, and the Addons Settings catalog/install-hint polish.
 **Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster, carried-forward G11 local audit item, sixth-pass F11 Roborazzi baseline item, Addons signing-pin trust-management slice, Addons dictionary asset-mounting slice, and Addons catalog/install-hint polish are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, KenLM reader offset hardening, hard visual-regression CI, confirmed addon trust reset / changed-certificate controls, no-extraction dictionary-pack asset mounting, and Settings dictionary-pack catalog details are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
@@ -405,8 +405,10 @@ body. Each is keyed to the existing section it qualifies.
   `BitmapFactory` decode (8192 px reject ceiling, ~512 px target edge);
   SAF-declared MIME is now the source of truth; Settings preference
   summary surfaces "Folder access lost. Tap to select again." when
-  Android revoked the persistable grant. Next-9.5a (open): mirror the
-  lost-grant banner inside the in-keyboard sticker palette tab.
+  Android revoked the persistable grant. Next-9.5a / F7 shipped in
+  v1.8.101: the in-keyboard Imported sticker tab remains visible after
+  grant loss and shows the matching re-pick banner instead of silently
+  emptying.
 - **§7 Next-10.1 (addon spec).** KDoc now mandates a REGISTER receiver
   with matching `<intent-filter>` for Android-11+ visibility, aligning
   with the existing `verify-addon-apk.sh` + `docs/addons/apk-validation.md`
