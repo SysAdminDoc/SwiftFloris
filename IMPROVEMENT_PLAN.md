@@ -15,7 +15,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
-- Current lint shape after cleanup batches: 259 warnings, 0 hints. Largest remaining bucket is `UnusedResources`.
+- Current lint shape after cleanup batches: 289 warnings, 1 hint. Largest remaining bucket is `UnusedResources`.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, dictionary import/export, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in extension editing, theme, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
@@ -52,6 +52,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Added JVM lifecycle coverage for auto-space and phantom-space state transitions, including editor-update grace, composing-region visibility, and candidate-for-revert cleanup.
 - 2026-05-18: Extracted glide-backspace escalation into the editor input policy and added JVM coverage for immediate word-delete, disabled preference, inactive phantom-space, and explicit word-delete paths.
 - 2026-05-18: Extracted incognito suggestion privacy decisions into a pure policy and added JVM coverage for app-declared privacy override, dynamic toggle availability, learning gates, and touch-decoder evidence suppression.
+- 2026-05-18: Extracted backup/restore validation and operation-state decisions into a pure policy, rejecting archives with no restorable content and adding JVM coverage for backup success/cancellation/failure, restore invalid archives, enablement, and partial failures.
 
 ## Workstreams
 
@@ -69,7 +70,7 @@ Tasks:
 - [x] Add phantom-space and autospace lifecycle tests.
 - [x] Add glide typing delete interaction tests.
 - [x] Add incognito suggestion behavior tests.
-- [ ] Add backup and restore tests for success, cancellation, invalid archive, and partial failure cases.
+- [x] Add backup and restore tests for success, cancellation, invalid archive, and partial failure cases.
 - [ ] Add language pack import/update tests.
 - [ ] Add subtype editor validation tests.
 - [ ] Add theme editor validation tests.
@@ -113,7 +114,7 @@ Tasks:
 - [ ] Extract candidate auto-commit eligibility and rejection policy from `NlpManager`.
 - [ ] Extract punctuation-triggered commit rules from `KeyboardManager`.
 - [x] Extract phantom-space/autospace rules from `EditorInstance`.
-- [ ] Extract backup/restore validation policy from Compose screens.
+- [x] Extract backup/restore validation policy from Compose screens.
 - [ ] Extract theme validation and rule parsing from UI surfaces.
 
 Acceptance criteria:
