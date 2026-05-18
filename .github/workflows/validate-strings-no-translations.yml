@@ -61,11 +61,13 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create comment if illegal files detected
-        # TODO supply-chain: pin to a SHA before next release; the SHA above
-        # was not independently verified at edit time, so the floating tag
-        # is kept for now. `gh api repos/peter-evans/create-or-update-comment/git/refs/tags/v4`
-        # will return the canonical commit SHA to substitute here.
-        uses: peter-evans/create-or-update-comment@v4
+        # SHA pin: peter-evans/create-or-update-comment@v4 = 71345be0265236311c031f5c7866368bd1eff043
+        # Verified 2026-05-17 via `GET /repos/peter-evans/create-or-update-comment/git/refs/tags/v4`.
+        # The action gets the workflow's GITHUB_TOKEN with `pull-requests: write`
+        # while running on `pull_request_target` (base-repo context). A
+        # floating tag would let an attacker who rotates the v4 ref exfiltrate
+        # the token. Re-pin when bumping; never re-introduce `@v4`.
+        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
         if: steps.precheck.outputs.require_validation == 'true' && steps.fetch_changed_files.outputs.illegal_changes_list != ''
         with:
           issue-number: ${{ github.event.pull_request.number }}
