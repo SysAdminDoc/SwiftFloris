@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.139-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.140-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.139 | Privacy posture |
+| Area | What's in v1.8.140 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -275,6 +275,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.140** (2026-05-18) — Candidate auto-commit policy extraction: `CandidateAutoCommitPolicy` now owns shortcut, phrase repair, active-strip, immediate fallback, quick-prediction, and rejected-correction gating decisions with focused JVM coverage. ([notes](RELEASE_NOTES_v1.8.140.md))
 - **v1.8.139** (2026-05-18) — Dependency warning review: Gradle is checksum-pinned to 9.5.1, Navigation Compose is on 2.9.8, and JUnit Vintage is centralized at 6.0.3 after official-release review, clearing the dependency-version lint warnings. ([notes](RELEASE_NOTES_v1.8.139.md))
 - **v1.8.138** (2026-05-18) — Conservative unused-resource cleanup: obsolete launcher/branding resources and dead legacy color tokens were removed after manifest/code/asset/test/dynamic lookup review, reducing lint from 289 warnings / 1 hint to 245 warnings / 1 hint. ([notes](RELEASE_NOTES_v1.8.138.md))
 - **v1.8.137** (2026-05-18) — Theme editor validation tests: theme component metadata now validates through `ThemeComponentMetaValidationPolicy`, with JVM coverage for valid apply normalization, invalid fields, duplicate IDs, and blank stylesheet fallback. ([notes](RELEASE_NOTES_v1.8.137.md))
@@ -404,7 +405,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.139** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.140** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

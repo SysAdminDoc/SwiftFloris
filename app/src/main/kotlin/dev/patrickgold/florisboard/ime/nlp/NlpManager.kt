@@ -375,105 +375,58 @@ class NlpManager(context: Context) {
     }
 
     fun getAutoCommitCandidate(): SuggestionCandidate? {
-        if (!prefs.correction.autoCorrect.get()) {
-            return null
-        }
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
-        if (autoCommitSuppression.shouldKeepTypedLiteral(
-                currentWord = currentWord,
-                currentWordStart = currentWordStart,
-            )
-        ) {
-            return null
-        }
-
-        // ROADMAP §6 N5.4 — Personal-dictionary shortcut auto-replace runs *before*
-        // the in-strip auto-commit candidate and the English contraction fallback,
-        // because user-defined shortcuts ("omw" → "on my way") express explicit user
-        // intent that should win over algorithmic guesses.
-        userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
-        immediatePhraseRepairCandidate(currentWord, currentWordStart)?.let { return it }
-
-        val activeCandidate = activeCandidates.firstOrNull { candidate ->
-            candidate.isEligibleForAutoCommit &&
-                SwiftKeyCandidateRanker.languageConfidenceAllowsAutoCommit(candidate, activeCandidateSignals) &&
-                !autoCommitSuppression.shouldSuppress(
-                    currentWord = currentWord,
-                    candidateText = candidate.text,
-                    currentWordStart = currentWordStart,
-                )
-        }
-        if (activeCandidate != null) {
-            return activeCandidate
-        }
-        return immediateAutoCommitCandidate(currentWord, currentWordStart)
+        return CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = prefs.correction.autoCorrect.get(),
+            currentWord = currentWord,
+            currentWordStart = currentWordStart,
+            candidates = activeCandidates,
+            candidateSignals = activeCandidateSignals,
+            rejectionPolicy = autoCommitSuppression,
+            // ROADMAP §6 N5.4 — personal-dictionary shortcuts express explicit
+            // user intent and therefore stay ahead of algorithmic guesses.
+            userDictionaryShortcutCandidate = userDictionaryShortcutAutoCommitCandidate(currentWord),
+            immediatePhraseRepairCandidate = immediatePhraseRepairCandidate(currentWord),
+            immediateAutoCommitCandidate = immediateAutoCommitCandidate(currentWord),
+        )
     }
 
     fun getSpacebarCandidate(): SuggestionCandidate? {
         val autoCorrectEnabled = prefs.correction.autoCorrect.get()
         val quickPredictionInsertEnabled = prefs.correction.quickPredictionInsert.get()
-        if (!autoCorrectEnabled && !quickPredictionInsertEnabled) {
-            return null
-        }
         val content = editorInstance.activeContent
         val currentWord = content.autoCommitWord()
         val currentWordStart = content.autoCommitWordStart()
-        if (autoCommitSuppression.shouldKeepTypedLiteral(
-                currentWord = currentWord,
-                currentWordStart = currentWordStart,
-            )
-        ) {
-            return null
-        }
-
-        if (autoCorrectEnabled) {
-            userDictionaryShortcutAutoCommitCandidate(currentWord, currentWordStart)?.let { return it }
-            immediatePhraseRepairCandidate(currentWord, currentWordStart)?.let { return it }
-        }
-
-        val candidate = SwiftKeyCandidateRanker.selectSpacebarCandidate(
+        return CandidateAutoCommitPolicy.selectSpacebarCandidate(
+            autoCorrectEnabled = autoCorrectEnabled,
+            quickPredictionInsertEnabled = quickPredictionInsertEnabled,
             currentWord = currentWord,
-            candidates = activeCandidates,
-            quickPredictionInsert = quickPredictionInsertEnabled,
+            currentWordStart = currentWordStart,
             textBeforeCursor = content.textBeforeSelection,
+            candidates = activeCandidates,
             candidateSignals = activeCandidateSignals,
-        ) ?: return if (autoCorrectEnabled) {
-            immediateAutoCommitCandidate(currentWord, currentWordStart)
-        } else {
-            null
-        }
-
-        return candidate.takeUnless {
-            autoCommitSuppression.shouldSuppress(
-                currentWord = currentWord,
-                candidateText = it.text,
-                currentWordStart = currentWordStart,
-            )
-        }
+            rejectionPolicy = autoCommitSuppression,
+            userDictionaryShortcutCandidate = userDictionaryShortcutAutoCommitCandidate(currentWord),
+            immediatePhraseRepairCandidate = immediatePhraseRepairCandidate(currentWord),
+            immediateAutoCommitCandidate = immediateAutoCommitCandidate(currentWord),
+        )
     }
 
     fun shouldSuppressPlainSpaceForPrediction(): Boolean {
-        if (!prefs.correction.quickPredictionInsert.get()) {
-            return false
-        }
         val content = editorInstance.activeContent
-        if (content.autoCommitWord().isNotBlank()) {
-            return false
-        }
-        return SwiftKeyCandidateRanker.selectSpacebarCandidate(
-            currentWord = "",
-            candidates = activeCandidates,
-            quickPredictionInsert = true,
+        return CandidateAutoCommitPolicy.shouldSuppressPlainSpaceForPrediction(
+            quickPredictionInsertEnabled = prefs.correction.quickPredictionInsert.get(),
+            currentWord = content.autoCommitWord(),
             textBeforeCursor = content.textBeforeSelection,
+            candidates = activeCandidates,
             candidateSignals = activeCandidateSignals,
-        ) != null
+        )
     }
 
     private fun userDictionaryShortcutAutoCommitCandidate(
         currentWord: String,
-        currentWordStart: Int?,
     ): SuggestionCandidate? {
         if (currentWord.isBlank()) return null
         val expansion = dictionaryManager.queryUserDictionaryShortcutExact(
@@ -486,14 +439,6 @@ class NlpManager(context: Context) {
             isEligibleForAutoCommit = true,
             isEligibleForUserRemoval = false,
         )
-        if (autoCommitSuppression.shouldSuppress(
-                currentWord = currentWord,
-                candidateText = expansion,
-                currentWordStart = currentWordStart,
-            )
-        ) {
-            return null
-        }
         return candidate
     }
 
@@ -832,38 +777,24 @@ class NlpManager(context: Context) {
         return locales.getOrNull(bestIndex)?.language?.takeIf { it.isNotBlank() }
     }
 
-    private fun immediateAutoCommitCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {
+    private fun immediateAutoCommitCandidate(currentWord: String): SuggestionCandidate? {
         if (!prefs.suggestion.enabled.get()) {
             return null
         }
-        val candidate = ImmediateAutocorrect.englishContractionCandidate(
+        return ImmediateAutocorrect.englishContractionCandidate(
             rawWord = currentWord,
             languageCode = subtypeManager.activeSubtype.primaryLocale.language,
-        ) ?: return null
-        return candidate.takeUnless {
-            autoCommitSuppression.shouldSuppress(
-                currentWord = currentWord,
-                candidateText = it.text,
-                currentWordStart = currentWordStart,
-            )
-        }
+        )
     }
 
-    private fun immediatePhraseRepairCandidate(currentWord: String, currentWordStart: Int?): SuggestionCandidate? {
+    private fun immediatePhraseRepairCandidate(currentWord: String): SuggestionCandidate? {
         if (!prefs.suggestion.enabled.get()) {
             return null
         }
-        val candidate = ImmediateAutocorrect.englishPhraseRepairCandidate(
+        return ImmediateAutocorrect.englishPhraseRepairCandidate(
             rawWord = currentWord,
             languageCode = subtypeManager.activeSubtype.primaryLocale.language,
-        ) ?: return null
-        return candidate.takeUnless {
-            autoCommitSuppression.shouldSuppress(
-                currentWord = currentWord,
-                candidateText = it.text,
-                currentWordStart = currentWordStart,
-            )
-        }
+        )
     }
 
     private fun onUserDictionaryConfigurationChanged() {
