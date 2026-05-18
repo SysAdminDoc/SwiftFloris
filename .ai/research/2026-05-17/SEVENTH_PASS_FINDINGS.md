@@ -131,7 +131,7 @@ shipped in this pass; four were structural / out-of-scope.
 | **#12** — `openFile` doesn't pre-check `file.exists()` (FileNotFoundException to receiver) | Low | Defer. |
 | **#14** — `primaryClipLastFromCallback` duplicate check too narrow on text-clear-text-cycle | Low | Defer. |
 | **#15** — `ClipboardMediaProvider.init` loads `cachedFileInfos` async; receiver calls during cold-paste race the cache | Medium | One-PR fix; flag. |
-| **#17** — `ClipboardHistoryManager` (the v1.8.68 Tink store) appears to be dead code on the IME path — the real store is `ClipboardManager`'s Room DB; the two parallel stores can drift | Low | Confirm intent; either delete or wire as the storage backend. |
+| **#17** — `ClipboardHistoryManager` (the v1.8.68 Tink store) appears to be dead code on the IME path — the real store is `ClipboardManager`'s Room DB; the two parallel stores can drift | Low | ✅ **v1.8.121** — deleted the unused Tink store and unused panel; the source regression now pins clipboard history to the Room-backed manager and rejects reintroducing the parallel preference store. |
 | **#18, #20** — minor cross-user / UX polish | Very low | Defer. |
 
 ---
@@ -157,14 +157,13 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.120)
+## 5. Open follow-up roster (post-v1.8.121)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.120 local voice catalog preview gate. Priority-scored.
+v1.8.121 dead clipboard history store removal. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
-| G9 | `ClipboardHistoryManager` (Tink store) — confirm intent; delete or wire as backend | Clipboard #17 | 2 | 2 | 1 | **2.5** |
 | G11 | NLP / autocorrect / suggestion full re-audit (rate-limited agent) | — | 4 | 4 | 2 | **2.5** |
 
 No high-leverage items (score ≥ 5.0) remain. The remaining items are

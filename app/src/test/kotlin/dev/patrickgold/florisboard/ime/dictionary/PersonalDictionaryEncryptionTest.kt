@@ -93,17 +93,18 @@ class PersonalDictionaryEncryptionTest : FunSpec({
         cryptoSource shouldContain "AeadConfig.register"
     }
 
-    test("clipboard history encryption also uses the shared Tink wrapper") {
-        val clipboardSource = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardHistoryManager.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardHistoryManager.kt",
-        ).readText()
+    test("clipboard history uses the Room-backed manager, not a parallel Tink store") {
+        val clipboardDir = locateProjectFile(
+            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard",
+            "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard",
+        )
+        val clipboardSource = File(clipboardDir, "ClipboardManager.kt").readText()
 
-        clipboardSource shouldContain "clipboard_history_tink_v1"
-        clipboardSource shouldContain "TinkStringPreferenceCrypto.readString"
-        clipboardSource shouldContain "TinkStringPreferenceCrypto.writeString"
-        clipboardSource shouldContain "TinkStringPreferenceCrypto.readLegacyEncryptedString"
-        clipboardSource shouldNotContain "androidx.security.crypto"
+        File(clipboardDir, "ClipboardHistoryManager.kt").exists() shouldBe false
+        clipboardSource shouldContain "ClipboardHistoryDatabase"
+        clipboardSource shouldContain "ClipboardHistoryDao"
+        clipboardSource shouldNotContain "TinkStringPreferenceCrypto"
+        clipboardSource shouldNotContain "clipboard_history_tink_v1"
     }
 
     test("SQLCipher, AndroidX SQLite, and Tink dependencies are declared") {
