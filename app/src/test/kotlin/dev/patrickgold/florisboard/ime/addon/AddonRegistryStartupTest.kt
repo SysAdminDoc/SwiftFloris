@@ -98,4 +98,16 @@ class AddonRegistryStartupTest : FunSpec({
         AddonRegistryStore.reset()
         AddonRegistryStore.active().snapshot() shouldBe emptyList()
     }
+
+    test("registry store generation changes when active registry changes") {
+        val before = AddonRegistryStore.generation()
+
+        AddonRegistryStore.setActive(AddonRegistry())
+        val afterSet = AddonRegistryStore.generation()
+        AddonRegistryStore.reset()
+        val afterReset = AddonRegistryStore.generation()
+
+        (afterSet > before) shouldBe true
+        (afterReset > afterSet) shouldBe true
+    }
 })

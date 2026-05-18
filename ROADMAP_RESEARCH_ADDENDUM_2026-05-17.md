@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.124 — Addons signing-pin trust controls (Next-10.4 local trust-management half; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.124, documented in §0.c through §0.e below).
+**HEAD at latest reconciliation:** v1.8.125 — Addons dictionary asset mounting (Next-10.4 local loader half; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.125, documented in §0.c through §0.f below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -133,8 +133,22 @@ v1.8.124. Settings -> Addons now has confirmed controls to clear every saved
 addon signing-certificate pin without re-enrolling installed APKs, and to trust
 a rejected changed-certificate addon by clearing that package's old pin and
 rescanning through `AddonRegistryStartup`. `AddonSigningPinSet.withoutPackage`
-keeps the mutation in the pure trust-store codec. The remaining Next-10.4 work
-is dictionary-pack asset mounting plus install-hint/catalog polish.
+keeps the mutation in the pure trust-store codec. v1.8.125 follows with
+dictionary-pack asset mounting; install-hint/catalog polish remains open.
+
+---
+
+## 0.f Reconciliation with v1.8.125 Addons asset mounting
+
+The dictionary-pack asset-mounting half of **§C.2 Next-10.4** shipped in
+v1.8.125. `AddonDictionaryAssetMounts` reads enrolled addon descriptor raw
+resources and APK `assets/` through PackageManager / AssetManager, with no
+extraction or temp-file copies; addon asset reads enforce the existing byte cap
+before materializing text. `LatinDictionaryStore` now plans addon
+dictionary and Zipf paths ahead of bundled assets, merges readable addon
+dictionaries with bundled baselines, and invalidates cached dictionaries when
+`AddonRegistryStore.generation()` changes. The remaining Next-10.4 work is
+Settings catalog/install-hint polish for discoverability.
 
 ---
 
@@ -648,7 +662,8 @@ last open piece.
 dictionary catalog + download UI. SwiftFloris's Next-10.3 now has both
 dictionary-pack addon schemas and the v1.8.81 process-local catalog
 foundation; v1.8.84/v1.8.124 cover Settings status and trust controls, while
-install-hint/catalog polish and APK asset mounting are the missing pieces.
+v1.8.125 covers APK asset mounting. Install-hint/catalog polish is the missing
+piece.
 
 **Body:**
 
@@ -819,7 +834,7 @@ but does not require a roadmap change.
 | Seventh-pass G9 dead clipboard history store removal | ✅ v1.8.121 |
 | Seventh-pass G11 local NLP / KenLM audit closure | ✅ v1.8.122 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
-| §C.2 Dictionary downloader UI (Next-10.4) | 🟡 v1.8.124 closed signing-pin revoke/reset UX; asset mounting remains |
+| §C.2 Dictionary downloader UI (Next-10.4) | 🟡 v1.8.124 closed signing-pin revoke/reset UX; v1.8.125 closed asset mounting; catalog/install-hint polish remains |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | ✅ v1.8.123 hard gate + focused baselines; full per-theme expansion remains additive |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |
 | §E.1 Per-app tone profile promotion | 🟡 on addon-side KenLM |

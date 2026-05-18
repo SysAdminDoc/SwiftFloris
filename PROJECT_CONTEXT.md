@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.124)
+## 3. Stack at HEAD (v1.8.125)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -157,7 +157,11 @@ and review package, type, version, license, size, and signing-certificate
 details. v1.8.124 adds the destructive trust-management controls: reset every
 saved addon signing-certificate pin without silently re-enrolling installed
 APKs, or trust a changed certificate from the rejected list after confirmation
-and rescan. Dictionary asset mounting remains the next Addons slice.
+and rescan. v1.8.125 adds the runtime asset-mounting path: enrolled
+dictionary-pack APK `assets/` are read through `PackageManager`, merged ahead
+of bundled Latin dictionary baselines, and invalidated when addon registry
+generation changes. Settings catalog/install-hint polish remains the next
+Addons slice.
 
 **v1.8.85 – v1.8.103** ships a 19-release session covering the sixth research-
 pass cross-subsystem hardening + the F1 – F12 follow-up roster + outreach
@@ -190,8 +194,8 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.124** ships the seventh research-pass privacy,
-voice, clipboard, NLP, visual-regression, and Addons trust-management layer.
+**v1.8.104 – v1.8.125** ships the seventh research-pass privacy,
+voice, clipboard, NLP, visual-regression, and Addons trust/asset-mounting layer.
 v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
@@ -230,6 +234,9 @@ Contrast, Aurora Animated, and Settings -> Addons surfaces, and CI now treats
 v1.8.124 returns to the Addons roadmap and closes the signing-pin
 revoke/reset UX slice with confirmed Settings actions plus targeted pin removal
 in `AddonSigningPinSet`.
+v1.8.125 closes the next local Addons loader slice by mounting enrolled
+dictionary-pack APK assets into `LatinDictionaryStore` without extraction and
+by tying dictionary cache invalidation to `AddonRegistryStore.generation()`.
 
 ## 4. Module layout
 

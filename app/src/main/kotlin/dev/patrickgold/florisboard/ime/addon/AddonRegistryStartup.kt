@@ -58,14 +58,20 @@ object AddonRegistryStartup {
 object AddonRegistryStore {
     @Volatile
     private var activeRegistry: AddonRegistry = AddonRegistry()
+    @Volatile
+    private var activeGeneration: Long = 0L
 
     fun active(): AddonRegistry = activeRegistry
 
+    fun generation(): Long = activeGeneration
+
     fun setActive(registry: AddonRegistry) {
         activeRegistry = registry
+        activeGeneration += 1L
     }
 
     fun reset() {
         activeRegistry = AddonRegistry()
+        activeGeneration += 1L
     }
 }
