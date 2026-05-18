@@ -40,6 +40,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistoryHelper
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
+import dev.patrickgold.florisboard.ime.media.sticker.UserStickerRepository
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
@@ -198,16 +199,26 @@ fun MediaScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.prefs__media__stickers__title)) {
+            // Recompute on every recomposition so a system-level grant
+            // revocation (e.g. user uninstalled the file-manager that
+            // issued the persistable grant) is reflected when the user
+            // re-enters this screen. The check is a single in-memory
+            // scan of the persistedUriPermissions list; cheap.
+            val grantLost = userStickerFolderUri.isNotBlank() &&
+                !UserStickerRepository.hasPersistableReadPermission(context, userStickerFolderUri)
             Preference(
                 icon = Icons.Default.Image,
                 title = stringRes(R.string.prefs__media__stickers_folder),
-                summary = if (userStickerFolderUri.isBlank()) {
-                    stringRes(R.string.prefs__media__stickers_folder__summary_empty)
-                } else {
-                    stringRes(
-                        R.string.prefs__media__stickers_folder__summary_selected,
-                        "folder" to userStickerFolderUri.substringAfterLast(':').substringAfterLast('/'),
-                    )
+                summary = when {
+                    userStickerFolderUri.isBlank() ->
+                        stringRes(R.string.prefs__media__stickers_folder__summary_empty)
+                    grantLost ->
+                        stringRes(R.string.prefs__media__stickers_folder__summary_grant_lost)
+                    else ->
+                        stringRes(
+                            R.string.prefs__media__stickers_folder__summary_selected,
+                            "folder" to userStickerFolderUri.substringAfterLast(':').substringAfterLast('/'),
+                        )
                 },
                 onClick = {
                     folderLauncher.launch(null)

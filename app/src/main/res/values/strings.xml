@@ -63,6 +63,7 @@
     <string name="prefs__media__stickers_folder" comment="Preference title">Imported sticker folder</string>
     <string name="prefs__media__stickers_folder__summary_empty" comment="Preference summary">Choose a local folder of PNG, WebP, JPEG, or GIF files to show as a sticker pack.</string>
     <string name="prefs__media__stickers_folder__summary_selected" comment="Preference summary">Using {folder}</string>
+    <string name="prefs__media__stickers_folder__summary_grant_lost" comment="Preference summary shown when Android revoked the persistable read permission for the previously-picked sticker folder (e.g. the file-manager app was uninstalled). The user must tap to re-pick the folder.">Folder access lost. Tap to select again.</string>
     <string name="prefs__media__stickers_folder_clear" comment="Preference title">Remove imported sticker folder</string>
     <string name="prefs__media__stickers_folder_clear__summary" comment="Preference summary">Keep bundled stickers and stop showing the selected folder.</string>
     <string name="prefs__media__stickers_folder_selected" comment="Toast shown after choosing an imported sticker folder">Sticker folder selected.</string>
