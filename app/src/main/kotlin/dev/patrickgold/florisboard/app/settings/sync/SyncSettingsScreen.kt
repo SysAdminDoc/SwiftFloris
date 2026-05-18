@@ -108,6 +108,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     val pairingReceivedText = stringRes(R.string.settings__sync__pairing_received)
     val pairingInvalidText = stringRes(R.string.settings__sync__pairing_invalid)
     val scannerMissingText = stringRes(R.string.settings__sync__scanner_missing)
+    val pairingUnsupportedText = stringRes(R.string.settings__sync__pairing_requires_android_13)
     val manualExportDefaultSummary = stringRes(R.string.settings__sync__channel_manual_export_summary)
 
     fun setChannel(channel: SyncChannel) {
@@ -180,6 +181,10 @@ fun SyncSettingsScreen() = FlorisScreen {
     }
 
     fun generatePairingPayload() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            Toast.makeText(context, pairingUnsupportedText, Toast.LENGTH_LONG).show()
+            return
+        }
         val resolvedClusterId = clusterId.ifBlank { UUID.randomUUID().toString() }
         val resolvedDeviceId = deviceId.ifBlank { UUID.randomUUID().toString() }
         scope.launch {
