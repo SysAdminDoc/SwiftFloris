@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.122 — KenLM mmap reader offset hardening (carried-forward G11 local audit closure; the full seventh-pass shipped layer is v1.8.104 – v1.8.122, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.123 — Roborazzi visual baseline hard gate (carried-forward F11 closure; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.123, documented in §0.c and §0.d below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -111,6 +111,18 @@ closed follow-ups from this roster:
   KenLM mmap-reader offset fix in **v1.8.122**. Future research runs
   should still sample NLP periodically, but no seventh-pass checklist
   item remains open.
+
+---
+
+## 0.d Reconciliation with v1.8.123 Roborazzi hard gate
+
+The carried-forward sixth-pass **F11** item closed in v1.8.123. Roborazzi now
+has committed baselines under `app/src/test/snapshots/` for the existing
+maintainer-chip suite plus SwiftKey High Contrast, Aurora Animated, and
+Settings -> Addons surfaces. `.github/workflows/android.yml` now runs
+`:app:verifyRoborazziDebug` without `continue-on-error`, so future visual drift
+must update focused baselines through `recordRoborazziDebug` instead of
+softening CI.
 
 ---
 
@@ -650,6 +662,11 @@ missing pieces.
 > `continue-on-error: true` from `:app:verifyRoborazziDebug` in
 > CI. Cost: M.
 
+**Reconciliation:** v1.8.123 shipped the hard gate and the highest-value
+baseline set for the maintainer chip, SwiftKey High Contrast, Aurora Animated,
+and Settings -> Addons. Full per-theme expansion remains a future additive
+coverage task, not a blocker for hard-gated visual CI.
+
 ## D. New ROADMAP items (LATER tier)
 
 ### D.1 L13 — CleverKeys-architecture Apache-2.0 reimplementation
@@ -791,7 +808,7 @@ but does not require a roadmap change.
 | Seventh-pass G11 local NLP / KenLM audit closure | ✅ v1.8.122 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
-| §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
+| §C.3 Roborazzi per-theme baseline (Next-12.6) | ✅ v1.8.123 hard gate + focused baselines; full per-theme expansion remains additive |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |
 | §E.1 Per-app tone profile promotion | 🟡 on addon-side KenLM |
 | §F new §10 rejections | 🔄 |

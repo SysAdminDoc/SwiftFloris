@@ -69,16 +69,12 @@ jobs:
       # the AGP-9 plugin, so the plugin alias is now applied in app/build.gradle.kts).
       # `verifyRoborazziDebug` re-runs every Roborazzi-annotated JUnit test and
       # diff-compares the captured PNG against the baseline under
-      # `app/src/test/snapshots/images/`. If a snapshot drifts beyond the
-      # default change threshold (0.01), the task fails the PR. Baseline
-      # captures land separately via `recordRoborazziDebug` on a maintainer
-      # push (run locally + commit the resulting PNGs). `continue-on-error: true`
-      # is used during the bootstrap window so the existing CI pipeline doesn't
-      # break before baselines are recorded; once `record` lands on master the
-      # flag can come off.
+      # `app/src/test/snapshots/`. If a snapshot drifts beyond the default
+      # change threshold (0.01), the task fails the PR. Baseline captures land
+      # separately via `recordRoborazziDebug` on a maintainer push (run locally
+      # and commit the resulting PNGs).
       - name: Roborazzi visual-regression verify (N14.1)
         run: ./gradlew :app:verifyRoborazziDebug
-        continue-on-error: true
 
       - name: Lint (debug)
         run: ./gradlew :app:lintDebug

@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.18
+# SwiftFloris Roadmap v5.19
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.17 (2026-05-18, same-day). v5.0-v5.17 entries are preserved with shipped markers updated in-place; v5.18 records the carried-forward G11 local NLP/KenLM audit closure and mmap-reader offset hardening. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.122 (released 2026-05-18 — KenLM mmap reader offset hardening). **v1.8.104 – v1.8.122 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, and one KenLM mmap-reader offset-boundary hardening.
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster and the carried-forward G11 local audit item are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, and KenLM reader offset hardening are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.18 (2026-05-18, same-day). v5.0-v5.18 entries are preserved with shipped markers updated in-place; v5.19 records the carried-forward F11 Roborazzi baseline capture and hard visual-regression CI gate. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.123 (released 2026-05-18 — Roborazzi visual baseline hard gate). **v1.8.104 – v1.8.123 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, one KenLM mmap-reader offset-boundary hardening, and the Roborazzi baseline / CI hard-gate closure for F11.
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster, carried-forward G11 local audit item, and sixth-pass F11 Roborazzi baseline item are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, KenLM reader offset hardening, and hard visual-regression CI are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.122)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.123)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -92,6 +92,13 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   pre-body reads now return `null`, offset arithmetic is overflow-guarded,
   and the fixed header probe no longer casts large file sizes to `Int`.
   `KenLmTrieReaderTest` pins the absolute-offset contract.
+- **v1.8.123** — Roborazzi visual baseline hard gate.
+  The carried-forward F11 item recorded committed baseline PNGs for
+  `ExtensionMaintainerChip`, `swiftkey_high_contrast`,
+  `aurora_animated`, and the Settings -> Addons registry surface under
+  `app/src/test/snapshots/`. CI now runs
+  `:app:verifyRoborazziDebug` without `continue-on-error`, so visual
+  drift fails push / PR builds.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
@@ -194,8 +201,8 @@ High-leverage items (score ≥ 5.0) are now closed:
 
 The v1.8.85 audit produced twelve follow-up items (F1 – F12) marked for
 single-feature per-PR releases on the standard AGENTS.md §6 cadence.
-v1.8.93 – v1.8.102 landed them all except F11 (Roborazzi baselines —
-deferred because this VM has no Android SDK).
+v1.8.93 – v1.8.102 landed eleven of twelve; the deferred F11
+Roborazzi baseline item closed in v1.8.123 on the maintainer build host.
 
 Shipped layer (one line per release):
 
@@ -224,14 +231,15 @@ Shipped layer (one line per release):
   parser tokenisation; popup-UI routing remains a future slice — F8
   (parser half).
 
-### 0.5.1 Open follow-ups carried forward
+### 0.5.1 Carried-forward follow-ups
 
-- **F11** (Roborazzi visual baselines for `swiftkey_high_contrast` +
-  `aurora_animated` themes + the Addons settings surface) — needs
-  `:app:recordRoborazziDebug` on a host with the Android SDK. Land
-  as v1.8.103 from the maintainer build host. Once recorded, remove
-  `continue-on-error: true` from the `Roborazzi visual-regression
-  verify (N14.1)` step in `.github/workflows/android.yml`.
+- ✅ **F11** (Roborazzi visual baselines for `swiftkey_high_contrast` +
+  `aurora_animated` themes + the Addons settings surface) — shipped in
+  **v1.8.123**. `ThemeAndAddonsScreenshotTest` records deterministic
+  baselines for both bundled theme surfaces and the seeded Settings ->
+  Addons registry surface; the existing maintainer-chip snapshots are
+  committed; `.github/workflows/android.yml` now treats
+  `:app:verifyRoborazziDebug` as a hard gate.
 - **F8 popup half** — wiring `HardwareKeyEntry.longPressAlternates`
   through to the on-screen long-press popup. Requires a new bridge
   between the hardware-keyboard runtime mapper and `KeyData.popup`
@@ -610,7 +618,7 @@ This delta supersedes the stale dependency guidance in the first-pass
 
 SwiftFloris is a Kotlin/Android IME fork of FlorisBoard, built with Gradle Kotlin DSL, AGP 9.2.1, Kotlin 2.3.21, Compose BOM 2026.05.00, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0, coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, Roborazzi 1.60.0, Robolectric 4.16.1, minSdk 26, target/compile SDK 36, and no `INTERNET` permission. The active runtime entry points are `FlorisApplication`, `FlorisImeService`, `FlorisAppActivity`, the spell-checker service, inline-autofill support, Tasker receiver, and local addon/MCP surfaces. The repo has mature shipped surfaces for autocorrect, multilingual scoring, user dictionary overlays, privacy gates, voice handoff, local-only addon facades, MCP daemon binding, honeycomb/T9/WordStyles scaffolds, SwiftKey visual parity, Android 16/17 readiness slices, and CI guardrails.
 
-The current constraint set is load-bearing: zero network/account/telemetry, Apache-2.0-compatible main app, no closed swipe blobs, reproducible-build posture, and addon isolation for heavy native/ML stacks. The main live gaps are not "basic keyboard" gaps; they are release hygiene for the v1.8.46 migration slice, emoji crash triage, Roborazzi baseline hardening, device-number benchmark collection, F-Droid verified rebuild completion, and real native/addon bring-up for smart compose/translation/CJK/handwriting/passkeys. SwiftKey export capture moved from urgent gap to shipped parser work in v1.8.46, but public migration documentation and release distribution still need to land before the 2026-05-31 account retirement.
+The current constraint set is load-bearing: zero network/account/telemetry, Apache-2.0-compatible main app, no closed swipe blobs, reproducible-build posture, addon isolation for heavy native/ML stacks, and hard visual-regression CI. The main live gaps are not "basic keyboard" gaps; they are release hygiene for the v1.8.46 migration slice, emoji crash triage, device-number benchmark collection, F-Droid verified rebuild completion, and real native/addon bring-up for smart compose/translation/CJK/handwriting/passkeys. SwiftKey export capture moved from urgent gap to shipped parser work in v1.8.46, but public migration documentation and release distribution still need to land before the 2026-05-31 account retirement.
 
 ### Phase 1 coverage audit
 
@@ -639,7 +647,7 @@ This table is the Phase 2/3 normalization layer. It does not replace the 95+ exi
 | 3 | SwiftKey export JSON importer | migration / data | `[COMM-SWIFTKEY-ONEDRIVE]`, `[COMMUNITY-SWIFTKEY-ONEDRIVE]`, `[INT-REL]` | rare/time-sensitive | strong | 5/2/2 | sample export | leapfrog | Recently Shipped | v1.8.46 landed the tolerant JSON parser; the remaining work is release/distribution/docs, not parser discovery. |
 | 4 | Emoji picker crash regression for issue #1 | reliability / testing | `[GH-SWIFTF-ISSUE-1]`, `[DEP-EMOJI2-2026]` | table-stakes | strong | 5/2/1 | repro trace | parity | Now | Emoji insertion is core keyboard behavior; public crash reports outrank speculative feature work. |
 | 5 | EmojiCompat GMS/no-GMS fallback audit | reliability / i18n | `[INT-TODO]`, `[DEP-EMOJI2-2026]`, `[STD-EMOJI17-RELEASE]` | common | strong | 4/2/2 | issue #1 triage | parity | Recently Shipped | ✅ 2026-05-16 — `FlorisEmojiCompat` refactored: explicit `EmojiCompatLoadState` sealed class (Loading / Loaded / Failed / Unavailable), `loadStateFlow(replaceAll)` public surface, injectable `configProvider` seam, doc block formalising the GMS-less / Huawei-HMS / stripped-firmware fallback contract (palette already falls through to `Paint.hasGlyph` so the no-GMS path is non-fatal by construction). 3 new `FlorisEmojiCompatTest` cases exercising the Unavailable transition. Open TODOs retired. |
-| 6 | Roborazzi baseline capture and hard gate | testing / UX | `[ROBORAZZI-RELEASES]`, `[DEP-ROBORAZZI-2026]` | table-stakes | strong | 4/2/1 | maintainer baseline push | parity | Partially Shipped | ✅ 2026-05-16 — new `.github/workflows/roborazzi-baseline.yml` `workflow_dispatch` job runs `:app:recordRoborazziDebug` and uploads the captured PNG tree as an artifact for maintainer commit. Remaining step: maintainer triggers the workflow, downloads the artifact, commits the PNGs into `app/src/test/snapshots/images/`, then removes `continue-on-error: true` from the `Roborazzi visual-regression verify` step in `android.yml`. |
+| 6 | Roborazzi baseline capture and hard gate | testing / UX | `[ROBORAZZI-RELEASES]`, `[DEP-ROBORAZZI-2026]` | table-stakes | strong | 4/2/1 | committed baselines + verify task | parity | Recently Shipped | ✅ 2026-05-18 — v1.8.123 commits baseline PNGs under `app/src/test/snapshots/` for the maintainer-chip suite, `swiftkey_high_contrast`, `aurora_animated`, and Settings -> Addons. `.github/workflows/android.yml` now runs `:app:verifyRoborazziDebug` as a hard gate with no `continue-on-error`. |
 | 7 | Device macrobenchmark numbers in `docs/BENCHMARKS.md` | performance / observability | `[STD-MACROBENCH]`, `[STD-MACROBENCH-2026]` | common | strong | 4/2/1 | device run | parity | Now | Trace sections exist; the roadmap should require real latency numbers before more perf claims. |
 | 8 | F-Droid verified reproducibility PR | distribution / security | `[STD-FDROID-VERIFIED]`, `[INT-REPRO]` | table-stakes | strong | 4/2/2 | release tag + fdroiddata | parity | Now | Reproducible build docs are already prepared; verification is the supply-chain credibility step. |
 | 9 | OSV dependency scan status note per release | security / dev-experience | `[SEC-OSV-2026]`, `[INT-CI]` | common | strong | 3/1/1 | release workflow | parity | Recently Shipped | ✅ 2026-05-16 — release workflow now runs `osv-scanner v2.0.2 --recursive --skip-git` against the resolved `releaseRuntimeClasspath` and appends a "Security scan (OSV)" footer to every GitHub Release body with the dated scanner version, vulnerability count, and reproduction recipe. See `docs/SECURITY.md`. |
@@ -763,12 +771,12 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
   (`v1.8.84` at this snapshot); publication remains a maintainer-host task
   because this VM cannot push to `SysAdminDoc/SwiftFloris`.
 - `:benchmark` and `:lib:native` are present-but-detached. Macrobenchmark trace sections are emitted from production paths, but device-number collection is still external work; embedded Whisper remains impossible until the native module is intentionally revived.
-- Roborazzi is now externally unblocked and the plugin alias is active, but the screenshot baseline is still in a bootstrap state. Record baseline PNGs and remove `continue-on-error` so screenshot regressions stop relying on manual review.
+- Roborazzi is now externally unblocked, baseline PNGs are committed, and `.github/workflows/android.yml` treats `:app:verifyRoborazziDebug` as a hard gate. Future visual work should add focused baselines instead of softening CI.
 - `FlorisLocale.kt` still hard-codes capitalization/autospace support tables; replace with ICU/script metadata before the next language-expansion wave.
 - ✅ Honeycomb renderer components are wired into the production character-layout
   path as of v1.8.79. Remaining layout debt: `TextKeyboardLayout` still carries
-  the unstable `constraints.maxWidth`/rotation comment and needs visual/device
-  baselines before the Roborazzi gate can become hard.
+  the unstable `constraints.maxWidth`/rotation comment and needs additional
+  visual/device baselines inside the now-hard Roborazzi gate.
 - `LanguagePackExtension` and `HanShapeBasedLanguageProvider` still carry multi-type/loading/locking TODO/FIXME notes that matter once external dictionary-pack addons move past descriptors.
 - ✅ `FlorisEmojiCompat` GMS/no-GMS audit closed 2026-05-16: explicit `EmojiCompatLoadState` (Loading/Loaded/Failed/Unavailable) sealed class plus `loadStateFlow(replaceAll)` make the GMS-less fallback path part of the public contract; the existing palette null-check + `Paint.hasGlyph` fallback already covered the case but is now formally documented. Issue #1 emoji-selection crash triage still pending (needs repro trace; the audit found no non-null-safe `EmojiCompat` call site, so the crash root cause is elsewhere — likely the palette grid recomposition path).
 
@@ -821,7 +829,7 @@ GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-
 | v1.8.46 | 2026-05-16 | N16.2 SwiftKey `swiftkey-cloud.json` parser added to `DictionaryImporter` ahead of the 2026-05-31 `data.swiftkey.com` retirement. New `DictionaryImportFormat.JSON` value + tolerant `parseSwiftKeyJson(json)` walking every nested array/object for `word`/`text`/`string` carriers. Auto-routed by both standalone-stream and zip-entry import paths. 10 new tests. | `DictionaryImporter.kt`; `DictionaryImporterTest.kt`; `gradle.properties` |
 | v1.8.45 | 2026-05-16 | N13.2 IME-visibility restore across configuration changes for the Android 17 (API 37) behavior change. `FlorisAppActivity.onSaveInstanceState` snapshots the live `WindowInsetsCompat.Type.ime()` visibility into a new `SAVED_KEY_IME_VISIBLE` bundle key; `FlorisAppActivity.onCreate` posts a `WindowInsetsControllerCompat.show(Type.ime())` when the saved bundle remembers the IME was visible. Idempotent on pre-Android-17; forward-compatible with the API-37 targetSdk bump. | `RELEASE_NOTES_v1.8.45.md` |
 | v1.8.44 | 2026-05-16 | N13.3 long-press popup guard on password fields. New pure `PasswordFieldPopupGate.shouldSuppressPopups(activeVariation)` returns true for `KeyVariation.PASSWORD` (Android `TYPE_TEXT_VARIATION_PASSWORD` / `_VISIBLE_PASSWORD` / `_WEB_PASSWORD` + `TYPE_NUMBER_VARIATION_PASSWORD` all collapse to that single bucket). `TextKeyboardLayout` now consults the gate in `isSuitableForBasicPopup` + `isSuitableForExtendedPopup` so long-press popups no-op on every password variation regardless of input source. New `rememberUpdatedState(evaluator)` capture keeps the predicate reading the live evaluator. 6 new `PasswordFieldPopupGateTest` cases. | `RELEASE_NOTES_v1.8.44.md` |
-| v1.8.43 | 2026-05-16 | N14.1 Roborazzi plugin unblocked. `gradle/libs.versions.toml` `roborazzi = "1.39.0"` → `"1.55.0"` (Jan 2026 line, AGP 9 support via PR #782) + `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. New "Roborazzi visual-regression verify" step in `.github/workflows/android.yml` runs `:app:verifyRoborazziDebug` on every push/PR with `continue-on-error: true` during the baseline-capture bootstrap window. | `RELEASE_NOTES_v1.8.43.md` |
+| v1.8.43 | 2026-05-16 | N14.1 Roborazzi plugin unblocked. `gradle/libs.versions.toml` `roborazzi = "1.39.0"` → `"1.55.0"` (Jan 2026 line, AGP 9 support via PR #782) + `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. New "Roborazzi visual-regression verify" step in `.github/workflows/android.yml` runs `:app:verifyRoborazziDebug` on every push/PR; the initial bootstrap `continue-on-error` guard was removed in v1.8.123 once baselines were committed. | `RELEASE_NOTES_v1.8.43.md` |
 | v1.8.42 | 2026-05-16 | N14.2 Kotlin `2.3.20` → `2.3.21` bug-fix bump per [KOTLIN-2321] (Wasm IC, ObjC protocol metaclass, AGP 9.1 R8 artifact-clear regression). `gradle/libs.versions.toml` `[versions] kotlin` only — every Kotlin Gradle plugin + `kotlin-reflect` + `kotlin-test-junit5` rides `version.ref = "kotlin"` so the bump propagates. `docs/REPRODUCIBLE_BUILDS.md` + ROADMAP §2 stack line bumped. | `RELEASE_NOTES_v1.8.42.md` |
 | v1.8.41 | 2026-05-16 | N15.2 auto-return to the letter keyboard after the apostrophe commits from the symbols panel. New pure `ApostropheReturnGate.shouldReturnToCharacters(committedText, currentMode, autoReturnEnabled)` consulted by `KeyboardManager.onInputKeyUp` right after `editorInstance.commitChar(text)`; gated on `prefs.keyboard.autoReturnAfterApostrophe` (default **on**) surfaced as Settings → Keyboard → "Return to letters after apostrophe". Trigger: ASCII `'` U+0027 only, only in SYMBOLS / SYMBOLS2 (NUMERIC family unaffected). 8 new `ApostropheReturnGateTest` cases. | `RELEASE_NOTES_v1.8.41.md` |
 | v1.8.40 | 2026-05-16 | L7.6b per-daemon enable/disable for the MCP bridge. `prefs.mcp.disabledDaemonPackages` newline-separated codec (`DisabledDaemonSet.parse/encode/add/remove/contains`); `McpDispatchRouter.isDaemonDisabled` short-circuit after tool resolution but before `client.callTool`. Settings → MCP screen renders a switch per daemon; row icon swaps PlayCircleOutline ↔ Block; status row reads "M/N enabled". 13 codec tests + 2 router gating tests. **998 unit tests** at HEAD, 0 failures. | `RELEASE_NOTES_v1.8.40.md` |
@@ -1096,7 +1104,7 @@ Android 17 was unveiled at The Android Show 2026-05-12 [STD-A17-UNVEIL] and targ
 
 v5.0 stranded the Roborazzi plugin alias behind a "wait for 1.44.0-stable" gate; that's resolved.
 
-- ✅ **N14.1** shipped 2026-05-16 (v1.8.43). `gradle/libs.versions.toml` `roborazzi = "1.39.0"` → `"1.55.0"` (Jan 2026 line, ships AGP 9 support via PR #782 per [ROBORAZZI-RELEASES]); `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:recordRoborazziDebug` + `:app:verifyRoborazziDebug` task wiring is now live. New "Roborazzi visual-regression verify (N14.1)" step in `.github/workflows/android.yml` between unit-tests and lint, running `:app:verifyRoborazziDebug` on every push/PR. Step uses `continue-on-error: true` during the bootstrap window so the existing CI gates don't fail before baseline images are recorded — once `recordRoborazziDebug` lands the snapshot PNGs under `app/src/test/snapshots/images/`, the flag can come off and the verify becomes a hard gate. The existing `ExtensionMaintainerChipScreenshotTest` (Next-12.2 sample suite) is the first test the plugin lights up; coverage extends in follow-up batches to the smartbar candidates row, the seven M3 Expressive theme keys, the floating-window border, and the stylus overlay.
+- ✅ **N14.1** shipped 2026-05-16 (v1.8.43) and hard-gated 2026-05-18 (v1.8.123). `gradle/libs.versions.toml` `roborazzi = "1.39.0"` → `"1.55.0"` (Jan 2026 line, ships AGP 9 support via PR #782 per [ROBORAZZI-RELEASES]); `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:recordRoborazziDebug` + `:app:verifyRoborazziDebug` task wiring is live. v1.8.123 commits baseline PNGs under `app/src/test/snapshots/` for the maintainer-chip suite, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons, and removes `continue-on-error` from the CI verify step. Future coverage extends through focused follow-up baselines, but the gate is now hard.
 - ✅ **N14.2** shipped 2026-05-16 (v1.8.42). `gradle/libs.versions.toml` `[versions] kotlin` bumped `2.3.20` → `2.3.21` (Apr 23 2026 bug-fix release per [KOTLIN-2321]: Wasm IC mode, Native ObjC protocol metaclass cast, AGP 9.1 R8 artifact-clear regression, Wasm IC + KGP composite-build fixes). `kotlin-android` / `kotlin-jvm` / `kotlin-plugin-compose` / `kotlin-serialization` Gradle plugins + `kotlin-reflect` + `kotlin-test-junit5` all ride the same `version.ref = "kotlin"` so they pick up the bump for free. `docs/REPRODUCIBLE_BUILDS.md` and the ROADMAP §2 stack line updated to match.
 - ✅ **N14.3** audit shipped 2026-05-17 (v1.8.51). The current `androidx-compose-bom = "2026.03.01"` pin is on the published March-2026 patch-01 line; no later patch is announced as of this audit. No Roborazzi visual-regression or macrobenchmark surface forces an out-of-band bump. The actual version-bump is a separate slice gated on the cadence policy in `docs/DEPENDENCY_TRIAGE.md` (Roborazzi + macrobenchmark evidence run); this slice is the audit + audit-log entry that pins the next review window.
 - ✅ **N14.4** audit shipped 2026-05-17 (v1.8.51). The current `gradle-wrapper.properties` pin is on `gradle-9.4.1-bin.zip` with `distributionSha256Sum=2ab2958f...` — the wrapper still verifies. The reproducible-builds contract from `docs/REPRODUCIBLE_BUILDS.md` requires any bump to update the SHA-256 in lockstep so the verify path stays correct; the bump itself is gated on `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` on the maintainer's local box per the cadence policy. Audit-log entry added so a future contributor doesn't redo this analysis from scratch.
@@ -1410,7 +1418,7 @@ Each entry below lists: the **scaffold seam** (file path), the **blocker** (what
 | **N1.1** Open-source glide-typing | `prefs.glide.engine` flag (Next placeholder; default remains `swiftfloris-statistical`) | HeliBoard NLnet R&D grant Jun 2025 → Jun 2026 [NLNET-GT]. As of 2026-05-17, no drop-in open library is released; HeliBoard `#2226` remains open, `v3.9` is still latest, and gesture data collection runs through 2026-11-30 [GH-HELIBOARD-RELEASES, H1-GESTURE-DATA]. | A permissively-licensed drop-in replaces `swypelibs`; glide accuracy meets or exceeds the current `GlideTypingManager.statistical` heuristic on a 1,000-trace eval set. |
 | **N1.2** CleverKeys-architecture port | `ime/nlp/cleverkeys/` (not yet present — created when library lands) | CleverKeys roadmap targets Q2-Q3 2026 for multi-layout / multi-script gesture model. Code is GPL-3.0 → architecture-borrow only. Tracked at [CK-DEEPWIKI](https://deepwiki.com/cleverkeys/cleverkeys). | Train an Apache-2.0 model from N1.1 dataset, ship via ONNX Runtime Mobile. |
 | **N10.1** Noto Color Emoji 17.0 | `androidx-emoji2 = "1.6.0"` in `libs.versions.toml` | Either: (a) `androidx.emoji2` 1.7.0+ published with Emoji 17, OR (b) ship `NotoColorEmoji.ttf` v17 directly + route through `EmojiCompat.Config(BundledEmojiCompatConfig)`. Track [emoji2 releases](https://developer.android.com/jetpack/androidx/releases/emoji2). | Emoji 17 glyphs (Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) render correctly in the palette. |
-| **Next-12.2 plugin / N14.1** | `app/build.gradle.kts:30` — was `// alias(libs.plugins.roborazzi)` | ✅ **CLOSED 2026-05-16 (v1.8.43).** Roborazzi **1.55.0** bumped in `gradle/libs.versions.toml`; `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:verifyRoborazziDebug` added to `.github/workflows/android.yml` (bootstrap window: `continue-on-error: true` until baselines are recorded via `recordRoborazziDebug` on a maintainer push). **Moved to §3 Recently Shipped.** | n/a |
+| **Next-12.2 plugin / N14.1** | `app/build.gradle.kts:30` — was `// alias(libs.plugins.roborazzi)` | ✅ **CLOSED 2026-05-16 (v1.8.43), hard-gated 2026-05-18 (v1.8.123).** Roborazzi **1.55.0** bumped in `gradle/libs.versions.toml`; `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:verifyRoborazziDebug` is now a hard CI gate backed by committed baselines under `app/src/test/snapshots/`. **Moved to §3 Recently Shipped.** | n/a |
 
 ### B. Out-of-tree addon APKs (heavy native runtime)
 
@@ -1507,7 +1515,7 @@ These came up in research but don't fit SwiftFloris; calling them out so future 
 | Gemma 3 270M licensing changes break L1 plan | Low | Medium | Have Phi-3 / Llama 3.2 1B fallback on stand-by; LiteRT-LM is model-agnostic |
 | F-Droid reproducible-build verification fails due to Gradle/AGP/NDK churn | Medium | Low | Pin everything in `gradle.properties`; subscribe to F-Droid Reproducible Builds discussion; address per release |
 | ~~The two `TODO("…")` runtime stubs get hit in the wild~~ — **Resolved in v1.7.0 (N11.1/N11.2/N11.3)**; preserved here as audit trail | n/a | Resolved | n/a |
-| Kotlin 2.3 / Compose 2026.05.00 BOM regressions | Medium | Medium | Keep Roborazzi soft-gated until baselines land; revert only with a reproducible visual / inset / focus regression |
+| Kotlin 2.3 / Compose 2026.05.00 BOM regressions | Medium | Medium | Keep Roborazzi baselines current and require a reproducible visual / inset / focus regression before reverting dependency patches |
 | Personal-dictionary growth balloons Room DB; Room main-thread query adds lag | Medium | Medium | The current `allowMainThreadQueries()` flag is a known concern; convert to suspend-only access on a Next-class refactor |
 | Unicode 17 / Emoji 17 backports break `EmojiCompat` lazy loader | Low | Low | N10.2 verifies pre-release |
 | The malicious closed-source FlorisBoard fork "CleverType AI Keyboard" [F3] confuses SwiftFloris's positioning | Low | Low | README + Settings → About explicitly distance from any closed fork |
