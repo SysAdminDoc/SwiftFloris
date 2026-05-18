@@ -1088,7 +1088,15 @@
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_image_items">Images</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Videos</string>
     <string name="backup_and_restore__back_up__success">Backup archive exported.</string>
+    <string name="backup_and_restore__back_up__share_sheet_opened">Backup archive ready to share</string>
+    <string name="backup_and_restore__back_up__share_sheet_opened_summary">Complete the share sheet to copy the archive into another app or storage provider.</string>
+    <string name="backup_and_restore__back_up__cancelled">Backup cancelled</string>
+    <string name="backup_and_restore__back_up__cancelled_summary">No archive was saved. You can adjust the backup contents and try again.</string>
+    <string name="backup_and_restore__back_up__failure_title">Backup failed</string>
     <string name="backup_and_restore__back_up__failure">Could not export backup archive: {error_message}</string>
+    <string name="backup_and_restore__back_up__unknown_error">Unknown error</string>
+    <string name="backup_and_restore__back_up__clipboard_privacy_warning_title">Sensitive clipboard items stay private</string>
+    <string name="backup_and_restore__back_up__clipboard_privacy_warning_summary">Clipboard entries marked sensitive by apps are skipped even when clipboard history is selected.</string>
     <string name="backup_and_restore__back_up__in_progress">Preparing backup</string>
     <string name="backup_and_restore__back_up__in_progress_summary">Keep this screen open until the save or share sheet appears.</string>
     <string name="backup_and_restore__restore__title">Restore data</string>

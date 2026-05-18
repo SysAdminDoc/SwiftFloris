@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.143-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.144-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.143 | Privacy posture |
+| Area | What's in v1.8.144 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -124,7 +124,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.40).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.41).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -276,6 +276,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.144** (2026-05-18) — Backup flow trust states: backup progress, cancellation, share-sheet handoff, failure, and sensitive-clipboard exclusion now surface as explicit cards, with `BackupFlowNotice` policy coverage. ([notes](RELEASE_NOTES_v1.8.144.md))
 - **v1.8.143** (2026-05-18) — Autocorrect lifecycle contract: `docs/AUTOCORRECT_LIFECYCLE.md` now defines spacebar, punctuation, backspace, hardware, glide-delete, provider-notification, manual QA, and regression-test contracts; accepted provider notifications now wait for successful editor commits. ([notes](RELEASE_NOTES_v1.8.143.md))
 - **v1.8.142** (2026-05-18) — Theme rule edit policy extraction: `ThemeRuleEditPolicy` now owns add-rule selection validation, selector toggling, and key-code attribute parsing/replacement decisions for the theme editor. ([notes](RELEASE_NOTES_v1.8.142.md))
 - **v1.8.141** (2026-05-18) — Punctuation flush policy extraction: `KeyboardAutoCommitFlushPolicy` now owns software non-letter autocorrect flush decisions for media mode, alphabetic keys, punctuation, numeric keys, and numeric/phone layouts. ([notes](RELEASE_NOTES_v1.8.141.md))
@@ -409,7 +410,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.143** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.144** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

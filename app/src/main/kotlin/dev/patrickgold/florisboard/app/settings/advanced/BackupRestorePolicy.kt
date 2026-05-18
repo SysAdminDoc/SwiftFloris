@@ -37,6 +37,27 @@ internal object BackupRestorePolicy {
         return hasSelectedFiles && !isBackupInProgress
     }
 
+    fun noticeForBackupDocumentResult(result: BackupDocumentResult): BackupFlowNotice? {
+        return when (result) {
+            BackupDocumentResult.Success -> BackupFlowNotice.Success
+            BackupDocumentResult.Cancelled -> BackupFlowNotice.Cancelled
+            BackupDocumentResult.Failure -> BackupFlowNotice.Failure
+        }
+    }
+
+    fun resolveBackupFlowNotice(
+        isBackupInProgress: Boolean,
+        clipboardItemsSelected: Boolean,
+        lastTerminalNotice: BackupFlowNotice?,
+    ): BackupFlowNotice {
+        return when {
+            isBackupInProgress -> BackupFlowNotice.InProgress
+            lastTerminalNotice != null -> lastTerminalNotice
+            clipboardItemsSelected -> BackupFlowNotice.ClipboardPrivacyWarning
+            else -> BackupFlowNotice.None
+        }
+    }
+
     fun hasRestorableContent(
         hasJetprefDatastore: Boolean,
         hasImeKeyboard: Boolean,
@@ -117,6 +138,16 @@ internal enum class BackupDocumentResult {
     Success,
     Cancelled,
     Failure,
+}
+
+internal enum class BackupFlowNotice {
+    None,
+    InProgress,
+    ClipboardPrivacyWarning,
+    Cancelled,
+    Failure,
+    ShareSheetOpened,
+    Success,
 }
 
 internal data class RestoreArchiveValidation(

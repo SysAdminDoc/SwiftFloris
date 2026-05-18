@@ -62,6 +62,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Extracted software punctuation/non-letter autocorrect flush decisions into `KeyboardAutoCommitFlushPolicy`, leaving `KeyboardManager` to execute the chosen flush and adding JVM coverage for media mode, alphabetic keys, punctuation keys, numeric keys, numeric/phone layouts, non-text keys, and empty text.
 - 2026-05-18: Extracted theme rule editing validation and key-code parsing into `ThemeRuleEditPolicy`, leaving `EditRuleDialog` to render dialog state and adding JVM coverage for empty add-rule selection, selector toggling, invalid/duplicate/unchanged code decisions, and add/replace code actions.
 - 2026-05-18: Codified the autocorrect lifecycle in `docs/AUTOCORRECT_LIFECYCLE.md`, moved accepted-candidate provider notifications behind successful editor commits with `CandidateCommitSideEffectPolicy`, and mapped regression/manual QA coverage for spacebar, punctuation, hardware, glide delete, and backspace rejection behavior.
+- 2026-05-18: Audited the backup flow trust states by adding explicit progress, cancellation, share-sheet handoff, failure, and clipboard privacy warning cards, plus `BackupFlowNotice` policy coverage for notice ordering.
 
 ## Workstreams
 
@@ -164,7 +165,7 @@ Tasks:
 - [x] Replace deprecated synchronous toast feedback in extension import/export/view flows.
 - [x] Replace deprecated synchronous toast feedback in dictionary import/export flows.
 - [x] Replace deprecated synchronous toast feedback in language pack delete flow.
-- [ ] Audit backup flow for loading, success, warning, failure, and cancellation states.
+- [x] Audit backup flow for loading, success, warning, failure, and cancellation states.
 - [ ] Audit restore flow for destructive confirmation, progress, partial failure, and recovery copy.
 - [ ] Audit language pack import/update/remove states.
 - [ ] Audit theme import/edit/delete states.
