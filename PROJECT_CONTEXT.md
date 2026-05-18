@@ -44,7 +44,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.84)
+## 3. Stack at HEAD (v1.8.103)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -155,6 +155,41 @@ rescan installed addon packages through the same startup reconciliation path,
 and review package, type, version, license, size, and signing-certificate
 details before destructive revoke/reset controls or dictionary asset mounting
 land.
+
+**v1.8.85 – v1.8.103** ships a 19-release session covering the sixth research-
+pass cross-subsystem hardening + the F1 – F12 follow-up roster + outreach
+drafts + this release-hygiene catch-up. Full breakdown in
+[`.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md)
+and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
+
+- **§2 No-`INTERNET` gate** now scans merged manifests + honours
+  `tools:node="remove"` (v1.8.85).
+- **§2 Personal-dictionary excluded from cloud-backup AND D2D transfer.**
+  New `app/src/main/res/xml/data_extraction_rules.xml` ships the correct
+  Android-12+ schema with explicit excludes (v1.8.85).
+- **§2 FLAG_SECURE coverage** extended via `keyVariation == PASSWORD`
+  propagation for `TYPE_NUMBER_VARIATION_PASSWORD` and a Compose
+  `DisposableEffect` on the encrypted-dictionary passphrase dialog
+  (v1.8.86, v1.8.87).
+- **New build gate `verifyDataExtractionRules`** pins the load-bearing
+  excludes against accidental rewrite (v1.8.95).
+- **`ZipUtils.unzip` atomic-abort semantics** — security violations throw,
+  benign anomalies continue with warning (v1.8.85 + v1.8.89).
+- **Hardware-keyboard runtime mapper** now thread-safe and AltGr-aware
+  (v1.8.85). LDML parser honours `shift=` over `longPress=` and stores
+  alternates in a `longPressAlternates` field (v1.8.92 + v1.8.102).
+- **CI workflow `permissions: { contents: read }`** at file scope on
+  `android.yml`, `crowdin-upload.yml`, `reproducible-build.yml`;
+  `pull_request_target` env-var hardening pattern documented;
+  third-party action floating tags pinned to verified SHAs (v1.8.85 +
+  v1.8.96).
+- **Outreach drafts** for the SwiftKey-refugee discovery gap shipped
+  at `docs/outreach/2026-05-17-swiftkey-migration/` covering
+  AlternativeTo, BGR, Android Authority, and r/Swiftkey.
+
+The only sixth-pass F-roster item still open is **F11** (Roborazzi visual
+baselines for the new themes + Addons surface) — needs Android SDK +
+on-device baseline record. Land as v1.8.104 from the maintainer build host.
 
 ## 4. Module layout
 
