@@ -127,6 +127,9 @@ class ClipboardManager(
         ioScope.launch {
             if (clipHistoryDb == null) {
                 clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
+                clipHistoryDao?.let { dao ->
+                    ClipboardStorageReconciliation.reconcile(context.applicationContext, dao)
+                }
                 withContext(Dispatchers.Main) {
                     clipHistoryDao?.getAllAsFlow()?.collect { items ->
                         updateHistory(items)

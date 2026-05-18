@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.115 — sensitive clipboard description guard (seventh-pass follow-up closure for skipping pin-popup URL/email/phone classification on sensitive clipboard items; the full seventh-pass shipped layer is v1.8.104 – v1.8.115, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.116 — clipboard startup storage reconciliation (seventh-pass follow-up closure for reconciling provider-backed clipboard history, file-info rows, and private media files; the full seventh-pass shipped layer is v1.8.104 – v1.8.116, documented in §0.c below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -20,7 +20,7 @@ same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Ph
 
 ---
 
-## 0.c Reconciliation with v1.8.104-115 seventh-pass audit releases
+## 0.c Reconciliation with v1.8.104-116 seventh-pass audit releases
 
 The user re-invoked the extreme-audit prompt after the sixth-pass
 roster closed. The seventh research pass dispatched three parallel
@@ -43,8 +43,9 @@ the eighth pass).
 | Voice follow-up G7: `VoiceInputSetupActivity` needed its non-exported manifest state pinned and accepted arbitrary extras by falling back to `NO_ENABLED_PROVIDER` | ✅ **v1.8.113** — Robolectric manifest test pins `android:exported="false"` and `VoiceInputSetupIntentContract` rejects malformed setup extras |
 | Voice follow-up G8: `isVoiceInputReadyForHandoff()` treated every non-FUTO voice IME as ready without checking that package's microphone grant | ✅ **v1.8.114** — `ExternalVoiceInputHandoffPolicy` requires `RECORD_AUDIO` permission for each enabled external voice IME package |
 | Clipboard follow-up G10: pin-popup description detection ran URL/email/phone classification over `stringRepresentation()` even for `item.isSensitive`, leaking structural info via badges | ✅ **v1.8.115** — `clipboardItemDescriptionKind` returns no badge for sensitive clips before reading raw text |
+| Clipboard follow-up G3: no startup reconciliation between clipboard-history rows, `ClipboardFileInfo` rows, and on-disk provider files; destructive history migration orphaned files forever | ✅ **v1.8.116** — `ClipboardStorageReconciliation` deletes missing-file history rows and unreferenced provider files / metadata rows before history collection |
 
-The v1.8.104 – v1.8.115 release notes are the per-release audit trail
+The v1.8.104 – v1.8.116 release notes are the per-release audit trail
 for this seventh-pass shipped layer.
 
 ### 0.c.1 Seventh-pass structural finding carried forward
@@ -759,6 +760,7 @@ but does not require a roadmap change.
 | Seventh-pass G7 voice setup intent hardening | ✅ v1.8.113 |
 | Seventh-pass G8 external voice IME microphone gate | ✅ v1.8.114 |
 | Seventh-pass G10 sensitive clipboard description guard | ✅ v1.8.115 |
+| Seventh-pass G3 clipboard startup storage reconciliation | ✅ v1.8.116 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |

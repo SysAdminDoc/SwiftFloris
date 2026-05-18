@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.11
+# SwiftFloris Roadmap v5.12
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.10 (2026-05-18, same-day). v5.0-v5.10 entries are preserved with shipped markers updated in-place; v5.11 records the fifth seventh-pass follow-up release after v1.8.104 – v1.8.110 and closes the high-leverage seventh-pass follow-up roster. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.115 (released 2026-05-18 — sensitive clipboard description guard). **v1.8.104 – v1.8.115 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), and six clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard).
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.11 (2026-05-18, same-day). v5.0-v5.11 entries are preserved with shipped markers updated in-place; v5.12 records the sixth seventh-pass follow-up release after v1.8.104 – v1.8.110 and keeps the high-leverage seventh-pass follow-up roster closed. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.116 (released 2026-05-18 — clipboard startup storage reconciliation). **v1.8.104 – v1.8.116 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), and seven clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation).
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed and G3 startup media-storage reconciliation is shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.115)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.116)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -47,6 +47,11 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   `item.isSensitive` before reading the raw `stringRepresentation()`,
   so redacted pin-popup text cannot reveal a link badge. This closes
   **G10**.
+- **v1.8.116** — Clipboard startup storage reconciliation.
+  `ClipboardStorageReconciliation` now runs before the history flow is
+  collected, deleting provider-backed history rows whose stored file is
+  missing and deleting stored provider files / `ClipboardFileInfo` rows
+  that no history row references. This closes **G3**.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
