@@ -78,13 +78,17 @@ class KenLmTrieReader private constructor(
      */
     fun readBytesAt(offset: Long, length: Int): ByteArray? {
         if (offset < 0 || length < 0) return null
+        if (offset < bodyStartOffset) return null
+        if (length > 0 && offset > Long.MAX_VALUE - length) return null
         if (offset + length > channel.size()) return null
         val out = ByteArray(length)
         // Mapped buffer is little-endian per KenLM; use absolute reads
         // so concurrent readers don't fight over the buffer position.
         synchronized(buffer) {
-            val pos = (offset - bodyStartOffset).toInt().coerceAtLeast(0)
-            if (pos + length > buffer.capacity()) return null
+            val relativeOffset = offset - bodyStartOffset
+            if (relativeOffset > Int.MAX_VALUE) return null
+            val pos = relativeOffset.toInt()
+            if (length > buffer.capacity() - pos) return null
             buffer.position(pos)
             buffer.get(out, 0, length)
         }
@@ -108,12 +112,13 @@ class KenLmTrieReader private constructor(
             try {
                 val channel = raf.channel
                 // Read the first 256 bytes as a sanity buffer for the header.
-                val headerBytes = ByteArray(256.coerceAtMost(channel.size().toInt()))
+                val headerBytes = ByteArray(minOf(256L, channel.size()).toInt())
                 val headerBb = java.nio.ByteBuffer.wrap(headerBytes)
+                var readOffset = 0L
                 while (headerBb.hasRemaining()) {
-                    val read = channel.read(headerBb, channel.position())
+                    val read = channel.read(headerBb, readOffset)
                     if (read == -1) break
-                    channel.position(channel.position() + read)
+                    readOffset += read
                 }
                 channel.position(0)
                 val header = KenLmBinaryReader.readHeader(
@@ -121,6 +126,9 @@ class KenLmTrieReader private constructor(
                 )
                 val bodyStart = 64L + 4L + 4L + 4L + (header.order * 8L)
                 val bodyLen = (channel.size() - bodyStart).coerceAtLeast(0)
+                if (bodyLen > Int.MAX_VALUE.toLong()) {
+                    throw KenLmFormatException("KenLM body too large for single mmap: $bodyLen bytes")
+                }
                 val mapped: MappedByteBuffer = channel.map(
                     FileChannel.MapMode.READ_ONLY,
                     bodyStart,

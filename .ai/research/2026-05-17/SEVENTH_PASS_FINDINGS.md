@@ -12,8 +12,9 @@ restore + crypto, scripts / CI.
 Three external research agents were dispatched in parallel plus a
 personal pass on `FlorisImeService` / `EditorInstance`. Two agents
 returned with substantial findings; the NLP agent hit an upstream
-rate limit and returned no output — flagged as **research debt for
-the eighth pass**.
+rate limit and returned no output. The carried-forward local G11 audit
+closed in v1.8.122 with the concrete KenLM mmap-reader offset fix
+documented below.
 
 **Local state at start:** clean worktree, `master…origin/master
 [ahead 105]`, HEAD `3dd879b` (`docs: Android 17 (API 37) gate audit`).
@@ -136,38 +137,46 @@ shipped in this pass; four were structural / out-of-scope.
 
 ---
 
-## 4. NLP / autocorrect / suggestion agent — rate-limited, no output
+## 4. NLP / autocorrect / suggestion agent — rate-limited, local closure
 
 The agent crashed with `API Error: Server is temporarily limiting
 requests · Rate limited` after a long run. No findings returned.
 This subsystem (NlpManager, suggestion ranking, latin/han subpackages,
-DictionaryManager, smartbar suggestion strip, text/composing) remains
-**un-audited in depth** as of the seventh pass.
+DictionaryManager, smartbar suggestion strip, text/composing) was
+carried forward as G11.
 
 The personal-pass finding 1.1 + 1.2 touched NLP-adjacent surfaces
 (the incognito gate is consumed by `learnIfAllowed` in
 `KeyboardManager`, which feeds `DictionaryManager.learnWord`), but a
 proper deep audit of the suggestion-strip race conditions, distance-
 algorithm boundaries, surrogate-pair handling, KenLM header parser,
-phantom-space lifecycle, etc., did not complete.
+phantom-space lifecycle, etc., did not complete in the agent pass.
 
-**Disposition:** carry forward to the eighth pass with the same
-agent prompt. Avoid scheduling parallel agents during peak rate-
-limit windows.
+**Disposition:** ✅ local eighth-pass closure in **v1.8.122**. The
+follow-up audit found one concrete KenLM reader defect:
+`KenLmTrieReader.readBytesAt(...)` documented absolute file offsets
+but accepted header/pre-body offsets and coerced them to mapped-body
+offset zero. v1.8.122 rejects pre-body offsets, guards offset
+arithmetic, avoids large-file `toInt()` overflow while probing the
+header, and adds `KenLmTrieReaderTest` coverage. Future full-system
+research runs should still sample NLP periodically, but no
+seventh-pass G11 checklist item remains open.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.121)
+## 5. Open follow-up roster (post-v1.8.122)
 
-Items the seventh-pass audit surfaced that remain open after the
-v1.8.121 dead clipboard history store removal. Priority-scored.
+Items the seventh-pass audit surfaced after the v1.8.121 dead
+clipboard history store removal. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
-| G11 | NLP / autocorrect / suggestion full re-audit (rate-limited agent) | — | 4 | 4 | 2 | **2.5** |
+| G11 | NLP / autocorrect / suggestion local re-audit (rate-limited agent) | — | 4 | 4 | 2 | ✅ **v1.8.122** |
 
-No high-leverage items (score ≥ 5.0) remain. The remaining items are
-structural, external-clock-dependent, or lower-score clipboard follow-ups.
+No high-leverage items (score ≥ 5.0) remain, and no seventh-pass
+follow-up checklist item remains open after v1.8.122. The remaining
+roadmap work is structural, external-clock-dependent, or future
+feature work outside this pass.
 
 ---
 
@@ -175,7 +184,7 @@ structural, external-clock-dependent, or lower-score clipboard follow-ups.
 
 - Voice subsystem agent output (in-session, agentId `a62da4a58412340e6`).
 - Clipboard subsystem agent output (in-session, agentId `ae17df2497d54c6aa`).
-- NLP subsystem agent (rate-limited, no output; agentId `a64f84cebff6af200`).
+- NLP subsystem agent (rate-limited, no output; agentId `a64f84cebff6af200`) plus local G11 audit closure in v1.8.122.
 - Personal pass against `FlorisImeService.kt`, `EditorInstance.kt`,
   `KeyboardManager.kt`, `DictionaryManager.kt` —
   see [`SEVENTH_PASS_FINDINGS.md §1`](SEVENTH_PASS_FINDINGS.md) and
@@ -185,7 +194,7 @@ structural, external-clock-dependent, or lower-score clipboard follow-ups.
 ---
 
 *End of seventh-pass findings. Open items folded into the next
-ROADMAP refresh (`v5.14` at current HEAD) and into
+ROADMAP refresh (`v5.18` at current HEAD) and into
 [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §0.c](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md).
 The ROADMAP append is the canonical user-facing record; this
 file is the audit trail.*
