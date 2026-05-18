@@ -22,7 +22,9 @@ import android.content.res.Configuration
 import android.graphics.drawable.Icon
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.os.Trace
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.autofill.inline.UiVersions
 import androidx.autofill.inline.common.ImageViewStyle
@@ -32,6 +34,7 @@ import androidx.autofill.inline.v1.InlineSuggestionUi
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.graphics.ColorUtils
+import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
@@ -122,21 +125,62 @@ class ThemeManager(context: Context) {
      * callback receivers about the new theme.
      */
     suspend fun updateActiveTheme(action: () -> Unit = { }) = activeThemeGuard.withLock {
+        updateActiveThemeTraced(action, benchmarkSource = "auto")
+    }
+
+    internal suspend fun updateActiveThemeForBenchmark(themeName: ExtensionComponentName) {
+        check(BuildConfig.BUILD_TYPE == "benchmark") {
+            "Benchmark theme switching is only available in benchmark builds"
+        }
+        activeThemeGuard.withLock {
+            updateActiveThemeTraced(
+                action = {},
+                themeNameOverride = themeName,
+                benchmarkSource = "direct",
+            )
+        }
+    }
+
+    private suspend fun updateActiveThemeTraced(
+        action: () -> Unit,
+        themeNameOverride: ExtensionComponentName? = null,
+        benchmarkSource: String,
+    ) {
+        val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
+        val startedAt = if (shouldLogBenchmark) {
+            SystemClock.elapsedRealtimeNanos()
+        } else {
+            0L
+        }
         Trace.beginSection("swiftfloris.theme.switch")
         try {
-            updateActiveThemeLocked(action)
+            updateActiveThemeLocked(action, themeNameOverride)
         } finally {
+            if (shouldLogBenchmark) {
+                val durationMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
+                Log.i(
+                    "SwiftFlorisPerf",
+                    "swiftfloris.theme.switchMs=$durationMs " +
+                        "theme=${_activeThemeInfo.value.name} " +
+                        "source=$benchmarkSource " +
+                        "loadFailed=${_activeThemeInfo.value.loadFailure != null} " +
+                        "cachedThemeCount=${cachedThemeInfos.size}",
+                )
+            }
             Trace.endSection()
         }
     }
 
-    private suspend fun updateActiveThemeLocked(action: () -> Unit) {
+    private suspend fun updateActiveThemeLocked(
+        action: () -> Unit,
+        themeNameOverride: ExtensionComponentName? = null,
+    ) {
         action()
         previewThemeInfo.value?.let { previewThemeInfo ->
             _activeThemeInfo.value = previewThemeInfo
             return
         }
-        val activeName = evaluateActiveThemeName()
+        val activeName = themeNameOverride ?: evaluateActiveThemeName()
         val cachedInfo = cachedThemeInfos.find { it.name == activeName }
         if (cachedInfo != null) {
             _activeThemeInfo.value = cachedInfo

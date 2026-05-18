@@ -15,5 +15,10 @@
             android:name="dev.patrickgold.florisboard.benchmark.BenchmarkDictionaryActivity"
             android:exported="true"
             android:theme="@style/FlorisAppTheme"/>
+        <activity
+            android:name="dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity"
+            android:exported="true"
+            android:theme="@style/FlorisAppTheme"
+            android:windowSoftInputMode="stateAlwaysVisible|adjustResize"/>
     </application>
 </manifest>

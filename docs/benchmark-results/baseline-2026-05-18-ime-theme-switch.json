@@ -1,0 +1,137 @@
+{
+  "benchmark": "themeSwitch",
+  "measuredAt": "2026-05-18T17:04:08.7578167-04:00",
+  "packageName": "dev.patrickgold.florisboard.bench",
+  "imeComponent": "dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.FlorisImeService",
+  "activityComponent": "dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity",
+  "iterations": 5,
+  "targetThemes": [
+    "org.florisboard.themes:swiftkey_pure_light",
+    "org.florisboard.themes:m3e_nord_dark",
+    "org.florisboard.themes:m3e_swiftkey_pure_dark",
+    "org.florisboard.themes:m3e_nord_dark",
+    "org.florisboard.themes:swiftkey_pure_light"
+  ],
+  "device": {
+    "serial": "R5CY34G070L",
+    "manufacturer": "samsung",
+    "model": "SM-S938B",
+    "device": "pa3q",
+    "androidRelease": "16",
+    "sdk": "36"
+  },
+  "summary": {
+    "switchCountMedian": 5.0,
+    "themeSwitchMedianOfRunMediansMs": 18.541197,
+    "themeSwitchMaxMedianMs": 19.587708,
+    "themeSwitchTotalMedianMs": 57.505570999999996,
+    "benchmarkStepMedianOfRunMediansMs": 18.768334,
+    "benchmarkStepMaxMedianMs": 19.667031,
+    "benchmarkColdStepMedianMs": 19.221354,
+    "benchmarkWarmStepMedianMs": 0.2808075,
+    "loadFailureCountMedian": 0.0,
+    "maxCachedThemeCountMedian": 4.0
+  },
+  "runs": [
+    {
+      "iteration": 1,
+      "switchCount": 5,
+      "switchMedianMs": 23.882292,
+      "switchMaxMs": 37.307812,
+      "switchTotalMs": 94.62614599999999,
+      "benchmarkStepMedianMs": 23.950469,
+      "benchmarkStepMaxMs": 38.640625,
+      "benchmarkColdStepMedianMs": 33.381667,
+      "benchmarkWarmStepMedianMs": 0.272344,
+      "loadFailureCount": 0,
+      "maxCachedThemeCount": 4.0,
+      "themes": [
+        "org.florisboard.themes:swiftkey_pure_light",
+        "org.florisboard.themes:m3e_nord_dark",
+        "org.florisboard.themes:m3e_swiftkey_pure_dark"
+      ],
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity }\nStatus: ok\nLaunchState: COLD\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity\nTotalTime: 107\nWaitTime: 108\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 17:03:34.574 23095 23120 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.012292 theme=org.florisboard.themes:base source=auto loadFailed=false cachedThemeCount=0\n05-18 17:03:34.575 23095 23120 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.005938 theme=org.florisboard.themes:base source=auto loadFailed=false cachedThemeCount=0\n05-18 17:03:34.601 23095 23121 I SwiftFlorisPerf: swiftfloris.theme.switchMs=25.390625 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:35.826 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.switchMs=37.307812 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=2\n05-18 17:03:35.826 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=38.640625 step=1 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=false\n05-18 17:03:36.110 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.switchMs=33.326302 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=3\n05-18 17:03:36.110 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=33.381667 step=2 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=false\n05-18 17:03:36.385 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.switchMs=23.882292 theme=org.florisboard.themes:m3e_swiftkey_pure_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:36.385 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=23.950469 step=3 theme=org.florisboard.themes:m3e_swiftkey_pure_dark expectedCacheHit=false\n05-18 17:03:36.635 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.025729 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:36.635 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.11625 step=4 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=true\n05-18 17:03:36.886 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.084011 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:36.886 23095 23095 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.428438 step=5 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=true\n05-18 17:03:38.252 23095 23114 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=1.316094 currentWordLength=0 candidateCount=8\n05-18 17:03:38.253 23095 23118 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=2.175938 currentWordLength=0 candidateCount=8\n05-18 17:03:39.003 23095 23114 I SwiftFlorisPerf: swiftfloris.dict.loadMs=749.416718 language=en wordCount=520837\n05-18 17:03:39.662 23095 23120 I SwiftFlorisPerf: swiftfloris.dict.loadMs=659.105521 language=en wordCount=520837"
+    },
+    {
+      "iteration": 2,
+      "switchCount": 5,
+      "switchMedianMs": 19.102031,
+      "switchMaxMs": 20.743906,
+      "switchTotalMs": 59.877081999999994,
+      "benchmarkStepMedianMs": 19.188073,
+      "benchmarkStepMaxMs": 20.824375,
+      "benchmarkColdStepMedianMs": 19.835208,
+      "benchmarkWarmStepMedianMs": 0.302735,
+      "loadFailureCount": 0,
+      "maxCachedThemeCount": 4.0,
+      "themes": [
+        "org.florisboard.themes:swiftkey_pure_light",
+        "org.florisboard.themes:m3e_nord_dark",
+        "org.florisboard.themes:m3e_swiftkey_pure_dark"
+      ],
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity\nTotalTime: 36\nWaitTime: 37\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 17:03:41.082 23262 23285 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.354115 currentWordLength=0 candidateCount=8\n05-18 17:03:41.083 23262 23284 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.027187 currentWordLength=0 candidateCount=8\n05-18 17:03:41.714 23262 23293 I SwiftFlorisPerf: swiftfloris.theme.switchMs=18.301302 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:41.714 23262 23293 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.005468 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:41.724 23262 23293 I SwiftFlorisPerf: swiftfloris.theme.switchMs=10.332812 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:41.747 23262 23262 I SwiftFlorisPerf: swiftfloris.ime.firstRenderMs=16.268437\n05-18 17:03:41.795 23262 23284 I SwiftFlorisPerf: swiftfloris.dict.loadMs=711.399427 language=en wordCount=520837\n05-18 17:03:42.476 23262 23293 I SwiftFlorisPerf: swiftfloris.dict.loadMs=680.696562 language=en wordCount=520837\n05-18 17:03:42.554 23262 23283 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.111459 currentWordLength=0 candidateCount=8\n05-18 17:03:42.562 23262 23262 I SwiftFlorisPerf: swiftfloris.smartbar.candidates.recomposeMs=1.151198 candidateCount=8 displayMode=CLASSIC\n05-18 17:03:42.921 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.switchMs=19.709895 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=2\n05-18 17:03:42.921 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=19.835208 step=1 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=false\n05-18 17:03:43.193 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.switchMs=19.102031 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=3\n05-18 17:03:43.193 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=19.188073 step=2 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=false\n05-18 17:03:43.464 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.switchMs=20.743906 theme=org.florisboard.themes:m3e_swiftkey_pure_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:43.464 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=20.824375 step=3 theme=org.florisboard.themes:m3e_swiftkey_pure_dark expectedCacheHit=false\n05-18 17:03:43.716 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.141823 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:43.716 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.283178 step=4 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=true\n05-18 17:03:43.969 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.179427 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:43.969 23262 23262 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.322292 step=5 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=true\n05-18 17:03:44.279 23262 23283 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.075468 currentWordLength=0 candidateCount=8"
+    },
+    {
+      "iteration": 3,
+      "switchCount": 5,
+      "switchMedianMs": 18.541197,
+      "switchMaxMs": 19.587708,
+      "switchTotalMs": 57.505570999999996,
+      "benchmarkStepMedianMs": 18.768334,
+      "benchmarkStepMaxMs": 19.667031,
+      "benchmarkColdStepMedianMs": 19.221354,
+      "benchmarkWarmStepMedianMs": 0.23710900000000001,
+      "loadFailureCount": 0,
+      "maxCachedThemeCount": 4.0,
+      "themes": [
+        "org.florisboard.themes:swiftkey_pure_light",
+        "org.florisboard.themes:m3e_nord_dark",
+        "org.florisboard.themes:m3e_swiftkey_pure_dark"
+      ],
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity\nTotalTime: 36\nWaitTime: 42\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 17:03:48.161 23449 23468 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.606875 currentWordLength=0 candidateCount=8\n05-18 17:03:48.162 23449 23474 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=3.242344 currentWordLength=0 candidateCount=8\n05-18 17:03:48.779 23449 23473 I SwiftFlorisPerf: swiftfloris.theme.switchMs=18.57599 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:48.779 23449 23473 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.006198 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:48.790 23449 23473 I SwiftFlorisPerf: swiftfloris.theme.switchMs=10.819687 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:48.812 23449 23449 I SwiftFlorisPerf: swiftfloris.ime.firstRenderMs=16.431875\n05-18 17:03:48.868 23449 23468 I SwiftFlorisPerf: swiftfloris.dict.loadMs=706.509896 language=en wordCount=520837\n05-18 17:03:49.547 23449 23475 I SwiftFlorisPerf: swiftfloris.dict.loadMs=679.311146 language=en wordCount=520837\n05-18 17:03:49.625 23449 23471 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.089271 currentWordLength=0 candidateCount=8\n05-18 17:03:49.632 23449 23449 I SwiftFlorisPerf: swiftfloris.smartbar.candidates.recomposeMs=1.262083 candidateCount=8 displayMode=CLASSIC\n05-18 17:03:49.985 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.switchMs=18.541197 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=2\n05-18 17:03:49.985 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=18.768334 step=1 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=false\n05-18 17:03:50.256 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.switchMs=19.133125 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=3\n05-18 17:03:50.256 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=19.221354 step=2 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=false\n05-18 17:03:50.526 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.switchMs=19.587708 theme=org.florisboard.themes:m3e_swiftkey_pure_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:50.526 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=19.667031 step=3 theme=org.florisboard.themes:m3e_swiftkey_pure_dark expectedCacheHit=false\n05-18 17:03:50.777 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.122916 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:50.777 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.255208 step=4 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=true\n05-18 17:03:51.028 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.120625 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:51.028 23449 23449 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.21901 step=5 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=true\n05-18 17:03:51.331 23449 23471 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.069948 currentWordLength=0 candidateCount=8"
+    },
+    {
+      "iteration": 4,
+      "switchCount": 5,
+      "switchMedianMs": 17.208281,
+      "switchMaxMs": 18.405416,
+      "switchTotalMs": 53.557395,
+      "benchmarkStepMedianMs": 17.344688,
+      "benchmarkStepMaxMs": 18.522188,
+      "benchmarkColdStepMedianMs": 17.444532,
+      "benchmarkWarmStepMedianMs": 0.5759894999999999,
+      "loadFailureCount": 0,
+      "maxCachedThemeCount": 4.0,
+      "themes": [
+        "org.florisboard.themes:swiftkey_pure_light",
+        "org.florisboard.themes:m3e_nord_dark",
+        "org.florisboard.themes:m3e_swiftkey_pure_dark"
+      ],
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity\nTotalTime: 32\nWaitTime: 33\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 17:03:55.259 23624 23642 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.51349 currentWordLength=0 candidateCount=8\n05-18 17:03:55.261 23624 23659 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.037344 currentWordLength=0 candidateCount=8\n05-18 17:03:55.849 23624 23648 I SwiftFlorisPerf: swiftfloris.theme.switchMs=17.253593 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:55.849 23624 23648 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.007448 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:55.861 23624 23648 I SwiftFlorisPerf: swiftfloris.theme.switchMs=11.261562 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:03:55.876 23624 23624 I SwiftFlorisPerf: swiftfloris.ime.firstRenderMs=12.15\n05-18 17:03:55.963 23624 23647 I SwiftFlorisPerf: swiftfloris.dict.loadMs=700.199323 language=en wordCount=520837\n05-18 17:03:56.624 23624 23647 I SwiftFlorisPerf: swiftfloris.dict.loadMs=660.799323 language=en wordCount=520837\n05-18 17:03:56.700 23624 23664 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.115677 currentWordLength=0 candidateCount=8\n05-18 17:03:56.707 23624 23624 I SwiftFlorisPerf: swiftfloris.smartbar.candidates.recomposeMs=1.122761 candidateCount=8 displayMode=CLASSIC\n05-18 17:03:57.057 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.switchMs=18.405416 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=2\n05-18 17:03:57.057 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=18.522188 step=1 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=false\n05-18 17:03:57.326 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.switchMs=17.341094 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=3\n05-18 17:03:57.326 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=17.444532 step=2 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=false\n05-18 17:03:57.594 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.switchMs=17.208281 theme=org.florisboard.themes:m3e_swiftkey_pure_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:57.594 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=17.344688 step=3 theme=org.florisboard.themes:m3e_swiftkey_pure_dark expectedCacheHit=false\n05-18 17:03:57.848 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.480156 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:57.848 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.918646 step=4 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=true\n05-18 17:03:58.099 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.122448 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=4\n05-18 17:03:58.099 23624 23624 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.233333 step=5 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=true\n05-18 17:03:58.397 23624 23664 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.101615 currentWordLength=0 candidateCount=8"
+    },
+    {
+      "iteration": 5,
+      "switchCount": 5,
+      "switchMedianMs": 16.732552,
+      "switchMaxMs": 19.350208,
+      "switchTotalMs": 54.57874899999999,
+      "benchmarkStepMedianMs": 16.902031,
+      "benchmarkStepMaxMs": 19.425104,
+      "benchmarkColdStepMedianMs": 18.250313,
+      "benchmarkWarmStepMedianMs": 0.2808075,
+      "loadFailureCount": 0,
+      "maxCachedThemeCount": 4.0,
+      "themes": [
+        "org.florisboard.themes:swiftkey_pure_light",
+        "org.florisboard.themes:m3e_nord_dark",
+        "org.florisboard.themes:m3e_swiftkey_pure_dark"
+      ],
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkThemeSwitchActivity\nTotalTime: 37\nWaitTime: 39\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 17:04:02.435 23808 23831 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=2.620677 currentWordLength=0 candidateCount=8\n05-18 17:04:02.435 23808 23847 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.650937 currentWordLength=0 candidateCount=8\n05-18 17:04:03.027 23808 23846 I SwiftFlorisPerf: swiftfloris.theme.switchMs=18.853333 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:04:03.027 23808 23846 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.005625 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:04:03.038 23808 23846 I SwiftFlorisPerf: swiftfloris.theme.switchMs=10.505 theme=org.florisboard.themes:swiftkey_pure_dark source=auto loadFailed=false cachedThemeCount=1\n05-18 17:04:03.061 23808 23808 I SwiftFlorisPerf: swiftfloris.ime.firstRenderMs=16.705208\n05-18 17:04:03.153 23808 23849 I SwiftFlorisPerf: swiftfloris.dict.loadMs=716.364687 language=en wordCount=520837\n05-18 17:04:03.828 23808 23846 I SwiftFlorisPerf: swiftfloris.dict.loadMs=674.127551 language=en wordCount=520837\n05-18 17:04:03.894 23808 23833 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.03125 currentWordLength=0 candidateCount=8\n05-18 17:04:03.901 23808 23808 I SwiftFlorisPerf: swiftfloris.smartbar.candidates.recomposeMs=1.129115 candidateCount=8 displayMode=CLASSIC\n05-18 17:04:04.229 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.switchMs=16.732552 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=2\n05-18 17:04:04.229 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=16.902031 step=1 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=false\n05-18 17:04:04.501 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.switchMs=19.350208 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=3\n05-18 17:04:04.501 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=19.425104 step=2 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=false\n05-18 17:04:04.769 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.switchMs=18.171875 theme=org.florisboard.themes:m3e_swiftkey_pure_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:04:04.769 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=18.250313 step=3 theme=org.florisboard.themes:m3e_swiftkey_pure_dark expectedCacheHit=false\n05-18 17:04:05.018 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.106041 theme=org.florisboard.themes:m3e_nord_dark source=direct loadFailed=false cachedThemeCount=4\n05-18 17:04:05.018 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.194271 step=4 theme=org.florisboard.themes:m3e_nord_dark expectedCacheHit=true\n05-18 17:04:05.269 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.switchMs=0.218073 theme=org.florisboard.themes:swiftkey_pure_light source=direct loadFailed=false cachedThemeCount=4\n05-18 17:04:05.269 23808 23808 I SwiftFlorisPerf: swiftfloris.theme.benchmarkStepMs=0.367344 step=5 theme=org.florisboard.themes:swiftkey_pure_light expectedCacheHit=true\n05-18 17:04:05.580 23808 23831 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=0.077708 currentWordLength=0 candidateCount=8"
+    }
+  ]
+}

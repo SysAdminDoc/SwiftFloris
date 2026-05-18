@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.162).
+through v1.8.163).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.162)
+## 3. Stack at HEAD (v1.8.163)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.162** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.163** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup and
 performance-baseline layer.
@@ -469,6 +469,16 @@ restores the previous IME. The first SM-S938B / Android 16 run records median
 nine recompositions per run, median recomposition body 0.326563 ms, median max
 0.770365 ms, median total 4.069529 ms, and paired median
 `swiftfloris.nlp.suggestMs` 0.339896 ms.
+
+v1.8.163 adds the theme-switch baseline. `ThemeManager` now emits
+benchmark-build-only direct `swiftfloris.theme.switchMs` markers, and
+`tools/benchmark-ime-theme-switch.ps1` opens a focused benchmark input field,
+switches across SwiftKey Pure Light, M3E Nord Dark, and M3E SwiftKey Pure Dark
+while the IME is visible, then restores the previous IME. The first SM-S938B /
+Android 16 run records median five direct switches per run, median switch body
+18.541197 ms, median max 19.587708 ms, median total 57.505571 ms, median
+cold-step 19.221354 ms, median warm cached-step 0.2808075 ms, and zero load
+failures.
 
 ## 4. Module layout
 
