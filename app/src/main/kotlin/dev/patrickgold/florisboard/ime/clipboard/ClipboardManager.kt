@@ -96,6 +96,7 @@ class ClipboardManager(
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val cleanUpJob: Job
+    private val historyMaintenanceMutex = Mutex(locked = false)
     private var clipHistoryDb: ClipboardHistoryDatabase? = null
     private val clipHistoryDao: ClipboardHistoryDao? get() = clipHistoryDb?.clipboardItemDao()
 
@@ -119,7 +120,7 @@ class ClipboardManager(
         cleanUpJob = ioScope.launch {
             while (isActive) {
                 delay(INTERVAL)
-                enforceExpiryDate(currentHistory)
+                enforceExpiryDate()
             }
         }
     }
@@ -131,20 +132,22 @@ class ClipboardManager(
                 clipHistoryDao?.let { dao ->
                     ClipboardStorageReconciliation.reconcile(context.applicationContext, dao)
                 }
-                withContext(Dispatchers.Main) {
-                    clipHistoryDao?.getAllAsFlow()?.collect { items ->
-                        updateHistory(items)
-                    }
+                clipHistoryDao?.getAllAsFlow()?.collect { items ->
+                    updateHistory(items)
                 }
             }
         }
     }
 
-    private fun updateHistory(items: List<ClipboardItem>) {
-        val itemsSorted = items.sortedByDescending { it.creationTimestampMs }
-        val clipHistory = ClipboardHistory(itemsSorted)
-        enforceHistoryLimit(clipHistory)
-        historyFlow.value = clipHistory
+    private suspend fun updateHistory(items: List<ClipboardItem>) {
+        historyMaintenanceMutex.withLock {
+            val clipHistory = withContext(Dispatchers.Default) {
+                ClipboardHistoryMaintenance.sortedHistory(items)
+            }
+            val overflowItems = overflowHistoryItems(clipHistory)
+            evictClipboardHistoryItemsNow(overflowItems)
+            historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, overflowItems)
+        }
     }
 
     /**
@@ -275,39 +278,40 @@ class ClipboardManager(
         }
     }
 
-    private fun enforceHistoryLimit(clipHistory: ClipboardHistory) {
-        if (prefs.clipboard.historySizeLimitEnabled.get()) {
-            evictClipboardHistoryItems(
-                ClipboardHistoryEviction.overflowItems(
-                    history = clipHistory,
-                    historySizeLimit = prefs.clipboard.historySizeLimit.get(),
-                ),
+    private fun overflowHistoryItems(clipHistory: ClipboardHistory): List<ClipboardItem> {
+        return if (prefs.clipboard.historySizeLimitEnabled.get()) {
+            ClipboardHistoryEviction.overflowItems(
+                history = clipHistory,
+                historySizeLimit = prefs.clipboard.historySizeLimit.get(),
             )
+        } else {
+            emptyList()
         }
     }
 
-    private fun enforceExpiryDate(clipHistory: ClipboardHistory) {
-        evictClipboardHistoryItems(
-            ClipboardHistoryEviction.expiredItems(
+    private suspend fun enforceExpiryDate() {
+        historyMaintenanceMutex.withLock {
+            val clipHistory = currentHistory
+            val expiredItems = ClipboardHistoryEviction.expiredItems(
                 history = clipHistory,
                 nowMs = System.currentTimeMillis(),
                 oldEnabled = prefs.clipboard.historyAutoCleanOldEnabled.get(),
                 oldAfterMinutes = prefs.clipboard.historyAutoCleanOldAfter.get(),
                 sensitiveEnabled = prefs.clipboard.historyAutoCleanSensitiveEnabled.get(),
                 sensitiveAfterSeconds = prefs.clipboard.historyAutoCleanSensitiveAfter.get(),
-            ),
-        )
+            )
+            evictClipboardHistoryItemsNow(expiredItems)
+            historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, expiredItems)
+        }
     }
 
-    private fun evictClipboardHistoryItems(items: List<ClipboardItem>) {
+    private suspend fun evictClipboardHistoryItemsNow(items: List<ClipboardItem>) {
         if (items.isEmpty()) return
-        ioScope.launch {
-            ClipboardHistoryEviction.closeThenDelete(
-                items = items,
-                closeItem = { it.close(appContext) },
-                deleteItems = { clipHistoryDao?.delete(it) },
-            )
-        }
+        ClipboardHistoryEviction.closeThenDelete(
+            items = items,
+            closeItem = { it.close(appContext) },
+            deleteItems = { clipHistoryDao?.delete(it) },
+        )
     }
 
     private fun moveToTheBeginning(oldItem: ClipboardItem, newItem: ClipboardItem) {

@@ -120,13 +120,13 @@ shipped in this pass; four were structural / out-of-scope.
 | **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphaned provider media files forever | Medium | ✅ **v1.8.116** — startup reconciliation deletes missing-file history rows and unreferenced provider files / metadata rows before history collection. |
 | **#10** — backup-restore dropped the `ClipboardFileInfo` row, so restored items had URIs pointing at IDs not in `clipboard_files` table | Medium | ✅ **v1.8.117** — restore recreates metadata rows and provider cache misses lazy-load metadata from Room. |
 | **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | ✅ **v1.8.118** — clone failures now propagate instead of returning a synthetic `/0` URI; invalid provider insert URIs are rejected before item creation; manager logs and skips failed imports. |
+| **#5, #6** — `enforceHistoryLimit` recurses on its own emission; `updateHistory` runs on Main and sort + filter at every emission | Medium | ✅ **v1.8.119** — Room collection stays on IO, derivation sorts on `Dispatchers.Default`, and eviction is serialized behind one history-maintenance `Mutex`. |
+| **#7** — `enforceExpiryDate` reads `currentHistory` on a background timer with no sync | Low | ✅ **v1.8.119** — timed expiry now shares the same maintenance `Mutex` and visible-history prune path as size-limit eviction. |
 
 ### Open (mostly perf / UX polish or structural)
 
 | Finding | Severity | Disposition |
 |---|---|---|
-| **#5, #6** — `enforceHistoryLimit` recurses on its own emission; `updateHistory` runs on Main and sort + filter at every emission | Medium | Perf cliff at startup with N=200 history + cap=10; needs a `Mutex` or single-threaded dispatcher. Modest refactor; defer. |
-| **#7** — `enforceExpiryDate` reads `currentHistory` on a background timer with no sync | Low | Same fix shape as #5; bundle. |
 | **#8** — no pin-cap; pinned items grow unbounded (combined with #4, pinned media files leak forever) | Low | UX polish + a pref; defer. |
 | **#12** — `openFile` doesn't pre-check `file.exists()` (FileNotFoundException to receiver) | Low | Defer. |
 | **#14** — `primaryClipLastFromCallback` duplicate check too narrow on text-clear-text-cycle | Low | Defer. |
@@ -157,15 +157,14 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.118)
+## 5. Open follow-up roster (post-v1.8.119)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.118 clipboard media clone failure guard. Priority-scored.
+v1.8.119 clipboard history maintenance serialization slice. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
 | G1 | Voice no-local-recogniser: hide / preview-only-flag the local engine catalog UI OR start the integration | Voice #6 | 4 | 4 | 1 | **2.25** |
-| G5 | `enforceHistoryLimit` `Mutex` + off-Main collection | Clipboard #5 + #6 + #7 | 3 | 2 | 1 | **3.5** |
 | G9 | `ClipboardHistoryManager` (Tink store) — confirm intent; delete or wire as backend | Clipboard #17 | 2 | 2 | 1 | **2.5** |
 | G11 | NLP / autocorrect / suggestion full re-audit (rate-limited agent) | — | 4 | 4 | 2 | **2.5** |
 

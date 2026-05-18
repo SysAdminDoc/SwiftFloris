@@ -38,6 +38,15 @@ private fun clip(
 )
 
 class ClipboardHistoryEvictionTest : FunSpec({
+    test("maintenance builds history newest first before publishing") {
+        val oldest = clip(1, 1_000L)
+        val newest = clip(2, 3_000L)
+        val middle = clip(3, 2_000L)
+
+        ClipboardHistoryMaintenance.sortedHistory(listOf(oldest, newest, middle)).all shouldBe
+            listOf(newest, middle, oldest)
+    }
+
     test("history size overflow selects the oldest unpinned items") {
         val now = System.currentTimeMillis()
         val newest = clip(1, now)
@@ -47,6 +56,17 @@ class ClipboardHistoryEvictionTest : FunSpec({
         val history = ClipboardHistory(listOf(newest, middle, oldest, pinnedOldest))
 
         ClipboardHistoryEviction.overflowItems(history, historySizeLimit = 2) shouldBe listOf(oldest)
+    }
+
+    test("maintenance hides evicted rows before the next Room emission") {
+        val newest = clip(1, 3_000L)
+        val middle = clip(2, 2_000L)
+        val oldest = clip(3, 1_000L)
+        val history = ClipboardHistoryMaintenance.sortedHistory(listOf(oldest, newest, middle))
+        val overflowItems = ClipboardHistoryEviction.overflowItems(history, historySizeLimit = 2)
+
+        ClipboardHistoryMaintenance.withoutEvictedItems(history, overflowItems).all shouldBe
+            listOf(newest, middle)
     }
 
     test("expiry selects old unpinned items and sensitive items") {

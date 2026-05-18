@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.118 — clipboard media clone failure guard (seventh-pass clipboard finding #2 closure for failed foreign `content://` image/video clone imports; the full seventh-pass shipped layer is v1.8.104 – v1.8.118, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.119 — clipboard history maintenance serialization (seventh-pass follow-up G5 closure for off-Main history collection plus serialized limit/expiry maintenance; the full seventh-pass shipped layer is v1.8.104 – v1.8.119, documented in §0.c below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -20,7 +20,7 @@ same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Ph
 
 ---
 
-## 0.c Reconciliation with v1.8.104-118 seventh-pass audit releases
+## 0.c Reconciliation with v1.8.104-119 seventh-pass audit releases
 
 The user re-invoked the extreme-audit prompt after the sixth-pass
 roster closed. The seventh research pass dispatched three parallel
@@ -46,8 +46,9 @@ the eighth pass).
 | Clipboard follow-up G3: no startup reconciliation between clipboard-history rows, `ClipboardFileInfo` rows, and on-disk provider files; destructive history migration orphaned files forever | ✅ **v1.8.116** — `ClipboardStorageReconciliation` deletes missing-file history rows and unreferenced provider files / metadata rows before history collection |
 | Clipboard follow-up G4: backup restore copied provider files but did not recreate `ClipboardFileInfo` rows, so restored media URIs pointed at IDs missing from the provider metadata DB | ✅ **v1.8.117** — restore recreates metadata rows and provider cache misses lazy-load metadata from Room |
 | Clipboard agent #2: foreign `content://` image/video URI clone failures were caught inside `ClipboardMediaProvider.insert(...)` and converted into a synthetic `/0` URI, so IME-local history could contain phantom media rows with no backing file | ✅ **v1.8.118** — clone failures now propagate, invalid provider insert URIs are rejected before `ClipboardItem` creation, and `ClipboardManager` logs/skips failed imports |
+| Clipboard follow-up G5 + clipboard agent #7: `updateHistory` sorted / rebuilt history on Main and history-limit eviction re-entered through its own Room emission; timed expiry read `currentHistory` without sharing a maintenance lock | ✅ **v1.8.119** — history collection stays on IO, derivation sorts on `Dispatchers.Default`, and size-limit / timed-expiry eviction share one `Mutex`-serialized maintenance path |
 
-The v1.8.104 – v1.8.118 release notes are the per-release audit trail
+The v1.8.104 – v1.8.119 release notes are the per-release audit trail
 for this seventh-pass shipped layer.
 
 ### 0.c.1 Seventh-pass structural finding carried forward
@@ -75,6 +76,9 @@ closed follow-ups from this roster:
 
 - ✅ **Clipboard #2** — failed foreign `content://` media clones no
   longer create phantom history rows. Shipped in **v1.8.118**.
+- ✅ **G5** — `enforceHistoryLimit` `Mutex` + off-Main collection,
+  bundled with clipboard agent #7 timed-expiry synchronization.
+  Shipped in **v1.8.119**.
 - ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap (image /
   video). Shipped in **v1.8.111**.
 - ✅ **G6** — `revokeUriPermission` on clipboard history rotation /
@@ -767,6 +771,7 @@ but does not require a roadmap change.
 | Seventh-pass G3 clipboard startup storage reconciliation | ✅ v1.8.116 |
 | Seventh-pass G4 clipboard restore media metadata | ✅ v1.8.117 |
 | Seventh-pass clipboard foreign-URI clone failure guard | ✅ v1.8.118 |
+| Seventh-pass G5 clipboard history maintenance serialization | ✅ v1.8.119 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
