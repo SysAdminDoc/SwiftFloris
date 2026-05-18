@@ -524,9 +524,17 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
             // ROADMAP §6 N7.2 — Never write password-field text into the keyboard
-            // clipboard history. The system clipboard still receives it (the host app
-            // initiated the cut), but our IME-local history must not retain it.
-            if (!isPasswordField()) {
+            // clipboard history. The system clipboard still receives it (the host
+            // app initiated the cut), but our IME-local history must not retain it.
+            //
+            // Also suppress when the active field is incognito (user-toggled or
+            // app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING`). Without this gate,
+            // a user typing in Signal who hits Cut would leak the selected
+            // ciphertext-bound text into the IME-local clipboard palette where
+            // it can be re-pasted to any other app via the history surface —
+            // bypassing the host-app sensitive-field declaration that the rest
+            // of the IME (dictionary learn, bigram store, smart-compose) honours.
+            if (!shouldSuppressClipboardHistory()) {
                 clipboardManager.addNewPlaintext(text.toString())
             }
         } else {
@@ -546,8 +554,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         phantomSpace.setInactive()
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
-            // ROADMAP §6 N7.2 — same gating as performClipboardCut.
-            if (!isPasswordField()) {
+            // ROADMAP §6 N7.2 — same gating as performClipboardCut. Suppress when
+            // the field is password OR incognito (user-toggled or app-declared).
+            if (!shouldSuppressClipboardHistory()) {
                 clipboardManager.addNewPlaintext(text.toString())
             }
         } else {
@@ -559,6 +568,28 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
 
     private fun isPasswordField(): Boolean {
         return keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD
+    }
+
+    /**
+     * Whether the IME-local clipboard history MUST refuse to retain the
+     * about-to-be-cut/copied text. Returns true when:
+     *
+     *  - the active field is a password / numeric-PIN / web-password
+     *    field (covered by [isPasswordField] via the v1.8.86
+     *    `keyVariation` propagation for `TYPE_NUMBER_VARIATION_PASSWORD`); or
+     *  - the active state is in incognito mode (user-toggled smartbar
+     *    incognito, or app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING`
+     *    that v1.8.104 now forces on regardless of the user's
+     *    IncognitoMode preference).
+     *
+     * Both signals are existing privacy contracts elsewhere in the IME
+     * (dictionary learn, bigram store, smart-compose, voice — pending
+     * v1.8.106). This helper unifies the gate so future callers can read
+     * one source of truth.
+     */
+    private fun shouldSuppressClipboardHistory(): Boolean {
+        val state = keyboardManager.activeState
+        return state.keyVariation == KeyVariation.PASSWORD || state.isIncognitoMode
     }
 
     /**
