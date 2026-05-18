@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.sp
 object FlorisCardDefaults {
     val IconRequiredSize = 24.dp
     val IconSpacing = 16.dp
+    const val SecondaryContentAlpha = 0.84f
 
     val ContentPadding = PaddingValues(start = 0.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)
 }
@@ -127,7 +128,7 @@ fun FlorisSimpleCard(
                         modifier = Modifier.fillMaxWidth(),
                         text = secondaryText,
                         style = MaterialTheme.typography.bodyMedium,
-                        color = contentColor.copy(alpha = 0.72f),
+                        color = contentColor.copy(alpha = FlorisCardDefaults.SecondaryContentAlpha),
                     )
                 }
                 if (actionLabel != null && onClick != null) {

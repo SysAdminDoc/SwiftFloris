@@ -16,7 +16,7 @@
     "--one-hand-background": "#dfe5ee",
     "--one-hand-foreground": "#2e3440",
     "--incognito-icon-color": "#2e344012",
-    "--on-primary": "#eceff4",
+    "--on-primary": "#000000",
     "--on-background": "#2e3440",
     "--on-background-disabled": "#2e344050",
     "--on-surface": "#2e3440",
@@ -77,7 +77,7 @@
   },
   "key[code=10]:pressed": {
     "background": "var(--primary-variant)",
-    "foreground": "var(--on-primary)"
+    "foreground": "#ffffff"
   },
   "key[code=32]": {
     "background": "var(--surface)",

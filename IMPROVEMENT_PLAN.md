@@ -74,6 +74,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Audited candidate row and smartbar TalkBack labels by extracting `SmartbarAccessibilityLabels`, announcing candidate type/position/text, preserving the remove-candidate custom action label, and pinning quick-action label fallback behavior in JVM tests.
 - 2026-05-18: Audited keyboard key semantics and touch targets by moving semantic focus to each key's real touch bounds, adding an accessibility click action, expanding special-key labels for clipboard/voice/mode/layout/smartbar controls, and pinning the behavior in JVM tests.
 - 2026-05-18: Verified dynamic font scaling on settings and dialogs by adding a shared high-font-scale expansion policy for compact one-line metadata, links, component titles, and theme-rule key previews, with JVM coverage for the threshold behavior.
+- 2026-05-18: Verified theme contrast for keyboard, candidate row, dialogs, and warnings by adding bundled stylesheet selector coverage, dynamic settings color-scheme coverage, fixing low-contrast enter-key theme variants, and raising shared card secondary-copy opacity.
 
 ## Workstreams
 
@@ -202,7 +203,7 @@ Tasks:
 - [x] Audit candidate row and smartbar TalkBack labels.
 - [x] Audit keyboard key semantics and touch target size.
 - [x] Verify dynamic font scaling on settings and dialogs.
-- [ ] Verify theme contrast for keyboard, candidate row, dialogs, and warnings.
+- [x] Verify theme contrast for keyboard, candidate row, dialogs, and warnings.
 - [ ] Ensure state indicators do not rely on color alone.
 - [ ] Add accessibility notes to manual QA checklist.
 

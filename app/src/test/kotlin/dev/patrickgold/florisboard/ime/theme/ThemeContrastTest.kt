@@ -16,13 +16,21 @@
 
 package dev.patrickgold.florisboard.ime.theme
 
+import androidx.compose.ui.graphics.Color
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import org.florisboard.lib.color.ColorMappings
+import org.florisboard.lib.color.neutralDynamicColorScheme
+import org.florisboard.lib.compose.FlorisCardDefaults
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.pow
+import kotlin.math.roundToInt
 
 private const val WcagAaTextContrast = 4.5
 private const val WcagAaaTextContrast = 7.0
@@ -82,6 +90,83 @@ class ThemeContrastTest : FunSpec({
         )
     }
 
+    test("bundled stylesheets keep keyboard, candidate row, and clipboard dialog text at WCAG AA contrast") {
+        locateBundledStylesheetDirectory()
+            .listFiles { file -> file.extension == "json" }
+            .orEmpty()
+            .sortedBy { it.name }
+            .forEach { file ->
+                val stylesheet = loadSnyggStylesheet(file)
+                SnyggContrastCases.forEach { contrastCase ->
+                    val foreground = stylesheet.colorFor(contrastCase.selector, "foreground")
+                    val background = stylesheet.optionalColorFor(contrastCase.selector, "background")
+                        ?: contrastCase.fallbackBackgroundSelector?.let { selector ->
+                            stylesheet.colorFor(selector, "background")
+                        }
+                        ?: contrastCase.fallbackBackgroundToken?.let { token ->
+                            stylesheet.resolveColor("var($token)")
+                        }
+                        ?: error("Missing background for ${contrastCase.selector} in ${file.path}")
+
+                    assertContrast(
+                        label = "${file.name} ${contrastCase.selector}",
+                        foreground = foreground,
+                        background = background,
+                    )
+                }
+            }
+    }
+
+    test("settings warning, error, and dialog colors meet WCAG AA contrast") {
+        ColorMappings.colors.forEach { accent ->
+            val accentLabel = accent.toColorRgb().toHexLabel()
+            listOf(
+                "light" to neutralDynamicColorScheme(primary = accent, isDark = false),
+                "dark" to neutralDynamicColorScheme(primary = accent, isDark = true),
+                "amoled" to neutralDynamicColorScheme(primary = accent, isDark = true, isAmoled = true),
+            ).forEach { (schemeName, scheme) ->
+                val label = "$schemeName accent $accentLabel"
+
+                assertContrast(
+                    label = "$label warning card",
+                    foreground = scheme.onTertiaryContainer.toColorRgb(),
+                    background = scheme.tertiaryContainer.toColorRgb(),
+                )
+                assertContrast(
+                    label = "$label warning card secondary",
+                    foreground = scheme.onTertiaryContainer.toColorRgb().compositeOver(
+                        background = scheme.tertiaryContainer.toColorRgb(),
+                        alpha = FlorisCardDefaults.SecondaryContentAlpha,
+                    ),
+                    background = scheme.tertiaryContainer.toColorRgb(),
+                )
+                assertContrast(
+                    label = "$label error card",
+                    foreground = scheme.onErrorContainer.toColorRgb(),
+                    background = scheme.errorContainer.toColorRgb(),
+                )
+                assertContrast(
+                    label = "$label error card secondary",
+                    foreground = scheme.onErrorContainer.toColorRgb().compositeOver(
+                        background = scheme.errorContainer.toColorRgb(),
+                        alpha = FlorisCardDefaults.SecondaryContentAlpha,
+                    ),
+                    background = scheme.errorContainer.toColorRgb(),
+                )
+                assertContrast(
+                    label = "$label settings dialog text",
+                    foreground = scheme.onSurface.toColorRgb(),
+                    background = scheme.surfaceContainerHigh.toColorRgb(),
+                )
+                assertContrast(
+                    label = "$label settings dialog secondary text",
+                    foreground = scheme.onSurfaceVariant.toColorRgb(),
+                    background = scheme.surfaceContainerHigh.toColorRgb(),
+                )
+            }
+        }
+    }
+
     test("SwiftKey High Contrast and Aurora Animated are registered bundled stylesheets") {
         val manifest = locateThemeExtensionManifest().readText()
         manifest.contains("\"version\": \"0.4.0\"") shouldBe true
@@ -115,13 +200,12 @@ private fun assertTextContrast(
     textSurfacePairs: List<Pair<String, String>>,
 ) {
     textSurfacePairs.forEach { (textToken, surfaceToken) ->
-        val contrast = contrastRatio(
+        assertContrast(
+            label = "$textToken on $surfaceToken",
             foreground = colors.getValue(textToken),
             background = colors.getValue(surfaceToken),
+            minContrast = minContrast,
         )
-        withClue("$textToken on $surfaceToken contrast ${"%.2f".format(contrast)}") {
-            (contrast >= minContrast) shouldBe true
-        }
     }
 }
 
@@ -176,13 +260,78 @@ private fun locateThemeExtensionManifest(): File {
 }
 
 private fun locateBundledStylesheet(fileName: String): File {
-    val candidates = listOf(
-        File("app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets/$fileName"),
-        File("src/main/assets/ime/theme/org.florisboard.themes/stylesheets/$fileName"),
-    )
-    return candidates.firstOrNull { it.exists() }
+    return File(locateBundledStylesheetDirectory(), fileName)
+        .takeIf { it.exists() }
         ?: error("$fileName not reachable from working directory ${File(".").absolutePath}")
 }
+
+private fun locateBundledStylesheetDirectory(): File {
+    val candidates = listOf(
+        File("app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets"),
+        File("src/main/assets/ime/theme/org.florisboard.themes/stylesheets"),
+    )
+    return candidates.firstOrNull { it.exists() }
+        ?: error("theme stylesheets not reachable from working directory ${File(".").absolutePath}")
+}
+
+private val SnyggContrastCases = listOf(
+    SnyggContrastCase(selector = "key", fallbackBackgroundToken = "--background"),
+    SnyggContrastCase(selector = "key:pressed"),
+    SnyggContrastCase(selector = "key[code=10]"),
+    SnyggContrastCase(selector = "key[code=10]:pressed"),
+    SnyggContrastCase(selector = "smartbar-candidate-word", fallbackBackgroundToken = "--background"),
+    SnyggContrastCase(selector = "smartbar-candidate-word:pressed"),
+    SnyggContrastCase(selector = "smartbar-candidate-clip", fallbackBackgroundToken = "--background"),
+    SnyggContrastCase(selector = "smartbar-candidate-clip:pressed"),
+    SnyggContrastCase(selector = "clipboard-clear-all-dialog"),
+    SnyggContrastCase(
+        selector = "clipboard-clear-all-dialog-button",
+        fallbackBackgroundSelector = "clipboard-clear-all-dialog",
+    ),
+)
+
+private data class SnyggContrastCase(
+    val selector: String,
+    val fallbackBackgroundToken: String? = null,
+    val fallbackBackgroundSelector: String? = null,
+)
+
+private fun loadSnyggStylesheet(file: File): SnyggStylesheet {
+    val root = Json.parseToJsonElement(file.readText()).jsonObject
+    val defines = root.getValue("@defines").jsonObject
+        .mapValues { (_, value) -> value.jsonPrimitive.content }
+    return SnyggStylesheet(file = file, defines = defines, root = root)
+}
+
+private data class SnyggStylesheet(
+    val file: File,
+    val defines: Map<String, String>,
+    val root: kotlinx.serialization.json.JsonObject,
+) {
+    fun colorFor(selector: String, attr: String): ColorRgb {
+        return optionalColorFor(selector = selector, attr = attr)
+            ?: error("Transparent $attr for $selector in ${file.path} needs a fallback")
+    }
+
+    fun optionalColorFor(selector: String, attr: String): ColorRgb? {
+        val rule = root[selector]?.jsonObject
+            ?: error("Missing $selector in ${file.path}")
+        val expression = rule[attr]?.jsonPrimitive?.content
+            ?: error("Missing $attr for $selector in ${file.path}")
+        return resolveColor(expression)
+    }
+
+    fun resolveColor(expression: String): ColorRgb? {
+        val value = expression.trim()
+        if (value == "transparent") return null
+        VarColorRegex.matchEntire(value)?.let { match ->
+            return resolveColor(defines.getValue(match.groupValues[1]))
+        }
+        return parseColor(value)
+    }
+}
+
+private val VarColorRegex = Regex("""var\((--[^)]+)\)""")
 
 private val StylesheetDefinesRegex = Regex(""""@defines"\s*:\s*\{([\s\S]*?)\n\s*\}""")
 private val SnyggDefineColorRegex = Regex(""""(--[^"]+)"\s*:\s*"(#[0-9a-fA-F]{6,8})"""")
@@ -201,6 +350,45 @@ private fun parseColor(value: String): ColorRgb {
         green = rgb.substring(2, 4).toInt(16),
         blue = rgb.substring(4, 6).toInt(16),
     )
+}
+
+private fun Color.toColorRgb(): ColorRgb {
+    return ColorRgb(
+        red = (red * 255).roundToInt(),
+        green = (green * 255).roundToInt(),
+        blue = (blue * 255).roundToInt(),
+    )
+}
+
+private fun ColorRgb.toHexLabel(): String {
+    return "#%02x%02x%02x".format(red, green, blue)
+}
+
+private fun ColorRgb.compositeOver(
+    background: ColorRgb,
+    alpha: Float,
+): ColorRgb {
+    return ColorRgb(
+        red = compositeChannel(red, background.red, alpha),
+        green = compositeChannel(green, background.green, alpha),
+        blue = compositeChannel(blue, background.blue, alpha),
+    )
+}
+
+private fun compositeChannel(foreground: Int, background: Int, alpha: Float): Int {
+    return (foreground * alpha + background * (1f - alpha)).roundToInt()
+}
+
+private fun assertContrast(
+    label: String,
+    foreground: ColorRgb,
+    background: ColorRgb,
+    minContrast: Double = WcagAaTextContrast,
+) {
+    val contrast = contrastRatio(foreground = foreground, background = background)
+    withClue("$label contrast ${"%.2f".format(contrast)}") {
+        (contrast >= minContrast) shouldBe true
+    }
 }
 
 private fun contrastRatio(foreground: ColorRgb, background: ColorRgb): Double {
