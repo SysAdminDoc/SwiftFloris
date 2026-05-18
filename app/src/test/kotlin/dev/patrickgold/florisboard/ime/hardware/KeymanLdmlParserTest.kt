@@ -106,8 +106,8 @@ class KeymanLdmlParserTest : FunSpec({
 
     test("multi-alternate longPress with no shift leaves shift slot null") {
         // longPress with spaces is a list of alternates; none should be
-        // promoted into the shift slot (the alternates UX is a separate
-        // feature once HardwareKeyEntry grows a longPressAlternates field).
+        // promoted into the shift slot. The alternates list is populated
+        // into longPressAlternates for the future popup-routing slice.
         val ldml = """
             <keyboard locale="x-test">
               <keys>
@@ -119,11 +119,14 @@ class KeymanLdmlParserTest : FunSpec({
         val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
         a01.normal shouldBe 'a'.code
         a01.shift shouldBe null
+        a01.longPressAlternates shouldBe listOf('ä'.code, 'á'.code, 'à'.code)
     }
 
     test("single-alternate longPress with no shift remains usable as shift fallback") {
         // Preserves the Amharic SERA-style backward-compat case where the
         // LDML author used longPress as the shift workaround.
+        // The alternates list still gets populated — both surfaces are
+        // accurate representations of the LDML.
         val ldml = """
             <keyboard locale="x-test">
               <keys>
@@ -135,6 +138,37 @@ class KeymanLdmlParserTest : FunSpec({
         val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
         a01.normal shouldBe 'a'.code
         a01.shift shouldBe 'A'.code
+        a01.longPressAlternates shouldBe listOf('A'.code)
+    }
+
+    test("longPress alternates are populated alongside shift when both attributes are present") {
+        // shift= wins for the shift slot (v1.8.92); longPressAlternates
+        // independently captures the full list for the long-press popup.
+        val ldml = """
+            <keyboard locale="x-test">
+              <keys>
+                <key id="A01" output="a" shift="A" longPress="ä á à â"/>
+              </keys>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
+        a01.normal shouldBe 'a'.code
+        a01.shift shouldBe 'A'.code
+        a01.longPressAlternates shouldBe listOf('ä'.code, 'á'.code, 'à'.code, 'â'.code)
+    }
+
+    test("empty longPressAlternates when longPress attribute is absent") {
+        val ldml = """
+            <keyboard locale="x-test">
+              <keys>
+                <key id="A01" output="a" shift="A"/>
+              </keys>
+            </keyboard>
+        """.trimIndent()
+        val layout = KeymanLdmlParser.parse(ldml)
+        val a01 = layout.scancodeMap.values.first { it.virtualKeyName == "A01" }
+        a01.longPressAlternates shouldBe emptyList()
     }
 
     test("display override with to attribute labels the matching key output") {
