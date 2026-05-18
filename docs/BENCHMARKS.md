@@ -2,7 +2,8 @@
 
 ROADMAP §7 Next-12.1. Macrobenchmark harness lives at
 `benchmark/src/main/kotlin/dev/patrickgold/florisboard/benchmark/
-KeyboardLatencyBenchmark.kt`. Run on a clocks-locked device:
+KeyboardLatencyBenchmark.kt`. The adb first-render harness lives at
+`tools/benchmark-ime-first-render.ps1`. Run on a clocks-locked device:
 
 ```bash
 # Lock device clocks (Pixel 6 / S25 Ultra example).
@@ -11,20 +12,28 @@ adb shell input keyevent KEYCODE_WAKEUP
 # … additional clock-locking per Macrobenchmark docs:
 # https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview
 
+./gradlew :app:assembleBenchmark :benchmark:assembleBenchmark
+
+# Repeatable adb baseline for IME first render.
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-first-render.ps1 -Iterations 5
+
+# AndroidX Macrobenchmark trace/frame runs.
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
 ```
 
 Collect output from
-`benchmark/build/outputs/connected_android_test_additional_output/`.
+`benchmark/build/outputs/connected_android_test_additional_output/` for
+AndroidX Macrobenchmark runs. The adb first-render script writes JSON to
+`docs/benchmark-results/`.
 
-## Latency baseline — pending first device run
+## Latency baseline
 
-| Benchmark | medianFrameDurationCpuMs | medianFrameOverrunMs | TraceSection p50 / p95 |
-|---|---|---|---|
-| `imeFirstRender` (cold IME view inflation) | _pending_ | _pending_ | `swiftfloris.ime.firstRender`: _pending_ |
-| `suggestionStripRecomposition` (warm-start with typed text) | _pending_ | _pending_ | `swiftfloris.nlp.suggest` + `swiftfloris.smartbar.candidates.recompose`: _pending_ |
-| `dictionaryColdLoad` (SCOWL 117k load) | _pending_ | _pending_ | `swiftfloris.dict.load` + `swiftfloris.nlp.symspell.build`: _pending_ |
-| `themeSwitch` (Snygg stylesheet swap) | _pending_ | _pending_ | `swiftfloris.theme.switch`: _pending_ |
+| Benchmark | Device / iterations | Launch median | TraceSection / log median | Evidence |
+|---|---|---|---|---|
+| `imeFirstRender` (cold IME view inflation) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: `TotalTime` 31.0 ms, `WaitTime` 34.0 ms | `SwiftFlorisPerf`: `swiftfloris.ime.firstRenderMs` 18.335469 ms | [`baseline-2026-05-18-ime-first-render.json`](benchmark-results/baseline-2026-05-18-ime-first-render.json) |
+| `suggestionStripRecomposition` (warm-start with typed text) | _pending_ | _pending_ | `swiftfloris.nlp.suggest` + `swiftfloris.smartbar.candidates.recompose`: _pending_ | _pending_ |
+| `dictionaryColdLoad` (SCOWL 117k load) | _pending_ | _pending_ | `swiftfloris.dict.load` + `swiftfloris.nlp.symspell.build`: _pending_ | _pending_ |
+| `themeSwitch` (Snygg stylesheet swap) | _pending_ | _pending_ | `swiftfloris.theme.switch`: _pending_ | _pending_ |
 
 ## Glide trace benchmark — pending first corpus run
 
@@ -73,13 +82,14 @@ try {
 
 ## Historical baselines
 
-Each baseline lives at `docs/benchmark-results/baseline-YYYY-MM-DD.json`
+Each baseline lives at `docs/benchmark-results/baseline-YYYY-MM-DD*.json`
 so subsequent runs can compare against the recorded numbers. Format:
-raw `BenchmarkResult` JSON as emitted by AndroidX Macrobenchmark.
+raw `BenchmarkResult` JSON as emitted by AndroidX Macrobenchmark, or the
+script-emitted JSON for adb-only baselines.
 
 | Date | Device | Build | Result file |
 |---|---|---|---|
-| _pending_ | _pending_ | _pending_ | _pending_ |
+| 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.159 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-first-render.json`](benchmark-results/baseline-2026-05-18-ime-first-render.json) |
 
 ## How to read a regression
 

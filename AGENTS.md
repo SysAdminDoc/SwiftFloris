@@ -11,7 +11,7 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 ## Read this first
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, the v1.8.158
+   project context. Pins the load-bearing invariants, the v1.8.159
    stack, the module layout, the roadmap-file routing, and the current
    sprint state.
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,
@@ -80,7 +80,7 @@ and Definition-of-Done evidence.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump
 in lockstep with the release-notes commit. Tag the release commit at the
-   same time. Local and remote release tags are current through `v1.8.158`
+   same time. Local and remote release tags are current through `v1.8.159`
 as of 2026-05-18.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)

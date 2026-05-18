@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Benchmark-only manifest overlay. The benchmark build type is used by
-    AndroidX Macrobenchmark / baseline-profile generation and requires the
-    process be profileable from shell. Kept out of main so release/beta APKs
-    distributed to end users do not advertise as profileable.
--->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
     <application>
-        <profileable android:shell="true"/>
+        <activity
+            android:name="dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity"
+            android:exported="true"
+            android:theme="@style/FlorisAppTheme"
+            android:windowSoftInputMode="stateAlwaysVisible|adjustResize"/>
     </application>
 </manifest>

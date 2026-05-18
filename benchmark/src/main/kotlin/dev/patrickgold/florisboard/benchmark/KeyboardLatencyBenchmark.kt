@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.benchmark
 
 import androidx.benchmark.macro.CompilationMode
+import androidx.benchmark.macro.ExperimentalMetricApi
 import androidx.benchmark.macro.FrameTimingMetric
 import androidx.benchmark.macro.MemoryUsageMetric
 import androidx.benchmark.macro.StartupMode
@@ -61,6 +62,7 @@ import org.junit.runner.RunWith
  * The [TraceSectionMetric] picks up matching names automatically.
  */
 @RunWith(AndroidJUnit4ClassRunner::class)
+@OptIn(ExperimentalMetricApi::class)
 class KeyboardLatencyBenchmark {
 
     @get:Rule
@@ -73,7 +75,7 @@ class KeyboardLatencyBenchmark {
      */
     @Test
     fun imeFirstRender() = benchmarkRule.measureRepeated(
-        packageName = "dev.patrickgold.florisboard",
+        packageName = TargetPackageName,
         metrics = listOf(
             FrameTimingMetric(),
             TraceSectionMetric("swiftfloris.ime.firstRender"),
@@ -83,11 +85,10 @@ class KeyboardLatencyBenchmark {
         startupMode = StartupMode.COLD,
         setupBlock = {
             pressHome()
-            device.executeShellCommand("ime enable dev.patrickgold.florisboard/.FlorisImeService")
-            device.executeShellCommand("ime set dev.patrickgold.florisboard/.FlorisImeService")
+            selectTargetIme()
         },
     ) {
-        startActivityAndWait()
+        startBenchmarkInputActivityAndWait()
         device.waitForIdle(2_000)
     }
 
@@ -103,7 +104,7 @@ class KeyboardLatencyBenchmark {
      */
     @Test
     fun suggestionStripRecomposition() = benchmarkRule.measureRepeated(
-        packageName = "dev.patrickgold.florisboard",
+        packageName = TargetPackageName,
         metrics = listOf(
             FrameTimingMetric(),
             TraceSectionMetric("swiftfloris.nlp.suggest"),
@@ -112,6 +113,11 @@ class KeyboardLatencyBenchmark {
         compilationMode = CompilationMode.Partial(),
         iterations = 5,
         startupMode = StartupMode.WARM,
+        setupBlock = {
+            selectTargetIme()
+            startBenchmarkInputActivityAndWait()
+            device.waitForIdle(1_000)
+        },
     ) {
         // Type a SCOWL-known sequence to exercise the dictionary, SymSpell,
         // bigram, and multilingual paths in one pass.
@@ -127,7 +133,7 @@ class KeyboardLatencyBenchmark {
      */
     @Test
     fun dictionaryColdLoad() = benchmarkRule.measureRepeated(
-        packageName = "dev.patrickgold.florisboard",
+        packageName = TargetPackageName,
         metrics = listOf(
             MemoryUsageMetric(MemoryUsageMetric.Mode.Max),
             TraceSectionMetric("swiftfloris.dict.load"),
@@ -136,7 +142,12 @@ class KeyboardLatencyBenchmark {
         compilationMode = CompilationMode.Partial(),
         iterations = 3,
         startupMode = StartupMode.COLD,
+        setupBlock = {
+            pressHome()
+            selectTargetIme()
+        },
     ) {
+        startBenchmarkInputActivityAndWait()
         device.executeShellCommand("input text 'teh'")
         device.waitForIdle(2_000)
     }
@@ -149,7 +160,7 @@ class KeyboardLatencyBenchmark {
      */
     @Test
     fun themeSwitch() = benchmarkRule.measureRepeated(
-        packageName = "dev.patrickgold.florisboard",
+        packageName = TargetPackageName,
         metrics = listOf(
             FrameTimingMetric(),
             TraceSectionMetric("swiftfloris.theme.switch"),
@@ -157,6 +168,11 @@ class KeyboardLatencyBenchmark {
         compilationMode = CompilationMode.Partial(),
         iterations = 5,
         startupMode = StartupMode.WARM,
+        setupBlock = {
+            selectTargetIme()
+            startBenchmarkInputActivityAndWait()
+            device.waitForIdle(1_000)
+        },
     ) {
         device.executeShellCommand("input keyevent KEYCODE_BACK")
         device.waitForIdle(500)

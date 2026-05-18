@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.158-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.159-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.158 | Privacy posture |
+| Area | What's in v1.8.159 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -124,7 +124,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.55).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.56).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -149,7 +149,7 @@ lib/color                  — color math
 lib/compose                — Compose helpers
 lib/kotlin                 — pure-Kotlin utilities
 lib/snygg                  — Snygg theme engine
-:benchmark                 — Macrobenchmark module (present on disk, not yet wired in settings)
+:benchmark                 — Macrobenchmark + adb benchmark harness (active in settings)
 :lib:native                — placeholder for future native add-ons (commented out)
 ```
 
@@ -261,13 +261,13 @@ Six Macrobenchmark trace sections are emitted from production code paths:
 - `swiftfloris.dict.load` (`loadSpecificDictionary`)
 - `swiftfloris.nlp.symspell.build` (lazy index init)
 
-Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section that produced them.
+Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). The v1.8.159 SM-S938B / Android 16 baseline records `am start -W` medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, plus benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms. The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section or log marker that produced them.
 
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
 - **Visual regression:** Roborazzi 1.60.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, backed by committed baselines for the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
-- **Macrobenchmark:** trace sections wired in production hot paths; device-number capture is tracked separately.
+- **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb first-render harness records repeatable IME cold-start baselines.
 - **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 - **Repo hygiene gate:** CI runs `scripts/check-no-root-crash-logs.sh` so root
   `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed.
@@ -276,6 +276,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.159** (2026-05-18) — IME first-render benchmark baseline: `:benchmark` is active again, a benchmark-only input activity drives cold IME view creation, and SM-S938B / Android 16 first-render numbers are committed under `docs/benchmark-results/`. ([notes](RELEASE_NOTES_v1.8.159.md))
 - **v1.8.158** (2026-05-18) — Accessibility manual QA notes: contributor and accessibility docs now list TalkBack traversal, key-label, candidate-row, font-scale, non-color-state, and theme/layout checks. ([notes](RELEASE_NOTES_v1.8.158.md))
 - **v1.8.157** (2026-05-18) — Non-color state indicators: shared success/progress/neutral cards and extension-import row icons make readiness, progress, cancellation, and completion visible without relying on color alone. ([notes](RELEASE_NOTES_v1.8.157.md))
 - **v1.8.156** (2026-05-18) — Theme contrast audit: bundled keyboard/candidate/dialog styles and settings warning/error/dialog palettes now have selector-level AA coverage; low-contrast enter-key variants and card secondary text were tightened. ([notes](RELEASE_NOTES_v1.8.156.md))
@@ -424,7 +425,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.158** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.159** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 
