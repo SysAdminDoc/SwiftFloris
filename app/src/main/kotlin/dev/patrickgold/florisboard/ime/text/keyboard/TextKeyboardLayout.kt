@@ -52,11 +52,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInteropFilter
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -120,7 +125,8 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggText
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 import kotlin.math.abs
-import kotlin.math.sqrt
+import kotlin.math.max
+import kotlin.math.min
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalComposeUiApi::class)
@@ -238,24 +244,31 @@ fun TextKeyboardLayout(
             .drawWithContent {
                 drawContent()
                 if (glideEnabled && glideShowTrail) {
-                    val targetDist = 3.0f
                     val radius = 20.0f
-
-                    val radiusReductionFactor = 0.99f
                     if (controller.fadingGlideRadius > 0) {
                         controller.drawGlideTrail(
                             this,
                             controller.fadingGlide,
-                            targetDist,
-                            controller.fadingGlideRadius,
-                            radiusReductionFactor,
+                            radius,
                             glideTrailColor,
+                            fadeProgress = controller.fadingGlideRadius / 20.0f,
                         )
                     }
                     if (controller.isGliding && controller.glideDataForDrawing.isNotEmpty()) {
+                        controller.glideActiveKey?.let { key ->
+                            val bounds = key.visibleBounds
+                            drawRoundRect(
+                                color = glideTrailColor.copy(alpha = 0.12f),
+                                topLeft = Offset(bounds.left, bounds.top),
+                                size = Size(bounds.width, bounds.height),
+                                cornerRadius = CornerRadius(8f, 8f),
+                            )
+                        }
                         controller.drawGlideTrail(
-                            this, controller.glideDataForDrawing, targetDist, radius,
-                            radiusReductionFactor, glideTrailColor,
+                            this,
+                            controller.glideDataForDrawing,
+                            radius,
+                            glideTrailColor,
                         )
                     }
                 }
@@ -722,6 +735,7 @@ private class TextKeyboardLayoutController(
     val glideDataForDrawing = mutableStateListOf<Pair<GlideTypingGesture.Detector.Position, Long>>()
     val fadingGlide = mutableStateListOf<Pair<GlideTypingGesture.Detector.Position, Long>>()
     var fadingGlideRadius by mutableFloatStateOf(0.0f)
+    var glideActiveKey by mutableStateOf<TextKey?>(null)
     private val swipeGestureDetector = SwipeGesture.Detector(this)
 
     lateinit var keyboard: TextKeyboard
@@ -1372,10 +1386,11 @@ private class TextKeyboardLayoutController(
     override fun onGlideAddPoint(point: GlideTypingGesture.Detector.Position) {
         if (isGlideEnabled) {
             glideDataForDrawing.add(point to System.currentTimeMillis())
+            val pointed = keyboard.getKeyForPos(point.x, point.y)
+            glideActiveKey = pointed
             // Flow Through Space: split the gesture into separate words when the trace
             // crosses the top edge of the space bar after first leaving it.
             if (prefs.glide.flowThroughSpace.get() && keyboard.mode == KeyboardMode.CHARACTERS) {
-                val pointed = keyboard.getKeyForPos(point.x, point.y)
                 val isOnSpace = pointed?.computedData?.code == KeyCode.SPACE ||
                     pointed?.computedData?.code == KeyCode.CJK_SPACE
                 if (!isOnSpace) {
@@ -1400,6 +1415,7 @@ private class TextKeyboardLayoutController(
     }
 
     override fun onGlideCancelled() {
+        glideActiveKey = null
         if (prefs.glide.showTrail.get()) {
             fadingGlide.clear()
             fadingGlide.addAll(glideDataForDrawing)
@@ -1419,37 +1435,72 @@ private class TextKeyboardLayoutController(
 
     fun drawGlideTrail(
         drawScope: ContentDrawScope,
-        gestureData: MutableList<Pair<GlideTypingGesture.Detector.Position, Long>>,
-        targetDist: Float,
+        gestureData: List<Pair<GlideTypingGesture.Detector.Position, Long>>,
         initialRadius: Float,
-        radiusReductionFactor: Float,
         color: Color,
+        fadeProgress: Float = 1.0f,
     ) {
-        var radius = initialRadius
-        var drawnPoints = 0
-        var prevX = gestureData.lastOrNull()?.first?.x ?: 0.0f
-        var prevY = gestureData.lastOrNull()?.first?.y ?: 0.0f
+        if (gestureData.size < 2 || fadeProgress <= 0f) return
         val time = System.currentTimeMillis()
+        val trailDurationMs = prefs.glide.trailDuration.get()
 
-        outer@ for (i in gestureData.size - 1 downTo 1) {
-            if (time - gestureData[i - 1].second > prefs.glide.trailDuration.get()) break
-
-            val dx = prevX - gestureData[i - 1].first.x
-            val dy = prevY - gestureData[i - 1].first.y
-            val dist = sqrt(dx * dx + dy * dy)
-
-            val numPoints = (dist / targetDist).toInt()
-            for (j in 0 until numPoints) {
-                radius *= radiusReductionFactor
-                val intermediateX =
-                    gestureData[i].first.x * (1 - j.toFloat() / numPoints) + gestureData[i - 1].first.x * (j.toFloat() / numPoints)
-                val intermediateY =
-                    gestureData[i].first.y * (1 - j.toFloat() / numPoints) + gestureData[i - 1].first.y * (j.toFloat() / numPoints)
-                drawScope.drawCircle(color, radius, center = Offset(intermediateX, intermediateY))
-                drawnPoints += 1
-                prevX = intermediateX
-                prevY = intermediateY
+        // Find first point still within the visible trail window.
+        var firstVisible = -1
+        for (i in gestureData.indices) {
+            if (time - gestureData[i].second <= trailDurationMs) {
+                firstVisible = i
+                break
             }
+        }
+        if (firstVisible < 0) return
+        val visibleCount = gestureData.size - firstVisible
+        if (visibleCount < 2) return
+
+        // Split the visible trail into segments for graduated opacity/width.
+        val segCount = min(12, max(2, visibleCount / 4))
+        val dataEnd = firstVisible + visibleCount // exclusive upper bound
+
+        for (seg in 0 until segCount) {
+            val segStart = firstVisible + (seg.toLong() * visibleCount / segCount).toInt()
+            val nextSegStart = firstVisible + ((seg + 1).toLong() * visibleCount / segCount).toInt()
+            // Include one extra point from next segment for seamless overlap at boundaries.
+            val segEnd = if (seg < segCount - 1) min(nextSegStart + 1, dataEnd) else min(nextSegStart, dataEnd)
+            if (segEnd - segStart < 2) continue
+
+            // progress: 0 at oldest visible segment → 1 at newest (finger end).
+            val progress = (seg + 1f) / segCount
+            val easedAlpha = progress * progress * 0.85f * fadeProgress
+            val width = initialRadius * (0.35f + 0.65f * progress) * fadeProgress
+
+            val path = Path().apply {
+                moveTo(gestureData[segStart].first.x, gestureData[segStart].first.y)
+                for (i in segStart + 1 until segEnd) {
+                    lineTo(gestureData[i].first.x, gestureData[i].first.y)
+                }
+            }
+
+            // Outer glow — wide, low-opacity bloom.
+            drawScope.drawPath(
+                path,
+                color.copy(alpha = easedAlpha * 0.12f),
+                style = Stroke(width * 3.5f, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+            // Core trail.
+            drawScope.drawPath(
+                path,
+                color.copy(alpha = easedAlpha),
+                style = Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round),
+            )
+        }
+
+        // Bright head dot at the finger position.
+        if (fadeProgress > 0.5f) {
+            val head = gestureData.last().first
+            val headCenter = Offset(head.x, head.y)
+            val dotAlpha = fadeProgress
+            drawScope.drawCircle(color.copy(alpha = dotAlpha * 0.15f), initialRadius * 1.5f, headCenter)
+            drawScope.drawCircle(color.copy(alpha = dotAlpha * 0.9f), initialRadius * 0.5f, headCenter)
+            drawScope.drawCircle(Color.White.copy(alpha = dotAlpha * 0.6f), initialRadius * 0.2f, headCenter)
         }
     }
 
