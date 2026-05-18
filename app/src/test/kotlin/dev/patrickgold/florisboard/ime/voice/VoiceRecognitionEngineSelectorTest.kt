@@ -78,6 +78,64 @@ class VoiceRecognitionEngineSelectorTest : FunSpec({
         selection.reason shouldBe VoiceRecognitionEngineRouteReason.FALLBACK_EXTERNAL_WHILE_LOCAL_UNAVAILABLE
     }
 
+    test("auto falls back to external voice input while local runtime is preview-only") {
+        val selection = select(
+            profile = highRam,
+            availability = availability(
+                hasEmbeddedWhisperModel = true,
+                hasVoskStreamingModel = true,
+                externalVoiceInputReady = true,
+                localRecognizerRuntimeAvailable = false,
+            ),
+        )
+
+        selection.route shouldBe VoiceRecognitionEngineRoute.EXTERNAL_IME
+        selection.reason shouldBe VoiceRecognitionEngineRouteReason.FALLBACK_EXTERNAL_WHILE_LOCAL_UNAVAILABLE
+    }
+
+    test("explicit local engines report preview-only runtime before mic permission") {
+        val whisper = select(
+            profile = highRam,
+            preference = VoiceRecognitionEnginePreference.EMBEDDED_WHISPER,
+            availability = availability(
+                hasEmbeddedWhisperModel = true,
+                hasVoskStreamingModel = true,
+                hasSwiftFlorisMicrophonePermission = false,
+                localRecognizerRuntimeAvailable = false,
+            ),
+        )
+        val vosk = select(
+            profile = highRam,
+            preference = VoiceRecognitionEnginePreference.VOSK_STREAMING,
+            availability = availability(
+                hasEmbeddedWhisperModel = true,
+                hasVoskStreamingModel = true,
+                hasSwiftFlorisMicrophonePermission = false,
+                localRecognizerRuntimeAvailable = false,
+            ),
+        )
+
+        whisper.route shouldBe VoiceRecognitionEngineRoute.UNAVAILABLE
+        whisper.reason shouldBe VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE
+        vosk.route shouldBe VoiceRecognitionEngineRoute.UNAVAILABLE
+        vosk.reason shouldBe VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE
+    }
+
+    test("local recognizer availability defaults to preview-only") {
+        val selection = select(
+            profile = highRam,
+            availability = VoiceRecognitionEngineAvailability(
+                hasEmbeddedWhisperModel = true,
+                hasVoskStreamingModel = true,
+                hasSwiftFlorisMicrophonePermission = true,
+                externalVoiceInputReady = false,
+            ),
+        )
+
+        selection.route shouldBe VoiceRecognitionEngineRoute.UNAVAILABLE
+        selection.reason shouldBe VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE
+    }
+
     test("explicit Vosk requires both model and SwiftFloris microphone permission") {
         val missingModel = select(
             profile = highRam,
@@ -142,11 +200,13 @@ private fun availability(
     hasVoskStreamingModel: Boolean,
     hasSwiftFlorisMicrophonePermission: Boolean = true,
     externalVoiceInputReady: Boolean = false,
+    localRecognizerRuntimeAvailable: Boolean = true,
 ): VoiceRecognitionEngineAvailability {
     return VoiceRecognitionEngineAvailability(
         hasEmbeddedWhisperModel = hasEmbeddedWhisperModel,
         hasVoskStreamingModel = hasVoskStreamingModel,
         hasSwiftFlorisMicrophonePermission = hasSwiftFlorisMicrophonePermission,
         externalVoiceInputReady = externalVoiceInputReady,
+        localRecognizerRuntimeAvailable = localRecognizerRuntimeAvailable,
     )
 }

@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.119 — clipboard history maintenance serialization (seventh-pass follow-up G5 closure for off-Main history collection plus serialized limit/expiry maintenance; the full seventh-pass shipped layer is v1.8.104 – v1.8.119, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.120 — local voice catalog preview gate (seventh-pass follow-up G1 product-honesty closure for the missing in-app Whisper/Vosk recognizer runtime; the full seventh-pass shipped layer is v1.8.104 – v1.8.120, documented in §0.c below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -20,7 +20,7 @@ same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Ph
 
 ---
 
-## 0.c Reconciliation with v1.8.104-119 seventh-pass audit releases
+## 0.c Reconciliation with v1.8.104-120 seventh-pass audit releases
 
 The user re-invoked the extreme-audit prompt after the sixth-pass
 roster closed. The seventh research pass dispatched three parallel
@@ -47,14 +47,15 @@ the eighth pass).
 | Clipboard follow-up G4: backup restore copied provider files but did not recreate `ClipboardFileInfo` rows, so restored media URIs pointed at IDs missing from the provider metadata DB | ✅ **v1.8.117** — restore recreates metadata rows and provider cache misses lazy-load metadata from Room |
 | Clipboard agent #2: foreign `content://` image/video URI clone failures were caught inside `ClipboardMediaProvider.insert(...)` and converted into a synthetic `/0` URI, so IME-local history could contain phantom media rows with no backing file | ✅ **v1.8.118** — clone failures now propagate, invalid provider insert URIs are rejected before `ClipboardItem` creation, and `ClipboardManager` logs/skips failed imports |
 | Clipboard follow-up G5 + clipboard agent #7: `updateHistory` sorted / rebuilt history on Main and history-limit eviction re-entered through its own Room emission; timed expiry read `currentHistory` without sharing a maintenance lock | ✅ **v1.8.119** — history collection stays on IO, derivation sorts on `Dispatchers.Default`, and size-limit / timed-expiry eviction share one `Mutex`-serialized maintenance path |
+| Voice structural follow-up G1: local Whisper/Vosk routes and the model catalog implied a working in-app recognizer runtime despite no `AudioRecord` / Vosk JNI / whisper.cpp glue | ✅ **v1.8.120** — local routes now require `VoiceLocalRecognizerRuntime.AVAILABLE`, Auto falls back to the external voice keyboard while it is false, and Settings marks the model catalog preview-only with download/import disabled |
 
-The v1.8.104 – v1.8.119 release notes are the per-release audit trail
+The v1.8.104 – v1.8.120 release notes are the per-release audit trail
 for this seventh-pass shipped layer.
 
 ### 0.c.1 Seventh-pass structural finding carried forward
 
-The voice agent surfaced one major structural finding that the
-per-PR slice could not absorb:
+The voice agent surfaced one major structural finding. The product-honesty
+branch shipped in v1.8.120; the actual recognizer runtime remains future work:
 
 **Voice no-local-recogniser story.** The voice catalog UI advertises
 Whisper tiny/base/large + seven Vosk packages and lets users
@@ -62,11 +63,11 @@ download ~3 GB cumulative, but `RECORD_AUDIO` is not declared in the
 manifest, no `AudioRecord` / Vosk JNI / whisper.cpp glue code exists,
 and the auto-route never reaches the local-engine branches. The only
 working voice path is the external-IME handoff (FUTO Voice Input).
-Either ship the recognizer integration as part of a dedicated future
-release (mirrors the L1 / L2 / L3 facade-only pattern documented in
-[`PROJECT_CONTEXT.md` §8](PROJECT_CONTEXT.md)) OR flag the catalog
-UI as preview-only / hide it behind a developer-options toggle until
-the recogniser lands.
+v1.8.120 flags the catalog UI as preview-only and gates local routes
+behind an explicit runtime-available flag until the recognizer lands.
+The recognizer integration itself remains a dedicated future release
+(mirrors the L1 / L2 / L3 facade-only pattern documented in
+[`PROJECT_CONTEXT.md` §8](PROJECT_CONTEXT.md)).
 
 ### 0.c.2 Seventh-pass open follow-up roster
 
@@ -79,6 +80,9 @@ closed follow-ups from this roster:
 - ✅ **G5** — `enforceHistoryLimit` `Mutex` + off-Main collection,
   bundled with clipboard agent #7 timed-expiry synchronization.
   Shipped in **v1.8.119**.
+- ✅ **G1** — Local voice model catalog / route selector must not imply
+  a working in-app Whisper/Vosk runtime. Shipped in **v1.8.120** as a
+  preview-only catalog and runtime-availability gate.
 - ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap (image /
   video). Shipped in **v1.8.111**.
 - ✅ **G6** — `revokeUriPermission` on clipboard history rotation /
@@ -772,6 +776,7 @@ but does not require a roadmap change.
 | Seventh-pass G4 clipboard restore media metadata | ✅ v1.8.117 |
 | Seventh-pass clipboard foreign-URI clone failure guard | ✅ v1.8.118 |
 | Seventh-pass G5 clipboard history maintenance serialization | ✅ v1.8.119 |
+| Seventh-pass G1 local voice catalog preview gate | ✅ v1.8.120 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |

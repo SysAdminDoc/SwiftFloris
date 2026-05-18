@@ -94,7 +94,7 @@ shipped in this pass; four were structural / out-of-scope.
 
 | Finding | Severity | Disposition |
 |---|---|---|
-| **#1, #2, #5, #6** — `VoiceModelInstallStore` has no model-integrity validation (any SAF input stream is "installed" once bytes > 0); `RECORD_AUDIO` not declared in manifest so the auto-route never reaches local engines; no actual `AudioRecord` / Vosk JNI / whisper.cpp integration exists anywhere in the codebase | High (advertising-vs-reality) | **STRUCTURAL.** The voice catalog UI advertises Whisper tiny/base/large + seven Vosk packages and lets users download ~3 GB cumulative, but the local-recogniser glue code does not exist — the only working voice path is the external-IME handoff (FUTO Voice Input). Either ship the recognizer integration as part of a dedicated future release (multi-week feature slice; mirrors the L1 / L2 / L3 facade-only pattern documented in PROJECT_CONTEXT.md §8) OR flag the catalog UI as preview-only / hide it behind a developer-options toggle until the recogniser lands. Flagged for the eighth pass and the next ROADMAP refresh. |
+| **#1, #2, #5, #6** — `VoiceModelInstallStore` has no model-integrity validation (any SAF input stream is "installed" once bytes > 0); `RECORD_AUDIO` not declared in manifest so the auto-route never reaches local engines; no actual `AudioRecord` / Vosk JNI / whisper.cpp integration exists anywhere in the codebase | High (advertising-vs-reality) | ✅ **v1.8.120 product-honesty branch** — local routes now require `VoiceLocalRecognizerRuntime.AVAILABLE`, Auto falls back to the external voice keyboard while that flag is false, and Settings marks the model catalog preview-only with download/import disabled. The actual recognizer integration and model-integrity validation remain a dedicated future feature slice. |
 | **#3, #4** — concurrent model-install races against itself; `sweepStaleStagingDirs()` deletes other in-flight staging dirs | Medium | Bundle with the L1.1a / Vosk integration slice when it lands. |
 | **#8** — engine-selector mis-labels failure reason when no engine is available | Medium | UX polish on a code path that is dead until #6 lands. Defer. |
 | **#10** — `acceptFinal` may re-commit stale text on a cumulative-final echo from non-incremental recognisers | Medium | Affects only the in-tree recogniser path (#6); defer with that slice. |
@@ -157,14 +157,13 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.119)
+## 5. Open follow-up roster (post-v1.8.120)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.119 clipboard history maintenance serialization slice. Priority-scored.
+v1.8.120 local voice catalog preview gate. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
-| G1 | Voice no-local-recogniser: hide / preview-only-flag the local engine catalog UI OR start the integration | Voice #6 | 4 | 4 | 1 | **2.25** |
 | G9 | `ClipboardHistoryManager` (Tink store) — confirm intent; delete or wire as backend | Clipboard #17 | 2 | 2 | 1 | **2.5** |
 | G11 | NLP / autocorrect / suggestion full re-audit (rate-limited agent) | — | 4 | 4 | 2 | **2.5** |
 

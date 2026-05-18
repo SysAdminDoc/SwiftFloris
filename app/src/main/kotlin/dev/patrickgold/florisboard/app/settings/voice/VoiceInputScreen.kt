@@ -62,6 +62,7 @@ import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommand
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
 import dev.patrickgold.florisboard.ime.voice.VoiceDeviceRamProfile
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
+import dev.patrickgold.florisboard.ime.voice.VoiceLocalRecognizerRuntime
 import dev.patrickgold.florisboard.ime.voice.VoiceModelCatalog
 import dev.patrickgold.florisboard.ime.voice.VoiceModelCatalogEntry
 import dev.patrickgold.florisboard.ime.voice.VoiceModelEngine
@@ -139,6 +140,7 @@ fun VoiceInputScreen() = FlorisScreen {
     val voiceInputManager = remember(appContext) { VoiceInputManager(appContext) }
     var status by remember { mutableStateOf(voiceInputManager.readStatus()) }
     val ramProfile = remember(appContext) { VoiceModelSelector.detectDeviceRamProfile(appContext) }
+    val localRecognizerRuntimeAvailable = VoiceLocalRecognizerRuntime.AVAILABLE
     val modelRepository = remember(appContext) { VoiceModelInstallRepository(appContext) }
     var modelStates by remember { mutableStateOf<Map<String, VoiceModelInstallState>>(emptyMap()) }
     var pendingModelImportId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -160,6 +162,7 @@ fun VoiceInputScreen() = FlorisScreen {
         embeddedModelPreference,
         hasEmbeddedWhisperModel,
         hasVoskStreamingModel,
+        localRecognizerRuntimeAvailable,
     ) {
         voiceInputManager.resolveRecognitionEngineSelection(
             enginePreference = recognitionEnginePreference,
@@ -168,6 +171,7 @@ fun VoiceInputScreen() = FlorisScreen {
             commandModeRequested = false,
             hasEmbeddedWhisperModel = hasEmbeddedWhisperModel,
             hasVoskStreamingModel = hasVoskStreamingModel,
+            localRecognizerRuntimeAvailable = localRecognizerRuntimeAvailable,
         )
     }
     val commandModeEngineSelection = remember(
@@ -177,6 +181,7 @@ fun VoiceInputScreen() = FlorisScreen {
         embeddedModelPreference,
         hasEmbeddedWhisperModel,
         hasVoskStreamingModel,
+        localRecognizerRuntimeAvailable,
     ) {
         voiceInputManager.resolveRecognitionEngineSelection(
             enginePreference = recognitionEnginePreference,
@@ -185,6 +190,7 @@ fun VoiceInputScreen() = FlorisScreen {
             commandModeRequested = true,
             hasEmbeddedWhisperModel = hasEmbeddedWhisperModel,
             hasVoskStreamingModel = hasVoskStreamingModel,
+            localRecognizerRuntimeAvailable = localRecognizerRuntimeAvailable,
         )
     }
     val customCommands by prefs.voice.customCommands.collectAsState()
@@ -350,12 +356,20 @@ fun VoiceInputScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__voice_input__group_local_models)) {
-            FlorisInfoCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.settings__voice_input__local_models_info_title),
-                secondaryText = stringRes(R.string.settings__voice_input__local_models_info_summary),
-                showIcon = false,
-            )
+            if (localRecognizerRuntimeAvailable) {
+                FlorisInfoCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__voice_input__local_models_info_title),
+                    secondaryText = stringRes(R.string.settings__voice_input__local_models_info_summary),
+                    showIcon = false,
+                )
+            } else {
+                FlorisWarningCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__voice_input__local_models_info_title),
+                    secondaryText = stringRes(R.string.settings__voice_input__local_models_info_summary),
+                )
+            }
             VoiceModelCatalog.entries
                 .groupBy { it.languageName }
                 .forEach { (languageName, models) ->
@@ -370,6 +384,7 @@ fun VoiceInputScreen() = FlorisScreen {
                         VoiceModelRow(
                             model = model,
                             state = modelStates[model.id],
+                            localRecognizerRuntimeAvailable = localRecognizerRuntimeAvailable,
                             onDownload = { context.launchUrl(model.sourceUrl) },
                             onImport = { importVoiceModel(model) },
                             onDelete = { deleteVoiceModel(model) },
@@ -616,6 +631,7 @@ private fun VoiceCommandEditDialog(
 private fun VoiceModelRow(
     model: VoiceModelCatalogEntry,
     state: VoiceModelInstallState?,
+    localRecognizerRuntimeAvailable: Boolean,
     onDownload: () -> Unit,
     onImport: () -> Unit,
     onDelete: () -> Unit,
@@ -641,13 +657,19 @@ private fun VoiceModelRow(
         ).joinToString(" - "),
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(onClick = onDownload) {
+                IconButton(
+                    onClick = onDownload,
+                    enabled = localRecognizerRuntimeAvailable,
+                ) {
                     Icon(
                         imageVector = Icons.Default.Download,
                         contentDescription = stringRes(R.string.settings__voice_input__local_model_download),
                     )
                 }
-                IconButton(onClick = onImport) {
+                IconButton(
+                    onClick = onImport,
+                    enabled = localRecognizerRuntimeAvailable,
+                ) {
                     Icon(
                         imageVector = Icons.Default.Add,
                         contentDescription = stringRes(R.string.settings__voice_input__local_model_import),
@@ -777,6 +799,8 @@ private fun voiceRecognitionEngineRouteReasonLabel(reason: VoiceRecognitionEngin
             stringRes(R.string.enum__voice_recognition_engine_reason__explicit_external_ime)
         VoiceRecognitionEngineRouteReason.FALLBACK_EXTERNAL_WHILE_LOCAL_UNAVAILABLE ->
             stringRes(R.string.enum__voice_recognition_engine_reason__fallback_external)
+        VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE ->
+            stringRes(R.string.enum__voice_recognition_engine_reason__local_runtime_unavailable)
         VoiceRecognitionEngineRouteReason.LOCAL_MIC_PERMISSION_MISSING ->
             stringRes(R.string.enum__voice_recognition_engine_reason__local_mic_permission_missing)
         VoiceRecognitionEngineRouteReason.EMBEDDED_WHISPER_MODEL_MISSING ->

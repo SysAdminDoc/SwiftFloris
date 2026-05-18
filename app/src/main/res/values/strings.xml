@@ -210,11 +210,11 @@
     <string name="settings__voice_input__status_other_provider_summary" comment="Voice input status summary">SwiftFloris can use an enabled voice keyboard, but FUTO is recommended for offline dictation.</string>
     <string name="settings__voice_input__group_embedded_engine" comment="Voice input settings group title">Embedded engine</string>
     <string name="settings__voice_input__embedded_engine_info_title" comment="Embedded voice engine information title">Local engine foundation</string>
-    <string name="settings__voice_input__embedded_engine_info_summary" comment="Embedded voice engine information summary">SwiftFloris now stores engine and model choices for the planned bundled Whisper and Vosk paths. Live dictation still uses FUTO until the local runtime and model manager land.</string>
+    <string name="settings__voice_input__embedded_engine_info_summary" comment="Embedded voice engine information summary">SwiftFloris stores engine and model choices for the planned bundled Whisper and Vosk paths. Live dictation stays on the external voice keyboard until the local recognizer runtime ships.</string>
     <string name="settings__voice_input__recognition_engine_preference" comment="Voice recognition engine setting title">Recognition engine</string>
     <string name="settings__voice_input__embedded_model_preference" comment="Embedded voice model setting title">Model tier</string>
     <string name="settings__voice_input__streaming_fallback_info_title" comment="Embedded voice streaming fallback information title">Streaming fallback path</string>
-    <string name="settings__voice_input__streaming_fallback_info_summary" comment="Embedded voice streaming fallback information summary">Auto will route low-RAM devices and command-mode sessions to Vosk streaming when a local Vosk model and microphone permission are available. Until then, SwiftFloris keeps using the enabled external voice keyboard.</string>
+    <string name="settings__voice_input__streaming_fallback_info_summary" comment="Embedded voice streaming fallback information summary">Auto will keep using the enabled external voice keyboard until a local recognizer runtime is bundled. Vosk streaming and embedded Whisper remain preview routes.</string>
     <string name="settings__voice_input__recognition_engine_route" comment="Voice recognition engine current route row title">Current route</string>
     <string name="settings__voice_input__command_mode_route" comment="Voice recognition engine command mode route row title">Command-mode route</string>
     <string name="settings__voice_input__recognition_engine_route_summary" comment="Voice recognition engine route row summary">Route: {route}. {reason}</string>
@@ -225,8 +225,8 @@
     <string name="settings__voice_input__embedded_model_ram_detected" comment="Embedded voice model RAM summary">{ram} GB RAM</string>
     <string name="settings__voice_input__embedded_model_ram_unknown" comment="Embedded voice model RAM fallback">unknown RAM</string>
     <string name="settings__voice_input__group_local_models" comment="Voice input settings group title">Local voice models</string>
-    <string name="settings__voice_input__local_models_info_title" comment="Local voice model manager information title">Models stay outside the base APK</string>
-    <string name="settings__voice_input__local_models_info_summary" comment="Local voice model manager information summary">SwiftFloris keeps the app offline-only: download model artifacts in the browser, then import them from local storage. Installed models are kept in private app storage and counted below.</string>
+    <string name="settings__voice_input__local_models_info_title" comment="Local voice model manager information title">Preview catalog only</string>
+    <string name="settings__voice_input__local_models_info_summary" comment="Local voice model manager information summary">SwiftFloris does not bundle a local Whisper or Vosk recognizer runtime yet. Installed models stay in private app storage for future builds, but download and import are disabled and live dictation uses the external voice keyboard.</string>
     <string name="settings__voice_input__local_model_language_summary" comment="Local voice model manager language row summary">{count} model options</string>
     <string name="settings__voice_input__local_model_size_summary" comment="Local voice model manager size summary">{size} MB target</string>
     <string name="settings__voice_input__local_model_installed" comment="Local voice model manager installed status">Installed: {size}</string>
@@ -325,11 +325,11 @@
     <string name="settings__sync__pairing_requires_android_13" comment="Sync toast">Pairing requires Android 13 or newer.</string>
     <string name="settings__sync__scanner_missing" comment="Sync toast">Scanner app not found. Paste the payload manually.</string>
     <string name="enum__voice_recognition_engine_preference__auto" comment="Voice recognition engine preference option">Auto</string>
-    <string name="enum__voice_recognition_engine_preference__auto__description" comment="Voice recognition engine preference description">Prefer local dictation when installed, Vosk for streaming command mode and low-RAM devices, then external voice keyboard fallback.</string>
+    <string name="enum__voice_recognition_engine_preference__auto__description" comment="Voice recognition engine preference description">Use the external voice keyboard until the preview local Whisper and Vosk runtime ships.</string>
     <string name="enum__voice_recognition_engine_preference__embedded_whisper" comment="Voice recognition engine preference option">Embedded Whisper</string>
-    <string name="enum__voice_recognition_engine_preference__embedded_whisper__description" comment="Voice recognition engine preference description">Use the bundled Whisper runtime and selected model tier when available.</string>
+    <string name="enum__voice_recognition_engine_preference__embedded_whisper__description" comment="Voice recognition engine preference description">Preview route for the planned bundled Whisper runtime; not used for live dictation yet.</string>
     <string name="enum__voice_recognition_engine_preference__vosk_streaming" comment="Voice recognition engine preference option">Vosk streaming</string>
-    <string name="enum__voice_recognition_engine_preference__vosk_streaming__description" comment="Voice recognition engine preference description">Prefer a smaller streaming Vosk model for low-RAM devices and live command detection.</string>
+    <string name="enum__voice_recognition_engine_preference__vosk_streaming__description" comment="Voice recognition engine preference description">Preview route for the planned streaming Vosk runtime and live command detection.</string>
     <string name="enum__voice_recognition_engine_preference__external_ime" comment="Voice recognition engine preference option">External voice keyboard</string>
     <string name="enum__voice_recognition_engine_preference__external_ime__description" comment="Voice recognition engine preference description">Always hand dictation to an enabled Android voice keyboard such as FUTO.</string>
     <string name="enum__voice_recognition_engine_route__embedded_whisper" comment="Voice recognition engine route label">Embedded Whisper</string>
@@ -345,7 +345,8 @@
     <string name="enum__voice_recognition_engine_reason__explicit_embedded_whisper" comment="Voice recognition engine route reason">Embedded Whisper was selected manually.</string>
     <string name="enum__voice_recognition_engine_reason__explicit_vosk_streaming" comment="Voice recognition engine route reason">Vosk streaming was selected manually.</string>
     <string name="enum__voice_recognition_engine_reason__explicit_external_ime" comment="Voice recognition engine route reason">External voice keyboard was selected manually.</string>
-    <string name="enum__voice_recognition_engine_reason__fallback_external" comment="Voice recognition engine route reason">Local voice models are not ready, so SwiftFloris falls back to external voice input.</string>
+    <string name="enum__voice_recognition_engine_reason__fallback_external" comment="Voice recognition engine route reason">The local voice runtime is preview-only, so SwiftFloris falls back to external voice input.</string>
+    <string name="enum__voice_recognition_engine_reason__local_runtime_unavailable" comment="Voice recognition engine route reason">The local recognizer runtime is not bundled in this app yet.</string>
     <string name="enum__voice_recognition_engine_reason__local_mic_permission_missing" comment="Voice recognition engine route reason">Local voice input needs SwiftFloris microphone permission.</string>
     <string name="enum__voice_recognition_engine_reason__embedded_model_missing" comment="Voice recognition engine route reason">The selected Whisper model is not installed yet.</string>
     <string name="enum__voice_recognition_engine_reason__vosk_model_missing" comment="Voice recognition engine route reason">The Vosk streaming model is not installed yet.</string>

@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.119)
+## 3. Stack at HEAD (v1.8.120)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -188,7 +188,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.119** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.120** ships the seventh research-pass privacy,
 voice, and clipboard hardening layer. v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
@@ -210,7 +210,9 @@ by rejecting failed foreign `content://` media clones before phantom
 provider rows enter history; v1.8.119 closes follow-up **G5** by
 collecting Room history off Main, sorting on `Dispatchers.Default`, and
 serializing history-size / timed-expiry eviction behind one maintenance
-mutex.
+mutex; v1.8.120 closes follow-up **G1** by making the missing local
+Whisper/Vosk recognizer runtime a first-class route availability gate and
+marking the local model catalog preview-only until that runtime exists.
 
 The only sixth-pass F-roster item still open is **F11** (Roborazzi visual
 baselines for the new themes + Addons surface) — needs Android SDK +

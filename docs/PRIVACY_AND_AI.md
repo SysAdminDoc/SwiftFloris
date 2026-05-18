@@ -107,23 +107,23 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 
 ### 2.5 Voice input
 
-- **What runs.** Two paths:
-  - **Preferred:** hand-off to the external **FUTO Voice Input** app
-    (Source-First licensed, voiceinput.futo.org). FUTO runs Whisper
-    locally on your phone; SwiftFloris hands the dictation session over
-    and receives final transcript text.
-  - **Fallback:** **bundled Vosk** streaming engine + locally-installed
-    Whisper / Vosk models. RAM-aware model selector picks tiny.en
-    (~75 MB), base.en (~140 MB), or Large-v3-Turbo INT8 (~800 MB) by
-    device class.
-- **Where.** On this device only. **No audio ever leaves the device.**
-  SwiftFloris itself does not request `RECORD_AUDIO`; the FUTO app or
-  the bundled engine holds it.
-- **Data seen.** Microphone audio for the duration of a dictation
-  session.
-- **Data sent.** Nothing leaves the device.
-- **Off switch.** Settings → Voice input → disable. The keyboard works
-  without voice.
+- **What runs.** The live path is a hand-off to the external
+  **FUTO Voice Input** app (Source-First licensed,
+  voiceinput.futo.org) or another enabled Android voice keyboard. FUTO
+  runs Whisper locally on your phone; SwiftFloris hands the dictation
+  session over and receives final transcript text. The in-app
+  Whisper/Vosk route selector and model catalog are preview-only until
+  a local recognizer runtime ships.
+- **Where.** FUTO runs recognition on this device. SwiftFloris itself
+  does not request `RECORD_AUDIO`; the external voice keyboard owns
+  microphone access and its own privacy boundary.
+- **Data seen.** SwiftFloris does not see microphone audio. The
+  external voice keyboard sees microphone audio for the duration of a
+  dictation session.
+- **Data sent.** SwiftFloris sends no audio or transcript to the
+  network. External voice keyboards have their own privacy policy.
+- **Off switch.** Remove the voice key/bottom-row preset or disable the
+  external voice keyboard. SwiftFloris works without voice.
 
 ### 2.6 Inline translation
 

@@ -39,6 +39,7 @@ enum class VoiceRecognitionEngineRouteReason {
     EXPLICIT_VOSK_STREAMING,
     EXPLICIT_EXTERNAL_IME,
     FALLBACK_EXTERNAL_WHILE_LOCAL_UNAVAILABLE,
+    LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE,
     LOCAL_MIC_PERMISSION_MISSING,
     EMBEDDED_WHISPER_MODEL_MISSING,
     VOSK_MODEL_MISSING,
@@ -46,11 +47,16 @@ enum class VoiceRecognitionEngineRouteReason {
     NO_VOICE_ENGINE_AVAILABLE,
 }
 
+object VoiceLocalRecognizerRuntime {
+    const val AVAILABLE = false
+}
+
 data class VoiceRecognitionEngineAvailability(
     val hasEmbeddedWhisperModel: Boolean,
     val hasVoskStreamingModel: Boolean,
     val hasSwiftFlorisMicrophonePermission: Boolean,
     val externalVoiceInputReady: Boolean,
+    val localRecognizerRuntimeAvailable: Boolean = VoiceLocalRecognizerRuntime.AVAILABLE,
 )
 
 data class VoiceRecognitionEngineRequest(
@@ -138,6 +144,8 @@ object VoiceRecognitionEngineSelector {
             )
         }
         val reason = when {
+            availability.hasInstalledLocalModel() && !availability.localRecognizerRuntimeAvailable ->
+                VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE
             availability.hasEmbeddedWhisperModel || availability.hasVoskStreamingModel ->
                 VoiceRecognitionEngineRouteReason.LOCAL_MIC_PERMISSION_MISSING
             request.commandModeRequested || request.deviceRamProfile.prefersStreamingFallback() ->
@@ -158,6 +166,8 @@ object VoiceRecognitionEngineSelector {
         val reason = when {
             !availability.hasEmbeddedWhisperModel ->
                 VoiceRecognitionEngineRouteReason.EMBEDDED_WHISPER_MODEL_MISSING
+            !availability.localRecognizerRuntimeAvailable ->
+                VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE
             !availability.hasSwiftFlorisMicrophonePermission ->
                 VoiceRecognitionEngineRouteReason.LOCAL_MIC_PERMISSION_MISSING
             else -> VoiceRecognitionEngineRouteReason.EXPLICIT_EMBEDDED_WHISPER
@@ -179,6 +189,8 @@ object VoiceRecognitionEngineSelector {
     ): VoiceRecognitionEngineSelection {
         val reason = when {
             !availability.hasVoskStreamingModel -> VoiceRecognitionEngineRouteReason.VOSK_MODEL_MISSING
+            !availability.localRecognizerRuntimeAvailable ->
+                VoiceRecognitionEngineRouteReason.LOCAL_RECOGNIZER_RUNTIME_UNAVAILABLE
             !availability.hasSwiftFlorisMicrophonePermission ->
                 VoiceRecognitionEngineRouteReason.LOCAL_MIC_PERMISSION_MISSING
             else -> VoiceRecognitionEngineRouteReason.EXPLICIT_VOSK_STREAMING
@@ -214,11 +226,19 @@ object VoiceRecognitionEngineSelector {
     }
 
     private fun VoiceRecognitionEngineAvailability.canUseEmbeddedWhisper(): Boolean {
-        return hasEmbeddedWhisperModel && hasSwiftFlorisMicrophonePermission
+        return localRecognizerRuntimeAvailable &&
+            hasEmbeddedWhisperModel &&
+            hasSwiftFlorisMicrophonePermission
     }
 
     private fun VoiceRecognitionEngineAvailability.canUseVoskStreaming(): Boolean {
-        return hasVoskStreamingModel && hasSwiftFlorisMicrophonePermission
+        return localRecognizerRuntimeAvailable &&
+            hasVoskStreamingModel &&
+            hasSwiftFlorisMicrophonePermission
+    }
+
+    private fun VoiceRecognitionEngineAvailability.hasInstalledLocalModel(): Boolean {
+        return hasEmbeddedWhisperModel || hasVoskStreamingModel
     }
 
     private fun VoiceDeviceRamProfile.prefersStreamingFallback(): Boolean {

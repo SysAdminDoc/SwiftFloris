@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.119-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.120-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,13 +44,13 @@
 
 ## Highlights
 
-| Area | What's in v1.8.103 | Privacy posture |
+| Area | What's in v1.8.120 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
 | **Scripts** | Devanagari + Bengali + Tamil + Telugu + ... (63-script transliteration coverage); RTL Arabic shaper, Persian / Urdu / Hebrew normalisers | On-device |
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
-| **Voice input** | FUTO Voice Input handoff (preferred), Vosk streaming fallback, RAM-aware model selector, local Whisper/Vosk model manager | No audio leaves the device |
+| **Voice input** | FUTO Voice Input handoff (live path), plus preview-only local Whisper/Vosk route selector and model catalog until a recognizer runtime ships | SwiftFloris itself does not record audio |
 | **Emoji & stickers** | Emoji search/history/pinned groups, bundled local sticker packs, and user-imported SAF sticker folders for PNG / WebP / JPEG / GIF files | Local folder URI only |
 | **Clipboard** | History with pinning + per-app source tag; Tink / AndroidKeystore-wrapped legacy history; SQLCipher-encrypted personal dictionary | On-device |
 | **Productivity** | Calendar quick-insert reads local agenda entries for today + next 7 days; task quick-insert sends selected text to user-chosen task / note apps | Calendar permission is explicit opt-in; no network |
@@ -82,7 +82,7 @@ Open the link above on a device with Obtainium installed (or paste it into Obtai
 
 1. Download the latest APK from [Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 2. Install on your Android device (Android 8.0+).
-3. (Optional) Install [FUTO Voice Input](https://voiceinput.futo.org/) for the preferred offline dictation path. SwiftFloris also ships a Vosk fallback that works without FUTO.
+3. (Optional) Install [FUTO Voice Input](https://voiceinput.futo.org/) for offline dictation. SwiftFloris's in-app Whisper/Vosk catalog is preview-only until the local recognizer runtime ships.
 
 ### Option C — Manual Build
 
@@ -123,7 +123,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.15).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.16).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -201,7 +201,7 @@ See [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) for the toolcha
 |------------|---------|-----------|
 | `INPUT_METHOD` | IME service binding | ✅ Yes |
 | `VIBRATE` | Haptic feedback | Optional |
-| `RECORD_AUDIO` | Voice input (FUTO handoff or Vosk fallback) | Optional |
+| `RECORD_AUDIO` | Not requested by SwiftFloris; the external voice keyboard owns microphone access | No |
 | `BIND_NOTIFICATION_LISTENER` | App-aware smartbar features | Optional |
 
 > **Privacy note:** SwiftFloris does not request `INTERNET`. CI validates this on every build.
@@ -275,7 +275,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-- **v1.8.104 – v1.8.119** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, and exposes a durable Listening state; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, automatic clipboard history eviction now closes provider-backed media before deleting rows, sensitive clipboard text no longer feeds pin-popup description URL/email/phone classification, startup reconciliation removes missing-file history rows plus unreferenced provider files / metadata rows, media restore recreates provider metadata for restored image/video clips, failed foreign media URI clones no longer create phantom history entries, and clipboard history maintenance no longer sorts or evicts on Main. ([latest notes](RELEASE_NOTES_v1.8.119.md))
+- **v1.8.104 – v1.8.120** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, exposes a durable Listening state, and now gates the in-app Whisper/Vosk route selector and model catalog behind a preview-only local-runtime flag; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, automatic clipboard history eviction now closes provider-backed media before deleting rows, sensitive clipboard text no longer feeds pin-popup description URL/email/phone classification, startup reconciliation removes missing-file history rows plus unreferenced provider files / metadata rows, media restore recreates provider metadata for restored image/video clips, failed foreign media URI clones no longer create phantom history entries, and clipboard history maintenance no longer sorts or evicts on Main. ([latest notes](RELEASE_NOTES_v1.8.120.md))
 - **v1.8.85 – v1.8.103** (2026-05-17) — cross-subsystem hardening pass + 18 single-feature follow-up releases. v1.8.85 was an explicit AGENTS.md §6 one-time deviation that closed eleven privacy / security / reliability gaps (merged-manifest `verifyNoInternetPermission`, Android 12+ `data_extraction_rules.xml`, atomic `ZipUtils.unzip`, thread-safe `HardwareKeyboardRuntimeMapper`, sticker decoder OOM, sticker MIME spoof, addon enumerator size category-error, `verify-reproducible-apk.sh` payload-manifest pass criterion, CI workflow permissions, `pull_request_target` injection, AltGr); v1.8.86 – v1.8.102 then returned to per-PR scope and closed eleven of twelve F-roster items (FLAG_SECURE on numeric PIN + passphrase dialog, legacy-passphrase recovery, ZipUtils abort policy, SAF lost-grant UX, addon spec docs alignment, LDML `shift=` semantics, fastlane script hardening, SHA-pinned floating action tags, `release.yml` keystore hygiene, `verifyDataExtractionRules` build gate, sticker LRU + folder cap, `HardwareKeyEntry.longPressAlternates`); v1.8.103 closes the documentation half (README + PROJECT_CONTEXT version refresh, master index of the session's commits). The only sixth-pass F-item still open is F11 (Roborazzi visual baselines — needs Android SDK + on-device record). ([master index](RELEASE_NOTES_v1.8.103.md))
 - **v1.8.84** (2026-05-17) — Settings → Addons status surface: users can inspect accepted/rejected addon APKs, manually rescan through the startup reconciliation path, and review package/license/version/size/signing-fingerprint details. ([notes](RELEASE_NOTES_v1.8.84.md))
 - **v1.8.83** (2026-05-17) — Addon registry startup wiring: the IME now scans installed addon manifests at startup, reconciles them through persisted signing pins, publishes a process-wide registry, and cleans malformed stored pin lines. ([notes](RELEASE_NOTES_v1.8.83.md))
@@ -348,7 +348,7 @@ See [Multilingual Gesture Typing](docs/GESTURE_TYPING_MULTILINGUAL.md). Gesture 
 
 ### Voice input unavailable?
 
-See [FUTO Voice Input Troubleshooting](docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md). SwiftFloris does not record audio itself; it hands off to the user-installed FUTO Voice Input app or to the bundled Vosk streaming engine. Make sure microphone permission is granted on whichever IME you've configured for dictation.
+See [FUTO Voice Input Troubleshooting](docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md). SwiftFloris does not record audio itself; live dictation hands off to the user-installed FUTO Voice Input app or another enabled external voice keyboard. The in-app Whisper/Vosk catalog is preview-only until the local recognizer runtime ships.
 
 ### Keyboard crashes on emoji insertion?
 
@@ -387,7 +387,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.119** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.120** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 
