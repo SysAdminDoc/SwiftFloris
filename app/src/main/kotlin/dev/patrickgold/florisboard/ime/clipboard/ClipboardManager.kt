@@ -206,7 +206,22 @@ class ClipboardManager(
                 if (!isEqual) {
                     val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
                     primaryClip = item
-                    insertOrMoveBeginning(item)
+                    // Skip IME-local history when the source app marked the
+                    // clip as sensitive via
+                    // `ClipDescription.EXTRA_IS_SENSITIVE` (API 33+).
+                    // Password managers (Bitwarden, 1Password, KeePassXC,
+                    // Proton Pass) and TOTP apps set this flag on every
+                    // copied credential. The system clipboard still
+                    // receives it (the OS is the source of truth for
+                    // primary-clip behaviour), but our IME-local history
+                    // must not retain a copy that would resurface on the
+                    // next clipboard-palette open. The flag was already
+                    // parsed into `ClipboardItem.isSensitive` by
+                    // `fromClipData`; this is the missing gate that
+                    // *uses* the flag.
+                    if (!item.isSensitive) {
+                        insertOrMoveBeginning(item)
+                    }
                 }
             }
         }
