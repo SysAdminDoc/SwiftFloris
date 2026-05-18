@@ -144,7 +144,21 @@ object KeymanLdmlParser {
             val shiftOutput = shiftRaw?.decodeLdmlEscapes()
             val normalCp = output?.codePointAt(0)
             val shiftCp = shiftOutput?.codePointAt(0)
-            if (normalCp == null && shiftCp == null) continue
+            // LDML longPress is a whitespace-separated list of alternates
+            // surfaced on long-press. Tokenise on any whitespace, decode
+            // each token's LDML escapes, and keep the first codepoint of
+            // each — the long-press UI surfaces one codepoint per
+            // alternate slot. Empty list when no alternates were declared.
+            val longPressAlternates = longPressAttr
+                ?.split(Regex("\\s+"))
+                ?.mapNotNull { token ->
+                    token.takeIf { it.isNotEmpty() }
+                        ?.decodeLdmlEscapes()
+                        ?.takeIf { it.isNotEmpty() }
+                        ?.codePointAt(0)
+                }
+                .orEmpty()
+            if (normalCp == null && shiftCp == null && longPressAlternates.isEmpty()) continue
             val displayLabel = displayOverrides.labelFor(
                 keyId = id,
                 normalOutput = output,
@@ -155,6 +169,7 @@ object KeymanLdmlParser {
                 normal = normalCp,
                 shift = shiftCp,
                 displayLabel = displayLabel,
+                longPressAlternates = longPressAlternates,
             )
             sequentialIndex++
         }

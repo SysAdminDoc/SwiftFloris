@@ -112,4 +112,19 @@ data class HardwareKeyEntry(
     val deadKeyTrigger: Int? = null,
     /** Optional visual label override from LDML `<displays>` entries. */
     val displayLabel: String? = null,
+    /**
+     * Long-press alternates as a list of output codepoints, in display
+     * order. Populated by the LDML parser from `longPress="a b c"` (LDML
+     * spec — space-separated list of alternates surfaced on long-press).
+     * Empty list when the layout source did not declare alternates.
+     *
+     * Consumers: the popup-routing slice tracked separately at
+     * [v1.8.85 follow-up F8](../../../../../../../../../../../../RELEASE_NOTES_v1.8.85.md#follow-up-work-next-per-feature-releases)
+     * — once the on-screen long-press popup learns to surface
+     * hardware-keyboard-source alternates, this field is the source of
+     * truth. Until then the field is populated but not consumed at input
+     * time; storing it now lets a future popup slice land without a
+     * second parser change.
+     */
+    val longPressAlternates: List<Int> = emptyList(),
 )
