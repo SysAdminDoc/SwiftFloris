@@ -658,6 +658,15 @@ class NlpManager(context: Context) {
         )
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
+        val contextFrequencyByLocale: Map<FlorisLocale, Map<String, Double>> = buildMap {
+            for (activeLocale in locales) {
+                put(activeLocale, buildMap {
+                    for (word in languageContextWords.distinct()) {
+                        put(word, frequencyForWordInLocale(suggestionProvider, subtype, activeLocale, word))
+                    }
+                })
+            }
+        }
         // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — same-sentence
         // language-switch hardening. Previously this map took the
         // MAX trailing-word frequency per locale across the 4-word
@@ -676,7 +685,7 @@ class NlpManager(context: Context) {
                 val blended = TrailingContextLanguageBlend.score(
                     contextWordsOldestFirst = languageContextWords,
                     freqLookup = { word ->
-                        frequencyForWordInLocale(suggestionProvider, subtype, activeLocale, word)
+                        contextFrequencyByLocale[activeLocale]?.get(word) ?: 0.0
                     },
                     decay = TrailingContextDecay,
                 )

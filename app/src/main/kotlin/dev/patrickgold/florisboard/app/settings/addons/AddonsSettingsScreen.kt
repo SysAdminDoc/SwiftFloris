@@ -111,7 +111,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     stringRes(R.string.settings__addons__rescan)
                 },
                 summary = stringRes(R.string.settings__addons__rescan_summary),
-                enabled = !scanInProgress,
+                enabledIf = { !scanInProgress },
                 onClick = { rescanInstalledAddons() },
             )
             scanError?.let { error ->

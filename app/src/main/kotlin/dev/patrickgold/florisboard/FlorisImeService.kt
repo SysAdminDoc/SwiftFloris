@@ -57,6 +57,7 @@ import dev.patrickgold.florisboard.ime.landscapeinput.ExtractedInputRootView
 import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceInputSetupReason
@@ -256,7 +257,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         // network permission. The host app's sensitive-field declaration
         // is the load-bearing privacy signal here; honour it.
         val state = keyboardManager.activeState
-        if (state.keyVariation == dev.patrickgold.florisboard.ime.keyboard.KeyVariation.PASSWORD ||
+        if (state.keyVariation == KeyVariation.PASSWORD ||
             state.isIncognitoMode
         ) {
             if (showFailureToast) {

@@ -16,15 +16,17 @@
 
 package dev.patrickgold.florisboard.ime.sync
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.security.KeyPair
 import java.security.KeyPairGenerator
+import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.spec.NamedParameterSpec
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
-import java.security.MessageDigest
 
 /**
  * ROADMAP §7 Next-5.2a — Curve25519 + AES-GCM "sealed-box" wrapper
@@ -33,7 +35,7 @@ import java.security.MessageDigest
  * Cross-platform libsodium ports for Android exist (Lazysodium, Tink)
  * but each adds 1-3 MB of native binaries that have to be reviewed
  * for the F-Droid build. The **JVM/Android stdlib** ships an X25519
- * (Curve25519 Diffie–Hellman) implementation since API 31, and
+     * (Curve25519 Diffie-Hellman) implementation on modern Android, and
  * AES-GCM since API 1. SwiftFloris uses these directly: no extra
  * native runtime, no extra licence review, no extra .so payload.
  *
@@ -77,6 +79,7 @@ object SealedBoxCrypto {
      * the public half goes into the [PairingPayload.pubkeyHex] field
      * after hex-encoding.
      */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun generateKeyPair(): KeyPair {
         val generator = KeyPairGenerator.getInstance(X25519_ALGORITHM)
         generator.initialize(NamedParameterSpec(X25519_ALGORITHM))
@@ -87,6 +90,7 @@ object SealedBoxCrypto {
      * Seal [plaintext] for [recipientPublicKey]. Produces the
      * libsodium-style sealed-box envelope described above.
      */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun seal(plaintext: ByteArray, recipientPublicKey: ByteArray): ByteArray {
         require(recipientPublicKey.size == PUBKEY_LENGTH) {
             "recipientPublicKey must be 32 bytes; was ${recipientPublicKey.size}"
@@ -107,6 +111,7 @@ object SealedBoxCrypto {
      * the decrypted plaintext, or null when the envelope is malformed
      * / fails MAC validation.
      */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun open(sealedEnvelope: ByteArray, recipientKeyPair: KeyPair): ByteArray? {
         if (sealedEnvelope.size < PUBKEY_LENGTH + NONCE_LENGTH + 16) return null
         val ephemeralPub = sealedEnvelope.copyOfRange(0, PUBKEY_LENGTH)
@@ -129,6 +134,7 @@ object SealedBoxCrypto {
         }
     }
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun computeSharedSecret(
         privateKey: java.security.PrivateKey,
         recipientPublicKeyRaw: ByteArray,

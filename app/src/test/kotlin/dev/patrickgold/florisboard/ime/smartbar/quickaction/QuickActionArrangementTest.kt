@@ -182,8 +182,8 @@ class QuickActionArrangementTest : FunSpec({
     }
 
     test("default arrangement exposes task and calendar quick actions in the hidden editor pool") {
-        QuickAction.InsertTask in QuickActionArrangement.Default shouldBe true
-        QuickAction.InsertCalendarEvent in QuickActionArrangement.Default shouldBe true
+        QuickActionArrangement.Default.contains(QuickAction.InsertTask) shouldBe true
+        QuickActionArrangement.Default.contains(QuickAction.InsertCalendarEvent) shouldBe true
     }
 
     test("serializer round-trips calendar quick action") {

@@ -27,7 +27,7 @@ class UserStickerRepositoryTest : FunSpec({
         val pack = UserStickerRepository.packFromDocuments(
             displayName = "My Stickers",
             documents = listOf(
-                document("content://stickers/tree/ok", "thumbs-up.PNG", "application/octet-stream"),
+                document("content://stickers/tree/ok", "thumbs-up.PNG", null),
                 document("content://stickers/tree/laugh", "laugh.webp", "image/webp"),
                 document("content://stickers/tree/readme", "readme.txt", "text/plain"),
             ),

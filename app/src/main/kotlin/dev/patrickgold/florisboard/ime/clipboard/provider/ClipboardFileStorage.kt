@@ -29,9 +29,22 @@ import org.florisboard.lib.kotlin.io.subFile
  */
 object ClipboardFileStorage {
     const val CLIPBOARD_FILES_PATH = "clipboard_files"
+    const val MAX_IMAGE_CLIP_BYTES = 32L * 1024L * 1024L
+    const val MAX_VIDEO_CLIP_BYTES = 128L * 1024L * 1024L
 
     private val Context.clipboardFilesDir: FsFile
         get() = FsFile(this.noBackupFilesDir, "clipboard_files").also { it.mkdirs() }
+
+    enum class MediaKind {
+        IMAGE,
+        VIDEO;
+
+        val maxCloneBytes: Long
+            get() = when (this) {
+                IMAGE -> MAX_IMAGE_CLIP_BYTES
+                VIDEO -> MAX_VIDEO_CLIP_BYTES
+            }
+    }
 
     /**
      * Clones a content URI to internal storage.
@@ -41,10 +54,15 @@ object ClipboardFileStorage {
      * @return The file's name which is a unique long
      */
     @Synchronized
-    fun cloneUri(context: Context, uri: Uri): Long {
+    fun cloneUri(context: Context, uri: Uri, mediaKind: MediaKind): Long {
         val id = System.nanoTime()
         val file = context.clipboardFilesDir.subFile(id.toString())
-        context.contentResolver.readToFile(uri, file)
+        try {
+            context.contentResolver.readToFile(uri, file, mediaKind.maxCloneBytes)
+        } catch (e: Exception) {
+            file.delete()
+            throw e
+        }
         return id
     }
 
