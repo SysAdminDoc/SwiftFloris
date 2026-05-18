@@ -613,7 +613,7 @@ class NlpManager(context: Context) {
                 })
             }
         }
-        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — same-sentence
+        // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — same-sentence
         // language-switch hardening. Previously this map took the
         // MAX trailing-word frequency per locale across the 4-word
         // window, which meant a single trailing word in any locale
@@ -860,7 +860,7 @@ class NlpManager(context: Context) {
         const val CandidateLanguageTieTolerance = 0.0001
 
         /**
-         * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — geometric decay
+         * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — geometric decay
          * factor for the trailing-word language-evidence blend. The
          * most-recent word weighs 1.0 and each word further back is
          * scaled by this factor:

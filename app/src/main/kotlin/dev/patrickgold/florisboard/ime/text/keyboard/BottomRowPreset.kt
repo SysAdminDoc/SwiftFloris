@@ -134,7 +134,7 @@ data class BottomRowPreset(
             )
         )
 
-        /** SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — dedicated arrow-keys
+        /** docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — dedicated arrow-keys
          *  bottom row. SwiftKey ships a "Modes → Arrow keys" affordance
          *  that swaps the standard bottom row for ← ↑ ↓ → so cursor
          *  navigation doesn't need the space-bar trackpad gesture or a
@@ -192,7 +192,7 @@ enum class BottomRowKey {
     ESCAPE,
     SLASH,
 
-    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow keys for the
+    // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow keys for the
     // Navigation bottom-row preset. Reuse the existing TextKeyData
     // arrow constants so the runtime cursor-movement path is already
     // wired (KeyboardManager.onInputKeyUp dispatches ARROW_*).

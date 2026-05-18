@@ -640,7 +640,7 @@ Shipped implementation:
 3. `TextKeyboard.getNearestKeyForPos` refuses nearest-key rescue inside
    `TextKeyboard.isPointInSplitGutter`.
 4. Unit tests pin final-width preservation and no-key gutter behavior.
-5. Release documentation lives in `RELEASE_NOTES_v1.8.62.md`.
+5. Release documentation lives in `CHANGELOG.md#v1.8.62`.
 
 Acceptance: enabling `prefs.keyboard.splitKeyboardEnabled` on a
 tablet with width ≥ 600dp renders the split layout; touches in the

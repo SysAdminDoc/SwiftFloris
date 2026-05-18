@@ -195,11 +195,11 @@ tests use Roborazzi and Robolectric. The active test strategy is:
 
 ## Documentation Routing
 
-- Product state and roadmap: `PROJECT_CONTEXT.md`, `ROADMAP.md`,
-  `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`
+- Product state and roadmap: `PROJECT_CONTEXT.md`, `ROADMAP.md`
+- Archived planning snapshots: `docs/archive/`
 - Typing behavior contracts: `docs/AUTOCORRECT_LIFECYCLE.md`
 - Research artifacts: `.ai/research/<YYYY-MM-DD>/`
-- Release notes: one root `RELEASE_NOTES_vX.Y.Z.md` per versioned release
+- Release notes: appended as a new `## vX.Y.Z` section in root `CHANGELOG.md`
 - Contributor workflow: `CONTRIBUTING.md`
 - Architecture: this file
 - Security/privacy/rebuild docs: `docs/`

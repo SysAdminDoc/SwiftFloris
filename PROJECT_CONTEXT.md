@@ -7,7 +7,7 @@ through v1.8.170).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
-[SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md),
+[docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md),
 [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md), or any per-release notes — it
 distills their durable content into one page so those longer documents
 don't have to be re-read every time.
@@ -561,11 +561,11 @@ subsystem map in
 
 | If your change is… | Lives in… |
 |---|---|
-| One feature slice, one release | A new `RELEASE_NOTES_vX.Y.Z.md` at repo root + a `gradle.properties` bump |
-| A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
+| One feature slice, one release | A new `## vX.Y.Z` section appended to [CHANGELOG.md](CHANGELOG.md) + a `gradle.properties` bump |
+| A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) (snapshot; migrate active items into `ROADMAP.md`) |
 | A roadmap-tier change (NOW / NEXT / LATER / UNDER CONSIDERATION) | [ROADMAP.md](ROADMAP.md) §6/§7/§8/§9 |
 | A quality / a11y / perf / test / CI / release-hygiene workstream | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
-| A research finding that updates a prior roadmap claim | [ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) (this run's addendum) |
+| A research finding that updates a prior roadmap claim | [docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) (snapshot; fold corrections into `ROADMAP.md`) |
 | A security / dependency / crypto migration | [docs/SECURITY.md](docs/SECURITY.md) + [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) + [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md) |
 | Architecture or contributor workflow | [ARCHITECTURE.md](ARCHITECTURE.md) + [CONTRIBUTING.md](CONTRIBUTING.md) |
 | A UX / migration walkthrough | `docs/MIGRATE_FROM_SWIFTKEY.md`, `docs/INLINE_AUTOFILL.md`, `docs/TASKER_INTEGRATION.md` |
@@ -583,7 +583,7 @@ standalone SwiftKey accounts on that date. Non-MS-account data is gone
 after the cutoff. The migration funnel is the highest-priority external
 clock the project has.
 
-Phase A of `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` is sized for this:
+Phase A of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` is sized for this:
 
 - ✅ A1 — README outreach pivot (shipped v1.8.52)
 - ✅ A2 — Post-import confirmation + rollback (shipped v1.8.53)
@@ -703,7 +703,7 @@ Per [ROADMAP.md](ROADMAP.md) §15 Definition of Done:
 
 1. `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug` all green locally.
 2. Manual QA pass on a real device.
-3. Per-release `RELEASE_NOTES_v*.md` file written.
+3. New `## vX.Y.Z` section appended to root `CHANGELOG.md`.
 4. `gradle.properties` versionCode + versionName bumped.
 5. New dep / asset → `NOTICE` / `LICENSES/` updated.
 6. APK signed and installable; SHA-256 published in release notes.
@@ -715,9 +715,11 @@ Per [ROADMAP.md](ROADMAP.md) §15 Definition of Done:
 
 ## 11. Memory rules captured by prior research
 
-- **Per-release file pattern:** every release ships its own
-  `RELEASE_NOTES_v<MAJOR>.<MINOR>.<PATCH>.md`. There is no rolled-up
-  `CHANGELOG.md` and there should not be.
+- **Consolidated changelog pattern:** every release appends a new
+  `## v<MAJOR>.<MINOR>.<PATCH>` section to root `CHANGELOG.md`, preceded
+  by an `<a id="vX.Y.Z"></a>` anchor. The release workflow extracts the
+  section between anchors for the GitHub release body. The legacy
+  per-file `RELEASE_NOTES_v*.md` pattern was retired 2026-05-18.
 - **Build gate:** every code change must keep `:app:verifyNoInternetPermission`
   passing. The build fails otherwise.
 - **License ceiling:** `:app` is Apache-2.0. GPL / AGPL / LGPL /
@@ -745,7 +747,7 @@ Per [ROADMAP.md](ROADMAP.md) §15 Definition of Done:
 - [FEATURE_BACKLOG.md](.ai/research/2026-05-17/FEATURE_BACKLOG.md) — raw harvested ideas
 - [PRIORITIZATION_MATRIX.md](.ai/research/2026-05-17/PRIORITIZATION_MATRIX.md) — scored + tiered
 - [CHANGESET_SUMMARY.md](.ai/research/2026-05-17/CHANGESET_SUMMARY.md) — what this research run created or changed
-- (At repo root) [ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) — the actionable additions
+- (At repo root) [docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) — the actionable additions
 
 Future research runs should follow the same `.ai/research/<YYYY-MM-DD>/`
 convention so prior runs remain auditable.
@@ -756,9 +758,9 @@ convention so prior runs remain auditable.
 |---|---|
 | Project pitch + setup | [README.md](README.md) |
 | The big roadmap with full history | [ROADMAP.md](ROADMAP.md) |
-| The current sprint plan | [SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
-| The latest research run's recommendations | [ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) |
+| The current sprint plan | [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
+| The latest research run's recommendations | [docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) (snapshot) |
 | Quality / a11y / perf / test plan | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
 | Threat model + security posture | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) + [docs/SECURITY.md](docs/SECURITY.md) |
-| What ships in the next release | The latest `RELEASE_NOTES_v*.md` |
+| What ships in the next release | Top section of [CHANGELOG.md](CHANGELOG.md) |
 | What I'm allowed to put in `:app` | §2 above + [ROADMAP.md](ROADMAP.md) §1, §10 |

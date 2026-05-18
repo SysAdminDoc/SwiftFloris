@@ -29,7 +29,7 @@ import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
 /**
- * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A3 — portable encrypted-blob
+ * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A3 — portable encrypted-blob
  * envelope for personal-dictionary export.
  *
  * The Floris personal dictionary already encrypts its on-disk Room

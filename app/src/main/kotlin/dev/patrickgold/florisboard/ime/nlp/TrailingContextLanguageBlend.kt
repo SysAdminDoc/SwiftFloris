@@ -17,7 +17,7 @@
 package dev.patrickgold.florisboard.ime.nlp
 
 /**
- * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — geometric-decay weighted
+ * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B4 — geometric-decay weighted
  * blend of trailing-word language evidence. Pulled out of
  * [NlpManager.candidateSignals] so the math has a focused JVM-test
  * surface independent of Android plumbing.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# ROADMAP_RESEARCH_ADDENDUM_2026-05-17 §B.4 / N12.5.
+# docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17 §B.4 / N12.5.
 # Build the release APK from two clean worktrees at the same commit and require
 # byte-for-byte equality. If the bytes drift, emit ZIP-entry manifests so the
 # failure distinguishes content drift from signing / ZIP metadata drift.

@@ -119,7 +119,7 @@ data class HardwareKeyEntry(
      * Empty list when the layout source did not declare alternates.
      *
      * Consumers: the popup-routing slice tracked separately at
-     * [v1.8.85 follow-up F8](../../../../../../../../../../../../RELEASE_NOTES_v1.8.85.md#follow-up-work-next-per-feature-releases)
+     * [v1.8.85 follow-up F8](../../../../../../../../../../../../CHANGELOG.md#v1.8.85)
      * — once the on-screen long-press popup learns to surface
      * hardware-keyboard-source alternates, this field is the source of
      * truth. Until then the field is populated but not consumed at input

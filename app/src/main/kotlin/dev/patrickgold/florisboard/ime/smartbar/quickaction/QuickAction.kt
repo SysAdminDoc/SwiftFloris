@@ -113,7 +113,7 @@ sealed class QuickAction {
     }
 
     /**
-     * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D2 — generic task-creation
+     * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D2 — generic task-creation
      * quick action, the on-device replacement for SwiftKey's
      * Microsoft-To-Do toolbar tile.
      *
@@ -181,7 +181,7 @@ sealed class QuickAction {
     }
 
     /**
-     * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D1 — calendar quick-insert.
+     * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D1 — calendar quick-insert.
      *
      * Reads upcoming agenda entries from Android's local CalendarProvider
      * (`CalendarContract.Instances`) and shows an IME-local picker. The

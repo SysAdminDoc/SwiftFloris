@@ -19,7 +19,7 @@ package dev.patrickgold.florisboard.ime.dictionary
 import dev.patrickgold.florisboard.lib.FlorisLocale
 
 /**
- * ROADMAP §6 N16.1 / SWIFTKEY_PARITY_ROADMAP_2026-05-17 Phase A2 —
+ * ROADMAP §6 N16.1 / docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 Phase A2 —
  * orchestrates a bulk personal-dictionary import with a snapshot-and-diff
  * pattern so the caller can present a "Imported N words" confirmation
  * sheet and offer an Undo action.
