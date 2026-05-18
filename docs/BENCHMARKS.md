@@ -23,6 +23,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-suggestion-lat
 # Repeatable adb baseline for dictionary cold load, preload, and lazy indexes.
 pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-dictionary-load.ps1 -Iterations 5
 
+# Repeatable adb baseline for candidate-row recomposition during warm typing.
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-candidate-row.ps1 -Iterations 5
+
 # AndroidX Macrobenchmark trace/frame runs.
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
 ```
@@ -39,7 +42,7 @@ AndroidX Macrobenchmark runs. The adb harness scripts write JSON to
 | `imeFirstRender` (cold IME view inflation) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: `TotalTime` 31.0 ms, `WaitTime` 34.0 ms | `SwiftFlorisPerf`: `swiftfloris.ime.firstRenderMs` 18.335469 ms | [`baseline-2026-05-18-ime-first-render.json`](benchmark-results/baseline-2026-05-18-ime-first-render.json) |
 | `firstSuggestionLatency` (cold provider-direct `teh`) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: `swiftfloris.nlp.firstSuggestionMs` 1878.616249 ms, 8 candidates | [`baseline-2026-05-18-ime-suggestion-latency.json`](benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json) |
 | `dictionaryColdLoad` (SCOWL load + preload + SymSpell indexes) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: `swiftfloris.dict.loadMs` 757.353333 ms; `swiftfloris.dict.preloadMs` 772.080625 ms; SymSpell d1 500.230156 ms / d2 532.298281 ms; post-preload spell 1030.179896 ms | [`baseline-2026-05-18-ime-dictionary-load.json`](benchmark-results/baseline-2026-05-18-ime-dictionary-load.json) |
-| `suggestionStripRecomposition` (warm-start with typed text) | _pending_ | _pending_ | `swiftfloris.smartbar.candidates.recompose`: _pending_ | _pending_ |
+| `candidateRowRecomposition` (warm typing phrase) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: 9.0 recompositions/run; median body 0.326563 ms; median max 0.770365 ms; median total 4.069529 ms; paired median `swiftfloris.nlp.suggestMs` 0.339896 ms | [`baseline-2026-05-18-ime-candidate-row.json`](benchmark-results/baseline-2026-05-18-ime-candidate-row.json) |
 | `themeSwitch` (Snygg stylesheet swap) | _pending_ | _pending_ | `swiftfloris.theme.switch`: _pending_ | _pending_ |
 
 ## Glide trace benchmark — pending first corpus run
@@ -96,6 +99,7 @@ script-emitted JSON for adb-only baselines.
 
 | Date | Device | Build | Result file |
 |---|---|---|---|
+| 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.162 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-candidate-row.json`](benchmark-results/baseline-2026-05-18-ime-candidate-row.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.161 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-dictionary-load.json`](benchmark-results/baseline-2026-05-18-ime-dictionary-load.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.160 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-suggestion-latency.json`](benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.159 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-first-render.json`](benchmark-results/baseline-2026-05-18-ime-first-render.json) |

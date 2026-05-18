@@ -16,7 +16,9 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
+import android.os.SystemClock
 import android.os.Trace
+import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
@@ -60,6 +62,7 @@ import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.FlorisImeService
+import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -87,6 +90,12 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     // Trace.beginSection / Trace.endSection calls flanking the body.
     // `android.os.Trace` tolerates a missing endSection if recomposition
     // throws — Perfetto just reports an unclosed section.
+    val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
+    val recomposeStartedAt = if (shouldLogBenchmark) {
+        SystemClock.elapsedRealtimeNanos()
+    } else {
+        0L
+    }
     Trace.beginSection("swiftfloris.smartbar.candidates.recompose")
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
@@ -218,6 +227,14 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                 )
             }
         }
+    }
+    if (shouldLogBenchmark) {
+        val durationMs = (SystemClock.elapsedRealtimeNanos() - recomposeStartedAt) / 1_000_000.0
+        Log.i(
+            "SwiftFlorisPerf",
+            "swiftfloris.smartbar.candidates.recomposeMs=$durationMs " +
+                "candidateCount=${candidates.size} displayMode=$displayMode",
+        )
     }
     Trace.endSection()
 }
