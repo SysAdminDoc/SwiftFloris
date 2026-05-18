@@ -62,8 +62,12 @@ either multi-week engineering, external-clock dependency, or
 maintainer business decisions:
 
 - **SwiftKey-refugee discovery slice** (Tier-1, urgency 5; 14 days to
-  cutoff). Maintainer outreach: AlternativeTo PR, BGR / Android
-  Authority comments, r/Swiftkey post.
+  cutoff). Outreach drafts now live at
+  [`docs/outreach/2026-05-17-swiftkey-migration/`](docs/outreach/2026-05-17-swiftkey-migration/)
+  covering AlternativeTo, BGR, Android Authority, and r/Swiftkey.
+  Maintainer to review and post from their own accounts during the
+  2026-05-28 to 2026-05-30 window; the directory's `README.md` has
+  the recommended order and engagement guidance.
 - **F-Droid reproducible-verified-tier submission** (Tier-1, urgency 3).
   Waiting on F-Droid Basic 2.0 stable; metadata submission then.
 - **LiteRT-LM v0.11 + Gemma 4 E2B as L1.1a target** (Tier-2). Multi-week

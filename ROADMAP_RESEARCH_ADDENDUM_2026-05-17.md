@@ -81,9 +81,14 @@ not already in this addendum:
    HeliBoard / FUTO / FlorisBoard / AnySoftKeyboard as the
    SwiftKey-migration escape route — **SwiftFloris is on none of them**.
    This is the single highest-leverage outreach gap of the migration
-   window. Action: an outreach micro-slice (PR submissions to
-   AlternativeTo, comments on the BGR / Android Authority pieces, one
-   Reddit post in r/Swiftkey) before 2026-05-30. Citations:
+   window.
+   **Status — 2026-05-17:** drafts shipped at
+   [`docs/outreach/2026-05-17-swiftkey-migration/`](docs/outreach/2026-05-17-swiftkey-migration/)
+   covering all four surfaces (AlternativeTo entry, BGR comment,
+   Android Authority comment, r/Swiftkey post). Maintainer to review
+   and post from their own accounts during the 2026-05-28 to 2026-05-30
+   window; the drafts directory's `README.md` documents the
+   recommended order and engagement guidance. Citations:
    <https://alternativeto.net/software/swiftkey/>,
    <https://www.androidauthority.com/heliboard-gboard-alternative-3505462/>,
    <https://www.bgr.com/2003971/android-keyboards-replace-google-gboard-swiftkey-heliboard/>.
