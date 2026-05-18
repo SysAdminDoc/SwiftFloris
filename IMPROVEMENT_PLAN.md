@@ -7,8 +7,8 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 ## Current Baseline
 
 - Branch: `master`; completed release slices are committed, tagged, and pushed.
-- Main Kotlin files: 240.
-- Test Kotlin files: 17.
+- Main Kotlin files: 241.
+- Test Kotlin files: 18.
 - Latest verified commands:
   - `./gradlew.bat :app:lintDebug :app:testDebugUnitTest :app:assembleDebug`
   - `./gradlew.bat :app:installDebug`
@@ -59,6 +59,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Completed the first conservative `UnusedResources` review by deleting only obsolete launcher/branding resources and legacy color tokens with no code, manifest, asset, test, or dynamic lookup references. Lint dropped from 289 warnings / 1 hint to 245 warnings / 1 hint; remaining `UnusedResources` entries are string, theme-palette, or spec-dimension buckets requiring separate semantic review.
 - 2026-05-18: Reviewed dependency-version lint warnings as a dedicated dependency slice and bumped Gradle 9.4.1 -> 9.5.1, Navigation Compose 2.9.7 -> 2.9.8, and JUnit Vintage 5.13.1 -> 6.0.3 after checking official Gradle, AndroidX, and JUnit release metadata. Lint dropped to 241 warnings / 1 hint.
 - 2026-05-18: Extracted candidate auto-commit ordering, quick-prediction spacebar selection, and rejected-correction gating into `CandidateAutoCommitPolicy`, leaving `NlpManager` to gather Android-bound state and adding focused JVM coverage for disabled states, shortcut/phrase/active/immediate priority, language-confidence gating, rejection suppression, and plain-space prediction suppression.
+- 2026-05-18: Extracted software punctuation/non-letter autocorrect flush decisions into `KeyboardAutoCommitFlushPolicy`, leaving `KeyboardManager` to execute the chosen flush and adding JVM coverage for media mode, alphabetic keys, punctuation keys, numeric keys, numeric/phone layouts, non-text keys, and empty text.
 
 ## Workstreams
 
@@ -118,7 +119,7 @@ Goal: Make keyboard behavior easier to test and safer to change by separating An
 Tasks:
 - [x] Extract autocorrect suppression state to a pure JVM-testable class.
 - [x] Extract candidate auto-commit eligibility and rejection policy from `NlpManager`.
-- [ ] Extract punctuation-triggered commit rules from `KeyboardManager`.
+- [x] Extract punctuation-triggered commit rules from `KeyboardManager`.
 - [x] Extract phantom-space/autospace rules from `EditorInstance`.
 - [x] Extract backup/restore validation policy from Compose screens.
 - [ ] Extract theme validation and rule parsing from UI surfaces.

@@ -934,8 +934,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.VIEW_SYMBOLS2 -> activeState.keyboardMode = KeyboardMode.SYMBOLS2
             else -> {
                 if (activeState.imeUiMode == ImeUiMode.MEDIA) {
-                    nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
-                    editorInstance.commitText(data.asString(isForDisplay = false))
+                    val text = data.asString(isForDisplay = false)
+                    if (shouldFlushAutoCommitBeforeCommit(data, text)) {
+                        nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
+                    }
+                    editorInstance.commitText(text)
                     return@batchEdit
                 }
                 when (activeState.keyboardMode) {
@@ -959,7 +962,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     else -> when (data.type) {
                         KeyType.CHARACTER, KeyType.NUMERIC ->{
                             val text = data.asString(isForDisplay = false)
-                            if (!UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0))) {
+                            if (shouldFlushAutoCommitBeforeCommit(data, text)) {
                                 nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
                             }
                             editorInstance.commitChar(text)
@@ -1014,6 +1017,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
             }
         }
+    }
+
+    private fun shouldFlushAutoCommitBeforeCommit(data: KeyData, text: String): Boolean {
+        return KeyboardAutoCommitFlushPolicy.shouldFlushBeforeCommit(
+            imeUiMode = activeState.imeUiMode,
+            keyboardMode = activeState.keyboardMode,
+            keyType = data.type,
+            text = text,
+            isFirstCodePointAlphabetic = text.isNotEmpty() &&
+                UCharacter.isUAlphabetic(UCharacter.codePointAt(text, 0)),
+        )
     }
 
     override fun onInputKeyCancel(data: KeyData) {
