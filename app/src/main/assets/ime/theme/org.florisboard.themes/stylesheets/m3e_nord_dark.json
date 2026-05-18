@@ -16,7 +16,7 @@
     "--one-hand-background": "#353b48",
     "--one-hand-foreground": "#eceff4",
     "--incognito-icon-color": "#ffffff12",
-    "--on-primary": "#2e3440",
+    "--on-primary": "#000000",
     "--on-background": "#eceff4",
     "--on-background-disabled": "#eceff450",
     "--on-surface": "#e5e9f0",
