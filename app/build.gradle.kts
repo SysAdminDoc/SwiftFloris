@@ -351,6 +351,84 @@ androidComponents {
     }
 }
 
+// ROADMAP §6 N7.4 — pin the load-bearing excludes in
+// `app/src/main/res/xml/data_extraction_rules.xml` against accidental
+// rewrite. Android Lint validates the XML against the data-extraction-rules
+// schema, but it does NOT check that the file contains exclude entries for
+// the SQLCipher personal-dictionary DB, the Tink-wrapped passphrase prefs,
+// or the clipboard-history directory. Without those specific excludes the
+// Android 12+ D2D transfer leak that v1.8.85 closed comes back the moment
+// someone "cleans up" the rules file. This task fails the build if any of
+// the required excludes are missing from either rule set
+// (`<cloud-backup>` and `<device-transfer>`).
+val verifyDataExtractionRules = tasks.register("verifyDataExtractionRules") {
+    group = "verification"
+    description = "Fails the build if data_extraction_rules.xml drops a load-bearing exclude (ROADMAP §6 N7.4)."
+
+    val rulesFile = file("src/main/res/xml/data_extraction_rules.xml")
+    inputs.file(rulesFile).withPathSensitivity(PathSensitivity.RELATIVE)
+    outputs.upToDateWhen { true }
+
+    // Each entry is a *substring* search on the rules file. The substrings
+    // are stable identifiers (file names / pref names / directory names)
+    // that any future edit must preserve. We deliberately don't parse the
+    // XML — the substring check is cheaper and catches both schema-valid
+    // rewrites that drop an exclude AND accidental typos in the file name.
+    val requiredExcludes = listOf(
+        // SQLCipher personal-dictionary DB + sidecars
+        "floris_user_dictionary",
+        "floris_user_dictionary.db",
+        "floris_user_dictionary.db-journal",
+        "floris_user_dictionary.db-wal",
+        "floris_user_dictionary.db-shm",
+        // Tink-wrapped passphrase prefs
+        "floris_user_dictionary_key.xml",
+        // Clipboard history dir
+        "clipboard_history",
+    )
+    val requiredSections = listOf("<cloud-backup>", "<device-transfer>")
+
+    doLast {
+        if (!rulesFile.exists()) {
+            throw GradleException(
+                "data_extraction_rules.xml missing at ${rulesFile.path} — this file is " +
+                    "load-bearing for the Android 12+ no-leak-via-D2D contract (ROADMAP §6 N7.4)."
+            )
+        }
+        val text = rulesFile.readText()
+        val missingSections = requiredSections.filterNot { it in text }
+        val missingExcludes = requiredExcludes.filterNot { it in text }
+        if (missingSections.isNotEmpty() || missingExcludes.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("data_extraction_rules.xml is missing required content (ROADMAP §6 N7.4):")
+                    if (missingSections.isNotEmpty()) {
+                        appendLine("  missing rule sections:")
+                        missingSections.forEach { appendLine("    - $it") }
+                    }
+                    if (missingExcludes.isNotEmpty()) {
+                        appendLine("  missing exclude identifiers:")
+                        missingExcludes.forEach { appendLine("    - $it") }
+                    }
+                    appendLine()
+                    append("Each identifier above MUST appear inside both <cloud-backup> and ")
+                    append("<device-transfer> as the `path=` attribute of an <exclude> element. ")
+                    append("Without these excludes, Android 12+ D2D transfer carries the SQLCipher ")
+                    append("personal-dictionary DB and its undecryptable Tink-wrapped passphrase ")
+                    append("to a new device, leaking PII ciphertext and bricking the dictionary on ")
+                    append("the new install.")
+                }
+            )
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.named("preBuild").configure {
+        dependsOn(verifyDataExtractionRules)
+    }
+}
+
 dependencies {
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
