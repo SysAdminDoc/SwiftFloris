@@ -160,6 +160,9 @@
     <!-- Settings UI strings -->
     <string name="settings__title" comment="Title of Settings">Settings</string>
     <string name="settings__preview_keyboard" comment="Hint for try your setup box">Try out your setup</string>
+    <string name="settings__preview_keyboard__label" comment="Label for the settings keyboard preview field">Keyboard preview</string>
+    <string name="settings__preview_keyboard__state_ready" comment="Supporting text for the settings keyboard preview field when it is not focused">Preview ready</string>
+    <string name="settings__preview_keyboard__state_active" comment="Supporting text for the settings keyboard preview field when it is focused">Preview active</string>
     <string name="settings__preview_keyboard__switch_keyboard" comment="Content description for the preview field keyboard switcher">Switch keyboard</string>
     <string name="settings__preview_keyboard__ime_picker_unavailable" comment="Toast shown when Android cannot open the keyboard picker">Keyboard switcher is not available right now.</string>
     <string name="settings__help" comment="General label for help buttons in Settings">Help</string>
