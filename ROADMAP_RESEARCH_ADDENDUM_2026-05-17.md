@@ -121,7 +121,23 @@ not already in this addendum:
    confirm it's benign for the IME service; (b) new
    `TextAttribute.setTextSuggestionSelected()` for CJKV candidate
    selection a11y, wire behind the existing API 37 gate. **No
-   compileSdk bump required before stable.** Citations:
+   compileSdk bump required before stable.**
+   **Status — 2026-05-17 (post-v1.8.103 audit):** the gates are already
+   shipped where they need to be. **N13.2** (IME-visibility-restore
+   across config change) is at
+   [`FlorisAppActivity.kt:113-127`](app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisAppActivity.kt);
+   **N13.3** (long-press-popup suppression for password fields under the
+   new `show_passwords_physical` separation) is at
+   [`PasswordFieldPopupGate.kt`](app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/PasswordFieldPopupGate.kt)
+   plus [`TextKeyboardLayout.kt:307-316`](app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt).
+   The IME service surface is benign (the agent's note was explicit:
+   "targets host apps, not the IME service"). `TextAttribute.setTextSuggestionSelected()`
+   remains the only outstanding behavior, but it should land WITH the
+   CJK candidate UI (currently L3 librime addon territory) rather than
+   ahead of it — speculative wiring without a corresponding consumer
+   is the wrong shape. No further pre-stable code action required;
+   pick up the CJKV `TextAttribute` work as part of L3.
+   Citations:
    <https://developer.android.com/about/versions/17/release-notes>,
    <https://developer.android.com/about/versions/17/behavior-changes-17>.
 
