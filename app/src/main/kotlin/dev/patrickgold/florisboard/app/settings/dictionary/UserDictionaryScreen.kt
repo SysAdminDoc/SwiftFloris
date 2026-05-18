@@ -44,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -53,10 +54,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
+import android.app.Activity
+import android.view.WindowManager
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
@@ -747,8 +751,29 @@ private fun DictionaryPassphraseDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    var passphrase by rememberSaveable { mutableStateOf("") }
-    var passphraseConfirmation by rememberSaveable { mutableStateOf("") }
+    // While this dialog is on-screen, mark the host activity window as
+    // FLAG_SECURE so screen recordings / screenshots / external-display
+    // mirroring cannot capture the passphrase the user is typing. The
+    // PasswordVisualTransformation only masks the rendered dot/bullet —
+    // without FLAG_SECURE the typed characters are still in the surface
+    // layer that a screen recorder captures. Cleared on dispose.
+    val view = LocalView.current
+    DisposableEffect(view) {
+        val window = (view.context as? Activity)?.window
+        window?.setFlags(
+            WindowManager.LayoutParams.FLAG_SECURE,
+            WindowManager.LayoutParams.FLAG_SECURE,
+        )
+        onDispose {
+            window?.clearFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        }
+    }
+    // Use plain `remember` (not `rememberSaveable`) so the passphrase does
+    // NOT survive process death / configuration change via the savedInstance
+    // state bundle. A passphrase in a savedInstanceState bundle is
+    // recoverable via `am dumpstate` and the like.
+    var passphrase by remember { mutableStateOf("") }
+    var passphraseConfirmation by remember { mutableStateOf("") }
     val mismatch = requireConfirmation &&
         passphraseConfirmation.isNotEmpty() &&
         passphrase != passphraseConfirmation
