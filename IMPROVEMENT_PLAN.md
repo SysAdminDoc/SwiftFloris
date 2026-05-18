@@ -15,7 +15,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
-- Current lint shape after cleanup batches: 245 warnings, 1 hint. Largest remaining bucket is `UnusedResources` at 211 warnings; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
+- Current lint shape after cleanup batches: 241 warnings, 1 hint. Largest remaining bucket is `UnusedResources` at 211 warnings; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, dictionary import/export, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in extension editing, theme, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
@@ -57,6 +57,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Extracted subtype editor draft validation into a pure policy and added JVM coverage for default add-state missing fields, complete draft building, placeholder rejection, and edit-state preservation.
 - 2026-05-18: Extracted theme component metadata validation into a pure policy and added JVM coverage for valid apply normalization, invalid fields, duplicate IDs, and blank stylesheet fallback.
 - 2026-05-18: Completed the first conservative `UnusedResources` review by deleting only obsolete launcher/branding resources and legacy color tokens with no code, manifest, asset, test, or dynamic lookup references. Lint dropped from 289 warnings / 1 hint to 245 warnings / 1 hint; remaining `UnusedResources` entries are string, theme-palette, or spec-dimension buckets requiring separate semantic review.
+- 2026-05-18: Reviewed dependency-version lint warnings as a dedicated dependency slice and bumped Gradle 9.4.1 -> 9.5.1, Navigation Compose 2.9.7 -> 2.9.8, and JUnit Vintage 5.13.1 -> 6.0.3 after checking official Gradle, AndroidX, and JUnit release metadata. Lint dropped to 241 warnings / 1 hint.
 
 ## Workstreams
 
@@ -99,7 +100,7 @@ Tasks:
 - [x] Audit `Typos` warnings and correct only cases with high confidence.
 - [x] Address `MissingQuantity` by adding required plural quantities, preferably via translation-safe fallback copying.
 - [x] Review `UnusedResources`; delete only resources proven unused across build variants and dynamic lookup paths.
-- [ ] Review dependency version warnings separately from source cleanup.
+- [x] Review dependency version warnings separately from source cleanup.
 
 Acceptance criteria:
 - Lint warning count decreases monotonically across cleanup batches.
@@ -366,8 +367,8 @@ Tasks:
 - [x] Replace deprecated language pack manager import icon usage with the AutoMirrored icon.
 - [ ] Review Room nullable DAO warning and either fix the type or document why it is intentional.
 - [ ] Review Kotlin compiler flags and remove stale flags only when language-version behavior is confirmed.
-- [ ] Review dependency update warnings separately from product changes.
-- [ ] Add a dependency-review note before any version bump.
+- [x] Review dependency update warnings separately from product changes.
+- [x] Add a dependency-review note before any version bump.
 
 Acceptance criteria:
 - Compile output gets quieter without broad suppressions.
