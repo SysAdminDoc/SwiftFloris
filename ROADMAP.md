@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.10
+# SwiftFloris Roadmap v5.11
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.9 (2026-05-18, same-day). v5.0-v5.9 entries are preserved with shipped markers updated in-place; v5.10 records the fourth seventh-pass follow-up release after v1.8.104 – v1.8.110. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.114 (released 2026-05-18 — external voice IME microphone gate). **v1.8.104 – v1.8.114 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), and five clipboard data-leak / resource-exhaustion paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup).
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass audit closed twelve privacy / data-integrity / resource-exhaustion findings on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.10 (2026-05-18, same-day). v5.0-v5.10 entries are preserved with shipped markers updated in-place; v5.11 records the fifth seventh-pass follow-up release after v1.8.104 – v1.8.110 and closes the high-leverage seventh-pass follow-up roster. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.115 (released 2026-05-18 — sensitive clipboard description guard). **v1.8.104 – v1.8.115 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), and six clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard).
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.114)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.115)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -42,6 +42,11 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   `PackageManager.checkPermission(RECORD_AUDIO, packageName)` before
   `isVoiceInputReadyForHandoff()` reports the handoff as ready. This
   closes **G8**.
+- **v1.8.115** — Sensitive clipboard description guard. Clipboard
+  item descriptions now skip email / URL / phone classification for
+  `item.isSensitive` before reading the raw `stringRepresentation()`,
+  so redacted pin-popup text cannot reveal a link badge. This closes
+  **G10**.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
@@ -102,11 +107,11 @@ per-PR slice could not absorb:
   OR flag the catalog UI as preview-only / hide it behind a
   developer-options toggle until the recogniser lands.
 
-### 0.6.3 Open seventh-pass follow-up roster
+### 0.6.3 Seventh-pass follow-up roster
 
 Priority-scored in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md §5`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
-High-leverage item (score ≥ 5.0) suitable for v1.8.115:
+High-leverage items (score ≥ 5.0) are now closed:
 
 - ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap.
   Shipped in **v1.8.111**.
@@ -116,8 +121,8 @@ High-leverage item (score ≥ 5.0) suitable for v1.8.115:
   validate Intent extras. Shipped in **v1.8.113**.
 - ✅ **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME
   `RECORD_AUDIO` grant. Shipped in **v1.8.114**.
-- **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
-  `item.isSensitive`.
+- ✅ **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
+  `item.isSensitive`. Shipped in **v1.8.115**.
 - ✅ **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
   guard. Shipped in **v1.8.111**.
 
