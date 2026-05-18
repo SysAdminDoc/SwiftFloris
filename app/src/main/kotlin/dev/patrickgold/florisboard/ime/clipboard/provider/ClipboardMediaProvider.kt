@@ -20,6 +20,7 @@ import android.content.ContentProvider
 import android.content.ContentResolver
 import android.content.ContentUris
 import android.content.ContentValues
+import android.content.Context
 import android.content.Intent
 import android.content.UriMatcher
 import android.database.Cursor
@@ -139,31 +140,43 @@ class ClipboardMediaProvider : ContentProvider() {
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
     }
 
+    private fun readImageRotation(context: Context, mediaUri: Uri): Int {
+        context.contentResolver.openInputStream(mediaUri).use { inputStream ->
+            requireNotNull(inputStream) {
+                "Unable to open clipboard image URI for orientation"
+            }
+            val exifInterface = ExifInterface(inputStream)
+            return when (exifInterface.getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL,
+            )) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> 90
+                ExifInterface.ORIENTATION_ROTATE_180 -> 180
+                ExifInterface.ORIENTATION_ROTATE_270 -> 270
+                else -> 0
+            }
+        }
+    }
+
     override fun insert(uri: Uri, values: ContentValues?): Uri {
         when (val m = Matcher.match(uri)) {
             IMAGE_CLIPS_TABLE, VIDEO_CLIPS_TABLE -> {
                 return try {
                     values as ContentValues
+                    val context = context!!
                     val mediaUri = values.getAsString(Columns.MediaUri).toUri()
-                    // Get the orientation of the image
-                    val exifInterface = ExifInterface(context!!.contentResolver.openInputStream(mediaUri)!!)
-                    var rotation = 0
-                    val orientation = exifInterface.getAttributeInt(
-                        ExifInterface.TAG_ORIENTATION,
-                        ExifInterface.ORIENTATION_NORMAL
-                    )
-                    when (orientation) {
-                        ExifInterface.ORIENTATION_ROTATE_90 -> rotation = 90
-                        ExifInterface.ORIENTATION_ROTATE_180 -> rotation = 180
-                        ExifInterface.ORIENTATION_ROTATE_270 -> rotation = 270
-                    }
                     val mediaKind = when (m) {
                         IMAGE_CLIPS_TABLE -> ClipboardFileStorage.MediaKind.IMAGE
                         VIDEO_CLIPS_TABLE -> ClipboardFileStorage.MediaKind.VIDEO
                         else -> error("Unexpected media table $m")
                     }
-                    val id = ClipboardFileStorage.cloneUri(context!!, mediaUri, mediaKind)
-                    val size = ClipboardFileStorage.getFileForId(context!!, id).length()
+                    val rotation = if (ClipboardMediaClonePolicy.shouldReadExifOrientation(mediaKind)) {
+                        readImageRotation(context, mediaUri)
+                    } else {
+                        0
+                    }
+                    val id = ClipboardFileStorage.cloneUri(context, mediaUri, mediaKind)
+                    val size = ClipboardFileStorage.getFileForId(context, id).length()
                     val mimeTypes = values.getAsString(Columns.MimeTypes).split(",")
                     val displayName = values.getAsString(OpenableColumns.DISPLAY_NAME)
                     val fileInfo = ClipboardFileInfo(id, displayName, size, rotation, mimeTypes)
@@ -177,8 +190,8 @@ class ClipboardMediaProvider : ContentProvider() {
                         ContentUris.withAppendedId(VIDEO_CLIPS_URI, id)
                     }
                 } catch (e: Exception) {
-                    flogError { e.message.toString() }
-                    uri.buildUpon().appendPath("0").build()
+                    flogError { "Failed to clone clipboard media URI: ${e.message.orEmpty()}" }
+                    throw e
                 }
             }
             else -> error("Unable to identify type of $uri")

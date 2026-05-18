@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -207,7 +208,12 @@ class ClipboardManager(
 
                 val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
                 if (!isEqual) {
-                    val item = ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
+                    val item = try {
+                        ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
+                    } catch (e: Exception) {
+                        flogError { "Failed to import system clipboard item: ${e.message.orEmpty()}" }
+                        return@launch
+                    }
                     primaryClip = item
                     // Skip IME-local history when the source app marked the
                     // clip as sensitive via
