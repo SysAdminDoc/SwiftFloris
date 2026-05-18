@@ -76,6 +76,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Verified dynamic font scaling on settings and dialogs by adding a shared high-font-scale expansion policy for compact one-line metadata, links, component titles, and theme-rule key previews, with JVM coverage for the threshold behavior.
 - 2026-05-18: Verified theme contrast for keyboard, candidate row, dialogs, and warnings by adding bundled stylesheet selector coverage, dynamic settings color-scheme coverage, fixing low-contrast enter-key theme variants, and raising shared card secondary-copy opacity.
 - 2026-05-18: Ensured state indicators do not rely on color alone by adding shared success/progress/neutral status cards with distinct icons, applying them to import/export/delete/backup/restore/readiness notices, and adding ready/skipped icons to extension import file rows.
+- 2026-05-18: Added accessibility notes to the manual QA checklist in contributor and accessibility docs, covering TalkBack traversal, keyboard labels, candidate announcements, high font scale, non-color states, and theme/layout cross-checks.
 
 ## Workstreams
 
@@ -206,7 +207,7 @@ Tasks:
 - [x] Verify dynamic font scaling on settings and dialogs.
 - [x] Verify theme contrast for keyboard, candidate row, dialogs, and warnings.
 - [x] Ensure state indicators do not rely on color alone.
-- [ ] Add accessibility notes to manual QA checklist.
+- [x] Add accessibility notes to manual QA checklist.
 
 Acceptance criteria:
 - Main settings workflows can be navigated predictably with accessibility services.
