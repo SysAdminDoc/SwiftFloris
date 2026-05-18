@@ -54,6 +54,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Extracted incognito suggestion privacy decisions into a pure policy and added JVM coverage for app-declared privacy override, dynamic toggle availability, learning gates, and touch-decoder evidence suppression.
 - 2026-05-18: Extracted backup/restore validation and operation-state decisions into a pure policy, rejecting archives with no restorable content and adding JVM coverage for backup success/cancellation/failure, restore invalid archives, enablement, and partial failures.
 - 2026-05-18: Extracted extension import readiness decisions into a pure policy and added JVM coverage for language pack import/update, bundled-core rejection, corrupted metadata, wrong extension type, and import button enablement.
+- 2026-05-18: Extracted subtype editor draft validation into a pure policy and added JVM coverage for default add-state missing fields, complete draft building, placeholder rejection, and edit-state preservation.
 
 ## Workstreams
 
@@ -73,7 +74,7 @@ Tasks:
 - [x] Add incognito suggestion behavior tests.
 - [x] Add backup and restore tests for success, cancellation, invalid archive, and partial failure cases.
 - [x] Add language pack import/update tests.
-- [ ] Add subtype editor validation tests.
+- [x] Add subtype editor validation tests.
 - [ ] Add theme editor validation tests.
 
 Acceptance criteria:

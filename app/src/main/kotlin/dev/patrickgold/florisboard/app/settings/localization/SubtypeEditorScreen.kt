@@ -91,57 +91,30 @@ import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
 
 
-private val SelectComponentName = ExtensionComponentName("00", "00")
-private val SelectNlpProviderId = SelectComponentName.toString()
-private val SelectNlpProviders = SubtypeNlpProviderMap(
-    spelling = SelectNlpProviderId,
-)
-private val SelectLayoutMap = SubtypeLayoutMap(
-    characters = SelectComponentName,
-    symbols = SelectComponentName,
-    symbols2 = SelectComponentName,
-    numeric = SelectComponentName,
-    numericAdvanced = SelectComponentName,
-    numericRow = SelectComponentName,
-    phone = SelectComponentName,
-    phone2 = SelectComponentName,
-)
-private val SelectLocale = FlorisLocale.from("00", "00")
-private val SelectListKeys = listOf(SelectComponentName)
-
-private class SubtypeEditorState(init: Subtype?) {
+private class SubtypeEditorState private constructor(init: SubtypeEditorDraft) {
     companion object {
         val Saver = Saver<SubtypeEditorState, String>(
             save = { editor ->
-                val subtype = Subtype(
-                    id = editor.id.value,
-                    primaryLocale = editor.primaryLocale.value,
-                    secondaryLocales = editor.secondaryLocales.value,
-                    nlpProviders = editor.nlpProviders.value,
-                    composer = editor.composer.value,
-                    currencySet = editor.currencySet.value,
-                    punctuationRule = editor.punctuationRule.value,
-                    popupMapping = editor.popupMapping.value,
-                    layoutMap = editor.layoutMap.value,
-                )
-                SubtypeJsonConfig.encodeToString(subtype)
+                SubtypeJsonConfig.encodeToString(editor.toDraft())
             },
             restore = { str ->
-                val subtype = SubtypeJsonConfig.decodeFromString<Subtype>(str)
-                SubtypeEditorState(subtype)
+                val draft = SubtypeJsonConfig.decodeFromString<SubtypeEditorDraft>(str)
+                SubtypeEditorState(draft)
             },
         )
     }
 
-    val id: MutableState<Long> = mutableLongStateOf(init?.id ?: -1)
-    val primaryLocale: MutableState<FlorisLocale> = mutableStateOf(init?.primaryLocale ?: SelectLocale)
-    val secondaryLocales: MutableState<List<FlorisLocale>> = mutableStateOf(init?.secondaryLocales ?: listOf())
-    val nlpProviders: MutableState<SubtypeNlpProviderMap> = mutableStateOf(init?.nlpProviders ?: Subtype.DEFAULT.nlpProviders)
-    val composer: MutableState<ExtensionComponentName> = mutableStateOf(init?.composer ?: SelectComponentName)
-    val currencySet: MutableState<ExtensionComponentName> = mutableStateOf(init?.currencySet ?: SelectComponentName)
-    val punctuationRule: MutableState<ExtensionComponentName> = mutableStateOf(init?.punctuationRule ?: Subtype.DEFAULT.punctuationRule)
-    val popupMapping: MutableState<ExtensionComponentName> = mutableStateOf(init?.popupMapping ?: SelectComponentName)
-    val layoutMap: MutableState<SubtypeLayoutMap> = mutableStateOf(init?.layoutMap ?: SelectLayoutMap)
+    constructor(init: Subtype?) : this(SubtypeEditorValidationPolicy.draftFrom(init))
+
+    val id: MutableState<Long> = mutableLongStateOf(init.id)
+    val primaryLocale: MutableState<FlorisLocale> = mutableStateOf(init.primaryLocale)
+    val secondaryLocales: MutableState<List<FlorisLocale>> = mutableStateOf(init.secondaryLocales)
+    val nlpProviders: MutableState<SubtypeNlpProviderMap> = mutableStateOf(init.nlpProviders)
+    val composer: MutableState<ExtensionComponentName> = mutableStateOf(init.composer)
+    val currencySet: MutableState<ExtensionComponentName> = mutableStateOf(init.currencySet)
+    val punctuationRule: MutableState<ExtensionComponentName> = mutableStateOf(init.punctuationRule)
+    val popupMapping: MutableState<ExtensionComponentName> = mutableStateOf(init.popupMapping)
+    val layoutMap: MutableState<SubtypeLayoutMap> = mutableStateOf(init.layoutMap)
 
     fun applySubtype(subtype: Subtype) {
         id.value = subtype.id
@@ -155,26 +128,20 @@ private class SubtypeEditorState(init: Subtype?) {
         layoutMap.value = subtype.layoutMap
     }
 
-    fun toSubtype() = runCatching {
-        check(primaryLocale.value != SelectLocale)
-        check(nlpProviders.value.spelling != SelectNlpProviderId)
-        check(nlpProviders.value.suggestion != SelectNlpProviderId)
-        check(composer.value != SelectComponentName)
-        check(currencySet.value != SelectComponentName)
-        check(punctuationRule.value != SelectComponentName)
-        check(popupMapping.value != SelectComponentName)
-        check(layoutMap.value.characters != SelectComponentName)
-        check(layoutMap.value.symbols != SelectComponentName)
-        check(layoutMap.value.symbols2 != SelectComponentName)
-        check(layoutMap.value.numeric != SelectComponentName)
-        check(layoutMap.value.numericAdvanced != SelectComponentName)
-        check(layoutMap.value.numericRow != SelectComponentName)
-        check(layoutMap.value.phone != SelectComponentName)
-        check(layoutMap.value.phone2 != SelectComponentName)
-        Subtype(
-            id.value, primaryLocale.value, secondaryLocales.value, nlpProviders.value, composer.value,
-            currencySet.value, punctuationRule.value, popupMapping.value, layoutMap.value,
-        )
+    fun toDraft() = SubtypeEditorDraft(
+        id = id.value,
+        primaryLocale = primaryLocale.value,
+        secondaryLocales = secondaryLocales.value,
+        nlpProviders = nlpProviders.value,
+        composer = composer.value,
+        currencySet = currencySet.value,
+        punctuationRule = punctuationRule.value,
+        popupMapping = popupMapping.value,
+        layoutMap = layoutMap.value,
+    )
+
+    fun toSubtype(): Result<Subtype> {
+        return SubtypeEditorValidationPolicy.toSubtype(toDraft())
     }
 }
 
