@@ -20,5 +20,9 @@
             android:exported="true"
             android:theme="@style/FlorisAppTheme"
             android:windowSoftInputMode="stateAlwaysVisible|adjustResize"/>
+        <activity
+            android:name="dev.patrickgold.florisboard.benchmark.BenchmarkBackupRestoreActivity"
+            android:exported="true"
+            android:theme="@style/FlorisAppTheme"/>
     </application>
 </manifest>

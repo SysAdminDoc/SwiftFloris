@@ -29,6 +29,9 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-candidate-row.
 # Repeatable adb baseline for theme switching while the IME is visible.
 pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-theme-switch.ps1 -Iterations 5
 
+# Repeatable adb baseline for backup/restore on a representative default archive.
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-backup-restore.ps1 -Iterations 5
+
 # AndroidX Macrobenchmark trace/frame runs.
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
 ```
@@ -47,6 +50,7 @@ AndroidX Macrobenchmark runs. The adb harness scripts write JSON to
 | `dictionaryColdLoad` (SCOWL load + preload + SymSpell indexes) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: `swiftfloris.dict.loadMs` 757.353333 ms; `swiftfloris.dict.preloadMs` 772.080625 ms; SymSpell d1 500.230156 ms / d2 532.298281 ms; post-preload spell 1030.179896 ms | [`baseline-2026-05-18-ime-dictionary-load.json`](benchmark-results/baseline-2026-05-18-ime-dictionary-load.json) |
 | `candidateRowRecomposition` (warm typing phrase) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: 9.0 recompositions/run; median body 0.326563 ms; median max 0.770365 ms; median total 4.069529 ms; paired median `swiftfloris.nlp.suggestMs` 0.339896 ms | [`baseline-2026-05-18-ime-candidate-row.json`](benchmark-results/baseline-2026-05-18-ime-candidate-row.json) |
 | `themeSwitch` (Snygg stylesheet swap) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: 5.0 switches/run; median body 18.541197 ms; median max 19.587708 ms; median total 57.505571 ms; cold-step median 19.221354 ms; warm cached-step median 0.2808075 ms; 0 load failures | [`baseline-2026-05-18-ime-theme-switch.json`](benchmark-results/baseline-2026-05-18-ime-theme-switch.json) |
+| `backupRestore` (default prefs + keyboard/theme archive) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: backup create 12.653698 ms; archive 22,034 bytes; restore prepare 4.062604 ms; merge apply 5.727604 ms; restore total 9.874167 ms; 3/3 sections restored, 0 failed | [`baseline-2026-05-18-backup-restore.json`](benchmark-results/baseline-2026-05-18-backup-restore.json) |
 
 ## Glide trace benchmark — pending first corpus run
 
@@ -102,6 +106,7 @@ script-emitted JSON for adb-only baselines.
 
 | Date | Device | Build | Result file |
 |---|---|---|---|
+| 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.164 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-backup-restore.json`](benchmark-results/baseline-2026-05-18-backup-restore.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.163 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-theme-switch.json`](benchmark-results/baseline-2026-05-18-ime-theme-switch.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.162 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-candidate-row.json`](benchmark-results/baseline-2026-05-18-ime-candidate-row.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.161 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-dictionary-load.json`](benchmark-results/baseline-2026-05-18-ime-dictionary-load.json) |

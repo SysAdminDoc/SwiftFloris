@@ -13,9 +13,9 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - `./gradlew.bat :app:lintDebug :app:testDebugUnitTest :app:assembleDebug`
   - `./gradlew.bat :app:installDebug`
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
-- Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
+- Known worktree condition: no unrelated worktree changes were present before the v1.8.164 benchmark slice.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
-- Current lint shape after trust-state batches: 246 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
+- Current lint shape after trust-state and benchmark batches: 247 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export/manual entry mutation, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
@@ -27,7 +27,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - Lint signal is improving, but the remaining `UnusedResources` bucket still hides real regressions. Further cleanup must stay conservative because translated strings, theme palette test fixtures, and build variants can look unused to lint.
 - Compile warnings show older synchronous feedback APIs in several UI surfaces. Replacing them with coroutine-safe feedback removes UI-thread risk and improves consistency.
 - CI and release verification should match the local path: lint, unit tests, assemble, optional adb install/launch, lint-baseline drift, and dependency review.
-- Performance quality is currently under-instrumented. Keyboard cold start, first render, first suggestion latency, dictionary load, candidate recomposition, and backup/restore durations need repeatable measurements.
+- Performance quality now has repeatable SM-S938B / Android 16 baselines for first render, first suggestion, dictionary load/preload, candidate recomposition, theme switching, and backup/restore. Future perf work should compare against `docs/BENCHMARKS.md`.
 
 ## Priority Model
 
@@ -227,7 +227,7 @@ Tasks:
 - [x] Measure dictionary load and preload time.
 - [x] Measure candidate row recomposition hotspots.
 - [x] Measure theme switching cost.
-- [ ] Measure backup/restore duration on representative archives.
+- [x] Measure backup/restore duration on representative archives.
 - [x] Add repeatable profiling notes using adb, simpleperf, Perfetto, or Compose tracing where appropriate.
 
 Progress:
@@ -274,6 +274,16 @@ Progress:
   19.587708 ms, median total switch time 57.505571 ms, median cold-step
   19.221354 ms, median warm cached-step 0.2808075 ms, and zero load failures.
   Evidence: `docs/benchmark-results/baseline-2026-05-18-ime-theme-switch.json`.
+- 2026-05-18 (v1.8.164): backup/restore duration is measured through
+  `BenchmarkBackupRestoreActivity` and `tools/benchmark-backup-restore.ps1`,
+  using a representative default archive profile with preferences plus seeded
+  keyboard/theme extension files inside the isolated benchmark app data.
+  Samsung SM-S938B / Android 16 baseline: median backup create
+  12.653698 ms, median archive size 22,034 bytes, median restore prepare
+  4.062604 ms, median merge-restore apply 5.727604 ms, median total restore
+  9.874167 ms, and median restored sections 3/3 with zero missing or failed
+  sections. Evidence:
+  `docs/benchmark-results/baseline-2026-05-18-backup-restore.json`.
 
 Acceptance criteria:
 - Performance claims are backed by repeatable commands.
