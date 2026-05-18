@@ -35,6 +35,7 @@ import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.core.SubtypePreset
+import dev.patrickgold.florisboard.ime.editor.EditorInputBehaviorPolicy
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
@@ -87,8 +88,6 @@ import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.kotlin.collectIn
 import org.florisboard.lib.kotlin.collectLatestIn
-
-private val DoubleSpacePeriodMatcher = """([^.!?‽\s]\s)""".toRegex()
 
 class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val prefs by FlorisPreferenceStore
@@ -671,8 +670,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
         // Skip handling changing to characters keyboard and double space periods
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
-        if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
-                candidate != null) { /* Do nothing */ } else {
+        if (EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
+                candidateAccepted = candidate != null,
+                suppressPlainSpaceForPrediction = suppressPlainSpace,
+                supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
+            )
+        ) {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
         }
     }
@@ -709,7 +712,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         if (prefs.correction.doubleSpacePeriod.get()) {
             if (inputEventDispatcher.isConsecutiveUp(data)) {
                 val text = editorInstance.run { activeContent.getTextBeforeCursor(2) }
-                if (text.length == 2 && DoubleSpacePeriodMatcher.matches(text)) {
+                if (EditorInputBehaviorPolicy.shouldConvertDoubleSpaceToPeriod(text)) {
                     editorInstance.deleteBackwards(OperationUnit.CHARACTERS)
                     editorInstance.commitText(". ")
                     return
@@ -717,8 +720,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             }
         }
         // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
-        if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace &&
-                candidate != null) { /* Do nothing */ } else {
+        if (EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
+                candidateAccepted = candidate != null,
+                suppressPlainSpaceForPrediction = suppressPlainSpace,
+                supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
+            )
+        ) {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
         }
     }

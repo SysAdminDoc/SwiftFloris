@@ -196,58 +196,38 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     }
 
     private fun shouldInsertAutoSpaceBefore(text: String): Boolean {
-        if (!prefs.correction.autoSpacePunctuation.get() || text.isEmpty()) return false
-        if (activeInfo.isRawInputEditor) return false
-        if (activeState.keyVariation != KeyVariation.NORMAL) return false
-
-        val punctuationRule = nlpManager.getActivePunctuationRule()
-        val textBefore = activeContent.getTextBeforeCursor(1)
-        return textBefore.isNotEmpty() && !textBefore.last().isWhitespace() &&
-            punctuationRule.symbolsFollowingAutoSpace.contains(text.first())
+        return EditorInputBehaviorPolicy.shouldInsertAutoSpaceBefore(
+            text = text,
+            textBeforeCursor = activeContent.getTextBeforeCursor(1),
+            punctuationRule = nlpManager.getActivePunctuationRule(),
+            isAutoSpacePunctuationEnabled = prefs.correction.autoSpacePunctuation.get(),
+            isRawInputEditor = activeInfo.isRawInputEditor,
+            isNormalKeyVariation = activeState.keyVariation == KeyVariation.NORMAL,
+        )
     }
 
     private fun shouldInsertAutoSpaceAfter(text: String): Boolean {
-        if (!prefs.correction.autoSpacePunctuation.get() || text.isEmpty()) return false
-        if (activeInfo.isRawInputEditor) return false
-        if (activeState.keyVariation != KeyVariation.NORMAL) return false
-
-        val punctuationRule = nlpManager.getActivePunctuationRule()
         val content = activeContent
-        val textBefore = content.getTextBeforeCursor(3).let { textBefore ->
-            if (autoSpace.isActive && textBefore.isNotEmpty() && textBefore.last() == ' ') {
-                textBefore.dropLast(1)
-            } else {
-                textBefore
-            }
-        }
-        return textBefore.isNotEmpty() && !textBefore.last().isWhitespace() &&
-            content.currentWordText.all { !it.isDigit() } &&
-            punctuationRule.symbolsPrecedingAutoSpace.contains(text.first())
-    }
-
-    private fun isSentenceEndingPunctuation(char: String): Boolean {
-        return char.isNotEmpty() && char.first() in ".!?"
+        return EditorInputBehaviorPolicy.shouldInsertAutoSpaceAfter(
+            text = text,
+            textBeforeCursor = content.getTextBeforeCursor(3),
+            currentWordText = content.currentWordText,
+            punctuationRule = nlpManager.getActivePunctuationRule(),
+            isAutoSpaceActive = autoSpace.isActive,
+            isAutoSpacePunctuationEnabled = prefs.correction.autoSpacePunctuation.get(),
+            isRawInputEditor = activeInfo.isRawInputEditor,
+            isNormalKeyVariation = activeState.keyVariation == KeyVariation.NORMAL,
+        )
     }
 
     private fun shouldAutoCapitalizeAfter(char: String): Boolean {
-        if (!prefs.correction.autoCapitalization.get() || !isSentenceEndingPunctuation(char)) return false
-        if (activeInfo.isRawInputEditor) return false
-        if (activeState.keyVariation != KeyVariation.NORMAL) return false
-        // Only auto-cap when the punctuation actually ends a word (letter immediately before).
-        // Skip cases like "3.14", "192.168.0.1", "e.g.", "U.S.A.", URLs, abbreviations, ellipses.
-        val textBefore = activeContent.getTextBeforeCursor(2)
-        val charBeforePunctuation = textBefore.lastOrNull() ?: return false
-        if (!charBeforePunctuation.isLetter()) return false
-        // Skip single-letter abbreviations ("e.", "U.", "A.") — heuristic: require at least 2 letters,
-        // or that the char before that is itself a letter (i.e. the punct closes a real word).
-        val charBeforeWordEnd = textBefore.dropLast(1).lastOrNull()
-        if (charBeforeWordEnd != null && charBeforeWordEnd.isLetter().not() &&
-            charBeforeWordEnd.isWhitespace().not()
-        ) {
-            // Pattern like "X.Y." — likely an abbreviation chain, not a sentence end.
-            return false
-        }
-        return true
+        return EditorInputBehaviorPolicy.shouldAutoCapitalizeAfter(
+            char = char,
+            textBeforeCursor = activeContent.getTextBeforeCursor(2),
+            isAutoCapitalizationEnabled = prefs.correction.autoCapitalization.get(),
+            isRawInputEditor = activeInfo.isRawInputEditor,
+            isNormalKeyVariation = activeState.keyVariation == KeyVariation.NORMAL,
+        )
     }
 
     override fun commitChar(char: String): Boolean {
@@ -705,14 +685,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     private fun PhantomSpaceState.determine(text: String, forceActive: Boolean = false): Boolean {
          val content = activeContent
          val selection = content.selection
-         if (!(isActive || forceActive) || selection.isNotValid || selection.start <= 0 || text.isEmpty()) return false
-         val textBefore = content.getTextBeforeCursor(1)
-         val punctuationRule = nlpManager.getActivePunctuationRule()
-         if (!subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace) return false;
-         return textBefore.isNotEmpty() &&
-             (punctuationRule.symbolsPrecedingPhantomSpace.contains(textBefore[textBefore.length - 1]) ||
-                 textBefore[textBefore.length - 1].isLetterOrDigit()) &&
-             (punctuationRule.symbolsFollowingPhantomSpace.contains(text[0]) || text[0].isLetterOrDigit())
+         return EditorInputBehaviorPolicy.shouldInsertPhantomSpace(
+             text = text,
+             textBeforeCursor = content.getTextBeforeCursor(1),
+             punctuationRule = nlpManager.getActivePunctuationRule(),
+             isActive = isActive,
+             forceActive = forceActive,
+             isSelectionValid = selection.isValid,
+             selectionStart = selection.start,
+             supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
+         )
     }
 
     private fun String.sameGestureWordAs(other: String): Boolean {

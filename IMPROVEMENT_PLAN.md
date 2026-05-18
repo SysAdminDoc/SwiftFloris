@@ -47,6 +47,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: Moved user dictionary import/export feedback off deprecated synchronous long toasts and gave dictionary export a concrete text MIME type.
 - 2026-05-05: Moved language pack delete failure feedback off deprecated synchronous long toasts and switched the language pack import action to the AutoMirrored icon.
 - 2026-05-05: Began the premium UX polish pass by tightening the shared settings shell, action-card affordances, setup step completion treatment, bottom-bar insets, backup/restore busy-state locking, extension empty-state actions, and language-pack manager empty/detail behavior.
+- 2026-05-18: Extracted editor input behavior decisions into a pure policy and added JVM coverage for autocorrect accept/reject spacing, punctuation auto-spacing, phantom spacing, double-space period, and sentence-capitalization gates.
 
 ## Workstreams
 
@@ -59,7 +60,7 @@ Goal: Raise confidence in the keyboard's highest-risk behavior by moving state r
 
 Tasks:
 - [x] Add JVM coverage for rejected autocorrect behavior.
-- [ ] Add editor/input behavior tests for autocorrect accept, reject, undo, punctuation, and spacing flows.
+- [x] Add editor/input behavior tests for autocorrect accept, reject, undo, punctuation, and spacing flows.
 - [ ] Add hardware keyboard tests for space, enter, delete, and punctuation behavior.
 - [ ] Add phantom-space and autospace lifecycle tests.
 - [ ] Add glide typing delete interaction tests.
@@ -107,7 +108,7 @@ Tasks:
 - [x] Extract autocorrect suppression state to a pure JVM-testable class.
 - [ ] Extract candidate auto-commit eligibility and rejection policy from `NlpManager`.
 - [ ] Extract punctuation-triggered commit rules from `KeyboardManager`.
-- [ ] Extract phantom-space/autospace rules from `EditorInstance`.
+- [x] Extract phantom-space/autospace rules from `EditorInstance`.
 - [ ] Extract backup/restore validation policy from Compose screens.
 - [ ] Extract theme validation and rule parsing from UI surfaces.
 

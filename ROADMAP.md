@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.25
+# SwiftFloris Roadmap v5.26
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.24 (2026-05-18, same-day). v5.0-v5.24 entries are preserved with shipped markers updated in-place; v5.25 records the L4.2 Nastaliq font bundle/routing completion and reconciles the stale Next-7.2 renderer row. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.128 (released 2026-05-18 — Nastaliq Urdu font bundle). **v1.8.104 – v1.8.128 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, one KenLM mmap-reader offset-boundary hardening, the Roborazzi baseline / CI hard-gate closure for F11, the Addons signing-pin revoke/reset UX slice, the Addons dictionary-pack asset-mounting slice, the Addons Settings catalog/install-hint polish, the pinned emoji-group sheet, and the L4.2 Nastaliq Urdu font bundle/routing slice.
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster, carried-forward G11 local audit item, sixth-pass F11 Roborazzi baseline item, Addons signing-pin trust-management slice, Addons dictionary asset-mounting slice, Addons catalog/install-hint polish, Next-9.4a pinned emoji-group sheet, and L4.2 Nastaliq font bundle are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, KenLM reader offset hardening, hard visual-regression CI, confirmed addon trust reset / changed-certificate controls, no-extraction dictionary-pack asset mounting, Settings dictionary-pack catalog details, named emoji-group pinning, and Urdu Nastaliq key rendering are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.25 (2026-05-18, same-day). v5.0-v5.25 entries are preserved with shipped markers updated in-place; v5.26 records the editor input behavior policy/testability slice after the L4.2 Nastaliq font bundle/routing completion. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.129 (released 2026-05-18 — editor input behavior policy tests). **v1.8.104 – v1.8.129 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, one KenLM mmap-reader offset-boundary hardening, the Roborazzi baseline / CI hard-gate closure for F11, the Addons signing-pin revoke/reset UX slice, the Addons dictionary-pack asset-mounting slice, the Addons Settings catalog/install-hint polish, the pinned emoji-group sheet, the L4.2 Nastaliq Urdu font bundle/routing slice, and the pure editor input behavior policy/test coverage slice.
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster, carried-forward G11 local audit item, sixth-pass F11 Roborazzi baseline item, Addons signing-pin trust-management slice, Addons dictionary asset-mounting slice, Addons catalog/install-hint polish, Next-9.4a pinned emoji-group sheet, L4.2 Nastaliq font bundle, and first input-behavior testability slice are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, KenLM reader offset hardening, hard visual-regression CI, confirmed addon trust reset / changed-certificate controls, no-extraction dictionary-pack asset mounting, Settings dictionary-pack catalog details, named emoji-group pinning, Urdu Nastaliq key rendering, and editor spacing/autocorrect policy tests are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.128)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.129)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -132,6 +132,14 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   Arabic-script routing predicates, and `TextKeyboardLayout` routes Urdu key
   labels/hints through the bundled font without changing Latin or non-Urdu
   Snygg font behavior.
+- **v1.8.129** — Editor input behavior policy tests.
+  `EditorInputBehaviorPolicy` now owns the pure decisions for autocorrect
+  spacebar commits, punctuation auto-spacing, phantom spacing, double-space
+  period, and sentence-capitalization gates. `EditorInstance` and
+  `KeyboardManager` route through that policy, and
+  `EditorInputBehaviorPolicyTest` pins accepted autocorrect spacing,
+  rejected-correction protection, suppressed plain-space predictions, and the
+  punctuation / spacing gates from `IMPROVEMENT_PLAN.md`.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
