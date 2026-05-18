@@ -20,6 +20,7 @@ import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
 import android.provider.DocumentsContract.Document
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import java.util.Base64
 import java.util.Locale
 
@@ -45,8 +46,36 @@ object UserStickerRepository {
     fun loadPack(context: Context, folderUriRaw: String): StickerPack? {
         if (folderUriRaw.isBlank()) return null
         val treeUri = runCatching { Uri.parse(folderUriRaw) }.getOrNull() ?: return null
+        // If Android revoked the persistable URI grant since the user picked
+        // the folder (uninstall+reinstall of the file-manager that issued
+        // the grant, system-wide grant cleanup, factory pattern restore),
+        // contentResolver.query throws SecurityException, runCatching
+        // swallows it, and the user sees an empty Imported tab with no
+        // signal as to why. Log explicitly so the cause shows up in logcat,
+        // and let MediaScreen surface a re-pick prompt via the public
+        // hasPersistableReadPermission helper.
+        if (!hasPersistableReadPermission(context, folderUriRaw)) {
+            flogWarning {
+                "UserStickerRepository: persistable read grant lost for $folderUriRaw; user needs to re-pick the folder."
+            }
+            return null
+        }
         val documents = runCatching { queryStickerDocuments(context, treeUri) }.getOrDefault(emptyList())
         return packFromDocuments(documents, displayName = treeUri.lastPathSegment?.substringAfterLast(':') ?: PackName)
+    }
+
+    /**
+     * Returns true when [folderUriRaw] is currently in the IME's
+     * `contentResolver.persistedUriPermissions` set with at least read access.
+     * Settings should use this to surface a "re-pick folder" prompt when the
+     * grant has been revoked between selection and the next process start.
+     */
+    fun hasPersistableReadPermission(context: Context, folderUriRaw: String): Boolean {
+        if (folderUriRaw.isBlank()) return false
+        val target = runCatching { Uri.parse(folderUriRaw) }.getOrNull() ?: return false
+        val grants = runCatching { context.contentResolver.persistedUriPermissions }
+            .getOrDefault(emptyList())
+        return grants.any { grant -> grant.uri == target && grant.isReadPermission }
     }
 
     fun packFromDocuments(
