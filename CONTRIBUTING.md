@@ -109,6 +109,26 @@ For autocorrect, spacebar, punctuation, backspace, glide-delete, or hardware
 keyboard changes, also follow the contract and scenario matrix in
 [`docs/AUTOCORRECT_LIFECYCLE.md`](docs/AUTOCORRECT_LIFECYCLE.md).
 
+Accessibility notes for manual QA:
+
+- With TalkBack enabled, Settings screens should announce one pane title on
+  entry, then traverse app bar controls, content, persistent actions, and
+  floating actions in that order.
+- Keyboard keys should announce specific labels for modifiers, clipboard,
+  voice, mode, layout, input-method, and smartbar controls instead of generic
+  "button" or "key" text.
+- Candidate-row items should announce suggestion type, position, and candidate
+  text, and eligible suggestions should expose the remove-from-predictions
+  accessibility action.
+- At high font scale, settings metadata, links, dialogs, extension components,
+  and theme key previews should wrap or grow without clipping text.
+- Warning, error, progress, success, cancellation, and ready/skipped states
+  should remain understandable by icon shape and copy when color perception is
+  unavailable.
+- Re-check dark theme, SwiftKey High Contrast, compact/floating/split layouts,
+  and at least one landscape viewport when the change touches keyboard or
+  settings layout.
+
 If your machine cannot run Gradle, say exactly which command was attempted and
 why it failed. Do not mark a code change fully verified from source inspection
 alone.

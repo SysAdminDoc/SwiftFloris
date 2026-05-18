@@ -109,5 +109,27 @@ candidate to be the first one TalkBack reaches.
 - Roborazzi screenshot tests (`:app:verifyRoborazziDebug`) capture rendered key labels including
   contentDescription strings, so a regression in label rendering will diff out in CI once baselines land
   (matrix #6).
-- Manual TalkBack pass: on a Pixel-class device, navigate Settings → MCP daemon bridge → MCP tool gate → back
-  to Settings home. Each screen change should produce one pane-title read, no announcement spam.
+
+## Manual QA checklist
+
+- **Settings traversal:** with TalkBack enabled, navigate Settings home → one
+  nested settings screen → back. Each screen should announce one pane title,
+  then traverse app bar controls, scrollable content, bottom actions, and
+  floating actions in that order.
+- **Keyboard labels:** focus common key types in a normal text field: printable
+  keys, Shift, Backspace, Enter, Space, clipboard, voice, keyboard mode, layout,
+  input-method, and smartbar controls. None should announce as only generic
+  "button" or "key" text.
+- **Candidate row:** type enough text to show predictions. TalkBack should read
+  each candidate's type, position, and text, and eligible candidates should
+  expose the remove-from-predictions custom action.
+- **Font scale:** at high system font scale, inspect Settings metadata rows,
+  hyperlinks, extension component headings, dialogs, and theme key previews for
+  clipping or unreadable truncation.
+- **State indicators:** review backup/restore, extension import, language-pack
+  delete, dictionary import/export, home readiness, and voice readiness states.
+  Readiness, progress, warning, error, cancellation, and success must be clear
+  from icon shape and copy, not color alone.
+- **Theme/layout cross-check:** repeat the affected flow in dark theme,
+  SwiftKey High Contrast, phone portrait, landscape, compact, floating, and
+  split/tablet layouts when the change touches IME or settings layout.
