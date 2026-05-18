@@ -21,6 +21,11 @@ internal enum class UserDictionaryEntryOperation {
     Deleting,
 }
 
+internal enum class UserDictionaryTransferOperation {
+    Importing,
+    Exporting,
+}
+
 internal enum class UserDictionaryEntryNotice {
     None,
     Saving,
@@ -31,13 +36,32 @@ internal enum class UserDictionaryEntryNotice {
     DeleteFailure,
 }
 
+internal enum class UserDictionaryTransferNotice {
+    None,
+    Importing,
+    Exporting,
+}
+
 internal object UserDictionaryEntryPolicy {
-    fun canLeave(isOperationInProgress: Boolean): Boolean {
-        return !isOperationInProgress
+    fun canLeave(
+        isOperationInProgress: Boolean,
+        isTransferInProgress: Boolean = false,
+    ): Boolean {
+        return !isOperationInProgress && !isTransferInProgress
     }
 
-    fun canMutateEntry(isOperationInProgress: Boolean): Boolean {
-        return !isOperationInProgress
+    fun canMutateEntry(
+        isOperationInProgress: Boolean,
+        isTransferInProgress: Boolean = false,
+    ): Boolean {
+        return !isOperationInProgress && !isTransferInProgress
+    }
+
+    fun canStartTransfer(
+        isOperationInProgress: Boolean,
+        isTransferInProgress: Boolean,
+    ): Boolean {
+        return !isOperationInProgress && !isTransferInProgress
     }
 
     fun resolveNotice(
@@ -48,6 +72,16 @@ internal object UserDictionaryEntryPolicy {
             UserDictionaryEntryOperation.Saving -> UserDictionaryEntryNotice.Saving
             UserDictionaryEntryOperation.Deleting -> UserDictionaryEntryNotice.Deleting
             null -> lastTerminalNotice ?: UserDictionaryEntryNotice.None
+        }
+    }
+
+    fun resolveTransferNotice(
+        activeOperation: UserDictionaryTransferOperation?,
+    ): UserDictionaryTransferNotice {
+        return when (activeOperation) {
+            UserDictionaryTransferOperation.Importing -> UserDictionaryTransferNotice.Importing
+            UserDictionaryTransferOperation.Exporting -> UserDictionaryTransferNotice.Exporting
+            null -> UserDictionaryTransferNotice.None
         }
     }
 

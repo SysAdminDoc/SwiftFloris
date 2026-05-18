@@ -872,6 +872,10 @@
     <string name="settings__udm__dictionary_export_success" comment="Message for dictionary export success">User dictionary exported.</string>
     <string name="settings__udm__dictionary_import_failure" comment="Message for dictionary import failure">Could not import user dictionary: {error_message}</string>
     <string name="settings__udm__dictionary_export_failure" comment="Message for dictionary export failure">Could not export user dictionary: {error_message}</string>
+    <string name="settings__udm__dictionary_import_in_progress" comment="Card title shown while a user dictionary file is being imported">Importing user dictionary</string>
+    <string name="settings__udm__dictionary_import_in_progress_summary" comment="Card summary shown while a user dictionary file is being imported">Keep this screen open while SwiftFloris reads the selected file and updates the dictionary list.</string>
+    <string name="settings__udm__dictionary_export_in_progress" comment="Card title shown while a user dictionary file is being exported">Exporting user dictionary</string>
+    <string name="settings__udm__dictionary_export_in_progress_summary" comment="Card summary shown while a user dictionary file is being exported">Keep this screen open while SwiftFloris writes the dictionary file to the selected destination.</string>
     <string name="settings__udm__dictionary_store_unavailable" comment="Message shown when the selected user dictionary storage is unavailable">Dictionary storage is not available right now.</string>
     <string name="settings__udm__encrypted_export" comment="Menu action for exporting the user dictionary as a passphrase-encrypted file">Export encrypted</string>
     <string name="settings__udm__encrypted_dictionary_export_success" comment="Message for encrypted dictionary export success">Encrypted user dictionary exported.</string>

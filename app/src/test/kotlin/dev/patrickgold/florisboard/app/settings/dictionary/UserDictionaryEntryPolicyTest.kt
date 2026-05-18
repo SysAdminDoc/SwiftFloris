@@ -23,9 +23,32 @@ class UserDictionaryEntryPolicyTest : FunSpec({
     test("entry mutations block leaving and duplicate entry actions while busy") {
         UserDictionaryEntryPolicy.canLeave(isOperationInProgress = true) shouldBe false
         UserDictionaryEntryPolicy.canMutateEntry(isOperationInProgress = true) shouldBe false
+        UserDictionaryEntryPolicy.canStartTransfer(
+            isOperationInProgress = true,
+            isTransferInProgress = false,
+        ) shouldBe false
 
         UserDictionaryEntryPolicy.canLeave(isOperationInProgress = false) shouldBe true
         UserDictionaryEntryPolicy.canMutateEntry(isOperationInProgress = false) shouldBe true
+        UserDictionaryEntryPolicy.canStartTransfer(
+            isOperationInProgress = false,
+            isTransferInProgress = false,
+        ) shouldBe true
+    }
+
+    test("dictionary transfers block leaving entry mutations and duplicate transfers") {
+        UserDictionaryEntryPolicy.canLeave(
+            isOperationInProgress = false,
+            isTransferInProgress = true,
+        ) shouldBe false
+        UserDictionaryEntryPolicy.canMutateEntry(
+            isOperationInProgress = false,
+            isTransferInProgress = true,
+        ) shouldBe false
+        UserDictionaryEntryPolicy.canStartTransfer(
+            isOperationInProgress = false,
+            isTransferInProgress = true,
+        ) shouldBe false
     }
 
     test("entry notice prioritizes active save and delete work") {
@@ -48,6 +71,20 @@ class UserDictionaryEntryPolicyTest : FunSpec({
             activeOperation = null,
             lastTerminalNotice = null,
         ) shouldBe UserDictionaryEntryNotice.None
+    }
+
+    test("dictionary transfer notice follows active import and export work") {
+        UserDictionaryEntryPolicy.resolveTransferNotice(
+            activeOperation = UserDictionaryTransferOperation.Importing,
+        ) shouldBe UserDictionaryTransferNotice.Importing
+
+        UserDictionaryEntryPolicy.resolveTransferNotice(
+            activeOperation = UserDictionaryTransferOperation.Exporting,
+        ) shouldBe UserDictionaryTransferNotice.Exporting
+
+        UserDictionaryEntryPolicy.resolveTransferNotice(
+            activeOperation = null,
+        ) shouldBe UserDictionaryTransferNotice.None
     }
 
     test("entry operation results map to terminal notices") {

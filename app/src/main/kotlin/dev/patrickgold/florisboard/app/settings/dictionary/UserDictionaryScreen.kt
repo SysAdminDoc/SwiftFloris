@@ -140,10 +140,19 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     var encryptedImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingEncryptedExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
     var activeEntryOperation by rememberSaveable { mutableStateOf<UserDictionaryEntryOperation?>(null) }
+    var activeDictionaryTransfer by rememberSaveable { mutableStateOf<UserDictionaryTransferOperation?>(null) }
     var lastEntryNotice by rememberSaveable { mutableStateOf<UserDictionaryEntryNotice?>(null) }
     var lastEntryNoticeDetail by rememberSaveable { mutableStateOf<String?>(null) }
     val isEntryOperationInProgress = activeEntryOperation != null
-    val entryActionsEnabled = UserDictionaryEntryPolicy.canMutateEntry(isEntryOperationInProgress)
+    val isDictionaryTransferInProgress = activeDictionaryTransfer != null
+    val entryActionsEnabled = UserDictionaryEntryPolicy.canMutateEntry(
+        isOperationInProgress = isEntryOperationInProgress,
+        isTransferInProgress = isDictionaryTransferInProgress,
+    )
+    val canLeaveDictionaryScreen = UserDictionaryEntryPolicy.canLeave(
+        isOperationInProgress = isEntryOperationInProgress,
+        isTransferInProgress = isDictionaryTransferInProgress,
+    )
     val dictionaryStoreUnavailableMessage = stringRes(R.string.settings__udm__dictionary_store_unavailable)
     val unknownEntryErrorMessage = stringRes(R.string.settings__udm__entry_error_details_unavailable)
 
@@ -157,6 +166,23 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
         activeEntryOperation = null
         lastEntryNotice = notice
         lastEntryNoticeDetail = detail
+    }
+
+    fun canStartDictionaryTransfer(): Boolean {
+        return UserDictionaryEntryPolicy.canStartTransfer(
+            isOperationInProgress = isEntryOperationInProgress,
+            isTransferInProgress = isDictionaryTransferInProgress,
+        )
+    }
+
+    fun startDictionaryTransfer(operation: UserDictionaryTransferOperation) {
+        activeDictionaryTransfer = operation
+        lastEntryNotice = null
+        lastEntryNoticeDetail = null
+    }
+
+    fun finishDictionaryTransfer() {
+        activeDictionaryTransfer = null
     }
 
     fun userDictionaryDao(): UserDictionaryDao? {
@@ -268,6 +294,9 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     }
 
     fun importPlainDictionary(uri: Uri) {
+        if (!canStartDictionaryTransfer()) {
+            return
+        }
         val db = userDictionaryDatabase()
         if (db == null) {
             scope.launch {
@@ -282,38 +311,53 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             }
             return
         }
-        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — try the modular
-        // importer first (SwiftKey JSON / Gboard XML / CSV / zip /
-        // SwiftFloris combined-list detection by byte sniff). On any
-        // DictionaryImportException, fall through to the legacy URI-based
-        // combined-list path so older FlorisBoard backups keep importing.
-        runCatching {
-            val importer = DictionaryImporter()
-            val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
-                importer.import(stream)
-            } ?: throw DictionaryImportException("Could not read selected file.")
-            val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
-                val sniffBuffer = ByteArray(1024)
-                val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
-                importer.detectFormat(sniffBuffer.copyOf(sniffed))
+        scope.launch {
+            startDictionaryTransfer(UserDictionaryTransferOperation.Importing)
+            try {
+                // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — try the modular
+                // importer first (SwiftKey JSON / Gboard XML / CSV / zip /
+                // SwiftFloris combined-list detection by byte sniff). On any
+                // DictionaryImportException, fall through to the legacy URI-based
+                // combined-list path so older FlorisBoard backups keep importing.
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        runCatching {
+                            val importer = DictionaryImporter()
+                            val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
+                                importer.import(stream)
+                            } ?: throw DictionaryImportException("Could not read selected file.")
+                            val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
+                                val sniffBuffer = ByteArray(1024)
+                                val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
+                                importer.detectFormat(sniffBuffer.copyOf(sniffed))
+                            }
+                            PersonalDictionaryImportBatch.import(
+                                parsedEntries = parsed,
+                                dao = dao,
+                                format = format,
+                            )
+                        }.recoverCatching { modularError ->
+                            if (modularError !is DictionaryImportException) throw modularError
+                            db.importCombinedList(context, uri)
+                            null
+                        }.getOrThrow()
+                    }
+                }.onSuccess { result ->
+                    handleImportSuccess(result)
+                }.onFailure { error ->
+                    handleImportFailure(error)
+                }
+            } finally {
+                finishDictionaryTransfer()
             }
-            PersonalDictionaryImportBatch.import(
-                parsedEntries = parsed,
-                dao = dao,
-                format = format,
-            )
-        }.recoverCatching { modularError ->
-            if (modularError !is DictionaryImportException) throw modularError
-            db.importCombinedList(context, uri)
-            null
-        }.onSuccess { result ->
-            handleImportSuccess(result)
-        }.onFailure { error ->
-            handleImportFailure(error)
         }
     }
 
     fun importEncryptedDictionary(uri: Uri, passphrase: CharArray) {
+        if (!canStartDictionaryTransfer()) {
+            passphrase.fill('\u0000')
+            return
+        }
         val dao = userDictionaryDao()
         if (dao == null) {
             passphrase.fill('\u0000')
@@ -323,6 +367,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             return
         }
         scope.launch {
+            startDictionaryTransfer(UserDictionaryTransferOperation.Importing)
             try {
                 runCatching {
                     withContext(Dispatchers.IO) {
@@ -348,6 +393,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     handleImportFailure(error)
                 }
             } finally {
+                finishDictionaryTransfer()
                 passphrase.fill('\u0000')
             }
         }
@@ -359,6 +405,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             // If uri is null it indicates that the selection activity was cancelled (mostly
             // by pressing the back button), so we don't display an error message here.
             if (uri == null) return@rememberLauncherForActivityResult
+            if (!canStartDictionaryTransfer()) return@rememberLauncherForActivityResult
             val isEncrypted = runCatching {
                 detectEncryptedEnvelope(uri)
             }.getOrElse { error ->
@@ -379,6 +426,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             // If uri is null it indicates that the selection activity was cancelled (mostly
             // by pressing the back button), so we don't display an error message here.
             if (uri == null) return@rememberLauncherForActivityResult
+            if (!canStartDictionaryTransfer()) return@rememberLauncherForActivityResult
             val db = when (type) {
                 UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDatabase()
                 UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
@@ -389,18 +437,26 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 }
                 return@rememberLauncherForActivityResult
             }
-            runCatching {
-                db.exportCombinedList(context, uri)
-            }.onSuccess {
-                scope.launch {
-                    context.showLongToast(R.string.settings__udm__dictionary_export_success)
-                }
-            }.onFailure { error ->
-                scope.launch {
-                    context.showLongToast(
-                        R.string.settings__udm__dictionary_export_failure,
-                        "error_message" to (error.localizedMessage ?: error.message ?: error::class.simpleName.orEmpty()),
-                    )
+            scope.launch {
+                startDictionaryTransfer(UserDictionaryTransferOperation.Exporting)
+                try {
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            db.exportCombinedList(context, uri)
+                        }
+                    }.onSuccess {
+                        context.showLongToast(R.string.settings__udm__dictionary_export_success)
+                    }.onFailure { error ->
+                        val errorMessage = error.localizedMessage
+                            ?: error.message
+                            ?: error::class.simpleName.orEmpty()
+                        context.showLongToast(
+                            R.string.settings__udm__dictionary_export_failure,
+                            "error_message" to errorMessage,
+                        )
+                    }
+                } finally {
+                    finishDictionaryTransfer()
                 }
             }
         },
@@ -415,6 +471,10 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 passphrase?.fill('\u0000')
                 return@rememberLauncherForActivityResult
             }
+            if (!canStartDictionaryTransfer()) {
+                passphrase.fill('\u0000')
+                return@rememberLauncherForActivityResult
+            }
             val db = userDictionaryDatabase()
             if (db == null) {
                 passphrase.fill('\u0000')
@@ -424,6 +484,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 return@rememberLauncherForActivityResult
             }
             scope.launch {
+                startDictionaryTransfer(UserDictionaryTransferOperation.Exporting)
                 try {
                     runCatching {
                         withContext(Dispatchers.IO) {
@@ -438,6 +499,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                         )
                     }
                 } finally {
+                    finishDictionaryTransfer()
                     passphrase.fill('\u0000')
                 }
             }
@@ -447,7 +509,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     navigationIcon {
         FlorisIconButton(
             onClick = {
-                if (!UserDictionaryEntryPolicy.canLeave(isEntryOperationInProgress)) {
+                if (!canLeaveDictionaryScreen) {
                     return@FlorisIconButton
                 } else if (currentLocale != null) {
                     currentLocale = null
@@ -468,7 +530,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     R.string.action__back
                 },
             ),
-            enabled = UserDictionaryEntryPolicy.canLeave(isEntryOperationInProgress),
+            enabled = canLeaveDictionaryScreen,
         )
     }
 
@@ -540,8 +602,8 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     }
 
     content {
-        BackHandler(currentLocale != null || isEntryOperationInProgress) {
-            if (UserDictionaryEntryPolicy.canLeave(isEntryOperationInProgress) && currentLocale != null) {
+        BackHandler(currentLocale != null || isEntryOperationInProgress || isDictionaryTransferInProgress) {
+            if (canLeaveDictionaryScreen && currentLocale != null) {
                 currentLocale = null
                 buildUi()
             }
@@ -550,6 +612,20 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
         LaunchedEffect(Unit) {
             dictionaryManager.loadUserDictionariesIfNecessary()
             buildUi()
+        }
+
+        when (UserDictionaryEntryPolicy.resolveTransferNotice(activeDictionaryTransfer)) {
+            UserDictionaryTransferNotice.None -> Unit
+            UserDictionaryTransferNotice.Importing -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__dictionary_import_in_progress),
+                secondaryText = stringRes(R.string.settings__udm__dictionary_import_in_progress_summary),
+            )
+            UserDictionaryTransferNotice.Exporting -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__dictionary_export_in_progress),
+                secondaryText = stringRes(R.string.settings__udm__dictionary_export_in_progress_summary),
+            )
         }
 
         when (UserDictionaryEntryPolicy.resolveNotice(activeEntryOperation, lastEntryNotice)) {
