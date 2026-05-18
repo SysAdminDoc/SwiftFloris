@@ -1,8 +1,23 @@
 #!/usr/bin/env zsh
+# Maintainer-only — regenerates the Play / F-Droid metadata screenshot
+# assets from the raw images under staging/images/. Run on the maintainer
+# build host; the result is committed manually.
 
-cd staging/images || exit
-# Do some image magick to make the screenshots look pretty
-mkdir out
+set -euo pipefail
+
+# Capture the absolute path of the staging/images directory up-front so
+# the cleanup `rm -r` at the bottom of the script targets a known tree
+# rather than relying on a relative `cd ..` after several nested cd's.
+STAGING_IMAGES_DIR="$(cd "$(dirname "${(%):-%x}")/../staging/images" 2>/dev/null && pwd)"
+if [ -z "$STAGING_IMAGES_DIR" ] || [ ! -d "$STAGING_IMAGES_DIR" ]; then
+  echo "::error::staging/images directory not found relative to $0" >&2
+  exit 1
+fi
+OUT_DIR_ABS="$STAGING_IMAGES_DIR/out"
+
+cd "$STAGING_IMAGES_DIR"
+# Do some image magick to make the screenshots look pretty.
+mkdir -p out
 
 FIRST_RATIO=0.25
 SECOND_RATIO=0.6
@@ -234,6 +249,9 @@ for i in "${screenshots[@]}"; do
 done
 
 echo "Cleanup..."
-cd ..
-rm -r out
+# Absolute-path cleanup — the previous `cd ..; rm -r out` would have
+# wiped the wrong tree if any earlier step accidentally changed
+# directory. `rm -rf -- "$OUT_DIR_ABS"` always targets the staging
+# scratch dir, never something a user accidentally cd'd into.
+rm -rf -- "$OUT_DIR_ABS"
 echo "Done"
