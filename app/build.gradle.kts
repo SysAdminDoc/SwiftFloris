@@ -219,14 +219,56 @@ kover {
 }
 
 // ROADMAP §6 N7.1 — Pin the no-network promise in code, not just in marketing.
-// Fails the build if any AndroidManifest.xml in the :app sourceSets declares the
-// INTERNET permission (or any equivalent network-permission alias). The check
-// runs as part of preBuild on every variant, so PRs cannot accidentally break
-// the offline-only contract that makes SwiftFloris viable for F-Droid privacy
-// review. Removing this check is itself a load-bearing review signal.
+// Fails the build if INTERNET / network permissions appear in either the :app
+// source manifests OR the variant's merged manifest (which folds in every
+// library AAR and every flavor/buildType overlay). A library that tries to
+// re-add INTERNET via manifest-merging is caught by the merged-manifest check.
+//
+// Legitimate `tools:node="remove"` directives (used to strip a permission a
+// library erroneously declares) are exempted in both checks — the source-
+// manifest pre-check skips them, and the merged-manifest post-check sees only
+// the post-merge result where the removal already took effect.
+//
+// The source-manifest pre-check runs as part of preBuild for fast feedback;
+// the merged-manifest post-check is wired per-variant against AGP's
+// MERGED_MANIFEST artifact so PRs cannot accidentally break the offline-only
+// contract that makes SwiftFloris viable for F-Droid privacy review.
+// Removing either check is itself a load-bearing review signal.
+val bannedNetworkPermissions = listOf(
+    "android.permission.INTERNET",
+    "android.permission.ACCESS_NETWORK_STATE",
+    "android.permission.ACCESS_WIFI_STATE",
+    "android.permission.CHANGE_NETWORK_STATE",
+    "android.permission.CHANGE_WIFI_STATE",
+)
+
+// Match a <uses-permission ...> element that declares one of the banned names
+// AND does NOT carry tools:node="remove" / "removeAll". Multi-line tolerant.
+fun findBannedPermissionViolations(manifestText: String): List<String> {
+    val usesPermissionPattern = Regex(
+        """<uses-permission\b[^>]*?/>|<uses-permission\b[^>]*?>.*?</uses-permission>""",
+        setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
+    )
+    val namePattern = Regex("""android:name\s*=\s*"([^"]+)"""")
+    val toolsNodeRemovePattern = Regex(
+        """tools:node\s*=\s*"(remove|removeAll)"""",
+        RegexOption.IGNORE_CASE,
+    )
+    val violations = mutableListOf<String>()
+    for (match in usesPermissionPattern.findAll(manifestText)) {
+        val element = match.value
+        if (toolsNodeRemovePattern.containsMatchIn(element)) continue
+        val name = namePattern.find(element)?.groupValues?.getOrNull(1) ?: continue
+        if (name in bannedNetworkPermissions) {
+            violations += name
+        }
+    }
+    return violations
+}
+
 val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
     group = "verification"
-    description = "Fails the build if any AndroidManifest.xml declares INTERNET / network permissions (ROADMAP §6 N7.1)."
+    description = "Fails the build if any source AndroidManifest.xml declares INTERNET / network permissions (ROADMAP §6 N7.1)."
 
     val manifests = fileTree("src") {
         include("**/AndroidManifest.xml")
@@ -234,25 +276,12 @@ val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
     inputs.files(manifests).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.upToDateWhen { true }
 
-    val bannedPermissions = listOf(
-        "android.permission.INTERNET",
-        "android.permission.ACCESS_NETWORK_STATE",
-        "android.permission.ACCESS_WIFI_STATE",
-        "android.permission.CHANGE_NETWORK_STATE",
-        "android.permission.CHANGE_WIFI_STATE",
-    )
-
     doLast {
         val violations = mutableListOf<String>()
         manifests.forEach { manifest ->
             val text = manifest.readText()
-            bannedPermissions.forEach { perm ->
-                val pattern = Regex(
-                    """<uses-permission[^>]*android:name\s*=\s*"${Regex.escape(perm)}""""
-                )
-                if (pattern.containsMatchIn(text)) {
-                    violations += "${manifest.relativeTo(projectDir)} declares $perm"
-                }
+            findBannedPermissionViolations(text).forEach { perm ->
+                violations += "${manifest.relativeTo(projectDir)} declares $perm"
             }
         }
         if (violations.isNotEmpty()) {
@@ -273,6 +302,52 @@ val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
 afterEvaluate {
     tasks.named("preBuild").configure {
         dependsOn(verifyNoInternetPermission)
+    }
+}
+
+// Merged-manifest check: scans the post-merge AndroidManifest.xml for each
+// variant, so an AAR / library that tries to add INTERNET via manifest merging
+// is caught. Wired against AGP's SingleArtifact.MERGED_MANIFEST so the task
+// runs after the manifest merger and before assemble.
+androidComponents {
+    onVariants { variant ->
+        val verifyMerged = tasks.register("verifyNoInternetPermissionMerged${variant.name.replaceFirstChar { it.uppercase() }}") {
+            group = "verification"
+            description = "Fails the build if the merged AndroidManifest for variant ${variant.name} declares INTERNET / network permissions (ROADMAP §6 N7.1)."
+
+            val mergedManifest = variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST)
+            inputs.file(mergedManifest).withPathSensitivity(PathSensitivity.RELATIVE)
+            outputs.upToDateWhen { true }
+
+            val variantName = variant.name
+
+            doLast {
+                val file = mergedManifest.get().asFile
+                if (!file.exists()) {
+                    throw GradleException("verifyNoInternetPermissionMerged: merged manifest missing for $variantName at $file")
+                }
+                val text = file.readText()
+                val violations = findBannedPermissionViolations(text)
+                if (violations.isNotEmpty()) {
+                    throw GradleException(
+                        buildString {
+                            appendLine("SwiftFloris no-network contract violation in MERGED manifest for $variantName (ROADMAP §6 N7.1):")
+                            violations.distinct().forEach { appendLine("  - $it") }
+                            appendLine()
+                            append("A library / AAR re-introduced a banned permission via manifest merging. ")
+                            append("If the addition is from an unwanted dependency, strip it with ")
+                            append("""<uses-permission android:name="..." tools:node="remove" />""")
+                            append(" in app/src/main/AndroidManifest.xml after confirming the library does not actually require network access.")
+                        }
+                    )
+                }
+            }
+        }
+        afterEvaluate {
+            val processTaskName = "process${variant.name.replaceFirstChar { it.uppercase() }}Manifest"
+            tasks.findByName(processTaskName)?.finalizedBy(verifyMerged)
+            tasks.findByName("assemble${variant.name.replaceFirstChar { it.uppercase() }}")?.dependsOn(verifyMerged)
+        }
     }
 }
 

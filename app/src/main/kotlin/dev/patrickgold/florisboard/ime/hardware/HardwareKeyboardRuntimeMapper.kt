@@ -36,29 +36,39 @@ import android.view.KeyEvent
 class HardwareKeyboardRuntimeMapper(
     private val attachedDeviceIdsProvider: () -> IntArray = { intArrayOf() },
 ) {
+    // Touched from the IME input thread (via KeyboardManager.onHardwareKeyDown
+    // and the InputManager device-detach callback) AND from the settings UI
+    // thread when the user binds a layout to a device. Plain LinkedHashMap
+    // throws ConcurrentModificationException on concurrent iteration + write.
+    // All accesses go through the `lock` monitor.
+    private val lock = Any()
     private val layoutsByDeviceId = LinkedHashMap<Int, HardwareKeyboardLayout>()
 
     fun setLayoutForDevice(deviceId: Int, layout: HardwareKeyboardLayout) {
-        if (deviceId < 0 || !layout.isLoaded) {
-            layoutsByDeviceId.remove(deviceId)
-            return
+        synchronized(lock) {
+            if (deviceId < 0 || !layout.isLoaded) {
+                layoutsByDeviceId.remove(deviceId)
+                return
+            }
+            layoutsByDeviceId[deviceId] = layout
         }
-        layoutsByDeviceId[deviceId] = layout
     }
 
     fun clearLayoutForDevice(deviceId: Int) {
-        layoutsByDeviceId.remove(deviceId)
+        synchronized(lock) { layoutsByDeviceId.remove(deviceId) }
     }
 
     fun layoutForDevice(deviceId: Int): HardwareKeyboardLayout? {
-        return layoutsByDeviceId[deviceId]
+        return synchronized(lock) { layoutsByDeviceId[deviceId] }
     }
 
     fun pruneDetachedLayouts(): Set<Int> {
         val attached = attachedDeviceIdsProvider().toSet()
-        val removed = layoutsByDeviceId.keys.filter { it !in attached }.toSet()
-        removed.forEach { layoutsByDeviceId.remove(it) }
-        return removed
+        return synchronized(lock) {
+            val removed = layoutsByDeviceId.keys.filter { it !in attached }.toSet()
+            removed.forEach { layoutsByDeviceId.remove(it) }
+            removed
+        }
     }
 
     fun map(event: KeyEvent?): HardwareMappedKey? {
@@ -66,8 +76,14 @@ class HardwareKeyboardRuntimeMapper(
     }
 
     fun map(event: HardwareKeyEventInfo): HardwareMappedKey? {
-        if (event.deviceId < 0 || event.isCtrlPressed || event.isMetaPressed) return null
-        val layout = layoutsByDeviceId[event.deviceId] ?: return null
+        if (event.deviceId < 0 || event.isMetaPressed) return null
+        // PC-style AltGr is delivered by Android as Ctrl+Alt. We must accept
+        // Ctrl ONLY when Alt is also pressed (the AltGr layer); a bare Ctrl
+        // press is a shortcut, never a printable character. Without this
+        // gating, every AltGr-mapped key (€ on EU layouts, all CJK IME hooks
+        // on .klc imports) is silently dropped.
+        if (event.isCtrlPressed && !event.isAltPressed) return null
+        val layout = synchronized(lock) { layoutsByDeviceId[event.deviceId] } ?: return null
         val (sourceCode, entry) = resolveEntry(layout, event) ?: return null
         val codePoint = entry.outputFor(event) ?: return null
         return HardwareMappedKey(

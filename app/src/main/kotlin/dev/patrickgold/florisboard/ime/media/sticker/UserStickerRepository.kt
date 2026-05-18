@@ -150,8 +150,23 @@ object UserStickerRepository {
     }
 
     private fun resolveMimeType(displayName: String, declaredMimeType: String?): String? {
-        val declared = declaredMimeType?.lowercase(Locale.ROOT)?.takeIf { it in SupportedMimeTypes }
-        if (declared != null) return declared
+        val declaredLower = declaredMimeType?.lowercase(Locale.ROOT)?.trim()
+        // If SAF declares a concrete MIME and it's in the supported image set,
+        // honour it.
+        if (!declaredLower.isNullOrEmpty() && declaredLower in SupportedMimeTypes) {
+            return declaredLower
+        }
+        // If SAF declares a concrete non-image MIME (e.g. application/octet-stream,
+        // text/plain, application/zip), REJECT outright. Previous logic fell
+        // back to the filename extension here, which let "evil.bin" renamed to
+        // "evil.png" be committed to recipient editors as image/png — a MIME
+        // spoof against any app whose commitContent receiver trusts the
+        // announced MIME (e.g. messengers that auto-decode and forward
+        // attachments).
+        if (!declaredLower.isNullOrEmpty()) return null
+        // Only when SAF gives us nothing (null / blank) do we trust the
+        // extension. Many file managers omit MIME entirely; this keeps the
+        // common case working without re-opening the spoof.
         return when (displayName.substringAfterLast('.', "").lowercase(Locale.ROOT)) {
             "png" -> "image/png"
             "webp" -> "image/webp"
