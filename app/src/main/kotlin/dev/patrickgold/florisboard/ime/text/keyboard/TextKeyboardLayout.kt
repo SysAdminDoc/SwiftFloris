@@ -64,7 +64,10 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
@@ -372,6 +375,7 @@ fun TextKeyboardLayout(
             TextKeyButton(
                 textKey, evaluator, desiredKey,
                 debugShowTouchBoundaries,
+                controller = controller,
                 reducedMotion = reducedMotion,
                 honeycombShape = keyboard.layoutStyle == TextKeyboardLayoutStyle.Honeycomb,
             )
@@ -395,6 +399,7 @@ private fun TextKeyButton(
     evaluator: ComputingEvaluator,
     desiredKey: TextKey,
     debugShowTouchBoundaries: Boolean,
+    controller: TextKeyboardLayoutController,
     reducedMotion: Boolean,
     honeycombShape: Boolean = false,
 ) = with(LocalDensity.current) {
@@ -449,19 +454,34 @@ private fun TextKeyButton(
         },
         label = "TextKeyButton.pressScale",
     )
+    val visualBounds = key.visibleBounds
+    val semanticsBounds = keyAccessibilityBounds(key)
+    Box(
+        modifier = Modifier
+            .requiredSize(semanticsBounds.size.toDpSize())
+            .absoluteOffset { semanticsBounds.topLeft.toIntOffset() }
+            .semantics {
+                contentDescription = keyDescription
+                role = Role.Button
+                if (key.isEnabled && key.isVisible) {
+                    onClick(label = keyDescription) {
+                        controller.performAccessibilityClick(key)
+                    }
+                } else {
+                    disabled()
+                }
+            },
+    )
     val keyModifier = Modifier
         .requiredSize(size)
-        .absoluteOffset { key.visibleBounds.topLeft.toIntOffset() }
+        .absoluteOffset { visualBounds.topLeft.toIntOffset() }
         .graphicsLayer {
             scaleX = pressScale
             scaleY = pressScale
             transformOrigin = TransformOrigin.Center
         }
         .let { base -> if (honeycombShape) base.clip(HoneycombHexShape) else base }
-        .semantics {
-            contentDescription = keyDescription
-            role = Role.Button
-        }
+        .clearAndSetSemantics { }
 
     SnyggBox(
         FlorisImeUi.Key.elementName,
@@ -551,6 +571,10 @@ private fun TextKeyButton(
     }
 }
 
+internal fun keyAccessibilityBounds(key: TextKey): FlorisRect {
+    return if (key.touchBounds.isNotEmpty()) key.touchBounds else key.visibleBounds
+}
+
 /**
  * ROADMAP §6 N8.3 — TalkBack content description for a single keyboard key.
  *
@@ -559,11 +583,9 @@ private fun TextKeyButton(
  *    use the label directly (a, b, ?, …) — this is what TalkBack already says
  *    for letter keys via the underlying SnyggText, but providing it on the
  *    button container ensures the press target itself announces correctly.
- *  - For control / system keys, return a short stable English fallback. A
- *    follow-up pass will move these to string resources for i18n; for now an
- *    English string is strictly better than the platform default ("button"
- *    with no further context, which Gboard / SwiftKey users have complained
- *    about at length on the FlorisBoard tracker).
+ *  - For control / system keys, return a short localized resource string so
+ *    the semantic key target announces intent instead of falling back to
+ *    "button" or a layout-internal token.
  */
 internal fun keyContentDescription(
     context: android.content.Context,
@@ -571,14 +593,30 @@ internal fun keyContentDescription(
     label: String?,
     hintedLabel: String? = null,
 ): String {
+    val res = context.resources
+    return keyContentDescription(
+        code = code,
+        label = label,
+        hintedLabel = hintedLabel,
+        getString = res::getString,
+        getFormattedString = { resId, arg -> res.getString(resId, arg) },
+    )
+}
+
+internal fun keyContentDescription(
+    code: Int,
+    label: String?,
+    hintedLabel: String? = null,
+    getString: (Int) -> String,
+    getFormattedString: (Int, String) -> String,
+): String {
     // §6 N8.3 + N8.3a — Localized TalkBack description. Each special-key
     // label resolves to a Crowdin-routed string resource so non-English
     // users get localised announcements instead of the hard-coded English
     // fallback. Letter / number / punctuation keys use the visible label
     // directly (already locale-correct since it's the typed glyph).
-    val res = context.resources
     val hintSuffix = if (!hintedLabel.isNullOrBlank() && hintedLabel.length <= 4) {
-        res.getString(dev.patrickgold.florisboard.R.string.a11y__key__alternative_suffix, hintedLabel)
+        getFormattedString(dev.patrickgold.florisboard.R.string.a11y__key__alternative_suffix, hintedLabel)
     } else {
         ""
     }
@@ -592,7 +630,7 @@ internal fun keyContentDescription(
         KeyCode.FORWARD_DELETE -> dev.patrickgold.florisboard.R.string.a11y__key__forward_delete
         KeyCode.FORWARD_DELETE_WORD -> dev.patrickgold.florisboard.R.string.a11y__key__forward_delete_word
         KeyCode.ENTER -> dev.patrickgold.florisboard.R.string.a11y__key__enter
-        KeyCode.SPACE -> dev.patrickgold.florisboard.R.string.a11y__key__space
+        KeyCode.SPACE, KeyCode.CJK_SPACE -> dev.patrickgold.florisboard.R.string.a11y__key__space
         KeyCode.TAB -> dev.patrickgold.florisboard.R.string.a11y__key__tab
         KeyCode.ESCAPE -> dev.patrickgold.florisboard.R.string.a11y__key__escape
         KeyCode.ARROW_LEFT -> dev.patrickgold.florisboard.R.string.a11y__key__arrow_left
@@ -604,14 +642,38 @@ internal fun keyContentDescription(
         KeyCode.MOVE_START_OF_PAGE -> dev.patrickgold.florisboard.R.string.a11y__key__move_start_of_page
         KeyCode.MOVE_END_OF_PAGE -> dev.patrickgold.florisboard.R.string.a11y__key__move_end_of_page
         KeyCode.LANGUAGE_SWITCH -> dev.patrickgold.florisboard.R.string.a11y__key__language_switch
-        KeyCode.SHOW_SUBTYPE_PICKER -> dev.patrickgold.florisboard.R.string.a11y__key__subtype_picker
+        KeyCode.SHOW_SUBTYPE_PICKER, KeyCode.IME_SUBTYPE_PICKER -> dev.patrickgold.florisboard.R.string.a11y__key__subtype_picker
         KeyCode.IME_NEXT_SUBTYPE -> dev.patrickgold.florisboard.R.string.a11y__key__next_subtype
         KeyCode.IME_PREV_SUBTYPE -> dev.patrickgold.florisboard.R.string.a11y__key__prev_subtype
         KeyCode.SYSTEM_INPUT_METHOD_PICKER -> dev.patrickgold.florisboard.R.string.a11y__key__input_method_picker
+        KeyCode.SYSTEM_NEXT_INPUT_METHOD -> dev.patrickgold.florisboard.R.string.a11y__key__next_input_method
+        KeyCode.SYSTEM_PREV_INPUT_METHOD -> dev.patrickgold.florisboard.R.string.a11y__key__prev_input_method
+        KeyCode.CLIPBOARD_COPY -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_copy
+        KeyCode.CLIPBOARD_CUT -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_cut
+        KeyCode.CLIPBOARD_PASTE -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_paste
+        KeyCode.CLIPBOARD_SELECT -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_select
+        KeyCode.CLIPBOARD_SELECT_ALL -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_select_all
+        KeyCode.CLIPBOARD_CLEAR_HISTORY -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_clear_history
+        KeyCode.CLIPBOARD_CLEAR_FULL_HISTORY -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_clear_full_history
+        KeyCode.CLIPBOARD_CLEAR_PRIMARY_CLIP -> dev.patrickgold.florisboard.R.string.a11y__key__clipboard_clear_primary_clip
+        KeyCode.TOGGLE_FLOATING_WINDOW -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_floating_window
+        KeyCode.TOGGLE_COMPACT_LAYOUT -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_compact_layout
+        KeyCode.COMPACT_LAYOUT_TO_LEFT -> dev.patrickgold.florisboard.R.string.a11y__key__compact_layout_left
+        KeyCode.COMPACT_LAYOUT_TO_RIGHT -> dev.patrickgold.florisboard.R.string.a11y__key__compact_layout_right
+        KeyCode.SPLIT_LAYOUT -> dev.patrickgold.florisboard.R.string.a11y__key__split_layout
+        KeyCode.MERGE_LAYOUT -> dev.patrickgold.florisboard.R.string.a11y__key__merge_layout
+        KeyCode.TOGGLE_RESIZE_MODE -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_resize_mode
+        KeyCode.VOICE_INPUT -> dev.patrickgold.florisboard.R.string.a11y__key__voice_input
+        KeyCode.IME_SHOW_UI -> dev.patrickgold.florisboard.R.string.a11y__key__show_ui
         KeyCode.IME_HIDE_UI -> dev.patrickgold.florisboard.R.string.a11y__key__hide_ui
         KeyCode.IME_UI_MODE_TEXT -> dev.patrickgold.florisboard.R.string.a11y__key__ime_text
         KeyCode.IME_UI_MODE_MEDIA -> dev.patrickgold.florisboard.R.string.a11y__key__ime_media
         KeyCode.IME_UI_MODE_CLIPBOARD -> dev.patrickgold.florisboard.R.string.a11y__key__ime_clipboard
+        KeyCode.TOGGLE_SMARTBAR_VISIBILITY -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_smartbar_visibility
+        KeyCode.TOGGLE_ACTIONS_OVERFLOW -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_actions_overflow
+        KeyCode.TOGGLE_ACTIONS_EDITOR -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_actions_editor
+        KeyCode.TOGGLE_INCOGNITO_MODE -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_incognito
+        KeyCode.TOGGLE_AUTOCORRECT -> dev.patrickgold.florisboard.R.string.a11y__key__toggle_autocorrect
         KeyCode.UNDO -> dev.patrickgold.florisboard.R.string.a11y__key__undo
         KeyCode.REDO -> dev.patrickgold.florisboard.R.string.a11y__key__redo
         KeyCode.VIEW_CHARACTERS -> dev.patrickgold.florisboard.R.string.a11y__key__view_characters
@@ -619,11 +681,13 @@ internal fun keyContentDescription(
         KeyCode.VIEW_SYMBOLS2 -> dev.patrickgold.florisboard.R.string.a11y__key__view_symbols2
         KeyCode.VIEW_NUMERIC -> dev.patrickgold.florisboard.R.string.a11y__key__view_numeric
         KeyCode.VIEW_NUMERIC_ADVANCED -> dev.patrickgold.florisboard.R.string.a11y__key__view_numeric_advanced
+        KeyCode.VIEW_PHONE -> dev.patrickgold.florisboard.R.string.a11y__key__view_phone
+        KeyCode.VIEW_PHONE2 -> dev.patrickgold.florisboard.R.string.a11y__key__view_phone2
         KeyCode.SETTINGS -> dev.patrickgold.florisboard.R.string.a11y__key__settings
         else -> return (label?.takeIf { it.isNotBlank() }
-            ?: res.getString(dev.patrickgold.florisboard.R.string.a11y__key__generic)) + hintSuffix
+            ?: getString(dev.patrickgold.florisboard.R.string.a11y__key__generic)) + hintSuffix
     }
-    return res.getString(resId) + hintSuffix
+    return getString(resId) + hintSuffix
 }
 
 @Suppress("unused_parameter")
@@ -641,6 +705,14 @@ private class TextKeyboardLayoutController(
     private val keyHintConfiguration = prefs.keyboard.keyHintConfiguration()
     private val pointerMap: PointerMap<TouchPointer> = PointerMap { TouchPointer() }
     lateinit var popupUiController: PopupUiController
+
+    fun performAccessibilityClick(key: TextKey): Boolean {
+        if (!key.isEnabled || !key.isVisible || key.computedData.code == KeyCode.UNSPECIFIED) {
+            return false
+        }
+        inputEventDispatcher.sendDownUp(key.computedData)
+        return true
+    }
 
     private var initSelectionStart: Int = 0
     private var initSelectionEnd: Int = 0
