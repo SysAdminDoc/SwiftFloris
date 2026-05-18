@@ -482,10 +482,26 @@ internal class LatinDictionaryStore(
         languageCode: String,
         plan: LatinDictionaryAssetPlan,
     ): LatinDictionarySnapshot? {
+        val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
+        val startedAt = if (shouldLogBenchmark) {
+            SystemClock.elapsedRealtimeNanos()
+        } else {
+            0L
+        }
+        var wordCount = 0
         Trace.beginSection("swiftfloris.dict.load")
         try {
-            return loadSpecificDictionaryImpl(languageCode, plan)
+            val result = loadSpecificDictionaryImpl(languageCode, plan)
+            wordCount = result?.frequencies?.size ?: 0
+            return result
         } finally {
+            if (shouldLogBenchmark) {
+                val durationMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
+                Log.i(
+                    "SwiftFlorisPerf",
+                    "swiftfloris.dict.loadMs=$durationMs language=$languageCode wordCount=$wordCount",
+                )
+            }
             Trace.endSection()
         }
     }
@@ -679,9 +695,24 @@ internal data class LatinDictionarySnapshot(
      * correction candidates.
      */
     val symSpellIndex: SymSpellIndex by lazy {
+        val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
+        val startedAt = if (shouldLogBenchmark) {
+            SystemClock.elapsedRealtimeNanos()
+        } else {
+            0L
+        }
         Trace.beginSection("swiftfloris.nlp.symspell.build")
         try {
-            SymSpellIndex.build(correctionWords)
+            SymSpellIndex.build(correctionWords).also {
+                if (shouldLogBenchmark) {
+                    val durationMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
+                    Log.i(
+                        "SwiftFlorisPerf",
+                        "swiftfloris.nlp.symspellBuildMs=$durationMs maxDistance=1 " +
+                            "wordCount=${correctionWords.size}",
+                    )
+                }
+            }
         } finally {
             Trace.endSection()
         }
@@ -693,9 +724,24 @@ internal data class LatinDictionarySnapshot(
      * on rare words that should only block false autocorrect, not drive corrections.
      */
     val symSpellDistance2Index: SymSpellIndex by lazy {
+        val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
+        val startedAt = if (shouldLogBenchmark) {
+            SystemClock.elapsedRealtimeNanos()
+        } else {
+            0L
+        }
         Trace.beginSection("swiftfloris.nlp.symspell.build")
         try {
-            SymSpellIndex.build(distanceTwoCorrectionWords, maxDistance = 2)
+            SymSpellIndex.build(distanceTwoCorrectionWords, maxDistance = 2).also {
+                if (shouldLogBenchmark) {
+                    val durationMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
+                    Log.i(
+                        "SwiftFlorisPerf",
+                        "swiftfloris.nlp.symspellBuildMs=$durationMs maxDistance=2 " +
+                            "wordCount=${distanceTwoCorrectionWords.size}",
+                    )
+                }
+            }
         } finally {
             Trace.endSection()
         }
