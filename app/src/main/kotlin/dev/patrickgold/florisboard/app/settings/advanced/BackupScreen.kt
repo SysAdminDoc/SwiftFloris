@@ -212,7 +212,18 @@ fun BackupScreen() = FlorisScreen {
 
             if (backupFilesSelector.provideClipboardItems()) {
                 val clipboardManager by context.clipboardManager()
+                // Drop clipboard items the source app flagged as sensitive
+                // (`ClipDescription.EXTRA_IS_SENSITIVE`, API 33+, also v1.8.105's
+                // primary-clip gate now refuses to insert these — but legacy
+                // history rows from before that fix can still carry the flag).
+                // Backups are user-portable artifacts that move via Syncthing /
+                // USB / cloud sync at the user's choice; passwords / OTPs / 2FA
+                // codes that landed in history must not be serialised into the
+                // backup zip in plaintext. The personal-dictionary backup is
+                // passphrase-encrypted (v1.8.65); clipboard history is not, so
+                // the only safe path is to exclude sensitive rows.
                 val clipboardHistory = clipboardManager.currentHistory.all
+                    .filterNot { it.isSensitive }
                 val clipboardFilesDir = workspace.inputDir.subDir("clipboard")
                 clipboardFilesDir.mkdir()
                 if (backupFilesSelector.clipboardTextItems) {
