@@ -42,7 +42,10 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.clipboardManager
+import dev.patrickgold.florisboard.ime.clipboard.ClipboardRestoredFileInfo
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFilesDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.lib.cache.CacheManager
@@ -196,6 +199,7 @@ fun RestoreScreen() = FlorisScreen {
 
         if (restoreFilesSelector.provideClipboardItems()) {
             val clipboardFilesDir = workspace.outputDir.subDir("clipboard")
+            val restoredFileInfos = mutableListOf<ClipboardFileInfo>()
 
             if (restoreFilesSelector.clipboardTextItems) {
                 val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
@@ -209,16 +213,17 @@ fun RestoreScreen() = FlorisScreen {
                 if (clipboardItems.exists()) {
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
                     for (item in clipboardItemsList.filter { it.type == ItemType.IMAGE }) {
-                        ClipboardFileStorage.insertFileFromBackupIfNotExisting(
+                        val restoredFileId = item.uri!!.path!!.split('/').last()
+                        val restoredFile = ClipboardFileStorage.insertFileFromBackupIfNotExisting(
                             context,
                             clipboardFilesDir.subFile(
-                                relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/${
-                                    item.uri!!.path!!.split(
-                                        '/'
-                                    ).last()
-                                }"
+                                relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$restoredFileId"
                             )
                         )
+                        restoredFileId.toLongOrNull()?.let { id ->
+                            ClipboardRestoredFileInfo.create(item, id, restoredFile.length())
+                                ?.let(restoredFileInfos::add)
+                        }
                     }
                     clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.IMAGE })
                 }
@@ -228,18 +233,27 @@ fun RestoreScreen() = FlorisScreen {
                 if (clipboardItems.exists()) {
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
                     for (item in clipboardItemsList.filter { it.type == ItemType.VIDEO }) {
-                        ClipboardFileStorage.insertFileFromBackupIfNotExisting(
+                        val restoredFileId = item.uri!!.path!!.split('/').last()
+                        val restoredFile = ClipboardFileStorage.insertFileFromBackupIfNotExisting(
                             context,
                             clipboardFilesDir.subFile(
-                                relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/${
-                                    item.uri!!.path!!.split(
-                                        '/'
-                                    ).last()
-                                }"
+                                relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$restoredFileId"
                             )
                         )
+                        restoredFileId.toLongOrNull()?.let { id ->
+                            ClipboardRestoredFileInfo.create(item, id, restoredFile.length())
+                                ?.let(restoredFileInfos::add)
+                        }
                     }
                     clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.VIDEO })
+                }
+            }
+            if (restoredFileInfos.isNotEmpty()) {
+                val clipboardFilesDb = ClipboardFilesDatabase.new(context)
+                try {
+                    clipboardFilesDb.clipboardFilesDao().insert(*restoredFileInfos.toTypedArray())
+                } finally {
+                    clipboardFilesDb.close()
                 }
             }
         }

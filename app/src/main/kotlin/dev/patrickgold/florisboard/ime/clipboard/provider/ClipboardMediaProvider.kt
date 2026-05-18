@@ -79,6 +79,12 @@ class ClipboardMediaProvider : ContentProvider() {
         }
     }
 
+    private fun cachedFileInfo(id: Long): ClipboardFileInfo? {
+        return cachedFileInfos[id] ?: clipboardFilesDao?.getById(id)?.also { fileInfo ->
+            cachedFileInfos[id] = fileInfo
+        }
+    }
+
     override fun onCreate(): Boolean {
         ioScope.launch {
             init()
@@ -108,7 +114,7 @@ class ClipboardMediaProvider : ContentProvider() {
     override fun getType(uri: Uri): String? {
         return when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
-                cachedFileInfos.getOrDefault(ContentUris.parseId(uri), null)?.mimeTypes?.getOrNull(0)
+                cachedFileInfo(ContentUris.parseId(uri))?.mimeTypes?.getOrNull(0)
             }
             IMAGE_CLIPS_TABLE -> "${ContentResolver.CURSOR_DIR_BASE_TYPE}/vnd.florisboard.image_clip_table"
             VIDEO_CLIPS_TABLE -> "${ContentResolver.CURSOR_DIR_BASE_TYPE}/vnd.florisboard.video_clip_table"
@@ -119,7 +125,7 @@ class ClipboardMediaProvider : ContentProvider() {
     override fun getStreamTypes(uri: Uri, mimeTypeFilter: String): Array<String>? {
         return when (Matcher.match(uri)) {
             IMAGE_CLIP_ITEM, VIDEO_CLIP_ITEM -> {
-                cachedFileInfos.getOrDefault(ContentUris.parseId(uri), null)?.mimeTypes?.toTypedArray()
+                cachedFileInfo(ContentUris.parseId(uri))?.mimeTypes?.toTypedArray()
             }
             else -> null
         }

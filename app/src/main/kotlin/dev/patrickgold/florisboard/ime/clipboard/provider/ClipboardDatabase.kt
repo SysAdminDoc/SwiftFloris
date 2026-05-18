@@ -37,6 +37,7 @@ import androidx.room.Database
 import androidx.room.Delete
 import androidx.room.Entity
 import androidx.room.Insert
+import androidx.room.OnConflictStrategy
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RenameColumn
@@ -367,7 +368,7 @@ data class ClipboardFileInfo(
 @Dao
 interface ClipboardFilesDao {
     @Query("SELECT * FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
-    fun getById(uid: Long) : ClipboardFileInfo
+    fun getById(uid: Long) : ClipboardFileInfo?
 
     @Query("SELECT * FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
     fun getCursorById(uid: Long) : Cursor
@@ -378,7 +379,7 @@ interface ClipboardFilesDao {
     @Query("DELETE FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:id)")
     fun delete(id: Long)
 
-    @Insert
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insert(vararg clipboardFileInfos: ClipboardFileInfo)
 
     @Query("SELECT * FROM $CLIPBOARD_FILES_TABLE")
