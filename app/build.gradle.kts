@@ -171,7 +171,7 @@ configure<ApplicationExtension> {
     }
 
     lint {
-        baseline = file("lint.xml")
+        lintConfig = file("lint.xml")
         disable.addAll(
             listOf(
                 "UElementAsPsi",

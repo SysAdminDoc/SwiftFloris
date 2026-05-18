@@ -38,12 +38,14 @@ Required:
 Common commands:
 
 ```powershell
-.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+.\gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 .\gradlew.bat :app:verifyRoborazziDebug
 .\gradlew.bat :app:installDebug
 ```
 
-Linux/macOS shells can use `./gradlew` with the same tasks.
+Linux/macOS shells can use `./gradlew` with the same tasks. The complete local
+gate, lint baseline-drift wrapper, adb smoke, and benchmark commands are in
+[`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md).
 
 ## Picking Work
 
@@ -86,7 +88,7 @@ Never add `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`,
 At minimum, code changes should run:
 
 ```powershell
-.\gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+.\gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
 ```
 
 Also run when relevant:

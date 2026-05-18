@@ -76,8 +76,8 @@ jobs:
       - name: Roborazzi visual-regression verify (N14.1)
         run: ./gradlew :app:verifyRoborazziDebug
 
-      - name: Lint (debug)
-        run: ./gradlew :app:lintDebug
+      - name: Lint (debug + baseline drift)
+        run: bash scripts/run-lint-debug-with-baseline-check.sh
 
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
@@ -124,6 +124,7 @@ jobs:
           path: |
             app/build/reports/lint-results-debug.html
             app/build/reports/lint-results-debug.xml
+            app/build/reports/lintDebug-console.log
 
       - name: Upload unit-test report
         if: always()

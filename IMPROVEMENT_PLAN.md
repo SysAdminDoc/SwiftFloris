@@ -10,10 +10,11 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - Main Kotlin files: 245.
 - Test Kotlin files: 22.
 - Latest verified commands:
-  - `./gradlew.bat :app:lintDebug :app:testDebugUnitTest :app:assembleDebug`
+  - `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:verifyRoborazziDebug :app:lintDebug :app:assembleDebug`
+  - `bash scripts/run-lint-debug-with-baseline-check.sh`
   - `./gradlew.bat :app:installDebug`
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
-- Known worktree condition: no unrelated worktree changes were present before the v1.8.164 benchmark slice.
+- Known worktree condition: no unrelated worktree changes were present before the v1.8.165 CI quality-gates slice.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after trust-state and benchmark batches: 247 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export/manual entry mutation, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
@@ -26,7 +27,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - The keyboard surface needs a dedicated accessibility and polish pass for candidate row semantics, smartbar controls, touch targets, contrast, and state labels.
 - Lint signal is improving, but the remaining `UnusedResources` bucket still hides real regressions. Further cleanup must stay conservative because translated strings, theme palette test fixtures, and build variants can look unused to lint.
 - Compile warnings show older synchronous feedback APIs in several UI surfaces. Replacing them with coroutine-safe feedback removes UI-thread risk and improves consistency.
-- CI and release verification should match the local path: lint, unit tests, assemble, optional adb install/launch, lint-baseline drift, and dependency review.
+- CI and release verification now matches the core local path: lint with baseline-drift detection, unit tests, Roborazzi verify, assemble, optional adb install/launch, dependency review, and manual emulator smoke.
 - Performance quality now has repeatable SM-S938B / Android 16 baselines for first render, first suggestion, dictionary load/preload, candidate recomposition, theme switching, and backup/restore. Future perf work should compare against `docs/BENCHMARKS.md`.
 
 ## Priority Model
@@ -292,19 +293,28 @@ Acceptance criteria:
 
 ### 8. CI Quality Gates
 
-Status: Planned
+Status: Completed in v1.8.165
 Priority: P1
 
 Goal: Keep quality checks repeatable and visible before release.
 
 Tasks:
-- [ ] Review existing GitHub Actions Android workflow.
-- [ ] Ensure unit tests run on pull requests.
-- [ ] Ensure `assembleDebug` or equivalent build runs on pull requests.
-- [ ] Ensure lint runs with baseline drift detection.
-- [ ] Add dependency/version review as a scheduled or manual check.
-- [ ] Evaluate emulator smoke feasibility for key settings launch flow.
-- [ ] Document local verification commands used before commit/push.
+- [x] Review existing GitHub Actions Android workflow.
+- [x] Ensure unit tests run on pull requests.
+- [x] Ensure `assembleDebug` or equivalent build runs on pull requests.
+- [x] Ensure lint runs with baseline drift detection.
+- [x] Add dependency/version review as a scheduled or manual check.
+- [x] Evaluate emulator smoke feasibility for key settings launch flow.
+- [x] Document local verification commands used before commit/push.
+
+Progress:
+- 2026-05-18 (v1.8.165): Android CI already ran unit tests,
+  `:app:verifyRoborazziDebug`, lint, and `assembleDebug` on PRs. This slice
+  fixed the lint DSL wiring (`lintConfig` instead of treating `app/lint.xml` as
+  a baseline), added `scripts/run-lint-debug-with-baseline-check.sh` so stale
+  lint-baseline entries fail CI, added weekly Dependabot Gradle / GitHub
+  Actions update review, added a manual emulator settings-launch smoke workflow,
+  and documented the local verification path in `docs/LOCAL_VERIFICATION.md`.
 
 Acceptance criteria:
 - CI matches the local verification path closely enough to catch common regressions.
