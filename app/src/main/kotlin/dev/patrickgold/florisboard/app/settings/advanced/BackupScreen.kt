@@ -374,7 +374,7 @@ fun BackupScreen() = FlorisScreen {
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__back_up__failure_title),
                 secondaryText = stringRes(
-                    R.string.backup_and_restore__back_up__failure,
+                    R.string.backup_and_restore__back_up__failure_recovery,
                     "error_message" to (lastBackupErrorMessage ?: stringRes(
                         R.string.backup_and_restore__back_up__unknown_error,
                     )),

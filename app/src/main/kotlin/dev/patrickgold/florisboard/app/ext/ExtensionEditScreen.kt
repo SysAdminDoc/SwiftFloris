@@ -392,7 +392,10 @@ private fun EditScreen(
             ThemeExtensionEditNotice.SaveFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__save_failure),
-                secondaryText = lastEditErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable),
+                secondaryText = stringRes(
+                    R.string.ext__editor__save_failure_summary,
+                    "error_message" to (lastEditErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable)),
+                ),
             )
             ThemeExtensionEditNotice.ComponentDeleted -> FlorisInfoCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),

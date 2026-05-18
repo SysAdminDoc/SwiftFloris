@@ -117,7 +117,7 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__localization__language_pack_delete_failure),
                 secondaryText = stringRes(
-                    R.string.error__snackbar_message_template,
+                    R.string.settings__localization__language_pack_delete_failure_summary,
                     "error_message" to (lastErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable)),
                 ),
             )

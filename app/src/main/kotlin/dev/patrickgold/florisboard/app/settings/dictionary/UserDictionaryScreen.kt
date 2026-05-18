@@ -577,12 +577,18 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             UserDictionaryEntryNotice.SaveFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__entry_save_failure),
-                secondaryText = lastEntryNoticeDetail ?: unknownEntryErrorMessage,
+                secondaryText = stringRes(
+                    R.string.settings__udm__entry_save_failure_summary,
+                    "error_message" to (lastEntryNoticeDetail ?: unknownEntryErrorMessage),
+                ),
             )
             UserDictionaryEntryNotice.DeleteFailure -> FlorisErrorCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__entry_delete_failure),
-                secondaryText = lastEntryNoticeDetail ?: unknownEntryErrorMessage,
+                secondaryText = stringRes(
+                    R.string.settings__udm__entry_delete_failure_summary,
+                    "error_message" to (lastEntryNoticeDetail ?: unknownEntryErrorMessage),
+                ),
             )
         }
 
