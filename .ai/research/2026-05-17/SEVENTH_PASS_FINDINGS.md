@@ -117,17 +117,17 @@ shipped in this pass; four were structural / out-of-scope.
 | **#16** — `uriToPreviewBitmap` modern (API 28+) branch had no max-size guard before bitmap allocation | Low | ✅ **v1.8.111** — shared `ClipboardPreviewImagePolicy` rejects unknown or >8192 px bounds before preview decode. |
 | **#13** — `revokeUriPermission` only on explicit delete, not on history rotation / expiry | Medium | ✅ **v1.8.112** — size-limit rotation and timed expiry now close provider-backed media items before deleting Room rows. |
 | **#9** — pin-popup `stringRepresentation()` ran URL/email/phone detection on unredacted text even when `isSensitive` is true, leaking structural info via icon | Low | ✅ **v1.8.115** — `clipboardItemDescriptionKind` skips classification for sensitive clips before reading raw text. |
+| **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphaned provider media files forever | Medium | ✅ **v1.8.116** — startup reconciliation deletes missing-file history rows and unreferenced provider files / metadata rows before history collection. |
 
 ### Open (mostly perf / UX polish or structural)
 
 | Finding | Severity | Disposition |
 |---|---|---|
-| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.116+. |
-| **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphans every file forever | Medium | Modest slice; flag for v1.8.116+. |
+| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.117+. |
 | **#5, #6** — `enforceHistoryLimit` recurses on its own emission; `updateHistory` runs on Main and sort + filter at every emission | Medium | Perf cliff at startup with N=200 history + cap=10; needs a `Mutex` or single-threaded dispatcher. Modest refactor; defer. |
 | **#7** — `enforceExpiryDate` reads `currentHistory` on a background timer with no sync | Low | Same fix shape as #5; bundle. |
 | **#8** — no pin-cap; pinned items grow unbounded (combined with #4, pinned media files leak forever) | Low | UX polish + a pref; defer. |
-| **#10** — backup-restore drops the `ClipboardFileInfo` row, so restored items have URIs pointing at IDs not in `clipboard_files` table → "Unable to resolve image" | Medium | One-PR fix on the restore path; flag for v1.8.116+. |
+| **#10** — backup-restore drops the `ClipboardFileInfo` row, so restored items have URIs pointing at IDs not in `clipboard_files` table → "Unable to resolve image" | Medium | One-PR fix on the restore path; flag for v1.8.117+. |
 | **#12** — `openFile` doesn't pre-check `file.exists()` (FileNotFoundException to receiver) | Low | Defer. |
 | **#14** — `primaryClipLastFromCallback` duplicate check too narrow on text-clear-text-cycle | Low | Defer. |
 | **#15** — `ClipboardMediaProvider.init` loads `cachedFileInfos` async; receiver calls during cold-paste race the cache | Medium | One-PR fix; flag. |
@@ -157,15 +157,14 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.115)
+## 5. Open follow-up roster (post-v1.8.116)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.115 G10 sensitive clipboard description-guard slice. Priority-scored.
+v1.8.116 G3 clipboard startup storage-reconciliation slice. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
 | G1 | Voice no-local-recogniser: hide / preview-only-flag the local engine catalog UI OR start the integration | Voice #6 | 4 | 4 | 1 | **2.25** |
-| G3 | Clipboard startup reconciliation between DB rows and on-disk files | Clipboard #4 | 3 | 2 | 1 | **3.5** |
 | G4 | Clipboard restore re-inserts `ClipboardFileInfo` rows | Clipboard #10 | 3 | 2 | 1 | **3.5** |
 | G5 | `enforceHistoryLimit` `Mutex` + off-Main collection | Clipboard #5 + #6 + #7 | 3 | 2 | 1 | **3.5** |
 | G9 | `ClipboardHistoryManager` (Tink store) — confirm intent; delete or wire as backend | Clipboard #17 | 2 | 2 | 1 | **2.5** |

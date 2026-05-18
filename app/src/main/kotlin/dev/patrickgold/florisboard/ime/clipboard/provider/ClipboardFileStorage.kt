@@ -79,6 +79,12 @@ object ClipboardFileStorage {
         return context.clipboardFilesDir.subFile(id.toString())
     }
 
+    fun listStoredFileIds(context: Context): Set<Long> {
+        return context.clipboardFilesDir.listFiles()
+            ?.mapNotNull { it.name.toLongOrNull() }
+            ?.toSet()
+            ?: emptySet()
+    }
 
     /**
      * Insert file from backup if not existing
