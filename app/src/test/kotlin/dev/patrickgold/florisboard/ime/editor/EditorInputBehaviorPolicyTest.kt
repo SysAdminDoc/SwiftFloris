@@ -128,6 +128,42 @@ class EditorInputBehaviorPolicyTest : FunSpec({
         ) shouldBe false
     }
 
+    test("glide backspace escalates character delete to word delete for an active committed glide word") {
+        EditorInputBehaviorPolicy.shouldEscalateGlideBackspaceToWordDelete(
+            operationUnit = OperationUnit.CHARACTERS,
+            isPhantomSpaceActive = true,
+            isCurrentWordValid = true,
+            immediateBackspaceDeletesWord = true,
+        ) shouldBe true
+    }
+
+    test("glide backspace does not escalate when the preference is disabled") {
+        EditorInputBehaviorPolicy.shouldEscalateGlideBackspaceToWordDelete(
+            operationUnit = OperationUnit.CHARACTERS,
+            isPhantomSpaceActive = true,
+            isCurrentWordValid = true,
+            immediateBackspaceDeletesWord = false,
+        ) shouldBe false
+    }
+
+    test("glide backspace does not escalate without an active phantom-space word") {
+        EditorInputBehaviorPolicy.shouldEscalateGlideBackspaceToWordDelete(
+            operationUnit = OperationUnit.CHARACTERS,
+            isPhantomSpaceActive = false,
+            isCurrentWordValid = true,
+            immediateBackspaceDeletesWord = true,
+        ) shouldBe false
+    }
+
+    test("glide backspace does not re-escalate explicit word deletes") {
+        EditorInputBehaviorPolicy.shouldEscalateGlideBackspaceToWordDelete(
+            operationUnit = OperationUnit.WORDS,
+            isPhantomSpaceActive = true,
+            isCurrentWordValid = true,
+            immediateBackspaceDeletesWord = true,
+        ) shouldBe false
+    }
+
     test("double-space period only accepts non-terminal text followed by a space") {
         EditorInputBehaviorPolicy.shouldConvertDoubleSpaceToPeriod("a ") shouldBe true
         EditorInputBehaviorPolicy.shouldConvertDoubleSpaceToPeriod(". ") shouldBe false
