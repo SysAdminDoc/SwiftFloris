@@ -98,9 +98,9 @@ The high-level typing path is:
    text, MIME capabilities, and sensitive-field state.
 3. `KeyboardManager` receives key events from the Compose keyboard, hardware
    keyboard hooks, or automation entry points.
-4. Text-key behavior delegates into `ime/text/`, `ime/input/`, and `ime/nlp/`
-   depending on whether the action is raw text, a correction, a suggestion, a
-   gesture trace, or rich content.
+4. Text-key behavior delegates into `ime/text/`, `ime/input/`, `ime/keyboard`
+   policies, and `ime/nlp/` depending on whether the action is raw text, a
+   correction, a suggestion, a gesture trace, or rich content.
 5. `NlpManager` gathers dictionary, priors, user learning, multilingual
    scoring, and field guards before `CandidateAutoCommitPolicy` and the rankers
    decide auto-commit, quick-prediction, and rejection behavior.
