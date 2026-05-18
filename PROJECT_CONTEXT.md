@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.136).
+through v1.8.137).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.136)
+## 3. Stack at HEAD (v1.8.137)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.136** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.137** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability layer.
 v1.8.104 – v1.8.110 closed the
@@ -301,6 +301,12 @@ v1.8.136 closes the subtype editor validation test item by adding
 model and delegates required-field checks to the policy, with focused JVM
 coverage for default add-state missing fields, complete draft-to-subtype
 building, select-placeholder rejection, and edit-state preservation.
+
+v1.8.137 closes the theme editor validation test item by adding
+`ThemeComponentMetaValidationPolicy`. Theme component metadata confirmation now
+uses a pure policy for field validity, duplicate-ID detection, and normalized
+apply data, with JVM coverage for valid apply normalization, invalid fields,
+duplicate IDs, and blank stylesheet fallback.
 
 ## 4. Module layout
 
