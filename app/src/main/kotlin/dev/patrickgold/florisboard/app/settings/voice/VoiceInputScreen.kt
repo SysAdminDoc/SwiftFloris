@@ -88,6 +88,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
@@ -735,7 +736,7 @@ private fun VoiceInputStatusCard(
             actionLabel = stringRes(R.string.voice_input_setup__open_futo_permissions),
             onClick = onClick,
         )
-        status.isFutoEnabled -> FlorisInfoCard(
+        status.isFutoEnabled -> FlorisSuccessCard(
             modifier = modifier,
             text = stringRes(R.string.settings__voice_input__status_ready),
             secondaryText = stringRes(R.string.settings__voice_input__status_ready_summary),

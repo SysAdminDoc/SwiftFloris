@@ -59,8 +59,9 @@ import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
@@ -103,12 +104,12 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
             isDeleteInProgress = isDeleteInProgress,
             lastTerminalNotice = lastNotice,
         )) {
-            LanguagePackManagerNotice.DeleteInProgress -> FlorisInfoCard(
+            LanguagePackManagerNotice.DeleteInProgress -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__localization__language_pack_delete_in_progress),
                 secondaryText = stringRes(R.string.settings__localization__language_pack_delete_in_progress_summary),
             )
-            LanguagePackManagerNotice.DeleteSuccess -> FlorisInfoCard(
+            LanguagePackManagerNotice.DeleteSuccess -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__localization__language_pack_delete_success),
                 secondaryText = stringRes(R.string.settings__localization__language_pack_delete_success_summary),

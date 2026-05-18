@@ -68,8 +68,9 @@ import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.writeFromFile
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisNeutralCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
@@ -355,7 +356,7 @@ fun BackupScreen() = FlorisScreen {
             clipboardItemsSelected = backupFilesSelector.provideClipboardItems(),
             lastTerminalNotice = lastBackupNotice,
         )) {
-            BackupFlowNotice.InProgress -> FlorisInfoCard(
+            BackupFlowNotice.InProgress -> FlorisProgressCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__back_up__in_progress),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__in_progress_summary),
@@ -365,7 +366,7 @@ fun BackupScreen() = FlorisScreen {
                 text = stringRes(R.string.backup_and_restore__back_up__clipboard_privacy_warning_title),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__clipboard_privacy_warning_summary),
             )
-            BackupFlowNotice.Cancelled -> FlorisInfoCard(
+            BackupFlowNotice.Cancelled -> FlorisNeutralCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__back_up__cancelled),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__cancelled_summary),
@@ -380,7 +381,7 @@ fun BackupScreen() = FlorisScreen {
                     )),
                 ),
             )
-            BackupFlowNotice.ShareSheetOpened -> FlorisInfoCard(
+            BackupFlowNotice.ShareSheetOpened -> FlorisProgressCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__back_up__share_sheet_opened),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__share_sheet_opened_summary),
