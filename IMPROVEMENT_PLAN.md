@@ -69,6 +69,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Audited extension import/edit/delete states by adding extension archive file progress/success/failure cards, async file import/rename/delete work, duplicate-action blocking, and focused policy coverage.
 - 2026-05-18: Audited dictionary add/update/remove states by adding manual entry progress/success/failure cards, async DAO writes, duplicate-action blocking, and focused policy coverage.
 - 2026-05-18: Added calm recovery-path copy to backup, restore, extension import/edit/delete, archive-file, language-pack delete, and manual dictionary entry failure cards so visible errors explain what stayed unchanged and what to retry.
+- 2026-05-18: Closed the Workstream 5 duplicate-action/busy-state pass by adding dictionary import/export transfer state, visible transfer progress cards, off-main-thread transfer work, disabled navigation/menu/entry actions during transfers, and focused policy coverage.
 
 ## Workstreams
 
@@ -178,7 +179,7 @@ Tasks:
 - [x] Audit extension import/edit/delete states.
 - [x] Audit dictionary add/remove states.
 - [x] Add calm, specific microcopy for failure and recovery paths.
-- [ ] Add disabled/busy states where repeated actions could corrupt state or confuse users.
+- [x] Add disabled/busy states where repeated actions could corrupt state or confuse users.
 
 Acceptance criteria:
 - Every destructive or long-running workflow has explicit feedback.
