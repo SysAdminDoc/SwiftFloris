@@ -83,6 +83,20 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 private val StickerBaseWidth = 96.dp
 
+// Maximum input dimension we'll accept from a SAF-imported sticker before
+// rejecting outright. A legitimate sticker is at most a few thousand pixels
+// on a side; anything larger is either a screenshot the user mis-categorised
+// or a hostile/corrupted file. Defends the IME process against
+// decoder-driven OOM crashes (BitmapFactory.decodeStream with no
+// inJustDecodeBounds pre-check would otherwise allocate width * height * 4
+// bytes — a 100k x 100k PNG is 40 GB).
+private const val MAX_STICKER_DIMENSION = 8192
+
+// Target longest edge for an on-keyboard sticker tile. We downsample so a
+// loaded `ImageBitmap` never holds more than a few MB regardless of source
+// resolution.
+private const val TARGET_STICKER_EDGE_PX = 512
+
 @Composable
 fun StickerPaletteView(
     modifier: Modifier = Modifier,
@@ -256,8 +270,38 @@ private fun BoxScope.StickerPreview(sticker: Sticker) {
     LaunchedEffect(sourceUri) {
         bitmap = withContext(Dispatchers.IO) {
             runCatching {
-                context.contentResolver.openInputStream(Uri.parse(sourceUri))?.use { stream ->
-                    BitmapFactory.decodeStream(stream)?.asImageBitmap()
+                val parsedUri = Uri.parse(sourceUri)
+                // Two-pass decode with bounds gate: a hostile / corrupted file
+                // returned by the SAF folder could otherwise allocate
+                // gigabytes (e.g. a 100k x 100k PNG) and crash the IME
+                // process. First pass reads bounds only, then we reject
+                // anything past a sanity ceiling and downsample the rest so
+                // a single tile never exceeds ~512 px on its longest edge.
+                val boundsOptions = BitmapFactory.Options().apply {
+                    inJustDecodeBounds = true
+                }
+                context.contentResolver.openInputStream(parsedUri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream, null, boundsOptions)
+                }
+                val srcWidth = boundsOptions.outWidth
+                val srcHeight = boundsOptions.outHeight
+                if (srcWidth <= 0 || srcHeight <= 0) return@runCatching null
+                if (srcWidth > MAX_STICKER_DIMENSION || srcHeight > MAX_STICKER_DIMENSION) {
+                    return@runCatching null
+                }
+                val targetEdge = TARGET_STICKER_EDGE_PX
+                var sampleSize = 1
+                while (srcWidth / (sampleSize * 2) >= targetEdge &&
+                    srcHeight / (sampleSize * 2) >= targetEdge
+                ) {
+                    sampleSize *= 2
+                }
+                val decodeOptions = BitmapFactory.Options().apply {
+                    inSampleSize = sampleSize
+                    inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+                }
+                context.contentResolver.openInputStream(parsedUri)?.use { stream ->
+                    BitmapFactory.decodeStream(stream, null, decodeOptions)?.asImageBitmap()
                 }
             }.getOrNull()
         }

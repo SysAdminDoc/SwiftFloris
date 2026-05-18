@@ -37,6 +37,12 @@ concurrency:
   group: reproducible-apk-${{ github.ref }}
   cancel-in-progress: true
 
+# Default GITHUB_TOKEN limited to read-only — this job only checks out
+# source, builds, and uploads artefacts. Restricting the token closes the
+# blast radius if a transitive action dependency is compromised.
+permissions:
+  contents: read
+
 jobs:
   verify:
     runs-on: ubuntu-latest

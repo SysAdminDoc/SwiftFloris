@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ (API 31+) data extraction rules.
+
+    Two separate <cloud-backup> and <device-transfer> rule sets are required
+    by the new schema; the pre-31 single <full-backup-content> rule set is
+    still referenced by `android:fullBackupContent="@xml/backup_rules"` for
+    devices older than API 31.
+
+    Privacy posture (load-bearing):
+
+    1. Personal-dictionary SQLCipher DB (floris_user_dictionary*) is excluded
+       from BOTH cloud backup and device transfer. It contains words the
+       personal-learning pipeline promoted from real typing — names,
+       addresses, codenames, slang. Cloud backup is excluded on principle.
+       Device transfer is excluded because the SQLCipher passphrase is wrapped
+       by an Android-Keystore-held AES-GCM key that is NOT exportable: the
+       ciphertext would arrive at the new device with no key to decrypt it,
+       bricking the dictionary AND leaking the encrypted PII blob.
+
+    2. Tink-wrapped passphrase preferences (floris_user_dictionary_key,
+       jetpref-encrypted-*) are excluded for the same reason — the wrap key
+       is bound to the original device's keystore alias.
+
+    3. JetPref non-encrypted preferences and the `files/ime/` extension/theme
+       directory are safe to include (no typed-text history).
+-->
+<data-extraction-rules>
+    <cloud-backup>
+        <include
+            domain="root"
+            path="jetpref_datastore"/>
+        <include
+            domain="file"
+            path="ime"/>
+        <!-- Hard excludes — never let these leave the device via cloud. -->
+        <exclude
+            domain="database"
+            path="floris_user_dictionary"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db-journal"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db-wal"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db-shm"/>
+        <exclude
+            domain="sharedpref"
+            path="floris_user_dictionary_key.xml"/>
+        <exclude
+            domain="file"
+            path="clipboard_history"/>
+    </cloud-backup>
+    <device-transfer>
+        <include
+            domain="root"
+            path="jetpref_datastore"/>
+        <include
+            domain="file"
+            path="ime"/>
+        <!-- Even D2D transfer cannot carry these: the wrap key is bound to
+             the original device's Android Keystore and the ciphertext is
+             undecryptable on the new device. Forcing the user to re-enrol
+             gives a defined, recoverable state. -->
+        <exclude
+            domain="database"
+            path="floris_user_dictionary"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db-journal"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db-wal"/>
+        <exclude
+            domain="database"
+            path="floris_user_dictionary.db-shm"/>
+        <exclude
+            domain="sharedpref"
+            path="floris_user_dictionary_key.xml"/>
+        <exclude
+            domain="file"
+            path="clipboard_history"/>
+    </device-transfer>
+</data-extraction-rules>

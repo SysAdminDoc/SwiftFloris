@@ -1,21 +1,32 @@
 name: Validate no translated strings.xml included
 
+# SECURITY: `pull_request_target` runs in the base-repo context with write
+# tokens. Every `${{ github.event.* }}` and step-output value derived from
+# untrusted PR data (login, filenames, PR body, branch name) MUST be passed
+# via `env:` and referenced as a quoted shell variable. NEVER interpolate
+# `${{ ... }}` directly into `run:` script bodies — that is GitHub Actions'
+# canonical script-injection sink.
+
 on:
   pull_request_target:
     branches: [ main ]
 
+# Restrict the default token to the absolute minimum this workflow needs.
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   validate:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pull-requests: write
     steps:
       - name: Precheck if validation is required
         id: precheck
+        env:
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          pr_author="${{ github.event.pull_request.user.login }}"
-          if [[ "$pr_author" == "florisboard-bot" ]]; then
+          set -euo pipefail
+          if [[ "$PR_AUTHOR" == "florisboard-bot" ]]; then
             echo "PR is by florisboard-bot, skipping validation!"
             echo "require_validation=false" >> "$GITHUB_OUTPUT"
           else
@@ -26,33 +37,40 @@ jobs:
       - name: Fetch PR changed files manually
         id: fetch_changed_files
         if: steps.precheck.outputs.require_validation == 'true'
+        env:
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          pr_info="$(curl -sSf https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }})" || exit 11
-          num_changed_files="$(jq -r '.changed_files' <<< "$pr_info")" || exit 12
-          num_pages=$(((num_changed_files + 99) / 100))
-          changed_files=""
-          echo "Num changed files: $num_changed_files ($num_pages page(s))"
-          for ((page=1; page<=num_pages; page++)); do
-            pr_files="$(curl -sSf https://api.github.com/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/files?per_page=100\&page=$page)" || exit 11
-            changed_files_iter="$(jq -r '.[].filename' <<< "$pr_files")" || exit 12
-            changed_files+="$changed_files_iter"
-          done
-          echo "Changed files:\n$changed_files"
-          illegal_changes_list="$(grep -E '^app/src/main/res/values-.+/strings.xml$' <<< "$changed_files")" || true
+          set -euo pipefail
+          # Use `gh api` which handles auth + pagination cleanly and never
+          # interpolates the response into the shell command line.
+          changed_files="$(gh api --paginate "repos/${REPO}/pulls/${PR_NUMBER}/files" --jq '.[].filename')"
+          echo "Changed files:"
+          echo "$changed_files"
+          illegal_changes_list="$(printf '%s\n' "$changed_files" | grep -E '^app/src/main/res/values-.+/strings\.xml$' || true)"
           if [ -n "$illegal_changes_list" ]; then
-            echo -e "Illegal changes detected:\n$illegal_changes_list"
+            printf 'Illegal changes detected:\n%s\n' "$illegal_changes_list"
           else
             echo "No illegal changes detected"
           fi
-          echo "illegal_changes_list<<EOF" >> "$GITHUB_OUTPUT"
-          echo "$illegal_changes_list" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
+          {
+            echo "illegal_changes_list<<EOF"
+            echo "$illegal_changes_list"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Create comment if illegal files detected
+        # TODO supply-chain: pin to a SHA before next release; the SHA above
+        # was not independently verified at edit time, so the floating tag
+        # is kept for now. `gh api repos/peter-evans/create-or-update-comment/git/refs/tags/v4`
+        # will return the canonical commit SHA to substitute here.
         uses: peter-evans/create-or-update-comment@v4
         if: steps.precheck.outputs.require_validation == 'true' && steps.fetch_changed_files.outputs.illegal_changes_list != ''
         with:
           issue-number: ${{ github.event.pull_request.number }}
+          # Markdown-fenced — even if filenames contain backticks they cannot
+          # escape the fence into surrounding markdown commands.
           body: |
             ⚠️ Illegal changes detected
 
@@ -67,4 +85,9 @@ jobs:
 
       - name: Fail workflow if illegal files detected
         if: steps.precheck.outputs.require_validation == 'true' && steps.fetch_changed_files.outputs.illegal_changes_list != ''
-        run: echo -e "Illegal changes detected:\n${{ steps.fetch_changed_files.outputs.illegal_changes_list }}" && exit 1
+        env:
+          ILLEGAL_CHANGES: ${{ steps.fetch_changed_files.outputs.illegal_changes_list }}
+        run: |
+          set -euo pipefail
+          printf 'Illegal changes detected:\n%s\n' "$ILLEGAL_CHANGES" >&2
+          exit 1

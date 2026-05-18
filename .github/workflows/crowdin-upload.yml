@@ -7,6 +7,14 @@ on:
       - "app/src/main/res/values/strings.xml"
       - ".github/workflows/crowdin-upload.yml"
 
+# Default GITHUB_TOKEN limited to read-only. This workflow uses a separate
+# Crowdin personal token (env FSEC_CROWDIN_PERSONAL_TOKEN); restricting the
+# default token blocks a malicious / compromised third-party action from
+# pushing to the repo via the workflow's own token. The Crowdin token
+# remains potent — pin `crowdin/github-action` to a SHA in a follow-up.
+permissions:
+  contents: read
+
 jobs:
   upload-to-crowdin:
     runs-on: ubuntu-latest

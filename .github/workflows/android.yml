@@ -25,6 +25,14 @@ on:
 # so it is implicitly re-checked by both lintDebug and assembleDebug below; we also
 # call it explicitly first so a contract violation fails fast before slower tasks.
 
+# Lock the default GITHUB_TOKEN to read-only. Build jobs that only need to
+# upload artefacts and report status do not need write access to issues,
+# pull-requests, packages, or contents. A future supply-chain compromise of a
+# transitive action dependency cannot abuse the token to push commits or
+# comment on issues.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest

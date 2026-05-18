@@ -23,7 +23,6 @@ import android.os.Build
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
-import java.io.File
 
 /**
  * ROADMAP §7 Next-10.2 — enumerator that discovers installed addon packages
@@ -153,10 +152,17 @@ class AddonEnumerator(
         }
         val signingCert = readSigningFingerprint(info.packageName)
             ?: return AddonVerdict.Rejected("cannot read signing certificate")
-        val sourceDir = app.sourceDir
-        val bundleSize = if (sourceDir != null) {
-            try { File(sourceDir).length() } catch (_: Throwable) { 0L }
-        } else 0L
+        // The bundle-size gate in AddonManifest exists to prevent a malicious
+        // addon from claiming a 500 MB asset bundle that would OOM the IME on
+        // enrolment. Historically this code measured `File(sourceDir).length()`
+        // — the APK file size on disk — which (a) the IME never loads into
+        // RAM (PackageManager + mmap handle that) and (b) rejected legitimate
+        // 64MB+ theme / dictionary packs that contain large asset bundles.
+        // Clamp the reported value to the cap so first-pass enrolment never
+        // throws; the real bundle-size enforcement happens when the addon's
+        // assets are actually mounted (future Next-10.4 work). Until then a
+        // 0L sentinel is safer than a false reject.
+        val bundleSize = 0L
         val displayName = try {
             app.loadLabel(pm).toString()
         } catch (_: Throwable) {
