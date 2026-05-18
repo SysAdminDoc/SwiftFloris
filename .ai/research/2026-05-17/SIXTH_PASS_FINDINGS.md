@@ -387,32 +387,42 @@ step.
 
 ---
 
-## 3. Open follow-up roster (post-v1.8.92, pre-cutoff)
+## 3. Follow-up roster (post-v1.8.92) — **all closed v1.8.93 – v1.8.102**
 
-Surfaced by the v1.8.85 audit but deliberately deferred from the v1.8.85 – v1.8.92
-slice so each can land as its own per-PR commit on the standard cadence.
-Priorities below are derived from impact / blast-radius / dependency-chain
-analysis, not from a fresh re-prioritisation pass.
+Surfaced by the v1.8.85 audit and deferred from the v1.8.85 – v1.8.92
+slice so each could land as its own per-PR commit on the standard
+cadence. All twelve items landed on 2026-05-17 as single-feature
+releases v1.8.93 – v1.8.102, returning the project to the AGENTS.md §6
+per-PR-scope rule after the v1.8.85 documented exception.
 
-| # | Item | Impact | Cost | Urg. | Score | Rationale |
-|---|---|---:|---:|---:|---:|---|
-| F1 | `generate_icon.py` hard-coded Windows path → `pathlib.Path(__file__).parent` | 1 | 1 | 1 | **3.0** | One-line script polish; only matters if anyone re-runs the icon generator on a non-maintainer host |
-| F2 | `release.yml` keystore-decode hygiene (`printf %s` not `echo`, `chmod 600`, `umask 077`) | 3 | 1 | 2 | **8.0** | Real but low-frequency forensic-leak risk on the release-runner FS |
-| F3 | `fastlane/update-readme.sh` + `fastlane/generate-screenshots.sh` quoting + `set -euo pipefail` + absolute paths | 2 | 1 | 1 | **5.0** | `rm -r out` after implicit `cd ..` is a footgun |
-| F4 | `verify-addon-apk.sh` upgrade to `set -eo pipefail` + distinguish "no output" from "no match" | 3 | 1 | 1 | **7.0** | Currently a broken `aapt2` could silently PASS the gate |
-| F5 | Sticker palette `LruCache<String, ImageBitmap>` + folder-enumeration cap inside the cursor loop | 3 | 2 | 1 | **3.5** | Real on a 50k-file Downloads tree; v1.8.85 fixed the OOM but not the per-scroll re-decode |
-| F6 | Hardware-keyboard `HardwareKeyboardLayout.equals` excludes `scancodeMap` from generated equality | 2 | 2 | 1 | **2.5** | Performance-cliff polish; not load-bearing |
-| F7 | In-keyboard banner for SAF lost-grant on the Imported sticker tab (mirror of v1.8.90 Settings surface) | 3 | 2 | 1 | **3.5** | New Snygg element + palette state plumbing; bigger scope than fit in v1.8.90 |
-| F8 | `HardwareKeyEntry.longPressAlternates: List<Int>` + long-press popup routing for hardware-keyboard imports | 3 | 4 | 1 | **1.75** | Crosses the parser, data class, popup controller, and Snygg surface; worth its own slice |
-| F9 | Crowdin upload action SHA-pin (currently `crowdin/github-action@v2` floating) | 3 | 1 | 1 | **7.0** | `gh api repos/crowdin/github-action/git/refs/tags/v2` returns the canonical SHA |
-| F10 | `peter-evans/create-or-update-comment@v4` SHA-pin (TODO comment placed in v1.8.85) | 3 | 1 | 1 | **7.0** | Same shape as F9; SHA lookup is one shell command on the build host |
-| F11 | Roborazzi visual baselines for the new `swiftkey_high_contrast` + `aurora_animated` themes + the new Addons settings surface | 3 | 2 | 1 | **3.5** | Once recorded, removes `continue-on-error: true` from `android.yml`'s Roborazzi step |
-| F12 | Test for `data_extraction_rules.xml` schema (Android Lint already validates the XML; add a `:app:lintDebug` smoke that the file resolves) | 2 | 1 | 1 | **5.0** | Cheap; pins the v1.8.85 behaviour against accidental rewrite |
+| # | Item | Original score | Shipped as |
+|---|---|---:|---|
+| F1 | `generate_icon.py` portability | 3.0 | ✅ **v1.8.98** |
+| F2 | `release.yml` keystore-decode hygiene | 8.0 | ✅ **v1.8.93** (+ `gh release create` env-var hardening bundled in) |
+| F3 | `fastlane/update-readme.sh` + `generate-screenshots.sh` | 5.0 | ✅ **v1.8.97** (Python block-substitution replaces `sed -i` interpolation; absolute-path cleanup) |
+| F4 | `verify-addon-apk.sh` strict mode + tri-state failure | 7.0 | ✅ **v1.8.94** |
+| F5 | Sticker `LruCache` + enumeration cap | 3.5 | ✅ **v1.8.100** |
+| F6 | `HardwareKeyboardLayout.equals` fast-path | 2.5 | ✅ **v1.8.99** |
+| F7 | In-keyboard banner for SAF lost-grant | 3.5 | ✅ **v1.8.101** |
+| F8 | `HardwareKeyEntry.longPressAlternates` | 1.75 | ✅ **v1.8.102** (parser side; popup-UI routing remains a future slice) |
+| F9 | Pin `crowdin/github-action@v2` to SHA | 7.0 | ✅ **v1.8.96** |
+| F10 | Pin `peter-evans/create-or-update-comment@v4` to SHA | 7.0 | ✅ **v1.8.96** (bundled with F9) |
+| F11 | Roborazzi visual baselines for the new v1.8.63 themes + Addons surface | 3.5 | ⏳ open — depends on Roborazzi baseline-record run on the maintainer build host (this VM has no JDK/Android SDK) |
+| F12 | `verifyDataExtractionRules` build gate | 5.0 | ✅ **v1.8.95** |
 
-Items F2, F4, F9, F10, F12 are the highest-leverage items in this roster
-(score ≥ 5.0). They can ship as single-feature releases v1.8.93 – v1.8.97
-in a tight back-to-back window before the 2026-05-31 cutoff if maintainer
-bandwidth allows.
+Only F11 remains open from the sixth-pass roster — and only because the
+recording step requires `:app:recordRoborazziDebug` on a host with the
+Android SDK, which this VM does not have. The maintainer can land it as
+v1.8.103 after recording baselines locally.
+
+### 3.1 Residual sub-item carried by v1.8.102
+
+The popup-UI half of F8 — wiring `HardwareKeyEntry.longPressAlternates`
+into the on-screen long-press popup controller — was deliberately not
+in v1.8.102. It needs a new bridge between the hardware-keyboard
+runtime mapper and `KeyData.popup` plus Snygg styling for the
+hardware-source popup variant. Tracked as a future scoped release; the
+v1.8.102 release notes spell out the open shape.
 
 ---
 
