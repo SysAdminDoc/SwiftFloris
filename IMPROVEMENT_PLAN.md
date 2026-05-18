@@ -14,7 +14,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - `bash scripts/run-lint-debug-with-baseline-check.sh`
   - `./gradlew.bat :app:installDebug`
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
-- Known worktree condition: no unrelated worktree changes were present before the v1.8.169 empty-state UX polish slice.
+- Known worktree condition: no unrelated worktree changes were present before the v1.8.170 keyboard preview-field polish slice.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after trust-state and benchmark batches: 247 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export/manual entry mutation, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
@@ -371,7 +371,7 @@ Tasks:
 - [x] Continue dialog copy and destructive-confirmation review across theme and extension editing.
 - [x] Add consistent loading/skeleton or progress affordances where files, extensions, or language packs are being scanned.
 - [x] Improve empty states for dictionary, extension lists, language packs, clipboard, and theme lists.
-- [ ] Review keyboard preview field placement and state feedback in settings screens.
+- [x] Review keyboard preview field placement and state feedback in settings screens.
 - [ ] Create a visual QA checklist for phone portrait, phone landscape, compact mode, floating mode, dark theme, and high font scale.
 
 Progress:
@@ -387,6 +387,10 @@ Progress:
   and theme-manager empty states now explain the current blank state and route
   users toward import, add, rescan, filter-clear, or recovery actions as
   appropriate.
+- 2026-05-18 (v1.8.170): The shared keyboard preview field now renders as a
+  distinct bottom surface, keeps bottom-bar traversal ordering, exposes
+  ready/active focus state feedback, and uses coroutine-safe feedback for the
+  Android keyboard-picker fallback.
 
 Acceptance criteria:
 - Main settings flows use consistent hierarchy, labels, and action placement.
