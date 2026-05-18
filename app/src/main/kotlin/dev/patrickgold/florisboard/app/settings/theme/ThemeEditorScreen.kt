@@ -632,22 +632,33 @@ private fun ComponentMetaEditorDialog(
         title = stringRes(R.string.ext__editor__metadata__title),
         confirmLabel = stringRes(R.string.action__apply),
         onConfirm = {
-            val allFieldsValid = idValidation.isValid() &&
-                labelValidation.isValid() &&
-                authorsValidation.isValid() &&
-                stylesheetPathValidation.isValid()
-            if (!allFieldsValid) {
+            val draft = ThemeComponentMetaDraft(
+                id = id,
+                label = label,
+                authors = authors,
+                isNightTheme = isNightTheme,
+                materialYouFlags = materialYouFlags,
+                stylesheetPath = stylesheetPath,
+            )
+            val existingThemeIds = (workspace.editor as? ThemeExtensionEditor)?.themes?.map { it.id }.orEmpty()
+            val validation = ThemeComponentMetaValidationPolicy.validate(
+                draft = draft,
+                originalId = editor.id,
+                existingThemeIds = existingThemeIds,
+            )
+            if (!validation.fieldsAreValid) {
                 showValidationErrors = true
-            } else if (id != editor.id && (workspace.editor as? ThemeExtensionEditor)?.themes?.find { it.id == id.trim() } != null) {
+            } else if (validation.duplicateId) {
                 context.showLongToastSync(R.string.settings__theme_editor__theme_id_exists)
             } else {
+                val update = ThemeComponentMetaValidationPolicy.toUpdate(draft)
                 workspace.update {
-                    editor.id = id.trim()
-                    editor.label = label.trim()
-                    editor.authors = authors.lines().map { it.trim() }.filter { it.isNotBlank() }
-                    editor.isNightTheme = isNightTheme
-                    editor.stylesheetPath = stylesheetPath.trim()
-                    editor.materialYouFlags = materialYouFlags
+                    editor.id = update.id
+                    editor.label = update.label
+                    editor.authors = update.authors
+                    editor.isNightTheme = update.isNightTheme
+                    editor.stylesheetPath = update.stylesheetPath
+                    editor.materialYouFlags = update.materialYouFlags
                 }
                 onConfirm()
             }
