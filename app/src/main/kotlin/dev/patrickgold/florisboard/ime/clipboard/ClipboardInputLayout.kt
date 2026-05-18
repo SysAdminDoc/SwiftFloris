@@ -346,12 +346,11 @@ fun ClipboardInputLayout(
                     )
                 }
             } else {
-                val text = item.stringRepresentation()
                 Column {
                     ClipTextItemDescription(
                         elementName = FlorisImeUi.ClipboardItemDescription.elementName,
                         attributes = attributes,
-                        text = text,
+                        item = item,
                     )
                     SnyggText(
                         modifier = Modifier
@@ -703,28 +702,20 @@ private fun ClipCategoryTitle(
 private fun ClipTextItemDescription(
     elementName: String,
     attributes: SnyggQueryAttributes,
-    text: String,
+    item: ClipboardItem,
     modifier: Modifier = Modifier,
 ): Unit = with(LocalDensity.current) {
-    val icon: ImageVector?
-    val description: String?
-    when {
-        NetworkUtils.isEmailAddress(text) -> {
-            icon = Icons.Outlined.Email
-            description = stringRes(R.string.clipboard__item_description_email)
+    val (icon, description) = when (clipboardItemDescriptionKind(item)) {
+        ClipboardItemDescriptionKind.EMAIL -> {
+            Icons.Outlined.Email to stringRes(R.string.clipboard__item_description_email)
         }
-        NetworkUtils.isUrl(text) -> {
-            icon = Icons.Default.Link
-            description = stringRes(R.string.clipboard__item_description_url)
+        ClipboardItemDescriptionKind.URL -> {
+            Icons.Default.Link to stringRes(R.string.clipboard__item_description_url)
         }
-        NetworkUtils.isPhoneNumber(text) -> {
-            icon = Icons.Default.Phone
-            description = stringRes(R.string.clipboard__item_description_phone)
+        ClipboardItemDescriptionKind.PHONE -> {
+            Icons.Default.Phone to stringRes(R.string.clipboard__item_description_phone)
         }
-        else -> {
-            icon = null
-            description = null
-        }
+        null -> null to null
     }
     if (icon != null && description != null) {
         SnyggRow(
@@ -741,6 +732,25 @@ private fun ClipTextItemDescription(
                 text = description,
             )
         }
+    }
+}
+
+internal enum class ClipboardItemDescriptionKind {
+    EMAIL,
+    URL,
+    PHONE,
+}
+
+internal fun clipboardItemDescriptionKind(item: ClipboardItem): ClipboardItemDescriptionKind? {
+    if (item.type != ItemType.TEXT || item.isSensitive) {
+        return null
+    }
+    val text = item.stringRepresentation()
+    return when {
+        NetworkUtils.isEmailAddress(text) -> ClipboardItemDescriptionKind.EMAIL
+        NetworkUtils.isUrl(text) -> ClipboardItemDescriptionKind.URL
+        NetworkUtils.isPhoneNumber(text) -> ClipboardItemDescriptionKind.PHONE
+        else -> null
     }
 }
 
