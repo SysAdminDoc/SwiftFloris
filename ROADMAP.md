@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.15
+# SwiftFloris Roadmap v5.16
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.14 (2026-05-18, same-day). v5.0-v5.14 entries are preserved with shipped markers updated in-place; v5.15 records the ninth seventh-pass follow-up release after v1.8.104 – v1.8.110 and keeps the high-leverage seventh-pass follow-up roster closed. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.119 (released 2026-05-18 — clipboard history maintenance serialization). **v1.8.104 – v1.8.119 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), and one clipboard history-maintenance concurrency/perf refactor.
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed and clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.15 (2026-05-18, same-day). v5.0-v5.15 entries are preserved with shipped markers updated in-place; v5.16 records the tenth seventh-pass follow-up release after v1.8.104 – v1.8.110 and closes the product-honesty part of the local voice recognizer structural finding. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.120 (released 2026-05-18 — local voice catalog preview gate). **v1.8.104 – v1.8.120 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), and one clipboard history-maintenance concurrency/perf refactor.
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed and clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization plus the local voice preview gate are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.119)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.120)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -69,6 +69,15 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   Rows selected for eviction are hidden from `historyFlow` before the
   next Room emission arrives. This closes **G5** and bundles clipboard
   agent **#7**.
+- **v1.8.120** — Local voice catalog preview gate. The missing bundled
+  Whisper/Vosk recognizer runtime is now a first-class route availability
+  condition (`VoiceLocalRecognizerRuntime.AVAILABLE = false`), so Auto /
+  Embedded Whisper / Vosk streaming cannot become live routes merely
+  because model files exist. Settings -> Voice input marks the local
+  model catalog preview-only, disables download/import until the runtime
+  ships, and leaves delete available for previously imported model files.
+  This closes **G1**'s product-honesty branch; the actual local recognizer
+  runtime remains a future multi-week Next-2 integration slice.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
@@ -114,8 +123,8 @@ Seven single-feature releases on AGENTS.md §6 per-PR cadence:
 
 ### 0.6.2 Structural findings carried forward (out-of-scope for per-PR)
 
-The voice agent surfaced one major structural finding that the
-per-PR slice could not absorb:
+The voice agent surfaced one major structural finding. The product-honesty
+branch shipped in v1.8.120; the actual recognizer runtime remains future work:
 
 - **Voice no-local-recogniser story.** The voice catalog UI advertises
   Whisper tiny/base/large + seven Vosk packages and lets users
@@ -126,8 +135,8 @@ per-PR slice could not absorb:
   Voice Input). Either ship the recognizer integration as part of a
   dedicated future release (mirrors the L1 / L2 / L3 facade-only
   pattern documented in [`PROJECT_CONTEXT.md` §8](PROJECT_CONTEXT.md))
-  OR flag the catalog UI as preview-only / hide it behind a
-  developer-options toggle until the recogniser lands.
+  v1.8.120 flags the catalog UI as preview-only and gates local routes behind
+  an explicit runtime-available flag until the recogniser lands.
 
 ### 0.6.3 Seventh-pass follow-up roster
 
@@ -147,6 +156,9 @@ High-leverage items (score ≥ 5.0) are now closed:
   `item.isSensitive`. Shipped in **v1.8.115**.
 - ✅ **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
   guard. Shipped in **v1.8.111**.
+- ✅ **G1** — Local voice model catalog / route selector must not imply
+  a working in-app Whisper/Vosk runtime. Shipped in **v1.8.120** as a
+  preview-only catalog and runtime-availability gate.
 
 ### 0.6.4 Eighth-pass research debt
 
@@ -1124,8 +1136,8 @@ Pure algorithmic win. SymSpell pre-computes only deletes (not insertions/substit
 FUTO is Source-First (non-OSI) and adds a second-app install friction users complain about [PAIN-8, AI8, AI9]. Bundle `whisper.cpp` (MIT) directly inside SwiftFloris.
 
 - ✅ **Next-2.1** shipped 2026-05-14. Added the RAM-aware embedded voice model selector foundation: `VoiceModelSelector` detects total device RAM / Android low-RAM class, maps Auto to tiny.en (~75MB) for low-end devices, base.en (~140MB) for mid-tier or unknown non-low-RAM devices, and Large-v3-Turbo INT8 (~800MB) for 8GB+ flagship devices. Settings → Voice input now has an Embedded engine group with a persisted model-tier preference, the resolved current selection, and the detected recommendation. The UI deliberately states that live dictation still uses FUTO until the bundled Whisper runtime and on-demand model manager ship. `VoiceModelSelectorTest` pins the RAM thresholds, manual overrides, and roadmap size metadata [AI3, AI8].
-- ✅ **Next-2.2** shipped 2026-05-14. Added the local voice engine routing layer for the Vosk streaming fallback path. New `VoiceRecognitionEngineSelector` resolves Auto / Embedded Whisper / Vosk streaming / External IME into an explicit route with user-readable reasons: Auto now prefers Vosk for command-mode sessions and low-RAM devices when the Vosk model plus SwiftFloris microphone permission are present, prefers embedded Whisper on capable devices, and otherwise keeps the current external voice-keyboard handoff. Settings → Voice input now exposes the recognition-engine preference, current route, and command-mode route. `StreamingVoiceTranscriptBuffer` also landed as the true-streaming transcript spine: it deduplicates repeated partials, commits final segments, handles cumulative recognizer output, and detects command phrases from partial transcripts so Vosk/Whisper streams can feed `docs/VOICE_COMMANDS.md` behavior without waiting for a full final transcript. Local model download/runtime activation remains intentionally assigned to Next-2.3/Next-2.4.
-- ✅ **Next-2.3** shipped 2026-05-14. Added a Joplin-style local voice model manager for the embedded dictation roadmap: a curated Whisper/Vosk catalog (Whisper tiny.en, base.en, large-v3-turbo-q8 plus Vosk small EN/ES/FR/DE/IT/PT), per-language model rows, explicit download/import/delete actions, private app-storage installs under `filesDir/voice-models`, and disk-usage badges. The flow keeps the base APK lean and preserves the current no-`INTERNET` app posture by opening model downloads in the browser and importing local artifacts through Android's document picker. Installed-model state now feeds the voice engine route preview, so embedded Whisper and Vosk streaming routes become selectable/credible only when the matching local model files exist.
+- ✅ **Next-2.2** shipped 2026-05-14, with the v1.8.120 preview gate correction. Added the local voice engine routing layer for the Vosk streaming fallback path. New `VoiceRecognitionEngineSelector` resolves Auto / Embedded Whisper / Vosk streaming / External IME into an explicit route with user-readable reasons. As of v1.8.120, local routes also require `VoiceLocalRecognizerRuntime.AVAILABLE`, so Auto keeps the external voice-keyboard handoff until an actual bundled runtime exists. Settings → Voice input exposes the recognition-engine preference, current route, and command-mode route. `StreamingVoiceTranscriptBuffer` also landed as the true-streaming transcript spine: it deduplicates repeated partials, commits final segments, handles cumulative recognizer output, and detects command phrases from partial transcripts so future Vosk/Whisper streams can feed `docs/VOICE_COMMANDS.md` behavior without waiting for a full final transcript.
+- ✅ **Next-2.3** shipped 2026-05-14, with the v1.8.120 preview gate correction. Added a Joplin-style local voice model manager for the embedded dictation roadmap: a curated Whisper/Vosk catalog (Whisper tiny.en, base.en, large-v3-turbo-q8 plus Vosk small EN/ES/FR/DE/IT/PT), per-language model rows, private app-storage installs under `filesDir/voice-models`, and disk-usage badges. Because the in-app recognizer runtime is not bundled yet, Settings now marks this catalog preview-only and disables download/import until the runtime ships; delete remains available for previously imported model files.
 - ✅ **Next-2.4** shipped 2026-05-14 (v1.7.9). `VoiceInputManager.consumeStreamingChunk(chunk, actions, customCommands, commandMode, ...)` pipes per-chunk transcripts through `StreamingVoiceTranscriptBuffer` and, on a final-chunk command match, fires `VoiceCommandExecutor` immediately. Partial chunks return `executed = null` even when the buffer surfaces a candidate `commandMatch` so the dictation overlay can preview a pending command without committing it. Buffer state is per-session; `resetStreamingBuffer()` recycles between dictations. Returns `VoiceStreamingCommandUpdate(transcript, executed)` so the IME can render both the partial/committed transcript and any executed-command feedback ("Executed: undo word") in one render pass. Closes the SwiftKey "Smart Edit"-style voice-edit surface ([SMART-EDIT, COMM-K]) the moment the user finishes saying it, rather than waiting for the recognizer's full-utterance final transcript.
 
 - **Next-2.5** Rambler-style streaming-voice cleanup [GBOARD-RAMBLER]. Android 17's Gboard ships "Rambler" — hold mic + ramble + clean polished text out (including mid-language switches). On-device equivalent: post-process the `StreamingVoiceTranscriptBuffer.committedText` through a Gemma 3 270M (L1) text-rewrite pass when the user holds-and-releases the voice key. Gated behind the L1 LLM dependency and an explicit user toggle. Cost: M (depends on L1 landing).

@@ -326,6 +326,7 @@ class VoiceInputManager(private val context: Context) {
         commandModeRequested: Boolean = false,
         hasEmbeddedWhisperModel: Boolean = false,
         hasVoskStreamingModel: Boolean = false,
+        localRecognizerRuntimeAvailable: Boolean = VoiceLocalRecognizerRuntime.AVAILABLE,
     ): VoiceRecognitionEngineSelection {
         return VoiceRecognitionEngineSelector.select(
             request = VoiceRecognitionEngineRequest(
@@ -339,6 +340,7 @@ class VoiceInputManager(private val context: Context) {
                 hasVoskStreamingModel = hasVoskStreamingModel,
                 hasSwiftFlorisMicrophonePermission = isSwiftFlorisMicrophonePermissionGranted(),
                 externalVoiceInputReady = isVoiceInputReadyForHandoff(),
+                localRecognizerRuntimeAvailable = localRecognizerRuntimeAvailable,
             ),
         )
     }
