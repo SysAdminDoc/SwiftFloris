@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-05-18, against the v1.8.142 codebase.
+Last updated: 2026-05-18, against the v1.8.143 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
@@ -191,6 +191,7 @@ tests use Roborazzi and Robolectric. The active test strategy is:
 
 - Product state and roadmap: `PROJECT_CONTEXT.md`, `ROADMAP.md`,
   `SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`
+- Typing behavior contracts: `docs/AUTOCORRECT_LIFECYCLE.md`
 - Research artifacts: `.ai/research/<YYYY-MM-DD>/`
 - Release notes: one root `RELEASE_NOTES_vX.Y.Z.md` per versioned release
 - Contributor workflow: `CONTRIBUTING.md`
