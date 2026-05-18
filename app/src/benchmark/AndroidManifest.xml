@@ -11,5 +11,9 @@
             android:name="dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity"
             android:exported="true"
             android:theme="@style/FlorisAppTheme"/>
+        <activity
+            android:name="dev.patrickgold.florisboard.benchmark.BenchmarkDictionaryActivity"
+            android:exported="true"
+            android:theme="@style/FlorisAppTheme"/>
     </application>
 </manifest>

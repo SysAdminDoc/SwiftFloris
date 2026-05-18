@@ -224,7 +224,7 @@ Goal: Add lightweight evidence around typing responsiveness and startup quality.
 Tasks:
 - [x] Measure keyboard cold start and first render.
 - [x] Measure first suggestion latency.
-- [ ] Measure dictionary load and preload time.
+- [x] Measure dictionary load and preload time.
 - [ ] Measure candidate row recomposition hotspots.
 - [ ] Measure theme switching cost.
 - [ ] Measure backup/restore duration on representative archives.
@@ -245,6 +245,16 @@ Progress:
   `swiftfloris.nlp.firstSuggestionMs` 1878.616249 ms over five runs with eight
   candidates. Evidence:
   `docs/benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json`.
+- 2026-05-18 (v1.8.161): dictionary load and preload are measured through a
+  benchmark-only activity that preloads `Subtype.DEFAULT`, then probes the
+  spelling and suggestion paths with invalid token `zzzxqq` to force the lazy
+  SymSpell indexes. Samsung SM-S938B / Android 16 baseline: median
+  `swiftfloris.dict.loadMs` 757.353333 ms for 520,837 English entries, median
+  `swiftfloris.dict.preloadMs` 772.080625 ms, median distance-1 SymSpell build
+  500.230156 ms for 94,934 correction words, median distance-2 SymSpell build
+  532.298281 ms for 10,534 correction words, and median post-preload spell
+  path 1030.179896 ms. Evidence:
+  `docs/benchmark-results/baseline-2026-05-18-ime-dictionary-load.json`.
 
 Acceptance criteria:
 - Performance claims are backed by repeatable commands.
