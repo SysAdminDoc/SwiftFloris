@@ -104,6 +104,18 @@ internal object EditorInputBehaviorPolicy {
             (punctuationRule.symbolsFollowingPhantomSpace.contains(next) || next.isLetterOrDigit())
     }
 
+    fun shouldEscalateGlideBackspaceToWordDelete(
+        operationUnit: OperationUnit,
+        isPhantomSpaceActive: Boolean,
+        isCurrentWordValid: Boolean,
+        immediateBackspaceDeletesWord: Boolean,
+    ): Boolean {
+        return operationUnit == OperationUnit.CHARACTERS &&
+            immediateBackspaceDeletesWord &&
+            isPhantomSpaceActive &&
+            isCurrentWordValid
+    }
+
     fun shouldConvertDoubleSpaceToPeriod(textBeforeCursor: String): Boolean {
         return textBeforeCursor.length == 2 && DoubleSpacePeriodMatcher.matches(textBeforeCursor)
     }
