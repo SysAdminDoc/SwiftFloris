@@ -92,10 +92,12 @@ object ClipboardFileStorage {
      * @param context the application context
      * @param file the file to be inserted
      */
-    fun insertFileFromBackupIfNotExisting(context: Context, file: FsFile) {
-        if (!context.clipboardFilesDir.subFile(file.name).isFile) {
-            file.copyTo(context.clipboardFilesDir.subFile(file.name), overwrite = false)
+    fun insertFileFromBackupIfNotExisting(context: Context, file: FsFile): FsFile {
+        val storedFile = context.clipboardFilesDir.subFile(file.name)
+        if (!storedFile.isFile) {
+            file.copyTo(storedFile, overwrite = false)
         }
+        return storedFile
     }
 
     /**

@@ -2,7 +2,7 @@
 
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
-[`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus the six
+[`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus the seven
 seventh-pass follow-up slices).
 
 This file is the single fastest read for an AI session, new contributor, or
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.116)
+## 3. Stack at HEAD (v1.8.117)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -188,7 +188,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.116** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.117** ships the seventh research-pass privacy,
 voice, and clipboard hardening layer. v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
@@ -203,7 +203,9 @@ enabled external voice IME package before external handoff is considered ready;
 v1.8.115 closes follow-up **G10** by skipping clipboard description
 classification for sensitive clips before raw text is read; v1.8.116
 closes follow-up **G3** by reconciling clipboard-history rows,
-`ClipboardFileInfo` rows, and stored provider files at startup.
+`ClipboardFileInfo` rows, and stored provider files at startup; v1.8.117
+closes follow-up **G4** by recreating `ClipboardFileInfo` rows during
+clipboard media restore.
 
 The only sixth-pass F-roster item still open is **F11** (Roborazzi visual
 baselines for the new themes + Addons surface) — needs Android SDK +
