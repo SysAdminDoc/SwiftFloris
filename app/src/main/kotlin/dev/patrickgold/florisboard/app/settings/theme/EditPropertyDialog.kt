@@ -196,6 +196,7 @@ internal fun EditPropertyDialog(
     val isAddPropertyDialog = initProperty.name == SnyggEmptyPropertyInfoForAdding.name
     var showSelectAsError by rememberSaveable { mutableStateOf(false) }
     var showAlreadyExistsError by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
 
     var propertyName by rememberSaveable {
         mutableStateOf(
@@ -273,7 +274,7 @@ internal fun EditPropertyDialog(
         } else {
             null
         },
-        onNeutral = onDelete,
+        onNeutral = { showDeleteConfirm = true },
         neutralColors = ButtonDefaults.textButtonColors(
             contentColor = MaterialTheme.colorScheme.error,
         ),
@@ -329,6 +330,26 @@ internal fun EditPropertyDialog(
                     isError = !isPropertyValueValid(),
                 )
             }
+        }
+    }
+
+    if (showDeleteConfirm) {
+        JetPrefAlertDialog(
+            title = stringRes(R.string.settings__theme_editor__property_delete_confirm_title),
+            confirmLabel = stringRes(R.string.action__delete),
+            onConfirm = {
+                showDeleteConfirm = false
+                onDelete()
+            },
+            dismissLabel = stringRes(R.string.action__cancel),
+            onDismiss = { showDeleteConfirm = false },
+        ) {
+            Text(
+                text = stringRes(
+                    R.string.settings__theme_editor__property_delete_confirm_message,
+                    "property_name" to initProperty.name,
+                ),
+            )
         }
     }
 }

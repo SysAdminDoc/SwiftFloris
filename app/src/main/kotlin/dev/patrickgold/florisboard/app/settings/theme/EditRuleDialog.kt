@@ -128,6 +128,11 @@ internal fun EditRuleDialog(
     val isAddRuleDialog = initRule == SnyggEmptyRuleForAdding
     var showSelectAsError by rememberSaveable { mutableStateOf(false) }
     var showAlreadyExistsError by rememberSaveable { mutableStateOf(false) }
+    var showDeleteConfirm by rememberSaveable { mutableStateOf(false) }
+    val initRuleName = when (initRule) {
+        is SnyggElementRule -> context.translateElementName(initRule, level)
+        else -> initRule.decl().name
+    }
 
     val possibleRuleTemplates = remember {
         buildList {
@@ -202,7 +207,7 @@ internal fun EditRuleDialog(
             null
         },
         neutralColors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
-        onNeutral = { onDeleteRule(initRule) },
+        onNeutral = { showDeleteConfirm = true },
     ) {
         Column {
             AnimatedVisibility(visible = showAlreadyExistsError) {
@@ -362,6 +367,26 @@ internal fun EditRuleDialog(
                     level = level,
                 )
             }
+        }
+    }
+
+    if (showDeleteConfirm) {
+        JetPrefAlertDialog(
+            title = stringRes(R.string.settings__theme_editor__rule_delete_confirm_title),
+            confirmLabel = stringRes(R.string.action__delete),
+            onConfirm = {
+                showDeleteConfirm = false
+                onDeleteRule(initRule)
+            },
+            dismissLabel = stringRes(R.string.action__cancel),
+            onDismiss = { showDeleteConfirm = false },
+        ) {
+            Text(
+                text = stringRes(
+                    R.string.settings__theme_editor__rule_delete_confirm_message,
+                    "rule_name" to initRuleName,
+                ),
+            )
         }
     }
 }
