@@ -51,7 +51,6 @@ import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.florisboard.lib.ext.validate
 import dev.patrickgold.florisboard.lib.io.FileRegistry
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.showLongToast
@@ -105,28 +104,16 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
     val scope = rememberCoroutineScope()
 
     fun getSkipReason(fileInfo: CacheManager.FileInfo): Int {
-        return when {
-            !FileRegistry.matchesFileFilter(fileInfo, type.supportedFiles) -> {
-                R.string.ext__import__file_skip_unsupported
-            }
-            fileInfo.ext != null -> {
-                val ext = fileInfo.ext
-                when {
-                    !ext.meta.validate() -> {
-                        R.string.ext__import__file_skip_ext_corrupted
-                    }
-                    extensionManager.getExtensionById(ext.meta.id)?.sourceRef?.isAssets == true -> {
-                        R.string.ext__import__file_skip_ext_core
-                    }
-                    else -> {
-                        NATIVE_NULLPTR.toInt()
-                    }
-                }
-            }
-            else -> { // ext == null
-                R.string.ext__import__file_skip_ext_corrupted
-            }
-        }
+        val ext = fileInfo.ext
+        val existingSource = ext?.meta?.id
+            ?.let(extensionManager::getExtensionById)
+            .let(ExtensionImportPolicy::existingSourceFor)
+        return ExtensionImportPolicy.decideFile(
+            fileMatchesFilter = FileRegistry.matchesFileFilter(fileInfo, type.supportedFiles),
+            extension = ext,
+            requestedType = type,
+            existingSource = existingSource,
+        ).skipReason
     }
 
     fun Result<CacheManager.ImporterWorkspace>.mapSkipReasons(): Result<CacheManager.ImporterWorkspace> {
