@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.7
+# SwiftFloris Roadmap v5.8
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.6 (2026-05-17, same-day). v5.0-v5.6 entries are preserved with shipped markers updated in-place; v5.7 records the first seventh-pass follow-up release after v1.8.104 – v1.8.110. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.111 (released 2026-05-18 — clipboard media intake size caps). **v1.8.104 – v1.8.111 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), four voice-subsystem bugs (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker), and four clipboard data-leak / resource-exhaustion paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds).
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass audit closed nine privacy / data-integrity / resource-exhaustion findings on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.7 (2026-05-18, same-day). v5.0-v5.7 entries are preserved with shipped markers updated in-place; v5.8 records the second seventh-pass follow-up release after v1.8.104 – v1.8.110. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.112 (released 2026-05-18 — clipboard automatic eviction cleanup). **v1.8.104 – v1.8.112 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), four voice-subsystem bugs (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker), and five clipboard data-leak / resource-exhaustion paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup).
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass audit closed ten privacy / data-integrity / resource-exhaustion findings on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-up (v1.8.111)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.112)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -27,6 +27,11 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   both modern `ImageDecoder` and legacy `BitmapFactory` preview bounds
   through `ClipboardPreviewImagePolicy` before bitmap allocation.
   This closes **G2** and **G12**.
+- **v1.8.112** — Clipboard automatic eviction cleanup. History
+  size-limit rotation and old/sensitive auto-expiry now route selected
+  rows through `ClipboardHistoryEviction.closeThenDelete(...)`, so
+  provider-backed image/video items call `ClipboardItem.close(context)`
+  before their Room rows are removed. This closes **G6**.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
@@ -91,12 +96,12 @@ per-PR slice could not absorb:
 
 Priority-scored in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md §5`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
-High-leverage items (score ≥ 5.0) suitable for v1.8.112 – v1.8.115:
+High-leverage items (score ≥ 5.0) suitable for v1.8.113 – v1.8.115:
 
 - ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap.
   Shipped in **v1.8.111**.
-- **G6** — `revokeUriPermission` on clipboard history rotation /
-  expiry path (not just explicit delete).
+- ✅ **G6** — `revokeUriPermission` on clipboard history rotation /
+  expiry path (not just explicit delete). Shipped in **v1.8.112**.
 - **G7** — `VoiceInputSetupActivity` `android:exported="false"` +
   validate Intent extras.
 - **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME

@@ -268,33 +268,36 @@ class ClipboardManager(
 
     private fun enforceHistoryLimit(clipHistory: ClipboardHistory) {
         if (prefs.clipboard.historySizeLimitEnabled.get()) {
-            val nonPinnedItems = clipHistory.recent + clipHistory.other
-            val nToRemove = nonPinnedItems.size - prefs.clipboard.historySizeLimit.get()
-            if (nToRemove > 0) {
-                val itemsToRemove = nonPinnedItems.asReversed().filterIndexed { n, _ -> n < nToRemove }
-                ioScope.launch {
-                    clipHistoryDao?.delete(itemsToRemove)
-                }
-            }
+            evictClipboardHistoryItems(
+                ClipboardHistoryEviction.overflowItems(
+                    history = clipHistory,
+                    historySizeLimit = prefs.clipboard.historySizeLimit.get(),
+                ),
+            )
         }
     }
 
     private fun enforceExpiryDate(clipHistory: ClipboardHistory) {
-        val itemsToRemove = mutableSetOf<ClipboardItem>()
-        if (prefs.clipboard.historyAutoCleanOldEnabled.get()) {
-            val nonPinnedItems = clipHistory.recent + clipHistory.other
-            val expiryTime = System.currentTimeMillis() - (prefs.clipboard.historyAutoCleanOldAfter.get() * 60 * 1000)
-            itemsToRemove.addAll(nonPinnedItems.filter { it.creationTimestampMs < expiryTime })
-        }
-        if (prefs.clipboard.historyAutoCleanSensitiveEnabled.get()) {
-            val sensitiveData = clipHistory.all.filter { it.isSensitive }
-            val expiryTime = System.currentTimeMillis() - (prefs.clipboard.historyAutoCleanSensitiveAfter.get() * 1000)
-            itemsToRemove.addAll(sensitiveData.filter { it.creationTimestampMs < expiryTime })
-        }
-        if (itemsToRemove.isNotEmpty()) {
-            ioScope.launch {
-                clipHistoryDao?.delete(itemsToRemove.toList())
-            }
+        evictClipboardHistoryItems(
+            ClipboardHistoryEviction.expiredItems(
+                history = clipHistory,
+                nowMs = System.currentTimeMillis(),
+                oldEnabled = prefs.clipboard.historyAutoCleanOldEnabled.get(),
+                oldAfterMinutes = prefs.clipboard.historyAutoCleanOldAfter.get(),
+                sensitiveEnabled = prefs.clipboard.historyAutoCleanSensitiveEnabled.get(),
+                sensitiveAfterSeconds = prefs.clipboard.historyAutoCleanSensitiveAfter.get(),
+            ),
+        )
+    }
+
+    private fun evictClipboardHistoryItems(items: List<ClipboardItem>) {
+        if (items.isEmpty()) return
+        ioScope.launch {
+            ClipboardHistoryEviction.closeThenDelete(
+                items = items,
+                closeItem = { it.close(appContext) },
+                deleteItems = { clipHistoryDao?.delete(it) },
+            )
         }
     }
 

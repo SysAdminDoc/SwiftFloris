@@ -96,7 +96,7 @@ shipped in this pass; four were structural / out-of-scope.
 | **#3, #4** — concurrent model-install races against itself; `sweepStaleStagingDirs()` deletes other in-flight staging dirs | Medium | Bundle with the L1.1a / Vosk integration slice when it lands. |
 | **#8** — engine-selector mis-labels failure reason when no engine is available | Medium | UX polish on a code path that is dead until #6 lands. Defer. |
 | **#10** — `acceptFinal` may re-commit stale text on a cumulative-final echo from non-incremental recognisers | Medium | Affects only the in-tree recogniser path (#6); defer with that slice. |
-| **#12** — `VoiceInputSetupActivity` exported by default (no manifest verify on `android:exported`); accepts arbitrary `Intent` extras | Low | Manifest hardening; could be its own slice (v1.8.112+ if maintainer wants to follow up). |
+| **#12** — `VoiceInputSetupActivity` exported by default (no manifest verify on `android:exported`); accepts arbitrary `Intent` extras | Low | Manifest hardening; could be its own slice (v1.8.113+ if maintainer wants to follow up). |
 | **#13** — `parser.parse` runs twice per utterance (once for command threshold, once for suggestion threshold) | Low | Perf-only polish on a non-hot path. Defer. |
 | **#15** — parameterised matches bypass the enabled-set gate that the UI filters on | Medium | Partially addressed by v1.8.107's tightening of the patterns themselves; the broader "enabled-action set" gate is a larger refactor. Flag for future slice. |
 | **#17** — `isVoiceInputReadyForHandoff()` returns true for any non-FUTO voice IME without checking that IME's mic permission | Low | Defer. |
@@ -115,20 +115,20 @@ shipped in this pass; four were structural / out-of-scope.
 | **#19** — `ClipboardItem.close(context)` only deleted the content-provider URI for `ItemType.IMAGE`; videos leaked both the on-disk file and per-receiver `grantUriPermission` calls | Medium | ✅ **v1.8.109** — extended to `IMAGE OR VIDEO`. |
 | **#3** — `ClipboardFileStorage.cloneUri` had no max-size cap for provider-backed image/video media clones | Medium | ✅ **v1.8.111** — 32 MiB image cap, 128 MiB video cap, and partial private-file cleanup on failed clones. |
 | **#16** — `uriToPreviewBitmap` modern (API 28+) branch had no max-size guard before bitmap allocation | Low | ✅ **v1.8.111** — shared `ClipboardPreviewImagePolicy` rejects unknown or >8192 px bounds before preview decode. |
+| **#13** — `revokeUriPermission` only on explicit delete, not on history rotation / expiry | Medium | ✅ **v1.8.112** — size-limit rotation and timed expiry now close provider-backed media items before deleting Room rows. |
 
 ### Open (mostly perf / UX polish or structural)
 
 | Finding | Severity | Disposition |
 |---|---|---|
-| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.112+. |
-| **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphans every file forever | Medium | Modest slice; flag for v1.8.112+. |
+| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.113+. |
+| **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphans every file forever | Medium | Modest slice; flag for v1.8.113+. |
 | **#5, #6** — `enforceHistoryLimit` recurses on its own emission; `updateHistory` runs on Main and sort + filter at every emission | Medium | Perf cliff at startup with N=200 history + cap=10; needs a `Mutex` or single-threaded dispatcher. Modest refactor; defer. |
 | **#7** — `enforceExpiryDate` reads `currentHistory` on a background timer with no sync | Low | Same fix shape as #5; bundle. |
 | **#8** — no pin-cap; pinned items grow unbounded (combined with #4, pinned media files leak forever) | Low | UX polish + a pref; defer. |
 | **#9** — pin-popup `stringRepresentation()` runs `NetworkUtils.isUrl` on the unredacted text even when `isSensitive` is true; leaks structural info via icon | Low | One-line fix; bundle with future clipboard polish. |
-| **#10** — backup-restore drops the `ClipboardFileInfo` row, so restored items have URIs pointing at IDs not in `clipboard_files` table → "Unable to resolve image" | Medium | One-PR fix on the restore path; flag for v1.8.112+. |
+| **#10** — backup-restore drops the `ClipboardFileInfo` row, so restored items have URIs pointing at IDs not in `clipboard_files` table → "Unable to resolve image" | Medium | One-PR fix on the restore path; flag for v1.8.113+. |
 | **#12** — `openFile` doesn't pre-check `file.exists()` (FileNotFoundException to receiver) | Low | Defer. |
-| **#13** — `revokeUriPermission` only on explicit delete, not on history rotation / expiry | Medium | Route eviction through `ClipboardManager.deleteClip`; bundle with #19's video extension. |
 | **#14** — `primaryClipLastFromCallback` duplicate check too narrow on text-clear-text-cycle | Low | Defer. |
 | **#15** — `ClipboardMediaProvider.init` loads `cachedFileInfos` async; receiver calls during cold-paste race the cache | Medium | One-PR fix; flag. |
 | **#17** — `ClipboardHistoryManager` (the v1.8.68 Tink store) appears to be dead code on the IME path — the real store is `ClipboardManager`'s Room DB; the two parallel stores can drift | Low | Confirm intent; either delete or wire as the storage backend. |
@@ -157,10 +157,10 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.111)
+## 5. Open follow-up roster (post-v1.8.112)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.111 G2/G12 clipboard hardening slice. Priority-scored.
+v1.8.112 G6 clipboard eviction hardening slice. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
@@ -168,15 +168,14 @@ v1.8.111 G2/G12 clipboard hardening slice. Priority-scored.
 | G3 | Clipboard startup reconciliation between DB rows and on-disk files | Clipboard #4 | 3 | 2 | 1 | **3.5** |
 | G4 | Clipboard restore re-inserts `ClipboardFileInfo` rows | Clipboard #10 | 3 | 2 | 1 | **3.5** |
 | G5 | `enforceHistoryLimit` `Mutex` + off-Main collection | Clipboard #5 + #6 + #7 | 3 | 2 | 1 | **3.5** |
-| G6 | `revokeUriPermission` on history rotation / expiry path | Clipboard #13 | 3 | 1 | 1 | **7.0** |
 | G7 | `VoiceInputSetupActivity` `android:exported="false"` + Intent extras validation | Voice #12 | 2 | 1 | 1 | **5.0** |
 | G8 | `isVoiceInputReadyForHandoff()` checks per-IME `RECORD_AUDIO` grant | Voice #17 | 2 | 1 | 1 | **5.0** |
 | G9 | `ClipboardHistoryManager` (Tink store) — confirm intent; delete or wire as backend | Clipboard #17 | 2 | 2 | 1 | **2.5** |
 | G10 | Pin-popup `NetworkUtils.isUrl` skipped when `isSensitive` | Clipboard #9 | 2 | 1 | 1 | **5.0** |
 | G11 | NLP / autocorrect / suggestion full re-audit (rate-limited agent) | — | 4 | 4 | 2 | **2.5** |
 
-High-leverage items (score ≥ 5.0): **G6, G7, G8, G10**.
-These map naturally to v1.8.112 – v1.8.115 single-feature releases.
+High-leverage items (score ≥ 5.0): **G7, G8, G10**.
+These map naturally to v1.8.113 – v1.8.115 single-feature releases.
 
 ---
 
