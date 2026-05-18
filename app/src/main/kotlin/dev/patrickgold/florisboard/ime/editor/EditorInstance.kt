@@ -135,12 +135,24 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             //!instance.inputAttributes.flagTextAutoComplete &&
             //!instance.inputAttributes.flagTextNoSuggestions
         }
-        activeState.isIncognitoMode = when (prefs.suggestion.incognitoMode.get()) {
+        // App-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` is a privacy
+        // contract from the host app (Signal, ProtonMail, banking,
+        // end-to-end encrypted chat), not a user preference. It must be
+        // honoured regardless of the user's IncognitoMode setting —
+        // otherwise a user who set IncognitoMode.FORCE_OFF to avoid
+        // "manually toggling incognito mode all the time" silently
+        // overrides every sensitive-field declaration the OS pipeline
+        // delivers.
+        //
+        // The user's IncognitoMode preference still controls *user-
+        // requested* incognito (the toggle on the smartbar, the
+        // FORCE_ON power-user setting). It just cannot turn the
+        // app-declared flag *off*.
+        val appDeclaredNoLearning = editorInfo.imeOptions.flagNoPersonalizedLearning
+        activeState.isIncognitoMode = appDeclaredNoLearning || when (prefs.suggestion.incognitoMode.get()) {
             IncognitoMode.FORCE_OFF -> false
             IncognitoMode.FORCE_ON -> true
-            IncognitoMode.DYNAMIC_ON_OFF -> {
-                editorInfo.imeOptions.flagNoPersonalizedLearning || prefs.suggestion.forceIncognitoModeFromDynamic.get()
-            }
+            IncognitoMode.DYNAMIC_ON_OFF -> prefs.suggestion.forceIncognitoModeFromDynamic.get()
         }
     }
 
