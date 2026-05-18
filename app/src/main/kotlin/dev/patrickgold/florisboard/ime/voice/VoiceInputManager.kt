@@ -93,8 +93,25 @@ class VoiceInputManager(private val context: Context) {
 
         val switched = FlorisImeService.switchToVoiceInputMethod(showFailureToast = false)
         if (switched) {
-            _isListening.value = false
-            _transcriptionState.value = TranscriptionState.Ready
+            // Previously: this branch immediately flipped `_isListening` back
+            // to false and the transcription state back to Ready in the same
+            // synchronous frame as the Listening assignment above. The Listening
+            // event was sub-millisecond and no UI consumer ever observed it
+            // (mic-meters, "connecting to voice IME…" spinners, recording-
+            // indicator notifications all stayed at Ready). Concretely: any
+            // composable doing `collectAsState()` on `transcriptionState`
+            // skipped straight from Ready → Ready with no rendered Listening
+            // frame.
+            //
+            // SwiftFloris's UI is hidden once the IME swap takes effect (FUTO
+            // is now the foreground IME), but the state stays load-bearing for
+            // (a) the brief pre-swap render window where SwiftFloris's UI is
+            // still on-screen and consumers want to render the handoff
+            // affordance, (b) the SwiftFloris UI that re-renders the moment
+            // the user returns from FUTO. We keep Listening here; the return-
+            // path is handled by `stopListening()` / `cancel()` / the next
+            // `refreshAvailability()` call when SwiftFloris becomes active
+            // again, all of which already exist.
             return true
         }
 
