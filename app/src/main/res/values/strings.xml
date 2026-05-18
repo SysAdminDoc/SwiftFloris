@@ -208,6 +208,8 @@
     <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add subtype</string>
     <string name="settings__localization__language_pack_title" comment="Title of the language pack manager screen for managing installed and custom language packs">Manage installed language packs</string>
     <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Install and manage language extensions for layouts, dictionaries, and language-specific input</string>
+    <string name="settings__localization__language_pack_empty_title">No language packs installed</string>
+    <string name="settings__localization__language_pack_empty_message">Import a trusted language-pack extension to add dictionaries, layouts, or language-specific input data. Built-in language resources remain available.</string>
     <string name="settings__localization__language_pack_delete_in_progress">Deleting language pack</string>
     <string name="settings__localization__language_pack_delete_in_progress_summary">Keep this screen open while SwiftFloris removes the selected language pack and refreshes the installed list.</string>
     <string name="settings__localization__language_pack_delete_success">Language pack deleted</string>
@@ -429,6 +431,8 @@
     <string name="pref__theme__customization__label" comment="Label of the shortcut that opens theme customization">Theme customization</string>
     <string name="pref__theme__customization__summary" comment="Summary of the shortcut that opens theme customization">Create, edit, import, or manage keyboard theme extensions</string>
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
+    <string name="settings__theme_manager__empty_title">No themes available</string>
+    <string name="settings__theme_manager__empty_message">Bundled themes should appear here. If this stays empty, reinstall SwiftFloris or import a trusted theme extension.</string>
     <string name="pref__theme__source_assets" comment="Label for the theme source field">SwiftFloris App Assets</string>
     <string name="pref__theme__source_internal" comment="Label for the theme source field">Internal Storage</string>
     <string name="pref__theme__source_external" comment="Label for the theme source field">External Provider</string>
@@ -868,6 +872,8 @@
     <string name="settings__udm__title_system" comment="Title of the User Dictionary Manager activity for system">System User Dictionary</string>
     <string name="settings__udm__no_words_in_dictionary" comment="String to show if no words are present in the dictionary">No words are saved in this dictionary yet. Add custom words to make suggestions and corrections feel more personal.</string>
     <string name="settings__udm__empty_title" comment="Title for the empty user dictionary state">No words saved</string>
+    <string name="settings__udm__empty_locale_title">No words for this language</string>
+    <string name="settings__udm__empty_locale_message">No saved words are attached to {language} yet. Add a word here or import a personal dictionary file.</string>
     <string name="settings__udm__word_summary_freq" comment="Summary label for a word entry. The decimal placeholder inserts the frequency for the word it summarizes.">Frequency: {freq}</string>
     <string name="settings__udm__word_summary_freq_shortcut" comment="Summary label for a word entry. The first placeholder inserts the frequency for the word it summarizes, the second placeholder the shortcut defined.">Frequency: {freq} | Shortcut: {shortcut}</string>
     <string name="settings__udm__all_languages" comment="Label of the For all languages entry in the language list">For all languages</string>
@@ -1188,7 +1194,9 @@
     <string name="clipboard__disabled__message">{app_name}\'s clipboard history allows you to quickly store and access text and images you copy, with the ability to pin items, configure automatic clean-up and set a maximum item limit.</string>
     <string name="clipboard__disabled__enable_button">Enable clipboard history</string>
     <string name="clipboard__empty__title">Your clipboard is empty</string>
-    <string name="clipboard__empty__message">Once you copy text clips or images they will show up here.</string>
+    <string name="clipboard__empty__message">Copy text, images, or videos to keep them here. Sensitive fields and private sessions are skipped.</string>
+    <string name="clipboard__filter_empty__title">No clips match these filters</string>
+    <string name="clipboard__filter_empty__message">Turn off a filter or copy a matching text, image, or video clip.</string>
     <string name="clipboard__locked__title">Your clipboard is locked</string>
     <string name="clipboard__locked__message">To access your clipboard history, please first unlock your device.</string>
     <string name="clipboard__group_pinned">Pinned</string>
@@ -1297,8 +1305,8 @@
     <string name="ext__list__ext_theme">Theme extensions</string>
     <string name="ext__list__ext_keyboard">Keyboard extensions</string>
     <string name="ext__list__ext_languagepack">Language pack extensions</string>
-    <string name="ext__list__empty_title">No extensions installed</string>
-    <string name="ext__list__empty">No extensions are installed in this category yet. Import an extension or visit the add-ons store to expand SwiftFloris.</string>
+    <string name="ext__list__empty_title">No extensions in this category</string>
+    <string name="ext__list__empty">Import a local SwiftFloris extension archive or install a trusted addon APK, then rescan if it should appear here.</string>
     <string name="ext__meta__authors">Authors</string>
     <string name="ext__meta__components">Bundled components</string>
     <string name="ext__meta__components_theme">Bundled themes</string>

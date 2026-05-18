@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.settings.theme
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
@@ -33,6 +34,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.extensionManager
@@ -43,6 +45,7 @@ import dev.patrickgold.florisboard.themeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.launch
+import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
@@ -104,6 +107,14 @@ fun ThemeManagerScreen(action: ThemeManagerScreenAction?) = FlorisScreen {
             onDispose {
                 themeManager.previewThemeId.value = null
             }
+        }
+        if (extGroupedThemes.isEmpty()) {
+            FlorisEmptyState(
+                modifier = Modifier.padding(16.dp),
+                icon = Icons.Default.DarkMode,
+                title = stringRes(R.string.settings__theme_manager__empty_title),
+                message = stringRes(R.string.settings__theme_manager__empty_message),
+            )
         }
         val grayColor = LocalContentColor.current.copy(alpha = 0.56f)
         for ((extensionId, configs) in extGroupedThemes) key(extensionId) {

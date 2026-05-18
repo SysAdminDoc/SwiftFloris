@@ -709,6 +709,29 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     )
                 }
             } else {
+                if (wordList.isEmpty()) {
+                    item {
+                        FlorisEmptyState(
+                            modifier = Modifier.padding(16.dp),
+                            icon = Icons.AutoMirrored.Filled.LibraryBooks,
+                            title = stringRes(R.string.settings__udm__empty_locale_title),
+                            message = stringRes(
+                                R.string.settings__udm__empty_locale_message,
+                                "language" to getDisplayNameForLocale(currentLocale!!),
+                            ),
+                            actionLabel = if (entryActionsEnabled) {
+                                stringRes(R.string.settings__udm__dialog__title_add)
+                            } else {
+                                null
+                            },
+                            onAction = if (entryActionsEnabled) {
+                                { userDictionaryEntryForDialog = UserDictionaryEntryToAdd }
+                            } else {
+                                null
+                            },
+                        )
+                    }
+                }
                 items(wordList) { wordEntry ->
                     JetPrefListItem(
                         modifier = Modifier.rippleClickable {

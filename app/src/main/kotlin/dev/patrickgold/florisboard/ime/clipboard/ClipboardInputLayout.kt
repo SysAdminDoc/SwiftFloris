@@ -465,6 +465,17 @@ fun ClipboardInputLayout(
                         state = gridState,
                         columns = staggeredGridCells,
                     ) {
+                        if (filteredHistory.all.isEmpty()) {
+                            item("filtered-empty", span = StaggeredGridItemSpan.FullLine) {
+                                ClipboardEmptyMessage(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    title = stringRes(R.string.clipboard__filter_empty__title),
+                                    message = stringRes(R.string.clipboard__filter_empty__message),
+                                )
+                            }
+                        }
                         clipboardItems(
                             items = filteredHistory.pinned,
                             key = "pinned-header",
@@ -610,17 +621,10 @@ fun ClipboardInputLayout(
 
     @Composable
     fun HistoryEmptyView() {
-        SnyggColumn(FlorisImeUi.ClipboardContent.elementName,
-            modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            SnyggText(
-                text = stringRes(R.string.clipboard__empty__title),
-            )
-            SnyggText(
-                text = stringRes(R.string.clipboard__empty__message),
-            )
-        }
+        ClipboardEmptyMessage(
+            title = stringRes(R.string.clipboard__empty__title),
+            message = stringRes(R.string.clipboard__empty__message),
+        )
     }
 
     @Composable
@@ -684,6 +688,25 @@ fun ClipboardInputLayout(
                 HistoryDisabledView()
             }
         }
+    }
+}
+
+@Composable
+private fun ClipboardEmptyMessage(
+    modifier: Modifier = Modifier.fillMaxSize(),
+    title: String,
+    message: String,
+) {
+    SnyggColumn(FlorisImeUi.ClipboardContent.elementName,
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        SnyggText(
+            text = title,
+        )
+        SnyggText(
+            text = message,
+        )
     }
 }
 
