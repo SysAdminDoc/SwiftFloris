@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.159).
+through v1.8.160).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.159)
+## 3. Stack at HEAD (v1.8.160)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.159** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.160** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup layer.
 v1.8.104 – v1.8.110 closed the
@@ -443,6 +443,13 @@ first-render baselines. The first committed SM-S938B / Android 16 run records
 five iterations with `am start -W` medians of `TotalTime` 31.0 ms and
 `WaitTime` 34.0 ms, plus benchmark-only `swiftfloris.ime.firstRenderMs`
 median 18.335469 ms.
+
+v1.8.160 adds the first suggestion latency baseline. A benchmark-only
+`BenchmarkSuggestionActivity` invokes `LatinLanguageProvider.suggest` against
+a real `EditorContent` snapshot for `teh`, logs
+`swiftfloris.nlp.firstSuggestionMs`, and `tools/benchmark-ime-suggestion-latency.ps1`
+records repeatable adb JSON. The first SM-S938B / Android 16 cold
+provider-direct run records median 1878.616249 ms with eight candidates.
 
 ## 4. Module layout
 

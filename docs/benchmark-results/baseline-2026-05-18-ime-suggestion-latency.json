@@ -1,0 +1,72 @@
+{
+  "benchmark": "firstSuggestionLatency",
+  "measuredAt": "2026-05-18T16:15:41.5586148-04:00",
+  "packageName": "dev.patrickgold.florisboard.bench",
+  "activityComponent": "dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity",
+  "iterations": 5,
+  "inputText": "teh",
+  "device": {
+    "serial": "R5CY34G070L",
+    "manufacturer": "samsung",
+    "model": "SM-S938B",
+    "device": "pa3q",
+    "androidRelease": "16",
+    "sdk": "36"
+  },
+  "summary": {
+    "suggestionLatencyMedianMs": 1878.616249,
+    "candidateCountMedian": 8.0
+  },
+  "runs": [
+    {
+      "iteration": 1,
+      "inputText": "teh",
+      "suggestionLatencyMs": 2104.284634,
+      "currentWordLength": 3,
+      "candidateCount": 8,
+      "suggestionLogCount": 1,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity\nTotalTime: 112\nWaitTime: 112\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 16:15:30.041  7350  7350 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=2104.107187 currentWordLength=3 candidateCount=8\n05-18 16:15:30.041  7350  7350 I SwiftFlorisPerf: swiftfloris.nlp.firstSuggestionMs=2104.284634 currentWordLength=3 candidateCount=8"
+    },
+    {
+      "iteration": 2,
+      "inputText": "teh",
+      "suggestionLatencyMs": 1494.349322,
+      "currentWordLength": 3,
+      "candidateCount": 8,
+      "suggestionLogCount": 1,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity\nTotalTime: 94\nWaitTime: 95\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 16:15:32.409  7534  7534 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=1494.312447 currentWordLength=3 candidateCount=8\n05-18 16:15:32.409  7534  7534 I SwiftFlorisPerf: swiftfloris.nlp.firstSuggestionMs=1494.349322 currentWordLength=3 candidateCount=8"
+    },
+    {
+      "iteration": 3,
+      "inputText": "teh",
+      "suggestionLatencyMs": 1893.017082,
+      "currentWordLength": 3,
+      "candidateCount": 8,
+      "suggestionLogCount": 1,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity\nTotalTime: 110\nWaitTime: 111\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 16:15:35.734  7699  7699 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=1892.928749 currentWordLength=3 candidateCount=8\n05-18 16:15:35.734  7699  7699 I SwiftFlorisPerf: swiftfloris.nlp.firstSuggestionMs=1893.017082 currentWordLength=3 candidateCount=8"
+    },
+    {
+      "iteration": 4,
+      "inputText": "teh",
+      "suggestionLatencyMs": 1491.812135,
+      "currentWordLength": 3,
+      "candidateCount": 8,
+      "suggestionLogCount": 1,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity\nTotalTime: 102\nWaitTime: 103\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 16:15:38.284  7829  7829 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=1491.775468 currentWordLength=3 candidateCount=8\n05-18 16:15:38.284  7829  7829 I SwiftFlorisPerf: swiftfloris.nlp.firstSuggestionMs=1491.812135 currentWordLength=3 candidateCount=8"
+    },
+    {
+      "iteration": 5,
+      "inputText": "teh",
+      "suggestionLatencyMs": 1878.616249,
+      "currentWordLength": 3,
+      "candidateCount": 8,
+      "suggestionLogCount": 1,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity (has extras) }\nStatus: ok\nLaunchState: COLD\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkSuggestionActivity\nTotalTime: 127\nWaitTime: 128\nComplete",
+      "perfLog": "--------- beginning of main\n05-18 16:15:41.625  8051  8051 I SwiftFlorisPerf: swiftfloris.nlp.suggestMs=1878.47078 currentWordLength=3 candidateCount=8\n05-18 16:15:41.625  8051  8051 I SwiftFlorisPerf: swiftfloris.nlp.firstSuggestionMs=1878.616249 currentWordLength=3 candidateCount=8"
+    }
+  ]
+}

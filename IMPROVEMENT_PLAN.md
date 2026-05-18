@@ -223,7 +223,7 @@ Goal: Add lightweight evidence around typing responsiveness and startup quality.
 
 Tasks:
 - [x] Measure keyboard cold start and first render.
-- [ ] Measure first suggestion latency.
+- [x] Measure first suggestion latency.
 - [ ] Measure dictionary load and preload time.
 - [ ] Measure candidate row recomposition hotspots.
 - [ ] Measure theme switching cost.
@@ -238,6 +238,13 @@ Progress:
   `TotalTime` 31.0 ms, median `WaitTime` 34.0 ms, and benchmark-only
   `swiftfloris.ime.firstRenderMs` median 18.335469 ms over five runs.
   Evidence: `docs/benchmark-results/baseline-2026-05-18-ime-first-render.json`.
+- 2026-05-18 (v1.8.160): first suggestion latency is measured through a
+  benchmark-only activity that invokes `LatinLanguageProvider.suggest` against
+  the same `EditorContent` shape used by IME updates. Samsung SM-S938B /
+  Android 16 cold provider-direct baseline for `teh`: median
+  `swiftfloris.nlp.firstSuggestionMs` 1878.616249 ms over five runs with eight
+  candidates. Evidence:
+  `docs/benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json`.
 
 Acceptance criteria:
 - Performance claims are backed by repeatable commands.
