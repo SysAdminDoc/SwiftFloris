@@ -51,6 +51,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Extracted hardware keyboard routing decisions into a pure policy and added JVM coverage for space, enter, delete pass-through, shift, mapped letters, mapped punctuation, and punctuation-triggered autocorrect flush behavior.
 - 2026-05-18: Added JVM lifecycle coverage for auto-space and phantom-space state transitions, including editor-update grace, composing-region visibility, and candidate-for-revert cleanup.
 - 2026-05-18: Extracted glide-backspace escalation into the editor input policy and added JVM coverage for immediate word-delete, disabled preference, inactive phantom-space, and explicit word-delete paths.
+- 2026-05-18: Extracted incognito suggestion privacy decisions into a pure policy and added JVM coverage for app-declared privacy override, dynamic toggle availability, learning gates, and touch-decoder evidence suppression.
 
 ## Workstreams
 
@@ -67,7 +68,7 @@ Tasks:
 - [x] Add hardware keyboard tests for space, enter, delete, and punctuation behavior.
 - [x] Add phantom-space and autospace lifecycle tests.
 - [x] Add glide typing delete interaction tests.
-- [ ] Add incognito suggestion behavior tests.
+- [x] Add incognito suggestion behavior tests.
 - [ ] Add backup and restore tests for success, cancellation, invalid archive, and partial failure cases.
 - [ ] Add language pack import/update tests.
 - [ ] Add subtype editor validation tests.

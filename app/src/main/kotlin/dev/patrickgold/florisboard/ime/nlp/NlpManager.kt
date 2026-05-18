@@ -31,7 +31,6 @@ import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
-import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
@@ -362,9 +361,11 @@ class NlpManager(context: Context) {
     }
 
     internal fun recordTouchDecoderSample(primaryText: String, alternatives: List<TouchDecoderCandidate>) {
-        if (!prefs.correction.autoCorrect.get()) return
-        if (keyboardManager.activeState.isIncognitoMode) return
-        if (keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD) return
+        if (!SuggestionPrivacyPolicy.shouldRecordTouchDecoderSample(
+            isAutoCorrectEnabled = prefs.correction.autoCorrect.get(),
+            isIncognitoMode = keyboardManager.activeState.isIncognitoMode,
+            keyVariation = keyboardManager.activeState.keyVariation,
+        )) return
         touchDecoderEvidence.record(
             TouchDecoderSample(
                 primaryText = primaryText,

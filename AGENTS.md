@@ -11,7 +11,7 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 ## Read this first
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, the v1.8.132
+   project context. Pins the load-bearing invariants, the v1.8.133
    stack, the module layout, the roadmap-file routing, and the current
    sprint state.
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,

@@ -32,8 +32,8 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.input.InputShiftState
-import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.text.composing.Appender
 import dev.patrickgold.florisboard.ime.text.composing.Composer
@@ -148,12 +148,11 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // requested* incognito (the toggle on the smartbar, the
         // FORCE_ON power-user setting). It just cannot turn the
         // app-declared flag *off*.
-        val appDeclaredNoLearning = editorInfo.imeOptions.flagNoPersonalizedLearning
-        activeState.isIncognitoMode = appDeclaredNoLearning || when (prefs.suggestion.incognitoMode.get()) {
-            IncognitoMode.FORCE_OFF -> false
-            IncognitoMode.FORCE_ON -> true
-            IncognitoMode.DYNAMIC_ON_OFF -> prefs.suggestion.forceIncognitoModeFromDynamic.get()
-        }
+        activeState.isIncognitoMode = SuggestionPrivacyPolicy.resolveIncognitoMode(
+            appDeclaredNoPersonalizedLearning = editorInfo.imeOptions.flagNoPersonalizedLearning,
+            preference = prefs.suggestion.incognitoMode.get(),
+            isDynamicIncognitoForced = prefs.suggestion.forceIncognitoModeFromDynamic.get(),
+        )
     }
 
     override fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
