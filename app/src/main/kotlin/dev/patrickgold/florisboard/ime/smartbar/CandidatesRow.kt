@@ -156,6 +156,8 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                     CandidateItem(
                         modifier = candidateModifier,
                         candidate = candidate,
+                        index = n,
+                        count = list.size,
                         displayMode = displayMode,
                         onClick = {
                             // Can't use candidate directly
@@ -277,6 +279,8 @@ private fun CandidateRemoveConfirmation(
 @Composable
 private fun CandidateItem(
     candidate: SuggestionCandidate,
+    index: Int,
+    count: Int,
     displayMode: CandidatesDisplayMode,
     modifier: Modifier = Modifier,
     onClick: () -> Unit = { },
@@ -298,11 +302,13 @@ private fun CandidateItem(
     // also expose a "Remove from predictions" custom action so screen-reader users
     // can do what long-press does for sighted users.
     val candidateText = candidate.text.toString()
-    val candidateSemanticLabel = if (candidate is ClipboardSuggestionCandidate) {
-        "Paste from clipboard: $candidateText"
-    } else {
-        candidateText
-    }
+    val candidateSemanticLabel = SmartbarAccessibilityLabels.candidateLabel(
+        text = candidateText,
+        index = index,
+        count = count,
+        isClipboard = candidate is ClipboardSuggestionCandidate,
+        isAutoCommit = candidate.isEligibleForAutoCommit,
+    )
     SnyggRow(
         elementName = elementName,
         attributes = attributes,
@@ -314,7 +320,7 @@ private fun CandidateItem(
                 if (candidate.isEligibleForUserRemoval) {
                     customActions = listOf(
                         CustomAccessibilityAction(
-                            label = "Remove from predictions",
+                            label = SmartbarAccessibilityLabels.RemoveCandidateAction,
                             action = { onLongPress() },
                         ),
                     )

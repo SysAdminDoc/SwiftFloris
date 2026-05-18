@@ -43,6 +43,7 @@ import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.computeImageVector
 import dev.patrickgold.florisboard.ime.keyboard.computeLabel
+import dev.patrickgold.florisboard.ime.smartbar.SmartbarAccessibilityLabels
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.snygg.SnyggSelector
@@ -99,9 +100,7 @@ fun QuickActionButton(
     // them inside the composition rather than inside a remember{} body.
     val actionDisplayName = action.computeDisplayName(evaluator = evaluator)
     val actionTooltip = action.computeTooltip(evaluator)
-    val actionA11yLabel = actionDisplayName.ifBlank {
-        actionTooltip.ifBlank { "Action" }
-    }
+    val actionA11yLabel = SmartbarAccessibilityLabels.quickActionLabel(actionDisplayName, actionTooltip)
     PlainTooltip(actionTooltip, enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
         SnyggBox(
             elementName = elementName,

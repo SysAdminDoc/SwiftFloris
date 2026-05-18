@@ -71,6 +71,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Added calm recovery-path copy to backup, restore, extension import/edit/delete, archive-file, language-pack delete, and manual dictionary entry failure cards so visible errors explain what stayed unchanged and what to retry.
 - 2026-05-18: Closed the Workstream 5 duplicate-action/busy-state pass by adding dictionary import/export transfer state, visible transfer progress cards, off-main-thread transfer work, disabled navigation/menu/entry actions during transfers, and focused policy coverage.
 - 2026-05-18: Began the Accessibility Pass by giving the shared settings scaffold an explicit traversal order: app bar, content, bottom actions, then floating action, with a regression test pinning the order.
+- 2026-05-18: Audited candidate row and smartbar TalkBack labels by extracting `SmartbarAccessibilityLabels`, announcing candidate type/position/text, preserving the remove-candidate custom action label, and pinning quick-action label fallback behavior in JVM tests.
 
 ## Workstreams
 
@@ -196,7 +197,7 @@ Goal: Treat accessibility as part of product quality, not post-release cleanup.
 
 Tasks:
 - [x] Audit settings screen focus order.
-- [ ] Audit candidate row and smartbar TalkBack labels.
+- [x] Audit candidate row and smartbar TalkBack labels.
 - [ ] Audit keyboard key semantics and touch target size.
 - [ ] Verify dynamic font scaling on settings and dialogs.
 - [ ] Verify theme contrast for keyboard, candidate row, dialogs, and warnings.
