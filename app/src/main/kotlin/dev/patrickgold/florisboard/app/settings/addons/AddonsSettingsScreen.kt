@@ -30,6 +30,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -41,13 +42,15 @@ import dev.patrickgold.florisboard.ime.addon.AddonSigningPinSet
 import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalog
 import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalogReader
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import java.text.NumberFormat
 import java.util.Locale
@@ -71,7 +74,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
     val dictionaryCatalogReader = remember(context) {
         DictionaryPackCatalogReader(context.applicationContext)
     }
-    val persistedPinsRaw by prefs.addon.signingCertPins.observeAsState()
+    val persistedPinsRaw by prefs.addon.signingCertPins.collectAsState()
     var snapshot by remember { mutableStateOf(AddonRegistryStore.active().lastRefresh()) }
     var registryGeneration by remember { mutableStateOf(AddonRegistryStore.generation()) }
     var dictionaryCatalog by remember {
@@ -153,6 +156,14 @@ fun AddonsSettingsScreen() = FlorisScreen {
     }
 
     content {
+        if (scanInProgress) {
+            FlorisProgressCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__addons__rescan_running),
+                secondaryText = stringRes(R.string.settings__addons__rescan_running_summary),
+            )
+        }
+
         PreferenceGroup(title = stringRes(R.string.settings__addons__group_status)) {
             Preference(
                 icon = Icons.Default.Extension,

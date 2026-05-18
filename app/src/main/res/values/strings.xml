@@ -1842,6 +1842,7 @@
     <string name="settings__addons__status_summary" comment="Addons status row summary; {accepted}, {rejected}, {pinned} = numbers">Accepted: {accepted} · Rejected: {rejected} · Pinned certificates: {pinned}</string>
     <string name="settings__addons__rescan" comment="Addons settings action title">Rescan installed addons</string>
     <string name="settings__addons__rescan_running" comment="Addons settings action title while scan is running">Scanning installed addons…</string>
+    <string name="settings__addons__rescan_running_summary" comment="Addons settings progress summary">Keep this screen open while SwiftFloris scans installed packages, verifies addon metadata, and refreshes dictionary-pack details.</string>
     <string name="settings__addons__rescan_summary" comment="Addons settings action summary">Runs the same no-network and signing-certificate checks used by IME startup.</string>
     <string name="settings__addons__reset_trust" comment="Addons settings action title">Reset addon trust decisions</string>
     <string name="settings__addons__reset_trust_summary" comment="Addons settings action summary">Clears saved signing-certificate pins. Installed addons stay disabled until a rescan records the current certificates again.</string>

@@ -14,7 +14,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - `bash scripts/run-lint-debug-with-baseline-check.sh`
   - `./gradlew.bat :app:installDebug`
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
-- Known worktree condition: no unrelated worktree changes were present before the v1.8.167 destructive-confirmation polish slice.
+- Known worktree condition: no unrelated worktree changes were present before the v1.8.168 addon scan progress slice.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after trust-state and benchmark batches: 247 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export/manual entry mutation, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
@@ -369,7 +369,7 @@ Tasks:
 - [x] Normalize bottom-bar, empty-state, warning, error, and info-card treatment in the first shared pass.
 - [x] Review primary/secondary/destructive action treatment across backup, restore, extension, language pack, and dictionary flows.
 - [x] Continue dialog copy and destructive-confirmation review across theme and extension editing.
-- [ ] Add consistent loading/skeleton or progress affordances where files, extensions, or language packs are being scanned.
+- [x] Add consistent loading/skeleton or progress affordances where files, extensions, or language packs are being scanned.
 - [ ] Improve empty states for dictionary, extension lists, language packs, clipboard, and theme lists.
 - [ ] Review keyboard preview field placement and state feedback in settings screens.
 - [ ] Create a visual QA checklist for phone portrait, phone landscape, compact mode, floating mode, dark theme, and high font scale.
@@ -379,6 +379,10 @@ Progress:
   draft-aware confirmation before removing archive files. Theme editor rule and
   property deletions now confirm before mutating the draft and explain that the
   installed theme remains unchanged until save.
+- 2026-05-18 (v1.8.168): Addons Settings now shows the shared progress-card
+  treatment while installed addon packages are rescanned and dictionary-pack
+  metadata is refreshed. The touched signing-pin preference observation moved
+  to `collectAsState` so the scan polish does not add warning noise.
 
 Acceptance criteria:
 - Main settings flows use consistent hierarchy, labels, and action placement.

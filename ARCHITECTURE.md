@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-05-18, against the v1.8.167 codebase.
+Last updated: 2026-05-18, against the v1.8.168 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
