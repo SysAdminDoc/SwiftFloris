@@ -39,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -51,7 +52,9 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.settings.advanced.RadioListItem
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
 import dev.patrickgold.florisboard.app.settings.theme.PrettyPrintConfig
+import dev.patrickgold.florisboard.app.settings.theme.ThemeExtensionEditNotice
 import dev.patrickgold.florisboard.app.settings.theme.ThemeEditorScreen
+import dev.patrickgold.florisboard.app.settings.theme.ThemeExtensionTrustStatePolicy
 import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
@@ -84,8 +87,12 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import java.util.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
@@ -244,12 +251,20 @@ private fun EditScreen(
 
     val context = LocalContext.current
     val navController = LocalNavController.current
+    val scope = rememberCoroutineScope()
 
     val extEditor = workspace.editor ?: return@FlorisScreen
     var showUnsavedChangesDialog by remember { mutableStateOf(false) }
     var showInvalidMetadataDialog by remember { mutableStateOf(false) }
+    var isSaveInProgress by rememberSaveable { mutableStateOf(false) }
+    var lastEditNotice by rememberSaveable { mutableStateOf<ThemeExtensionEditNotice?>(null) }
+    var lastEditErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var componentToDelete by remember { mutableStateOf<ThemeExtensionComponentEditor?>(null) }
 
     fun handleBackPress() {
+        if (!ThemeExtensionTrustStatePolicy.canLeaveEditor(isSaveInProgress)) {
+            return
+        }
         if (workspace.isModified) {
             showUnsavedChangesDialog = true
         } else {
@@ -258,19 +273,15 @@ private fun EditScreen(
         }
     }
 
-    fun handleSave() {
-        if (!extEditor.meta.validate()) {
-            showUnsavedChangesDialog = false
-            showInvalidMetadataDialog = true
-            return
-        }
-        val manifest = extEditor.build()
+    suspend fun persistEditedExtension(
+        manifest: Extension,
+        themeEditors: List<ThemeExtensionComponentEditor>?,
+    ) = withContext(Dispatchers.IO) {
         workspace.saverDir.deleteContentsRecursively()
         val manifestFile = workspace.saverDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
         manifestFile.writeJson(manifest, ExtensionJsonConfig)
-        when (extEditor) {
-            is ThemeExtensionEditor -> {
-                // TODO: this is hacky
+        when {
+            themeEditors != null -> {
                 val fonts = workspace.extDir.subDir("fonts")
                 if (fonts.exists()) {
                     fonts.copyRecursively(workspace.saverDir.subDir("fonts"), overwrite = true)
@@ -279,19 +290,13 @@ private fun EditScreen(
                 if (images.exists()) {
                     images.copyRecursively(workspace.saverDir.subDir("images"), overwrite = true)
                 }
-                for (theme in extEditor.themes) {
+                for (theme in themeEditors) {
                     val stylesheetFile = workspace.saverDir.subFile(theme.stylesheetPath())
                     stylesheetFile.parentFile?.mkdirs()
                     val stylesheetEditor = theme.stylesheetEditor
                     if (stylesheetEditor != null) {
-                        runCatching {
-                            val stylesheet = stylesheetEditor.build().toJson(PrettyPrintConfig).getOrThrow()
-                            stylesheetFile.writeText(stylesheet)
-                        }.onFailure {
-                            // TODO: better error handling
-                            context.showLongToastSync(it.message.toString())
-                            return
-                        }
+                        val stylesheet = stylesheetEditor.build().toJson(PrettyPrintConfig).getOrThrow()
+                        stylesheetFile.writeText(stylesheet)
                     } else {
                         val unmodifiedStylesheetFile = workspace.extDir.subFile(theme.stylesheetPath())
                         if (unmodifiedStylesheetFile.exists()) {
@@ -300,7 +305,6 @@ private fun EditScreen(
                     }
                 }
             }
-            else -> { }
         }
         val flexArchiveName = ExtensionDefaults.createFlexName(extEditor.meta.id)
         val flexArchiveFile = workspace.dir.subFile(flexArchiveName)
@@ -311,24 +315,63 @@ private fun EditScreen(
             workspace.ext!!.sourceRef!!
         }
         flexArchiveFile.copyTo(sourceRef.absoluteFile(context), overwrite = true)
-        workspace.close()
-        navController.popBackStack()
+    }
+
+    fun handleSave() {
+        if (!ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress)) {
+            return
+        }
+        if (!extEditor.meta.validate()) {
+            showUnsavedChangesDialog = false
+            showInvalidMetadataDialog = true
+            return
+        }
+        showUnsavedChangesDialog = false
+        isSaveInProgress = true
+        lastEditNotice = null
+        lastEditErrorMessage = null
+        val manifest = extEditor.build()
+        val themeEditors = (extEditor as? ThemeExtensionEditor)?.themes?.toList()
+        scope.launch {
+            val saveResult = runCatching {
+                persistEditedExtension(manifest, themeEditors)
+            }
+            isSaveInProgress = false
+            saveResult.onSuccess {
+                workspace.close()
+                navController.popBackStack()
+            }.onFailure { error ->
+                lastEditNotice = ThemeExtensionEditNotice.SaveFailure
+                lastEditErrorMessage = error.localizedMessage ?: error.message
+            }
+        }
     }
 
     navigationIcon {
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.AutoMirrored.Filled.ArrowBack,
+            enabled = ThemeExtensionTrustStatePolicy.canLeaveEditor(isSaveInProgress),
         )
     }
 
     bottomBar {
         FlorisButtonBar {
             ButtonBarSpacer()
-            ButtonBarTextButton(text = stringRes(R.string.action__cancel)) {
+            ButtonBarTextButton(
+                text = stringRes(R.string.action__cancel),
+                enabled = ThemeExtensionTrustStatePolicy.canLeaveEditor(isSaveInProgress),
+            ) {
                 handleBackPress()
             }
-            ButtonBarButton(text = stringRes(R.string.action__save)) {
+            ButtonBarButton(
+                text = if (isSaveInProgress) {
+                    stringRes(R.string.ext__editor__save_in_progress)
+                } else {
+                    stringRes(R.string.action__save)
+                },
+                enabled = ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress),
+            ) {
                 handleSave()
             }
         }
@@ -337,6 +380,25 @@ private fun EditScreen(
     content {
         BackHandler {
             handleBackPress()
+        }
+
+        when (ThemeExtensionTrustStatePolicy.resolveEditNotice(isSaveInProgress, lastEditNotice)) {
+            ThemeExtensionEditNotice.None -> Unit
+            ThemeExtensionEditNotice.Saving -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__save_in_progress),
+                secondaryText = stringRes(R.string.ext__editor__save_in_progress_summary),
+            )
+            ThemeExtensionEditNotice.SaveFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__save_failure),
+                secondaryText = lastEditErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable),
+            )
+            ThemeExtensionEditNotice.ComponentDeleted -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__editor__component_delete_success),
+                secondaryText = stringRes(R.string.ext__editor__component_delete_success_summary),
+            )
         }
 
         FlorisOutlinedBox(
@@ -364,16 +426,28 @@ private fun EditScreen(
                 ExtensionComponentListView(
                     title = stringRes(R.string.ext__meta__components_theme),
                     components = extEditor.themes,
+                    createEnabled = ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress),
                     onCreateBtnClick = {
-                        workspace.currentAction = EditorAction.CreateComponent(ThemeExtensionComponent::class)
+                        if (ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress)) {
+                            workspace.currentAction = EditorAction.CreateComponent(ThemeExtensionComponent::class)
+                        }
                     },
                 ) { component ->
                     ExtensionComponentView(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
                         meta = extEditor.meta,
                         component = component,
-                        onDeleteBtnClick = { workspace.update { extEditor.themes.remove(component) } },
-                        onEditBtnClick = { workspace.currentAction = EditorAction.ManageComponent(component) },
+                        actionsEnabled = ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress),
+                        onDeleteBtnClick = {
+                            if (ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress)) {
+                                componentToDelete = component
+                            }
+                        },
+                        onEditBtnClick = {
+                            if (ThemeExtensionTrustStatePolicy.canMutateEditor(isSaveInProgress)) {
+                                workspace.currentAction = EditorAction.ManageComponent(component)
+                            }
+                        },
                     )
                 }
             }
@@ -411,6 +485,33 @@ private fun EditScreen(
                     Text(text = stringRes(R.string.ext__editor__metadata__message_invalid))
                 },
             )
+        }
+
+        componentToDelete?.let { component ->
+            JetPrefAlertDialog(
+                title = stringRes(R.string.ext__editor__component_delete_confirm_title),
+                confirmLabel = stringRes(R.string.action__delete),
+                onConfirm = {
+                    val themeEditor = extEditor as? ThemeExtensionEditor
+                    if (themeEditor != null) {
+                        workspace.update {
+                            themeEditor.themes.remove(component)
+                        }
+                        lastEditNotice = ThemeExtensionEditNotice.ComponentDeleted
+                        lastEditErrorMessage = null
+                    }
+                    componentToDelete = null
+                },
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = { componentToDelete = null },
+            ) {
+                Text(
+                    text = stringRes(
+                        R.string.ext__editor__component_delete_confirm_message,
+                        "component_name" to component.label,
+                    ),
+                )
+            }
         }
     }
 }

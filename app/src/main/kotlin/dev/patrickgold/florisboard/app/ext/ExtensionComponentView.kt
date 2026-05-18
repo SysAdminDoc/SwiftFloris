@@ -67,6 +67,7 @@ fun ExtensionComponentView(
     meta: ExtensionMeta,
     component: ExtensionComponent,
     modifier: Modifier = Modifier,
+    actionsEnabled: Boolean = true,
     onDeleteBtnClick: (() -> Unit)? = null,
     onEditBtnClick: (() -> Unit)? = null,
 ) {
@@ -132,6 +133,7 @@ fun ExtensionComponentView(
                         onClick = onDeleteBtnClick,
                         icon = Icons.Default.Delete,
                         text = stringRes(R.string.action__delete),
+                        enabled = actionsEnabled,
                         colors = ButtonDefaults.textButtonColors(
                             contentColor = MaterialTheme.colorScheme.error,
                         ),
@@ -143,6 +145,7 @@ fun ExtensionComponentView(
                         onClick = onEditBtnClick,
                         icon = Icons.Default.Edit,
                         text = stringRes(R.string.action__edit),
+                        enabled = actionsEnabled,
                     )
                 }
             }
@@ -200,6 +203,7 @@ fun <T : ExtensionComponent> ExtensionComponentListView(
     modifier: Modifier = Modifier,
     title: String,
     components: List<T>,
+    createEnabled: Boolean = true,
     onCreateBtnClick: (() -> Unit)? = null,
     componentGenerator: @Composable (T) -> Unit,
 ) {
@@ -218,6 +222,7 @@ fun <T : ExtensionComponent> ExtensionComponentListView(
                         onClick = onCreateBtnClick,
                         icon = Icons.Default.Add,
                         iconColor = MaterialTheme.colorScheme.secondary,
+                        enabled = createEnabled,
                     )
                 }
             } else { null },
