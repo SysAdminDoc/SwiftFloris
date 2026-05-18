@@ -511,6 +511,16 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)
         editorInstance.handleStartInput(editorInfo)
+        // After v1.8.110, `voiceInputManager.startListening` deliberately
+        // leaves the listening/transcription state in Listening when the
+        // IME hands off to an external voice IME, so consumers can observe
+        // the handoff window. Reset that state here — when SwiftFloris is
+        // re-bound as the active IME (the user returned from FUTO / system
+        // picker) — so the next interaction starts from a clean Ready
+        // baseline. Cheap idempotent operation; `refreshAvailability()`
+        // already short-circuits when the recogniser surface hasn't
+        // changed.
+        voiceInputManager.refreshAvailability()
     }
 
     /**
