@@ -1,0 +1,37 @@
+version: 2
+updates:
+  - package-ecosystem: "gradle"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:00"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    groups:
+      android-runtime:
+        patterns:
+          - "androidx.*"
+          - "org.jetbrains.kotlinx*"
+          - "io.coil-kt*"
+          - "com.google.crypto.tink*"
+      android-test-tooling:
+        patterns:
+          - "io.kotest*"
+          - "io.github.takahirom.roborazzi*"
+          - "org.robolectric*"
+          - "androidx.test*"
+          - "androidx.benchmark*"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+      time: "09:30"
+      timezone: "America/New_York"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        patterns:
+          - "*"

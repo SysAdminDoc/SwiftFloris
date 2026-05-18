@@ -71,6 +71,15 @@ The scan job's failure threshold is **any HIGH or CRITICAL CVE in a runtime-clas
 are reported but non-blocking, so we can publish releases with known-low-severity issues if the upstream fix is not
 yet available.
 
+### Weekly version-review PRs (`.github/dependabot.yml`)
+
+Dependabot version updates run weekly for Gradle and GitHub Actions manifests.
+The Gradle update scope includes `gradle/libs.versions.toml`, custom catalog
+imports from `settings.gradle.kts`, and module build files; GitHub Actions
+updates cover workflow action references under `.github/workflows/`. These PRs
+are review prompts, not auto-merge rules: follow
+[`docs/DEPENDENCY_TRIAGE.md`](DEPENDENCY_TRIAGE.md) before accepting any bump.
+
 ### Release-time scan (`.github/workflows/release.yml`)
 
 The release workflow runs an additional OSV scan as part of the release pipeline. The scan summary (count, scanner
