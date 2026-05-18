@@ -73,8 +73,14 @@ maintainer business decisions:
 - **LiteRT-LM v0.11 + Gemma 4 E2B as L1.1a target** (Tier-2). Multi-week
   addon engineering when L1.1a moves out of gate.
 - **Android 17 IME compliance slice** (Tier-2, urgency 1; June 2026
-  stable). Two behavior changes to confirm benign / wire behind the API
-  37 gate.
+  stable). **Audit complete 2026-05-17:** N13.2 (IME-visibility-restore)
+  shipped in `FlorisAppActivity`; N13.3 (password long-press-popup
+  suppression under `show_passwords_physical`) shipped in
+  `PasswordFieldPopupGate` + `TextKeyboardLayout`; the IME service
+  surface is benign (agent's note: "targets host apps, not the IME
+  service"). Remaining `TextAttribute.setTextSuggestionSelected()`
+  for CJKV is correctly L3-gated and lands with the librime addon, not
+  speculatively ahead of it. **No pre-stable code action required.**
 - **Phase B5 decoder field calibration with real traces** (planned).
   Needs real-device telemetry collection on the maintainer host.
 - **Bergamot L2.1a / librime L3 addons** — blocked on upstream releases.
