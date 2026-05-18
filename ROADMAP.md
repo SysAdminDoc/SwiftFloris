@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.13
+# SwiftFloris Roadmap v5.14
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.12 (2026-05-18, same-day). v5.0-v5.12 entries are preserved with shipped markers updated in-place; v5.13 records the seventh seventh-pass follow-up release after v1.8.104 – v1.8.110 and keeps the high-leverage seventh-pass follow-up roster closed. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.117 (released 2026-05-18 — clipboard restore media metadata). **v1.8.104 – v1.8.117 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), and eight clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata).
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed and G3/G4 clipboard media-storage reconciliation / restore metadata are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.13 (2026-05-18, same-day). v5.0-v5.13 entries are preserved with shipped markers updated in-place; v5.14 records the eighth seventh-pass follow-up release after v1.8.104 – v1.8.110 and keeps the high-leverage seventh-pass follow-up roster closed. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.118 (released 2026-05-18 — clipboard media clone failure guard). **v1.8.104 – v1.8.118 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), and nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries).
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed and clipboard media-storage reconciliation / restore metadata / failed-clone guards are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.117)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.118)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -56,6 +56,12 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   image/video backups now recreates `ClipboardFileInfo` rows for the
   restored provider files and lets `ClipboardMediaProvider` lazy-load
   metadata on cache misses. This closes **G4**.
+- **v1.8.118** — Clipboard media clone failure guard. Failed foreign
+  `content://` image/video clones now propagate instead of returning a
+  synthetic `/0` provider URI; `ClipboardItem.fromClipData(...)`
+  rejects invalid provider insert results; and `ClipboardManager` logs
+  and skips failed imports so phantom media rows do not enter history.
+  Video imports also bypass image-only EXIF orientation parsing.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 

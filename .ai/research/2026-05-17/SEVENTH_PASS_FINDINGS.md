@@ -119,12 +119,12 @@ shipped in this pass; four were structural / out-of-scope.
 | **#9** — pin-popup `stringRepresentation()` ran URL/email/phone detection on unredacted text even when `isSensitive` is true, leaking structural info via icon | Low | ✅ **v1.8.115** — `clipboardItemDescriptionKind` skips classification for sensitive clips before reading raw text. |
 | **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphaned provider media files forever | Medium | ✅ **v1.8.116** — startup reconciliation deletes missing-file history rows and unreferenced provider files / metadata rows before history collection. |
 | **#10** — backup-restore dropped the `ClipboardFileInfo` row, so restored items had URIs pointing at IDs not in `clipboard_files` table | Medium | ✅ **v1.8.117** — restore recreates metadata rows and provider cache misses lazy-load metadata from Room. |
+| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | ✅ **v1.8.118** — clone failures now propagate instead of returning a synthetic `/0` URI; invalid provider insert URIs are rejected before item creation; manager logs and skips failed imports. |
 
 ### Open (mostly perf / UX polish or structural)
 
 | Finding | Severity | Disposition |
 |---|---|---|
-| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.118+. |
 | **#5, #6** — `enforceHistoryLimit` recurses on its own emission; `updateHistory` runs on Main and sort + filter at every emission | Medium | Perf cliff at startup with N=200 history + cap=10; needs a `Mutex` or single-threaded dispatcher. Modest refactor; defer. |
 | **#7** — `enforceExpiryDate` reads `currentHistory` on a background timer with no sync | Low | Same fix shape as #5; bundle. |
 | **#8** — no pin-cap; pinned items grow unbounded (combined with #4, pinned media files leak forever) | Low | UX polish + a pref; defer. |
@@ -157,10 +157,10 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.117)
+## 5. Open follow-up roster (post-v1.8.118)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.117 G4 clipboard restore media-metadata slice. Priority-scored.
+v1.8.118 clipboard media clone failure guard. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
@@ -188,7 +188,7 @@ structural, external-clock-dependent, or lower-score clipboard follow-ups.
 ---
 
 *End of seventh-pass findings. Open items folded into the next
-ROADMAP refresh (`v5.7`) and into
+ROADMAP refresh (`v5.14` at current HEAD) and into
 [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §0.c](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md).
-The v5.7 ROADMAP append is the canonical user-facing record; this
+The ROADMAP append is the canonical user-facing record; this
 file is the audit trail.*

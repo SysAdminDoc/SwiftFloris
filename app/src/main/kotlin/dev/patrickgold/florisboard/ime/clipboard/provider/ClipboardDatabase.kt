@@ -169,7 +169,9 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                     context.contentResolver.insert(when (type) {
                         ItemType.IMAGE -> ClipboardMediaProvider.IMAGE_CLIPS_URI
                         ItemType.VIDEO -> ClipboardMediaProvider.VIDEO_CLIPS_URI
-                    }, values)
+                    }, values).let { insertedUri ->
+                        ClipboardMediaClonePolicy.requireValidInsertedUri(insertedUri)
+                    }
                 }
             } else { null }
 

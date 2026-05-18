@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.clipboard
 
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaClonePolicy
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -28,6 +29,18 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
 
     test("clipboard video clone cap stays at 128 MiB") {
         ClipboardFileStorage.MediaKind.VIDEO.maxCloneBytes shouldBe 128L * 1024L * 1024L
+    }
+
+    test("provider insert result rejects sentinel or missing file ids") {
+        ClipboardMediaClonePolicy.isValidInsertedFileId(null) shouldBe false
+        ClipboardMediaClonePolicy.isValidInsertedFileId(-1L) shouldBe false
+        ClipboardMediaClonePolicy.isValidInsertedFileId(0L) shouldBe false
+        ClipboardMediaClonePolicy.isValidInsertedFileId(1L) shouldBe true
+    }
+
+    test("provider reads EXIF orientation for images only") {
+        ClipboardMediaClonePolicy.shouldReadExifOrientation(ClipboardFileStorage.MediaKind.IMAGE) shouldBe true
+        ClipboardMediaClonePolicy.shouldReadExifOrientation(ClipboardFileStorage.MediaKind.VIDEO) shouldBe false
     }
 
     test("preview policy accepts bounded image dimensions") {
