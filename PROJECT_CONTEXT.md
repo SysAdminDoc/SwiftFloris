@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.126)
+## 3. Stack at HEAD (v1.8.127)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.126** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.127** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, and Addons trust/asset/catalog layer.
 v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
@@ -241,6 +241,9 @@ by tying dictionary cache invalidation to `AddonRegistryStore.generation()`.
 v1.8.126 completes the current local Next-10.4 Addons polish by sharing the
 descriptor reader between runtime and Settings, listing dictionary-pack
 descriptor details, and surfacing descriptor rejection reasons.
+v1.8.127 closes the Next-9.4a emoji pinned-group sheet: long-pressing emoji
+can pin them to existing or newly named groups, and pinned-group chips commit
+the saved emoji sequence from the palette.
 
 ## 4. Module layout
 

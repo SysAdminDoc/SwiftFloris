@@ -61,6 +61,9 @@ class PinToGroupSheetState internal constructor(
     /** Snapshot of existing group names in stable creation order. */
     fun existingGroups(): List<String> = store.groupNames()
 
+    /** Snapshot of the emoji currently pinned under [groupName]. */
+    fun emojisForExistingGroup(groupName: String): List<String> = store.emojisFor(groupName)
+
     /** Open the sheet for [emojiValue]. Clears prior error / new-group input. */
     fun open(emojiValue: String) {
         emojiBeingPinned = emojiValue

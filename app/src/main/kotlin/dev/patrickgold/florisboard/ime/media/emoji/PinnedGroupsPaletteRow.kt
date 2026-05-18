@@ -49,10 +49,9 @@ import androidx.compose.ui.unit.sp
  * Each group is a chip-style card (subtle rectangular backdrop, 8 dp
  * radius — never a pill per the global no-pill rule) showing the group
  * name plus the first three pinned emoji as a preview. Tapping the
- * chip raises [onGroupTapped] so the palette can expand the group's
- * full emoji list inline. Long-pressing the chip raises
- * [onGroupLongPressed] so callers can plumb the "rename / unpin /
- * delete" sheet later.
+ * chip raises [onGroupTapped] so the palette can commit the group's
+ * full emoji list. Long-pressing the chip raises [onGroupLongPressed]
+ * for a compact hint or a future management surface.
  *
  * Designed for embed inside the existing `EmojiPaletteView`'s
  * horizontal Pinned strip — the strip lives above the search bar, so

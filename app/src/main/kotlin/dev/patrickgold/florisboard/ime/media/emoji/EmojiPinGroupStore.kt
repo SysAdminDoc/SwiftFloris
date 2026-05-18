@@ -30,8 +30,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Users frequently send the same *combination* of emoji together
  * (🎂🎉🎁 for a birthday, 🥲😭❤️ for a tearful goodbye). The pin-together
  * feature lets the user name a group and pin a list of emoji to it,
- * surfaced in a dedicated "Pinned groups" row in the emoji palette
- * (paired with EmojiPaletteView in a follow-up Next-9.4a slice).
+ * surfaced in a dedicated "Pinned groups" row in the emoji palette.
  *
  * Storage mirrors [CustomEmojiTagStore] — single JSON file under
  * `filesDir/emoji_pin_groups.json`, atomic-rename writes, in-memory
