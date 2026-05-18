@@ -129,9 +129,29 @@ fun StickerPaletteView(
     val scope = rememberCoroutineScope()
     val userStickerFolderUri by prefs.sticker.userFolderUri.collectAsState()
     var userStickerPack by remember { mutableStateOf<StickerPack?>(null) }
+    var userStickerGrantLost by remember { mutableStateOf(false) }
     LaunchedEffect(context, userStickerFolderUri) {
-        userStickerPack = withContext(Dispatchers.IO) {
-            UserStickerRepository.loadPack(context, userStickerFolderUri)
+        // Distinguish three states:
+        //   - URI blank → no Imported tab.
+        //   - URI set, grant valid, pack loadable → pack rendered.
+        //   - URI set, grant lost → empty placeholder pack so the tab stays
+        //     visible and the user gets a clear "open Settings to re-pick"
+        //     message in the grid instead of a silently-vanishing tab.
+        val grantValid = userStickerFolderUri.isNotBlank() &&
+            UserStickerRepository.hasPersistableReadPermission(context, userStickerFolderUri)
+        userStickerGrantLost = userStickerFolderUri.isNotBlank() && !grantValid
+        userStickerPack = if (grantValid) {
+            withContext(Dispatchers.IO) {
+                UserStickerRepository.loadPack(context, userStickerFolderUri)
+            }
+        } else if (userStickerGrantLost) {
+            StickerPack(
+                id = UserStickerRepository.PackId,
+                name = UserStickerRepository.PackName,
+                stickers = emptyList(),
+            )
+        } else {
+            null
         }
     }
     val packs = remember(userStickerPack) {
@@ -143,6 +163,7 @@ fun StickerPaletteView(
     val canInsertStickers = remember(activeEditorInfo.contentMimeTypes.toList(), packs) {
         packs.any { pack -> pack.stickers.any { sticker -> sticker.canCommitInEditor(editorInstance) } }
     }
+    val isImportedTabActive = activePack.id == UserStickerRepository.PackId
 
     Column(modifier = modifier) {
         StickerPackTabRow(
@@ -160,6 +181,23 @@ fun StickerPaletteView(
                     .fillMaxWidth()
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 text = stringRes(R.string.sticker__unsupported_message),
+            )
+        }
+        if (isImportedTabActive && userStickerGrantLost) {
+            // Mirror of the v1.8.90 Settings-side preference-summary surface.
+            // Android revoked the persistable SAF grant (e.g. the file
+            // manager that issued the grant was uninstalled). The tab
+            // stays visible so the user has a clear signal that the pack
+            // is recoverable; tapping is currently not wired to the
+            // Settings deep-link because the IME view runs in a different
+            // process surface and can't open Settings activities cleanly,
+            // so the message guides the user to do it manually.
+            SnyggText(
+                elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 8.dp),
+                text = stringRes(R.string.sticker__user_folder_grant_lost),
             )
         }
         val gridState = rememberLazyGridState()

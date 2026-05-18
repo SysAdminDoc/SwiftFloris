@@ -59,6 +59,7 @@
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
     <string name="sticker__unsupported_message" comment="State shown when the active app does not accept image insertion from the keyboard">This app does not accept sticker images.</string>
     <string name="sticker__commit_failed" comment="Toast shown when sticker insertion fails">Sticker could not be inserted here.</string>
+    <string name="sticker__user_folder_grant_lost" comment="In-keyboard banner shown on the Imported sticker tab when Android revoked the persistable SAF read permission for the user's imported folder. Mirrors the Settings preference summary; instructs the user to re-pick the folder from Settings.">Imported folder access lost. Open Settings → Emoji &amp; stickers to re-pick.</string>
     <string name="prefs__media__stickers__title" comment="Preference group title">Stickers</string>
     <string name="prefs__media__stickers_folder" comment="Preference title">Imported sticker folder</string>
     <string name="prefs__media__stickers_folder__summary_empty" comment="Preference summary">Choose a local folder of PNG, WebP, JPEG, or GIF files to show as a sticker pack.</string>
