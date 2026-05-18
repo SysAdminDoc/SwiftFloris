@@ -1,9 +1,105 @@
-# SwiftFloris Roadmap v5.5
+# SwiftFloris Roadmap v5.6
 
 **Last Updated:** 2026-05-17
-**Supersedes:** ROADMAP v5.4 (2026-05-17, same-day). v5.0-v5.4 entries are preserved with shipped markers updated in-place; v5.5 records the closure of the v1.8.85 follow-up roster across v1.8.93 – v1.8.102. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.102 (released 2026-05-17 — `HardwareKeyEntry.longPressAlternates` + LDML parser tokenisation). **v1.8.93 – v1.8.102 releases:** F1 – F12 follow-up roster from the v1.8.85 cross-subsystem audit, ten single-feature commits that closed every sixth-pass open item except F11 (Roborazzi baseline recording — needs Android SDK).
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream; sixth-pass cross-subsystem hardening + v1.8.93 – v1.8.102 follow-ups closed the v1.8.85 audit roster; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons, Android 17 IME compliance), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library), or maintainer outreach (SwiftKey-refugee discovery on AlternativeTo / BGR / Android Authority round-ups).
+**Supersedes:** ROADMAP v5.5 (2026-05-17, same-day). v5.0-v5.5 entries are preserved with shipped markers updated in-place; v5.6 records the **seventh-pass audit** (user re-invoked the extreme-audit prompt post-v1.8.103) and the seven follow-up releases v1.8.104 – v1.8.110. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.110 (released 2026-05-17 — voice Listening state observable during handoff). **v1.8.104 – v1.8.110 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), three voice-subsystem bugs (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker), and two clipboard data-leak paths (backup-sensitive, video-clear-all).
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass audit closed seven privacy / data-integrity findings on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; voice-local-recogniser integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), structural refactors (clipboard `enforceHistoryLimit` Main-thread + recursion), or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+
+---
+
+## 0. Research Refresh v5.6 (2026-05-17 seventh-pass audit)
+
+The user re-invoked the extreme-audit prompt after the sixth-pass
+roster closed. Three new external research agents covered the
+subsystems the original five did NOT deeply audit: NLP / autocorrect
+(agent rate-limited, no output — flagged as eighth-pass debt), voice
+input, clipboard manager. A personal pass on `FlorisImeService` /
+`EditorInstance` ran in parallel. Full audit trail in
+[`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
+
+### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
+
+Seven single-feature releases on AGENTS.md §6 per-PR cadence:
+
+- **v1.8.104** — `IME_FLAG_NO_PERSONALIZED_LEARNING` always honoured.
+  App-declared flag now forces `isIncognitoMode = true` regardless of
+  user's `prefs.suggestion.incognitoMode` preference. A user who set
+  IncognitoMode to `FORCE_OFF` previously overrode every cross-app
+  sensitive-field declaration (Signal, ProtonMail, banking, E2E chat).
+  The user preference now governs only user-requested incognito
+  (smartbar toggle, FORCE_ON power-user setting).
+- **v1.8.105** — Clipboard cut/copy gates on `isIncognitoMode` +
+  `ClipDescription.EXTRA_IS_SENSITIVE` honoured on the primary-clip
+  sync path. New `shouldSuppressClipboardHistory()` helper unifies
+  password + incognito signals. Password-manager credentials no
+  longer land in IME-local history.
+- **v1.8.106** — Voice handoff sensitive-field guard.
+  `switchToVoiceInputMethod` refuses with toast when
+  `keyVariation == PASSWORD || isIncognitoMode`. Voice IMEs typically
+  have full network permission; SwiftFloris's no-`INTERNET` contract
+  doesn't extend to them, so spoken credentials must not route there.
+- **v1.8.107** — Voice "scratch" command requires explicit list-anchor
+  suffix. Replaced the bare-prefix `scratch X` pattern (silently
+  fired on natural-prose utterances like "let me scratch that idea")
+  with four explicit `scratch X {from|off} {the }list` variants.
+  Regression-guard test pins three previously-vulnerable inputs.
+- **v1.8.108** — Voice `removeItemFromList` refuses on existing
+  selection. The prior implementation collapsed any non-empty
+  editor selection AND overwrote selected text plus the suffix
+  above the cursor — silent multi-region data loss.
+- **v1.8.109** — Clipboard backup excludes `isSensitive` items +
+  video clear-all leak. Backup zip is not passphrase-encrypted, so
+  legacy sensitive rows in history could be exported in plaintext;
+  now filtered. `ClipboardItem.close` extended from `IMAGE` to
+  `IMAGE OR VIDEO` so video clear-all reclaims on-disk file + revokes
+  per-receiver `grantUriPermission`.
+- **v1.8.110** — Voice Listening state observable during handoff.
+  `_isListening` and `_transcriptionState` were assigned-and-overwritten
+  in the same synchronous frame; observers never saw the Listening
+  transition. State now held during external-IME session; reset via
+  `voiceInputManager.refreshAvailability()` on `onStartInput` rebind.
+
+### 0.6.2 Structural findings carried forward (out-of-scope for per-PR)
+
+The voice agent surfaced one major structural finding that the
+per-PR slice could not absorb:
+
+- **Voice no-local-recogniser story.** The voice catalog UI advertises
+  Whisper tiny/base/large + seven Vosk packages and lets users
+  download ~3 GB cumulative, but `RECORD_AUDIO` is not declared in
+  the manifest, no `AudioRecord` / Vosk JNI / whisper.cpp glue code
+  exists, and the auto-route never reaches the local-engine branches.
+  The only working voice path is the external-IME handoff (FUTO
+  Voice Input). Either ship the recognizer integration as part of a
+  dedicated future release (mirrors the L1 / L2 / L3 facade-only
+  pattern documented in [`PROJECT_CONTEXT.md` §8](PROJECT_CONTEXT.md))
+  OR flag the catalog UI as preview-only / hide it behind a
+  developer-options toggle until the recogniser lands.
+
+### 0.6.3 Open seventh-pass follow-up roster
+
+Priority-scored in
+[`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md §5`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
+High-leverage items (score ≥ 5.0) suitable for v1.8.111 – v1.8.116:
+
+- **G2** — `ClipboardFileStorage.cloneUri` max-size cap.
+- **G6** — `revokeUriPermission` on clipboard history rotation /
+  expiry path (not just explicit delete).
+- **G7** — `VoiceInputSetupActivity` `android:exported="false"` +
+  validate Intent extras.
+- **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME
+  `RECORD_AUDIO` grant.
+- **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
+  `item.isSensitive`.
+- **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
+  guard (the legacy branch already has one).
+
+### 0.6.4 Eighth-pass research debt
+
+- **Re-run NLP / autocorrect / suggestion-strip / KenLM-header /
+  phantom-space audit.** Seventh-pass agent rate-limited; no findings
+  returned. Avoid scheduling parallel agents during peak
+  rate-limit windows; pace at 1-2 agents at a time.
 
 ---
 

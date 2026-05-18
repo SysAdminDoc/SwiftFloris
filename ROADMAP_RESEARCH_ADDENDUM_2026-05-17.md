@@ -12,9 +12,77 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.92 — LDML parser shift= > longPress=.
+**HEAD at latest reconciliation:** v1.8.110 — voice Listening state observable during handoff (seventh-pass audit closure for the visible-but-unresponsive flicker on the voice handoff path; the full seventh-pass shipped layer is v1.8.104 – v1.8.110, documented in §0.c below).
+
+**Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
 same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Phase B1 seed + Phase B2 + Phase C1 + Phase C3 + Phase D1 + Phase A3 Settings wiring + N8.7 Article 50 transparency + N12.5 reproducible-build self-check + N7.6 Tink migration + Bump-batches A/B/C + README Samsung / Grammarly callouts + glide strategy correction + root crash-log guard + hardware-keyboard import/runtime follow-ups + user sticker folders + Keyman `.kmp` package intake + honeycomb hex layout production wire-up + SQLCipher provider migration plan + Next-10.3a addon catalog foundation + Next-10.3b signing-pin persistence + Next-10.3c startup reconciliation + Next-10.3d Settings status/rescan UI. The sixth-pass v1.8.85-92 cross-subsystem hardening + per-feature follow-ups landed afterwards; see §0.b below.)
+
+---
+
+## 0.c Reconciliation with v1.8.104-110 seventh-pass audit releases
+
+The user re-invoked the extreme-audit prompt after the sixth-pass
+roster closed. The seventh research pass dispatched three parallel
+agents on the un-audited subsystems (NLP, voice, clipboard) plus a
+personal pass on `FlorisImeService` / `EditorInstance`. Two agents
+returned with findings; the NLP agent rate-limited (research debt for
+the eighth pass).
+
+| Seventh-pass finding | Shipped as |
+|---|---|
+| Personal pass 1.1: `EditorInstance.handleStartInputView` honoured `IME_FLAG_NO_PERSONALIZED_LEARNING` only when `prefs.suggestion.incognitoMode == DYNAMIC_ON_OFF`; under `FORCE_OFF` the user silently overrode every app-declared cross-app privacy flag (Signal / ProtonMail / banking / E2E chat / password vaults) | ✅ **v1.8.104** — app-declared flag now forces `isIncognitoMode = true` regardless of user pref; user pref governs only user-requested incognito (smartbar toggle, FORCE_ON power-user setting) |
+| Personal pass 1.2 + clipboard agent #1: clipboard cut/copy gated only on `isPasswordField()` and `ClipboardItem.fromClipData` read `EXTRA_IS_SENSITIVE` into `item.isSensitive` but `onPrimaryClipChanged` never used the flag as an insertion gate; password-manager credentials and incognito-field text landed in IME-local history | ✅ **v1.8.105** — new `shouldSuppressClipboardHistory()` helper unifies password + incognito signals; both cut and copy now read it. `onPrimaryClipChanged` wraps `insertOrMoveBeginning` in `if (!item.isSensitive)`. System clipboard unchanged |
+| Voice agent #7: `switchToVoiceInputMethod` routed voice input to external IMEs (FUTO Voice Input — typically full-network-permission) in password / numeric-PIN / web-password / incognito fields | ✅ **v1.8.106** — early-return + toast `voice_input__suppressed_on_sensitive_field`. Voice IME's privacy boundary doesn't inherit SwiftFloris's no-`INTERNET` contract |
+| Voice agent #16: `RemoveItemPattern(canonicalPhrase = "scratch", prefix = "scratch")` was a bare-prefix entry; any utterance starting with "scratch" (including natural prose "let me scratch that idea") silently fired `REMOVE_ITEM_FROM_LIST` and excised text from the committed buffer | ✅ **v1.8.107** — replaced with four explicit suffix-anchored patterns (`scratch X {from\|off} {the }list`). Regression-guard test pins three previously-vulnerable inputs |
+| Voice agent #14: `removeItemFromList` collapsed non-empty editor selections and overwrote selected text plus the suffix above the cursor on execution — silent multi-region data loss | ✅ **v1.8.108** — early-return `ACTION_REJECTED` when `content.selectedText.isNotEmpty()` BEFORE the streaming buffer is mutated, so dictation state stays in sync after retry |
+| Clipboard agent #11 + #19: backup zip serialised every history row including sensitive ones in plaintext (backup is not passphrase-encrypted); `ClipboardItem.close(context)` only deleted the content-provider URI for `IMAGE`, so video clear-all leaked on-disk files AND kept per-receiver `grantUriPermission` calls live | ✅ **v1.8.109** — `filterNot { it.isSensitive }` at the top of the clipboard backup path; `close()` extended from IMAGE to IMAGE OR VIDEO |
+| Voice agent #11: `_isListening` / `_transcriptionState` assigned-and-overwritten in the same synchronous frame as the successful `switchToVoiceInputMethod` call; observers never saw the Listening transition (mic-meter UIs read `isListening` as permanently false; "Connecting to voice IME…" spinners read `transcriptionState` as Ready → Ready) | ✅ **v1.8.110** — state held Listening when the handoff succeeds; `FlorisImeService.onStartInput` calls `voiceInputManager.refreshAvailability()` so state resets to Ready when SwiftFloris is re-bound as the active IME (user returned from FUTO) |
+
+The seven follow-up releases are tagged locally; push is blocked from
+this VM by the documented 403 (per [`AGENTS.md`](AGENTS.md)).
+
+### 0.c.1 Seventh-pass structural finding carried forward
+
+The voice agent surfaced one major structural finding that the
+per-PR slice could not absorb:
+
+**Voice no-local-recogniser story.** The voice catalog UI advertises
+Whisper tiny/base/large + seven Vosk packages and lets users
+download ~3 GB cumulative, but `RECORD_AUDIO` is not declared in the
+manifest, no `AudioRecord` / Vosk JNI / whisper.cpp glue code exists,
+and the auto-route never reaches the local-engine branches. The only
+working voice path is the external-IME handoff (FUTO Voice Input).
+Either ship the recognizer integration as part of a dedicated future
+release (mirrors the L1 / L2 / L3 facade-only pattern documented in
+[`PROJECT_CONTEXT.md` §8](PROJECT_CONTEXT.md)) OR flag the catalog
+UI as preview-only / hide it behind a developer-options toggle until
+the recogniser lands.
+
+### 0.c.2 Seventh-pass open follow-up roster
+
+Full priority-scored roster in
+[`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md §5`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md);
+high-leverage items (score ≥ 5.0):
+
+- **G2** — `ClipboardFileStorage.cloneUri` max-size cap (image / video).
+- **G6** — `revokeUriPermission` on clipboard history rotation /
+  expiry path (currently only on explicit delete).
+- **G7** — `VoiceInputSetupActivity` `android:exported="false"` +
+  validate Intent extras.
+- **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME
+  `RECORD_AUDIO` grant.
+- **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
+  `item.isSensitive`.
+- **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
+  guard.
+
+### 0.c.3 Seventh-pass research debt
+
+- **NLP / autocorrect / suggestion-strip / KenLM-header / phantom-space
+  audit.** Seventh-pass agent rate-limited; no findings returned.
+  Eighth-pass agent should pace at 1-2 parallel agents instead of
+  three. The subsystem remains un-audited in depth.
 
 ---
 
