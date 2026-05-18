@@ -18,12 +18,10 @@ package dev.patrickgold.florisboard.ime.nlp.latin
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.content.res.Resources
 import dev.patrickgold.florisboard.ime.addon.AddonContract
-import dev.patrickgold.florisboard.ime.addon.AddonManifest
 import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
-import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalog
+import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalogReader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.readText
@@ -44,16 +42,12 @@ internal class AddonDictionaryAssetMounts(
 ) : LatinDictionaryAssetReader, LatinDictionaryAssetPlanner {
     private val appContext = context.applicationContext
     private val packageManager: PackageManager = appContext.packageManager
+    private val catalogReader = DictionaryPackCatalogReader(appContext)
 
     override suspend fun planForLanguage(languageCode: String): LatinDictionaryAssetPlan {
         val normalizedLanguage = LatinDictionaryStore.normalizeLanguageCode(languageCode)
         val generation = generationProvider()
-        val catalog = withContext(Dispatchers.IO) {
-            DictionaryPackCatalog.build(
-                manifests = registryProvider().dictionaryPacks(),
-                descriptorJsonFor = ::readDescriptorJson,
-            )
-        }
+        val catalog = catalogReader.build(registryProvider().dictionaryPacks())
         val entries = catalog.forLanguage(normalizedLanguage)
         val addonDictionaryPaths = entries.map { entry ->
             addonAssetPath(entry.packageName, entry.descriptor.fldicAssetPath)
@@ -80,21 +74,6 @@ internal class AddonDictionaryAssetMounts(
     private fun readBundledAsset(path: String): String? {
         return try {
             appContext.assets.readText(path)
-        } catch (_: IOException) {
-            null
-        }
-    }
-
-    private fun readDescriptorJson(manifest: AddonManifest): String? {
-        return try {
-            packageManager.getResourcesForApplication(manifest.packageName)
-                .openRawResource(manifest.descriptorResourceId)
-                .bufferedReader(Charsets.UTF_8)
-                .use { it.readText() }
-        } catch (_: PackageManager.NameNotFoundException) {
-            null
-        } catch (_: Resources.NotFoundException) {
-            null
         } catch (_: IOException) {
             null
         }
