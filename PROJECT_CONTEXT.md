@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.121)
+## 3. Stack at HEAD (v1.8.122)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -188,7 +188,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.121** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.122** ships the seventh research-pass privacy,
 voice, and clipboard hardening layer. v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
@@ -216,6 +216,10 @@ marking the local model catalog preview-only until that runtime exists;
 v1.8.121 closes follow-up **G9** by deleting the unused parallel
 `ClipboardHistoryManager` Tink store and its unused panel so the Room-backed
 `ClipboardManager` remains the sole live clipboard-history storage path.
+v1.8.122 closes the carried-forward **G11** local audit with a concrete
+KenLM mmap-reader hardening: `KenLmTrieReader.readBytesAt(...)` now rejects
+header/pre-body absolute offsets instead of aliasing them to trie-body bytes,
+and its header probe avoids large-file `toInt()` overflow.
 
 The only sixth-pass F-roster item still open is **F11** (Roborazzi visual
 baselines for the new themes + Addons surface) — needs Android SDK +

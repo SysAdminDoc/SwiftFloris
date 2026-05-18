@@ -1,9 +1,9 @@
-# SwiftFloris Roadmap v5.17
+# SwiftFloris Roadmap v5.18
 
 **Last Updated:** 2026-05-18
-**Supersedes:** ROADMAP v5.16 (2026-05-18, same-day). v5.0-v5.16 entries are preserved with shipped markers updated in-place; v5.17 records the eleventh seventh-pass follow-up release after v1.8.104 – v1.8.110 and removes the dead parallel clipboard-history store. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.121 (released 2026-05-18 — dead clipboard history store removal). **v1.8.104 – v1.8.121 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, and one dead duplicate clipboard-store removal.
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster is closed and clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, and the local voice preview gate are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+**Supersedes:** ROADMAP v5.17 (2026-05-18, same-day). v5.0-v5.17 entries are preserved with shipped markers updated in-place; v5.18 records the carried-forward G11 local NLP/KenLM audit closure and mmap-reader offset hardening. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.122 (released 2026-05-18 — KenLM mmap reader offset hardening). **v1.8.104 – v1.8.122 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, and one KenLM mmap-reader offset-boundary hardening.
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster and the carried-forward G11 local audit item are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, and KenLM reader offset hardening are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
 
 ---
 
@@ -17,7 +17,7 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
 `EditorInstance` ran in parallel. Full audit trail in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
 
-### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.121)
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.122)
 
 - **v1.8.111** — Clipboard media intake size caps and preview decode
   bounds. `ClipboardFileStorage.cloneUri` now receives image/video
@@ -85,6 +85,13 @@ input, clipboard manager. A personal pass on `FlorisImeService` /
   with media/provider metadata, backup/restore, sensitive-item gates, and
   serialized maintenance. Removing the dead store closes **G9** and keeps
   clipboard history on a single backend.
+- **v1.8.122** — KenLM mmap reader offset hardening.
+  The carried-forward G11 local audit found that
+  `KenLmTrieReader.readBytesAt(...)` documented absolute file offsets but
+  silently coerced pre-body offsets to mapped-body offset zero. Header /
+  pre-body reads now return `null`, offset arithmetic is overflow-guarded,
+  and the fixed header probe no longer casts large file sizes to `Int`.
+  `KenLmTrieReaderTest` pins the absolute-offset contract.
 
 ### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
 
@@ -168,13 +175,18 @@ High-leverage items (score ≥ 5.0) are now closed:
   preview-only catalog and runtime-availability gate.
 - ✅ **G9** — `ClipboardHistoryManager` Tink store was a dead parallel
   backend beside the Room path. Removed in **v1.8.121**.
+- ✅ **G11** — NLP / autocorrect / suggestion local re-audit (rate-limited
+  seventh-pass agent). Closed in **v1.8.122** with a concrete KenLM mmap
+  reader offset-boundary hardening and regression test.
 
-### 0.6.4 Eighth-pass research debt
+### 0.6.4 Eighth-pass research-debt closure
 
-- **Re-run NLP / autocorrect / suggestion-strip / KenLM-header /
-  phantom-space audit.** Seventh-pass agent rate-limited; no findings
-  returned. Avoid scheduling parallel agents during peak
-  rate-limit windows; pace at 1-2 agents at a time.
+- ✅ **G11 local audit closure.** The seventh-pass NLP agent rate-limited
+  before returning findings. The local eighth-pass audit reviewed the
+  NLP/autocorrect/suggestion/KenLM surfaces and landed the concrete
+  KenLM mmap-reader offset bug in **v1.8.122**. Future full-system
+  research runs should still sample NLP periodically, but no
+  seventh-pass checklist item remains open.
 
 ---
 

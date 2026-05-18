@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.121-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.122-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.121 | Privacy posture |
+| Area | What's in v1.8.122 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -52,7 +52,7 @@
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
 | **Voice input** | FUTO Voice Input handoff (live path), plus preview-only local Whisper/Vosk route selector and model catalog until a recognizer runtime ships | SwiftFloris itself does not record audio |
 | **Emoji & stickers** | Emoji search/history/pinned groups, bundled local sticker packs, and user-imported SAF sticker folders for PNG / WebP / JPEG / GIF files | Local folder URI only |
-| **Clipboard** | History with pinning + per-app source tag; Tink / AndroidKeystore-wrapped legacy history; SQLCipher-encrypted personal dictionary | On-device |
+| **Clipboard** | Room-backed history with pinning + per-app source tag, media/provider metadata, sensitive-item gates, and startup/restore reconciliation | On-device |
 | **Productivity** | Calendar quick-insert reads local agenda entries for today + next 7 days; task quick-insert sends selected text to user-chosen task / note apps | Calendar permission is explicit opt-in; no network |
 | **Themes** | 21 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent | No telemetry |
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
@@ -123,7 +123,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.17).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.18).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -275,7 +275,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-- **v1.8.104 – v1.8.121** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, exposes a durable Listening state, and now gates the in-app Whisper/Vosk route selector and model catalog behind a preview-only local-runtime flag; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, automatic clipboard history eviction now closes provider-backed media before deleting rows, sensitive clipboard text no longer feeds pin-popup description URL/email/phone classification, startup reconciliation removes missing-file history rows plus unreferenced provider files / metadata rows, media restore recreates provider metadata for restored image/video clips, failed foreign media URI clones no longer create phantom history entries, clipboard history maintenance no longer sorts or evicts on Main, and the dead parallel Tink clipboard-history store has been removed so the Room-backed manager is the only live storage path. ([latest notes](RELEASE_NOTES_v1.8.121.md))
+- **v1.8.104 – v1.8.122** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, exposes a durable Listening state, and now gates the in-app Whisper/Vosk route selector and model catalog behind a preview-only local-runtime flag; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, automatic clipboard history eviction now closes provider-backed media before deleting rows, sensitive clipboard text no longer feeds pin-popup description URL/email/phone classification, startup reconciliation removes missing-file history rows plus unreferenced provider files / metadata rows, media restore recreates provider metadata for restored image/video clips, failed foreign media URI clones no longer create phantom history entries, clipboard history maintenance no longer sorts or evicts on Main, the dead parallel Tink clipboard-history store has been removed so the Room-backed manager is the only live storage path, and the KenLM mmap reader now rejects header/pre-body offsets instead of aliasing them to trie-body bytes. ([latest notes](RELEASE_NOTES_v1.8.122.md))
 - **v1.8.85 – v1.8.103** (2026-05-17) — cross-subsystem hardening pass + 18 single-feature follow-up releases. v1.8.85 was an explicit AGENTS.md §6 one-time deviation that closed eleven privacy / security / reliability gaps (merged-manifest `verifyNoInternetPermission`, Android 12+ `data_extraction_rules.xml`, atomic `ZipUtils.unzip`, thread-safe `HardwareKeyboardRuntimeMapper`, sticker decoder OOM, sticker MIME spoof, addon enumerator size category-error, `verify-reproducible-apk.sh` payload-manifest pass criterion, CI workflow permissions, `pull_request_target` injection, AltGr); v1.8.86 – v1.8.102 then returned to per-PR scope and closed eleven of twelve F-roster items (FLAG_SECURE on numeric PIN + passphrase dialog, legacy-passphrase recovery, ZipUtils abort policy, SAF lost-grant UX, addon spec docs alignment, LDML `shift=` semantics, fastlane script hardening, SHA-pinned floating action tags, `release.yml` keystore hygiene, `verifyDataExtractionRules` build gate, sticker LRU + folder cap, `HardwareKeyEntry.longPressAlternates`); v1.8.103 closes the documentation half (README + PROJECT_CONTEXT version refresh, master index of the session's commits). The only sixth-pass F-item still open is F11 (Roborazzi visual baselines — needs Android SDK + on-device record). ([master index](RELEASE_NOTES_v1.8.103.md))
 - **v1.8.84** (2026-05-17) — Settings → Addons status surface: users can inspect accepted/rejected addon APKs, manually rescan through the startup reconciliation path, and review package/license/version/size/signing-fingerprint details. ([notes](RELEASE_NOTES_v1.8.84.md))
 - **v1.8.83** (2026-05-17) — Addon registry startup wiring: the IME now scans installed addon manifests at startup, reconciles them through persisted signing pins, publishes a process-wide registry, and cleans malformed stored pin lines. ([notes](RELEASE_NOTES_v1.8.83.md))
@@ -387,7 +387,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.121** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.122** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

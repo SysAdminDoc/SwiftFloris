@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.121 — dead clipboard history store removal (seventh-pass follow-up G9 closure; the full seventh-pass shipped layer is v1.8.104 – v1.8.121, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.122 — KenLM mmap reader offset hardening (carried-forward G11 local audit closure; the full seventh-pass shipped layer is v1.8.104 – v1.8.122, documented in §0.c below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -20,14 +20,14 @@ same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Ph
 
 ---
 
-## 0.c Reconciliation with v1.8.104-121 seventh-pass audit releases
+## 0.c Reconciliation with v1.8.104-122 seventh-pass audit releases
 
 The user re-invoked the extreme-audit prompt after the sixth-pass
 roster closed. The seventh research pass dispatched three parallel
 agents on the un-audited subsystems (NLP, voice, clipboard) plus a
 personal pass on `FlorisImeService` / `EditorInstance`. Two agents
-returned with findings; the NLP agent rate-limited (research debt for
-the eighth pass).
+returned with findings; the NLP agent rate-limited. The carried-forward
+local audit closed G11 in v1.8.122 with a KenLM mmap-reader offset fix.
 
 | Seventh-pass finding | Shipped as |
 |---|---|
@@ -49,8 +49,9 @@ the eighth pass).
 | Clipboard follow-up G5 + clipboard agent #7: `updateHistory` sorted / rebuilt history on Main and history-limit eviction re-entered through its own Room emission; timed expiry read `currentHistory` without sharing a maintenance lock | ✅ **v1.8.119** — history collection stays on IO, derivation sorts on `Dispatchers.Default`, and size-limit / timed-expiry eviction share one `Mutex`-serialized maintenance path |
 | Voice structural follow-up G1: local Whisper/Vosk routes and the model catalog implied a working in-app recognizer runtime despite no `AudioRecord` / Vosk JNI / whisper.cpp glue | ✅ **v1.8.120** — local routes now require `VoiceLocalRecognizerRuntime.AVAILABLE`, Auto falls back to the external voice keyboard while it is false, and Settings marks the model catalog preview-only with download/import disabled |
 | Clipboard follow-up G9: `ClipboardHistoryManager` Tink store was a dead parallel clipboard-history backend beside the Room-backed `ClipboardManager` path | ✅ **v1.8.121** — removed the unused manager and unused panel; source regression now pins clipboard history to the Room-backed manager instead of the parallel Tink store |
+| Carried-forward G11: NLP / autocorrect / suggestion audit was rate-limited before returning findings; local re-audit found `KenLmTrieReader.readBytesAt(...)` accepted absolute offsets before the mapped trie body and aliased them to body offset zero | ✅ **v1.8.122** — pre-body/header offsets now return `null`, offset arithmetic is overflow-guarded, the fixed header probe avoids large-file `toInt()` overflow, and `KenLmTrieReaderTest` pins the absolute-offset contract |
 
-The v1.8.104 – v1.8.121 release notes are the per-release audit trail
+The v1.8.104 – v1.8.122 release notes are the per-release audit trail
 for this seventh-pass shipped layer.
 
 ### 0.c.1 Seventh-pass structural finding carried forward
@@ -86,6 +87,8 @@ closed follow-ups from this roster:
   preview-only catalog and runtime-availability gate.
 - ✅ **G9** — `ClipboardHistoryManager` Tink store was a dead parallel
   backend beside the Room path. Removed in **v1.8.121**.
+- ✅ **G11** — NLP / autocorrect / suggestion local re-audit. Shipped
+  in **v1.8.122** with KenLM mmap reader offset-boundary hardening.
 - ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap (image /
   video). Shipped in **v1.8.111**.
 - ✅ **G6** — `revokeUriPermission` on clipboard history rotation /
@@ -100,12 +103,14 @@ closed follow-ups from this roster:
 - ✅ **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
   guard. Shipped in **v1.8.111**.
 
-### 0.c.3 Seventh-pass research debt
+### 0.c.3 Seventh-pass research-debt closure
 
-- **NLP / autocorrect / suggestion-strip / KenLM-header / phantom-space
-  audit.** Seventh-pass agent rate-limited; no findings returned.
-  Eighth-pass agent should pace at 1-2 parallel agents instead of
-  three. The subsystem remains un-audited in depth.
+- ✅ **G11 local audit closure.** Seventh-pass NLP agent rate-limited
+  before returning findings. The local eighth-pass audit reviewed the
+  NLP/autocorrect/suggestion/KenLM surfaces and shipped the concrete
+  KenLM mmap-reader offset fix in **v1.8.122**. Future research runs
+  should still sample NLP periodically, but no seventh-pass checklist
+  item remains open.
 
 ---
 
@@ -783,6 +788,7 @@ but does not require a roadmap change.
 | Seventh-pass G5 clipboard history maintenance serialization | ✅ v1.8.119 |
 | Seventh-pass G1 local voice catalog preview gate | ✅ v1.8.120 |
 | Seventh-pass G9 dead clipboard history store removal | ✅ v1.8.121 |
+| Seventh-pass G11 local NLP / KenLM audit closure | ✅ v1.8.122 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
