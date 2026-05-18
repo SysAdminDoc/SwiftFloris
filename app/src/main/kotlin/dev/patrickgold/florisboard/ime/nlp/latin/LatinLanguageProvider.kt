@@ -39,8 +39,6 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.builtins.MapSerializer
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.json.Json
-import org.florisboard.lib.android.readText
-import java.io.IOException
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.abs
 import kotlin.math.ln
@@ -54,17 +52,11 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
     }
 
     private val appContext by context.appContext()
+    private val dictionaryAssets = AddonDictionaryAssetMounts(context.applicationContext)
 
     private val dictionaryStore = LatinDictionaryStore(
-        readAsset = LatinDictionaryAssetReader { path ->
-            withContext(Dispatchers.IO) {
-                try {
-                    appContext.assets.readText(path)
-                } catch (_: IOException) {
-                    null
-                }
-            }
-        },
+        readAsset = dictionaryAssets,
+        assetPlanner = dictionaryAssets,
     )
 
     override val providerId = ProviderId
@@ -404,27 +396,59 @@ internal fun interface LatinDictionaryAssetReader {
     suspend fun read(path: String): String?
 }
 
+internal fun interface LatinDictionaryAssetPlanner {
+    suspend fun planForLanguage(languageCode: String): LatinDictionaryAssetPlan
+}
+
+internal data class LatinDictionaryAssetPlan(
+    val generation: Long,
+    val dictionaryPaths: List<String>,
+    val zipfPaths: List<String>,
+) {
+    companion object {
+        fun bundled(languageCode: String): LatinDictionaryAssetPlan =
+            LatinDictionaryAssetPlan(
+                generation = 0L,
+                dictionaryPaths = LatinDictionaryStore.assetPathsForLanguage(languageCode),
+                zipfPaths = listOf(LatinDictionaryStore.zipfAssetPath(languageCode)),
+            )
+    }
+}
+
 internal class LatinDictionaryStore(
     private val readAsset: LatinDictionaryAssetReader,
+    private val assetPlanner: LatinDictionaryAssetPlanner = LatinDictionaryAssetPlanner { languageCode ->
+        LatinDictionaryAssetPlan.bundled(languageCode)
+    },
     private val json: Json = Json,
 ) {
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
     private val dictionaryLoadGuard = Mutex()
     private val dictionaries = ConcurrentHashMap<String, LatinDictionarySnapshot>()
+    @Volatile
+    private var cachedGeneration: Long = Long.MIN_VALUE
 
     suspend fun dictionaryForLanguage(language: String): LatinDictionarySnapshot {
         val languageCode = normalizeLanguageCode(language)
-        dictionaries[languageCode]?.let { return it }
+        val plan = assetPlanner.planForLanguage(languageCode)
+        if (cachedGeneration == plan.generation) {
+            dictionaries[languageCode]?.let { return it }
+        }
 
         return dictionaryLoadGuard.withLock {
+            if (cachedGeneration != plan.generation) {
+                dictionaries.clear()
+                cachedGeneration = plan.generation
+            }
             dictionaries[languageCode]?.let { return@withLock it }
 
-            val dictionary = loadSpecificDictionary(languageCode)
+            val dictionary = loadSpecificDictionary(languageCode, plan)
                 ?: if (languageCode == DefaultLanguageCode) {
                     LatinDictionarySnapshot.Empty
                 } else {
+                    val defaultPlan = assetPlanner.planForLanguage(DefaultLanguageCode)
                     dictionaries[DefaultLanguageCode]
-                        ?: loadSpecificDictionary(DefaultLanguageCode)
+                        ?: loadSpecificDictionary(DefaultLanguageCode, defaultPlan)
                             ?.also { dictionaries[DefaultLanguageCode] = it }
                         ?: LatinDictionarySnapshot.Empty
                 }
@@ -433,17 +457,23 @@ internal class LatinDictionaryStore(
         }
     }
 
-    private suspend fun loadSpecificDictionary(languageCode: String): LatinDictionarySnapshot? {
+    private suspend fun loadSpecificDictionary(
+        languageCode: String,
+        plan: LatinDictionaryAssetPlan,
+    ): LatinDictionarySnapshot? {
         Trace.beginSection("swiftfloris.dict.load")
         try {
-            return loadSpecificDictionaryImpl(languageCode)
+            return loadSpecificDictionaryImpl(languageCode, plan)
         } finally {
             Trace.endSection()
         }
     }
 
-    private suspend fun loadSpecificDictionaryImpl(languageCode: String): LatinDictionarySnapshot? {
-        val base = loadFirstDictionary(languageCode) ?: return null
+    private suspend fun loadSpecificDictionaryImpl(
+        languageCode: String,
+        plan: LatinDictionaryAssetPlan,
+    ): LatinDictionarySnapshot? {
+        val base = loadMergedDictionaries(plan.dictionaryPaths) ?: return null
         val merged = if (languageCode == DefaultLanguageCode) {
             base.mergeWith(loadSupplementalEnglishFrequencies())
         } else {
@@ -453,17 +483,25 @@ internal class LatinDictionaryStore(
         // language. Missing asset is tolerated: the snapshot then carries
         // `ZipfFrequencyTable.Empty` and `frequencyFor` falls back to pure
         // SCOWL frequencies (current behaviour).
-        val zipfTsv = readAsset.read(zipfAssetPath(languageCode))
+        val zipfTsv = loadFirstText(plan.zipfPaths)
         val zipfTable = ZipfFrequencyTable.parse(languageCode, zipfTsv)
         return merged.withZipfTable(zipfTable)
     }
 
-    private suspend fun loadFirstDictionary(languageCode: String): LatinDictionarySnapshot? {
-        for (path in assetPathsForLanguage(languageCode)) {
+    private suspend fun loadMergedDictionaries(paths: List<String>): LatinDictionarySnapshot? {
+        var merged: Map<String, Int>? = null
+        for (path in paths.distinct()) {
             val rawData = readAsset.read(path) ?: continue
             val frequencies = decodeFrequencies(path, rawData)
             if (frequencies.isEmpty()) continue
-            return LatinDictionarySnapshot.from(frequencies)
+            merged = mergeFrequencies(merged, frequencies)
+        }
+        return merged?.let { LatinDictionarySnapshot.from(it) }
+    }
+
+    private suspend fun loadFirstText(paths: List<String>): String? {
+        for (path in paths.distinct()) {
+            return readAsset.read(path) ?: continue
         }
         return null
     }
@@ -475,6 +513,20 @@ internal class LatinDictionaryStore(
         }.getOrElse {
             emptyMap()
         }
+    }
+
+    private fun mergeFrequencies(
+        existing: Map<String, Int>?,
+        incoming: Map<String, Int>,
+    ): Map<String, Int> {
+        if (existing == null) return incoming
+        if (incoming.isEmpty()) return existing
+        val merged = HashMap<String, Int>(existing.size + incoming.size)
+        merged.putAll(existing)
+        incoming.forEach { (word, frequency) ->
+            merged[word] = maxOf(merged[word] ?: 0, frequency)
+        }
+        return merged
     }
 
     private fun decodeFrequencies(path: String, rawData: String): Map<String, Int> {

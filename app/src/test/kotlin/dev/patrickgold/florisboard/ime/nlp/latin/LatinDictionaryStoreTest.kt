@@ -63,6 +63,66 @@ class LatinDictionaryStoreTest : FunSpec({
         dictionary.frequencyFor("hello") shouldBe 210 / 255.0
     }
 
+    test("merges addon dictionary assets ahead of bundled language assets") {
+        val addonDictionaryPath = AddonDictionaryAssetMounts.addonAssetPath(
+            packageName = "org.swiftfloris.dict.pl",
+            assetPath = "ime/dict/pl.fldic",
+        )
+        val store = LatinDictionaryStore(
+            readAsset = LatinDictionaryAssetReader { path ->
+                mapOf(
+                    addonDictionaryPath to fldic("addonword" to 1000, "shared" to 1000),
+                    "ime/dict/pl.fldic" to fldic("baseword" to 900, "shared" to 100),
+                )[path]
+            },
+            assetPlanner = LatinDictionaryAssetPlanner {
+                LatinDictionaryAssetPlan(
+                    generation = 1L,
+                    dictionaryPaths = listOf(addonDictionaryPath, "ime/dict/pl.fldic"),
+                    zipfPaths = emptyList(),
+                )
+            },
+        )
+
+        val dictionary = runBlocking { store.dictionaryForLanguage("pl") }
+
+        dictionary.sortedWords shouldBe listOf("addonword", "baseword", "shared")
+        dictionary.frequencyFor("addonword") shouldBe 1.0
+        dictionary.frequencyFor("baseword") shouldBe 1.0
+        dictionary.frequencyFor("shared") shouldBe 1.0
+    }
+
+    test("reloads cached dictionaries when the asset plan generation changes") {
+        val addonDictionaryPath = AddonDictionaryAssetMounts.addonAssetPath(
+            packageName = "org.swiftfloris.dict.pl",
+            assetPath = "ime/dict/pl.fldic",
+        )
+        val assets = mutableMapOf(
+            "ime/dict/pl.fldic" to fldic("baseword" to 900),
+        )
+        var generation = 1L
+        var dictionaryPaths = listOf("ime/dict/pl.fldic")
+        val store = LatinDictionaryStore(
+            readAsset = LatinDictionaryAssetReader { path -> assets[path] },
+            assetPlanner = LatinDictionaryAssetPlanner {
+                LatinDictionaryAssetPlan(
+                    generation = generation,
+                    dictionaryPaths = dictionaryPaths,
+                    zipfPaths = emptyList(),
+                )
+            },
+        )
+
+        val first = runBlocking { store.dictionaryForLanguage("pl") }
+        assets[addonDictionaryPath] = fldic("addonword" to 1000)
+        dictionaryPaths = listOf(addonDictionaryPath, "ime/dict/pl.fldic")
+        generation = 2L
+        val second = runBlocking { store.dictionaryForLanguage("pl") }
+
+        first.sortedWords shouldBe listOf("baseword")
+        second.sortedWords shouldBe listOf("addonword", "baseword")
+    }
+
     test("merges bundled English supplemental dictionary without lowering base frequencies") {
         val store = latinDictionaryStore(
             "ime/dict/data.json" to dictionaryJson("hello" to 210, "test" to 180),
@@ -175,6 +235,18 @@ private fun dictionaryJson(vararg words: Pair<String, Int>): String {
     return words.joinToString(prefix = "{", postfix = "}") { (word, frequency) ->
         """"$word":$frequency"""
     }
+}
+
+private fun fldic(vararg words: Pair<String, Int>): String {
+    return words.joinToString(
+        prefix = """
+            #~schema: https://schemas.florisboard.org/nlp/v0~draft1/fldic.txt
+            #~encoding: utf-8
+
+            [words]
+        """.trimIndent() + "\n",
+        separator = "\n",
+    ) { (word, score) -> "$word\t$score" }
 }
 
 private fun bundledAsset(path: String): File? {

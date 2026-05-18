@@ -146,12 +146,12 @@ descriptor JSON and produces provenance rows for Settings.
 As of v1.8.84, Settings → Addons can display the accepted/rejected snapshot and
 manually rescan installed addon APKs through the same startup reconciliation
 path. As of v1.8.124, the same screen can reset saved signing-certificate pins
-or trust a changed certificate after confirmation and rescan. Asset mounting
-still waits for the next loader slice.
-The next loader slice mounts the addon's `assets/` via the standard
+or trust a changed certificate after confirmation and rescan. As of v1.8.125,
+the Latin dictionary loader mounts the addon's `assets/` via the standard
 [`PackageManager#getResourcesForApplication`](https://developer.android.com/reference/android/content/pm/PackageManager#getResourcesForApplication(java.lang.String))
 + `AssetManager` flow — no extraction, no temp-file copy, no permission
-escalation.
+escalation. Addon asset text reads enforce the existing per-addon byte cap
+before materializing a string; an oversized asset is skipped rather than loaded.
 
 ## 5. Signing certificate pinning
 
@@ -167,7 +167,9 @@ As of v1.8.82, the persisted pin format is implemented by
 user-edited; Settings → Addons exposes read-only provenance/status in v1.8.84
 and confirmed trust reset / changed-certificate actions in v1.8.124. As of
 v1.8.83, startup writes back the canonical pin string only when first-seen
-addons or malformed stored lines change the trust set.
+addons or malformed stored lines change the trust set. As of v1.8.125,
+dictionary cache invalidation follows `AddonRegistryStore.generation()` so
+startup and Settings rescans can expose newly mounted packs to the loader.
 
 ## 6. Reference implementation
 
@@ -175,6 +177,6 @@ A minimal reference dictionary-pack project will live at
 `addons/dictionary-pack-polish/` in a sibling repo once the Polish
 dataset extraction lands. Until then, the descriptor + manifest layout
 documented here is fully sufficient to build a working pack against the
-current IME (`v1.8.84+`). Validation can be exercised in unit tests via
+current IME (`v1.8.125+`). Validation can be exercised in unit tests via
 `DictionaryPackDescriptor.parse(rawJson)` and `DictionaryPackCatalog.build(...)`
 — see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.
