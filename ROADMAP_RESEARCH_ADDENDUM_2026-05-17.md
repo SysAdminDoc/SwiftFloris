@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.125 — Addons dictionary asset mounting (Next-10.4 local loader half; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.125, documented in §0.c through §0.f below).
+**HEAD at latest reconciliation:** v1.8.126 — Addons dictionary catalog polish (Next-10.4 local Settings half; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.126, documented in §0.c through §0.g below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -149,6 +149,18 @@ dictionary and Zipf paths ahead of bundled assets, merges readable addon
 dictionaries with bundled baselines, and invalidates cached dictionaries when
 `AddonRegistryStore.generation()` changes. The remaining Next-10.4 work is
 Settings catalog/install-hint polish for discoverability.
+
+---
+
+## 0.g Reconciliation with v1.8.126 Addons catalog polish
+
+The Settings catalog/install-hint half of **§C.2 Next-10.4** shipped in
+v1.8.126. `DictionaryPackCatalogReader` is now shared by Settings and the
+runtime loader, and Settings -> Addons exposes a Dictionary packs group with
+language, word count, dataset license, source, descriptor rejection reasons,
+and updated local-addon install guidance. The current local Next-10.4 work is
+closed; future catalog distribution depends on actual sibling addon APK
+publication and store metadata.
 
 ---
 
@@ -661,9 +673,9 @@ last open piece.
 **Why now:** HeliBoard's killer ecosystem feature is the in-app
 dictionary catalog + download UI. SwiftFloris's Next-10.3 now has both
 dictionary-pack addon schemas and the v1.8.81 process-local catalog
-foundation; v1.8.84/v1.8.124 cover Settings status and trust controls, while
-v1.8.125 covers APK asset mounting. Install-hint/catalog polish is the missing
-piece.
+foundation; v1.8.84/v1.8.124 cover Settings status and trust controls,
+v1.8.125 covers APK asset mounting, and v1.8.126 covers catalog/install-hint
+polish.
 
 **Body:**
 
@@ -834,7 +846,7 @@ but does not require a roadmap change.
 | Seventh-pass G9 dead clipboard history store removal | ✅ v1.8.121 |
 | Seventh-pass G11 local NLP / KenLM audit closure | ✅ v1.8.122 |
 | Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
-| §C.2 Dictionary downloader UI (Next-10.4) | 🟡 v1.8.124 closed signing-pin revoke/reset UX; v1.8.125 closed asset mounting; catalog/install-hint polish remains |
+| §C.2 Dictionary downloader UI (Next-10.4) | ✅ local IME half closed through v1.8.126; sibling addon publication/store metadata remains external |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | ✅ v1.8.123 hard gate + focused baselines; full per-theme expansion remains additive |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |
 | §E.1 Per-app tone profile promotion | 🟡 on addon-side KenLM |

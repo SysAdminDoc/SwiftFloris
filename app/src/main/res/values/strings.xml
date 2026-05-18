@@ -1714,6 +1714,7 @@
     <string name="settings__addons__title" comment="Title of the Addons settings screen">Addons</string>
     <string name="settings__addons__group_status" comment="Addons settings group title">Status</string>
     <string name="settings__addons__group_installed" comment="Addons settings group title">Installed addons</string>
+    <string name="settings__addons__group_dictionary_packs" comment="Addons settings group title">Dictionary packs</string>
     <string name="settings__addons__group_rejected" comment="Addons settings group title">Rejected addons</string>
     <string name="settings__addons__group_install" comment="Addons settings group title">Install guidance</string>
     <string name="settings__addons__status_title" comment="Addons status row title">Addon registry</string>
@@ -1730,6 +1731,11 @@
     <string name="settings__addons__none_installed_summary" comment="Addons settings empty-state summary">Install a sibling addon APK that declares the SwiftFloris addon metadata, then rescan or restart the IME service.</string>
     <string name="settings__addons__installed_summary" comment="Installed addon row summary; {type}, {version}, {license}, {size} = values">Type: {type} · Version: {version} · License: {license} · Size: {size}</string>
     <string name="settings__addons__fingerprint_summary" comment="Installed addon row fingerprint fragment; {fingerprint} = SHA-256 certificate fingerprint">Signing SHA-256: {fingerprint}</string>
+    <string name="settings__addons__none_dictionary_packs" comment="Addons settings empty-state title">No dictionary packs mounted</string>
+    <string name="settings__addons__none_dictionary_packs_summary" comment="Addons settings empty-state summary">Accepted dictionary-pack addons appear here after their descriptor JSON is read successfully.</string>
+    <string name="settings__addons__dictionary_pack_summary" comment="Dictionary-pack addon row summary; {language}, {words}, {license}, {source} = descriptor fields">Language: {language} · Words: {words} · Dataset license: {license}\nSource: {source}</string>
+    <string name="settings__addons__dictionary_pack_rejected" comment="Dictionary-pack descriptor rejection row title">Dictionary pack descriptor rejected</string>
+    <string name="settings__addons__dictionary_pack_rejected_summary" comment="Dictionary-pack descriptor rejection row summary; {package}, {reason} = descriptor rejection fields">Package: {package}\nReason: {reason}</string>
     <string name="settings__addons__rejected_summary" comment="Rejected addon row summary; {package} = package name, {reason} = rejection reason">Package: {package}\nReason: {reason}</string>
     <string name="settings__addons__trust_changed_certificate" comment="Addons settings action title">Trust current certificate</string>
     <string name="settings__addons__trust_changed_certificate_summary" comment="Addons settings action summary; {package} = package name">Clears the old pin for {package}, rescans, and records the currently installed certificate if the addon still passes validation.</string>
@@ -1737,6 +1743,6 @@
     <string name="settings__addons__trust_changed_certificate_confirm_title" comment="Addons changed certificate confirmation title">Trust changed certificate?</string>
     <string name="settings__addons__trust_changed_certificate_confirm_message" comment="Addons changed certificate confirmation message; {name} = display name, {package} = package name">Only continue if you verified this update for {name} ({package}). SwiftFloris will forget the old certificate pin and rescan the installed addon.</string>
     <string name="settings__addons__install_title" comment="Addons install guidance row title">Install trusted local addons only</string>
-    <string name="settings__addons__install_summary" comment="Addons install guidance row summary">SwiftFloris accepts addon APKs only when they declare supported metadata, avoid all network permissions, and keep their first-seen signing certificate. Dictionary asset mounting lands in the next slice.</string>
+    <string name="settings__addons__install_summary" comment="Addons install guidance row summary">SwiftFloris accepts addon APKs only when they declare supported metadata, avoid all network permissions, keep their first-seen signing certificate, and expose compatible descriptor resources. Use trusted local packages from F-Droid, Obtainium, or direct APK sources you can verify.</string>
 
 </resources>

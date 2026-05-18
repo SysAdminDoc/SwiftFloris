@@ -152,6 +152,9 @@ the Latin dictionary loader mounts the addon's `assets/` via the standard
 + `AssetManager` flow — no extraction, no temp-file copy, no permission
 escalation. Addon asset text reads enforce the existing per-addon byte cap
 before materializing a string; an oversized asset is skipped rather than loaded.
+As of v1.8.126, Settings → Addons also lists mounted dictionary-pack descriptor
+details (language, word count, dataset license, source) and descriptor-level
+rejections.
 
 ## 5. Signing certificate pinning
 
@@ -177,6 +180,6 @@ A minimal reference dictionary-pack project will live at
 `addons/dictionary-pack-polish/` in a sibling repo once the Polish
 dataset extraction lands. Until then, the descriptor + manifest layout
 documented here is fully sufficient to build a working pack against the
-current IME (`v1.8.125+`). Validation can be exercised in unit tests via
+current IME (`v1.8.126+`). Validation can be exercised in unit tests via
 `DictionaryPackDescriptor.parse(rawJson)` and `DictionaryPackCatalog.build(...)`
 — see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.

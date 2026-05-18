@@ -24,6 +24,7 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +38,8 @@ import dev.patrickgold.florisboard.ime.addon.AddonManifest
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonSigningPinSet
+import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalog
+import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalogReader
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.datastore.model.observeAsState
@@ -46,13 +49,15 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.stringRes
+import java.text.NumberFormat
+import java.util.Locale
 
 /**
  * ROADMAP §7 Next-10.3d — read-only Settings surface for installed addon APKs.
  *
  * This screen deliberately reuses [AddonRegistryStartup] for manual rescans so
  * Settings and IME startup share the exact same signing-pin and package-hijack
- * rules. Asset mounting stays in the next slice.
+ * rules.
  */
 @Composable
 fun AddonsSettingsScreen() = FlorisScreen {
@@ -63,8 +68,15 @@ fun AddonsSettingsScreen() = FlorisScreen {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val dictionaryCatalogReader = remember(context) {
+        DictionaryPackCatalogReader(context.applicationContext)
+    }
     val persistedPinsRaw by prefs.addon.signingCertPins.observeAsState()
     var snapshot by remember { mutableStateOf(AddonRegistryStore.active().lastRefresh()) }
+    var registryGeneration by remember { mutableStateOf(AddonRegistryStore.generation()) }
+    var dictionaryCatalog by remember {
+        mutableStateOf(DictionaryPackCatalog(entries = emptyList(), rejected = emptyList()))
+    }
     var activePinnedPackageNames by remember {
         mutableStateOf(AddonRegistryStore.active().pinnedSigningCertificates().keys)
     }
@@ -83,6 +95,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
         AddonRegistryStore.setActive(result.registry)
         snapshot = result.snapshot
         activePinnedPackageNames = result.registry.pinnedSigningCertificates().keys
+        registryGeneration = AddonRegistryStore.generation()
     }
 
     fun rescanInstalledAddons(persistedPinsOverride: String? = null) {
@@ -124,12 +137,19 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 AddonRegistryStore.reset()
                 snapshot = AddonRegistryStore.active().lastRefresh()
                 activePinnedPackageNames = emptySet()
+                registryGeneration = AddonRegistryStore.generation()
             } catch (e: Exception) {
                 scanError = e.message ?: e::class.simpleName
             } finally {
                 scanInProgress = false
             }
         }
+    }
+
+    LaunchedEffect(registryGeneration) {
+        dictionaryCatalog = dictionaryCatalogReader.build(
+            AddonRegistryStore.active().dictionaryPacks(),
+        )
     }
 
     content {
@@ -182,6 +202,29 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 for (manifest in snapshot.accepted) {
                     InstalledAddonRow(manifest = manifest)
                 }
+            }
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__addons__group_dictionary_packs)) {
+            if (dictionaryCatalog.entries.isEmpty()) {
+                Preference(
+                    icon = Icons.Default.Extension,
+                    title = stringRes(R.string.settings__addons__none_dictionary_packs),
+                    summary = stringRes(R.string.settings__addons__none_dictionary_packs_summary),
+                )
+            } else {
+                for (entry in dictionaryCatalog.entries) {
+                    DictionaryPackRow(entry = entry)
+                }
+            }
+            for (rejectedDescriptor in dictionaryCatalog.rejected) {
+                Preference(
+                    icon = Icons.Default.Block,
+                    title = stringRes(R.string.settings__addons__dictionary_pack_rejected),
+                    summary = stringRes(R.string.settings__addons__dictionary_pack_rejected_summary)
+                        .replace("{package}", rejectedDescriptor.packageName)
+                        .replace("{reason}", rejectedDescriptor.reason),
+                )
             }
         }
 
@@ -244,6 +287,19 @@ fun AddonsSettingsScreen() = FlorisScreen {
 }
 
 @Composable
+private fun DictionaryPackRow(entry: DictionaryPackCatalog.Entry) {
+    Preference(
+        icon = Icons.Default.CheckCircle,
+        title = entry.displayName,
+        summary = stringRes(R.string.settings__addons__dictionary_pack_summary)
+            .replace("{language}", entry.language)
+            .replace("{words}", formatWordCount(entry.descriptor.wordCount))
+            .replace("{license}", entry.descriptor.license)
+            .replace("{source}", entry.descriptor.source),
+    )
+}
+
+@Composable
 private fun InstalledAddonRow(manifest: AddonManifest) {
     Preference(
         icon = Icons.Default.CheckCircle,
@@ -266,6 +322,9 @@ private fun InstalledAddonRow(manifest: AddonManifest) {
         },
     )
 }
+
+private fun formatWordCount(words: Long): String =
+    NumberFormat.getIntegerInstance(Locale.getDefault()).format(words)
 
 private fun formatBundleSize(bytes: Long): String {
     val kib = 1024L
