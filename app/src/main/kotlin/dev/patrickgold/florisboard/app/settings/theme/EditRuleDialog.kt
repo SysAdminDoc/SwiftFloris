@@ -65,6 +65,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -86,6 +87,7 @@ import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
@@ -626,6 +628,9 @@ private fun TextKeyDataPreviewBox(
 
     val label = remember(data) { evaluator.computeLabel(data) }
     val icon = remember(data) { evaluator.computeImageVector(data) }
+    val fontScale = LocalDensity.current.fontScale
+    val previewMinSize = DynamicFontScale.minHeightDp(compact = 36f, expanded = 48f, fontScale = fontScale).dp
+    val labelMaxLines = DynamicFontScale.maxLines(compact = 1, expanded = 2, fontScale = fontScale)
     val displayName = remember(data) {
         if (data.code > 0) {
             UCharacter.getName(data.code) ?: UCharacter.getExtendedName(data.code)
@@ -642,8 +647,8 @@ private fun TextKeyDataPreviewBox(
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.12f),
                     shape = MaterialTheme.shapes.medium,
                 )
-                .height(36.dp)
-                .widthIn(min = 36.dp)
+                .height(previewMinSize)
+                .widthIn(min = previewMinSize)
                 .align(Alignment.CenterVertically),
             contentAlignment = Alignment.Center,
         ) {
@@ -657,8 +662,8 @@ private fun TextKeyDataPreviewBox(
                 Text(
                     text = label,
                     fontSize = 16.sp,
-                    maxLines = 1,
-                    softWrap = false,
+                    maxLines = labelMaxLines,
+                    softWrap = labelMaxLines > 1,
                 )
             }
         }

@@ -23,6 +23,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
@@ -37,6 +38,7 @@ fun FlorisHyperlinkText(
     color: Color = MaterialTheme.colorScheme.primary,
 ) {
     val context = LocalContext.current
+    val fontScale = LocalDensity.current.fontScale
 
     Text(
         modifier = modifier
@@ -46,7 +48,7 @@ fun FlorisHyperlinkText(
         text = text,
         color = color,
         style = MaterialTheme.typography.bodyMedium.copy(textDecoration = TextDecoration.Underline),
-        maxLines = 1,
+        maxLines = DynamicFontScale.maxLines(compact = 1, expanded = 2, fontScale = fontScale),
         overflow = TextOverflow.Ellipsis,
     )
 }

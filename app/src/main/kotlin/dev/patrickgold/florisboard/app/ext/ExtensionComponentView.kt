@@ -35,6 +35,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponent
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
@@ -166,6 +168,10 @@ private fun ComponentMetaRow(
     monospace: Boolean = false,
     showDividerAbove: Boolean = true,
 ) {
+    val fontScale = LocalDensity.current.fontScale
+    val labelMaxLines = DynamicFontScale.maxLines(compact = 1, expanded = 2, fontScale = fontScale)
+    val valueMaxLines = DynamicFontScale.maxLines(compact = 2, expanded = 4, fontScale = fontScale)
+
     if (showDividerAbove) {
         HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f))
     }
@@ -183,7 +189,7 @@ private fun ComponentMetaRow(
             text = label,
             style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
-            maxLines = 1,
+            maxLines = labelMaxLines,
             overflow = TextOverflow.Ellipsis,
         )
         Text(
@@ -192,7 +198,7 @@ private fun ComponentMetaRow(
             style = MaterialTheme.typography.bodyMedium,
             color = MaterialTheme.colorScheme.onSurface,
             fontFamily = if (monospace) FontFamily.Monospace else null,
-            maxLines = 2,
+            maxLines = valueMaxLines,
             overflow = TextOverflow.Ellipsis,
         )
     }
@@ -207,13 +213,16 @@ fun <T : ExtensionComponent> ExtensionComponentListView(
     onCreateBtnClick: (() -> Unit)? = null,
     componentGenerator: @Composable (T) -> Unit,
 ) {
+    val fontScale = LocalDensity.current.fontScale
+    val titleMaxLines = DynamicFontScale.maxLines(compact = 1, expanded = 2, fontScale = fontScale)
+
     Column(modifier = modifier) {
         ListItem(
             headlineContent = { Text(
                 text = title,
                 color = MaterialTheme.colorScheme.secondary,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1,
+                maxLines = titleMaxLines,
                 overflow = TextOverflow.Ellipsis,
             ) },
             trailingContent = if (onCreateBtnClick != null) {
