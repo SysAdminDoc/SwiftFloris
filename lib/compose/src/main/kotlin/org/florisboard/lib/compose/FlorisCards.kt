@@ -34,8 +34,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material.icons.outlined.Warning
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -217,6 +220,93 @@ fun FlorisWarningCard(
             FlorisStatusIcon(
                 imageVector = Icons.Outlined.Warning,
                 tint = MaterialTheme.colorScheme.onTertiaryContainer,
+            )
+        }) else null,
+        text = text,
+        secondaryText = secondaryText,
+        actionLabel = actionLabel,
+        contentPadding = contentPadding,
+    )
+}
+
+@Composable
+fun FlorisSuccessCard(
+    text: String,
+    modifier: Modifier = Modifier,
+    secondaryText: String? = null,
+    actionLabel: String? = null,
+    showIcon: Boolean = true,
+    contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    onClick: (() -> Unit)? = null,
+) {
+    FlorisSimpleCard(
+        modifier = modifier,
+        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
+        onClick = onClick,
+        icon = if (showIcon) ({
+            FlorisStatusIcon(
+                imageVector = Icons.Default.CheckCircle,
+                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            )
+        }) else null,
+        text = text,
+        secondaryText = secondaryText,
+        actionLabel = actionLabel,
+        contentPadding = contentPadding,
+    )
+}
+
+@Composable
+fun FlorisProgressCard(
+    text: String,
+    modifier: Modifier = Modifier,
+    secondaryText: String? = null,
+    actionLabel: String? = null,
+    showIcon: Boolean = true,
+    contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    onClick: (() -> Unit)? = null,
+) {
+    FlorisSimpleCard(
+        modifier = modifier,
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
+        onClick = onClick,
+        icon = if (showIcon) ({
+            FlorisStatusIcon(
+                imageVector = Icons.Default.Sync,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+        }) else null,
+        text = text,
+        secondaryText = secondaryText,
+        actionLabel = actionLabel,
+        contentPadding = contentPadding,
+    )
+}
+
+@Composable
+fun FlorisNeutralCard(
+    text: String,
+    modifier: Modifier = Modifier,
+    secondaryText: String? = null,
+    actionLabel: String? = null,
+    showIcon: Boolean = true,
+    contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    onClick: (() -> Unit)? = null,
+) {
+    FlorisSimpleCard(
+        modifier = modifier,
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+        onClick = onClick,
+        icon = if (showIcon) ({
+            FlorisStatusIcon(
+                imageVector = Icons.Default.Block,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }) else null,
         text = text,

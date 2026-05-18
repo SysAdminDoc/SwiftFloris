@@ -69,9 +69,10 @@ import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisNeutralCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisOutlinedButton
+import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
@@ -444,12 +445,12 @@ fun RestoreScreen() = FlorisScreen {
             eraseMode = importStrategy == ImportStrategy.Erase,
             lastTerminalNotice = lastRestoreNotice,
         )) {
-            RestoreFlowNotice.LoadingArchive -> FlorisInfoCard(
+            RestoreFlowNotice.LoadingArchive -> FlorisProgressCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__restore__loading_file),
                 secondaryText = stringRes(R.string.backup_and_restore__restore__loading_file_summary),
             )
-            RestoreFlowNotice.Restoring -> FlorisInfoCard(
+            RestoreFlowNotice.Restoring -> FlorisProgressCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__restore__in_progress),
                 secondaryText = stringRes(R.string.backup_and_restore__restore__in_progress_summary),
@@ -459,7 +460,7 @@ fun RestoreScreen() = FlorisScreen {
                 text = stringRes(R.string.backup_and_restore__restore__erase_recovery_copy_title),
                 secondaryText = stringRes(R.string.backup_and_restore__restore__erase_recovery_copy_summary),
             )
-            RestoreFlowNotice.Cancelled -> FlorisInfoCard(
+            RestoreFlowNotice.Cancelled -> FlorisNeutralCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__restore__cancelled),
                 secondaryText = stringRes(R.string.backup_and_restore__restore__cancelled_summary),

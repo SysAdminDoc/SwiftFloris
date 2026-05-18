@@ -48,7 +48,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
 
@@ -81,7 +81,7 @@ fun HomeScreen() = FlorisScreen {
                 onClick = { InputMethodUtils.showImePicker(context) },
             )
         } else {
-            FlorisInfoCard(
+            FlorisSuccessCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__home__ime_ready),
                 secondaryText = stringRes(R.string.settings__home__ime_ready_summary),

@@ -96,7 +96,8 @@ import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
@@ -616,12 +617,12 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
 
         when (UserDictionaryEntryPolicy.resolveTransferNotice(activeDictionaryTransfer)) {
             UserDictionaryTransferNotice.None -> Unit
-            UserDictionaryTransferNotice.Importing -> FlorisInfoCard(
+            UserDictionaryTransferNotice.Importing -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__dictionary_import_in_progress),
                 secondaryText = stringRes(R.string.settings__udm__dictionary_import_in_progress_summary),
             )
-            UserDictionaryTransferNotice.Exporting -> FlorisInfoCard(
+            UserDictionaryTransferNotice.Exporting -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__dictionary_export_in_progress),
                 secondaryText = stringRes(R.string.settings__udm__dictionary_export_in_progress_summary),
@@ -630,22 +631,22 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
 
         when (UserDictionaryEntryPolicy.resolveNotice(activeEntryOperation, lastEntryNotice)) {
             UserDictionaryEntryNotice.None -> Unit
-            UserDictionaryEntryNotice.Saving -> FlorisInfoCard(
+            UserDictionaryEntryNotice.Saving -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__entry_save_in_progress),
                 secondaryText = stringRes(R.string.settings__udm__entry_save_in_progress_summary),
             )
-            UserDictionaryEntryNotice.Deleting -> FlorisInfoCard(
+            UserDictionaryEntryNotice.Deleting -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__entry_delete_in_progress),
                 secondaryText = stringRes(R.string.settings__udm__entry_delete_in_progress_summary),
             )
-            UserDictionaryEntryNotice.SaveSuccess -> FlorisInfoCard(
+            UserDictionaryEntryNotice.SaveSuccess -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__entry_save_success),
                 secondaryText = stringRes(R.string.settings__udm__entry_save_success_summary),
             )
-            UserDictionaryEntryNotice.DeleteSuccess -> FlorisInfoCard(
+            UserDictionaryEntryNotice.DeleteSuccess -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__entry_delete_success),
                 secondaryText = stringRes(R.string.settings__udm__entry_delete_success_summary),

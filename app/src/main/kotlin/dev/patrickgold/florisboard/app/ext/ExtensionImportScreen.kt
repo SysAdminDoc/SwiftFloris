@@ -20,15 +20,20 @@ import android.text.format.Formatter
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.StringRes
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Input
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Input
+import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -60,8 +66,10 @@ import org.florisboard.lib.compose.FlorisBulletSpacer
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisNeutralCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.florisHorizontalScroll
@@ -259,17 +267,17 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             isImportInProgress = isImportInProgress,
             lastTerminalNotice = lastImportNotice,
         )) {
-            ExtensionImportFlowNotice.SelectingFiles -> FlorisInfoCard(
+            ExtensionImportFlowNotice.SelectingFiles -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__import__selecting_files),
                 secondaryText = stringRes(R.string.ext__import__selecting_files_summary),
             )
-            ExtensionImportFlowNotice.Importing -> FlorisInfoCard(
+            ExtensionImportFlowNotice.Importing -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__import__in_progress),
                 secondaryText = stringRes(R.string.ext__import__in_progress_summary),
             )
-            ExtensionImportFlowNotice.Cancelled -> FlorisInfoCard(
+            ExtensionImportFlowNotice.Cancelled -> FlorisNeutralCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__import__cancelled),
                 secondaryText = stringRes(R.string.ext__import__cancelled_summary),
@@ -284,7 +292,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
                 onClick = selectFiles.takeIf { initUuid == null },
             )
-            ExtensionImportFlowNotice.Success -> FlorisInfoCard(
+            ExtensionImportFlowNotice.Success -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__import__success_title),
                 secondaryText = stringRes(R.string.ext__import__success_summary),
@@ -313,7 +321,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 val importableFileCount = importSummary.importableCount
                 val skippedFileCount = importSummary.skippedCount
                 if (importableFileCount > 0) {
-                    FlorisInfoCard(
+                    FlorisSuccessCard(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
                         text = stringRes(R.string.ext__import__review_title),
                         secondaryText = stringRes(
@@ -403,17 +411,28 @@ private fun FileInfoView(
                 MaterialTheme.colorScheme.error
             }
             val ext = fileInfo.ext
-            Text(
-                text = stringRes(
-                    if (isImportable) {
-                        R.string.ext__import__file_ready
-                    } else {
-                        R.string.ext__import__file_skipped
-                    },
-                ),
-                style = MaterialTheme.typography.labelLarge,
-                color = statusColor,
-            )
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Icon(
+                    modifier = Modifier.size(18.dp),
+                    imageVector = if (isImportable) Icons.Default.CheckCircle else Icons.Default.Block,
+                    contentDescription = null,
+                    tint = statusColor,
+                )
+                Text(
+                    text = stringRes(
+                        if (isImportable) {
+                            R.string.ext__import__file_ready
+                        } else {
+                            R.string.ext__import__file_skipped
+                        },
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = statusColor,
+                )
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Row {
                 Text(

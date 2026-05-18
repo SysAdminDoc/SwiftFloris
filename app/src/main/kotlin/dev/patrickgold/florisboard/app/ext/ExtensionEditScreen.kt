@@ -96,6 +96,8 @@ import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.android.showLongToastSync
@@ -384,7 +386,7 @@ private fun EditScreen(
 
         when (ThemeExtensionTrustStatePolicy.resolveEditNotice(isSaveInProgress, lastEditNotice)) {
             ThemeExtensionEditNotice.None -> Unit
-            ThemeExtensionEditNotice.Saving -> FlorisInfoCard(
+            ThemeExtensionEditNotice.Saving -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__save_in_progress),
                 secondaryText = stringRes(R.string.ext__editor__save_in_progress_summary),
@@ -397,7 +399,7 @@ private fun EditScreen(
                     "error_message" to (lastEditErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable)),
                 ),
             )
-            ThemeExtensionEditNotice.ComponentDeleted -> FlorisInfoCard(
+            ThemeExtensionEditNotice.ComponentDeleted -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__component_delete_success),
                 secondaryText = stringRes(R.string.ext__editor__component_delete_success_summary),

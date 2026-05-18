@@ -74,6 +74,7 @@ import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 
@@ -108,7 +109,7 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
         val canDeleteExtension = extensionManager.canDelete(ext)
         when (ThemeExtensionTrustStatePolicy.resolveDeleteNotice(isDeleteInProgress, lastDeleteNotice)) {
             ThemeExtensionDeleteNotice.None -> Unit
-            ThemeExtensionDeleteNotice.DeleteInProgress -> FlorisInfoCard(
+            ThemeExtensionDeleteNotice.DeleteInProgress -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__view__delete_in_progress),
                 secondaryText = stringRes(R.string.ext__view__delete_in_progress_summary),

@@ -61,7 +61,8 @@ import org.florisboard.lib.android.query
 import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.io.subDir
@@ -222,22 +223,22 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
 
         when (ExtensionEditorFilesPolicy.resolveNotice(isFileActionInProgress, lastNotice)) {
             ExtensionEditorFileNotice.None -> Unit
-            ExtensionEditorFileNotice.FileActionInProgress -> FlorisInfoCard(
+            ExtensionEditorFileNotice.FileActionInProgress -> FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__action_in_progress),
                 secondaryText = stringRes(R.string.ext__editor__files__action_in_progress_summary),
             )
-            ExtensionEditorFileNotice.ImportSuccess -> FlorisInfoCard(
+            ExtensionEditorFileNotice.ImportSuccess -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__import_success),
                 secondaryText = stringRes(R.string.ext__editor__files__import_success_summary),
             )
-            ExtensionEditorFileNotice.RenameSuccess -> FlorisInfoCard(
+            ExtensionEditorFileNotice.RenameSuccess -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__rename_success),
                 secondaryText = stringRes(R.string.ext__editor__files__rename_success_summary),
             )
-            ExtensionEditorFileNotice.DeleteSuccess -> FlorisInfoCard(
+            ExtensionEditorFileNotice.DeleteSuccess -> FlorisSuccessCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.ext__editor__files__delete_success),
                 secondaryText = stringRes(R.string.ext__editor__files__delete_success_summary),
