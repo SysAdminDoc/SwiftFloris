@@ -7,8 +7,8 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 ## Current Baseline
 
 - Branch: `master`; completed release slices are committed, tagged, and pushed.
-- Main Kotlin files: 242.
-- Test Kotlin files: 19.
+- Main Kotlin files: 243.
+- Test Kotlin files: 20.
 - Latest verified commands:
   - `./gradlew.bat :app:lintDebug :app:testDebugUnitTest :app:assembleDebug`
   - `./gradlew.bat :app:installDebug`
@@ -61,6 +61,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Extracted candidate auto-commit ordering, quick-prediction spacebar selection, and rejected-correction gating into `CandidateAutoCommitPolicy`, leaving `NlpManager` to gather Android-bound state and adding focused JVM coverage for disabled states, shortcut/phrase/active/immediate priority, language-confidence gating, rejection suppression, and plain-space prediction suppression.
 - 2026-05-18: Extracted software punctuation/non-letter autocorrect flush decisions into `KeyboardAutoCommitFlushPolicy`, leaving `KeyboardManager` to execute the chosen flush and adding JVM coverage for media mode, alphabetic keys, punctuation keys, numeric keys, numeric/phone layouts, non-text keys, and empty text.
 - 2026-05-18: Extracted theme rule editing validation and key-code parsing into `ThemeRuleEditPolicy`, leaving `EditRuleDialog` to render dialog state and adding JVM coverage for empty add-rule selection, selector toggling, invalid/duplicate/unchanged code decisions, and add/replace code actions.
+- 2026-05-18: Codified the autocorrect lifecycle in `docs/AUTOCORRECT_LIFECYCLE.md`, moved accepted-candidate provider notifications behind successful editor commits with `CandidateCommitSideEffectPolicy`, and mapped regression/manual QA coverage for spacebar, punctuation, hardware, glide delete, and backspace rejection behavior.
 
 ## Workstreams
 
@@ -132,19 +133,19 @@ Acceptance criteria:
 
 ### 4. Input Behavior Hardening
 
-Status: In progress
+Status: Completed
 Priority: P0
 
 Goal: Make typing behavior predictable, especially around corrections, manual overrides, punctuation, hardware keyboards, and destructive edits.
 
 Tasks:
 - [x] Respect user backspace rejection after an automatic correction.
-- [ ] Define a written contract for autocorrect lifecycle behavior.
-- [ ] Make suggestion acceptance, rejection, and provider notification semantics explicit.
-- [ ] Audit punctuation and non-letter commit behavior across software and hardware input.
-- [ ] Audit delete behavior with glide setting `immediateBackspaceDeletesWord`.
-- [ ] Add manual QA scripts or adb notes for preview-field typing checks.
-- [ ] Add regression tests for every fixed input behavior.
+- [x] Define a written contract for autocorrect lifecycle behavior.
+- [x] Make suggestion acceptance, rejection, and provider notification semantics explicit.
+- [x] Audit punctuation and non-letter commit behavior across software and hardware input.
+- [x] Audit delete behavior with glide setting `immediateBackspaceDeletesWord`.
+- [x] Add manual QA scripts or adb notes for preview-field typing checks.
+- [x] Add regression tests for every fixed input behavior.
 
 Acceptance criteria:
 - User correction rejection is stable across software and hardware entry points.

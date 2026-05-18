@@ -52,6 +52,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
 import dev.patrickgold.florisboard.ime.input.InputShiftState
+import dev.patrickgold.florisboard.ime.nlp.CandidateCommitSideEffectPolicy
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
 import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
@@ -339,14 +340,27 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun commitCandidate(candidate: SuggestionCandidate): Boolean {
-        scope.launch {
-            candidate.sourceProvider?.notifySuggestionAccepted(subtypeManager.activeSubtype, candidate)
-        }
         val committed = when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
             else -> editorInstance.commitCompletion(candidate)
         }
-        if (committed && candidate !is ClipboardSuggestionCandidate) {
+        val sourceProvider = candidate.sourceProvider
+        if (CandidateCommitSideEffectPolicy.shouldNotifyAcceptedProvider(
+                commitSucceeded = committed,
+                hasSourceProvider = sourceProvider != null,
+            )
+        ) {
+            sourceProvider?.let {
+                scope.launch {
+                    it.notifySuggestionAccepted(subtypeManager.activeSubtype, candidate)
+                }
+            }
+        }
+        if (CandidateCommitSideEffectPolicy.shouldLearnCommittedCandidate(
+                commitSucceeded = committed,
+                isClipboardCandidate = candidate is ClipboardSuggestionCandidate,
+            )
+        ) {
             // The user explicitly chose this candidate (or auto-commit chose it on their
             // behalf). Reinforce its weight in the personal dictionary so it ranks higher
             // next time. Skipped in incognito.

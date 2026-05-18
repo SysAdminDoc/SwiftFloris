@@ -105,6 +105,10 @@ Manual QA is required for IME behavior. For keyboard changes, test at least:
 - A rich-content-capable app if the change touches clipboard, emoji, stickers,
   or media.
 
+For autocorrect, spacebar, punctuation, backspace, glide-delete, or hardware
+keyboard changes, also follow the contract and scenario matrix in
+[`docs/AUTOCORRECT_LIFECYCLE.md`](docs/AUTOCORRECT_LIFECYCLE.md).
+
 If your machine cannot run Gradle, say exactly which command was attempted and
 why it failed. Do not mark a code change fully verified from source inspection
 alone.

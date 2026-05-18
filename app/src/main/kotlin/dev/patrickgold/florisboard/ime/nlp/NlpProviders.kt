@@ -143,8 +143,9 @@ interface SuggestionProvider : NlpProvider {
     ): List<SuggestionCandidate>
 
     /**
-     * Is called when a suggestion has been accepted, either manually by the user or automatically through auto-commit.
-     * This is purely a notification about an event and can safely be ignored if not needed.
+     * Is called when a suggestion has been accepted, either manually by the user or automatically through auto-commit,
+     * after the editor commit reports success. This callback is best-effort and asynchronous; providers must treat it
+     * as a training / accounting signal and must not rely on it to mutate the active editor transaction.
      *
      * @param subtype Information about the current subtype, primarily used for getting the primary and secondary
      *  language for correct dictionary selection.
@@ -153,8 +154,10 @@ interface SuggestionProvider : NlpProvider {
     suspend fun notifySuggestionAccepted(subtype: Subtype, candidate: SuggestionCandidate)
 
     /**
-     * Is called when a previously automatically accepted suggestion has been reverted by the user with backspace. This
-     * is purely a notification about an event and can safely be ignored if not needed.
+     * Is called when a previously accepted suggestion is still tracked as the revertable phantom-space candidate and
+     * the user deletes immediately enough for the keyboard to classify it as a rejection. This callback is best-effort
+     * and advisory; the IME-owned `AutoCommitSuppression` state is the source of truth for preventing the same
+     * correction from being re-applied in the same word slot.
      *
      * @param subtype Information about the current subtype, primarily used for getting the primary and secondary
      *  language for correct dictionary selection.
