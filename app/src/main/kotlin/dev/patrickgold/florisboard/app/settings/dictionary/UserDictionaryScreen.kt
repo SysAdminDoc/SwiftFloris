@@ -94,7 +94,10 @@ import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
 
@@ -136,6 +139,25 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     var encryptedExportDialogVisible by rememberSaveable { mutableStateOf(false) }
     var encryptedImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingEncryptedExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
+    var activeEntryOperation by rememberSaveable { mutableStateOf<UserDictionaryEntryOperation?>(null) }
+    var lastEntryNotice by rememberSaveable { mutableStateOf<UserDictionaryEntryNotice?>(null) }
+    var lastEntryNoticeDetail by rememberSaveable { mutableStateOf<String?>(null) }
+    val isEntryOperationInProgress = activeEntryOperation != null
+    val entryActionsEnabled = UserDictionaryEntryPolicy.canMutateEntry(isEntryOperationInProgress)
+    val dictionaryStoreUnavailableMessage = stringRes(R.string.settings__udm__dictionary_store_unavailable)
+    val unknownEntryErrorMessage = stringRes(R.string.settings__udm__entry_error_details_unavailable)
+
+    fun startEntryOperation(operation: UserDictionaryEntryOperation) {
+        activeEntryOperation = operation
+        lastEntryNotice = null
+        lastEntryNoticeDetail = null
+    }
+
+    fun finishEntryOperation(notice: UserDictionaryEntryNotice, detail: String? = null) {
+        activeEntryOperation = null
+        lastEntryNotice = notice
+        lastEntryNoticeDetail = detail
+    }
 
     fun userDictionaryDao(): UserDictionaryDao? {
         return when (type) {
@@ -425,7 +447,9 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     navigationIcon {
         FlorisIconButton(
             onClick = {
-                if (currentLocale != null) {
+                if (!UserDictionaryEntryPolicy.canLeave(isEntryOperationInProgress)) {
+                    return@FlorisIconButton
+                } else if (currentLocale != null) {
                     currentLocale = null
                     buildUi()
                 } else {
@@ -444,6 +468,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     R.string.action__back
                 },
             ),
+            enabled = UserDictionaryEntryPolicy.canLeave(isEntryOperationInProgress),
         )
     }
 
@@ -453,6 +478,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             onClick = { expanded = !expanded },
             icon = Icons.Default.MoreVert,
             contentDescription = stringRes(R.string.action__more_options),
+            enabled = entryActionsEnabled,
         )
         DropdownMenu(
             expanded = expanded,
@@ -464,6 +490,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     expanded = false
                 },
                 text = { Text(text = stringRes(R.string.action__import)) },
+                enabled = entryActionsEnabled,
             )
             DropdownMenuItem(
                 onClick = {
@@ -471,6 +498,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     expanded = false
                 },
                 text = { Text(text = stringRes(R.string.action__export)) },
+                enabled = entryActionsEnabled,
             )
             DropdownMenuItem(
                 onClick = {
@@ -478,6 +506,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     expanded = false
                 },
                 text = { Text(text = stringRes(R.string.settings__udm__encrypted_export)) },
+                enabled = entryActionsEnabled,
             )
             if (type == UserDictionaryType.SYSTEM) {
                 DropdownMenuItem(
@@ -486,6 +515,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                         expanded = false
                     },
                     text = { Text(text = stringRes(R.string.settings__udm__open_system_manager_ui)) },
+                    enabled = entryActionsEnabled,
                 )
             }
         }
@@ -493,7 +523,11 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
 
     floatingActionButton {
         ExtendedFloatingActionButton(
-            onClick = { userDictionaryEntryForDialog = UserDictionaryEntryToAdd },
+            onClick = {
+                if (entryActionsEnabled) {
+                    userDictionaryEntryForDialog = UserDictionaryEntryToAdd
+                }
+            },
             shape = MaterialTheme.shapes.medium,
             icon = {
                 Icon(
@@ -506,14 +540,50 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     }
 
     content {
-        BackHandler(currentLocale != null) {
-            currentLocale = null
-            buildUi()
+        BackHandler(currentLocale != null || isEntryOperationInProgress) {
+            if (UserDictionaryEntryPolicy.canLeave(isEntryOperationInProgress) && currentLocale != null) {
+                currentLocale = null
+                buildUi()
+            }
         }
 
         LaunchedEffect(Unit) {
             dictionaryManager.loadUserDictionariesIfNecessary()
             buildUi()
+        }
+
+        when (UserDictionaryEntryPolicy.resolveNotice(activeEntryOperation, lastEntryNotice)) {
+            UserDictionaryEntryNotice.None -> Unit
+            UserDictionaryEntryNotice.Saving -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__entry_save_in_progress),
+                secondaryText = stringRes(R.string.settings__udm__entry_save_in_progress_summary),
+            )
+            UserDictionaryEntryNotice.Deleting -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__entry_delete_in_progress),
+                secondaryText = stringRes(R.string.settings__udm__entry_delete_in_progress_summary),
+            )
+            UserDictionaryEntryNotice.SaveSuccess -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__entry_save_success),
+                secondaryText = stringRes(R.string.settings__udm__entry_save_success_summary),
+            )
+            UserDictionaryEntryNotice.DeleteSuccess -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__entry_delete_success),
+                secondaryText = stringRes(R.string.settings__udm__entry_delete_success_summary),
+            )
+            UserDictionaryEntryNotice.SaveFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__entry_save_failure),
+                secondaryText = lastEntryNoticeDetail ?: unknownEntryErrorMessage,
+            )
+            UserDictionaryEntryNotice.DeleteFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__udm__entry_delete_failure),
+                secondaryText = lastEntryNoticeDetail ?: unknownEntryErrorMessage,
+            )
         }
 
         LazyColumn(
@@ -526,8 +596,16 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                         icon = Icons.AutoMirrored.Filled.LibraryBooks,
                         title = stringRes(R.string.settings__udm__empty_title),
                         message = stringRes(R.string.settings__udm__no_words_in_dictionary),
-                        actionLabel = stringRes(R.string.settings__udm__dialog__title_add),
-                        onAction = { userDictionaryEntryForDialog = UserDictionaryEntryToAdd },
+                        actionLabel = if (entryActionsEnabled) {
+                            stringRes(R.string.settings__udm__dialog__title_add)
+                        } else {
+                            null
+                        },
+                        onAction = if (entryActionsEnabled) {
+                            { userDictionaryEntryForDialog = UserDictionaryEntryToAdd }
+                        } else {
+                            null
+                        },
                     )
                 }
             }
@@ -535,11 +613,13 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 items(languageList) { language ->
                     JetPrefListItem(
                         modifier = Modifier.rippleClickable {
-                            scope.launch {
-                                // Delay makes UI ripple visible and experience better
-                                delay(150)
-                                currentLocale = language
-                                buildUi()
+                            if (entryActionsEnabled) {
+                                scope.launch {
+                                    // Delay makes UI ripple visible and experience better
+                                    delay(150)
+                                    currentLocale = language
+                                    buildUi()
+                                }
                             }
                         },
                         text = getDisplayNameForLocale(language),
@@ -549,7 +629,9 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                 items(wordList) { wordEntry ->
                     JetPrefListItem(
                         modifier = Modifier.rippleClickable {
-                            userDictionaryEntryForDialog = wordEntry
+                            if (entryActionsEnabled) {
+                                userDictionaryEntryForDialog = wordEntry
+                            }
                         },
                         text = wordEntry.word,
                         secondaryText = stringRes(
@@ -591,6 +673,9 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     R.string.action__apply
                 }),
                 onConfirm = {
+                    if (!entryActionsEnabled) {
+                        return@JetPrefAlertDialog
+                    }
                     val isInvalid = wordValidation.isInvalid() ||
                         freqValidation.isInvalid() ||
                         shortcutValidation.isInvalid() ||
@@ -608,21 +693,38 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                                 FlorisLocale.fromTag(it).localeTag()
                             },
                         )
-                        if (isAddWord) {
-                            userDictionaryDao()?.insert(entry)
-                        } else {
-                            userDictionaryDao()?.update(entry)
-                        }
-                        // ROADMAP §7 Next-3 — keep the in-memory overlay in
-                        // sync with manual DAO edits so the IME's suggest()
-                        // path picks up the change on the next keystroke.
-                        entry.locale?.let { tag ->
-                            dev.patrickgold.florisboard.ime.dictionary
-                                .DictionaryManager.default()
-                                .rebuildOverlay(FlorisLocale.fromTag(tag))
-                        }
+                        val localeTagsToRebuild = setOf(wordEntry.locale, entry.locale).filterNotNull()
                         userDictionaryEntryForDialog = null
-                        buildUi()
+                        startEntryOperation(UserDictionaryEntryOperation.Saving)
+                        scope.launch {
+                            val saved = runCatching {
+                                withContext(Dispatchers.IO) {
+                                    val dao = userDictionaryDao() ?: error(dictionaryStoreUnavailableMessage)
+                                    if (isAddWord) {
+                                        dao.insert(entry)
+                                    } else {
+                                        dao.update(entry)
+                                    }
+                                }
+                                // ROADMAP §7 Next-3 — keep the in-memory
+                                // overlay in sync with manual DAO edits so the
+                                // IME's suggest() path picks up the change on
+                                // the next keystroke.
+                                localeTagsToRebuild.forEach { tag ->
+                                    dictionaryManager.rebuildOverlay(FlorisLocale.fromTag(tag))
+                                }
+                            }
+                            saved.onSuccess {
+                                finishEntryOperation(UserDictionaryEntryPolicy.saveResult(saved = true))
+                                buildUi()
+                            }.onFailure { error ->
+                                finishEntryOperation(
+                                    UserDictionaryEntryPolicy.saveResult(saved = false),
+                                    error.localizedMessage ?: error.message ?: unknownEntryErrorMessage,
+                                )
+                                buildUi()
+                            }
+                        }
                     }
                 },
                 dismissLabel = stringRes(R.string.action__cancel),
@@ -635,14 +737,33 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     stringRes(R.string.action__delete)
                 },
                 onNeutral = {
-                    userDictionaryDao()?.delete(wordEntry)
-                    wordEntry.locale?.let { tag ->
-                        dev.patrickgold.florisboard.ime.dictionary
-                            .DictionaryManager.default()
-                            .rebuildOverlay(FlorisLocale.fromTag(tag))
+                    if (!entryActionsEnabled) {
+                        return@JetPrefAlertDialog
                     }
+                    val localeTagsToRebuild = setOf(wordEntry.locale).filterNotNull()
                     userDictionaryEntryForDialog = null
-                    buildUi()
+                    startEntryOperation(UserDictionaryEntryOperation.Deleting)
+                    scope.launch {
+                        val deleted = runCatching {
+                            withContext(Dispatchers.IO) {
+                                val dao = userDictionaryDao() ?: error(dictionaryStoreUnavailableMessage)
+                                dao.delete(wordEntry)
+                            }
+                            localeTagsToRebuild.forEach { tag ->
+                                dictionaryManager.rebuildOverlay(FlorisLocale.fromTag(tag))
+                            }
+                        }
+                        deleted.onSuccess {
+                            finishEntryOperation(UserDictionaryEntryPolicy.deleteResult(deleted = true))
+                            buildUi()
+                        }.onFailure { error ->
+                            finishEntryOperation(
+                                UserDictionaryEntryPolicy.deleteResult(deleted = false),
+                                error.localizedMessage ?: error.message ?: unknownEntryErrorMessage,
+                            )
+                            buildUi()
+                        }
+                    }
                 },
             ) {
                 Column {

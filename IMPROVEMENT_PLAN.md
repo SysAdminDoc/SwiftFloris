@@ -7,8 +7,8 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 ## Current Baseline
 
 - Branch: `master`; completed release slices are committed, tagged, and pushed.
-- Main Kotlin files: 244.
-- Test Kotlin files: 21.
+- Main Kotlin files: 245.
+- Test Kotlin files: 22.
 - Latest verified commands:
   - `./gradlew.bat :app:lintDebug :app:testDebugUnitTest :app:assembleDebug`
   - `./gradlew.bat :app:installDebug`
@@ -16,7 +16,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after trust-state batches: 246 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
-- Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
+- Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export/manual entry mutation, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
 
@@ -67,6 +67,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Audited language pack import/update/remove states by adding import preparation/importing/cancel/failure cards, install/update/skipped-file counts, delete progress/success/failure cards, duplicate-action blocking, and focused policy coverage.
 - 2026-05-18: Audited theme import/edit/delete states by adding theme-extension save progress/failure cards, confirmed component removal with draft-state feedback, installed extension delete progress/failure cards, duplicate-action blocking, and focused policy coverage.
 - 2026-05-18: Audited extension import/edit/delete states by adding extension archive file progress/success/failure cards, async file import/rename/delete work, duplicate-action blocking, and focused policy coverage.
+- 2026-05-18: Audited dictionary add/update/remove states by adding manual entry progress/success/failure cards, async DAO writes, duplicate-action blocking, and focused policy coverage.
 
 ## Workstreams
 
@@ -174,7 +175,7 @@ Tasks:
 - [x] Audit language pack import/update/remove states.
 - [x] Audit theme import/edit/delete states.
 - [x] Audit extension import/edit/delete states.
-- [ ] Audit dictionary add/remove states.
+- [x] Audit dictionary add/remove states.
 - [ ] Add calm, specific microcopy for failure and recovery paths.
 - [ ] Add disabled/busy states where repeated actions could corrupt state or confuse users.
 

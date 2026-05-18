@@ -912,6 +912,17 @@
     <string name="settings__udm__dialog__shortcut_error_invalid" comment="Error label for the shortcut in the user dictionary add/edit dialog">Please enter a shortcut matching {regex}</string>
     <string name="settings__udm__dialog__locale_label" comment="Label for the language code in the user dictionary add/edit dialog">Language code (optional)</string>
     <string name="settings__udm__dialog__locale_error_invalid" comment="Error label for the language code in the user dictionary add/edit dialog">This language code does not conform to the expected syntax. The code must either be a language only (like en), a language and country (like en_US) or a language, country, and script (like en_US-script).</string>
+    <string name="settings__udm__entry_save_in_progress" comment="Card title shown while a user dictionary word is being saved">Saving dictionary word</string>
+    <string name="settings__udm__entry_save_in_progress_summary" comment="Card summary shown while a user dictionary word is being saved">Keep this screen open while SwiftFloris updates your personal dictionary.</string>
+    <string name="settings__udm__entry_save_success" comment="Card title shown after a user dictionary word was saved">Dictionary word saved</string>
+    <string name="settings__udm__entry_save_success_summary" comment="Card summary shown after a user dictionary word was saved">The dictionary list has been refreshed and suggestions can use this entry.</string>
+    <string name="settings__udm__entry_save_failure" comment="Card title shown when a user dictionary word could not be saved">Could not save dictionary word</string>
+    <string name="settings__udm__entry_error_details_unavailable" comment="Fallback error detail when a user dictionary entry operation fails without a specific message">No additional error details were provided.</string>
+    <string name="settings__udm__entry_delete_in_progress" comment="Card title shown while a user dictionary word is being deleted">Removing dictionary word</string>
+    <string name="settings__udm__entry_delete_in_progress_summary" comment="Card summary shown while a user dictionary word is being deleted">Keep this screen open while SwiftFloris removes the selected entry.</string>
+    <string name="settings__udm__entry_delete_success" comment="Card title shown after a user dictionary word was deleted">Dictionary word removed</string>
+    <string name="settings__udm__entry_delete_success_summary" comment="Card summary shown after a user dictionary word was deleted">The word was removed from this dictionary and the suggestion overlay is being refreshed.</string>
+    <string name="settings__udm__entry_delete_failure" comment="Card title shown when a user dictionary word could not be deleted">Could not remove dictionary word</string>
 
     <string name="settings__gestures__title" comment="Title of Gestures screen">Gestures &amp; Glide typing</string>
     <string name="pref__glide__title" comment="Preference group title">Glide typing</string>
