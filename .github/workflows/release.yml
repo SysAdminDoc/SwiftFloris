@@ -141,8 +141,38 @@ jobs:
         env:
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
         run: |
-          echo "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keystore.jks"
-          echo "keystore-path=$RUNNER_TEMP/keystore.jks" >> "$GITHUB_OUTPUT"
+          set -euo pipefail
+          # Restrict file-mode of the keystore the moment it appears on disk.
+          # `echo "$VAR" | base64 -d` adds a trailing newline to its input, so
+          # any keystore whose base64 encoding lacks a trailing newline would
+          # have a stray 0x0a appended pre-decode and the decoded bytes would
+          # be one trailing-byte off. `printf '%s' "$VAR"` writes the exact
+          # secret with no trailer.
+          umask 077
+          keystore_path="$RUNNER_TEMP/keystore.jks"
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 -d > "$keystore_path"
+          chmod 600 "$keystore_path"
+          # Verify the decoded file is non-empty and looks like a Java keystore
+          # (magic bytes: FE ED FE ED for JKS, or 30 82 for PKCS#12 ASN.1
+          # DER SEQUENCE). Anything else points at a secret-encoding mishap
+          # and the build should fail fast rather than ship an unsigned APK
+          # silently.
+          if [ ! -s "$keystore_path" ]; then
+            echo "::error::Decoded keystore is empty — check SIGNING_KEYSTORE_BASE64 secret." >&2
+            exit 1
+          fi
+          head -c 4 "$keystore_path" | od -An -tx1 | tr -d ' \n' > "$RUNNER_TEMP/keystore.magic"
+          magic=$(cat "$RUNNER_TEMP/keystore.magic")
+          case "$magic" in
+            feedfeed) ;;          # JKS
+            3082*) ;;             # PKCS#12 (DER SEQUENCE)
+            *)
+              echo "::error::Decoded keystore does not start with a JKS or PKCS#12 magic prefix (got: $magic). Check SIGNING_KEYSTORE_BASE64 encoding." >&2
+              exit 1
+              ;;
+          esac
+          rm -f "$RUNNER_TEMP/keystore.magic"
+          echo "keystore-path=$keystore_path" >> "$GITHUB_OUTPUT"
 
       - name: Build signed release APK
         if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
@@ -190,9 +220,18 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          # Pass dynamic values via env to avoid interpolating `${{ … }}`
+          # directly into the shell command line (consistent with the
+          # validate-strings-no-translations.yml hardening pattern).
+          RELEASE_VERSION: ${{ inputs.version }}
+          RELEASE_DRAFT: ${{ inputs.draft }}
+          RELEASE_TARGET: ${{ github.ref_name }}
+          APK_PATH: ${{ steps.locate-apk.outputs.apk-path }}
+          MANIFEST_PATH: ${{ steps.sha.outputs.manifest-path }}
         run: |
-          tag="v${{ inputs.version }}"
-          notes="RELEASE_NOTES_v${{ inputs.version }}.md"
+          set -euo pipefail
+          tag="v${RELEASE_VERSION}"
+          notes="RELEASE_NOTES_v${RELEASE_VERSION}.md"
           # Compose the release body: prefer the per-version RELEASE_NOTES file when present, fall back to autogen,
           # then append the OSV scan appendix produced earlier (matrix #9 + #44).
           body_file="$(mktemp)"
@@ -202,24 +241,24 @@ jobs:
           if [ -f RELEASE_OSV_SUMMARY.md ]; then
             cat RELEASE_OSV_SUMMARY.md >> "$body_file"
           fi
-          draft_arg=""
-          if [ "${{ inputs.draft }}" = "true" ]; then
-            draft_arg="--draft"
+          draft_arg=()
+          if [ "$RELEASE_DRAFT" = "true" ]; then
+            draft_arg+=(--draft)
           fi
           if [ -s "$body_file" ]; then
             gh release create "$tag" \
-              "${{ steps.locate-apk.outputs.apk-path }}" \
-              "${{ steps.sha.outputs.manifest-path }}" \
-              --title "SwiftFloris v${{ inputs.version }}" \
+              "$APK_PATH" \
+              "$MANIFEST_PATH" \
+              --title "SwiftFloris v${RELEASE_VERSION}" \
               --notes-file "$body_file" \
-              $draft_arg \
-              --target ${{ github.ref_name }}
+              "${draft_arg[@]}" \
+              --target "$RELEASE_TARGET"
           else
             gh release create "$tag" \
-              "${{ steps.locate-apk.outputs.apk-path }}" \
-              "${{ steps.sha.outputs.manifest-path }}" \
-              --title "SwiftFloris v${{ inputs.version }}" \
+              "$APK_PATH" \
+              "$MANIFEST_PATH" \
+              --title "SwiftFloris v${RELEASE_VERSION}" \
               --generate-notes \
-              $draft_arg \
-              --target ${{ github.ref_name }}
+              "${draft_arg[@]}" \
+              --target "$RELEASE_TARGET"
           fi
