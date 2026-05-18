@@ -25,6 +25,16 @@ The first verification run reached source compilation and exposed stale HEAD err
 - `NlpManager` precomputes trailing-context locale frequencies before calling the non-suspend `TrailingContextLanguageBlend.score` callback.
 - `AuroraAnimatedThemeBackground` drops the obsolete `matchParentSize` import.
 - `QuickActionArrangementTest` calls `contains(...)` explicitly for the default-arrangement quick-action assertions.
+- `UserDictionaryCombinedListCodec` skips blank export lines so encrypted combined-list exports round-trip through the importer.
+- `DictionaryImporter` avoids the API-33-only `ByteArrayOutputStream.toString(Charset)` overload on minSdk 26 devices.
+- `HardwareKeyboardRuntimeMapper` tolerates null platform key-code names in JVM/Robolectric and uses an explicit alphanumeric fallback for source-name matching.
+- `ZipUtilsTest` now asserts the current abort-on-path-traversal contract instead of the retired ignore-and-continue contract.
+- `UserStickerRepositoryTest` matches the MIME-spoof guard by using null SAF MIME for extension fallback coverage.
+- `WordStylesCanvasRenderer` selects `Typeface` styles without bitwise flag composition.
+- `StateAdapters` remembers the mapped flow before `collectAsState`.
+- `data_extraction_rules.xml` suppresses lint's intentional-exclude false positives while preserving the build-pinned no-D2D-leak excludes.
+- The debug Roborazzi host activity is no longer a launcher activity.
+- X25519 sync pairing is API-gated to Android 13+ so minSdk 26 devices do not reach API-33-only Java crypto classes.
 
 ## Files touched
 
@@ -36,20 +46,33 @@ The first verification run reached source compilation and exposed stale HEAD err
 - `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/addons/AddonsSettingsScreen.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryImporter.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/UserDictionary.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/HardwareKeyboardRuntimeMapper.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/SealedBoxCrypto.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/PairingPayloadGenerator.kt`
 - `app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/AuroraAnimatedThemeBackground.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/wordstyles/WordStylesCanvasRenderer.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/StateAdapters.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt`
+- `app/src/main/res/xml/data_extraction_rules.xml`
+- `app/src/main/res/values/strings.xml`
+- `app/src/debug/AndroidManifest.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/media/sticker/UserStickerRepositoryTest.kt`
 - `app/src/test/kotlin/dev/patrickgold/florisboard/ime/smartbar/quickaction/QuickActionArrangementTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/lib/io/ZipUtilsTest.kt`
 - `gradle.properties` — versionCode 1911 / versionName 1.8.111
 
 ## Verification
 
 ```powershell
-./gradlew.bat :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.clipboard.ClipboardMediaSafetyPolicyTest"
+./gradlew.bat :app:testDebugUnitTest
 ```
 
-Expected result: five focused clipboard media-safety tests pass, and the task also exercises `verifyNoInternetPermission`, `verifyNoInternetPermissionMergedDebug`, `verifyDataExtractionRules`, and debug Kotlin/unit-test compilation.
-
-Full debug verification for this release:
+Result: pass. The full JVM unit-test suite passes after the stale build-gate repairs.
 
 ```powershell
-./gradlew.bat :app:testDebugUnitTest :app:lintDebug :app:assembleDebug
+./gradlew.bat :app:lintDebug :app:assembleDebug
 ```
+
+Result: pass. `lintDebug` still reports the existing warning backlog (290 warnings) and a stale lint baseline note, but no errors.

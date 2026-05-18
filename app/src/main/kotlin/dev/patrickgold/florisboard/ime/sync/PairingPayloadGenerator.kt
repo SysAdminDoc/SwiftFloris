@@ -16,11 +16,14 @@
 
 package dev.patrickgold.florisboard.ime.sync
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import java.security.KeyPair
 import java.util.Locale
 import java.util.UUID
 
 object PairingPayloadGenerator {
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun generate(
         displayName: String,
         syncChannelId: String,

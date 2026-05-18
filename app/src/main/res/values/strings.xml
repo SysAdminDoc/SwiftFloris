@@ -322,6 +322,7 @@
     <string name="settings__sync__manual_export_target_selected" comment="Sync toast">Manual export target selected.</string>
     <string name="settings__sync__pairing_received" comment="Sync toast">Pairing device saved.</string>
     <string name="settings__sync__pairing_invalid" comment="Sync toast">Could not read that pairing payload.</string>
+    <string name="settings__sync__pairing_requires_android_13" comment="Sync toast">Pairing requires Android 13 or newer.</string>
     <string name="settings__sync__scanner_missing" comment="Sync toast">Scanner app not found. Paste the payload manually.</string>
     <string name="enum__voice_recognition_engine_preference__auto" comment="Voice recognition engine preference option">Auto</string>
     <string name="enum__voice_recognition_engine_preference__auto__description" comment="Voice recognition engine preference description">Prefer local dictation when installed, Vosk for streaming command mode and low-RAM devices, then external voice keyboard fallback.</string>
