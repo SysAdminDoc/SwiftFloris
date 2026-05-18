@@ -177,6 +177,54 @@ class BackupRestorePolicyTest : FunSpec({
         ) shouldBe false
     }
 
+    test("restore operation result maps to terminal flow notices") {
+        BackupRestorePolicy.noticeForRestoreOperationResult(RestoreOperationResult.Success) shouldBe
+            RestoreFlowNotice.Success
+        BackupRestorePolicy.noticeForRestoreOperationResult(RestoreOperationResult.Cancelled) shouldBe
+            RestoreFlowNotice.Cancelled
+        BackupRestorePolicy.noticeForRestoreOperationResult(RestoreOperationResult.PartialFailure) shouldBe
+            RestoreFlowNotice.PartialFailure
+        BackupRestorePolicy.noticeForRestoreOperationResult(RestoreOperationResult.Failure) shouldBe
+            RestoreFlowNotice.Failure
+    }
+
+    test("restore flow notice prioritizes progress terminal state and erase recovery copy") {
+        BackupRestorePolicy.resolveRestoreFlowNotice(
+            isRestoreInProgress = true,
+            hasWorkspace = false,
+            eraseMode = true,
+            lastTerminalNotice = RestoreFlowNotice.Failure,
+        ) shouldBe RestoreFlowNotice.LoadingArchive
+
+        BackupRestorePolicy.resolveRestoreFlowNotice(
+            isRestoreInProgress = true,
+            hasWorkspace = true,
+            eraseMode = true,
+            lastTerminalNotice = RestoreFlowNotice.Failure,
+        ) shouldBe RestoreFlowNotice.Restoring
+
+        BackupRestorePolicy.resolveRestoreFlowNotice(
+            isRestoreInProgress = false,
+            hasWorkspace = true,
+            eraseMode = true,
+            lastTerminalNotice = RestoreFlowNotice.PartialFailure,
+        ) shouldBe RestoreFlowNotice.PartialFailure
+
+        BackupRestorePolicy.resolveRestoreFlowNotice(
+            isRestoreInProgress = false,
+            hasWorkspace = true,
+            eraseMode = true,
+            lastTerminalNotice = null,
+        ) shouldBe RestoreFlowNotice.EraseRecoveryCopy
+
+        BackupRestorePolicy.resolveRestoreFlowNotice(
+            isRestoreInProgress = false,
+            hasWorkspace = true,
+            eraseMode = false,
+            lastTerminalNotice = null,
+        ) shouldBe RestoreFlowNotice.None
+    }
+
     test("restore operation classification covers success cancellation partial and failure") {
         BackupRestorePolicy.classifyRestoreOperation(
             selectedSections = 2,
@@ -202,5 +250,19 @@ class BackupRestorePolicyTest : FunSpec({
             missingSections = 1,
             failedSections = 1,
         ) shouldBe RestoreOperationResult.Failure
+    }
+
+    test("restore operation summary exposes classification and problem count") {
+        val summary = RestoreOperationSummary(
+            selectedSections = 3,
+            restoredSections = 2,
+            missingSections = 1,
+            failedSections = 0,
+            firstFailureMessage = "kept for UI",
+        )
+
+        summary.problemSections shouldBe 1
+        summary.result shouldBe RestoreOperationResult.PartialFailure
+        summary.firstFailureMessage shouldBe "kept for UI"
     }
 })

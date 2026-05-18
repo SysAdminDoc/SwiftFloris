@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,6 +57,7 @@ import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
 import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
 import dev.patrickgold.jetpref.datastore.runtime.ImportStrategy
 import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import java.io.FileNotFoundException
 import java.text.DateFormat
 import java.util.*
@@ -100,6 +102,11 @@ fun RestoreScreen() = FlorisScreen {
     var restoreWorkspace by remember {
         mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null)
     }
+    var showEraseRestoreConfirmation by remember { mutableStateOf(false) }
+    var lastRestoreNotice by remember { mutableStateOf<RestoreFlowNotice?>(null) }
+    var lastRestoreErrorMessage by remember { mutableStateOf<String?>(null) }
+    var lastRestoreSummary by remember { mutableStateOf<RestoreOperationSummary?>(null) }
+    val unknownRestoreError = stringRes(R.string.backup_and_restore__restore__unknown_error)
 
     suspend fun prepareRestoreWorkspace(uri: Uri): CacheManager.BackupAndRestoreWorkspace = withContext(Dispatchers.IO) {
         val workspace = cacheManager.backupAndRestore.new()
@@ -143,10 +150,18 @@ fun RestoreScreen() = FlorisScreen {
     val restoreDataFromFileSystemLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
-            if (uri == null) return@rememberLauncherForActivityResult
+            if (uri == null) {
+                lastRestoreNotice = RestoreFlowNotice.Cancelled
+                lastRestoreErrorMessage = null
+                lastRestoreSummary = null
+                return@rememberLauncherForActivityResult
+            }
             restoreScope.launch {
                 if (isRestoreInProgress) return@launch
                 isRestoreInProgress = true
+                lastRestoreNotice = null
+                lastRestoreErrorMessage = null
+                lastRestoreSummary = null
                 runCatching {
                     restoreWorkspace?.close()
                     restoreWorkspace = null
@@ -158,20 +173,72 @@ fun RestoreScreen() = FlorisScreen {
                         R.string.backup_and_restore__restore__failure,
                         "error_message" to error.localizedMessage,
                     )
+                    lastRestoreNotice = RestoreFlowNotice.Failure
+                    lastRestoreErrorMessage = error.localizedMessage
                 }
                 isRestoreInProgress = false
             }
         },
     )
 
-    suspend fun performRestore() {
+    suspend fun performRestore(): RestoreOperationSummary {
         val workspace = restoreWorkspace!!
         val shouldReset = importStrategy == ImportStrategy.Erase
+        var summary = RestoreOperationSummary()
+
+        fun markSelected() {
+            summary = summary.copy(selectedSections = summary.selectedSections + 1)
+        }
+
+        fun markRestored() {
+            summary = summary.copy(restoredSections = summary.restoredSections + 1)
+        }
+
+        fun markMissing() {
+            summary = summary.copy(missingSections = summary.missingSections + 1)
+        }
+
+        fun markFailed(error: Throwable) {
+            summary = summary.copy(
+                failedSections = summary.failedSections + 1,
+                firstFailureMessage = summary.firstFailureMessage ?: error.localizedMessage,
+            )
+        }
+
+        suspend fun restoreSelectedSection(
+            sourceExists: Boolean,
+            block: suspend () -> Unit,
+        ) {
+            markSelected()
+            if (!sourceExists) {
+                markMissing()
+                return
+            }
+            runCatching {
+                block()
+            }.onSuccess {
+                markRestored()
+            }.onFailure { error ->
+                error.printStackTrace()
+                markFailed(error)
+            }
+        }
+
+        fun insertRestoredClipboardFileInfos(restoredFileInfos: List<ClipboardFileInfo>) {
+            if (restoredFileInfos.isEmpty()) return
+            val clipboardFilesDb = ClipboardFilesDatabase.new(context)
+            try {
+                clipboardFilesDb.clipboardFilesDao().insert(*restoredFileInfos.toTypedArray())
+            } finally {
+                clipboardFilesDb.close()
+            }
+        }
+
         if (restoreFilesSelector.jetprefDatastore) {
             val file = workspace.outputDir
                 .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
                 .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
-            if (file.exists()) {
+            restoreSelectedSection(sourceExists = file.exists()) {
                 val fileBasedStorage = FileBasedStorage(file.path)
                 FlorisPreferenceStore.import(importStrategy, fileBasedStorage).getOrThrow()
             }
@@ -180,45 +247,53 @@ fun RestoreScreen() = FlorisScreen {
         if (restoreFilesSelector.imeKeyboard) {
             val srcDir = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH)
             val dstDir = context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH)
-            if (shouldReset) {
-                dstDir.deleteContentsRecursively()
-            }
-            if (srcDir.exists()) {
+            restoreSelectedSection(sourceExists = srcDir.exists()) {
+                if (shouldReset) {
+                    dstDir.deleteContentsRecursively()
+                }
                 srcDir.copyRecursively(dstDir, overwrite = true)
             }
         }
         if (restoreFilesSelector.imeTheme) {
             val srcDir = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH)
             val dstDir = context.filesDir.subDir(ExtensionManager.IME_THEME_PATH)
-            if (shouldReset) {
-                dstDir.deleteContentsRecursively()
-            }
-            if (srcDir.exists()) {
+            restoreSelectedSection(sourceExists = srcDir.exists()) {
+                if (shouldReset) {
+                    dstDir.deleteContentsRecursively()
+                }
                 srcDir.copyRecursively(dstDir, overwrite = true)
             }
         }
         val clipboardManager = context.clipboardManager().value
-        if (shouldReset) {
-            clipboardManager.clearFullHistory()
-            ClipboardFileStorage.resetClipboardFileStorage(context)
+        var clipboardWasReset = false
+
+        fun ensureClipboardReset() {
+            if (shouldReset && !clipboardWasReset) {
+                clipboardManager.clearFullHistory()
+                ClipboardFileStorage.resetClipboardFileStorage(context)
+                clipboardWasReset = true
+            }
         }
 
         if (restoreFilesSelector.provideClipboardItems()) {
             val clipboardFilesDir = workspace.outputDir.subDir("clipboard")
-            val restoredFileInfos = mutableListOf<ClipboardFileInfo>()
 
             if (restoreFilesSelector.clipboardTextItems) {
                 val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
-                if (clipboardItems.exists()) {
+                restoreSelectedSection(sourceExists = clipboardItems.exists()) {
+                    ensureClipboardReset()
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
                     clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.TEXT })
                 }
             }
             if (restoreFilesSelector.clipboardImageItems) {
                 val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
-                if (clipboardItems.exists()) {
+                restoreSelectedSection(sourceExists = clipboardItems.exists()) {
+                    ensureClipboardReset()
+                    val restoredFileInfos = mutableListOf<ClipboardFileInfo>()
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
-                    for (item in clipboardItemsList.filter { it.type == ItemType.IMAGE }) {
+                    val restoredItems = clipboardItemsList.filter { it.type == ItemType.IMAGE }
+                    for (item in restoredItems) {
                         val restoredFileId = item.uri!!.path!!.split('/').last()
                         val restoredFile = ClipboardFileStorage.insertFileFromBackupIfNotExisting(
                             context,
@@ -231,14 +306,18 @@ fun RestoreScreen() = FlorisScreen {
                                 ?.let(restoredFileInfos::add)
                         }
                     }
-                    clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.IMAGE })
+                    clipboardManager.restoreHistory(items = restoredItems)
+                    insertRestoredClipboardFileInfos(restoredFileInfos)
                 }
             }
             if (restoreFilesSelector.clipboardVideoItems) {
                 val clipboardItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
-                if (clipboardItems.exists()) {
+                restoreSelectedSection(sourceExists = clipboardItems.exists()) {
+                    ensureClipboardReset()
+                    val restoredFileInfos = mutableListOf<ClipboardFileInfo>()
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
-                    for (item in clipboardItemsList.filter { it.type == ItemType.VIDEO }) {
+                    val restoredItems = clipboardItemsList.filter { it.type == ItemType.VIDEO }
+                    for (item in restoredItems) {
                         val restoredFileId = item.uri!!.path!!.split('/').last()
                         val restoredFile = ClipboardFileStorage.insertFileFromBackupIfNotExisting(
                             context,
@@ -251,17 +330,75 @@ fun RestoreScreen() = FlorisScreen {
                                 ?.let(restoredFileInfos::add)
                         }
                     }
-                    clipboardManager.restoreHistory(items = clipboardItemsList.filter { it.type == ItemType.VIDEO })
+                    clipboardManager.restoreHistory(items = restoredItems)
+                    insertRestoredClipboardFileInfos(restoredFileInfos)
                 }
             }
-            if (restoredFileInfos.isNotEmpty()) {
-                val clipboardFilesDb = ClipboardFilesDatabase.new(context)
-                try {
-                    clipboardFilesDb.clipboardFilesDao().insert(*restoredFileInfos.toTypedArray())
-                } finally {
-                    clipboardFilesDb.close()
+        }
+        return summary
+    }
+
+    fun startRestore() {
+        restoreScope.launch {
+            if (isRestoreInProgress) return@launch
+            isRestoreInProgress = true
+            lastRestoreNotice = null
+            lastRestoreErrorMessage = null
+            lastRestoreSummary = null
+            try {
+                val summary = withContext(Dispatchers.IO) {
+                    performRestore()
                 }
+                val result = summary.result
+                lastRestoreSummary = summary
+                lastRestoreErrorMessage = summary.firstFailureMessage
+                lastRestoreNotice = BackupRestorePolicy.noticeForRestoreOperationResult(result)
+                when (result) {
+                    RestoreOperationResult.Success -> {
+                        context.showLongToast(R.string.backup_and_restore__restore__success)
+                        navController.navigateUp()
+                    }
+                    RestoreOperationResult.PartialFailure -> {
+                        context.showLongToast(R.string.backup_and_restore__restore__partial_failure_toast)
+                    }
+                    RestoreOperationResult.Failure -> {
+                        context.showLongToast(
+                            R.string.backup_and_restore__restore__failure,
+                            "error_message" to unknownRestoreError,
+                        )
+                    }
+                    RestoreOperationResult.Cancelled -> {
+                        context.showLongToast(R.string.backup_and_restore__restore__cancelled)
+                    }
+                }
+            } catch (e: Throwable) {
+                e.printStackTrace()
+                lastRestoreNotice = RestoreFlowNotice.Failure
+                lastRestoreErrorMessage = e.localizedMessage
+                context.showLongToast(
+                    R.string.backup_and_restore__restore__failure,
+                    "error_message" to e.localizedMessage,
+                )
+            } finally {
+                isRestoreInProgress = false
             }
+        }
+    }
+
+    if (showEraseRestoreConfirmation) {
+        JetPrefAlertDialog(
+            title = stringRes(R.string.backup_and_restore__restore__confirm_erase_title),
+            confirmLabel = stringRes(R.string.action__restore),
+            dismissLabel = stringRes(R.string.action__cancel),
+            onConfirm = {
+                showEraseRestoreConfirmation = false
+                startRestore()
+            },
+            onDismiss = {
+                showEraseRestoreConfirmation = false
+            },
+        ) {
+            Text(text = stringRes(R.string.backup_and_restore__restore__confirm_erase_message))
         }
     }
 
@@ -274,30 +411,21 @@ fun RestoreScreen() = FlorisScreen {
                     navController.navigateUp()
                 },
                 text = stringRes(R.string.action__cancel),
+                enabled = !isRestoreInProgress,
             )
             ButtonBarButton(
                 onClick = {
-                    restoreScope.launch {
-                        if (isRestoreInProgress) return@launch
-                        isRestoreInProgress = true
-                        try {
-                            withContext(Dispatchers.IO) {
-                                performRestore()
-                            }
-                            context.showLongToast(R.string.backup_and_restore__restore__success)
-                            navController.navigateUp()
-                        } catch (e: Throwable) {
-                            e.printStackTrace()
-                            context.showLongToast(
-                                R.string.backup_and_restore__restore__failure,
-                                "error_message" to e.localizedMessage,
-                            )
-                        } finally {
-                            isRestoreInProgress = false
-                        }
+                    if (importStrategy == ImportStrategy.Erase) {
+                        showEraseRestoreConfirmation = true
+                    } else {
+                        startRestore()
                     }
                 },
-                text = stringRes(R.string.action__restore),
+                text = if (isRestoreInProgress && restoreWorkspace != null) {
+                    stringRes(R.string.backup_and_restore__restore__in_progress)
+                } else {
+                    stringRes(R.string.action__restore)
+                },
                 enabled = BackupRestorePolicy.canStartRestore(
                     hasWorkspace = restoreWorkspace != null,
                     restoreErrorId = restoreWorkspace?.restoreErrorId,
@@ -309,6 +437,57 @@ fun RestoreScreen() = FlorisScreen {
     }
 
     content {
+        val workspace = restoreWorkspace
+        when (BackupRestorePolicy.resolveRestoreFlowNotice(
+            isRestoreInProgress = isRestoreInProgress,
+            hasWorkspace = workspace != null,
+            eraseMode = importStrategy == ImportStrategy.Erase,
+            lastTerminalNotice = lastRestoreNotice,
+        )) {
+            RestoreFlowNotice.LoadingArchive -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__loading_file),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__loading_file_summary),
+            )
+            RestoreFlowNotice.Restoring -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__in_progress),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__in_progress_summary),
+            )
+            RestoreFlowNotice.EraseRecoveryCopy -> FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__erase_recovery_copy_title),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__erase_recovery_copy_summary),
+            )
+            RestoreFlowNotice.Cancelled -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__cancelled),
+                secondaryText = stringRes(R.string.backup_and_restore__restore__cancelled_summary),
+            )
+            RestoreFlowNotice.Failure -> FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__restore__failure_title),
+                secondaryText = stringRes(
+                    R.string.backup_and_restore__restore__failure,
+                    "error_message" to (lastRestoreErrorMessage ?: unknownRestoreError),
+                ),
+            )
+            RestoreFlowNotice.PartialFailure -> {
+                val summary = lastRestoreSummary
+                FlorisWarningCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.backup_and_restore__restore__partial_failure_title),
+                    secondaryText = stringRes(
+                        R.string.backup_and_restore__restore__partial_failure_summary,
+                        "restored_count" to (summary?.restoredSections ?: 0),
+                        "problem_count" to (summary?.problemSections ?: 0),
+                    ),
+                )
+            }
+            RestoreFlowNotice.Success,
+            RestoreFlowNotice.None,
+            -> Unit
+        }
         FlorisOutlinedBox(
             modifier = Modifier.defaultFlorisOutlinedBox(),
             title = stringRes(R.string.backup_and_restore__restore__mode),
@@ -332,18 +511,14 @@ fun RestoreScreen() = FlorisScreen {
                 secondaryText = stringRes(R.string.backup_and_restore__restore__mode_erase_and_overwrite_summary),
             )
         }
-        if (importStrategy == ImportStrategy.Erase) {
-            FlorisWarningCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.backup_and_restore__restore__erase_warning_title),
-                secondaryText = stringRes(R.string.backup_and_restore__restore__erase_warning_summary),
-            )
-        }
         FlorisOutlinedButton(
             onClick = {
                 runCatching {
                     restoreDataFromFileSystemLauncher.launch("*/*")
                 }.onFailure { error ->
+                    lastRestoreNotice = RestoreFlowNotice.Failure
+                    lastRestoreErrorMessage = error.localizedMessage
+                    lastRestoreSummary = null
                     restoreScope.launch {
                         context.showLongToast(
                             R.string.backup_and_restore__restore__failure,
@@ -362,14 +537,7 @@ fun RestoreScreen() = FlorisScreen {
             },
             enabled = !isRestoreInProgress,
         )
-        val workspace = restoreWorkspace
-        if (isRestoreInProgress && workspace == null) {
-            FlorisInfoCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.backup_and_restore__restore__loading_file),
-                secondaryText = stringRes(R.string.backup_and_restore__restore__loading_file_summary),
-            )
-        } else if (workspace == null) {
+        if (workspace == null) {
             FlorisEmptyState(
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 8.dp),
