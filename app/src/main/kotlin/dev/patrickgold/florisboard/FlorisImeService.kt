@@ -24,7 +24,9 @@ import android.inputmethodservice.ExtractEditText
 import android.os.Build
 import android.os.Bundle
 import android.os.LocaleList
+import android.os.SystemClock
 import android.os.Trace
+import android.util.Log
 import android.util.Size
 import android.view.KeyEvent
 import android.view.View
@@ -430,6 +432,7 @@ class FlorisImeService : LifecycleInputMethodService() {
     }
 
     override fun onCreateInputView(): View? {
+        val firstRenderStartedAt = SystemClock.elapsedRealtimeNanos()
         Trace.beginSection("swiftfloris.ime.firstRender")
         try {
             super.installViewTreeOwners()
@@ -438,6 +441,10 @@ class FlorisImeService : LifecycleInputMethodService() {
             // Disable the default input view placement
             return null
         } finally {
+            if (BuildConfig.BUILD_TYPE == "benchmark") {
+                val durationMs = (SystemClock.elapsedRealtimeNanos() - firstRenderStartedAt) / 1_000_000.0
+                Log.i("SwiftFlorisPerf", "swiftfloris.ime.firstRenderMs=$durationMs")
+            }
             Trace.endSection()
         }
     }

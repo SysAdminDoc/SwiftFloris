@@ -1,0 +1,58 @@
+{
+  "benchmark": "imeFirstRender",
+  "measuredAt": "2026-05-18T15:55:04.8609473-04:00",
+  "packageName": "dev.patrickgold.florisboard.bench",
+  "imeComponent": "dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.FlorisImeService",
+  "activityComponent": "dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity",
+  "iterations": 5,
+  "device": {
+    "serial": "R5CY34G070L",
+    "manufacturer": "samsung",
+    "model": "SM-S938B",
+    "device": "pa3q",
+    "androidRelease": "16",
+    "sdk": "36"
+  },
+  "summary": {
+    "activityTotalTimeMedianMs": 31.0,
+    "activityWaitTimeMedianMs": 34.0,
+    "imeFirstRenderMedianMs": 18.335469
+  },
+  "runs": [
+    {
+      "iteration": 1,
+      "activityTotalTimeMs": 31,
+      "activityWaitTimeMs": 34,
+      "imeFirstRenderMs": 22.323282,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity\nTotalTime: 31\nWaitTime: 34\nComplete"
+    },
+    {
+      "iteration": 2,
+      "activityTotalTimeMs": 32,
+      "activityWaitTimeMs": 34,
+      "imeFirstRenderMs": 18.043177,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity\nTotalTime: 32\nWaitTime: 34\nComplete"
+    },
+    {
+      "iteration": 3,
+      "activityTotalTimeMs": 29,
+      "activityWaitTimeMs": 31,
+      "imeFirstRenderMs": 17.20625,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity\nTotalTime: 29\nWaitTime: 31\nComplete"
+    },
+    {
+      "iteration": 4,
+      "activityTotalTimeMs": 39,
+      "activityWaitTimeMs": 43,
+      "imeFirstRenderMs": 21.174531,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity\nTotalTime: 39\nWaitTime: 43\nComplete"
+    },
+    {
+      "iteration": 5,
+      "activityTotalTimeMs": 30,
+      "activityWaitTimeMs": 31,
+      "imeFirstRenderMs": 18.335469,
+      "startOutput": "Starting: Intent { cmp=dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity }\nStatus: ok\nLaunchState: WARM\nActivity: dev.patrickgold.florisboard.bench/dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity\nTotalTime: 30\nWaitTime: 31\nComplete"
+    }
+  ]
+}

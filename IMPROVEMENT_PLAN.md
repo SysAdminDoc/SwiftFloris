@@ -216,19 +216,28 @@ Acceptance criteria:
 
 ### 7. Performance Instrumentation
 
-Status: Planned
+Status: In progress
 Priority: P1
 
 Goal: Add lightweight evidence around typing responsiveness and startup quality.
 
 Tasks:
-- [ ] Measure keyboard cold start and first render.
+- [x] Measure keyboard cold start and first render.
 - [ ] Measure first suggestion latency.
 - [ ] Measure dictionary load and preload time.
 - [ ] Measure candidate row recomposition hotspots.
 - [ ] Measure theme switching cost.
 - [ ] Measure backup/restore duration on representative archives.
-- [ ] Add repeatable profiling notes using adb, simpleperf, Perfetto, or Compose tracing where appropriate.
+- [x] Add repeatable profiling notes using adb, simpleperf, Perfetto, or Compose tracing where appropriate.
+
+Progress:
+- 2026-05-18 (v1.8.159): `:benchmark` is active again, the benchmark
+  variant has a local-only input activity, and
+  `tools/benchmark-ime-first-render.ps1` records repeatable adb first-render
+  runs. Samsung SM-S938B / Android 16 baseline: `am start -W` median
+  `TotalTime` 31.0 ms, median `WaitTime` 34.0 ms, and benchmark-only
+  `swiftfloris.ime.firstRenderMs` median 18.335469 ms over five runs.
+  Evidence: `docs/benchmark-results/baseline-2026-05-18-ime-first-render.json`.
 
 Acceptance criteria:
 - Performance claims are backed by repeatable commands.

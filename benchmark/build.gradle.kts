@@ -14,37 +14,26 @@
  * limitations under the License.
  */
 
+import com.android.build.api.dsl.TestExtension
+
 plugins {
     alias(libs.plugins.agp.test)
-    alias(libs.plugins.kotlin.android)
 }
 
-android {
+configure<TestExtension> {
     namespace = "dev.patrickgold.florisboard.benchmark"
-    compileSdk = 34
+    compileSdk = project.property("projectCompileSdk").toString().toInt()
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
 
-    kotlinOptions {
-        jvmTarget = "1.8"
-    }
-
     defaultConfig {
-        minSdk = 24
-        targetSdk = 34
+        minSdk = project.property("projectMinSdk").toString().toInt()
+        targetSdk = project.property("projectTargetSdk").toString().toInt()
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        sourceSets {
-            maybeCreate("main").apply {
-                java {
-                    srcDirs("src/main/kotlin")
-                }
-            }
-        }
     }
 
     buildTypes {

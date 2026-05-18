@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-05-18, against the v1.8.158 codebase.
+Last updated: 2026-05-18, against the v1.8.159 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
@@ -30,9 +30,11 @@ The active Gradle modules are declared in `settings.gradle.kts`.
 | `:lib:compose` | Shared Compose resource, layout, and UI helpers |
 | `:lib:kotlin` | Pure Kotlin utility code |
 | `:lib:snygg` | Snygg theme parser and runtime engine |
+| `:benchmark` | AndroidX Macrobenchmark module plus adb-driven benchmark harness target |
 
-`benchmark/` and `lib/native/` are present on disk but are not active Gradle
-modules in the current settings file.
+`:benchmark` is included in settings for Macrobenchmark and adb performance
+harnesses. `:lib:native` remains present on disk but inactive until a native
+addon/runtime slice intentionally revives it.
 
 ## Runtime Entrypoints
 
