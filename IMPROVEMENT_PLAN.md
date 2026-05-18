@@ -49,6 +49,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: Began the premium UX polish pass by tightening the shared settings shell, action-card affordances, setup step completion treatment, bottom-bar insets, backup/restore busy-state locking, extension empty-state actions, and language-pack manager empty/detail behavior.
 - 2026-05-18: Extracted editor input behavior decisions into a pure policy and added JVM coverage for autocorrect accept/reject spacing, punctuation auto-spacing, phantom spacing, double-space period, and sentence-capitalization gates.
 - 2026-05-18: Extracted hardware keyboard routing decisions into a pure policy and added JVM coverage for space, enter, delete pass-through, shift, mapped letters, mapped punctuation, and punctuation-triggered autocorrect flush behavior.
+- 2026-05-18: Added JVM lifecycle coverage for auto-space and phantom-space state transitions, including editor-update grace, composing-region visibility, and candidate-for-revert cleanup.
 
 ## Workstreams
 
@@ -63,7 +64,7 @@ Tasks:
 - [x] Add JVM coverage for rejected autocorrect behavior.
 - [x] Add editor/input behavior tests for autocorrect accept, reject, undo, punctuation, and spacing flows.
 - [x] Add hardware keyboard tests for space, enter, delete, and punctuation behavior.
-- [ ] Add phantom-space and autospace lifecycle tests.
+- [x] Add phantom-space and autospace lifecycle tests.
 - [ ] Add glide typing delete interaction tests.
 - [ ] Add incognito suggestion behavior tests.
 - [ ] Add backup and restore tests for success, cancellation, invalid archive, and partial failure cases.
