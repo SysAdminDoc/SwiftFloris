@@ -1,6 +1,6 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-05-18 for v1.8.165.
+Last updated: 2026-05-18 for v1.8.166.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
@@ -9,6 +9,7 @@ resources, or docs that describe shipped behavior.
 
 ```powershell
 git diff --check
+bash scripts/check-repo-hygiene.sh
 .\gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:verifyRoborazziDebug :app:lintDebug :app:assembleDebug
 ```
 
@@ -16,6 +17,8 @@ Expected result:
 
 - `verifyNoInternetPermission` fails if any app manifest adds `INTERNET` or
   equivalent network permissions.
+- `check-repo-hygiene.sh` fails if generated build/report output is tracked or
+  local Markdown deletions still need classification.
 - `testDebugUnitTest` passes the JVM policy, parser, trust-state, accessibility,
   and screenshot-host tests.
 - `verifyRoborazziDebug` hard-fails if committed screenshot baselines drift.

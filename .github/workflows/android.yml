@@ -47,6 +47,9 @@ jobs:
       - name: Check root crash/replay logs
         run: bash scripts/check-no-root-crash-logs.sh
 
+      - name: Check repo hygiene
+        run: bash scripts/check-repo-hygiene.sh
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:

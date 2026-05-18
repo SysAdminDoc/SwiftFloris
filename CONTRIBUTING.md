@@ -46,6 +46,8 @@ Common commands:
 Linux/macOS shells can use `./gradlew` with the same tasks. The complete local
 gate, lint baseline-drift wrapper, adb smoke, and benchmark commands are in
 [`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md).
+Repo hygiene rules for generated outputs and deleted docs are in
+[`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md).
 
 ## Picking Work
 
