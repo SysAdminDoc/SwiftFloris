@@ -101,8 +101,9 @@ The high-level typing path is:
 4. Text-key behavior delegates into `ime/text/`, `ime/input/`, and `ime/nlp/`
    depending on whether the action is raw text, a correction, a suggestion, a
    gesture trace, or rich content.
-5. `NlpManager` and related rankers combine dictionary, priors, user learning,
-   multilingual scoring, and field guards before candidates reach the smartbar.
+5. `NlpManager` gathers dictionary, priors, user learning, multilingual
+   scoring, and field guards before `CandidateAutoCommitPolicy` and the rankers
+   decide auto-commit, quick-prediction, and rejection behavior.
 6. Commits return through `EditorInstance` into the Android `InputConnection`.
 
 Keep deterministic rules pure where practical. The roadmap and improvement plan

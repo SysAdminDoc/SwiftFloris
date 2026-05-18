@@ -104,7 +104,7 @@ Mapped against the same SwiftKey buckets so the gap analysis is direct.
 | Adaptive touch | `AdaptiveTouchModel` per-subtype Welford-online; persisted across restarts; per-key offsets feed `findNClosestKeys` + `Pruner.generateIdealGestures`. |
 | SHARK2 + Flow | `StatisticalGlideTypingClassifier` over bounded EN/DE/ES/FR/IT/PT dictionaries. |
 | Flow Through Space | `GlideTypingGesture.Detector.signalWordBoundary()` + `GlideContextRescorer` covering `in` → `I'm`, etc. Pref `glide.flowThroughSpace` (default on). |
-| Three-slot prediction bar with rejection-after-backspace | `SwiftKeyCandidateRanker` + `AutoCommitSuppression`; replay fixtures pin the behavior. |
+| Three-slot prediction bar with rejection-after-backspace | `SwiftKeyCandidateRanker` + `CandidateAutoCommitPolicy` + `AutoCommitSuppression`; replay fixtures and focused policy tests pin the behavior. |
 | Spacebar modes (plain / complete / Quick prediction insert) | All three present; Quick prediction insert is the explicit Typing setting added in the v1.7.x slice. |
 | Long-press accented characters | Inherited FlorisBoard upstream; works on every Latin layout. |
 | Up to 5 simultaneous languages | Bilingual subtype presets (EN+ES / EN+FR / EN+DE) shipped; `MultilingualTokenScorer` evaluates every active subtype locale; cross-locale candidate frequency feeds the ranker. |
@@ -120,7 +120,7 @@ Mapped against the same SwiftKey buckets so the gap analysis is direct.
 | Tone (professional/casual/polite) | `RewriteProvider` shape supports tone-tagged rewrites; UI surface deferred to the addon. |
 | Image creator / Designer (DALL-E 3) | **Out of scope** (§1 — cloud, GPL/non-commercial models on-device too large + ethically loaded). |
 | Translator | `ime/translate/InlineTranslator` + `TranslationRouter` + `TranslationCache` + `LanguageDetector` + `SentenceTokenizer` + `TranslationLanguagePackManager` + `QuickAction.TranslateSelection` smartbar action. Bergamot WASM runtime addon (L2.1a) outstanding. |
-| Clipboard with pinning + shortcuts | Tink / AndroidKeystore-wrapped clipboard history with pinning + per-app source tag (`ClipboardManager`); shortcut auto-replace via personal-dictionary `shortcut` column wired in `NlpManager.getAutoCommitCandidate`. |
+| Clipboard with pinning + shortcuts | Tink / AndroidKeystore-wrapped clipboard history with pinning + per-app source tag (`ClipboardManager`); shortcut auto-replace via personal-dictionary `shortcut` column gathered by `NlpManager` and prioritized by `CandidateAutoCommitPolicy`. |
 | GIFs | **Out of scope** (Tenor/Giphy needs network; explicit rejection in §10 of ROADMAP.md). Local sticker packs cover the static-reaction case. |
 | Stickers | `StickerRenderer` + `StickerMediaProvider` + bundled "Swift reactions" / "Quick replies" packs; commit via `commitContent(InputContentInfoCompat)`. Animated stickers via `coil-gif` decoder. |
 | Calendar | **Not shipped.** New gap. |

@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.139).
+through v1.8.140).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.139)
+## 3. Stack at HEAD (v1.8.140)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.139** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.140** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup layer.
 v1.8.104 – v1.8.110 closed the
@@ -320,6 +320,14 @@ dependency slice. Gradle moves from 9.4.1 to checksum-pinned 9.5.1, Navigation
 Compose moves from 2.9.7 to 2.9.8, and JUnit Vintage moves from 5.13.1 to
 cataloged 6.0.3 for the remaining JUnit-4-style Robolectric test bridge. Lint
 now reports 241 warnings / 1 hint.
+
+v1.8.140 closes the candidate auto-commit policy extraction item from
+`IMPROVEMENT_PLAN.md` Workstream 3. `CandidateAutoCommitPolicy` owns
+deterministic ordering and rejection decisions for user-dictionary shortcuts,
+phrase repairs, active-strip autocorrects, immediate fallbacks, quick-prediction
+spacebar insertion, and plain-space prediction suppression. `NlpManager` stays
+responsible for Android-bound state collection and provider lookups, while
+`CandidateAutoCommitPolicyTest` pins the pure JVM contract.
 
 ## 4. Module layout
 
