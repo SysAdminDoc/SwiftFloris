@@ -118,6 +118,30 @@ internal object BackupRestorePolicy {
             !isRestoreInProgress
     }
 
+    fun noticeForRestoreOperationResult(result: RestoreOperationResult): RestoreFlowNotice {
+        return when (result) {
+            RestoreOperationResult.Success -> RestoreFlowNotice.Success
+            RestoreOperationResult.Cancelled -> RestoreFlowNotice.Cancelled
+            RestoreOperationResult.PartialFailure -> RestoreFlowNotice.PartialFailure
+            RestoreOperationResult.Failure -> RestoreFlowNotice.Failure
+        }
+    }
+
+    fun resolveRestoreFlowNotice(
+        isRestoreInProgress: Boolean,
+        hasWorkspace: Boolean,
+        eraseMode: Boolean,
+        lastTerminalNotice: RestoreFlowNotice?,
+    ): RestoreFlowNotice {
+        return when {
+            isRestoreInProgress && !hasWorkspace -> RestoreFlowNotice.LoadingArchive
+            isRestoreInProgress -> RestoreFlowNotice.Restoring
+            lastTerminalNotice != null -> lastTerminalNotice
+            eraseMode -> RestoreFlowNotice.EraseRecoveryCopy
+            else -> RestoreFlowNotice.None
+        }
+    }
+
     fun classifyRestoreOperation(
         selectedSections: Int,
         restoredSections: Int,
@@ -150,10 +174,40 @@ internal enum class BackupFlowNotice {
     Success,
 }
 
+internal enum class RestoreFlowNotice {
+    None,
+    LoadingArchive,
+    Restoring,
+    EraseRecoveryCopy,
+    Cancelled,
+    Failure,
+    PartialFailure,
+    Success,
+}
+
 internal data class RestoreArchiveValidation(
     val warningId: Int?,
     val errorId: Int?,
 )
+
+internal data class RestoreOperationSummary(
+    val selectedSections: Int = 0,
+    val restoredSections: Int = 0,
+    val missingSections: Int = 0,
+    val failedSections: Int = 0,
+    val firstFailureMessage: String? = null,
+) {
+    val problemSections: Int
+        get() = missingSections + failedSections
+
+    val result: RestoreOperationResult
+        get() = BackupRestorePolicy.classifyRestoreOperation(
+            selectedSections = selectedSections,
+            restoredSections = restoredSections,
+            missingSections = missingSections,
+            failedSections = failedSections,
+        )
+}
 
 internal enum class RestoreOperationResult {
     Success,

@@ -1116,12 +1116,25 @@
     <string name="backup_and_restore__restore__mode_erase_and_overwrite_summary">Clear the selected data first, then restore from the archive</string>
     <string name="backup_and_restore__restore__erase_warning_title">Erase mode will replace selected data</string>
     <string name="backup_and_restore__restore__erase_warning_summary">Review the selected backup sections before restoring. SwiftFloris will remove matching local data first, then import the archive copy.</string>
+    <string name="backup_and_restore__restore__erase_recovery_copy_title">Keep a recovery copy before erase restore</string>
+    <string name="backup_and_restore__restore__erase_recovery_copy_summary">Erase mode can replace selected local data. Create a fresh backup first if you might need to undo this restore.</string>
+    <string name="backup_and_restore__restore__confirm_erase_title">Confirm erase restore</string>
+    <string name="backup_and_restore__restore__confirm_erase_message">SwiftFloris will clear matching local data for selected sections, then import the archive copy. Continue only if you have a current backup or recovery copy.</string>
     <string name="backup_and_restore__restore__success">Data restored.</string>
+    <string name="backup_and_restore__restore__cancelled">Restore cancelled</string>
+    <string name="backup_and_restore__restore__cancelled_summary">No data was changed. Select an archive and restore mode when you are ready.</string>
+    <string name="backup_and_restore__restore__failure_title">Restore failed</string>
     <string name="backup_and_restore__restore__failure">Could not restore data: {error_message}</string>
+    <string name="backup_and_restore__restore__unknown_error">Unknown error</string>
+    <string name="backup_and_restore__restore__partial_failure_title">Restore finished with warnings</string>
+    <string name="backup_and_restore__restore__partial_failure_summary">Restored {restored_count} section(s). {problem_count} selected section(s) were missing from the archive or could not be restored. Your recovery path is to review the selected archive and retry, or restore from a newer backup.</string>
+    <string name="backup_and_restore__restore__partial_failure_toast">Restore finished with warnings.</string>
     <string name="backup_and_restore__restore__empty_title">Select a backup archive</string>
     <string name="backup_and_restore__restore__empty_message">Choose a SwiftFloris backup ZIP to inspect its metadata and select what to restore.</string>
     <string name="backup_and_restore__restore__loading_file">Reading archive</string>
     <string name="backup_and_restore__restore__loading_file_summary">Checking the backup metadata before anything is restored.</string>
+    <string name="backup_and_restore__restore__in_progress">Restoring data</string>
+    <string name="backup_and_restore__restore__in_progress_summary">Keep this screen open while selected sections are restored. Erase mode only clears a section after its archive data is available.</string>
 
     <!-- Crash Dialog strings -->
     <string name="crash_dialog__title" comment="Title of crash dialog">SwiftFloris error report</string>
