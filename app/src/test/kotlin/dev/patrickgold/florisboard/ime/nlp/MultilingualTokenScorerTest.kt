@@ -53,7 +53,7 @@ class MultilingualTokenScorerTest : FunSpec({
         signal.languageConfidence shouldBeLessThan 0.4
     }
 
-    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B3 — shared-spelling
+    // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B3 — shared-spelling
     // bilingual handling. Two sibling cases pin the asymmetry:
     //   - shared typed word + one-locale-only candidate => sub-floor
     //     (< MinAutoCommitLanguageConfidence = 0.40 in the ranker)

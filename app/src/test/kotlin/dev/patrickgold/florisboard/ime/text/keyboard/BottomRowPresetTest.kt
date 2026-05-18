@@ -80,7 +80,7 @@ class BottomRowPresetTest : FunSpec({
         row.first { it.code == 44 }.popup shouldBe null
     }
 
-    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow-keys bottom-row
+    // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow-keys bottom-row
     // preset.
 
     test("Navigation preset surfaces left / up / down / right arrows around a shrunken spacebar") {

@@ -20,11 +20,11 @@ ad-hoc Claude API sessions).
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — one page; fastest read.
 2. [`AGENTS.md`](AGENTS.md) — hard rules + file-routing.
-3. [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
-   — current sprint plan.
-4. [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
-   — latest research run's additions / corrections.
-5. The most recent few `RELEASE_NOTES_v*.md` files — what shipped recently.
+3. [`docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
+   — sprint plan snapshot (archived 2026-05-18).
+4. [`docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
+   — research-run additions / corrections (archived 2026-05-18).
+5. The top of [`CHANGELOG.md`](CHANGELOG.md) — most recent versions and what shipped.
 6. [`ROADMAP.md`](ROADMAP.md) only if the prior files leave a question
    unanswered. It's ~340 KB; sample by section heading.
 
@@ -64,8 +64,9 @@ ad-hoc Claude API sessions).
 The maintainer's `~/.claude/projects/.../memory/` already pins:
 
 - `Z:\repos` is the master directory holding all projects on this VM.
-- SwiftFloris-specific facts: Android keyboard fork; per-release file
-  pattern; build gates.
+- SwiftFloris-specific facts: Android keyboard fork; consolidated
+  `CHANGELOG.md` (one `## vX.Y.Z` section per release, anchor `#vX.Y.Z`);
+  build gates.
 - `git push` to `SysAdminDoc/SwiftFloris` fails 403 from this VM.
 
 Do not re-save these as memory entries.
@@ -74,8 +75,7 @@ Do not re-save these as memory entries.
 
 ## Writing style for this repo
 
-Conventions observed across `RELEASE_NOTES_v*.md`, `ROADMAP.md`, and
-`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`:
+Conventions observed across [`CHANGELOG.md`](CHANGELOG.md) and [`ROADMAP.md`](ROADMAP.md):
 
 - **Tight prose.** Sentence-level precision; minimal hand-waving.
 - **Specific file references** with line numbers when relevant.

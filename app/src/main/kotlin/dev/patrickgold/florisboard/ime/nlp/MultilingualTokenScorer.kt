@@ -44,7 +44,7 @@ internal object MultilingualTokenScorer {
         val typedKnownLocaleCount = localeEvidence.count { it.typedFrequency > 0.0 }
         val dictionaryFrequency = localeEvidence.maxOfOrNull { it.candidateFrequency.coerceIn(0.0, 1.0) } ?: 0.0
         val candidateKnown = dictionaryFrequency > 0.0
-        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B3 — shared-spelling
+        // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B3 — shared-spelling
         // bilingual handling. When the typed word is recognised in
         // multiple active locales (e.g. "no" in EN+ES), a candidate
         // that's *only* known in ONE locale is a single-language

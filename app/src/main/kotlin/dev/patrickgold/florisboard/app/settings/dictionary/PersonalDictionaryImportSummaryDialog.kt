@@ -30,7 +30,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import org.florisboard.lib.compose.stringRes
 
 /**
- * SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import confirmation
+ * docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import confirmation
  * dialog. Surfaces after a successful modular `DictionaryImporter` run
  * and shows what landed in the personal dictionary, with an explicit
  * Undo action backed by `PersonalDictionaryImportBatch.rollback`.

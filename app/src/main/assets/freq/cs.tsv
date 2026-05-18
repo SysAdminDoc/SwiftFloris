@@ -1,5 +1,5 @@
 # SwiftFloris — Zipf-scale frequency table (Czech)
-# ROADMAP §7 Next-3.2 / SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B1.
+# ROADMAP §7 Next-3.2 / docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §B1.
 # Generated from rspeer/wordfreq 3.1.1 top_n_list + zipf_frequency output.
 # Zipf values generated from rspeer/wordfreq 3.1.1 (Apache-2.0); one word<TAB>zipf line per entry.
 # Seed top-1000 table; full corpus-sized tables belong in dictionary-pack addons.

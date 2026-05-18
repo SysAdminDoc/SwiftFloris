@@ -132,7 +132,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
     var languageList by remember { mutableStateOf(emptyList<FlorisLocale>()) }
     var wordList by remember { mutableStateOf(emptyList<UserDictionaryEntry>()) }
     var userDictionaryEntryForDialog by remember { mutableStateOf<UserDictionaryEntry?>(null) }
-    // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import summary
+    // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2 — post-import summary
     // confirmation surface. Holds the result of the most recent
     // successful modular DictionaryImporter run so the user can
     // see what landed and optionally roll the inserts back.
@@ -315,7 +315,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
         scope.launch {
             startDictionaryTransfer(UserDictionaryTransferOperation.Importing)
             try {
-                // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — try the modular
+                // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — try the modular
                 // importer first (SwiftKey JSON / Gboard XML / CSV / zip /
                 // SwiftFloris combined-list detection by byte sniff). On any
                 // DictionaryImportException, fall through to the legacy URI-based
@@ -908,7 +908,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             }
         }
 
-        // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — post-import summary.
+        // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — post-import summary.
         // Renders when the modular DictionaryImporter path returned a
         // result, including decrypted SwiftFloris combined-list exports.
         val summary = importSummary

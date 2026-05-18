@@ -21,12 +21,12 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 4. [`ROADMAP.md`](ROADMAP.md) — full roadmap with history; ~340 KB,
    tiered NOW / NEXT / LATER / UNDER CONSIDERATION / REJECTED with
    sourced appendix.
-5. [`SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
+5. [`docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
    — current sprint plan (Phase A → E) timed to the 2026-05-31 SwiftKey
    account-retirement cutoff.
 6. [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused
    quality / a11y / perf / test / build / release plan; 15 workstreams.
-7. [`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
+7. [`docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
    — most recent research-run additions and corrections, not yet folded
    into `ROADMAP.md`.
 8. [`.ai/research/<YYYY-MM-DD>/`](.ai/research/) — full research-run
@@ -131,7 +131,7 @@ commands above.
 | If your change is… | Lives in… |
 |---|---|
 | One feature slice, one release | A new `RELEASE_NOTES_vX.Y.Z.md` at repo root + a `gradle.properties` bump |
-| A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
+| A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
 | A roadmap-tier change (NOW / NEXT / LATER / UNDER CONSIDERATION) | [ROADMAP.md](ROADMAP.md) §6/§7/§8/§9 |
 | A quality / a11y / perf / test / CI / release-hygiene workstream | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
 | A research finding | New `.ai/research/<YYYY-MM-DD>/` directory; updates fold into the next `ROADMAP.md` `v5.X` refresh |

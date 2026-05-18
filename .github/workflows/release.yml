@@ -231,12 +231,16 @@ jobs:
         run: |
           set -euo pipefail
           tag="v${RELEASE_VERSION}"
-          notes="RELEASE_NOTES_v${RELEASE_VERSION}.md"
-          # Compose the release body: prefer the per-version RELEASE_NOTES file when present, fall back to autogen,
-          # then append the OSV scan appendix produced earlier (matrix #9 + #44).
+          # Compose the release body: extract the per-version section from CHANGELOG.md when present,
+          # fall back to autogen, then append the OSV scan appendix (matrix #9 + #44).
+          # The section runs from the version's <a id="vX.Y.Z"></a> anchor to the next <a id="v..."> anchor.
           body_file="$(mktemp)"
-          if [ -f "$notes" ]; then
-            cat "$notes" > "$body_file"
+          if [ -f CHANGELOG.md ]; then
+            awk -v ver="$RELEASE_VERSION" '
+              $0 == "<a id=\"v" ver "\"></a>" { in_section = 1; next }
+              in_section && /^<a id="v[0-9]/ { exit }
+              in_section { print }
+            ' CHANGELOG.md > "$body_file"
           fi
           if [ -f RELEASE_OSV_SUMMARY.md ]; then
             cat RELEASE_OSV_SUMMARY.md >> "$body_file"

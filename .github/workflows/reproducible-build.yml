@@ -1,6 +1,6 @@
 name: Reproducible APK Check
 
-# ROADMAP_RESEARCH_ADDENDUM_2026-05-17 §B.4 / N12.5 — build the
+# docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17 §B.4 / N12.5 — build the
 # release APK twice from clean worktrees at the same commit and fail on
 # byte-level drift before F-Droid's rebuilder catches it.
 

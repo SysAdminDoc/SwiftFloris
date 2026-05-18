@@ -2,7 +2,7 @@
 
 **Purpose:** unblock the Tier-1 / urgency-5 "SwiftKey-refugee discovery
 gap" commitment from
-[`ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §0.b.2](../../../ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
+[`docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §0.b.2](../../../docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
 and
 [`ROADMAP.md` v5.4 §0.4.3](../../../ROADMAP.md) /
 v5.5 §0.5.2. The sixth research pass surfaced that AlternativeTo, BGR,

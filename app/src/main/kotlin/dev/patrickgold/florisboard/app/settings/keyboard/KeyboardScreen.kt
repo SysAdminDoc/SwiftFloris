@@ -112,7 +112,7 @@ fun KeyboardScreen() = FlorisScreen {
                             label = "Programmer",
                         ),
                         entry(
-                            // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — SwiftKey
+                            // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — SwiftKey
                             // "Modes → Arrow keys" parity. Swaps the bottom row
                             // for ← ↑ ↓ → so cursor navigation doesn't need the
                             // space-bar trackpad gesture or a hardware-keyboard

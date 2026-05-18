@@ -36,7 +36,7 @@ val QuickActionJsonConfig = Json(DefaultJsonConfig) {
             subclass(QuickAction.InsertKey::class, QuickAction.InsertKey.serializer())
             subclass(QuickAction.InsertText::class, QuickAction.InsertText.serializer())
             subclass(QuickAction.TranslateSelection::class, QuickAction.TranslateSelection.serializer())
-            // SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D2 — task-creation
+            // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §D2 — task-creation
             // quick action, the on-device replacement for SwiftKey's
             // Microsoft-To-Do toolbar tile.
             subclass(QuickAction.InsertTask::class, QuickAction.InsertTask.serializer())
