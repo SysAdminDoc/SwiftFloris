@@ -176,6 +176,19 @@ class EditorVoiceCommandActions(
         if (editor.activeInfo.isRawInputEditor) {
             return VoiceCommandActionResult.failure(VoiceCommandFailureReason.ACTION_REJECTED)
         }
+        // If the user already has a non-empty selection in the editor
+        // (they tapped a word, double-tapped a line, dragged the
+        // selection handles), our replace-suffix logic below would
+        // collapse the selection and overwrite the selected text plus
+        // the suffix above the cursor with the diff's new text — silent
+        // data loss. Refuse instead. The streaming buffer's diff is also
+        // not committed, so the user can retry the command after
+        // clearing the selection without their dictation getting out of
+        // sync.
+        val content = editor.activeContent
+        if (content.selectedText.isNotEmpty()) {
+            return VoiceCommandActionResult.failure(VoiceCommandFailureReason.ACTION_REJECTED)
+        }
         val diff = buffer.removeCommittedItem(item)
         if (!diff.didChange) {
             // Item was not found in the buffer — surface a distinct
@@ -189,7 +202,6 @@ class EditorVoiceCommandActions(
         // typed something the IME didn't see in between (rare given
         // dictation flow), and we fall back to a no-op + signal to
         // avoid corrupting the editor.
-        val content = editor.activeContent
         val before = content.textBeforeSelection.toString()
         val previous = diff.previousCommittedText
         if (previous.isNotEmpty() && before.endsWith(previous, ignoreCase = false)) {
