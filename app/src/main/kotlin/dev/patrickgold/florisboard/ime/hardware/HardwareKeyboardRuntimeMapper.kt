@@ -127,8 +127,9 @@ class HardwareKeyboardRuntimeMapper(
 
     private fun normalizedAndroidKeyName(keyCode: Int): String? {
         val raw = KeyEvent.keyCodeToString(keyCode)
-            .removePrefix("KEYCODE_")
-            .takeIf { it.isNotBlank() && it != keyCode.toString() }
+            ?.removePrefix("KEYCODE_")
+            ?.takeIf { it.isNotBlank() && it != keyCode.toString() }
+            ?: fallbackAndroidKeyNames[keyCode]
             ?: return null
         return raw.normalizedSourceName()
     }
@@ -240,6 +241,45 @@ class HardwareKeyboardRuntimeMapper(
             KeyEvent.KEYCODE_M to 46,
             KeyEvent.KEYCODE_PERIOD to 47,
             KeyEvent.KEYCODE_GRAVE to 50,
+        )
+
+        private val fallbackAndroidKeyNames = mapOf(
+            KeyEvent.KEYCODE_A to "A",
+            KeyEvent.KEYCODE_B to "B",
+            KeyEvent.KEYCODE_C to "C",
+            KeyEvent.KEYCODE_D to "D",
+            KeyEvent.KEYCODE_E to "E",
+            KeyEvent.KEYCODE_F to "F",
+            KeyEvent.KEYCODE_G to "G",
+            KeyEvent.KEYCODE_H to "H",
+            KeyEvent.KEYCODE_I to "I",
+            KeyEvent.KEYCODE_J to "J",
+            KeyEvent.KEYCODE_K to "K",
+            KeyEvent.KEYCODE_L to "L",
+            KeyEvent.KEYCODE_M to "M",
+            KeyEvent.KEYCODE_N to "N",
+            KeyEvent.KEYCODE_O to "O",
+            KeyEvent.KEYCODE_P to "P",
+            KeyEvent.KEYCODE_Q to "Q",
+            KeyEvent.KEYCODE_R to "R",
+            KeyEvent.KEYCODE_S to "S",
+            KeyEvent.KEYCODE_T to "T",
+            KeyEvent.KEYCODE_U to "U",
+            KeyEvent.KEYCODE_V to "V",
+            KeyEvent.KEYCODE_W to "W",
+            KeyEvent.KEYCODE_X to "X",
+            KeyEvent.KEYCODE_Y to "Y",
+            KeyEvent.KEYCODE_Z to "Z",
+            KeyEvent.KEYCODE_0 to "0",
+            KeyEvent.KEYCODE_1 to "1",
+            KeyEvent.KEYCODE_2 to "2",
+            KeyEvent.KEYCODE_3 to "3",
+            KeyEvent.KEYCODE_4 to "4",
+            KeyEvent.KEYCODE_5 to "5",
+            KeyEvent.KEYCODE_6 to "6",
+            KeyEvent.KEYCODE_7 to "7",
+            KeyEvent.KEYCODE_8 to "8",
+            KeyEvent.KEYCODE_9 to "9",
         )
     }
 }

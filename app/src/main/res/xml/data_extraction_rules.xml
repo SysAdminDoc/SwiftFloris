@@ -25,7 +25,9 @@
     3. JetPref non-encrypted preferences and the `files/ime/` extension/theme
        directory are safe to include (no typed-text history).
 -->
-<data-extraction-rules>
+<data-extraction-rules
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="FullBackupContent">
     <cloud-backup>
         <include
             domain="root"

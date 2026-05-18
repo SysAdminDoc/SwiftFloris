@@ -246,6 +246,9 @@ object UserDictionaryCombinedListCodec {
         val entries = mutableListOf<PersonalDictionaryEntry>()
         var isFirstLine = true
         lines.forEach { line ->
+            if (line.isBlank()) {
+                return@forEach
+            }
             if (isFirstLine) {
                 isFirstLine = false
                 // Header line: dictionary=<name>;date=<millis>;generated-by=<package>;version=1

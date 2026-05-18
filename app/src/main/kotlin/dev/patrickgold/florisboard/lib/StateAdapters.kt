@@ -21,6 +21,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisallowComposableCalls
 import androidx.compose.runtime.State
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import dev.patrickgold.jetpref.datastore.model.PreferenceData
 import kotlinx.coroutines.flow.map
 
@@ -30,6 +31,7 @@ inline fun <V : Any, R : Any> PreferenceData<V>.observeAsTransformingState(
     crossinline transform: @DisallowComposableCalls (V) -> R,
 ): State<R> {
     return asFlow().let { flow ->
-        flow.map { transform(it) }.collectAsState(transform(flow.value))
+        val mappedFlow = remember(flow) { flow.map { transform(it) } }
+        mappedFlow.collectAsState(transform(flow.value))
     }
 }

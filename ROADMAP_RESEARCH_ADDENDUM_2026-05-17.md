@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.110 — voice Listening state observable during handoff (seventh-pass audit closure for the visible-but-unresponsive flicker on the voice handoff path; the full seventh-pass shipped layer is v1.8.104 – v1.8.110, documented in §0.c below).
+**HEAD at latest reconciliation:** v1.8.111 — clipboard media intake size caps (seventh-pass follow-up closure for provider-backed media clone size limits plus modern preview decode bounds; the full seventh-pass shipped layer is v1.8.104 – v1.8.111, documented in §0.c below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -20,7 +20,7 @@ same release window, implementing Phase B4 + Phase C2 + Phase D2 + Phase D3 + Ph
 
 ---
 
-## 0.c Reconciliation with v1.8.104-110 seventh-pass audit releases
+## 0.c Reconciliation with v1.8.104-111 seventh-pass audit releases
 
 The user re-invoked the extreme-audit prompt after the sixth-pass
 roster closed. The seventh research pass dispatched three parallel
@@ -38,9 +38,10 @@ the eighth pass).
 | Voice agent #14: `removeItemFromList` collapsed non-empty editor selections and overwrote selected text plus the suffix above the cursor on execution — silent multi-region data loss | ✅ **v1.8.108** — early-return `ACTION_REJECTED` when `content.selectedText.isNotEmpty()` BEFORE the streaming buffer is mutated, so dictation state stays in sync after retry |
 | Clipboard agent #11 + #19: backup zip serialised every history row including sensitive ones in plaintext (backup is not passphrase-encrypted); `ClipboardItem.close(context)` only deleted the content-provider URI for `IMAGE`, so video clear-all leaked on-disk files AND kept per-receiver `grantUriPermission` calls live | ✅ **v1.8.109** — `filterNot { it.isSensitive }` at the top of the clipboard backup path; `close()` extended from IMAGE to IMAGE OR VIDEO |
 | Voice agent #11: `_isListening` / `_transcriptionState` assigned-and-overwritten in the same synchronous frame as the successful `switchToVoiceInputMethod` call; observers never saw the Listening transition (mic-meter UIs read `isListening` as permanently false; "Connecting to voice IME…" spinners read `transcriptionState` as Ready → Ready) | ✅ **v1.8.110** — state held Listening when the handoff succeeds; `FlorisImeService.onStartInput` calls `voiceInputManager.refreshAvailability()` so state resets to Ready when SwiftFloris is re-bound as the active IME (user returned from FUTO) |
+| Clipboard follow-up G2 + G12: provider-backed image/video clipboard clones had no byte cap, and the modern API 28+ preview decode path did not reject oversized dimensions before allocation | ✅ **v1.8.111** — `ClipboardFileStorage.cloneUri` applies 32 MiB image / 128 MiB video copy caps and removes partial failed clones; `ClipboardPreviewImagePolicy` guards both `ImageDecoder` and `BitmapFactory` preview bounds before decode |
 
-The seven follow-up releases are tagged locally; push is blocked from
-this VM by the documented 403 (per [`AGENTS.md`](AGENTS.md)).
+The v1.8.104 – v1.8.111 release notes are the per-release audit trail
+for this seventh-pass shipped layer.
 
 ### 0.c.1 Seventh-pass structural finding carried forward
 
@@ -65,7 +66,8 @@ Full priority-scored roster in
 [`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md §5`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md);
 high-leverage items (score ≥ 5.0):
 
-- **G2** — `ClipboardFileStorage.cloneUri` max-size cap (image / video).
+- ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap (image /
+  video). Shipped in **v1.8.111**.
 - **G6** — `revokeUriPermission` on clipboard history rotation /
   expiry path (currently only on explicit delete).
 - **G7** — `VoiceInputSetupActivity` `android:exported="false"` +
@@ -74,8 +76,8 @@ high-leverage items (score ≥ 5.0):
   `RECORD_AUDIO` grant.
 - **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
   `item.isSensitive`.
-- **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
-  guard.
+- ✅ **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
+  guard. Shipped in **v1.8.111**.
 
 ### 0.c.3 Seventh-pass research debt
 
@@ -747,6 +749,8 @@ but does not require a roadmap change.
 | Next-10.3b Addon signing-pin persistence | ✅ v1.8.82 |
 | Next-10.3c Addon registry startup wiring | ✅ v1.8.83 |
 | Next-10.3d Settings → Addons status surface | ✅ v1.8.84 |
+| Seventh-pass G2 clipboard media clone caps | ✅ v1.8.111 |
+| Seventh-pass G12 clipboard preview decode bounds | ✅ v1.8.111 |
 | §C.2 Dictionary downloader UI (Next-10.4) | 🟡 on signing-pin revoke/reset UX + asset mounting |
 | §C.3 Roborazzi per-theme baseline (Next-12.6) | 🟡 on Bump-batch B |
 | §D.1 L13 CleverKeys-arch Apache-2.0 | 🟡 on dataset |

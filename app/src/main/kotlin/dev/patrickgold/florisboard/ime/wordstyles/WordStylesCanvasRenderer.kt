@@ -96,9 +96,13 @@ class WordStylesCanvasRenderer(private val context: Context) : WordStylesRendere
         paint.color = parseHex(style.foregroundColor)
         paint.textSize = sp(style.fontSizeSp)
         val baseTypeface = Typeface.create(style.fontFamily, Typeface.NORMAL)
-        val styleMask = (if (style.isBold) Typeface.BOLD else 0) or
-            (if (style.isItalic) Typeface.ITALIC else 0)
-        paint.typeface = Typeface.create(baseTypeface, styleMask)
+        val typefaceStyle = when {
+            style.isBold && style.isItalic -> Typeface.BOLD_ITALIC
+            style.isBold -> Typeface.BOLD
+            style.isItalic -> Typeface.ITALIC
+            else -> Typeface.NORMAL
+        }
+        paint.typeface = Typeface.create(baseTypeface, typefaceStyle)
         return paint
     }
 

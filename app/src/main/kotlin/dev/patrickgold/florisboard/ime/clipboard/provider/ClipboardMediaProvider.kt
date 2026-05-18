@@ -36,7 +36,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import org.florisboard.lib.kotlin.tryOrNull
-import androidx.core.net.toUri
 
 /**
  * Allows apps to access images and videos on the clipboard.
@@ -152,7 +151,12 @@ class ClipboardMediaProvider : ContentProvider() {
                         ExifInterface.ORIENTATION_ROTATE_180 -> rotation = 180
                         ExifInterface.ORIENTATION_ROTATE_270 -> rotation = 270
                     }
-                    val id = ClipboardFileStorage.cloneUri(context!!, mediaUri)
+                    val mediaKind = when (m) {
+                        IMAGE_CLIPS_TABLE -> ClipboardFileStorage.MediaKind.IMAGE
+                        VIDEO_CLIPS_TABLE -> ClipboardFileStorage.MediaKind.VIDEO
+                        else -> error("Unexpected media table $m")
+                    }
+                    val id = ClipboardFileStorage.cloneUri(context!!, mediaUri, mediaKind)
                     val size = ClipboardFileStorage.getFileForId(context!!, id).length()
                     val mimeTypes = values.getAsString(Columns.MimeTypes).split(",")
                     val displayName = values.getAsString(OpenableColumns.DISPLAY_NAME)

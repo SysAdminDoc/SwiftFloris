@@ -63,10 +63,6 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 
 class FlorisCopyToClipboardActivity : ComponentActivity() {
-    companion object {
-        private const val MaxPreviewBitmapSide = 1024
-    }
-
     private var error: CopyToClipboardError? = null
     private var bitmap: Bitmap? = null
     private var copiedToClipboard: Boolean = false
@@ -147,9 +143,10 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
             val source = ImageDecoder.createSource(contentResolver, uri)
             ImageDecoder.decodeBitmap(source) { decoder, info, _ ->
                 val size = info.size
+                ClipboardPreviewImagePolicy.requireSupportedBounds(size.width, size.height)
                 val scale = max(
-                    size.width.toFloat() / MaxPreviewBitmapSide,
-                    size.height.toFloat() / MaxPreviewBitmapSide,
+                    size.width.toFloat() / ClipboardPreviewImagePolicy.MAX_PREVIEW_BITMAP_SIDE,
+                    size.height.toFloat() / ClipboardPreviewImagePolicy.MAX_PREVIEW_BITMAP_SIDE,
                 )
                 if (scale > 1f) {
                     decoder.setTargetSize(
@@ -178,9 +175,10 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
                 BitmapFactory.decodeStream(stream, null, fallbackOptions)
             } ?: error("Cannot decode image preview")
         }
+        ClipboardPreviewImagePolicy.requireSupportedBounds(bounds.outWidth, bounds.outHeight)
         val scale = max(
-            bounds.outWidth.toFloat() / MaxPreviewBitmapSide,
-            bounds.outHeight.toFloat() / MaxPreviewBitmapSide,
+            bounds.outWidth.toFloat() / ClipboardPreviewImagePolicy.MAX_PREVIEW_BITMAP_SIDE,
+            bounds.outHeight.toFloat() / ClipboardPreviewImagePolicy.MAX_PREVIEW_BITMAP_SIDE,
         )
         val options = BitmapFactory.Options().apply {
             inSampleSize = if (scale > 1f) ceil(scale).toInt() else 1

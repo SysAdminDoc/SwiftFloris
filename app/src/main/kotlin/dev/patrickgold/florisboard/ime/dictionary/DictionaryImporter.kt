@@ -446,7 +446,7 @@ class DictionaryImporter {
             }
             out.write(buffer, 0, read)
         }
-        return out.toString(Charsets.UTF_8)
+        return String(out.toByteArray(), Charsets.UTF_8)
     }
 
     private fun checkEntryLimit(size: Int) {

@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.lib.io
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import java.io.File
 import java.io.FileOutputStream
@@ -42,17 +43,19 @@ class ZipUtilsTest : FunSpec({
         }
     }
 
-    test("unzip ignores path traversal entries") {
+    test("unzip aborts path traversal entries") {
         val root = Files.createTempDirectory("floris-zip-test").toFile()
         try {
             val archive = root.subFile("traversal.zip")
             writeZip(archive, "../escape.txt" to "bad", "safe/file.txt" to "good")
             val destination = root.subDir("out")
 
-            ZipUtils.unzip(archive, destination)
+            shouldThrow<SecurityException> {
+                ZipUtils.unzip(archive, destination)
+            }
 
             root.subFile("escape.txt").exists() shouldBe false
-            destination.subFile("safe/file.txt").readText() shouldBe "good"
+            destination.subFile("safe/file.txt").exists() shouldBe false
         } finally {
             root.deleteRecursively()
         }
