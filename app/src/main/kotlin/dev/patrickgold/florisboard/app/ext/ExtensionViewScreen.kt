@@ -39,6 +39,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -50,6 +51,8 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.settings.theme.ThemeExtensionDeleteNotice
+import dev.patrickgold.florisboard.app.settings.theme.ThemeExtensionTrustStatePolicy
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
@@ -61,8 +64,11 @@ import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
 import dev.patrickgold.florisboard.lib.io.FlorisRef
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.FlorisOutlinedBox
@@ -92,9 +98,25 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
     val scope = rememberCoroutineScope()
 
     var extToDelete by remember { mutableStateOf<Extension?>(null) }
+    var isDeleteInProgress by rememberSaveable { mutableStateOf(false) }
+    var lastDeleteNotice by rememberSaveable { mutableStateOf<ThemeExtensionDeleteNotice?>(null) }
+    var lastDeleteErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     content {
         val canDeleteExtension = extensionManager.canDelete(ext)
+        when (ThemeExtensionTrustStatePolicy.resolveDeleteNotice(isDeleteInProgress, lastDeleteNotice)) {
+            ThemeExtensionDeleteNotice.None -> Unit
+            ThemeExtensionDeleteNotice.DeleteInProgress -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__view__delete_in_progress),
+                secondaryText = stringRes(R.string.ext__view__delete_in_progress_summary),
+            )
+            ThemeExtensionDeleteNotice.DeleteFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__view__delete_failure),
+                secondaryText = lastDeleteErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable),
+            )
+        }
         FlorisInfoCard(
             modifier = Modifier.defaultFlorisOutlinedBox(),
             text = stringRes(R.string.ext__view__overview_title),
@@ -181,13 +203,20 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
             Row(modifier = Modifier.fillMaxWidth()) {
+                val canDelete = ThemeExtensionTrustStatePolicy.canDeleteExtension(
+                    extensionCanBeDeleted = canDeleteExtension,
+                    isDeleteInProgress = isDeleteInProgress,
+                )
                 if (canDeleteExtension) {
                     FlorisOutlinedButton(
                         onClick = {
-                            extToDelete = ext
+                            if (canDelete) {
+                                extToDelete = ext
+                            }
                         },
                         icon = Icons.Default.Delete,
                         text = stringRes(R.string.action__delete),
+                        enabled = canDelete,
                         colors = ButtonDefaults.outlinedButtonColors(
                             contentColor = MaterialTheme.colorScheme.error,
                         ),
@@ -200,6 +229,7 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
                     },
                     icon = Icons.Default.Share,
                     text = stringRes(R.string.action__export),
+                    enabled = ThemeExtensionTrustStatePolicy.canExportExtension(isDeleteInProgress),
                 )
             }
         }
@@ -237,19 +267,33 @@ private fun ViewScreen(ext: Extension) = FlorisScreen {
         if (extToDelete != null) {
             FlorisConfirmDeleteDialog(
                 onConfirm = {
-                    runCatching {
-                        extensionManager.delete(extToDelete!!)
-                    }.onSuccess {
-                        navController.popBackStack()
-                    }.onFailure { error ->
-                        scope.launch {
+                    val target = extToDelete ?: return@FlorisConfirmDeleteDialog
+                    if (!ThemeExtensionTrustStatePolicy.canDeleteExtension(canDeleteExtension, isDeleteInProgress)) {
+                        extToDelete = null
+                        return@FlorisConfirmDeleteDialog
+                    }
+                    extToDelete = null
+                    isDeleteInProgress = true
+                    lastDeleteNotice = null
+                    lastDeleteErrorMessage = null
+                    scope.launch {
+                        val deleteResult = runCatching {
+                            withContext(Dispatchers.IO) {
+                                extensionManager.delete(target)
+                            }
+                        }
+                        isDeleteInProgress = false
+                        deleteResult.onSuccess {
+                            navController.popBackStack()
+                        }.onFailure { error ->
+                            lastDeleteNotice = ThemeExtensionDeleteNotice.DeleteFailure
+                            lastDeleteErrorMessage = error.localizedMessage ?: error.message
                             context.showLongToast(
-                                R.string.error__snackbar_message,
-                                "error_message" to error.localizedMessage,
+                                R.string.error__snackbar_message_template,
+                                "error_message" to (lastDeleteErrorMessage ?: ""),
                             )
                         }
                     }
-                    extToDelete = null
                 },
                 onDismiss = { extToDelete = null },
                 what = extToDelete!!.meta.title,

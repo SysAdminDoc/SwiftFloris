@@ -15,7 +15,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
-- Current lint shape after cleanup batches: 241 warnings, 1 hint. Largest remaining bucket is `UnusedResources` at 211 warnings; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
+- Current lint shape after trust-state batches: 246 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, dictionary import/export, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in extension editing, theme, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
@@ -65,6 +65,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Audited the backup flow trust states by adding explicit progress, cancellation, share-sheet handoff, failure, and clipboard privacy warning cards, plus `BackupFlowNotice` policy coverage for notice ordering.
 - 2026-05-18: Audited the restore flow trust states by adding erase-mode confirmation, progress/cancellation/failure/partial-failure cards, recovery-copy guidance, duplicate-action blocking, and `RestoreFlowNotice` policy coverage.
 - 2026-05-18: Audited language pack import/update/remove states by adding import preparation/importing/cancel/failure cards, install/update/skipped-file counts, delete progress/success/failure cards, duplicate-action blocking, and focused policy coverage.
+- 2026-05-18: Audited theme import/edit/delete states by adding theme-extension save progress/failure cards, confirmed component removal with draft-state feedback, installed extension delete progress/failure cards, duplicate-action blocking, and focused policy coverage.
 
 ## Workstreams
 
@@ -170,7 +171,7 @@ Tasks:
 - [x] Audit backup flow for loading, success, warning, failure, and cancellation states.
 - [x] Audit restore flow for destructive confirmation, progress, partial failure, and recovery copy.
 - [x] Audit language pack import/update/remove states.
-- [ ] Audit theme import/edit/delete states.
+- [x] Audit theme import/edit/delete states.
 - [ ] Audit extension import/edit/delete states.
 - [ ] Audit dictionary add/remove states.
 - [ ] Add calm, specific microcopy for failure and recovery paths.
