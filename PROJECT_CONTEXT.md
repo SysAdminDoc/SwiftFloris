@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.134).
+through v1.8.135).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.134)
+## 3. Stack at HEAD (v1.8.135)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.134** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.135** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability layer.
 v1.8.104 – v1.8.110 closed the
@@ -287,6 +287,14 @@ extraction by adding `BackupRestorePolicy`. Backup completion, cancellation,
 restore archive validation, no-content archive rejection, restore action
 enablement, and partial-failure classification are now covered in JVM tests
 instead of being implicit inside Compose screen state.
+
+v1.8.135 closes the language-pack import/update test item by adding
+`ExtensionImportPolicy`. Specific extension import screens now classify
+readiness by manifest serial type before enabling import, so the language-pack
+screen rejects keyboard/theme packs instead of presenting them as ready, while
+new language-pack installs, user-installed updates, bundled-core rejection,
+corrupted metadata, unsupported files, and import button enablement have focused
+JVM coverage.
 
 ## 4. Module layout
 
