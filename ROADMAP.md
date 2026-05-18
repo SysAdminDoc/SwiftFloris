@@ -1,9 +1,103 @@
-# SwiftFloris Roadmap v5.4
+# SwiftFloris Roadmap v5.5
 
 **Last Updated:** 2026-05-17
-**Supersedes:** ROADMAP v5.3 (2026-05-17). v5.0-v5.3 entries are preserved with shipped markers updated in-place; v5.4 adds the sixth-pass cross-subsystem-hardening reconciliation layer from `.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md` and the 2-week external delta. v5.0-v5.2 historical body is not rewritten.
-**Current Version:** v1.8.92 (released 2026-05-17 — LDML parser `shift=` > `longPress=` correction. **Previous releases in this session, v1.8.91** addon-spec docs mandate REGISTER receiver; **v1.8.90** SAF lost-grant surface in Settings; **v1.8.89** ZipUtils atomic-abort security policy; **v1.8.88** recover-not-crash on undecryptable legacy passphrase; **v1.8.87** FLAG_SECURE + non-saveable passphrase dialog; **v1.8.86** numeric-PIN keyVariation; **v1.8.85** cross-subsystem hardening pass (11 fixes, intentional AGENTS.md §6 deviation). **Prior baseline: v1.8.84** (Settings → Addons read-only status surface).
-**Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream; sixth-pass cross-subsystem hardening closed the latent INTERNET-via-AAR risk, the Android 12+ D2D wrap-key leak, the IME-process OOM via sticker decoder, the hardware-keyboard concurrent-modification crash, and seven smaller correctness / privacy / security gates.
+**Supersedes:** ROADMAP v5.4 (2026-05-17, same-day). v5.0-v5.4 entries are preserved with shipped markers updated in-place; v5.5 records the closure of the v1.8.85 follow-up roster across v1.8.93 – v1.8.102. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.102 (released 2026-05-17 — `HardwareKeyEntry.longPressAlternates` + LDML parser tokenisation). **v1.8.93 – v1.8.102 releases:** F1 – F12 follow-up roster from the v1.8.85 cross-subsystem audit, ten single-feature commits that closed every sixth-pass open item except F11 (Roborazzi baseline recording — needs Android SDK).
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; autocorrect + dictionary + multilingual NLP + voice-routing + addon scaffold all past upstream; sixth-pass cross-subsystem hardening + v1.8.93 – v1.8.102 follow-ups closed the v1.8.85 audit roster; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons, Android 17 IME compliance), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library), or maintainer outreach (SwiftKey-refugee discovery on AlternativeTo / BGR / Android Authority round-ups).
+
+---
+
+## 0. Research Refresh v5.5 (2026-05-17 sixth-pass roster closure)
+
+The v1.8.85 audit produced twelve follow-up items (F1 – F12) marked for
+single-feature per-PR releases on the standard AGENTS.md §6 cadence.
+v1.8.93 – v1.8.102 landed them all except F11 (Roborazzi baselines —
+deferred because this VM has no Android SDK).
+
+Shipped layer (one line per release):
+
+- **v1.8.93** — `release.yml` keystore-decode hygiene (`printf %s`,
+  magic-byte gate, `umask 077` + `chmod 600`, `gh release create`
+  env-var hardening) — F2.
+- **v1.8.94** — `verify-addon-apk.sh` strict mode + tri-state failure
+  reporting — F4.
+- **v1.8.95** — `verifyDataExtractionRules` build gate pinning the
+  load-bearing D2D-exclude content against accidental rewrite — F12.
+- **v1.8.96** — `crowdin/github-action@v2` and
+  `peter-evans/create-or-update-comment@v4` pinned to verified SHAs —
+  F9 + F10.
+- **v1.8.97** — `fastlane/update-readme.sh` Python block-substitution
+  (replaces `sed -i` interpolation footgun);
+  `fastlane/generate-screenshots.sh` absolute-path cleanup — F3.
+- **v1.8.98** — `generate_icon.py` `Path(__file__).resolve().parent`
+  portability — F1.
+- **v1.8.99** — `HardwareKeyboardLayout.equals` fast-path skips the
+  structural map walk in the common case — F6.
+- **v1.8.100** — Sticker palette `LruCache<String, ImageBitmap>` +
+  cursor-time enumeration cap in `UserStickerRepository` — F5.
+- **v1.8.101** — In-keyboard banner for SAF lost-grant on the Imported
+  sticker tab (mirror of the v1.8.90 Settings-side surface) — F7.
+- **v1.8.102** — `HardwareKeyEntry.longPressAlternates` field + LDML
+  parser tokenisation; popup-UI routing remains a future slice — F8
+  (parser half).
+
+### 0.5.1 Open follow-ups carried forward
+
+- **F11** (Roborazzi visual baselines for `swiftkey_high_contrast` +
+  `aurora_animated` themes + the Addons settings surface) — needs
+  `:app:recordRoborazziDebug` on a host with the Android SDK. Land
+  as v1.8.103 from the maintainer build host. Once recorded, remove
+  `continue-on-error: true` from the `Roborazzi visual-regression
+  verify (N14.1)` step in `.github/workflows/android.yml`.
+- **F8 popup half** — wiring `HardwareKeyEntry.longPressAlternates`
+  through to the on-screen long-press popup. Requires a new bridge
+  between the hardware-keyboard runtime mapper and `KeyData.popup`
+  plus Snygg styling for the hardware-source popup variant. Multi-file
+  slice; warrants its own scoped release with design notes.
+
+### 0.5.2 Remaining open work (re-stated from v5.4 §0.4.3 / §0.4.5)
+
+These were not closed by v1.8.93 – v1.8.102 because each requires
+either multi-week engineering, external-clock dependency, or
+maintainer business decisions:
+
+- **SwiftKey-refugee discovery slice** (Tier-1, urgency 5; 14 days to
+  cutoff). Maintainer outreach: AlternativeTo PR, BGR / Android
+  Authority comments, r/Swiftkey post.
+- **F-Droid reproducible-verified-tier submission** (Tier-1, urgency 3).
+  Waiting on F-Droid Basic 2.0 stable; metadata submission then.
+- **LiteRT-LM v0.11 + Gemma 4 E2B as L1.1a target** (Tier-2). Multi-week
+  addon engineering when L1.1a moves out of gate.
+- **Android 17 IME compliance slice** (Tier-2, urgency 1; June 2026
+  stable). Two behavior changes to confirm benign / wire behind the API
+  37 gate.
+- **Phase B5 decoder field calibration with real traces** (planned).
+  Needs real-device telemetry collection on the maintainer host.
+- **Bergamot L2.1a / librime L3 addons** — blocked on upstream releases.
+
+### 0.5.3 Net cumulative scope of the 2026-05-17 day
+
+- Eighteen releases (v1.8.85 – v1.8.102) — one cross-subsystem
+  hardening pass plus seventeen single-feature follow-up commits.
+- Twenty-three identified audit findings closed.
+- One latent INTERNET-via-AAR escape hatch closed
+  (`verifyNoInternetPermissionMerged`).
+- One personal-dictionary data-leak path closed
+  (Android-12+ `data_extraction_rules.xml`).
+- One IME-process OOM crash closed (sticker decoder).
+- One IME hot-path crash closed (`HardwareKeyboardRuntimeMapper`
+  concurrent modification).
+- Five CI / build supply-chain surfaces hardened.
+- Two reliability / atomic-restore semantics tightened.
+- Three privacy-gate gaps closed (numeric-PIN clipboard, passphrase
+  dialog FLAG_SECURE, undecryptable-legacy-passphrase recovery).
+- Two performance-cliff polish items.
+
+The cumulative diff across the day is ~1100 insertions across 22 source
+files, 10 release-notes files, and 3 research artifacts. Unverified
+locally — Definition-of-Done verification commands listed in each
+RELEASE_NOTES file should run on the maintainer build host before
+tagging.
 
 ---
 

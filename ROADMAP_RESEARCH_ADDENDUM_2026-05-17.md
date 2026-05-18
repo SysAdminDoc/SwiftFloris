@@ -48,24 +48,28 @@ landed that implemented the findings:
 The eight follow-up releases are tagged locally; push is blocked by the
 same VM 403 documented in [`AGENTS.md`](AGENTS.md).
 
-### 0.b.1 Sixth-pass open follow-up roster
+### 0.b.1 Sixth-pass follow-up roster — **all closed v1.8.93 – v1.8.102**
 
-Surfaced by the v1.8.85 audit but deferred from the v1.8.85 – v1.8.92
-slice so each can land as its own per-PR commit on the standard cadence.
-Full priority-scored roster in
-[`.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md §3`](.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md);
-high-leverage items (score ≥ 5.0):
+Surfaced by the v1.8.85 audit and deferred from the v1.8.85 – v1.8.92
+slice; landed as ten single-feature releases over 2026-05-17:
 
-- **F2** — `release.yml` keystore-decode hygiene (`printf %s` instead of
-  `echo`, `chmod 600`, `umask 077`).
-- **F4** — `verify-addon-apk.sh` upgrade to `set -eo pipefail` and
-  distinguish "no output" from "no match" so a broken `aapt2` can't
-  silently PASS.
-- **F9** — Pin `crowdin/github-action@v2` floating tag to a SHA.
-- **F10** — Pin `peter-evans/create-or-update-comment@v4` floating tag to
-  a SHA (TODO comment placed in v1.8.85).
-- **F12** — Lint smoke that `data_extraction_rules.xml` resolves cleanly,
-  pinning the v1.8.85 behaviour against accidental rewrite.
+| Item | Shipped as |
+|---|---|
+| **F2** — `release.yml` keystore-decode hygiene (`printf %s` instead of `echo`, `chmod 600`, `umask 077`, JKS / PKCS#12 magic-byte gate, `gh release create` env-var hardening) | ✅ **v1.8.93** |
+| **F4** — `verify-addon-apk.sh` upgrade to `set -eo pipefail`, distinguish "tool failed to invoke" from "tool produced no output" from "tool succeeded but no match" — broken `aapt2` can no longer silently PASS | ✅ **v1.8.94** |
+| **F12** — Build gate `verifyDataExtractionRules` pinning the load-bearing excludes in `data_extraction_rules.xml` against accidental rewrite | ✅ **v1.8.95** |
+| **F9** — Pin `crowdin/github-action@v2` to `8868a33591d21088edfc398968173a3b98d51706` | ✅ **v1.8.96** |
+| **F10** — Pin `peter-evans/create-or-update-comment@v4` to `71345be0265236311c031f5c7866368bd1eff043` | ✅ **v1.8.96** |
+| **F3** — `fastlane/update-readme.sh` Python block-substitution replacement for the `sed -i` interpolation footgun; `fastlane/generate-screenshots.sh` absolute-path cleanup instead of `cd ..; rm -r out` | ✅ **v1.8.97** |
+| **F1** — `generate_icon.py` portability (`Path(__file__).resolve().parent` instead of hard-coded Windows absolute) | ✅ **v1.8.98** |
+| **F6** — `HardwareKeyboardLayout.equals` fast-path skips the structural map walk in the common cases | ✅ **v1.8.99** |
+| **F5** — Sticker palette `LruCache<String, ImageBitmap>` (64-entry) + cursor-time enumeration cap in `UserStickerRepository` | ✅ **v1.8.100** |
+| **F7** — In-keyboard banner for SAF lost-grant — mirror of the v1.8.90 Settings-side surface | ✅ **v1.8.101** |
+| **F8** — `HardwareKeyEntry.longPressAlternates` + LDML parser tokenisation; popup-UI routing intentionally deferred to its own future slice | ✅ **v1.8.102** |
+
+The follow-up roster is fully closed. The remaining open items below are
+all multi-week feature slices, external-clock-dependent, or maintainer
+outreach tasks; they did not land in the autonomous-loop window.
 
 ### 0.b.2 Sixth-pass external delta — new commitments
 
