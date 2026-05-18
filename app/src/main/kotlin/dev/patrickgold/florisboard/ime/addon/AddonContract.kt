@@ -33,11 +33,24 @@ package dev.patrickgold.florisboard.ime.addon
  *     `<application>` tag, equal to one of [AddonContract.MetadataKey]. The
  *     value is a string resource id pointing to an XML descriptor file that
  *     conforms to the schema below.
- *  2. An addon APK *may* declare a broadcast `<receiver>` that responds to
- *     [AddonContract.Action.REGISTER] so it can self-announce changes
- *     (version bumps, new language assets) without forcing the IME to poll.
- *     Receivers must be exported with a signature-permission protection so
- *     only signature-matching packages can request a register-callback.
+ *  2. An addon APK **MUST** declare a broadcast `<receiver>` whose
+ *     `<intent-filter>` matches one of the [AddonContract.Action] register
+ *     actions (REGISTER_ADDON or one of the type-specific aliases).
+ *
+ *     This is a *visibility* requirement, not a feature requirement —
+ *     Android 11+ enforces package-visibility restrictions; the IME's
+ *     `<queries>` block in `AndroidManifest.xml` declares intent-filter
+ *     queries for these action names, and an addon's package is invisible
+ *     to `PackageManager.getInstalledPackages()` unless at least one of its
+ *     manifest components carries a matching intent-filter. The receiver
+ *     can be a no-op (it does not need to handle the broadcast); the
+ *     intent-filter alone satisfies the visibility query.
+ *
+ *     The receiver *should* also respond to [AddonContract.Action.REGISTER]
+ *     so it can self-announce changes (version bumps, new language assets)
+ *     without forcing the IME to poll. Receivers must be exported with a
+ *     signature-permission protection so only signature-matching packages
+ *     can request a register-callback.
  *  3. The addon's signing certificate is captured at first-enrolment and
  *     pinned. Subsequent installs that change the signing cert are quietly
  *     ignored — supply-chain protection equivalent to the user-dictionary
