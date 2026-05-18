@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.159-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.160-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.159 | Privacy posture |
+| Area | What's in v1.8.160 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -124,7 +124,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.56).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.57).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -261,7 +261,7 @@ Six Macrobenchmark trace sections are emitted from production code paths:
 - `swiftfloris.dict.load` (`loadSpecificDictionary`)
 - `swiftfloris.nlp.symspell.build` (lazy index init)
 
-Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). The v1.8.159 SM-S938B / Android 16 baseline records `am start -W` medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, plus benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms. The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section or log marker that produced them.
+Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, and cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`. The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section or log marker that produced them.
 
 ## Testing
 
@@ -276,6 +276,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.160** (2026-05-18) — First suggestion latency baseline: a benchmark-only activity invokes the Latin suggestion provider against a real `EditorContent` snapshot and records cold provider-direct SM-S938B / Android 16 numbers under `docs/benchmark-results/`. ([notes](RELEASE_NOTES_v1.8.160.md))
 - **v1.8.159** (2026-05-18) — IME first-render benchmark baseline: `:benchmark` is active again, a benchmark-only input activity drives cold IME view creation, and SM-S938B / Android 16 first-render numbers are committed under `docs/benchmark-results/`. ([notes](RELEASE_NOTES_v1.8.159.md))
 - **v1.8.158** (2026-05-18) — Accessibility manual QA notes: contributor and accessibility docs now list TalkBack traversal, key-label, candidate-row, font-scale, non-color-state, and theme/layout checks. ([notes](RELEASE_NOTES_v1.8.158.md))
 - **v1.8.157** (2026-05-18) — Non-color state indicators: shared success/progress/neutral cards and extension-import row icons make readiness, progress, cancellation, and completion visible without relying on color alone. ([notes](RELEASE_NOTES_v1.8.157.md))
@@ -425,7 +426,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.159** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.160** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

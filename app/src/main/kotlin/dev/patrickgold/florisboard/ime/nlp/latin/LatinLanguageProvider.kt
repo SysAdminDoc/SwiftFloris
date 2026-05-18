@@ -17,7 +17,10 @@
 package dev.patrickgold.florisboard.ime.nlp.latin
 
 import android.content.Context
+import android.os.SystemClock
 import android.os.Trace
+import android.util.Log
+import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.core.Subtype
@@ -128,10 +131,28 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): List<SuggestionCandidate> {
+        val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
+        val currentWordLength = content.currentWordText.ifBlank { content.composingText }.length
+        val suggestStartedAt = if (shouldLogBenchmark) {
+            SystemClock.elapsedRealtimeNanos()
+        } else {
+            0L
+        }
+        var candidateCount = 0
         Trace.beginSection("swiftfloris.nlp.suggest")
         try {
-            return suggestImpl(subtype, content, maxCandidateCount, isPrivateSession)
+            val result = suggestImpl(subtype, content, maxCandidateCount, isPrivateSession)
+            candidateCount = result.size
+            return result
         } finally {
+            if (shouldLogBenchmark) {
+                val durationMs = (SystemClock.elapsedRealtimeNanos() - suggestStartedAt) / 1_000_000.0
+                Log.i(
+                    "SwiftFlorisPerf",
+                    "swiftfloris.nlp.suggestMs=$durationMs " +
+                        "currentWordLength=$currentWordLength candidateCount=$candidateCount",
+                )
+            }
             Trace.endSection()
         }
     }

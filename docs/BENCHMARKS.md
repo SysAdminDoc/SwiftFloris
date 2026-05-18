@@ -2,8 +2,8 @@
 
 ROADMAP §7 Next-12.1. Macrobenchmark harness lives at
 `benchmark/src/main/kotlin/dev/patrickgold/florisboard/benchmark/
-KeyboardLatencyBenchmark.kt`. The adb first-render harness lives at
-`tools/benchmark-ime-first-render.ps1`. Run on a clocks-locked device:
+KeyboardLatencyBenchmark.kt`. The adb harness scripts live under `tools/`.
+Run on a clocks-locked device:
 
 ```bash
 # Lock device clocks (Pixel 6 / S25 Ultra example).
@@ -16,6 +16,9 @@ adb shell input keyevent KEYCODE_WAKEUP
 
 # Repeatable adb baseline for IME first render.
 pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-first-render.ps1 -Iterations 5
+
+# Repeatable adb baseline for cold first suggestion provider latency.
+pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-ime-suggestion-latency.ps1 -Iterations 5
 
 # AndroidX Macrobenchmark trace/frame runs.
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
@@ -31,7 +34,8 @@ AndroidX Macrobenchmark runs. The adb first-render script writes JSON to
 | Benchmark | Device / iterations | Launch median | TraceSection / log median | Evidence |
 |---|---|---|---|---|
 | `imeFirstRender` (cold IME view inflation) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: `TotalTime` 31.0 ms, `WaitTime` 34.0 ms | `SwiftFlorisPerf`: `swiftfloris.ime.firstRenderMs` 18.335469 ms | [`baseline-2026-05-18-ime-first-render.json`](benchmark-results/baseline-2026-05-18-ime-first-render.json) |
-| `suggestionStripRecomposition` (warm-start with typed text) | _pending_ | _pending_ | `swiftfloris.nlp.suggest` + `swiftfloris.smartbar.candidates.recompose`: _pending_ | _pending_ |
+| `firstSuggestionLatency` (cold provider-direct `teh`) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: `swiftfloris.nlp.firstSuggestionMs` 1878.616249 ms, 8 candidates | [`baseline-2026-05-18-ime-suggestion-latency.json`](benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json) |
+| `suggestionStripRecomposition` (warm-start with typed text) | _pending_ | _pending_ | `swiftfloris.smartbar.candidates.recompose`: _pending_ | _pending_ |
 | `dictionaryColdLoad` (SCOWL 117k load) | _pending_ | _pending_ | `swiftfloris.dict.load` + `swiftfloris.nlp.symspell.build`: _pending_ | _pending_ |
 | `themeSwitch` (Snygg stylesheet swap) | _pending_ | _pending_ | `swiftfloris.theme.switch`: _pending_ | _pending_ |
 
@@ -89,6 +93,7 @@ script-emitted JSON for adb-only baselines.
 
 | Date | Device | Build | Result file |
 |---|---|---|---|
+| 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.160 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-suggestion-latency.json`](benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json) |
 | 2026-05-18 | Samsung SM-S938B / Android 16 (SDK 36) | v1.8.159 benchmark APK (`dev.patrickgold.florisboard.bench`) | [`baseline-2026-05-18-ime-first-render.json`](benchmark-results/baseline-2026-05-18-ime-first-render.json) |
 
 ## How to read a regression
