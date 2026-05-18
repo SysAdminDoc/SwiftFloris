@@ -272,6 +272,7 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
         @Composable
         fun FileList(title: String, icon: ImageVector, files: List<File>, onAdd: () -> Unit) {
             var dialogFile by remember { mutableStateOf<File?>(null) }
+            var fileToDelete by remember { mutableStateOf<File?>(null) }
             val actionsEnabled = ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)
             ListItem(
                 headlineContent = {
@@ -324,16 +325,7 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                             return@JetPrefAlertDialog
                         }
                         dialogFile = null
-                        startFileAction()
-                        scope.launch {
-                            val deleted = withContext(Dispatchers.IO) {
-                                file.delete()
-                            }
-                            finishFileAction(ExtensionEditorFilesPolicy.deleteResult(deleted))
-                            if (deleted) {
-                                version++
-                            }
-                        }
+                        fileToDelete = file
                     },
                     onConfirm = {
                         if (!ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)) {
@@ -376,6 +368,38 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
                         value = fileNameInput,
                         onValueChange = { fileNameInput = it },
                         singleLine = true,
+                    )
+                }
+            }
+
+            fileToDelete?.let { file ->
+                JetPrefAlertDialog(
+                    title = stringRes(R.string.ext__editor__files__delete_confirm_title),
+                    confirmLabel = stringRes(R.string.action__delete),
+                    onConfirm = {
+                        if (!ExtensionEditorFilesPolicy.canStartFileAction(isFileActionInProgress)) {
+                            return@JetPrefAlertDialog
+                        }
+                        fileToDelete = null
+                        startFileAction()
+                        scope.launch {
+                            val deleted = withContext(Dispatchers.IO) {
+                                file.delete()
+                            }
+                            finishFileAction(ExtensionEditorFilesPolicy.deleteResult(deleted))
+                            if (deleted) {
+                                version++
+                            }
+                        }
+                    },
+                    dismissLabel = stringRes(R.string.action__cancel),
+                    onDismiss = { fileToDelete = null },
+                ) {
+                    Text(
+                        text = stringRes(
+                            R.string.ext__editor__files__delete_confirm_message,
+                            "file_name" to file.name,
+                        ),
                     )
                 }
             }
