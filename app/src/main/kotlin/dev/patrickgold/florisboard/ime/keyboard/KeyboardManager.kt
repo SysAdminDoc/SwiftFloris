@@ -42,6 +42,9 @@ import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.ImeOptions
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
 import dev.patrickgold.florisboard.ime.editor.OperationUnit
+import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardInputPolicy
+import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardKeyDownAction
+import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardKeyUpAction
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayout
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardRuntimeMapper
 import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
@@ -1058,39 +1061,41 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     fun onHardwareKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
         hardwareKeyboardRuntimeMapper.pruneDetachedLayouts()
-        if (handleMappedHardwareKey(event)) return true
-        when (keyCode) {
-            KeyEvent.KEYCODE_SPACE -> {
+        val mappedKey = hardwareKeyboardRuntimeMapper.map(event)
+        return when (val action = HardwareKeyboardInputPolicy.keyDownAction(
+            keyCode = keyCode,
+            mappedKey = mappedKey,
+            isMappedKeyAlphabetic = mappedKey?.let { UCharacter.isUAlphabetic(it.codePoint) } ?: false,
+        )) {
+            is HardwareKeyboardKeyDownAction.CommitMappedText -> {
+                if (action.shouldFlushAutoCommitCandidate) {
+                    nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
+                }
+                editorInstance.commitChar(action.text)
+            }
+            HardwareKeyboardKeyDownAction.HandleSpace -> {
                 handleHardwareKeyboardSpace()
-                return true
+                true
             }
-            KeyEvent.KEYCODE_ENTER -> {
+            HardwareKeyboardKeyDownAction.HandleEnter -> {
                 handleEnter()
-                return true
+                true
             }
-            KeyEvent.KEYCODE_SHIFT_LEFT, KeyEvent.KEYCODE_SHIFT_RIGHT -> {
+            HardwareKeyboardKeyDownAction.HandleShiftDown -> {
                 inputEventDispatcher.sendDown(TextKeyData.SHIFT)
-                return true
+                true
             }
-            else -> return false
+            HardwareKeyboardKeyDownAction.PassThrough -> false
         }
-    }
-
-    private fun handleMappedHardwareKey(event: KeyEvent?): Boolean {
-        val mapped = hardwareKeyboardRuntimeMapper.map(event) ?: return false
-        if (!UCharacter.isUAlphabetic(mapped.codePoint)) {
-            nlpManager.getAutoCommitCandidate()?.let { commitAutoCommitCandidate(it) }
-        }
-        return editorInstance.commitChar(mapped.text)
     }
 
     fun onHardwareKeyUp(keyCode: Int, event: KeyEvent?): Boolean {
-        when (keyCode) {
-            KeyEvent.KEYCODE_SHIFT_LEFT, KeyEvent.KEYCODE_SHIFT_RIGHT -> {
+        return when (HardwareKeyboardInputPolicy.keyUpAction(keyCode)) {
+            HardwareKeyboardKeyUpAction.HandleShiftUp -> {
                 inputEventDispatcher.sendUp(TextKeyData.SHIFT)
-                return true
+                true
             }
-            else -> return false
+            HardwareKeyboardKeyUpAction.PassThrough -> false
         }
     }
 

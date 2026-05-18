@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.129).
+through v1.8.130).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.129)
+## 3. Stack at HEAD (v1.8.130)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.129** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.130** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability layer.
 v1.8.104 – v1.8.110 closed the
@@ -258,6 +258,12 @@ item by extracting `EditorInputBehaviorPolicy` and routing `EditorInstance` /
 spacebar commits, rejected-correction protection, suppressed plain-space
 predictions, punctuation auto-spacing, phantom spacing, double-space period,
 and sentence-capitalization gates.
+
+v1.8.130 closes the adjacent hardware-keyboard test item by extracting
+`HardwareKeyboardInputPolicy`. The hardware keydown / keyup router is now
+covered for space, enter, delete pass-through, shift, mapped letters, mapped
+punctuation, mapped-key priority, and punctuation-triggered pending-autocorrect
+flush behavior.
 
 ## 4. Module layout
 
