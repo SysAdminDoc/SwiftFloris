@@ -91,6 +91,24 @@ class AddonSigningPinSetTest : FunSpec({
         )
     }
 
+    test("withoutPackage removes only the requested pin") {
+        val pins = AddonSigningPinSet.parse(
+            """
+            org.swiftfloris.dict.de=$PIN_SHA_B
+            org.swiftfloris.dict.pl=$PIN_SHA_A
+            """.trimIndent(),
+        ).withoutPackage("org.swiftfloris.dict.pl")
+
+        pins.asMap() shouldBe mapOf("org.swiftfloris.dict.de" to PIN_SHA_B)
+    }
+
+    test("withoutPackage is a no-op for packages that are not pinned") {
+        val pins = AddonSigningPinSet.parse("org.swiftfloris.dict.pl=$PIN_SHA_A")
+            .withoutPackage("org.swiftfloris.dict.fr")
+
+        pins.asMap() shouldBe mapOf("org.swiftfloris.dict.pl" to PIN_SHA_A)
+    }
+
     test("registry can round-trip through the pin set codec") {
         val registry = AddonRegistry.fromPinnedSigningPinSet(
             AddonSigningPinSet.parse("org.swiftfloris.dict.pl=$PIN_SHA_A"),

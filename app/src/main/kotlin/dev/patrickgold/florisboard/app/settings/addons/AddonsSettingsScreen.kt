@@ -19,7 +19,10 @@ package dev.patrickgold.florisboard.app.settings.addons
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.Refresh
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -35,6 +38,7 @@ import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonSigningPinSet
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.datastore.model.observeAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
@@ -48,7 +52,7 @@ import org.florisboard.lib.compose.stringRes
  *
  * This screen deliberately reuses [AddonRegistryStartup] for manual rescans so
  * Settings and IME startup share the exact same signing-pin and package-hijack
- * rules. Revoke/reset controls and asset mounting stay in the next slices.
+ * rules. Asset mounting stays in the next slice.
  */
 @Composable
 fun AddonsSettingsScreen() = FlorisScreen {
@@ -61,30 +65,65 @@ fun AddonsSettingsScreen() = FlorisScreen {
     val scope = rememberCoroutineScope()
     val persistedPinsRaw by prefs.addon.signingCertPins.observeAsState()
     var snapshot by remember { mutableStateOf(AddonRegistryStore.active().lastRefresh()) }
+    var activePinnedPackageNames by remember {
+        mutableStateOf(AddonRegistryStore.active().pinnedSigningCertificates().keys)
+    }
     var scanInProgress by remember { mutableStateOf(false) }
     var scanError by remember { mutableStateOf<String?>(null) }
-    val pinnedCount = remember(persistedPinsRaw) {
-        AddonSigningPinSet.parse(persistedPinsRaw).asMap().size
+    var pendingPinAction by remember { mutableStateOf<SigningPinAction?>(null) }
+    val persistedPinSet = remember(persistedPinsRaw) {
+        AddonSigningPinSet.parse(persistedPinsRaw)
+    }
+    val pinnedPackageNames = remember(persistedPinSet, activePinnedPackageNames) {
+        persistedPinSet.asMap().keys + activePinnedPackageNames
+    }
+    val pinnedCount = pinnedPackageNames.size
+
+    fun publishReconcileResult(result: AddonRegistryStartup.Result) {
+        AddonRegistryStore.setActive(result.registry)
+        snapshot = result.snapshot
+        activePinnedPackageNames = result.registry.pinnedSigningCertificates().keys
     }
 
-    fun rescanInstalledAddons() {
+    fun rescanInstalledAddons(persistedPinsOverride: String? = null) {
         if (scanInProgress) return
         scanInProgress = true
         scanError = null
         scope.launch {
             try {
+                val persistedPins = persistedPinsOverride ?: prefs.addon.signingCertPins.get()
+                if (persistedPinsOverride != null) {
+                    prefs.addon.signingCertPins.set(persistedPinsOverride)
+                }
                 val result = withContext(Dispatchers.Default) {
                     val discovered = AddonEnumerator(context.applicationContext).snapshot()
                     AddonRegistryStartup.reconcile(
                         discovered = discovered,
-                        persistedSigningPinsRaw = prefs.addon.signingCertPins.get(),
+                        persistedSigningPinsRaw = persistedPins,
                     )
                 }
-                AddonRegistryStore.setActive(result.registry)
-                snapshot = result.snapshot
+                publishReconcileResult(result)
                 if (result.signingPinsChanged) {
                     prefs.addon.signingCertPins.set(result.encodedSigningPins)
                 }
+            } catch (e: Exception) {
+                scanError = e.message ?: e::class.simpleName
+            } finally {
+                scanInProgress = false
+            }
+        }
+    }
+
+    fun resetTrustDecisions() {
+        if (scanInProgress) return
+        scanInProgress = true
+        scanError = null
+        scope.launch {
+            try {
+                prefs.addon.signingCertPins.set("")
+                AddonRegistryStore.reset()
+                snapshot = AddonRegistryStore.active().lastRefresh()
+                activePinnedPackageNames = emptySet()
             } catch (e: Exception) {
                 scanError = e.message ?: e::class.simpleName
             } finally {
@@ -114,6 +153,15 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 enabledIf = { !scanInProgress },
                 onClick = { rescanInstalledAddons() },
             )
+            if (pinnedCount > 0) {
+                Preference(
+                    icon = Icons.Default.Delete,
+                    title = stringRes(R.string.settings__addons__reset_trust),
+                    summary = stringRes(R.string.settings__addons__reset_trust_summary),
+                    enabledIf = { !scanInProgress },
+                    onClick = { pendingPinAction = SigningPinAction.ResetAll },
+                )
+            }
             scanError?.let { error ->
                 Preference(
                     icon = Icons.Default.Block,
@@ -147,6 +195,21 @@ fun AddonsSettingsScreen() = FlorisScreen {
                             .replace("{package}", rejected.packageName)
                             .replace("{reason}", rejected.reason),
                     )
+                    if (rejected.packageName in pinnedPackageNames) {
+                        Preference(
+                            icon = Icons.Default.Refresh,
+                            title = stringRes(R.string.settings__addons__trust_changed_certificate),
+                            summary = stringRes(R.string.settings__addons__trust_changed_certificate_summary)
+                                .replace("{package}", rejected.packageName),
+                            enabledIf = { !scanInProgress },
+                            onClick = {
+                                pendingPinAction = SigningPinAction.TrustChangedCertificate(
+                                    packageName = rejected.packageName,
+                                    displayName = rejected.displayName,
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }
@@ -156,6 +219,25 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 icon = Icons.Default.Extension,
                 title = stringRes(R.string.settings__addons__install_title),
                 summary = stringRes(R.string.settings__addons__install_summary),
+            )
+        }
+
+        pendingPinAction?.let { action ->
+            SigningPinActionDialog(
+                action = action,
+                onConfirm = {
+                    pendingPinAction = null
+                    when (action) {
+                        SigningPinAction.ResetAll -> resetTrustDecisions()
+                        is SigningPinAction.TrustChangedCertificate -> {
+                            val nextPins = AddonSigningPinSet.parse(prefs.addon.signingCertPins.get())
+                                .withoutPackage(action.packageName)
+                                .encode()
+                            rescanInstalledAddons(persistedPinsOverride = nextPins)
+                        }
+                    }
+                },
+                onDismiss = { pendingPinAction = null },
             )
         }
     }
@@ -192,5 +274,52 @@ private fun formatBundleSize(bytes: Long): String {
         bytes >= mib -> "%.2f MiB".format(bytes.toDouble() / mib)
         bytes >= kib -> "%.2f KiB".format(bytes.toDouble() / kib)
         else -> "$bytes B"
+    }
+}
+
+private sealed interface SigningPinAction {
+    data object ResetAll : SigningPinAction
+
+    data class TrustChangedCertificate(
+        val packageName: String,
+        val displayName: String?,
+    ) : SigningPinAction
+}
+
+@Composable
+private fun SigningPinActionDialog(
+    action: SigningPinAction,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    when (action) {
+        SigningPinAction.ResetAll -> {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__addons__reset_trust_confirm_title),
+                confirmLabel = stringRes(R.string.action__reset),
+                onConfirm = onConfirm,
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = onDismiss,
+            ) {
+                Text(text = stringRes(R.string.settings__addons__reset_trust_confirm_message))
+            }
+        }
+        is SigningPinAction.TrustChangedCertificate -> {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__addons__trust_changed_certificate_confirm_title),
+                confirmLabel = stringRes(R.string.settings__addons__trust_changed_certificate_confirm),
+                onConfirm = onConfirm,
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = onDismiss,
+            ) {
+                Text(
+                    text = stringRes(
+                        R.string.settings__addons__trust_changed_certificate_confirm_message,
+                        "package" to action.packageName,
+                        "name" to (action.displayName ?: action.packageName),
+                    ),
+                )
+            }
+        }
     }
 }

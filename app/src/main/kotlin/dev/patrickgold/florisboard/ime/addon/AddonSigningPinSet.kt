@@ -35,6 +35,11 @@ data class AddonSigningPinSet(
 
     fun contains(packageName: String): Boolean = packageName in pinsByPackageName
 
+    fun withoutPackage(packageName: String): AddonSigningPinSet {
+        if (!contains(packageName)) return this
+        return AddonSigningPinSet(pinsByPackageName - packageName)
+    }
+
     fun withFirstSeen(manifest: AddonManifest): AddonSigningPinSet {
         if (contains(manifest.packageName)) return this
         return AddonSigningPinSet(
