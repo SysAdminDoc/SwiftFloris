@@ -18,11 +18,12 @@ package dev.patrickgold.florisboard.ime.bidi
 
 import android.content.Context
 import android.graphics.Typeface
+import androidx.compose.ui.text.font.FontFamily
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * ROADMAP §7 L4.2 — Noto Nastaliq Urdu font provider (path scaffold).
+ * ROADMAP §7 L4.2 — Noto Nastaliq Urdu font provider.
  *
  * Urdu users expect Nastaliq positional shaping. Standard Android
  * fallback fonts render Urdu in **Naskh** (Arabic-style) which is the
@@ -32,14 +33,13 @@ import java.util.concurrent.atomic.AtomicReference
  * SwiftFloris bundles Noto Nastaliq Urdu (OFL-1.1; Apache-compatible
  * with attribution in `app/src/main/assets/fonts/LICENSE-OFL.txt`) at
  * [BUNDLED_FONT_PATH]. This provider lazily loads it via
- * `Typeface.createFromAsset` on first access. Snygg stylesheet
- * selectors with `locale="ur"` route their `font-family` through
- * [bundledTypeface] to render in correct Nastaliq shape.
+ * `Typeface.createFromAsset` on first access. The keyboard renderer
+ * routes Urdu-subtype Arabic-script labels through [bundledFontFamily]
+ * to render in correct Nastaliq shape.
  *
- * If the asset is missing (e.g. user-build without the font file
- * downloaded), the provider falls back to `Typeface.DEFAULT` so the
- * IME still renders. Bundle download instructions live in
- * `docs/FONTS.md`.
+ * If the asset is missing (e.g. custom build without the font file),
+ * the provider falls back to `Typeface.DEFAULT` so the IME still
+ * renders. Bundle source and attribution live in `docs/FONTS.md`.
  */
 object NastaliqFontProvider {
 
@@ -73,6 +73,28 @@ object NastaliqFontProvider {
         }
     }
 
+    /** Compose font-family wrapper around [bundledTypeface]. */
+    fun bundledFontFamily(context: Context): FontFamily {
+        return FontFamily(bundledTypeface(context))
+    }
+
+    /** True when the active subtype language should prefer Nastaliq glyphs. */
+    fun isUrduLanguage(language: String): Boolean {
+        return language.equals("ur", ignoreCase = true)
+    }
+
+    /** True when [text] should use the bundled Nastaliq font for an Urdu subtype. */
+    fun shouldRouteText(language: String, text: String?): Boolean {
+        if (!isUrduLanguage(language) || text.isNullOrBlank()) return false
+        var index = 0
+        while (index < text.length) {
+            val codePoint = text.codePointAt(index)
+            if (isArabicScriptCodePoint(codePoint)) return true
+            index += Character.charCount(codePoint)
+        }
+        return false
+    }
+
     /** True when the bundled asset is loadable. */
     fun isAvailable(context: Context): Boolean {
         return try {
@@ -85,5 +107,13 @@ object NastaliqFontProvider {
     /** Test-only: clears the cached Typeface so a fresh load happens. */
     internal fun resetForTesting() {
         cached.set(null)
+    }
+
+    private fun isArabicScriptCodePoint(codePoint: Int): Boolean {
+        return codePoint in 0x0600..0x06FF ||
+            codePoint in 0x0750..0x077F ||
+            codePoint in 0x0870..0x08FF ||
+            codePoint in 0xFB50..0xFDFF ||
+            codePoint in 0xFE70..0xFEFF
     }
 }

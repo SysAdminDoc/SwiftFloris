@@ -479,30 +479,12 @@ produces sensible auto-correct + completion candidates.
 
 ### C4 — L4.2 Nastaliq font bundle
 
-```
-SwiftFloris at `~/repos/SwiftFloris` has the Persian/Urdu normaliser
-(`ime/bidi/PersianUrduNormalizer`) but no Nastaliq font asset, so
-Urdu text renders in fallback Naskh.
-
-Your task:
-1. Download Noto Nastaliq Urdu from
-   https://fonts.google.com/noto/specimen/Noto+Nastaliq+Urdu
-   (OFL-1.1 license — Apache-compatible attribution).
-2. Bundle as `app/src/main/assets/fonts/NotoNastaliqUrdu-Regular.ttf`
-   (~480 KB).
-3. In the Snygg theme stylesheets (every `*.json` under
-   `assets/ime/theme/.../stylesheets/`), add a Urdu-locale-specific
-   `key[locale="ur"]` selector that sets `font-family:
-   "Noto Nastaliq Urdu"`.
-4. Register the bundled font with `Typeface.createFromAsset` at app
-   boot via `FlorisApplication.onCreate`.
-5. Add a unit test asserting the font asset is present + non-empty.
-6. Document in `docs/RTL.md` (new file).
-
-Acceptance: switching to an Urdu subtype + typing Urdu text renders
-in Nastaliq positional shapes; English text in the same paragraph
-stays in the default sans-serif.
-```
+Closed in v1.8.128. SwiftFloris now commits the official OFL-1.1 Noto
+Nastaliq Urdu hinted TTF at
+`app/src/main/assets/fonts/NotoNastaliqUrdu-Regular.ttf`, ships the OFL
+text next to it, and routes Urdu subtype Arabic-script key labels/hints
+through `NastaliqFontProvider.bundledFontFamily(context)`. Keep this
+section only as historical context; do not hand it out as open work.
 
 ---
 

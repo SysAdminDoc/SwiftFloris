@@ -73,6 +73,7 @@ import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.glideTypingManager
+import dev.patrickgold.florisboard.ime.bidi.NastaliqFontProvider
 import dev.patrickgold.florisboard.ime.editor.OperationScope
 import dev.patrickgold.florisboard.ime.editor.OperationUnit
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
@@ -405,6 +406,14 @@ private fun TextKeyButton(
         FlorisImeUi.Attr.Mode to evaluator.keyboard.mode.toString(),
         FlorisImeUi.Attr.ShiftState to evaluator.state.inputShiftState.toString(),
     )
+    val subtypeLanguage = evaluator.subtype.primaryLocale.language
+    val nastaliqFontFamily = remember(context, subtypeLanguage) {
+        if (NastaliqFontProvider.isUrduLanguage(subtypeLanguage)) {
+            NastaliqFontProvider.bundledFontFamily(context)
+        } else {
+            null
+        }
+    }
     val selector = when {
         !key.isEnabled -> SnyggSelector.DISABLED
         key.isPressed -> SnyggSelector.PRESSED
@@ -485,6 +494,9 @@ private fun TextKeyButton(
                         }
                     ),
                 text = customLabel,
+                fontFamilyOverride = nastaliqFontFamily.takeIf {
+                    NastaliqFontProvider.shouldRouteText(subtypeLanguage, customLabel)
+                },
             )
         }
         if (isVoiceCommaKey) {
@@ -516,6 +528,9 @@ private fun TextKeyButton(
                     .wrapContentSize()
                     .align(if (isTelPadKey) BiasAlignment(0.5f, 0f) else Alignment.TopEnd),
                 text = hintedLabel,
+                fontFamilyOverride = nastaliqFontFamily.takeIf {
+                    NastaliqFontProvider.shouldRouteText(subtypeLanguage, hintedLabel)
+                },
             )
         }
         key.foregroundImageVector?.let { imageVector ->

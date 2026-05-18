@@ -55,6 +55,7 @@ fun SnyggText(
     selector: SnyggSelector? = null,
     modifier: Modifier = Modifier,
     text: String,
+    fontFamilyOverride: FontFamily? = null,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Text(
@@ -69,7 +70,7 @@ fun SnyggText(
             fontSize = style.fontSize(),
             fontStyle = style.fontStyle(),
             fontWeight = style.fontWeight(),
-            fontFamily = style.fontFamily(LocalSnyggPreloadedCustomFontFamilies.current),
+            fontFamily = fontFamilyOverride ?: style.fontFamily(LocalSnyggPreloadedCustomFontFamilies.current),
             letterSpacing = style.letterSpacing(),
             lineHeight = style.lineHeight(),
             textAlign = style.textAlign(),

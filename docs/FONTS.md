@@ -11,48 +11,30 @@ optimised for input-method rendering. All bundled fonts are
 |---|---|---|---|
 | **Noto Nastaliq Urdu** Regular | `app/src/main/assets/fonts/NotoNastaliqUrdu-Regular.ttf` | OFL-1.1 | Urdu Nastaliq positional shaping (ROADMAP §7 L4.2) |
 
-## Download instructions (for fresh contributor checkouts)
+## Source and routing
 
-The Noto Nastaliq Urdu binary is **not** committed to the repository
-(~480 KB binary diff isn't an ideal git citizen). Download from
-Google's Noto site before building:
+The Noto Nastaliq Urdu binary is committed to the repository as an APK
+asset. It was sourced from the official Noto Nastaliq hinted TTF build:
 
-```bash
-mkdir -p app/src/main/assets/fonts
-curl -L \
-  -o app/src/main/assets/fonts/NotoNastaliqUrdu-Regular.ttf \
-  "https://fonts.google.com/download?family=Noto+Nastaliq+Urdu"
-# Or via Github mirror:
-curl -L \
-  -o app/src/main/assets/fonts/NotoNastaliqUrdu-Regular.ttf \
-  "https://raw.githubusercontent.com/googlefonts/noto-fonts/main/hinted/ttf/NotoNastaliqUrdu/NotoNastaliqUrdu-Regular.ttf"
-```
+- <https://notofonts.github.io/nastaliq/fonts/NotoNastaliqUrdu/hinted/ttf/NotoNastaliqUrdu-Regular.ttf>
 
-**Without the binary**, `NastaliqFontProvider.bundledTypeface` falls
-back to `Typeface.DEFAULT` and Urdu renders in Naskh — the IME still
-works, the user just sees the wrong glyph shape. The
-`NastaliqFontProvider.isAvailable(context)` predicate lets the Snygg
-theme selectors skip the `font-family` override when the file is
-missing.
+`NastaliqFontProvider.bundledTypeface` loads the asset lazily with
+`Typeface.createFromAsset`; if a custom build removes the binary, it
+falls back to `Typeface.DEFAULT` so the IME still renders. The keyboard
+renderer only applies the Compose `FontFamily` override when the active
+subtype language is Urdu (`ur`) and the key label/hint contains
+Arabic-script code points. Latin labels and non-Urdu Arabic/Persian
+subtypes continue to use the active Snygg theme font.
 
 ## OFL-1.1 attribution
 
 ```
-Copyright 2013-2024 The Noto Project Authors
+Copyright 2022 The Noto Project Authors
 (https://github.com/notofonts/nastaliq)
 Licensed under the SIL Open Font License, Version 1.1.
 ```
 
 Full OFL text: <https://scripts.sil.org/cms/scripts/page.php?item_id=OFL_web>.
-
-## CI handling
-
-The Github Actions release workflow runs the download step inline
-before `./gradlew :app:assembleRelease` so the bundled APK always
-ships with the binary present. The build's `app/src/main/assets/`
-directory is otherwise un-managed (no symlinks, no submodules) so
-the OFL binary lives as a regular file in the workspace once
-downloaded.
 
 ## Adding a new bundled font
 
@@ -61,5 +43,5 @@ downloaded.
 2. Add the file path + license to the table above.
 3. Provide a `*FontProvider` Kotlin singleton in the same style as
    `NastaliqFontProvider`.
-4. Wire it into the Snygg stylesheet selectors that need it.
-5. Add to the CI download step.
+4. Wire it into the renderer or Snygg stylesheet selectors that need it.
+5. Add an asset-presence/license test.
