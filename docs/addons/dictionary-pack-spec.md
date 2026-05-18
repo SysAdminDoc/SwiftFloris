@@ -145,7 +145,9 @@ malformed stored pin lines; `DictionaryPackCatalog` then validates the
 descriptor JSON and produces provenance rows for Settings.
 As of v1.8.84, Settings → Addons can display the accepted/rejected snapshot and
 manually rescan installed addon APKs through the same startup reconciliation
-path. Asset mounting still waits for the next loader slice.
+path. As of v1.8.124, the same screen can reset saved signing-certificate pins
+or trust a changed certificate after confirmation and rescan. Asset mounting
+still waits for the next loader slice.
 The next loader slice mounts the addon's `assets/` via the standard
 [`PackageManager#getResourcesForApplication`](https://developer.android.com/reference/android/content/pm/PackageManager#getResourcesForApplication(java.lang.String))
 + `AssetManager` flow — no extraction, no temp-file copy, no permission
@@ -162,10 +164,10 @@ publish a new package-name rather than re-signing under the same name.
 As of v1.8.82, the persisted pin format is implemented by
 `AddonSigningPinSet` and stored at `prefs.addon.signingCertPins` as one
 `packageName=SHA-256` entry per line. The raw preference is not meant to be
-user-edited; Settings → Addons exposes read-only provenance/status in v1.8.84,
-and revoke/reset actions remain a later slice. As of v1.8.83, startup writes
-back the canonical pin string only when first-seen addons or malformed stored
-lines change the trust set.
+user-edited; Settings → Addons exposes read-only provenance/status in v1.8.84
+and confirmed trust reset / changed-certificate actions in v1.8.124. As of
+v1.8.83, startup writes back the canonical pin string only when first-seen
+addons or malformed stored lines change the trust set.
 
 ## 6. Reference implementation
 

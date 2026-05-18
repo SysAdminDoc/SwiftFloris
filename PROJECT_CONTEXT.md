@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.123)
+## 3. Stack at HEAD (v1.8.124)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -154,8 +154,10 @@ v1.8.84 ships the Next-10.3d Settings -> Addons read-only status surface.
 `AddonsSettingsScreen` lets users inspect accepted/rejected addon APKs, manually
 rescan installed addon packages through the same startup reconciliation path,
 and review package, type, version, license, size, and signing-certificate
-details before destructive revoke/reset controls or dictionary asset mounting
-land.
+details. v1.8.124 adds the destructive trust-management controls: reset every
+saved addon signing-certificate pin without silently re-enrolling installed
+APKs, or trust a changed certificate from the rejected list after confirmation
+and rescan. Dictionary asset mounting remains the next Addons slice.
 
 **v1.8.85 – v1.8.103** ships a 19-release session covering the sixth research-
 pass cross-subsystem hardening + the F1 – F12 follow-up roster + outreach
@@ -188,8 +190,9 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.123** ships the seventh research-pass privacy,
-voice, clipboard, NLP, and visual-regression hardening layer. v1.8.104 – v1.8.110 closed the
+**v1.8.104 – v1.8.124** ships the seventh research-pass privacy,
+voice, clipboard, NLP, visual-regression, and Addons trust-management layer.
+v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
 **G12** by bounding provider-backed clipboard media clones and rejecting
@@ -224,6 +227,9 @@ v1.8.123 closes the carried-forward sixth-pass **F11** visual-regression item:
 Roborazzi baseline PNGs are committed for the maintainer chip, SwiftKey High
 Contrast, Aurora Animated, and Settings -> Addons surfaces, and CI now treats
 `:app:verifyRoborazziDebug` as a hard gate.
+v1.8.124 returns to the Addons roadmap and closes the signing-pin
+revoke/reset UX slice with confirmed Settings actions plus targeted pin removal
+in `AddonSigningPinSet`.
 
 ## 4. Module layout
 
