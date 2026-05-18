@@ -75,7 +75,22 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         super.handleStartInputView(editorInfo, isRestart)
         val keyboardMode = when (editorInfo.inputAttributes.type) {
             InputAttributes.Type.NUMBER -> {
-                activeState.keyVariation = KeyVariation.NORMAL
+                // TYPE_NUMBER_VARIATION_PASSWORD (numeric PIN / OTP fields)
+                // collapses to InputAttributes.Variation.PASSWORD. Mirror
+                // that through to keyVariation so the privacy gates that
+                // key off `keyVariation == KeyVariation.PASSWORD`
+                // (clipboard history in EditorInstance.performClipboardCut /
+                // performClipboardCopy, suggestion suppression here, glide /
+                // long-press scaling in TextKeyboardLayout, etc.) all fire
+                // for PIN entry. Without this, a numeric-PIN copy lands in
+                // the IME-local clipboard history.
+                activeState.keyVariation = if (editorInfo.inputAttributes.variation ==
+                    InputAttributes.Variation.PASSWORD
+                ) {
+                    KeyVariation.PASSWORD
+                } else {
+                    KeyVariation.NORMAL
+                }
                 KeyboardMode.NUMERIC
             }
             InputAttributes.Type.PHONE -> {
