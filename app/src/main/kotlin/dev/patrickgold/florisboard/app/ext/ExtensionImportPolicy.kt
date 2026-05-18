@@ -36,12 +36,30 @@ internal enum class ExtensionImportAction {
     Update,
 }
 
+internal enum class ExtensionImportFlowNotice {
+    None,
+    SelectingFiles,
+    Importing,
+    Cancelled,
+    Failure,
+    Success,
+}
+
 internal data class ExtensionImportDecision(
     @param:StringRes val skipReason: Int,
     val action: ExtensionImportAction?,
 ) {
     val isImportable: Boolean
         get() = skipReason == NATIVE_NULLPTR.toInt()
+}
+
+internal data class ExtensionImportSummary(
+    val newInstallCount: Int = 0,
+    val updateCount: Int = 0,
+    val skippedCount: Int = 0,
+) {
+    val importableCount: Int
+        get() = newInstallCount + updateCount
 }
 
 internal object ExtensionImportPolicy {
@@ -76,6 +94,52 @@ internal object ExtensionImportPolicy {
 
     fun canImport(decisions: Iterable<ExtensionImportDecision>): Boolean {
         return decisions.any { it.isImportable }
+    }
+
+    fun canSelectFiles(
+        isPreparingFiles: Boolean,
+        isImportInProgress: Boolean,
+    ): Boolean {
+        return !isPreparingFiles && !isImportInProgress
+    }
+
+    fun canStartImport(
+        hasImportableFiles: Boolean,
+        isPreparingFiles: Boolean,
+        isImportInProgress: Boolean,
+    ): Boolean {
+        return hasImportableFiles && !isPreparingFiles && !isImportInProgress
+    }
+
+    fun summarize(decisions: Iterable<ExtensionImportDecision>): ExtensionImportSummary {
+        var newInstallCount = 0
+        var updateCount = 0
+        var skippedCount = 0
+        for (decision in decisions) {
+            when (decision.action) {
+                ExtensionImportAction.NewInstall -> newInstallCount++
+                ExtensionImportAction.Update -> updateCount++
+                null -> skippedCount++
+            }
+        }
+        return ExtensionImportSummary(
+            newInstallCount = newInstallCount,
+            updateCount = updateCount,
+            skippedCount = skippedCount,
+        )
+    }
+
+    fun resolveFlowNotice(
+        isPreparingFiles: Boolean,
+        isImportInProgress: Boolean,
+        lastTerminalNotice: ExtensionImportFlowNotice?,
+    ): ExtensionImportFlowNotice {
+        return when {
+            isPreparingFiles -> ExtensionImportFlowNotice.SelectingFiles
+            isImportInProgress -> ExtensionImportFlowNotice.Importing
+            lastTerminalNotice != null -> lastTerminalNotice
+            else -> ExtensionImportFlowNotice.None
+        }
     }
 
     private fun Extension.matchesRequestedType(type: ExtensionImportScreenType): Boolean {

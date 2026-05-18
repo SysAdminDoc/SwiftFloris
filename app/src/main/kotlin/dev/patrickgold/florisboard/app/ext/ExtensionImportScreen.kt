@@ -52,7 +52,9 @@ import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.io.FileRegistry
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisBulletSpacer
 import org.florisboard.lib.compose.FlorisButtonBar
@@ -102,8 +104,12 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
     val cacheManager by context.cacheManager()
     val extensionManager by context.extensionManager()
     val scope = rememberCoroutineScope()
+    var isPreparingFiles by remember { mutableStateOf(false) }
+    var isImportInProgress by remember { mutableStateOf(false) }
+    var lastImportNotice by remember { mutableStateOf<ExtensionImportFlowNotice?>(null) }
+    var lastImportErrorMessage by remember { mutableStateOf<String?>(null) }
 
-    fun getSkipReason(fileInfo: CacheManager.FileInfo): Int {
+    fun getImportDecision(fileInfo: CacheManager.FileInfo): ExtensionImportDecision {
         val ext = fileInfo.ext
         val existingSource = ext?.meta?.id
             ?.let(extensionManager::getExtensionById)
@@ -113,7 +119,11 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             extension = ext,
             requestedType = type,
             existingSource = existingSource,
-        ).skipReason
+        )
+    }
+
+    fun getSkipReason(fileInfo: CacheManager.FileInfo): Int {
+        return getImportDecision(fileInfo).skipReason
     }
 
     fun Result<CacheManager.ImporterWorkspace>.mapSkipReasons(): Result<CacheManager.ImporterWorkspace> {
@@ -138,13 +148,38 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             // If uri is null it indicates that the selection activity
             //  was cancelled (mostly by pressing the back button), so
             //  we don't display an error message here.
-            if (uriList.isEmpty()) return@rememberLauncherForActivityResult
-            importResult?.getOrNull()?.close()
-            importResult = runCatching { cacheManager.readFromUriIntoCache(uriList) }.mapSkipReasons()
+            if (uriList.isEmpty()) {
+                lastImportNotice = ExtensionImportFlowNotice.Cancelled
+                lastImportErrorMessage = null
+                return@rememberLauncherForActivityResult
+            }
+            scope.launch {
+                if (!ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)) return@launch
+                isPreparingFiles = true
+                lastImportNotice = null
+                lastImportErrorMessage = null
+                importResult?.getOrNull()?.close()
+                importResult = runCatching {
+                    withContext(Dispatchers.IO) {
+                        cacheManager.readFromUriIntoCache(uriList)
+                    }
+                }.mapSkipReasons().onFailure { error ->
+                    lastImportNotice = ExtensionImportFlowNotice.Failure
+                    lastImportErrorMessage = error.localizedMessage
+                }
+                isPreparingFiles = false
+            }
         },
     )
     val selectFiles = {
-        importLauncher.launch("*/*")
+        if (ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)) {
+            runCatching {
+                importLauncher.launch("*/*")
+            }.onFailure { error ->
+                lastImportNotice = ExtensionImportFlowNotice.Failure
+                lastImportErrorMessage = error.localizedMessage
+            }
+        }
     }
 
     bottomBar {
@@ -152,57 +187,111 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
             ButtonBarSpacer()
             ButtonBarTextButton(
                 text = stringRes(R.string.action__cancel),
+                enabled = ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress),
             ) {
                 importResult?.getOrNull()?.close()
                 navController.popBackStack()
             }
-            val enabled = remember(importResult) {
-                importResult?.getOrNull()?.takeIf { workspace ->
-                    workspace.inputFileInfos.any { it.skipReason == NATIVE_NULLPTR.toInt() }
-                } != null
-            }
+            val hasImportableFiles = importResult?.getOrNull()?.let { workspace ->
+                ExtensionImportPolicy.canImport(workspace.inputFileInfos.map(::getImportDecision))
+            } == true
+            val enabled = ExtensionImportPolicy.canStartImport(
+                hasImportableFiles = hasImportableFiles,
+                isPreparingFiles = isPreparingFiles,
+                isImportInProgress = isImportInProgress,
+            )
             ButtonBarButton(
-                text = stringRes(R.string.action__import),
+                text = if (isImportInProgress) {
+                    stringRes(R.string.ext__import__in_progress)
+                } else {
+                    stringRes(R.string.action__import)
+                },
                 enabled = enabled,
             ) {
-                val workspace = importResult!!.getOrThrow()
-                runCatching {
-                    for (fileInfo in workspace.inputFileInfos) {
-                        if (fileInfo.skipReason != NATIVE_NULLPTR.toInt()) {
-                            continue
+                scope.launch {
+                    if (!enabled) return@launch
+                    val workspace = importResult!!.getOrThrow()
+                    isImportInProgress = true
+                    lastImportNotice = null
+                    lastImportErrorMessage = null
+                    runCatching {
+                        withContext(Dispatchers.IO) {
+                            for (fileInfo in workspace.inputFileInfos) {
+                                if (getSkipReason(fileInfo) != NATIVE_NULLPTR.toInt()) {
+                                    continue
+                                }
+                                val ext = fileInfo.ext
+                                when (type) {
+                                    ExtensionImportScreenType.EXT_ANY -> {
+                                        ext?.let { extensionManager.import(it) }
+                                    }
+                                    ExtensionImportScreenType.EXT_KEYBOARD -> {
+                                        ext.takeIf { it is KeyboardExtension }?.let { extensionManager.import(it) }
+                                    }
+                                    ExtensionImportScreenType.EXT_THEME -> {
+                                        ext.takeIf { it is ThemeExtension }?.let { extensionManager.import(it) }
+                                    }
+                                    ExtensionImportScreenType.EXT_LANGUAGEPACK -> {
+                                        ext.takeIf { it is LanguagePackExtension }?.let { extensionManager.import(it) }
+                                    }
+                                }
+                            }
                         }
-                        val ext = fileInfo.ext
-                        when (type) {
-                            ExtensionImportScreenType.EXT_ANY -> {
-                                ext?.let { extensionManager.import(it) }
-                            }
-                            ExtensionImportScreenType.EXT_KEYBOARD -> {
-                                ext.takeIf { it is KeyboardExtension }?.let { extensionManager.import(it) }
-                            }
-                            ExtensionImportScreenType.EXT_THEME -> {
-                                ext.takeIf { it is ThemeExtension }?.let { extensionManager.import(it) }
-                            }
-                            ExtensionImportScreenType.EXT_LANGUAGEPACK -> {
-                                ext.takeIf { it is LanguagePackExtension }?.let { extensionManager.import(it) }
-                            }
-                        }
-                    }
-                }.onSuccess {
-                    workspace.close()
-                    scope.launch {
+                    }.onSuccess {
+                        lastImportNotice = ExtensionImportFlowNotice.Success
                         context.showLongToast(R.string.ext__import__success)
+                        workspace.close()
                         navController.popBackStack()
-                    }
-                }.onFailure { error ->
-                    scope.launch {
+                    }.onFailure { error ->
+                        lastImportNotice = ExtensionImportFlowNotice.Failure
+                        lastImportErrorMessage = error.localizedMessage
                         context.showLongToast(R.string.ext__import__failure, "error_message" to error.localizedMessage)
                     }
+                    isImportInProgress = false
                 }
             }
         }
     }
 
     content {
+        when (ExtensionImportPolicy.resolveFlowNotice(
+            isPreparingFiles = isPreparingFiles,
+            isImportInProgress = isImportInProgress,
+            lastTerminalNotice = lastImportNotice,
+        )) {
+            ExtensionImportFlowNotice.SelectingFiles -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__import__selecting_files),
+                secondaryText = stringRes(R.string.ext__import__selecting_files_summary),
+            )
+            ExtensionImportFlowNotice.Importing -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__import__in_progress),
+                secondaryText = stringRes(R.string.ext__import__in_progress_summary),
+            )
+            ExtensionImportFlowNotice.Cancelled -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__import__cancelled),
+                secondaryText = stringRes(R.string.ext__import__cancelled_summary),
+            )
+            ExtensionImportFlowNotice.Failure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__import__failure_title),
+                secondaryText = stringRes(
+                    R.string.ext__import__failure,
+                    "error_message" to (lastImportErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable)),
+                ),
+                actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
+                onClick = selectFiles.takeIf { initUuid == null },
+            )
+            ExtensionImportFlowNotice.Success -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.ext__import__success_title),
+                secondaryText = stringRes(R.string.ext__import__success_summary),
+            )
+            ExtensionImportFlowNotice.None -> Unit
+        }
+
         val result = importResult
         when {
             result == null -> {
@@ -212,36 +301,45 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     title = stringRes(R.string.ext__import__empty_title),
                     message = stringRes(R.string.ext__import__empty_message),
                     actionLabel = stringRes(R.string.action__select_files),
-                    onAction = selectFiles.takeIf { initUuid == null },
+                    onAction = selectFiles.takeIf {
+                        initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                    },
                 )
             }
             result.isSuccess -> {
                 val workspace = result.getOrThrow()
-                val importableFileCount = workspace.inputFileInfos.count { fileInfo ->
-                    fileInfo.skipReason == NATIVE_NULLPTR.toInt()
-                }
-                val skippedFileCount = workspace.inputFileInfos.size - importableFileCount
+                val decisions = workspace.inputFileInfos.map(::getImportDecision)
+                val importSummary = ExtensionImportPolicy.summarize(decisions)
+                val importableFileCount = importSummary.importableCount
+                val skippedFileCount = importSummary.skippedCount
                 if (importableFileCount > 0) {
                     FlorisInfoCard(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
                         text = stringRes(R.string.ext__import__review_title),
                         secondaryText = stringRes(
-                            if (skippedFileCount > 0) {
-                                R.string.ext__import__review_message_with_skips
-                            } else {
-                                R.string.ext__import__review_message_all_ready
-                            },
+                            R.string.ext__import__review_message_with_actions,
+                            "new_count" to importSummary.newInstallCount,
+                            "update_count" to importSummary.updateCount,
+                            "skipped_count" to skippedFileCount,
                         ),
-                        actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
-                        onClick = selectFiles.takeIf { initUuid == null },
+                        actionLabel = stringRes(R.string.action__select_files).takeIf {
+                            initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                        },
+                        onClick = selectFiles.takeIf {
+                            initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                        },
                     )
                 } else {
                     FlorisWarningCard(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
                         text = stringRes(R.string.ext__import__none_ready_title),
                         secondaryText = stringRes(R.string.ext__import__none_ready_message),
-                        actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
-                        onClick = selectFiles.takeIf { initUuid == null },
+                        actionLabel = stringRes(R.string.action__select_files).takeIf {
+                            initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                        },
+                        onClick = selectFiles.takeIf {
+                            initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                        },
                     )
                 }
                 for (fileInfo in workspace.inputFileInfos) {
@@ -253,8 +351,12 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     modifier = Modifier.defaultFlorisOutlinedBox(),
                     text = stringRes(R.string.ext__import__error_title),
                     secondaryText = stringRes(R.string.ext__import__error_message),
-                    actionLabel = stringRes(R.string.action__select_files).takeIf { initUuid == null },
-                    onClick = selectFiles.takeIf { initUuid == null },
+                    actionLabel = stringRes(R.string.action__select_files).takeIf {
+                        initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                    },
+                    onClick = selectFiles.takeIf {
+                        initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
+                    },
                 )
                 FlorisOutlinedBox(
                     modifier = Modifier.defaultFlorisOutlinedBox(),

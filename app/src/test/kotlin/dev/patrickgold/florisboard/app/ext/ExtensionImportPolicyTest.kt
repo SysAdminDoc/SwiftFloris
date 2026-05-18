@@ -121,6 +121,91 @@ class ExtensionImportPolicyTest : FunSpec({
             ),
         ) shouldBe true
     }
+
+    test("import flow blocks duplicate file selection and duplicate imports while busy") {
+        ExtensionImportPolicy.canSelectFiles(
+            isPreparingFiles = false,
+            isImportInProgress = false,
+        ) shouldBe true
+        ExtensionImportPolicy.canSelectFiles(
+            isPreparingFiles = true,
+            isImportInProgress = false,
+        ) shouldBe false
+        ExtensionImportPolicy.canSelectFiles(
+            isPreparingFiles = false,
+            isImportInProgress = true,
+        ) shouldBe false
+
+        ExtensionImportPolicy.canStartImport(
+            hasImportableFiles = true,
+            isPreparingFiles = false,
+            isImportInProgress = false,
+        ) shouldBe true
+        ExtensionImportPolicy.canStartImport(
+            hasImportableFiles = false,
+            isPreparingFiles = false,
+            isImportInProgress = false,
+        ) shouldBe false
+        ExtensionImportPolicy.canStartImport(
+            hasImportableFiles = true,
+            isPreparingFiles = true,
+            isImportInProgress = false,
+        ) shouldBe false
+        ExtensionImportPolicy.canStartImport(
+            hasImportableFiles = true,
+            isPreparingFiles = false,
+            isImportInProgress = true,
+        ) shouldBe false
+    }
+
+    test("import summary counts new installs updates and skipped files") {
+        ExtensionImportPolicy.summarize(
+            listOf(
+                ExtensionImportDecision(
+                    skipReason = NATIVE_NULLPTR.toInt(),
+                    action = ExtensionImportAction.NewInstall,
+                ),
+                ExtensionImportDecision(
+                    skipReason = NATIVE_NULLPTR.toInt(),
+                    action = ExtensionImportAction.Update,
+                ),
+                ExtensionImportDecision(
+                    skipReason = R.string.ext__import__file_skip_unsupported,
+                    action = null,
+                ),
+            ),
+        ) shouldBe ExtensionImportSummary(
+            newInstallCount = 1,
+            updateCount = 1,
+            skippedCount = 1,
+        )
+    }
+
+    test("import flow notice prioritizes preparation import and terminal states") {
+        ExtensionImportPolicy.resolveFlowNotice(
+            isPreparingFiles = true,
+            isImportInProgress = true,
+            lastTerminalNotice = ExtensionImportFlowNotice.Failure,
+        ) shouldBe ExtensionImportFlowNotice.SelectingFiles
+
+        ExtensionImportPolicy.resolveFlowNotice(
+            isPreparingFiles = false,
+            isImportInProgress = true,
+            lastTerminalNotice = ExtensionImportFlowNotice.Failure,
+        ) shouldBe ExtensionImportFlowNotice.Importing
+
+        ExtensionImportPolicy.resolveFlowNotice(
+            isPreparingFiles = false,
+            isImportInProgress = false,
+            lastTerminalNotice = ExtensionImportFlowNotice.Cancelled,
+        ) shouldBe ExtensionImportFlowNotice.Cancelled
+
+        ExtensionImportPolicy.resolveFlowNotice(
+            isPreparingFiles = false,
+            isImportInProgress = false,
+            lastTerminalNotice = null,
+        ) shouldBe ExtensionImportFlowNotice.None
+    }
 })
 
 private fun languagePack(
