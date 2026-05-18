@@ -39,6 +39,7 @@ class PinToGroupSheetStateTest : FunSpec({
         state.emoji() shouldBe "🎉"
         state.newGroupNameInput() shouldBe ""
         state.existingGroups() shouldBe listOf("birthday")
+        state.emojisForExistingGroup("birthday") shouldBe listOf("🎂")
         state.error() shouldBe null
     }
 

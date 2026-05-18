@@ -57,6 +57,17 @@
     <string name="emoji__history__recent">Recent</string>
     <string name="emoji__search__placeholder" comment="Placeholder in the emoji panel search field">Search emoji</string>
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
+    <string name="emoji__pin_group__title" comment="In-keyboard sheet title for pinning an emoji to a named group. {emoji} is the selected emoji.">Pin {emoji} to group</string>
+    <string name="emoji__pin_group__existing_empty" comment="Empty state in the pin-to-group sheet when no groups exist yet">No groups yet. Create one below.</string>
+    <string name="emoji__pin_group__new_group_placeholder" comment="Text field placeholder in the pin-to-group sheet">Group name</string>
+    <string name="emoji__pin_group__create" comment="Action button in the pin-to-group sheet">Create</string>
+    <string name="emoji__pin_group__error_no_emoji" comment="Pin-to-group sheet error when no emoji is selected">Choose an emoji first.</string>
+    <string name="emoji__pin_group__error_blank" comment="Pin-to-group sheet error when the new group name is blank">Enter a group name.</string>
+    <string name="emoji__pin_group__error_too_many_groups" comment="Pin-to-group sheet error when the group limit is reached">Group limit reached.</string>
+    <string name="emoji__pin_group__error_group_full" comment="Pin-to-group sheet error when the selected group is full">This group is full.</string>
+    <string name="emoji__pin_group__error_already_pinned" comment="Pin-to-group sheet error when the emoji is already pinned to the selected group">Already pinned to this group.</string>
+    <string name="emoji__pin_group__pinned_toast" comment="Toast after pinning an emoji to a group. {group} is the group name.">Pinned to {group}.</string>
+    <string name="emoji__pin_group__chip_hint" comment="Toast after long-pressing a pinned emoji group chip. {group} is the group name.">Tap {group} to insert the group.</string>
     <string name="sticker__unsupported_message" comment="State shown when the active app does not accept image insertion from the keyboard">This app does not accept sticker images.</string>
     <string name="sticker__commit_failed" comment="Toast shown when sticker insertion fails">Sticker could not be inserted here.</string>
     <string name="sticker__user_folder_grant_lost" comment="In-keyboard banner shown on the Imported sticker tab when Android revoked the persistable SAF read permission for the user's imported folder. Mirrors the Settings preference summary; instructs the user to re-pick the folder from Settings.">Imported folder access lost. Open Settings → Emoji &amp; stickers to re-pick.</string>

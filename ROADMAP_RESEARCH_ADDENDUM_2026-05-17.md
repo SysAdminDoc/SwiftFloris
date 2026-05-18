@@ -12,7 +12,7 @@ existing item. When the next ROADMAP refresh (`v5.3`) lands, the items
 here either flow into the relevant section or are explicitly retired with
 reasoning.
 
-**HEAD at latest reconciliation:** v1.8.126 — Addons dictionary catalog polish (Next-10.4 local Settings half; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.126, documented in §0.c through §0.g below).
+**HEAD at latest reconciliation:** v1.8.127 — Emoji pinned-group sheet (Next-9.4a completion; the seventh-pass + carried-forward shipped layer is v1.8.104 – v1.8.127, documented in §0.c through §0.h below).
 
 **Previous reconciliation marker:** v1.8.92 — LDML parser shift= > longPress=.
 (The research run started at v1.8.55; v1.8.56-84 shipped concurrently in the
@@ -161,6 +161,17 @@ language, word count, dataset license, source, descriptor rejection reasons,
 and updated local-addon install guidance. The current local Next-10.4 work is
 closed; future catalog distribution depends on actual sibling addon APK
 publication and store metadata.
+
+---
+
+## 0.h Reconciliation with v1.8.127 emoji pinned-group sheet
+
+The open **§D Next-9.4a** local UI completion shipped in v1.8.127.
+`PinToGroupSheet` now binds `EmojiPaletteView` long-press actions to the
+existing `EmojiPinGroupStore`: users can pin emoji into existing or newly
+named groups, see inline validation for blank / duplicate / full / cap states,
+and tap pinned-group chips to commit the saved emoji sequence through the
+keyboard input dispatcher. The earlier v1.8.29 placeholder toast is retired.
 
 ---
 

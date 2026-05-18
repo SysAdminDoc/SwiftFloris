@@ -45,6 +45,7 @@ import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.PushPin
@@ -97,7 +98,6 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.showShortToast
-import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.header
@@ -196,13 +196,23 @@ fun EmojiPaletteView(
     val scope = rememberCoroutineScope()
 
     // ROADMAP §7 Next-9.4a — pinned-emoji-groups palette row state. Tracks
-    // a version counter so the chip strip rebuilds when learn/forget calls
-    // mutate the underlying EmojiPinGroupStore.
+    // version counters so the chip strip and in-keyboard pin sheet rebuild
+    // when learn/forget calls mutate the underlying EmojiPinGroupStore.
+    val emojiPinGroupStore = remember(context) { EmojiPinGroupStore.get(context) }
+    val pinToGroupSheetState = remember(emojiPinGroupStore) {
+        PinToGroupSheetState.forStore(emojiPinGroupStore)
+    }
     var pinnedGroupsVersion by remember { mutableIntStateOf(0) }
+    var pinSheetVersion by remember { mutableIntStateOf(0) }
     val pinnedGroupChips = remember(pinnedGroupsVersion) {
         PinnedGroupChip.fromStoreSnapshot(
-            EmojiPinGroupStore.get(context).snapshot(),
+            emojiPinGroupStore.snapshot(),
         )
+    }
+
+    fun openPinToGroupSheet(emoji: Emoji) {
+        pinToGroupSheetState.open(emoji.value)
+        pinSheetVersion++
     }
 
     @Composable
@@ -234,6 +244,7 @@ fun EmojiPaletteView(
             onHistoryAction = {
                 recentlyUsedVersion++
             },
+            onPinToGroup = ::openPinToGroupSheet,
         )
     }
 
@@ -499,20 +510,29 @@ fun EmojiPaletteView(
                                 PinnedGroupsPaletteRow(
                                     groups = pinnedGroupChips,
                                     onGroupTapped = { groupName ->
-                                        val emojis = EmojiPinGroupStore.get(context).emojisFor(groupName)
+                                        val emojis = emojiPinGroupStore.emojisFor(groupName)
                                         for (emojiText in emojis) {
                                             keyboardManager.inputEventDispatcher.sendDownUp(
                                                 Emoji(value = emojiText, name = groupName, keywords = emptyList()),
                                             )
                                         }
+                                        scope.launch {
+                                            for (emojiText in emojis) {
+                                                EmojiHistoryHelper.markEmojiUsed(
+                                                    prefs = prefs,
+                                                    emoji = Emoji(value = emojiText, name = groupName, keywords = emptyList()),
+                                                )
+                                            }
+                                            recentlyUsedVersion++
+                                        }
                                     },
                                     onGroupLongPressed = { groupName ->
-                                        // Sheet integration lands in a follow-up; surface a
-                                        // toast acknowledgement for now so long-press is
-                                        // discoverable.
-                                        context.showShortToastSync(
-                                            "Long-press menu for '$groupName' is coming soon",
-                                        )
+                                        scope.launch {
+                                            context.showShortToast(
+                                                R.string.emoji__pin_group__chip_hint,
+                                                "group" to groupName,
+                                            )
+                                        }
                                     },
                                 )
                             }
@@ -550,6 +570,23 @@ fun EmojiPaletteView(
                 }
             }
         }
+        PinToGroupSheet(
+            state = pinToGroupSheetState,
+            version = pinSheetVersion,
+            onStateChanged = {
+                pinSheetVersion++
+            },
+            onPinned = { groupName ->
+                pinnedGroupsVersion++
+                pinSheetVersion++
+                scope.launch {
+                    context.showShortToast(
+                        R.string.emoji__pin_group__pinned_toast,
+                        "group" to groupName,
+                    )
+                }
+            },
+        )
     }
 }
 
@@ -562,6 +599,7 @@ private fun EmojiKey(
     isRecent: Boolean,
     onEmojiInput: (Emoji) -> Unit,
     onHistoryAction: () -> Unit,
+    onPinToGroup: (Emoji) -> Unit,
 ) {
     val inputFeedbackController = LocalInputFeedbackController.current
     val base = emojiSet.base(withSkinTone = preferredSkinTone)
@@ -583,6 +621,8 @@ private fun EmojiKey(
                         inputFeedbackController.keyLongPress(TextKeyData.UNSPECIFIED)
                         if (variations.isNotEmpty() || isPinned || isRecent) {
                             showVariantsBox = true
+                        } else {
+                            onPinToGroup(base)
                         }
                     },
                 )
@@ -617,6 +657,10 @@ private fun EmojiKey(
                     onHistoryAction()
                     showVariantsBox = false
                 },
+                onPinToGroup = {
+                    onPinToGroup(base)
+                    showVariantsBox = false
+                },
                 onDismiss = {
                     showVariantsBox = false
                 },
@@ -628,6 +672,10 @@ private fun EmojiKey(
                 emojiCompatInstance = emojiCompatInstance,
                 onEmojiTap = { emoji ->
                     onEmojiInput(emoji)
+                    showVariantsBox = false
+                },
+                onPinBaseToGroup = {
+                    onPinToGroup(base)
                     showVariantsBox = false
                 },
                 onDismiss = {
@@ -645,6 +693,7 @@ private fun EmojiVariationsPopup(
     visible: Boolean,
     emojiCompatInstance: EmojiCompat?,
     onEmojiTap: (Emoji) -> Unit,
+    onPinBaseToGroup: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val emojiKeyHeight = FlorisImeSizing.smartbarHeight
@@ -653,7 +702,7 @@ private fun EmojiVariationsPopup(
         Popup(
             alignment = Alignment.TopCenter,
             offset = with(LocalDensity.current) {
-                val y = -emojiKeyHeight * ceil(variations.size / 6f)
+                val y = -emojiKeyHeight * ceil((variations.size + 1) / 6f)
                 IntOffset(x = 0, y = y.toPx().toInt())
             },
             onDismissRequest = onDismiss,
@@ -663,6 +712,20 @@ private fun EmojiVariationsPopup(
                 modifier = Modifier
                     .widthIn(max = EmojiBaseWidth * 6),
             ) {
+                SnyggBox(
+                    elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
+                    modifier = Modifier
+                        .pointerInput(Unit) {
+                            detectTapGestures { onPinBaseToGroup() }
+                        }
+                        .width(EmojiBaseWidth)
+                        .height(emojiKeyHeight),
+                ) {
+                    SnyggIcon(
+                        modifier = Modifier.align(Alignment.Center),
+                        imageVector = Icons.Outlined.Add,
+                    )
+                }
                 for (emoji in variations) {
                     SnyggBox(
                         elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
@@ -692,6 +755,7 @@ private fun EmojiHistoryPopup(
     visible: Boolean,
     isCurrentlyPinned: Boolean,
     onHistoryAction: () -> Unit,
+    onPinToGroup: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val prefs by FlorisPreferenceStore
@@ -726,7 +790,7 @@ private fun EmojiHistoryPopup(
         }
     }
 
-    val numActions = 1
+    val numActions = 3 + (if (showMoveLeft) 1 else 0) + (if (showMoveRight) 1 else 0)
     if (visible) {
         Popup(
             alignment = Alignment.TopCenter,
@@ -772,6 +836,12 @@ private fun EmojiHistoryPopup(
                         },
                     )
                 }
+                Action(
+                    icon = Icons.Outlined.Add,
+                    action = {
+                        onPinToGroup()
+                    },
+                )
                 Action(
                     icon = Icons.Outlined.Delete,
                     action = {
