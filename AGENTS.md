@@ -11,7 +11,7 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 ## Read this first
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, the v1.8.137
+   project context. Pins the load-bearing invariants, the v1.8.138
    stack, the module layout, the roadmap-file routing, and the current
    sprint state.
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,
@@ -80,9 +80,8 @@ and Definition-of-Done evidence.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump
 in lockstep with the release-notes commit. Tag the release commit at the
-   same time. Local release tags are current through `v1.8.84` as of
-2026-05-17; push tags from the maintainer host because this VM cannot push
-to `SysAdminDoc/SwiftFloris`.
+   same time. Local and remote release tags are current through `v1.8.138`
+as of 2026-05-18.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)
 
@@ -114,8 +113,8 @@ The project's Windows / Linux build commands:
 ./gradlew.bat :app:installDebug           # device smoke
 ```
 
-This VM has no JDK / Android SDK on the path; recommend running the
-commands above on the user's main build host before pushing.
+This Windows host has a working JDK / Android SDK path for the Gradle
+commands above.
 
 ---
 
