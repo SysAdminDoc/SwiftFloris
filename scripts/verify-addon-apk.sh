@@ -30,7 +30,11 @@
 #                  $HOME/Android/Sdk (Linux). If neither exists the
 #                  script falls back to PATH-resolved binaries.
 
-set -u
+set -eo pipefail
+
+# `set -u` would error on unset positional parameters before the usage check
+# fires, so it's deliberately not in the strict-mode line. The case-by-case
+# `${VAR:-default}` style below covers the references that need it.
 
 readonly MAX_BUNDLE_BYTES=67108864  # 64 MiB — AddonContract.ADDON_MAX_BUNDLE_BYTES
 readonly BANNED_PERMISSIONS=(
@@ -115,8 +119,29 @@ check_bundle_size() {
 
 check_permissions() {
     local apk="$1" aapt2="$2"
-    local perms
-    perms=$("$aapt2" dump permissions "$apk" 2>/dev/null || true)
+    local perms aapt2_status
+    # Run aapt2 in a subshell so its non-zero exit (e.g. tool corruption,
+    # malformed APK) is captured into $aapt2_status rather than aborted by
+    # `set -e`. We then explicitly distinguish "tool failed" from "tool
+    # succeeded but produced no output" from "tool succeeded and matched
+    # nothing" — the previous `|| true` collapsed all three into a silent
+    # PASS.
+    set +e
+    perms=$("$aapt2" dump permissions "$apk" 2>/dev/null)
+    aapt2_status=$?
+    set -e
+    if [ "$aapt2_status" -ne 0 ]; then
+        echo "FAIL  aapt2 dump permissions exited $aapt2_status — cannot validate banned permissions"
+        return 1
+    fi
+    if [ -z "$perms" ]; then
+        # An APK with zero declared permissions returns empty output. That's
+        # actually the PASS case (no banned-permission strings to match),
+        # but we report it explicitly so the maintainer can sanity-check
+        # against expectation.
+        echo "PASS  no permissions declared in APK"
+        return 0
+    fi
     local found=0
     for perm in "${BANNED_PERMISSIONS[@]}"; do
         if echo "$perms" | grep -qE "uses-permission: name='${perm}'|name='${perm}'"; then
@@ -133,10 +158,21 @@ check_permissions() {
 
 check_register_receiver_and_metadata() {
     local apk="$1" aapt2="$2"
-    local manifest
-    manifest=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" 2>/dev/null || true)
+    local manifest aapt2_status
+    set +e
+    manifest=$("$aapt2" dump xmltree --file AndroidManifest.xml "$apk" 2>/dev/null)
+    aapt2_status=$?
+    set -e
+    if [ "$aapt2_status" -ne 0 ]; then
+        echo "FAIL  aapt2 dump xmltree exited $aapt2_status — cannot parse AndroidManifest.xml"
+        return 1
+    fi
     if [ -z "$manifest" ]; then
-        echo "FAIL  could not parse AndroidManifest.xml via aapt2"
+        # Distinguished from "tool failed": aapt2 succeeded but emitted no
+        # output. That's an APK without an AndroidManifest, which is
+        # impossible for a valid Android package — call it a failure so a
+        # broken `aapt2` build (no output, exit 0) can't silently pass.
+        echo "FAIL  AndroidManifest.xml produced no output from aapt2 — APK is malformed or aapt2 is broken"
         return 1
     fi
     if ! echo "$manifest" | grep -qE "action.*${REGISTER_ACTION_PREFIX}"; then
@@ -160,8 +196,19 @@ check_register_receiver_and_metadata() {
 
 check_signing_certificate() {
     local apk="$1" apksigner="$2"
-    local signer_output
-    signer_output=$("$apksigner" verify --print-certs "$apk" 2>/dev/null || true)
+    local signer_output apksigner_status
+    set +e
+    signer_output=$("$apksigner" verify --print-certs "$apk" 2>/dev/null)
+    apksigner_status=$?
+    set -e
+    # apksigner returns non-zero when the APK is unsigned or signed with an
+    # unrecognised scheme. Distinguish that from "tool failed to invoke at
+    # all" (status > 1 typically) so a missing apksigner binary doesn't
+    # masquerade as an unsigned APK.
+    if [ "$apksigner_status" -gt 2 ]; then
+        echo "FAIL  apksigner verify exited $apksigner_status — tool error rather than verification failure"
+        return 1
+    fi
     if echo "$signer_output" | grep -qE "Signer #1 certificate SHA-256 digest"; then
         echo "PASS  signing certificate present (apksigner --print-certs)"
         return 0
