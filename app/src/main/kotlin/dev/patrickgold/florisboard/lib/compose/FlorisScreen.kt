@@ -41,8 +41,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.isTraversalGroup
 import androidx.compose.ui.semantics.paneTitle
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.traversalIndex
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
@@ -56,6 +58,15 @@ import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.autoMirrorForRtl
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
+
+internal object FlorisScreenFocusOrder {
+    const val AppBar = 0f
+    const val Content = 1f
+    const val BottomBar = 2f
+    const val FloatingActionButton = 3f
+
+    val orderedTraversal = listOf(AppBar, Content, BottomBar, FloatingActionButton)
+}
 
 @Composable
 fun FlorisScreen(builder: @Composable FlorisScreenScope.() -> Unit) {
@@ -140,6 +151,7 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
         val previewFieldController = LocalPreviewFieldController.current
         val colorScheme = MaterialTheme.colorScheme
 
+        @Suppress("DEPRECATION")
         SideEffect {
             val window = (context as Activity).window
             previewFieldController?.isVisible = previewFieldVisible
@@ -160,11 +172,40 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
         Scaffold(
             modifier = Modifier
                 .nestedScroll(scrollBehavior.nestedScrollConnection)
-                .semantics { if (title.isNotBlank()) paneTitle = title },
+                .semantics {
+                    isTraversalGroup = true
+                    if (title.isNotBlank()) paneTitle = title
+                },
             containerColor = colorScheme.background,
-            topBar = { FlorisAppBar(title, navigationIcon.takeIf { navigationIconVisible }, actions, scrollBehavior) },
-            bottomBar = bottomBar,
-            floatingActionButton = fab,
+            topBar = {
+                FlorisAppBar(
+                    title = title,
+                    navigationIcon = navigationIcon.takeIf { navigationIconVisible },
+                    actions = actions,
+                    scrollBehavior = scrollBehavior,
+                    modifier = Modifier.semantics {
+                        traversalIndex = FlorisScreenFocusOrder.AppBar
+                    },
+                )
+            },
+            bottomBar = {
+                Box(
+                    modifier = Modifier.semantics {
+                        traversalIndex = FlorisScreenFocusOrder.BottomBar
+                    },
+                ) {
+                    bottomBar()
+                }
+            },
+            floatingActionButton = {
+                Box(
+                    modifier = Modifier.semantics {
+                        traversalIndex = FlorisScreenFocusOrder.FloatingActionButton
+                    },
+                ) {
+                    fab()
+                }
+            },
         ) { innerPadding ->
             val scrollModifier = if (scrollable) {
                 Modifier.florisVerticalScroll()
@@ -174,7 +215,10 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
             Box(
                 modifier = Modifier
                     .padding(innerPadding)
-                    .fillMaxSize(),
+                    .fillMaxSize()
+                    .semantics {
+                        traversalIndex = FlorisScreenFocusOrder.Content
+                    },
             ) {
                 PreferenceLayout(
                     FlorisPreferenceStore,

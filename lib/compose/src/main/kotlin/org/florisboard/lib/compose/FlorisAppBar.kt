@@ -24,6 +24,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.TopAppBarScrollBehavior
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 
@@ -33,10 +34,12 @@ fun FlorisAppBar(
     title: String,
     navigationIcon: (@Composable () -> Unit)?,
     actions: @Composable RowScope.() -> Unit = { },
-    scrollBehavior: TopAppBarScrollBehavior
+    scrollBehavior: TopAppBarScrollBehavior,
+    modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
     TopAppBar(
+        modifier = modifier,
         navigationIcon = navigationIcon ?: {},
         title = {
             Text(
