@@ -54,6 +54,7 @@ import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
+import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.popup.PopupMappingComponent
 import dev.patrickgold.florisboard.ime.text.composing.Composer
@@ -378,9 +379,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private var lastLearnedLocaleTag: String? = null
 
     private fun learnIfAllowed(rawWord: String) {
-        if (activeState.isIncognitoMode) return
-        if (activeState.keyVariation == KeyVariation.PASSWORD) return
-        if (rawWord.isBlank()) return
+        if (!SuggestionPrivacyPolicy.shouldLearnCommittedWord(
+            rawWord = rawWord,
+            isIncognitoMode = activeState.isIncognitoMode,
+            keyVariation = activeState.keyVariation,
+        )) return
         val locale = subtypeManager.activeSubtype.primaryLocale
         DictionaryManager.default().learnWord(rawWord, locale)
         if (prefs.suggestion.nextWordPrediction.get()) {
@@ -1194,10 +1197,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 KeyCode.CLIPBOARD_SELECT_ALL -> {
                     editorInfo.isRichInputEditor
                 }
-                KeyCode.TOGGLE_INCOGNITO_MODE -> when (prefs.suggestion.incognitoMode.get()) {
-                    IncognitoMode.FORCE_OFF, IncognitoMode.FORCE_ON -> false
-                    IncognitoMode.DYNAMIC_ON_OFF -> !editorInfo.imeOptions.flagNoPersonalizedLearning
-                }
+                KeyCode.TOGGLE_INCOGNITO_MODE -> SuggestionPrivacyPolicy.canToggleIncognitoMode(
+                    preference = prefs.suggestion.incognitoMode.get(),
+                    appDeclaredNoPersonalizedLearning = editorInfo.imeOptions.flagNoPersonalizedLearning,
+                )
                 KeyCode.LANGUAGE_SWITCH -> {
                     subtypeManager.subtypes.size > 1
                 }

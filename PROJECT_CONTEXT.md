@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.132).
+through v1.8.133).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.132)
+## 3. Stack at HEAD (v1.8.133)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.132** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.133** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability layer.
 v1.8.104 – v1.8.110 closed the
@@ -275,6 +275,12 @@ v1.8.132 closes the glide typing delete interaction test item by extracting
 policy pins the `immediateBackspaceDeletesWord` path so an active committed
 glide word escalates one character backspace to word deletion while disabled,
 inactive, invalid-word, and explicit word-delete paths do not re-escalate.
+
+v1.8.133 closes the incognito suggestion behavior test item by extracting
+`SuggestionPrivacyPolicy`. App-declared no-personalized-learning now has a
+focused JVM contract that overrides user force-off, dynamic incognito toggles
+stay unavailable in app-private fields, and committed-word learning plus
+touch-decoder evidence are suppressed in incognito or password contexts.
 
 ## 4. Module layout
 
