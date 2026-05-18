@@ -53,9 +53,13 @@ import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -90,16 +94,45 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
     }
 
     var languagePackExtToDelete by remember { mutableStateOf<Extension?>(null) }
+    var isDeleteInProgress by remember { mutableStateOf(false) }
+    var lastNotice by remember { mutableStateOf<LanguagePackManagerNotice?>(null) }
+    var lastErrorMessage by remember { mutableStateOf<String?>(null) }
 
     content {
+        when (LanguagePackManagerPolicy.resolveNotice(
+            isDeleteInProgress = isDeleteInProgress,
+            lastTerminalNotice = lastNotice,
+        )) {
+            LanguagePackManagerNotice.DeleteInProgress -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__localization__language_pack_delete_in_progress),
+                secondaryText = stringRes(R.string.settings__localization__language_pack_delete_in_progress_summary),
+            )
+            LanguagePackManagerNotice.DeleteSuccess -> FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__localization__language_pack_delete_success),
+                secondaryText = stringRes(R.string.settings__localization__language_pack_delete_success_summary),
+            )
+            LanguagePackManagerNotice.DeleteFailure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__localization__language_pack_delete_failure),
+                secondaryText = stringRes(
+                    R.string.error__snackbar_message_template,
+                    "error_message" to (lastErrorMessage ?: stringRes(R.string.ext__import__error_details_unavailable)),
+                ),
+            )
+            LanguagePackManagerNotice.None -> Unit
+        }
         if (action == LanguagePackManagerScreenAction.MANAGE) {
             FlorisOutlinedBox(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
             ) {
                 Preference(
-                    onClick = { navController.navigate(
-                        Routes.Ext.Import(ExtensionImportScreenType.EXT_LANGUAGEPACK, null)
-                    ) },
+                    onClick = {
+                        if (LanguagePackManagerPolicy.canTriggerImport(isDeleteInProgress)) {
+                            navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_LANGUAGEPACK, null))
+                        }
+                    },
                     icon = Icons.AutoMirrored.Filled.Input,
                     title = stringRes(R.string.action__import),
                 )
@@ -112,8 +145,12 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 title = stringRes(R.string.settings__localization__language_pack_title),
                 message = stringRes(R.string.settings__localization__language_pack_summary),
                 actionLabel = stringRes(R.string.action__import),
-                onAction = {
-                    navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_LANGUAGEPACK, null))
+                onAction = if (LanguagePackManagerPolicy.canTriggerImport(isDeleteInProgress)) {
+                    {
+                        navController.navigate(Routes.Ext.Import(ExtensionImportScreenType.EXT_LANGUAGEPACK, null))
+                    }
+                } else {
+                    null
                 },
             )
         }
@@ -141,6 +178,10 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                         )
                     }
                 }
+                val canDelete = LanguagePackManagerPolicy.canDelete(
+                    extensionCanBeDeleted = extensionManager.canDelete(ext),
+                    isDeleteInProgress = isDeleteInProgress,
+                )
                 if (action == LanguagePackManagerScreenAction.MANAGE && extensionManager.canDelete(ext)) {
                     Row(
                         modifier = Modifier
@@ -153,6 +194,7 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                             },
                             icon = Icons.Default.Delete,
                             text = stringRes(R.string.action__delete),
+                            enabled = canDelete,
                             colors = ButtonDefaults.textButtonColors(
                                 contentColor = MaterialTheme.colorScheme.error,
                             ),
@@ -173,17 +215,31 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
         if (languagePackExtToDelete != null) {
             FlorisConfirmDeleteDialog(
                 onConfirm = {
-                    runCatching {
-                        extensionManager.delete(languagePackExtToDelete!!)
-                    }.onFailure { error ->
+                    languagePackExtToDelete?.let { extToDelete ->
+                        languagePackExtToDelete = null
                         scope.launch {
-                            context.showLongToast(
-                                R.string.error__snackbar_message,
-                                "error_message" to error.localizedMessage,
-                            )
+                            if (isDeleteInProgress) return@launch
+                            isDeleteInProgress = true
+                            lastNotice = null
+                            lastErrorMessage = null
+                            runCatching {
+                                withContext(Dispatchers.IO) {
+                                    extensionManager.delete(extToDelete)
+                                }
+                            }.onSuccess {
+                                lastNotice = LanguagePackManagerNotice.DeleteSuccess
+                                context.showLongToast(R.string.settings__localization__language_pack_delete_success)
+                            }.onFailure { error ->
+                                lastNotice = LanguagePackManagerNotice.DeleteFailure
+                                lastErrorMessage = error.localizedMessage
+                                context.showLongToast(
+                                    R.string.error__snackbar_message_template,
+                                    "error_message" to error.localizedMessage,
+                                )
+                            }
+                            isDeleteInProgress = false
                         }
                     }
-                    languagePackExtToDelete = null
                 },
                 onDismiss = { languagePackExtToDelete = null },
                 what = languagePackExtToDelete!!.meta.title,
