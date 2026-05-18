@@ -48,6 +48,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-05: Moved language pack delete failure feedback off deprecated synchronous long toasts and switched the language pack import action to the AutoMirrored icon.
 - 2026-05-05: Began the premium UX polish pass by tightening the shared settings shell, action-card affordances, setup step completion treatment, bottom-bar insets, backup/restore busy-state locking, extension empty-state actions, and language-pack manager empty/detail behavior.
 - 2026-05-18: Extracted editor input behavior decisions into a pure policy and added JVM coverage for autocorrect accept/reject spacing, punctuation auto-spacing, phantom spacing, double-space period, and sentence-capitalization gates.
+- 2026-05-18: Extracted hardware keyboard routing decisions into a pure policy and added JVM coverage for space, enter, delete pass-through, shift, mapped letters, mapped punctuation, and punctuation-triggered autocorrect flush behavior.
 
 ## Workstreams
 
@@ -61,7 +62,7 @@ Goal: Raise confidence in the keyboard's highest-risk behavior by moving state r
 Tasks:
 - [x] Add JVM coverage for rejected autocorrect behavior.
 - [x] Add editor/input behavior tests for autocorrect accept, reject, undo, punctuation, and spacing flows.
-- [ ] Add hardware keyboard tests for space, enter, delete, and punctuation behavior.
+- [x] Add hardware keyboard tests for space, enter, delete, and punctuation behavior.
 - [ ] Add phantom-space and autospace lifecycle tests.
 - [ ] Add glide typing delete interaction tests.
 - [ ] Add incognito suggestion behavior tests.
