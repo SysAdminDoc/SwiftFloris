@@ -143,8 +143,8 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
             FlorisEmptyState(
                 modifier = Modifier.padding(16.dp),
                 icon = Icons.Default.Language,
-                title = stringRes(R.string.settings__localization__language_pack_title),
-                message = stringRes(R.string.settings__localization__language_pack_summary),
+                title = stringRes(R.string.settings__localization__language_pack_empty_title),
+                message = stringRes(R.string.settings__localization__language_pack_empty_message),
                 actionLabel = stringRes(R.string.action__import),
                 onAction = if (LanguagePackManagerPolicy.canTriggerImport(isDeleteInProgress)) {
                     {
