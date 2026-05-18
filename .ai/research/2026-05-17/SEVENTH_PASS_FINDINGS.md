@@ -87,6 +87,7 @@ shipped in this pass; four were structural / out-of-scope.
 | **#16** — `RemoveItemPattern(canonicalPhrase = "scratch", prefix = "scratch")` was bare-prefix; any utterance starting with the word "scratch" silently fired `REMOVE_ITEM_FROM_LIST` against committed text | Medium | ✅ **v1.8.107** — replaced with four explicit suffix-anchored variants (`scratch X {from \| off} {the }list`) + regression-guard test |
 | **#14** — `removeItemFromList` collapsed any non-empty editor selection and overwrote selected text plus the suffix above the cursor on execution — silent multi-region data loss | Medium | ✅ **v1.8.108** — early-return `ACTION_REJECTED` when `content.selectedText.isNotEmpty()` BEFORE buffer mutation |
 | **#11** — `_isListening` and `_transcriptionState` set to Listening then overwritten back to Ready in the same synchronous frame; observers never saw the Listening transition | Medium | ✅ **v1.8.110** — keep state Listening when handoff succeeds; reset via `voiceInputManager.refreshAvailability()` on `onStartInput` rebind when SwiftFloris regains focus |
+| **#12** — `VoiceInputSetupActivity` exported by default (no manifest verify on `android:exported`); accepts arbitrary `Intent` extras | Low | ✅ **v1.8.113** — manifest test pins `exported=false`; setup intent contract rejects missing / unknown / unexpected extras. |
 
 ### Open (structural — multi-file / out-of-scope for per-PR)
 
@@ -96,7 +97,6 @@ shipped in this pass; four were structural / out-of-scope.
 | **#3, #4** — concurrent model-install races against itself; `sweepStaleStagingDirs()` deletes other in-flight staging dirs | Medium | Bundle with the L1.1a / Vosk integration slice when it lands. |
 | **#8** — engine-selector mis-labels failure reason when no engine is available | Medium | UX polish on a code path that is dead until #6 lands. Defer. |
 | **#10** — `acceptFinal` may re-commit stale text on a cumulative-final echo from non-incremental recognisers | Medium | Affects only the in-tree recogniser path (#6); defer with that slice. |
-| **#12** — `VoiceInputSetupActivity` exported by default (no manifest verify on `android:exported`); accepts arbitrary `Intent` extras | Low | Manifest hardening; could be its own slice (v1.8.113+ if maintainer wants to follow up). |
 | **#13** — `parser.parse` runs twice per utterance (once for command threshold, once for suggestion threshold) | Low | Perf-only polish on a non-hot path. Defer. |
 | **#15** — parameterised matches bypass the enabled-set gate that the UI filters on | Medium | Partially addressed by v1.8.107's tightening of the patterns themselves; the broader "enabled-action set" gate is a larger refactor. Flag for future slice. |
 | **#17** — `isVoiceInputReadyForHandoff()` returns true for any non-FUTO voice IME without checking that IME's mic permission | Low | Defer. |
@@ -121,13 +121,13 @@ shipped in this pass; four were structural / out-of-scope.
 
 | Finding | Severity | Disposition |
 |---|---|---|
-| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.113+. |
-| **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphans every file forever | Medium | Modest slice; flag for v1.8.113+. |
+| **#2** — no `SecurityException` catch when reading a foreign content URI; phantom history entries pointing at non-existent files | Medium | One-PR-shaped fix; flag for v1.8.114+. |
+| **#4** — no startup reconciliation between DB rows and on-disk files; `fallbackToDestructiveMigration` orphans every file forever | Medium | Modest slice; flag for v1.8.114+. |
 | **#5, #6** — `enforceHistoryLimit` recurses on its own emission; `updateHistory` runs on Main and sort + filter at every emission | Medium | Perf cliff at startup with N=200 history + cap=10; needs a `Mutex` or single-threaded dispatcher. Modest refactor; defer. |
 | **#7** — `enforceExpiryDate` reads `currentHistory` on a background timer with no sync | Low | Same fix shape as #5; bundle. |
 | **#8** — no pin-cap; pinned items grow unbounded (combined with #4, pinned media files leak forever) | Low | UX polish + a pref; defer. |
 | **#9** — pin-popup `stringRepresentation()` runs `NetworkUtils.isUrl` on the unredacted text even when `isSensitive` is true; leaks structural info via icon | Low | One-line fix; bundle with future clipboard polish. |
-| **#10** — backup-restore drops the `ClipboardFileInfo` row, so restored items have URIs pointing at IDs not in `clipboard_files` table → "Unable to resolve image" | Medium | One-PR fix on the restore path; flag for v1.8.113+. |
+| **#10** — backup-restore drops the `ClipboardFileInfo` row, so restored items have URIs pointing at IDs not in `clipboard_files` table → "Unable to resolve image" | Medium | One-PR fix on the restore path; flag for v1.8.114+. |
 | **#12** — `openFile` doesn't pre-check `file.exists()` (FileNotFoundException to receiver) | Low | Defer. |
 | **#14** — `primaryClipLastFromCallback` duplicate check too narrow on text-clear-text-cycle | Low | Defer. |
 | **#15** — `ClipboardMediaProvider.init` loads `cachedFileInfos` async; receiver calls during cold-paste race the cache | Medium | One-PR fix; flag. |
@@ -157,10 +157,10 @@ limit windows.
 
 ---
 
-## 5. Open follow-up roster (post-v1.8.112)
+## 5. Open follow-up roster (post-v1.8.113)
 
 Items the seventh-pass audit surfaced that remain open after the
-v1.8.112 G6 clipboard eviction hardening slice. Priority-scored.
+v1.8.113 G7 voice setup hardening slice. Priority-scored.
 
 | # | Item | Source | Impact | Cost | Urg. | Score |
 |---|---|---|---|---:|---:|---:|
@@ -168,14 +168,13 @@ v1.8.112 G6 clipboard eviction hardening slice. Priority-scored.
 | G3 | Clipboard startup reconciliation between DB rows and on-disk files | Clipboard #4 | 3 | 2 | 1 | **3.5** |
 | G4 | Clipboard restore re-inserts `ClipboardFileInfo` rows | Clipboard #10 | 3 | 2 | 1 | **3.5** |
 | G5 | `enforceHistoryLimit` `Mutex` + off-Main collection | Clipboard #5 + #6 + #7 | 3 | 2 | 1 | **3.5** |
-| G7 | `VoiceInputSetupActivity` `android:exported="false"` + Intent extras validation | Voice #12 | 2 | 1 | 1 | **5.0** |
 | G8 | `isVoiceInputReadyForHandoff()` checks per-IME `RECORD_AUDIO` grant | Voice #17 | 2 | 1 | 1 | **5.0** |
 | G9 | `ClipboardHistoryManager` (Tink store) — confirm intent; delete or wire as backend | Clipboard #17 | 2 | 2 | 1 | **2.5** |
 | G10 | Pin-popup `NetworkUtils.isUrl` skipped when `isSensitive` | Clipboard #9 | 2 | 1 | 1 | **5.0** |
 | G11 | NLP / autocorrect / suggestion full re-audit (rate-limited agent) | — | 4 | 4 | 2 | **2.5** |
 
-High-leverage items (score ≥ 5.0): **G7, G8, G10**.
-These map naturally to v1.8.113 – v1.8.115 single-feature releases.
+High-leverage items (score ≥ 5.0): **G8, G10**.
+These map naturally to v1.8.114 – v1.8.115 single-feature releases.
 
 ---
 

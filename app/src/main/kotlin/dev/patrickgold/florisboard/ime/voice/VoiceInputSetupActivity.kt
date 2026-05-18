@@ -60,12 +60,8 @@ enum class VoiceInputSetupReason {
 
 class VoiceInputSetupActivity : ComponentActivity() {
     companion object {
-        private const val ExtraReason = "reason"
-
         fun launch(context: Context, reason: VoiceInputSetupReason): Boolean {
-            val intent = Intent(context, VoiceInputSetupActivity::class.java)
-                .putExtra(ExtraReason, reason.name)
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            val intent = VoiceInputSetupIntentContract.createIntent(context, reason)
             return try {
                 context.startActivity(intent)
                 true
@@ -77,15 +73,13 @@ class VoiceInputSetupActivity : ComponentActivity() {
         }
     }
 
-    private val reason: VoiceInputSetupReason
-        get() {
-            val value = intent.getStringExtra(ExtraReason)
-            return VoiceInputSetupReason.values().firstOrNull { it.name == value }
-                ?: VoiceInputSetupReason.NO_ENABLED_PROVIDER
-        }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val reason = VoiceInputSetupIntentContract.reasonFrom(intent)
+        if (reason == null) {
+            finish()
+            return
+        }
         setFinishOnTouchOutside(true)
         setContent {
             Content(reason)
@@ -239,3 +233,27 @@ private val VoiceInputSetupReason.messageRes: Int
         VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED -> R.string.voice_input_setup__mic_permission_message
         VoiceInputSetupReason.NO_ENABLED_PROVIDER -> R.string.voice_input_setup__no_provider_message
     }
+
+internal object VoiceInputSetupIntentContract {
+    private const val ExtraReason = "reason"
+    private val AllowedExtraKeys = setOf(ExtraReason)
+
+    fun createIntent(context: Context, reason: VoiceInputSetupReason): Intent {
+        return Intent(context, VoiceInputSetupActivity::class.java)
+            .putExtra(ExtraReason, reason.name)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+
+    fun reasonFrom(intent: Intent): VoiceInputSetupReason? {
+        val extras = intent.extras ?: return null
+        return reasonFromExtras(
+            keys = extras.keySet(),
+            reasonName = extras.getString(ExtraReason),
+        )
+    }
+
+    fun reasonFromExtras(keys: Set<String>, reasonName: String?): VoiceInputSetupReason? {
+        if (keys != AllowedExtraKeys) return null
+        return VoiceInputSetupReason.entries.firstOrNull { it.name == reasonName }
+    }
+}
