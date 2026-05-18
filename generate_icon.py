@@ -1,4 +1,14 @@
 #!/usr/bin/env python3
+"""Regenerate the SwiftFloris app-icon PNG next to this script.
+
+Maintainer-only helper. Output lands at `SwiftFloris_icon_new.png` in
+the same directory as this script regardless of the caller's CWD, so
+running `python3 generate_icon.py` from anywhere produces a writable,
+predictable artifact path. Replaces the previous hard-coded Windows
+path that worked only on a single maintainer's host.
+"""
+
+from pathlib import Path
 from PIL import Image, ImageDraw
 
 # Create a 512x512 image with transparency
@@ -76,8 +86,9 @@ draw.rounded_rectangle(
     width=1
 )
 
-# Save the icon
-output_path = r'C:\Users\--\repos\SwiftFloris\SwiftFloris_icon_new.png'
-img.save(output_path, 'PNG')
+# Save the icon next to this script so the output path is portable
+# across maintainer hosts and CWDs.
+output_path = Path(__file__).resolve().parent / "SwiftFloris_icon_new.png"
+img.save(output_path, "PNG")
 print(f"✓ Icon generated: {output_path}")
 print(f"  Size: {img.size}, Format: PNG with transparency (RGBA)")
