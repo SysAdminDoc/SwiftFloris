@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.137).
+through v1.8.138).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.137)
+## 3. Stack at HEAD (v1.8.138)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,9 +195,9 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.137** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.138** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
-input-behavior testability layer.
+input-behavior testability plus conservative lint cleanup layer.
 v1.8.104 – v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
@@ -307,6 +307,13 @@ v1.8.137 closes the theme editor validation test item by adding
 uses a pure policy for field validity, duplicate-ID detection, and normalized
 apply data, with JVM coverage for valid apply normalization, invalid fields,
 duplicate IDs, and blank stylesheet fallback.
+
+v1.8.138 closes the first conservative `UnusedResources` review by deleting
+obsolete launcher/branding resources and legacy color tokens after checking
+manifest, code, asset, test, and dynamic lookup references. Lint now reports
+245 warnings / 1 hint, down from 289 warnings / 1 hint; remaining unused
+resource warnings are string, theme-palette, or spec-dimension buckets that
+need semantic review before deletion.
 
 ## 4. Module layout
 

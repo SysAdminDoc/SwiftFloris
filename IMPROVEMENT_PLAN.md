@@ -1,12 +1,12 @@
 # SwiftFloris Improvement Plan
 
-Last updated: 2026-05-05
+Last updated: 2026-05-18
 
 This plan tracks quality, UX, accessibility, performance, testing, and delivery improvements that sit beside the product roadmap. It is intentionally execution-focused: every item should end in code, tests, docs, or release-process changes.
 
 ## Current Baseline
 
-- Branch: `master`, currently ahead of `origin/master`.
+- Branch: `master`; completed release slices are committed, tagged, and pushed.
 - Main Kotlin files: 239.
 - Test Kotlin files: 16.
 - Latest verified commands:
@@ -15,7 +15,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
 - Known worktree condition: unrelated deleted markdown files are present and must not be staged unless explicitly requested.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
-- Current lint shape after cleanup batches: 289 warnings, 1 hint. Largest remaining bucket is `UnusedResources`.
+- Current lint shape after cleanup batches: 245 warnings, 1 hint. Largest remaining bucket is `UnusedResources` at 211 warnings; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, dictionary import/export, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in extension editing, theme, devtools, keyboard, and clipboard surfaces.
 
 ## Current Improvement Assessment
@@ -24,7 +24,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - Backup, restore, extension, language pack, dictionary, and theme workflows are trust-sensitive. They need clear busy states, specific errors, recovery copy, duplicate-action blocking, and post-action confirmation.
 - Settings are feature-rich and need stronger information architecture: clearer section summaries, consistent secondary text, better empty states, and predictable destructive confirmations.
 - The keyboard surface needs a dedicated accessibility and polish pass for candidate row semantics, smartbar controls, touch targets, contrast, and state labels.
-- Lint signal is improving, but `UnusedResources` still hides real regressions. Resource cleanup must be conservative because dynamic lookup and build variants are likely.
+- Lint signal is improving, but the remaining `UnusedResources` bucket still hides real regressions. Further cleanup must stay conservative because translated strings, theme palette test fixtures, and build variants can look unused to lint.
 - Compile warnings show older synchronous feedback APIs in several UI surfaces. Replacing them with coroutine-safe feedback removes UI-thread risk and improves consistency.
 - CI and release verification should match the local path: lint, unit tests, assemble, optional adb install/launch, lint-baseline drift, and dependency review.
 - Performance quality is currently under-instrumented. Keyboard cold start, first render, first suggestion latency, dictionary load, candidate recomposition, and backup/restore durations need repeatable measurements.
@@ -56,6 +56,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Extracted extension import readiness decisions into a pure policy and added JVM coverage for language pack import/update, bundled-core rejection, corrupted metadata, wrong extension type, and import button enablement.
 - 2026-05-18: Extracted subtype editor draft validation into a pure policy and added JVM coverage for default add-state missing fields, complete draft building, placeholder rejection, and edit-state preservation.
 - 2026-05-18: Extracted theme component metadata validation into a pure policy and added JVM coverage for valid apply normalization, invalid fields, duplicate IDs, and blank stylesheet fallback.
+- 2026-05-18: Completed the first conservative `UnusedResources` review by deleting only obsolete launcher/branding resources and legacy color tokens with no code, manifest, asset, test, or dynamic lookup references. Lint dropped from 289 warnings / 1 hint to 245 warnings / 1 hint; remaining `UnusedResources` entries are string, theme-palette, or spec-dimension buckets requiring separate semantic review.
 
 ## Workstreams
 
@@ -97,7 +98,7 @@ Tasks:
 - [x] Normalize `TypographyEllipsis` in string resources.
 - [x] Audit `Typos` warnings and correct only cases with high confidence.
 - [x] Address `MissingQuantity` by adding required plural quantities, preferably via translation-safe fallback copying.
-- [ ] Review `UnusedResources`; delete only resources proven unused across build variants and dynamic lookup paths.
+- [x] Review `UnusedResources`; delete only resources proven unused across build variants and dynamic lookup paths.
 - [ ] Review dependency version warnings separately from source cleanup.
 
 Acceptance criteria:
