@@ -73,6 +73,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Began the Accessibility Pass by giving the shared settings scaffold an explicit traversal order: app bar, content, bottom actions, then floating action, with a regression test pinning the order.
 - 2026-05-18: Audited candidate row and smartbar TalkBack labels by extracting `SmartbarAccessibilityLabels`, announcing candidate type/position/text, preserving the remove-candidate custom action label, and pinning quick-action label fallback behavior in JVM tests.
 - 2026-05-18: Audited keyboard key semantics and touch targets by moving semantic focus to each key's real touch bounds, adding an accessibility click action, expanding special-key labels for clipboard/voice/mode/layout/smartbar controls, and pinning the behavior in JVM tests.
+- 2026-05-18: Verified dynamic font scaling on settings and dialogs by adding a shared high-font-scale expansion policy for compact one-line metadata, links, component titles, and theme-rule key previews, with JVM coverage for the threshold behavior.
 
 ## Workstreams
 
@@ -200,7 +201,7 @@ Tasks:
 - [x] Audit settings screen focus order.
 - [x] Audit candidate row and smartbar TalkBack labels.
 - [x] Audit keyboard key semantics and touch target size.
-- [ ] Verify dynamic font scaling on settings and dialogs.
+- [x] Verify dynamic font scaling on settings and dialogs.
 - [ ] Verify theme contrast for keyboard, candidate row, dialogs, and warnings.
 - [ ] Ensure state indicators do not rely on color alone.
 - [ ] Add accessibility notes to manual QA checklist.
