@@ -117,13 +117,27 @@ object UserStickerRepository {
             Document.COLUMN_MIME_TYPE,
             Document.COLUMN_SIZE,
         )
-        val documents = mutableListOf<UserStickerDocument>()
+        // Cap inside the cursor loop so a 50k-file Downloads folder doesn't
+        // allocate 50k UserStickerDocument objects (plus their string fields)
+        // only to be `take(MaxStickers)`-trimmed downstream. We collect
+        // slightly more than MaxStickers so the downstream `sortedBy` /
+        // `distinctBy` can still pick from a wider set than the final
+        // displayed count, but cap hard before the cursor walk gets out
+        // of hand.
+        val enumerationCap = MaxStickers * 4
+        val documents = ArrayList<UserStickerDocument>(MaxStickers)
         context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
             val idCol = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID)
             val nameCol = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME)
             val mimeCol = cursor.getColumnIndex(Document.COLUMN_MIME_TYPE)
             val sizeCol = cursor.getColumnIndex(Document.COLUMN_SIZE)
             while (cursor.moveToNext()) {
+                if (documents.size >= enumerationCap) {
+                    flogWarning {
+                        "UserStickerRepository: capped folder enumeration at $enumerationCap entries; some files in the picked folder will be ignored. Move the imported-sticker folder to a smaller scope."
+                    }
+                    break
+                }
                 val documentId = cursor.getStringOrNull(idCol) ?: continue
                 val mimeType = cursor.getStringOrNull(mimeCol)
                 if (mimeType == Document.MIME_TYPE_DIR) continue

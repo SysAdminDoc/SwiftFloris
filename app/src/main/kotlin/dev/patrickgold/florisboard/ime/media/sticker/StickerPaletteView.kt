@@ -97,6 +97,26 @@ private const val MAX_STICKER_DIMENSION = 8192
 // resolution.
 private const val TARGET_STICKER_EDGE_PX = 512
 
+// Shared LRU of decoded sticker bitmaps, keyed by sourceUri string.
+//
+// Before this cache: every scroll cycle re-entered each `StickerPreview`
+// composable, which fired its `LaunchedEffect` again, which re-opened the
+// SAF input stream and re-ran the two-pass decode. For a 240-sticker pack
+// scrolled aggressively, the IME could allocate and release hundreds of
+// bitmaps per minute.
+//
+// After this cache: the first composition for a sourceUri pays the SAF
+// open + decode cost; every subsequent composition is a cache hit.
+//
+// Size budget: 64 entries × ~512 px longest edge × 4 bytes/px ≈ 32 MB
+// worst case, ≈ 13 MB at typical sticker sizes. Object-count-based
+// eviction is simpler than byte-counting and good enough — actual heap
+// pressure is dominated by other parts of the IME (the keyboard atlas,
+// the Compose tree, the active dictionary).
+private const val STICKER_BITMAP_CACHE_SIZE = 64
+private val stickerBitmapCache: androidx.collection.LruCache<String, ImageBitmap> =
+    androidx.collection.LruCache(STICKER_BITMAP_CACHE_SIZE)
+
 @Composable
 fun StickerPaletteView(
     modifier: Modifier = Modifier,
@@ -266,9 +286,18 @@ private fun BoxScope.StickerPreview(sticker: Sticker) {
     }
 
     val context = LocalContext.current
-    var bitmap by remember(sourceUri) { mutableStateOf<ImageBitmap?>(null) }
+    var bitmap by remember(sourceUri) {
+        // Cache-warm initial value: if the bitmap was already decoded in a
+        // prior composition (e.g. the user scrolled away and back), the
+        // first frame after recomposition renders the cached bitmap with
+        // no SAF open / decode round-trip. Cache-miss path still runs in
+        // the LaunchedEffect below.
+        mutableStateOf<ImageBitmap?>(stickerBitmapCache.get(sourceUri))
+    }
     LaunchedEffect(sourceUri) {
-        bitmap = withContext(Dispatchers.IO) {
+        if (bitmap != null) return@LaunchedEffect
+        val decoded = withContext(Dispatchers.IO) {
+            stickerBitmapCache.get(sourceUri)?.let { return@withContext it }
             runCatching {
                 val parsedUri = Uri.parse(sourceUri)
                 // Two-pass decode with bounds gate: a hostile / corrupted file
@@ -303,8 +332,11 @@ private fun BoxScope.StickerPreview(sticker: Sticker) {
                 context.contentResolver.openInputStream(parsedUri)?.use { stream ->
                     BitmapFactory.decodeStream(stream, null, decodeOptions)?.asImageBitmap()
                 }
-            }.getOrNull()
+            }.getOrNull()?.also { decoded ->
+                stickerBitmapCache.put(sourceUri, decoded)
+            }
         }
+        bitmap = decoded
     }
     val loaded = bitmap
     if (loaded != null) {
