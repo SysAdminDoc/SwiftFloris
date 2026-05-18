@@ -7,8 +7,8 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 ## Current Baseline
 
 - Branch: `master`; completed release slices are committed, tagged, and pushed.
-- Main Kotlin files: 241.
-- Test Kotlin files: 18.
+- Main Kotlin files: 242.
+- Test Kotlin files: 19.
 - Latest verified commands:
   - `./gradlew.bat :app:lintDebug :app:testDebugUnitTest :app:assembleDebug`
   - `./gradlew.bat :app:installDebug`
@@ -60,12 +60,13 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
 - 2026-05-18: Reviewed dependency-version lint warnings as a dedicated dependency slice and bumped Gradle 9.4.1 -> 9.5.1, Navigation Compose 2.9.7 -> 2.9.8, and JUnit Vintage 5.13.1 -> 6.0.3 after checking official Gradle, AndroidX, and JUnit release metadata. Lint dropped to 241 warnings / 1 hint.
 - 2026-05-18: Extracted candidate auto-commit ordering, quick-prediction spacebar selection, and rejected-correction gating into `CandidateAutoCommitPolicy`, leaving `NlpManager` to gather Android-bound state and adding focused JVM coverage for disabled states, shortcut/phrase/active/immediate priority, language-confidence gating, rejection suppression, and plain-space prediction suppression.
 - 2026-05-18: Extracted software punctuation/non-letter autocorrect flush decisions into `KeyboardAutoCommitFlushPolicy`, leaving `KeyboardManager` to execute the chosen flush and adding JVM coverage for media mode, alphabetic keys, punctuation keys, numeric keys, numeric/phone layouts, non-text keys, and empty text.
+- 2026-05-18: Extracted theme rule editing validation and key-code parsing into `ThemeRuleEditPolicy`, leaving `EditRuleDialog` to render dialog state and adding JVM coverage for empty add-rule selection, selector toggling, invalid/duplicate/unchanged code decisions, and add/replace code actions.
 
 ## Workstreams
 
 ### 1. Test Coverage Expansion
 
-Status: In progress
+Status: Completed
 Priority: P0
 
 Goal: Raise confidence in the keyboard's highest-risk behavior by moving state rules into testable units and adding regression coverage.
@@ -111,7 +112,7 @@ Acceptance criteria:
 
 ### 3. Pure Core Extraction
 
-Status: In progress
+Status: Completed
 Priority: P0
 
 Goal: Make keyboard behavior easier to test and safer to change by separating Android framework wiring from deterministic rules.
@@ -122,7 +123,7 @@ Tasks:
 - [x] Extract punctuation-triggered commit rules from `KeyboardManager`.
 - [x] Extract phantom-space/autospace rules from `EditorInstance`.
 - [x] Extract backup/restore validation policy from Compose screens.
-- [ ] Extract theme validation and rule parsing from UI surfaces.
+- [x] Extract theme validation and rule parsing from UI surfaces.
 
 Acceptance criteria:
 - Extracted classes have no Android framework dependency unless unavoidable.

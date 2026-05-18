@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.141).
+through v1.8.142).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.141)
+## 3. Stack at HEAD (v1.8.142)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.141** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.142** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup layer.
 v1.8.104 – v1.8.110 closed the
@@ -335,6 +335,13 @@ whether software text commits flush a pending autocorrect candidate first:
 media-mode text commits flush, character-mode non-letter commits flush, and
 numeric / phone layout punctuation does not flush. `KeyboardManager` now only
 executes the selected behavior.
+
+v1.8.142 closes the theme rule editing extraction item from
+`IMPROVEMENT_PLAN.md` Workstream 3. `ThemeRuleEditPolicy` now owns add-rule
+selection validation, selector toggling, and key-code attribute parsing /
+replacement decisions. `EditRuleDialog` remains responsible for dialog state
+and user feedback, while focused JVM coverage pins invalid, duplicate,
+unchanged, add, and replace decisions.
 
 ## 4. Module layout
 

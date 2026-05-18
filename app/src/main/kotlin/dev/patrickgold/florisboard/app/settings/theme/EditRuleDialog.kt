@@ -181,11 +181,14 @@ internal fun EditRuleDialog(
             }
         ),
         onConfirm = {
-            if (isAddRuleDialog && elementsSelectedIndex == 0) {
-                showSelectAsError = true
-            } else {
-                if (!onConfirmRule(initRule, currentRule)) {
-                    showAlreadyExistsError = true
+            when (ThemeRuleEditPolicy.validateSelection(isAddRuleDialog, elementsSelectedIndex)) {
+                ThemeRuleSelectionValidation.MissingSelection -> {
+                    showSelectAsError = true
+                }
+                ThemeRuleSelectionValidation.Ready -> {
+                    if (!onConfirmRule(initRule, currentRule)) {
+                        showAlreadyExistsError = true
+                    }
                 }
             }
         },
@@ -237,11 +240,7 @@ internal fun EditRuleDialog(
                     return@apply
                 }
                 fun updateCurrentRule(newSelector: SnyggSelector) {
-                    currentRule = if (selector == newSelector) {
-                        copy(selector = SnyggSelector.NONE)
-                    } else {
-                        copy(selector = newSelector)
-                    }
+                    currentRule = ThemeRuleEditPolicy.toggleSelector(this, newSelector)
                 }
                 DialogProperty(text = stringRes(R.string.settings__theme_editor__rule_selectors)) {
                     Row(
@@ -468,27 +467,28 @@ private fun EditCodeValueDialog(
             }
         ),
         onConfirm = {
-            val code = inputCodeString.trim().toIntOrNull(radix = 10)
-            when {
-                code == null || (code !in KeyCode.Spec.CHARACTERS && code !in KeyCode.Spec.INTERNAL) -> {
+            when (val decision = ThemeRuleEditPolicy.codeEditDecision(
+                inputCodeString = inputCodeString,
+                currentCodeValue = codeValue,
+                codeExists = checkExisting,
+            )) {
+                ThemeRuleCodeEditDecision.Invalid -> {
                     errorId = R.string.settings__theme_editor__code_invalid
                     showError = true
                 }
 
-                code.toString() == codeValue -> {
+                ThemeRuleCodeEditDecision.Unchanged -> {
                     onDismiss()
                 }
 
-                checkExisting(code.toString()) -> {
+                ThemeRuleCodeEditDecision.Duplicate -> {
                     errorId = R.string.settings__theme_editor__code_already_exists
                     showError = true
                 }
 
-                else -> {
-                    if (codeValue != KeyCode.UNSPECIFIED.toString()) {
-                        onDelete(codeValue)
-                    }
-                    onAdd(code.toString())
+                is ThemeRuleCodeEditDecision.Apply -> {
+                    decision.oldCodeToDelete?.let { onDelete(it) }
+                    onAdd(decision.newCode)
                     onDismiss()
                 }
             }

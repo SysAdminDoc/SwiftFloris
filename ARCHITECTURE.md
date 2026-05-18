@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-05-17, against the v1.8.77 codebase.
+Last updated: 2026-05-18, against the v1.8.142 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
@@ -67,7 +67,7 @@ Primary app code lives under
 | Package | Main responsibility |
 |---|---|
 | `app/` | Settings activity, navigation, setup, preference model, import screens |
-| `app/settings/` | Compose Settings screens grouped by product area |
+| `app/settings/` | Compose Settings screens grouped by product area, plus pure policies for settings/editor validation |
 | `ime/core/` | Subtype and active-language state |
 | `ime/editor/` | Editor info, current input connection, rich-content commits, field guards |
 | `ime/input/` | Feedback, capitalization, haptics, input state |
