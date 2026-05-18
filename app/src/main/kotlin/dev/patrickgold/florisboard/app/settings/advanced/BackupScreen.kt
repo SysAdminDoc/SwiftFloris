@@ -67,8 +67,10 @@ import kotlinx.serialization.Serializable
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.writeFromFile
 import org.florisboard.lib.compose.FlorisButtonBar
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
@@ -151,20 +153,25 @@ fun BackupScreen() = FlorisScreen {
     val backupFilesSelector = remember { Backup.FilesSelector() }
     var backupWorkspace by remember { mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null) }
     var isBackupInProgress by remember { mutableStateOf(false) }
+    var lastBackupNotice by remember { mutableStateOf<BackupFlowNotice?>(null) }
+    var lastBackupErrorMessage by remember { mutableStateOf<String?>(null) }
 
     val backUpToFileSystemLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip"),
         onResult = { uri ->
             if (uri == null) {
-                if (BackupRestorePolicy.classifyBackupDocumentResult(
+                val result = BackupRestorePolicy.classifyBackupDocumentResult(
                     uriSelected = false,
                     writeSucceeded = false,
-                ) != BackupDocumentResult.Cancelled) return@rememberLauncherForActivityResult
+                )
+                if (result != BackupDocumentResult.Cancelled) return@rememberLauncherForActivityResult
                 // User can modify checkboxes between cancellation and second
                 // trigger, so we make sure to clear out the previous workspace
                 backupWorkspace?.close()
                 backupWorkspace = null
                 isBackupInProgress = false
+                lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(result)
+                lastBackupErrorMessage = null
                 return@rememberLauncherForActivityResult
             }
             runCatching {
@@ -173,6 +180,8 @@ fun BackupScreen() = FlorisScreen {
             }.onSuccess {
                 backupWorkspace = null
                 isBackupInProgress = false
+                lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Success)
+                lastBackupErrorMessage = null
                 scope.launch {
                     context.showLongToast(R.string.backup_and_restore__back_up__success)
                     navController.popBackStack()
@@ -188,6 +197,8 @@ fun BackupScreen() = FlorisScreen {
                 backupWorkspace?.close()
                 backupWorkspace = null
                 isBackupInProgress = false
+                lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
+                lastBackupErrorMessage = error.message
             }
         },
     )
@@ -276,6 +287,8 @@ fun BackupScreen() = FlorisScreen {
             return
         }
         isBackupInProgress = true
+        lastBackupNotice = null
+        lastBackupErrorMessage = null
         runCatching {
             if (backupWorkspace == null || backupWorkspace!!.isClosed()) {
                 prepareBackupWorkspace()
@@ -295,6 +308,7 @@ fun BackupScreen() = FlorisScreen {
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     context.startActivity(shareIntent)
                     isBackupInProgress = false
+                    lastBackupNotice = BackupFlowNotice.ShareSheetOpened
                 }
             }
         }.onFailure { error ->
@@ -303,6 +317,8 @@ fun BackupScreen() = FlorisScreen {
             backupWorkspace?.close()
             backupWorkspace = null
             isBackupInProgress = false
+            lastBackupNotice = BackupFlowNotice.Failure
+            lastBackupErrorMessage = error.message
         }
     }
 
@@ -334,12 +350,44 @@ fun BackupScreen() = FlorisScreen {
     }
 
     content {
-        if (isBackupInProgress) {
-            FlorisInfoCard(
+        when (BackupRestorePolicy.resolveBackupFlowNotice(
+            isBackupInProgress = isBackupInProgress,
+            clipboardItemsSelected = backupFilesSelector.provideClipboardItems(),
+            lastTerminalNotice = lastBackupNotice,
+        )) {
+            BackupFlowNotice.InProgress -> FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.backup_and_restore__back_up__in_progress),
                 secondaryText = stringRes(R.string.backup_and_restore__back_up__in_progress_summary),
             )
+            BackupFlowNotice.ClipboardPrivacyWarning -> FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__back_up__clipboard_privacy_warning_title),
+                secondaryText = stringRes(R.string.backup_and_restore__back_up__clipboard_privacy_warning_summary),
+            )
+            BackupFlowNotice.Cancelled -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__back_up__cancelled),
+                secondaryText = stringRes(R.string.backup_and_restore__back_up__cancelled_summary),
+            )
+            BackupFlowNotice.Failure -> FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__back_up__failure_title),
+                secondaryText = stringRes(
+                    R.string.backup_and_restore__back_up__failure,
+                    "error_message" to (lastBackupErrorMessage ?: stringRes(
+                        R.string.backup_and_restore__back_up__unknown_error,
+                    )),
+                ),
+            )
+            BackupFlowNotice.ShareSheetOpened -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.backup_and_restore__back_up__share_sheet_opened),
+                secondaryText = stringRes(R.string.backup_and_restore__back_up__share_sheet_opened_summary),
+            )
+            BackupFlowNotice.Success,
+            BackupFlowNotice.None,
+            -> Unit
         }
         FlorisOutlinedBox(
             modifier = Modifier.defaultFlorisOutlinedBox(),

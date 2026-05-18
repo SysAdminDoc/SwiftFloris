@@ -58,6 +58,41 @@ class BackupRestorePolicyTest : FunSpec({
         ) shouldBe false
     }
 
+    test("backup document result maps to terminal flow notices") {
+        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Success) shouldBe
+            BackupFlowNotice.Success
+        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Cancelled) shouldBe
+            BackupFlowNotice.Cancelled
+        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure) shouldBe
+            BackupFlowNotice.Failure
+    }
+
+    test("backup flow notice prioritizes progress terminal state and clipboard warning") {
+        BackupRestorePolicy.resolveBackupFlowNotice(
+            isBackupInProgress = true,
+            clipboardItemsSelected = true,
+            lastTerminalNotice = BackupFlowNotice.Failure,
+        ) shouldBe BackupFlowNotice.InProgress
+
+        BackupRestorePolicy.resolveBackupFlowNotice(
+            isBackupInProgress = false,
+            clipboardItemsSelected = true,
+            lastTerminalNotice = BackupFlowNotice.Cancelled,
+        ) shouldBe BackupFlowNotice.Cancelled
+
+        BackupRestorePolicy.resolveBackupFlowNotice(
+            isBackupInProgress = false,
+            clipboardItemsSelected = true,
+            lastTerminalNotice = null,
+        ) shouldBe BackupFlowNotice.ClipboardPrivacyWarning
+
+        BackupRestorePolicy.resolveBackupFlowNotice(
+            isBackupInProgress = false,
+            clipboardItemsSelected = false,
+            lastTerminalNotice = null,
+        ) shouldBe BackupFlowNotice.None
+    }
+
     test("restore archive validation accepts compatible archives with restorable content") {
         BackupRestorePolicy.validateRestoreArchive(
             metadata = validMetadata,
