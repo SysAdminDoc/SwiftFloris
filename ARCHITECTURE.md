@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-05-18, against the v1.8.165 codebase.
+Last updated: 2026-05-18, against the v1.8.166 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
@@ -169,11 +169,12 @@ Use the Gradle wrapper. The expected maintainer-host verification path is:
 
 The CI workflows under `.github/workflows/` cover Android build/test/lint,
 network-permission verification, OSV scanning, release builds, reproducible
-build checks, string validation, Crowdin upload, weekly Dependabot version
-review, manual emulator settings-launch smoke, and maintainer-triggered
-Roborazzi baseline capture. Android lint runs through
+build checks, repo hygiene, string validation, Crowdin upload, weekly
+Dependabot version review, manual emulator settings-launch smoke, and
+maintainer-triggered Roborazzi baseline capture. Android lint runs through
 `scripts/run-lint-debug-with-baseline-check.sh` in CI so stale baseline entries
-fail visibly.
+fail visibly, and `scripts/check-repo-hygiene.sh` keeps generated build/report
+output out of committed history.
 
 The local VM used by some agent runs may not have Java or the Android SDK on
 PATH. In that case, record the exact Gradle command attempted and leave final

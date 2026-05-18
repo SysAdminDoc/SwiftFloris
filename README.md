@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.165-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.166-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.165 | Privacy posture |
+| Area | What's in v1.8.166 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -60,7 +60,7 @@
 | **Migration** | Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose | On-device, no account, no telemetry |
-| **CI / build** | No-network gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
+| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
 
 ## Distribution
 
@@ -115,6 +115,8 @@ Project-internal docs all live in the repository:
 - [`docs/SQLCIPHER_PROVIDER_MIGRATION.md`](docs/SQLCIPHER_PROVIDER_MIGRATION.md) — SQLCipher crypto-provider migration triggers, OpenSSL proof-of-concept path, and 16 KB verification gates.
 - [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) — pinned toolchain and F-Droid rebuild plan.
 - [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — Macrobenchmark trace sections and regression threshold contract.
+- [`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md) — maintainer local test/build/lint/device commands.
+- [`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md) — generated-output, deleted-doc, commit-scope, and handoff rules.
 - [`docs/INLINE_AUTOFILL.md`](docs/INLINE_AUTOFILL.md) — inline-autofill matrix and password-manager verification.
 - [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md) — Tasker intent contract.
 - [`docs/FONTS.md`](docs/FONTS.md) — bundled fonts (Nastaliq + Naskh fallback).
@@ -124,7 +126,7 @@ Project-internal docs all live in the repository:
 - [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.62).
+- [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.63).
 - `RELEASE_NOTES_v*.md` — per-release notes, one file per version, in the repository root.
 
 ## Architecture & Stack
@@ -272,12 +274,14 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 - **Lint drift:** CI lint runs through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
 - **Emulator smoke:** The manual `Android Emulator Smoke` workflow builds the debug APK, launches the Settings app on an emulator, and uploads logcat for crash triage.
 - **Repo hygiene gate:** CI runs `scripts/check-no-root-crash-logs.sh` so root
-  `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed.
+  `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed, and
+  `scripts/check-repo-hygiene.sh` rejects tracked generated build/report output.
 
 ## Recent releases
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.166** (2026-05-18) — Repo hygiene closure: CI now runs a repo-hygiene script, generated build/report output is guarded, legacy deleted markdown decisions are documented, and commit-scope/final-handoff rules are pinned. ([notes](RELEASE_NOTES_v1.8.166.md))
 - **v1.8.165** (2026-05-18) — CI quality gates: Android CI lint now fails stale baseline drift, Dependabot reviews Gradle and Actions updates weekly, a manual emulator settings-launch smoke exists, and local verification commands are documented. ([notes](RELEASE_NOTES_v1.8.165.md))
 - **v1.8.164** (2026-05-18) — Backup/restore baseline: benchmark-only representative archive generation measures preference plus keyboard/theme backup creation and merge restore timings under `docs/benchmark-results/`. ([notes](RELEASE_NOTES_v1.8.164.md))
 - **v1.8.163** (2026-05-18) — Theme-switch baseline: benchmark-only direct switch markers and an adb harness measure SwiftKey Pure / M3E theme swaps while the benchmark IME is visible, including cold and cached timings under `docs/benchmark-results/`. ([notes](RELEASE_NOTES_v1.8.163.md))
@@ -433,7 +437,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.165** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.166** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 

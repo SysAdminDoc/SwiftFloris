@@ -14,7 +14,7 @@ This plan tracks quality, UX, accessibility, performance, testing, and delivery 
   - `bash scripts/run-lint-debug-with-baseline-check.sh`
   - `./gradlew.bat :app:installDebug`
   - adb launch smoke for `dev.patrickgold.florisboard.debug/dev.patrickgold.florisboard.SettingsLauncherAlias`
-- Known worktree condition: no unrelated worktree changes were present before the v1.8.165 CI quality-gates slice.
+- Known worktree condition: no unrelated worktree changes were present before the v1.8.166 repo-hygiene slice.
 - Initial lint shape when this plan started: 324 warnings, 2 hints.
 - Current lint shape after trust-state and benchmark batches: 247 warnings, 1 hint. Largest remaining bucket is still `UnusedResources`; the remaining bucket is dominated by string resources and theme palette/spec files that need product-copy or theme-contract review before removal.
 - Current compile-warning focus: touched backup/restore, extension import/export/view, extension archive file management, dictionary import/export/manual entry mutation, and language pack delete deprecated toast warnings are cleared. Remaining known warning themes are the Room nullable DAO type, Kotlin compiler flags, and deprecated synchronous toast calls in theme, devtools, keyboard, and clipboard surfaces.
@@ -323,14 +323,14 @@ Acceptance criteria:
 
 ### 9. Repo Hygiene
 
-Status: In progress
+Status: Completed in v1.8.166
 Priority: P0
 
 Goal: Keep commits and release state understandable.
 
 Tasks:
-- [ ] Resolve whether the currently deleted markdown files are intentional before the next push.
-- [ ] Keep future commits scoped to one logical improvement.
+- [x] Resolve whether the currently deleted markdown files are intentional before the next push.
+- [x] Keep future commits scoped to one logical improvement.
 - [x] Add root `ARCHITECTURE.md` and `CONTRIBUTING.md` entry points for
   package/runtime orientation and contributor verification expectations.
 - [x] Move root multilingual / voice guides into `docs/` and update internal
@@ -338,9 +338,17 @@ Tasks:
 - [x] Keep JVM crash/replay logs out of the repo root and committed history
   (v1.8.73 moved local logs to `.ai/local-crash-logs/2026-05-16/` and added
   `scripts/check-no-root-crash-logs.sh` to CI).
-- [ ] Keep generated reports/build output out of commits.
-- [ ] Track improvement work in this file.
-- [ ] Keep verification commands in final handoffs.
+- [x] Keep generated reports/build output out of commits.
+- [x] Track improvement work in this file.
+- [x] Keep verification commands in final handoffs.
+
+Progress:
+- 2026-05-18 (v1.8.166): `docs/REPO_HYGIENE.md` records the intentional
+  legacy root-markdown deletion decision, one-slice commit rule,
+  generated-output rule, and final-handoff verification rule.
+  `scripts/check-repo-hygiene.sh` now fails tracked build/report output and
+  local deleted Markdown files that have not been classified; Android CI runs
+  it before Gradle work.
 
 Acceptance criteria:
 - No unrelated deleted docs are staged accidentally.
