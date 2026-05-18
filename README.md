@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.128-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.129-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -44,7 +44,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.128 | Privacy posture |
+| Area | What's in v1.8.129 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring | On-device |
@@ -275,6 +275,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in the `RELEASE_NOTES_v*.md` files in the repository root, and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.129** (2026-05-18) — Editor input behavior policy extraction: autocorrect spacebar commits, rejected-correction protection, punctuation auto-spacing, phantom spacing, double-space period, and sentence-capitalization gates now have focused JVM coverage through a pure policy class. ([notes](RELEASE_NOTES_v1.8.129.md))
 - **v1.8.128** (2026-05-18) — Nastaliq Urdu font bundle: the official OFL-1.1 Noto Nastaliq Urdu TTF is now committed as an APK asset, Urdu subtype key labels and hints route Arabic-script text through it, and asset/license tests pin the bundle. ([notes](RELEASE_NOTES_v1.8.128.md))
 - **v1.8.127** (2026-05-18) — Emoji pinned-group sheet: long-pressing emoji can now pin them to named groups, and pinned-group chips commit the saved emoji sequence from the palette. ([notes](RELEASE_NOTES_v1.8.127.md))
 - **v1.8.126** (2026-05-18) — Addons dictionary catalog polish: Settings -> Addons now lists mounted dictionary packs with language, word count, dataset license, source, descriptor rejections, and updated install guidance. ([notes](RELEASE_NOTES_v1.8.126.md))
@@ -393,7 +394,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.128** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.129** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
 
 ---
 
