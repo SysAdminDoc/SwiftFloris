@@ -225,7 +225,7 @@ Tasks:
 - [x] Measure keyboard cold start and first render.
 - [x] Measure first suggestion latency.
 - [x] Measure dictionary load and preload time.
-- [ ] Measure candidate row recomposition hotspots.
+- [x] Measure candidate row recomposition hotspots.
 - [ ] Measure theme switching cost.
 - [ ] Measure backup/restore duration on representative archives.
 - [x] Add repeatable profiling notes using adb, simpleperf, Perfetto, or Compose tracing where appropriate.
@@ -255,6 +255,15 @@ Progress:
   532.298281 ms for 10,534 correction words, and median post-preload spell
   path 1030.179896 ms. Evidence:
   `docs/benchmark-results/baseline-2026-05-18-ime-dictionary-load.json`.
+- 2026-05-18 (v1.8.162): candidate-row recomposition is measured through
+  benchmark-only `CandidatesRow` log markers and
+  `tools/benchmark-ime-candidate-row.ps1`, which focuses the benchmark input
+  field, clears startup log noise, types `hello world this is a test`, and
+  restores the previous IME. Samsung SM-S938B / Android 16 baseline: median
+  nine candidate-row recompositions per run, median recomposition body
+  0.326563 ms, median max recomposition 0.770365 ms, median total recomposition
+  4.069529 ms, and paired median NLP suggestion body 0.339896 ms. Evidence:
+  `docs/benchmark-results/baseline-2026-05-18-ime-candidate-row.json`.
 
 Acceptance criteria:
 - Performance claims are backed by repeatable commands.

@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-05-18 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.161).
+through v1.8.162).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -45,7 +45,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.161)
+## 3. Stack at HEAD (v1.8.162)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
@@ -195,7 +195,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.161** ships the seventh research-pass privacy,
+**v1.8.104 – v1.8.162** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup and
 performance-baseline layer.
@@ -460,6 +460,15 @@ records repeatable adb JSON. The first SM-S938B / Android 16 run records median
 772.080625 ms, median SymSpell d1 build 500.230156 ms over 94,934 correction
 words, median SymSpell d2 build 532.298281 ms over 10,534 correction words, and
 median post-preload spell path 1030.179896 ms.
+
+v1.8.162 adds the candidate-row recomposition baseline. `CandidatesRow` now
+emits benchmark-build-only `swiftfloris.smartbar.candidates.recomposeMs` log
+markers, and `tools/benchmark-ime-candidate-row.ps1` focuses the benchmark
+input field, clears startup log noise, types `hello world this is a test`, and
+restores the previous IME. The first SM-S938B / Android 16 run records median
+nine recompositions per run, median recomposition body 0.326563 ms, median max
+0.770365 ms, median total 4.069529 ms, and paired median
+`swiftfloris.nlp.suggestMs` 0.339896 ms.
 
 ## 4. Module layout
 
