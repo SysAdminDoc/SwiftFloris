@@ -94,9 +94,28 @@ class VoiceCommandParserTest : FunSpec({
         parser.parse("delete apples from the list")?.argument shouldBe "apples"
     }
 
-    test("parses 'scratch X' with single-word and multi-word items") {
-        parser.parse("scratch apples")?.argument shouldBe "apples"
-        parser.parse("scratch almond butter")?.argument shouldBe "almond butter"
+    test("parses 'scratch X from list' / 'scratch X off list' variants") {
+        // v1.8.107 dropped the bare-prefix "scratch <X>" pattern because it
+        // silently triggered REMOVE_ITEM_FROM_LIST on natural-prose
+        // utterances starting with "scratch" ("let me scratch that idea").
+        // The disambiguated forms with an explicit suffix keep the
+        // shopping-list UX.
+        parser.parse("scratch apples from list")?.argument shouldBe "apples"
+        parser.parse("scratch apples from the list")?.argument shouldBe "apples"
+        parser.parse("scratch apples off list")?.argument shouldBe "apples"
+        parser.parse("scratch apples off the list")?.argument shouldBe "apples"
+        parser.parse("scratch almond butter from list")?.argument shouldBe "almond butter"
+    }
+
+    test("bare 'scratch X' (no suffix) no longer triggers removal") {
+        // Regression guard for v1.8.107. The bare prefix used to fire on
+        // any utterance starting with "scratch", which silently excised
+        // text from the committed buffer when the user was just
+        // dictating prose. With the suffix now required, these all
+        // return null.
+        parser.parse("scratch apples") shouldBe null
+        parser.parse("scratch that idea") shouldBe null
+        parser.parse("scratch the previous note") shouldBe null
     }
 
     test("does not classify 'remove that' as a REMOVE_ITEM_FROM_LIST (DELETE_THAT alias wins)") {

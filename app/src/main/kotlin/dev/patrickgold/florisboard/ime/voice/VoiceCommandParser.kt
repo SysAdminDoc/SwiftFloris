@@ -213,7 +213,37 @@ class VoiceCommandParser(
                 prefix = "delete",
                 suffix = "from list",
             ),
-            RemoveItemPattern(canonicalPhrase = "scratch", prefix = "scratch"),
+            // "scratch <item>" was previously accepted with only a prefix
+            // and no suffix. That made it a *catch-everything* trigger:
+            // any utterance starting with the word "scratch" — including
+            // ones where the user is dictating natural prose ("let me
+            // scratch that out", "scratch the previous note") — silently
+            // executed REMOVE_ITEM_FROM_LIST against the committed
+            // buffer. Now requires an explicit "from list" / "off list"
+            // / "off the list" suffix so the anchor disambiguates intent.
+            // Users who genuinely want to remove via "scratch" still have
+            // the variant `scratch apples off list`; the bare-prefix
+            // attack surface is gone.
+            RemoveItemPattern(
+                canonicalPhrase = "scratch <item> from the list",
+                prefix = "scratch",
+                suffix = "from the list",
+            ),
+            RemoveItemPattern(
+                canonicalPhrase = "scratch <item> from list",
+                prefix = "scratch",
+                suffix = "from list",
+            ),
+            RemoveItemPattern(
+                canonicalPhrase = "scratch <item> off the list",
+                prefix = "scratch",
+                suffix = "off the list",
+            ),
+            RemoveItemPattern(
+                canonicalPhrase = "scratch <item> off list",
+                prefix = "scratch",
+                suffix = "off list",
+            ),
         )
 
         // Conservative single-word stopword set rejected as an argument
