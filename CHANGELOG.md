@@ -2,6 +2,15 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.173"></a>
+## v1.8.173
+
+Released: 2026-05-18
+
+### Fixes
+
+- **EmojiCompat race crash on emoji picker open** ([#1](https://github.com/SysAdminDoc/SwiftFloris/issues/1)) — Compose's `AndroidParagraphHelper.createCharSequence` calls `EmojiCompat.get().process(...)` whenever `EmojiCompat.isConfigured()` returns true, but does not catch the `IllegalStateException("Not initialized yet")` thrown by `process()` between singleton install and metadata load completion. Opening the emoji picker before the asynchronous metadata load finished crashed the IME (`java.lang.IllegalStateException: Not initialized yet` at `EmojiCompat.process:1105` → `ParagraphLayoutCache.layoutText` → first measure of the picker). Fix: construct the managed `EmojiCompat` instance via the package-private constructor (reflection) so `sInstance` stays null during load. Compose then sees `isConfigured() == false` and uses the raw text path until the `InitCallback.onInitialized` callback fires, at which point we install the fully-loaded instance via `EmojiCompat.reset(EmojiCompat)`. No more race window where `isConfigured` and `isInitialized` diverge.
+
 <a id="v1.8.172"></a>
 ## v1.8.172
 
