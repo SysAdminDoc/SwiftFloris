@@ -36,6 +36,20 @@ import kotlinx.coroutines.launch
  * it. This keeps the common path to one EmojiCompat metadata graph while preserving compatibility for editors that
  * explicitly ask for replace-all behavior.
  *
+ * ## Why we defer singleton install until load completes (issue #1)
+ *
+ * `EmojiCompat.reset(Config)` constructs the instance AND assigns it to the process-wide `sInstance`. From that moment
+ * `EmojiCompat.isConfigured()` returns `true`, but `EmojiCompat.isInitialized()` stays `false` until the metadata load
+ * succeeds. Compose's `AndroidParagraphHelper.createCharSequence` gates on `isConfigured()` only and then calls
+ * `EmojiCompat.get().process(...)`, which throws `IllegalStateException("Not initialized yet")` during that window.
+ * The crash was reproducible by opening the emoji picker before metadata loaded.
+ *
+ * Fix: construct the EmojiCompat instance via the package-private constructor (reflection), so the singleton stays
+ * `null`. Compose then sees `isConfigured() == false` and uses the raw text path — no race, no crash. Once the metadata
+ * load completes (InitCallback#onInitialized), we publish the loaded instance via the standard `EmojiCompat.reset(EmojiCompat)`
+ * overload, which only assigns `sInstance` and never reinitialises state. From that point Compose sees both
+ * `isConfigured()` and `isInitialized()` as `true`.
+ *
  * ## Fallback contract on GMS-less devices
  *
  * `DefaultEmojiCompatConfig.create(context)` returns `null` whenever the device has no emoji-font provider installed.
@@ -207,14 +221,24 @@ object FlorisEmojiCompat {
 
         @SuppressLint("RestrictedApi")
         private fun createInstance(config: EmojiCompat.Config): EmojiCompat {
-            return EmojiCompat.reset(config)
+            // Construct WITHOUT installing as singleton (see class kdoc "Why we defer singleton install").
+            // Falls back to EmojiCompat.reset(config) if reflection fails — that path still has the race window
+            // but is preferable to crashing during creation.
+            return try {
+                val ctor = EmojiCompat::class.java.getDeclaredConstructor(EmojiCompat.Config::class.java)
+                ctor.isAccessible = true
+                ctor.newInstance(config)
+            } catch (t: Throwable) {
+                flogError { "Reflective EmojiCompat construction failed ($t); falling back to reset(config)" }
+                EmojiCompat.reset(config)
+            }
         }
 
         @SuppressLint("RestrictedApi")
         private fun setAsDefault(instance: EmojiCompat) {
             flogInfo { "Set default EmojiCompat instance to $instance(replaceAll=$replaceAll)" }
-            // This API is not really supposed to be used by third-party apps, but it is really handy and does
-            // exactly what we need, so we suppress the restriction here.
+            // Install the loaded instance as the process-wide singleton. Only called after the InitCallback fires
+            // onInitialized, so isInitialized() == true the moment Compose can observe isConfigured() == true.
             EmojiCompat.reset(instance)
         }
     }
