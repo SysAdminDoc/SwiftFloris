@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingEngine
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageProfile
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageSupport
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingQuality
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -72,6 +73,12 @@ fun GesturesScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__glide__show_trail__label),
                 summary = stringRes(R.string.pref__glide__show_trail__summary),
                 enabledIf = { prefs.glide.enabled.get() },
+            )
+            ListPreference(
+                prefs.glide.trailTheme,
+                title = stringRes(R.string.pref__glide__trail_theme__label),
+                entries = enumDisplayEntriesOf(GlideTrailTheme::class),
+                enabledIf = { prefs.glide.enabled.get() && prefs.glide.showTrail.get() },
             )
             DialogSliderPreference(
                 prefs.glide.trailDuration,

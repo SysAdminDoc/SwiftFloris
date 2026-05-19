@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -48,10 +49,12 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var glideTypingClassifier = StatisticalGlideTypingClassifier(context)
     private var lastTime = System.currentTimeMillis()
+    private var previewJob: Job? = null
     private var pendingContextRescore: PendingGlideCommit? = null
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
-        updateSuggestionsAsync(MAX_SUGGESTION_COUNT, true) {
+        previewJob?.cancel()
+        launchSuggestions(MAX_SUGGESTION_COUNT, true) {
             glideTypingClassifier.clear()
         }
     }
@@ -61,7 +64,8 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         // the classifier so the continuing trace starts fresh for the next word. The
         // existing commitGesture path already activates phantom-space, so the next
         // committed word will be auto-prefixed with " ".
-        updateSuggestionsAsync(MAX_SUGGESTION_COUNT, true) {
+        previewJob?.cancel()
+        launchSuggestions(MAX_SUGGESTION_COUNT, true) {
             glideTypingClassifier.clear()
         }
     }
@@ -78,7 +82,9 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
 
         val time = System.currentTimeMillis()
         if (prefs.glide.showPreview.get() && time - lastTime > prefs.glide.previewRefreshDelay.get()) {
-            updateSuggestionsAsync(1, false) {}
+            // Cancel any stale preview job so they don't pile up.
+            previewJob?.cancel()
+            previewJob = launchSuggestions(1, false) {}
             lastTime = time
         }
     }
@@ -95,19 +101,20 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     /**
      * Asks gesture classifier for suggestions and then passes that on to the smartbar.
      * Also commits the most confident suggestion if [commit] is set. All happens on an async executor.
-     * NB: only fetches [MAX_SUGGESTION_COUNT] suggestions.
      *
      * @param callback Called when this function completes. Takes a boolean, which indicates if suggestions
      * were successfully set.
      */
-    private fun updateSuggestionsAsync(maxSuggestionsToShow: Int, commit: Boolean, callback: (Boolean) -> Unit) {
+    private fun launchSuggestions(maxSuggestionsToShow: Int, commit: Boolean, callback: (Boolean) -> Unit): Job? {
         if (!prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype) || !glideTypingClassifier.ready) {
             callback.invoke(false)
-            return
+            return null
         }
 
-        scope.launch(Dispatchers.Default) {
-            val suggestions = glideTypingClassifier.getSuggestions(MAX_SUGGESTION_COUNT, true)
+        return scope.launch(Dispatchers.Default) {
+            // For preview, only compute the few we'll display; for commit, compute all.
+            val classifierCount = if (commit) MAX_SUGGESTION_COUNT else maxSuggestionsToShow.coerceAtLeast(1)
+            val suggestions = glideTypingClassifier.getSuggestions(classifierCount, true)
 
             withContext(Dispatchers.Main) {
                 val suggestionList = buildList {

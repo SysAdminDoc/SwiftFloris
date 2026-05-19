@@ -38,6 +38,7 @@ import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.IncognitoDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
@@ -792,6 +793,38 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
                     R.string.enum__voice_model_preference__large_v3_turbo_int8__description,
                 ),
                 showDescriptionOnlyIfSelected = true,
+            )
+        }
+    },
+    GlideTrailTheme::class to DEFAULT to {
+        listPrefEntries {
+            entry(
+                key = GlideTrailTheme.ACCENT,
+                label = stringRes(R.string.enum__glide_trail_theme__accent),
+            )
+            entry(
+                key = GlideTrailTheme.RAINBOW,
+                label = stringRes(R.string.enum__glide_trail_theme__rainbow),
+            )
+            entry(
+                key = GlideTrailTheme.FIRE,
+                label = stringRes(R.string.enum__glide_trail_theme__fire),
+            )
+            entry(
+                key = GlideTrailTheme.ICE,
+                label = stringRes(R.string.enum__glide_trail_theme__ice),
+            )
+            entry(
+                key = GlideTrailTheme.AURORA,
+                label = stringRes(R.string.enum__glide_trail_theme__aurora),
+            )
+            entry(
+                key = GlideTrailTheme.GALAXY,
+                label = stringRes(R.string.enum__glide_trail_theme__galaxy),
+            )
+            entry(
+                key = GlideTrailTheme.NEON,
+                label = stringRes(R.string.enum__glide_trail_theme__neon),
             )
         }
     },

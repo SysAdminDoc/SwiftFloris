@@ -60,6 +60,8 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         get() = currentSubtype == layoutSubtype && wordDataSubtype == layoutSubtype && wordDataSubtype != null
     private val prunerCache = LruCache<Subtype, Pruner>(PRUNER_CACHE_SIZE)
     private val lruSuggestionCache = LruCache<SuggestionCacheKey, List<String>>(SUGGESTION_CACHE_SIZE)
+    /** Cached resampled + normalized ideal gestures per word. Cleared on layout change. */
+    private val idealGestureCache = LruCache<String, List<Pair<Gesture, Gesture>>>(512)
 
     /**
      * The minimum distance between points to be added to a gesture.
@@ -127,6 +129,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         // if only layout changed but not subtype
         val layoutChanged = layoutSubtype == subtype
         lruSuggestionCache.evictAll()
+        idealGestureCache.evictAll()
 
         keysByCharacter.clear()
         keys.clear()
@@ -223,11 +226,18 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
 
         for (i in remainingWords.indices) {
             val word = remainingWords[i]
-            val idealGestures = Gesture.generateIdealGestures(word, keysByCharacter)
+            // Use cached resampled+normalized ideal gestures to avoid recomputing per call.
+            val cachedPairs = idealGestureCache.get(word) ?: run {
+                val pairs = Gesture.generateIdealGestures(word, keysByCharacter).map { ideal ->
+                    val resampled = ideal.resample(SAMPLING_POINTS)
+                    val normalized = resampled.normalizeByBoxSide()
+                    resampled to normalized
+                }
+                idealGestureCache.put(word, pairs)
+                pairs
+            }
 
-            for (idealGesture in idealGestures) {
-                val wordGesture = idealGesture.resample(SAMPLING_POINTS)
-                val normalizedGesture: Gesture = wordGesture.normalizeByBoxSide()
+            for ((wordGesture, normalizedGesture) in cachedPairs) {
                 val shapeDistance = calcShapeDistance(normalizedGesture, normalizedUserGesture)
                 val locationDistance = calcLocationDistance(wordGesture, userGesture)
                 val shapeProbability = calcGaussianProbability(shapeDistance, 0.0f, SHAPE_STD)
