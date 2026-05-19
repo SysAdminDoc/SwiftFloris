@@ -950,6 +950,15 @@
     <string name="pref__glide__enabled__summary" comment="Preference summary">Type in a word by sliding your finger through its letters</string>
     <string name="pref__glide__show_trail__label" comment="Preference title">Show glide trail</string>
     <string name="pref__glide__show_trail__summary" comment="Preference summary">Will disappear after each word</string>
+    <string name="pref__glide__trail_theme__label" comment="Preference title">Trail theme</string>
+    <string name="pref__glide__trail_theme__summary" comment="Preference summary">Visual style for the glide trail</string>
+    <string name="enum__glide_trail_theme__accent">Accent (theme color)</string>
+    <string name="enum__glide_trail_theme__rainbow">Rainbow</string>
+    <string name="enum__glide_trail_theme__fire">Fire</string>
+    <string name="enum__glide_trail_theme__ice">Ice</string>
+    <string name="enum__glide_trail_theme__aurora">Aurora</string>
+    <string name="enum__glide_trail_theme__galaxy">Galaxy</string>
+    <string name="enum__glide_trail_theme__neon">Neon</string>
     <string name="pref__glide_trail_fade_duration">Glide trail fade time</string>
     <string name="pref__glide_preview_refresh_delay">Preview refresh delay</string>
     <string name="pref__glide__show_preview">Show preview while glide typing</string>

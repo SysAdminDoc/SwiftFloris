@@ -94,6 +94,7 @@ import dev.patrickgold.florisboard.ime.nlp.TouchDecoderCandidate
 import dev.patrickgold.florisboard.ime.popup.ExceptionsForKeyCodes
 import dev.patrickgold.florisboard.ime.popup.PopupUiController
 import dev.patrickgold.florisboard.ime.popup.rememberPopupUiController
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeGesture
@@ -127,6 +128,7 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.math.sqrt
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @OptIn(ExperimentalComposeUiApi::class)
@@ -174,8 +176,12 @@ fun TextKeyboardLayout(
     }
     val reducedMotion = animatorDurationScale == 0f
     val glideShowTrail = glideShowTrailPref && !reducedMotion
+    val glideTrailTheme by prefs.glide.trailTheme.collectAsState()
     val glideTrailStyle = rememberSnyggThemeQuery(FlorisImeUi.GlideTrail.elementName)
-    val glideTrailColor = glideTrailStyle.foreground(default = Color.Green)
+    val glideTrailAccent = glideTrailStyle.foreground(default = Color.Green).let { c ->
+        // Guard against transparent theme resolution — ensure the accent is visible.
+        if (c.alpha < 0.1f) Color.Green else c
+    }
 
     val controller = remember { TextKeyboardLayoutController(context) }.also {
         it.keyboard = keyboard
@@ -243,34 +249,38 @@ fun TextKeyboardLayout(
             }
             .drawWithContent {
                 drawContent()
-                if (glideEnabled && glideShowTrail) {
-                    val radius = 20.0f
-                    if (controller.fadingGlideRadius > 0) {
-                        controller.drawGlideTrail(
-                            this,
-                            controller.fadingGlide,
-                            radius,
-                            glideTrailColor,
-                            fadeProgress = controller.fadingGlideRadius / 20.0f,
+                val radius = 20.0f
+                val timeMs = System.currentTimeMillis()
+                if (controller.fadingGlideRadius > 0) {
+                    controller.drawGlideTrail(
+                        this,
+                        controller.fadingGlide,
+                        radius,
+                        glideTrailTheme,
+                        glideTrailAccent,
+                        timeMs,
+                        fadeProgress = controller.fadingGlideRadius / 20.0f,
+                    )
+                }
+                if (controller.isGliding && controller.glideDataForDrawing.isNotEmpty()) {
+                    controller.glideActiveKey?.let { key ->
+                        val bounds = key.visibleBounds
+                        val highlightColor = glideTrailTheme.colorAt(1f, timeMs, glideTrailAccent)
+                        drawRoundRect(
+                            color = highlightColor.copy(alpha = 0.12f),
+                            topLeft = Offset(bounds.left, bounds.top),
+                            size = Size(bounds.width, bounds.height),
+                            cornerRadius = CornerRadius(8f, 8f),
                         )
                     }
-                    if (controller.isGliding && controller.glideDataForDrawing.isNotEmpty()) {
-                        controller.glideActiveKey?.let { key ->
-                            val bounds = key.visibleBounds
-                            drawRoundRect(
-                                color = glideTrailColor.copy(alpha = 0.12f),
-                                topLeft = Offset(bounds.left, bounds.top),
-                                size = Size(bounds.width, bounds.height),
-                                cornerRadius = CornerRadius(8f, 8f),
-                            )
-                        }
-                        controller.drawGlideTrail(
-                            this,
-                            controller.glideDataForDrawing,
-                            radius,
-                            glideTrailColor,
-                        )
-                    }
+                    controller.drawGlideTrail(
+                        this,
+                        controller.glideDataForDrawing,
+                        radius,
+                        glideTrailTheme,
+                        glideTrailAccent,
+                        timeMs,
+                    )
                 }
             },
     ) {
@@ -1437,17 +1447,18 @@ private class TextKeyboardLayoutController(
         drawScope: ContentDrawScope,
         gestureData: List<Pair<GlideTypingGesture.Detector.Position, Long>>,
         initialRadius: Float,
-        color: Color,
+        theme: GlideTrailTheme,
+        accentColor: Color,
+        timeMillis: Long,
         fadeProgress: Float = 1.0f,
     ) {
         if (gestureData.size < 2 || fadeProgress <= 0f) return
-        val time = System.currentTimeMillis()
         val trailDurationMs = prefs.glide.trailDuration.get()
 
         // Find first point still within the visible trail window.
         var firstVisible = -1
         for (i in gestureData.indices) {
-            if (time - gestureData[i].second <= trailDurationMs) {
+            if (timeMillis - gestureData[i].second <= trailDurationMs) {
                 firstVisible = i
                 break
             }
@@ -1456,21 +1467,22 @@ private class TextKeyboardLayoutController(
         val visibleCount = gestureData.size - firstVisible
         if (visibleCount < 2) return
 
-        // Split the visible trail into segments for graduated opacity/width.
-        val segCount = min(12, max(2, visibleCount / 4))
-        val dataEnd = firstVisible + visibleCount // exclusive upper bound
+        // 8 segments balances color-gradient fidelity vs draw-call cost.
+        val segCount = min(8, max(2, visibleCount / 4))
+        val dataEnd = firstVisible + visibleCount
 
         for (seg in 0 until segCount) {
             val segStart = firstVisible + (seg.toLong() * visibleCount / segCount).toInt()
             val nextSegStart = firstVisible + ((seg + 1).toLong() * visibleCount / segCount).toInt()
-            // Include one extra point from next segment for seamless overlap at boundaries.
             val segEnd = if (seg < segCount - 1) min(nextSegStart + 1, dataEnd) else min(nextSegStart, dataEnd)
             if (segEnd - segStart < 2) continue
 
-            // progress: 0 at oldest visible segment → 1 at newest (finger end).
             val progress = (seg + 1f) / segCount
-            val easedAlpha = progress * progress * 0.85f * fadeProgress
-            val width = initialRadius * (0.35f + 0.65f * progress) * fadeProgress
+            val sqrtProgress = sqrt(progress)
+            val easedAlpha = (0.15f + 0.75f * sqrtProgress) * fadeProgress
+            // Single slightly-wider stroke instead of separate glow + core layers.
+            val width = initialRadius * (0.6f + 0.5f * sqrtProgress) * fadeProgress
+            val segColor = theme.colorAt(progress, timeMillis, accentColor)
 
             val path = Path().apply {
                 moveTo(gestureData[segStart].first.x, gestureData[segStart].first.y)
@@ -1479,28 +1491,25 @@ private class TextKeyboardLayoutController(
                 }
             }
 
-            // Outer glow — wide, low-opacity bloom.
             drawScope.drawPath(
                 path,
-                color.copy(alpha = easedAlpha * 0.12f),
-                style = Stroke(width * 3.5f, cap = StrokeCap.Round, join = StrokeJoin.Round),
-            )
-            // Core trail.
-            drawScope.drawPath(
-                path,
-                color.copy(alpha = easedAlpha),
+                segColor.copy(alpha = easedAlpha),
                 style = Stroke(width, cap = StrokeCap.Round, join = StrokeJoin.Round),
             )
         }
 
         // Bright head dot at the finger position.
-        if (fadeProgress > 0.5f) {
+        if (fadeProgress > 0.3f) {
             val head = gestureData.last().first
             val headCenter = Offset(head.x, head.y)
             val dotAlpha = fadeProgress
-            drawScope.drawCircle(color.copy(alpha = dotAlpha * 0.15f), initialRadius * 1.5f, headCenter)
-            drawScope.drawCircle(color.copy(alpha = dotAlpha * 0.9f), initialRadius * 0.5f, headCenter)
-            drawScope.drawCircle(Color.White.copy(alpha = dotAlpha * 0.6f), initialRadius * 0.2f, headCenter)
+            val headColor = theme.colorAt(1f, timeMillis, accentColor)
+            // Wide glow ring
+            drawScope.drawCircle(headColor.copy(alpha = dotAlpha * 0.20f), initialRadius * 2f, headCenter)
+            // Core dot
+            drawScope.drawCircle(headColor.copy(alpha = dotAlpha * 0.95f), initialRadius * 0.6f, headCenter)
+            // Hot center highlight
+            drawScope.drawCircle(Color.White.copy(alpha = dotAlpha * 0.7f), initialRadius * 0.25f, headCenter)
         }
     }
 

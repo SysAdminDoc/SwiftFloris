@@ -46,6 +46,7 @@ import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangement
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyHintConfiguration
@@ -415,9 +416,13 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "glide__show_trail",
             default = true,
         )
+        val trailTheme = enum(
+            key = "glide__trail_theme",
+            default = GlideTrailTheme.ACCENT,
+        )
         val trailDuration = int(
             key = "glide__trail_fade_duration",
-            default = 200,
+            default = 500,
         )
         val showPreview = boolean(
             key = "glide__show_preview",
