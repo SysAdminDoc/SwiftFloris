@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.180-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.181-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -59,7 +59,7 @@
 | **Addon packs** | Addon manifest/enumerator contracts, IME-startup registry reconciliation, Settings -> Addons status/rescan, trust reset/changed-certificate controls, dictionary-pack catalog details, persisted signing-certificate pins, descriptor validation, provenance reports, typed dictionary-pack catalog, and addon APK dictionary asset mounting | No-network addon rejection |
 | **Settings UX** | Clearer empty states for selected user-dictionary languages, extension categories, language packs, filtered clipboard history, and theme-manager recovery; surfaced keyboard preview field with ready/active state feedback | Local UI only |
 | **Migration** | Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
-| **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing | On-device |
+| **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026; see [docs/HONEYCOMB_LAYOUT.md](docs/HONEYCOMB_LAYOUT.md)) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose | On-device, no account, no telemetry |
 | **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
 

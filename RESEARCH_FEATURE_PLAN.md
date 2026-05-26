@@ -858,8 +858,9 @@ The roadmap below is **additive** to [`ROADMAP.md`](ROADMAP.md) and [`IMPROVEMEN
 - [ ] **P2** — EI6 — Clipboard reconciliation property test
   - Touches: `app/src/test/kotlin/.../clipboard/ClipboardReconciliationPropertyTest.kt`
 
-- [ ] **P2** — EI8 — Honeycomb layout promotion (README + fastlane image + docs)
-  - Touches: `README.md`, `fastlane/metadata/android/en-US/images/phoneScreenshots/`, `docs/HONEYCOMB_LAYOUT.md` (new)
+- [x] **P2** — EI8 — Honeycomb layout promotion (README + docs) — **shipped v1.8.181 (2026-05-25)**
+  - Touches: `docs/HONEYCOMB_LAYOUT.md` (new), `README.md` Highlights table links to it
+  - Deferred to a future slice: fastlane phoneScreenshots refresh (needs real device + capture flow; existing 5 PNGs are FlorisBoard-era and need a fresh-capture batch covering v1.8.181 themes incl. honeycomb)
 
 - [ ] **P2** — EI9 — Macrobenchmark trend regression CI job
   - Touches: `.github/workflows/benchmark-regression.yml` (new), `docs/BENCHMARKS.md`
