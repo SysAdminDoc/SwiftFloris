@@ -755,7 +755,15 @@ class FlorisImeService : LifecycleInputMethodService() {
                 EditorInfo.IME_ACTION_PREVIOUS -> resourcesContext.getString(AndroidInternalR.string.ime_action_previous)
                 else -> resourcesContext.getString(AndroidInternalR.string.ime_action_default)
             }
-        } catch (_: Throwable) {
+        } catch (t: Throwable) {
+            // resourcesContext.getString against AndroidInternalR can throw on
+            // devices where the framework strings are stripped / renamed (OEM
+            // builds, very old preview tracks). Fall back to the platform
+            // getTextForImeAction and surface a dev-build log so a regression
+            // here doesn't hide silently.
+            flogWarning(LogTopic.IMS_EVENTS) {
+                "getTextForImeAction: AndroidInternalR lookup failed (imeOptions=$imeOptions): ${t.javaClass.simpleName}"
+            }
             super.getTextForImeAction(imeOptions)?.toString()
         }
     }

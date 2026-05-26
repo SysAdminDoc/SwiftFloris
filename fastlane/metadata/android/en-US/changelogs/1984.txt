@@ -1,0 +1,5 @@
+v1.8.184 — log silently-dropped code points.
+
+Three empty try/catch (_: Throwable) blocks silently dropped malformed code points or framework-string failures in TextKeyData (two sites) and FlorisImeService.getTextForImeAction. Each catch now logs via flogWarning so dev-build triage sees the regression instead of a missing glyph appearing in production.
+
+Release builds suppress flogWarning output; no user-visible behaviour changes.

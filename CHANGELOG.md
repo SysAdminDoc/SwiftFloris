@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.184"></a>
+## v1.8.184
+
+Released: 2026-05-25
+
+### Log silently-dropped code points (RESEARCH_FEATURE_PLAN.md F32)
+
+The 2026-05-25 code reconnaissance pass found three `try/catch (_: Throwable) {}` blocks that silently swallow exceptions at hot keyboard paths:
+
+- [`TextKeyData.kt:637`](app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyData.kt#L637) `MultiTextKeyData.asString(...)` — drops invalid `codePoints` from a `MultiTextKeyData` (a multi-character soft-key like a typographic ligature or compound emoji sequence). `StringBuilder.appendCodePoint(...)` throws on negative ints, `> 0x10FFFF`, or unpaired surrogate halves.
+- [`TextKeyData.kt:656`](app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyData.kt#L656) top-level `asString(data: KeyData, ...)` — same surrogate-half / out-of-range rejection class against `data.code`.
+- [`FlorisImeService.kt:758`](app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt#L758) `getTextForImeAction(imeOptions)` — `resourcesContext.getString(AndroidInternalR.string.ime_action_*)` can throw `Resources.NotFoundException` on OEM Android builds that strip or rename internal framework string IDs.
+
+Each catch produced no logging, so a malformed asset (e.g. a `MultiTextKeyData` with `codePoints = [0xFFFF, -1, 0x110000]`) or a missing framework string would manifest in production as a silently-missing glyph or a default-fallback `Action` label, with no trace in `adb logcat` to triage from.
+
+### Changes
+
+- `TextKeyData.kt:637` — caught as `t: Throwable` and routed through `flogWarning { "MultiTextKeyData.asString: dropping invalid code point $codePoint: ${t.javaClass.simpleName}" }`. New import `import dev.patrickgold.florisboard.lib.devtools.flogWarning` added.
+- `TextKeyData.kt:656` — same shape for the top-level `asString(KeyData,...)`: `flogWarning { "asString(KeyData): dropping invalid code point ${data.code}: ${t.javaClass.simpleName}" }`. Re-uses the existing import.
+- `FlorisImeService.kt:758` — caught as `t: Throwable` and routed through `flogWarning(LogTopic.IMS_EVENTS) { "getTextForImeAction: AndroidInternalR lookup failed (imeOptions=$imeOptions): ${t.javaClass.simpleName}" }`. The `flogWarning` import was already present from the v1.8.85 wallpaper-receiver logging path.
+
+### Why log instead of remove the catch
+
+The catches are intentional — `appendCodePoint(...)` and the `AndroidInternalR` framework-string lookup are both reachable from user-controlled or OEM-controlled inputs that may legitimately fail. Removing the `try/catch` would crash the IME on malformed assets; keeping the catch but logging is the right shape. The decision is consistent with the rest of the codebase: every non-trivial `catch` in the IME path is paired with a `flog*` call (e.g. `FlorisImeService.kt:393` for wallpaper-receiver registration, `KenLmTrieReader` after v1.8.122, every `DictionaryManager` SQLCipher path).
+
+### Verification
+
+- `grep -rn "catch (_: Throwable)" app/src/main/kotlin/` returns no matches at HEAD inside SwiftFloris-authored code paths. Upstream FlorisBoard-inherited code outside the IME hot path may still carry the pattern; this slice targeted only the three sites flagged in `RESEARCH_FEATURE_PLAN.md` §code-recon-finding-#11.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1984).
+- Release builds gate `flogWarning` output behind the existing `Flog.kt` `Flog.isEnabled` check, so the change is zero-cost in release mode and visible only to dev-build triage / `adb logcat -s FlorisIME` consumers.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyData.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
+- `fastlane/metadata/android/en-US/changelogs/1984.txt` (new)
+- `gradle.properties` (versionCode 1983→1984, versionName 1.8.183→1.8.184)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F32)
+
 <a id="v1.8.183"></a>
 ## v1.8.183
 
