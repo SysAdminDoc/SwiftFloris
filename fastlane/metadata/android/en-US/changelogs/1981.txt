@@ -1,0 +1,5 @@
+v1.8.181 — promote honeycomb hex layout via docs/HONEYCOMB_LAYOUT.md.
+
+Added a longform doc explaining the design decisions, contributor surface, strategic positioning (only FOSS Android keyboard shipping this since Typewise vacated the consumer market early 2026), and open follow-ups (Roborazzi baseline, theme matrix, tablet-split honeycomb, perf evidence). README Highlights row now links to it.
+
+Doc-only; no app code changes.

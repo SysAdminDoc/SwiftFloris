@@ -2,6 +2,43 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.181"></a>
+## v1.8.181
+
+Released: 2026-05-25
+
+### Honeycomb layout promotion (RESEARCH_FEATURE_PLAN.md EI8)
+
+v1.8.79 shipped the production honeycomb hex layout — `LayoutManager` recognises the bundled `honeycomb` character layout, `TextKeyboard.layoutHoneycomb(...)` positions real `TextKey` instances in a hex tessellation, `TextKeyboardLayout` clips Snygg key surfaces to `HoneycombHexShape`, and hit testing uses the actual hex polygon instead of rectangular bounding boxes. SwiftFloris is the only FOSS Android keyboard shipping this niche after Typewise vacated the consumer market in early 2026 (per the 2026-05-17 + 2026-05-25 competitor matrix passes).
+
+The implementation had near-zero promotion: no contributor-facing design doc, no README callout to it as a differentiator, and no entry in `docs/AI_PROMPTS_EXTERNAL_WORK.md`-style positioning surfaces. v1.8.181 closes the documentation gap.
+
+### Changes
+
+- **`docs/HONEYCOMB_LAYOUT.md`** — new longform doc covering the design rationale (why hex tessellation increases per-key touch area at the same total keyboard height; why mistype recovery is more predictable than QWERTY), the contributor surface (8 referenced files with one-line role descriptions: `HoneycombHexShape`, `HoneycombHexButton`, `HoneycombKeyboardRow`, `HoneycombTessellation`, `HoneycombLayoutLoader`, `TextKeyboard.layoutHoneycomb(...)`, `TextKeyboardLayout`, `LayoutManager`), how a user enables it (Settings → Localization → Subtype → Character layout → Honeycomb), the strategic positioning ("only FOSS Android keyboard shipping this — Typewise vacated 2026"), explicit clarifications about what it is NOT (not a Typewise copy, not an AI feature, not promoted as default — QWERTY stays the SwiftKey-refugee-friendly default), and four open follow-ups: Roborazzi visual baseline (tracked as F40), theme-coverage matrix across the 21 bundled themes, tablet-split honeycomb (Next-7.2 split-mode currently passes through to standard QWERTY), and a Macrobenchmark perf baseline for hex hit testing.
+- **`README.md` `Highlights` table** — the existing "Alternative layouts" row now names honeycomb as "only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026" and links directly to the new doc.
+
+### What is intentionally not done in this slice
+
+- **Fastlane screenshot of honeycomb in `fastlane/metadata/android/en-US/images/phoneScreenshots/`.** Screenshots require a real device + screen capture flow; the existing 5 phoneScreenshots are FlorisBoard-era artefacts that need a separate fresh-capture pass against v1.8.181 themes (SwiftKey Pure Light/Dark, M3E Nord, Aurora Animated, SwiftKey High Contrast AAA, honeycomb). Tracked as a future fastlane-image-refresh slice; not in this batch's scope per the per-PR scope-discipline rule (`AGENTS.md` hard rule #6).
+- **Roborazzi baseline.** Same scope-discipline reason; would require a Roborazzi rule + screenshot test. Tracked as F40 / EI9.
+
+### Verification
+
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1981).
+- `docs/HONEYCOMB_LAYOUT.md` lints clean against the project's existing doc style (mirrors `docs/SPLIT_KEYBOARD.md` and `docs/AUTOCORRECT_LIFECYCLE.md` layout).
+- All in-doc file references resolve: each cited path exists at HEAD (verified via `Glob app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/Honeycomb*` and `Glob app/src/main/assets/ime/keyboard/.../honeycomb.json`).
+
+### Files Touched
+
+- `docs/HONEYCOMB_LAYOUT.md` (new)
+- `README.md` (Highlights table — honeycomb row links to the new doc)
+- `fastlane/metadata/android/en-US/changelogs/1981.txt` (new)
+- `gradle.properties` (versionCode 1980→1981, versionName 1.8.180→1.8.181)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick EI8)
+
 <a id="v1.8.180"></a>
 ## v1.8.180
 
