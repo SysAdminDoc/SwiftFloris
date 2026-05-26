@@ -766,9 +766,6 @@
     <string name="pref__smartbar__group_layout_specific__label" comment="Preference group title">Layout behavior</string>
     <string name="pref__smartbar__flip_toggles__label" comment="Preference title">Flip toggle buttons</string>
     <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Move action row toggles to the opposite side</string>
-    <string name="pref__smartbar__shared_actions_auto_expand_collapse__label" comment="Preference title">Auto-expand/collapse</string>
-    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary" comment="Preference summary">Automatically show or hide shared actions based on typing state</string>
-    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary_locked" comment="Preference summary for a locked shared action behavior">Always enabled to keep shared actions predictable.</string>
     <string name="pref__smartbar__extended_actions_placement__label" comment="Preference title">Action row placement</string>
 
     <!-- Typing strings -->
