@@ -156,6 +156,8 @@
     <!-- Incognito mode strings -->
     <string name="incognito_mode__toast_after_enabled">Incognito mode is now enabled\n\n{app_name} will not learn words from your input while this mode is active</string>
     <string name="incognito_mode__toast_after_disabled">Incognito mode is now disabled by default</string>
+    <string name="autocorrect_toggle__toast_after_enabled">Autocorrect is on</string>
+    <string name="autocorrect_toggle__toast_after_disabled">Autocorrect is off</string>
 
     <!-- Settings UI strings -->
     <string name="settings__title" comment="Title of Settings">Settings</string>

@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.183"></a>
+## v1.8.183
+
+Released: 2026-05-25
+
+### Wire the TOGGLE_AUTOCORRECT keyboard shortcut (RESEARCH_FEATURE_PLAN.md F15)
+
+The 2026-05-25 code reconnaissance pass found that [`KeyboardManager.kt:782`](app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt#L782) shipped a `KeyCode.TOGGLE_AUTOCORRECT` handler that displayed a literal user-facing string: *"Autocorrect toggle is a placeholder and not yet implemented"*. The `TOGGLE_AUTOCORRECT` quick action is selectable from `QuickActionsEditorPanel`'s long-press drag-and-drop reorder grid, so users could put it on their smartbar and tap it expecting an effect. IMPROVEMENT_PLAN Workstream 11 flagged this as a load-bearing "placeholder feedback to replace"; `RESEARCH_FEATURE_PLAN.md` F15 promoted it to P0 because it directly contradicts the project's "no unfinished controls" principle.
+
+### Changes
+
+- **`app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`** — `handleToggleAutocorrect()` is now a `suspend fun` that flips `prefs.correction.autoCorrect` and surfaces a localized toast. Mirrors the existing `handleToggleIncognitoMode()` pattern (write the preference inside `scope.launch { … }` because JetPref's `PreferenceData.set(...)` is suspend). The dispatch site at line 940 now routes via `scope.launch { handleToggleAutocorrect() }`, identical to the incognito-mode dispatch one line above.
+- **`app/src/main/res/values/strings.xml`** — two new string resources `autocorrect_toggle__toast_after_enabled` ("Autocorrect is on") and `autocorrect_toggle__toast_after_disabled` ("Autocorrect is off"). Routed through Crowdin via the existing `crowdin-upload.yml` workflow on the next strings push.
+- Removed the now-unused `import org.florisboard.lib.android.showLongToastSync` from `KeyboardManager.kt`. The remaining `showShortToastSync` and `showLongToast` imports are still consumed elsewhere in the file (verified).
+
+### Why bind to the live `prefs.correction.autoCorrect` instead of removing the QuickAction
+
+`prefs.correction.autoCorrect` is the preference [NlpManager.kt:365](app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt#L365) already reads on every suggestion request (`isAutoCorrectEnabled = prefs.correction.autoCorrect.get()`), plus the spacebar candidate selection at line 382 and the touch-decoder gate at [`TextKeyboardLayout.kt:901`](app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt#L901). Flipping the preference takes effect on the next keystroke with no extra plumbing. The existing Settings → Typing → "Auto-correct" switch is the long-form user surface; this QuickAction is the keyboard-side shortcut to the same control.
+
+Removing the QuickAction entirely would have been the alternative (delete `KeyCode.TOGGLE_AUTOCORRECT` + its predefined `TextKeyData` + the smartbar quick-action registry entry), but that would lose a power-user affordance that has a real underlying preference behind it. Wiring is the cheaper + more honest fix.
+
+### Verification
+
+- Manual review confirmed the placeholder toast string is gone from `KeyboardManager.kt`; `grep -n "placeholder and not yet implemented" app/src/` returns no matches at HEAD.
+- The dispatch site at line 940 (`KeyCode.TOGGLE_AUTOCORRECT -> scope.launch { handleToggleAutocorrect() }`) mirrors the immediately-above `TOGGLE_INCOGNITO_MODE` line, so the patch is structurally aligned with the existing toggle convention.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1983).
+- Gradle build + manual real-device QA of the smartbar drag-and-drop reorder + tap flow deferred to maintainer host per `CLAUDE.md`. No new permissions or persisted-data schema changes.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/1983.txt` (new)
+- `gradle.properties` (versionCode 1982→1983, versionName 1.8.182→1.8.183)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F15)
+
 <a id="v1.8.182"></a>
 ## v1.8.182
 

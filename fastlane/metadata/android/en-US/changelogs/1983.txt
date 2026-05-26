@@ -1,0 +1,5 @@
+v1.8.183 — wire the autocorrect toggle keyboard shortcut.
+
+The TOGGLE_AUTOCORRECT keyboard shortcut (selectable as a smartbar quick action) previously surfaced a "placeholder and not yet implemented" toast. It now flips the live Settings → Typing → "Auto-correct" preference and confirms with a clear "Autocorrect is on/off" toast. The change takes effect on the next keystroke; NlpManager already reads the same preference on every suggestion request.
+
+No new permissions or stored data.

@@ -986,7 +986,7 @@ Three parallel research agents ran during this synthesis pass — **Code/Subsyst
 
 The items above promote to:
 
-- [ ] **P0** — F15 — **Wire or hide `TOGGLE_AUTOCORRECT`**. Either bind to `prefs.correction.autoCorrect` or remove the QuickAction entry. Touches: `ime/keyboard/KeyboardManager.kt:782`, `ime/smartbar/quickaction/QuickAction.kt`. Acceptance: no placeholder toast; Roborazzi baseline for the QuickAction state. Complexity: S.
+- [x] **P0** — F15 — **Wire or hide `TOGGLE_AUTOCORRECT`** — **shipped v1.8.183 (2026-05-25)**. `handleToggleAutocorrect()` now flips the live `prefs.correction.autoCorrect` preference (mirroring `handleToggleIncognitoMode()`) and surfaces a Crowdin-routed toast (`autocorrect_toggle__toast_after_enabled/disabled`). NlpManager + spacebar candidate selection + touch-decoder gate already consume the same preference. The placeholder toast and the stale `showLongToastSync` import are gone.
 
 - [ ] **P0** — F16 — **Delete `local.properties` from tracking and add to `check-repo-hygiene.sh`**. Touches: `git rm --cached local.properties`, `.gitignore` already covers it, `scripts/check-repo-hygiene.sh`. Acceptance: planted regression fails the hygiene script. Complexity: S.
 
