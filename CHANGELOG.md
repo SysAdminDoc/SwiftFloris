@@ -2,6 +2,38 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.174"></a>
+## v1.8.174
+
+Released: 2026-05-25
+
+### Repository Hygiene
+
+- **Untracked stale root-level artefacts.** Removed `SwiftFloris_icon.png` (787 KB; redundant with the `fastlane/metadata/android/en-US/images/icon.png` F-Droid listing image) and `ROADMAP.md.backup-v2` (21 KB; pre-rewrite snapshot superseded by the live `ROADMAP.md` at v5.67) from git tracking. Files remain in `.gitignore`-covered space; history is preserved per [`CLAUDE.md`](CLAUDE.md) safety rules — no history rewrite.
+- **Extended `scripts/check-repo-hygiene.sh` to reject regressions.** The script now fails when any of the following land at the repo root: `*.apk`, `*.aab`, `*.jks`, `*.keystore`, `local.properties`, `*.backup*`, `*.bak`, or any PNG > 200 KB. The historical case for each rule:
+  - Release APKs / AABs ship via GitHub Releases artefacts, not git; v1.5.2 era leaked a 9.7 MB `app-release-v1.5.2.apk` into the working tree that every fresh clone paid for.
+  - Keystores (`*.jks`, `*.keystore`) never enter git — release signing flows through `release.yml`'s base64 secret + `$RUNNER_TEMP` (`release.yml:138-175`).
+  - `local.properties` is per-machine SDK configuration; gitignore covers it but `git add -f` could still slip it in.
+  - `*.backup*` / `*.bak` belong under `docs/archive/` when retained at all — `v1.8.171` already retired `README.md.bak`.
+  - Root-level branding PNGs over 200 KB belong under `fastlane/metadata/android/en-US/images/` (F-Droid listing) or `app/src/main/res/` (in-app drawable). The `:(top)*.png` matcher restricts the size check to top-level entries; `app/src/main/res/drawable/ic_swiftfloris_foreground.png` (787 KB) is correctly out of scope.
+- **Documented in `docs/REPO_HYGIENE.md`.** Added a numbered rule list (generated output, deleted markdown, root-level forbidden artefacts, large root-level PNGs) plus the historical rationale tying the rules to actual prior incidents.
+
+### Verification
+
+- `bash scripts/check-repo-hygiene.sh` returned `OK` at HEAD.
+- Planted regression `touch test-stub.apk && git add -f test-stub.apk` was correctly rejected with exit code 1 and a clear `::error::` message; the test artefact was cleaned up before commit.
+- Gradle verification (`:app:verifyNoInternetPermission :app:testDebugUnitTest :app:verifyRoborazziDebug :app:lintDebug :app:assembleDebug`) deferred to the maintainer host per [`CLAUDE.md`](CLAUDE.md) — no Java / Android SDK on the autonomous-loop VM.
+
+### Files Touched
+
+- `scripts/check-repo-hygiene.sh` (rule extension)
+- `docs/REPO_HYGIENE.md` (rule documentation + rationale)
+- `SwiftFloris_icon.png` (untracked, file deleted from index only)
+- `ROADMAP.md.backup-v2` (untracked, file deleted from index only)
+- `gradle.properties` (versionCode 1973→1974, versionName 1.8.173→1.8.174)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+
 <a id="v1.8.173"></a>
 ## v1.8.173
 
