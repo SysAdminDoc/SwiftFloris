@@ -102,7 +102,7 @@ should be re-runnable. On a re-run:
    If yes and you're on the same date, **don't overwrite** — produce a
    `SECOND_PASS_FINDINGS.md` in the same directory and update only the
    files where new evidence has surfaced.
-3. Always commit locally with a `docs:` prefix; never `git push`.
+3. Commit with a `docs:` prefix and push per the global auto-commit-and-push rule. (Updated 2026-05-26: prior "never `git push`" rule retired.)
 4. The recommended-not-applied items in
    `ROADMAP_RESEARCH_ADDENDUM_*.md` are the right place to look for
    "did this land yet?" reconciliation.
