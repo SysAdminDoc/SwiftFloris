@@ -1025,9 +1025,9 @@ The items above promote to:
 
 - [ ] **P2** — F34 — **Move hard-coded `testImplementation` strings** at `app/build.gradle.kts:498-500` into the version catalog so Dependabot can update them. Complexity: S.
 
-- [ ] **P2** — F35 — **Refresh `docs/THREAT_MODEL.md`** — currently 105 versions stale. Reflect v1.8.104-122 privacy regressions closed + addon trust pin store. Complexity: M.
+- [x] **P2** — F35 — **Refresh `docs/THREAT_MODEL.md`** — currently 105 versions stale. Reflect v1.8.104-122 privacy regressions closed + addon trust pin store. Complexity: M. **Shipped v1.8.176 (2026-05-25)** — added a 20-bullet "What changed since the v1.8.68 baseline" audit-trail section covering v1.8.85 → v1.8.175.
 
-- [ ] **P2** — F36 — **Refresh `roborazzi-baseline.yml` header comment** — the "remove `continue-on-error`" instruction is stale. Complexity: S.
+- [x] **P2** — F36 — **Refresh `roborazzi-baseline.yml` header comment** — the "remove `continue-on-error`" instruction is stale. Complexity: S. **Shipped v1.8.176 (2026-05-25)** — also fixed the snapshot-path reference (`images/` no longer suffixed); `docs/LOCAL_VERIFICATION.md` now calls `check-fastlane-metadata.sh` alongside the existing repo-hygiene gate.
 
 - [ ] **P2** — F37 — **`AdvancedProviders.kt` audit** — single file vs two named engines in tests. Either ship the engines or rename the tests / consolidate. Complexity: S.
 

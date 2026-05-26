@@ -1,8 +1,70 @@
 # SwiftFloris Threat Model
 
-**Last updated:** 2026-05-17 (v1.8.68)
+**Last updated:** 2026-05-25 (v1.8.176)
 **Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules — none ship today, none are planned).
 **Audience:** maintainers, reviewers, and security-conscious users evaluating SwiftFloris vs proprietary keyboards.
+
+### What changed since the v1.8.68 baseline
+
+The v1.8.85 → v1.8.122 sixth- and seventh-pass audits closed the following live attack-surface
+items. They are referenced by their original finding IDs so the audit trail is traceable; the
+gory detail lives in [.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md)
+and [SEVENTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md):
+
+- **v1.8.85** — `verifyNoInternetPermission` now scans **merged** manifests in addition to source
+  manifests, and honours `tools:node="remove"`. Source-only scanning could miss a transitively-
+  declared INTERNET permission from an aggregated library; the merged-manifest scan closes it.
+- **v1.8.85** — Personal dictionary now excluded from cloud-backup AND device-to-device transfer.
+  New `app/src/main/res/xml/data_extraction_rules.xml` ships the Android-12+ schema with explicit
+  excludes for the SQLCipher database and its Tink-wrapped passphrase.
+- **v1.8.86 / v1.8.87** — FLAG_SECURE coverage extended via `keyVariation == PASSWORD` propagation
+  for `TYPE_NUMBER_VARIATION_PASSWORD` and a Compose `DisposableEffect` on the encrypted-dictionary
+  passphrase dialog. Previously the numeric-PIN entry path skipped the IME-side screenshot block.
+- **v1.8.95** — `verifyDataExtractionRules` build gate added. Pins the load-bearing
+  data_extraction_rules.xml excludes against accidental rewrite (e.g. a tool that "normalizes" the
+  XML and drops the personal-dictionary include path).
+- **v1.8.85 / v1.8.89** — `ZipUtils.unzip` now aborts atomically on security violations (path
+  traversal, oversized entries, decompression bombs). Benign anomalies (a single corrupted entry
+  in an otherwise valid archive) continue with a warning so a partially-corrupted dictionary
+  import still works.
+- **v1.8.104** — App-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` now always forces
+  `isIncognitoMode = true` regardless of the user's `prefs.suggestion.incognitoMode` preference.
+  Previously a `FORCE_OFF` user preference silently overrode cross-app sensitive-field
+  declarations (Signal, ProtonMail, banking).
+- **v1.8.105** — Clipboard cut/copy now gates on `isIncognitoMode` in addition to
+  `isPasswordField()`. Closes the cross-app leakage path where a user typing in an incognito-
+  declared field could Cut text into IME-local clipboard history.
+- **v1.8.106** — Voice handoff now early-returns in PASSWORD / numeric-PIN / web-password /
+  incognito fields. External voice IMEs (which typically have full network permission) cannot
+  receive sensitive-field audio.
+- **v1.8.111** — Provider-backed clipboard media clones now have a 32 MiB image cap and 128 MiB
+  video cap; oversized preview dimensions (> 8192 px) are rejected before decode.
+- **v1.8.112** — Provider-backed media closed on automatic history rotation / timed expiry
+  before the Room rows are deleted. Closes the URI-permission leak window.
+- **v1.8.113** — `VoiceInputSetupActivity` pinned as `android:exported="false"` plus
+  setup-intent extras validation.
+- **v1.8.114** — External voice IMEs must hold `RECORD_AUDIO` permission before SwiftFloris
+  considers handoff "ready." Prevents handoff to an IME that lacks mic access.
+- **v1.8.122** — `KenLmTrieReader.readBytesAt(...)` now rejects header/pre-body absolute offsets
+  instead of aliasing them to trie-body zero. Header probe also avoids large-file `toInt()`
+  overflow. Closes a precondition-violation bug class on adversarially-crafted KenLM model files.
+- **v1.8.123** — Roborazzi visual-regression is now a hard CI gate (was `continue-on-error`).
+  Catches accidental theme regressions that would expose hidden states.
+- **v1.8.124** — Addon trust pins now expose targeted revoke (`AddonSigningPinSet.withoutPackage`)
+  and reset-all actions in Settings → Addons. Users can disenroll a single compromised addon
+  without losing trust for the rest of the addon set.
+- **v1.8.125** — Addon dictionary-pack assets mount via `PackageManager#getResourcesForApplication`,
+  no extraction, no temp copies. Closes the symlink-vs-extracted-file confusion class.
+- **v1.8.174** — Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
+  `*.keystore` / `local.properties` / `*.backup*` / large branding PNGs. Closes the supply-
+  chain footgun where a maintainer's working-tree keystore could land in a commit.
+- **v1.8.175** — F-Droid metadata gate (`scripts/check-fastlane-metadata.sh`) prevents stale
+  upstream FlorisBoard branding from publishing on F-Droid; rejects future versionCode bumps
+  that ship without a matching per-versionCode changelog file.
+
+The remaining open audit items (see `.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md` §2 / §3)
+are local-recogniser bring-up gated (the voice-route findings #1–6, #8, #10), perf polish on
+non-hot paths, or UX polish on dead code paths.
 
 This document enumerates the realistic attacker scenarios SwiftFloris defends against, the
 attack surfaces it deliberately closes, and the gaps that remain. It is the structured

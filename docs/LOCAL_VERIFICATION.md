@@ -1,6 +1,6 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-05-18 for v1.8.166.
+Last updated: 2026-05-25 for v1.8.176.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
@@ -10,8 +10,13 @@ resources, or docs that describe shipped behavior.
 ```powershell
 git diff --check
 bash scripts/check-repo-hygiene.sh
+bash scripts/check-fastlane-metadata.sh
 .\gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:verifyRoborazziDebug :app:lintDebug :app:assembleDebug
 ```
+
+`check-fastlane-metadata.sh` was added in v1.8.175 to catch F-Droid listing drift
+(see [`CHANGELOG.md#v1.8.175`](../CHANGELOG.md#v1.8.175)). Every `projectVersionCode`
+bump must ship with a matching `fastlane/metadata/android/en-US/changelogs/<code>.txt`.
 
 Expected result:
 
