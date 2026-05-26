@@ -2,7 +2,7 @@ name: Roborazzi baseline capture
 
 # ROADMAP matrix #6 — operator-triggered Roborazzi baseline capture. The standard
 # `verifyRoborazziDebug` job in `android.yml` diffs every captured PNG against the
-# baseline under `app/src/test/snapshots/images/`. New screenshot tests + theme
+# baseline under `app/src/test/snapshots/`. New screenshot tests + theme
 # bumps + dimension changes all need a fresh baseline before that diff can be a
 # real gate. This workflow lets a maintainer run `recordRoborazziDebug` on
 # demand without pulling the whole repo onto their laptop:
@@ -11,12 +11,13 @@ name: Roborazzi baseline capture
 #     keep baseline writes maintainer-controlled.
 #   - Output: the freshly-captured snapshot tree is uploaded as a workflow
 #     artifact (`roborazzi-baselines-<run-id>`). The maintainer downloads it,
-#     drops the PNGs into `app/src/test/snapshots/images/`, and commits.
+#     drops the PNGs into `app/src/test/snapshots/`, and commits.
 #
-# When the baseline tree is committed to master, the maintainer should remove
-# the `continue-on-error: true` flag from the `Roborazzi visual-regression
-# verify (N14.1)` step in `.github/workflows/android.yml` so screenshot
-# regressions become a hard PR gate.
+# Historical note: an earlier revision of this comment instructed the maintainer
+# to remove a `continue-on-error: true` flag from android.yml once baselines
+# landed. v1.8.123 already promoted `:app:verifyRoborazziDebug` to a hard gate,
+# so the android.yml step no longer carries `continue-on-error`. The note is
+# kept here only as audit-trail.
 
 on:
   workflow_dispatch:

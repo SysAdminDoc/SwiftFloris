@@ -2,6 +2,42 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.176"></a>
+## v1.8.176
+
+Released: 2026-05-25
+
+### Stale-Doc Refreshes (RESEARCH_FEATURE_PLAN.md F35 + F36)
+
+The 2026-05-25 build/CI reconnaissance pass flagged three documentation surfaces drifting behind reality:
+
+- **`docs/THREAT_MODEL.md`** had `Last updated: 2026-05-17 (v1.8.68)` — that's 108 versions stale and predates the entire seventh-pass privacy audit closure run (v1.8.85 → v1.8.122) plus the v1.8.123 Roborazzi hard-gate, v1.8.124 addon-trust controls, v1.8.125 dictionary-asset mounting, and v1.8.174/v1.8.175 repo + listing hygiene gates. A privacy-curious user reading the threat model today would miss every concrete attack-surface improvement of the last hundred versions.
+- **`docs/LOCAL_VERIFICATION.md`** had `Last updated: 2026-05-18 for v1.8.166` and did not mention `scripts/check-fastlane-metadata.sh` introduced in v1.8.175 — so a contributor running the documented gate set would let F-Droid metadata drift slip through.
+- **`.github/workflows/roborazzi-baseline.yml`** comment block instructed the maintainer to remove `continue-on-error: true` from `android.yml`'s Roborazzi step once baselines landed. v1.8.123 already promoted the step to a hard gate. Instructions were stale.
+
+### Changes
+
+- **`docs/THREAT_MODEL.md`** — `Last updated` advanced to `2026-05-25 (v1.8.176)`. Added a "What changed since the v1.8.68 baseline" section enumerating every privacy/security item shipped in v1.8.85 → v1.8.175 with a one-line description tying each back to its finding ID in `.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md` and `SEVENTH_PASS_FINDINGS.md`. Twenty audit-trail bullets cover: manifest-merge scanning, data extraction rules excludes + gate, FLAG_SECURE numeric-PIN propagation, ZipUtils atomic abort, app-declared incognito enforcement, clipboard-incognito gating, voice-handoff sensitive-field guard, provider-backed-media size caps + close-before-evict, VoiceInputSetupActivity export hardening, RECORD_AUDIO precondition for external voice IMEs, KenLM reader offset rejection, Roborazzi hard-gate, addon trust revoke/reset, no-extraction dictionary asset mount, repo-root hygiene script extension, and the F-Droid metadata gate.
+- **`docs/LOCAL_VERIFICATION.md`** — `Last updated` advanced to `2026-05-25 for v1.8.176`. Standard local-gate block now lists `bash scripts/check-fastlane-metadata.sh` alongside `check-repo-hygiene.sh`. Added a brief note explaining the F-Droid-metadata-vs-versionCode contract (`fastlane/metadata/android/en-US/changelogs/<code>.txt` must exist for every `gradle.properties` versionCode bump).
+- **`.github/workflows/roborazzi-baseline.yml`** — removed the stale `continue-on-error` instruction; preserved a single audit-trail line so future readers see the historical context. Also corrected the snapshot path from `app/src/test/snapshots/images/` to the actual `app/src/test/snapshots/` location used by the current Roborazzi config.
+
+### Verification
+
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1976).
+- Doc-only slice; no Kotlin / Gradle changes. Maintainer-host Gradle verification not required for this release.
+
+### Files Touched
+
+- `docs/THREAT_MODEL.md`
+- `docs/LOCAL_VERIFICATION.md`
+- `.github/workflows/roborazzi-baseline.yml`
+- `fastlane/metadata/android/en-US/changelogs/1976.txt` (new)
+- `gradle.properties` (versionCode 1975→1976, versionName 1.8.175→1.8.176)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F35 + F36)
+
 <a id="v1.8.175"></a>
 ## v1.8.175
 

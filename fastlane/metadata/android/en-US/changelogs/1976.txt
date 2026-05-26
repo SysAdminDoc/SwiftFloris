@@ -1,0 +1,5 @@
+v1.8.176 — stale-doc refreshes.
+
+Advanced docs/THREAT_MODEL.md from v1.8.68 (108 versions stale) to v1.8.176; added an audit-trail summary of every privacy/security gate landed between v1.8.85 and v1.8.175. Updated docs/LOCAL_VERIFICATION.md to call check-fastlane-metadata.sh. Removed stale guidance from roborazzi-baseline.yml.
+
+No app code, permissions, or runtime behaviour changed.
