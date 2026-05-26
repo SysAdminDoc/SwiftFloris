@@ -1,0 +1,5 @@
+v1.8.182 — accessibility: photosensitivity disclosure for glide-trail themes.
+
+docs/ACCESSIBILITY.md now documents the animation rates of the v1.8.172 glide-trail themes (RAINBOW, AURORA, NEON, FIRE, GALAXY) and re-affirms the reduced-motion guarantee: ANIMATOR_DURATION_SCALE = 0 disables the trail entirely. Recommends Developer Options "Animations off" for photosensitive users.
+
+No code changes; the reduced-motion gate was already wired since v1.8.172.

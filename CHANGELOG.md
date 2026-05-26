@@ -2,6 +2,55 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.182"></a>
+## v1.8.182
+
+Released: 2026-05-25
+
+### Accessibility: glide-trail photosensitivity disclosure (RESEARCH_FEATURE_PLAN.md EI4)
+
+v1.8.172 shipped seven selectable glide-trail themes (Accent, Rainbow, Fire, Ice, Aurora, Galaxy, Neon). Five of them are time-driven — their per-segment colour is computed against the current `timeMillis`, so the trail animates as the finger draws it. `RAINBOW`, `NEON`, and `FIRE` carry enough high-frequency colour or brightness modulation to be relevant for users with photosensitive epilepsy. WCAG 2.3 / 2.3.2 sets the floor at three flashes per second of red-saturated content over more than 25% of the central visual field; SwiftFloris's trail is well under the 25%-visual-field cap (thin stroke at most ~110% of a key radius), but the maintainer cannot audit every user's hardware and ambient conditions, so the disclosure is worth making explicit.
+
+The reduced-motion gate already shipped in v1.8.172 — `TextKeyboardLayout.kt:177-178` reads `Settings.Global.ANIMATOR_DURATION_SCALE` once per recomposition and computes `val glideShowTrail = glideShowTrailPref && !reducedMotion`. When `ANIMATOR_DURATION_SCALE == 0f` (Developer Options → "Animator duration scale" → Animations off), the trail does not draw at all, regardless of which theme is selected. So users with photosensitivity concerns have a single system-level switch that fully removes the trail surface; they do not need to navigate into Settings → Gestures to pick a less-animated theme.
+
+This release documents both facts in `docs/ACCESSIBILITY.md` so the disclosure is canonical and discoverable.
+
+### Changes
+
+- **`docs/ACCESSIBILITY.md`** — new section "Glide trail themes and photosensitivity" between the Android 16 migration content and the existing "Other a11y contracts" section. Covers:
+  - A table of per-theme animation rates (hue°/ms or rad/ms) so an accessibility reviewer can reason about the surface without reading the Kotlin source:
+    - `ACCENT` / `ICE`: 0 (no time-driven effect)
+    - `RAINBOW`: 0.2 hue°/ms (~3 Hz at typical gesture lengths)
+    - `AURORA`: 0.06 hue°/ms (slow shimmer)
+    - `FIRE`: 0.003 rad/ms (~0.5 Hz visible flicker on the hot tail only)
+    - `GALAXY`: 0.0004 rad/ms (sub-Hz drift)
+    - `NEON`: 0.015 rad/ms (~2.4 Hz pulse across the whole trail)
+  - The WCAG 2.3.2 framing (three flashes per second of red-saturated content over 25% of the visual field) plus the visual-field bound that SwiftFloris's stroke comfortably stays under.
+  - The reduced-motion guarantee, citing the specific file and lines (`TextKeyboardLayout.kt:177-178`) so the gate is auditable. The Snygg engine's parallel reduced-motion gate for `KeyPopupElement` accent rings and smartbar transitions is mentioned for completeness — the glide trail inherits the same contract.
+  - User-facing recommendation: turn on Developer Options → "Animator duration scale" → Animations off (or the Android-14+ per-app motion preference where available).
+  - Follow-up tracker: a future Settings → Gestures → "Trail theme" picker could grow a small "ⓘ" tooltip beside `RAINBOW`/`AURORA`/`NEON`/`FIRE`/`GALAXY` noting the animation rate. Tracked as a Workstream 10 polish slice; this doc serves as the canonical reference until the tooltip lands.
+
+### What is intentionally not done in this slice
+
+- **Settings → Gestures inline tooltip / ⓘ icon.** Adding per-theme tooltips would require new Compose UI (a `Popup` or `TooltipBox`) and additional `strings.xml` entries that Crowdin would need to translate. Doc-only disclosure is sufficient for the per-PR-scope-discipline (`AGENTS.md` hard rule #6), and the existing reduced-motion gate already handles the load-bearing case (photosensitivity-concerned users have a system-level kill-switch).
+- **Code change to gate animations per-theme.** The whole trail rendering path is already gated off; per-theme animation gating would be wasted complexity.
+
+### Verification
+
+- `grep -n "ANIMATOR_DURATION_SCALE" app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt` returns the gate at lines 172 + 177 (Verified).
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1982).
+- Doc-only slice; gradle gates deferred to maintainer host per `CLAUDE.md`.
+
+### Files Touched
+
+- `docs/ACCESSIBILITY.md`
+- `fastlane/metadata/android/en-US/changelogs/1982.txt` (new)
+- `gradle.properties` (versionCode 1981→1982, versionName 1.8.181→1.8.182)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick EI4)
+
 <a id="v1.8.181"></a>
 ## v1.8.181
 
