@@ -1,0 +1,5 @@
+v1.8.180 — version catalog: promote hardcoded testImpl strings.
+
+Three testImplementation coordinate strings in app/build.gradle.kts ("androidx.compose.ui:ui-test-junit4", "androidx.test:runner:1.7.0", "junit:junit:4.13.2") now live in libs.versions.toml so Dependabot can update them. Investigated coil + material-kolor as supposed dead pins; both are live in lib/snygg + lib/color, kept.
+
+No app behaviour changes.
