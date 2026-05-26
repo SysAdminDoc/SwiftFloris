@@ -1,0 +1,9 @@
+v1.8.179 — remove "Neural coming soon" placeholder.
+
+Deleted the unused GlideTypingEngine.NEURAL_COMING_SOON enum value, its
+"Neural coming soon" string resource, and the corresponding label arm in
+GesturesScreen.kt. No language profile mapped to it, so the value advertised
+a feature with no implementation. SwiftFloris's production glide engine
+remains StatisticalGlideTypingClassifier.
+
+No user-visible behaviour change.

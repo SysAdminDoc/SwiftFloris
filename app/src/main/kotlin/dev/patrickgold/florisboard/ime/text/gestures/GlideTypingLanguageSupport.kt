@@ -24,7 +24,6 @@ data class GlideTypingLanguageProfile(
 
 enum class GlideTypingEngine {
     STATISTICAL,
-    NEURAL_COMING_SOON,
 }
 
 enum class GlideTypingQuality {

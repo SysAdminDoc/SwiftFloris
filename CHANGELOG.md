@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.179"></a>
+## v1.8.179
+
+Released: 2026-05-25
+
+### Remove "Neural coming soon" placeholder (RESEARCH_FEATURE_PLAN.md F17)
+
+The 2026-05-25 code reconnaissance pass surfaced that `app/src/main/res/values/strings.xml:978` shipped a `pref__glide__engine__neural_coming_soon` string ("Neural coming soon") bound to a `GlideTypingEngine.NEURAL_COMING_SOON` enum value, but no language profile in `GlideTypingLanguageSupport` actually mapped to it — every concrete profile (en/de/es/fr/it/pt) uses `GlideTypingEngine.STATISTICAL`. The enum value advertised an unimplemented feature; Settings → Gestures could never have shown the label because no profile ever returned it.
+
+This is the "advertise vs ship" cleanup IMPROVEMENT_PLAN Workstream 12 flags as part of localization/content quality, and which `RESEARCH_FEATURE_PLAN.md` F17 promoted to P0.
+
+### Changes
+
+- **`app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/GlideTypingLanguageSupport.kt`** — removed the `NEURAL_COMING_SOON` enum entry from `GlideTypingEngine`. The enum now contains a single member, `STATISTICAL`. All existing profile constructions remain valid.
+- **`app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/gestures/GesturesScreen.kt`** — removed the `GlideTypingEngine.NEURAL_COMING_SOON -> R.string.pref__glide__engine__neural_coming_soon` arm from `engineLabelRes`. The `when` is still exhaustive: `STATISTICAL` and `null` (no profile for the language).
+- **`app/src/main/res/values/strings.xml:978`** — deleted the `pref__glide__engine__neural_coming_soon` string. No translated `values-*` file referenced this key (verified by grep across `app/src/main/res/`).
+
+### Why not wire a real neural engine instead
+
+The honest path is to remove the placeholder until a permissive open-source glide model + dataset are ready. `RESEARCH_FEATURE_PLAN.md` F21 separately tracks training an Apache-2.0 glide model on the MIT-licensed FUTO swipe dataset (1.04M rows, live on Hugging Face) — that work happens out-of-tree (off-device training pipeline + model packaging into a sibling addon APK) and is XL complexity. Until the resulting addon is installable, the only production glide engine is `StatisticalGlideTypingClassifier`, and the Settings UI should not promise otherwise. When the addon path lands, the engine label can return as something concrete like `pref__glide__engine__neural_addon` referenced only when the addon registry exposes a glide-model provider.
+
+### Verification
+
+- `grep -rn "neural_coming_soon\|NEURAL_COMING_SOON" app/` returns no matches at HEAD.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1979).
+- The Kotlin `when` over `GlideTypingEngine?` is still exhaustive after removing the enum value; no compile-time surprise. Gradle build deferred to maintainer host per `CLAUDE.md`.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/GlideTypingLanguageSupport.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/gestures/GesturesScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/1979.txt` (new)
+- `gradle.properties` (versionCode 1978→1979, versionName 1.8.178→1.8.179)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F17)
+
 <a id="v1.8.178"></a>
 ## v1.8.178
 
