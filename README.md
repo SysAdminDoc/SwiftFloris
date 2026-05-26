@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.184-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.185-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -153,8 +153,11 @@ lib/compose                — Compose helpers
 lib/kotlin                 — pure-Kotlin utilities
 lib/snygg                  — Snygg theme engine
 :benchmark                 — Macrobenchmark + adb benchmark harness (active in settings)
-:lib:native                — placeholder for future native add-ons (commented out)
 ```
+
+Native runtimes for optional capabilities (LiteRT-LM, Bergamot, librime, ML
+Kit Digital Ink, Vosk) ship as out-of-tree signed addon APKs through the
+addon enrolment contract, not as a `:lib:native` module in the base APK.
 
 The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard/ime/{keyboard,nlp,theme,ext,emoji,mcp,voice,bidi,dictionary,kenlm}`.
 

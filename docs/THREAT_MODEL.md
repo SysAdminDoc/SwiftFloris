@@ -179,8 +179,13 @@ Out of scope:
 ### 3.8 Auditability
 - Apache-2.0 codebase, no obfuscation in debug builds, ProGuard rules visible
   in `app/proguard-rules.pro` for release builds.
-- No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); the only
-  native code is `lib/native` (Rust ICU helpers, source visible).
+- No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); the base
+  APK ships **zero** native code as of v1.8.185 (the prior `:lib:native` Rust
+  placeholder was dropped — see `RESEARCH_FEATURE_PLAN.md` EI11 + the
+  v1.8.185 CHANGELOG entry). When optional native runtimes (LiteRT-LM,
+  whisper.cpp, librime, etc.) land they ship as out-of-tree signed addon
+  APKs with their own auditable sources, never as a hidden `:app`
+  dependency.
 - F-Droid metadata + reproducible-build target are Now items (N6.2 / N6.3).
 
 ---

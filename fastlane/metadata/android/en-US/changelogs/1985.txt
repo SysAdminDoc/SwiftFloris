@@ -1,0 +1,5 @@
+v1.8.185 — drop dormant :lib:native placeholder + libnative scaffold.
+
+The :lib:native module and the libnative/ Rust scaffold had been disabled in settings.gradle.kts since 2025; native runtimes (LiteRT-LM, Bergamot, librime, whisper.cpp, ML Kit, Vosk) ship as out-of-tree signed addon APKs, not as a :lib:native module in the base APK. Removed the dirs, the commented-out include, and the dead FlorisApplication libnative test path.
+
+No user-visible behaviour change.
