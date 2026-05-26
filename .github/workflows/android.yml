@@ -106,8 +106,10 @@ jobs:
       # ROADMAP §7 Next-12.4 — 16 KB memory-page alignment guard. Per Google
       # Play's Nov 1 2025 cutoff [STD-A15-16KB], every native .so shipped on
       # a target-Android-15+ APK must be 16 KB ELF-segment aligned. SwiftFloris
-      # currently ships zero native libs (the libnative/ module is disabled),
-      # so this check is a forward-looking guard: as soon as Next-2 (whisper.cpp),
+      # currently ships zero native libs in :app (native runtimes for optional
+      # capabilities live in out-of-tree signed addon APKs per the AddonContract
+      # enrolment path), so this check is a forward-looking guard: as soon as
+      # Next-2 (whisper.cpp),
       # N1.2 (CleverKeys ONNX), L1 (LiteRT-LM), or L7 (MCP bridge) bring native
       # code back in, the gate catches a 4 KB regression at PR time instead of
       # at Play upload time. If no .so files exist in the APK the check is a

@@ -33,8 +33,12 @@ The active Gradle modules are declared in `settings.gradle.kts`.
 | `:benchmark` | AndroidX Macrobenchmark module plus adb-driven benchmark harness target |
 
 `:benchmark` is included in settings for Macrobenchmark and adb performance
-harnesses. `:lib:native` remains present on disk but inactive until a native
-addon/runtime slice intentionally revives it.
+harnesses. Native runtimes for optional capabilities (LiteRT-LM smart compose,
+Bergamot offline NMT, librime CJK input, ML Kit Digital Ink handwriting, Vosk
+voice) ship as out-of-tree signed addon APKs per the addon enrolment contract
+(`AddonContract.Action.REGISTER_*`); the base APK does not carry a native
+module. The previous `:lib:native` placeholder + `libnative/` Rust scaffold
+were dropped in v1.8.185.
 
 ## Runtime Entrypoints
 

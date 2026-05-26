@@ -2,6 +2,56 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.185"></a>
+## v1.8.185
+
+Released: 2026-05-25
+
+### Drop the `:lib:native` placeholder + `libnative/` Rust scaffold (RESEARCH_FEATURE_PLAN.md EI11)
+
+The `:lib:native` Gradle module and its sibling `libnative/dummy/` Rust scaffold had been disabled in `settings.gradle.kts` since 2025 (`//include(":lib:native")`). The module shipped one Kotlin file (`external fun dummyAdd(a: Int, b: Int): Int`), a Rust `lib.rs` with the matching JNI implementation, a CMakeLists.txt, an empty Android manifest, and a `Cargo.toml`. Nothing in `:app` consumed it — the only reference in production code was a commented-out import in `FlorisApplication.kt:57` and a corresponding commented-out `flogError { "dummy result: ${dummyAdd(3,4)}" }` log at line 138 with a paired `flogError { "native module disabled, skipping dummy test" }` warning that surfaced on every cold start.
+
+The placeholder was originally retained as a roadmap surface for future native-in-`:app` work, but the project's architectural direction has firmly settled: native runtimes for optional capabilities (LiteRT-LM smart-compose per L1.1a, whisper.cpp per Next-2, librime CJK per L3, Bergamot offline NMT per L2.1a, ML Kit Digital Ink per Next-4.2a, Vosk voice per F8) ship as out-of-tree signed addon APKs via the `AddonContract.Action.REGISTER_*` enrolment contract. The base APK does not, and is not intended to, carry a native module. A dormant placeholder that promises otherwise was misleading to contributors.
+
+### Changes
+
+- **Deleted the `:lib:native` module** — `git rm -rf lib/native libnative` removed 8 tracked files under `lib/native/` (`build.gradle.kts`, `src/main/AndroidManifest.xml`, `src/main/kotlin/org/florisboard/libnative/test.kt`, `src/main/rust/CMakeLists.txt`, `src/main/rust/Cargo.toml`, `src/main/rust/Cargo.lock`, `src/main/rust/src/lib.c`, `src/main/rust/src/lib.rs`) plus 3 tracked files under `libnative/dummy/` (`Cargo.toml`, `Cargo.lock`, `src/lib.rs`). The working-tree `lib/native/build/` cache was deleted on disk but was never gitignored at the directory level; the v1.8.174 hygiene script already catches future tracked-build-output regressions.
+- **`settings.gradle.kts`** — removed the `//include(":lib:native")  // Skip Rust native - not needed for basic keyboard` line at line 51. The trailing `include(":lib:snygg")` line now lands immediately after `include(":lib:kotlin")`.
+- **`FlorisApplication.kt`** — removed the commented-out `import org.florisboard.libnative.dummyAdd` line and the corresponding `flogError { "native module disabled, skipping dummy test" }` + `// Originally: flogError { "dummy result: ${dummyAdd(3,4)}" }` block. Both fired on every cold start, polluting `adb logcat` with a noise marker for a non-existent feature.
+- **`ARCHITECTURE.md` Module Layout** — replaced the `:lib:native remains present on disk but inactive` paragraph with a forward-looking note explaining that native runtimes ship as out-of-tree signed addon APKs.
+- **`PROJECT_CONTEXT.md` §4 module layout** — removed the `:lib:native … placeholder for future native add-ons (commented out)` line and added the addon-only-native-runtime explanation.
+- **`README.md` Module Layout** — same change for the user-facing README.
+- **`ROADMAP.md` §2 State of the Repo + §0 v5.2 follow-up** — updated both mentions of `:lib:native` to reflect the drop, citing v1.8.185 + the addon-only enrolment contract.
+- **`docs/REPRODUCIBLE_BUILDS.md`** — the Rust toolchain pin row's annotation moved from "only used by `lib/native` (currently disabled)" to a forward-looking note explaining the pin is retained for future out-of-tree native addons that may use the same toolchain. The pin itself stays (no harm in keeping the toolchain version recorded; Gradle does not download it unless a module references it).
+- **`docs/THREAT_MODEL.md` §3.8 Auditability** — replaced the "the only native code is `lib/native` (Rust ICU helpers, source visible)" claim with the more accurate "the base APK ships zero native code as of v1.8.185" framing. The auditability surface is still strong; the prior sentence was misleading anyway because `lib/native` shipped a Rust JNI stub that returned `a + b`, not "ICU helpers."
+- **`.github/workflows/android.yml`** — updated the 16 KB native-library guard comment from `the libnative/ module is disabled` to `native runtimes for optional capabilities live in out-of-tree signed addon APKs per the AddonContract enrolment path`. The check itself is unchanged (it remains a forward-looking guard for the day a release variant brings native code in).
+
+### Verification
+
+- `grep -rn "lib/native\|libnative\|:lib:native" .` returns matches only in `.ai/research/2026-05-17/` (frozen historical snapshot per `AGENTS.md`) plus the v1.8.185 entries in CHANGELOG, RESEARCH_FEATURE_PLAN, and PROJECT_CONTEXT/ARCHITECTURE/ROADMAP that reference the drop.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1985).
+- `ls lib/` returns the 5 surviving modules: `android`, `color`, `compose`, `kotlin`, `snygg`. `ls libnative` returns `No such file or directory`.
+- Gradle reload + build deferred to maintainer host per `CLAUDE.md`. The dropped module had no consumers in `:app` or `:benchmark`, so dependency graph remains clean.
+
+### Files Touched
+
+- `lib/native/` (deleted, 8 tracked files + working-tree `build/` cache)
+- `libnative/` (deleted, 3 tracked files)
+- `settings.gradle.kts` (removed commented-out include)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt` (removed dead import + log)
+- `ARCHITECTURE.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `ROADMAP.md` (two mention sites refreshed)
+- `docs/REPRODUCIBLE_BUILDS.md`
+- `docs/THREAT_MODEL.md`
+- `.github/workflows/android.yml` (comment update only)
+- `fastlane/metadata/android/en-US/changelogs/1985.txt` (new)
+- `gradle.properties` (versionCode 1984→1985, versionName 1.8.184→1.8.185)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick EI11)
+
 <a id="v1.8.184"></a>
 ## v1.8.184
 

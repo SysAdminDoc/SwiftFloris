@@ -876,8 +876,8 @@ The roadmap below is **additive** to [`ROADMAP.md`](ROADMAP.md) and [`IMPROVEMEN
 - [ ] **P3** — F13 — Cross-platform desktop "SwiftFloris dictionary export" CLI
   - Touches: out-of-tree `swiftfloris-desktop-bridge/`
 
-- [ ] **P3** — EI11 — Drop the `:lib:native` placeholder module
-  - Touches: `settings.gradle.kts`, `lib/native/`, `ARCHITECTURE.md`
+- [x] **P3** — EI11 — Drop the `:lib:native` placeholder module — **shipped v1.8.185 (2026-05-25)**
+  - Removed `lib/native/` (8 tracked files), `libnative/dummy/` (3 tracked files), the `//include(":lib:native")` line in `settings.gradle.kts`, and the dead `flogError { "native module disabled, skipping dummy test" }` cold-start log in `FlorisApplication.kt`. Updated ARCHITECTURE.md / PROJECT_CONTEXT.md / README.md / ROADMAP.md / THREAT_MODEL.md / REPRODUCIBLE_BUILDS.md / android.yml to reflect the addon-only path for native runtimes.
 
 ---
 

@@ -23,7 +23,7 @@ verify it matches the official Release artifact.
 | JDK | `gradle/tools.versions.toml` `jdk` | 17 | enforced by `compileOptions { sourceCompatibility = JavaVersion.VERSION_11 }` and `kotlin { compilerOptions { jvmTarget = JVM_11 } }`; build container uses `setup-java@v4 java-version: 17 distribution: temurin` |
 | CMake | `gradle/tools.versions.toml` `cmake` | 4.1.2 | fixed |
 | cmdline tools | `gradle/tools.versions.toml` `cmdlineTools` + `cmdlineToolsChecksum` | 14742923 | SHA-256 pinned |
-| Rust toolchain | `gradle/tools.versions.toml` `rustToolchain` | 1.93.0 | only used by `lib/native` (currently disabled in `settings.gradle.kts`) |
+| Rust toolchain | `gradle/tools.versions.toml` `rustToolchain` | 1.93.0 | dormant pin retained for future out-of-tree native addons; `:app` ships no Rust today (the `:lib:native` placeholder was dropped in v1.8.185) |
 
 All Compose / library dependencies live behind `gradle/libs.versions.toml` version refs — no transitive `+` or `latest.release` selectors.
 

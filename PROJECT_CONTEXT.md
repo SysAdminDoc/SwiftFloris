@@ -535,8 +535,15 @@ lib/compose             — Compose helpers
 lib/kotlin              — pure-Kotlin utilities
 lib/snygg               — Snygg theme engine
 :benchmark              — Macrobenchmark + adb benchmark harness (active in settings)
-:lib:native             — placeholder for future native add-ons (commented out)
 ```
+
+Native runtimes for optional capabilities (LiteRT-LM, Bergamot, librime, ML
+Kit Digital Ink, Vosk) ship as out-of-tree signed addon APKs via the addon
+enrolment contract, not as a `:lib:native` module in the base APK. The
+prior `:lib:native` placeholder and `libnative/` Rust scaffold were dropped
+in v1.8.185 (RESEARCH_FEATURE_PLAN.md EI11) since no addon was ever going
+to consume them and they confused contributors about whether native code
+was permitted in `:app`.
 
 `app/src/main/kotlin/dev/patrickgold/florisboard/` is the work tree. Full
 subsystem map in

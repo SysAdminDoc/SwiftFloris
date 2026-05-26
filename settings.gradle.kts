@@ -48,5 +48,4 @@ include(":lib:android")
 include(":lib:color")
 include(":lib:compose")
 include(":lib:kotlin")
-//include(":lib:native")  // Skip Rust native - not needed for basic keyboard
 include(":lib:snygg")
