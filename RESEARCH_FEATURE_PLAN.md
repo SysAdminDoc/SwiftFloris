@@ -1005,9 +1005,9 @@ The items above promote to:
 
 - [ ] **P1** — F24 — **Roborazzi for the release variant** (`:app:verifyRoborazziRelease`). R8/minify can rename Compose semantics nodes; nothing catches it today. Touches: `app/build.gradle.kts`, `android.yml`. Complexity: M.
 
-- [ ] **P1** — F25 — **`zipalign -P 16` on release variant** in `release.yml`. Touches: `release.yml`. Acceptance: planted misaligned `.so` in release fails the workflow. Complexity: S.
+- [x] **P1** — F25 — **`zipalign -P 16` on release variant** in `release.yml`. Touches: `release.yml`. Acceptance: planted misaligned `.so` in release fails the workflow. Complexity: S. **Shipped v1.8.178 (2026-05-25)**.
 
-- [ ] **P1** — F26 — **Explicit `verifyDataExtractionRules` CI step** alongside `verifyNoInternetPermission`. Touches: `android.yml`, `release.yml`. Complexity: S.
+- [x] **P1** — F26 — **Explicit `verifyDataExtractionRules` CI step** alongside `verifyNoInternetPermission`. Touches: `android.yml`, `release.yml`. Complexity: S. **Shipped v1.8.178 (2026-05-25)** — explicit step added in both workflows; the gate's auto-fire from preBuild is preserved, the explicit call adds run-summary legibility.
 
 - [ ] **P1** — F27 — **Add a `KeyboardManager` unit test set** for the dispatch + state machine. Sliver-mocked `EditorInstance` + scripted KeyData sequences. Touches: `app/src/test/kotlin/.../keyboard/KeyboardManagerStateMachineTest.kt`. Acceptance: at least 5 critical state-transition tests. Complexity: M.
 

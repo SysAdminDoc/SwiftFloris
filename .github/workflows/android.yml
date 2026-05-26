@@ -74,6 +74,15 @@ jobs:
       - name: Verify no-network contract (N7.1)
         run: ./gradlew :app:verifyNoInternetPermission
 
+      # ROADMAP §0 N12.5b — explicit verifyDataExtractionRules step. The
+      # gate also fires transitively from preBuild (registered in
+      # app/build.gradle.kts), but calling it directly here makes the
+      # green/red signal legible in the workflow run summary and pins the
+      # data_extraction_rules.xml excludes (personal-dictionary + clipboard
+      # encrypted-stores) against accidental rewrite.
+      - name: Verify data-extraction rules
+        run: ./gradlew :app:verifyDataExtractionRules
+
       - name: Unit tests
         run: ./gradlew :app:testDebugUnitTest
 
