@@ -42,6 +42,63 @@ one surface that needs explicit attention because it overlays the bottom edge; t
 Screenshot baselines (matrix #6) should cover at least one settings screen in both portrait and landscape to
 pin the edge-to-edge rendering — that test lands when the Roborazzi baseline capture lands.
 
+## Glide trail themes and photosensitivity
+
+v1.8.172 added seven selectable glide-trail themes
+(`GlideTrailTheme.{ACCENT, RAINBOW, FIRE, ICE, AURORA, GALAXY, NEON}`,
+defined in
+[`app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/GlideTrailTheme.kt`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/GlideTrailTheme.kt)).
+Five of them (`RAINBOW`, `FIRE`, `AURORA`, `GALAXY`, `NEON`) are time-driven —
+their per-segment colour is computed against the current `timeMillis`, so the
+trail animates as the finger draws it.
+
+Approximate animation rates by theme (rad/ms or hue°/ms):
+
+| Theme | Time-driven effect | Rate |
+|---|---|---|
+| ACCENT | none (constant Snygg primary) | 0 |
+| ICE | none (static gradient by position) | 0 |
+| RAINBOW | 360° hue sweep over time | 0.2 hue°/ms (~3 Hz at typical gesture lengths) |
+| AURORA | 180° hue cycle | 0.06 hue°/ms (slow shimmer) |
+| FIRE | per-segment sin shimmer at the hot tail | 0.003 rad/ms (~0.5 Hz visible flicker) |
+| GALAXY | sub-hue shift on the mid segments | 0.0004 rad/ms (sub-Hz, slow drift) |
+| NEON | sinusoidal brightness modulation across the whole trail | 0.015 rad/ms (~2.4 Hz pulse) |
+
+The `RAINBOW`, `NEON`, and `FIRE` themes can rise above the seizure-trigger
+threshold for users with photosensitive epilepsy (the WCAG 2.3 / 2.3.2 floor
+sits at three flashes per second of red-saturated content over more than 25% of
+the central visual field). The trail itself is a thin stroke at most ~110% of a
+key radius, well below 25% of the visual field, and the brightness is bounded
+by the active Snygg accent — but the disclosure is worth making explicit
+because the maintainer cannot audit every user's hardware and ambient
+conditions.
+
+**Reduced-motion guarantee.** The whole trail rendering path is gated off at
+[`TextKeyboardLayout.kt:177-178`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt#L177)
+when `Settings.Global.ANIMATOR_DURATION_SCALE == 0f` (Developer Options →
+"Animator duration scale" = Animations off):
+`val glideShowTrail = glideShowTrailPref && !reducedMotion`. With reduced
+motion on, the trail does not draw at all — animated or otherwise — regardless
+of which theme is selected. So a user with photosensitivity concerns has a
+single system-level switch that fully removes the trail surface; they do not
+need to navigate into Settings → Gestures to pick a less-animated theme.
+
+The Snygg engine respects `ANIMATOR_DURATION_SCALE` per-element as well, so
+the `KeyPopupElement` accent ring (v1.7.9 N3.4) and the smartbar transitions
+already collapse to static frames when reduced motion is on. The glide trail
+inherits the same gate.
+
+**Recommended user guidance for photosensitive users:** turn on
+Developer Options → "Animator duration scale" = Animations off (or set
+the per-app accessibility motion preference where available on Android 14+).
+SwiftFloris's trail will not render at all in that state.
+
+**Recommended Settings affordance follow-up.** Settings → Gestures →
+"Trail theme" picker could grow a small "ⓘ" tooltip beside `RAINBOW`,
+`AURORA`, `NEON`, `FIRE`, and `GALAXY` noting the time-based animation and
+the existing reduced-motion gate. Tracked as a future Workstream 10 polish
+slice; the disclosure copy here is the canonical reference until it lands.
+
 ## Other a11y contracts SwiftFloris pins
 
 - **48 dp touch targets (WCAG 2.5.5).** The IME enforces a minimum 48 dp touch-target size via the existing

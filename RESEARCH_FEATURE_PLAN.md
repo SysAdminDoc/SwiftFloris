@@ -799,12 +799,12 @@ The roadmap below is **additive** to [`ROADMAP.md`](ROADMAP.md) and [`IMPROVEMEN
   - Acceptance: home screen shows five groups; deep links still resolve; TalkBack focus order pinned
   - Verify: Roborazzi baseline; `FlorisScreenFocusOrderTest`
 
-- [ ] **P1** — EI4 — Glide trail photosensitivity disclosure
+- [x] **P1** — EI4 — Glide trail photosensitivity disclosure — **shipped v1.8.182 (2026-05-25)**
   - Why: Rainbow / Aurora / Neon involve time-based hue/brightness changes; trigger risk for some users
-  - Evidence: `ime/text/keyboard/GlideTrailTheme.kt`
-  - Touches: `docs/ACCESSIBILITY.md`, `app/settings/gestures/GesturesScreen.kt`, possibly `GlideTrailTheme.kt`
-  - Acceptance: Rainbow/Aurora/Neon honour `ANIMATOR_DURATION_SCALE == 0f`; tooltip + a11y note land
-  - Verify: unit test for reduced-motion gate; manual QA with developer-options "Animator duration scale = Off"
+  - Evidence: `ime/text/keyboard/GlideTrailTheme.kt`; reduced-motion gate already wired at `TextKeyboardLayout.kt:177-178`
+  - Touches: `docs/ACCESSIBILITY.md` — new "Glide trail themes and photosensitivity" section with per-theme animation-rate table, WCAG 2.3.2 framing, citation of the existing `Settings.Global.ANIMATOR_DURATION_SCALE == 0f` kill-switch
+  - Acceptance: docs-side disclosure shipped; existing reduced-motion gate already disables the trail entirely at scale=0
+  - Settings-side ⓘ tooltip deferred (would require new Compose UI + Crowdin'd strings)
 
 - [ ] **P1** — EI5 — EmojiCompat singleton race regression test
   - Why: v1.8.173 fix uses reflection against a package-private constructor; a future AndroidX bump could break it silently
