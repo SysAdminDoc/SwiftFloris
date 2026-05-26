@@ -242,6 +242,5 @@ private val GlideTypingLanguageProfile?.qualityLabelRes: Int
 private val GlideTypingLanguageProfile?.engineLabelRes: Int
     get() = when (this?.engine) {
         GlideTypingEngine.STATISTICAL -> R.string.pref__glide__engine__statistical
-        GlideTypingEngine.NEURAL_COMING_SOON -> R.string.pref__glide__engine__neural_coming_soon
         null -> R.string.pref__glide__engine__unsupported
     }
