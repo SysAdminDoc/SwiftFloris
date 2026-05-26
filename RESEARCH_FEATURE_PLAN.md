@@ -1040,7 +1040,7 @@ The items above promote to:
 
 - [x] **P3** — F41 — **Delete the `smartbar` `sharedActionsAutoExpandCollapse` locked-false switch** — **shipped v1.8.186 (2026-05-25)**. Removed the SwitchPreference + orphaned SideEffect + `SideEffect` import from SmartbarScreen.kt; removed the three unused English label strings. The `@Deprecated` AppPrefs entry stays for saved-value compat; the 24 translated `values-*/strings.xml` entries become unused-resource lint warnings until the next Crowdin sync drops them.
 
-- [ ] **P3** — F42 — **Update `addons/` references in facade docs** to "out-of-tree" — there is currently no `addons/` directory; the in-source comments mislead contributors. Touches: `ime/smartcompose/`, `ime/translate/`, `ime/cjk/`, `ime/handwriting/`, `ime/passkey/`, `ime/voice/`. Complexity: S.
+- [x] **P3** — F42 — **Update `addons/` references in facade docs** — **shipped v1.8.187 (2026-05-25)**. Rewrote four facade KDoc blocks (`CjkInputProvider`, `StrokeRecognizer`, `SmartComposeProvider`, `InlineTranslator`) to say "out-of-tree signed addon APK" distributed via GitHub Releases / Obtainium / F-Droid through the `AddonContract.Action.REGISTER_*` enrolment path. `ime/passkey/` and `ime/voice/` were also flagged but already used clean prose (verified by grep).
 
 These items extend Phase 2 and Phase 3 of the prioritized roadmap above. The grand total is now **F1–F42 + EI1–EI12** = **54 net-new items** beyond the existing ROADMAP / IMPROVEMENT_PLAN tracking.
 

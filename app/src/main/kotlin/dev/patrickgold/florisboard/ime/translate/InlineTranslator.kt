@@ -29,9 +29,12 @@ import kotlinx.serialization.Serializable
  * on-device (Firefox embeds the same `marian-decoder` shape). Like the
  * LiteRT-LM smart-compose provider (L1) and ML Kit Digital Ink stroke
  * recogniser (Next-4.2), the actual Bergamot runtime ships in an
- * out-of-tree addon (L2.1a — `addons/translator-bergamot/`) that the
+ * **out-of-tree signed addon APK** (L2.1a — slated identifier
+ * `translator-bergamot`, distributed via GitHub Releases / Obtainium /
+ * F-Droid alongside SwiftFloris, never bundled into `:app`) that the
  * user explicitly installs, then registers itself via
- * [InlineTranslatorRegistry.setActive].
+ * [InlineTranslatorRegistry.setActive] through the
+ * `AddonContract.Action.REGISTER_*` enrolment path.
  *
  * The facade exposes the minimum the IME's smartbar quick-action +
  * preview-row UI needs:

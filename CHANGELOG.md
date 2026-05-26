@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.187"></a>
+## v1.8.187
+
+Released: 2026-05-25
+
+### Clarify addon-path facade docstrings (RESEARCH_FEATURE_PLAN.md F42)
+
+Four facade Kotlin files referenced "out-of-tree addon" paths like `addons/cjk-librime/` and `addons/handwriting-mlkit/` in their class-level KDoc. No `addons/` directory exists anywhere in the tree (verified by `Test-Path 'W:\repos\SwiftFloris\addons'` returning False), so the references misled new contributors into searching for a sibling Gradle module that does not and is not planned to ever exist.
+
+The reality is that each optional capability ships as a separately-signed addon APK distributed alongside SwiftFloris via the same channels as the main app (GitHub Releases / Obtainium / F-Droid). Enrolment goes through the `AddonContract.Action.REGISTER_*` action set; the addon enumerator (`AddonEnumerator`) discovers installed APKs via `PackageManager`, validates signing pins, and the facade's `*Registry.setActive(...)` method binds the concrete implementation.
+
+### Changes
+
+- **`ime/cjk/CjkInputProvider.kt`** — replaced `addons/cjk-librime/` with "out-of-tree signed addon APK (slated identifier `cjk-librime`, distributed via GitHub Releases / Obtainium / F-Droid alongside SwiftFloris, never bundled into `:app`)" and named the `AddonContract.Action.REGISTER_*` enrolment path.
+- **`ime/handwriting/StrokeRecognizer.kt`** — same shape for the ML Kit Digital Ink path: `addons/handwriting-mlkit/` → "out-of-tree signed addon APK (Next-4.2a — slated identifier `handwriting-mlkit`, distributed via GitHub Releases / Obtainium / F-Droid alongside SwiftFloris, never bundled into `:app`)".
+- **`ime/smartcompose/SmartComposeProvider.kt`** — `addons/smart-compose-litert/` → "out-of-tree signed addon APK (L1.1a — slated identifier `smart-compose-litert`)".
+- **`ime/translate/InlineTranslator.kt`** — `addons/translator-bergamot/` → "out-of-tree signed addon APK (L2.1a — slated identifier `translator-bergamot`)".
+
+The `ime/passkey/` and `ime/voice/` facades were also flagged by `RESEARCH_FEATURE_PLAN.md` F42 but already used clean prose; verified by grep returning no `addons/<name>/` references inside their KDoc.
+
+### Verification
+
+- `grep -rn 'addons/[a-z-]\+/' app/src/main/kotlin/dev/patrickgold/florisboard/ime/` returns no matches at HEAD.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1987).
+- Doc-comment-only slice; KDoc changes do not affect compilation. Gradle build deferred to maintainer host per `CLAUDE.md`.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/cjk/CjkInputProvider.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/handwriting/StrokeRecognizer.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/SmartComposeProvider.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/translate/InlineTranslator.kt`
+- `fastlane/metadata/android/en-US/changelogs/1987.txt` (new)
+- `gradle.properties` (versionCode 1986→1987, versionName 1.8.186→1.8.187)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F42)
+
 <a id="v1.8.186"></a>
 ## v1.8.186
 
