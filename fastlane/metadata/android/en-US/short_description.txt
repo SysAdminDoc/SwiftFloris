@@ -1,1 +1,1 @@
-An open-source keyboard which respects your privacy. Currently in beta.
+Privacy-first Android keyboard. Apache-2.0. No INTERNET. No accounts.

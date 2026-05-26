@@ -1,19 +1,34 @@
-<p><i>FlorisBoard</i> is an open-source keyboard aimed at providing you with an easy way to type while respecting your privacy.</p>
-<p><b>Note:</b> This project is currently in beta stage. If you want to see a feature being implemented or want to report a bug, please visit this project's repository (linked in the end of the description) on GitHub and file an issue. This helps making FlorisBoard even better! Thank you!</p>
-<p><b>Currently implemented and fully working features:</b></p>
+<p><b>SwiftFloris</b> is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no <tt>INTERNET</tt> permission, and binds zero accounts.</p>
+
+<p><b>Zero cloud processing. Zero telemetry. Zero account. All features work offline.</b> The no-network promise is pinned by a Gradle build gate (<tt>verifyNoInternetPermission</tt>) that fails the build if any <tt>INTERNET</tt>, <tt>ACCESS_NETWORK_STATE</tt>, <tt>ACCESS_WIFI_STATE</tt>, <tt>CHANGE_NETWORK_STATE</tt>, or <tt>CHANGE_WIFI_STATE</tt> permission is declared in the app manifest.</p>
+
+<p><b>Migrating from SwiftKey?</b> Microsoft retired standalone SwiftKey accounts on 2026-05-31, deleting non-Microsoft-account learned data permanently. SwiftFloris imports your <tt>swiftkey-cloud.json</tt> cloud export directly via Settings → Personal dictionary → Import. See the in-app migration walkthrough.</p>
+
+<p><b>Typing features:</b></p>
 <ul>
-    <li>Huge variety of Latin keyboard layouts</li>
-    <li>Limited support for non-Latin keyboard layouts (Arabic, Persian and Hebrew currently, more are planned)</li>
-    <li>Easy switching between languages/layouts by defining subtypes in the settings</li>
-    <li>Full theme customization + theme presets for day/night themes</li>
-    <li>Automatic day/night theme switching</li>
-    <li>Keyboard layouts for typing in a (phone) number</li>
-    <li>Special characters input</li>
-    <li>Emoji/Emoticon keyboard</li>
-    <li>One-handed/compact mode for easier typing on large devices</li>
-    <li>Customization of key press sound/vibration</li>
-    <li>Customizable actions for gestures: swipe up/down/left/right, space bar left/right, delete key swipe)</li>
-    <li>Integrated special symbols into character layouts</li>
-    <li>Clipboard/Cursor toolbar</li>
-    <li>Clipboard manager/history</li>
+    <li>SCOWL 117k English dictionary, SymSpell distance-1 + distance-2, bigram + trigram next-word prediction, capitalization-aware completions, instant-remember user-dictionary overlay</li>
+    <li>Bilingual subtype presets (EN+ES, EN+FR, EN+DE), per-token Latin language identification, top-two straddle guard for mid-sentence language switches</li>
+    <li>Statistical glide typing with bounded EN / DE / ES / FR / IT / PT dictionaries plus adaptive touch evidence; 7 selectable trail themes (Accent, Rainbow, Fire, Ice, Aurora, Galaxy, Neon)</li>
+    <li>Devanagari + Bengali + Tamil + Telugu + 4 more Indic scripts via 63-script transliteration; RTL Arabic shaper; Persian / Urdu / Hebrew normalisers; bundled Noto Nastaliq Urdu for Urdu subtype key labels</li>
+    <li>Voice input via FUTO Voice Input handoff (preferred); local Whisper/Vosk catalog and route selector ship preview-only until the local recognizer runtime lands</li>
+    <li>Emoji search / history / pinned-groups palette; bundled local sticker packs; user-imported SAF sticker folders for PNG / WebP / JPEG / GIF; rich-content <tt>commitContent</tt> path</li>
 </ul>
+
+<p><b>Privacy and security:</b></p>
+<ul>
+    <li>No <tt>INTERNET</tt> permission — build-gate enforced</li>
+    <li>No vendor account — Microsoft, Google, Samsung, or otherwise</li>
+    <li>Personal dictionary encrypted at rest (SQLCipher 4.16.0 + Google Tink + AndroidKeystore AES-256-GCM)</li>
+    <li>Sensitive-clip and incognito-field guards across cut/copy/paste, voice handoff, and learning</li>
+    <li><tt>FLAG_SECURE</tt> on password fields blocks screenshots / screen recording during credential entry</li>
+    <li>First-run AI/ML transparency screen + reopenable Settings → About → AI features explainer</li>
+    <li>Reproducible-build verification in CI; 16 KB native page alignment for Android 15+; weekly OSV CVE scan; signature-protected addon enrolment</li>
+</ul>
+
+<p><b>21 bundled themes</b> — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier/Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha, plus selectable honeycomb hex layout. Per-app accent (opt-in, no extra permissions).</p>
+
+<p><b>Productivity:</b> calendar quick-insert (explicit <tt>READ_CALENDAR</tt> opt-in, today + next 7 days), task quick-insert to any Intent.ACTION_SEND target (Tasks.org, OpenTasks, Joplin, Notion, Markor), Tasker integration, MCP daemon bridge for local-LLM tool calls.</p>
+
+<p><b>Form factors:</b> floating mode, split mode (tablets ≥ 600dp), one-handed mode, dynamic font scaling, hardware keyboard layout import (Windows KLC, macOS .keylayout, Keyman LDML / .kmp).</p>
+
+<p><b>Distribution:</b> GitHub Releases (canonical), Obtainium one-tap subscribe URL, F-Droid (reproducible-build verification in progress). Not on Google Play by design — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture.</p>
