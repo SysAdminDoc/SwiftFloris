@@ -2,6 +2,51 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.175"></a>
+## v1.8.175
+
+Released: 2026-05-25
+
+### F-Droid Metadata Rewrite (RESEARCH_FEATURE_PLAN.md F1)
+
+The repo's `fastlane/metadata/android/en-US/` content was inherited verbatim from upstream FlorisBoard v0.3.16 era and never updated. As of v1.8.173 the F-Droid listing would have published `title=FlorisBoard`, `short_description="An open-source keyboard which respects your privacy. Currently in beta."`, and a `full_description` that opens with `<i>FlorisBoard</i>`. The latest `changelogs/86.txt` body read `Detailed changelog: https://github.com/florisboard/florisboard/releases/tag/v0.3.16` while `gradle.properties` was on `projectVersionCode=1973`. Any user reaching SwiftFloris through F-Droid (or through the pending `fdroiddata` PR) would see stale upstream FlorisBoard branding. This is the single highest-leverage brand-identity bug the 2026-05-25 research pass surfaced, and the SwiftKey-refugee migration window closes 2026-05-31.
+
+### Changes
+
+- **`fastlane/metadata/android/en-US/title.txt`** — `FlorisBoard` → `SwiftFloris` (11 chars, under F-Droid's 50-char cap).
+- **`fastlane/metadata/android/en-US/short_description.txt`** — Upstream "Currently in beta" copy replaced with `Privacy-first Android keyboard. Apache-2.0. No INTERNET. No accounts.` (69 chars, under the 80-char cap). Mirrors the README §1 wedge claim.
+- **`fastlane/metadata/android/en-US/full_description.txt`** — Rewritten against v1.8.175 reality: no-INTERNET build gate, SwiftKey-migration window, typing features (SymSpell d1+d2, bigram/trigram, bilingual subtypes, glide trail themes), 63-script transliteration coverage, voice/emoji/stickers, privacy posture (SQLCipher + Tink + AndroidKeystore, FLAG_SECURE, reproducible-build CI), 21 themes including honeycomb hex, productivity actions (calendar/task quick-insert, Tasker, MCP daemon bridge), form factors (floating/split/one-handed, hardware-keyboard import), and the Obtainium-first distribution model. Replaces the upstream FlorisBoard `<ul>` feature list.
+- **`fastlane/metadata/android/en-US/changelogs/1974.txt`** — backfills the v1.8.174 entry under 500 chars so the previous release ships with its own listing changelog.
+- **`scripts/check-fastlane-metadata.sh`** — new CI gate that rejects metadata drift. Enforces: (a) title.txt ≤ 50 chars + not empty + does not contain `FlorisBoard`; (b) short_description.txt ≤ 80 chars + not empty; (c) full_description.txt not empty; (d) for the current `projectVersionCode`, a matching `changelogs/<code>.txt` file exists, is non-empty, and is ≤ 500 chars. The forward-going contract: every `gradle.properties` versionCode bump ships with its own per-versionCode changelog file extracted from the matching `## vX.Y.Z` section of `CHANGELOG.md`.
+- **`.github/workflows/android.yml`** — calls `scripts/check-fastlane-metadata.sh` immediately after the repo-hygiene check, so PRs that bump `projectVersionCode` without writing a matching changelog fail visibly.
+
+### Out of Scope
+
+- Translation of metadata to other locales. The upstream `values-*` Crowdin pipeline covers in-app strings; the fastlane metadata directory currently ships only `en-US/`. Adding `de-DE/`, `es/`, `fr/`, etc. is a separate slice and depends on F-Droid metadata locale conventions.
+- The actual `fdroiddata` submission PR. The build-server YAML template lives in `docs/REPRODUCIBLE_BUILDS.md`. RESEARCH_FEATURE_PLAN.md F12 tracks the submission as P2 because the package-id collision with upstream FlorisBoard's existing F-Droid listing (`dev.patrickgold.florisboard.beta`) needs maintainer-level disambiguation first.
+- Backfilling older versionCode changelogs. The fastlane convention reads changelogs per versionCode going forward; only the current one is gate-required. The existing FlorisBoard upstream changelogs from `12.txt` through `86.txt` are left in place as historical context.
+
+### Verification
+
+- `bash scripts/check-fastlane-metadata.sh` → `OK (versionCode 1975, title=11 chars, short=69 chars, changelog=...)` once the v1.8.175 changelog file lands (see below).
+- Negative test: `sed -i 's/projectVersionCode=1974/projectVersionCode=9999/' gradle.properties && bash scripts/check-fastlane-metadata.sh` exits 1 with the missing-changelog error. Confirmed.
+- Negative test: `echo 'FlorisBoard' > fastlane/metadata/android/en-US/title.txt && bash scripts/check-fastlane-metadata.sh` would exit 1 (gate rejects the upstream name).
+- Gradle gates deferred to maintainer host per [`CLAUDE.md`](CLAUDE.md).
+
+### Files Touched
+
+- `fastlane/metadata/android/en-US/title.txt`
+- `fastlane/metadata/android/en-US/short_description.txt`
+- `fastlane/metadata/android/en-US/full_description.txt`
+- `fastlane/metadata/android/en-US/changelogs/1974.txt` (new)
+- `fastlane/metadata/android/en-US/changelogs/1975.txt` (new — for this release)
+- `scripts/check-fastlane-metadata.sh` (new)
+- `.github/workflows/android.yml` (call the new gate)
+- `gradle.properties` (versionCode 1974→1975, versionName 1.8.174→1.8.175)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F1)
+
 <a id="v1.8.174"></a>
 ## v1.8.174
 

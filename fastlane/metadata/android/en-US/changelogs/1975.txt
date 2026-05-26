@@ -1,0 +1,5 @@
+v1.8.175 — F-Droid metadata rewrite + listing CI gate.
+
+The repo's fastlane metadata had not been updated since the FlorisBoard v0.3.16-era fork (title "FlorisBoard", description "Currently in beta", FlorisBoard upstream changelogs). Rewrote title, short_description, and full_description against v1.8.175 reality, added a per-versionCode changelog convention, and wired scripts/check-fastlane-metadata.sh into CI to reject future drift.
+
+No app code, permissions, or runtime behaviour changed.

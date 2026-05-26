@@ -727,12 +727,12 @@ The roadmap below is **additive** to [`ROADMAP.md`](ROADMAP.md) and [`IMPROVEMEN
 
 ### Phase 1 — Migration window (now → 2026-05-31)
 
-- [ ] **P0** — F1 — Fastlane / F-Droid metadata rewrite + version-tracker CI gate
-  - Why: F-Droid listing currently reads `FlorisBoard` `currently in beta` with FlorisBoard v0.3.16-era changelogs; submission would torpedo SwiftKey-window outreach
-  - Evidence: `fastlane/metadata/android/en-US/title.txt`, `short_description.txt`, `full_description.txt`, `changelogs/*.txt`
-  - Touches: `fastlane/metadata/android/en-US/*`, `scripts/check-fastlane-metadata.sh` (new), `.github/workflows/android.yml`
-  - Acceptance: title=`SwiftFloris`; changelogs/1973.txt exists (≤500 chars, extracted from CHANGELOG.md#v1.8.173); CI fails when a versionCode bump has no matching changelog
-  - Verify: `bash scripts/check-fastlane-metadata.sh && cat fastlane/metadata/android/en-US/title.txt`
+- [x] **P0** — F1 — Fastlane / F-Droid metadata rewrite + version-tracker CI gate — **shipped v1.8.175 (2026-05-25)**
+  - Why: F-Droid listing was reading `FlorisBoard` `Currently in beta` with FlorisBoard v0.3.16-era changelogs through v1.8.173
+  - Evidence: pre-v1.8.175 `fastlane/metadata/android/en-US/title.txt` = `FlorisBoard`; `short_description.txt` = "An open-source keyboard which respects your privacy. Currently in beta."; latest changelog file was `86.txt` pointing at FlorisBoard v0.3.16
+  - Touches: `fastlane/metadata/android/en-US/title.txt|short_description.txt|full_description.txt`, `fastlane/metadata/android/en-US/changelogs/{1974,1975}.txt` (new), `scripts/check-fastlane-metadata.sh` (new), `.github/workflows/android.yml`
+  - Acceptance: title=`SwiftFloris`; both v1.8.174 and v1.8.175 changelogs present (≤500 chars); CI gate rejects future versionCode bumps without a matching changelog, and rejects re-introduction of `FlorisBoard` in the title
+  - Verify: `bash scripts/check-fastlane-metadata.sh` → `OK (versionCode 1975, title=11 chars, short=69 chars, changelog=496 chars)`; negative tests pass
 
 - [x] **P0** — F2 — Repo-root binary purge + hygiene gate extension — **shipped v1.8.174 (2026-05-25)**
   - Why: 10+ MB of root-level stale artifacts (`app-release-v1.5.2.apk`, `SwiftFloris_icon.png`, `ROADMAP.md.backup-v2`)

@@ -50,6 +50,15 @@ jobs:
       - name: Check repo hygiene
         run: bash scripts/check-repo-hygiene.sh
 
+      - name: Check fastlane / F-Droid metadata
+        # F-Droid build server reads fastlane/metadata/android/en-US/ for the
+        # listing title, descriptions, and per-versionCode changelog. If those
+        # files drift behind gradle.properties, the listing's "What's New"
+        # falls back to a stale prior changelog. See RESEARCH_FEATURE_PLAN.md
+        # F1 + the v1.8.175 release notes for the historical rationale (the
+        # tree shipped FlorisBoard v0.3.16-era metadata through v1.8.173).
+        run: bash scripts/check-fastlane-metadata.sh
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:

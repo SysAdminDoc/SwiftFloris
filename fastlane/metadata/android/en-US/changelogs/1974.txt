@@ -1,0 +1,5 @@
+v1.8.174 — repository hygiene gate extension.
+
+Untracked stale root-level artefacts (SwiftFloris_icon.png, ROADMAP.md.backup-v2) and extended scripts/check-repo-hygiene.sh to reject regressions: *.apk, *.aab, *.jks, *.keystore, local.properties, *.backup*, *.bak, and root-level PNGs > 200 KB.
+
+No user-facing behaviour, permissions, dependencies, or persisted-data formats changed.
