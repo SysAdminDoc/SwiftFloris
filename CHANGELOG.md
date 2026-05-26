@@ -2,6 +2,44 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.186"></a>
+## v1.8.186
+
+Released: 2026-05-25
+
+### Remove vestigial locked-off smartbar toggle (RESEARCH_FEATURE_PLAN.md F41)
+
+Settings → Smartbar previously surfaced a permanently-disabled `Auto-expand/collapse` `SwitchPreference` (`SmartbarScreen.kt:76-87`) whose `summary_locked` string explained that the option was no longer available. The block carried a `TODO: schedule to remove this preference in the future, but keep it for now so users know why the setting is not available anymore` comment plus an orphaned `SideEffect { /* prefs.smartbar.sharedActionsAutoExpandCollapse.set(true) */ }` with a commented-out body. The transitional explanation has long outlived its purpose — current users (especially SwiftKey refugees post-2026-05-31) never saw the prior behaviour and the locked-off switch only adds visual clutter to the Smartbar settings list.
+
+### Changes
+
+- **`app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/smartbar/SmartbarScreen.kt`** — removed the `SideEffect { … }` block, the `SwitchPreference(prefs.smartbar.sharedActionsAutoExpandCollapse, …, enabledIf = { false }, …)` block, and the `// TODO: schedule to remove this preference …` comment that explained the workaround. Left a brief note recording the v1.8.186 cleanup so a future contributor can see why the preference key remains in `AppPrefs.kt` while no UI surfaces it.
+- **`app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/smartbar/SmartbarScreen.kt`** — removed the now-unused `import androidx.compose.runtime.SideEffect`.
+- **`app/src/main/res/values/strings.xml`** — deleted the three unused English strings: `pref__smartbar__shared_actions_auto_expand_collapse__label` ("Auto-expand/collapse"), `pref__smartbar__shared_actions_auto_expand_collapse__summary` ("Automatically show or hide shared actions based on typing state"), and `pref__smartbar__shared_actions_auto_expand_collapse__summary_locked` ("Always enabled to keep shared actions predictable.").
+
+### What is intentionally not done
+
+- **The `prefs.smartbar.sharedActionsAutoExpandCollapse` entry in `AppPrefs.kt:939` stays** with its `@Deprecated("Always enabled due to UX issues")` annotation. Saved user values written before this release deserialize cleanly against the same key; removing the AppPrefs declaration would force a JetPref schema migration for no functional benefit since no code path reads the value any more.
+- **The translated `pref__smartbar__shared_actions_auto_expand_collapse__*` strings in `values-*/strings.xml`** (24 locales) are not touched in this slice. They would become "unused resources" lint warnings if Crowdin re-imports them, but a `crowdin-upload.yml` sweep on the next strings push will drop them from the Crowdin source side, and the `values-*` files will catch up over the next sync cycle. The existing lint baseline drift script (`scripts/run-lint-debug-with-baseline-check.sh`) will surface the new unused-resource entries so the cleanup is auditable.
+
+### Verification
+
+- `grep -rn "sharedActionsAutoExpandCollapse\|shared_actions_auto_expand_collapse" app/src/main/kotlin/` returns only the `@Deprecated` `AppPrefs.kt:939` entry (intentionally retained).
+- `grep -rn "shared_actions_auto_expand_collapse" app/src/main/res/values/` returns no matches.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1986).
+- Gradle build deferred to maintainer host per `CLAUDE.md`. The deleted UI block had no consumers other than the now-removed `SideEffect`; removing it cannot cause a compile-time break.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/smartbar/SmartbarScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/1986.txt` (new)
+- `gradle.properties` (versionCode 1985→1986, versionName 1.8.185→1.8.186)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F41)
+
 <a id="v1.8.185"></a>
 ## v1.8.185
 

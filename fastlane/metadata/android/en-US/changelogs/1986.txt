@@ -1,0 +1,5 @@
+v1.8.186 — remove vestigial locked-off smartbar toggle.
+
+Settings → Smartbar previously surfaced a permanently-disabled "Auto-expand/collapse" SwitchPreference whose summary explained the option was no longer available. The transitional explanation is no longer needed. Removed the SwitchPreference, orphaned SideEffect block + import, and the two unused English label strings. The @Deprecated AppPrefs entry stays for saved-value compat.
+
+No functional change.

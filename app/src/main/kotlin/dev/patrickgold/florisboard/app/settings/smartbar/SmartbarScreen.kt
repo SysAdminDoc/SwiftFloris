@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.app.settings.smartbar
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.SideEffect
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
@@ -73,18 +72,11 @@ fun SmartbarScreen() = FlorisScreen {
                         prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_EXTENDED
                 },
             )
-            // TODO: schedule to remove this preference in the future, but keep it for now so users
-            //  know why the setting is not available anymore. Also force enable it for UI display.
-            SideEffect {
-                // prefs.smartbar.sharedActionsAutoExpandCollapse.set(true)
-            }
-            SwitchPreference(
-                prefs.smartbar.sharedActionsAutoExpandCollapse,
-                title = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__label),
-                summary = stringRes(R.string.pref__smartbar__shared_actions_auto_expand_collapse__summary_locked),
-                enabledIf = { false },
-                visibleIf = { prefs.smartbar.layout isEqualTo SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED },
-            )
+            // Note: prefs.smartbar.sharedActionsAutoExpandCollapse (deprecated)
+            // is intentionally not surfaced. The transitional locked-off switch
+            // that explained the prior behaviour was removed in v1.8.186; the
+            // preference key remains in AppPrefs so saved user values continue
+            // to deserialize cleanly.
             ListPreference(
                 listPref = prefs.smartbar.extendedActionsPlacement,
                 title = stringRes(R.string.pref__smartbar__extended_actions_placement__label),
