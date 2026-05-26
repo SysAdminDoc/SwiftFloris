@@ -1,0 +1,5 @@
+v1.8.178 — explicit release-time CI gates: verifyDataExtractionRules + zipalign on release APK.
+
+verifyDataExtractionRules already fires transitively via preBuild; calling it explicitly in android.yml and release.yml makes the green/red signal legible. release.yml now runs zipalign -P 16 against the release APK before SHA-256 capture (previously only the debug variant was alignment-checked in android.yml).
+
+No app code or behaviour changes.

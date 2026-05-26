@@ -2,6 +2,41 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.178"></a>
+## v1.8.178
+
+Released: 2026-05-25
+
+### CI: explicit verifyDataExtractionRules + release-variant zipalign (RESEARCH_FEATURE_PLAN.md F25 + F26)
+
+Two release-time CI signals were firing transitively but not as visible workflow steps. v1.8.178 promotes both to explicit steps.
+
+### Changes
+
+- **`.github/workflows/android.yml`** — added an explicit `Verify data-extraction rules` step calling `:app:verifyDataExtractionRules`. The gate already fires from `preBuild` (registered in `app/build.gradle.kts:364-430`), but a transitive trigger means a failure surfaces under `Build debug APK` instead of its own step, making the workflow log harder to scan and the run-summary signal less legible. The explicit step also documents the contract in CI for future contributors auditing the workflow.
+- **`.github/workflows/release.yml`** — added the same explicit `Verify data-extraction rules` step before `Run unit tests`. A release flow that skipped this gate could ship a tagged build with regressed extraction excludes; calling it explicitly closes the gap.
+- **`.github/workflows/release.yml`** — added a `16 KB native-library alignment guard (release variant)` step immediately after `Locate release APK` and before `Compute SHA-256 manifest`. `android.yml` ran `zipalign -P 16` on the debug APK every PR, but the release variant applies R8 minify/shrink and uses different signing — its native `.so` layout was not transitively validated by the debug build. The new step runs `zipalign -c -P 16 -v 4` against the located release APK and fails with a clear `::error::` if any `.so` is aligned to less than 16 KB. No-op for SwiftFloris today (zero native libs in the release variant), but engages the moment any of Next-2 (whisper.cpp), N1.2 (CleverKeys ONNX), L1 (LiteRT-LM addon-tier integration), or L7 (MCP daemon) brings native code into the release path.
+
+### Why now
+
+The 2026-05-25 build/CI reconnaissance pass found that `verifyDataExtractionRules` fired only transitively via preBuild, and `zipalign -P 16` ran only on debug. Both are load-bearing gates per the project's invariants (data_extraction_rules.xml pins the personal-dictionary + clipboard backup excludes; 16 KB alignment is required by Google Play after 2025-11-01 for target-Android-15+ APKs). Adding explicit release-time steps closes the residual gap before the F-Droid `Reproducible` tier submission opens its review.
+
+### Verification
+
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1978).
+- Gradle gates deferred to maintainer host per `CLAUDE.md`. The `:app:verifyDataExtractionRules` task is registered at `app/build.gradle.kts:364-430` and wired into `preBuild` at lines 426-430, so an explicit call adds no new compile / runtime risk.
+
+### Files Touched
+
+- `.github/workflows/android.yml` (explicit verifyDataExtractionRules step)
+- `.github/workflows/release.yml` (explicit verifyDataExtractionRules step + release-variant zipalign)
+- `fastlane/metadata/android/en-US/changelogs/1978.txt` (new)
+- `gradle.properties` (versionCode 1977→1978, versionName 1.8.177→1.8.178)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F25 + F26)
+
 <a id="v1.8.177"></a>
 ## v1.8.177
 
