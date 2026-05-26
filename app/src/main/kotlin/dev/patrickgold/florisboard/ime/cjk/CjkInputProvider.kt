@@ -30,11 +30,14 @@ import kotlinx.serialization.Serializable
  * The de-facto open implementation is **librime** (BSD-3) — the
  * conversion engine behind fcitx5 on Linux and the iOS App Store's
  * Squirrel-derived inputs. Wiring librime into Android needs JNI to
- * its C++ runtime; that work lives in an out-of-tree addon
- * (`addons/cjk-librime/`) that registers a concrete
- * [CjkInputProvider] with [CjkInputProviderRegistry]. The IME-side
- * surface stays this facade so the candidate-row + per-keystroke
- * dispatch can ship and be tested independently from the JNI bring-up.
+ * its C++ runtime; that work lives in an **out-of-tree signed addon
+ * APK** (slated identifier `cjk-librime`, distributed via GitHub
+ * Releases / Obtainium / F-Droid alongside SwiftFloris, never bundled
+ * into `:app`) that registers a concrete [CjkInputProvider] with
+ * [CjkInputProviderRegistry] through the `AddonContract.Action.REGISTER_*`
+ * enrolment path. The IME-side surface stays this facade so the
+ * candidate-row + per-keystroke dispatch can ship and be tested
+ * independently from the JNI bring-up.
  *
  * Three concrete provider classes are expected (L3.1–L3.3 in ROADMAP):
  *  - L3.1 Mandarin Pinyin / Cantonese Jyutping / Mandarin Zhuyin via

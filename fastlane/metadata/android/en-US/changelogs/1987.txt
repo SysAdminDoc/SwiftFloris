@@ -1,0 +1,5 @@
+v1.8.187 — clarify addon-path facade docstrings.
+
+Four facade Kotlin files (CjkInputProvider, StrokeRecognizer, SmartComposeProvider, InlineTranslator) referenced "out-of-tree addon" paths like addons/cjk-librime/. No addons/ directory exists; the references misled contributors. Rewrote each to say "out-of-tree signed addon APK" via the AddonContract enrolment path.
+
+Doc-comment only; no code change.

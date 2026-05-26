@@ -24,12 +24,14 @@ package dev.patrickgold.florisboard.ime.handwriting
  * `RemoteModelManager.download(...)` requires `INTERNET` at runtime,
  * which would break the §1 no-network promise that this IME's F-Droid
  * privacy review depends on. Instead, this facade defines the
- * stroke-recogniser contract; an out-of-tree **addon module**
- * (Next-4.2a — slated to live in `addons/handwriting-mlkit/`) provides
- * the actual ML Kit binding, and that module ships as a *separate*
- * APK the user explicitly opts into installing — at which point the
- * addon enumerator (Next-10.2) registers it as a recogniser provider
- * and the IME consumes its output through this same interface.
+ * stroke-recogniser contract; an **out-of-tree signed addon APK**
+ * (Next-4.2a — slated identifier `handwriting-mlkit`, distributed via
+ * GitHub Releases / Obtainium / F-Droid alongside SwiftFloris, never
+ * bundled into `:app`) provides the actual ML Kit binding. The user
+ * explicitly opts into installing the addon — at which point the addon
+ * enumerator (Next-10.2) registers it as a recogniser provider through
+ * the `AddonContract.Action.REGISTER_*` enrolment path and the IME
+ * consumes its output through this same interface.
  *
  * Until an addon registers a real implementation, [Default] is used:
  * it accepts strokes but returns `NoRecognition` so the IME falls

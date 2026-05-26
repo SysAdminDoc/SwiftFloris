@@ -28,13 +28,14 @@ import kotlinx.serialization.Serializable
  * multi-MB native runtime + GPU/NPU/CPU backend dispatch + KV-cache
  * management — too large to embed in the base APK that ships on
  * F-Droid. Like ML Kit Digital Ink (Next-4.2), the actual LiteRT-LM
- * binding lives in an out-of-tree **addon module** (L1.1a — planned at
- * `addons/smart-compose-litert/`) that the user explicitly opts into
- * installing. Once that addon is registered through the existing
- * `AddonContract` plumbing (Next-10.x), it calls
- * [SmartComposeProviderRegistry.setActive] with a real implementation
- * and the IME's typing pipeline consumes its output through this
- * interface.
+ * binding lives in an **out-of-tree signed addon APK** (L1.1a — slated
+ * identifier `smart-compose-litert`, distributed via GitHub Releases /
+ * Obtainium / F-Droid alongside SwiftFloris, never bundled into `:app`)
+ * that the user explicitly opts into installing. Once that addon is
+ * registered through the `AddonContract.Action.REGISTER_*` enrolment
+ * path (Next-10.x), it calls [SmartComposeProviderRegistry.setActive]
+ * with a real implementation and the IME's typing pipeline consumes its
+ * output through this interface.
  *
  * The facade exposes the minimal surface the keyboard needs:
  *  - [predictNextTokens]  — given the typing context, return ranked
