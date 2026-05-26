@@ -2,6 +2,62 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.177"></a>
+## v1.8.177
+
+Released: 2026-05-25
+
+### Supply-chain hardening (RESEARCH_FEATURE_PLAN.md F19 + F20)
+
+The 2026-05-25 build/CI reconnaissance pass found that 7 of 8 GitHub Actions workflows used floating major-tag pins (e.g. `actions/checkout@v4`, `gradle/actions/setup-gradle@v4`, `reactivecircus/android-emulator-runner@v2`, `google/osv-scanner-action@v2.0.2`). A floating tag's underlying commit can be re-pointed by the action's owner after the fact; a compromise of any action's repo would re-point the tag at malicious code, and the next CI run on SwiftFloris would execute it. Only `crowdin-upload.yml` and `validate-strings-no-translations.yml` already SHA-pinned. Additionally, `release.yml`'s OSV-Scanner step downloaded the v2.0.2 binary via curl without SHA-256 verification — a CDN-level swap would similarly run unverified code on the runner.
+
+### Changes
+
+- **SHA-pinned every third-party action across all 8 workflows.** The mapping (each replacement is exact `action@tag` → `action@<sha> # tag`):
+  - `actions/checkout@v4` → `@34e114876b0b11c390a56381ad16ebd13914f8d5`
+  - `actions/setup-java@v4` → `@c1e323688fd81a25caa38c78aa6df2d33d3e20d9`
+  - `actions/upload-artifact@v4` → `@ea165f8d65b6e75b540449e92b4886f43607fa02`
+  - `actions/dependency-review-action@v4` → `@4901385134134e04cec5fbe5ddfe3b2c5bd5d976`
+  - `gradle/actions/wrapper-validation@v4` → `@48b5f213c81028ace310571dc5ec0fbbca0b2947`
+  - `gradle/actions/setup-gradle@v4` → `@48b5f213c81028ace310571dc5ec0fbbca0b2947`
+  - `lukka/get-cmake@v4.0.2` → `@ea004816823209b8d1211e47b216185caee12cc5`
+  - `google/osv-scanner-action/osv-scanner-action@v2.0.2` → `@e69cc6c86b31f1e7e23935bbe7031b50e51082de`
+  - `reactivecircus/android-emulator-runner@v2` → `@e89f39f1abbbd05b1113a29cf4db69e7540cae5a`
+  SHAs were resolved via `gh api repos/<owner>/<repo>/git/refs/tags/<tag>` against the live GitHub API on the run date; annotated tags were dereferenced one level to the underlying commit object.
+- **SHA-256-pinned the `osv-scanner` v2.0.2 binary in `.github/workflows/release.yml`.** Added an `OSV_BINARY_SHA256` env on the OSV scan step (value `3abcfd7126c453a00421487e721b296e0cb68085bd431d6cef60872774170fc8`); the step now runs `sha256sum` against the downloaded binary and refuses to execute on mismatch with a clear `::error::` message. A future bump to `v2.x.y` requires re-recording the digest alongside the URL bump.
+
+### Verification
+
+- `grep -rn "uses: [a-zA-Z0-9_/.-]\+@v" .github/workflows/` returns no matches (no unpinned actions remain at HEAD).
+- `grep -rn "uses: " .github/workflows/` returns 41 references, all carrying `@<sha> # <tag>` form.
+- `curl -sSL .../osv-scanner_linux_amd64 | sha256sum` was computed off-runner to confirm the env value: `3abcfd7126c453a00421487e721b296e0cb68085bd431d6cef60872774170fc8`.
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1977).
+
+### Bump guidance
+
+To bump an action across the project:
+1. Pick the new version tag.
+2. Resolve the commit SHA via `gh api repos/<owner>/<repo>/git/refs/tags/<tag>` (dereference annotated tags).
+3. Replace every occurrence of the old SHA with the new SHA; update the trailing `# vN.Y` comment to match.
+4. If the new tag changes major version, treat as a breaking change and run the workflow on a draft branch first.
+
+### Files Touched
+
+- `.github/workflows/android.yml`
+- `.github/workflows/dependency-scan.yml`
+- `.github/workflows/emulator-smoke.yml`
+- `.github/workflows/reproducible-build.yml`
+- `.github/workflows/release.yml` (SHA-pins + OSV binary verification)
+- `.github/workflows/roborazzi-baseline.yml`
+- `.github/workflows/crowdin-upload.yml`
+- `.github/workflows/validate-strings-no-translations.yml`
+- `fastlane/metadata/android/en-US/changelogs/1977.txt` (new)
+- `gradle.properties` (versionCode 1976→1977, versionName 1.8.176→1.8.177)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F19 + F20)
+
 <a id="v1.8.176"></a>
 ## v1.8.176
 

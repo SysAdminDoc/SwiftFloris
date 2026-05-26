@@ -1,0 +1,5 @@
+v1.8.177 — supply-chain: SHA-pin every third-party GitHub Action + osv-scanner binary.
+
+Replaced floating tag references (@v4, @v2, @v2.0.2, @v4.0.2) with full commit-SHA pins for actions/checkout, actions/setup-java, actions/upload-artifact, actions/dependency-review-action, gradle/actions/{wrapper-validation,setup-gradle}, lukka/get-cmake, google/osv-scanner-action, and reactivecircus/android-emulator-runner. Pinned osv-scanner v2.0.2 binary by SHA-256.
+
+No user-facing behaviour changes.
