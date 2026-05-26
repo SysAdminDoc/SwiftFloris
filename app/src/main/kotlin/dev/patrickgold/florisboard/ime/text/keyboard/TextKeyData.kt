@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.Unicode
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.lowercase
 import dev.patrickgold.florisboard.lib.uppercase
 import kotlinx.serialization.SerialName
@@ -634,7 +635,15 @@ class MultiTextKeyData(
                 append(label)
             } else {
                 for (codePoint in codePoints) {
-                    try { appendCodePoint(codePoint) } catch (_: Throwable) { }
+                    try {
+                        appendCodePoint(codePoint)
+                    } catch (t: Throwable) {
+                        // appendCodePoint rejects invalid code points (negative, > U+10FFFF, or
+                        // unpaired surrogate halves). Skip the malformed entry but log so a
+                        // bad MultiTextKeyData asset surfaces during dev-build triage instead
+                        // of silently producing a missing glyph in production.
+                        flogWarning { "MultiTextKeyData.asString: dropping invalid code point $codePoint: ${t.javaClass.simpleName}" }
+                    }
                 }
             }
         }
@@ -653,7 +662,14 @@ internal fun asString(data: KeyData, isForDisplay: Boolean) : String {
             }
             append(data.label)
         } else {
-            try { appendCodePoint(data.code) } catch (_: Throwable) { }
+            try {
+                appendCodePoint(data.code)
+            } catch (t: Throwable) {
+                // Same surrogate-half / out-of-range rejection class as MultiTextKeyData
+                // above; log so a malformed KeyData lights up dev-build triage instead of
+                // silently dropping the glyph.
+                flogWarning { "asString(KeyData): dropping invalid code point ${data.code}: ${t.javaClass.simpleName}" }
+            }
         }
     }
 }

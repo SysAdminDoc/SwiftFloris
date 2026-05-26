@@ -1020,7 +1020,7 @@ The items above promote to:
 
 - [ ] **P2** — F31 — **Per-app language auto-switch via `LocaleManager.getApplicationLocales`** (opt-in). Touches: `ime/core/`, new `app/settings/localization/PerAppLanguageScreen.kt`. Complexity: M.
 
-- [ ] **P2** — F32 — **Empty `try/catch (_: Throwable)` audit**. Replace silent drops at `TextKeyData.kt:637/656` and `FlorisImeService.kt:758` with `flogWarning`. Touches: those two files. Complexity: S.
+- [x] **P2** — F32 — **Empty `try/catch (_: Throwable)` audit** — **shipped v1.8.184 (2026-05-25)**. All three sites (`TextKeyData.kt:637`, `TextKeyData.kt:656`, `FlorisImeService.kt:758`) now log via `flogWarning` with the exception class name; the `catch` stays in place because each call site has a legitimate failure mode (malformed code point, missing AndroidInternalR string on OEM builds) — silent swallow is the bug, not the catch itself.
 
 - [~] **P2** — F33 — **Delete dead catalog pins** `coil` and `material-kolor`. **Rejected on investigation (2026-05-25)**: both are actively consumed by sibling library modules — `lib/snygg/build.gradle.kts:103-104` uses `libs.coil.compose` + `libs.coil.gif`, and `lib/color/build.gradle.kts:60` uses `libs.material.kolor`. The original claim came from grepping only `app/` source; the catalog pins are live.
 
