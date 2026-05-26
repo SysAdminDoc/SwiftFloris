@@ -2,6 +2,53 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.180"></a>
+## v1.8.180
+
+Released: 2026-05-25
+
+### Version catalog hygiene (RESEARCH_FEATURE_PLAN.md F34; F33 investigated and rejected)
+
+The 2026-05-25 build/CI reconnaissance pass flagged three hardcoded `testImplementation` coordinate strings in [`app/build.gradle.kts`](app/build.gradle.kts) lines 498–500 (`"androidx.compose.ui:ui-test-junit4"`, `"androidx.test:runner:1.7.0"`, `"junit:junit:4.13.2"`). Hardcoded strings bypass the version catalog, which means Dependabot's grouped Android-runtime / Android-test-tooling update rules (`.github/dependabot.yml`) skip them, and bumps require hand-editing the `.kts` file instead of a single catalog entry.
+
+The same pass also claimed `coil` and `material-kolor` were dead catalog pins (F33). Verification on this run found both are actively consumed by sibling library modules: `lib/snygg/build.gradle.kts:103-104` uses `libs.coil.compose` + `libs.coil.gif`, and `lib/color/build.gradle.kts:60` uses `libs.material.kolor`. The "dead pin" claim came from grepping only `app/`, which missed the sibling modules. F33 is therefore rejected and the catalog entries remain.
+
+### Changes
+
+- **`gradle/libs.versions.toml`** — added three new entries:
+  - `[versions] androidx-test-runner = "1.7.0"`
+  - `[versions] junit4 = "4.13.2"`
+  - `[libraries] androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }`
+  - `[libraries] androidx-compose-ui-test-junit4 = { module = "androidx.compose.ui:ui-test-junit4" }` (no `version.ref` — coordinate is managed by the existing `androidx-compose-bom`)
+  - `[libraries] junit4 = { module = "junit:junit", version.ref = "junit4" }`
+- **`app/build.gradle.kts:498-500`** — replaced the three hardcoded coordinate strings with their new catalog accessors:
+  - `testImplementation("androidx.compose.ui:ui-test-junit4")` → `testImplementation(libs.androidx.compose.ui.test.junit4)`
+  - `testImplementation("androidx.test:runner:1.7.0")` → `testImplementation(libs.androidx.test.runner)`
+  - `testImplementation("junit:junit:4.13.2")` → `testImplementation(libs.junit4)`
+
+### Why JUnit 4 is still pinned
+
+JUnit 4 is **not** a primary test framework here — the project's main test runner is Kotest 6 on JUnit Platform (`useJUnitPlatform()` per the existing `tasks.withType<Test>` block). The JUnit-4 transitive surface stays because Robolectric's `@RunWith(RobolectricTestRunner::class)` rule and Compose's `createComposeRule()` ship as JUnit-4 rules, and `junit-vintage-engine` bridges them onto the JUnit-Platform runner. Pinning `junit:junit:4.13.2` (the last stable JUnit 4) keeps the bridge deterministic. JUnit 5 / JUnit Platform stays the primary runner for new tests.
+
+### Verification
+
+- `bash scripts/check-repo-hygiene.sh` → OK.
+- `bash scripts/check-fastlane-metadata.sh` → OK (versionCode 1980).
+- `git diff gradle/libs.versions.toml` shows only the three additive entries; no edits to existing live pins.
+- `grep -E "implementation\(\"[a-z.]+:[a-z-]+" app/build.gradle.kts` returns no remaining hardcoded coordinate strings.
+- Sibling-module usage confirmed: `grep -rn "libs\.coil\|libs\.material\.kolor" lib/` returns the expected matches in `lib/snygg/build.gradle.kts` and `lib/color/build.gradle.kts`.
+- Gradle compile + Dependabot grouping verification deferred to maintainer host per `CLAUDE.md`.
+
+### Files Touched
+
+- `gradle/libs.versions.toml`
+- `app/build.gradle.kts`
+- `fastlane/metadata/android/en-US/changelogs/1980.txt` (new)
+- `gradle.properties` (versionCode 1979→1980, versionName 1.8.179→1.8.180)
+- `README.md` (version badge)
+- `CHANGELOG.md` (this section)
+- `RESEARCH_FEATURE_PLAN.md` (tick F34, mark F33 rejected with reason)
+
 <a id="v1.8.179"></a>
 ## v1.8.179
 

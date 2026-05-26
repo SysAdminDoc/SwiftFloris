@@ -1021,9 +1021,9 @@ The items above promote to:
 
 - [ ] **P2** — F32 — **Empty `try/catch (_: Throwable)` audit**. Replace silent drops at `TextKeyData.kt:637/656` and `FlorisImeService.kt:758` with `flogWarning`. Touches: those two files. Complexity: S.
 
-- [ ] **P2** — F33 — **Delete dead catalog pins** `coil` and `material-kolor` from `libs.versions.toml`. Update PROJECT_CONTEXT.md §3 to match. Complexity: S.
+- [~] **P2** — F33 — **Delete dead catalog pins** `coil` and `material-kolor`. **Rejected on investigation (2026-05-25)**: both are actively consumed by sibling library modules — `lib/snygg/build.gradle.kts:103-104` uses `libs.coil.compose` + `libs.coil.gif`, and `lib/color/build.gradle.kts:60` uses `libs.material.kolor`. The original claim came from grepping only `app/` source; the catalog pins are live.
 
-- [ ] **P2** — F34 — **Move hard-coded `testImplementation` strings** at `app/build.gradle.kts:498-500` into the version catalog so Dependabot can update them. Complexity: S.
+- [x] **P2** — F34 — **Move hard-coded `testImplementation` strings** at `app/build.gradle.kts:498-500` into the version catalog so Dependabot can update them. Complexity: S. **Shipped v1.8.180 (2026-05-25)** — promoted `androidx-test-runner`, `junit4`, and `androidx-compose-ui-test-junit4` (compose-BOM-managed, no version ref) into `libs.versions.toml`; `app/build.gradle.kts` consumes them via `libs.*` accessors.
 
 - [x] **P2** — F35 — **Refresh `docs/THREAT_MODEL.md`** — currently 105 versions stale. Reflect v1.8.104-122 privacy regressions closed + addon trust pin store. Complexity: M. **Shipped v1.8.176 (2026-05-25)** — added a 20-bullet "What changed since the v1.8.68 baseline" audit-trail section covering v1.8.85 → v1.8.175.
 
