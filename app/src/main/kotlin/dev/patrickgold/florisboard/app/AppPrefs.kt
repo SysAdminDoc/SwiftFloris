@@ -207,6 +207,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             key = "correction__multilingual_suggestions",
             default = true,
         )
+        val heuristicSmartCompose = boolean(
+            key = "correction__heuristic_smart_compose",
+            default = false,
+        )
     }
 
     val devtools = Devtools()

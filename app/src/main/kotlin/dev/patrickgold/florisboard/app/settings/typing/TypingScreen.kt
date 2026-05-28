@@ -151,6 +151,12 @@ fun TypingScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__correction__multilingual_suggestions__label),
                 summary = stringRes(R.string.pref__correction__multilingual_suggestions__summary),
             )
+            SwitchPreference(
+                prefs.correction.heuristicSmartCompose,
+                title = stringRes(R.string.pref__correction__heuristic_smart_compose__label),
+                summary = stringRes(R.string.pref__correction__heuristic_smart_compose__summary),
+                enabledIf = { prefs.suggestion.enabled isEqualTo true },
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__spelling__title)) {

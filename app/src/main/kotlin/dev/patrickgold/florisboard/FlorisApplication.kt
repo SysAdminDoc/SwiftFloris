@@ -113,6 +113,17 @@ class FlorisApplication : Application() {
             // installed. Out-of-tree addon variants can still override
             // via WordStylesRendererRegistry.setActive(...).
             WordStylesRendererRegistry.setActive(WordStylesCanvasRenderer(this))
+            // RESEARCH_FEATURE_PLAN.md F18 — bind the on-device n-gram
+            // heuristic SmartComposeProvider as the baseline so inline
+            // ghost-text works without any LLM addon. Gated at call time by
+            // prefs.correction.heuristicSmartCompose (default off). The debug
+            // provider (below) overrides this on debug builds, and an
+            // out-of-tree LiteRT-LM addon overrides it at enrolment.
+            dev.patrickgold.florisboard.ime.smartcompose.SmartComposeProviderRegistry
+                .setActive(
+                    dev.patrickgold.florisboard.ime.smartcompose
+                        .HeuristicSmartComposeProvider(this),
+                )
             // ROADMAP §0 P1 (debug-only) — wire the debug
             // SmartComposeProvider via reflection so release builds
             // never reference it. The class only exists in
