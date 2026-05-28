@@ -51,9 +51,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   encrypted-at-rest claim in `docs/THREAT_MODEL.md` depends on this; zero coverage today.
 - [ ] **F27** (P1) — `KeyboardManager` unit-test set (≥5 state-transition cases);
   extract a small pure dispatch helper if needed to make it JVM-testable.
-- [ ] **R3** (P1) — Back-fill tests for v1.8.183 (`TOGGLE_AUTOCORRECT` flips
-  `prefs.correction.autoCorrect`) + v1.8.184 (malformed code point emits
-  `flogWarning` without throwing).
+- [x] **R3** (P1) — Back-fill tests for v1.8.184 (malformed code point dropped
+  without throwing). **Shipped v1.8.189 (2026-05-28).** The v1.8.183
+  `TOGGLE_AUTOCORRECT` assertion is delivered with the F27 KeyboardManager
+  harness (next), which it depends on.
 - [ ] **EI5** (P1) — `FlorisEmojiCompat` bind-before-init race regression test +
   runtime guard that fails loudly if the reflected constructor changes shape after
   an emoji2 bump.

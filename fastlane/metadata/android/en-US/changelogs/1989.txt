@@ -1,0 +1,3 @@
+v1.8.189 — test hardening.
+
+Adds a regression test pinning the v1.8.184 fix: malformed key code points are dropped without crashing the layout, valid characters around them are preserved, and the display path falls back to the key label. No user-facing behaviour change.
