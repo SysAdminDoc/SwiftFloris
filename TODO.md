@@ -41,12 +41,11 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
 
 ### A1. Test coverage / correctness floor
 
-- [ ] **F18** (P1) — Heuristic `SmartComposeProvider` consuming the existing
+- [x] **F18** (P1) — Heuristic `SmartComposeProvider` consuming the existing
   trigram/bigram/cold-start chain (replaces no-op `SmartComposeProvider.Default`).
   New `ime/smartcompose/HeuristicSmartComposeProvider.kt` + pref
-  `correction.heuristicSmartCompose` (default off) + registry wiring + JVM test.
-  *Accept:* with the toggle on + confidence-gated, ghost text renders from the
-  trigram chain; provider returns `NoSuggestion` when off / below threshold.
+  `correction.heuristicSmartCompose` (default off) + Settings toggle + registry
+  wiring + JVM test. **Shipped v1.8.188 (2026-05-28).**
 - [ ] **F28 / O7** (P0) — `TinkStringPreferenceCrypto` round-trip test
   (encrypt→decrypt identity, tampered-ciphertext failure, empty string). Every
   encrypted-at-rest claim in `docs/THREAT_MODEL.md` depends on this; zero coverage today.

@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.188"></a>
+## v1.8.188
+
+Released: 2026-05-28
+
+### Inline next-word ghost-text from on-device n-grams, no LLM (RESEARCH_FEATURE_PLAN.md F18)
+
+The smart-compose facade (`SmartComposeProviderRegistry`) shipped with only a no-op `SmartComposeProvider.Default` (returns `NoSuggestion`) and a debug-only lookup-table stub. Inline ghost-text — the SwiftKey-style grey next-word hint, the single most-requested migration feature — therefore never appeared unless the (not-yet-shipped) LiteRT-LM addon was installed.
+
+This release adds a production `HeuristicSmartComposeProvider` that consumes infrastructure already present in `:app`: the per-locale `PersonalTrigramStore` + `PersonalBigramStore` (learned as the user types) with `ColdStartNextWordPriors` as the fresh-install fallback. No model download, no network, no new permission. The provider is bound at app start as the baseline (a debug provider or an out-of-tree LiteRT-LM addon still overrides it via `SmartComposeProviderRegistry.setActive`) and is gated at call time by a new preference, so the Settings switch takes effect immediately.
+
+Confidence is tier-based so it composes with the existing `NlpManager.buildGhostTextCandidate` gate (`confidence >= 0.45f`): a trigram-context hit clears the gate comfortably, a bigram hit clears it narrowly (matching the F5 "trigram ≥ 0.80 or bigram ≥ 0.55" intent), and cold-start priors sit just below the gate so a fresh install does not over-fire before any personal history exists.
+
+### Changes
+
+- **`ime/smartcompose/HeuristicSmartComposeProvider.kt`** (new) — the provider plus a pure, JVM-testable `HeuristicSmartCompose` core (`lastTwoWords`, `confidenceFor`, `buildResult`). The provider reads the personal n-gram stores via `runBlocking` (an in-memory map lookup on the NlpManager background scope, matching the existing editor-path convention) and falls through trigram → bigram → cold-start tiers.
+- **`app/AppPrefs.kt`** — new `correction.heuristicSmartCompose` boolean (`correction__heuristic_smart_compose`, default off).
+- **`app/settings/typing/TypingScreen.kt`** — new "Inline next-word hint" switch under the Correction group, gated on suggestions being enabled.
+- **`FlorisApplication.kt`** — bind `HeuristicSmartComposeProvider` as the baseline provider at boot, before the debug-provider reflection block.
+- **`res/values/strings.xml`** — `pref__correction__heuristic_smart_compose__{label,summary}` (en-US; Crowdin-routed).
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.smartcompose.HeuristicSmartComposeTest"` → 11 cases green (tokenizer, tier gating around 0.45, rank decay, tier preference, `maxCandidates`, `NoSuggestion`).
+- `./gradlew :app:assembleDebug :app:lintDebug` green; `:app:verifyNoInternetPermission` unaffected (no manifest change).
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/HeuristicSmartComposeProvider.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/smartcompose/HeuristicSmartComposeTest.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/typing/TypingScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/1988.txt` (new)
+- `gradle.properties` (versionCode 1987→1988, versionName 1.8.187→1.8.188)
+- `README.md` (version badge)
+- `TODO.md` (F18 ticked)
+
 <a id="v1.8.187"></a>
 ## v1.8.187
 

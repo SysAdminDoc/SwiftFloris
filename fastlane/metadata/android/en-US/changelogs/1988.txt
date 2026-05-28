@@ -1,0 +1,3 @@
+v1.8.188 — inline next-word hint, fully on-device.
+
+A new SmartCompose provider turns the trigram/bigram history you build by typing (plus cold-start phrase priors) into the grey inline next-word hint — SwiftKey-style ghost text — with no model download and no network. Off by default; enable it under Settings → Typing → "Inline next-word hint". Everything stays on your device.
