@@ -1,5 +1,9 @@
 # SwiftFloris Improvement Plan
 
+> **The live open-work list is now [`TODO.md`](TODO.md).** Open workstream items
+> (WS10–WS15 remainders) are consolidated there; this file keeps the full workstream
+> structure + the dated Progress Log. Closed items are in [`CHANGELOG.md`](CHANGELOG.md).
+
 Last updated: 2026-05-18
 
 This plan tracks quality, UX, accessibility, performance, testing, and delivery improvements that sit beside the product roadmap. It is intentionally execution-focused: every item should end in code, tests, docs, or release-process changes.
