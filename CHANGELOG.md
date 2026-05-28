@@ -2,6 +2,35 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.189"></a>
+## v1.8.189
+
+Released: 2026-05-28
+
+### Regression test for malformed-code-point logging (.ai/research/2026-05-25 R3)
+
+The 2026-05-25 second-pass research flagged that the v1.8.174 → v1.8.187 stream shipped 14 commits with zero new tests, calling out v1.8.184 (the `try/catch (_: Throwable)` → `flogWarning` change in `TextKeyData.kt`) as a change that should ship with a sentinel test. This adds that test.
+
+`TextKeyDataMalformedCodePointTest` pins the **observable** guarantee of the v1.8.184 fix: a malformed code point (negative, `> U+10FFFF`, or an unpaired surrogate half) is dropped without throwing, valid code points around it are preserved, valid astral code points round-trip to their surrogate pair, and the display path falls back to the label.
+
+The companion v1.8.183 assertion (`TOGGLE_AUTOCORRECT` flips `prefs.correction.autoCorrect`) is delivered with the `KeyboardManager` test harness in a following release (RESEARCH_FEATURE_PLAN.md F27) rather than here, because asserting the dispatch path requires the Robolectric-backed manager fixture rather than a standalone unit.
+
+### Changes
+
+- **`app/src/test/.../ime/text/keyboard/TextKeyDataMalformedCodePointTest.kt`** (new) — 6 cases against `MultiTextKeyData.asString` + `TextKeyData.asString`.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.text.keyboard.TextKeyDataMalformedCodePointTest"` → 6 cases green. Test-only change; main sources recompiled clean.
+
+### Files Touched
+
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyDataMalformedCodePointTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/1989.txt` (new)
+- `gradle.properties` (versionCode 1988→1989, versionName 1.8.188→1.8.189)
+- `README.md` (version badge)
+- `TODO.md` (R3 ticked)
+
 <a id="v1.8.188"></a>
 ## v1.8.188
 
