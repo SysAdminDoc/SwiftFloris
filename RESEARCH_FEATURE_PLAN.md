@@ -1,5 +1,9 @@
 # SwiftFloris — Research and Feature Plan
 
+> **The live open-work list is now [`TODO.md`](TODO.md).** The open `F#`/`EI#` items
+> from this plan have been consolidated there with their current status; this file is
+> preserved as the sourced research record. Closed items are in [`CHANGELOG.md`](CHANGELOG.md).
+
 **Run date:** 2026-05-25
 **HEAD:** `ad4d8ca` (v1.8.173, released 2026-05-18)
 **Branch:** `master`, 178 commits ahead of origin (push from dev VM blocked, see [CLAUDE.md](CLAUDE.md))

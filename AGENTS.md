@@ -10,6 +10,11 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 
 ## Read this first
 
+**The live open-work list is [`TODO.md`](TODO.md)** — the single source of truth
+for "what needs doing", consolidated from the planning docs below. Completed work
+lives in [`CHANGELOG.md`](CHANGELOG.md). The files below are historical context and
+sourced reasoning; mine them for *why*, but pick the next task from `TODO.md`.
+
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
    project context. Pins the load-bearing invariants, the v1.8.170
    stack, the module layout, the roadmap-file routing, and the current
@@ -71,17 +76,20 @@ No `libjni_latinimegoogle.so`-style swipe blobs. Reproducible builds with
 toolchain pinning (see
 [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md)).
 
-### 4. Per-release file pattern
+### 4. Per-release changelog pattern
 
-Every shipped release writes its own `RELEASE_NOTES_v<MAJOR>.<MINOR>.<PATCH>.md`
-at the repository root. There is no rolled-up `CHANGELOG.md` and there
-should not be. Each note describes intent, files touched, tests added,
-and Definition-of-Done evidence.
+Every shipped release adds a `## vX.Y.Z` section to the consolidated
+[`CHANGELOG.md`](CHANGELOG.md) (newest first, with an `<a id="vX.Y.Z"></a>`
+anchor). This **replaced** the former root-level `RELEASE_NOTES_v*.md`
+file-per-release pattern — do not re-introduce per-release note files. Each
+section describes intent, files touched, tests added, and Definition-of-Done
+evidence. A matching `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
+(≤500 chars; draft ≤480 for headroom) ships alongside, enforced by
+`scripts/check-fastlane-metadata.sh`.
 
-`gradle.properties` `projectVersionCode` + `projectVersionName` bump
-in lockstep with the release-notes commit. Tag the release commit at the
-   same time. Local and remote release tags are current through `v1.8.170`
-as of 2026-05-18.
+`gradle.properties` `projectVersionCode` + `projectVersionName` bump in lockstep
+with the changelog commit. Tag the release commit at the same time
+(`git push --tags`). HEAD is `v1.8.187` (versionCode 1987) as of 2026-05-28.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)
 
@@ -90,7 +98,7 @@ Before marking a roadmap item complete:
 1. `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug` all
    green locally.
 2. Manual QA pass on a real device.
-3. `RELEASE_NOTES_v*.md` file written.
+3. `CHANGELOG.md` `## vX.Y.Z` section written (+ matching fastlane changelog).
 4. `gradle.properties` versionCode + versionName bumped.
 5. New dep / asset → `NOTICE` / `LICENSES/` updated.
 6. APK signed and installable; SHA-256 published.
@@ -130,7 +138,7 @@ commands above.
 
 | If your change is… | Lives in… |
 |---|---|
-| One feature slice, one release | A new `RELEASE_NOTES_vX.Y.Z.md` at repo root + a `gradle.properties` bump |
+| One feature slice, one release | A new `## vX.Y.Z` section in [`CHANGELOG.md`](CHANGELOG.md) + a `gradle.properties` bump + a fastlane changelog |
 | A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
 | A roadmap-tier change (NOW / NEXT / LATER / UNDER CONSIDERATION) | [ROADMAP.md](ROADMAP.md) §6/§7/§8/§9 |
 | A quality / a11y / perf / test / CI / release-hygiene workstream | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
@@ -171,14 +179,21 @@ re-proposed (full reasoning in [ROADMAP.md](ROADMAP.md) §10):
 
 ## Local environment notes
 
-- `git push` to `SysAdminDoc/SwiftFloris` returns 403 from the
-  maintainer's dev VM. **Commit locally only**; the user pushes from a
-  separate host.
-- All SwiftFloris work happens at `Z:\repos\SwiftFloris\`. `Z:\repos\` is
-  the master directory.
-- The maintainer's primary build / test host has the JDK / Android SDK
-  set up; this VM does not. Run gradle commands on the build host before
-  merging.
+Environment capability is **host-dependent** — check before assuming:
+
+- **`git push`**: works from authorized maintainer hosts (the prior
+  "always 403, commit-only" note was specific to one dev VM and is retired —
+  see the global "push from any machine" rule). Auto-commit-and-push per
+  logical change unless told otherwise.
+- **Gradle**: the working host may or may not have a JDK + Android SDK. Where
+  it does (e.g. JDK 21 Temurin + Android SDK platforms 34–36.1 + Gradle 9.5.1),
+  run the full Definition-of-Done verification locally. If the env `JAVA_HOME`
+  points at a stale path, override it inline:
+  `export JAVA_HOME="C:/Program Files/Eclipse Adoptium/jdk-21.0.11.10-hotspot"`.
+  Where it does not, ship the tractable (non-compiling-risk) tier and defer the
+  gradle gates to a host that has the toolchain.
+- The repo root differs per host (`Z:\repos\…`, `C:\Users\…\repos\…`); use the
+  working directory you're invoked in, not a hard-coded path.
 
 ---
 
