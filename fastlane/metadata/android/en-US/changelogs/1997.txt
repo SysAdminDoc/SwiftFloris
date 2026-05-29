@@ -1,0 +1,3 @@
+v1.8.197 — logging consistency.
+
+Routes the personal-dictionary manager's diagnostics through the app's standard Flog system under a new "dictionary" topic, instead of raw Android logging. Failure paths (encrypted-store open/recreate, plaintext→encrypted migration, backup restore) now log with consistent formatting and topic filtering. No user-facing change.

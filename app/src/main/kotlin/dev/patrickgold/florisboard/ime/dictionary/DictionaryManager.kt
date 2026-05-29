@@ -17,12 +17,15 @@
 package dev.patrickgold.florisboard.ime.dictionary
 
 import android.content.Context
-import android.util.Log
 import androidx.room.Room
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.FlorisLocale
+import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.devtools.flogInfo
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -30,7 +33,6 @@ import kotlinx.coroutines.launch
 import java.io.File
 import java.lang.ref.WeakReference
 
-private const val TAG = "DictionaryManager"
 private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
 private const val SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY = 1
 private const val SHORTCUT_MATCH_PRIORITY = 0
@@ -365,7 +367,7 @@ class DictionaryManager private constructor(context: Context) {
             database.userDictionaryDao().queryLanguageList()
             database
         }.getOrElse { error ->
-            Log.w(TAG, "Encrypted user dictionary could not be opened; recreating empty store: ${error.message}")
+            flogWarning(LogTopic.DICTIONARY) { "Encrypted user dictionary could not be opened; recreating empty store: ${error.message}" }
             database.close()
             deleteFlorisUserDictionaryDatabaseFiles(context)
             val replacement = buildEncryptedFlorisUserDictionary(context) ?: return null
@@ -373,7 +375,7 @@ class DictionaryManager private constructor(context: Context) {
                 replacement.userDictionaryDao().queryLanguageList()
                 replacement
             }.getOrElse { replacementError ->
-                Log.w(TAG, "Encrypted user dictionary unavailable after recreation: ${replacementError.message}")
+                flogError(LogTopic.DICTIONARY) { "Encrypted user dictionary unavailable after recreation: ${replacementError.message}" }
                 replacement.close()
                 null
             }
@@ -406,14 +408,14 @@ class DictionaryManager private constructor(context: Context) {
                 plaintextDatabase.close()
             }
         }.getOrElse { error ->
-            Log.w(TAG, "Unable to read plaintext user dictionary for encryption migration: ${error.message}")
+            flogWarning(LogTopic.DICTIONARY) { "Unable to read plaintext user dictionary for encryption migration: ${error.message}" }
             return false
         }
 
         val backups = runCatching {
             moveFlorisUserDictionaryDatabaseFilesAside(context)
         }.getOrElse { error ->
-            Log.w(TAG, "Unable to stage plaintext user dictionary for encryption migration: ${error.message}")
+            flogWarning(LogTopic.DICTIONARY) { "Unable to stage plaintext user dictionary for encryption migration: ${error.message}" }
             return false
         }
 
@@ -430,10 +432,10 @@ class DictionaryManager private constructor(context: Context) {
             }
             encryptedDatabase.close()
             deleteBackedUpFlorisUserDictionaryDatabaseFiles(backups)
-            Log.i(TAG, "Migrated ${entries.size} user dictionary entries to encrypted SQLCipher storage")
+            flogInfo(LogTopic.DICTIONARY) { "Migrated ${entries.size} user dictionary entries to encrypted SQLCipher storage" }
             true
         }.getOrElse { error ->
-            Log.w(TAG, "Encrypted user dictionary migration failed; restoring plaintext store: ${error.message}")
+            flogError(LogTopic.DICTIONARY) { "Encrypted user dictionary migration failed; restoring plaintext store: ${error.message}" }
             encryptedDatabase.close()
             deleteFlorisUserDictionaryDatabaseFiles(context)
             restoreFlorisUserDictionaryDatabaseFiles(backups)
@@ -485,12 +487,12 @@ class DictionaryManager private constructor(context: Context) {
         var restored = true
         for ((original, backup) in backups) {
             if (original.exists() && !original.delete()) {
-                Log.w(TAG, "Could not delete ${original.name} before restoring ${backup.name}")
+                flogWarning(LogTopic.DICTIONARY) { "Could not delete ${original.name} before restoring ${backup.name}" }
                 restored = false
             }
             if (backup.exists()) {
                 if (!backup.renameTo(original)) {
-                    Log.w(TAG, "Could not restore ${backup.name} to ${original.name}")
+                    flogWarning(LogTopic.DICTIONARY) { "Could not restore ${backup.name} to ${original.name}" }
                     restored = false
                 }
             }
@@ -501,7 +503,7 @@ class DictionaryManager private constructor(context: Context) {
     private fun deleteBackedUpFlorisUserDictionaryDatabaseFiles(backups: List<DatabaseFileBackup>) {
         for ((_, backup) in backups) {
             if (backup.exists() && !backup.delete()) {
-                Log.w(TAG, "Could not delete migrated plaintext user dictionary backup ${backup.name}")
+                flogWarning(LogTopic.DICTIONARY) { "Could not delete migrated plaintext user dictionary backup ${backup.name}" }
             }
         }
     }
