@@ -1,0 +1,3 @@
+v1.8.194 — clipboard test hardening.
+
+Adds a property-based test for clipboard storage reconciliation, checking across randomised inputs that no history entry points at a missing file, no stored file is left orphaned, and the cleanup always settles in a single pass. No user-facing change.

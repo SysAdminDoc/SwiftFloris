@@ -2,6 +2,33 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.194"></a>
+## v1.8.194
+
+Released: 2026-05-28
+
+### Property test for clipboard storage reconciliation (RESEARCH_FEATURE_PLAN.md EI6)
+
+`ClipboardStorageReconciliation.plan` decides which history rows, file-info rows, and stored files to drop so the three stores stay consistent. The existing `ClipboardStorageReconciliationTest` is scenario-based; the second pass asked for a property test to catch corner cases (e.g. a row referencing a deleted file colliding with a re-created file).
+
+This adds `ClipboardStorageReconciliationPropertyTest` using Kotest property checking (`kotest-property`, already a dependency) over randomised combinations of history rows, file-info rows, stored-file ids, and provider references (the planner's injectable `providerBackedMediaId` lambda lets this run pure, no Android `Uri`). It asserts impl-independent post-conditions: no surviving history row points at a missing stored file, no stored file survives unreferenced, no file-info row survives unless referenced *and* stored, and — the strongest property — reconciliation converges in a single pass (re-planning the cleaned state yields an empty plan).
+
+### Changes
+
+- **`app/src/test/.../ime/clipboard/ClipboardStorageReconciliationPropertyTest.kt`** (new) — bounded generators (ids 1..8, sizes 0..6) for deterministic shrinking; 4 invariants asserted per generated case.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.clipboard.ClipboardStorageReconciliationPropertyTest"` → green (1000 randomised cases).
+
+### Files Touched
+
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardStorageReconciliationPropertyTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/1994.txt` (new)
+- `gradle.properties` (versionCode 1993→1994, versionName 1.8.193→1.8.194)
+- `README.md` (version badge)
+- `TODO.md` (EI6 ticked)
+
 <a id="v1.8.193"></a>
 ## v1.8.193
 

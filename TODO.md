@@ -66,9 +66,9 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   **Shipped v1.8.193 (2026-05-28).** Reframed: the activity *does* request on
   launch by design (it's launched only from the in-keyboard tap); the real
   invariant is that no third party can launch it.
-- [ ] **EI6** (P2) — Clipboard reconciliation property/parameterized test: no orphan
-  provider files, no DB rows pointing at missing files post-reconciliation.
-  (Use a deterministic JUnit test unless Kotest is already a dep.)
+- [x] **EI6** (P2) — Clipboard reconciliation property test (Kotest property):
+  no dangling rows, no orphan files, single-pass convergence over randomised
+  inputs. **Shipped v1.8.194 (2026-05-28).**
 - [ ] **F40 (test-class phase)** (P2) — Roborazzi screen-level test *classes* for
   `AddonsSettingsScreen`, `McpSettingsScreen`, `TypingStatsScreen`,
   `VoiceInputScreen`, `AiFeaturesScreen`, honeycomb keyboard surface, glide-trail
