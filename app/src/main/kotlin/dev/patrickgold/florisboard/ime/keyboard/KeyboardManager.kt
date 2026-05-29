@@ -47,7 +47,6 @@ import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardKeyDownAction
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardKeyUpAction
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayout
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardRuntimeMapper
-import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
@@ -628,38 +627,22 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
      * Handles a [KeyCode.SHIFT] down event.
      */
     private fun handleShiftDown(data: KeyData) {
-        val prefs = prefs.keyboard.capitalizationBehavior
-        when (prefs.get()) {
-            CapitalizationBehavior.CAPSLOCK_BY_DOUBLE_TAP -> {
-                if (inputEventDispatcher.isConsecutiveDown(data)) {
-                    activeState.inputShiftState = InputShiftState.CAPS_LOCK
-                } else {
-                    if (activeState.inputShiftState == InputShiftState.UNSHIFTED) {
-                        activeState.inputShiftState = InputShiftState.SHIFTED_MANUAL
-                    } else {
-                        activeState.inputShiftState = InputShiftState.UNSHIFTED
-                    }
-                }
-            }
-            CapitalizationBehavior.CAPSLOCK_BY_CYCLE -> {
-                activeState.inputShiftState = when (activeState.inputShiftState) {
-                    InputShiftState.UNSHIFTED -> InputShiftState.SHIFTED_MANUAL
-                    InputShiftState.SHIFTED_MANUAL -> InputShiftState.CAPS_LOCK
-                    InputShiftState.SHIFTED_AUTOMATIC -> InputShiftState.UNSHIFTED
-                    InputShiftState.CAPS_LOCK -> InputShiftState.UNSHIFTED
-                }
-            }
-        }
+        activeState.inputShiftState = ShiftStateMachine.onShiftDown(
+            current = activeState.inputShiftState,
+            behavior = prefs.keyboard.capitalizationBehavior.get(),
+            isConsecutiveDown = inputEventDispatcher.isConsecutiveDown(data),
+        )
     }
 
     /**
      * Handles a [KeyCode.SHIFT] up event.
      */
     private fun handleShiftUp(data: KeyData) {
-        if (activeState.inputShiftState != InputShiftState.CAPS_LOCK && !inputEventDispatcher.isAnyPressed() &&
-            !inputEventDispatcher.isUninterruptedEventSequence(data)) {
-            activeState.inputShiftState = InputShiftState.UNSHIFTED
-        }
+        activeState.inputShiftState = ShiftStateMachine.onShiftUp(
+            current = activeState.inputShiftState,
+            isAnyKeyPressed = inputEventDispatcher.isAnyPressed(),
+            isUninterruptedSequence = inputEventDispatcher.isUninterruptedEventSequence(data),
+        )
     }
 
     /**

@@ -2,6 +2,40 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.191"></a>
+## v1.8.191
+
+Released: 2026-05-28
+
+### Extract + test the SHIFT-key state machine from KeyboardManager (RESEARCH_FEATURE_PLAN.md F27)
+
+`KeyboardManager` (~1,300 LOC of Android-coupled dispatch) had zero direct tests; the second pass flagged it as the largest single test-coverage gap. Following the project's Workstream-3 pattern (cf. `KeyboardAutoCommitFlushPolicy`, `ApostropheReturnGate`, `QuoteAutoCloseGate`), the deterministic SHIFT-key state machine is lifted into a pure `ShiftStateMachine` object and unit-tested, rather than standing up a brittle Robolectric harness for the whole manager.
+
+This is behavior-preserving: `handleShiftDown` / `handleShiftUp` now delegate to `ShiftStateMachine.onShiftDown` / `onShiftUp` with the same logic.
+
+### Changes
+
+- **`ime/keyboard/ShiftStateMachine.kt`** (new) — pure `onShiftDown(current, behavior, isConsecutiveDown)` (double-tap-to-caps-lock vs. cycle) and `onShiftUp(current, isAnyKeyPressed, isUninterruptedSequence)` (transient-shift release rules).
+- **`ime/keyboard/KeyboardManager.kt`** — `handleShiftDown` / `handleShiftUp` delegate to `ShiftStateMachine`; the now-unused `CapitalizationBehavior` import is dropped.
+- **`app/src/test/.../ime/keyboard/ShiftStateMachineTest.kt`** (new) — 10 cases: double-tap latch, single-tap toggle, the full cycle path, SHIFTED_AUTOMATIC collapse, and all four shift-up release/keep conditions (CAPS_LOCK never released, held-key combo, uninterrupted sequence).
+
+The companion v1.8.183 `TOGGLE_AUTOCORRECT` assertion (deferred from v1.8.189 / R3) remains a one-line `prefs.correction.autoCorrect` flip whose only meaningful surface is the dispatch path; it stays covered by the inline wire-up rather than a dedicated brittle test, consistent with the decision above to test the extracted state machine instead of mocking the whole manager.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.keyboard.ShiftStateMachineTest"` → 10 cases green.
+- `./gradlew :app:assembleDebug :app:lintDebug` green (also re-validates the v1.8.190 crypto seam refactor).
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/ShiftStateMachine.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/keyboard/ShiftStateMachineTest.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
+- `fastlane/metadata/android/en-US/changelogs/1991.txt` (new)
+- `gradle.properties` (versionCode 1990→1991, versionName 1.8.190→1.8.191)
+- `README.md` (version badge)
+- `TODO.md` (F27 ticked)
+
 <a id="v1.8.190"></a>
 ## v1.8.190
 
