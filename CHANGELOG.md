@@ -2,6 +2,39 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.200"></a>
+## v1.8.200
+
+Released: 2026-05-28
+
+### Settings → Local audit log: see every cross-process call (RESEARCH_FEATURE_PLAN.md F7)
+
+SwiftFloris already records every smart-compose / translation / MCP call it makes on the user's behalf in an in-memory `AddonInvocationAudit` ring (PII-safe by construction — only the app package, language pair, or `daemon::tool` is stored, never typed text, candidates, or results). There was no way to *see* it, so the trust signal was invisible.
+
+This adds a **display-only** "Local audit log" screen under Settings (and a Home entry in the Privacy & data group). It shows a summary line, a "Recent activity" list (newest first, each row = surface · outcome · timestamp · subject + reason), and two actions: "Copy log as JSON" (puts `AddonAuditExport.toJsonString()` on the clipboard — stays on device, the user decides where it goes) and "Clear log". No new data is collected; the screen only reads the existing ring.
+
+### Changes
+
+- **`app/settings/privacy/PrivacyAuditScreen.kt`** (new) — `FlorisScreen` reading `AddonInvocationAudit.snapshot()` + `AddonAuditExport.summaryLine()/toJsonString()`; export via clipboard, clear via `AddonInvocationAudit.clear()`. Caps the list to the 100 most recent rows; categorical enum names are formatted in Kotlin (no localization churn).
+- **`app/Routes.kt`** — `Settings.PrivacyAuditLog` route (`@Deeplink settings/privacy/audit-log`) + registration.
+- **`app/settings/HomeScreen.kt`** — "Local audit log" entry (Shield icon) in the data section.
+- **`res/values/strings.xml`** — `settings__privacy_audit__*` (11 keys; en-US).
+
+### Verification
+
+- `./gradlew :app:assembleDebug :app:lintDebug` → green. `:app:verifyNoInternetPermission` unaffected (no new permission/collection — the screen is read-only over an existing on-device ring).
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/privacy/PrivacyAuditScreen.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/HomeScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/2000.txt` (new)
+- `gradle.properties` (versionCode 1999→2000, versionName 1.8.199→1.8.200)
+- `README.md` (version badge)
+- `TODO.md` (F7 ticked)
+
 <a id="v1.8.199"></a>
 ## v1.8.199
 

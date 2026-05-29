@@ -60,6 +60,7 @@ import dev.patrickgold.florisboard.app.settings.advanced.OtherScreen
 import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardScreen
 import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
+import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
@@ -215,6 +216,10 @@ object Routes {
         object TypingStats
 
         @Serializable
+        @Deeplink("settings/privacy/audit-log")
+        object PrivacyAuditLog
+
+        @Serializable
         @Deeplink("settings/about")
         object About
 
@@ -332,6 +337,7 @@ object Routes {
 
             composableWithDeepLink(Settings.Typing::class) { TypingScreen() }
             composableWithDeepLink(Settings.TypingStats::class) { TypingStatsScreen() }
+            composableWithDeepLink(Settings.PrivacyAuditLog::class) { PrivacyAuditScreen() }
             composableWithDeepLink(Settings.VoiceInput::class) { VoiceInputScreen() }
 
             composableWithDeepLink(Settings.Dictionary::class) { DictionaryScreen() }

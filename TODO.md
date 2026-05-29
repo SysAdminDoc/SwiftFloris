@@ -104,9 +104,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   dictionary": confirmed combined wipe of all 4 learning stores + the personal
   dictionary (DB reset + overlay clear), behind a `JetPrefAlertDialog`. The gentler
   dictionary-preserving "Reset all typing learning" stays. **Shipped v1.8.199.**
-- [ ] **F7** (P1) — Settings → Privacy → "Local audit log" surface for the existing
-  `AddonInvocationAudit` + MCP + Tasker + voice-handoff records (browse + export +
-  clear; redact PASSWORD payloads). No new data collection.
+- [x] **F7** (P1) — Settings → "Local audit log" screen over the existing
+  `AddonInvocationAudit` ring (summary + recent-activity list + copy-as-JSON +
+  clear). Display-only; records are PII-safe by construction (no redaction needed).
+  **Shipped v1.8.200 (2026-05-28).**
 - [ ] **EI3** (P2) — Personal dictionary bulk-import preview (first ~50 entries +
   total + exclude-row checkboxes) before commit; "Skip preview" opt-out.
 - [ ] **F31** (P2) — Per-app language auto-switch via
