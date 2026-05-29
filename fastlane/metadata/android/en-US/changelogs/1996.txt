@@ -1,0 +1,3 @@
+v1.8.196 — code documentation.
+
+Documents the deliberate split between the stateless spelling/prediction engines and their stateful provider wrappers in the advanced NLP code, confirming the existing tests are correctly named. Comment-only; no behaviour change.

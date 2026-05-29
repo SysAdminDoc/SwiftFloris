@@ -2,6 +2,33 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.196"></a>
+## v1.8.196
+
+Released: 2026-05-28
+
+### Document the AdvancedProviders engine/provider split (RESEARCH_FEATURE_PLAN.md F37)
+
+F37 flagged that `AdvancedProviders.kt` is a single file while two engine-named tests exist (`AdvancedPredictionEngineTest`, `AdvancedSpellingEngineTest`), asking whether to ship the engines as separate classes, rename the tests, or consolidate.
+
+The audit found the architecture already correct: `AdvancedSpellingEngine` and `AdvancedPredictionEngine` are real `internal object`s holding the pure, stateless algorithm logic (the units the two tests directly target), while `AdvancedSpellingProvider`/`AdvancedPredictionProvider` are the public `NlpProvider` implementations owning lifecycle, the bundled dictionary, and caches. No code change is warranted — only a clarifying file-level note so the question is not re-litigated.
+
+### Changes
+
+- **`ime/nlp/advanced/AdvancedProviders.kt`** — file-level doc comment explaining the deliberate stateless-engine / stateful-provider split and that the engine-named tests are correctly named for their units.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.nlp.advanced.*"` → green (comment-only; no bytecode change).
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/advanced/AdvancedProviders.kt`
+- `fastlane/metadata/android/en-US/changelogs/1996.txt` (new)
+- `gradle.properties` (versionCode 1995→1996, versionName 1.8.195→1.8.196)
+- `README.md` (version badge)
+- `TODO.md` (F37 ticked)
+
 <a id="v1.8.195"></a>
 ## v1.8.195
 
