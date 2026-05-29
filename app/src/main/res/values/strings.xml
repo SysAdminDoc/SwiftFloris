@@ -846,6 +846,12 @@
     <string name="settings__typing_stats__reset_all_learning" comment="Action row title">Reset all typing learning</string>
     <string name="settings__typing_stats__reset_all_learning__summary" comment="Action row summary">Clears phrase predictions, correction memory, and adaptive touch samples. Saved dictionary words stay in place.</string>
     <string name="settings__typing_stats__reset_all_learning__toast" comment="Toast shown after resetting all typing learning">Typing learning reset.</string>
+    <string name="settings__typing_stats__erase_everything" comment="Action row title for the most destructive reset">Erase everything, including dictionary</string>
+    <string name="settings__typing_stats__erase_everything__summary" comment="Action row summary">Wipes all typing learning and every word in your personal dictionary. This can\'t be undone.</string>
+    <string name="settings__typing_stats__erase_everything__confirm_title" comment="Confirmation dialog title">Erase everything?</string>
+    <string name="settings__typing_stats__erase_everything__confirm_message" comment="Confirmation dialog body">This permanently deletes your phrase predictions, correction memory, adaptive touch model, and every word in your personal dictionary. There is no undo.</string>
+    <string name="settings__typing_stats__erase_everything__confirm_button" comment="Confirmation dialog destructive button">Erase</string>
+    <string name="settings__typing_stats__erase_everything__toast" comment="Toast shown after erasing everything">All on-device learning and your personal dictionary were erased.</string>
     <string name="settings__typing_stats__trace_capture" comment="Action row title">Local trace capture</string>
     <string name="settings__typing_stats__trace_capture__on" comment="Trace capture row summary when enabled. The placeholder inserts file size.">On. Records suggestion decisions locally for replay tuning. Size: {size}</string>
     <string name="settings__typing_stats__trace_capture__off" comment="Trace capture row summary when disabled. The placeholder inserts file size.">Off. Enable only when collecting a local typing replay. Size: {size}</string>

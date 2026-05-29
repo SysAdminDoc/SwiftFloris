@@ -2,6 +2,35 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.199"></a>
+## v1.8.199
+
+Released: 2026-05-28
+
+### Settings → Typing stats → "Erase everything, including dictionary" (RESEARCH_FEATURE_PLAN.md EI12)
+
+Wiping every trace of on-device personalization took several separate taps and never included the personal dictionary: the existing "Reset all typing learning" action deliberately clears only the phrase/correction/touch models and leaves saved dictionary words in place. There was no single "start completely fresh" action.
+
+This adds one — a confirmed "Erase everything, including dictionary" action that wipes `PersonalBigramStore` + `PersonalTrigramStore` + `CorrectionOutcomePriors` + `AdaptiveTouchModel` **and** the personal dictionary (`FlorisUserDictionaryDatabase.reset()` + `UserDictionaryOverlay.clearAll()`) in one motion. Because it destroys curated dictionary words with no recovery, it is gated behind a `JetPrefAlertDialog` confirmation (the per-category resets stay one-tap, since each is less destructive and the gentler "Reset all typing learning" — dictionary preserved — remains for users who want that).
+
+### Changes
+
+- **`app/settings/typing/TypingStatsScreen.kt`** — new `DeleteForever` "Erase everything" preference + a confirm dialog; combined reset runs on the existing `resetAndRefresh` IO helper.
+- **`res/values/strings.xml`** — `settings__typing_stats__erase_everything{,__summary,__confirm_title,__confirm_message,__confirm_button,__toast}` (en-US).
+
+### Verification
+
+- `./gradlew :app:assembleDebug :app:lintDebug` → green. Reuses the already-covered `resetAndAwait()`/`reset()` store APIs; the dictionary wipe uses `FlorisUserDictionaryDatabase.reset()` (the DB source of truth) plus the overlay cache clear.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/typing/TypingStatsScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/1999.txt` (new)
+- `gradle.properties` (versionCode 1998→1999, versionName 1.8.198→1.8.199)
+- `README.md` (version badge)
+- `TODO.md` (EI12 ticked)
+
 <a id="v1.8.198"></a>
 ## v1.8.198
 

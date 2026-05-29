@@ -1,0 +1,3 @@
+v1.8.199 — one-tap "start fresh".
+
+Settings → Typing stats now has an "Erase everything, including dictionary" action that wipes all on-device learning AND your personal dictionary in one motion, behind a confirmation dialog (it can't be undone). The gentler "Reset all typing learning", which keeps your saved words, is still there.
