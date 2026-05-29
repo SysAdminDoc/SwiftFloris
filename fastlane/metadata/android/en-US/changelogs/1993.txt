@@ -1,0 +1,3 @@
+v1.8.193 — privacy test hardening.
+
+Adds a test pinning the calendar-permission privacy guarantees: the activity that requests calendar access is not exported (no other app can trigger the prompt), and the permission is declared as expected. No user-facing change.

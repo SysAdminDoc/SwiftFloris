@@ -2,6 +2,33 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.193"></a>
+## v1.8.193
+
+Released: 2026-05-28
+
+### Calendar permission privacy invariants test (RESEARCH_FEATURE_PLAN.md O6)
+
+The second pass proposed asserting that `CalendarPermissionActivity` "does not auto-request `READ_CALENDAR` without an explicit user tap." On inspection that premise is slightly off: the activity **does** request the permission on `onCreate` — but only because it is launched *exclusively* from the Calendar quick-action tap (`CalendarPermissionActivity.launch`), so the user tap has already happened upstream. The genuinely load-bearing privacy invariants are therefore: the permission is declared (so the request can resolve), and the requesting activity is **not exported** (so a third-party app cannot start it and trigger a `READ_CALENDAR` prompt without the in-keyboard tap).
+
+This adds `CalendarPermissionActivityManifestTest` pinning both, mirroring the existing `VoiceInputSetupActivityManifestTest`.
+
+### Changes
+
+- **`app/src/test/.../ime/calendar/CalendarPermissionActivityManifestTest.kt`** (new) — Robolectric `AndroidJUnit4` test: `CalendarPermissionActivity.exported == false`, and `android.permission.READ_CALENDAR` is among the manifest's requested permissions.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.calendar.CalendarPermissionActivityManifestTest"` → 2 cases green.
+
+### Files Touched
+
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/calendar/CalendarPermissionActivityManifestTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/1993.txt` (new)
+- `gradle.properties` (versionCode 1992→1993, versionName 1.8.192→1.8.193)
+- `README.md` (version badge)
+- `TODO.md` (O6 ticked)
+
 <a id="v1.8.192"></a>
 ## v1.8.192
 

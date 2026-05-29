@@ -61,8 +61,11 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
 - [x] **EI5** (P1) — `FlorisEmojiCompat` reflection-shape guard (loud `flogError`
   + graceful fallback) + `FlorisEmojiCompatReflectionGuardTest` CI sentinel that
   fails on an emoji2 constructor-shape bump. **Shipped v1.8.192 (2026-05-28).**
-- [ ] **O6** (P1) — `CalendarPermissionActivity` Robolectric test: does **not**
-  auto-request `READ_CALENDAR` without an explicit user tap (v1.8.64 criterion).
+- [x] **O6** (P1) — Calendar permission privacy invariants test
+  (`CalendarPermissionActivity` not exported + `READ_CALENDAR` declared).
+  **Shipped v1.8.193 (2026-05-28).** Reframed: the activity *does* request on
+  launch by design (it's launched only from the in-keyboard tap); the real
+  invariant is that no third party can launch it.
 - [ ] **EI6** (P2) — Clipboard reconciliation property/parameterized test: no orphan
   provider files, no DB rows pointing at missing files post-reconciliation.
   (Use a deterministic JUnit test unless Kotest is already a dep.)
