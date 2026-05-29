@@ -50,8 +50,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   (encrypt→decrypt identity, AAD binding, tampered-ciphertext + cross-key
   failure, empty string). **Shipped v1.8.190 (2026-05-28)** via an `encodeEncrypted`
   /`decodeEncrypted` internal seam tested with a pure-JVM Tink AEAD.
-- [ ] **F27** (P1) — `KeyboardManager` unit-test set (≥5 state-transition cases);
-  extract a small pure dispatch helper if needed to make it JVM-testable.
+- [x] **F27** (P1) — `KeyboardManager` SHIFT-key state machine extracted to a
+  pure `ShiftStateMachine` + 10 JVM tests (double-tap, cycle, shift-up release
+  rules). **Shipped v1.8.191 (2026-05-28).** Further dispatch surfaces remain
+  candidates for the same extract-and-test pattern.
 - [x] **R3** (P1) — Back-fill tests for v1.8.184 (malformed code point dropped
   without throwing). **Shipped v1.8.189 (2026-05-28).** The v1.8.183
   `TOGGLE_AUTOCORRECT` assertion is delivered with the F27 KeyboardManager

@@ -1,0 +1,3 @@
+v1.8.191 — internal refactor + tests.
+
+Lifts the SHIFT-key state machine out of KeyboardManager into a small, pure ShiftStateMachine and adds 10 unit tests covering double-tap caps-lock, the shift cycle, and the shift-release rules. Behaviour is unchanged; this just makes the most-used keyboard state machine directly testable. No user-facing change.
