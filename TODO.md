@@ -76,9 +76,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
 
 ### A2. Code cleanup / debt
 
-- [ ] **F38** (P2) — Remove `KeyboardMode.kt` `@Deprecated TODO: remove` enum
-  entries + `FlorisImeSizing.kt:116` `@Deprecated TODO: move logic`; fix all
-  `when (mode)` exhaustiveness sites.
+- [x] **F38** (P2) — Removed the 3 dead `KeyboardMode` `@Deprecated` entries +
+  their `LayoutManager` `when` arms; converted the misused `FlorisImeSizing`
+  `ProvideKeyboardRowBaseHeight` `@Deprecated` to a KDoc/TODO (it's the current
+  API). **Shipped v1.8.195 (2026-05-28).**
 - [ ] **F37** (P2) — `AdvancedProviders.kt` audit: ship the named engines as classes,
   rename the two engine tests to match the dispatcher, or consolidate. Decide + edit.
 - [ ] **F39** (P2) — `DictionaryManager.kt` Log.w/Log.e + `@Suppress` audit; convert

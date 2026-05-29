@@ -2,6 +2,37 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.195"></a>
+## v1.8.195
+
+Released: 2026-05-28
+
+### Remove dead KeyboardMode entries + de-misuse a FlorisImeSizing @Deprecated marker (RESEARCH_FEATURE_PLAN.md F38)
+
+Three `KeyboardMode` values carried `@Deprecated(message = "TODO: remove")` — `EDITING` (1), `SMARTBAR_CLIPBOARD_CURSOR_ROW` (8), `SMARTBAR_NUMBER_ROW` (9). A repo-wide grep confirmed their only references were the enum declarations and three arms in `LayoutManager.computeKeyboardAsync`'s `when`, which already has an `else` fallback; nothing constructs them, and `KeyboardMode.fromInt` maps any persisted `1`/`8`/`9` to `CHARACTERS`, so old saved state stays safe. They are removed.
+
+Separately, `FlorisImeSizing.ProvideKeyboardRowBaseHeight` was annotated `@Deprecated("TODO: move logic fully into ImeWindow impl")`. That function is the current, load-bearing API (its single caller is `ImeWindow`), so the `@Deprecated` was a misused refactor marker emitting a spurious deprecation warning at the call site. It's converted to a plain KDoc + `// TODO`, preserving the "fold into ImeWindow" intent without the warning. The actual inlining remains a separate refactor.
+
+### Changes
+
+- **`ime/keyboard/KeyboardMode.kt`** — drop the three `@Deprecated` enum entries; document in `fromInt` that old persisted values 1/8/9 map to `CHARACTERS`.
+- **`ime/keyboard/LayoutManager.kt`** — remove the three corresponding `when` arms (the `else` already covers them).
+- **`ime/keyboard/FlorisImeSizing.kt`** — `@Deprecated` → KDoc/`// TODO` on `ProvideKeyboardRowBaseHeight`.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest :app:assembleDebug :app:lintDebug` → full suite + APK build + lint all green (also re-validates the v1.8.192 emoji guard). No remaining references to the removed values (`grep`).
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardMode.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/LayoutManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/FlorisImeSizing.kt`
+- `fastlane/metadata/android/en-US/changelogs/1995.txt` (new)
+- `gradle.properties` (versionCode 1994→1995, versionName 1.8.194→1.8.195)
+- `README.md` (version badge)
+- `TODO.md` (F38 ticked)
+
 <a id="v1.8.194"></a>
 ## v1.8.194
 
