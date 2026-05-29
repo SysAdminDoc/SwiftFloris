@@ -226,10 +226,23 @@ object FlorisEmojiCompat {
             // but is preferable to crashing during creation.
             return try {
                 val ctor = EmojiCompat::class.java.getDeclaredConstructor(EmojiCompat.Config::class.java)
+                // Loud guard: an androidx-emoji2 bump that changes the package-private
+                // EmojiCompat(Config) constructor shape silently sends us down the
+                // reset(config) fallback, which reintroduces the bind-before-init race
+                // (see kdoc "Why we defer singleton install"). Fail the construction so
+                // the error is logged with an actionable message rather than masked, and
+                // FlorisEmojiCompatReflectionGuardTest catches the same drift in CI.
+                check(isExpectedEmojiCompatConstructor(ctor)) {
+                    "EmojiCompat(Config) constructor shape changed unexpectedly"
+                }
                 ctor.isAccessible = true
                 ctor.newInstance(config)
             } catch (t: Throwable) {
-                flogError { "Reflective EmojiCompat construction failed ($t); falling back to reset(config)" }
+                flogError {
+                    "Reflective EmojiCompat construction failed or its (Config) constructor shape changed " +
+                        "(androidx-emoji2 bump?): $t. Falling back to reset(config), which reintroduces the " +
+                        "bind-before-init race window — update FlorisEmojiCompat.createInstance for the new shape."
+                }
                 EmojiCompat.reset(config)
             }
         }
@@ -242,6 +255,21 @@ object FlorisEmojiCompat {
             EmojiCompat.reset(instance)
         }
     }
+}
+
+/**
+ * Validates that [ctor] is the package-private `EmojiCompat(EmojiCompat.Config)`
+ * constructor the deferred-singleton reflection path in
+ * [FlorisEmojiCompat.InstanceHandler] depends on: exactly one parameter, of type
+ * [EmojiCompat.Config]. Extracted so the shape is asserted both at runtime
+ * (loudly logged on mismatch) and in CI (`FlorisEmojiCompatReflectionGuardTest`),
+ * catching an androidx-emoji2 bump before it silently reintroduces the
+ * bind-before-init race.
+ */
+internal fun isExpectedEmojiCompatConstructor(ctor: java.lang.reflect.Constructor<*>?): Boolean {
+    return ctor != null &&
+        ctor.parameterTypes.size == 1 &&
+        ctor.parameterTypes[0] == EmojiCompat.Config::class.java
 }
 
 /**

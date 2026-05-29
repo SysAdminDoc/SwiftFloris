@@ -1,0 +1,3 @@
+v1.8.192 — emoji reliability hardening.
+
+Adds a guard around the reflection used to dodge the EmojiCompat "Not initialized yet" crash: if a future emoji library update changes the internal shape it relies on, the app now logs a clear warning (and a CI test catches it) instead of silently slipping back into the crashy code path. No user-facing change.

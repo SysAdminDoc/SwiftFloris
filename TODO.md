@@ -58,9 +58,9 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   without throwing). **Shipped v1.8.189 (2026-05-28).** The v1.8.183
   `TOGGLE_AUTOCORRECT` assertion is delivered with the F27 KeyboardManager
   harness (next), which it depends on.
-- [ ] **EI5** (P1) — `FlorisEmojiCompat` bind-before-init race regression test +
-  runtime guard that fails loudly if the reflected constructor changes shape after
-  an emoji2 bump.
+- [x] **EI5** (P1) — `FlorisEmojiCompat` reflection-shape guard (loud `flogError`
+  + graceful fallback) + `FlorisEmojiCompatReflectionGuardTest` CI sentinel that
+  fails on an emoji2 constructor-shape bump. **Shipped v1.8.192 (2026-05-28).**
 - [ ] **O6** (P1) — `CalendarPermissionActivity` Robolectric test: does **not**
   auto-request `READ_CALENDAR` without an explicit user tap (v1.8.64 criterion).
 - [ ] **EI6** (P2) — Clipboard reconciliation property/parameterized test: no orphan
