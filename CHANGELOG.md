@@ -2,6 +2,35 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.190"></a>
+## v1.8.190
+
+Released: 2026-05-28
+
+### TinkStringPreferenceCrypto round-trip + tamper coverage (RESEARCH_FEATURE_PLAN.md F28 / second-pass O7)
+
+`TinkStringPreferenceCrypto` is the Tink + AndroidKeystore wrapper that protects the SQLCipher passphrase and the legacy clipboard-history store — the load-bearing cryptographic surface behind every "encrypted at rest" claim in `docs/THREAT_MODEL.md`. It had **zero** test coverage; the second pass promoted this from P1 to P0.
+
+Production binds the AEAD to an AndroidKeystore master key, which Robolectric cannot emulate for real crypto, so the wire-format logic was extracted into an internal seam and tested against a pure-JVM Tink AEAD.
+
+### Changes
+
+- **`ime/security/TinkStringPreferenceCrypto.kt`** — extract two internal seams, `encodeEncrypted(aead, prefsFileName, key, value)` and `decodeEncrypted(aead, prefsFileName, key, stored)`, that own the `encrypt → Base64 → decode → decrypt` + associated-data path. `writeBytes`/`readBytes` now delegate to them inside `withAndroidKeystoreAead { … }`. Behavior-preserving: the AndroidKeystore master-key binding is unchanged.
+- **`app/src/test/.../ime/security/TinkStringPreferenceCryptoTest.kt`** (new) — 8 cases: string/bytes/empty round-trips, GCM nonce non-determinism, tampered-ciphertext rejection, wrong-prefsFileName / wrong-key associated-data rejection, and cross-key isolation. All assert `GeneralSecurityException` on the failure paths.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCryptoTest"` → 8 cases green. Main sources (the seam refactor) recompiled clean.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCrypto.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCryptoTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/1990.txt` (new)
+- `gradle.properties` (versionCode 1989→1990, versionName 1.8.189→1.8.190)
+- `README.md` (version badge)
+- `TODO.md` (F28 ticked)
+
 <a id="v1.8.189"></a>
 ## v1.8.189
 
