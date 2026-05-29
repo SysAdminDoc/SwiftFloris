@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.SettingsBackupRestore
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material.icons.filled.Sync
@@ -196,6 +197,12 @@ fun HomeScreen() = FlorisScreen {
                 title = stringRes(R.string.backup_and_restore__restore__title),
                 summary = stringRes(R.string.settings__home__restore_summary),
                 onClick = { navController.navigate(Routes.Settings.Restore) },
+            )
+            Preference(
+                icon = Icons.Default.Shield,
+                title = stringRes(R.string.settings__privacy_audit__title),
+                summary = stringRes(R.string.settings__privacy_audit__home_summary),
+                onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
             )
         }
 

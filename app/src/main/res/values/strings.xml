@@ -852,6 +852,20 @@
     <string name="settings__typing_stats__erase_everything__confirm_message" comment="Confirmation dialog body">This permanently deletes your phrase predictions, correction memory, adaptive touch model, and every word in your personal dictionary. There is no undo.</string>
     <string name="settings__typing_stats__erase_everything__confirm_button" comment="Confirmation dialog destructive button">Erase</string>
     <string name="settings__typing_stats__erase_everything__toast" comment="Toast shown after erasing everything">All on-device learning and your personal dictionary were erased.</string>
+    <string name="settings__privacy_audit__title" comment="Screen + preference title">Local audit log</string>
+    <string name="settings__privacy_audit__home_summary" comment="Home preference summary">Review every on-device addon, MCP and translation call</string>
+    <string name="settings__privacy_audit__intro" comment="Explainer at the top of the audit log screen">Every cross-process call SwiftFloris makes on your behalf is recorded here, on this device only. Nothing is uploaded, and no typed text, suggestions or translated content is ever stored — only the app, the language pair, or the tool name.</string>
+    <string name="settings__privacy_audit__group_summary" comment="Preference group title">Summary</string>
+    <string name="settings__privacy_audit__group_actions" comment="Preference group title">Actions</string>
+    <string name="settings__privacy_audit__group_records" comment="Preference group title">Recent activity</string>
+    <string name="settings__privacy_audit__summary_title" comment="Preference title showing the audit summary line">Audit log</string>
+    <string name="settings__privacy_audit__empty" comment="Shown when no records exist">No recorded activity yet.</string>
+    <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
+    <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere — it never leaves the device on its own.</string>
+    <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
+    <string name="settings__privacy_audit__clear" comment="Action title">Clear log</string>
+    <string name="settings__privacy_audit__clear__summary" comment="Action summary">Drops every recorded entry. The log starts fresh from the next call.</string>
+    <string name="settings__privacy_audit__clear_toast" comment="Toast after clearing">Audit log cleared.</string>
     <string name="settings__typing_stats__trace_capture" comment="Action row title">Local trace capture</string>
     <string name="settings__typing_stats__trace_capture__on" comment="Trace capture row summary when enabled. The placeholder inserts file size.">On. Records suggestion decisions locally for replay tuning. Size: {size}</string>
     <string name="settings__typing_stats__trace_capture__off" comment="Trace capture row summary when disabled. The placeholder inserts file size.">Off. Enable only when collecting a local typing replay. Size: {size}</string>

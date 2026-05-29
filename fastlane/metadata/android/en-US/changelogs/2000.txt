@@ -1,0 +1,3 @@
+v1.8.200 — see what the keyboard does on your behalf.
+
+New Settings → Local audit log shows every smart-compose, translation and MCP call SwiftFloris has made — on-device only, with no typed text ever stored (just the app, language pair or tool name). Browse recent activity, copy the log as JSON, or clear it. Display-only: nothing new is collected.
