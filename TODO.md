@@ -84,8 +84,9 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   `internal object`s targeted by the engine-named tests; providers are the
   stateful public classes. Architecture correct — added a clarifying doc note.
   **Shipped v1.8.196 (2026-05-28).**
-- [ ] **F39** (P2) — `DictionaryManager.kt` Log.w/Log.e + `@Suppress` audit; convert
-  silent swallows to `flog*` with context (v1.8.184 convention) or justify each.
+- [x] **F39** (P2) — `DictionaryManager.kt` logging audit: 9 `Log.*` calls (no
+  `@Suppress` found) routed through `flog*` under a new `LogTopic.DICTIONARY`;
+  critical paths promoted to `flogError`. **Shipped v1.8.197 (2026-05-28).**
 - [ ] **EI1** (P2) — Partition `AppPrefs.kt` (~1,301 LOC) by feature area
   (`app/prefs/*Prefs.kt`), re-exporting the merged `AppPrefs`. Golden test: same key
   set + defaults before/after. Datastore keys MUST NOT change.

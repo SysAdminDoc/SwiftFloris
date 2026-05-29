@@ -2,6 +2,36 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.197"></a>
+## v1.8.197
+
+Released: 2026-05-28
+
+### Route DictionaryManager logging through Flog + a DICTIONARY topic (RESEARCH_FEATURE_PLAN.md F39)
+
+`DictionaryManager` logged via `android.util.Log` (a private `TAG`), bypassing the project's `Flog` infrastructure that every other subsystem uses. The audit found 9 such calls (8 `Log.w` + 1 `Log.i`) and — contrary to the second-pass estimate — **no** `@Suppress` annotations to triage. Each call sits on a legitimate failure path (encrypted-store open/recreate failure, plaintext→SQLCipher migration read/stage/restore failures, backup-file delete/rename failures), so the catches stay; only the logging channel changes.
+
+All 9 are converted to `flogWarning` / `flogError` / `flogInfo` under a new `LogTopic.DICTIONARY` (`0x00_08_00_00u`), so dictionary diagnostics participate in Flog's topic filtering and consistent tag formatting. The two critical paths (encrypted store unavailable *after* recreation; migration failed → restoring plaintext) are promoted to `flogError`; the rest stay warnings; the successful-migration line stays info. The now-unused `android.util.Log` import and `TAG` constant are removed.
+
+### Changes
+
+- **`lib/devtools/LogTopic.kt`** — add `DICTIONARY = 0x00_08_00_00u` (next 2^n after `EXT_INDEXING`).
+- **`ime/dictionary/DictionaryManager.kt`** — 9 `Log.*` → `flog*(LogTopic.DICTIONARY)`; drop the `Log` import and `TAG`.
+
+### Verification
+
+- `grep` confirms no residual `Log.` / `TAG` / `android.util.Log` in the file.
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.dictionary.*"` → green (main recompiled clean).
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/devtools/LogTopic.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt`
+- `fastlane/metadata/android/en-US/changelogs/1997.txt` (new)
+- `gradle.properties` (versionCode 1996→1997, versionName 1.8.196→1.8.197)
+- `README.md` (version badge)
+- `TODO.md` (F39 ticked)
+
 <a id="v1.8.196"></a>
 ## v1.8.196
 

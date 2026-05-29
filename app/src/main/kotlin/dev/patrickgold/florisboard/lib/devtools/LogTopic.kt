@@ -49,4 +49,5 @@ object LogTopic {
     const val FILE_IO: FlogTopic =              0x00_01_00_00u
     const val EXT_MANAGER: FlogTopic =          0x00_02_00_00u
     const val EXT_INDEXING: FlogTopic =         0x00_04_00_00u
+    const val DICTIONARY: FlogTopic =           0x00_08_00_00u
 }
