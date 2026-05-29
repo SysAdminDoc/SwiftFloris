@@ -96,8 +96,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
 
 ### A3. Settings / UX surfaces
 
-- [ ] **F14** (P2) — Settings → About → "What's new" excerpt (compile-time
-  `CHANGELOG.md` extractor) + privacy-posture cross-link card.
+- [x] **F14** (P2) — Settings → About → inline "What's new" excerpt
+  (`BuildConfig.WHATS_NEW` from the matching `CHANGELOG.md` section at build time;
+  scrollable dialog + "Full changelog" link). **Shipped v1.8.198 (2026-05-28).**
+  (Privacy-posture comparison table deferred — separate doc, lower value.)
 - [ ] **EI12** (P2) — Settings → Privacy → "Erase all on-device learning" combined
   confirmed action wiping `PersonalBigramStore` + `PersonalTrigramStore` +
   `AdaptiveTouchModel` + `CorrectionOutcomePriors` + personal dictionary in one motion.

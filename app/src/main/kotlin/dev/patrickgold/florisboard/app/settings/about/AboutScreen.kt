@@ -20,16 +20,22 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.NewReleases
 import androidx.compose.material.icons.outlined.Policy
 import androidx.compose.material.icons.outlined.VerifiedUser
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -132,6 +138,45 @@ fun AboutScreen() = FlorisScreen {
                 }
             },
         )
+        // RESEARCH_FEATURE_PLAN.md F14 — inline, offline "What's new" excerpt sourced
+        // at compile time from the matching CHANGELOG.md section (BuildConfig.WHATS_NEW).
+        // Hidden when no section matched at build time (e.g. a dev build between releases).
+        val whatsNew = BuildConfig.WHATS_NEW
+        if (whatsNew.isNotBlank()) {
+            var showWhatsNew by remember { mutableStateOf(false) }
+            Preference(
+                icon = Icons.Outlined.NewReleases,
+                title = stringRes(R.string.about__whats_new__title),
+                summary = stringRes(R.string.about__whats_new__summary, "version" to BuildConfig.VERSION_NAME),
+                onClick = { showWhatsNew = true },
+            )
+            if (showWhatsNew) {
+                AlertDialog(
+                    onDismissRequest = { showWhatsNew = false },
+                    title = {
+                        Text(stringRes(R.string.about__whats_new__dialog_title, "version" to BuildConfig.VERSION_NAME))
+                    },
+                    text = {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState()).heightIn(max = 420.dp)) {
+                            Text(whatsNew)
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showWhatsNew = false
+                            context.launchUrl(R.string.florisboard__changelog_url, "version" to BuildConfig.VERSION_NAME)
+                        }) {
+                            Text(stringRes(R.string.about__whats_new__full_changelog))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showWhatsNew = false }) {
+                            Text(stringRes(R.string.action__close))
+                        }
+                    },
+                )
+            }
+        }
         Preference(
             icon = Icons.Default.History,
             title = stringRes(R.string.about__changelog__title),

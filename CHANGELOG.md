@@ -2,6 +2,37 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.198"></a>
+## v1.8.198
+
+Released: 2026-05-28
+
+### Settings → About → inline "What's new" excerpt, fully offline (RESEARCH_FEATURE_PLAN.md F14)
+
+After updating, users had no in-app way to see what changed — the About screen's "Changelog" row only opens an external URL (a browser hop; the keyboard itself has no INTERNET). This adds an inline "What's new" entry that shows the current release's notes right inside Settings, with no network and no runtime file IO.
+
+The excerpt is sourced at compile time: a new `whatsNewExcerpt(versionName)` Gradle helper reads the matching `## vX.Y.Z` section from the repo-root `CHANGELOG.md`, lightly de-markdowns it (strips heading hashes, bold, inline-code ticks), truncates to ~900 chars, and emits it as `BuildConfig.WHATS_NEW` — mirroring the existing `BUILD_COMMIT_HASH` build-config pattern. Settings → About shows a "What's new" preference that opens a scrollable dialog with that text plus a "Full changelog" button (the existing online link) and "Close". The preference hides itself when no section matched at build time (e.g. a dev build between releases), so it never shows an empty dialog.
+
+### Changes
+
+- **`app/build.gradle.kts`** — `whatsNewExcerpt()` + `String.escapeForBuildConfig()` helpers; new `BuildConfig.WHATS_NEW` field.
+- **`app/settings/about/AboutScreen.kt`** — "What's new" `Preference` + Material3 `AlertDialog` (scrollable), shown only when `BuildConfig.WHATS_NEW` is non-blank; reuses `action__close`.
+- **`res/values/strings.xml`** — `about__whats_new__{title,summary,dialog_title,full_changelog}` (en-US; `{version}` placeholder).
+
+### Verification
+
+- `./gradlew :app:assembleDebug :app:lintDebug` green; `BuildConfig.WHATS_NEW` populated from this section. `:app:verifyNoInternetPermission` unaffected (no manifest/permission change; the inline view replaces a browser hop with on-device text).
+
+### Files Touched
+
+- `app/build.gradle.kts`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/about/AboutScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/1998.txt` (new)
+- `gradle.properties` (versionCode 1997→1998, versionName 1.8.197→1.8.198)
+- `README.md` (version badge)
+- `TODO.md` (F14 ticked)
+
 <a id="v1.8.197"></a>
 ## v1.8.197
 

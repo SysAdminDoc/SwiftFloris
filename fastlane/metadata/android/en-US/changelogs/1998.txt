@@ -1,0 +1,3 @@
+v1.8.198 — "What's new", in the app and offline.
+
+Settings → About now has a "What's new" entry that shows this release's notes inline, in a scrollable dialog, with no network — the text is baked in at build time from the changelog. A "Full changelog" button still opens the complete online history. It hides itself if there are no notes for the build.

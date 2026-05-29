@@ -106,6 +106,14 @@ configure<ApplicationExtension> {
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
         buildConfigField("String", "FLADDONS_API_VERSION", "\"v~draft2\"")
         buildConfigField("String", "FLADDONS_STORE_URL", "\"beta.addons.florisboard.org\"")
+        // RESEARCH_FEATURE_PLAN.md F14 — compile-time "What's new" excerpt sourced
+        // from the matching CHANGELOG.md section so Settings → About can show it
+        // offline (no INTERNET, no runtime file IO). Empty when no section matches.
+        buildConfigField(
+            "String",
+            "WHATS_NEW",
+            "\"${whatsNewExcerpt(projectVersionName.substringBefore("-")).escapeForBuildConfig()}\"",
+        )
 
         sourceSets {
             maybeCreate("main").apply {
@@ -517,3 +525,34 @@ fun getGitCommitHash(short: Boolean = false): Provider<String> {
     }
     return execProvider.standardOutput.asText.map { it.trim() }
 }
+
+// RESEARCH_FEATURE_PLAN.md F14 — extract the body of the `## v<versionName>`
+// section from the repo-root CHANGELOG.md, lightly de-markdown it, and truncate
+// to [maxChars] so it can ship as a BuildConfig string for the offline
+// "What's new" surface. Returns "" when the section is absent (e.g. a dev build
+// between releases), in which case the Settings entry hides itself.
+fun whatsNewExcerpt(versionName: String, maxChars: Int = 900): String {
+    val changelog = rootProject.file("CHANGELOG.md")
+    if (!changelog.exists()) return ""
+    val text = changelog.readText()
+    val startMarker = "## v$versionName"
+    val startIdx = text.indexOf(startMarker)
+    if (startIdx < 0) return ""
+    val bodyStart = text.indexOf('\n', startIdx).let { if (it < 0) return "" else it + 1 }
+    val nextAnchor = text.indexOf("\n<a id=\"v", bodyStart)
+    val nextHeader = text.indexOf("\n## v", bodyStart)
+    val end = listOf(nextAnchor, nextHeader).filter { it >= 0 }.minOrNull() ?: text.length
+    var body = text.substring(bodyStart, end).trim()
+        .replace(Regex("(?m)^#{1,6}\\s*"), "") // strip heading hashes
+        .replace(Regex("\\*\\*([^*]+)\\*\\*"), "$1") // unbold
+        .replace("`", "") // drop inline-code ticks
+        .replace(Regex("\n{3,}"), "\n\n") // collapse blank runs
+        .trim()
+    if (body.length > maxChars) {
+        body = body.substring(0, maxChars).substringBeforeLast('\n').trimEnd() + "\n…"
+    }
+    return body
+}
+
+fun String.escapeForBuildConfig(): String =
+    replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "")
