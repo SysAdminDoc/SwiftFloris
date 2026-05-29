@@ -110,13 +110,24 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   **Shipped v1.8.200 (2026-05-28).**
 - [ ] **EI3** (P2) — Personal dictionary bulk-import preview (first ~50 entries +
   total + exclude-row checkboxes) before commit; "Skip preview" opt-out.
-- [ ] **F31** (P2) — Per-app language auto-switch via
-  `LocaleManager.getApplicationLocales` (opt-in pref + screen). No permission escalation.
+- [ ] **F31** (P2) — Per-app language — **NEEDS REFRAME (do not implement as specced).**
+  `LocaleManager.getApplicationLocales(packageName)` for *another* app requires the
+  privileged `READ_APP_SPECIFIC_LOCALES` permission — not grantable to a normal IME,
+  and it conflicts with the clean-permission posture. Reframe as permission-free
+  **"remember keyboard language per app"**: on manual subtype switch, record
+  `editorPackage → subtypeId`; on `onStartInputView`, auto-restore the remembered
+  subtype for the focused package. Opt-in (default off). Touches `ime/core/`
+  (a small persisted map + a pure `PerAppSubtypeMemory` to unit-test), a new
+  `PerAppLanguageScreen`, an `AppPrefs.localization` pref, and the
+  `FlorisImeService.onStartInputView` hook (~line 569-587).
 - [ ] **F29** (P1) — Build out `PhysicalKeyboardScreen` to expose the shipped Mac
   `.keylayout` / Keyman `.kmp` / KLC parsers + `HardwareKeyboardRuntimeMapper`
   (custom-layout picker + Import button).
-- [ ] **EI2** (P1) — Group Settings home into Typing / Personalization / Privacy &
-  data / Advanced / About. Pure UI; deep links still resolve.
+- [ ] **EI2** (P1→P3, low value) — Settings home is **already** grouped into four
+  labelled sections (Essentials / Experience / Data / System) in `HomeScreen.kt` —
+  the research's "15 sub-screens at one level" premise is stale. Remaining value is a
+  cosmetic re-bucket into the 5 research groups; do only as polish. The new F7 audit-log
+  entry already lives in the Data section.
 - [ ] **F4** (P1) — Settings → Search (index builder + scroll-and-highlight per screen).
 - [ ] **EI7** (P1) — Voice route empty state explains "what is FUTO" with an Install
   link (drop the migration-window framing; ship as a generic recommendation surface).
@@ -125,9 +136,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   route to the existing `DictionaryImporter`. (Migration window closed 2026-05-31;
   the discovery value is permanent.)
 - [ ] **F6** (P2) — Per-app accent opt-in discovery hint + Settings preview (single-fire).
-- [ ] **O5** (P1) — **Audit first**, then act: confirm whether a Sync settings screen
-  exists/reachable. If genuinely missing, build `SyncSettingsScreen` over the shipped
-  `ime/sync/` subsystem; if present, correct the ROADMAP claim.
+- [x] **O5** (P1) — Audited: `SyncSettingsScreen.kt` (443 LOC) **already exists**, is
+  registered in `Routes.kt` (`@Deeplink settings/sync`), and is reachable from
+  `HomeScreen`. The second-pass "screen missing" finding was **incorrect** — the
+  ROADMAP §10.5 Next-5.3a "shipped" claim is right. No code change needed (verified 2026-05-28).
 
 ### A4. CI / build / release hardening
 
@@ -209,7 +221,22 @@ sibling repo, ML infra, or a product decision the code can't make.
 
 ## Recently closed (see `CHANGELOG.md` for detail)
 
+v1.8.188→v1.8.200 closed (autonomous session 2026-05-28): **F18** (heuristic
+ghost-text), **R3** (malformed-codepoint test), **F28/O7** (Tink crypto test),
+**F27** (ShiftStateMachine + tests), **EI5** (EmojiCompat reflection guard),
+**O6** (calendar-permission test), **EI6** (clipboard reconciliation property
+test), **F38** (dead KeyboardMode removal), **F37** (AdvancedProviders audit),
+**F39** (DictionaryManager flog), **F14** (What's-new excerpt), **EI12** (erase-
+everything), **F7** (local audit log), **O5** (verified Sync screen exists).
+
 v1.8.174→v1.8.187 closed: **F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34,
 F35, F36, F41, F42, EI4 (doc), EI8, EI11** + rejected F33. IMPROVEMENT_PLAN
 Workstreams 1, 3, 4, 5, 6 are complete; Workstream 2 (lint) is monotonically
 decreasing. Full per-release detail is in `CHANGELOG.md`.
+
+**Open Tier A queue (next pass):** F31 (reframed — see note), EI3 (import
+preview — touches the rollback flow, handle carefully), F29 (PhysicalKeyboardScreen
+build-out), F4 (Settings search), EI1 (AppPrefs partition — golden-test guarded,
+risky), CI items (F23/F24/EI9/F40 test classes), UX/strings (EI7/F3/F6),
+hygiene/docs (WS14 incl. the stale `-Xwhen-guards` flag, R5/O1/EI10, WS10/WS15),
+EI2 (low-value cosmetic). Tier C stays blocked (see §Tier C + open questions).
