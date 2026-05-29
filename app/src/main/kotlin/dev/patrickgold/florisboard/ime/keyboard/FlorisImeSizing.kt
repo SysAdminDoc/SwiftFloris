@@ -113,7 +113,17 @@ object FlorisImeSizing {
     }
 }
 
-@Deprecated("TODO: move logic fully into ImeWindow impl")
+/**
+ * Provides [LocalKeyboardRowBaseHeight] / [LocalSmartbarHeight] to [content].
+ *
+ * This is the current, load-bearing API — its single caller is `ImeWindow`.
+ * It was previously annotated `@Deprecated("TODO: move logic fully into ImeWindow
+ * impl")`, but that misused `@Deprecated` as a refactor marker and emitted a
+ * spurious deprecation warning at the only call site. The intent stands as a
+ * plain TODO: fold this height-derivation into the `ImeWindow` composable so the
+ * composition locals are provided there directly.
+ */
+// TODO: move this height derivation fully into the ImeWindow impl.
 @Composable
 fun ProvideKeyboardRowBaseHeight(content: @Composable () -> Unit) {
     val windowController = LocalWindowController.current

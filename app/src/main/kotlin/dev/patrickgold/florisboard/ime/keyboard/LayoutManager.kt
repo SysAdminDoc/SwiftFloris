@@ -360,10 +360,6 @@ class LayoutManager(context: Context) {
                 main = LTN(LayoutType.CHARACTERS, subtype.layoutMap.characters)
                 modifier = LTN(LayoutType.CHARACTERS_MOD, extCoreLayout("default"))
             }
-            KeyboardMode.EDITING -> {
-                // Layout for this mode is defined in custom layout xml file.
-                return@async TextKeyboard(arrayOf(), keyboardMode, null, null)
-            }
             KeyboardMode.NUMERIC -> {
                 main = LTN(LayoutType.NUMERIC, subtype.layoutMap.numeric)
             }
@@ -384,12 +380,6 @@ class LayoutManager(context: Context) {
             KeyboardMode.SYMBOLS2 -> {
                 main = LTN(LayoutType.SYMBOLS2, subtype.layoutMap.symbols2)
                 modifier = LTN(LayoutType.SYMBOLS2_MOD, extCoreLayout("default"))
-            }
-            KeyboardMode.SMARTBAR_CLIPBOARD_CURSOR_ROW -> {
-                extension = LTN(LayoutType.EXTENSION, extCoreLayout("clipboard_cursor_row"))
-            }
-            KeyboardMode.SMARTBAR_NUMBER_ROW -> {
-                extension = LTN(LayoutType.NUMERIC_ROW, subtype.layoutMap.numericRow)
             }
             else -> {
                 // Default values are already provided

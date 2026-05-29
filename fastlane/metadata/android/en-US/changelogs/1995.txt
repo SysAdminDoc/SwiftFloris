@@ -1,0 +1,3 @@
+v1.8.195 — internal cleanup.
+
+Removes three long-dead keyboard-mode values and the layout branches for them (old saved settings map safely to the normal letters layout), and clears a misused "deprecated" marker that was warning about a still-current helper. Behaviour is unchanged. No user-facing change.
