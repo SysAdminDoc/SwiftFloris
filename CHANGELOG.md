@@ -2,6 +2,35 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.192"></a>
+## v1.8.192
+
+Released: 2026-05-28
+
+### Pin the EmojiCompat reflection target against emoji2 drift (RESEARCH_FEATURE_PLAN.md EI5)
+
+The v1.8.173 fix for the EmojiCompat "Not initialized yet" race constructs `EmojiCompat` via its package-private `(Config)` constructor by reflection, so the process-wide singleton stays null until metadata load completes. That reflection is fragile: a future androidx-emoji2 bump that changes the constructor shape would send `createInstance` down the `EmojiCompat.reset(config)` fallback, which silently **reintroduces** the race window.
+
+This adds a loud guard. `createInstance` now validates the resolved constructor's shape and logs an actionable `flogError` (with "emoji2 bump?" guidance) on mismatch instead of silently degrading — while still falling back gracefully rather than crashing the IME at startup. A new `FlorisEmojiCompatReflectionGuardTest` pins the same shape so CI fails loudly on the drift before it ships.
+
+### Changes
+
+- **`ime/media/emoji/FlorisEmojiCompat.kt`** — extract file-internal `isExpectedEmojiCompatConstructor(ctor)` (exactly one parameter of type `EmojiCompat.Config`); `createInstance` `check()`s it and logs a specific error on mismatch.
+- **`app/src/test/.../ime/media/emoji/FlorisEmojiCompatReflectionGuardTest.kt`** (new) — asserts the real `EmojiCompat(Config)` constructor matches at the pinned emoji2 version, and that the guard rejects wrong-arity / wrong-type / null constructors.
+
+### Verification
+
+- `./gradlew :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.media.emoji.*"` → full emoji package green, including the existing `FlorisEmojiCompatTest` (unaffected) and the new guard test.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/emoji/FlorisEmojiCompat.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/media/emoji/FlorisEmojiCompatReflectionGuardTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/1992.txt` (new)
+- `gradle.properties` (versionCode 1991→1992, versionName 1.8.191→1.8.192)
+- `README.md` (version badge)
+- `TODO.md` (EI5 ticked)
+
 <a id="v1.8.191"></a>
 ## v1.8.191
 
