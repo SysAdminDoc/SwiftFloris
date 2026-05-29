@@ -1,0 +1,3 @@
+v1.8.190 — crypto test hardening.
+
+Adds round-trip and tamper-detection tests for the Tink AEAD wrapper that protects the encrypted dictionary passphrase and clipboard store — the surface behind every "encrypted on device" claim. Encrypt/decrypt, associated-data binding, and tampered-ciphertext rejection are now pinned. No user-facing behaviour change.

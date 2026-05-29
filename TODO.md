@@ -46,9 +46,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   New `ime/smartcompose/HeuristicSmartComposeProvider.kt` + pref
   `correction.heuristicSmartCompose` (default off) + Settings toggle + registry
   wiring + JVM test. **Shipped v1.8.188 (2026-05-28).**
-- [ ] **F28 / O7** (P0) — `TinkStringPreferenceCrypto` round-trip test
-  (encrypt→decrypt identity, tampered-ciphertext failure, empty string). Every
-  encrypted-at-rest claim in `docs/THREAT_MODEL.md` depends on this; zero coverage today.
+- [x] **F28 / O7** (P0) — `TinkStringPreferenceCrypto` round-trip + tamper test
+  (encrypt→decrypt identity, AAD binding, tampered-ciphertext + cross-key
+  failure, empty string). **Shipped v1.8.190 (2026-05-28)** via an `encodeEncrypted`
+  /`decodeEncrypted` internal seam tested with a pure-JVM Tink AEAD.
 - [ ] **F27** (P1) — `KeyboardManager` unit-test set (≥5 state-transition cases);
   extract a small pure dispatch helper if needed to make it JVM-testable.
 - [x] **R3** (P1) — Back-fill tests for v1.8.184 (malformed code point dropped

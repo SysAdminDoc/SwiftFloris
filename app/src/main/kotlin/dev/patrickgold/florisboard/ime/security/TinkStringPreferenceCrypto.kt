@@ -54,7 +54,7 @@ internal object TinkStringPreferenceCrypto {
     ): ByteArray? {
         val stored = prefs.getString(key, null) ?: return null
         return withAndroidKeystoreAead(keystoreAlias, createIfMissing = false) {
-            decrypt(decodeBase64(stored), associatedData(prefsFileName, key))
+            decodeEncrypted(this, prefsFileName, key, stored)
         }
     }
 
@@ -66,10 +66,10 @@ internal object TinkStringPreferenceCrypto {
         value: ByteArray,
     ): Boolean {
         val wrapped = withAndroidKeystoreAead(keystoreAlias, createIfMissing = true) {
-            encrypt(value, associatedData(prefsFileName, key))
+            encodeEncrypted(this, prefsFileName, key, value)
         }
         return prefs.edit()
-            .putString(key, encodeBase64(wrapped))
+            .putString(key, wrapped)
             .commit()
     }
 
@@ -160,6 +160,27 @@ internal object TinkStringPreferenceCrypto {
         buffer.get(bytes)
         val stringValue = String(bytes, UTF_8)
         return if (stringValue == LEGACY_NULL_VALUE) null else stringValue
+    }
+
+    /**
+     * Encrypts [value] with [aead] under the (prefsFileName, key)-derived
+     * associated data and returns the Base64 wire form stored in
+     * SharedPreferences. Extracted as an internal seam so the full
+     * encrypt → encode → decode → decrypt round trip (and its associated-data
+     * binding) is unit-testable with a JVM Tink AEAD, independent of the
+     * AndroidKeystore master key that production binds at [withAndroidKeystoreAead].
+     */
+    internal fun encodeEncrypted(aead: Aead, prefsFileName: String, key: String, value: ByteArray): String {
+        return encodeBase64(aead.encrypt(value, associatedData(prefsFileName, key)))
+    }
+
+    /**
+     * Inverse of [encodeEncrypted]. Throws [java.security.GeneralSecurityException]
+     * if [stored] was tampered with or the (prefsFileName, key) associated data
+     * does not match the value used at encrypt time.
+     */
+    internal fun decodeEncrypted(aead: Aead, prefsFileName: String, key: String, stored: String): ByteArray {
+        return aead.decrypt(decodeBase64(stored), associatedData(prefsFileName, key))
     }
 
     private inline fun <T> withAndroidKeystoreAead(
