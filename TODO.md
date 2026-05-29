@@ -80,8 +80,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   their `LayoutManager` `when` arms; converted the misused `FlorisImeSizing`
   `ProvideKeyboardRowBaseHeight` `@Deprecated` to a KDoc/TODO (it's the current
   API). **Shipped v1.8.195 (2026-05-28).**
-- [ ] **F37** (P2) — `AdvancedProviders.kt` audit: ship the named engines as classes,
-  rename the two engine tests to match the dispatcher, or consolidate. Decide + edit.
+- [x] **F37** (P2) — `AdvancedProviders.kt` audited: engines already exist as pure
+  `internal object`s targeted by the engine-named tests; providers are the
+  stateful public classes. Architecture correct — added a clarifying doc note.
+  **Shipped v1.8.196 (2026-05-28).**
 - [ ] **F39** (P2) — `DictionaryManager.kt` Log.w/Log.e + `@Suppress` audit; convert
   silent swallows to `flog*` with context (v1.8.184 convention) or justify each.
 - [ ] **EI1** (P2) — Partition `AppPrefs.kt` (~1,301 LOC) by feature area

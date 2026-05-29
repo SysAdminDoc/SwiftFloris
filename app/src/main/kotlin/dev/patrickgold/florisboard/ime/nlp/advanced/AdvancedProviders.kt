@@ -29,6 +29,26 @@ import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import java.io.BufferedReader
 import java.io.InputStreamReader
 
+/*
+ * Advanced NLP providers (RESEARCH_FEATURE_PLAN.md F37 — audited 2026-05-28).
+ *
+ * This single file intentionally holds two layers:
+ *
+ *  - **Stateless engines** — `AdvancedSpellingEngine` and `AdvancedPredictionEngine`
+ *    are `internal object`s containing the pure algorithm logic (Levenshtein
+ *    correction generation, frequency/context ranking). They take their inputs
+ *    explicitly and hold no state, which is why `AdvancedSpellingEngineTest` and
+ *    `AdvancedPredictionEngineTest` target them directly — those tests are
+ *    correctly named for the units under test.
+ *  - **Stateful providers** — `AdvancedSpellingProvider : SpellingProvider` and
+ *    `AdvancedPredictionProvider : SuggestionProvider` are the public NlpProvider
+ *    implementations that own lifecycle (create/preload/destroy), the bundled
+ *    dictionary, and the `LruCache`s, delegating the math to the engines.
+ *
+ * The F37 audit confirmed this engine/provider split is deliberate and the test
+ * naming is correct; no consolidation or rename is warranted. This note exists so
+ * the "single file vs. two engine-named tests" question is not re-litigated.
+ */
 internal object AdvancedSpellingEngine {
     fun generateCorrections(word: String, dictionary: Set<String>, maxCount: Int): List<String> {
         if (maxCount <= 0) {
