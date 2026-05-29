@@ -100,9 +100,10 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
   (`BuildConfig.WHATS_NEW` from the matching `CHANGELOG.md` section at build time;
   scrollable dialog + "Full changelog" link). **Shipped v1.8.198 (2026-05-28).**
   (Privacy-posture comparison table deferred — separate doc, lower value.)
-- [ ] **EI12** (P2) — Settings → Privacy → "Erase all on-device learning" combined
-  confirmed action wiping `PersonalBigramStore` + `PersonalTrigramStore` +
-  `AdaptiveTouchModel` + `CorrectionOutcomePriors` + personal dictionary in one motion.
+- [x] **EI12** (P2) — Settings → Typing stats → "Erase everything, including
+  dictionary": confirmed combined wipe of all 4 learning stores + the personal
+  dictionary (DB reset + overlay clear), behind a `JetPrefAlertDialog`. The gentler
+  dictionary-preserving "Reset all typing learning" stays. **Shipped v1.8.199.**
 - [ ] **F7** (P1) — Settings → Privacy → "Local audit log" surface for the existing
   `AddonInvocationAudit` + MCP + Tasker + voice-handoff records (browse + export +
   clear; redact PASSWORD payloads). No new data collection.

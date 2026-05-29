@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
+import androidx.compose.material.icons.filled.DeleteForever
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.TouchApp
 import androidx.compose.material3.Text
@@ -37,6 +38,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
+import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
 import dev.patrickgold.florisboard.ime.nlp.CorrectionAccuracyDelta
 import dev.patrickgold.florisboard.ime.nlp.CorrectionAccuracyTrend
 import dev.patrickgold.florisboard.ime.nlp.CorrectionOutcomePriors
@@ -45,6 +47,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -120,6 +123,8 @@ fun TypingStatsScreen() = FlorisScreen {
     }
 
     content {
+        var showEraseEverythingConfirm by remember { mutableStateOf(false) }
+
         PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_corpus)) {
             Preference(
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
@@ -212,6 +217,38 @@ fun TypingStatsScreen() = FlorisScreen {
                     }
                 },
             )
+            // RESEARCH_FEATURE_PLAN.md EI12 — single confirmed action that also wipes
+            // the personal dictionary (the "Reset all learning" row above deliberately
+            // keeps it). Destructive + no recovery, so it is gated behind a confirm
+            // dialog, unlike the per-category resets.
+            Preference(
+                icon = Icons.Default.DeleteForever,
+                title = stringRes(R.string.settings__typing_stats__erase_everything),
+                summary = stringRes(R.string.settings__typing_stats__erase_everything__summary),
+                onClick = { showEraseEverythingConfirm = true },
+            )
+        }
+
+        if (showEraseEverythingConfirm) {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__typing_stats__erase_everything__confirm_title),
+                confirmLabel = stringRes(R.string.settings__typing_stats__erase_everything__confirm_button),
+                onConfirm = {
+                    showEraseEverythingConfirm = false
+                    resetAndRefresh(R.string.settings__typing_stats__erase_everything__toast) {
+                        PersonalBigramStore.get(context).resetAndAwait()
+                        PersonalTrigramStore.get(context).resetAndAwait()
+                        CorrectionOutcomePriors.get(context).resetAndAwait()
+                        AdaptiveTouchModel.reset()
+                        DictionaryManager.default().florisUserDictionaryDatabase()?.reset()
+                        UserDictionaryOverlay.get().clearAll()
+                    }
+                },
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = { showEraseEverythingConfirm = false },
+            ) {
+                Text(stringRes(R.string.settings__typing_stats__erase_everything__confirm_message))
+            }
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_diagnostics)) {
