@@ -181,7 +181,7 @@ Out of scope:
   in `app/proguard-rules.pro` for release builds.
 - No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); the base
   APK ships **zero** native code as of v1.8.185 (the prior `:lib:native` Rust
-  placeholder was dropped — see `RESEARCH_FEATURE_PLAN.md` EI11 + the
+  placeholder was dropped — see `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md` EI11 + the
   v1.8.185 CHANGELOG entry). When optional native runtimes (LiteRT-LM,
   whisper.cpp, librime, etc.) land they ship as out-of-tree signed addon
   APKs with their own auditable sources, never as a hidden `:app`
