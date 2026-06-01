@@ -108,6 +108,8 @@ Full step-by-step paths are in [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FR
 
 Project-internal docs all live in the repository:
 
+- [`COMPLETED.md`](COMPLETED.md) — shipped-state summary.
+- [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md) — current research synthesis.
 - [`ARCHITECTURE.md`](ARCHITECTURE.md) — module, package, runtime, security-boundary, and CI architecture map.
 - [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup, verification, privacy, and release expectations.
 - [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md) — SwiftKey account-retirement migration paths.
@@ -128,6 +130,7 @@ Project-internal docs all live in the repository:
 - [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
 - [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused quality / UX / a11y / perf / test / delivery plan.
 - [`ROADMAP.md`](ROADMAP.md) — current and historical roadmap (v5.67).
+- [`docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`](docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md) — archived 2026-05-25 research plan.
 - [`CHANGELOG.md`](CHANGELOG.md) — full release history, one section per version (anchor: `#vX.Y.Z`).
 
 ## Architecture & Stack
@@ -445,7 +448,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.170** (2026-05-18). Migration window for SwiftKey users closes **2026-05-31** — 13 days from this release.
+🚀 **Active development.** Current release: **v1.8.200** (2026-05-28). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
@@ -457,6 +460,8 @@ limitations under the License.
 | **Issues** | https://github.com/SysAdminDoc/SwiftFloris/issues |
 | **Releases** | https://github.com/SysAdminDoc/SwiftFloris/releases |
 | **Roadmap** | [ROADMAP.md](ROADMAP.md) |
+| **Completed work** | [COMPLETED.md](COMPLETED.md) |
+| **Research report** | [RESEARCH_REPORT.md](RESEARCH_REPORT.md) |
 | **SwiftKey migration** | [docs/MIGRATE_FROM_SWIFTKEY.md](docs/MIGRATE_FROM_SWIFTKEY.md) |
 | **Privacy and AI** | [docs/PRIVACY_AND_AI.md](docs/PRIVACY_AND_AI.md) |
 | **Threat model** | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) |

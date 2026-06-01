@@ -4,7 +4,7 @@
 
 This file is the **canonical open-work checklist.** It consolidates the open items
 that were previously scattered across [`ROADMAP.md`](ROADMAP.md),
-[`RESEARCH_FEATURE_PLAN.md`](RESEARCH_FEATURE_PLAN.md),
+[`RESEARCH_FEATURE_PLAN_2026-05-25.md`](docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md),
 [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md), and the research runs under
 [`.ai/research/`](.ai/research/). Those files remain as **historical context and
 sourced reasoning** — but the live "what needs doing" list is *here*.
@@ -12,7 +12,7 @@ sourced reasoning** — but the live "what needs doing" list is *here*.
 - **Completed work** lives in [`CHANGELOG.md`](CHANGELOG.md) (one `## vX.Y.Z`
   section per release). When an item below ships, tick its box here and write the
   release section there. Do **not** re-expand a closed item in this file.
-- **IDs** trace back to their origin: `F#`/`EI#` from `RESEARCH_FEATURE_PLAN.md`;
+- **IDs** trace back to their origin: `F#`/`EI#` from `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`;
   `R#`/`O#` from `.ai/research/2026-05-25/SECOND_PASS_FINDINGS.md`; `WS#` from
   `IMPROVEMENT_PLAN.md` workstreams; `N#`/`Next-#`/`L#` from `ROADMAP.md` tiers.
 - **Hard rules still apply** (see [`AGENTS.md`](AGENTS.md)): no `INTERNET` in

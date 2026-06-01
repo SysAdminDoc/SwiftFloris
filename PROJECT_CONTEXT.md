@@ -541,7 +541,7 @@ Native runtimes for optional capabilities (LiteRT-LM, Bergamot, librime, ML
 Kit Digital Ink, Vosk) ship as out-of-tree signed addon APKs via the addon
 enrolment contract, not as a `:lib:native` module in the base APK. The
 prior `:lib:native` placeholder and `libnative/` Rust scaffold were dropped
-in v1.8.185 (RESEARCH_FEATURE_PLAN.md EI11) since no addon was ever going
+in v1.8.185 (`docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md` EI11) since no addon was ever going
 to consume them and they confused contributors about whether native code
 was permitted in `:app`.
 
