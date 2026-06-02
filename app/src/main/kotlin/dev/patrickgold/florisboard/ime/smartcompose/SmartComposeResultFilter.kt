@@ -68,7 +68,17 @@ object SmartComposeResultFilter {
             if (text.isBlank()) continue
             val existing = cleaned[text]
             val winner = if (existing == null || candidate.confidence > existing.confidence) {
-                candidate.copy(text = text)
+                // Recompute tokenCount when whitespace normalization changed the text:
+                // collapsing "see  you" -> "see you" must drop the stale 3-token count to
+                // 2, since tokenCount drives partial-accept granularity.
+                if (text == candidate.text) {
+                    candidate
+                } else {
+                    candidate.copy(
+                        text = text,
+                        tokenCount = text.split(' ').filter { it.isNotEmpty() }.size.coerceIn(1, 32),
+                    )
+                }
             } else {
                 existing
             }

@@ -313,6 +313,19 @@ class NlpManager(context: Context) {
         content: EditorContent,
         currentWord: String,
     ): GhostTextSuggestionCandidate? {
+        // Honor sensitive fields before deriving ghost text from the user's personal
+        // n-gram history. The composing-disabled gate only covers password *variations*;
+        // it does NOT cover IME_FLAG_NO_PERSONALIZED_LEARNING, which a field can set to
+        // ask the IME to suppress personalized output. SensitiveFieldGuard covers both,
+        // keeping ghost text consistent with the rest of the sensitive-field surface.
+        val editorInfo = editorInstance.activeInfo
+        if (dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard.isSensitive(
+                editorInfo.inputAttributes.raw,
+                editorInfo.imeOptions.raw,
+            )
+        ) {
+            return null
+        }
         val provider = dev.patrickgold.florisboard.ime.smartcompose
             .SmartComposeProviderRegistry.active
         val locale = subtype.primaryLocale.languageTag()

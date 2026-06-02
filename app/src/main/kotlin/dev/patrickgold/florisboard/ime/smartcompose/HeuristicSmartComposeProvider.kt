@@ -67,7 +67,19 @@ class HeuristicSmartComposeProvider(private val appContext: Context) : SmartComp
         maxCandidates: Int,
     ): SmartComposeResult {
         if (!enabled() || maxCandidates <= 0) return SmartComposeResult.NoSuggestion
-        val (prev2, prev1) = HeuristicSmartCompose.lastTwoWords(context.precedingText)
+        // Strip the in-progress word (composingPrefix) off the preceding text before
+        // extracting the n-gram context: precedingText runs up to the selection start and
+        // therefore INCLUDES the partially-typed word, so without this the store would
+        // predict the word that FOLLOWS the fragment (and feed the fragment to the n-gram
+        // store as if it were a finished word, which never matches).
+        val base = if (context.composingPrefix.isNotEmpty() &&
+            context.precedingText.endsWith(context.composingPrefix)
+        ) {
+            context.precedingText.dropLast(context.composingPrefix.length)
+        } else {
+            context.precedingText
+        }
+        val (prev2, prev1) = HeuristicSmartCompose.lastTwoWords(base)
         if (prev1 == null) return SmartComposeResult.NoSuggestion
 
         val locale = FlorisLocale.fromTag(context.locale)
@@ -87,7 +99,7 @@ class HeuristicSmartComposeProvider(private val appContext: Context) : SmartComp
             }
             val coldStart = if (trigram.isEmpty() && bigram.isEmpty()) {
                 ColdStartNextWordPriors
-                    .suggest(context.precedingText, context.locale, maxCandidates)
+                    .suggest(base, context.locale, maxCandidates)
                     .map { it.word }
             } else {
                 emptyList()

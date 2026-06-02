@@ -52,6 +52,11 @@ class RewriteRouter(
         }
     }
 
+    // accessOrder=true means get() structurally mutates the map (re-links to tail), so
+    // concurrent get()/put()/clear() can corrupt the list or throw CME. Guard every
+    // access, mirroring SmartComposeCache.
+    private val cacheLock = Any()
+
     fun rewrite(request: RewriteRequest): Response {
         if (!isConsentGranted()) {
             return Response.Suppressed(reason = "consent required")
@@ -67,13 +72,13 @@ class RewriteRouter(
         }
 
         val key = CacheKey(request.tone, request.sourceLanguageTag, request.sourceText)
-        cache?.get(key)?.let { hit ->
+        synchronized(cacheLock) { cache?.get(key) }?.let { hit ->
             return Response.Rewritten(hit.rewrittenText, hit.tone, fromCache = true)
         }
 
         return when (val result = provider.rewrite(request)) {
             is RewriteResult.Rewritten -> {
-                cache?.put(key, result)
+                synchronized(cacheLock) { cache?.put(key, result) }
                 Response.Rewritten(result.rewrittenText, result.tone, fromCache = false)
             }
             is RewriteResult.Unavailable -> Response.Suppressed(reason = result.reason)
@@ -83,7 +88,7 @@ class RewriteRouter(
 
     /** Drop the LRU cache (e.g. on language switch). */
     fun clearCache() {
-        cache?.clear()
+        synchronized(cacheLock) { cache?.clear() }
     }
 
     /** Caller-facing result envelope. */

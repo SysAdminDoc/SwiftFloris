@@ -120,6 +120,30 @@ object EmojiHistoryHelper {
         )
     }
 
+    /**
+     * Persist [dataMut] with the configured pinned/recent caps applied, mirroring
+     * [markEmojiUsed]. The pin/unpin/move/remove writers must use this rather than
+     * the uncapped [EmojiHistory.Editor.build]: otherwise pinning past a finite cap
+     * leaves the list over-size until the NEXT unrelated emoji tap runs markEmojiUsed,
+     * which then silently truncates the user's oldest explicit pins.
+     */
+    private suspend fun setCapped(prefs: FlorisPreferenceModel, dataMut: EmojiHistory.Editor) {
+        val pinnedUS = prefs.emoji.historyPinnedUpdateStrategy.get()
+        val recentUS = prefs.emoji.historyRecentUpdateStrategy.get()
+        val pinnedMaxSize = prefs.emoji.historyPinnedMaxSize.get().let { maxSize ->
+            if (maxSize == EmojiHistory.MaxSizeUnlimited) Int.MAX_VALUE else maxSize
+        }
+        val recentMaxSize = prefs.emoji.historyRecentMaxSize.get().let { maxSize ->
+            if (maxSize == EmojiHistory.MaxSizeUnlimited) Int.MAX_VALUE else maxSize
+        }
+        prefs.emoji.historyData.set(
+            EmojiHistory(
+                pinned = dataMut.pinned.takeWithStrategy(pinnedUS, pinnedMaxSize),
+                recent = dataMut.recent.takeWithStrategy(recentUS, recentMaxSize),
+            )
+        )
+    }
+
     suspend fun pinEmoji(prefs: FlorisPreferenceModel, emoji: Emoji): Unit = emojiGuard.withLock {
         if (!prefs.emoji.historyEnabled.get()) {
             return
@@ -134,7 +158,7 @@ object EmojiHistoryHelper {
             dataMut.pinned.addWithStrategy(pinnedUS, emoji)
         }
 
-        prefs.emoji.historyData.set(dataMut.build())
+        setCapped(prefs, dataMut)
     }
 
     suspend fun unpinEmoji(prefs: FlorisPreferenceModel, emoji: Emoji): Unit = emojiGuard.withLock {
@@ -151,7 +175,7 @@ object EmojiHistoryHelper {
             dataMut.recent.addWithStrategy(recentUS, emoji)
         }
 
-        prefs.emoji.historyData.set(dataMut.build())
+        setCapped(prefs, dataMut)
     }
 
     suspend fun moveEmoji(prefs: FlorisPreferenceModel, emoji: Emoji, offset: Int): Unit = emojiGuard.withLock {
@@ -171,7 +195,7 @@ object EmojiHistoryHelper {
             }
         }
 
-        prefs.emoji.historyData.set(dataMut.build())
+        setCapped(prefs, dataMut)
     }
 
     suspend fun removeEmoji(prefs: FlorisPreferenceModel, emoji: Emoji): Unit = emojiGuard.withLock {
@@ -191,21 +215,19 @@ object EmojiHistoryHelper {
             }
         }
 
-        prefs.emoji.historyData.set(dataMut.build())
+        setCapped(prefs, dataMut)
     }
 
+    // No historyEnabled guard: clearing already-stored data must work even after the
+    // user turns history OFF — otherwise a previously-collected typed-emoji log is
+    // stranded with no UI path to erase it (a privacy gap for a privacy-first keyboard).
+    // Clearing is always safe/idempotent.
     suspend fun deleteHistory(prefs: FlorisPreferenceModel): Unit = emojiGuard.withLock {
-        if (!prefs.emoji.historyEnabled.get()) {
-            return
-        }
         val dataMut = prefs.emoji.historyData.get().edit()
         prefs.emoji.historyData.set(EmojiHistory(pinned = dataMut.pinned, listOf()))
     }
 
     suspend fun deletePinned(prefs: FlorisPreferenceModel): Unit = emojiGuard.withLock {
-        if (!prefs.emoji.historyEnabled.get()) {
-            return
-        }
         val dataMut = prefs.emoji.historyData.get().edit()
         prefs.emoji.historyData.set(EmojiHistory(pinned = listOf(), dataMut.recent))
     }
