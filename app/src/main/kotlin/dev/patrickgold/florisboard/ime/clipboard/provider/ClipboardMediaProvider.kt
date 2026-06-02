@@ -46,7 +46,11 @@ import org.florisboard.lib.kotlin.tryOrNull
  */
 class ClipboardMediaProvider : ContentProvider() {
     private var clipboardFilesDao: ClipboardFilesDao? = null
-    private val cachedFileInfos: HashMap<Long, ClipboardFileInfo> = hashMapOf()
+    // ConcurrentHashMap: this cache is mutated/read from binder pool threads
+    // (insert/delete/getType) AND from the ioScope init() iteration concurrently.
+    // A plain HashMap under concurrent structural modification is undefined
+    // behaviour (lost writes, CME during init's iteration, corrupted bucket table).
+    private val cachedFileInfos = java.util.concurrent.ConcurrentHashMap<Long, ClipboardFileInfo>()
     private val ioScope: CoroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     companion object {
@@ -102,11 +106,14 @@ class ClipboardMediaProvider : ContentProvider() {
     ): Cursor? {
         val id = tryOrNull { ContentUris.parseId(uri) } ?: return null
         if (projection != null) {
-            if (projection.contains(MediaStore.Images.Media.ORIENTATION)) {
-                clipboardFilesDao?.getCursorByIdWithColumns(id, MediaStore.Images.Media.ORIENTATION)
+            return if (projection.contains(MediaStore.Images.Media.ORIENTATION)) {
+                // Callers (notably the platform image-paste path) request
+                // just the ORIENTATION column. Return that cursor instead
+                // of discarding it and falling through to the full row.
+                clipboardFilesDao?.getOrientationCursorById(id)
             } else {
                 //Return null if the projection query is invalid
-                return null
+                null
             }
         }
         return clipboardFilesDao?.getCursorById(id)

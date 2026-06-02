@@ -28,12 +28,14 @@ import androidx.compose.material3.Checkbox
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.TriStateCheckbox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -156,6 +158,18 @@ fun BackupScreen() = FlorisScreen {
     var isBackupInProgress by remember { mutableStateOf(false) }
     var lastBackupNotice by remember { mutableStateOf<BackupFlowNotice?>(null) }
     var lastBackupErrorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Close the workspace when the screen leaves composition (system-back / nav-up),
+    // mirroring RestoreScreen. The share-intent path deliberately sets backupWorkspace
+    // = null after handing the zip to FileProvider, so onDispose only closes a
+    // still-owned workspace and never deletes a zip a receiving app is still reading.
+    val currentBackupWorkspace by rememberUpdatedState(backupWorkspace)
+    val currentIsBackupInProgress by rememberUpdatedState(isBackupInProgress)
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!currentIsBackupInProgress) currentBackupWorkspace?.close()
+        }
+    }
 
     val backUpToFileSystemLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/zip"),
@@ -308,6 +322,14 @@ fun BackupScreen() = FlorisScreen {
                         .createChooserIntent()
                         .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                     context.startActivity(shareIntent)
+                    // Don't close() here: the receiving app reads the zip from the
+                    // FileProvider URI after this returns, and close() deletes the
+                    // workspace dir (the zip with it). But drop our reference so the
+                    // next backup rebuilds a fresh workspace instead of re-sharing this
+                    // stale zip — prepareAndPerformBackup() only rebuilds when
+                    // backupWorkspace is null/closed, so a non-null leftover would
+                    // re-share the old selection even after the user changes checkboxes.
+                    backupWorkspace = null
                     isBackupInProgress = false
                     lastBackupNotice = BackupFlowNotice.ShareSheetOpened
                 }
@@ -327,6 +349,10 @@ fun BackupScreen() = FlorisScreen {
         FlorisButtonBar {
             ButtonBarSpacer()
             ButtonBarTextButton(
+                // Disabled while a backup is running: close() deletes the workspace
+                // directory, which would otherwise be torn down from under the
+                // in-flight zip/copy coroutine (mirrors RestoreScreen's guard).
+                enabled = !isBackupInProgress,
                 onClick = {
                     backupWorkspace?.close()
                     navController.popBackStack()

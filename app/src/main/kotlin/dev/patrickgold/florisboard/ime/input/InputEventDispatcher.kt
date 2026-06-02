@@ -226,8 +226,12 @@ class InputEventDispatcher private constructor(private val repeatableKeyCodes: I
 
     data class PressedKeyInfo(
         val eventTimeDown: Long,
-        var job: Job? = null,
-        var blockUp: Boolean = false,
+        // job/blockUp are written by the long-press/repeat coroutine on
+        // Dispatchers.Default (outside the pressedKeys lock) and read under the
+        // lock in sendUp(); @Volatile guarantees the write is visible across
+        // threads so a long-press up-suppression can't be missed.
+        @Volatile var job: Job? = null,
+        @Volatile var blockUp: Boolean = false,
     ) {
         fun cancelJobs() {
             job?.cancel()

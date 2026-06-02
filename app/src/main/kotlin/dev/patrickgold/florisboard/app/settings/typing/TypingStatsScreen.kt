@@ -124,6 +124,7 @@ fun TypingStatsScreen() = FlorisScreen {
 
     content {
         var showEraseEverythingConfirm by remember { mutableStateOf(false) }
+        var showResetAllConfirm by remember { mutableStateOf(false) }
 
         PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_corpus)) {
             Preference(
@@ -208,14 +209,12 @@ fun TypingStatsScreen() = FlorisScreen {
             Preference(
                 title = stringRes(R.string.settings__typing_stats__reset_all_learning),
                 summary = stringRes(R.string.settings__typing_stats__reset_all_learning__summary),
-                onClick = {
-                    resetAndRefresh(R.string.settings__typing_stats__reset_all_learning__toast) {
-                        PersonalBigramStore.get(context).resetAndAwait()
-                        PersonalTrigramStore.get(context).resetAndAwait()
-                        CorrectionOutcomePriors.get(context).resetAndAwait()
-                        AdaptiveTouchModel.reset()
-                    }
-                },
+                // Confirm-gated: this single tap wipes the entire accumulated typing
+                // model (phrases, correction memory, adaptive touch) with no recovery —
+                // the same destructive-without-recovery property that gates the
+                // "Erase everything" row below. The per-category resets above stay
+                // unguarded because each only drops one regenerable model.
+                onClick = { showResetAllConfirm = true },
             )
             // RESEARCH_FEATURE_PLAN.md EI12 — single confirmed action that also wipes
             // the personal dictionary (the "Reset all learning" row above deliberately
@@ -227,6 +226,26 @@ fun TypingStatsScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__typing_stats__erase_everything__summary),
                 onClick = { showEraseEverythingConfirm = true },
             )
+        }
+
+        if (showResetAllConfirm) {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__typing_stats__reset_all_learning),
+                confirmLabel = stringRes(R.string.action__reset),
+                onConfirm = {
+                    showResetAllConfirm = false
+                    resetAndRefresh(R.string.settings__typing_stats__reset_all_learning__toast) {
+                        PersonalBigramStore.get(context).resetAndAwait()
+                        PersonalTrigramStore.get(context).resetAndAwait()
+                        CorrectionOutcomePriors.get(context).resetAndAwait()
+                        AdaptiveTouchModel.reset()
+                    }
+                },
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = { showResetAllConfirm = false },
+            ) {
+                Text(stringRes(R.string.settings__typing_stats__reset_all_learning__summary))
+            }
         }
 
         if (showEraseEverythingConfirm) {

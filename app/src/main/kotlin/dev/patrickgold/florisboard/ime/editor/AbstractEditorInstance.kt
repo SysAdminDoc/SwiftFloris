@@ -375,7 +375,10 @@ abstract class AbstractEditorInstance(context: Context) {
             expectedContentQueue.push(newContent)
             // Utilize composing region to replace previous chars without using delete. This avoids flickering in the
             // target editor and improves the UX
-            ic.setComposingRegion(content.selection.start - rm, content.selection.start)
+            // coerceAtLeast(0): in a corner case (deletePreviousSpace bumping rm
+            // past the cursor offset) start-rm could go negative, which different
+            // editors handle inconsistently and can drop the subsequent edit.
+            ic.setComposingRegion((content.selection.start - rm).coerceAtLeast(0), content.selection.start)
             ic.setComposingText(finalText, 1)
             // Now set the proper composing region we expect
             ic.setComposingRegion(newContent.composing)
@@ -416,10 +419,15 @@ abstract class AbstractEditorInstance(context: Context) {
         val ic = currentInputConnection() ?: return false
         val content = activeContent
         val composing = content.composing
-        ic.beginBatchEdit()
+        // Begin the batch only after the guard: the previous order left an
+        // unbalanced beginBatchEdit() on the early-return path, which keeps the
+        // target editor in a nested batch and suppresses onUpdateSelection until
+        // the input session restarts (stale cursor/selection mirror).
         if (activeInfo.isRawInputEditor || composing.isNotValid) {
             return false
-        } else runBlocking {
+        }
+        ic.beginBatchEdit()
+        runBlocking {
             val newSelection = EditorRange.cursor(composing.end + (text.length - content.composingText.length))
             val newContent = content.generateCopy(
                 selection = newSelection,

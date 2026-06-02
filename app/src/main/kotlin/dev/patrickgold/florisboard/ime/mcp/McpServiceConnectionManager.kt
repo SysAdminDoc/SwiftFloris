@@ -91,6 +91,13 @@ class McpServiceConnectionManager(
         val accepted = appContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
         if (accepted) {
             table.registerPending(daemonKey, connection)
+        } else {
+            // Android contract: even when bindService() returns false the
+            // system may have retained the ServiceConnection, so it must be
+            // released or it leaks. The bounded rebind loop on onBindingDied
+            // re-enters this path for an uninstalled / permission-revoked
+            // daemon, which would otherwise leak one connection per attempt.
+            runCatching { appContext.unbindService(connection) }
         }
         return accepted
     }

@@ -1066,7 +1066,10 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             // Migrate media prefs to emoji prefs
             // Keep migration rule until: 0.6 dev cycle
             "media__emoji_recently_used" -> {
-                val emojiValues = entry.rawValue.split(";")
+                // Filter blanks: split(";") on an empty/trailing-separator value
+                // yields "" entries, which would migrate into bogus empty Emoji("")
+                // rows in the recent-emoji history.
+                val emojiValues = entry.rawValue.split(";").filter { it.isNotEmpty() }
                 val recent = emojiValues.map {
                     dev.patrickgold.florisboard.ime.media.emoji.Emoji(it, "", emptyList())
                 }

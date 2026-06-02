@@ -375,8 +375,20 @@ interface ClipboardFilesDao {
     @Query("SELECT * FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
     fun getCursorById(uid: Long) : Cursor
 
-    @Query("SELECT (:projection) FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)")
-    fun getCursorByIdWithColumns(uid: Long, projection: String) : Cursor
+    // Returns a single-column cursor over the EXIF orientation for the
+    // row. A column name cannot be supplied as a bind parameter — Room
+    // binds `:param` as a *value*, so the old `SELECT (:projection)`
+    // returned a one-row cursor whose only cell was the literal string
+    // "orientation", never the ORIENTATION column. The provider's only
+    // projection consumer (MediaStore.Images.Media.ORIENTATION) is served
+    // by selecting the column directly and aliasing it back to the
+    // requested projection name so the cursor's column name matches what
+    // the caller asked for.
+    @Query(
+        "SELECT `${Media.ORIENTATION}` AS `${Media.ORIENTATION}` " +
+            "FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:uid)",
+    )
+    fun getOrientationCursorById(uid: Long) : Cursor
 
     @Query("DELETE FROM $CLIPBOARD_FILES_TABLE WHERE ${BaseColumns._ID} == (:id)")
     fun delete(id: Long)

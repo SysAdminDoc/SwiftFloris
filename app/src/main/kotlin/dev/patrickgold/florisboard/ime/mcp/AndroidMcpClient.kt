@@ -129,8 +129,12 @@ class AndroidMcpClient(
         // Defend against a misbehaving / malicious daemon shipping an
         // oversized response that would otherwise force the IME to
         // allocate megabytes of UTF-16 just to throw it away on the decode
-        // line. The contract's cap applies symmetrically to both sides.
-        if (responseJson.length.toLong() > McpBridgeContract.MAX_PAYLOAD_BYTES) {
+        // line. The contract's cap is in BYTES, so compare against the UTF-8
+        // byte length — not the UTF-16 char count, which is only a lower
+        // bound on the byte length and would let an oversized multibyte
+        // response slip past. Mirrors the request-side check above.
+        val responseBytes = responseJson.toByteArray(Charsets.UTF_8).size.toLong()
+        if (responseBytes > McpBridgeContract.MAX_PAYLOAD_BYTES) {
             return McpToolCallResponse(
                 correlationId = correlationId,
                 toolName = toolName,

@@ -41,7 +41,13 @@ package dev.patrickgold.florisboard.ime.translate
 object LanguageDetector {
 
     enum class DetectedScript(val rangesLo: IntArray, val rangesHi: IntArray) {
-        LATIN(intArrayOf(0x0041, 0x0061), intArrayOf(0x005A, 0x007A)),
+        // Basic Latin (A-Z, a-z) plus Latin-1 Supplement / Latin Extended-A/-B
+        // (0x00C0-0x024F) and Latin Extended Additional (0x1E00-0x1EFF) so that
+        // accented letters (é à ñ ü ç ã …) — ubiquitous in the very languages
+        // this detector targets — classify as LATIN instead of UNKNOWN. The
+        // non-letter symbols inside 0x00C0-0x00FF (× ÷) are already filtered out
+        // upstream by the Character.isLetter() gate.
+        LATIN(intArrayOf(0x0041, 0x0061, 0x00C0, 0x1E00), intArrayOf(0x005A, 0x007A, 0x024F, 0x1EFF)),
         CYRILLIC(intArrayOf(0x0400), intArrayOf(0x04FF)),
         GREEK(intArrayOf(0x0370), intArrayOf(0x03FF)),
         HEBREW(intArrayOf(0x0590), intArrayOf(0x05FF)),
@@ -85,7 +91,13 @@ object LanguageDetector {
             counts[script] = (counts[script] ?: 0) + 1
         }
         if (letterCount == 0) return Detection(DetectedScript.UNKNOWN, 0f)
-        val best = counts.maxByOrNull { it.value } ?: return Detection(DetectedScript.UNKNOWN, 0f)
+        // Never let stray unclassified letters become the "dominant script":
+        // pick the most frequent *recognised* script. Falls back to UNKNOWN only
+        // when no supported script appears at all.
+        val best = counts.entries
+            .filter { it.key != DetectedScript.UNKNOWN }
+            .maxByOrNull { it.value }
+            ?: return Detection(DetectedScript.UNKNOWN, 0f)
         val confidence = best.value.toFloat() / letterCount.toFloat()
         return Detection(best.key, confidence)
     }

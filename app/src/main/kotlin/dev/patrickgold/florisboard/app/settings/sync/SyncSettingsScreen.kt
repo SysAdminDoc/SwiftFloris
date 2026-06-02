@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.app.settings.sync
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,7 +27,8 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
+import androidx.compose.ui.semantics.Role
+import org.florisboard.lib.compose.rippleClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -131,6 +133,18 @@ fun SyncSettingsScreen() = FlorisScreen {
 
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
+            // Release the previous folder grant before taking the new one, otherwise
+            // each re-pick orphans a persisted grant and slowly exhausts Android's
+            // per-app persisted-URI-permission cap (the stale grants survive reboots).
+            val previousFolderUri = (activeChannel as? SyncChannel.LocalFolder)?.absolutePath
+            if (!previousFolderUri.isNullOrBlank() && previousFolderUri != uri.toString()) {
+                runCatching {
+                    context.contentResolver.releasePersistableUriPermission(
+                        Uri.parse(previousFolderUri),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }
+            }
             runCatching {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
@@ -146,6 +160,27 @@ fun SyncSettingsScreen() = FlorisScreen {
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
         if (uri != null) {
+            // Release the previous manual-export grant before taking the new one (see
+            // folderLauncher) so re-picking a target doesn't leak persisted grants.
+            val previousExportUri = manualExportTargetUri
+            if (previousExportUri.isNotBlank() && previousExportUri != uri.toString()) {
+                runCatching {
+                    context.contentResolver.releasePersistableUriPermission(
+                        Uri.parse(previousExportUri),
+                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                    )
+                }
+            }
+            // Persist the write grant, otherwise the transient ActivityResult
+            // permission is lost on process death and every later export to this
+            // saved target fails with SecurityException (the folder channel above
+            // already does this).
+            runCatching {
+                context.contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                )
+            }
             scope.launch {
                 prefs.sync.manualExportTargetUri.set(uri.toString())
                 prefs.sync.channelId.set(SyncChannel.ManualExport.channelId)
@@ -303,13 +338,17 @@ private fun SyncChannelPreference(
     onClick: () -> Unit,
 ) {
     JetPrefListItem(
-        modifier = Modifier.clickable(onClick = onClick),
+        // One activation target with a RadioButton role (mirrors
+        // BackupScreen.RadioListItem): the whole row is the radio control, and
+        // the inner RadioButton is non-interactive (onClick = null) so screen
+        // readers announce a single selectable radio option, not two targets.
+        modifier = Modifier.rippleClickable(role = Role.RadioButton, onClick = onClick),
         text = title,
         secondaryText = summary,
         trailing = {
             RadioButton(
                 selected = selected,
-                onClick = onClick,
+                onClick = null,
             )
         },
     )

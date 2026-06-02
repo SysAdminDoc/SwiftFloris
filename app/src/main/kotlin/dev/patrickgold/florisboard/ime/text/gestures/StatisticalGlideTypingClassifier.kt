@@ -695,9 +695,16 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         }
 
         override fun hashCode(): Int {
-            var result = xs.contentHashCode()
-            result = 31 * result + ys.contentHashCode()
-            result = 31 * result + size
+            // Hash only the active prefix [0, size) to stay consistent with equals().
+            // The backing xs/ys arrays are a fixed 500-element capacity that clear()
+            // never zeroes, so hashing the whole array would give two equals()-equal
+            // gestures different hash codes (stale tail) and silently break the
+            // SuggestionCacheKey lookups that key lruSuggestionCache.
+            var result = size
+            for (i in 0 until size) {
+                result = 31 * result + xs[i].toRawBits()
+                result = 31 * result + ys[i].toRawBits()
+            }
             return result
         }
     }

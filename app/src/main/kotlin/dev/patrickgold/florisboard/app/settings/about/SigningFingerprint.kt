@@ -79,16 +79,30 @@ object SigningFingerprint {
                 @Suppress("DEPRECATION")
                 val info = pm.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
                 val signingInfo: SigningInfo = info.signingInfo ?: return null
+                // Refuse to pin a multi-signer package. apkContentsSigners returns ALL
+                // signers in no contractually-stable order, so .first() could pin a
+                // different signer across boots, and — worse — an attacker re-signing a
+                // hijacked package as [victimCert, attackerCert] would still match a pin
+                // taken on victimCert. A trust pin over an ambiguous signer set is not a
+                // pin; treat it as unreadable.
                 if (signingInfo.hasMultipleSigners()) {
-                    signingInfo.apkContentsSigners.toList()
-                } else {
-                    signingInfo.signingCertificateHistory.toList()
+                    flogError { "$packageName has multiple signers; refusing to pin an ambiguous certificate." }
+                    return null
                 }
+                // Use the *current* signer set only — what `apksigner --print-certs`
+                // reports and the platform actually trusts. Do NOT fall back to
+                // signingCertificateHistory: it is ordered oldest→newest, so .first()
+                // there is a superseded/rotated-away cert — exactly the trust root a
+                // compromised old key would present. Empty current set ⇒ unreadable.
+                signingInfo.apkContentsSigners?.toList().orEmpty()
             } else {
                 @Suppress("DEPRECATION")
                 val info = pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+                // GET_SIGNATURES (Android 8.0/8.1) surfaces only the v1 (JAR) block and
+                // cannot disambiguate multi-signer APKs; require exactly one signature so
+                // the pinned fingerprint is unambiguous, otherwise treat as unreadable.
                 @Suppress("DEPRECATION")
-                info.signatures?.toList()
+                info.signatures?.toList()?.takeIf { it.size == 1 }
             }
         } catch (e: Throwable) {
             flogError { "Failed to read signing info for $packageName: $e" }

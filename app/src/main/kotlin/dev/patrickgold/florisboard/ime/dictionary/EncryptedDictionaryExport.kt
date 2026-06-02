@@ -114,6 +114,17 @@ object EncryptedDictionaryExport {
      */
     const val DEFAULT_PBKDF2_ITERS: Int = 600_000
 
+    /** Floor for an accepted PBKDF2 iteration count (matches the encrypt-side minimum). */
+    const val MIN_PBKDF2_ITERS: Int = 100_000
+
+    /**
+     * Hard ceiling for the iteration count read from an untrusted envelope header.
+     * Without it, a crafted `.sfexp` could request ~2 billion rounds and pin a CPU
+     * core for minutes before the GCM tag is ever checked (a trivial decrypt DoS).
+     * 10M leaves ample headroom for future security bumps from [DEFAULT_PBKDF2_ITERS].
+     */
+    const val MAX_PBKDF2_ITERS: Int = 10_000_000
+
     /**
      * Hard cap on plaintext payload size so an attacker-controlled
      * blob can't force a multi-megabyte allocation on decrypt. 16 MiB
@@ -147,8 +158,8 @@ object EncryptedDictionaryExport {
         require(passphrase.isNotEmpty()) {
             "Passphrase must not be empty."
         }
-        require(iterations >= 100_000) {
-            "PBKDF2 iteration count must be at least 100,000 (OWASP 2025 floor)."
+        require(iterations in MIN_PBKDF2_ITERS..MAX_PBKDF2_ITERS) {
+            "PBKDF2 iteration count must be within $MIN_PBKDF2_ITERS..$MAX_PBKDF2_ITERS (OWASP 2025 floor + DoS ceiling)."
         }
         val salt = ByteArray(SALT_BYTES).also { secureRandom.nextBytes(it) }
         val nonce = ByteArray(GCM_NONCE_BYTES).also { secureRandom.nextBytes(it) }
@@ -205,7 +216,9 @@ object EncryptedDictionaryExport {
         val salt = ByteArray(SALT_BYTES).also { buf.get(it) }
         val nonce = ByteArray(GCM_NONCE_BYTES).also { buf.get(it) }
         val iterations = buf.int
-        if (iterations < 1) {
+        if (iterations < MIN_PBKDF2_ITERS || iterations > MAX_PBKDF2_ITERS) {
+            // Reject before deriveKey() so an attacker-chosen iteration count
+            // cannot turn a mere import attempt into a multi-minute PBKDF2 hang.
             throw EncryptedDictionaryException(FailureReason.CORRUPT_HEADER)
         }
         val plaintextLen = buf.int

@@ -80,7 +80,12 @@ data class SnyggTextMaxLinesValue(val maxLines: Int) : SnyggTextValue {
             val map = snyggIdToValueMapOf()
             spec.parse(v, map)
             val clampValue = map.getString(TextMaxLinesId)
-            val maxLines = if (clampValue == NoneKey) NoneValue else clampValue.toInt()
+            // toIntOrNull, not toInt: the regex [1-9][0-9]* accepts arbitrarily long
+            // digit strings, so a well-formed but out-of-Int-range literal (e.g.
+            // "99999999999") would throw NumberFormatException and be swallowed into
+            // an invalid value. Map an overflowing literal to the NoneValue sentinel
+            // (unbounded) instead of discarding the whole property.
+            val maxLines = if (clampValue == NoneKey) NoneValue else (clampValue.toIntOrNull() ?: NoneValue)
             return@runCatching SnyggTextMaxLinesValue(maxLines)
         }
     }

@@ -73,6 +73,13 @@ object PersonalDictionaryImportBatch {
         // size is sub-10k entries even for power users) so the snapshot
         // cost is negligible compared to the per-entry insert/update RPC.
         val beforeIds: Set<Long> = dao.queryAll().mapTo(HashSet()) { it.id }
+        // Track the `(word, locale)` keys this batch actually inserted. The
+        // post-pass diff must only claim rows matching one of these keys —
+        // otherwise a word the user auto-learns concurrently (DictionaryManager
+        // .learnWord inserts into this same table off-thread) would also be
+        // id-`!in beforeIds` and get swept into the rollback-eligible set, so a
+        // later Undo would silently delete the user's freshly-learned word.
+        val insertedKeys = HashSet<Pair<String, String?>>()
         var updated = 0
         var skipped = 0
         for (entry in parsedEntries) {
@@ -107,11 +114,15 @@ object PersonalDictionaryImportBatch {
                         shortcut = shortcut,
                     ),
                 )
+                insertedKeys += word to locale
             }
         }
-        // Identify newly-inserted ids by diffing against the before-set.
+        // Identify newly-inserted ids by diffing against the before-set, but
+        // only accept rows whose `(word, locale)` matches a key this batch
+        // inserted. This keeps concurrently auto-learned words out of the
+        // rollback-eligible set.
         val insertedIds = dao.queryAll().mapNotNull { row ->
-            row.id.takeIf { it !in beforeIds }
+            row.id.takeIf { it !in beforeIds && (row.word to row.locale) in insertedKeys }
         }
         return PersonalDictionaryImportResult(
             insertedIds = insertedIds,

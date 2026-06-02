@@ -75,6 +75,7 @@ import dev.patrickgold.florisboard.lib.util.launchActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidInternalR
@@ -313,13 +314,21 @@ class FlorisImeService : LifecycleInputMethodService() {
             switchInputMethod(method.id, subtype)
             return true
         } else {
-            window.window?.let { window ->
+            // Pre-API28: a null window token previously fell through to `return false`
+            // silently — a candidate voice IME was selected but the user got no
+            // feedback and nothing happened. Surface the IME picker (the same fallback
+            // switchToPrev/NextInputMethod use) instead of a silent no-op.
+            val token = window.window?.attributes?.token
+            if (token != null) {
                 @Suppress("DEPRECATION")
-                imm.setInputMethod(window.attributes.token, method.id)
+                imm.setInputMethod(token, method.id)
                 return true
             }
+            if (showFailureToast) {
+                imm.showInputMethodPicker()
+            }
+            return false
         }
-        return false
     }
 
     private val prefs by FlorisPreferenceStore
@@ -369,7 +378,7 @@ class FlorisImeService : LifecycleInputMethodService() {
             prefs.localization.displayKeyboardLabelsInSubtypeLanguage.asFlow(),
         ) { systemLocales, subtype, shouldUseSubtypeLanguage ->
             systemLocales to (if (shouldUseSubtypeLanguage) subtype.primaryLocale else null)
-        }.collectIn(lifecycleScope) { (systemLocales, subtypeLocale) ->
+        }.distinctUntilChanged().collectIn(lifecycleScope) { (systemLocales, subtypeLocale) ->
             val config = Configuration().apply {
                 setToDefaults()
                 if (subtypeLocale != null) {
@@ -509,6 +518,14 @@ class FlorisImeService : LifecycleInputMethodService() {
             }
             wallpaperReceiverRegistered = false
         }
+        // Clear inline-autofill suggestions: NlpInlineAutofill is a process-lifetime
+        // singleton whose StateFlow holds InlineContentViews inflated against THIS
+        // service Context. onFinishInput() clears them, but Android does not guarantee
+        // it runs before onDestroy(), so a destroy/rebind with suggestions still
+        // resident would keep this dead service (and its window) reachable.
+        try { NlpInlineAutofill.clearInlineSuggestions() } catch (e: Exception) {
+            flogWarning(LogTopic.IMS_EVENTS) { "NlpInlineAutofill.clearInlineSuggestions() failed: $e" }
+        }
         FlorisImeServiceReference = WeakReference(null)
         super.onDestroy()
     }
@@ -605,7 +622,14 @@ class FlorisImeService : LifecycleInputMethodService() {
             -> true
             else -> false
         }
-        if (isPasswordField) {
+        // Also honour incognito: every other sensitive-data gate (voice handoff,
+        // dictionary learning, clipboard history) treats incognito as equal to a
+        // password field, but FLAG_SECURE only checked the field variation, leaving
+        // the IME window screenshot-/record-able while the user types privately into
+        // an ordinary field in incognito mode. NOTE: this re-applies on each
+        // onStartInputView; a mid-session TOGGLE_INCOGNITO_MODE won't re-run it until
+        // the next field start (the toggle-path callback is left as follow-up work).
+        if (isPasswordField || activeState.isIncognitoMode) {
             w.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         } else {
             w.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)

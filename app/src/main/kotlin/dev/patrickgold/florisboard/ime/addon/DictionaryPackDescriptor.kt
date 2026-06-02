@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.addon
 
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import java.util.Locale
 
 /**
  * ROADMAP §7 Next-10.3 — first-class dictionary-pack addon descriptor.
@@ -78,7 +79,11 @@ data class DictionaryPackDescriptor(
 ) {
     init {
         require(schema >= 1) { "schema must be >= 1" }
-        require(language.isNotBlank() && language == language.lowercase()) {
+        // Locale.ROOT: DictionaryPackCatalog normalizes lookups with lowercase(Locale.ROOT),
+        // so this invariant must use the same locale. The default-locale lowercase() would,
+        // on a Turkish device, fold an ASCII 'I' to the dotless 'ı' and wrongly reject a
+        // descriptor that was validly ROOT-lowercased.
+        require(language.isNotBlank() && language == language.lowercase(Locale.ROOT)) {
             "language must be a non-blank lowercase ISO 639-1 code"
         }
         require(wordCount >= 0) { "wordCount must be non-negative" }
@@ -86,10 +91,16 @@ data class DictionaryPackDescriptor(
         require(!fldicAssetPath.startsWith("/")) {
             "fldicAssetPath must be a relative path inside assets/"
         }
+        require(!fldicAssetPath.hasParentTraversalSegment()) {
+            "fldicAssetPath must not contain a '..' path segment"
+        }
         zipfAssetPath?.let {
             require(it.isNotBlank()) { "zipfAssetPath must not be blank when present" }
             require(!it.startsWith("/")) {
                 "zipfAssetPath must be a relative path inside assets/"
+            }
+            require(!it.hasParentTraversalSegment()) {
+                "zipfAssetPath must not contain a '..' path segment"
             }
         }
         require(minSchemaCompat >= 1) { "minSchemaCompat must be >= 1" }
@@ -103,6 +114,14 @@ data class DictionaryPackDescriptor(
         /** Highest descriptor schema version this IME understands. Bump when
          *  the on-disk layout grows a load-bearing field. */
         const val SUPPORTED_SCHEMA: Int = 1
+
+        /**
+         * True if any `/`- or `\`-delimited segment of this path is exactly `..`,
+         * i.e. the path tries to escape its asset root. A literal `..foo` filename
+         * is allowed; only a standalone parent-directory segment is rejected.
+         */
+        private fun String.hasParentTraversalSegment(): Boolean =
+            split('/', '\\').any { it == ".." }
 
         private val JsonConfig = Json {
             ignoreUnknownKeys = true

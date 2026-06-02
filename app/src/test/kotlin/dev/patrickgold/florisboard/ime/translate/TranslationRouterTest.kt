@@ -128,8 +128,11 @@ class TranslationRouterTest : FunSpec({
     }
 
     test("paragraph: each sentence dispatched separately and stitched") {
+        // The router strips the inter-sentence separator off each piece before
+        // dispatching, so the translator sees the trimmed core ("Hello." /
+        // "World!"), and the router re-attaches the original separator verbatim.
         val tr = FakeTranslator(mapOf(
-            Triple("Hello. ", "en", "es") to TranslationResult.Translated("Hola. ", 0.9f),
+            Triple("Hello.", "en", "es") to TranslationResult.Translated("Hola.", 0.9f),
             Triple("World!", "en", "es") to TranslationResult.Translated("¡Mundo!", 0.9f),
         ))
         val pm = FakePackManager(listOf(pair("en", "es")), preferred = "es")
@@ -140,6 +143,8 @@ class TranslationRouterTest : FunSpec({
             targetLocale = "es",
         ))
         val translated = resp as TranslationRouter.Response.Translated
+        // Inter-sentence whitespace is preserved even though the translator
+        // does not echo it back in `translatedText`.
         translated.translatedText shouldBe "Hola. ¡Mundo!"
         tr.calls shouldBe 2
     }

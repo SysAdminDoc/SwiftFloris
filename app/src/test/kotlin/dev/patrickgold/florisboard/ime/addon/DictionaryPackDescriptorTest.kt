@@ -104,4 +104,43 @@ class DictionaryPackDescriptorTest : FunSpec({
             )
         }
     }
+
+    test("rejects '..' path-traversal segments in asset paths") {
+        shouldThrow<IllegalArgumentException> {
+            DictionaryPackDescriptor(
+                schema = 1,
+                language = "pl",
+                displayName = "Bad",
+                wordCount = 1,
+                fldicAssetPath = "ime/../../../etc/passwd",
+                source = "x",
+                license = "MIT",
+            )
+        }
+        shouldThrow<IllegalArgumentException> {
+            DictionaryPackDescriptor(
+                schema = 1,
+                language = "pl",
+                displayName = "Bad",
+                wordCount = 1,
+                fldicAssetPath = "ime/dict/pl.fldic",
+                zipfAssetPath = "freq\\..\\..\\secret.tsv",
+                source = "x",
+                license = "MIT",
+            )
+        }
+    }
+
+    test("allows a literal '..foo' filename segment that is not a parent-directory hop") {
+        val desc = DictionaryPackDescriptor(
+            schema = 1,
+            language = "pl",
+            displayName = "OK",
+            wordCount = 1,
+            fldicAssetPath = "ime/dict/..foo.fldic",
+            source = "x",
+            license = "MIT",
+        )
+        desc.fldicAssetPath shouldBe "ime/dict/..foo.fldic"
+    }
 })

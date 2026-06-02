@@ -310,11 +310,19 @@ fun ClipboardInputLayout(
                     runCatching {
                         check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
                         val rawBitmap = if (AndroidVersion.ATLEAST_API29_Q) {
+                            // MediaMetadataRetriever holds a native extractor + an open
+                            // file descriptor; it must be released on every path or the
+                            // IME steadily leaks FDs as videos scroll into the grid
+                            // (the width!!.toInt() below can also throw).
                             val dataRetriever = MediaMetadataRetriever()
-                            dataRetriever.setDataSource(file.absolutePath)
-                            val width = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                            val height = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                            ThumbnailUtils.createVideoThumbnail(file, Size(width!!.toInt(), height!!.toInt()), null)
+                            try {
+                                dataRetriever.setDataSource(file.absolutePath)
+                                val width = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                                val height = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                                ThumbnailUtils.createVideoThumbnail(file, Size(width!!.toInt(), height!!.toInt()), null)
+                            } finally {
+                                dataRetriever.release()
+                            }
                         } else {
                             @Suppress("DEPRECATION")
                             ThumbnailUtils.createVideoThumbnail(file.absolutePath, MediaStore.Video.Thumbnails.MINI_KIND)

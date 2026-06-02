@@ -62,7 +62,12 @@ object KlcLayoutParser {
             when (val token = line.split(Regex("\\s+")).first().uppercase()) {
                 "KBD" -> {
                     section = Section.KBD
-                    val rest = line.substringAfter(token).trim()
+                    // substring(token.length), not substringAfter(token): `token` is the
+                    // UPPERCASED first token, but `line` is original case. For a lowercase
+                    // header like `kbd "..."`, substringAfter("KBD") finds no match and
+                    // returns the whole line. The token came from splitting `line`, so its
+                    // length is always a valid prefix length regardless of case.
+                    val rest = line.substring(token.length).trim()
                     // KBD "<internal>" "<display>"   ← KLC quotes the display name
                     val quoted = Regex("\"([^\"]*)\"").findAll(rest).map { it.groupValues[1] }.toList()
                     if (quoted.isNotEmpty()) {
@@ -73,7 +78,9 @@ object KlcLayoutParser {
                 }
                 "LOCALENAME" -> {
                     section = Section.METADATA
-                    locale = line.substringAfter(token).trim().trim('"')
+                    // substring(token.length): see the KBD branch — substringAfter(token)
+                    // would return the entire line for a non-uppercase LocaleName header.
+                    locale = line.substring(token.length).trim().trim('"')
                 }
                 "COPYRIGHT", "COMPANY", "LOCALEID", "VERSION" -> {
                     section = Section.METADATA

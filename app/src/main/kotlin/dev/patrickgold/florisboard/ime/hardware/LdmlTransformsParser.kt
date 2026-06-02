@@ -141,7 +141,10 @@ class LdmlTransformEngine(private val table: LdmlTransformTable) {
      *  of [output] so the IME can sync its composing region. */
     fun consume(char: Char): String {
         output.append(char)
-        if (table.isEmpty || maxLookback < 2) return char.toString()
+        // `table.isEmpty` already covers the no-rules case (maxLookback == 0).
+        // The guard must NOT bail at maxLookback < 2, or a table whose longest
+        // `from` is a single char (a valid LDML 1→1 transform) would never fire.
+        if (table.isEmpty || maxLookback < 1) return char.toString()
         // Check rules — longest first — against the tail of the output.
         for (rule in table.rulesByLengthDesc) {
             val tailStart = output.length - rule.patternLength

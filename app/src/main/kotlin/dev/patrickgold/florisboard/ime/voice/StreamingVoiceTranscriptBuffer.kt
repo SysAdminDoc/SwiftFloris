@@ -97,6 +97,20 @@ class StreamingVoiceTranscriptBuffer(
     fun committedSegmentsSnapshot(): List<String> = committedSegments.toList()
 
     /**
+     * Restore the committed-segment list to a previously captured
+     * [committedSegmentsSnapshot]. Used by
+     * [VoiceCommandActions.removeItemFromList] to roll the buffer back
+     * when [removeCommittedItem] mutated it but the editor edit could
+     * not be applied — without this the buffer and the editor would
+     * desync (the buffer would think the item was removed while the
+     * editor still shows it). Does not touch the live partial.
+     */
+    fun restoreCommittedSegments(segments: List<String>) {
+        committedSegments.clear()
+        committedSegments += segments
+    }
+
+    /**
      * ROADMAP §6 N15.3 — walk the committed-segment buffer and excise
      * every case-insensitive occurrence of [item] (matched as a
      * standalone phrase, not a substring inside a longer word) along

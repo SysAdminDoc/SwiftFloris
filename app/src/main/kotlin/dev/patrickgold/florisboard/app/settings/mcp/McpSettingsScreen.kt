@@ -21,7 +21,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
-import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material3.Switch
@@ -74,9 +73,6 @@ fun McpSettingsScreen() = FlorisScreen {
         DisabledDaemonSet.parse(disabledSerialized)
     }
     val disabledToolsSerialized by prefs.mcp.disabledTools.observeAsState()
-    val disabledToolSet = remember(disabledToolsSerialized) {
-        DisabledToolSet.parse(disabledToolsSerialized)
-    }
 
     content {
         PreferenceGroup(title = stringRes(R.string.settings__mcp__group_status)) {
@@ -130,7 +126,11 @@ fun McpSettingsScreen() = FlorisScreen {
                             daemonPackage = entry.key.packageName,
                             toolName = tool.name,
                             toolDescription = tool.description,
-                            isEnabled = toolEnabled && daemonEnabled,
+                            // Show the tool's TRUE persisted state; interactivity (not the
+                            // checked state) is gated on the parent daemon. Otherwise a
+                            // muted daemon renders every enabled tool as OFF, contradicting
+                            // the preserved per-tool state and misleading TalkBack.
+                            isEnabled = toolEnabled,
                             isInteractive = daemonEnabled,
                             onEnabledChange = { enabled ->
                                 scope.launch {
