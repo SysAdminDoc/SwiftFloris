@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.clipboard
 
 import android.content.ClipData
+import android.content.ClipDescription.EXTRA_IS_SENSITIVE
 import android.content.Context
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
@@ -30,6 +31,7 @@ import java.io.Closeable
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -41,6 +43,7 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidClipboardManager
 import org.florisboard.lib.android.AndroidClipboardManager_OnPrimaryClipChangedListener
+import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.clearPrimaryClipAnyApi
 import org.florisboard.lib.android.setOrClearPrimaryClip
 import org.florisboard.lib.android.showShortToastSync
@@ -211,8 +214,22 @@ class ClipboardManager(
 
                 val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
                 if (!isEqual) {
+                    // Decide sensitivity BEFORE cloning. fromClipData(cloneUri = true)
+                    // unconditionally writes IMAGE/VIDEO bytes to on-disk clipboard
+                    // storage; the `if (!item.isSensitive)` history gate below only
+                    // prevents the *history row*, so a sensitive media clip (e.g. a
+                    // copied secret image from a password manager) would still leave a
+                    // plaintext file + DAO row on disk that nothing deletes until the
+                    // next process-start reconcile. Skipping the clone for sensitive
+                    // clips keeps the bytes off disk entirely; isSensitive is parsed
+                    // from the description independently of cloneUri, mirrored here.
+                    val isSensitiveClip = if (AndroidVersion.ATLEAST_API33_T) {
+                        systemPrimaryClip.description?.extras?.getBoolean(EXTRA_IS_SENSITIVE) ?: false
+                    } else {
+                        false
+                    }
                     val item = try {
-                        ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = true)
+                        ClipboardItem.fromClipData(appContext, systemPrimaryClip, cloneUri = !isSensitiveClip)
                     } catch (e: Exception) {
                         flogError { "Failed to import system clipboard item: ${e.message.orEmpty()}" }
                         return@launch
@@ -435,6 +452,9 @@ class ClipboardManager(
      */
     override fun close() {
         systemClipboardManager.removePrimaryClipChangedListener(this)
-        cleanUpJob.cancel()
+        // Cancel the whole IO scope, not just cleanUpJob: initializeForContext()
+        // launches a long-lived clipboard-history flow collector in the same scope,
+        // and cancelling only cleanUpJob would leak it (and any in-flight launches).
+        ioScope.cancel()
     }
 }

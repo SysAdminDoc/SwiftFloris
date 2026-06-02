@@ -102,7 +102,11 @@ data class CjkCandidate(
 ) {
     init {
         require(text.isNotEmpty()) { "CJK candidate text must not be empty" }
-        require(confidence in 0f..1f) { "confidence must be in [0, 1]; was $confidence" }
+        // Explicitly reject NaN: `NaN in 0f..1f` is false, so this also rejects it,
+        // but the message would be misleading. A 3rd-party (out-of-tree) provider
+        // emitting NaN for an unranked candidate gets a clear error rather than a
+        // confusing one.
+        require(!confidence.isNaN() && confidence in 0f..1f) { "confidence must be a number in [0, 1]; was $confidence" }
     }
 }
 

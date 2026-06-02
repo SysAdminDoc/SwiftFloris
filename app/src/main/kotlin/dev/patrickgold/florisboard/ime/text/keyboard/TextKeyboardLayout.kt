@@ -262,7 +262,7 @@ fun TextKeyboardLayout(
                         fadeProgress = controller.fadingGlideRadius / 20.0f,
                     )
                 }
-                if (controller.isGliding && controller.glideDataForDrawing.isNotEmpty()) {
+                if (glideShowTrail && controller.isGliding && controller.glideDataForDrawing.isNotEmpty()) {
                     controller.glideActiveKey?.let { key ->
                         val bounds = key.visibleBounds
                         val highlightColor = glideTrailTheme.colorAt(1f, timeMs, glideTrailAccent)
@@ -1426,6 +1426,12 @@ private class TextKeyboardLayoutController(
 
     override fun onGlideCancelled() {
         glideActiveKey = null
+        // Only the fade-out animation is gated on the trail pref. The buffer
+        // clear + state reset below MUST run unconditionally: onGlideAddPoint
+        // populates `glideDataForDrawing` whenever glide is enabled (it does
+        // not consult `showTrail`), so leaving them inside the pref branch
+        // leaked the point buffer for the whole session and latched
+        // `isGliding` true permanently when the trail was disabled.
         if (prefs.glide.showTrail.get()) {
             fadingGlide.clear()
             fadingGlide.addAll(glideDataForDrawing)
@@ -1437,10 +1443,9 @@ private class TextKeyboardLayoutController(
                 fadingGlideRadius = it.animatedValue as Float
             }
             animator.start()
-
-            glideDataForDrawing.clear()
-            isGliding = false
         }
+        glideDataForDrawing.clear()
+        isGliding = false
     }
 
     fun drawGlideTrail(

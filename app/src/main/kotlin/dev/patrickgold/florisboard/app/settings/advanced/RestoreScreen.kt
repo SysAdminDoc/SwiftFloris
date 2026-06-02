@@ -27,10 +27,12 @@ import androidx.compose.material.icons.filled.Schedule
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -108,6 +110,20 @@ fun RestoreScreen() = FlorisScreen {
     var lastRestoreErrorMessage by remember { mutableStateOf<String?>(null) }
     var lastRestoreSummary by remember { mutableStateOf<RestoreOperationSummary?>(null) }
     val unknownRestoreError = stringRes(R.string.backup_and_restore__restore__unknown_error)
+
+    // Close the workspace when the screen leaves composition (system-back / nav-up),
+    // not only via the Cancel button. prepareRestoreWorkspace extracts the archive —
+    // including clipboard plaintext and the decrypted jetpref datastore — into the
+    // cache dir; without this, leaving any other way leaves that plaintext on disk.
+    // rememberUpdatedState so onDispose sees the latest workspace/flag, and we skip
+    // closing mid-restore so we don't pull the dir out from under an in-flight copy.
+    val currentRestoreWorkspace by rememberUpdatedState(restoreWorkspace)
+    val currentIsRestoreInProgress by rememberUpdatedState(isRestoreInProgress)
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!currentIsRestoreInProgress) currentRestoreWorkspace?.close()
+        }
+    }
 
     suspend fun prepareRestoreWorkspace(uri: Uri): CacheManager.BackupAndRestoreWorkspace = withContext(Dispatchers.IO) {
         val workspace = cacheManager.backupAndRestore.new()

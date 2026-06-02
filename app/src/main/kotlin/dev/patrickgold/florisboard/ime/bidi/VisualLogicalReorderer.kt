@@ -54,24 +54,7 @@ object VisualLogicalReorderer {
             if (baseIsRtl) Bidi.DIRECTION_DEFAULT_RIGHT_TO_LEFT else Bidi.DIRECTION_DEFAULT_LEFT_TO_RIGHT,
         )
         if (bidi.isLeftToRight) return logical
-        // Java spec: writeReverse renders the bidi-ordered visual form
-        // by reversing the runs and concatenating.
-        return Bidi.reorderVisually(
-            byteArrayOf(if (baseIsRtl) 1 else 0),
-            0,
-            arrayOf(logical),
-            0,
-            1,
-        ).let {
-            // reorderVisually mutates an array of runs; for a single-run
-            // input we hit the easy path below.
-            logical
-        }.let {
-            // The previous indirection is the API's awkward shape; do
-            // the actual visual reorder by hand using the per-run
-            // direction info.
-            visualReorderByRuns(bidi, logical)
-        }
+        return visualReorderByRuns(bidi, logical)
     }
 
     /**
@@ -90,7 +73,7 @@ object VisualLogicalReorderer {
         // For single-script RTL text in visual order the logical form
         // is literally the reverse character sequence.
         if (baseIsRtl && !visual.any { Character.isDigit(it) }) {
-            return visual.reversed()
+            return reverseByCodePoint(visual)
         }
         // Mixed-direction visual → logical isn't well-defined for
         // arbitrary input; treat as identity to avoid surprising
@@ -113,27 +96,59 @@ object VisualLogicalReorderer {
     }
 
     private fun visualReorderByRuns(bidi: Bidi, logical: String): String {
-        val out = StringBuilder(logical.length)
-        // Per-run reorder: collect runs in visual order, reverse each
-        // RTL run's characters, concatenate.
         val runCount = bidi.runCount
-        val order = IntArray(runCount) { it }
-        // Stable sort runs by visual order (level + start).
-        val orderedRuns = (0 until runCount).sortedWith(
-            compareBy({ bidi.getRunLevel(it) }, { bidi.getRunStart(it) }),
-        )
-        for (runIndex in orderedRuns) {
+        if (runCount == 0) return logical
+
+        // Resolve runs in logical order, then ask the ICU-backed engine
+        // for the correct visual order via UAX#9 rule L2. `sortedWith`
+        // by ascending level is NOT L2: L2 reverses contiguous spans
+        // from the highest level down to the lowest odd level, which
+        // preserves the spatial interleaving of LTR/RTL runs that a
+        // level-ascending sort destroys. `Bidi.reorderVisually` is the
+        // stdlib implementation of L2.
+        val levels = ByteArray(runCount)
+        val visualToLogicalRun = Array(runCount) { it }
+        for (i in 0 until runCount) {
+            levels[i] = bidi.getRunLevel(i).toByte()
+        }
+        // Reorders `visualToLogicalRun` in place into visual order.
+        Bidi.reorderVisually(levels, 0, visualToLogicalRun, 0, runCount)
+
+        val out = StringBuilder(logical.length)
+        for (visualIndex in 0 until runCount) {
+            val runIndex = visualToLogicalRun[visualIndex] as Int
             val start = bidi.getRunStart(runIndex)
             val end = bidi.getRunLimit(runIndex)
             val level = bidi.getRunLevel(runIndex)
             val run = logical.substring(start, end)
             if (level and 1 == 1) {
-                // Odd level = RTL run; reverse for visual order.
-                out.append(run.reversed())
+                // Odd level = RTL run; reverse for visual order. Reverse
+                // by Unicode code point (not UTF-16 char) so
+                // supplementary-plane characters keep their surrogate
+                // pairs intact and combining-mark sequences are not torn
+                // from their base.
+                out.append(reverseByCodePoint(run))
             } else {
                 out.append(run)
             }
         }
         return out.toString()
+    }
+
+    /**
+     * Reverse [s] by Unicode code point. `String.reversed()` reverses by
+     * UTF-16 code unit, which swaps the order of the high/low surrogate
+     * of any supplementary-plane character (corrupting it into two
+     * unpaired surrogates) and detaches combining marks from their base.
+     */
+    private fun reverseByCodePoint(s: String): String {
+        val sb = StringBuilder(s.length)
+        var i = s.length
+        while (i > 0) {
+            val cp = s.codePointBefore(i)
+            sb.appendCodePoint(cp)
+            i -= Character.charCount(cp)
+        }
+        return sb.toString()
     }
 }

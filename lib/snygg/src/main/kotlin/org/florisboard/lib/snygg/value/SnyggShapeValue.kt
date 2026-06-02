@@ -139,10 +139,15 @@ data class SnyggCutCornerDpShapeValue(
         override fun deserialize(v: String) = runCatching<SnyggValue> {
             val map = snyggIdToValueMapOf()
             spec.parse(v, map)
-            val topStart = map.getInt(CornerSizeTopStart).dp
-            val topEnd = map.getInt(CornerSizeTopEnd).dp
-            val bottomEnd = map.getInt(CornerSizeBottomEnd).dp
-            val bottomStart = map.getInt(CornerSizeBottomStart).dp
+            // getFloat, not getInt: the spec declares all four corners as float(DpUnit)
+            // (matching the SnyggRoundedCornerDpShapeValue sibling), so a fractional dp
+            // such as cut-corner(4.5dp,...) parses to "4.5"; getInt would throw
+            // NumberFormatException, be swallowed by runCatching, and silently discard
+            // the whole shape on deserialize even though serialize emits the fraction.
+            val topStart = map.getFloat(CornerSizeTopStart).dp
+            val topEnd = map.getFloat(CornerSizeTopEnd).dp
+            val bottomEnd = map.getFloat(CornerSizeBottomEnd).dp
+            val bottomStart = map.getFloat(CornerSizeBottomStart).dp
             return@runCatching SnyggCutCornerDpShapeValue(topStart, topEnd, bottomEnd, bottomStart)
         }
     }

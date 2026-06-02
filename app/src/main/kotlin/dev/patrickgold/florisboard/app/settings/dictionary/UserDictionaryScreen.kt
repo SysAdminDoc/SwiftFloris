@@ -374,10 +374,15 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                     withContext(Dispatchers.IO) {
                         val envelope = readEncryptedEnvelopeBytes(uri)
                         val plaintext = EncryptedDictionaryExport.decrypt(envelope, passphrase)
+                        // Hoisted so it can be scrubbed in finally: this is a 1 KiB copy
+                        // of the decrypted personal-dictionary plaintext; leaving it
+                        // un-wiped on the heap defeats the deliberate plaintext.fill(0)
+                        // below and leaks a slice of the user's vocabulary.
+                        var sniff: ByteArray? = null
                         try {
                             val importer = DictionaryImporter()
                             val parsed = importer.import(ByteArrayInputStream(plaintext))
-                            val sniff = plaintext.copyOf(minOf(plaintext.size, 1024))
+                            sniff = plaintext.copyOf(minOf(plaintext.size, 1024))
                             val format = importer.detectFormat(sniff)
                             PersonalDictionaryImportBatch.import(
                                 parsedEntries = parsed,
@@ -386,6 +391,7 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
                             )
                         } finally {
                             plaintext.fill(0)
+                            sniff?.fill(0)
                         }
                     }
                 }.onSuccess { result ->

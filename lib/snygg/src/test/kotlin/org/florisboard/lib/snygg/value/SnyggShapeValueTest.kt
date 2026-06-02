@@ -140,6 +140,17 @@ class SnyggShapeValueTest {
         }
 
         @Test
+        fun `deserialize fractional dp shape values round-trips`() {
+            // Regression: the spec declares the four corners as float(DpUnit), so a
+            // fractional-dp cut-corner must deserialize (it used to read getInt and
+            // throw NumberFormatException, silently discarding the whole shape).
+            val value = SnyggCutCornerDpShapeValue(4.5.dp, 4.5.dp, 4.5.dp, 4.5.dp)
+            val serialized = dpEncoder.serialize(value).getOrNull()
+            assertEquals("cut-corner(4.5dp,4.5dp,4.5dp,4.5dp)", serialized)
+            assertEquals(value, dpEncoder.deserialize(serialized!!).getOrNull())
+        }
+
+        @Test
         fun `deserialize percentage shape values`() {
             val pairs = listOf(
                 //valid

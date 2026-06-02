@@ -48,6 +48,13 @@ object KeymanPackageParser {
     private const val MetadataFileName = "kmp.json"
     private const val MaxMetadataBytes = 512 * 1024
     private const val MaxLdmlBytes = 1024 * 1024
+    // Per-entry byte caps alone don't bound a crafted .kmp: thousands of max-size
+    // LDML XMLs, each read into a String and parsed into a retained layout, can OOM
+    // the IME (and OOM is an Error that escapes the runCatching below, crashing the
+    // process instead of degrading). Cap the entry count and the cumulative LDML
+    // bytes parsed; legitimate packages carry a handful of keyboards.
+    private const val MaxEntries = 4096
+    private const val MaxTotalLdmlBytes = 8L * 1024 * 1024
 
     private val JsonParser = Json {
         ignoreUnknownKeys = true
@@ -65,11 +72,17 @@ object KeymanPackageParser {
         val ldmlLayouts = mutableListOf<KeymanPackageLdmlLayout>()
         var metadataJson: String? = null
 
+        var entryCount = 0
+        var totalLdmlBytes = 0L
         runCatching {
             ZipInputStream(inputStream).use { zip ->
                 while (true) {
                     val entry = zip.nextEntry ?: break
                     if (entry.isDirectory) continue
+                    if (++entryCount > MaxEntries) {
+                        warnings += "Package has more than $MaxEntries entries; stopped parsing the remainder."
+                        break
+                    }
                     if (!entry.name.isSafePackageEntryName()) {
                         warnings += "Skipped unsafe package entry: ${entry.name}"
                         continue
@@ -88,13 +101,18 @@ object KeymanPackageParser {
                             metadataJson = zip.readEntryTextLimited(MaxMetadataBytes)
                         }
                         fileType == KeymanPackageFileType.LdmlKeyboard -> {
-                            val xml = zip.readEntryTextLimited(MaxLdmlBytes)
-                            val layout = KeymanLdmlParser.parse(xml)
-                            if (layout.isLoaded) {
-                                ldmlLayouts += KeymanPackageLdmlLayout(
-                                    entryName = entryName,
-                                    layout = layout,
-                                )
+                            if (totalLdmlBytes >= MaxTotalLdmlBytes) {
+                                warnings += "Skipped LDML keyboard '$entryName': cumulative LDML size budget exceeded."
+                            } else {
+                                val xml = zip.readEntryTextLimited(MaxLdmlBytes)
+                                totalLdmlBytes += xml.length.toLong()
+                                val layout = KeymanLdmlParser.parse(xml)
+                                if (layout.isLoaded) {
+                                    ldmlLayouts += KeymanPackageLdmlLayout(
+                                        entryName = entryName,
+                                        layout = layout,
+                                    )
+                                }
                             }
                         }
                     }

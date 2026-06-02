@@ -169,7 +169,11 @@ internal object AdaptiveTouchModel {
     fun refine(keyboard: TextKeyboard, primary: TextKey, touchX: Float, touchY: Float): TextKey {
         if (!isLearnableKey(primary)) return primary
         val bucketStats = statsBySubtype[activeBucket] ?: return primary
-        val primaryStats = bucketStats[primary.computedData.code] ?: return primary
+        // Key by touchModelCode() to match recordTap() and the candidate branch
+        // below. computedData.code can be UNSPECIFIED for keys whose code only
+        // lives on `data`; using it here meant the lookup missed and refinement
+        // silently no-op'd for exactly those keys.
+        val primaryStats = bucketStats[primary.touchModelCode()] ?: return primary
         if (primaryStats.count < MIN_SAMPLES_PER_KEY) return primary
 
         val pBounds = primary.visibleBounds

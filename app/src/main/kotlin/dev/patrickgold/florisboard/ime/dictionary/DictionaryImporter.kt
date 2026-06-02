@@ -156,12 +156,14 @@ class DictionaryImporter {
                         found += parseGboardXml(
                             zis.readUtf8TextLimited("Zip entry ${entry.name}", cumulativeBytes),
                         )
+                        checkEntryLimit(found.size)
                     }
                     name.endsWith(".csv") -> {
                         sawCandidateEntry = true
                         found += parseCsv(
                             zis.readUtf8TextLimited("Zip entry ${entry.name}", cumulativeBytes),
                         )
+                        checkEntryLimit(found.size)
                     }
                     name.endsWith(".json") -> {
                         // Two cases:
@@ -176,6 +178,7 @@ class DictionaryImporter {
                         found += parseSwiftKeyJson(
                             zis.readUtf8TextLimited("Zip entry ${entry.name}", cumulativeBytes),
                         )
+                        checkEntryLimit(found.size)
                     }
                     name.endsWith(".db") || name.endsWith(".sqlite") -> {
                         // FlorisBoard backup with raw SQLite snapshot: not

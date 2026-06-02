@@ -189,11 +189,19 @@ class EditorVoiceCommandActions(
         if (content.selectedText.isNotEmpty()) {
             return VoiceCommandActionResult.failure(VoiceCommandFailureReason.ACTION_REJECTED)
         }
+        // Snapshot the committed-segment list BEFORE removeCommittedItem
+        // mutates it in place, so we can roll the buffer back on any
+        // editor-edit failure below. Without this the buffer commits the
+        // removal while the editor keeps the item — a silent desync that
+        // poisons every subsequent dictation diff.
+        val segmentsBeforeRemoval = buffer.committedSegmentsSnapshot()
         val diff = buffer.removeCommittedItem(item)
         if (!diff.didChange) {
             // Item was not found in the buffer — surface a distinct
             // failure reason so the dictation overlay can render a
             // helpful "no match" hint instead of a generic rejection.
+            // didChange == false means the buffer was left untouched, so
+            // there is nothing to roll back here.
             return VoiceCommandActionResult.failure(VoiceCommandFailureReason.ITEM_NOT_FOUND)
         }
         // Best-effort editor replacement: if the editor's current
@@ -210,18 +218,22 @@ class EditorVoiceCommandActions(
             // does not accept a length-to-replace.
             val startOfOld = before.length - previous.length
             if (!editor.setSelection(startOfOld, content.textBeforeSelection.length)) {
+                buffer.restoreCommittedSegments(segmentsBeforeRemoval)
                 return VoiceCommandActionResult.failure(VoiceCommandFailureReason.ACTION_REJECTED)
             }
             val committed = editor.commitText(diff.newCommittedText)
             return if (committed) {
                 VoiceCommandActionResult.success()
             } else {
+                buffer.restoreCommittedSegments(segmentsBeforeRemoval)
                 VoiceCommandActionResult.failure(VoiceCommandFailureReason.ACTION_REJECTED)
             }
         }
         // We mutated the buffer but couldn't safely apply to the editor.
-        // Signal a distinct failure so the IME can decide whether to
-        // re-sync the buffer to the editor or surface a hint to the user.
+        // Roll the buffer back so it stays in sync with the (unchanged)
+        // editor, then signal a distinct failure so the IME can surface a
+        // "retry" hint to the user.
+        buffer.restoreCommittedSegments(segmentsBeforeRemoval)
         return VoiceCommandActionResult.failure(VoiceCommandFailureReason.EDITOR_OUT_OF_SYNC)
     }
 

@@ -36,6 +36,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 data class NlpInlineAutofillSuggestion(
     val info: InlineSuggestionInfo,
@@ -83,16 +84,20 @@ object NlpInlineAutofill {
             }
 
             val inflatedSuggestions = suggestionsArray.filterNotNull().sortedByDescending { it.info.isPinned }
-            setterGuard.lock()
-            flogInfo { "showInlineSuggestions: [${sequenceId}] successfully inflated " +
-                "${inflatedSuggestions.count { it.view != null }} out of ${inflatedSuggestions.size} suggestions" }
-            if (currentSequenceId.get() == sequenceId) {
-                flogInfo { "showInlineSuggestions: [${sequenceId}] setting suggestions" }
-                suggestions.value = inflatedSuggestions
-            } else {
-                flogWarning { "showInlineSuggestions: [${sequenceId}] seqId != current, skip setting suggestions" }
+            // withLock releases the mutex in a finally, so an exception or
+            // coroutine cancellation between acquire and release can no longer
+            // leave the guard permanently locked (which would silently freeze
+            // every later inline-suggestion update for the process lifetime).
+            setterGuard.withLock {
+                flogInfo { "showInlineSuggestions: [${sequenceId}] successfully inflated " +
+                    "${inflatedSuggestions.count { it.view != null }} out of ${inflatedSuggestions.size} suggestions" }
+                if (currentSequenceId.get() == sequenceId) {
+                    flogInfo { "showInlineSuggestions: [${sequenceId}] setting suggestions" }
+                    suggestions.value = inflatedSuggestions
+                } else {
+                    flogWarning { "showInlineSuggestions: [${sequenceId}] seqId != current, skip setting suggestions" }
+                }
             }
-            setterGuard.unlock()
         }
 
         return true
@@ -105,10 +110,10 @@ object NlpInlineAutofill {
 
     private fun clearInlineSuggestions(sequenceId: Int) {
         scope.launch {
-            setterGuard.lock()
-            flogInfo { "clearInlineSuggestions: [${sequenceId}] clearing suggestions" }
-            suggestions.value = emptyList()
-            setterGuard.unlock()
+            setterGuard.withLock {
+                flogInfo { "clearInlineSuggestions: [${sequenceId}] clearing suggestions" }
+                suggestions.value = emptyList()
+            }
         }
     }
 

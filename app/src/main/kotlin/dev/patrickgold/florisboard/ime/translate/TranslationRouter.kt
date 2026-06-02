@@ -93,20 +93,36 @@ class TranslationRouter(
         val out = StringBuilder(request.sourceText.length)
         var anyTranslated = false
         for (piece in pieces) {
+            // SentenceTokenizer folds inter-sentence whitespace into the *trailing*
+            // end of each piece. A neural translator (Bergamot) normalises its
+            // output and does NOT echo that trailing whitespace back, so stitching
+            // raw `translatedText` would collapse "Hola. ¡Mundo!" into
+            // "Hola.¡Mundo!". Split the separator off, translate only the core,
+            // and re-append the original separator verbatim.
+            val coreEnd = piece.indexOfLast { !it.isWhitespace() } + 1
+            val core = if (coreEnd > 0) piece.substring(0, coreEnd) else piece
+            val trailing = if (coreEnd > 0) piece.substring(coreEnd) else ""
+            if (core.isEmpty()) {
+                // Whitespace-only piece (shouldn't happen post-split, but be safe).
+                out.append(piece)
+                continue
+            }
             val pieceResult = if (cache != null) {
-                cache.translate(piece, resolvedSource, target)
+                cache.translate(core, resolvedSource, target)
             } else {
-                translator.translate(piece, resolvedSource, target)
+                translator.translate(core, resolvedSource, target)
             }
             when (pieceResult) {
                 is TranslationResult.Translated -> {
                     out.append(pieceResult.translatedText)
+                    out.append(trailing)
                     anyTranslated = true
                 }
                 is TranslationResult.Unavailable -> {
                     // Fall back to source for the piece so the user
                     // still sees something coherent.
-                    out.append(piece)
+                    out.append(core)
+                    out.append(trailing)
                 }
             }
         }

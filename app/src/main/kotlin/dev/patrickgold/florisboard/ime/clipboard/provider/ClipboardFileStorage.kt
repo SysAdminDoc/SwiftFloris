@@ -23,6 +23,7 @@ import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.io.subFile
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Backend helper object which is used by [ClipboardMediaProvider] to serve content.
@@ -31,6 +32,15 @@ object ClipboardFileStorage {
     const val CLIPBOARD_FILES_PATH = "clipboard_files"
     const val MAX_IMAGE_CLIP_BYTES = 32L * 1024L * 1024L
     const val MAX_VIDEO_CLIP_BYTES = 128L * 1024L * 1024L
+
+    /**
+     * Monotonic id source for cloned files. Seeded from [System.nanoTime] so a fresh
+     * process is very unlikely to immediately reuse an id from the previous run, but
+     * because `nanoTime()` is boot-relative (and can restart low after a reboot) the
+     * actual collision guard is the on-disk `exists()` check in [cloneUri] — never the
+     * counter alone.
+     */
+    private val idSource = AtomicLong(System.nanoTime())
 
     private val Context.clipboardFilesDir: FsFile
         get() = FsFile(this.noBackupFilesDir, "clipboard_files").also { it.mkdirs() }
@@ -55,8 +65,17 @@ object ClipboardFileStorage {
      */
     @Synchronized
     fun cloneUri(context: Context, uri: Uri, mediaKind: MediaKind): Long {
-        val id = System.nanoTime()
-        val file = context.clipboardFilesDir.subFile(id.toString())
+        val dir = context.clipboardFilesDir
+        // Pick an id that does not already name a stored file. nanoTime() alone is
+        // boot-relative and can collide with files written before a reboot, which
+        // would silently overwrite an existing clipboard entry; the exists() guard
+        // makes the id genuinely unique against what is on disk.
+        var id = idSource.getAndIncrement()
+        var file = dir.subFile(id.toString())
+        while (file.exists()) {
+            id = idSource.getAndIncrement()
+            file = dir.subFile(id.toString())
+        }
         try {
             context.contentResolver.readToFile(uri, file, mediaKind.maxCloneBytes)
         } catch (e: Exception) {

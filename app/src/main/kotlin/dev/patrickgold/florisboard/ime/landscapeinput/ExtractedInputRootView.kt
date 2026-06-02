@@ -21,6 +21,7 @@ import android.inputmethodservice.ExtractEditText
 import android.util.TypedValue
 import android.view.Gravity
 import android.widget.FrameLayout
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -162,7 +163,12 @@ class ExtractedInputRootView(val ims: FlorisImeService, eet: ExtractEditText?) :
         removeView(extractEditText)
         super.onAttachedToWindow()
         try {
-            (parent as LinearLayout).let { extractEditLayout ->
+            // Use a safe cast: on the OEM-fallback branch of onCreateExtractTextView
+            // the parent is the content frame, not the AOSP LinearLayout, so an
+            // unchecked `as LinearLayout` would throw ClassCastException (caught, but
+            // the layout reset is skipped anyway). Reset margins/padding for any
+            // ViewGroup parent and no-op cleanly when there is none.
+            (parent as? ViewGroup)?.let { extractEditLayout ->
                 extractEditLayout.layoutParams = LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.MATCH_PARENT,

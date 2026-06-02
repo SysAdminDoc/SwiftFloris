@@ -65,7 +65,17 @@ object SmartComposeContextWindow {
     fun truncate(precedingText: String, maxChars: Int = DEFAULT_MAX_CHARS): String {
         require(maxChars >= 16) { "maxChars must be ≥ 16 (was $maxChars)" }
         if (precedingText.length <= maxChars) return precedingText
-        val hardCap = precedingText.substring(precedingText.length - maxChars)
+        var startIdx = precedingText.length - maxChars
+        // Never begin the window on an orphaned low surrogate: slicing between a
+        // high/low surrogate pair (common when the tail is emoji / astral-script
+        // text) would hand the provider an invalid leading code point.
+        if (startIdx in 1 until precedingText.length &&
+            Character.isLowSurrogate(precedingText[startIdx]) &&
+            Character.isHighSurrogate(precedingText[startIdx - 1])
+        ) {
+            startIdx++
+        }
+        val hardCap = precedingText.substring(startIdx)
         val boundary = findFirstSentenceBoundary(hardCap)
         return if (boundary >= 0) hardCap.substring(boundary) else hardCap
     }

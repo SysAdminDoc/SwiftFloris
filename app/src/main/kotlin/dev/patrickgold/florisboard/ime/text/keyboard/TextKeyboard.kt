@@ -342,17 +342,22 @@ class TextKeyboard(
         private var keyIndex: Int = 0
 
         override fun hasNext(): Boolean {
-            return rowIndex < arrangement.size && keyIndex < arrangement[rowIndex].size
+            // Skip over empty rows (a layout may legitimately produce a
+            // zero-key row). The previous `keyIndex < arrangement[rowIndex].size`
+            // check evaluated to `0 < 0` on the first empty row and terminated
+            // iteration permanently, silently dropping every subsequent row
+            // from hit-testing and glide layout.
+            while (rowIndex < arrangement.size && keyIndex >= arrangement[rowIndex].size) {
+                rowIndex++
+                keyIndex = 0
+            }
+            return rowIndex < arrangement.size
         }
 
         override fun next(): TextKey {
+            if (!hasNext()) throw NoSuchElementException()
             val next = arrangement[rowIndex][keyIndex]
-            if (keyIndex + 1 == arrangement[rowIndex].size) {
-                rowIndex++
-                keyIndex = 0
-            } else {
-                keyIndex++
-            }
+            keyIndex++
             return next
         }
     }

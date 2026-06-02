@@ -416,6 +416,15 @@ data class SnyggAttributes internal constructor(
 
         private val INT_PATTERN = """(?:0|-?[1-9][0-9]*)""".toRegex()
         private val INT_RANGE_PATTERN = """$INT_PATTERN[.]{2}$INT_PATTERN""".toRegex()
+
+        /**
+         * Upper bound on how many integers a single attribute range may expand to.
+         * A theme (`.flex`) crosses a trust boundary — it is unzipped from an
+         * external file — so an unbounded range like `code=0..2000000000` would
+         * otherwise allocate billions of strings and OOM-crash the IME at theme
+         * load. Real key-code / index ranges are tiny; 65 536 is generous headroom.
+         */
+        private const val MAX_ATTR_RANGE_WIDTH = 65_536L
         private val STRING_PATTERN = """`[^`]+`""".toRegex()
         private val ATTR_VALUE_PATTERN = """(?:$STRING_PATTERN|$INT_RANGE_PATTERN|$INT_PATTERN)""".toRegex()
         internal val ATTRIBUTE_REGEX = """\[(?<attrKey>[a-zA-Z0-9-]+)=(?<attrRawValues>$ATTR_VALUE_PATTERN(?:,$ATTR_VALUE_PATTERN)*)]""".toRegex()
@@ -434,8 +443,16 @@ data class SnyggAttributes internal constructor(
                             continue
                         }
                         if (INT_RANGE_PATTERN.matches(rawValue)) {
-                            val (start, end) = rawValue.split("..").map { it.toInt() }
-                            addAll((start..end).map { it.toString() })
+                            val bounds = rawValue.split("..")
+                            val start = bounds.getOrNull(0)?.toIntOrNull()
+                            val end = bounds.getOrNull(1)?.toIntOrNull()
+                            // Skip unparseable (Int-overflow) or absurdly wide ranges
+                            // instead of expanding them — see MAX_ATTR_RANGE_WIDTH.
+                            if (start != null && end != null && end >= start &&
+                                (end.toLong() - start.toLong()) <= MAX_ATTR_RANGE_WIDTH
+                            ) {
+                                for (value in start..end) add(value.toString())
+                            }
                             continue
                         }
                         if (INT_PATTERN.matches(rawValue)) {

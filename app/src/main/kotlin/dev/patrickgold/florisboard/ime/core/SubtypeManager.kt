@@ -229,19 +229,15 @@ class SubtypeManager(context: Context) {
      */
     fun switchToPrevSubtype() = scope.launch {
         val subtypeList = subtypes
-        val cachedActiveSubtype = activeSubtype
-        var triggerNextSubtype = false
-        var newActiveSubtype: Subtype = Subtype.DEFAULT
-        for (subtype in subtypeList.asReversed()) {
-            if (triggerNextSubtype) {
-                triggerNextSubtype = false
-                newActiveSubtype = subtype
-            } else if (subtype == cachedActiveSubtype) {
-                triggerNextSubtype = true
-            }
-        }
-        if (triggerNextSubtype) {
-            newActiveSubtype = subtypeList.last()
+        if (subtypeList.isEmpty()) return@launch
+        val currentIndex = subtypeList.indexOf(activeSubtype)
+        // If the active subtype is no longer in the list (e.g. it was just removed),
+        // fall back to the last real subtype rather than the sentinel Subtype.DEFAULT,
+        // which is not a selectable subtype.
+        val newActiveSubtype = if (currentIndex < 0) {
+            subtypeList.last()
+        } else {
+            subtypeList[(currentIndex - 1 + subtypeList.size) % subtypeList.size]
         }
         prefs.localization.activeSubtypeId.set(newActiveSubtype.id)
         activeSubtype = newActiveSubtype
@@ -252,19 +248,14 @@ class SubtypeManager(context: Context) {
      */
     fun switchToNextSubtype() = scope.launch {
         val subtypeList = subtypes
-        val cachedActiveSubtype = activeSubtype
-        var triggerNextSubtype = false
-        var newActiveSubtype: Subtype = Subtype.DEFAULT
-        for (subtype in subtypeList) {
-            if (triggerNextSubtype) {
-                triggerNextSubtype = false
-                newActiveSubtype = subtype
-            } else if (subtype == cachedActiveSubtype) {
-                triggerNextSubtype = true
-            }
-        }
-        if (triggerNextSubtype) {
-            newActiveSubtype = subtypeList.first()
+        if (subtypeList.isEmpty()) return@launch
+        val currentIndex = subtypeList.indexOf(activeSubtype)
+        // See [switchToPrevSubtype]: a missing active subtype falls back to the first
+        // real subtype instead of the sentinel Subtype.DEFAULT.
+        val newActiveSubtype = if (currentIndex < 0) {
+            subtypeList.first()
+        } else {
+            subtypeList[(currentIndex + 1) % subtypeList.size]
         }
         prefs.localization.activeSubtypeId.set(newActiveSubtype.id)
         activeSubtype = newActiveSubtype

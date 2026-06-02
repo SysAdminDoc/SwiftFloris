@@ -336,11 +336,20 @@ abstract class CrashUtility private constructor() {
          */
         private fun readFile(file: FsFile): String {
             val retText = StringBuilder()
-            if (file.exists()) {
-                val newLine = System.lineSeparator()
-                file.forEachLine {
-                    retText.append(it)
-                    retText.append(newLine)
+            // Guarded: readFile runs inside the uncaughtException handler. An IOException
+            // here (file vanished, storage full, permission flux) must not crash the crash
+            // handler itself and abort the notification / dedup logic that follows it.
+            try {
+                if (file.exists()) {
+                    val newLine = System.lineSeparator()
+                    file.forEachLine {
+                        retText.append(it)
+                        retText.append(newLine)
+                    }
+                }
+            } catch (e: Exception) {
+                flogError(LogTopic.CRASH_UTILITY) {
+                    "Failed to read stacktrace file '${file.name}':\n$e"
                 }
             }
             return retText.toString()
