@@ -67,7 +67,17 @@ class StickerMediaProvider : ContentProvider() {
         sortOrder: String?,
     ): Cursor? {
         val sticker = stickerFor(uri) ?: return null
-        val size = sticker.sourceUri?.let { sizeOfSourceUri(it) } ?: ensureStickerFile(sticker).length()
+        // For a user sticker (sourceUri != null) the size comes from the source URI; do
+        // NOT fall back to ensureStickerFile, which renders+writes a 512x512 placeholder
+        // PNG that openFile() never serves (it streams sourceUri), so the reported size
+        // would be a bogus placeholder and the render is wasted I/O. Only bundled stickers
+        // (sourceUri == null) use the rendered file.
+        val sourceUri = sticker.sourceUri
+        val size = if (sourceUri != null) {
+            sizeOfSourceUri(sourceUri) ?: 0L
+        } else {
+            ensureStickerFile(sticker).length()
+        }
         val columns = projection ?: arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
         return MatrixCursor(columns).apply {
             val row = newRow()

@@ -72,6 +72,10 @@ data class EmojiData(
 
             var ec: EmojiCategory? = null
             var emojiEditorList: MutableList<Emoji>? = null
+            // True while skipping the tab-indented variation lines of a base emoji whose
+            // own (non-tab) line was malformed (blank value). Without this, the orphaned
+            // variations would reseed a bogus standalone base with the wrong name.
+            var skipVariations = false
 
             fun commitEmojiEditorList() {
                 emojiEditorList?.let { byCategory[ec]!!.add(EmojiSet(it)) }
@@ -84,13 +88,19 @@ data class EmojiData(
                         // Comment line
                     } else if (line.startsWith("[")) {
                         commitEmojiEditorList()
+                        skipVariations = false
                         ec = EmojiCategory.entries.find { it.id == line.slice(1 until (line.length - 1)) }
                     } else if (line.trim().isEmpty() || ec == null) {
                         // Empty line
                         continue
                     } else {
-                        if (!line.startsWith("\t")) {
+                        val isTabLine = line.startsWith("\t")
+                        if (!isTabLine) {
                             commitEmojiEditorList()
+                            skipVariations = false
+                        } else if (skipVariations) {
+                            // This variation belongs to a base that was dropped as malformed.
+                            continue
                         }
                         // Assume it is a data line
                         val data = line.split(";")
@@ -103,7 +113,13 @@ data class EmojiData(
                             // SHOULDN'T contain such lines but a future
                             // contributor / addon-supplied asset should
                             // never be able to crash the IME this way.
-                            if (value.isEmpty()) continue
+                            if (value.isEmpty()) {
+                                // If the malformed line is the BASE of a set, drop the whole
+                                // set: skip its following variation lines so they don't
+                                // reseed a bogus standalone emoji with the wrong name.
+                                if (!isTabLine) skipVariations = true
+                                continue
+                            }
                             val base = emojiEditorList?.first()
                             val emoji = Emoji(
                                 value = value,

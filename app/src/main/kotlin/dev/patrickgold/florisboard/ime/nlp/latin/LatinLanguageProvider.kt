@@ -313,7 +313,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             for (word in bootstrap) {
                 if (merged.size >= maxCandidateCount) break
                 if (seen.add(word.lowercase())) {
-                    merged.add(word to (0.30 + 0.001 * dict.frequencyFor(word)))
+                    // frequencyFor returns [0,1], so the old 0.001 multiplier collapsed
+                    // every bootstrap word to ~0.300 (the *255 byte-frequency multiplier
+                    // was mis-ported). Spread the frequency over a real 0..0.06 band
+                    // starting at 0.18 — kept below trained bigram/trigram (0.55+) and
+                    // the cold-start prior floor so cross-provider ranking stays correct.
+                    merged.add(word to (0.18 + 0.06 * dict.frequencyFor(word)))
                 }
             }
         }
@@ -391,7 +396,10 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
         dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore.get(appContext).forget(word, locale)
         dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore.get(appContext).forget(word, locale)
-        return removedFromUserDict || true
+        // Report the only synchronously-knowable signal. The bigram/trigram forget()
+        // calls are fire-and-forget (return Unit), so they can't contribute a result;
+        // the old `|| true` made this constant-true and hid genuine failures from callers.
+        return removedFromUserDict
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
@@ -1032,7 +1040,7 @@ internal object LatinDictionarySuggester {
         if (maxCandidateCount <= 0 || word.length < MinCorrectionLength || !dictionary.isLoaded) return emptyList()
         val oneEditCandidates = knownEdits1(word, dictionary)
         val scowlCandidates = if (oneEditCandidates.isNotEmpty()) {
-            oneEditCandidates.map { it to 1 }
+            oneEditCandidates
         } else if (word.length <= MaxTwoEditWordLength) {
             knownEdits2(word, dictionary)
         } else {
@@ -1100,39 +1108,15 @@ internal object LatinDictionarySuggester {
         for (key in userOverlay.keys) {
             // Length-based prune first — distance is at least |len(a) - len(b)|.
             if (kotlin.math.abs(key.length - word.length) > maxDistance) continue
-            val d = boundedLevenshtein(word, key, maxDistance)
+            // Damerau (not plain Levenshtein): overlay candidates are merged with the
+            // SCOWL candidates and ranked/auto-committed by a shared distance field, so
+            // both sources must use the same metric. Plain Levenshtein counted an
+            // adjacent transposition (e.g. learned "patrick" typed "patrcik") as 2,
+            // sinking it below distance-1 look-alikes and to the stricter threshold.
+            val d = boundedDamerauLevenshteinDistance(word, key, maxDistance) ?: continue
             if (d in 1..maxDistance) out.add(key to d)
         }
         return out
-    }
-
-    /**
-     * Bounded Levenshtein distance — returns [maxDistance] + 1 as soon as
-     * the rolling-row minimum exceeds [maxDistance], short-circuiting most
-     * comparisons for the common case of clearly-different strings.
-     */
-    private fun boundedLevenshtein(a: String, b: String, maxDistance: Int): Int {
-        val n = a.length
-        val m = b.length
-        if (kotlin.math.abs(n - m) > maxDistance) return maxDistance + 1
-        val prev = IntArray(m + 1) { it }
-        val curr = IntArray(m + 1)
-        for (i in 1..n) {
-            curr[0] = i
-            var rowMin = i
-            for (j in 1..m) {
-                val cost = if (a[i - 1] == b[j - 1]) 0 else 1
-                curr[j] = minOf(
-                    curr[j - 1] + 1,
-                    prev[j] + 1,
-                    prev[j - 1] + cost,
-                )
-                if (curr[j] < rowMin) rowMin = curr[j]
-            }
-            if (rowMin > maxDistance) return maxDistance + 1
-            for (j in 0..m) prev[j] = curr[j]
-        }
-        return prev[m]
     }
 
     /**
@@ -1273,12 +1257,24 @@ internal object LatinDictionarySuggester {
         return low
     }
 
-    private fun knownEdits1(word: String, dictionary: LatinDictionarySnapshot): Set<String> {
+    private fun knownEdits1(word: String, dictionary: LatinDictionarySnapshot): List<Pair<String, Int>> {
         // SymSpell-based fast path: the precomputed delete-index returns every dict word
         // within edit-distance ≤ 1 in O(L²) instead of generating L · |alphabet| ≈ L · 54
-        // candidate strings per call.
+        // candidate strings per call. The shared-delete test is a SUPERSET (a single
+        // delete applied to both query and dict word can collide at true distance 2), so
+        // we must verify each candidate's actual Damerau distance — exactly as knownEdits2
+        // does — instead of labelling them all distance 1, otherwise a true-distance-2
+        // typo auto-commits at the looser distance-1 frequency threshold.
         return dictionary.symSpellIndex.candidatesAtDistance1(word)
-            .filterTo(HashSet()) { it != word }
+            .asSequence()
+            .filter { it != word }
+            .mapNotNull { candidate ->
+                val distance = boundedDamerauLevenshteinDistance(word, candidate, maxDistance = 2)
+                    ?: return@mapNotNull null
+                candidate to distance
+            }
+            .filter { (_, distance) -> distance in 1..2 }
+            .toList()
     }
 
     private fun knownEdits2(word: String, dictionary: LatinDictionarySnapshot): List<Pair<String, Int>> {

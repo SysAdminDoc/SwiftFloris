@@ -111,7 +111,11 @@ class CustomEmojiTagStore private constructor(
             val tmp = File(storageFile.parentFile, storageFile.name + ".tmp")
             tmp.writeText(JsonConfig.encodeToString(StoreFile(map)))
             if (!tmp.renameTo(storageFile)) {
-                storageFile.writeText(tmp.readText())
+                // Do NOT hand-copy tmp into the live file: a write that throws partway
+                // (low disk, interruption) would truncate/corrupt the previously-good
+                // file, defeating the whole tmp+rename atomicity. Keep the old file
+                // intact; the in-memory cache already holds the new state for this session.
+                flogError { "CustomEmojiTagStore.flush: atomic rename failed; keeping previous tag file" }
                 tmp.delete()
             }
         } catch (e: Throwable) {

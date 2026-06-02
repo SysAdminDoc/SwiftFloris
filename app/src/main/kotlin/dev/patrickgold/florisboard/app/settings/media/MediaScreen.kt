@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.settings.media
 
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -71,6 +72,18 @@ fun MediaScreen() = FlorisScreen {
     val folderClearedText = stringRes(R.string.prefs__media__stickers_folder_cleared)
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
+            // Release the previous folder grant before taking the new one — otherwise
+            // each re-pick orphans a persisted read grant (privacy leak + slowly
+            // exhausts Android's per-app persisted-URI cap). Mirrors SyncSettingsScreen.
+            val previousFolderUri = userStickerFolderUri
+            if (previousFolderUri.isNotBlank() && previousFolderUri != uri.toString()) {
+                runCatching {
+                    context.contentResolver.releasePersistableUriPermission(
+                        Uri.parse(previousFolderUri),
+                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                    )
+                }
+            }
             runCatching {
                 context.contentResolver.takePersistableUriPermission(
                     uri,
@@ -130,19 +143,20 @@ fun MediaScreen() = FlorisScreen {
                 stepIncrement = 1,
                 enabledIf = { prefs.emoji.historyEnabled.isTrue() },
             )
+            // No enabledIf: the reset buttons must stay tappable after history is turned
+            // off so the user can still erase what was already collected (see
+            // EmojiHistoryHelper.deleteHistory/deletePinned).
             Preference(
                 title = stringRes(R.string.prefs__media__emoji_history_pinned_reset),
                 onClick = {
                     shouldDelete = ShouldDelete(true)
                 },
-                enabledIf = { prefs.emoji.historyEnabled.isTrue() },
             )
             Preference(
                 title = stringRes(R.string.prefs__media__emoji_history_reset),
                 onClick = {
                     shouldDelete = ShouldDelete(false)
                 },
-                enabledIf = { prefs.emoji.historyEnabled.isTrue() },
             )
 
         }
@@ -230,7 +244,15 @@ fun MediaScreen() = FlorisScreen {
                 summary = stringRes(R.string.prefs__media__stickers_folder_clear__summary),
                 enabledIf = { userStickerFolderUri.isNotBlank() },
                 onClick = {
+                    val old = userStickerFolderUri
                     scope.launch {
+                        // Release the grant when clearing, not just the pref reference.
+                        if (old.isNotBlank()) runCatching {
+                            context.contentResolver.releasePersistableUriPermission(
+                                Uri.parse(old),
+                                Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                            )
+                        }
                         prefs.sticker.userFolderUri.set("")
                     }
                     Toast.makeText(context, folderClearedText, Toast.LENGTH_SHORT).show()
