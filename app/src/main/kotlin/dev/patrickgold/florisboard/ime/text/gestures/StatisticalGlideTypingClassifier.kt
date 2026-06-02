@@ -49,6 +49,14 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     private val nlpManager by context.nlpManager()
 
     private val gesture = Gesture()
+
+    // Serializes access to [gesture]: addGesturePoint()/clear() run on the input
+    // thread while getSuggestions() runs on Dispatchers.Default (preview jobs are
+    // launched while the finger is still moving), so the unsynchronized reads of
+    // `gesture` used to race the in-place addPoint() writes and could index past
+    // the written data via a torn `size`. Heavy classification operates on a clone
+    // taken under this lock, so the lock is held only for cheap snapshot/mutation.
+    private val gestureLock = Any()
     private var keysByCharacter: SparseArrayCompat<TextKey> = SparseArrayCompat()
     private var words: List<String> = emptyList()
     private var keys: ArrayList<TextKey> = arrayListOf()
@@ -107,15 +115,17 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     }
 
     override fun addGesturePoint(position: GlideTypingGesture.Detector.Position) {
-        if (!gesture.isEmpty) {
-            val dx = gesture.getLastX() - position.x
-            val dy = gesture.getLastY() - position.y
+        synchronized(gestureLock) {
+            if (!gesture.isEmpty) {
+                val dx = gesture.getLastX() - position.x
+                val dy = gesture.getLastY() - position.y
 
-            if (dx * dx + dy * dy > distanceThresholdSquared) {
+                if (dx * dx + dy * dy > distanceThresholdSquared) {
+                    gesture.addPoint(position.x, position.y)
+                }
+            } else {
                 gesture.addPoint(position.x, position.y)
             }
-        } else {
-            gesture.addPoint(position.x, position.y)
         }
     }
 
@@ -197,12 +207,16 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
 
     override fun getSuggestions(maxSuggestionCount: Int, gestureCompleted: Boolean): List<String> {
         val subtype = currentSubtype ?: return emptyList()
-        val key = SuggestionCacheKey(this.gesture, maxSuggestionCount, subtype)
+        // Snapshot the gesture once under the lock; the lookup, the classification,
+        // and the cache put all operate on this one consistent clone, so a
+        // concurrent addGesturePoint() can't tear the read mid-classification.
+        val snapshot = synchronized(gestureLock) { gesture.clone() }
+        val key = SuggestionCacheKey(snapshot, maxSuggestionCount, subtype)
         return when (val cached = lruSuggestionCache.get(key)) {
             null -> {
-                val suggestions = unCachedGetSuggestions(maxSuggestionCount)
+                val suggestions = unCachedGetSuggestions(snapshot, maxSuggestionCount)
                 lruSuggestionCache.put(
-                    SuggestionCacheKey(this.gesture.clone(), maxSuggestionCount, subtype),
+                    SuggestionCacheKey(snapshot, maxSuggestionCount, subtype),
                     suggestions,
                 )
 
@@ -214,15 +228,15 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         }
     }
 
-    private fun unCachedGetSuggestions(maxSuggestionCount: Int): List<String> {
+    private fun unCachedGetSuggestions(userGestureSnapshot: Gesture, maxSuggestionCount: Int): List<String> {
         val candidates = arrayListOf<String>()
         val candidateWeights = arrayListOf<Float>()
         val key = keys.firstOrNull() ?: return listOf()
         val radius = min(key.visibleBounds.height, key.visibleBounds.width)
-        var remainingWords = pruner.pruneByExtremities(gesture, this.keys)
-        val userGesture = gesture.resample(SAMPLING_POINTS)
+        var remainingWords = pruner.pruneByExtremities(userGestureSnapshot, this.keys)
+        val userGesture = userGestureSnapshot.resample(SAMPLING_POINTS)
         val normalizedUserGesture: Gesture = userGesture.normalizeByBoxSide()
-        remainingWords = pruner.pruneByLength(gesture, remainingWords, keysByCharacter, keys)
+        remainingWords = pruner.pruneByLength(userGestureSnapshot, remainingWords, keysByCharacter, keys)
 
         for (i in remainingWords.indices) {
             val word = remainingWords[i]
@@ -274,7 +288,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     }
 
     override fun clear() {
-        gesture.clear()
+        synchronized(gestureLock) { gesture.clear() }
         lruSuggestionCache.evictAll()
     }
 
