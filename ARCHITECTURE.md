@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-06-04, against the v1.8.244 codebase.
+Last updated: 2026-06-04, against the v1.8.245 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
@@ -179,6 +179,9 @@ maintainer-triggered Roborazzi baseline capture. Android lint runs through
 `scripts/run-lint-debug-with-baseline-check.sh` in CI so stale baseline entries
 fail visibly, and `scripts/check-repo-hygiene.sh` keeps generated build/report
 output out of committed history.
+Fastlane changelog drafting guidance keeps the short store-facing release text
+within the 480-character draft budget before the metadata script enforces the
+hard limit.
 
 The local VM used by some agent runs may not have Java or the Android SDK on
 PATH. In that case, record the exact Gradle command attempted and leave final

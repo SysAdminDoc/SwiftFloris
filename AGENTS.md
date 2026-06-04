@@ -18,7 +18,7 @@ and sourced reasoning; mine them for *why*, but pick the next task from
 `ROADMAP.md`.
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, current v1.8.244
+   project context. Pins the load-bearing invariants, current v1.8.245
    stack, the module layout, roadmap-file routing, and current source-of-truth
    state.
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,
@@ -87,11 +87,12 @@ file-per-release pattern — do not re-introduce per-release note files. Each
 section describes intent, files touched, tests added, and Definition-of-Done
 evidence. A matching `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
 (≤500 chars; draft ≤480 for headroom) ships alongside, enforced by
-`scripts/check-fastlane-metadata.sh`.
+`scripts/check-fastlane-metadata.sh`; draft it as a short store-facing summary,
+not as a file list or test log.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump in lockstep
 with the changelog commit. Tag the release commit at the same time
-(`git push --tags`). HEAD is `v1.8.244` (versionCode 2044) as of 2026-06-04.
+(`git push --tags`). HEAD is `v1.8.245` (versionCode 2045) as of 2026-06-04.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)
 

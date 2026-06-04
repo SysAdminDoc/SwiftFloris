@@ -1,6 +1,6 @@
 # SwiftFloris Repo Hygiene
 
-Last updated: 2026-06-04 for v1.8.243.
+Last updated: 2026-06-04 for v1.8.245.
 
 This repository uses one commit per release slice. Keep code, roadmap state,
 release notes, and verification evidence together so the next maintainer can
@@ -56,6 +56,22 @@ The historical rationale: through v1.8.173 the repo carried a 9.7 MB
 cost; F-Droid reviewers saw a sloppy tree. v1.8.174 untracked the surviving
 two (`SwiftFloris_icon.png`, `ROADMAP.md.backup-v2`) and extended this script
 to keep them out.
+
+## Fastlane Changelog Drafting Rule
+
+The Fastlane changelog is the short store-facing summary for the current
+`projectVersionCode`, not a second copy of `CHANGELOG.md`. Draft it after the
+full changelog section so it summarizes verified release impact.
+
+- Keep drafts at or below 480 characters even though
+  `scripts/check-fastlane-metadata.sh` allows 500. The extra room prevents
+  late copy edits from failing the gate.
+- Use one plain sentence or two short fragments. Name the recognizable feature,
+  guardrail, or maintenance path and the shipped benefit.
+- Do not include test commands, file paths, internal-only issue IDs, or claims
+  that are not backed by the release evidence.
+- For docs-only or hygiene releases, say what contributor or release path is
+  now clearer. Do not imply app behavior changed.
 
 ## Commit Scope Rule
 

@@ -2,6 +2,46 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.245"></a>
+## v1.8.245
+
+Released: 2026-06-04
+
+### Fastlane changelog drafting guide
+
+R5 is closed. The short Fastlane changelog now has a documented drafting rule before the metadata script enforces the hard limit: write a store-facing, evidence-backed summary with 480-character headroom instead of a file list or test log.
+
+### Changes
+
+- **`docs/REPO_HYGIENE.md`** - adds the Fastlane changelog drafting rule, including the 480-character draft budget, store-facing summary focus, and docs-only release wording guidance.
+- **`docs/LOCAL_VERIFICATION.md`** - folds the drafting expectations into the standard local gate near `scripts/check-fastlane-metadata.sh`.
+- **`CONTRIBUTING.md` / `AGENTS.md` / `ARCHITECTURE.md`** - point release contributors and agent runs at the same short-summary rule.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `README.md` / `PROJECT_CONTEXT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.245 / versionCode 2045 and closes R5.
+- **`ROADMAP.md` / `RESEARCH_REPORT.md`** - refresh the API 37 / Kotlin blocker evidence: Kotlin `2.4.0` is current, KSP still tops out at `2.3.9`, and AndroidX Core `1.19.0` declares `minCompileSdk=37`.
+
+### Verification
+
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2045.
+- `bash scripts/check-repo-hygiene.sh` - PASS.
+- APK assembly was intentionally skipped in this local docs-only batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `CONTRIBUTING.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `docs/LOCAL_VERIFICATION.md`
+- `docs/REPO_HYGIENE.md`
+- `fastlane/metadata/android/en-US/changelogs/2045.txt` (new)
+- `gradle.properties` (versionCode 2044->2045, versionName 1.8.244->1.8.245)
+
 <a id="v1.8.244"></a>
 ## v1.8.244
 
