@@ -1,10 +1,19 @@
 # SwiftFloris Research Report
 
-This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 3.
+This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 4.
 
-2026-06-04 Cycle 3 note: the branch is clean but five commits ahead of
-`origin/master`, with `HEAD` at `8142536` and no tag pointing at it. The latest
-three code-fix commits after the v1.8.225 docs marker cover n-gram data loss,
+2026-06-04 Cycle 4 note: after the Cycle 3 docs push, `master` is clean at
+`dc72e32` (`v1.8.223-6-gdc72e32`) with no tag at HEAD. Cycle 4 widened into
+language-tag, Compose semantics, MIME helper, and ByteBuffer contracts. R4-1
+fixes Japanese `ja` locale capability gates; R4-2 adds clipboard media TalkBack
+labels; R4-3 pins MIME aggregate helper behavior and removes constructor stdout;
+R4-4 hardens the native string bridge. WS13 was sharpened with the deferred
+`StickerMediaProvider.openFile` SAF allow-list validation.
+
+2026-06-04 Cycle 3 note: after the Cycle 3 docs push, `master` is clean at
+`dc72e32`, with `git describe` returning `v1.8.223-6-gdc72e32` and no tag
+pointing at HEAD. The latest three code-fix commits after the v1.8.225 docs
+marker are `4fda240`, `86c9885`, and `76a74c2`; they cover n-gram data loss,
 thread safety, SealedBoxCrypto KDF/scrubbing, private-session trace suppression,
 Arabic combining-mark shaping, and Snygg selector/contentScale handling, but
 the release ledger still tops out at v1.8.225 / versionCode 2025. R3-1 was
@@ -51,7 +60,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.225 plus the three untagged local post-release fixes, the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on source-of-truth release hygiene, the already-partial clipboard search surface, and sync-crypto contract tests. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.225 plus the three untagged pushed post-release fixes, the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on source-of-truth release hygiene, the already-partial clipboard search surface, sync-crypto contract tests, Japanese locale capability correctness, and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -68,14 +77,18 @@ Top opportunities (one line each):
 11. **Sealed-box contract vectors** — sync crypto tests need deterministic envelope/KDF vectors before CRDT transport persists or exchanges encrypted deltas (R3-3, P1). [Verified]
 12. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]
 13. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
+14. **Japanese locale capability gate** — `supportsAutoSpace` uses `jp` instead of the BCP-47 Japanese language subtag `ja`, and the adjacent capability tables need regression coverage (R4-1, P1). [Verified]
+15. **Clipboard media TalkBack labels** — image/video history tiles expose visual thumbnails without a user-meaningful accessibility description (R4-2, P3). [Verified]
+16. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
+17. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
 ## Evidence Reviewed
 
-- **Key files/dirs:** `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/` (`SettingsSearchIndex.kt`, `SettingsSearchScreen.kt`), `app/src/test/.../settings/search/SettingsSearchIndexTest.kt`, `FlorisApplication.kt`, `FlorisAppActivity.kt`, `lib/crashutility/CrashUtility.kt`, `RestoreScreen.kt`, `BackupScreen.kt`, `Flog.kt`, `gradle/libs.versions.toml`, `gradle.properties`, `app/src/main/AndroidManifest.xml`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/ACCESSIBILITY.md`, `.github/workflows/*`, and the three `docs/AUDIT_2026-*.md` reports (read-only).
-- **Git range:** `git log --oneline -n 40`; `git show --stat --oneline v1.8.223..HEAD` confirmed v1.8.224 -> v1.8.225 docs/build/release movement plus the newest local n-gram/thread-safety/crypto/privacy, Arabic-shaping, and Snygg hotfixes.
-- **External sources / standards:** Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
+- **Key files/dirs:** `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/` (`SettingsSearchIndex.kt`, `SettingsSearchScreen.kt`), `app/src/test/.../settings/search/SettingsSearchIndexTest.kt`, `FlorisLocale.kt`, `LayoutScriptClassifier.kt`, `EditorInstance.kt`, `KeyboardManager.kt`, `ClipboardInputLayout.kt`, `MimeTypeFilter.kt`, `MimeTypeFilterTest.kt`, `Native.kt`, `FlorisApplication.kt`, `FlorisAppActivity.kt`, `lib/crashutility/CrashUtility.kt`, `RestoreScreen.kt`, `BackupScreen.kt`, `Flog.kt`, `gradle/libs.versions.toml`, `gradle.properties`, `app/src/main/AndroidManifest.xml`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/ACCESSIBILITY.md`, `docs/AUDIT_2026-05-29.md`, `docs/AUDIT_2026-06-02.md`, `.github/workflows/*`, and the three `docs/AUDIT_2026-*.md` reports (read-only).
+- **Git range:** `git log --oneline -n 40`; `git show --stat --oneline v1.8.223..HEAD` confirmed v1.8.224 -> v1.8.225 docs/build/release movement plus pushed n-gram/thread-safety/crypto/privacy, Arabic-shaping, Snygg, and Cycle 3 docs commits through `dc72e32`.
+- **External sources / standards:** IANA Language Subtag Registry (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`); Android `Locale` reference (`https://developer.android.com/reference/java/util/Locale`); Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); AndroidX `MimeTypeFilter` reference (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`); Android `ClipDescription.compareMimeTypes` reference (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`); Android `ByteBuffer` reference (`https://developer.android.com/reference/java/nio/ByteBuffer`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
 - **Unverifiable here:** This research-only pass did not run Gradle or device QA; on-device focus/IME-raise behavior, TalkBack output, and clipboard palette interaction remain manual acceptance criteria for the build machine. [Needs validation]
 
 ## Current Product Map
@@ -90,6 +103,13 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   `prefs.clipboard.historySearchEnabled` exists, but `ClipboardInputLayout`
   currently applies only item-type filters. R3-2 is the UI wire-up, not a new
   storage feature. [Verified]
+- **Locale capability gates (partial):** `FlorisLocale` centralizes capitalization
+  and auto-space support decisions, but `supportsAutoSpace` uses `jp` instead of
+  the Japanese `ja` language subtag. R4-1 is a small correctness fix plus tests
+  for the existing capability contract. [Verified]
+- **Clipboard media accessibility (partial):** clipboard text items have richer
+  semantic context than image/video tiles. R4-2 adds localized media labels
+  without changing clipboard storage, redaction, or paste behavior. [Verified]
 - **Sync sealed-box scaffold (partial):** `SealedBoxCrypto` uses X25519 +
   AES-GCM and an HMAC-based KDF after the latest local fix, but it is still
   scaffold/test-surface rather than a full production transport. R3-3 asks for
@@ -128,6 +148,14 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Medium] Clipboard query helper not surfaced in the IME palette** → R3-2.
   The pure helper and pref exist; the user-facing keyboard UI does not expose a
   search field yet.
+- **[Medium] Japanese auto-space gate typo** → R4-1. `supportsAutoSpace`
+  excludes `jp`, while Android and IANA use `ja` for Japanese.
+- **[Minor] Clipboard media thumbnails lack useful spoken labels** → R4-2.
+  The image/video thumbnail content descriptions are null; add localized labels
+  while keeping decorative overlay icons hidden.
+- **[Minor] MIME helper stdout and aggregate semantics** → R4-3. Remove the
+  constructor print and pin `matchesAll` / `matchesAny` / `matchesOne` behavior
+  before more import/provider code depends on the helper.
 
 ## Architecture & Technical Findings
 
@@ -136,6 +164,12 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   direction, but deterministic vectors and envelope-schema docs are missing.
   Because the transport is still scaffold-level, this is a pre-release
   hardening item rather than a production decrypt-migration incident.
+- **MIME helper contract:** SwiftFloris intentionally accepts wildcard fragments
+  that AndroidX's helper does not. R4-3 keeps that broader local contract only
+  if tests and KDoc make the divergence explicit.
+- **Native string bridge:** `NativeStr.toJavaString()` handles direct buffers
+  with `remaining()` but heap buffers with the whole backing array. R4-4 aligns
+  heap/direct behavior before native addon surfaces make sliced buffers common.
 - **Dependency health:** the security-sensitive pins checked here are still current for SQLCipher 4.16.0 and Tink 1.21.0, and Room/Robolectric also match metadata. The compatible P3 maintenance batch shipped in v1.8.216 (Compose BOM `2026.05.01`, KSP `2.3.9`, Roborazzi `1.63.0`). Kotlin `2.4.0` and AndroidX Core `1.19.0` remain gated on KSP publication and compileSdk 37 respectively; AGP 9.2.1 appears to be the stable baseline while Google Maven's newest AGP metadata is 9.3 alpha. [Verified via Maven metadata]
 - **Overgrown files:** `IndicTransliterator.kt` (~86 KB), `TextKeyboardLayout.kt` (~76 KB), `LatinLanguageProvider.kt` (~60 KB), `KeyboardManager.kt` (~60 KB) are large but the SHIFT state machine was already extracted (F27 shipped) and the audits already track `LatinLanguageProvider` heap risk (A1). Left as-is — no speculative refactor proposed.
 - **Testability:** 218 JVM test files, 5 androidTest. The search catalog's integrity and synonym-hit coverage are now pinned by RA-1 and RA-3, and the RA-10 scroll-reset guard is covered; RA-4 remains the manual/accessibility coverage gap.
@@ -144,11 +178,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 is sync-crypto contract hardening before transport activation, with no new permission or native dependency. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 is sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
-The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `TouchTargetWcagTest`, RTL mirroring, candidate-row custom actions). The gap is that the **new** search screen wasn't brought under that umbrella: no field label/semantics, no live-region result-count announcement, and no entry in the manual-QA checklist (RA-4). UX polish (auto-focus, clear, IME Search, diacritic folding, no-results escape) brings search to parity with platform expectations without scope creep.
+The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `TouchTargetWcagTest`, RTL mirroring, candidate-row custom actions). The **settings search** gap is that the new screen was not brought under that umbrella: no field label/semantics, no live-region result-count announcement, and no entry in the manual-QA checklist (RA-4). The **clipboard media** gap is narrower but user-facing: image/video history tiles need spoken labels and state context while decorative overlay icons remain hidden (R4-2). UX polish (auto-focus, clear, IME Search, diacritic folding, no-results escape) brings search to parity with platform expectations without scope creep.
 
 ## Explicit Non-Goals (rejected + why)
 
@@ -161,6 +195,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 
 1. RA-4 still needs manual TalkBack verification on a device after the semantics pass.
 2. RA-9 is a code-local follow-up and does not require a product decision before implementation.
+3. R4-2 needs a short manual TalkBack pass after strings land, because spoken
+   clipboard media labels are hard to validate with JVM tests alone.
 
 ## Archived Evidence
 
@@ -173,3 +209,7 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
   AnySoftKeyboard 1.13-r1, HeliBoard 3.9, FlorisBoard v0.6.0-alpha02,
   libsodium sealed boxes, RFC 5869 HKDF, Android Compose semantics/live-region,
   Unicode UAX #53 Arabic mark rendering.
+- Cycle 4 companion: `.ai/research/2026-06-04/CYCLE_4_FINDINGS.md`.
+- Cycle 4 external source classes checked: IANA language subtags, Android
+  `Locale`, Android Compose semantics, AndroidX `MimeTypeFilter`, Android
+  `ClipDescription.compareMimeTypes`, and Android `ByteBuffer`.
