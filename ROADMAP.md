@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 7 - 2026-06-04.
+> Last researched: Cycle 8 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -160,6 +160,55 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 8 - 2026-06-04)
+
+- [x] 🔬 `user-dictionary-back-feedback-recheck-2026-06-04` - synced
+  `master` at the Cycle 7 pushed tip, rechecked the user-dictionary operation
+  gating audit against live Compose back handling, nearby policy tests, and
+  AndroidX `BackHandler` docs, and avoided duplicating the already-shipped
+  dictionary transfer progress cards. This cycle adds one focused navigation
+  feedback row for blocked back gestures during active dictionary work.
+
+#### User-dictionary navigation feedback
+
+- [ ] 🤖 P3 — Give blocked user-dictionary back gestures explicit feedback (R8-1)
+  - Why: save/delete/import/export operations deliberately block leaving the
+    user-dictionary screen so mutable dictionary work is not interrupted. The
+    toolbar back button is disabled and progress cards explain that work is in
+    flight, but the system back gesture is still intercepted by an enabled
+    `BackHandler` and then silently does nothing while an operation is active.
+    That makes a protected in-progress state look like a frozen settings
+    screen.
+  - Evidence: `UserDictionaryScreen.kt:171-179` derives
+    `isEntryOperationInProgress`, `isDictionaryTransferInProgress`, and
+    `canLeaveDictionaryScreen`; `UserDictionaryScreen.kt:626-650` disables the
+    visible navigation button while `canLeaveDictionaryScreen` is false;
+    `UserDictionaryScreen.kt:722-727` enables `BackHandler` for current-locale
+    or active-operation state but only handles the current-locale escape when
+    `canLeaveDictionaryScreen` is true; `UserDictionaryScreen.kt:734-758` and
+    `strings.xml:942-945` / `strings.xml:997-1005` already expose progress-card
+    copy for import/export/save/delete; `UserDictionaryEntryPolicy.kt:45-65`
+    and `UserDictionaryEntryPolicyTest.kt:23-51` pin the block-leaving policy;
+    `docs/AUDIT_2026-05-28.md:160-162` records the same swallowed-back gap.
+    AndroidX `BackHandler` docs define the `enabled` flag as the control for
+    whether the handler is active, so an enabled no-op handler consumes the
+    gesture (`https://developer.android.com/reference/kotlin/androidx/activity/compose/BackHandler.composable`).
+  - Touches: `UserDictionaryScreen.kt`, `UserDictionaryEntryPolicy.kt` if a
+    small operation-to-feedback helper is useful, localized strings for the
+    back-blocked message, and focused JVM/Compose tests around the policy or
+    screen behavior.
+  - Acceptance: system back during save, delete, import, and export keeps the
+    user on the dictionary screen but surfaces clear feedback using existing
+    in-progress wording or a dedicated toast/snackbar/live announcement; system
+    back still closes the selected locale when no operation is active; with no
+    selected locale and no active operation, this screen does not consume back;
+    the toolbar button disabled state and existing progress cards remain
+    unchanged; TalkBack users receive equivalent feedback.
+  - Verify: focused unit tests for the extracted feedback decision plus manual
+    Settings -> Dictionary smoke for save/delete/import/export in progress,
+    hardware/gesture back, toolbar back, and TalkBack announcement behavior.
+  - Complexity: S
 
 ### Researcher Queue (Cycle 7 - 2026-06-04)
 
