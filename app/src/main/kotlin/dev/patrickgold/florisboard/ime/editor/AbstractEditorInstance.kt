@@ -501,9 +501,8 @@ abstract class AbstractEditorInstance(context: Context) {
                         OperationUnit.WORDS -> breakIterators.measureUWords(scopeText, n, locale)
                     }
                     val selection = content.selection
-                    val newSelection = selection.translatedBy(length)
                     val newContent = content.generateCopy(
-                        selection = newSelection,
+                        selection = selection,
                         textAfterSelection = scopeText.drop(length),
                     )
                     expectedContentQueue.push(newContent)

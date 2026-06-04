@@ -366,7 +366,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         // Initialize voice input manager
         voiceInputManager.initialize()
 
-        WindowCompat.setDecorFitsSystemWindows(window.window!!, false)
+        window.window?.let { WindowCompat.setDecorFitsSystemWindows(it, false) }
         windowController.onConfigurationChanged(resources.configuration)
         windowController.activeWindowConfig.collectLatestIn(lifecycleScope) {
             keyboardManager.updateActiveEvaluators() // TODO: wacky solution, but works for now

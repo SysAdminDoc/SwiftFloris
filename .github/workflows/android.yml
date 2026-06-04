@@ -33,6 +33,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -117,7 +121,7 @@ jobs:
       - name: 16 KB native-library alignment guard
         run: |
           set -euo pipefail
-          ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+          ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           BUILD_TOOLS=$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           ZIPALIGN="$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign"
           APK="app/build/outputs/apk/debug/app-debug.apk"

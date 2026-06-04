@@ -280,7 +280,12 @@ fun ClipboardInputLayout(
             ),
         ) {
             if (item.type == ItemType.IMAGE) {
-                val id = ContentUris.parseId(item.uri!!)
+                val uri = item.uri
+                if (uri == null) {
+                    SnyggText(modifier = Modifier.fillMaxWidth(), text = "Missing image URI")
+                    return@SnyggSurface
+                }
+                val id = ContentUris.parseId(uri)
                 val file = ClipboardFileStorage.getFileForId(context, id)
                 val bitmap = remember(id) {
                     runCatching {
@@ -304,7 +309,12 @@ fun ClipboardInputLayout(
                     )
                 }
             } else if (item.type == ItemType.VIDEO) {
-                val id = ContentUris.parseId(item.uri!!)
+                val uri = item.uri
+                if (uri == null) {
+                    SnyggText(modifier = Modifier.fillMaxWidth(), text = "Missing video URI")
+                    return@SnyggSurface
+                }
+                val id = ContentUris.parseId(uri)
                 val file = ClipboardFileStorage.getFileForId(context, id)
                 val bitmap = remember(id) {
                     runCatching {

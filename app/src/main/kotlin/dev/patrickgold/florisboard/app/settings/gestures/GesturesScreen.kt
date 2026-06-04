@@ -72,13 +72,13 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.glide.showTrail,
                 title = stringRes(R.string.pref__glide__show_trail__label),
                 summary = stringRes(R.string.pref__glide__show_trail__summary),
-                enabledIf = { prefs.glide.enabled.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true },
             )
             ListPreference(
                 prefs.glide.trailTheme,
                 title = stringRes(R.string.pref__glide__trail_theme__label),
                 entries = enumDisplayEntriesOf(GlideTrailTheme::class),
-                enabledIf = { prefs.glide.enabled.get() && prefs.glide.showTrail.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true && prefs.glide.showTrail isEqualTo true },
             )
             DialogSliderPreference(
                 prefs.glide.trailDuration,
@@ -87,13 +87,13 @@ fun GesturesScreen() = FlorisScreen {
                 min = 0,
                 max = 500,
                 stepIncrement = 10,
-                enabledIf = { prefs.glide.enabled.get() && prefs.glide.showTrail.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true && prefs.glide.showTrail isEqualTo true },
             )
             SwitchPreference(
                 prefs.glide.showPreview,
                 title = stringRes(R.string.pref__glide__show_preview),
                 summary = stringRes(R.string.pref__glide__show_preview__summary),
-                enabledIf = { prefs.glide.enabled.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true },
             )
             DialogSliderPreference(
                 prefs.glide.previewRefreshDelay,
@@ -102,19 +102,19 @@ fun GesturesScreen() = FlorisScreen {
                 min = 50,
                 max = 500,
                 stepIncrement = 25,
-                enabledIf = { prefs.glide.enabled.get() && prefs.glide.showPreview.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true && prefs.glide.showPreview isEqualTo true },
             )
             SwitchPreference(
                 prefs.glide.immediateBackspaceDeletesWord,
                 title = stringRes(R.string.pref__glide__immediate_backspace_deletes_word__label),
                 summary = stringRes(R.string.pref__glide__immediate_backspace_deletes_word__summary),
-                enabledIf = { prefs.glide.enabled.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true },
             )
             SwitchPreference(
                 prefs.glide.flowThroughSpace,
                 title = stringRes(R.string.pref__glide__flow_through_space__label),
                 summary = stringRes(R.string.pref__glide__flow_through_space__summary),
-                enabledIf = { prefs.glide.enabled.get() },
+                enabledIf = { prefs.glide.enabled isEqualTo true },
             )
         }
 
@@ -141,7 +141,7 @@ fun GesturesScreen() = FlorisScreen {
                         "quality" to stringRes(profile.qualityLabelRes),
                         "engine" to stringRes(profile.engineLabelRes),
                     ),
-                    enabledIf = { prefs.glide.enabled.get() },
+                    enabledIf = { prefs.glide.enabled isEqualTo true },
                 )
             }
         }

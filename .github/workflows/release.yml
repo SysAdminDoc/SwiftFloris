@@ -142,10 +142,12 @@ jobs:
         run: |
           scan_date=$(date -u +"%Y-%m-%d")
           scanner_version="osv-scanner v2.0.2"
+          scan_completed=true
           if [ -s osv-result.json ]; then
             vuln_count=$(python3 -c "import json;d=json.load(open('osv-result.json'));n=sum(len(p.get('vulnerabilities', [])) for r in d.get('results', []) for p in r.get('packages', []));print(n)")
           else
-            vuln_count=0
+            vuln_count="unknown"
+            scan_completed=false
           fi
           {
             echo ""
@@ -155,7 +157,9 @@ jobs:
             echo ""
             echo "- **Scan date (UTC):** $scan_date"
             echo "- **Scanner:** $scanner_version"
-            if [ "$vuln_count" = "0" ]; then
+            if [ "$scan_completed" = "false" ]; then
+              echo "- **Result:** ⚠️ Scan did NOT complete — \`osv-result.json\` is missing or empty. Vulnerability status is unknown for this release. Check the workflow logs for the scan failure reason."
+            elif [ "$vuln_count" = "0" ]; then
               echo "- **Result:** 0 known vulnerabilities in the \`releaseRuntimeClasspath\` of \`:app\`."
             else
               echo "- **Result:** $vuln_count advisory match(es) — see \`osv-result.json\` in the workflow artifacts. A clean scan today does not imply forever-immunity; see [\`docs/SECURITY.md\`](https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/SECURITY.md)."
@@ -249,7 +253,7 @@ jobs:
           APK: ${{ steps.locate-apk.outputs.apk-path }}
         run: |
           set -euo pipefail
-          ANDROID_HOME="${ANDROID_HOME:-$HOME/Library/Android/sdk}"
+          ANDROID_HOME="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
           BUILD_TOOLS=$(ls -1 "$ANDROID_HOME/build-tools" | sort -V | tail -1)
           ZIPALIGN="$ANDROID_HOME/build-tools/$BUILD_TOOLS/zipalign"
           if [ ! -x "$ZIPALIGN" ]; then

@@ -18,4 +18,19 @@
     <include
         domain="file"
         path="ime"/>
+    <exclude
+        domain="file"
+        path="personal_bigrams"/>
+    <exclude
+        domain="file"
+        path="personal_trigrams"/>
+    <exclude
+        domain="file"
+        path="correction_outcome_priors"/>
+    <exclude
+        domain="file"
+        path="swiftkey_typing_traces.jsonl"/>
+    <exclude
+        domain="file"
+        path="swiftkey_trace.enabled"/>
 </full-backup-content>

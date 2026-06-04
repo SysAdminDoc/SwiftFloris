@@ -333,8 +333,7 @@ class ClipboardManager(
 
     private fun moveToTheBeginning(oldItem: ClipboardItem, newItem: ClipboardItem) {
         ioScope.launch {
-            clipHistoryDao?.delete(oldItem.id)
-            clipHistoryDao?.insert(newItem)
+            clipHistoryDao?.deleteAndInsert(oldItem.id, newItem)
         }
     }
 
@@ -359,7 +358,8 @@ class ClipboardManager(
      */
     fun clearHistory() {
         ioScope.launch {
-            for (item in currentHistory.all) {
+            val snapshot = currentHistory.all.toList()
+            for (item in snapshot) {
                 item.close(appContext)
             }
             clipHistoryDao?.deleteAllUnpinned()
@@ -371,7 +371,8 @@ class ClipboardManager(
      */
     fun clearFullHistory() {
         ioScope.launch {
-            for (item in currentHistory.all) {
+            val snapshot = currentHistory.all.toList()
+            for (item in snapshot) {
                 item.close(appContext)
             }
             clipHistoryDao?.deleteAll()

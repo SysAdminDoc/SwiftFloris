@@ -1,0 +1,1 @@
+Deep engineering audit: 20+ fixes across IME core, clipboard, dictionary, settings, security, and CI. Key fixes: forward-delete flicker, clipboard move atomicity, backup crash on corrupted items, n-gram files excluded from Android cloud backup, haptic feedback thread safety, dictionary import crash protection, and CI hardening.
