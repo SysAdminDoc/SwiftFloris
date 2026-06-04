@@ -18,7 +18,7 @@ and sourced reasoning; mine them for *why*, but pick the next task from
 `ROADMAP.md`.
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, current v1.8.245
+   project context. Pins the load-bearing invariants, current v1.8.246
    stack, the module layout, roadmap-file routing, and current source-of-truth
    state.
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,
@@ -92,7 +92,7 @@ not as a file list or test log.
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump in lockstep
 with the changelog commit. Tag the release commit at the same time
-(`git push --tags`). HEAD is `v1.8.245` (versionCode 2045) as of 2026-06-04.
+(`git push --tags`). HEAD is `v1.8.246` (versionCode 2046) as of 2026-06-04.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)
 

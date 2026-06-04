@@ -1,6 +1,6 @@
 # SwiftFloris Architecture
 
-Last updated: 2026-06-04, against the v1.8.245 codebase.
+Last updated: 2026-06-04, against the v1.8.246 codebase.
 
 This file is the fast architectural map for contributors. It is intentionally
 shorter than `ROADMAP.md` and more code-oriented than `PROJECT_CONTEXT.md`.
@@ -182,6 +182,9 @@ output out of committed history.
 Fastlane changelog drafting guidance keeps the short store-facing release text
 within the 480-character draft budget before the metadata script enforces the
 hard limit.
+Repo hygiene also documents that `git rm --cached` does not delete ignored
+`lib/<module>/build/` caches, so generated module output stays local unless a
+small textual summary is committed under `docs/`.
 
 The local VM used by some agent runs may not have Java or the Android SDK on
 PATH. In that case, record the exact Gradle command attempted and leave final

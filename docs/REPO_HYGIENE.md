@@ -1,6 +1,6 @@
 # SwiftFloris Repo Hygiene
 
-Last updated: 2026-06-04 for v1.8.245.
+Last updated: 2026-06-04 for v1.8.246.
 
 This repository uses one commit per release slice. Keep code, roadmap state,
 release notes, and verification evidence together so the next maintainer can
@@ -56,6 +56,25 @@ The historical rationale: through v1.8.173 the repo carried a 9.7 MB
 cost; F-Droid reviewers saw a sloppy tree. v1.8.174 untracked the surviving
 two (`SwiftFloris_icon.png`, `ROADMAP.md.backup-v2`) and extended this script
 to keep them out.
+
+### Module Build Cache Survival
+
+`git rm --cached` only removes tracked index entries. It does not delete the
+ignored local cache directory that produced them, so `lib/<module>/build/`
+directories can remain on disk after a cleanup commit and surprise the next
+status check.
+
+When untracking generated module output, verify both states before committing:
+
+1. `git status --short` should no longer show tracked `lib/<module>/build/`
+   paths.
+2. The local `lib/<module>/build/` directory may still exist; remove it only as
+   local generated cache after checking the resolved path is the intended module
+   build directory.
+
+Do not preserve module `build/` contents as documentation evidence. If a build
+or cache file matters for review, copy a small textual summary into the release
+note or a committed file under `docs/`.
 
 ## Fastlane Changelog Drafting Rule
 

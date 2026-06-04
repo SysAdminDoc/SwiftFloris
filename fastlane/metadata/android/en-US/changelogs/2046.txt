@@ -1,0 +1,1 @@
+Repo hygiene now explains that lib module build caches can survive git rm --cached and should be cleared locally, not treated as review evidence.

@@ -84,6 +84,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] WS12 (P2) — Localization content-quality pass cleared Turkish adjacent repeated-word lint with native-safe copy, tightened source labels, standardized trust-sensitive failure/destructive wording, and documented translation-safe cleanup rules. Shipped v1.8.243. — *Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS12.*
 - [x] WS10 / WS15 (P2) — Visual-QA, manual-QA, and release-evidence checklists now live in `docs/QA_CHECKLISTS.md` and are linked from verification, contributor, accessibility, and README docs. Shipped v1.8.244. — *Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS10/WS15.*
 - [x] R5 (P3) — Fastlane changelog drafting guidance now documents the 480-character draft budget, store-facing summary rules, and evidence-backed wording expectations. Shipped v1.8.245. — *Source: docs/archive/TODO_2026-06-03.md A5 / second-pass R5.*
+- [x] O1 (P3) — Repo hygiene now documents that `lib/<module>/build/` generated caches can survive `git rm --cached` and must be treated as local ignored output, not review evidence. Shipped v1.8.246. — *Source: docs/archive/TODO_2026-06-03.md A5 / second-pass O1.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 
