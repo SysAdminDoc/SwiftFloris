@@ -257,7 +257,6 @@ object UserDictionaryCombinedListCodec {
             }
             if (isFirstLine) {
                 isFirstLine = false
-                // Header line: dictionary=<name>;date=<millis>;generated-by=<package>;version=1
                 if (line.trimStart().startsWith("dictionary=", ignoreCase = true)) {
                     return@forEach
                 }
@@ -266,10 +265,12 @@ object UserDictionaryCombinedListCodec {
             var freq: Int? = null
             var locale: String? = null
             var shortcut: String? = null
+            var malformed = false
             for (property in line.split(';')) {
                 val keyValuePair = property.split('=', limit = 2)
-                check(keyValuePair.size == 2) {
-                    "Error at source line `$line`: Key-Value pair expected, but either only key or too many values provided"
+                if (keyValuePair.size != 2) {
+                    malformed = true
+                    break
                 }
                 val key = keyValuePair[0].trim().lowercase()
                 val value = keyValuePair[1].trim()
@@ -277,9 +278,9 @@ object UserDictionaryCombinedListCodec {
                     "w", "word" -> word = value.ifBlank { null }
                     "f", "freq" -> {
                         val number = value.toIntOrNull(10)
-                        checkNotNull(number) { "Error at source line `$line`: Freq is not a valid decimal number" }
-                        check(number in FREQUENCY_MIN..FREQUENCY_MAX) {
-                            "Error at source line `$line`: Freq not within range of $FREQUENCY_MIN and $FREQUENCY_MAX"
+                        if (number == null || number !in FREQUENCY_MIN..FREQUENCY_MAX) {
+                            malformed = true
+                            break
                         }
                         freq = number
                     }
@@ -290,9 +291,12 @@ object UserDictionaryCombinedListCodec {
                     "s", "shortcut" -> shortcut = value.ifBlank { null }
                 }
             }
+            if (malformed || word == null || freq == null) {
+                return@forEach
+            }
             entries += PersonalDictionaryEntry(
-                word = checkNotNull(word) { "Error at source line `$line`: Word cannot be empty or missing" },
-                frequency = checkNotNull(freq) { "Error at source line `$line`: Freq cannot be empty or missing" },
+                word = word,
+                frequency = freq,
                 locale = locale,
                 shortcut = shortcut,
             )

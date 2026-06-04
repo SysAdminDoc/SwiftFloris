@@ -2,6 +2,116 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.225"></a>
+## v1.8.225
+
+Released: 2026-06-04
+
+### Deep engineering audit hardening pass
+
+Comprehensive audit across core IME, settings UI, clipboard/media/backup, security/crypto/privacy, and build/CI systems. 20+ fixes applied covering correctness, security, reliability, and CI robustness.
+
+### Correctness & Reliability
+
+- **Forward-delete expected selection** — `AbstractEditorInstance.deleteAroundCursor` AFTER_CURSOR branch incorrectly computed `selection.translatedBy(length)` for forward-delete, causing every forward-delete to miss the expectedContentQueue and trigger an expensive InputConnection re-query with visible flicker. Cursor now stays in place as intended.
+- **Clipboard move-to-beginning atomicity** — `ClipboardManager.moveToTheBeginning` executed delete+insert as two separate DAO calls; a process kill between them permanently lost the entry. Now uses a `@Transaction`-annotated `deleteAndInsert` DAO method.
+- **Clipboard clear race condition** — `clearHistory`/`clearFullHistory` iterated `currentHistory.all` while the StateFlow could update concurrently. Now takes a snapshot before iterating.
+- **Dictionary import crash on malformed input** — `UserDictionaryCombinedListCodec.decodeLines` used `check()`/`checkNotNull()` which crash on corrupted backup files. Replaced with graceful skip-and-continue for malformed lines.
+- **MassSelectionState underflow** — `end()` could go negative if called more times than `begin()` (e.g., cancel+up for the same key), permanently breaking arrow-key mass-selection. Now clamped to zero.
+- **Media clipboard commit batch edit** — `commitClipboardItem` for IMAGE/VIDEO path called `finishComposingText` without wrapping in `beginBatchEdit`/`endBatchEdit`, causing interleaved `onUpdateSelection` in WebView editors.
+- **Backup NPE on null-URI clipboard items** — `BackupScreen` and `ClipboardInputLayout` force-unwrapped `item.uri!!` for IMAGE/VIDEO items; a corrupted database row crashes the entire backup or IME. Now uses safe-call with graceful fallback.
+- **URI TypeConverter null-to-"null"** — `Converters.stringFromUri` returned the literal string `"null"` for null URIs, causing TEXT items to gain a spurious non-null URI after database round-trip. Return type changed to `String?`.
+
+### Security & Privacy
+
+- **N-gram files excluded from Android backup** — Plaintext `personal_bigrams_*.tsv`, `personal_trigrams_*.tsv`, `correction_outcome_priors_*.tsv`, `swiftkey_typing_traces.jsonl`, and `swiftkey_trace.enabled` were not listed in `data_extraction_rules.xml` or `backup_rules.xml`. These learned typing pattern files could be uploaded to Google Drive, contradicting the no-cloud privacy posture. Added explicit `<exclude>` entries for both cloud backup and device transfer.
+- **ZipUtils operator precedence** — `isUnsafeEntryName` drive-letter check had ambiguous `&&`/`||` precedence that was correct by coincidence but fragile. Simplified to explicit parenthesized form.
+
+### Reliability
+
+- **FlorisApplication WeakReference NPE** — `florisApplication()` force-unwrapped a `WeakReference.get()` with `!!`, which crashes the IME on low-memory restart. Replaced with descriptive error message.
+- **DictionaryManager strong application context** — Held `WeakReference<Context>` to the application context (which is process-lifetime and cannot be GC'd). Changed to strong reference, eliminating silent no-op fallthrough if the reference were ever null.
+- **Haptic feedback on wrong thread** — `performHapticFeedback` was called from `Dispatchers.Default` via `scope.launch`, but `View.performHapticFeedback` requires the main thread. Wrapped in `withContext(Dispatchers.Main)`.
+- **Window force-unwrap on OEM devices** — `FlorisImeService.onCreate` and `LifecycleInputMethodService.installViewTreeOwners` force-unwrapped `window.window!!` which can be null on some Huawei/Honor devices. Changed to safe-call with early return.
+- **DictionaryManager.forgetWord silent exception** — `runCatching` swallowed database errors with no logging. Added `flogError` on failure path.
+
+### Settings UI
+
+- **GesturesScreen enabledIf pattern** — Used `.get()` (synchronous blocking read) instead of the project-standard `isEqualTo` reactive pattern for 8 `enabledIf` lambdas. Fixed to use reactive pattern matching every other settings screen.
+- **Clipboard auto-clean min=0** — Slider minimums allowed 0 minutes (auto-clean-old) and 0 seconds (auto-clean-sensitive), which would destroy clipboard entries instantly. Changed minimums to 1 minute and 10 seconds respectively.
+
+### Build & CI
+
+- **ANDROID_HOME fallback path** — CI workflows (`android.yml`, `release.yml`) used macOS SDK fallback path `$HOME/Library/Android/sdk` on Linux runners. Changed to the correct Ubuntu runner path `/usr/local/lib/android/sdk`.
+- **OSV scan false-clean** — Release workflow reported "0 known vulnerabilities" when the OSV scanner failed to produce output. Now distinguishes scan-did-not-complete from genuinely-clean.
+- **Roborazzi shell injection** — `roborazzi-baseline.yml` interpolated `${{ inputs.message }}` directly in shell. Changed to env-variable approach.
+- **CI concurrency group** — Main `android.yml` lacked a concurrency group, allowing queued builds on rapid pushes. Added `cancel-in-progress: true` group.
+- **Git commit hash path** — `getGitCommitHash()` used `File(".git")` relative to JVM CWD. Changed to `rootProject.file(".git")`.
+- **Beta signing config** — `beta` build type had no `signingConfig` assignment unlike `release`. Added matching fallback pattern.
+
+### Files Touched
+
+- `app/build.gradle.kts`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/clipboard/ClipboardScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/gestures/GesturesScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardDatabase.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/UserDictionary.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/input/InputFeedbackController.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/lifecycle/LifecycleInputMethodService.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/io/ZipUtils.kt`
+- `app/src/main/res/xml/backup_rules.xml`
+- `app/src/main/res/xml/data_extraction_rules.xml`
+- `.github/workflows/android.yml`
+- `.github/workflows/release.yml`
+- `.github/workflows/roborazzi-baseline.yml`
+- `gradle.properties` (versionCode 2024->2025, versionName 1.8.224->1.8.225)
+- `fastlane/metadata/android/en-US/changelogs/2025.txt` (new)
+- `CHANGELOG.md`
+
+<a id="v1.8.224"></a>
+## v1.8.224
+
+Released: 2026-06-04
+
+### Settings search scroll reset
+
+RA-10 is closed. Settings search now resets the results list to the top whenever a populated non-blank query changes, so the highest-ranked result is visible after editing from a previously scrolled query.
+
+### Changes
+
+- **`SettingsSearchScreen.kt`** - adds a query-keyed scroll reset for populated non-blank result sets while leaving blank and no-results states alone.
+- **`SettingsSearchScreenStateTest.kt`** - pins the reset guard so populated non-blank queries reset and blank/no-result states do not.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - closes RA-10, preserves the RA-9 stable-key clarification, and leaves RA-4 plus RA-9 as the remaining settings-search follow-ups.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.224 / versionCode 2024.
+
+### Verification
+
+- `./gradlew.bat --no-daemon :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.*"` -> green.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreenStateTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2024.txt` (new)
+- `gradle.properties` (versionCode 2023->2024, versionName 1.8.223->1.8.224)
+
 <a id="v1.8.223"></a>
 ## v1.8.223
 

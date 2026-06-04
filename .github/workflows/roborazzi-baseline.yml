@@ -62,6 +62,8 @@ jobs:
 
       - name: Summarise captured baseline tree
         if: always()
+        env:
+          CAPTURE_MESSAGE: ${{ inputs.message }}
         run: |
           baseline_dir="app/src/test/snapshots/images"
           if [ -d "$baseline_dir" ]; then
@@ -70,8 +72,8 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "- **Snapshot count:** $count PNGs" >> "$GITHUB_STEP_SUMMARY"
             echo "- **Directory:** \`$baseline_dir\`" >> "$GITHUB_STEP_SUMMARY"
-            if [ -n "${{ inputs.message }}" ]; then
-              echo "- **Context:** ${{ inputs.message }}" >> "$GITHUB_STEP_SUMMARY"
+            if [ -n "$CAPTURE_MESSAGE" ]; then
+              echo "- **Context:** $CAPTURE_MESSAGE" >> "$GITHUB_STEP_SUMMARY"
             fi
             echo "" >> "$GITHUB_STEP_SUMMARY"
             echo "Download the artifact, copy into \`$baseline_dir/\` locally, and commit." >> "$GITHUB_STEP_SUMMARY"

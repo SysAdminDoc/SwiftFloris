@@ -57,7 +57,7 @@ open class LifecycleInputMethodService : InputMethodService(),
     }
 
     fun installViewTreeOwners() {
-        val decorView = window!!.window!!.decorView
+        val decorView = window?.window?.decorView ?: return
         decorView.setViewTreeLifecycleOwner(this)
         decorView.setViewTreeViewModelStoreOwner(this)
         decorView.setViewTreeSavedStateRegistryOwner(this)

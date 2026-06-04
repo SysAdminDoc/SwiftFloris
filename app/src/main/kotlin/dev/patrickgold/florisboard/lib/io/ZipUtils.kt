@@ -49,8 +49,7 @@ object ZipUtils {
         if (name.contains('\u0000')) return true
         if (name.startsWith('/') || name.startsWith('\\')) return true
         // Windows drive-letter prefix like "C:\path" or "C:/path"
-        if (name.length >= 2 && name[1] == ':' &&
-            name[0] in 'A'..'Z' || (name.length >= 2 && name[1] == ':' && name[0] in 'a'..'z')) return true
+        if (name.length >= 2 && name[1] == ':' && (name[0] in 'A'..'Z' || name[0] in 'a'..'z')) return true
         for (segment in name.split('/', '\\')) {
             if (segment == ".." ) return true
         }

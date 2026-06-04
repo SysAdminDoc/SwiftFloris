@@ -194,9 +194,12 @@ private tailrec fun Context.florisApplication(): FlorisApplication {
         is FlorisApplication -> this
         is ContextWrapper -> when {
             this.baseContext != null -> this.baseContext.florisApplication()
-            else -> FlorisApplicationReference.get()!!
+            else -> FlorisApplicationReference.get()
+                ?: error("FlorisApplication has not been initialized or was garbage collected")
         }
-        else -> tryOrNull { this.applicationContext as FlorisApplication } ?: FlorisApplicationReference.get()!!
+        else -> tryOrNull { this.applicationContext as FlorisApplication }
+            ?: FlorisApplicationReference.get()
+            ?: error("FlorisApplication has not been initialized or was garbage collected")
     }
 }
 

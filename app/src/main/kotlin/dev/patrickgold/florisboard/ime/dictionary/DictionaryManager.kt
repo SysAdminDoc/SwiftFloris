@@ -31,7 +31,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import java.io.File
-import java.lang.ref.WeakReference
 
 private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
 private const val SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY = 1
@@ -69,7 +68,7 @@ private const val LEARN_MAX_LENGTH = 32
  * dictionary is the highest-priority source for conflicts. Stores are opened lazily when an accessor first needs them.
  */
 class DictionaryManager private constructor(context: Context) {
-    private val applicationContext: WeakReference<Context> = WeakReference(context.applicationContext ?: context)
+    private val applicationContext: Context = context.applicationContext ?: context
     private val prefs by FlorisPreferenceStore
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
@@ -183,6 +182,8 @@ class DictionaryManager private constructor(context: Context) {
                 .filter { it.word.equals(normalized, ignoreCase = true) }
             for (entry in matches) dao.delete(entry)
             matches.isNotEmpty()
+        }.onFailure { e ->
+            flogError(LogTopic.DICTIONARY) { "forgetWord($normalized) failed: ${e.message}" }
         }.getOrDefault(false)
     }
 
@@ -348,7 +349,7 @@ class DictionaryManager private constructor(context: Context) {
     }
 
     private fun loadFlorisUserDictionaryIfNecessary() {
-        val context = applicationContext.get() ?: return
+        val context = applicationContext
         if (florisUserDictionaryDatabase == null && prefs.dictionary.enableFlorisUserDictionary.get()) {
             florisUserDictionaryDatabase = openEncryptedFlorisUserDictionary(context)
         }
@@ -444,7 +445,7 @@ class DictionaryManager private constructor(context: Context) {
     }
 
     private fun loadSystemUserDictionaryIfNecessary() {
-        val context = applicationContext.get() ?: return
+        val context = applicationContext
         if (systemUserDictionaryDatabase == null && prefs.dictionary.enableSystemUserDictionary.get()) {
             systemUserDictionaryDatabase = SystemUserDictionaryDatabase(context)
         }

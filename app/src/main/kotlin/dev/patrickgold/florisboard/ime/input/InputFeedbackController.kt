@@ -35,6 +35,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 val LocalInputFeedbackController = staticCompositionLocalOf<InputFeedbackController> { error("not init") }
 
@@ -132,18 +133,19 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
 
         scope.launch {
             if (prefs.inputFeedback.hapticVibrationMode.get() == HapticVibrationMode.USE_HAPTIC_FEEDBACK_INTERFACE) {
-                val view = ims.window?.window?.decorView ?: return@launch
-                val hfc = if (factor < 1.0 && AndroidVersion.ATLEAST_API27_O_MR1) {
-                    HapticFeedbackConstants.TEXT_HANDLE_MOVE
-                } else {
-                    HapticFeedbackConstants.KEYBOARD_TAP
+                val didPerform = withContext(Dispatchers.Main) {
+                    val view = ims.window?.window?.decorView ?: return@withContext false
+                    val hfc = if (factor < 1.0 && AndroidVersion.ATLEAST_API27_O_MR1) {
+                        HapticFeedbackConstants.TEXT_HANDLE_MOVE
+                    } else {
+                        HapticFeedbackConstants.KEYBOARD_TAP
+                    }
+                    view.performHapticFeedback(hfc,
+                        HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING or
+                            HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
+                    )
                 }
-                val didPerform = view.performHapticFeedback(hfc,
-                    HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING or
-                        HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING
-                )
                 if (didPerform) return@launch
-                // If not performed fall back to using the vibrator directly
             }
 
             vibrator.vibrate(

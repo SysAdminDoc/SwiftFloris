@@ -379,9 +379,12 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                     null,
                 )
                 val ic = currentInputConnection() ?: return false
+                ic.beginBatchEdit()
                 ic.finishComposingText()
                 val flags = InputConnectionCompat.INPUT_CONTENT_GRANT_READ_URI_PERMISSION
-                InputConnectionCompat.commitContent(ic, activeInfo.base, inputContentInfo, flags, null)
+                val result = InputConnectionCompat.commitContent(ic, activeInfo.base, inputContentInfo, flags, null)
+                ic.endBatchEdit()
+                result
             }
         }.also {
             if (prefs.clipboard.historyHideOnPaste.get()) {
@@ -800,8 +803,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
 
         fun end() {
-            if (state.decrementAndGet() == 0) {
-                // We need to emulate a selection update to update the content if mass selection has ended
+            val newValue = state.updateAndGet { maxOf(it - 1, 0) }
+            if (newValue == 0) {
                 handleSelectionUpdate(EditorRange.Unspecified, activeContent.selection, EditorRange.Unspecified)
             }
         }

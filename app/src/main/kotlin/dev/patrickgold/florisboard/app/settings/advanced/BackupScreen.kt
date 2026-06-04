@@ -264,7 +264,8 @@ fun BackupScreen() = FlorisScreen {
                     clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
                         .writeJson(clipboardHistory.filter { it.type == ItemType.IMAGE })
                     for (item in clipboardHistory.filter { it.type == ItemType.IMAGE }) {
-                        val id = ContentUris.parseId(item.uri!!)
+                        val uri = item.uri ?: continue
+                        val id = ContentUris.parseId(uri)
                         ClipboardFileStorage.getFileForId(context, id).copyTo(
                             clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
                         )
@@ -274,7 +275,8 @@ fun BackupScreen() = FlorisScreen {
                     clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
                         .writeJson(clipboardHistory.filter { it.type == ItemType.VIDEO })
                     for (item in clipboardHistory.filter { it.type == ItemType.VIDEO }) {
-                        val id = ContentUris.parseId(item.uri!!)
+                        val uri = item.uri ?: continue
+                        val id = ContentUris.parseId(uri)
                         ClipboardFileStorage.getFileForId(context, id).copyTo(
                             clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
                         )

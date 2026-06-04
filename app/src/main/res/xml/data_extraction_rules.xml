@@ -57,6 +57,22 @@
         <exclude
             domain="file"
             path="clipboard_history"/>
+        <!-- Learned typing patterns — plaintext n-gram stores and trace logs. -->
+        <exclude
+            domain="file"
+            path="personal_bigrams"/>
+        <exclude
+            domain="file"
+            path="personal_trigrams"/>
+        <exclude
+            domain="file"
+            path="correction_outcome_priors"/>
+        <exclude
+            domain="file"
+            path="swiftkey_typing_traces.jsonl"/>
+        <exclude
+            domain="file"
+            path="swiftkey_trace.enabled"/>
     </cloud-backup>
     <device-transfer>
         <include
@@ -90,5 +106,20 @@
         <exclude
             domain="file"
             path="clipboard_history"/>
+        <exclude
+            domain="file"
+            path="personal_bigrams"/>
+        <exclude
+            domain="file"
+            path="personal_trigrams"/>
+        <exclude
+            domain="file"
+            path="correction_outcome_priors"/>
+        <exclude
+            domain="file"
+            path="swiftkey_typing_traces.jsonl"/>
+        <exclude
+            domain="file"
+            path="swiftkey_trace.enabled"/>
     </device-transfer>
 </data-extraction-rules>
