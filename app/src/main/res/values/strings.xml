@@ -548,6 +548,8 @@
     <string name="snygg__rule_element__clipboard_header_text">Clipboard header text</string>
     <string name="snygg__rule_element__clipboard_subheader">Clipboard subheader</string>
     <string name="snygg__rule_element__clipboard_content">Clipboard content</string>
+    <string name="snygg__rule_element__clipboard_search_row">Clipboard search row</string>
+    <string name="snygg__rule_element__clipboard_search_button">Clipboard search button</string>
     <string name="snygg__rule_element__clipboard_filter_row">Clipboard filter row</string>
     <string name="snygg__rule_element__clipboard_filter_chip">Clipboard filter chip</string>
     <string name="snygg__rule_element__clipboard_filter_chip_icon">Clipboard filter chip icon</string>
@@ -1325,6 +1327,12 @@
     <string name="clipboard__disabled__enable_button">Enable clipboard history</string>
     <string name="clipboard__empty__title">Your clipboard is empty</string>
     <string name="clipboard__empty__message">Copy text, images, or videos to keep them here. Sensitive fields and private sessions are skipped.</string>
+    <string name="clipboard__search__label">Search clipboard history</string>
+    <string name="clipboard__search__placeholder">Search copied text</string>
+    <string name="clipboard__search__clear">Clear clipboard search</string>
+    <string name="clipboard__search_empty__title">No clips match this search</string>
+    <string name="clipboard__search_empty__message">Clear the search or copy matching text to keep it here.</string>
+    <string name="clipboard__search_filter_empty__message">Clear the search, turn off a filter, or copy matching text to keep it here.</string>
     <string name="clipboard__filter_empty__title">No clips match these filters</string>
     <string name="clipboard__filter_empty__message">Turn off a filter or copy a matching text, image, or video clip.</string>
     <string name="clipboard__locked__title">Your clipboard is locked</string>
@@ -1371,6 +1379,8 @@
     <string name="pref__clipboard__limit_history_size__label">Limit history size</string>
     <string name="pref__clipboard__limit_history_size__summary">Keep the clipboard history from growing beyond a chosen item count</string>
     <string name="pref__clipboard__max_history_size__label">Max history size</string>
+    <string name="pref__clipboard__history_search_enabled__label">Search clipboard history</string>
+    <string name="pref__clipboard__history_search_enabled__summary">Show a search field in the keyboard clipboard panel</string>
     <string name="pref__clipboard__history_hide_on_paste__label">Hide history on paste</string>
     <string name="pref__clipboard__history_hide_on_paste__summary">Return to the keyboard after pasting an item from history</string>
     <string name="pref__clipboard__history_hide_on_next_text_field__label">Hide history on next text field</string>

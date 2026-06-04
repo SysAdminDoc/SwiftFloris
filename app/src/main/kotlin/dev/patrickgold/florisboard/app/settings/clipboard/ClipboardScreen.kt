@@ -146,6 +146,12 @@ fun ClipboardScreen() = FlorisScreen {
                 stepIncrement = 5,
                 enabledIf = { prefs.clipboard.historyEnabled isEqualTo true && prefs.clipboard.historySizeLimitEnabled isEqualTo true },
             )
+            SwitchPreference(
+                prefs.clipboard.historySearchEnabled,
+                title = stringRes(R.string.pref__clipboard__history_search_enabled__label),
+                summary = stringRes(R.string.pref__clipboard__history_search_enabled__summary),
+                enabledIf = { prefs.clipboard.historyEnabled isEqualTo true },
+            )
 
             SwitchPreference(
                 prefs.clipboard.historyHideOnPaste,

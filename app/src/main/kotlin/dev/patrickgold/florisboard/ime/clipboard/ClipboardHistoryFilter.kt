@@ -56,6 +56,23 @@ object ClipboardHistoryFilter {
     }
 
     /**
+     * Compose the live clipboard-palette filters in the same order the user sees them:
+     * type chips first, then the free-text query across the remaining text clips.
+     */
+    fun filterByQueryAndType(
+        history: ClipboardHistory,
+        query: String,
+        activeTypes: Set<ItemType>,
+    ): ClipboardHistory {
+        val typeFilteredItems = if (activeTypes.isEmpty()) {
+            history.all
+        } else {
+            history.all.filter { it.type in activeTypes }
+        }
+        return ClipboardHistory(filterByQuery(typeFilteredItems, query))
+    }
+
+    /**
      * @param item the candidate.
      * @param lowerQuery the search query, already trimmed and lowercased.
      */

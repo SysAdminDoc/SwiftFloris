@@ -31,6 +31,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
@@ -48,6 +49,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.outlined.Backspace
@@ -59,14 +61,17 @@ import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Phone
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.ToggleOff
 import androidx.compose.material.icons.filled.ToggleOn
 import androidx.compose.material.icons.filled.Videocam
+import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPasteGo
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -87,7 +92,11 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
@@ -128,6 +137,7 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggIconButton
 import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
+import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 private val ItemWidth = 200.dp
 private val DialogWidth = 240.dp
@@ -147,19 +157,24 @@ fun ClipboardInputLayout(
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
     val historyEnabled by prefs.clipboard.historyEnabled.collectAsState()
+    val historySearchEnabled by prefs.clipboard.historySearchEnabled.collectAsState()
 
     var isFilterRowShown by remember { mutableStateOf(false) }
     val activeFilterTypes = remember { mutableStateSetOf<ItemType>() }
+    val activeFilterTypeSnapshot = activeFilterTypes.toSet()
+    var searchQuery by remember { mutableStateOf("") }
+    val effectiveSearchQuery = if (historySearchEnabled) searchQuery else ""
+    val hasActiveSearchQuery = effectiveSearchQuery.isNotBlank()
+    val hasActiveFilters = activeFilterTypeSnapshot.isNotEmpty() || hasActiveSearchQuery
 
     val unfilteredHistory by clipboardManager.historyFlow.collectAsState()
-    val filteredHistory = remember(unfilteredHistory, activeFilterTypes.toSet()) {
-        if (activeFilterTypes.isEmpty()) {
-            unfilteredHistory
-        } else {
-            unfilteredHistory.all
-                .filter { activeFilterTypes.contains(it.type) }
-                .let { ClipboardHistory(it) }
-        }
+    val hasClipboardHistory = unfilteredHistory.all.isNotEmpty()
+    val filteredHistory = remember(unfilteredHistory, activeFilterTypeSnapshot, effectiveSearchQuery) {
+        ClipboardHistoryFilter.filterByQueryAndType(
+            history = unfilteredHistory,
+            query = effectiveSearchQuery,
+            activeTypes = activeFilterTypeSnapshot,
+        )
     }
 
     val gridState = rememberLazyStaggeredGridState()
@@ -175,7 +190,13 @@ fun ClipboardInputLayout(
         }
     }
 
-    LaunchedEffect(activeFilterTypes.toSet()) {
+    LaunchedEffect(historySearchEnabled) {
+        if (!historySearchEnabled) {
+            searchQuery = ""
+        }
+    }
+
+    LaunchedEffect(activeFilterTypeSnapshot, effectiveSearchQuery) {
         gridState.scrollToItem(0)
     }
 
@@ -232,7 +253,7 @@ fun ClipboardInputLayout(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
                 onClick = { isFilterRowShown = !isFilterRowShown },
                 modifier = sizeModifier,
-                enabled = !deviceLocked && historyEnabled && unfilteredHistory.all.isNotEmpty() && !isPopupSurfaceActive(),
+                enabled = !deviceLocked && historyEnabled && hasClipboardHistory && !isPopupSurfaceActive(),
             ) {
                 SnyggIcon(
                     imageVector = if (!isFilterRowShown) {
@@ -249,6 +270,70 @@ fun ClipboardInputLayout(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
             ) {
                 SnyggIcon(imageVector = Icons.AutoMirrored.Outlined.Backspace)
+            }
+        }
+    }
+
+    @Composable
+    fun ClipboardSearchRow(
+        query: String,
+        onQueryChange: (String) -> Unit,
+    ) {
+        val style = rememberSnyggThemeQuery(FlorisImeUi.ClipboardSearchRow.elementName)
+        val searchDescription = stringRes(R.string.clipboard__search__label)
+        SnyggRow(
+            elementName = FlorisImeUi.ClipboardSearchRow.elementName,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(FlorisImeSizing.smartbarHeight)
+                .padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            SnyggIcon(
+                modifier = Modifier
+                    .padding(horizontal = 8.dp)
+                    .sizeIn(maxWidth = 24.dp, maxHeight = 24.dp),
+                imageVector = Icons.Default.Search,
+                contentDescription = null,
+            )
+            BasicTextField(
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { contentDescription = searchDescription },
+                value = query,
+                onValueChange = { value -> onQueryChange(value.take(80)) },
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = style.foreground(),
+                    fontSize = 16.sp,
+                ),
+                decorationBox = { innerTextField ->
+                    Box(modifier = Modifier.fillMaxWidth()) {
+                        if (query.isBlank()) {
+                            Text(
+                                text = stringRes(R.string.clipboard__search__placeholder),
+                                color = style.foreground().copy(alpha = 0.58f),
+                                fontSize = 16.sp,
+                            )
+                        }
+                        innerTextField()
+                    }
+                },
+            )
+            if (query.isNotBlank()) {
+                SnyggIconButton(
+                    elementName = FlorisImeUi.ClipboardSearchButton.elementName,
+                    modifier = Modifier.sizeIn(
+                        minWidth = FlorisImeSizing.smartbarHeight,
+                        minHeight = FlorisImeSizing.smartbarHeight,
+                    ),
+                    onClick = { onQueryChange("") },
+                ) {
+                    SnyggIcon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = stringRes(R.string.clipboard__search__clear),
+                    )
+                }
             }
         }
     }
@@ -421,6 +506,16 @@ fun ClipboardInputLayout(
                     .alpha(historyAlpha),
             ) {
                 AnimatedVisibility(
+                    visible = historySearchEnabled && (hasClipboardHistory || searchQuery.isNotBlank()),
+                    enter = VerticalEnterTransition,
+                    exit = VerticalExitTransition,
+                ) {
+                    ClipboardSearchRow(
+                        query = searchQuery,
+                        onQueryChange = { query -> searchQuery = query },
+                    )
+                }
+                AnimatedVisibility(
                     visible = isFilterRowShown,
                     enter = VerticalEnterTransition,
                     exit = VerticalExitTransition,
@@ -485,12 +580,22 @@ fun ClipboardInputLayout(
                     ) {
                         if (filteredHistory.all.isEmpty()) {
                             item("filtered-empty", span = StaggeredGridItemSpan.FullLine) {
+                                val title = when {
+                                    hasActiveSearchQuery -> R.string.clipboard__search_empty__title
+                                    else -> R.string.clipboard__filter_empty__title
+                                }
+                                val message = when {
+                                    hasActiveSearchQuery && activeFilterTypeSnapshot.isNotEmpty() ->
+                                        R.string.clipboard__search_filter_empty__message
+                                    hasActiveSearchQuery -> R.string.clipboard__search_empty__message
+                                    else -> R.string.clipboard__filter_empty__message
+                                }
                                 ClipboardEmptyMessage(
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .padding(16.dp),
-                                    title = stringRes(R.string.clipboard__filter_empty__title),
-                                    message = stringRes(R.string.clipboard__filter_empty__message),
+                                    title = stringRes(title),
+                                    message = stringRes(message),
                                 )
                             }
                         }
@@ -597,7 +702,7 @@ fun ClipboardInputLayout(
                         SnyggText(
                             elementName = FlorisImeUi.ClipboardClearAllDialogMessage.elementName,
                             text = stringRes(
-                                if (isFilterRowShown) {
+                                if (hasActiveFilters) {
                                     R.string.clipboard__confirm_clear_filtered_history__message
                                 } else {
                                     R.string.clipboard__confirm_clear_unfiltered_history__message
@@ -699,7 +804,7 @@ fun ClipboardInputLayout(
             HistoryLockedView()
         } else {
             if (historyEnabled) {
-                if (filteredHistory.all.isNotEmpty() || !activeFilterTypes.isEmpty()) {
+                if (hasClipboardHistory || hasActiveFilters) {
                     HistoryMainView()
                 } else {
                     HistoryEmptyView()

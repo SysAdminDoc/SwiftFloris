@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.227-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.228-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.227 | Privacy posture |
+| Area | What's in v1.8.228 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -45,7 +45,7 @@
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
 | **Voice input** | FUTO Voice Input handoff (live path), FUTO install guidance when no voice keyboard is available, plus preview-only local Whisper/Vosk route selector and model catalog until a recognizer runtime ships | SwiftFloris itself does not record audio |
 | **Emoji & stickers** | Emoji search/history/pinned groups with an in-keyboard pin-to-group sheet, bundled local sticker packs, and user-imported SAF sticker folders for PNG / WebP / JPEG / GIF files | Local folder URI only |
-| **Clipboard** | Room-backed history with pinning + per-app source tag, media/provider metadata, sensitive-item gates, and startup/restore reconciliation | On-device |
+| **Clipboard** | Room-backed history with pinning + per-app source tag, media/provider metadata, sensitive-item gates, startup/restore reconciliation, and in-keyboard text search with type-filter composition | On-device |
 | **Productivity** | Calendar quick-insert reads local agenda entries for today + next 7 days; task quick-insert sends selected text to user-chosen task / note apps | Calendar permission is explicit opt-in; no network |
 | **Themes** | 21 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent with Settings preview and one-time opt-in hint | No telemetry |
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
@@ -285,6 +285,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.228** (2026-06-04) — Clipboard history search is now wired into the keyboard palette with a settings toggle, clear/no-results states, and query plus type-filter composition coverage. ([notes](CHANGELOG.md#v1.8.228))
 - **v1.8.227** (2026-06-04) — Japanese locale capability gates now use the valid `ja` language subtag for no-capitalization and no-auto-space behavior, with focused JVM coverage. ([notes](CHANGELOG.md#v1.8.227))
 - **v1.8.226** (2026-06-04) — Post-audit release ledger for pushed n-gram, thread-safety, crypto, trace-privacy, Arabic-shaping, Snygg selector/contentScale, and clipboard media fallback fixes. ([notes](CHANGELOG.md#v1.8.226))
 - **v1.8.225** (2026-06-04) — Deep engineering audit hardening across IME core, clipboard, dictionary import, privacy backup rules, settings sliders, haptics, and CI release gates. ([notes](CHANGELOG.md#v1.8.225))
@@ -455,7 +456,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.227** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.228** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

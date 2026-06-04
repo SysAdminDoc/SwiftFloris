@@ -281,6 +281,13 @@ val FlorisImeThemeBaseStyle = SnyggStylesheet.v2 {
     FlorisImeUi.ClipboardContent.elementName {
         padding = padding(10.dp)
     }
+    FlorisImeUi.ClipboardSearchRow.elementName {
+        foreground = `var`("--on-background")
+        fontSize = fontSize(16.sp)
+    }
+    FlorisImeUi.ClipboardSearchButton.elementName {
+        shape = roundedCornerShape(8)
+    }
     FlorisImeUi.ClipboardItem.elementName {
         background = `var`("--surface")
         foreground = `var`("--on-surface")

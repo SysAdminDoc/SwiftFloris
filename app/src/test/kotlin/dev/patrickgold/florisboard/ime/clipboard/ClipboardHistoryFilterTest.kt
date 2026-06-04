@@ -32,14 +32,18 @@ private fun text(id: Long, content: String, sensitive: Boolean = false): Clipboa
     isSensitive = sensitive,
 )
 
-private fun image(id: Long): ClipboardItem = ClipboardItem(
+private fun image(id: Long): ClipboardItem = media(id, ItemType.IMAGE, "image/png")
+
+private fun video(id: Long): ClipboardItem = media(id, ItemType.VIDEO, "video/mp4")
+
+private fun media(id: Long, type: ItemType, mimeType: String): ClipboardItem = ClipboardItem(
     id = id,
-    type = ItemType.IMAGE,
+    type = type,
     text = null,
     uri = null,
     creationTimestampMs = id * 1000L,
     isPinned = false,
-    mimeTypes = listOf("image/png"),
+    mimeTypes = listOf(mimeType),
 )
 
 class ClipboardHistoryFilterTest : FunSpec({
@@ -92,5 +96,46 @@ class ClipboardHistoryFilterTest : FunSpec({
 
     test("empty input list with non-blank query returns empty list") {
         ClipboardHistoryFilter.filterByQuery(emptyList(), "hello") shouldBe emptyList()
+    }
+
+    test("query and type filters compose in palette order") {
+        val items = listOf(
+            text(1, "alpha text"),
+            image(2),
+            text(3, "beta text"),
+            video(4),
+        )
+
+        ClipboardHistoryFilter
+            .filterByQueryAndType(
+                history = ClipboardHistory(items),
+                query = "alpha",
+                activeTypes = setOf(ItemType.TEXT, ItemType.IMAGE),
+            )
+            .all shouldBe listOf(items[0])
+    }
+
+    test("media type filters are preserved when the search query is blank") {
+        val items = listOf(text(1, "alpha text"), image(2), video(3))
+
+        ClipboardHistoryFilter
+            .filterByQueryAndType(
+                history = ClipboardHistory(items),
+                query = " ",
+                activeTypes = setOf(ItemType.IMAGE, ItemType.VIDEO),
+            )
+            .all shouldBe listOf(items[1], items[2])
+    }
+
+    test("blank type set keeps query-only search over full history") {
+        val items = listOf(text(1, "alpha"), image(2), text(3, "alphabet"))
+
+        ClipboardHistoryFilter
+            .filterByQueryAndType(
+                history = ClipboardHistory(items),
+                query = "alpha",
+                activeTypes = emptySet(),
+            )
+            .all shouldBe listOf(items[0], items[2])
     }
 })
