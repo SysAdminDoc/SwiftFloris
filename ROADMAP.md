@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.222 (versionCode 2022). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.223 (versionCode 2023). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -261,7 +261,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
 
-This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard and v1.8.222 adds a no-results escape hatch, while the remaining work is keyword, accessibility, and highlight-lifecycle polish.
+This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, v1.8.222 adds a no-results escape hatch, and v1.8.223 adds high-traffic synonym coverage, while the remaining work is result-scroll, accessibility, and highlight-lifecycle polish.
 
 ### Quick Wins
 
@@ -292,12 +292,38 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Acceptance: from a zero-result query the user can reach Settings home in one tap; copy is translation-safe.
   - Verify: focused search tests plus `:app:assembleDebug`; full Gradle gate.
   - Complexity: S
-- [ ] P2 — Keyword/synonym coverage audit for high-traffic settings terms (RA-3)
+- [ ] P2 — Reset settings-search result scroll when the query changes (RA-10)
+  - Why: settings search ranks results per query, but the list keeps one
+    `LazyListState` across every edit. A user who scrolls down one query and
+    then types a different query can land mid-list for the new result set,
+    hiding the highest-ranked destination until they manually scroll back up.
+  - Evidence: `SettingsSearchScreen.kt:83-86` recomputes `results` from
+    `searchQuery` but creates `val state = rememberLazyListState()` without a
+    query key; `SettingsSearchScreen.kt:161-166` passes that same state to the
+    results `LazyColumn`; the only `LaunchedEffect` in the screen handles
+    initial focus, not result-list position.
+  - Touches: `SettingsSearchScreen` only. Add a query-keyed scroll reset such
+    as `LaunchedEffect(searchQuery) { state.scrollToItem(0) }`, guarding blank
+    or empty-result states if needed to avoid unnecessary work.
+  - Acceptance: after changing a non-blank query, the result list starts at the
+    first/highest-ranked result; clearing or entering a no-results query does not
+    leave the next populated query scrolled into the middle.
+  - Verify: `:app:assembleDebug`; optional Compose UI/manual search scroll smoke.
+  - Complexity: S
+- [x] P2 — Keyword/synonym coverage audit for high-traffic settings terms (RA-3)
+  - Shipped v1.8.223: `SettingsSearchIndex` now adds targeted keyword
+    synonyms for theme mode, haptic feedback, trace/shape-writing gestures,
+    punctuation spacing, and privacy audit rows. `SettingsSearchIndexTest`
+    pins the requested "dark theme", "haptic", "trace", "punctuation", and
+    "privacy" queries to the expected destinations, with exact target-row
+    checks for dark mode, punctuation, and privacy.
   - Why: Search matches title/summary/screen-title/keywords substrings, but many discoverable prefs have sparse `keywords` (e.g. "haptic" only on input-feedback, "dark"/"light" not on theme.mode, "swipe" present on gestures but "shape writing"/"trace" partial). Users search by capability words, not the exact shipped label.
-  - Evidence: `SettingsSearchIndex.kt:103-204` — most `entry(...)` rows pass no `keywords`; `theme.mode` (`:151`) has none, so "dark mode" misses unless the label literally contains it.
-  - Touches: `SettingsSearchIndex.entries` keyword strings only (no code path change); extend `SettingsSearchIndexTest` with synonym-hit cases ("dark theme", "haptic", "trace", "punctuation", "privacy").
+  - Evidence: pre-fix `SettingsSearchIndex` rows had no targeted synonyms for
+    theme mode, glide trace/shape-writing, punctuation spacing, or privacy
+    audit capability queries; the shipped rows now carry those keywords.
+  - Touches: `SettingsSearchIndex.entries` keyword strings only (no code path change); `SettingsSearchIndexTest`.
   - Acceptance: a documented set of capability synonyms each resolve to the right destination; test pins them.
-  - Verify: `:app:testDebugUnitTest`.
+  - Verify: focused search package tests plus full Gradle gate.
   - Complexity: M
 - [ ] P2 — Accessibility/TalkBack pass over the search screen + result list (RA-4)
   - Why: `ACCESSIBILITY.md` does not yet cover the new search surface. The result `JetPrefListItem`s are `clickable` with no `role`/merged-semantics announcement of "result N of M", the leading icon is correctly `contentDescription = null` (decorative) but the field itself has no labelled state, and the empty/no-results text isn't a live region — a TalkBack user won't hear result-count changes as they type.

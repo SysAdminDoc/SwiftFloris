@@ -54,6 +54,26 @@ class SettingsSearchIndexTest : FunSpec({
         SettingsSearchIndex.search("thème", ::resolve).first().entry.id shouldBe "theme"
     }
 
+    test("capability synonyms resolve to expected settings destinations") {
+        val cases = mapOf(
+            "dark theme" to SettingsSearchDestination.THEME,
+            "haptic" to SettingsSearchDestination.INPUT_FEEDBACK,
+            "trace" to SettingsSearchDestination.GESTURES,
+            "punctuation" to SettingsSearchDestination.TYPING,
+            "privacy" to SettingsSearchDestination.PRIVACY_AUDIT,
+        )
+
+        cases.forEach { (query, destination) ->
+            SettingsSearchIndex.search(query, ::resolve).first().entry.destination shouldBe destination
+        }
+    }
+
+    test("specific capability synonyms rank the target setting first") {
+        SettingsSearchIndex.search("dark mode", ::resolve).first().entry.id shouldBe "theme.mode"
+        SettingsSearchIndex.search("punctuation", ::resolve).first().entry.id shouldBe "typing.auto-space-punctuation"
+        SettingsSearchIndex.search("privacy", ::resolve).first().entry.id shouldBe "privacy-audit"
+    }
+
     test("search target stores resolved labels for destination highlight") {
         val result = SettingsSearchIndex.search("futo", ::resolve).first()
 
@@ -80,6 +100,16 @@ private val testStrings = mapOf(
     R.string.pref__correction__auto_correct__summary to "Correct mistyped words automatically",
     R.string.settings__theme__title to "Theme",
     R.string.settings__home__theme_summary to "Keyboard colors, dark mode, and custom themes",
+    R.string.pref__theme__mode__label to "Theme mode",
+    R.string.settings__input_feedback__title to "Input feedback",
+    R.string.settings__home__input_feedback_summary to "Sound, vibration, and haptic keypress feedback",
+    R.string.settings__gestures__title to "Gestures",
+    R.string.pref__glide__enabled__label to "Glide typing",
+    R.string.pref__glide__show_trail__label to "Show glide trail",
+    R.string.pref__correction__auto_space_punctuation__label to "Auto-space punctuation",
+    R.string.pref__correction__auto_space_punctuation__summary to "Insert spacing around punctuation automatically",
+    R.string.settings__privacy_audit__title to "Privacy audit",
+    R.string.settings__privacy_audit__home_summary to "Review local privacy and addon activity",
     R.string.settings__voice_input__title to "Voice input",
     R.string.settings__home__voice_input_summary to "FUTO setup, offline language models, and voice keyboard status",
 )
