@@ -7,8 +7,9 @@ This report summarizes current research conclusions. The full 2026-05-25 researc
 initialization audit against live `FlorisApplication.init()` and Settings
 splash code. R2-1 already handles synchronous staged startup exceptions, but
 the launched `initAndroid(...)` path can still leave `preferenceStoreLoaded`
-false forever. This cycle adds R11-1: guard preference-store init failures
-before the splash wait can hang indefinitely.
+false forever. This cycle added R11-1: guard preference-store init failures
+before the splash wait can hang indefinitely. R11-1 was later closed in
+v1.8.240.
 
 2026-06-04 Cycle 10 note: after the Cycle 9 docs push, `master` is clean at
 `99a8431` (`v1.8.234-1-g99a8431`). Cycle 10 rechecked the deferred editor
@@ -120,7 +121,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.239, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, clipboard image/video history tiles have TalkBack labels, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, stale editor content-generation jobs are cancelled or superseded across input-session boundaries, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.240, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, clipboard image/video history tiles have TalkBack labels, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, stale editor content-generation jobs are cancelled or superseded across input-session boundaries, async preference-store init failures now unblock Settings into the crash recovery path, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
 
 Top opportunities (one line each):
 
@@ -148,7 +149,7 @@ Top opportunities (one line each):
 22. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
 23. **Suggestion privacy request snapshot** — async candidate generation now freezes incognito/editor sensitivity and suggestion preference inputs before provider, trace, and ghost-text work runs (R9-1). [Closed]
 24. **Editor content-generation lifecycle** — delayed start/selection content jobs are cancelled or superseded across reset/finishInput and input-connection switches before they can publish state or touch a captured `InputConnection` (R10-1). [Closed]
-25. **Preference-store init splash recovery** — async `initAndroid` failures can leave `preferenceStoreLoaded` false after the staged-crash precheck already ran (R11-1, P2). [Verified]
+25. **Preference-store init splash recovery** — async `initAndroid` failures now stage a crash report, unblock the splash wait, and redirect to crash recovery before normal Settings content renders (R11-1). [Closed]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -214,11 +215,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   progress cards. v1.8.232 closes R8-1 by adding blocked-back feedback for the
   same save/delete/import/export work without weakening the leave-blocking
   policy. [Closed]
-- **Startup preference loading (partial):** R2-1 persists synchronous staged
-  startup exceptions before the splash wait, but `FlorisApplication.init()` still
-  runs preference-store loading inside an unguarded launched coroutine. R11-1
-  prevents async preference-init failures from leaving Settings on the splash
-  indefinitely. [Verified]
+- **Startup preference loading:** R2-1 persists synchronous staged startup
+  exceptions before the splash wait, and v1.8.240 closes R11-1 for async
+  preference-store failures by staging the failure, marking preference loading
+  complete, and checking the staged crash path before Settings content renders.
+  [Closed]
 - Established surfaces (autocorrect/SymSpell, glide classifier, clipboard, addons, voice handoff, sync, MCP, hardware-keyboard import) are covered by `COMPLETED.md` and the audits; no net-new gap surfaced beyond what the roadmap already tracks.
 
 ## Competitive Landscape
@@ -250,9 +251,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Closed v1.8.237] Search highlight lifecycle** → RA-9. `SettingsSearchScreen.kt` marks `SettingsSearchHighlightStore.activeTarget`, while `FlorisScreen.kt` now consumes matching targets once into local state and exposes a close action so stale cards do not persist across later visits.
 - **[Closed v1.8.224] Search result scroll reset** → RA-10. `SettingsSearchScreen` now scrolls populated non-blank result sets back to item 0 when the query changes, guarded by `SettingsSearchScreenStateTest`.
 - **[Closed v1.8.218] Staged startup exception is never surfaced** → R2-1. `CrashUtility.consumeStagedException(...)` now persists the staged report without the process-killing handler, and `FlorisAppActivity` opens the crash dialog before installing the splash-screen keep condition.
-- **[Medium] Async preference-store init recovery** → R11-1. Guard the
-  launched `FlorisPreferenceStore.initAndroid(...)` path so failure is logged,
-  routed to recovery, and cannot leave `preferenceStoreLoaded` false forever.
+- **[Closed v1.8.240] Async preference-store init recovery** → R11-1. The
+  launched `FlorisPreferenceStore.initAndroid(...)` path is supervised,
+  error-guarded, staged through crash recovery on failure, and always unblocks
+  the Settings splash wait for non-cancelled completion.
 - **[Closed v1.8.219] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` failure diagnostics now use `flogError`, restore UI copy falls back to the existing "Unknown error" string for null/blank throwable messages, and `CrashUtility.writeToFile` logs through `LogTopic.CRASH_UTILITY`.
 - **[High] Local release ledger drift** → R3-1. Three code-fix commits after
   the v1.8.225 docs marker are untagged and absent from the release ledger.
@@ -330,11 +332,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   ordering and adds immutable request inputs for provider calls, typing traces,
   and ghost-text gating, so delayed work does not re-read live incognito or
   editor-info state after the async boundary.
-- **Startup async boundary:** `FlorisAppActivity` correctly checks staged
-  synchronous startup failures before its splash keep condition, but
-  `FlorisApplication.init()` has no equivalent failure state for the launched
-  preference-store load. R11-1 should make that async boundary supervised and
-  observable.
+- **Startup async boundary:** v1.8.240 keeps the synchronous staged-crash path
+  and adds an equivalent guarded path for launched preference-store loading:
+  failures are logged and staged, `preferenceStoreLoaded` unblocks the splash,
+  and `FlorisAppActivity` checks the staged crash path again before normal
+  Settings content renders.
 - **User-dictionary navigation policy:** `UserDictionaryEntryPolicy` correctly
   centralizes leave/mutation/transfer gates. v1.8.232 keeps that policy and
   adds a visible response when Compose back handling blocks the gesture during
@@ -347,7 +349,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R11-1 is the remaining async side of startup diagnostics: it should surface preference-store init failures without adding storage, permissions, or outbound data. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R11-1 closes the async side of startup diagnostics by surfacing preference-store init failures through the existing local crash recovery path without adding storage, permissions, or outbound data. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
@@ -371,8 +373,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
    request-boundary contract is covered by focused JVM tests.
 5. v1.8.239 still needs manual field-switch/composing smoke on a device; the
    delayed editor-session contract is covered by focused JVM/Robolectric tests.
-6. R11-1 needs a forced failing preference initializer in tests or debug smoke;
-   no maintainer product decision is required.
+6. v1.8.240 still needs manual forced preference-init debug smoke on a device;
+   the async failure contract is covered by focused JVM/Robolectric tests.
 
 ## Archived Evidence
 

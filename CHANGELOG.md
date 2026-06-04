@@ -2,6 +2,46 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.240"></a>
+## v1.8.240
+
+Released: 2026-06-04
+
+### Startup preference recovery
+
+R11-1 is closed. Async preference-store initialization now runs under a supervised app scope, stages failures through the existing crash-report path, unblocks the Settings splash wait in a non-cancelled completion path, and re-checks staged startup crashes before normal Settings content renders.
+
+### Changes
+
+- **`FlorisApplication.kt`** - switches the app background scope to `SupervisorJob`, extracts a testable preference-init helper, stages/logs init failures, and marks `preferenceStoreLoaded` true in `finally` so the splash cannot wait forever.
+- **`FlorisAppActivity.kt`** - re-checks `stagedStartupCrashIntent(...)` after the preference-loaded flow unblocks and redirects to `CrashDialogActivity` before reading prefs or rendering normal Settings content.
+- **`StartupCrashRecoveryTest.kt`** - adds focused coverage for async preference-init failure staging, splash unblock, crash-dialog intent routing, stacktrace persistence, and successful init without staged-crash leakage.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.240 / versionCode 2040 and closes R11-1.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.app.StartupCrashRecoveryTest"` - PASS in 45s.
+- Initial focused run compiled touched app code, then failed because JUnit4 rejected expression-bodied `runBlocking` tests as non-void methods; the tests now use block bodies.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2040.
+- APK assembly and manual forced preference-init smoke were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisAppActivity.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/StartupCrashRecoveryTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2040.txt` (new)
+- `gradle.properties` (versionCode 2039->2040, versionName 1.8.239->1.8.240)
+
 <a id="v1.8.239"></a>
 ## v1.8.239
 
