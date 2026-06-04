@@ -1,0 +1,2166 @@
+# SwiftFloris Roadmap v5.67
+
+> **The live open-work list is now [`TODO.md`](TODO.md).** This roadmap is preserved
+> for its tiered strategy (NOW/NEXT/LATER), sourced appendix, and history. To pick
+> the next task, read `TODO.md`; mine this file for the *why* behind an item.
+
+**Last Updated:** 2026-05-18
+**Supersedes:** ROADMAP v5.66 (2026-05-18, same-day). v5.0-v5.66 entries are preserved with shipped markers updated in-place; v5.67 records the keyboard preview-field placement/state polish slice after the empty-state UX polish slice. v5.0-v5.2 historical body is not rewritten.
+**Current Version:** v1.8.170 (released 2026-05-18 — keyboard preview-field polish). **v1.8.104 – v1.8.170 releases:** seventh-pass audit findings closing two app-declared-privacy-flag gaps (IME_FLAG_NO_PERSONALIZED_LEARNING + EXTRA_IS_SENSITIVE), six voice-subsystem bugs / hardening gaps (sensitive-field guard, dangerous "scratch" prefix, selection-collapse on `removeItemFromList`, Listening-state flicker, setup-activity intent contract, per-external-IME microphone gate), one voice structural product-honesty gap (local Whisper/Vosk routes and catalog are preview-only until a recognizer runtime ships), nine clipboard data-leak / resource-exhaustion / metadata-leak paths (backup-sensitive, video-clear-all, media clone caps, preview decode bounds, automatic eviction cleanup, sensitive pin-popup description guard, startup storage reconciliation, restore media metadata, failed foreign-URI clone phantom entries), one clipboard history-maintenance concurrency/perf refactor, one dead duplicate clipboard-store removal, one KenLM mmap-reader offset-boundary hardening, the Roborazzi baseline / CI hard-gate closure for F11, the Addons signing-pin revoke/reset UX slice, the Addons dictionary-pack asset-mounting slice, the Addons Settings catalog/install-hint polish, the pinned emoji-group sheet, the L4.2 Nastaliq Urdu font bundle/routing slice, the pure editor input behavior policy/test coverage slice, the hardware keyboard input routing policy test slice, the spacing lifecycle state test slice, the glide typing delete policy test slice, the incognito suggestion privacy policy test slice, the backup/restore validation policy test slice, the language-pack import/update policy test slice, the subtype editor validation policy test slice, the theme editor validation policy test slice, the conservative unused-resource cleanup slice, the dependency-warning review slice, the candidate auto-commit policy extraction slice, the punctuation flush policy extraction slice, the theme rule edit policy extraction slice, the autocorrect lifecycle contract slice, the backup flow trust-state audit slice, the restore flow trust-state audit slice, the language pack trust-state audit slice, the theme extension trust-state audit slice, the extension archive file trust-state audit slice, the dictionary entry trust-state audit slice, the trust-state recovery microcopy slice, the dictionary transfer busy-state slice, the settings focus-order slice, the candidate/smartbar TalkBack-label slice, the keyboard key semantics/touch-target slice, the high-font-scale settings/dialog expansion slice, the theme-contrast verification/fix slice, the non-color state-indicator card/icon slice, the accessibility manual-QA documentation slice, the IME first-render benchmark baseline slice, the first suggestion latency baseline slice, the dictionary load/preload baseline slice, the candidate-row recomposition baseline slice, the theme-switch benchmark baseline slice, the backup/restore duration baseline slice, the CI quality-gates slice, the repo-hygiene closure, the theme/extension destructive-confirmation polish slice, the addon scan progress affordance slice, the empty-state UX polish slice, and the keyboard preview-field polish slice.
+**Project Status:** Production fork of FlorisBoard v0.6-class baseline; the seventh-pass high-leverage follow-up roster, carried-forward G11 local audit item, sixth-pass F11 Roborazzi baseline item, Addons signing-pin trust-management slice, Addons dictionary asset-mounting slice, Addons catalog/install-hint polish, Next-9.4a pinned emoji-group sheet, L4.2 Nastaliq font bundle, input-behavior testability slices, backup/restore validation policy extraction, language-pack import/update policy extraction, subtype editor validation policy extraction, theme editor validation policy extraction, first conservative unused-resource cleanup, dependency-version warning review, candidate auto-commit policy extraction, punctuation flush policy extraction, theme rule edit policy extraction, autocorrect lifecycle contract, backup flow trust-state audit, restore flow trust-state audit, language pack trust-state audit, theme extension trust-state audit, extension archive file-state audit, dictionary entry-state audit, trust-state recovery microcopy, dictionary transfer busy states, settings focus order, candidate/smartbar TalkBack labels, keyboard key semantics/touch targets, settings/dialog dynamic font scaling, theme contrast, non-color state indicators, accessibility manual-QA notes, the first IME benchmark baseline, first suggestion latency baseline, dictionary load/preload baseline, candidate-row recomposition baseline, theme-switch baseline, backup/restore duration baseline, CI quality-gates batch, repo-hygiene closure, theme/extension destructive-confirmation polish, addon scan progress affordance, empty-state UX polish, and keyboard preview-field polish are closed. Clipboard media-storage reconciliation / restore metadata / failed-clone guards / history-maintenance serialization, dead-store removal, local voice preview gate, KenLM reader offset hardening, hard visual-regression CI, confirmed addon trust reset / changed-certificate controls, no-extraction dictionary-pack asset mounting, Settings dictionary-pack catalog details, named emoji-group pinning, Urdu Nastaliq key rendering, editor spacing/autocorrect policy tests, hardware key routing policy tests, auto-space / phantom-space lifecycle tests, glide backspace escalation tests, incognito suggestion privacy tests, backup/restore policy tests, language-pack import/update tests, subtype editor validation tests, theme editor validation tests, obsolete launcher/branding resource removal, dependency-version warning cleanup, candidate auto-commit policy tests, punctuation flush policy tests, theme rule edit policy tests, autocorrect lifecycle/provider-notification tests, backup flow notice tests, restore flow notice tests, language pack trust-state tests, theme extension trust-state tests, extension archive file-state tests, dictionary entry-state tests, dictionary transfer-state tests, settings scaffold traversal tests, smartbar accessibility label tests, keyboard key accessibility tests, dynamic-font-scale policy tests, theme-contrast selector/scheme tests, shared state-card icon treatments, accessibility manual-QA checklist notes, first-render benchmark evidence, first-suggestion benchmark evidence, dictionary-load benchmark evidence, candidate-row recomposition evidence, theme-switch evidence, backup/restore duration evidence, CI lint-drift/dependency/emulator/local-verification gates, repo-hygiene guards, theme/extension delete confirmations, addon scan progress cards, dictionary/extension/language-pack/clipboard/theme empty states, and preview-field placement/state feedback are shipped on top of the sixth-pass twenty-three; the remaining open work is multi-week feature slices (L1 / L2.1a / L3 addons; actual voice-local-recogniser runtime integration), external-clock-dependent (F-Droid Basic 2.0 reproducible-verified submission, HeliBoard NLnet glide library, Android 17 stable), lower-score clipboard polish, or maintainer outreach (SwiftKey-refugee discovery — drafts shipped, posting on maintainer).
+
+---
+
+## 0. Research Refresh v5.7 (2026-05-18 seventh-pass follow-up)
+
+The user re-invoked the extreme-audit prompt after the sixth-pass
+roster closed. Three new external research agents covered the
+subsystems the original five did NOT deeply audit: NLP / autocorrect
+(agent rate-limited, no output — flagged as eighth-pass debt), voice
+input, clipboard manager. A personal pass on `FlorisImeService` /
+`EditorInstance` ran in parallel. Full audit trail in
+[`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
+
+### 0.6.0 New shipped follow-ups (v1.8.111 – v1.8.170)
+
+- **v1.8.111** — Clipboard media intake size caps and preview decode
+  bounds. `ClipboardFileStorage.cloneUri` now receives image/video
+  media kind and enforces the existing bounded stream-copy primitive
+  at 32 MiB for images and 128 MiB for videos, deleting partial private
+  files on failed clones. `FlorisCopyToClipboardActivity` now validates
+  both modern `ImageDecoder` and legacy `BitmapFactory` preview bounds
+  through `ClipboardPreviewImagePolicy` before bitmap allocation.
+  This closes **G2** and **G12**.
+- **v1.8.112** — Clipboard automatic eviction cleanup. History
+  size-limit rotation and old/sensitive auto-expiry now route selected
+  rows through `ClipboardHistoryEviction.closeThenDelete(...)`, so
+  provider-backed image/video items call `ClipboardItem.close(context)`
+  before their Room rows are removed. This closes **G6**.
+- **v1.8.113** — Voice setup intent hardening. `VoiceInputSetupActivity`
+  stays non-exported and is now pinned by a Robolectric manifest test;
+  `VoiceInputSetupIntentContract` accepts only a single known `reason`
+  extra instead of rendering a setup dialog for malformed inputs. This
+  closes **G7**.
+- **v1.8.114** — External voice IME microphone gate. Every enabled
+  external voice IME package now has to pass
+  `PackageManager.checkPermission(RECORD_AUDIO, packageName)` before
+  `isVoiceInputReadyForHandoff()` reports the handoff as ready. This
+  closes **G8**.
+- **v1.8.115** — Sensitive clipboard description guard. Clipboard
+  item descriptions now skip email / URL / phone classification for
+  `item.isSensitive` before reading the raw `stringRepresentation()`,
+  so redacted pin-popup text cannot reveal a link badge. This closes
+  **G10**.
+- **v1.8.116** — Clipboard startup storage reconciliation.
+  `ClipboardStorageReconciliation` now runs before the history flow is
+  collected, deleting provider-backed history rows whose stored file is
+  missing and deleting stored provider files / `ClipboardFileInfo` rows
+  that no history row references. This closes **G3**.
+- **v1.8.117** — Clipboard restore media metadata. Restoring clipboard
+  image/video backups now recreates `ClipboardFileInfo` rows for the
+  restored provider files and lets `ClipboardMediaProvider` lazy-load
+  metadata on cache misses. This closes **G4**.
+- **v1.8.118** — Clipboard media clone failure guard. Failed foreign
+  `content://` image/video clones now propagate instead of returning a
+  synthetic `/0` provider URI; `ClipboardItem.fromClipData(...)`
+  rejects invalid provider insert results; and `ClipboardManager` logs
+  and skips failed imports so phantom media rows do not enter history.
+  Video imports also bypass image-only EXIF orientation parsing.
+- **v1.8.119** — Clipboard history maintenance serialization. Room
+  history collection stays on the IO scope instead of `Dispatchers.Main`,
+  history derivation sorts on `Dispatchers.Default`, and size-limit /
+  timed-expiry eviction share one `Mutex`-serialized maintenance path.
+  Rows selected for eviction are hidden from `historyFlow` before the
+  next Room emission arrives. This closes **G5** and bundles clipboard
+  agent **#7**.
+- **v1.8.120** — Local voice catalog preview gate. The missing bundled
+  Whisper/Vosk recognizer runtime is now a first-class route availability
+  condition (`VoiceLocalRecognizerRuntime.AVAILABLE = false`), so Auto /
+  Embedded Whisper / Vosk streaming cannot become live routes merely
+  because model files exist. Settings -> Voice input marks the local
+  model catalog preview-only, disables download/import until the runtime
+  ships, and leaves delete available for previously imported model files.
+  This closes **G1**'s product-honesty branch; the actual local recognizer
+  runtime remains a future multi-week Next-2 integration slice.
+- **v1.8.121** — Dead clipboard history store removal.
+  `ClipboardHistoryManager` and its unused `ClipboardHistoryPanel` were
+  a separate Tink-encrypted text-only store left over from the v1.8.68
+  migration work. The live IME path is the Room-backed `ClipboardManager`
+  with media/provider metadata, backup/restore, sensitive-item gates, and
+  serialized maintenance. Removing the dead store closes **G9** and keeps
+  clipboard history on a single backend.
+- **v1.8.122** — KenLM mmap reader offset hardening.
+  The carried-forward G11 local audit found that
+  `KenLmTrieReader.readBytesAt(...)` documented absolute file offsets but
+  silently coerced pre-body offsets to mapped-body offset zero. Header /
+  pre-body reads now return `null`, offset arithmetic is overflow-guarded,
+  and the fixed header probe no longer casts large file sizes to `Int`.
+  `KenLmTrieReaderTest` pins the absolute-offset contract.
+- **v1.8.123** — Roborazzi visual baseline hard gate.
+  The carried-forward F11 item recorded committed baseline PNGs for
+  `ExtensionMaintainerChip`, `swiftkey_high_contrast`,
+  `aurora_animated`, and the Settings -> Addons registry surface under
+  `app/src/test/snapshots/`. CI now runs
+  `:app:verifyRoborazziDebug` without `continue-on-error`, so visual
+  drift fails push / PR builds.
+- **v1.8.124** — Addons signing-pin trust controls.
+  Settings -> Addons now exposes confirmed reset-all trust and
+  changed-certificate trust actions. `AddonSigningPinSet.withoutPackage(...)`
+  keeps targeted pin removal in the pure codec; trusting a changed certificate
+  clears the old package pin, rescans installed addons, and records the current
+  certificate only if the addon still passes validation. The Addons Roborazzi
+  baseline now covers the new trust-management row.
+- **v1.8.125** — Addons dictionary asset mounting.
+  `AddonDictionaryAssetMounts` reads enrolled dictionary-pack descriptor
+  resources and addon APK `assets/` through PackageManager, with no extraction
+  or temp-file copies, and skips oversized addon asset reads before
+  materializing text. `LatinDictionaryStore` now plans addon dictionary and
+  Zipf paths ahead of bundled assets, merges readable addon dictionaries with
+  bundled baselines, and invalidates cached dictionaries when
+  `AddonRegistryStore.generation()` changes after startup or Settings rescans.
+- **v1.8.126** — Addons dictionary catalog polish.
+  `DictionaryPackCatalogReader` is now shared by Settings and the runtime
+  loader. Settings -> Addons adds a Dictionary packs group with mounted pack
+  language, word count, dataset license, source, and descriptor rejection rows,
+  and the install guidance now points users toward verifiable local addon APK
+  sources instead of a future loader slice.
+- **v1.8.127** — Emoji pinned-group sheet.
+  `PinToGroupSheet` wires the existing `EmojiPinGroupStore` into the palette:
+  long-pressing emoji can pin them to an existing or newly named group, inline
+  validation covers duplicate / full / blank / cap states, and pinned-group
+  chips commit the saved emoji sequence through the keyboard input dispatcher.
+- **v1.8.128** — Nastaliq Urdu font bundle.
+  The official OFL-1.1 Noto Nastaliq Urdu hinted TTF is committed under
+  `app/src/main/assets/fonts/` with the OFL text beside it.
+  `NastaliqFontProvider` now exposes a Compose `FontFamily` and Urdu-only
+  Arabic-script routing predicates, and `TextKeyboardLayout` routes Urdu key
+  labels/hints through the bundled font without changing Latin or non-Urdu
+  Snygg font behavior.
+- **v1.8.129** — Editor input behavior policy tests.
+  `EditorInputBehaviorPolicy` now owns the pure decisions for autocorrect
+  spacebar commits, punctuation auto-spacing, phantom spacing, double-space
+  period, and sentence-capitalization gates. `EditorInstance` and
+  `KeyboardManager` route through that policy, and
+  `EditorInputBehaviorPolicyTest` pins accepted autocorrect spacing,
+  rejected-correction protection, suppressed plain-space predictions, and the
+  punctuation / spacing gates from `IMPROVEMENT_PLAN.md`.
+- **v1.8.130** — Hardware keyboard input policy tests.
+  `HardwareKeyboardInputPolicy` now owns hardware keydown / keyup routing for
+  mapped-layout output and built-in space / enter / shift handling.
+  `HardwareKeyboardInputPolicyTest` pins delete pass-through, mapped punctuation
+  flushing pending autocorrect, mapped-letter no-flush behavior, and mapped-key
+  priority before the built-in key handlers.
+- **v1.8.131** — Spacing lifecycle state tests. `EditorSpacingLifecycleStateTest`
+  pins the auto-space and phantom-space state holders across one-update grace,
+  immediate expiry, composing-region visibility, and candidate-for-revert cleanup
+  after explicit and editor-update deactivation.
+- **v1.8.132** — Glide typing delete policy tests.
+  `EditorInputBehaviorPolicy.shouldEscalateGlideBackspaceToWordDelete` now pins
+  when `immediateBackspaceDeletesWord` may turn one character backspace after a
+  committed glide word into a whole-word delete, while disabled preference,
+  inactive phantom-space, invalid-word, and explicit word-delete paths remain
+  non-escalating.
+- **v1.8.133** — Incognito suggestion privacy policy tests.
+  `SuggestionPrivacyPolicy` now pins app-declared no-personalized-learning
+  override semantics, dynamic incognito toggle availability, committed-word
+  learning gates, and touch-decoder evidence suppression for incognito and
+  password contexts.
+- **v1.8.134** — Backup/restore policy tests. `BackupRestorePolicy` now owns
+  backup document result classification, restore archive metadata/content
+  validation, restore action enablement, and partial-failure classification.
+  The restore screen now rejects archives that contain metadata but no restorable
+  sections.
+- **v1.8.135** — Language-pack import/update policy tests.
+  `ExtensionImportPolicy` now owns extension import readiness classification for
+  new installs, user-installed updates, bundled-core rejection, corrupted
+  metadata, wrong extension type, unsupported files, and import button
+  enablement. The language-pack import screen now rejects non-language-pack
+  `.flex` files before enabling import instead of presenting them as ready.
+- **v1.8.136** — Subtype editor validation policy tests.
+  `SubtypeEditorValidationPolicy` now owns draft required-field validation and
+  draft-to-subtype building. The editor save state serializes the draft model,
+  and JVM coverage pins default add-state missing fields, complete draft
+  building, select-placeholder rejection, and edit-state preservation.
+- **v1.8.137** — Theme editor validation policy tests.
+  `ThemeComponentMetaValidationPolicy` now owns component metadata field
+  validity, duplicate-ID detection, and normalized apply data. JVM coverage pins
+  valid apply normalization, invalid fields, duplicate IDs, and blank stylesheet
+  fallback.
+- **v1.8.138** — Conservative unused-resource cleanup.
+  The first `UnusedResources` review deleted only obsolete launcher/branding
+  resources and legacy color tokens with no code, manifest, asset, test, or
+  dynamic lookup references. Lint dropped from 289 warnings / 1 hint to
+  245 warnings / 1 hint; the remaining 211 `UnusedResources` entries are
+  dominated by strings, theme palettes, and spec dimensions that need semantic
+  review before removal.
+- **v1.8.139** — Dependency-warning review.
+  Gradle is checksum-pinned to 9.5.1, Navigation Compose is on 2.9.8, and
+  JUnit Vintage is now cataloged at 6.0.3 after checking official Gradle,
+  AndroidX, and JUnit release metadata. The full local gate passed and lint
+  dropped to 241 warnings / 1 hint with the dependency-version warnings gone.
+- **v1.8.140** — Candidate auto-commit policy extraction.
+  `CandidateAutoCommitPolicy` now owns shortcut, phrase repair, active-strip,
+  immediate fallback, quick-prediction spacebar, plain-space suppression, and
+  rejected-correction gating decisions. `NlpManager` now gathers Android-bound
+  state and delegates the deterministic candidate policy to focused JVM tests.
+- **v1.8.141** — Punctuation flush policy extraction.
+  `KeyboardAutoCommitFlushPolicy` now owns whether software text commits flush a
+  pending autocorrect candidate first. The policy preserves media-mode flushing,
+  character-mode non-letter flushing, and numeric / phone layout no-flush
+  behavior with focused JVM coverage.
+- **v1.8.142** — Theme rule edit policy extraction.
+  `ThemeRuleEditPolicy` now owns add-rule selection validation, selector
+  toggling, and key-code attribute parsing / replacement decisions for the
+  theme editor. `EditRuleDialog` keeps the existing user feedback and rendering
+  while delegating deterministic rule-edit decisions to focused JVM coverage.
+- **v1.8.143** — Autocorrect lifecycle contract.
+  `docs/AUTOCORRECT_LIFECYCLE.md` now defines the spacebar, punctuation,
+  non-letter, hardware, delete, glide-delete, provider-notification, manual QA,
+  and regression-test contracts. `CandidateCommitSideEffectPolicy` now pins
+  accepted-provider notifications and learning to successful editor commits.
+- **v1.8.144** — Backup flow trust states.
+  Settings -> Advanced -> Back up data now surfaces explicit in-progress,
+  cancellation, share-sheet handoff, failure, and sensitive-clipboard exclusion
+  cards. `BackupFlowNotice` pins notice precedence so progress outranks prior
+  terminal state and the clipboard privacy warning appears when relevant.
+- **v1.8.145** — Restore flow trust states.
+  Settings -> Advanced -> Restore data now requires confirmation before erase
+  restores, keeps recovery-copy guidance visible in erase mode, surfaces
+  restore progress/cancellation/failure/partial-failure cards, and records
+  section-level restore summaries so missing archive sections are warnings
+  rather than silent local-data erasures.
+- **v1.8.146** — Language pack trust states.
+  Extension import now surfaces file-reading, importing, cancellation, and
+  failure cards and counts new installs, updates, and skipped files before the
+  user commits an import. Settings -> Languages & Layouts -> language-pack
+  management now shows delete progress/success/failure cards and blocks
+  duplicate import/delete actions while deletion is running.
+- **v1.8.147** — Theme extension trust states.
+  Theme extension editing now surfaces save progress/failure, disables duplicate
+  save/cancel/component actions while saving, confirms theme-component removal,
+  and keeps a visible "removed from draft" state until the user saves or exits.
+  Installed extension deletion now runs with progress/failure cards and blocks
+  duplicate delete/export actions while removal is running.
+- **v1.8.148** — Extension archive file trust states.
+  Extension archive file management now surfaces file-action progress and
+  import/rename/delete success/failure cards, moves selected-file copy/rename/
+  delete work off the main thread, and blocks duplicate file actions while work
+  is running.
+- **v1.8.149** — Dictionary entry trust states.
+  Manual user-dictionary add/update/delete operations now show progress and
+  success/failure cards, run DAO writes off the main thread, refresh affected
+  suggestion overlays after successful mutations, and block duplicate entry
+  actions while a mutation is running.
+- **v1.8.150** — Trust-state recovery microcopy.
+  Backup, restore, extension import/edit/delete, archive file management,
+  language-pack delete, and manual dictionary entry failure cards now state what
+  remained unchanged and give a calm retry/recovery path alongside the technical
+  error detail.
+- **v1.8.151** — Dictionary transfer busy states.
+  User dictionary import/export now has an explicit transfer operation state,
+  visible import/export progress cards, duplicate transfer blocking, disabled
+  navigation/menu/entry actions while a transfer is running, and focused policy
+  coverage for the gating and notice rules.
+- **v1.8.152** — Settings focus order.
+  The shared settings scaffold now exposes a consistent traversal order for
+  TalkBack and keyboard navigation: app bar first, scrollable content second,
+  persistent bottom actions third, and floating actions last. A regression test
+  pins the traversal constants.
+- **v1.8.153** — Candidate/smartbar TalkBack labels.
+  Prediction-strip candidates now announce suggestion type, position, total
+  count, and text, with explicit clipboard/autocorrect prefixes. Smartbar quick
+  actions now share a tested display-name / tooltip / generic-label fallback
+  policy, and the remove-candidate custom action label stays stable.
+- **v1.8.154** — Keyboard key accessibility semantics.
+  Text-key semantics now use the real touch hitbox instead of the smaller
+  visual key surface, expose an accessibility click action that dispatches the
+  normal key event, and label common clipboard, voice, keyboard-mode, layout,
+  input-method, and smartbar-control keys without falling back to generic
+  "Key" text.
+- **v1.8.155** — Dynamic font scaling for settings/dialogs.
+  `DynamicFontScale` centralizes the high-font-scale expansion threshold for
+  compact UI surfaces. Extension metadata labels/values, extension component
+  headings, hyperlinks, and the theme-rule key preview now add wrapping room or
+  a larger preview box at high font scale while keeping compact defaults
+  unchanged.
+- **v1.8.156** — Theme contrast verification.
+  `ThemeContrastTest` now checks keyboard key, candidate-row, clipboard-dialog,
+  settings warning, settings error, and settings dialog contrast across bundled
+  stylesheets and predefined accent schemes. Low-contrast enter-key variants in
+  Floris Night / Pure Night, Dracula, Nord, and Tokyo Night themes were fixed,
+  and shared card secondary text now keeps AA contrast.
+- **v1.8.157** — Non-color state indicators.
+  Shared success, progress, and neutral cards now carry distinct icons and
+  tones. Extension import/edit/delete, language-pack delete, dictionary
+  import/export/entry, backup/restore, home readiness, and voice readiness
+  notices now use state-specific cards, and extension import file rows include
+  ready/skipped icons beside their status text.
+- **v1.8.158** — Accessibility manual QA notes.
+  Contributor and accessibility docs now list TalkBack traversal, keyboard
+  label, candidate-row announcement, high-font-scale, non-color-state, and
+  theme/layout cross-checks for manual QA when settings or keyboard surfaces
+  change.
+- **v1.8.159** — IME first-render benchmark baseline.
+  `:benchmark` is active again on AGP 9, the benchmark sources target the
+  `.bench` app id, and the benchmark variant ships a local-only
+  `BenchmarkInputActivity` plus `tools/benchmark-ime-first-render.ps1`.
+  Samsung SM-S938B / Android 16 evidence records five adb-driven runs:
+  `am start -W` median `TotalTime` 31.0 ms / `WaitTime` 34.0 ms, and
+  benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms in
+  `docs/benchmark-results/baseline-2026-05-18-ime-first-render.json`.
+- **v1.8.160** — First suggestion latency baseline.
+  The benchmark variant now includes `BenchmarkSuggestionActivity`, which
+  invokes `LatinLanguageProvider.suggest` against a real `EditorContent`
+  snapshot and records `swiftfloris.nlp.firstSuggestionMs` through
+  `tools/benchmark-ime-suggestion-latency.ps1`. Samsung SM-S938B /
+  Android 16 cold provider-direct evidence for `teh` records median
+  1878.616249 ms over five runs with eight candidates in
+  `docs/benchmark-results/baseline-2026-05-18-ime-suggestion-latency.json`.
+- **v1.8.161** — Dictionary load/preload baseline.
+  The benchmark variant now includes `BenchmarkDictionaryActivity`, which
+  preloads `Subtype.DEFAULT`, then probes invalid token `zzzxqq` so spelling
+  forces lazy SymSpell d1/d2 index construction. Samsung SM-S938B /
+  Android 16 evidence records median `swiftfloris.dict.loadMs` 757.353333 ms
+  for 520,837 English entries, median `swiftfloris.dict.preloadMs`
+  772.080625 ms, median SymSpell d1 build 500.230156 ms for 94,934
+  correction words, median SymSpell d2 build 532.298281 ms for 10,534
+  correction words, and median post-preload spell path 1030.179896 ms in
+  `docs/benchmark-results/baseline-2026-05-18-ime-dictionary-load.json`.
+- **v1.8.162** — Candidate-row recomposition baseline.
+  The benchmark build now logs `swiftfloris.smartbar.candidates.recomposeMs`
+  from `CandidatesRow`, and `tools/benchmark-ime-candidate-row.ps1` measures
+  a warm `hello world this is a test` typing pass while restoring the user's
+  previous IME afterward. Samsung SM-S938B / Android 16 evidence records
+  median nine recompositions per run, median recomposition body 0.326563 ms,
+  median max recomposition 0.770365 ms, median total recomposition 4.069529 ms,
+  and paired median `swiftfloris.nlp.suggestMs` 0.339896 ms in
+  `docs/benchmark-results/baseline-2026-05-18-ime-candidate-row.json`.
+- **v1.8.163** — Theme-switch benchmark baseline.
+  `ThemeManager` now logs benchmark-only direct `swiftfloris.theme.switchMs`
+  markers, and `tools/benchmark-ime-theme-switch.ps1` switches across
+  SwiftKey Pure Light, M3E Nord Dark, and M3E SwiftKey Pure Dark while the
+  benchmark IME is visible, then restores the previous IME afterward. Samsung
+  SM-S938B / Android 16 evidence records median five direct switches per run,
+  median switch body 18.541197 ms, median max 19.587708 ms, median total
+  57.505571 ms, median cold-step 19.221354 ms, median warm cached-step
+  0.2808075 ms, and zero load failures in
+  `docs/benchmark-results/baseline-2026-05-18-ime-theme-switch.json`.
+- **v1.8.164** — Backup/restore duration baseline.
+  The benchmark build now includes `BenchmarkBackupRestoreActivity`, which
+  seeds a representative default archive profile with preferences plus
+  keyboard/theme extension files inside isolated benchmark app data, then
+  measures backup creation and merge restore through the same storage, zip,
+  unzip, and import/copy primitives used by the Settings backup/restore
+  screens. Samsung SM-S938B / Android 16 evidence records median backup create
+  12.653698 ms, median archive size 22,034 bytes, median restore prepare
+  4.062604 ms, median restore apply 5.727604 ms, median restore total
+  9.874167 ms, and 3/3 sections restored with zero missing or failed sections
+  in `docs/benchmark-results/baseline-2026-05-18-backup-restore.json`.
+- **v1.8.165** — CI quality gates.
+  `.github/workflows/android.yml` now runs lint through
+  `scripts/run-lint-debug-with-baseline-check.sh`, which captures lint console
+  output and fails stale baseline entries. `app/build.gradle.kts` now treats
+  `app/lint.xml` as lint config, `.github/dependabot.yml` schedules weekly
+  Gradle and GitHub Actions version review, `.github/workflows/emulator-smoke.yml`
+  provides a manual API 35 settings-launch smoke, and
+  `docs/LOCAL_VERIFICATION.md` documents the maintainer local gate.
+- **v1.8.166** — Repo hygiene closure.
+  `docs/REPO_HYGIENE.md` records the intentional legacy root-markdown deletion
+  decision, generated-output rule, commit-scope rule, and final-handoff
+  verification rule. `scripts/check-repo-hygiene.sh` rejects tracked
+  build/report outputs and unclassified local Markdown deletions, and Android
+  CI now runs the check before Gradle work.
+- **v1.8.167** — Theme and extension destructive confirmations.
+  Extension draft archive file deletes now open a dedicated confirmation dialog
+  before touching the draft file. Theme editor rule and property deletes now
+  confirm before mutation and explain that saving the theme is required before
+  the installed copy changes.
+- **v1.8.168** — Addon scan progress affordance.
+  Addons Settings now renders the shared progress card while installed addon
+  APKs are being rescanned and dictionary-pack metadata is refreshed. The same
+  slice updates the touched signing-pin preference state read to the current
+  `collectAsState` API so the scan polish does not add compile-warning noise.
+- **v1.8.169** — Empty-state UX polish.
+  User dictionary language detail views now explain when a selected language has
+  no saved entries and keep the add action available. Extension and language-pack
+  lists use clearer local-import guidance, the theme manager shows a recovery
+  empty state if no theme components are available, and the clipboard filtered
+  history view now explains when active filters match no clips.
+- **v1.8.170** — Keyboard preview-field polish.
+  The shared Settings preview field now sits on a distinct bottom surface,
+  keeps bottom-bar traversal ordering, exposes ready/active focus state copy,
+  and uses coroutine-safe fallback feedback when Android cannot open the IME
+  picker.
+
+### 0.6.1 New shipped layer (v1.8.104 – v1.8.110)
+
+Seven single-feature releases on AGENTS.md §6 per-PR cadence:
+
+- **v1.8.104** — `IME_FLAG_NO_PERSONALIZED_LEARNING` always honoured.
+  App-declared flag now forces `isIncognitoMode = true` regardless of
+  user's `prefs.suggestion.incognitoMode` preference. A user who set
+  IncognitoMode to `FORCE_OFF` previously overrode every cross-app
+  sensitive-field declaration (Signal, ProtonMail, banking, E2E chat).
+  The user preference now governs only user-requested incognito
+  (smartbar toggle, FORCE_ON power-user setting).
+- **v1.8.105** — Clipboard cut/copy gates on `isIncognitoMode` +
+  `ClipDescription.EXTRA_IS_SENSITIVE` honoured on the primary-clip
+  sync path. New `shouldSuppressClipboardHistory()` helper unifies
+  password + incognito signals. Password-manager credentials no
+  longer land in IME-local history.
+- **v1.8.106** — Voice handoff sensitive-field guard.
+  `switchToVoiceInputMethod` refuses with toast when
+  `keyVariation == PASSWORD || isIncognitoMode`. Voice IMEs typically
+  have full network permission; SwiftFloris's no-`INTERNET` contract
+  doesn't extend to them, so spoken credentials must not route there.
+- **v1.8.107** — Voice "scratch" command requires explicit list-anchor
+  suffix. Replaced the bare-prefix `scratch X` pattern (silently
+  fired on natural-prose utterances like "let me scratch that idea")
+  with four explicit `scratch X {from|off} {the }list` variants.
+  Regression-guard test pins three previously-vulnerable inputs.
+- **v1.8.108** — Voice `removeItemFromList` refuses on existing
+  selection. The prior implementation collapsed any non-empty
+  editor selection AND overwrote selected text plus the suffix
+  above the cursor — silent multi-region data loss.
+- **v1.8.109** — Clipboard backup excludes `isSensitive` items +
+  video clear-all leak. Backup zip is not passphrase-encrypted, so
+  legacy sensitive rows in history could be exported in plaintext;
+  now filtered. `ClipboardItem.close` extended from `IMAGE` to
+  `IMAGE OR VIDEO` so video clear-all reclaims on-disk file + revokes
+  per-receiver `grantUriPermission`.
+- **v1.8.110** — Voice Listening state observable during handoff.
+  `_isListening` and `_transcriptionState` were assigned-and-overwritten
+  in the same synchronous frame; observers never saw the Listening
+  transition. State now held during external-IME session; reset via
+  `voiceInputManager.refreshAvailability()` on `onStartInput` rebind.
+
+### 0.6.2 Structural findings carried forward (out-of-scope for per-PR)
+
+The voice agent surfaced one major structural finding. The product-honesty
+branch shipped in v1.8.120; the actual recognizer runtime remains future work:
+
+- **Voice no-local-recogniser story.** The voice catalog UI advertises
+  Whisper tiny/base/large + seven Vosk packages and lets users
+  download ~3 GB cumulative, but `RECORD_AUDIO` is not declared in
+  the manifest, no `AudioRecord` / Vosk JNI / whisper.cpp glue code
+  exists, and the auto-route never reaches the local-engine branches.
+  The only working voice path is the external-IME handoff (FUTO
+  Voice Input). Either ship the recognizer integration as part of a
+  dedicated future release (mirrors the L1 / L2 / L3 facade-only
+  pattern documented in [`PROJECT_CONTEXT.md` §8](PROJECT_CONTEXT.md))
+  v1.8.120 flags the catalog UI as preview-only and gates local routes behind
+  an explicit runtime-available flag until the recogniser lands.
+
+### 0.6.3 Seventh-pass follow-up roster
+
+Priority-scored in
+[`.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md §5`](.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md).
+High-leverage items (score ≥ 5.0) are now closed:
+
+- ✅ **G2** — `ClipboardFileStorage.cloneUri` max-size cap.
+  Shipped in **v1.8.111**.
+- ✅ **G6** — `revokeUriPermission` on clipboard history rotation /
+  expiry path (not just explicit delete). Shipped in **v1.8.112**.
+- ✅ **G7** — `VoiceInputSetupActivity` `android:exported="false"` +
+  validate Intent extras. Shipped in **v1.8.113**.
+- ✅ **G8** — `isVoiceInputReadyForHandoff()` checks per-external-IME
+  `RECORD_AUDIO` grant. Shipped in **v1.8.114**.
+- ✅ **G10** — Pin-popup `NetworkUtils.isUrl` skipped when
+  `item.isSensitive`. Shipped in **v1.8.115**.
+- ✅ **G12** — `uriToPreviewBitmap` modern (API 28+) branch max-size
+  guard. Shipped in **v1.8.111**.
+- ✅ **G1** — Local voice model catalog / route selector must not imply
+  a working in-app Whisper/Vosk runtime. Shipped in **v1.8.120** as a
+  preview-only catalog and runtime-availability gate.
+- ✅ **G9** — `ClipboardHistoryManager` Tink store was a dead parallel
+  backend beside the Room path. Removed in **v1.8.121**.
+- ✅ **G11** — NLP / autocorrect / suggestion local re-audit (rate-limited
+  seventh-pass agent). Closed in **v1.8.122** with a concrete KenLM mmap
+  reader offset-boundary hardening and regression test.
+
+### 0.6.4 Eighth-pass research-debt closure
+
+- ✅ **G11 local audit closure.** The seventh-pass NLP agent rate-limited
+  before returning findings. The local eighth-pass audit reviewed the
+  NLP/autocorrect/suggestion/KenLM surfaces and landed the concrete
+  KenLM mmap-reader offset bug in **v1.8.122**. Future full-system
+  research runs should still sample NLP periodically, but no
+  seventh-pass checklist item remains open.
+
+---
+
+## 0. Research Refresh v5.5 (2026-05-17 sixth-pass roster closure)
+
+The v1.8.85 audit produced twelve follow-up items (F1 – F12) marked for
+single-feature per-PR releases on the standard AGENTS.md §6 cadence.
+v1.8.93 – v1.8.102 landed eleven of twelve; the deferred F11
+Roborazzi baseline item closed in v1.8.123 on the maintainer build host.
+
+Shipped layer (one line per release):
+
+- **v1.8.93** — `release.yml` keystore-decode hygiene (`printf %s`,
+  magic-byte gate, `umask 077` + `chmod 600`, `gh release create`
+  env-var hardening) — F2.
+- **v1.8.94** — `verify-addon-apk.sh` strict mode + tri-state failure
+  reporting — F4.
+- **v1.8.95** — `verifyDataExtractionRules` build gate pinning the
+  load-bearing D2D-exclude content against accidental rewrite — F12.
+- **v1.8.96** — `crowdin/github-action@v2` and
+  `peter-evans/create-or-update-comment@v4` pinned to verified SHAs —
+  F9 + F10.
+- **v1.8.97** — `fastlane/update-readme.sh` Python block-substitution
+  (replaces `sed -i` interpolation footgun);
+  `fastlane/generate-screenshots.sh` absolute-path cleanup — F3.
+- **v1.8.98** — `generate_icon.py` `Path(__file__).resolve().parent`
+  portability — F1.
+- **v1.8.99** — `HardwareKeyboardLayout.equals` fast-path skips the
+  structural map walk in the common case — F6.
+- **v1.8.100** — Sticker palette `LruCache<String, ImageBitmap>` +
+  cursor-time enumeration cap in `UserStickerRepository` — F5.
+- **v1.8.101** — In-keyboard banner for SAF lost-grant on the Imported
+  sticker tab (mirror of the v1.8.90 Settings-side surface) — F7.
+- **v1.8.102** — `HardwareKeyEntry.longPressAlternates` field + LDML
+  parser tokenisation; popup-UI routing remains a future slice — F8
+  (parser half).
+
+### 0.5.1 Carried-forward follow-ups
+
+- ✅ **F11** (Roborazzi visual baselines for `swiftkey_high_contrast` +
+  `aurora_animated` themes + the Addons settings surface) — shipped in
+  **v1.8.123**. `ThemeAndAddonsScreenshotTest` records deterministic
+  baselines for both bundled theme surfaces and the seeded Settings ->
+  Addons registry surface; the existing maintainer-chip snapshots are
+  committed; `.github/workflows/android.yml` now treats
+  `:app:verifyRoborazziDebug` as a hard gate.
+- **F8 popup half** — wiring `HardwareKeyEntry.longPressAlternates`
+  through to the on-screen long-press popup. Requires a new bridge
+  between the hardware-keyboard runtime mapper and `KeyData.popup`
+  plus Snygg styling for the hardware-source popup variant. Multi-file
+  slice; warrants its own scoped release with design notes.
+
+### 0.5.2 Remaining open work (re-stated from v5.4 §0.4.3 / §0.4.5)
+
+These were not closed by v1.8.93 – v1.8.102 because each requires
+either multi-week engineering, external-clock dependency, or
+maintainer business decisions:
+
+- **SwiftKey-refugee discovery slice** (Tier-1, urgency 5; 14 days to
+  cutoff). Outreach drafts now live at
+  [`docs/outreach/2026-05-17-swiftkey-migration/`](docs/outreach/2026-05-17-swiftkey-migration/)
+  covering AlternativeTo, BGR, Android Authority, and r/Swiftkey.
+  Maintainer to review and post from their own accounts during the
+  2026-05-28 to 2026-05-30 window; the directory's `README.md` has
+  the recommended order and engagement guidance.
+- **F-Droid reproducible-verified-tier submission** (Tier-1, urgency 3).
+  Waiting on F-Droid Basic 2.0 stable; metadata submission then.
+- **LiteRT-LM v0.11 + Gemma 4 E2B as L1.1a target** (Tier-2). Multi-week
+  addon engineering when L1.1a moves out of gate.
+- **Android 17 IME compliance slice** (Tier-2, urgency 1; June 2026
+  stable). **Audit complete 2026-05-17:** N13.2 (IME-visibility-restore)
+  shipped in `FlorisAppActivity`; N13.3 (password long-press-popup
+  suppression under `show_passwords_physical`) shipped in
+  `PasswordFieldPopupGate` + `TextKeyboardLayout`; the IME service
+  surface is benign (agent's note: "targets host apps, not the IME
+  service"). Remaining `TextAttribute.setTextSuggestionSelected()`
+  for CJKV is correctly L3-gated and lands with the librime addon, not
+  speculatively ahead of it. **No pre-stable code action required.**
+- **Phase B5 decoder field calibration with real traces** (planned).
+  Needs real-device telemetry collection on the maintainer host.
+- **Bergamot L2.1a / librime L3 addons** — blocked on upstream releases.
+
+### 0.5.3 Net cumulative scope of the 2026-05-17 day
+
+- Eighteen releases (v1.8.85 – v1.8.102) — one cross-subsystem
+  hardening pass plus seventeen single-feature follow-up commits.
+- Twenty-three identified audit findings closed.
+- One latent INTERNET-via-AAR escape hatch closed
+  (`verifyNoInternetPermissionMerged`).
+- One personal-dictionary data-leak path closed
+  (Android-12+ `data_extraction_rules.xml`).
+- One IME-process OOM crash closed (sticker decoder).
+- One IME hot-path crash closed (`HardwareKeyboardRuntimeMapper`
+  concurrent modification).
+- Five CI / build supply-chain surfaces hardened.
+- Two reliability / atomic-restore semantics tightened.
+- Three privacy-gate gaps closed (numeric-PIN clipboard, passphrase
+  dialog FLAG_SECURE, undecryptable-legacy-passphrase recovery).
+- Two performance-cliff polish items.
+
+The cumulative diff across the day is ~1100 insertions across 22 source
+files, 10 release-notes files, and 3 research artifacts. Unverified
+locally — Definition-of-Done verification commands listed in each
+RELEASE_NOTES file should run on the maintainer build host before
+tagging.
+
+---
+
+## 0. Research Refresh v5.4 (2026-05-17 sixth pass)
+
+This delta records the v1.8.85-92 cross-subsystem-hardening reconciliation
+and the 2-week external delta. Full audit trail in
+`.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md`. Actionable items
+(promotions, corrections, new commitments) live in
+`docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md` §0.b. The v5.0-v5.3 historical
+sections below are preserved in place per the established append-mostly
+convention.
+
+### 0.4.1 New shipped layer (v1.8.85-92)
+
+The sixth research pass ran five parallel read-only research agents
+covering (a) the recently-shipped addon registry (v1.8.81-84),
+(b) the recently-shipped hardware-keyboard layout import (v1.8.75-78),
+(c) the recently-shipped sticker import (v1.8.77),
+(d) the backup / restore + crypto path (Tink migration, SQLCipher), and
+(e) the scripts / CI workflows. Eleven fixes landed in v1.8.85 as an
+intentional [AGENTS.md §6](AGENTS.md) per-PR-scope deviation; seven
+follow-ups landed as single-feature releases v1.8.86 – v1.8.92 over the
+same day, returning to the standard one-logical-change-per-release
+pattern.
+
+The shipped record (one line per release):
+
+- **v1.8.85** — `verifyNoInternetPermission` extended to merged-manifest
+  scan + `tools:node="remove"` exemption; `data_extraction_rules.xml`
+  ships the correct Android-12+ schema with personal-dictionary +
+  wrap-key + clipboard-history excludes; `ZipUtils.unzip` gains
+  pre-canonical entry-name guard + 10_000-entry cap;
+  `HardwareKeyboardRuntimeMapper` thread-safety + AltGr (Ctrl+Alt) fix;
+  sticker palette bounded decode + MIME-spoof close; addon enumerator
+  drops the APK-size-as-bundle-size category-error gate;
+  `verify-reproducible-apk.sh` entry-manifest pass criterion replaces
+  the always-failing `cmp -s` on signed APKs; CI workflows pin to
+  read-only `GITHUB_TOKEN`; `validate-strings-no-translations.yml`
+  pull-request-target env-var hardening.
+- **v1.8.86** — `keyVariation` honours `TYPE_NUMBER_VARIATION_PASSWORD`
+  (numeric-PIN clipboard-history exclusion).
+- **v1.8.87** — `FLAG_SECURE` + non-saveable passphrase on
+  `DictionaryPassphraseDialog`.
+- **v1.8.88** — Recover-not-crash on undecryptable legacy AndroidX
+  Security Crypto passphrase state.
+- **v1.8.89** — `ZipUtils.unzip` atomic-abort semantics (split: security
+  violations throw `SecurityException`, benign anomalies continue-with-
+  warning).
+- **v1.8.90** — Lost SAF persistable-grant surface in Settings for the
+  imported sticker folder.
+- **v1.8.91** — Addon spec KDoc mandate of the REGISTER receiver
+  (matches the `<queries>`-based visibility mechanism).
+- **v1.8.92** — `KeymanLdmlParser` honours `shift=` over `longPress=`
+  (LDML spec correctness); three new tests pin the case matrix.
+
+### 0.4.2 Reframings to existing roadmap sections
+
+These are append-only annotations rather than rewrites of the v5.0-v5.3
+body. Each is keyed to the existing section it qualifies.
+
+- **§6 N7.1 (no-INTERNET build gate).** Now also scans the per-variant
+  `SingleArtifact.MERGED_MANIFEST`, so a library AAR re-adding INTERNET
+  via manifest merging is caught. Honours `tools:node="remove"` /
+  `tools:node="removeAll"` directives.
+- **§6 N7.4 (personal-dictionary encryption).** Now requires
+  `app/src/main/res/xml/data_extraction_rules.xml` with explicit
+  Android-12+ `<cloud-backup>` and `<device-transfer>` excludes — the
+  SQLCipher work is incomplete without the correct transfer-exclusion
+  schema.
+- **§6 N7.x (atomic restore).** `ZipUtils.unzip` aborts on three classes
+  of security violation (unsafe entry name, zip-slip via canonical-path
+  resolution, entry-count cap), continues-with-warning on benign
+  anomalies (entry name > 255 chars, destination path > 1023 chars,
+  per-entry byte cap).
+- **§6 N7.x (clipboard-history privacy).** Closed the
+  `TYPE_NUMBER_VARIATION_PASSWORD` gap — numeric-PIN copy / cut no
+  longer writes into the IME-local clipboard history.
+- **§7 Next-6.4b (hardware-keyboard runtime mapper).** Now thread-safe;
+  AltGr (delivered by Android as Ctrl+Alt on PC keyboards) is no longer
+  silently dropped.
+- **§7 Next-9.5 (user-imported sticker folder).** Bounded
+  `BitmapFactory` decode (8192 px reject ceiling, ~512 px target edge);
+  SAF-declared MIME is now the source of truth; Settings preference
+  summary surfaces "Folder access lost. Tap to select again." when
+  Android revoked the persistable grant. Next-9.5a / F7 shipped in
+  v1.8.101: the in-keyboard Imported sticker tab remains visible after
+  grant loss and shows the matching re-pick banner instead of silently
+  emptying.
+- **§7 Next-10.1 (addon spec).** KDoc now mandates a REGISTER receiver
+  with matching `<intent-filter>` for Android-11+ visibility, aligning
+  with the existing `verify-addon-apk.sh` + `docs/addons/apk-validation.md`
+  enforcement.
+- **§7 Next-10.x (addon enumerator).** No longer rejects legitimate
+  64MB+ asset packs — the previous APK-file-size gate was a category
+  error; real bundle-size enforcement moves to asset-mount time
+  (future Next-10.4).
+- **§7 Next-6.4 (LDML import).** `KeymanLdmlParser` honours `shift=`
+  attribute over `longPress=`; multi-alternate `longPress=` lists no
+  longer poison the shift slot. The `HardwareKeyEntry.longPressAlternates:
+  List<Int>` field + popup-routing slice is logged as a follow-up.
+- **§6 N12.5 (reproducible-build self-check).** Pass criterion is now
+  payload-entry-manifest equality, not raw byte equality on signed
+  APKs (which can never match because of v2/v3 signing-block randomised
+  padding). Matches F-Droid rebuilder methodology.
+- **§6 N6.x (CI supply-chain).** File-scope `permissions: { contents:
+  read }` on all workflows; `pull_request_target` env-var hardening
+  pattern documented in `validate-strings-no-translations.yml`.
+- **§14 Risk Register.** Close one row: "INTERNET-via-library-AAR" is no
+  longer latent now that v1.8.85's merged-manifest gate catches it.
+
+### 0.4.3 New commitments from the external delta
+
+The 2-week external research surfaced four new commitments not on the
+v5.0-v5.3 roadmap:
+
+1. **SwiftKey-refugee discovery slice (Tier-1, urgency 5 — 14 days
+   to cutoff).** AlternativeTo, BGR, and Android Authority round-ups
+   name HeliBoard / FUTO / FlorisBoard / AnySoftKeyboard as the
+   SwiftKey-migration escape route — SwiftFloris is on none of them.
+   Action: outreach micro-slice (AlternativeTo PR, comments on BGR /
+   Android Authority pieces, one r/Swiftkey post) before 2026-05-30.
+   Sources: [AlternativeTo SwiftKey alternatives](https://alternativeto.net/software/swiftkey/),
+   [Android Authority "HeliBoard vs. Gboard"](https://www.androidauthority.com/heliboard-gboard-alternative-3505462/),
+   [BGR "Android keyboards to replace Google Gboard and SwiftKey"](https://www.bgr.com/2003971/android-keyboards-replace-google-gboard-swiftkey-heliboard/).
+2. **F-Droid reproducible-builds verified badge (Tier-1, urgency 3).**
+   F-Droid Basic 2.0-alpha9 ships per-app reproducibility badges
+   (NLnet-funded). SwiftFloris's v1.8.67 + v1.8.85 reproducible-build
+   self-check makes the project one submission step from being the
+   visibly-reproducible exemplar keyboard. Action: when F-Droid Basic
+   2.0 stable ships, submit reproducible-build metadata. Sources:
+   [F-Droid: Making reproducible builds visible](https://f-droid.org/en/2025/05/21/making-reproducible-builds-visible.html),
+   [NLnet Reproducible F-Droid grant](https://nlnet.nl/project/Reproducible-F-Droid/),
+   [F-Droid threatened by Google verification mandate](https://www.bleepingcomputer.com/news/security/f-droid-project-threatened-by-googles-new-dev-registration-rules/).
+3. **LiteRT-LM v0.11.0 + Gemma 4 E2B as concrete L1.1a target
+   (Tier-2).** LiteRT-LM v0.11.0 stable (2026-05-07) ships Gemma 4
+   multi-token prediction (>2× decode on mobile GPU); Gemma 4
+   (2026-04-02) is Apache 2.0 (clean alignment with `:app`). Action:
+   when ROADMAP §8 L1.1a moves out of the gate, target this stack.
+   Sources: [LiteRT-LM releases](https://github.com/google-ai-edge/LiteRT-LM/releases),
+   [Google blog: Gemma 4](https://blog.google/innovation-and-ai/technology/developers-tools/gemma-4/).
+4. **Android 17 IME compliance slice (Tier-2, urgency 1 — June 2026
+   stable).** Two IME-relevant Android 17 behaviors:
+   (a) IME visibility no longer auto-restored across unhandled config
+   changes (host-app problem; confirm SwiftFloris IME service is
+   benign); (b) new `TextAttribute.setTextSuggestionSelected()` for
+   CJKV candidate selection a11y, wire behind the existing API 37
+   gate when CJK candidate UI lands. **No compileSdk bump required
+   before stable.** Sources:
+   [Android 17 release notes](https://developer.android.com/about/versions/17/release-notes),
+   [Android 17 behavior changes for apps targeting](https://developer.android.com/about/versions/17/behavior-changes-17).
+
+### 0.4.4 Negative-signal confirmations
+
+The sixth-pass external research re-validated four "no-op" findings:
+
+- **HeliBoard NLnet open-glide library:** no in-window milestone;
+  gesture-data window ends 2026-11-30, grant deadline 2026-06-01.
+  L1.3 glide swap remains correctly gated. Source:
+  [NLnet Gesture Typing](https://nlnet.nl/project/GestureTyping/).
+- **Bergamot translator:** no new release; L2.1a blocker unchanged.
+  Source: [bergamot-translator releases](https://github.com/browsermt/bergamot-translator/releases).
+- **FlorisBoard upstream:** no release; nothing to cherry-pick. Source:
+  [florisboard releases](https://github.com/florisboard/florisboard/releases).
+- **On-device LLM keyboard demand:** HN threads on on-device LLMs in
+  May 2026 do not request keyboard integration. Gboard's Gemini-Nano
+  "Rambler" occupies the on-device-AI-keyboard mindshare on Pixel.
+  Keep L1.1a as Later / Under Consideration. Sources:
+  [HN Off Grid thread](https://news.ycombinator.com/item?id=47019133),
+  [HN EdgeDox thread](https://news.ycombinator.com/item?id=47016559).
+
+### 0.4.5 Open sixth-pass follow-up roster
+
+Surfaced by the v1.8.85 audit but deliberately deferred from the
+v1.8.85 – v1.8.92 slice so each can land as its own per-PR commit on
+the standard cadence. Full priority-scored roster in
+[`.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md §3`](.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md).
+High-leverage items (score ≥ 5.0) recommended for the v1.8.93+
+release window:
+
+- **F2** — `release.yml` keystore-decode hygiene (`printf %s` not
+  `echo`, `chmod 600`, `umask 077`).
+- **F4** — `verify-addon-apk.sh` `set -eo pipefail` + distinguish
+  "no output" from "no match" so a broken `aapt2` can't silently PASS.
+- **F9** — Pin `crowdin/github-action@v2` floating tag to a SHA.
+- **F10** — Pin `peter-evans/create-or-update-comment@v4` floating
+  tag to a SHA (TODO comment placed in v1.8.85).
+- **F12** — Lint smoke that `data_extraction_rules.xml` resolves,
+  pinning the v1.8.85 behaviour against accidental rewrite.
+
+### 0.4.6 Research-debt items for the next pass
+
+- **Post-Google-I/O (2026-05-19 to 2026-05-20) re-scan.** Two days
+  after the SwiftKey cutoff. Likely surfaces: Android 17 final, Gemma 4
+  mobile guidance, any new Edge AI APIs. Schedule a small seventh pass
+  the following day.
+- **MediaPipe LLM Inference → LiteRT-LM migration guide.** No formal
+  IME-specific migration recipe is published on `ai.google.dev/edge/litert-lm`
+  as of 2026-05-17. Flag for the next pass.
+- **CleverKeys engine licensing.** Community signal names it "the only
+  open-source keyboard with reliable swipe typing" but the engine is
+  GPL-3.0 (cannot link into `:app`). Worth a deeper read for
+  architectural-reference value only.
+
+---
+
+## 0. Research Refresh v5.3 (2026-05-17 fifth pass)
+
+This delta supersedes the stale dependency guidance in the first-pass
+2026-05-17 research artifacts:
+
+- `androidx-activity 1.13.0` is stable. The earlier "downgrade to
+  1.12.4" recommendation is retired.
+- `androidx.security:security-crypto:1.1.0` did ship, but the APIs are
+  deprecated. N7.6 shipped in v1.8.68: the app now uses Google Tink
+  Android + direct AndroidKeystore wrapping instead of AndroidX Security Crypto.
+- Dependency targets refreshed from live Maven metadata: AGP `9.2.1`
+  (AGP `9.3.0-alpha05` intentionally skipped) after Roborazzi/Robolectric
+  and R8-rule audit, Compose BOM `2026.05.00`, Roborazzi `1.60.0`, Robolectric `4.16.1`,
+  SQLCipher `4.16.0` keep, Tink Android `1.21.0` as the migration
+  target. Bump-batch A shipped in v1.8.69: KSP `2.3.8`, coroutines
+  `1.11.0`, AboutLibraries `14.2.0`, and ZXing `3.5.4`.
+- Release tags `v1.8.41` through `v1.8.69` were backfilled locally on
+  2026-05-17 from their matching `gradle.properties` version-bump commits
+  so Obtainium / fork audit anchors are no longer stale locally; v1.8.70
+  through v1.8.84 are tagged with their release commits. The remaining
+  distribution step is pushing those tags from the maintainer host.
+- v1.8.70 refreshed README migration-window messaging for Samsung and
+  Grammarly users: Galaxy AI Writing Assist is framed as an optional Samsung
+  layer on One UI 7+, while Grammarly's Android keyboard replacement is framed
+  as an overlay that can sit above SwiftFloris without changing SwiftFloris's
+  no-network behavior.
+- Bump-batch B shipped in v1.8.71: Roborazzi `1.55.0` → `1.60.0` and
+  Robolectric `4.14.1` → `4.16.1`, verified against Maven / Gradle Plugin
+  Portal metadata and OSV querybatch. AGP `9.2.x` + Compose BOM `2026.05.00`
+  remain the next dependency batch after maintainer-host visual/unit tests.
+- HeliBoard / NLnet open-glide integration was reframed in v1.8.72 after a
+  2026-05-17 upstream re-check: HeliBoard latest release is still `v3.9`
+  (2026-03-29), issue `#2226` remains open, and the public user-facing work
+  is still gesture-data gathering. SwiftFloris's statistical classifier is
+  therefore the production glide path; N1.1 becomes an additive integration
+  gate for a future permissive open library/dataset.
+- Repository hygiene guardrails shipped in v1.8.73: local root
+  `hs_err_pid*.log` / `replay_pid*.log` files moved under
+  `.ai/local-crash-logs/2026-05-16/`, and `.github/workflows/android.yml`
+  now runs `scripts/check-no-root-crash-logs.sh` so forced-added logs fail
+  quickly in CI.
+- Bump-batch C shipped in v1.8.74: Android Gradle Plugin `9.0.0` → `9.2.1`
+  and Compose BOM `2026.03.01` → `2026.05.00`. R8 keepattributes audit found
+  no active wildcard rule requiring a change. Gradle verification still belongs
+  on the maintainer host because this VM has no Java on PATH.
+- Next-6.4a shipped in v1.8.75: `MacKeylayoutParser` now handles macOS
+  `.keylayout` XML files with the same XXE-hardened posture as the Keyman LDML
+  importer. The adjacent Android `InputManager` / `KeyEvent.getDeviceId(...)`
+  runtime bridge shipped immediately after it in v1.8.76.
+- Next-6.4b shipped in v1.8.76: `HardwareKeyboardRuntimeMapper` binds imported
+  layouts to Android hardware keyboard `deviceId` values, prunes detached
+  devices from `InputManager.getInputDeviceIds()`, and lets `KeyboardManager`
+  commit mapped printable keys before falling back to built-in Space / Enter /
+  Shift handling.
+- Next-9.5 shipped in v1.8.77: Settings → Emoji & stickers persists a
+  read-only SAF folder URI, `UserStickerRepository` enumerates supported local
+  image files into an Imported sticker pack, `StickerPaletteView` decodes local
+  previews, and `StickerMediaProvider` proxies commits through the existing
+  `commitContent` path without adding network or gallery permissions.
+- Tier-3 #34 partial shipped in v1.8.78: `.kmp` Keyman package intake now has
+  a safe parser/classifier foundation. This does **not** execute compiled
+  `.kmx` bytecode or JavaScript in `:app`; those packages are explicitly marked
+  `CompiledEngineRequired` until a compatible addon/runtime lands.
+- Tier-3 #35 shipped in v1.8.79: the existing honeycomb renderer foundation is
+  now connected to the production character-layout path. The bundled
+  `honeycomb` layout is selectable, `TextKeyboard` performs honeycomb geometry
+  and hex-aware hit testing, and `TextKeyboardLayout` clips the real Snygg key
+  surface to `HoneycombHexShape`.
+- Tier-3 #36 shipped in v1.8.80 as a security-planning correction: SQLCipher
+  issue `#564` announced LibTomCrypt / NSS deprecation, but Zetetic restored
+  LibTomCrypt for Android Community builds in 4.14.0 and 4.16.0 still lists it
+  as the Android Community provider. The project now has a documented OpenSSL
+  proof-of-concept path and migration triggers instead of a premature provider
+  swap.
+- Next-10.3a shipped in v1.8.81: `AddonRegistry` now owns process-live addon
+  state after `AddonEnumerator` scans installed packages, preserves first-seen
+  signing-certificate pins, rejects package-name hijacks with changed
+  certificates, and exposes typed dictionary-pack lookups. `DictionaryPackCatalog`
+  turns enrolled dictionary-pack manifests plus descriptor JSON into validated
+  catalog entries and `AddonProvenanceReport`s, while rejecting missing,
+  malformed, or future-schema descriptors. Settings → Addons UI and asset
+  mounting remain the next Next-10.3 slices.
+- Next-10.3b shipped in v1.8.82 and extended in v1.8.124: `AddonSigningPinSet` adds the persistable
+  newline-string codec for `packageName=SHA-256` signing pins, ignores corrupt
+  preference lines instead of crashing the IME, preserves first-seen trust, and
+  gives `AddonRegistry` `fromPinnedSigningPinSet(...)` /
+  `pinnedSigningPinSet()` round-trip helpers. v1.8.124 adds
+  `withoutPackage(...)` for confirmed changed-certificate trust flows.
+  `prefs.addon.signingCertPins`
+  now exists as the durable key; startup wiring shipped immediately after in
+  v1.8.83.
+- Next-10.3c shipped in v1.8.83: IME startup now runs `AddonEnumerator`,
+  reconciles discovered addon manifests through `AddonRegistryStartup`, writes
+  canonical signing pins back only when the trust set changes, and publishes the
+  process-wide `AddonRegistryStore` for future Settings/runtime consumers.
+  Settings → Addons shipped immediately after in v1.8.84, v1.8.124 adds
+  confirmed trust reset / changed-certificate flows, and v1.8.125 adds
+  dictionary-pack asset mounting. v1.8.126 adds the Settings dictionary-pack
+  catalog and install guidance polish.
+- Next-10.3d shipped in v1.8.84 and extended in v1.8.124: Settings → Addons now has a status
+  and rescan surface. It shows accepted/rejected/pinned counts, lists accepted
+  addon package/type/version/license/size/signing-fingerprint details, lists
+  rejected addon reasons from the latest snapshot, and manually rescans through
+  the same startup reconciliation path. v1.8.124 adds confirmed reset-all trust
+  and trust-current-certificate actions for changed-certificate rejections.
+  v1.8.125 mounts enrolled dictionary-pack APK assets into the Latin dictionary
+  store; v1.8.126 adds the Settings dictionary-pack catalog and install
+  guidance polish.
+- LeanType (`LeanBitLab/LeanType`) was added as an active HeliBoard fork
+  with Standard / Offline / Offline Lite APK lines. It is GPL-3.0 and
+  cannot be copied into `:app`, but it validates the offline-AI keyboard
+  demand SwiftFloris is targeting through addon boundaries.
+- Verification remains documentation-only on this VM because `java` is
+  not on PATH. Gradle/test/lint/assemble verification belongs on the
+  maintainer build host.
+
+## 0. Research Refresh v5.2 (2026-05-16)
+
+### Phase 0 state memo
+
+SwiftFloris is a Kotlin/Android IME fork of FlorisBoard, built with Gradle Kotlin DSL, AGP 9.2.1, Kotlin 2.3.21, Compose BOM 2026.05.00, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0, coroutines 1.11.0, KSP 2.3.8, ZXing 3.5.4, Roborazzi 1.60.0, Robolectric 4.16.1, minSdk 26, target/compile SDK 36, and no `INTERNET` permission. The active runtime entry points are `FlorisApplication`, `FlorisImeService`, `FlorisAppActivity`, the spell-checker service, inline-autofill support, Tasker receiver, and local addon/MCP surfaces. The repo has mature shipped surfaces for autocorrect, multilingual scoring, user dictionary overlays, privacy gates, voice handoff, local-only addon facades, MCP daemon binding, honeycomb/T9/WordStyles scaffolds, SwiftKey visual parity, Android 16/17 readiness slices, and CI guardrails.
+
+The current constraint set is load-bearing: zero network/account/telemetry, Apache-2.0-compatible main app, no closed swipe blobs, reproducible-build posture, addon isolation for heavy native/ML stacks, and hard visual-regression CI. The main live gaps are not "basic keyboard" gaps; they are release hygiene for the v1.8.46 migration slice, emoji crash triage, device-number benchmark collection, F-Droid verified rebuild completion, and real native/addon bring-up for smart compose/translation/CJK/handwriting/passkeys. SwiftKey export capture moved from urgent gap to shipped parser work in v1.8.46, but public migration documentation and release distribution still need to land before the 2026-05-31 account retirement.
+
+### Phase 1 coverage audit
+
+All required source classes were hit and reconciled into this file:
+
+| Source class | Coverage notes | Appendix anchors |
+|---|---|---|
+| Direct OSS competitors | FlorisBoard, HeliBoard, AnySoftKeyboard, Unexpected Keyboard, Thumb-Key, fcitx5-android, Trime, FUTO Keyboard, CleverKeys, Fossify Keyboard, Hacker's Keyboard, OpenBoard, Indic Keyboard, Divvun/Giella. | `[OSS-*]`, `[GH-*]`, `[CK-*]`, `[ASK-*]`, `[FUTO-*]` |
+| Commercial / closed-source competitors | Microsoft SwiftKey account/OneDrive migration and Copilot removal, Gboard Play listing/help/2026 features, Samsung Keyboard/Galaxy AI writing assist, Typewise consumer-keyboard retreat. | `[COMM-*]`, `[SK-*]`, `[GBOARD-*]`, `[TYPEWISE-*]` |
+| Adjacent-domain projects | Keyman/LDML, Rime/librime, Bergamot, KenLM, Automerge, MCP, LiteRT-LM, FunctionGemma, Whisper/Vosk. | `[STD-*]`, `[LITERT-*]`, `[MCP-*]`, `[HF-*]` |
+| Awesome-lists / discovery lists | Open-source Android keyboard lists and FOSS app catalogs used to cross-check long-tail keyboards. | `[LIST-*]` |
+| Community signal | Reddit SwiftKey/Gboard complaints, Privacy Guides FUTO/HeliBoard threads, HN/OSS issue traffic already captured in v5.0/v5.1. | `[COMMUNITY-*]`, `[PG-*]`, `[PAIN-*]` |
+| Standards / specs / platform APIs | Android IME inline autofill, Android 14 stylus handwriting, Android 16 behavior/a11y/16KB, Android 17 IME changes, Unicode/Emoji, WCAG target size. | `[STD-*]`, `[DEP-*]` |
+| Academic / engineering research | HUOZIIME on-device personalized IME, KeySense, gesture-typing and touch/adaptive input research, CleverKeys architecture notes. | `[RESEARCH-*]`, `[CK-*]` |
+| Dependency changelogs | Roborazzi, Kotlin, AGP, emoji2, Room, WindowManager, Compose/BOM watch, SQLCipher/OSV scan surface. | `[DEP-*]`, `[KOTLIN-*]`, `[ROBORAZZI-*]`, `[OSV-*]` |
+| Security advisories / CVE databases | OSV direct package checks returned zero known vulnerabilities for current core Gradle/Maven deps; Android bulletin class kept in risk register. | `[SEC-*]`, `[STD-CVE-*]` |
+
+### v5.2 harvest and prioritization matrix
+
+This table is the Phase 2/3 normalization layer. It does not replace the 95+ existing roadmap initiatives; it confirms their source fit, adds 50 refresh rows, and explicitly rejects items that contradict the project philosophy. Scores are `Impact/Effort/Risk` on 1-5 scales.
+
+| # | Feature / idea | Cat. | Sources | Prev. | Fit | I/E/R | Depends | Novelty | Tier | Placement rationale |
+|---:|---|---|---|---|---|---|---|---|---|---|
+| 1 | README/version/release-note parity sweep | docs / distribution | `[INT-README]`, `[INT-ROADMAP]` | table-stakes | strong | 4/1/1 | release artifacts | parity | Recently Shipped | ✅ Refreshed through v1.8.84 — `README.md` / `ROADMAP.md` now track the current stack, target SDK, themes, MCP bridge, multilingual scripts, hardware-keyboard import/runtime slices, local sticker import, Keyman `.kmp` package intake, honeycomb hex layout wire-up, SQLCipher provider planning, addon catalog/signing-pin/startup/Settings foundation, encryption posture, release-note links, and local tag stream; broken doc links remain removed. |
+| 2 | Publish v1.8.46 GitHub release artifacts | distribution | `[INT-REL]`, `[SK-RETIRE-2026]` | table-stakes | strong | 5/1/1 | signing workflow | parity | Now | SwiftKey users have a dated cutoff; a stale public release stream kills adoption trust. |
+| 3 | SwiftKey export JSON importer | migration / data | `[COMM-SWIFTKEY-ONEDRIVE]`, `[COMMUNITY-SWIFTKEY-ONEDRIVE]`, `[INT-REL]` | rare/time-sensitive | strong | 5/2/2 | sample export | leapfrog | Recently Shipped | v1.8.46 landed the tolerant JSON parser; the remaining work is release/distribution/docs, not parser discovery. |
+| 4 | Emoji picker crash regression for issue #1 | reliability / testing | `[GH-SWIFTF-ISSUE-1]`, `[DEP-EMOJI2-2026]` | table-stakes | strong | 5/2/1 | repro trace | parity | Now | Emoji insertion is core keyboard behavior; public crash reports outrank speculative feature work. |
+| 5 | EmojiCompat GMS/no-GMS fallback audit | reliability / i18n | `[INT-TODO]`, `[DEP-EMOJI2-2026]`, `[STD-EMOJI17-RELEASE]` | common | strong | 4/2/2 | issue #1 triage | parity | Recently Shipped | ✅ 2026-05-16 — `FlorisEmojiCompat` refactored: explicit `EmojiCompatLoadState` sealed class (Loading / Loaded / Failed / Unavailable), `loadStateFlow(replaceAll)` public surface, injectable `configProvider` seam, doc block formalising the GMS-less / Huawei-HMS / stripped-firmware fallback contract (palette already falls through to `Paint.hasGlyph` so the no-GMS path is non-fatal by construction). 3 new `FlorisEmojiCompatTest` cases exercising the Unavailable transition. Open TODOs retired. |
+| 6 | Roborazzi baseline capture and hard gate | testing / UX | `[ROBORAZZI-RELEASES]`, `[DEP-ROBORAZZI-2026]` | table-stakes | strong | 4/2/1 | committed baselines + verify task | parity | Recently Shipped | ✅ 2026-05-18 — v1.8.123 commits baseline PNGs under `app/src/test/snapshots/` for the maintainer-chip suite, `swiftkey_high_contrast`, `aurora_animated`, and Settings -> Addons. `.github/workflows/android.yml` now runs `:app:verifyRoborazziDebug` as a hard gate with no `continue-on-error`. |
+| 7 | Device macrobenchmark numbers in `docs/BENCHMARKS.md` | performance / observability | `[STD-MACROBENCH]`, `[STD-MACROBENCH-2026]` | common | strong | 4/2/1 | device run | parity | Now | Trace sections exist; the roadmap should require real latency numbers before more perf claims. |
+| 8 | F-Droid verified reproducibility PR | distribution / security | `[STD-FDROID-VERIFIED]`, `[INT-REPRO]` | table-stakes | strong | 4/2/2 | release tag + fdroiddata | parity | Now | Reproducible build docs are already prepared; verification is the supply-chain credibility step. |
+| 9 | OSV dependency scan status note per release | security / dev-experience | `[SEC-OSV-2026]`, `[INT-CI]` | common | strong | 3/1/1 | release workflow | parity | Recently Shipped | ✅ 2026-05-16 — release workflow now runs `osv-scanner v2.0.2 --recursive --skip-git` against the resolved `releaseRuntimeClasspath` and appends a "Security scan (OSV)" footer to every GitHub Release body with the dated scanner version, vulnerability count, and reproduction recipe. See `docs/SECURITY.md`. |
+| 10 | 16 KB native alignment gate for addon APKs | security / packaging | `[STD-16KB-BLOG]`, `[STD-A15-16KB]` | table-stakes | strong | 4/2/2 | addon template | parity | Recently Shipped | ✅ 2026-05-16 — new `docs/addons/apk-validation.md` defines the universal addon-APK enrolment contract (16 KB alignment + banned-permission scan + REGISTER_ADDON receiver + required meta-data keys + 64 MiB bundle cap + signing-cert presence). New executable `scripts/verify-addon-apk.sh` implements every check via `zipalign` / `aapt2` / `apksigner` so downstream addon repos can adopt the gate as a one-line CI step. Dictionary-pack spec cross-references the universal contract. |
+| 11 | Android 16 accessibility announcement migration | accessibility | `[STD-A16-ALL]` | common | strong | 3/2/1 | Compose a11y audit | parity | Recently Shipped | ✅ 2026-05-16 — audit confirmed zero production call sites for `announceForAccessibility` / `TYPE_ANNOUNCEMENT` (no migration needed; this is forward-only). `FlorisScreen` Scaffold now wires `Modifier.semantics { paneTitle = title }`, so every Settings screen inherits Android-16 pane-aware announcements for free. New `docs/ACCESSIBILITY.md` codifies the policy (paneTitle for screens, liveRegion Polite for status surfaces, Assertive only for critical failures, 48 dp touch-target floor, WCAG AA contrast, reading order). |
+| 12 | Android 16 edge-to-edge settings audit | UX / platform | `[STD-A16-BEHAVIOR]`, `[DEP-WINDOW-2026]` | table-stakes | strong | 3/2/1 | settings screenshots | parity | Recently Shipped | ✅ 2026-05-16 — `FlorisAppActivity.onCreate` migrated from the older `WindowCompat.setDecorFitsSystemWindows(window, false)` call to the modern `androidx.activity.enableEdgeToEdge()` API (androidx-activity 1.13.0 already in the dep tree). The inset-aware `Scaffold` path inside `FlorisScreen` already consumes `innerPadding`, so every Settings screen handles status / nav / IME insets without per-screen edits. Documented in `docs/ACCESSIBILITY.md`. Settings-screen Roborazzi baselines for inset coverage tracked under matrix #6. |
+| 13 | Android 17 CJKV IME accessibility selection | accessibility / i18n | `[STD-A17-BEHAVIOR]` | rare | strong | 3/2/1 | CJK candidate backend | leapfrog | Next | The platform has a dedicated API; implementation waits on real CJK candidate emission. |
+| 14 | Free-movement spacebar trackpad | UX | `[GBOARD-CURSOR-2026]`, `[OSS-THUMB-GH]` | emerging | strong | 4/3/2 | cursor overlay | parity | Recently Shipped | ✅ 2026-05-16 — bundled with matrix #15. The `handleSpaceSwipe` TOUCH_MOVE handler now dispatches continuous `handleArrow(ARROW_UP, count)` / `handleArrow(ARROW_DOWN, count)` when the user has bound the up / down space-bar swipe to `MOVE_CURSOR_UP` / `MOVE_CURSOR_DOWN`, mirroring the existing left / right cursor-drag path. Mass-selection batching reused so multi-row drags coalesce into one editor update. |
+| 15 | Trackpad navigation keys / vertical cursor actions | UX / accessibility | `[OSS-THUMB-GH]`, `[GBOARD-CURSOR-2026]` | uncommon | medium | 3/2/1 | N15.1 design | parity | Recently Shipped | ✅ 2026-05-16 — new `prefs.gestures.spaceBarSwipeDown` (default `NO_ACTION`) sibling to the existing `spaceBarSwipeUp`; `handleSpaceSwipe` TOUCH_UP path now dispatches one-shot `executeSwipeAction(...)` for any bound action on either vertical direction. Settings → Gestures → "Space bar swipe down" entry + matching string resource. Matrix #14 continuous-drag path shares the same dispatch machinery so the two stay in lockstep. |
+| 16 | Rambler-style local voice cleanup | mobile / AI / offline | `[STD-A17-RAMBLER]`, `[GBOARD-SMART-EDIT-2026]`, `[LITERT-LM-0-11-0]` | emerging | strong | 5/4/3 | Whisper runtime + LiteRT addon | leapfrog | Later | High value, but it depends on the native voice and local-LLM add-ons becoming real. |
+| 17 | Bluetooth mic source selection for voice | mobile / UX | `[COMMUNITY-GBOARD-VOICE]`, `[COMM-GBOARD-VOICE]` | emerging | medium | 3/3/2 | embedded voice stack | parity | Under Consideration | Valuable for hands-free dictation, but Android audio routing complexity is not justified before embedded voice ships. |
+| 18 | LiteRT-LM smart-compose provider APK | offline / AI | `[STD-LITERT-LM]`, `[LITERT-LM-0-11-0]`, `[RESEARCH-HUOZIIME]` | rare | strong | 5/5/3 | addon signing + model packaging | leapfrog | Next | This is the clean offline answer to commercial writing-assist surfaces; keep it addon-isolated. |
+| 19 | On-device personalized memory for smart compose | data / offline / privacy | `[RESEARCH-HUOZIIME]`, `[RESEARCH-ONDEVICE-PERS]` | rare | medium | 4/5/4 | L1.1a + privacy UX | leapfrog | Later | Deep personalization fits the thesis but risks sensitive-memory UX; defer until the base provider is stable. |
+| 20 | Samsung-style rewrite/tone actions via local provider | UX / offline / AI | `[COMM-SAMSUNG-WRITING]`, `[GBOARD-AI-2025]`, `[STD-FUNCTIONGEMMA]` | emerging | strong | 4/4/3 | smart-compose addon | parity | Partially Shipped | ✅ 2026-05-16 — full IME-side data + router stack. `RewriteTone` enum (FORMAL / CASUAL / SHORTER / LONGER / SUMMARIZE), `RewriteRequest` / `RewriteResult` (Rewritten / Unavailable / Failed) data carriers, `RewriteProvider` interface with `NoOpRewriteProvider` fallback, `RewriteProviderRegistry` singleton (mirrors `SmartComposeProviderRegistry`), and `RewriteRouter` end-to-end (consent → sensitive-field → blank → readiness → LRU cache → provider). 12 new `RewriteRouterTest` cases pin every branch + the registry round-trip + the `NoOpRewriteProvider` Unavailable contract. Smartbar `QuickAction.RewriteSelection(tone)` wire-up + production registry binding tracked as follow-ups (need the actual LiteRT-LM / Gemma addon to flip the registry off the No-Op). |
+| 21 | Bergamot translator addon bring-up | offline / i18n | `[STD-BERGAMOT]`, `[COMM-GBOARD-PLAY]` | common | strong | 5/4/3 | addon APK + model pairs | parity | Next | Translation toolbar is already wired on the IME side; the runtime is the missing piece. |
+| 22 | librime/Rime CJK addon | i18n / plugin ecosystem | `[OSS-FCITX-GH]`, `[OSS-TRIME-GH]`, `[OSS-RIME]`, `[FUTO-V0-1-28]` | common outside Latin | strong | 5/5/3 | native addon | parity | Next | CJK support is table-stakes globally and the Rime ecosystem is the proven offline path. |
+| 23 | Fcitx-style engine pack API | plugin ecosystem / i18n | `[OSS-FCITX-GH]`, `[STD-FLORIS-EXT]` | rare on Android | strong | 4/5/3 | dictionary/addon contracts | leapfrog | Later | Useful architecture, but SwiftFloris should finish one real Rime/Bergamot add-on before generalizing engines. |
+| 24 | Rime schema import UI | migration / i18n | `[OSS-TRIME-GH]`, `[OSS-RIME]` | common in Rime world | strong | 4/3/2 | L3 addon | parity | Later | Schema import matters after the CJK runtime exists, not before. |
+| 25 | Keyman LDML / `.kmp` pack import expansion | i18n / migration | `[OSS-KEYMAN]`, `[OSS-DIVVUN-GH]` | common in minority-language IMEs | strong | 4/4/2 | existing LDML parser + `.kmp` package parser | leapfrog | Partially Shipped | ✅ v1.8.78 adds `KeymanPackageParser`: safe ZIP/package metadata intake for `.kmp`, LDML-in-package extraction, lexical-model/mixed-package classification, compiled-engine-required classification, and unsafe entry skipping. Remaining work is the actual compiled `.kmx` / `.js` runtime path, likely addon-scoped. |
+| 26 | Indic Keyboard / Divvun language-pack backlog | i18n | `[OSS-INDIC-GH]`, `[OSS-DIVVUN-GH]` | common | strong | 4/3/2 | dictionary pack spec | parity | Later | Treat as pack work so the base APK remains lean and license/attribution stays isolated. |
+| 27 | Unexpected Keyboard script-first layout picker | UX / i18n | `[OSS-UNEXPECTED-GH]` | uncommon | medium | 3/2/1 | subtype editor | parity | Partially Shipped | ✅ 2026-05-16 — new `LayoutScript` enum (27 buckets including LATIN / CYRILLIC / GREEK / HEBREW / ARABIC / ARMENIAN / GEORGIAN / DEVANAGARI / BENGALI / GURMUKHI / GUJARATI / TAMIL / TELUGU / KANNADA / MALAYALAM / ODIA / SINHALA / THAI / LAO / KHMER / BURMESE / TIBETAN / CJK / KOREAN_HANGUL / JAPANESE / ETHIOPIC / CHEROKEE / OTHER). `LayoutScriptClassifier.classify(locale)` maps a `FlorisLocale` to its dominant script (with overrides for Yiddish→Hebrew, Ladino→Hebrew, etc.). `groupByScript(presets)` returns an order-preserving `Map<LayoutScript, List<SubtypePreset>>` keyed by script-first appearance. 12 new `LayoutScriptClassifierTest` cases pin each bucket + the OTHER fallback + the case-insensitive code lookup + the grouping order. Settings → Localization UI wire-up tracked as a follow-up — the data layer ships here as additive (no behavior change to the existing locale-alphabetical picker). |
+| 28 | Thumb-Key YAML/layout validation before apply | reliability / UX | `[OSS-THUMB-GH]` | uncommon | medium | 3/2/1 | custom layout editor | parity | Under Consideration | Valuable if SwiftFloris exposes raw layout import; otherwise not user-facing. |
+| 29 | Bulk custom layout modifications | UX / dev-experience | `[OSS-THUMB-GH]`, `[FLOR-LAYOUT-EDITOR]` | rare | medium | 3/4/2 | layout editor | leapfrog | Later | Powerful, but layout editing is not the current highest adoption blocker. |
+| 30 | AnySoftKeyboard-style immersive/fullscreen mode toggle | UX / accessibility | `[OSS-ASK-GH]` | niche | medium | 2/2/2 | settings design | parity | Under Consideration | Useful for small screens, but risk of surprising users is higher than default value. |
+| 31 | HeliBoard top-to-bottom hide gesture | UX | `[GH-HELIBOARD-RELEASES]` | uncommon | medium | 2/1/1 | gesture pref | parity | Under Consideration | Small polish; defer until higher-impact cursor/voice gestures are complete. |
+| 32 | Quote/speech-mark auto-close | UX / i18n | `[GH-HELIBOARD-RELEASES]`, `[OSS-HELI-GH]` | common | strong | 3/2/2 | locale rules | parity | Recently Shipped | ✅ 2026-05-16 — pure `QuoteAutoCloseGate.closerFor(typed, preceding, following, variation, enabled)` covers straight `"` `'`, French guillemet `«»`, German low-9 / curly pairs (`„“` / `‚‘` / `“”` / `‘’`), and CJK corner / angle pairs (`「」` / `『』` / `〈〉` / `《》`). Suppressed in password / URI / email fields, mid-word contexts, before an existing closer (double-up guard), and on `'` / `’` after a letter or digit (apostrophe + foot-shorthand). Wired into `KeyboardManager.onInputKeyUp` post-`commitChar` with `commitText(closer) + setSelection(cursor - closerLen)`. New `prefs.keyboard.quoteAutoCloseEnabled` (default on) surfaced as Settings → Keyboard → "Auto-close quotes". 23 new `QuoteAutoCloseGateTest` cases. |
+| 33 | Clipboard search and retention policy UI | UX / privacy | `[OSS-FLORIS-GH]`, `[OSS-UNEXPECTED-GH]` | common | strong | 3/2/2 | clipboard store audit | parity | Partially Shipped | ✅ 2026-05-16 — retention-policy prefs were already in place (`historySizeLimit{,Enabled}`, `historyAutoCleanOld{,Enabled,After}`, `historyAutoCleanSensitive{,Enabled,After}`). New `ClipboardHistoryFilter.filterByQuery(items, query)` pure helper: case-insensitive substring match on TEXT items, IMAGE / VIDEO items never match a non-blank query (so the "search" pane doesn't surface mysterious unmatched media tiles), sensitive items remain visible when their text matches (search is user-driven; lock-screen redaction is enforced upstream by matrix #34). New `prefs.clipboard.historySearchEnabled` (default true). 9 new `ClipboardHistoryFilterTest` cases pin the contract. Search-bar TextField UI inside `ClipboardInputLayout` tracked as a follow-up. |
+| 34 | Locked-screen clipboard suggestion suppression regression | security / privacy | `[GH-HELIBOARD-RELEASES]`, `[INT-THREAT]` | common | strong | 4/2/1 | test harness | parity | Recently Shipped | ✅ 2026-05-16 — pure `ClipboardSuggestionLockGate.shouldSuppress(isDeviceLocked, isKeyguardLocked)` consulted by `ClipboardSuggestionProvider.suggest` right after the enabled-check; matches the existing UI-side gate in `ClipboardInputLayout`. 4 new `ClipboardSuggestionLockGateTest` cases pin the contract (unlocked / device-locked / keyguard-only / both-locked). |
+| 35 | Local image clipboard / sticker history | UX / offline | `[FUTO-V0-1-28]`, `[COMM-GBOARD-PLAY]` | common | strong | 3/3/2 | commitContent matrix | parity | Recently Shipped | ✅ 2026-05-16 — image / sticker storage + commit infrastructure already in place (`ClipboardItem.type = IMAGE/VIDEO`, `EditorInstance.commitClipboardItem` / `commitRichContent` via `InputConnectionCompat.commitContent`, `StickerPaletteView` + `BundledStickerRepository`). New `EditorContentMimeMatrix` pure helper centralises the "does the editor accept this kind of media?" decision: `acceptsImages(editorMimeTypes)` / `acceptsAny(candidates, editorMimeTypes)` / `bestMatchFor(available, editorMimeTypes)` / `isAccepted(candidate, editorMimeTypes)`, with `image/*` and `*/*` glob support and case-insensitive matching. v1.8.77 adds a Settings → Emoji & stickers SAF folder picker, local imported-pack enumeration, image previews, and provider proxy reads for user stickers. 13 `EditorContentMimeMatrixTest` cases + `UserStickerRepositoryTest` pin the contracts. Settings → Clipboard image-history UI wire-up remains a separate follow-up. |
+| 36 | Dictionary-pack provenance and signing report | security / plugin ecosystem | `[INT-DICTPACK]`, `[STD-FLORIS-EXT]` | table-stakes | strong | 4/2/1 | addon verifier | leapfrog | Recently Shipped | ✅ 2026-05-16 — new `AddonProvenanceReport` data class + `from(manifest)` / `fromDictionaryPack(manifest, descriptor)` factories + `toPlainText()` / `toJson()` renderers + `sortedForDisplay()` ordering helper. Surfaces package / type / version / APK license / dataset license / dataset source / signing-cert SHA-256 / bundle size / no-network attestation. 8 new `AddonProvenanceReportTest` cases. Settings UI wire-up tracked as a follow-up. |
+| 37 | Addon consent screen for MCP/smart-compose/translation | security / UX | `[MCP-2026-ROADMAP]`, `[INT-THREAT]` | common in agent systems | strong | 5/3/2 | NlpAddonHub audit | leapfrog | Recently Shipped | ✅ 2026-05-16 — new `AddonConsentState` enum (`NEEDS_PROMPT` / `GRANTED` / `DENIED`) with `allowsInvocation()` predicate (only `GRANTED` returns true). Three new per-surface enum prefs `prefs.privacy.{smartComposeConsent,translationConsent,mcpConsent}` (default `NEEDS_PROMPT`). All three routers (`SmartComposeRouter` / `TranslationRouter` / `McpDispatchRouter`) gain an `isConsentGranted: () -> Boolean = { true }` constructor lambda consulted **before** the sensitive-field guard so consent failures take priority. Suppression reason: `"consent required"`. New `AddonConsentStateTest` (3 cases) + 3 new `McpDispatchRouterTest` cases pin the gate ordering. Settings → Privacy consent-dialog UI wire-up tracked as follow-up. |
+| 38 | Per-tool MCP allowlist and invocation details | security / observability | `[MCP-2026-ROADMAP]`, `[INT-TASKER]` | emerging | strong | 5/3/2 | L7 bridge | leapfrog | Recently Shipped | ✅ 2026-05-16 — new `DisabledToolSet` codec (parse / encode / add / remove / contains / toolsFor) sibling to `DisabledDaemonSet`, keyed by `<daemonPackage>::<toolName>`. `McpDispatchRouter` gains an `isToolDisabled(DaemonKey, String)` constructor lambda consulted after the existing daemon-disabled gate; suppression reason "tool X on daemon Y disabled by user". New `prefs.mcp.disabledTools` (default empty). 12 new `DisabledToolSetTest` cases + 3 new `McpDispatchRouterTest` cases pin the gate contract. Settings UI wire-up + audit-record `subject` extension tracked as follow-up. |
+| 39 | Local-only audit export bundle | observability / privacy | `[STD-ACRA]`, `[INT-THREAT]` | uncommon | medium | 3/3/3 | export redaction design | Recently Shipped | ✅ 2026-05-16 — new `AddonAuditExport` data layer: `buildBundle(now, records, totalCount)` returns a stable JSON bundle (schema v1) carrying sequence + UTC ISO timestamp + surface + outcome + reason + subject fields; `toJsonString(...)` serialises; `summaryLine(...)` produces the human-readable preview tile string. PII contract enforced by design — ACCEPTED records omit `reason` entirely, blank subjects normalised to null, no device id / build version / locale ever joins the bundle. 7 new `AddonAuditExportTest` cases. Settings UI wire-up tracked as a follow-up; the data layer + privacy posture land in this slice. |
+| 40 | Privacy-preserving crash capture opt-in | reliability / privacy | `[STD-ACRA]`, `[SEC-OSV-2026]` | common | medium | 3/3/3 | consent UX | Under Consideration | ACRA could help crashes, but default-on telemetry is rejected; opt-in only if issue triage remains blocked. |
+| 41 | Compose BOM / Material patch cadence | dev-experience / UX | `[DEP-COMPOSE-BOM-2026]`, `[AGP-9-2-0]` | common | strong | 3/1/2 | changelog review | parity | Recently Shipped | ✅ 2026-05-16 — new `docs/DEPENDENCY_TRIAGE.md` codifies the "check upstream first" triage for visual / insets / focus / inset bugs, lists the symptoms that usually ride Compose BOM or Material patch bumps, and sets the patch / minor / major bump-cadence policy. Also covers the Room / WindowManager + AGP 9.x → API 37 sequencing tracked as matrix #42 and #43. |
+| 42 | Room/WindowManager bump review | reliability / platform | `[DEP-ROOM-2026]`, `[DEP-WINDOW-2026]` | common | strong | 2/1/1 | OSV clean scan | parity | Next | Current versions are clean; bump only when release notes justify it. |
+| 43 | AGP 9.1/9.2 target API strategy | dev-experience / packaging | `[AGP-9-2-0]`, `[STD-A17-BEHAVIOR]` | common | strong | 4/2/2 | API 37 plan | parity | Next | AGP 9.1+ matters for API 37; plan the bump with Android 17 behavior gates. |
+| 44 | OSV clean-result release appendix | security / docs | `[SEC-OSV-2026]` | common | strong | 2/1/1 | release workflow | parity | Recently Shipped | ✅ 2026-05-16 — bundled with matrix #9: every release body now carries a dated "Security scan (OSV)" appendix with explicit "0 known vulnerabilities" / "N advisory matches" wording, and `docs/SECURITY.md` formalises what "clean" means and what it does not. |
+| 45 | Closed `swypelibs` gesture blob | licensing | `[OSS-HELI-GH]`, `[NLNET-GT]` | common workaround | reject | 4/1/5 | none | parity | Rejected | It directly violates auditability; wait for open glide or train from open data. |
+| 46 | GPL/AGPL code linked into `:app` | licensing | `[OSS-THUMB-GH]`, `[OSS-CLEVER-GH]`, `[OSS-TRIME-GH]` | common in OSS | reject | 3/1/5 | none | parity | Rejected | Architecture can inspire, but main-app license ceiling remains Apache-2.0-compatible. |
+| 47 | Microsoft/Google account sync | licensing / privacy | `[COMM-SWIFTKEY-ONEDRIVE]`, `[SK-RETIRE-2026]` | commercial table-stakes | reject | 5/1/5 | none | parity | Rejected | The forced account migration is the adoption opportunity, not a model to copy. |
+| 48 | Tenor/Giphy/cloud GIF keyboard | integrations / privacy | `[COMM-GBOARD-PLAY]` | commercial table-stakes | reject | 3/2/5 | none | parity | Rejected | Local stickers and image clipboard are acceptable; cloud GIF search is not. |
+| 49 | Default-on analytics or model upload | telemetry / privacy | `[COMMUNITY-GBOARD-VOICE]`, `[INT-THREAT]` | common | reject | 3/2/5 | none | parity | Rejected | It breaks the zero-telemetry promise and undermines the no-network moat. |
+| 50 | Cloud LLM writing assistant in core | AI / privacy | `[COMM-SAMSUNG-WRITING]`, `[GBOARD-AI-2025]` | common | reject | 4/2/5 | none | parity | Rejected | Local add-ons and user-owned MCP daemons are the only acceptable AI path. |
+
+### Self-audit notes from v5.2
+
+- Traceability: every v5.2 row cites appendix anchors; anchors are either existing v5.0/v5.1 sources or new v5.2 sources appended below.
+- Tier consistency: no v5.2 item is duplicated into multiple tiers; shipped v1.8.41-v1.8.45 work remains in §3/N13/N14/N15 rather than being re-opened.
+- Category coverage: security, accessibility, i18n, observability, testing, docs, distribution, plugin ecosystem, mobile/offline, multi-user/sync, migration, and upgrade strategy all have explicit rows or existing roadmap sections. Cloud collaboration remains rejected because it conflicts with §1; local CRDT sync remains the accepted alternative.
+- Adversarial review answer: the largest naive risks are over-promising local AI before add-on runtimes exist, ignoring stale public releases during the SwiftKey migration window, and letting visual-regression CI stay soft. The Now tier therefore prioritizes release hygiene, crash triage, hard gates, benchmark numbers, F-Droid verification, and provenance controls before more speculative features.
+
+---
+
+## 0. SwiftKey Full-Parity Tracker (live)
+
+Audit of the **3** Microsoft-SwiftKey features still missing from SwiftFloris vs. **everything else**, which is at parity or ahead. Updated 2026-05-15.
+
+### Remaining work for full SwiftKey parity
+
+| # | SwiftKey feature | What's required in SwiftFloris | Status |
+|---|---|---|---|
+| **P1** | **Smart Compose inline ghost-text** (gray next-word continuation, swipe-space to accept) | IME-side: ghost-text Compose overlay reading from `SmartComposeProviderRegistry`. Runtime: L1.1a LiteRT-LM addon supplying a real `SmartComposeProvider`. | ✅ **IME-side shipped 2026-05-15 (v1.8.3)** — `GhostTextSuggestionCandidate` data class added; `NlpManager.suggest` now appends a ghost-text candidate when `SmartComposeProviderRegistry.active.isReady(locale)` AND confidence ≥ 0.45. Default no-op provider keeps the surface invisible until the L1.1a addon (prompt B1) is installed. |
+| **P2** | **Translation toolbar** (select text → translate inline) | IME-side: smartbar quick-action + preview row consuming `InlineTranslator`. Runtime: L2.1a Bergamot WASM addon. | ✅ **IME-side shipped 2026-05-15 (v1.8.3)** — new `QuickAction.TranslateSelection` data object dispatches through `InlineTranslatorRegistry.active.translate(...)`. Default `Unavailable` result surfaces a "install translator addon" Toast; when the L2.1a addon (prompt B2) is installed, the translated text replaces the selection. |
+| **P3** | **Split keyboard renderer** (tablet landscape; mid-row gutter, per-side key rects) | Wire `SplitKeyboardLayoutCalculator` (v1.8.2) into `TextKeyboardLayout` + `KeyboardManager` touch routing. Pure in-IME work. | ✅ **Renderer shipped 2026-05-17 (v1.8.62)** — `TextKeyboardSplitLayout` resolves the viable split gutter, `TextKeyboardLayout` lays out rows at `keyboardWidth - gutter`, `SplitGutterPostPass` shifts the right half back into the final container, `ImeWindowController` demotes non-viable narrow roots, and `TextKeyboard.getNearestKeyForPos` refuses gutter-zone rescue. |
+
+### Already at or ahead of parity (no further work needed unless polish)
+
+- **Core typing:** multilingual hot-switch, bilingual subtype presets, SCOWL 117k + Zipf overlay, SymSpell d1+d2, capitalisation-aware autocorrect, bigram + trigram next-word, contraction autocorrect — **shipped through v1.8.2**.
+- **UI surfaces:** SwiftKey Pure themes (light + dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, per-app accent (Chrooma-style), one-handed mode, floating keyboard with onboarding tooltip (Next-7.1a `f8ddaed`), CODE smartbar profile, spring motion polish, custom smartbar action editor — **all shipped**.
+- **Productivity:** encrypted clipboard manager with history + pinning, sticker packs, voice input (FUTO handoff + Vosk streaming + Next-2.4 streaming commands), inline autofill verified with five password managers, custom emoji tags + predict-by-tag + search-by-tag + pin-together — **all shipped**.
+- **Migration:** Gboard / FlorisBoard backup importers, SwiftKey migration doc, Windows KLC + Keyman LDML hardware-keyboard imports incl. `<transforms>` and `<displays>` (L8.2 `74e04f4`).
+- **Privacy:** zero INTERNET permission (CI-enforced), SQLCipher-encrypted personal dictionary, no account, F-Droid distribution, signed releases with reproducible-build pinning.
+
+### SwiftFloris-only features (no SwiftKey equivalent)
+
+Stylus handwriting facade · CJK / Indic (63 transliteration scripts) / Ge'ez / RTL Arabic-shaper + Persian normaliser · Espanso config import · Tasker intent endpoints (L11.1 receiver `cee3472`) · CRDT personal-dictionary sync over user-chosen channel + Settings → Sync Compose screen (Next-5.3a `aecc348`) · WebAuthn passkey contract · WordStyles renderer · T9 layout · **MCP local-LLM bridge — end-to-end shipped v1.8.35-v1.8.40** (AIDL surface + AndroidMcpClient + per-daemon ServiceConnection lifecycle + PackageManager-backed discovery + IME-startup wire-up + Settings UI + per-daemon enable/disable) · Android 16 PWLE haptic envelopes · Macrobenchmark harness + 6 trace sections wired (v1.8.34) · Roborazzi screenshot CI · **Honeycomb hex layout — foundation v1.8.31-v1.8.33, production wire-up v1.8.79** (`HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader` + `TextKeyboardLayoutStyle.Honeycomb`).
+
+### Explicitly rejected (SwiftKey has, we won't)
+
+GIF keyboard via Tenor/Giphy · Bing search bar · Microsoft account sync · in-keyboard ads — see §10.
+**Supersedes:** ROADMAP v4.0 (2026-05-14). Completed items preserved in §3 with dated checkmarks; new items added from the v1.7.9 research pass below (LiteRT-LM migration, Android 16 PWLE haptic envelopes, Rambler-style streaming-voice cleanup, emoji-tag predict, F-Droid Verified-tier badge, 16KB-page CI gate).
+**Document length:** intentionally dense — every Now/Next item carries a source citation `[n]` traceable to the Appendix.
+
+---
+
+## 1. Philosophy (load-bearing — every item below must respect this)
+
+- **100% offline.** No `INTERNET` permission. Zero telemetry. Zero account requirement. Zero vendor cloud.
+- **Apache-2.0 only.** GPL/AGPL/LGPL, FUTO Source-First, and undeclared-license code cannot be ingested into the main app, only conceptually borrowed or shipped as a clearly-isolated module under its own license.
+- **Audit-friendly by construction.** No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); reproducible builds; SHA256 fingerprints in README.
+- **Distribution:** GitHub Releases + F-Droid (verified-reproducible badge target) + IzzyOnDroid + Aurora Store (mirror) + Obtainium + Accrescent. **Not Google Play** by default — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture; revisit only if a separately-signed Play track is needed.
+- **Strategic wedge:** *"What FlorisBoard wants to be when it grows up, plus the SwiftKey multilingual brain, plus FUTO's offline voice, with zero network, zero account, zero vendor cloud."* Every Now/Next item below either closes a SwiftKey/Gboard parity gap or extends the on-device-only frontier no commercial keyboard occupies.
+
+---
+
+## 2. State of the Repo (v1.8.84 reality, observed)
+
+**Stack:** Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor · AGP 9.2.1 · Gradle 9.5.1 · JDK 17 · minSdk 26 · targetSdk/compileSdk 36 · Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · coroutines 1.11.0 · KSP 2.3.8 · ZXing 3.5.4 · AboutLibraries 14.2.0 · Kotest 6.1.11 · Roborazzi 1.60.0 plugin active with `:app:recordRoborazziDebug` / `:app:verifyRoborazziDebug` tasks · Robolectric 4.16.1 · Crowdin translation pipeline · no `INTERNET` permission in the manifest.
+
+**Modules:** `:app`, `:benchmark`, and `lib/{android,color,compose,kotlin,snygg}` are included in `settings.gradle.kts`. `:benchmark` is active again for AndroidX Macrobenchmark and adb-driven first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore evidence. The previous `:lib:native` placeholder and `libnative/` Rust scaffold were dropped in v1.8.185 (per `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md` EI11); native runtimes for optional capabilities ship as out-of-tree signed addon APKs per the `AddonContract.Action.REGISTER_*` enrolment contract, not inside the base APK.
+
+**Source size:** 624+ tracked Kotlin files repo-wide, with the main IME work concentrated in `app/src/main/kotlin/dev/patrickgold/florisboard/ime/{keyboard,nlp,theme,ext,emoji,mcp,voice,bidi,dictionary,kenlm,calendar}`. The v1.8.40 release line reported **998 unit tests** at HEAD, and v1.8.41-v1.8.69 pushed the suite past **1000+ unit tests** with targeted gates around apostrophe auto-return, password-field popup suppression, Roborazzi task wiring, Kotlin reproducibility drift, Android 17 IME visibility restore, split rendering, bundled theme contrast/registration, calendar quick-insert formatting/serialization, encrypted dictionary export/import round-trip parsing, AI-feature disclosure catalog coverage, and the Tink encrypted-preference migration contract. Production TODO/FIXME markers are now mostly design debt rather than crash stubs: language-capability hard-coding in `FlorisLocale`, loader/locking notes in language-pack extensions, emoji-compat GMS/no-GMS cleanup, honeycomb/layout constraint comments, and unsupported mutating calls in read-only media providers. **No known production `TODO()` crash stub remains.**
+
+**Active components (v1.8.84):**
+- **Core keyboard:** FlorisBoard-derived layouts, QWERTY/QWERTZ/AZERTY and locale variants, bottom-row presets, split/floating/one-handed foundations, SwiftKey Pure themes, M3 Expressive themes, SwiftKey High Contrast (AAA), Aurora Animated, Snygg theme engine, per-app smartbar profiles, CODE profile, inline autofill slot, keyboard-height/font-size controls, haptics, popup polish, reduced-motion gating, and accessibility labels.
+- **Prediction / correction:** 117k-word SCOWL English dictionary, contraction autocorrect, SymSpell d1 + bounded d2, adaptive touch model, personal bigram/trigram stores, typed-word overlay with instant remember, overlay typo correction, user-dictionary edit invalidation, capitalization-aware completions, single-letter proper-noun completions, and remove-from-predictions overlay.
+- **Multilingual input:** bilingual subtype presets, per-token Latin language identification, multilingual token scoring, top-two straddle guard, phrase priors, multi-word repair, 63-script transliteration coverage, RTL/BiDi pipeline, sentence tokenizer, inline translation facade/cache/router/language-pack manager, and CJK/librime facade without native backend yet.
+- **Glide / gesture typing:** current production path is still `StatisticalGlideTypingClassifier` with bounded EN/DE/ES/FR/IT/PT dictionaries, Flow Through Space support, adaptive touch evidence, short-word context rescoring, and quality labels. Neural/open-glide remains gated on HeliBoard NLnet/FUTO-swipe-data follow-up (N1).
+- **Voice:** external FUTO Voice Input handoff remains the live dictation path; embedded path has a RAM-aware model selector, streaming engine route selector, local Whisper/Vosk model manager, streaming transcript buffer, and voice-command execution harness.
+- **Media:** emoji search/history/pinned groups, bundled local sticker packs, user-imported read-only sticker folders via SAF, rich-content `commitContent` insertion, and clipboard image/video handling all stay local and permission-scoped.
+- **Addon / AI surfaces:** SmartCompose, InlineTranslator, CJK, MCP, sync, Tasker, passkey, WordStyles, and dictionary-pack contracts are present as mostly local-only facades. MCP advanced fastest: AIDL binder, Android client, discovery, service lifecycle, settings listing, and per-daemon enable/disable all shipped through v1.8.40; v1.8.41-v1.8.45 then closed Gboard apostrophe return, Roborazzi plugin activation, Kotlin 2.3.21 reproducibility drift, Android 17 password popup hardening, and Android 17 IME visibility restore. v1.8.66 adds the first-run and About-screen AI transparency surface promised by `docs/PRIVACY_AND_AI.md`; v1.8.81 adds the process-local `AddonRegistry` and `DictionaryPackCatalog` foundation for signed, no-network dictionary-pack addon state; v1.8.82 adds the persisted signing-pin codec and `prefs.addon.signingCertPins`; v1.8.83 wires IME startup scan/reconcile/publish through those persisted pins; v1.8.84 adds Settings → Addons status, accepted/rejected rows, and manual rescan.
+- **Privacy / security:** Gradle no-network gate, password-field learning/clipboard/FLAG_SECURE defenses, SQLCipher personal dictionary with Tink / AndroidKeystore passphrase wrapping, Room-backed clipboard history with sensitive-item gates, addon sensitive-field guard, in-memory addon audit ring, local-only MCP binding, threat model, signing fingerprint surface, dependency scan workflow, reproducible-build docs, and 16 KB APK alignment check.
+
+**Stubbed / under-investigated (current blockers):**
+- ✅ `ROADMAP.md` / `README.md` parity has been refreshed through v1.8.84:
+  broken doc links were removed, release-note links match local files, and the
+  stack / target-SDK / themes / MCP / multilingual / hardware-keyboard sections
+  track the current manifest and version metadata.
+- GitHub Releases still need to be checked against the current local tag stream
+  (`v1.8.84` at this snapshot); publication remains a maintainer-host task
+  because this VM cannot push to `SysAdminDoc/SwiftFloris`.
+- `:benchmark` is active again and has committed SM-S938B / Android 16 first-render, first-suggestion, dictionary-load/preload, candidate-row recomposition, theme-switch, and backup/restore evidence in `docs/benchmark-results/`. The `:lib:native` placeholder was dropped in v1.8.185; embedded native runtimes (Whisper, librime, LiteRT-LM, Bergamot) ship as out-of-tree signed addon APKs per the `AddonContract.Action.REGISTER_*` enrolment contract rather than as a `:lib:native` module in the base APK.
+- Roborazzi is now externally unblocked, baseline PNGs are committed, and `.github/workflows/android.yml` treats `:app:verifyRoborazziDebug` as a hard gate. Future visual work should add focused baselines instead of softening CI.
+- `FlorisLocale.kt` still hard-codes capitalization/autospace support tables; replace with ICU/script metadata before the next language-expansion wave.
+- ✅ Honeycomb renderer components are wired into the production character-layout
+  path as of v1.8.79. Remaining layout debt: `TextKeyboardLayout` still carries
+  the unstable `constraints.maxWidth`/rotation comment and needs additional
+  visual/device baselines inside the now-hard Roborazzi gate.
+- `LanguagePackExtension` and `HanShapeBasedLanguageProvider` still carry multi-type/loading/locking TODO/FIXME notes that matter once external dictionary-pack addons move past descriptors.
+- ✅ `FlorisEmojiCompat` GMS/no-GMS audit closed 2026-05-16: explicit `EmojiCompatLoadState` (Loading/Loaded/Failed/Unavailable) sealed class plus `loadStateFlow(replaceAll)` make the GMS-less fallback path part of the public contract; the existing palette null-check + `Paint.hasGlyph` fallback already covered the case but is now formally documented. Issue #1 emoji-selection crash triage still pending (needs repro trace; the audit found no non-null-safe `EmojiCompat` call site, so the crash root cause is elsewhere — likely the palette grid recomposition path).
+
+**CI / distribution today:** CI runs wrapper validation, no-network verification, root crash/replay log guard, unit tests, lint, debug assembly, 16 KB alignment guard, reproducible-release-APK self-check, artifact uploads, dependency review, and OSV scan. Release workflow can sign with secrets and publish artifacts, but the public GitHub Release stream is stale relative to tags. Obtainium setup is documented; F-Droid metadata submission and external rebuild result remain pending.
+
+---
+
+## 3. Recently Shipped (v1.5.0 → v1.8.84, reconciled from prior ROADMAP v4.0 + release-note commits)
+
+| Version | Date | Headline | Source |
+|---|---|---|---|
+| v1.8.84 | 2026-05-17 | Next-10.3d Settings → Addons read-only status surface. Added `AddonsSettingsScreen`, Home route, deep link, source strings, accepted/rejected registry rows, pinned-count status, local install guidance, and manual rescan through `AddonRegistryStartup`. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.84` |
+| v1.8.83 | 2026-05-17 | Next-10.3c addon registry startup wiring. `FlorisImeService` now scans installed addon manifests, reconciles through `AddonRegistryStartup`, publishes `AddonRegistryStore`, persists canonical pins when first-seen addons or malformed stored lines change the trust set, and tolerates scan failures without aborting IME startup. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.83` |
+| v1.8.82 | 2026-05-17 | Next-10.3b addon signing-pin persistence. Added `AddonSigningPinSet` for newline-string `packageName=SHA-256` persistence with malformed-line tolerance, deterministic encoding, first-seen preservation, and `AddonRegistry` codec round-trip helpers. Added `prefs.addon.signingCertPins` as the durable JetPref key later consumed by v1.8.83 startup wiring and v1.8.84 Settings status UI. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.82` |
+| v1.8.81 | 2026-05-17 | Next-10.3a addon catalog foundation. Added `AddonRegistry` for live addon state, signing-certificate pin reconciliation, package-name hijack rejection, deterministic addon lookups, and stale-pin retention. Added `DictionaryPackCatalog` to validate enrolled dictionary-pack descriptors, reject missing / malformed / future-schema JSON, expose language lookups, and produce `AddonProvenanceReport`s for Settings UI. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.81` |
+| v1.8.80 | 2026-05-17 | Tier-3 #36 SQLCipher provider migration plan. Added `docs/SQLCIPHER_PROVIDER_MIGRATION.md`, updated `docs/SECURITY.md`, and corrected the research security review: SQLCipher Android Community 4.16.0 still uses LibTomCrypt, while OpenSSL remains the documented source-build escape hatch. No runtime dependency changed; the plan now records migration triggers, proof-of-concept steps, 16 KB page-size gates, `PersonalDictionaryEncryptionTest` expectations, and rollback rules. | `CHANGELOG.md#v1.8.80` |
+| v1.8.79 | 2026-05-17 | Tier-3 #35 honeycomb hex layout wire-up. Registered the bundled `honeycomb` character layout in `extension.json`, added `TextKeyboardLayoutStyle.Honeycomb`, taught `LayoutManager` to select it for the honeycomb layout id, positioned real `TextKey` instances through `TextKeyboard.layoutHoneycomb(...)`, clipped production Snygg key backdrops to `HoneycombHexShape`, and added hex-aware touch hit testing plus `TextKeyboardHoneycombLayoutTest`. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.79` |
+| v1.8.78 | 2026-05-17 | Tier-3 #34 Keyman `.kmp` package import foundation. Added `KeymanPackageParser`, package metadata models, safe ZIP entry validation, `kmp.json` normalization, LDML XML extraction through `KeymanLdmlParser`, package-status classification for LDML-ready / lexical-model-only / mixed / metadata-only / compiled-engine-required packages, and `KeymanPackageParserTest`. Compiled `.kmx` / `.js` execution remains explicitly outside `:app` until an addon/runtime path lands. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.78` |
+| v1.8.77 | 2026-05-17 | Next-9.5 user-imported sticker folder. Added `prefs.sticker.userFolderUri`, Settings → Emoji & stickers SAF tree picker / clear action, `UserStickerRepository` for local PNG / WebP / JPEG / GIF document enumeration, imported-pack preview decoding in `StickerPaletteView`, and `StickerMediaProvider` proxy reads for user sticker content URIs. New `UserStickerRepositoryTest` covers supported-file filtering, extension fallback, empty-folder handling, caps, and duplicate URI collapse. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.77` |
+| v1.8.76 | 2026-05-17 | Next-6.4b hardware-keyboard runtime mapper. Added `HardwareKeyboardRuntimeMapper`, device-id layout binding, detached-device pruning via `InputManager.getInputDeviceIds()`, direct scan/key-code resolution, PC set-1 KLC fallbacks, macOS ANSI virtual-key fallbacks, source-name fallback, and `KeyboardManager.onHardwareKeyDown(...)` dispatch that commits mapped printable characters through the normal editor path before built-in Space / Enter / Shift handling. New `HardwareKeyboardRuntimeMapperTest` covers fallbacks, direct precedence, Ctrl/Meta suppression, and prune behavior. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.76` |
+| v1.8.75 | 2026-05-17 | Next-6.4a macOS `.keylayout` parser. Added `MacKeylayoutParser`, an XXE-hardened XML importer that selects the referenced `<keyMapSet>`, maps normal / Shift / Option-as-AltGr / Shift+Option slots through `<modifierMap>`, captures action-backed dead-key outputs, and returns `HardwareKeyboardLayout.Empty` for blank, malformed, non-keyboard, or DOCTYPE-bearing XML. New `MacKeylayoutParserTest` covers metadata, modifier slots, map-set selection, fallback mapping, dead keys, malformed XML, and XXE rejection. Gradle verification remains blocked on this VM by missing Java. | `CHANGELOG.md#v1.8.75` |
+| v1.8.74 | 2026-05-17 | Bump-batch C. Updated Android Gradle Plugin `9.0.0` → `9.2.1` and Compose BOM `2026.03.01` → `2026.05.00` after checking Google Maven metadata, Android Studio Panda 4 Patch 1 notes, Compose release metadata, OSV querybatch, and R8 keepattributes rules. AGP `9.3.0-alpha05` exists but is preview and intentionally skipped. No app code, permissions, network surface, or runtime behavior changed. | `CHANGELOG.md#v1.8.74` |
+| v1.8.73 | 2026-05-17 | Repository hygiene guardrail. Moved five local root JVM crash/replay logs into `.ai/local-crash-logs/2026-05-16/`, added `scripts/check-no-root-crash-logs.sh`, and wired it into `.github/workflows/android.yml` before Java / Gradle setup so committed root `hs_err_pid*.log` / `replay_pid*.log` files fail CI quickly. No app code, permissions, dependencies, or runtime behavior changed. | `CHANGELOG.md#v1.8.73` |
+| v1.8.72 | 2026-05-17 | Roadmap correction for HeliBoard / NLnet slip-base-case planning. Re-checked HeliBoard `#2226`, releases, the NLnet project page, and the gesture-data contribution wiki: latest release is still `v3.9`, the open-glide issue remains open, and the public workflow still depends on collecting gesture data with the existing proprietary library. N1.1 is now an additive future integration track; SwiftFloris's `StatisticalGlideTypingClassifier` remains the production glide path until a permissive open library and dataset are available. No app code, permissions, dependencies, or runtime behavior changed. | `CHANGELOG.md#v1.8.72` |
+| v1.8.71 | 2026-05-17 | Bump-batch B. Updated Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1` after checking Maven Central / Gradle Plugin Portal metadata and OSV querybatch. This prepares the visual/JVM test harness for the later AGP 9.2.x + Compose BOM 2026.05.00 batch. No app code, permissions, network surface, or runtime behavior changed. | `CHANGELOG.md#v1.8.71` |
+| v1.8.70 | 2026-05-17 | README migration-window follow-up. Added Samsung / Grammarly users callout: One UI 7+ Galaxy AI Writing Assist can remain a separate Samsung selected-text layer while SwiftFloris stays the default no-network keyboard, and Grammarly for Android can replace the old Grammarly Keyboard without SwiftFloris sending text to Grammarly. No app code, permissions, dependencies, or runtime behavior changed. | `CHANGELOG.md#v1.8.70` |
+| v1.8.69 | 2026-05-17 | Bump-batch A. Updated `kotlinx-coroutines` 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4, and AboutLibraries 14.0.1 → stable 14.2.0 after re-checking Maven Central / Gradle Plugin Portal metadata. AboutLibraries 15.0.0-b01 exists but is beta and intentionally skipped. No app code, permissions, network surface, or runtime feature behavior changed. | `CHANGELOG.md#v1.8.69` |
+| v1.8.68 | 2026-05-17 | N7.6 Tink / AndroidKeystore migration. Removed `androidx.security:security-crypto:1.1.0-alpha06`, added `com.google.crypto.tink:tink-android:1.21.0`, and introduced `TinkStringPreferenceCrypto` for AndroidKeystore-held AES-256-GCM wrapping. SQLCipher passphrase storage moved to `sqlcipher_passphrase_tink_v1`; legacy AndroidX encrypted-preference passphrases migrate once. The parallel legacy clipboard-history Tink store from this slice was later retired in v1.8.121 after the live Room path was confirmed canonical. | `CHANGELOG.md#v1.8.68` |
+| v1.8.67 | 2026-05-17 | N12.5 reproducible-build self-verification CI. Added `.github/workflows/reproducible-build.yml` and `scripts/verify-reproducible-apk.sh`: two detached clean worktrees at the same commit, submodule update, cache-disabled `clean :app:assembleRelease` in both trees, byte-for-byte APK comparison, and per-entry SHA-256 manifests on drift so maintainers can separate payload drift from signing / ZIP metadata drift. | `CHANGELOG.md#v1.8.67` |
+| v1.8.66 | 2026-05-17 | N8.7 Article 50 transparency surface. Setup now starts with a keyboard-disabled-safe **Review local AI features** disclosure step backed by `prefs.internal.aiFeaturesExplainerSeen`; Settings → About includes **AI features in this keyboard** with the same local-only/no-account/no-telemetry posture, per-surface disclosures for next-word / glide / voice / translation / smart-compose, and links to `docs/PRIVACY_AND_AI.md`, `docs/THREAT_MODEL.md`, and `PROJECT_CONTEXT.md`. `AiFeatureDisclosureCatalogTest` pins the first-run surface list. | `CHANGELOG.md#v1.8.66` |
+| v1.8.65 | 2026-05-17 | Phase A3 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: encrypted personal-dictionary export/import wiring. Added **Export encrypted** in Settings → Personal dictionary, passphrase + confirmation dialog, `.sfexp` create-document flow, direct encrypt-then-write via `EncryptedDictionaryExport`, `SFEXP1` import sniffing, passphrase decrypt, and decrypted SwiftFloris combined-list routing through `DictionaryImporter` + `PersonalDictionaryImportBatch` so encrypted imports keep the summary/rollback affordance. `UserDictionaryCombinedListCodec` now centralizes the legacy semicolon key-value format. | `CHANGELOG.md#v1.8.65` |
+| v1.8.64 | 2026-05-17 | Phase D1 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: calendar quick-insert. Added `QuickAction.InsertCalendarEvent`, `CalendarQuickInsertManager`, `CalendarAgendaReader` over `CalendarContract.Instances`, `CalendarPermissionActivity` for explicit `READ_CALENDAR` runtime grant, and an IME-local `CalendarAgendaPickerPanel` that inserts selected event title + date/time. Existing and new smartbar arrangements expose the action from the hidden editor pool. | `CHANGELOG.md#v1.8.64` |
+| v1.8.63 | 2026-05-17 | Phase C3 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: bundled theme parity. Added `swiftkey_high_contrast` with explicit key/popup/inline borders and WCAG AAA Snygg-token coverage, plus `aurora_animated` with a runtime GenericShape aurora background gated by `LocalActiveThemeName` and frozen when Android reduced-motion is enabled. Theme extension manifest 0.4.0 now registers 21 bundled themes. | `CHANGELOG.md#v1.8.63` |
+| v1.8.62 | 2026-05-17 | Phase C1 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: split-keyboard renderer wire-up. New `TextKeyboardSplitLayout` gates split rendering to viable character-mode `Fixed.SPLIT` windows, clamps the active gutter, and pre-shrinks the base `TextKeyboard` layout before `SplitGutterPostPass` shifts the right half back into the final container. `ImeWindowController` demotes persisted split configs on narrow roots. `TextKeyboard.isPointInSplitGutter` blocks nearest-key rescue in the generated gutter. | `CHANGELOG.md#v1.8.62` |
+| v1.8.61 | 2026-05-17 | Phase B2 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: quick-prediction-insert threshold tuning. `SwiftKeyCandidateRanker` now gates blank-current-word prediction insertion behind a configurable weighted-confidence floor (`confidence * recency-weight >= 0.40` by default) and only allows the trigger at cold start, after `.`, `!`, `?`, or after newline. `NlpManager.shouldSuppressPlainSpaceForPrediction()` now delegates to the same ranker path, so rejected predictions no longer swallow a normal space. Property-style coverage sweeps context × confidence × recency. | `CHANGELOG.md#v1.8.61` |
+| v1.8.60 | 2026-05-17 | Phase B1 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: multilingual sentence-position priors seed. `ColdStartNextWordPriors` now supports localized sentence-start, one-word, two-word, and three-word priors for EN/CS/DE/ES/FR/IT/PT. Added top-1,000 `rspeer/wordfreq` Zipf seed overlays for CS/DE/ES/FR/IT/PT and attribution in `NOTICE`. | `CHANGELOG.md#v1.8.60` |
+| v1.8.59 | 2026-05-17 | Phase D3 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: typing-stats accuracy-delta number. `CorrectionOutcomePriors` now stores bounded weekly `#week` metadata rows beside the existing accepted/rejected pair priors, and `accuracyDelta()` compares current-week accepted corrections with the previous week. Settings → Typing → Typing stats surfaces "Accepted corrections this week" with no-data, no-baseline, fewer, more, and unchanged summaries. No new permissions, dependencies, or network surfaces. | `CHANGELOG.md#v1.8.59` |
+| v1.8.58 | 2026-05-17 | Phase D2 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: generic task-creation quick action (`QuickAction.InsertTask`) — on-device replacement for SwiftKey's Microsoft-To-Do tile. Uses `Intent.ACTION_SEND` + `Intent.createChooser` so any installed task / note app (Tasks.org, OpenTasks, Google Tasks, Joplin, etc.) surfaces without hard-coded per-app contracts. `SensitiveFieldGuard` blocks sensitive fields. `FLAG_ACTIVITY_NEW_TASK` set; ActivityNotFoundException falls back to install-helper Toast. Registered in `QuickActionJsonConfig` polymorphic codec. | `CHANGELOG.md#v1.8.58` |
+| v1.8.57 | 2026-05-17 | Phase C2 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: SwiftKey "Modes → Arrow keys" parity. New `BottomRowPreset.Navigation` selectable in Settings → Keyboard → Bottom-row preset surfaces ARROW_LEFT / ARROW_UP / SPACE / ARROW_DOWN / ARROW_RIGHT / ENTER. 4 new `BottomRowKey` enum values map to existing `TextKeyData.ARROW_*` constants — runtime cursor-movement path already wired. 3 new tests pin key-code ordering, JSON round-trip, registry inclusion. | `CHANGELOG.md#v1.8.57` |
+| v1.8.56 | 2026-05-17 | Phase B4 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: same-sentence language-switch hardening. New `TrailingContextLanguageBlend` helper replaces the MAX-over-window scoring in `NlpManager.candidateSignals` with a geometric-decay weighted average (decay 0.7 per step back) so a single early trailing word in any locale no longer locks in the signal — mid-sentence switches transition smoothly. 8 new tests covering empty / single / decay extremes / regression-vs-MAX. | `CHANGELOG.md#v1.8.56` |
+| v1.8.55 | 2026-05-17 | Phase B3 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: shared-spelling bilingual handling. Asymmetric `MultilingualTokenScorer` branch fires when typed is shared across ≥ 2 active locales AND candidate is recognised in only one → pushes language confidence to `SharedSpellingOneLocaleCandidateConfidence = 0.30`, sub-floor relative to the ranker's autocommit threshold (0.40), so spacebar refuses the one-language overwrite. Both-shared case keeps existing 0.52 dampening; literal protection unchanged. 2 new tests, existing test reframed. | `CHANGELOG.md#v1.8.55` |
+| v1.8.54 | 2026-05-17 | Phase A3 codec primitive of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: portable encrypted-blob envelope for personal-dictionary export. New `EncryptedDictionaryExport` uses AES-256-GCM + PBKDF2-HMAC-SHA-256 at OWASP-2025's 600 000-iteration count (iters baked into the 44-byte header). 16-byte salt + 12-byte nonce per export. Cryptographic-indistinguishability collapses wrong-passphrase + tampered-ciphertext to one `BAD_PASSPHRASE` reason. Header validation rejects oversized / truncated / unsupported-version blobs before touching the cipher. `isEncryptedEnvelope` byte-sniff predicate so the import flow only prompts for a passphrase when needed. 15 new tests. Settings UI wiring followed in v1.8.65. | `CHANGELOG.md#v1.8.54` |
+| v1.8.53 | 2026-05-17 | Phase A2 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`: post-import confirmation + rollback for the personal dictionary, plus the long-missing wiring of `DictionaryImporter` into the Settings UI. New pure-Kotlin `PersonalDictionaryImportBatch` orchestrator + `PersonalDictionaryImportResult` carrier + `PersonalDictionaryImportSummaryDialog` Compose surface. Snapshot-and-diff identifies rollback-eligible rows; in-place updates intentionally NOT rolled back. Idempotent rollback tolerates manual delete between import and undo. Modular `DictionaryImporter` tried first; legacy `importCombinedList` is now the fallback only on `DictionaryImportException`. 14 new strings, 10 new tests. | `CHANGELOG.md#v1.8.53` |
+| v1.8.52 | 2026-05-17 | N16.1 SwiftKey-migration outreach push (Phase A1 of `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`). README gains a `SwiftKey migration` Shields badge captioned "window closes 2026-05-31" in red, plus a banner block above the Highlights table walking visitors through the two no-cloud migration paths. Highlights table version bump, "Recent releases" catch-up to v1.8.52, emoji-crash troubleshooting updated to reference v1.8.50 fix. Doc-only slice; marketing side (Reddit + GH-release pin) stays open. | `CHANGELOG.md#v1.8.52` |
+| v1.8.51 | 2026-05-17 | N14.3 + N14.4 dependency-pin audit. Compose BOM `2026.03.01` audited against upstream — on the current patch line, no out-of-band bump required. Gradle wrapper `9.4.1` + SHA-256 audited — verify path intact, reproducible-builds contract still holds. `docs/DEPENDENCY_TRIAGE.md` gains an Audit log table pinning each audit's date / pin / conclusion / next-action gate. Doc-only slice; version-bumps themselves remain separate slices per cadence policy. | `CHANGELOG.md#v1.8.51` |
+| v1.8.50 | 2026-05-17 | N17.1 emoji-picker crash triage. Root cause: `Paint.hasGlyph("")` throws `IllegalArgumentException` and aborts the palette render whenever an empty-value `Emoji` reaches the initial filter. Two leak paths fixed: `Emoji.ValueOnlySerializer` round-trips `""` JSON entries (filter at consumer) and `EmojiData.loadEmojiDataMap` accepted blank-value rows (skip at parse). `EmojiPaletteView` now skips empty values before `getEmojiMatch` / `hasGlyph`; history-mapping filters empty entries before grid construction. New `EmojiHistoryEmptyValueTest` pins the contract. | `CHANGELOG.md#v1.8.50` |
+| v1.8.49 | 2026-05-17 | N15.3 Smart Edit voice REMOVE_ITEM_FROM_LIST. New `VoiceCommandAction.REMOVE_ITEM_FROM_LIST` + `argument: String?` on `VoiceCommandMatch`. `VoiceCommandParser.parameterisedMatch(...)` recognises seven patterns (`no longer want <item>`, `no longer need <item>`, `remove/delete <item> from the list`/`from list`, `scratch <item>`); confidence 1.0 on exact match; conservative stopword guard rejects `scratch the` / `remove the from the list`. `StreamingVoiceTranscriptBuffer.removeCommittedItem(item)` excises whole-phrase matches across committed segments, drops dangling connectors, returns `RemoveCommittedItemResult`. `EditorVoiceCommandActions.removeItemFromList(item)` uses the buffer diff to safely select + replace the previously-committed slice in the editor. New `ITEM_NOT_FOUND` + `EDITOR_OUT_OF_SYNC` failure reasons. `REMOVE_ITEM_FROM_LIST` filtered out of the custom-command picker (argument-only). 19 new tests. | `CHANGELOG.md#v1.8.49` |
+| v1.8.48 | 2026-05-17 | Adversarial-input + lifecycle hardening pass. `DictionaryImporter` strips UTF-8 BOM before format detection, the CSV header heuristic no longer drops a real `word,…` entry, `parseGboardXml` decodes XML numeric character references, `parseZip` bounds cumulative bytes across the archive. `AndroidMcpClient` payload cap measures UTF-8 bytes (not char length), bounds the daemon's response size with the same cap, and validates correlation-id echo. `McpServiceConnectionManager.onBindingDied` is bounded to three rebind attempts per daemon. `TaskerActionDispatcher.INSERT_TEXT` + `INSERT_CLIP` now route through `SensitiveFieldGuard`. `FlorisImeService.onDestroy` runs cleanup before `super.onDestroy()`. `VoiceModelInstallStore` sweeps stale staging / backup dirs from crashed installs. `ZipUtils.unzip` logs skip reasons and defers `dstFile.delete()` until after the output stream closes. `PersonalBigramStore.totalEntryCount` excludes leftover `.tsv.tmp` files. `UserDictionary` cursor cleanup switched to `cursor.use { … }`. | `CHANGELOG.md#v1.8.48` |
+| v1.8.47 | 2026-05-16 | N1.4 replay/benchmark harness. `SwipeTraceReplay` maps normalized imported trace samples into `GlideTypingGesture.Detector.PointerData`, and `SwipeTraceBenchmark.evaluate(...)` reports top-1/top-3/top-N accuracy, failures, latency, capped misses, and Markdown summaries. The real FUTO corpus download + device-side comparison numbers remain pending in `docs/BENCHMARKS.md`. | `SwipeTraceReplay.kt`; `SwipeTraceBenchmark.kt`; `SwipeTraceReplayTest.kt`; `SwipeTraceBenchmarkTest.kt`; `docs/BENCHMARKS.md` |
+| v1.8.46 | 2026-05-16 | N16.2 SwiftKey `swiftkey-cloud.json` parser added to `DictionaryImporter` ahead of the 2026-05-31 `data.swiftkey.com` retirement. New `DictionaryImportFormat.JSON` value + tolerant `parseSwiftKeyJson(json)` walking every nested array/object for `word`/`text`/`string` carriers. Auto-routed by both standalone-stream and zip-entry import paths. 10 new tests. | `DictionaryImporter.kt`; `DictionaryImporterTest.kt`; `gradle.properties` |
+| v1.8.45 | 2026-05-16 | N13.2 IME-visibility restore across configuration changes for the Android 17 (API 37) behavior change. `FlorisAppActivity.onSaveInstanceState` snapshots the live `WindowInsetsCompat.Type.ime()` visibility into a new `SAVED_KEY_IME_VISIBLE` bundle key; `FlorisAppActivity.onCreate` posts a `WindowInsetsControllerCompat.show(Type.ime())` when the saved bundle remembers the IME was visible. Idempotent on pre-Android-17; forward-compatible with the API-37 targetSdk bump. | `CHANGELOG.md#v1.8.45` |
+| v1.8.44 | 2026-05-16 | N13.3 long-press popup guard on password fields. New pure `PasswordFieldPopupGate.shouldSuppressPopups(activeVariation)` returns true for `KeyVariation.PASSWORD` (Android `TYPE_TEXT_VARIATION_PASSWORD` / `_VISIBLE_PASSWORD` / `_WEB_PASSWORD` + `TYPE_NUMBER_VARIATION_PASSWORD` all collapse to that single bucket). `TextKeyboardLayout` now consults the gate in `isSuitableForBasicPopup` + `isSuitableForExtendedPopup` so long-press popups no-op on every password variation regardless of input source. New `rememberUpdatedState(evaluator)` capture keeps the predicate reading the live evaluator. 6 new `PasswordFieldPopupGateTest` cases. | `CHANGELOG.md#v1.8.44` |
+| v1.8.43 | 2026-05-16 | N14.1 Roborazzi plugin unblocked. `gradle/libs.versions.toml` `roborazzi = "1.39.0"` → `"1.55.0"` (Jan 2026 line, AGP 9 support via PR #782) + `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. New "Roborazzi visual-regression verify" step in `.github/workflows/android.yml` runs `:app:verifyRoborazziDebug` on every push/PR; the initial bootstrap `continue-on-error` guard was removed in v1.8.123 once baselines were committed. | `CHANGELOG.md#v1.8.43` |
+| v1.8.42 | 2026-05-16 | N14.2 Kotlin `2.3.20` → `2.3.21` bug-fix bump per [KOTLIN-2321] (Wasm IC, ObjC protocol metaclass, AGP 9.1 R8 artifact-clear regression). `gradle/libs.versions.toml` `[versions] kotlin` only — every Kotlin Gradle plugin + `kotlin-reflect` + `kotlin-test-junit5` rides `version.ref = "kotlin"` so the bump propagates. `docs/REPRODUCIBLE_BUILDS.md` + ROADMAP §2 stack line bumped. | `CHANGELOG.md#v1.8.42` |
+| v1.8.41 | 2026-05-16 | N15.2 auto-return to the letter keyboard after the apostrophe commits from the symbols panel. New pure `ApostropheReturnGate.shouldReturnToCharacters(committedText, currentMode, autoReturnEnabled)` consulted by `KeyboardManager.onInputKeyUp` right after `editorInstance.commitChar(text)`; gated on `prefs.keyboard.autoReturnAfterApostrophe` (default **on**) surfaced as Settings → Keyboard → "Return to letters after apostrophe". Trigger: ASCII `'` U+0027 only, only in SYMBOLS / SYMBOLS2 (NUMERIC family unaffected). 8 new `ApostropheReturnGateTest` cases. | `CHANGELOG.md#v1.8.41` |
+| v1.8.40 | 2026-05-16 | L7.6b per-daemon enable/disable for the MCP bridge. `prefs.mcp.disabledDaemonPackages` newline-separated codec (`DisabledDaemonSet.parse/encode/add/remove/contains`); `McpDispatchRouter.isDaemonDisabled` short-circuit after tool resolution but before `client.callTool`. Settings → MCP screen renders a switch per daemon; row icon swaps PlayCircleOutline ↔ Block; status row reads "M/N enabled". 13 codec tests + 2 router gating tests. **998 unit tests** at HEAD, 0 failures. | `CHANGELOG.md#v1.8.40` |
+| v1.8.39 | 2026-05-16 | L7.6 Settings → MCP daemon bridge screen. Read-only listing of every bound daemon with protocol version + tool count + tool names. Status group reads "no daemons installed" / "bound to N daemons" + explicit local-only callout. `Routes.Settings.Mcp` deeplink; HomeScreen entry between Sync + Backup. 8 new `settings__mcp__*` string resources with `{count}` / `{version}` placeholders. **982 unit tests**. | `CHANGELOG.md#v1.8.39` |
+| v1.8.38 | 2026-05-16 | L7.5b end-to-end MCP bridge wired into `FlorisImeService`. `McpServiceLifecycle.start(appContext)` (production factory) + `startWithDaemons(daemons)` (test seam) + `stop()` (idempotent). `onCreate` runs discovery + binds every daemon + installs `AndroidMcpClient` into `McpClientRegistry`; `onDestroy` unbinds + restores `NoOpMcpClient`. **982 unit tests**. | `CHANGELOG.md#v1.8.38` |
+| v1.8.37 | 2026-05-16 | L7.5 `McpAndroidDiscoverer` PackageManager wrapper. `runDiscovery(context)` queries `ACTION_BIND_MCP_DAEMON` services with `GET_META_DATA`, lifts via `serviceAttrsFrom(ResolveInfo)` (Android-bound), shapes via `shapeCandidate(ServiceAttrs, catalogLookup)` (pure Kotlin → tested without Robolectric). Catalog read via `createPackageContext`. **973 unit tests**. | `CHANGELOG.md#v1.8.37` |
+| v1.8.36 | 2026-05-16 | L7.4b `McpServiceConnectionManager` per-daemon `bindService` lifecycle. `bind/unbind/shutdown/binderFor` surface; pure-Kotlin `BindingTable` nested class drives state-machine transitions; per-daemon `LifecycleConnection` handles `onServiceConnected`/`onServiceDisconnected`/`onBindingDied` (rebind per Android contract)/`onNullBinding`. **963 unit tests**. | `CHANGELOG.md#v1.8.36` |
+| v1.8.35 | 2026-05-16 | L7.4 `IMcpDaemon.aidl` Binder surface + `AndroidMcpClient`. Two-method AIDL (`listToolNames()` + `invoke(String requestJson)`); payload-typed as String so daemons in any JVM language interop without kotlinx.serialization. Client translates 5 failure modes (oversized payload / missing binder / DeadObjectException / RemoteException / non-JSON response) into `McpToolCallResponse` shape. Enabled `buildFeatures.aidl`. **954 unit tests**. | `CHANGELOG.md#v1.8.35` |
+| v1.8.34 | 2026-05-16 | Next-12.1 Macrobenchmark trace instrumentation wired into 6 production hot paths: `swiftfloris.ime.firstRender` (`FlorisImeService.onCreateInputView`), `swiftfloris.nlp.suggest` (`LatinLanguageProvider.suggest` — impl split), `swiftfloris.smartbar.candidates.recompose` (`CandidatesRow` body — Compose forbids try/finally so sequential begin/end), `swiftfloris.theme.switch` (`ThemeManager.updateActiveTheme` — impl split), `swiftfloris.dict.load` (`loadSpecificDictionary` — impl split), `swiftfloris.nlp.symspell.build` (both lazy index inits). Flipped `testOptions.unitTests.isReturnDefaultValues=true`. **945 unit tests**. | `CHANGELOG.md#v1.8.34` |
+| v1.8.33 | 2026-05-16 | L9.2 `HoneycombLayoutLoader` bridges `honeycomb.json` → `HoneycombKeyboardRow`. kotlinx.serialization parser returns `List<List<String>>` of character-key labels; filters modifier / system_gui / enter_editing keys + known modifier-word set (`shift`/`delete`/`space`/`enter`/`view_*`); returns empty list on malformed input (fail-safe). 8 Kotest cases. **945 unit tests**. | `CHANGELOG.md#v1.8.33` |
+| v1.8.32 | 2026-05-16 | L9.2 `HoneycombHexButton` + `HoneycombKeyboardRow` Compose composables. Button: hex-clipped backdrop, `detectTapGestures` pressed-state, onTap/onLongPress. Row: absolute-positioned hexagonal tessellation via `Box + offset` (row stride 1.5r / column stride √3·r / odd-row half offset), takes `List<List<String>>` row labels + per-key `(row, col, label)` tap callback. **937 unit tests**. | `CHANGELOG.md#v1.8.32` |
+| v1.8.31 | 2026-05-16 | L9.2 `HoneycombHexShape` Compose `Shape`. `Outline.Generic(buildPath(size))` returns flat-top hexagon inscribed in caller bounds; `radiusFor(size) = min(width/2, height/√3)`; `verticesFor(size)` returns six (x,y) pairs clockwise from left; `centerOf(size)`. 6 geometry tests + path-output test deferred to Robolectric (Compose Path requires `android.graphics.Path`). | `CHANGELOG.md#v1.8.31` |
+| v1.8.30 | 2026-05-16 | Settings → User Dictionary edits now invalidate the overlay. `DictionaryManager.rebuildOverlay(locale)` (idempotent: clear + re-hydrate). `UserDictionaryScreen` calls it after every DAO insert/update/delete so manual edits take effect on the next keystroke without IME restart. | `CHANGELOG.md#v1.8.30` |
+| v1.8.29 | 2026-05-16 | Next-9.4a `EmojiPaletteView` pinned-groups chip row wired. `pinnedGroupsVersion` mutableIntStateOf bump on every `EmojiPinGroupStore` mutation; row only renders on `RECENTLY_USED` tab; tap → `keyboardManager.inputEventDispatcher.sendDownUp(Emoji)`. The placeholder long-press path was superseded by the v1.8.127 pin-to-group sheet. | `CHANGELOG.md#v1.8.29` |
+| v1.8.28 | 2026-05-16 | Overlay-typo autocorrect. `LatinDictionarySuggester.corrections(...)` adds `overlayEditDistanceCandidates(...)` running bounded Levenshtein over the in-memory user-dictionary overlay alongside SCOWL corrections. Typos of learned words now autocorrect to the learned form before the cap. `MaxTwoEditWordLength` cap matches the existing SCOWL behaviour. | `CHANGELOG.md#v1.8.28` |
+| v1.8.27 | 2026-05-16 | Second-commit cap for instant-remember. Frequency progression `245 → 250` (cap) reached at commit #2 (was #3); `INCREMENT=5`, `MAX_FREQUENCY=250`. `hydrateLocale` uses `coerceIn(1, MAX_FREQUENCY)` (not floor at INITIAL) so old DAO entries from 80-init builds aren't mass-promoted on load. | `CHANGELOG.md#v1.8.27` |
+| v1.8.26 | 2026-05-16 | SwiftKey-style instant remember. `INITIAL_FREQUENCY` bumped 80 → 245 so a single commit places the learned word near the top of the SCOWL 0..255 frequency scale; `hasOverlayCompletion` demotes SCOWL edit-distance corrections (food/foot/fool when typing "foob") so the user's freshly-learned "foobar" wins on the very next keystroke. | `CHANGELOG.md#v1.8.26` |
+| v1.8.25 | 2026-05-16 | Typed-word memory wired into the suggester. Next-3 `UserDictionaryOverlay` (in-memory per-locale freq map; bumped on commit; lazy DAO hydration). `DictionaryManager.learnWord`/`forgetWord` update overlay alongside DAO. `LatinDictionarySuggester` merges overlay prefix-matches with SCOWL completions; ranks via `max(scowl, overlay)`; overlay-known words skip corrections. `spell()` treats overlay-known words as valid. 925 unit tests, 0 failures. | `CHANGELOG.md#v1.8.25` |
+| v1.8.24 | 2026-05-15 | Twenty-fourth autonomous slice. N7.6 `AddonInvocationAudit` (PII-safe in-process log; surface + outcome + categorical reason; FIFO ring at 256; in-memory only). N7.7 `NlpAddonHub` unified façade (SmartCompose + Translation + Mcp Routers + audit recording). L5.x Multani (U+11280 Saraiki merchant historical) + Masaram Gondi (U+11D00 1928 Unicode 10) + Gunjala Gondi (U+11D60 1928 Unicode 11). 63 scripts total. 908 unit tests, 0 failures. | `CHANGELOG.md#v1.8.24` |
+| v1.8.23 | 2026-05-15 | Twenty-third autonomous slice. L7.6 `McpDispatchRouter` (third sibling of SmartCompose + Translation routers; pipeline: guard → registry.findTool → McpClient.callTool; structured Response.Completed/Failed/Suppressed; no cache because tool calls are side-effecting; RegistryView.from() for test injection). L5.x Kaithi (U+11080 Bhojpuri/Maithili/Awadhi historical) + Mahajani (U+11150 north-Indian merchant accounting) + Khojki (U+11200 Khoja Muslim Sindh + Gujarat) historical Brahmic scripts. 60 scripts total. 897 unit tests, 0 failures. | `CHANGELOG.md#v1.8.23` |
+| v1.8.22 | 2026-05-15 | Twenty-second autonomous slice. L2.1f `TranslationRouter` (end-to-end pipeline: guard → detect → pack → tokenize → cache → translate → stitch; categorised Response.Translated / Response.Suppressed). L5.x Modi (U+11600 Marathi historical) + Sharada (U+11180 Sanskrit + Kashmiri historical) + Takri (U+11680 Dogri/Chambeali historical) Brahmic scripts. 57 scripts total. 886 unit tests, 0 failures. | `CHANGELOG.md#v1.8.22` |
+| v1.8.21 | 2026-05-15 | Twenty-first autonomous slice. L1.1e `SmartComposeResultFilter` (drop low-confidence + blank; normalise whitespace; de-dupe; sort descending; clamp; empty → NoSuggestion downgrade). L1.1f `SmartComposeRouter` (guard → truncate → cache → provider → filter pipeline; internal LRU; bypassCache for benchmarks; clearCache). L5.x Saurashtra (U+A880 Tamil Nadu) + Kayah Li (U+A900 Myanmar/Thailand) + Rejang (U+A930 Sumatra). 54 scripts total. 872 unit tests, 0 failures. | `CHANGELOG.md#v1.8.21` |
+| v1.8.20 | 2026-05-15 | Twentieth autonomous slice. L2.1e `TranslationLanguagePackManager` (atomic-snapshot bookkeeping for installed + available Bergamot pairs; preferredTargetLocale + defaultPairFor + downloadablePairs set-subtraction; de-dupes by pairKey). L5.x Wancho (U+1E2C0 Arunachal Pradesh Naga, Banwang Losu 2001) + Nyiakeng Puachue Hmong (U+1E100 Reverend Chervang Kong Vang 1980s) + Medefaidrin (U+16E40 Oberi Okaime Nigeria 1930). 51 scripts total. 853 unit tests, 0 failures. | `CHANGELOG.md#v1.8.20` |
+| v1.8.19 | 2026-05-15 | Nineteenth autonomous slice. L1.1d `SmartComposeContextWindow` (sentence-aware truncation; multi-script terminator snap; default 1024-char hard cap). L7.5 `McpTimeoutClient` sliding-window budget breaker (default 10s/60s; injectable `Clock`; totalDispatchMillis + breakerTrips diagnostics). L5.x Tagbanwa (U+1760 Palawan) + Buhid (U+1740 Mindoro Mangyan) + Baybayin (U+1700 pre-colonial Tagalog) Philippine Brahmic scripts. 48 scripts total. 842 unit tests, 0 failures. | `CHANGELOG.md#v1.8.19` |
+| v1.8.18 | 2026-05-15 | Eighteenth autonomous slice. N7 `OptInAddonDispatcher` (single chokepoint composing SmartComposeProvider + InlineTranslator + McpClient with the SensitiveFieldGuard short-circuit on text/visible/web password + numeric PIN + `IME_FLAG_NO_PERSONALIZED_LEARNING`). L2.1d `SentenceTokenizer` (sentence-boundary splitter for Bergamot per-sentence inference; `.` / `!` / `?` + Arabic / Devanagari / CJK / Ethiopic terminators; consecutive terminators collapse; `hasMultipleSentences` predicate). L5.x Soyombo (U+11A50 Zanabazar 17th c.) + Marchen (U+11C70 Bon liturgical) + Chakma (U+11100 Chittagong Hill Tracts). 45 scripts total. 826 unit tests, 0 failures. | `CHANGELOG.md#v1.8.18` |
+| v1.8.17 | 2026-05-15 | Seventeenth autonomous slice. L1.1c `SmartComposeCache` (LRU wrapping `SmartComposeProvider`, tuple-keyed by locale + editor package + maxCandidates + precedingText + composingPrefix; `NoSuggestion` never cached). N7 `SensitiveFieldGuard` privacy gate (text/visible/web password + numeric PIN + `IME_FLAG_NO_PERSONALIZED_LEARNING` suppress every opt-in addon; bitwise int probe — no Robolectric in tests; `reasonFor` diagnostic). L5.x Tifinagh (U+2D30 Berber/Amazigh alphabet) + Vithkuqi (U+10570 Unicode 14 Albanian alphabet) + Hanunoo (U+1720 Philippine Mangyan script). 42 scripts total. 806 unit tests, 0 failures. | `CHANGELOG.md#v1.8.17` |
+| v1.8.16 | 2026-05-15 | Sixteenth autonomous slice. L2.1b `TranslationCache` (LRU wrapping `InlineTranslator`, triple-keyed by sourceText + sourceLocale + targetLocale, Unavailable never cached). L2.1c `LanguageDetector` (script classifier: LATIN / CYRILLIC / GREEK / HEBREW / ARABIC / DEVANAGARI / BENGALI / CJK / THAI / UNKNOWN with letter-fraction confidence). L5.x Bassa Vah (U+16AD0 20th c. Liberian alphabet) + Mende Kikakui (U+1E800 RTL syllabary, Sierra Leone) + Pahawh Hmong (U+16B00 Shong Lue Yang 1959). 39 scripts total. 793 unit tests, 0 failures. | `CHANGELOG.md#v1.8.16` |
+| v1.8.15 | 2026-05-15 | Fifteenth autonomous slice. L4.8 `RtlTextPipeline` (five-step facade: Niqqud strip + Persian/Urdu normalise + Arabic shape + numeral convert + isNoOp predicate + ARABIC/PERSIAN_URDU/HEBREW default profiles). L7.4 `McpClient` facade + `NoOpMcpClient` fallback + `McpClientRegistry.setActive` pattern (mirrors SmartCompose/InlineTranslator registries). L5.x Caucasian Albanian (U+10530) + Elbasan (U+10500) + Vai West-African syllabary (U+A500). 36 scripts total. 774 unit tests, 0 failures. | `CHANGELOG.md#v1.8.15` |
+| v1.8.14 | 2026-05-15 | Fourteenth autonomous slice. L4.7 `VisualLogicalReorderer` (JVM-stdlib `java.text.Bidi` visual ↔ logical reorder with `needsReordering` predicate). L5.x Carian (U+102A0) + Lycian (U+10280) + Lydian (U+10920) ancient Anatolian scripts. 33 scripts total. 757 unit tests, 0 failures. | `CHANGELOG.md#v1.8.14` |
+| v1.8.13 | 2026-05-15 | Thirteenth autonomous slice. L7.3 MCP tool-call envelope (`McpToolCallRequest` + `McpToolCallResponse` + `McpErrorCode` enum with stable wire values + `McpEnvelopeCodec` round-trip). Next-3.1i `KenLmScoreCache` LRU score cache (LinkedHashMap access-order eviction at configurable capacity, hits/misses counters, unit-separator-keyed lookups). L5.x Phoenician (U+10900 RTL parent of Western alphabets) + Imperial Aramaic (U+10840 Achaemenid state script) + Avestan (U+10B00 Zoroastrian liturgical, true alphabet w/ separate vowels). 30 scripts total. 746 unit tests, 0 failures. | `CHANGELOG.md#v1.8.13` |
+| v1.8.12 | 2026-05-15 | Twelfth autonomous slice. L7.2 `McpDaemonDiscoverer` pure-Kotlin pipeline (DiscoveryCandidate → DaemonEntry; silently drops malformed candidates; safe placeholders for partial catalog). L4.6 `ArabicPersianNumeralConverter` (Western ↔ Arabic-Indic ↔ Persian/Urdu + normaliseToWestern + isAnyDigit). L5.x Samaritan (U+0800 RTL) + Mandaic (U+0840 RTL) + Old Permic (U+10350 supplementary plane). 27 scripts total. 728 unit tests, 0 failures. | `CHANGELOG.md#v1.8.12` |
+| v1.8.11 | 2026-05-15 | Eleventh autonomous slice. L7.1 `McpDaemonRegistry` (atomic-snapshot registry; DaemonKey/DaemonEntry/ResolvedTool data carriers; listAllTools + findTool cross-daemon resolver). L4.5 `YiddishBidiSegmenter` (Yiddish digraph block U+05F0..U+05F2 classified as HEBREW; `isYiddishDigraph` / `yiddishDigraphCount` predicates). L5.x Coptic (U+2C80) + Georgian Mkhedruli (33-letter alphabet) + Glagolitic (U+2C00 pre-Cyrillic Slavonic). 24 scripts total. 708 unit tests, 0 failures. | `CHANGELOG.md#v1.8.11` |
+| v1.8.10 | 2026-05-15 | Tenth autonomous slice. Next-3.1h `KenLmModelTypeDispatch` (sealed `KenLmScorer` facade — picks ProbingNavigator vs TrieNavigator from `modelType`). L6.x `TigrinyaSeraTransliterator` (qhe + xa series + labio-velars) layered on `GeezSeraTransliterator.transliterateWith` composition seam. L5.x Adlam (U+1E900, supplementary-plane — `buildIndicMappings` digit iterator fixed) + N'Ko (U+07C0) + Cherokee syllabary (U+13A0). 21 scripts total. 692 unit tests, 0 failures. | `CHANGELOG.md#v1.8.10` |
+| v1.8.9 | 2026-05-15 | Ninth autonomous slice. Next-3.1g `KenLmTrieNavigator` for TRIE / QUANT_TRIE model types: `KenLmVocabulary` + per-order `TrieOrderTable` joined into `lookup(history, tail)` + `score(history, tail)` mirroring standard backoff. L4.4 `HebrewBidiSegmenter` (HEBREW/LATIN/DIGITS/WHITESPACE/NEUTRAL classification, run segmentation, dominant-direction). L5.x Mongolian (U+1800) + Javanese (U+A980) + Sundanese (U+1B80) script tables — 18 scripts total. 675 unit tests, 0 failures. | `CHANGELOG.md#v1.8.9` |
+| v1.8.8 | 2026-05-15 | Eighth autonomous slice. Next-3.1e KenLM SeparatelyQuantize codec — per-order `KenLmQuantTable` (probability + backoff centroid arrays) + `KenLmQuantTableSet` (ordered table-bundle with highest-order-no-backoff invariant) + `parseTableSet(ByteBuffer, order, probBits, backoffBits)` reader. Next-3.1f `KenLmProbingNavigator` joins `KenLmVocabulary` + per-order `KenLmProbingHash` into a `lookup(history, tail)` + `score(history, tail)` facade honoring standard backoff (`logProb + Σ logBackoff(parent_context_of_skipped_order)`). L5.x Khmer (U+1780) + Thai (U+0E00) script tables — 15 scripts total. 658 unit tests, 0 failures. | `CHANGELOG.md#v1.8.8` |
+| v1.8.7 | 2026-05-15 | Seventh autonomous slice. Next-3.1d Bhiksha-encoded next-pointer decoder for KenLM TRIE/QUANT_TRIE (fixed-width low-bits arena + monotone high-bits bitmap + symmetric encode helper for fixtures + property tests). Next-9.4a `PinToGroupSheetState` presenter + `PinnedGroupsPaletteRow` Compose row + `PinnedGroupChip` data class — additive integration into EmojiPaletteView. L5.x three more Brahmic scripts: Burmese / Lao / Tibetan. Total transliteration coverage 13 scripts. 643 unit tests, 0 failures. | `CHANGELOG.md#v1.8.7` |
+| v1.8.6 | 2026-05-15 | Sixth autonomous slice. Next-3.1c KenLM probing-hash search arena reader (linear-probe + MurmurHash64A + 16-byte bucket layout + packKey helper). L4.3 HebrewNiqqudNormalizer (strip U+0591..U+05C7 marks + optional Geresh / Gershayim rewrite). L5.x three more Indic tables: Malayalam, Odia, Sinhala. Total Indic-script coverage 10 scripts. 620 unit tests, 0 failures. | `CHANGELOG.md#v1.8.6` |
+| v1.8.5 | 2026-05-15 | Fifth autonomous slice. P3-renderer final wire-up in `TextKeyboardLayout` (invokes `SplitGutterPostPass.apply` after `keyboard.layout`; split actually renders now in tablet landscape when toggle on). L1 debug-only `DebugSmartComposeProvider` (10-entry trigram lookup, reflection-gated, only in debug APK). Next-12.1 `docs/BENCHMARKS.md` template with trace-section naming and 8% regression threshold. L8.3 5 new LDML script fixtures (Khmer / Burmese / Tibetan / Lao / Sinhala). 601 unit tests, 0 failures. | `CHANGELOG.md#v1.8.5` |
+| v1.8.4 | 2026-05-15 | Fourth autonomous slice. L9.2 honeycomb hex tessellation (geometry math + layout JSON, flat-top hex with √3·r column stride + even-row half offset + point-in-hex hit-tester). Next-3.1b KenLM vocabulary string-arena parser (uint64 count + length + null-terminated UTF-8 tokens with 8M / 256 MB caps). L4.2 Nastaliq font scaffold (`NastaliqFontProvider` + `docs/FONTS.md` + graceful Naskh fallback). P3-renderer `SplitGutterPostPass.apply` — shifts the right half of every row by the gutter, unit-tested on 5+5 / 5+4 / 4+3 QWERTY canonical boundaries. 596 unit tests, 0 failures. | `CHANGELOG.md#v1.8.4` |
+| v1.8.3 | 2026-05-15 | **SwiftKey full-parity slice**. P1 Smart-Compose IME-side wire-up (`GhostTextSuggestionCandidate` + `NlpManager` ghost-text emit when a provider is bound) — invisible until the L1.1a addon ships. P2 `QuickAction.TranslateSelection` smartbar quick-action dispatching to `InlineTranslatorRegistry`; Toast fallback when no addon. P3 split-keyboard preference promoted to active `Fixed.SPLIT` mode by `ImeWindowController` when toggle is on. 572 unit tests, 0 failures. | `CHANGELOG.md#v1.8.3` |
+| v1.8.2 | 2026-05-15 | Third autonomous pass — `.Xa` follow-up slice sweep. L4.1 Arabic connected-form shaper (Unicode FE70-FEFC) + L4.2 Persian/Urdu normaliser. L5.x six new Indic tables (Bengali / Tamil / Telugu / Gujarati / Gurmukhi / Kannada) bringing total Indic-script coverage to 7. L6.1 Amharic SERA keyboard layout. L8.1 LDML `<transforms>` parser + LdmlTransformEngine. L9.1 T9 layout JSON. L11a EspansoVarsExpander (date / clipboard / echo / random) + regex match. L12.1 WordStylesCanvasRenderer wired at app boot. Next-3.1a KenLmTrieReader (mmap). Next-5.2a SealedBoxCrypto (X25519 + AES-GCM via JVM stdlib). Next-7.2a SplitKeyboardLayoutCalculator. Next-12.2a Roborazzi launcher-Activity unblock — screenshot tests run now. **557 unit tests** (was 494). | `CHANGELOG.md#v1.8.2` |
+| v1.8.1 | 2026-05-15 | Second autonomous pass — L-tier scaffold sweep: L1 SmartComposeProvider + LiteRtModelDescriptor, L2 InlineTranslator + LanguagePairDescriptor, L3 CjkInputProvider + nine schemas, L4 RtlBidiResolver (uses JVM `java.text.Bidi`, real impl), L5 IndicTransliterator + full Hindi ITRANS→Devanagari table, L6 GeezSeraTransliterator (28 radicals × 7 vowel forms), L8 KeymanLdmlParser (XXE-hardened javax.xml), L10 PasskeyAdapter + PasskeyFieldDetector, L12 WordStylesRenderer + 4 BuiltIns. Next-9.4 finish (search-by-tag, EmojiPinGroupStore), Next-5.3 SyncChannel taxonomy + parser, L11.1 TaskerIntentContract (INSERT_TEXT / INSERT_CLIP / SWITCH_LAYOUT / TRIGGER_VOICE). **494 unit tests at HEAD** (491 pass, 3 @Ignore'd Roborazzi pending Next-12.2a). | `CHANGELOG.md#v1.8.1` |
+| v1.8.0 | 2026-05-15 | 11-item autonomous ROADMAP pass: Next-3.1 KenLM header reader, Next-3.2 Zipf overlay (rspeer/wordfreq), Next-4.2 stroke-recogniser facade (no-network friendly, ML Kit lives in opt-in addon), Next-5.1+5.2 CRDT personal-dict + QR pairing payload, Next-6.4 KLC parser, Next-7.2 split-keyboard window-mode foundation, Next-9.4 custom emoji tag store, Next-10.3 dictionary-pack descriptor + spec, Next-11.1 seven new M3 Expressive themes (Nord L/D, Tokyo Night, Dracula, Catppuccin Mocha, SwiftKey Pure M3E L/D), Next-12.2 Roborazzi screenshot regression scaffold, LATER tier L7 MCP contract + L9 audit + L11 Espanso parser. 416 unit tests (413 pass + 3 @Ignore'd pending Robolectric manifest fix). | `CHANGELOG.md#v1.8.0` |
+| v1.7.9 | 2026-05-14 | 19-item ROADMAP pass: N3.4 finish (popup polish), N8.3 finish (a11y labels + hint), Next-2.4 streaming voice commands, Next-3.3 capitalization-aware tests, Next-3.4 Remove-from-predictions overlay, Next-6.1/6.2 Gboard+FlorisBoard backup importer, Next-6.3 SwiftKey migration doc, Next-7.3 one-handed UX audit, Next-8.1+8.2 CODE smartbar profile, Next-9.1/9.2/9.3 inline-autofill verified+doc, Next-10.1+10.2 addon schema+enumerator, Next-11.2 springy dismiss, Next-11.3 per-app accent resolver, Next-12.3 property-based autocorrect tests, R8 fix for Tink missing classes | `CHANGELOG.md#v1.7.9` |
+| v1.7.8 | 2026-05-13 | Bilingual subtype presets, bottom row presets, per-app smartbar profiles, encrypted personal dictionary (SQLCipher), emoji search + bundled sticker packs, voice model tier selector, Vosk fallback routing, local voice model manager, multilingual autocommit straddle guard, Latin language identification, glide vocabulary bounding, dark-theme key contrast guard, distance-2 SymSpell, expanded multilingual context depth, multilingual autocorrect confidence gating, shared-bilingual literal protection, SwiftKey glide contraction rescue, expanded multi-word phrase repairs, bilingual language switches, three-word run-together repair, sentence-local SwiftKey context scoring, phrase priors fed into scoring | `CHANGELOG.md#v1.7.8` (release notes file rebadged to v1.7.9 after pre-existing v1.7.8 tag collision) |
+| v1.7.7 | 2026-05-13 | SwiftKey decoder scoring extracted; replay harness landed; adaptive touch persistence; SwiftKey quick-prediction insert; spacebar prediction alignment; touch evidence in decoder | `CHANGELOG.md#v1.7.7` |
+| v1.7.6 | 2026-05-13 | Three-round hardening audit: clipboard JSON corruption (kotlinx.serialization migration + synchronized writes), ThemeManager disk leak (cache sweep on init + per-evicted-theme cleanup), HanShapeBasedLanguageProvider race (@Volatile + synchronized(loadLock)), FlorisImeService.onDestroy unregisterReceiver crash, floris_user_dictionary removed from cloud-backup paths (kept device-transfer), profileable moved to debug+benchmark overlays, NlpManager.frequencyCache LruCache(5000), TypingStatsScreen double-query elimination, InputFeedbackController scope leak fix, FlorisCopyToClipboardActivity OOM fix, .gitignore Rust pattern narrowed, Settings polish (`cd770c`, `1e0e9d9`, `69def6a`) | `CHANGELOG.md#v1.7.6` |
+| v1.7.5 | 2026-05-09 | SwiftKey indistinguishability wave: N12.1 adaptive touch, N12.2 bigram next-word, N12.3 multilingual hot-switch, N12.4 Flow Through Space, N12.5 trigram, N12.6 stats screen, N12.7 cold-start bootstrap, N12.8 adaptive touch → glide, N12.9 sentence-case, N12.10 long-press to forget, Next-1.A SymSpell d1, Next-1.B d2 high-freq auto-commit | `CHANGELOG.md#v1.7.5` |
+| v1.7.4 | 2026-05-09 | N7.2 final piece (FLAG_SECURE on IME window in password fields), N6.3 partial (toolchain pins + `docs/REPRODUCIBLE_BUILDS.md`), N4.1 + N8.6 verified-already-shipped | `CHANGELOG.md#v1.7.4` |
+| v1.7.3 | 2026-05-09 | N6.2 release workflow + signing fallback, N8.1 48dp touch-target WCAG regression test (`TouchTargetWcagTest`), N8.3 TalkBack content descriptions per key | `CHANGELOG.md#v1.7.3` |
+| v1.7.2 | 2026-05-09 | N6.4 dep-CVE scan workflow, N3.3 SwiftKey haptic defaults (20ms / 60), N3.4 popup elevation 2dp→4dp; N5.2/N3.5/N8.5/N10.2 verified-already-shipped triage | `CHANGELOG.md#v1.7.2` |
+| v1.7.1 | 2026-05-09 | Same-day follow-up: N3.1 SwiftKey Pure themes, N5.3 keyboard-height slider, N7.3 personal-dict isolation regression test + threat-model doc, N8.4 reduced-motion guard, N8.5 switch-access verified, N9.1/N9.2 commitContent verified | `CHANGELOG.md#v1.7.1` |
+| v1.7.0 | 2026-05-09 | Correctness floor + privacy hardening + SwiftKey-parity polish (closes Now items N11/N7.1/N7.2/N7.5/N6.1/N6.5/N5.1/N5.4/N10.3/N3.2) | `CHANGELOG.md#v1.7.0` |
+| v1.6.0 | 2026-05-08 | Personal-learning dict + 117k SCOWL English + SwiftKey design tokens (#319DFF accent, Pure-theme palette, key dims) | `CHANGELOG.md#v1.6.0` |
+| v1.5.5 | 2026-05-09 | 130-entry contraction autocorrect (two-tier safety: SAFE / DICTIONARY_GATED); ALL-CAPS skip; sentence-start case preservation | `CHANGELOG.md#v1.5.5` |
+| v1.5.4 | 2026-05-08 | Auto-cap context check (rejects digits/abbreviations/ellipses); decoupled auto-cap from auto-space; pronoun substitution dictionary-gated; new `correction.autoCorrect` toggle | `CHANGELOG.md#v1.5.4` |
+| v1.5.3 | 2026-05-05 | Sentence-start pronoun autocorrect handling | `CHANGELOG.md#v1.5.3` |
+| v1.5.2 | 2026-05-04 | Latin autocorrect/suggestions fix; ANR hardening; lint cleanup | commits `f041be5`, `835d601` |
+| v1.5.0 | 2026-04 | FUTO Voice Input integration (replaced Google Speech Recognizer); voice command parser/executor; multi-lang gesture dictionaries; NLP refactor (registry/assembler split) | commits `0c79ea1`, `49ba608` |
+| v1.4.0 | 2026-04 | Gesture typing stabilization; per-language glide controls | commits `e707141`, `cd14f86` |
+| v1.3.0 | 2026-04 | Voice input v1; multilingual testing | commits `1584691`, `83336e3` |
+| v1.2.0 | 2026-04 | Auto-cap parity v1 with SwiftKey | commits `c18b47b`, `373c5e1` |
+| v1.1.0 | 2026-03 | SwiftFloris fork from FlorisBoard; rebrand; haptic strength enhancement | commits `d4905b9`, `0c7265f` |
+
+---
+
+## 4. Strategic Thesis
+
+The Android keyboard market has bifurcated into two camps: **(a) Apple/Samsung — on-device AI but locked to vendor silicon**, and **(b) Microsoft/Google/Grammarly — cloud-bound and account-bound**. There is no third option that runs anywhere, syncs P2P, and ships under Apache-2.0. SwiftFloris occupies that gap.
+
+Three forces drive this roadmap:
+
+1. **Upstream drift.** FlorisBoard v0.6-alpha targets glide typing, predictions, floating mode, and Snygg v2 themes [F1, F2]; SwiftFloris is already past upstream on autocorrect + dictionary, but behind on glide breadth, floating mode, and emoji-search. Whoever ships HeliBoard's NLnet-funded open swipe library + dataset first wins the next migration wave [H1].
+2. **Commercial collapse signals.** Microsoft removed in-keyboard Copilot in 2025 and is forcing SwiftKey users onto a Microsoft account by 2026-05-31 [C1, C2, C3]. Google nerfed Gboard offline voice for non-Pixel devices [GBOARD-VOICE]. Grammarly is shutting down its standalone keyboard [C8]. Every event above is a switch-trigger users name explicitly in r/SwiftKey, HN, and Privacy Guides forums [PAIN-1 through PAIN-5].
+3. **On-device LLM viability.** Gemma 3 270M Q4 (~135MB, <1% Pixel 9 Pro battery for 25 conversations [AI1, AI2]) and Whisper Large-v3-Turbo INT8 (~315ms per Snapdragon 8 Elite [AI3]) make smart-compose and dictation shippable on flagship devices in 2026 *without* the cloud — the moat closing window is open right now.
+
+The wedge: ship every paywalled cloud feature **fully on-device, fully auditable, with zero account requirement.**
+
+---
+
+## 5. Tier System
+
+- **Now** — committed for v1.7.0–v1.8.0 (next ~3 months, Q3 2026). High user value, modest engineering cost, fits stack and philosophy. Build started or imminent.
+- **Next** — committed for v1.9.0–v2.0.0 (Q4 2026 – Q1 2027). High value, larger cost or platform-readiness gate. Investigated, scoped, deferred only on capacity.
+- **Later** — desirable for v2.1+ (2027). Either large engineering effort, dependency on external work (HeliBoard NLnet drop, Android 17), or speculative-but-promising.
+- **Under Consideration** — no commitment. Listed because users asked or the strategic case is intriguing; will graduate to Next/Later or retire to Rejected with a written verdict.
+- **Rejected** — explicit no, with reasoning. Listed so future contributors don't re-litigate.
+
+Source-citation rule: every item carries `[n]` keyed to §10 Appendix. If `[n]` is absent, that item came from internal repo state (e.g. an existing TODO marker) and is referenced by its file:line.
+
+---
+
+## 6. NOW (v1.7.0 → v1.8.0, target Q3 2026)
+
+Twenty-one bundled themes now ship. Each item below is small enough to land in a single PR, large enough to be roadmap-worthy, and grouped so a contributor can pick a theme and ship its bullets together.
+
+### N1. Glide-typing breadth without the GApps blob
+
+The single highest-leverage gap. The production default is now N1.3
+(`swiftfloris-statistical`); N1.1 / N1.2 remain additive upgrade paths when
+their external blockers clear.
+
+- **N1.1** Additive HeliBoard / NLnet open-glide integration: monitor [HeliBoard NLnet open-glide project](https://github.com/HeliBorg/HeliBoard/issues/2226) [H1, NLNET-GT, COMM-3]. **Status 2026-05-17:** NLnet still describes the goal as a separately-developed open-source gesture library with an AOSP-compatible drop-in layer [NLNET-GT], but HeliBoard `#2226` remains open and its latest public status says the active work is data gathering / passive-mode tuning, not a released library. HeliBoard latest release is still `v3.9` (2026-03-29); v3.7-beta1 introduced optional gesture-data gathering and v3.9 fixed / preserved that gathering flow [GH-HELIBOARD-RELEASES]. The wiki now says volunteer data collection runs until 2026-11-30 and still requires loading the existing proprietary gesture library [H1-GESTURE-DATA]. **Planning change:** SwiftFloris no longer treats this as the default production path. The shipped `swiftfloris-statistical` engine remains the default; `heliboard-open` stays behind a future `prefs.glide.engine` flag only after a permissively-licensed library + dataset land and beat the current classifier on the N1.4 replay benchmark. Integration cost: M when library lands.
+- **N1.2** Port-CleverKeys-architecture: CleverKeys ships a 5.4MB encoder + 7.4MB decoder ONNX transformer that handles 11 languages with sub-200ms beam-search latency on Pixel 7 via XNNPACK [O1, AI4, CK-DEEPWIKI]. Code is **GPL-3.0** (re-confirmed 2026-05-14 — incompatible with the Apache-2.0 main-app ceiling); cannot directly link, but the *architecture and training repo* are public reference. CleverKeys's own roadmap targets multi-layout / multi-script gesture model in **Q2-Q3 2026** [CK-DEEPWIKI] — once that drops, the architectural reference for non-QWERTY layouts becomes much more useful. Plan: train an Apache-2.0 model from the eventual HeliBoard NLnet dataset (N1.1) and ship via ONNX Runtime Mobile. Cost: L.
+- ✅ **N1.3** shipped 2026-05-14. The existing `StatisticalGlideTypingClassifier` now consumes a bounded high-confidence glide vocabulary from each imported per-language dictionary instead of the full long-tail recognition map: frequency `80+`, length `2..24`, max `120k` words per language. This keeps rare recognition-only words from polluting swipe candidates while preserving broad EN/DE/ES/FR/IT/PT coverage. Settings → Gestures now shows per-language glide quality and engine labels (`Expanded statistical dictionary` / `Imported statistical dictionary`, `Statistical`) so users can see the current non-neural state while the HeliBoard neural/open-glide path remains pending.
+- ✅ **N1.4 schema** shipped 2026-05-16. New `SwipeTraceRecord` data class (word + layout + samples + optional languageTag + source attribution) with `@Serializable` derivation, plus `SwipeTraceSample(x, y, t)` carrying normalised `[0.0, 1.0]` coordinates and relative-millisecond timestamps. New `SwipeTraceImporter.parse(input)` auto-detects JSON-Array vs JSON-Lines and tolerates malformed lines (silently dropped so a partially-corrupted dataset never blocks the benchmark run). 10 new `SwipeTraceImporterTest` cases. **N1.4 dataset ingestion + benchmark numbers vs `StatisticalGlideTypingClassifier` remains the device-side follow-up:** run the importer over a downloaded FUTO MIT swipe corpus, compare classifier accuracy / latency against the FUTO nightly model, and publish results in `docs/BENCHMARKS.md`. **N1.4 description (kept):** FUTO v0.1.28 reports a swipe.futo.org data set with more than 1M swipes and a nightly model competitive with major keyboards; the public Hugging Face data card marks the filtered volunteer data MIT and in the `1M<n<10M` size class [FUTO-V0-1-28, HF-FUTO-SWIPE]. Do not ingest FUTO Source-First app code; do import the MIT swipe traces into the SwiftFloris replay/glide benchmark harness and compare against `StatisticalGlideTypingClassifier` before training any ONNX model.
+- ✅ **N1.4 replay/benchmark harness** shipped 2026-05-16 (v1.8.47). `SwipeTraceReplay.toPointerData(...)` converts normalized trace samples into the existing glide-classifier pointer shape for a concrete keyboard rectangle. `SwipeTraceBenchmark.evaluate(...)` measures top-1/top-3/top-N accuracy, failed/evaluated record counts, predictor latency, capped miss examples, and Markdown report output. `docs/BENCHMARKS.md` now carries the pending FUTO-corpus comparison table. The remaining N1.4 blocker is external evidence only: download the corpus outside the repo, wire records into the live `StatisticalGlideTypingClassifier`, and record device-side numbers.
+
+Rejected sub-path: bundle Google's `libjni_latinimegoogle.so` from old GApps dumps. Violates the no-blob clause; HeliBoard's reluctant binary distribution of this file is exactly what auditability means to reject.
+
+### N2. Multilingual auto-detect (per-token language identification)
+
+The killer SwiftKey feature with no first-class FOSS equivalent [C1, COMM-2]. Users in r/SwiftKey, HN 35597622, and HeliBoard #2124 [PAIN-5, COMM-2] all report the same complaint: typing two languages bleeds wrong-language autocorrects mid-sentence.
+
+- ✅ **N2.1** shipped 2026-05-14. Added an offline Latin-script language identifier over the current token plus the trailing four sentence-local context words. The first implementation is a compact per-language char n-gram/common-word/prefix classifier for enrolled EN/ES/FR/DE/IT/PT subtypes, with accent folding and BCP-47 language normalization. `NlpManager` now feeds those confidence scores into `MultilingualTokenScorer`, letting the ranker boost detected-language candidates and demote inactive-language autocorrects before context-only heuristics run.
+  Follow-up scale paths remain a compact langid library (e.g. CLD3 port, ~2MB + 70 langs), an Apache-compatible fastText `lid.176` quantized model [AI5] (~1MB INT8), or a custom trained char-trigram profile set that fits in <200KB.
+- ✅ **N2.2** shipped 2026-05-14. Completed the earlier N12 partials by labeling each candidate with its dominant enrolled dictionary language and adding a top-two language-straddle guard to `SwiftKeyCandidateRanker.selectSpacebarCandidate(...)`. Multilingual subtypes now rank per-token across active locale dictionaries, preserve the existing language-confidence demotion for weak inactive-language corrections, and refuse spacebar/punctuation autocommit when the two strongest plausible replacement candidates come from different enrolled languages.
+- ✅ **N2.3** shipped 2026-05-14. Added first-class bilingual subtype presets for canonical SwiftKey-style EN+ES, EN+FR, and EN+DE typing. `SubtypePreset` now persists secondary locales into created subtypes, `BilingualSubtypePresets` synthesizes stable pairs from the installed preset catalog, and Settings → Localization now surfaces Bilingual presets plus the selected secondary language in both the editor and subtype list/delete confirmation. This gives users a one-time bilingual setup path without manual language switching while reusing the existing multilingual NLP path from N2.1/N2.2.
+
+### N3. SwiftKey-parity surface polish (close the visual gap)
+
+v1.6.0 shipped accent (`#319DFF`) + Pure palette tokens + dimens bumps. Finish:
+
+- ✅ **N3.1** shipped 2026-05-09 (v1.7.x). Two new theme stylesheets registered in `org.florisboard.themes/extension.json`: **SwiftKey Pure (Light)** and **SwiftKey Pure (Dark)**. Each stylesheet branches off the existing `swift_glacier` / `swift_slate` skeleton with the `@defines` block rewritten to consume the `swiftkey_pure_*` tokens from `colors_branding.xml` (light: `#E1E4E8` kbd / `#FFFFFF` keys / `#BFC4CC` special / `#1F1F1F` text / `#7A7E85` hint; dark: `#1F1F1F` kbd / `#2C2C2E` keys / `#3A3A3C` special / `#F2F2F2` text / `#8E8E93` hint; both share the SwiftKey 2020+ accent `#319DFF`). Themes appear in Settings → Theme picker and inherit the N3.2 `FontWeight.Medium` glyph weight automatically.
+- ✅ **N3.2** shipped 2026-05-09 (v1.7.0). `FlorisImeUi.Key.elementName` base style in `FlorisImeThemeBaseStyle.kt` now sets `fontWeight = fontWeight(FontWeight.Medium)` (weight 500). Applies to every shipped theme (Nord/Tokyo Night/Dracula/Catppuccin/SwiftKey-Pure) since they all inherit from the base style. Closes the SwiftKey perceived-quality gap without changing key dimensions or layouts.
+- ✅ **N3.3** complete — partial shipped 2026-05-09 (v1.7.x: 20ms / 60-strength SwiftKey/Gboard defaults), **N3.3a finish shipped 2026-05-15**. `Vibrator.vibrate(duration, strength, factor)` in `lib/android` is now a three-tier path: (1) Android 16 PWLE `VibrationEffect.WaveformEnvelopeBuilder` via reflection (so the call compiles on every build-tools SDK) when `Vibrator.areEnvelopeEffectsSupported()` reports true — builds a three-control-point amplitude envelope (rise → plateau → settle) for a crisp tactile keypress shape; (2) Android 11+ `VibrationEffect.startComposition().addPrimitive(PRIMITIVE_TICK / PRIMITIVE_CLICK / PRIMITIVE_LOW_TICK, amplitudeScale)` chosen by `factor` (long-press repeat → LOW_TICK; long-press / swipe → TICK; standard keypress → CLICK), gated on `areAllPrimitivesSupported(primitive)`; (3) legacy `VibrationEffect.createOneShot(duration, amplitude)` as a final fallback. New `AndroidVersion.ATLEAST_API36_BAKLAVA` gate added. Net effect: users on Android 11-15 get richer composition primitives today; Android 16+ users get true PWLE envelopes when their actuator supports them. [STD-A16-PWLE].
+- ✅ **N3.4** complete — partial shipped 2026-05-09 (v1.7.x: popup elevation 2dp→4dp); **finish shipped 2026-05-14 (v1.7.9)**. `animateFloatAsState`-driven 1.03× scale-up over 60ms with 80ms spring-back on release in `TextKeyButton` (`graphicsLayer` so the touch-target geometry doesn't shift); reduced-motion gate via the existing N8.4 `ANIMATOR_DURATION_SCALE` read (when scale = 0 the spring is suppressed but the PRESSED Snygg color flip still reads). Long-press popup variant carries a 1.5dp accent-ring via `borderColor = var(--primary)` / `borderWidth = 1.5dp` on the `KeyPopupElement` FOCUS selector — per-theme stylesheets that override `--primary` retint the ring automatically (SwiftKey Pure uses #319DFF; Tokyo Night uses its own accent).
+- ✅ **N3.5** resolved 2026-05-09 (v1.7.x) by documentation. Verified that `R.dimen.key_height` is *not* directly consumed by `ImeWindowConstraints.defKeyboardHeight` — that calculation is form-factor-derived (`screenHeight * factor`). On a typical 6-7" phone in portrait the resulting per-row height lands at ~52..58dp, bracketing the 56dp SwiftKey reference. Updated `dimens.xml` comment to accurately frame the token as a spec reference (not consumed) and cross-reference N5.3's user-facing percentage slider (50..150%) which is now the supported way to adjust keyboard height. A future "form-factor-aware floor" (`key_height × rows`) is captured as N3.5 follow-up but not blocking; the current behavior already meets SwiftKey-parity on common phones.
+- ✅ **N3.6 / C3** shipped 2026-05-17 (v1.8.63). Two new bundled themes registered in `org.florisboard.themes/extension.json` 0.4.0: **SwiftKey High Contrast (AAA)** and **Aurora Animated**. High Contrast uses white-on-black key surfaces, black-on-yellow action keys, and explicit key / popup / inline-chip borders; `ThemeContrastTest` parses the Snygg defines and pins all keyboard text/background pairs at WCAG AAA 7.0:1. Aurora Animated keeps the palette as a normal Snygg stylesheet and adds `AuroraAnimatedThemeBackground`, a reduced-motion-aware Compose `GenericShape` morph layer gated by `LocalActiveThemeName`. No extra dependency, permission, network, or asset pipeline.
+
+### N4. Customizable bottom row + smartbar
+
+ASK #1832 / HeliBoard #695 / FlorisBoard #196 — the most-requested customization across all OSS keyboards [COMM-A, COMM-B, COMM-C, PAIN-20].
+
+- ✅ **N4.1** verified shipped (inherited FlorisBoard upstream + verified 2026-05-09 v1.7.x). `QuickActionsEditorPanel.kt:278` already implements long-press drag-and-drop reordering of smartbar actions via `detectDragGesturesAfterLongPress` over a `LazyVerticalGrid`. Sticky-action slot, primary actions, and overflow grid all support drag. UI accessible via `Settings → Smartbar → Customize quick actions`.
+- ✅ **N4.2** shipped 2026-05-14. Added a JSON-backed bottom-row preset override while preserving the current asset-defined row as `Automatic`. Settings → Keyboard now offers SwiftKey-style, language-picker, voice-key, settings-shortcut, and minimal rows; each preset can add/remove the language picker, comma/period cluster, emoji/media key, voice key, and settings shortcut without touching layout assets. `LayoutManager` applies the override only in `KeyboardMode.CHARACTERS`, clears the character-keyboard cache when the preset changes, and keeps the legacy utility-key behavior intact unless the user chooses an explicit preset.
+- ✅ **N4.3** shipped 2026-05-14. Added optional per-app Smartbar profiles that re-prioritize quick actions at render time without rewriting the saved arrangement. Password fields surface paste/incognito/hide/settings; Slack/WhatsApp/Telegram/Signal/Discord and short-message fields surface media/voice/paste/language/autocorrect; Outlook/Gmail/email fields surface paste/voice/language/cursor/settings. The setting lives under `Settings → Smartbar → Per-app profiles` and defaults on. `SmartbarActionProfilesTest` covers disabled passthrough, password, chat, email, and unmatched editor profiles.
+
+### N5. Word-edit ergonomics (long-asked-for, mostly small fixes)
+
+- ✅ **N5.1** shipped 2026-05-09 (v1.7.0). Wiring was already present (`KeyboardManager.handleSwipe → SwipeAction.DELETE_WORD → TextKeyData.DELETE_WORD → handleBackwardDelete(OperationUnit.WORDS)`). Flipped the prefs defaults in `AppPrefs.Gestures`: `deleteKeySwipeLeft` `DELETE_CHARACTERS_PRECISELY → DELETE_WORD`, `deleteKeyLongPress` `DELETE_CHARACTER → DELETE_WORD`. SwiftKey/Gboard parity. Existing user overrides preserved (jetpref only falls back to default when no value is set).
+- ✅ **N5.2** verified shipped (inherited FlorisBoard upstream + verified 2026-05-09 v1.7.x). `TextKeyboardLayout.handleSpaceSwipe` already implements continuous SwiftKey-style cursor drag: `TOUCH_MOVE` events on space convert finger displacement (`relUnitCountX`) into per-cell `keyboardManager.handleArrow` calls, gated by `spaceBarSwipeLeft == MOVE_CURSOR_LEFT` / `spaceBarSwipeRight == MOVE_CURSOR_RIGHT` (both defaults). Mass-selection batching via `editorInstance.massSelection.begin()` so multi-cell drags coalesce into one editor update. User-facing toggle = the existing `Settings → Gestures → Space bar swipe (left/right)` preference; setting either to `NO_ACTION` disables cursor mode for that direction.
+- ✅ **N5.3** shipped 2026-05-09 (v1.7.x). Font-size slider was already wired (`fontSizeMultiplierPortrait` / `Landscape`, 50..150% in 5% steps). Added the height slider this release: new `AppPrefs.Keyboard.keyboardHeightMultiplierPortrait` + `keyboardHeightMultiplierLandscape` (range 50..150, default 100), threaded through `ImeWindowController.userPreferredOptions` flow → `ImeWindowSpec.UserPreferredOptions.keyboardHeightScale` → applied in `doComputeWindowSpec` *before* `props.constrained(constraints)` so the [`minKeyboardHeight`, `maxKeyboardHeight`] clamp catches absurd slider values. Floating mode skips the slider (it has its own resize affordance). New `DialogSliderPreference` in `KeyboardScreen.kt` directly under the font-size slider.
+- ✅ **N5.4** shipped 2026-05-09 (v1.7.0). Settings UI was already present (`UserDictionaryScreen` Add/Edit dialog has Word + Freq + **Shortcut** + Locale fields with validation). Wired the auto-replace half: added `DictionaryManager.queryUserDictionaryShortcutExact(query, locale)` which returns the highest-frequency expansion when [query] is an exact (case-insensitive) match against any enabled personal-dictionary shortcut. `NlpManager.getAutoCommitCandidate` now consults this *before* in-strip suggestions and the English contraction fallback — user-defined shortcuts beat algorithmic guesses. Suppression-cooldown still applies (deleting an auto-replaced shortcut won't re-trigger). Try it: open Settings → Typing → Personal dictionary → Add `omw` shortcut for `on my way`, then type `omw ` in any field.
+
+### N6. CI + release engineering hardening
+
+The current GitHub Action runs `assembleDebug` only — tests, lint, and reproducibility are ungated. This is a quality gate that costs CI minutes, not engineering velocity.
+
+- ✅ **N6.1** shipped 2026-05-09 (v1.7.0). `.github/workflows/android.yml` now runs (in order) `:app:verifyNoInternetPermission` (N7.1 fail-fast), `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`. Lint + test reports upload as artifacts on every run (`if: always()`) for triage. Renamed workflow to `SwiftFloris CI`. Cache wired via `gradle/actions/setup-gradle@v4`.
+- ✅ **N6.2** shipped 2026-05-09 (v1.7.x). New `.github/workflows/release.yml` (`workflow_dispatch` trigger, `version` + `draft` inputs). Pipeline: (1) verify `gradle.properties projectVersionName` matches input; (2) NOTICE / LICENSES presence check (Apache-2.0 attribution); (3) re-run N7.1 no-network gate, unit tests, lint; (4) decode keystore from `SIGNING_KEYSTORE_BASE64` env to a runner-temp path; (5) `:app:assembleRelease` consumes `KEYSTORE_PATH` + `SIGNING_*` env vars via the new `signingConfigs.create("release")` block in `app/build.gradle.kts`; (6) compute SHA-256 manifest, append to GH job summary; (7) `gh release create` with the signed APK + SHA256SUMS + the matching `CHANGELOG.md` section extracted between `<a id="vX.Y.Z">` anchors. Fallback path: when `SIGNING_KEYSTORE_BASE64` is empty (forks running their own dispatch), the release variant uses the debug signing config so the build still validates end-to-end. Repo secrets needed: `SIGNING_KEYSTORE_BASE64`, `SIGNING_KEYSTORE_PASSWORD`, `SIGNING_KEY_ALIAS`, `SIGNING_KEY_PASSWORD`. F-Droid metadata bump and `fdroiddata Builds:` block stays a separate N6.3 item.
+- ✅ **N6.3** partial — shipped 2026-05-09 (v1.7.x) and refreshed through v1.8.74. All toolchain inputs are pinned: Gradle 9.4.1 with SHA-256 distribution checksum (`gradle-wrapper.properties`), AGP 9.2.1, Kotlin 2.3.21, KSP 2.3.8, Build Tools 36.0.0, NDK 29.0.14206865, JDK 17 Temurin (CI), cmake 4.1.2, cmdline tools with SHA-256 pin (`tools.versions.toml`). New `docs/REPRODUCIBLE_BUILDS.md` documents the full pin matrix, local verification recipe (build + `apkdiff` recipe), and a copy-pastable F-Droid `Builds:` stanza for the upstream `fdroiddata` submission. **Pending:** `fdroiddata` PR submission and F-Droid build-server rebuild result — that step happens on the F-Droid side.
+- ✅ **N6.4** shipped 2026-05-09 (v1.7.x). New `.github/workflows/dependency-scan.yml`: (a) GitHub `actions/dependency-review-action@v4` on every PR that touches `libs.versions.toml`, `tools.versions.toml`, or any `build.gradle.kts` — fails on HIGH or CRITICAL severity, comments summary on PR; (b) `google/osv-scanner-action@v2.0.2` recursive scan as a SBOM-level cross-check that goes beyond the GitHub vulnerability database; (c) cron Sundays 06:00 UTC for proactive drift detection; (d) workflow_dispatch for manual runs. Gradle dep-tree uploaded as artifact for triage.
+- ✅ **N6.5** shipped 2026-05-09 (v1.7.0). README "Installation" now leads with **Option A — Obtainium**: a copy-pastable `obtainium://app/{...}` URL that auto-subscribes to the GitHub Releases feed (`apkFilterRegEx: app-release.*\.apk`, `versionDetection: true`, `fallbackToOlderReleases: true`). Manual GH-Releases and source build flows demoted to Options B / C.
+
+### N7. Privacy hardening (the moat verbatim)
+
+- ✅ **N7.1** shipped 2026-05-09 (v1.7.0). Pre-build Gradle verification task `:app:verifyNoInternetPermission` (registered in `app/build.gradle.kts`) scans every `AndroidManifest.xml` under `app/src/**` and fails the build if any of `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, `CHANGE_WIFI_STATE` is declared. Wired into `preBuild` via `afterEvaluate`, so every variant build (debug/beta/release/benchmark) re-runs the check. Verified by adding INTERNET temporarily — task fails with a clear contract-violation message; removing it restores green build. Chose Gradle task over a custom lint `Detector` module because it's strictly less infrastructure for an identical fail-fast outcome and keeps `:app:lintDebug` clean. (Pin the no-network promise in code, not just in marketing [STD-CAKI, STD-NO-INTERNET].)
+- ✅ **N7.2** complete — shipped across v1.7.0 + v1.7.x. Already in place from FlorisBoard upstream: suggestions disabled when `keyVariation == PASSWORD` (composing flagged off), incognito triggered by `IME_FLAG_NO_PERSONALIZED_LEARNING`. v1.7.0 added (a) `KeyboardManager.learnIfAllowed` extra `keyVariation == PASSWORD` gate (defense-in-depth vs apps that forget `IME_FLAG_NO_PERSONALIZED_LEARNING` — HeliBoard #2124, AnySoftKeyboard #1399); (b) `EditorInstance.performClipboardCut`/`performClipboardCopy` skip the IME-local clipboard history on password fields. v1.7.x adds (c) `FlorisImeService.applyFlagSecureForCurrentField` — sets `WindowManager.LayoutParams.FLAG_SECURE` on the IME window when the active variation is `PASSWORD`/`VISIBLE_PASSWORD`/`WEB_PASSWORD`, clears it otherwise. Prevents screenshots, screen recordings, and external display mirroring from capturing the long-press popup or suggestion strip during credential entry, while still allowing screenshots in normal fields.
+- ✅ **N7.3** shipped 2026-05-09 (v1.7.0). New `docs/THREAT_MODEL.md` enumerates threat actors (co-installed apps, CAKI, supply-chain, hostile editors), live defenses (no-network contract, password-field hardening, encrypted clipboard, signing-fingerprint pin, personal-dict isolation), known gaps (FLAG_SECURE on popups, reproducible-build, SQLCipher), and a per-release verification checklist. New `PersonalDictionaryIsolationTest` (Kotest `FunSpec`) proves by static-content inspection of `DictionaryManager.kt` that `learnWord`'s body never references `systemUserDictionaryDao` / `systemUserDictionaryDatabase` / platform `UserDictionary.Words` — any future contributor breaking the contract gets a clear test failure with N7.3 cited in the message. All three tests pass.
+- ✅ **N7.4** shipped 2026-05-14 and wrapper-updated in v1.8.68. The Floris personal Room dictionary now opens through SQLCipher (`net.zetetic:sqlcipher-android` 4.16.0 + `androidx.sqlite` 2.6.2) via `SupportOpenHelperFactory`. A 64-byte passphrase is generated locally, synchronously persisted, wrapped by Tink `Aead`, and protected by an AndroidKeystore-held AES-256-GCM key. Existing plaintext databases are detected by SQLite header, staged, migrated into encrypted storage, and restored if migration cannot complete. Backup rules now omit the encrypted dictionary from device/cloud transfer because the Android Keystore-protected key is intentionally non-portable. `PersonalDictionaryEncryptionTest` guards the SQLCipher, Keystore, dependency, backup-rule, header-detection, and legacy encrypted-preference migration contracts [STD-PERS-DICT-ENC].
+- ✅ **N7.5** shipped 2026-05-09 (v1.7.0). New `SigningFingerprint.sha256(context)` reads `PackageManager` signing info (API 28+ `GET_SIGNING_CERTIFICATES` with API 26/27 `GET_SIGNATURES` fallback), digests via `MessageDigest.SHA-256`, formats as `AB:CD:…` matching `apksigner verify --print-certs` / F-Droid metadata convention. New "APK signing fingerprint" preference in `AboutScreen` shows the fingerprint (computed off-main-thread via `Dispatchers.IO` in a `LaunchedEffect`); tap to copy. Three states: loading / value / unavailable. Detects supply-chain swap when compared against the value the maintainer publishes in README.
+- ✅ **N7.6** shipped 2026-05-17 (v1.8.68; clipboard side retired v1.8.121). Removed AndroidX Security Crypto and replaced it with Google Tink Android (`com.google.crypto.tink:tink-android` 1.21.0). New `TinkStringPreferenceCrypto` uses Tink `Aead`, AndroidKeystore-held AES-256-GCM keys, and `prefsFile:key` associated data for local encrypted-preference payloads. Existing AndroidX `EncryptedSharedPreferences` string values migrate once through Tink `AndroidKeysetManager` when their keysets are still readable. The SQLCipher passphrase moves from `sqlcipher_passphrase_v1` to `sqlcipher_passphrase_tink_v1`; the old parallel clipboard-history Tink store was later deleted because the live clipboard backend is Room-backed `ClipboardManager` [STD-PERS-DICT-ENC].
+
+### N8. Accessibility scoped pass
+
+The IMPROVEMENT_PLAN already has this as Workstream 6 (Planned, P1) — promote the concrete deliverables to roadmap items.
+
+- ✅ **N8.1** shipped 2026-05-09 (v1.7.x). New `TouchTargetWcagTest` (Kotest, 4 tests, all passing) pins WCAG 2.5.5 AAA per-key 48dp floor for PHONE_PORTRAIT default + max keyboard heights at the typical 360×800dp form factor. Landscape phones (vertically constrained — only ~360dp of usable height) hold the line at WCAG 2.5.8 AA's 24dp floor (industry-standard for landscape keyboards). `ImeWindowConstraints.resizeHandleTouchSize` (48dp) audited too. Future contributor lowering any form-factor factor will get a clear test failure with WCAG citation in the test name.
+- ✅ **N8.2** shipped 2026-05-14 and expanded 2026-05-17 (v1.8.63). Static contrast audit covers Catppuccin Mocha + Tokyo Night keyboard text tokens against keyboard surface/background tokens at WCAG 2.1 AA 4.5:1, and now parses the SwiftKey High Contrast Snygg stylesheet to pin core keyboard text/background pairs at WCAG AAA 7.0:1. Tokyo Night secondary/tertiary text uses `#9aa5ce`; Catppuccin tertiary text uses `catppuccin_subtext0`. `ThemeContrastTest` resolves XML `@color/...` references, parses bundled stylesheet defines, verifies High Contrast and Aurora manifest registration, and fails if any key-glyph token pair regresses [STD-WCAG-CONTRAST].
+- ✅ **N8.3** complete — partial shipped 2026-05-09 (v1.7.x: key-level descriptions); **finish shipped 2026-05-14 (v1.7.9)**. `QuickActionButton` now carries a TalkBack `contentDescription` derived from `action.computeDisplayName(evaluator)` → tooltip fallback → "Action" (every smartbar slot announces something descriptive instead of "button"). `CandidatesRow.CandidateItem` carries a candidate-text `contentDescription`, `role = Role.Button`, and — for eligible candidates — a `CustomAccessibilityAction("Remove from predictions", action = { onLongPress() })` so screen-reader users can trigger the Next-3.4 forget flow without the long-press gesture. `keyContentDescription` appends `", alternative: <hint>"` when a key carries a hinted alt-glyph (the small top-right corner glyph), so TalkBack announces "a, alternative: à" — mirrors Samsung Keyboard / Gboard alt-glyph announce.
+- ✅ **N8.3a** shipped 2026-05-15. The English fallback labels (`Shift`, `Backspace`, `Enter`, ...) are now Crowdin-routed string resources (`R.string.a11y__key__shift` etc., 33 entries plus an `a11y__key__alternative_suffix` format string for the hint-suffix). `keyContentDescription(context, code, label, hintedLabel)` signature now takes a `Context` and resolves every code-keyed label through `res.getString(resId)`, with the alternative-suffix format applied via `res.getString(R.string.a11y__key__alternative_suffix, hintedLabel)`. Non-English users now get localised announcements at the same time the rest of the UI changes locale (no separate Settings → A11y locale dance required).
+- ✅ **N8.4** shipped 2026-05-09 (v1.7.x). `TextKeyboardLayout` reads `Settings.Global.ANIMATOR_DURATION_SCALE` once per recomposition (memoized on `configuration` so animator-toggle Developer Options changes propagate via the standard Compose configuration-change recompose path). When the scale is exactly `0f` ("Animations off"), the trail is suppressed even if the user has `showTrail` enabled. Wrapped in `runCatching` because some OEM devices restrict cross-app `Settings.Global` reads.
+- ✅ **N8.5** verified shipped (inherited FlorisBoard upstream + supplemented in fork). `app/src/main/res/xml/method.xml` already declares `android:supportsSwitchingToNextInputMethod="true"`. `FlorisImeService.switchToNextInputMethod` correctly calls `imm.switchToNextInputMethod(window.attributes.token, false)` (API 28+ path) with `super.switchToNextInputMethod(false)` fallback. Switch Access users can rotate subtypes via the platform's standard subtype-cycle gesture.
+- ✅ **N8.6** verified shipped (inherited FlorisBoard upstream + verified 2026-05-09 v1.7.x). `AbstractEditorInstance.setComposingRegion(composing: EditorRange)` extension function (line 303) routes invalid ranges through `finishComposingText()` and valid ranges through the standard two-arg `setComposingRegion(start, end)`. All composing-region updates in `AbstractEditorInstance` and `EditorInstance` go through this wrapper, so Voice Access dictation always sees a clean lifecycle and never gets a stale composing region from a shortcut auto-replace path.
+- ✅ **N8.7** shipped 2026-05-17 (v1.8.66). Article 50 transparency surface for AI/ML features: first-run setup step before IME enablement, persisted `prefs.internal.aiFeaturesExplainerSeen`, reopenable Settings → About → **AI features in this keyboard** screen, per-surface disclosures for next-word / glide / voice / translation / smart-compose, and links to `docs/PRIVACY_AND_AI.md`, `docs/THREAT_MODEL.md`, and `PROJECT_CONTEXT.md`. `AiFeatureDisclosureCatalogTest` pins the required first-run surface list.
+
+### N9. Inline `commitContent()` for sticker / GIF / image insertion
+
+Universal request across OSS keyboards [COMM-A, COMM-B PAIN-15, FR-13]. Architecture is small; payoff is parity with Gboard's image-paste behavior in apps that declare `EditorInfo.contentMimeTypes`.
+
+- ✅ **N9.1** verified shipped (inherited FlorisBoard upstream, validated 2026-05-09 v1.7.x). `EditorInstance.commitClipboardItem` for `ItemType.IMAGE`/`VIDEO` already wraps the URI in an `InputContentInfoCompat`, calls `InputConnectionCompat.commitContent` with `INPUT_CONTENT_GRANT_READ_URI_PERMISSION`. Editor-compatibility gate at `ClipboardManager.canUseClipImage` (text/plain || matches `activeInfo.contentMimeTypes`).
+- ✅ **N9.2** verified shipped (inherited FlorisBoard upstream, validated 2026-05-09 v1.7.x). `ClipboardInputLayout.kt` renders image clipboard items in the panel grid (`Image` composable from decoded bitmap), tap → `clipboardManager.pasteItem(item)` → `commitClipboardItem` → `commitContent`. Long-press → preview popup with delete/pin actions.
+- ✅ **N9.3** shipped 2026-05-14. The emoji panel now has a persistent search row above the category tabs, backed by `EmojiSearch` ranking over emoji names and keywords with stable source-level tests. The media panel also has an emoji/sticker mode switch and two bundled local sticker packs ("Swift reactions" and "Quick replies"). Stickers are generated on-device as PNGs by `StickerRenderer`, served through `StickerMediaProvider` (`${applicationId}.provider.sticker`), and committed with the same Android `InputContentInfoCompat` rich-content path used by image clipboard paste. Unsupported editors show a calm disabled state instead of failing silently. `EmojiSearchTest` and `BundledStickerRepositoryTest` guard search behavior, pack uniqueness, provider registration, and stable URI paths [FR-9].
+- ✅ **N9.5 / Next-9.5** shipped 2026-05-17 (v1.8.77). Settings → Emoji & stickers now exposes an "Imported sticker folder" SAF tree picker, persists the read-only URI in `prefs.sticker.userFolderUri`, and offers a clear action. `UserStickerRepository` enumerates local PNG / WebP / JPEG / GIF documents into a synthetic `Imported` sticker pack with a 240-item cap, extension fallback for generic MIME declarations, duplicate-URI collapse, and stable encoded document IDs. `StickerPaletteView` appends the imported pack to the bundled packs and decodes local image previews off the main thread. `StickerMediaProvider` proxies imported sticker reads through the existing content provider authority so `EditorInstance.commitRichContent(...)` can keep using `InputConnectionCompat.commitContent` with grant flags. This remains local-only and does not add broad media-library or network permissions; deleting files from the chosen folder remains a later SAF write-flow polish item.
+
+### N10. Emoji 16/17 + Unicode 17 readiness
+
+Emoji 17.0 lands on Android in March 2026 (7 new glyphs: Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) [STD-EMOJI17, STD-UNICODE17].
+
+- **N10.1** Bundle Noto Color Emoji 17.0 fonts ahead of upstream Android propagation. **Status 2026-05-14 (v5.0):** deferred to v1.8.x. Current `androidx.emoji2 1.6.0` provides Emoji 15.1 / Unicode 15.1 fallback; N10.1 requires either a newer emoji2 release (1.7.0+ when published — upstream emoji2 releases page tracked) or shipping `NotoColorEmoji.ttf` v17 directly as a font asset and routing through `EmojiCompat.Config(BundledEmojiCompatConfig)`. Tracking upstream via [emoji2 release notes](https://developer.android.com/jetpack/androidx/releases/emoji2). Note Emoji 17.0 ships 7 new glyphs (Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) [STD-EMOJI17].
+- ✅ **N10.2** verified shipped (commit `6fd6e3b` + `ba3c790`). `FlorisEmojiCompat` lazy `replaceAll` loader is wired and a memory-profile test ships in the test suite. Unicode 15.1 glyphs (Pink Heart, Wireless, Pushing-back hand) render via the platform's bundled font + EmojiCompat font-replacement on devices below the OS support threshold. Re-verify when N10.1 ships emoji-pack v17.
+- ✅ **N10.3** shipped 2026-05-09 (v1.7.0). `AbstractEditorInstance.deleteText` (BEFORE_CURSOR + AFTER_CURSOR branches) now converts the ICU-grapheme-aligned char `length` to a code-point count via `String.codePointCount(start, end)` and calls `InputConnection.deleteSurroundingTextInCodePoints` (API 24+, always available since `minSdk = 26`). Backspace is now surrogate-pair safe even if the editor has drifted from our expected text. Applies to character + word units, EN-locale and ICU-driven multilingual paths alike.
+
+### N12. SwiftKey indistinguishability — close the perceived-quality gap
+
+Tracking item from `docs/archive/SWIFTKEY_PARITY_RESEARCH.md` (2026-05-09). Goal: a user cannot tell the difference between SwiftFloris and SwiftKey while typing, **without** importing Copilot, DALL-E, account sync, or any cloud surface. Builds on SwiftKey's four core engines (neural LM, adaptive touch, SHARK2 + LM Flow, federated personalization) using Apache-2.0-only, on-device-only equivalents.
+
+- ✅ **N12.1** shipped 2026-05-09 (v1.7.5). New `AdaptiveTouchModel` singleton in `ime/text/keyboard/AdaptiveTouchModel.kt` keeps per-subtype, per-key Welford-online stats of normalized tap offsets `(dx/halfW, dy/halfH)` relative to the visible center of each letter/punctuation key. After `getKeyForPos(...)` lands the geometric primary, `refine(keyboard, primary, x, y)` evaluates only the immediately-adjacent neighbours (within `pHalfW + cHalfW + 0.4·pHalfW` horizontally and `pHalfH + cHalfH + 0.6·pHalfH` vertically) and switches to a neighbour iff its 2D-Gaussian log-likelihood beats the primary's *and* both keys have ≥30 samples — so cold-start always falls back to the geometric hit. Stats are in-memory only (privacy-clean), reset via `setActiveSubtype(...)` on subtype change in `KeyboardManager.kt:158`. New pref `correction.adaptiveTouchModel` (default `true`) + Settings → Typing → "Adaptive touch model" switch in `TypingScreen.kt`. Verified by compile + adb-installed v1.7.5 debug build on `R5CY34G070L`.
+- ✅ **N12.2** shipped 2026-05-09 (v1.7.5). New `PersonalBigramStore` in `ime/dictionary/PersonalBigramStore.kt` is a singleton, per-locale bigram counter persisted to `<filesDir>/personal_bigrams_<localeTag>.tsv` (one tab-separated `prev\tnext\tcount` triple per line). Caps: 2,000 prev words per locale, 16 next words per prev, 1,000 max count, MIN_COUNT=2 to suggest. Lazy-loaded, debounced flush every 20 commits. Wired into `KeyboardManager.learnIfAllowed`: every commit now learns the bigram `(lastLearnedWord, currWord)` for the active locale, gated behind the existing incognito + password-field checks. `LatinLanguageProvider.suggest` falls back to a new `nextWordSuggestions(...)` path when `currentWord` is blank — extracts the previous letter-token from `content.textBeforeSelection`, queries `PersonalBigramStore.predict(...)`, and returns up to 8 `WordSuggestionCandidate` entries with `isEligibleForAutoCommit=false` so a stray space doesn't auto-replace a real word. New pref `suggestion.nextWordPrediction` (default `true`) + Settings → Typing → "Predict the next word" switch. Inline ghost text is deferred to a future revision; this lands the suggestion-strip surface SwiftKey users actually rely on (the row-of-three after a space). Compile-verified.
+- ✅ **N12.3** shipped 2026-05-09 (v1.7.5). When a subtype has one or more `secondaryLocales` enrolled (already supported in `SubtypeEditorScreen`), `LatinLanguageProvider.suggest` now branches into a new `suggestMultilingual(...)` path: it queries every enrolled locale's dictionary in parallel, asks each whether it recognises the typed word, and merges per-locale candidate lists with a `prior` of `1.0` for any locale that recognised it and `0.4` for those that didn't (with a fall-through of `1.0` when no locale recognises). Candidates are deduped by lowercase text and sorted by `confidence × prior` desc. `isEligibleForAutoCommit` is gated to locales that recognised the word, so the keyboard never autocommits a wrong-language correction mid-sentence. New pref `correction.multilingualSuggestions` (default `true`) + Settings → Typing → "Multilingual suggestions" switch. This is the user-facing slice of the larger N2 multilingual auto-detect work and ships immediately for any user with multilingual subtypes already enrolled. Compile-verified.
+- ✅ **N12.4** shipped 2026-05-09 (v1.7.5). New `GlideTypingGesture.Detector.signalWordBoundary()` snapshots the current points-list, fires the new `Listener.onGlideWordBoundary(data)` callback, then resets `positions` (keeping the most recent point so the new trace is geometrically continuous), `startTime`, and `isActuallyGesture` so the velocity-arming check re-runs without releasing `pointerId`. `TextKeyboardLayoutController.onGlideAddPoint` now uses `keyboard.getKeyForPos(...)` to detect when the trace is on a SPACE/CJK_SPACE key after first having been off it; on that first re-entry it calls `signalWordBoundary()`. `GlideTypingManager.onGlideWordBoundary` reuses the existing `updateSuggestionsAsync(MAX_SUGGESTION_COUNT, true) { glideTypingClassifier.clear() }` path, so the current word commits via `keyboardManager.commitGesture(...)` and the classifier resets — and because `commitGesture` activates phantom-space, the next word committed at trace-end is automatically prefixed with " ". The controller also fires `onGlideCancelled()` on each boundary so the trail-fade animation visually punctuates each finished word, the same way it does on a finger-lift. New pref `glide.flowThroughSpace` (default `true`) + Settings → Gestures → "Flow through space" switch. Compile-verified.
+- ✅ **N12.5** shipped 2026-05-09 (v1.7.5). New `PersonalTrigramStore` is a per-locale `(prev2, prev1) → next` counter persisted to `<filesDir>/personal_trigrams_<localeTag>.tsv` (one tab-separated quadruple per line). Caps: 4,000 contexts per locale, 12 next words per context, max count 1,000, MIN_COUNT=2 to suggest. `KeyboardManager.learnIfAllowed` now tracks both `lastLearnedWord` and `prevLearnedWord` (sliding two-word window per locale), and on each commit calls `PersonalBigramStore.learn(prev1, curr, locale)` *and* `PersonalTrigramStore.learn(prev2, prev1, curr, locale)` whenever both `prev` slots are populated for the active locale. `LatinLanguageProvider.nextWordSuggestions(...)` adds a new Tier 0 (trigram) before the existing Tier 1 (bigram) and Tier 2 (dict bootstrap) — confidence range 0.80-0.45. `previousWordOf(...)` now takes a `depth` parameter (1 = prev, 2 = prev-prev) so the same letter-token-extraction logic services both lookups. End result: after the user has typed `the quick brown fox` a couple of times, typing `the quick` will surface `brown` as the top suggestion *via the trigram path* rather than the generic bigram fallback. Compile-verified.
+
+- ✅ **N12.5 (deferred)** — local-personalization-adapter blending personal frequencies with base dictionary frequencies via Bayesian update is naturally absorbed into the trigram→bigram→dict-frequency tier ladder above; no separate adapter needed until L1 (Gemma 3 270M) lands and a real probability model exists to blend with.
+- ✅ **N12.9** shipped 2026-05-09 (v1.7.5). `applySentenceCase(word, textBeforeCursor)` capitalises the first letter of every next-word suggestion (trigram, bigram, dict bootstrap) when the trimmed text-before-cursor is empty or its last character is `.`/`!`/`?` — so after a period the strip surfaces `The`, `A`, `I` instead of lowercase. Wraps every merged candidate at the end of `nextWordSuggestions(...)`. Cheap, visible, and SwiftKey-parity at sentence start.
+
+- ✅ **N12.10** shipped 2026-05-09 (v1.7.5). `WordSuggestionCandidate` returned from `nextWordSuggestions(...)` and `DictionaryManager.queryUserDictionary(...)` now both ship `isEligibleForUserRemoval = true`. New `DictionaryManager.forgetWord(word, locale)` deletes the matching personal-dict rows via `dao.delete(entry)` (off-thread, IO dispatcher). New `PersonalBigramStore.forget(word, locale)` removes every entry where `word` is the `next` value, evicting any prev-key whose `nextMap` becomes empty, then forces a flush. Same for `PersonalTrigramStore.forget(word, locale)`. `LatinLanguageProvider.removeSuggestion(...)` now consults all three forget paths in sequence whenever the candidate is eligible. End-to-end UX: long-press a noisy suggestion (e.g. an autocomplete from a typo you don't want learned) → it's gone everywhere on this device, and the suggestion strip re-runs (`NlpManager.removeSuggestion` already triggers `suggest(...)`) so the next-best suggestion takes its place.
+
+- ✅ **N12.11** shipped 2026-05-14. Flow short-word context rescue is now wired. `GlideTypingManager` keeps the previous committed glide candidate list recoverable for a bounded 6-second window, asks `NlpManager.nextWordContextScore(...)` for personal/cold-start phrase evidence when the next glide word arrives, and lets `GlideContextRescorer` conservatively replace only short ambiguous words when following context is strong enough. `KeyboardManager.replaceLastGestureWordForContext(...)` preserves casing for retroactive replacements, and `EditorInstance.replaceCurrentGestureWord(...)` only replaces the active composing gesture word when it still matches the expected committed word. New `GlideContextRescorerTest` covers `in` + `going` -> `I'm`, weak-context no-ops, and long-word no-ops.
+
+- ✅ **N12.12 / N2.2 partial** shipped 2026-05-14. Multilingual known-word detection now evaluates every active subtype locale instead of only the primary locale. `NlpManager.isKnownTypedWord(...)` checks user dictionaries and provider frequencies across `subtype.locales()`, `candidateSignals(...)` uses active-locale candidate frequency as the dictionary prior, and new `MultilingualTokenScorer` lowers language confidence for wrong-language corrections when the typed token is known in another enabled language. New `MultilingualTokenScorerTest` covers secondary-language literals, wrong-language correction demotion, and single-language confidence preservation.
+
+- ✅ **N12.13** shipped 2026-05-14. Cold-start phrase prediction now checks common two- and three-word English phrase contexts before falling back to single-word continuations. `ColdStartNextWordPriors` parses the trailing phrase window, normalizes apostrophes, and adds phrase continuations such as `let me -> know`, `as soon as -> possible`, `thank you for -> the`, `are you going -> to`, and `would you like -> to`. New tests cover phrase-prior precedence and three-word lookup.
+
+- ✅ **N12.14** shipped 2026-05-14. Typing stats is now a local-learning control surface, not just a passive counter. `TypingStatsScreen` shows learned dictionary words, learned phrase-pair count plus disk usage, learned phrase-triple count plus disk usage, correction outcome prior count, and persisted adaptive-touch sample count. It also exposes immediate local reset actions for phrase predictions, correction memory, adaptive touch, and all non-dictionary typing learning. `PersonalBigramStore` and `PersonalTrigramStore` now provide awaited reset/count APIs and serialize disk flushes with resets so pending background writes cannot recreate cleared learning. New tests cover correction-prior count/reset and adaptive-touch reset behavior.
+
+- ✅ **N12.15** shipped 2026-05-14. SwiftKey parity tuning now has a visible local trace workflow. Typing stats exposes local trace capture, trace sharing, and trace clearing; trace capture still writes only to private app storage and exports via the existing FileProvider cache path when the user shares it. `SwiftKeyTypingTraceRecorder` now has explicit enable, size, clear, and share-cache APIs. Replay coverage also expanded with checked-in JSONL cases for the user-reported `thos -> this` short-word correction and a phrase-context `let me -> know` prediction case.
+
+- ✅ **N12.16** shipped 2026-05-14. Replay tuning now exposes aggregate parity metrics. `SwiftKeyTraceReplayFixtureTest` replays every checked-in JSONL fixture through the ranker, then derives case count, full-ranking hit count, spacebar-action assertion count/hits, expected-role assertion count/hits, and typed-literal protection misses. The test currently requires a perfect hit rate across the fixture set, giving future scoring-threshold changes a single regression signal instead of isolated anecdotal checks.
+
+- ✅ **N12.17** shipped 2026-05-14. Replay coverage now has explicit SwiftKey parity categories for bilingual literal protection and glide context rescue. Suggestion JSONL fixtures support `tags`, add same-prefix Spanish/English and secondary-language auto-commit protection cases, and assert zero typed-literal protection misses for `bilingual-token-protection`. Flow rescoring now has its own checked-in `swiftkey/replay/glide_context_cases.jsonl` fixture set with aggregate metrics for successful short-word rescues (`in -> I'm`, `in -> on`, `ill -> I'll`) and conservative no-op cases for weak context, long words, and punctuation.
+
+- ✅ **N12.18** shipped 2026-05-14. SwiftKey scorer tuning is now explicit and replay-testable. `SwiftKeyCandidateTuning` lifts candidate weights, spatial threshold, accepted-correction boost, and rejected-correction penalty out of private constants while preserving the shipped defaults. `GlideContextTuning` does the same for Flow context rescue length, candidate cap, rank prior, context weight, minimum context, and switch margin. Replay tests now run deliberately conservative tuning variants to prove the fixture metrics detect degraded spatial roles and lost glide rescues before any production threshold moves.
+
+- ✅ **N12.19** shipped 2026-05-14. Local trace capture now feeds the replay harness directly. `SwiftKeyTraceFixtureExporter` converts opt-in trace JSONL into sanitized replay-fixture JSONL by dropping timestamps, cursor-lengths, and previous-word context while preserving current word, touch evidence, scored candidates, expected ranking, expected roles, and accepted/rejected correction outcomes. Typing stats now adds **Share replay fixtures**, which writes `swiftkey_trace_replay_cases.jsonl` to the existing FileProvider cache path so real device sessions can become checked-in parity fixtures without hand-transcribing every candidate.
+
+- ✅ **N12.20** shipped 2026-05-14. Cold-start phrase priors now influence typed partial-word candidate scoring, not only blank next-word prediction. `NlpManager.candidateSignals(...)` strips the active composing word from the context prefix and feeds `ColdStartNextWordPriors.score(...)` into the unified context probability, so typing `kn` after `Let me ` can rank `know` over stronger generic completions before personal history exists. Undo/retype parity also tightened: after a user rejects an autocorrection with backspace, `AutoCommitSuppression.shouldKeepTypedLiteral(...)` blocks all replacement candidates for that restored word slot until the user moves on, matching SwiftKey's "I meant what I just restored" behavior. Replay fixtures now cover partial phrase completion and a longer Flow contraction rescue (`were` + `going` -> `we're`).
+
+- ✅ **N12.21 / N2.2 partial** shipped 2026-05-14. Multilingual scoring now uses trailing sentence context, not only the current token. `TokenLocaleEvidence` carries per-locale context frequency from the previous two words, `NlpManager.candidateSignals(...)` precomputes that context evidence across every active subtype locale, and `MultilingualTokenScorer` sharply boosts candidates from the locale already implied by the sentence while demoting inactive-locale autocorrects. This closes a SwiftKey-feel gap for partial bilingual completions, where `hola grac...` should prefer Spanish `gracias` over an English autocorrect like `grace` before the current token is fully recognized. Replay fixtures add a `bilingual-context` category for this behavior.
+
+- ✅ **N12.22** shipped 2026-05-14. A conservative multi-word repair tier now handles common run-together English phrase typos before generic suggestions win. `ImmediateAutocorrect.englishPhraseRepairCandidate(...)` covers safe non-word forms such as `thankyou -> thank you`, `alot -> a lot`, `atleast -> at least`, `ofcourse -> of course`, `bytheway -> by the way`, and `rightnow -> right now`, preserves sentence-start case, skips all-caps input, and is English-locale gated. `NlpManager` checks this phrase-repair tier after explicit user-dictionary shortcuts but before lower-confidence in-strip autocorrects. Replay fixtures add a `multi-word-repair` category so phrase repair remains part of SwiftKey parity metrics.
+
+- ✅ **N12.23 / N2.2 partial** shipped 2026-05-14. Active-locale context no longer bleeds across sentence boundaries. New `TypingContextExtractor` centralizes "prefix before current word" and previous-word extraction, trims the active composing token, and limits phrase/language context to the current sentence after `.`, `!`, `?`, or newline. `NlpManager` now uses that sentence-local context for personal n-gram scoring, cold-start phrase scoring, and multilingual trailing-word evidence. Unit tests cover current-word stripping, punctuation/newline language-boundary resets, and apostrophe/hyphen preservation.
+
+- ✅ **N12.24 / N2.2 partial** shipped 2026-05-14. Same-sentence bilingual typing can now switch languages from the current token instead of letting trailing context dominate every candidate. `MultilingualTokenScorer` distinguishes prefix-completion language switches from context-language autocorrects, `NlpManager` detects when the active context language has a matching prefix candidate before applying the switch boost, and replay fixtures now cover both directions: `hola grac... -> gracias` stays in Spanish when Spanish has the prefix candidate, while a Spanish-context `th...` token can still surface English `the` over Spanish `te`.
+
+- ✅ **N12.25 / N2.2 partial** shipped 2026-05-14. Multi-word repair now covers common three-word run-together phrases, not only two-word merges. `ImmediateAutocorrect.englishPhraseRepairCandidate(...)` adds safe forms such as `letmeknow -> let me know`, `thankyoufor -> thank you for`, `infrontof -> in front of`, `aswellas -> as well as`, `fromnowon -> from now on`, and `seeyousoon -> see you soon`; replay fixtures now include a three-word repair case so this SwiftKey-style behavior stays guarded by parity metrics.
+
+- ✅ **N12.26 / N12.4 partial** shipped 2026-05-14. Glide context rescue now handles the common `id like -> I'd like` contraction pattern before personal history exists. `ColdStartNextWordPriors` adds `I'd` continuations (`like`, `rather`, `love`, `say`, `be`) and follow-on phrase priors for `I'd like/rather/love`, while glide replay fixtures add a `contraction before like` case so short ambiguous Flow commits can be corrected from the next word the way SwiftKey does.
+
+- ✅ **N12.27 / N2.2 partial** shipped 2026-05-14. Shared-spelling bilingual literals now look less overconfidently wrong in the suggestion strip. `MultilingualTokenScorer` detects when the typed word is known in more than one active locale and dampens one-language correction confidence unless the candidate is the typed word itself. Replay fixtures add `shared-spelling bilingual literal protection` (`no` against English `on`/`so`) so the spacebar remains literal-safe and aggregate bilingual-protection metrics cover this SwiftKey parity edge case.
+
+- ✅ **N12.28 / N2.2 partial** shipped 2026-05-14. Spacebar and punctuation autocommit now honor multilingual language confidence. `SwiftKeyCandidateRanker.selectSpacebarCandidate(...)` accepts candidate signals and refuses low-confidence language replacements, while `NlpManager` carries the active signal map into both spacebar and punctuation auto-commit selection. Replay fixtures add `low-confidence multilingual autocorrect guard`, preventing a weak wrong-language `hello` replacement from firing even if it still appears in the strip.
+
+- ✅ **N12.29 / N2.1 partial** shipped 2026-05-14. Active-language detection now considers up to four trailing words in the current sentence instead of only two. `TypingContextExtractor.previousWordListBeforeCurrentWord(...)` exposes a reusable sentence-local list for language evidence, while `NlpManager` keeps bigram/trigram prediction on the previous two words but expands multilingual context scoring to the roadmap's 3-4 word target.
+
+- ✅ **N12.8** shipped 2026-05-09 (v1.7.5). New `AdaptiveTouchModel.adjustedCenter(keyCode, fallbackCenterX, fallbackCenterY, halfWidth, halfHeight)` returns the user-personalised pixel center for a key when the model has ≥30 samples, otherwise the geometric fallback. Bias is clamped to `±0.5 × halfWidth/halfHeight` so even a heavily-skewed learner can never drag the template outside the visible key. `StatisticalGlideTypingClassifier.findNClosestKeys` (matching) and `Pruner.generateIdealGestures` (template) both consult `adjustedCenter(...)` instead of using `key.visibleBounds.center` directly. Net effect: the glide trace-shape comparator now scores swipes against where this user actually aims for each key, not the visual center — same per-user bias N12.1 already gives the tap path. Compile-verified.
+- ✅ **N12.7** shipped 2026-05-09 (v1.7.5). `LatinDictionarySnapshot.topByFrequency(n)` lazily caches the top-64 most-frequent dictionary words (skipping single-letter words other than "a"/"I" so the strip doesn't surface noise). `LatinLanguageProvider.nextWordSuggestions(...)` now layers two tiers: (Tier 1) up-to-`maxCandidateCount` trained-bigram hits when the previous word matched anything in the personal bigram store; (Tier 2) fills any remaining slots with high-frequency dictionary words. A `HashSet` deduplicates between tiers (case-insensitive). The result: a never-empty suggestion strip on cold-start and after sentence-ending punctuation, the SwiftKey Day-1 surface. Sentence-start detection (`...trimEnd().lastOrNull() in {'.','!','?'}` or empty) auto-capitalises the first letter so the user gets `The`, `A`, `I` not `the`, `a`, `i` after a period. Tier 1 confidence range 0.55-0.20 (5% per slot), Tier 2 confidence ~0.30-0.55 weighted by SCOWL frequency, so a strong personal bigram still wins over a generic "the". Compile-verified.
+
+- ✅ **N12.6** shipped 2026-05-09 (v1.7.5). New `Routes.Settings.TypingStats` (deep-link `settings/typing/stats`) reachable from the bottom of `TypingScreen` ("Typing stats" with `Insights` icon). `TypingStatsScreen.kt` reads three on-device numbers off-thread: (1) words-learned count + top-10 personal-dictionary entries by frequency from `DictionaryManager.default().florisUserDictionaryDao().queryAll()`; (2) total bigram-store size on disk by summing every `personal_bigrams_*.tsv` under `filesDir`; (3) adaptive-touch-model session sample count from `AdaptiveTouchModel.totalSampleCount()`. Manual refresh button rerunshe the IO query. No data leaves the device. Closes the SwiftKey "Stats" parity surface. Compile-verified + adb-installed.
+
+Out of scope by design: Copilot, DALL-E Designer, Microsoft account sync, federated aggregation server, anything that requires `INTERNET` permission.
+
+### N11. Resolve the runtime `TODO()` stubs (correctness floor) ✅ shipped 2026-05-09 (v1.7.0)
+
+Two `TODO("…")` calls in production paths will crash the IME if reached; both are in extension-loader fallback branches. Either implement or guard.
+
+- ✅ **N11.1** `KeyboardExtension.kt:55` — replaced `TODO("Not yet implemented")` with a real `KeyboardExtensionEditor` (mirrors `ThemeExtensionEditor` shape: meta + dependencies + per-component mutable lists; `build()` round-trips back to a `KeyboardExtension`). Edit screen no longer crashes if an extension of this type is opened.
+- ✅ **N11.2** `LanguagePackExtension.kt:62` — replaced `TODO("LOL LMAO")` with a real `LanguagePackExtensionEditor`. Unblocks F-Droid acceptance check.
+- ✅ **N11.3** `FlorisSpellCheckerService.kt:141` — documented design choice. AOSP's default sentence-aggregation already routes per-word lookups through `onGetSuggestionsMultiple`, which is SwiftFloris-backed via `NlpManager`. Custom impl deferred until we need cross-word sentence context. Comment in code explains the rationale.
+
+### N13. Android 17 readiness (new v5.1 theme)
+
+Android 17 was unveiled at The Android Show 2026-05-12 [STD-A17-UNVEIL] and targets API level 37. IME-relevant behavior changes need to be addressed when SwiftFloris's `targetSdk` bumps to 37 (current is 36). All three items are pure-code surgical fixes, no external dep.
+
+- **N13.1** CJKV IME accessibility — Android 17 adds new `TextAttribute.Builder.setTextSuggestionSelected()` + `AccessibilityEvent.setTextChangeTypes()` paths so screen readers announce conversion-candidate selection during composition [STD-A17-BEHAVIOR]. SwiftFloris's `EditorInstance.setComposingRegion(...)` extension is the natural seam; for CJK subtypes routing through L3's `CjkInputProvider` facade (v1.8.x), wire `setTextSuggestionSelected(true)` when a candidate is picked. **Currently the L3 path is a facade with no real librime backend**, so this lands trivially when the facade emits a candidate via `commit(...)`. Cost: S.
+- ✅ **N13.2** shipped 2026-05-16 (v1.8.45). Audit found there is exactly **one** activity declared in the manifest (`FlorisAppActivity`) hosting all eight Compose nav-destinations — so the IME-visibility-restore path lands once, in that activity's lifecycle. `FlorisAppActivity.onSaveInstanceState` now snapshots `ViewCompat.getRootWindowInsets(decor)?.isVisible(WindowInsetsCompat.Type.ime())` into the new `SAVED_KEY_IME_VISIBLE = "swiftfloris.app.ime_visible"` bundle key; `FlorisAppActivity.onCreate` posts a `WindowInsetsControllerCompat(window, decorView).show(WindowInsetsCompat.Type.ime())` request when the saved bundle remembers the IME was visible. Pre-Android-17 builds still get the system's auto-restore *and* this explicit restore (idempotent — `show()` on an already-visible IME is a no-op), so the behavior is forward-compatible with the API-37 targetSdk bump on a future slice without changing pre-API-37 behavior. The `windowSoftInputMode="adjustResize"` manifest declaration is retained — adding `stateAlwaysVisible` would force the IME open even when the user had deliberately dismissed it before rotation, which is the opposite of what the Android 17 behavior change is asking for.
+- ✅ **N13.3** shipped 2026-05-16 (v1.8.44). The audit confirmed `EditorInstance.handleStartInputView` already collapses Android `TYPE_TEXT_VARIATION_PASSWORD` / `_VISIBLE_PASSWORD` / `_WEB_PASSWORD` / `TYPE_NUMBER_VARIATION_PASSWORD` into a single `KeyVariation.PASSWORD` bucket, so the IME-side gate only needs one branch. New pure helper `PasswordFieldPopupGate.shouldSuppressPopups(activeVariation)` in `ime/text/keyboard/` returns `true` iff the variation is `KeyVariation.PASSWORD`. `TextKeyboardLayout` now consults the gate in both `isSuitableForBasicPopup` and `isSuitableForExtendedPopup` predicates passed to `rememberPopupUiController`, using a new `rememberUpdatedState(evaluator)` capture so the predicate always reads the live evaluator instead of the one snapshotted at the first recomposition. Net effect: long-press popups no longer render the typed character on password fields regardless of input source (touch *or* hardware key event), aligning the IME path with Android 17's new `show_passwords_physical` setting [STD-A17-BEHAVIOR]. 6 new `PasswordFieldPopupGateTest` cases including a forward-compat check that exhaustively iterates `KeyVariation.entries` so a future variation that should also suppress popups gets a clear test failure.
+
+### N14. Roborazzi plugin alias + dependency bumps (new v5.1 theme)
+
+v5.0 stranded the Roborazzi plugin alias behind a "wait for 1.44.0-stable" gate; that's resolved.
+
+- ✅ **N14.1** shipped 2026-05-16 (v1.8.43) and hard-gated 2026-05-18 (v1.8.123). `gradle/libs.versions.toml` `roborazzi = "1.39.0"` → `"1.55.0"` (Jan 2026 line, ships AGP 9 support via PR #782 per [ROBORAZZI-RELEASES]); `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:recordRoborazziDebug` + `:app:verifyRoborazziDebug` task wiring is live. v1.8.123 commits baseline PNGs under `app/src/test/snapshots/` for the maintainer-chip suite, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons, and removes `continue-on-error` from the CI verify step. Future coverage extends through focused follow-up baselines, but the gate is now hard.
+- ✅ **N14.2** shipped 2026-05-16 (v1.8.42). `gradle/libs.versions.toml` `[versions] kotlin` bumped `2.3.20` → `2.3.21` (Apr 23 2026 bug-fix release per [KOTLIN-2321]: Wasm IC mode, Native ObjC protocol metaclass cast, AGP 9.1 R8 artifact-clear regression, Wasm IC + KGP composite-build fixes). `kotlin-android` / `kotlin-jvm` / `kotlin-plugin-compose` / `kotlin-serialization` Gradle plugins + `kotlin-reflect` + `kotlin-test-junit5` all ride the same `version.ref = "kotlin"` so they pick up the bump for free. `docs/REPRODUCIBLE_BUILDS.md` and the ROADMAP §2 stack line updated to match.
+- ✅ **N14.3** audit shipped 2026-05-17 (v1.8.51). The current `androidx-compose-bom = "2026.03.01"` pin is on the published March-2026 patch-01 line; no later patch is announced as of this audit. No Roborazzi visual-regression or macrobenchmark surface forces an out-of-band bump. The actual version-bump is a separate slice gated on the cadence policy in `docs/DEPENDENCY_TRIAGE.md` (Roborazzi + macrobenchmark evidence run); this slice is the audit + audit-log entry that pins the next review window.
+- ✅ **N14.4** audit shipped 2026-05-17 (v1.8.51). The current `gradle-wrapper.properties` pin is on `gradle-9.4.1-bin.zip` with `distributionSha256Sum=2ab2958f...` — the wrapper still verifies. The reproducible-builds contract from `docs/REPRODUCIBLE_BUILDS.md` requires any bump to update the SHA-256 in lockstep so the verify path stays correct; the bump itself is gated on `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` on the maintainer's local box per the cadence policy. Audit-log entry added so a future contributor doesn't redo this analysis from scratch.
+- ✅ **N14.5 / Bump-batch A** shipped 2026-05-17 (v1.8.69). Low-risk dependency refresh only: `kotlinx-coroutines` 1.10.2 → 1.11.0, KSP 2.3.5 → 2.3.8, ZXing 3.5.3 → 3.5.4, AboutLibraries 14.0.1 → stable 14.2.0. Re-checked Maven Central / Gradle Plugin Portal metadata before applying; AboutLibraries 15.0.0-b01 is present but beta and intentionally skipped. Gradle verification remains blocked on this VM by missing Java, so `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the maintainer build host.
+- ✅ **N14.6 / Bump-batch B** shipped 2026-05-17 (v1.8.71). Visual/JVM test harness refresh only: Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1`. Maven Central and Gradle Plugin Portal metadata both report Roborazzi `1.60.0` as latest/release; Maven Central reports Robolectric `4.16.1` as latest/release. OSV querybatch returned zero vulnerabilities for the updated Roborazzi core / Compose / JUnit-rule artifacts and Robolectric. Gradle verification remains blocked on this VM by missing Java, so `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the maintainer build host.
+- ✅ **N14.7 / Bump-batch C** shipped 2026-05-17 (v1.8.74). Build toolchain refresh: Android Gradle Plugin `9.0.0` → `9.2.1` and Compose BOM `2026.03.01` → `2026.05.00`. Google Maven metadata shows AGP stable tail through `9.2.1` while `9.3.0-alpha05` is preview; Compose BOM latest/release is `2026.05.00`. Android Studio Panda 4 Patch 1 notes say AGP `9.2.1` fixes the `RecordTag` class issue seen after upgrading to Gradle / AGP `9.2.0`, so this skips directly to the patch release. R8 keepattributes audit required no active rule changes: `app/proguard-rules.pro` keeps `RuntimeVisibleAnnotations,AnnotationDefault`, not wildcard `*Annotation*`, and the library `SourceFile,LineNumberTable` examples are commented out. OSV querybatch returned zero vulnerabilities for `com.android.tools.build:gradle:9.2.1` and `androidx.compose:compose-bom:2026.05.00`. Gradle verification remains blocked on this VM by missing Java, so `:app:testDebugUnitTest :app:lintDebug :app:assembleDebug` must run on the maintainer build host.
+
+### N15. Gboard 2026 parity polish (new v5.1 theme)
+
+Three Gboard 2026 features that shipped or rolled out during the v5.0 window — each is a small SwiftFloris parity item.
+
+- ✅ **N15.1** shipped 2026-05-16 (matrix #14 + #15, commit `0385603`). The implementation route taken was to extend the existing `handleSpaceSwipe` handler — not a separate `Box` overlay — to support continuous vertical drag in addition to the existing horizontal drag. New `prefs.gestures.spaceBarSwipeDown` sibling to the existing `spaceBarSwipeUp` (default NO_ACTION, opt-in, surfaced under Settings → Gestures). `handleSpaceSwipe` now carries UP / DOWN `TOUCH_MOVE` arms mirroring the LEFT / RIGHT continuous-drag logic: binding the vertical swipe to MOVE_CURSOR_UP / MOVE_CURSOR_DOWN turns the entire space bar into a 2-axis virtual trackpad while preserving the existing horizontal cursor walk. Mass-selection batching reused so multi-cell drags coalesce into one editor update. `TOUCH_UP` UP / DOWN arms still dispatch the configured `executeSwipeAction(...)` for non-NO_ACTION bindings so the legacy single-swipe gesture is unchanged. Functionally matches Gboard's free-movement cursor mode [GBOARD-CURSOR-2026] without the `Box` overlay's IME-window-state cost.
+- ✅ **N15.2** shipped 2026-05-16 (v1.8.41). New pure `ApostropheReturnGate.shouldReturnToCharacters(committedText, currentMode, autoReturnEnabled)` helper in `ime/keyboard/`; consulted by `KeyboardManager.onInputKeyUp` right after `editorInstance.commitChar(text)` in the default CHARACTER/NUMERIC branch. Returns true iff (a) the new `prefs.keyboard.autoReturnAfterApostrophe` pref is on (default **on**), (b) the committed text is exactly the ASCII apostrophe (U+0027 — the curly U+2019 typographic quote is intentionally **not** auto-returned to keep the gate conservative), and (c) the active mode is `SYMBOLS` or `SYMBOLS2`. NUMERIC/NUMERIC_ADVANCED/PHONE/PHONE2 panels never trigger (the shipped layouts don't carry the apostrophe there). New Settings → Keyboard → "Return to letters after apostrophe" switch (sibling of the existing `spaceBarSwitchesToCharacters` toggle) with two new string resources. 8 new `ApostropheReturnGateTest` cases pin the contract (SYMBOLS, SYMBOLS2, disabled pref, non-apostrophe, CHARACTERS, NUMERIC family, curly U+2019, empty string).
+- ✅ **N15.3** shipped 2026-05-17 (v1.8.49). New `VoiceCommandAction.REMOVE_ITEM_FROM_LIST` enum value plus an `argument: String?` field on `VoiceCommandMatch` so parameterised commands carry their extracted target. `VoiceCommandParser.parameterisedMatch(...)` runs before the fixed-phrase ranker and recognises a small set of unambiguous prefix / suffix patterns: `no longer want <item>`, `no longer need <item>`, `remove <item> from the list`, `remove <item> from list`, `delete <item> from the list`, `delete <item> from list`, `scratch <item>`. Confidence is fixed at 1.0 for an exact pattern match because the anchor tokens themselves disambiguate — partial matches don't fire so the user can retry. `extractRaw` preserves the original argument casing for UX feedback ("Removed 'Apples'"); a conservative stopword guard (`the`/`a`/`an`/`this`/`that`/`it`/`them`/`those`/`these`) prevents an utterance like `remove the from the list` or `scratch the` from excising the whole buffer. `StreamingVoiceTranscriptBuffer.removeCommittedItem(item)` walks `committedSegments`, excises every case-insensitive whole-phrase match (multi-word items supported), drops dangling `and`/`or`/`plus`/`with`/`&` connectors, and returns a `RemoveCommittedItemResult` with `previousCommittedText` / `newCommittedText` / `removedCount` so the executor can decide whether to apply the diff. `EditorVoiceCommandActions` gains an optional `transcriptBuffer` reference and a `removeItemFromList(item)` override that uses the buffer's diff to compute a safe editor-side replacement (selects the previously-committed slice via `editor.setSelection` + `commitText`, refuses if the editor's text-before-cursor no longer ends with the previous committed text). Two new failure reasons (`ITEM_NOT_FOUND`, `EDITOR_OUT_OF_SYNC`) distinguish "your list doesn't have that" from "you typed something between dictation chunks and I won't risk corrupting the editor". `REMOVE_ITEM_FROM_LIST` is filtered out of the Settings → Voice Input custom-command picker because it's argument-only and not assignable as a fixed-phrase custom command. New tests: 8 parser cases (`no longer want`, casing preservation, all three remove/delete variants, `scratch`, `remove that`/DELETE_THAT precedence, stopword rejection, no-argument rejection, ambient-utterance false-positive guard), 8 buffer cases (single match, dangling-`and` cleanup, case-insensitive match with casing-preserved remainder, no-op when absent, blank-input refusal, multi-word item, cross-segment walk, trailing-punctuation argument tolerance), 3 executor cases (null-argument short-circuit, whitespace-argument short-circuit, trimmed-argument forwarding). The Next-2.5 Rambler-style cleanup pass remains pending on L1 Gemma 3 LLM bring-up.
+
+### N16. SwiftKey migration push (window closes 2026-05-31)
+
+**Time-sensitive: SwiftKey accounts retire 15 days from this update [SK-RETIRE].** All non-Microsoft-account login data permanently deleted post-cutoff. SwiftFloris's migration funnel is in place (Next-6.3 `docs/MIGRATE_FROM_SWIFTKEY.md` + Obtainium one-tap install URL); the time-sensitive work is **visibility**.
+
+- ⏳ **N16.1** README + opening pitch slice shipped 2026-05-17 (v1.8.52). New `SwiftKey migration` Shields badge in the top badge row captioned "window closes 2026-05-31" in red; new banner block above the Highlights table walks the visitor through the two no-cloud migration paths in three sentences each; existing "Migrating from SwiftKey" section consolidated and pointed at `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`; "Recent releases" + emoji-crash troubleshooting + status-line all bumped to v1.8.52. **Remaining marketing-side actions:** one-shot Reddit thread on r/SwiftKey + r/HeliBoard + r/FlorisBoard + r/PrivacyGuides with the Obtainium URL + `MIGRATE_FROM_SWIFTKEY.md` permalink; pin a GitHub release on 2026-05-30 (last business day before cutoff). **Engineering side closed; marketing side stays open per `docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md` Phase A1.**
+- ✅ **N16.2** shipped 2026-05-16 (v1.8.46). `DictionaryImporter` now recognises and parses SwiftKey's `swiftkey-cloud.json` export: new `DictionaryImportFormat.JSON` enum value + `parseSwiftKeyJson(json)` entry point + envelope auto-detection in both the standalone `import(InputStream)` byte-sniff path and the `parseZip(stream)` `.json` entry branch. Because the exact wire shape was lightly documented and `data.swiftkey.com` retires 2026-05-31 [SK-RETIRE] (15 days from this update), the parser is **deliberately tolerant**: it walks every nested JSON array/object and lifts any object that carries a `word`-class field (`word` / `text` / `string`) into a `PersonalDictionaryEntry`, picking up `frequency` / `count` / `rank` for frequency (clamped to [0,255], defaults to 128), `shortcut` / `expansion` for the shortcut field, and `locale` / `language` / `lang` for the locale. Covers the three envelope shapes most commonly observed in user exports: `{ "predictions": [...], "shortcuts": [...] }`, `{ "user_data": { "predictions": [...] } }`, and a bare `[ { "word": "..." }, ... ]` array. Malformed JSON returns an empty list (defensive — so a FlorisBoard backup-manifest JSON sitting in the same zip as the dictionary CSV doesn't abort the whole import). 10 new `DictionaryImporterTest` cases (envelope canonical, user_data wrapping, bare array, missing-fields tolerance, out-of-range frequency clamping, malformed-JSON no-throw, empty array/object, blank-word filtering, end-to-end `import()` byte-sniff routing, and the JSON detector additions).
+- ✅ **N16.3** shipped 2026-05-17 (release metadata only). The 29 missing local release tags `v1.8.41` through `v1.8.69` were backfilled from their corresponding `gradle.properties` version-bump commits after validating every commit's `projectVersionName` and `projectVersionCode`. This resolves the local Obtainium / fork-audit tag gap without creating a new app release. The tags are not pushed from this VM; the maintainer host still needs to run `git push --tags` or push the individual `v1.8.41`...`v1.8.69` refs.
+- ✅ **N16.4** shipped 2026-05-17 (v1.8.70). README migration-window follow-up for adjacent keyboard workflows: Galaxy users on One UI 7+ can keep SwiftFloris as default and intentionally invoke Galaxy AI Writing Assist through Samsung's selected-text UI; Grammarly users are told that Grammarly's old Android keyboard is being replaced by Grammarly for Android, which can integrate above any keyboard. The copy explicitly preserves the privacy boundary: SwiftFloris itself does not call Samsung, Grammarly, or any network service.
+
+### N17. Emoji crash triage (tracked repo issue)
+
+- ✅ **N17.1** shipped 2026-05-17 (v1.8.50). Triage landed on `Paint.hasGlyph("")` throwing `IllegalArgumentException("hasGlyph called with empty string")` and aborting the palette render. Two paths can leak an empty-value `Emoji` into the pipeline: (a) `Emoji.ValueOnlySerializer.deserialize(decoder)` round-trips a `""` JSON entry into `Emoji(value = "")` without validation, and (b) `EmojiData.loadEmojiDataMap(...)` accepted a malformed `;...;...;...` asset row with a blank first column. Three defensive fixes: (1) `EmojiPaletteView.emojiMappings` now skips any `emoji.value.isEmpty()` before calling either `EmojiCompat.getEmojiMatch` or `Paint.hasGlyph(...)`; (2) the history-mapping branch (`prefs.emoji.historyData` pinned / recent → `EmojiSet`) filters out empty-value entries before constructing the recently-used grid so it cannot render invisible / commit-empty tap targets; (3) `EmojiData.loadEmojiDataMap` now `continue`s past data lines whose first column trims to empty so a future contributor / addon-supplied asset can't crash the IME this way. New `EmojiHistoryEmptyValueTest` pins the four contract layers (serializer permissive round-trip, history deserialiser tolerance, EmojiSet wrap, palette-side filter snippet) so the regression stays caught without Robolectric. [GH-SWIFTF-ISSUE-1]
+
+### N18. Repository hygiene guardrails
+
+- ✅ **N18.1** shipped 2026-05-17 (v1.8.73). Moved five ignored local
+  root diagnostics (`hs_err_pid15604.log`, `hs_err_pid4860.log`,
+  `replay_pid11584.log`, `replay_pid15604.log`, `replay_pid4860.log`) into
+  `.ai/local-crash-logs/2026-05-16/` so the repo root stays scan-friendly.
+  Added `.ai/local-crash-logs/README.md` to document that these are
+  machine-local ignored files, not source artifacts. Added
+  `scripts/check-no-root-crash-logs.sh` and wired it into
+  `.github/workflows/android.yml` before Java / Gradle setup; the script fails
+  if root `hs_err_pid*.log` or `replay_pid*.log` files are ever committed via
+  `git add -f`. Closes the 2026-05-17 prioritization matrix #14 + #15 batch.
+
+---
+
+## 7. NEXT (v1.9.0 → v2.0.0, target Q4 2026 – Q1 2027)
+
+Larger pieces. Each is committed but not started; ordered by value.
+
+### Next-1. SymSpell replacing Levenshtein-2 corrections
+
+Pure algorithmic win. SymSpell pre-computes only deletes (not insertions/substitutions/transpositions); a 5-letter word's 3M-error error-space collapses to ~25 entries; benchmarks show **~1M× faster than Norvig and ~1,870× faster than BK-tree at edit-distance 2** [AI6, AI7]. Replaces the current per-keystroke Levenshtein-2 scan in `LatinDictionarySuggester.corrections()`, freeing the UI thread.
+
+- ✅ **Next-1.A** shipped 2026-05-09 (v1.7.5) — distance-1 slice. New pure-Kotlin `SymSpellIndex.kt`: lazy delete-only index over the dictionary's word set (`HashMap<String, Array<String>>`, single-pass build). `LatinDictionarySnapshot.symSpellIndex` is a `by lazy` field so the cost (~100-300 ms over the 117k-word EN dict on a Pixel 6) lands on the first correction call rather than dictionary-load. `LatinDictionarySuggester.knownEdits1(...)` now calls `dictionary.symSpellIndex.candidatesAtDistance1(input)` instead of generating Norvig's L · 54 candidate strings per call → ~50× speedup on the per-keystroke correction path. Distance-2 stayed on the bounded legacy path in this slice and was replaced later by Next-1.C.
+- ✅ **Next-1.B** shipped 2026-05-09 (v1.7.5) — distance-2 auto-commit gating. Old behaviour: only `distance == 1` corrections with `frequency ≥ 0.78` would auto-commit on space. New `AutoCommitMinFrequencyDistance2 = 0.92` threshold lets distance-2 candidates auto-commit too — but only when the candidate is in the *very* common bucket (~top 3k SCOWL words by frequency). This is what closes the long-word-typo gap users actually mention: `recieved` → `received`, `tommorrow` → `tomorrow`, `seperate` → `separate`. Per-distance `autoCommitThreshold` switch in `LatinDictionarySuggester.corrections(...)`.
+- ✅ **Next-1.C** shipped 2026-05-14 — bounded distance-2 SymSpell index. `SymSpellIndex` now supports a distance-2 delete index, while `LatinDictionarySnapshot` builds it lazily over only common correction words (`frequency >= 192`, up to 24k words, max length 12) instead of the full 500k+ recognition dictionary. `LatinDictionarySuggester.corrections(...)` now uses that bounded index for short two-edit typo recovery and verifies the exact Damerau-Levenshtein distance before ranking/autocommit, preserving Next-1.B's high-frequency distance-2 safety gate.
+
+### Next-2. On-device voice typing (drop the FUTO Voice Input dependency)
+
+FUTO is Source-First (non-OSI) and adds a second-app install friction users complain about [PAIN-8, AI8, AI9]. Bundle `whisper.cpp` (MIT) directly inside SwiftFloris.
+
+- ✅ **Next-2.1** shipped 2026-05-14. Added the RAM-aware embedded voice model selector foundation: `VoiceModelSelector` detects total device RAM / Android low-RAM class, maps Auto to tiny.en (~75MB) for low-end devices, base.en (~140MB) for mid-tier or unknown non-low-RAM devices, and Large-v3-Turbo INT8 (~800MB) for 8GB+ flagship devices. Settings → Voice input now has an Embedded engine group with a persisted model-tier preference, the resolved current selection, and the detected recommendation. The UI deliberately states that live dictation still uses FUTO until the bundled Whisper runtime and on-demand model manager ship. `VoiceModelSelectorTest` pins the RAM thresholds, manual overrides, and roadmap size metadata [AI3, AI8].
+- ✅ **Next-2.2** shipped 2026-05-14, with the v1.8.120 preview gate correction. Added the local voice engine routing layer for the Vosk streaming fallback path. New `VoiceRecognitionEngineSelector` resolves Auto / Embedded Whisper / Vosk streaming / External IME into an explicit route with user-readable reasons. As of v1.8.120, local routes also require `VoiceLocalRecognizerRuntime.AVAILABLE`, so Auto keeps the external voice-keyboard handoff until an actual bundled runtime exists. Settings → Voice input exposes the recognition-engine preference, current route, and command-mode route. `StreamingVoiceTranscriptBuffer` also landed as the true-streaming transcript spine: it deduplicates repeated partials, commits final segments, handles cumulative recognizer output, and detects command phrases from partial transcripts so future Vosk/Whisper streams can feed `docs/VOICE_COMMANDS.md` behavior without waiting for a full final transcript.
+- ✅ **Next-2.3** shipped 2026-05-14, with the v1.8.120 preview gate correction. Added a Joplin-style local voice model manager for the embedded dictation roadmap: a curated Whisper/Vosk catalog (Whisper tiny.en, base.en, large-v3-turbo-q8 plus Vosk small EN/ES/FR/DE/IT/PT), per-language model rows, private app-storage installs under `filesDir/voice-models`, and disk-usage badges. Because the in-app recognizer runtime is not bundled yet, Settings now marks this catalog preview-only and disables download/import until the runtime ships; delete remains available for previously imported model files.
+- ✅ **Next-2.4** shipped 2026-05-14 (v1.7.9). `VoiceInputManager.consumeStreamingChunk(chunk, actions, customCommands, commandMode, ...)` pipes per-chunk transcripts through `StreamingVoiceTranscriptBuffer` and, on a final-chunk command match, fires `VoiceCommandExecutor` immediately. Partial chunks return `executed = null` even when the buffer surfaces a candidate `commandMatch` so the dictation overlay can preview a pending command without committing it. Buffer state is per-session; `resetStreamingBuffer()` recycles between dictations. Returns `VoiceStreamingCommandUpdate(transcript, executed)` so the IME can render both the partial/committed transcript and any executed-command feedback ("Executed: undo word") in one render pass. Closes the SwiftKey "Smart Edit"-style voice-edit surface ([SMART-EDIT, COMM-K]) the moment the user finishes saying it, rather than waiting for the recognizer's full-utterance final transcript.
+
+- **Next-2.5** Rambler-style streaming-voice cleanup [GBOARD-RAMBLER]. Android 17's Gboard ships "Rambler" — hold mic + ramble + clean polished text out (including mid-language switches). On-device equivalent: post-process the `StreamingVoiceTranscriptBuffer.committedText` through a Gemma 3 270M (L1) text-rewrite pass when the user holds-and-releases the voice key. Gated behind the L1 LLM dependency and an explicit user toggle. Cost: M (depends on L1 landing).
+
+### Next-3. Multi-tier learning improvements (beyond v1.6.0's `learnWord`)
+
+- ✅ **Next-3.1** shipped 2026-05-15 (header reader scaffold). New `KenLmBinaryHeader` data class + `KenLmBinaryReader.readHeader(input)` parse the fixed 64-byte KenLM magic block (`mmap lm http://kheafield.com/code\n\u0000` NUL-padded), the uint32 little-endian `ModelType` enum (PROBING / REST_PROBING / TRIE / QUANT_TRIE / ARRAY_TRIE / QUANT_ARRAY_TRIE), the model `order` (1–8 clamped), `FixedWidthParameters` (`has_vocabulary`, `pointer_bhiksha`, `counts_following_order`), and the per-order uint64 n-gram counts. Throws `KenLmFormatException` on magic mismatch, out-of-range order, or truncated stream — gives the NLP pipeline a cheap "is this a KenLM file, and what order / what counts?" probe so it can decide whether to mmap the trie body or fall back to the existing bigram chain. `KenLmBinaryReaderTest` covers five cases (canonical TRIE shape, QUANT_ARRAY_TRIE 5-gram, magic-mismatch rejection, unreasonable order rejection, EOF after magic). **Trie body parsing** (probability quantisation, Bhiksha-encoded next-pointer arrays, vocab strings) intentionally deferred to Next-3.1a — JNI bring-up against [the upstream KenLM library](https://github.com/kpu/kenlm) is the cheapest correctness path. Reference: [edugp/kenlm 24-language pre-trained models](https://huggingface.co/edugp/kenlm) ship in the QUANT_TRIE format that this header reader recognises. [AI11, AI12, HF-EDUGP-KENLM]
+- ✅ **Next-3.2** shipped 2026-05-15 and expanded 2026-05-17 (v1.8.60). New `ZipfFrequencyTable` loads `assets/freq/<langCode>.tsv` (one `word\tzipf` line per entry, range [1, 8] per the rspeer/wordfreq scale) and `LatinDictionarySnapshot.frequencyFor(word)` now returns `0.6 * scowl + 0.4 * (zipf / 8.0)` when both signals are present, falling back to pure SCOWL when the Zipf asset is missing for the language. Words only in SCOWL behave exactly as before; words only in Zipf get `zipf / 8.0` directly so common-but-uncommonly-spelled tokens like `okay` rank meaningfully. Seed `assets/freq/en.tsv` shipped first with ~1,000 high-frequency English entries; v1.8.60 adds matching top-1,000 `rspeer/wordfreq` seed overlays for `cs`, `de`, `es`, `fr`, `it`, and `pt`. Full SUBTLEX-extracted tables move to the Next-10.3 dictionary-pack addon. `ZipfFrequencyTableTest` covers empty passthrough, missing-rows tolerance, the 0.6/0.4 blend, the [1, 8] clamp, case-insensitive lookup, and bundled multilingual seed-table parsing.
+- ✅ **Next-3.3** shipped 2026-05-14 (v1.7.9). Existing `LatinDictionarySuggester.applyTypedCase(candidate, rawWord)` contract is now explicitly pinned by `LatinDictionarySuggesterTest`: Title Case for prefix completions when prefix capitalized, ALL_CAPS when prefix length ≥ 2 and all uppercase, lowercase passthrough otherwise; case-pinning applies to distance-1 + bounded-distance-2 corrections too. Closes FlorisBoard #1007 [FR-19, COMM-D].
+- ✅ **Next-3.3a** shipped 2026-05-15. Single-letter proper-noun completion: when the user types a single capital letter (e.g. "F" or "T"), `LatinDictionarySuggester.suggest(...)` now routes to a new `singleLetterProperNounCompletions(...)` path that returns the top-frequency dictionary words starting with that letter, case-matched via `withTypedCase` ("F" → "For", "From", "Foo"; "T" → "The", "To", "This"). Single-letter words "a"/"i" are skipped (they're the typed letter). Never auto-commit (single-letter prefix is too ambiguous). Lowercase single letters explicitly return no completions — would flood the strip every time the user begins a normal word. `LatinDictionarySuggesterTest` adds case-match + lowercase-skip coverage.
+- ✅ **Next-3.4** shipped 2026-05-14 (v1.7.9). Long-press a removable candidate → in-strip "Remove '<word>' from predictions" prompt overlays the suggestion strip (not a popup; rendered via Compose `Box` over `CandidatesRow` content). Confirms via right-hand "Remove" button → fires `nlpManager.removeSuggestion(subtype, candidate)` (deletes from personal dict + bigram + trigram via the existing N12.10 forget paths); tap outside or "Cancel" dismisses. Springy entry/exit (`scaleIn(0.85f) + fadeIn` at DampingRatioMediumBouncy / `scaleOut + fadeOut` at StiffnessHigh) per Next-11.2. If the underlying candidate list rotates the pending word out, the overlay self-dismisses so the user never confirms removal of a now-invisible candidate. Closes COMM-A FR-22 / FlorisBoard #737 / AnySoftKeyboard #1399 / FlorisBoard #1888.
+
+### Next-4. Stylus handwriting (Pixel Tablet + S-Pen audience)
+
+Android 14+ ships `InputMethodService.onStartStylusHandwriting()` + Ink API. Currently no FOSS keyboard implements it [STD-STYLUS, STD-INK].
+
+- ✅ **Next-4.1** shipped 2026-05-15 (scaffold). `FlorisImeService.onStartStylusHandwriting()` now overrides the Android 14+ entry point, logs the session, and returns `false` so the system falls back to the standard touch path. Reserves the surface so language-pack / preference plumbing can ship ahead of the recogniser bring-up. The actual recogniser hook is Next-4.2's slot.
+- ✅ **Next-4.2** shipped 2026-05-15 (recogniser facade). New `ime/handwriting/` package: `Stroke` + `StrokePoint` capture pen-down→pen-up polylines with timing (ML Kit uses pen-speed profile to disambiguate `o` vs `0`); `StrokeRecognizer` interface (`recognize(strokes, locale) -> StrokeRecognitionResult`, `isReady(locale)`, `supportedLocales: Set<String>`); `StrokeRecognitionResult.{NoRecognition, Candidates}` so the IME can tell "I don't know" apart from "no matches" (former keeps strokes on screen for retry, latter clears); `StrokeCandidate(text, confidence)` validates `confidence ∈ [0, 1]`; `StrokeRecognizerRegistry` mediates active recogniser (defaults to `StrokeRecognizer.Default` no-op). **ML Kit Digital Ink is deliberately not depended on in :app** — `RemoteModelManager.download(...)` needs `INTERNET` at runtime which breaks the §1 no-network promise; the actual ML Kit binding ships in an out-of-tree `addons/handwriting-mlkit/` APK (Next-4.2a) that the user explicitly opts into installing, at which point the Next-10.2 addon enumerator registers it as a `StrokeRecognizer` provider through `StrokeRecognizerRegistry.setActive`. `StrokeRecognizerTest` covers seven invariants (Default returns NoRecognition, registry replace + reset, stroke duration math, two-points-minimum, candidate validation, ranked-output preservation). Per-subtype refinement (Hindi-only / Japanese-only) lands in Next-4.3a once the addon is in.
+- ✅ **Next-4.3** shipped 2026-05-15 (toggle; per-subtype refinement pending Next-4.2). New `prefs.keyboard.stylusHandwritingEnabled` boolean (default **off**) surfaced under Settings → Keyboard. `FlorisImeService.onStartStylusHandwriting()` short-circuits to `false` when the toggle is off, so the system falls back to standard touch input without ever invoking the recogniser stub. When Next-4.2 lands, the per-subtype refinement (Hindi-only / Japanese-only handwriting depending on what the ML Kit / ICU-LM recogniser supports) lands as Next-4.3a.
+
+Differentiator vs HeliBoard / FlorisBoard upstream (neither ships handwriting).
+
+### Next-5. CRDT personal-dictionary sync over Syncthing
+
+No mainstream IME combines E2EE with personal-dictionary sync without a vendor account [STD-SYNC, AI18, COMM-J].
+
+- ✅ **Next-5.1** shipped 2026-05-15 (CRDT model + merge engine). New `PersonalDictionaryCrdt` data class captures the per-device file shape (`deviceId`, monotonic Lamport `clock`, `schema`, `entries[]`, `tombstones[]`). Companion `PersonalDictionaryCrdtMerger.merge(left, right)` implements observed-add / last-write-wins delete semantics with deterministic tie-break by `writtenBy` lex value, so `merge(a, b) == merge(b, a)` (commutative) and `merge(a, a) == merge(merge(a, a), a)` (idempotent). Tombstones survive merges so a third device joining the cluster eventually applies every prior deletion. Real Automerge-rs JNI bring-up moves to Next-5.1a — the scaffold semantics here cover the typical personal-dictionary case (set union + LWW on frequency) without paying the Automerge integration cost. `PersonalDictionaryCrdtTest` covers eight invariants (disjoint-union, conflict resolution, tie-break determinism, tombstone-vs-entry resolution, commutativity, idempotency, JSON round-trip). [AI18, COMM-J, STD-SYNC]
+- ✅ **Next-5.2** shipped 2026-05-15 (QR-pair payload scaffold). New `PairingPayload` data class pins the QR-encoded JSON shape exchanged on first launch (`schema`, `clusterId`, `deviceId`, 32-byte Curve25519 `pubkeyHex` as 64-char lowercase hex, `displayName`, `syncChannelId`, `senderClock`). Validator rejects malformed / mixed-case pubkey hex up front so a corrupt QR scan can't poison the cluster state. libsodium sealed-box wrap of the actual CRDT delta lands in Next-5.2a alongside the encryption bring-up; this commit lands the payload schema + serialization so the QR producer and scanner can ship independently.
+- ✅ **Next-5.3** shipped 2026-05-15 (channel taxonomy + parser). New `ime/sync/SyncChannel` sealed class with four concrete variants: `Syncthing(folderName)` (default device-to-device sync), `LocalFolder(absolutePath, displayLabel)` (any user-picked directory mirrored by Nextcloud / Resilio / Dropbox-via-FolderSync), `ManualExport` (single-blob share-sheet hand-off — useful for one-shot phone-to-phone migration), and `Disabled` (sync off, IME stays purely local). Each variant emits a canonical channel-id string that round-trips through `SyncChannel.parse(channelId)`. Unknown channel-ids — including stale or future variants — fall back to `Disabled` so a corrupt config can't accidentally activate a real sync surface. `PairingPayload.syncChannelId` (Next-5.2) feeds straight into the parser. `SyncChannelTest` pins seven invariants. The Settings → Sync Compose screen that surfaces the picker lands as Next-5.3a alongside the actual transport implementations.
+- ✅ **Next-5.3a** shipped 2026-05-15 (Settings → Sync control plane). New `Settings.Sync` route and `SyncSettingsScreen` surface the channel picker for Syncthing, SAF document-tree local folders, manual export targets, and Disabled. The screen persists `prefs.sync.*`, generates a v1 `PairingPayload` QR via ZXing core without adding network permissions, receives pairing payloads through an external scanner intent with a paste fallback, and stores paired-device summaries in JSON for the future transport layer. `SyncChannelTest` now covers SAF content-URI folders; `SyncPairingUiModelTest` covers QR generation, pairing-payload generation, corrupt-device-list tolerance, and paired-device upsert behavior.
+
+### Next-6. Migration importers
+
+- ✅ **Next-6.1** shipped 2026-05-14 (v1.7.9). New `DictionaryImporter.parseGboardXml(xml)` + `parseZip(stream)` consumes Google Takeout's `PersonalDictionary.zip` (XML inside zip; `<userdictionary><entry word="..." shortcut="..." locale="..." frequency="..."/></userdictionary>` shape). Schema detection routes by structure (PK magic bytes / `<?xml` / first-line shape), not file extension. XML entity decoding for `&amp;` / `&lt;` etc. Frequency clamped 0..255. Closes [PAIN-2, PAIN-18, MIG-GBOARD].
+- ✅ **Next-6.2** shipped 2026-05-14 (v1.7.9). Same `DictionaryImporter` path handles FlorisBoard CSV (`word,frequency,shortcut,locale` with optional header). `.flbackup` zip containing a raw `.db` / `.sqlite` SQLite snapshot is **explicitly routed to a future in-app importer path** — JVM-side can't open a SQLite database without Android's runtime, so the JVM importer raises a clear `DictionaryImportException` directing the user to Settings → Personal dictionary → Import .flbackup. The CSV+JSON manifest layout is fully supported; SQLite-snapshot routing is the v1.8 follow-up.
+- ✅ **Next-6.3** shipped 2026-05-14 (v1.7.9). New `docs/MIGRATE_FROM_SWIFTKEY.md` writes up the three available paths (retrain SwiftFloris, redownload via Microsoft account then re-export, root-only `sqlite3` extraction with sample one-line `adb` recipe) and explicitly refuses to ship a SwiftKey-cloud OAuth helper (violates §1 no-network). Times directly into the **Microsoft SwiftKey account-retirement cutoff of 2026-05-31** [SK-RETIRE] — the migration window is open right now. Closes [MIG-SK, C2].
+- ✅ **Next-6.4** shipped 2026-05-15 (parser scaffold). New `HardwareKeyboardLayout` + `HardwareKeyEntry` data classes pin the cross-format target representation. `KlcLayoutParser.parse(klcText)` consumes Windows `.klc` exports (Microsoft Keyboard Layout Creator): tolerates the BOM, comments (`//` + `;`), tab-and-space-delimited columns, dead-key `@` suffix, `%` / `-1` no-output slots, and the canonical `SC VK_NAME CAP NORMAL SHIFT CTRL ALTGR SHIFT+ALTGR` row shape. Captures `KBD`'s display name + `LOCALENAME` metadata; intentionally skips `DEADKEY` / `KEYNAME` / `LIGATURE` sections at the scaffold tier. `KlcLayoutParserTest` covers six cases (metadata extraction, alpha rows, OEM punctuation, dead-key trigger detection, Empty fallback when no LAYOUT rows resolve, tolerant skip of malformed rows). ✅ **Next-6.4a** shipped 2026-05-17 (v1.8.75): `MacKeylayoutParser.parse(xml)` consumes macOS `.keylayout` XML, selects the referenced `<keyMapSet>`, maps normal / Shift / Option-as-AltGr / Shift+Option modifier slots, captures action-backed dead-key outputs, and uses XXE-hardened XML parsing with Empty fallback for blank, malformed, non-keyboard, or DOCTYPE-bearing files. ✅ **Next-6.4b** shipped 2026-05-17 (v1.8.76): `HardwareKeyboardRuntimeMapper` binds parsed layouts to Android hardware keyboard `deviceId` values, prunes detached devices using `InputManager.getInputDeviceIds()`, resolves `KeyEvent` scan/key-code input through direct entries plus KLC/macOS/source-name fallbacks, and lets `KeyboardManager` commit mapped printable characters at runtime. [MIG-KLFC]
+
+### Next-7. Floating + split + one-handed window modes (FlorisBoard upstream parity)
+
+`ImeWindowMode.kt:56` is a documented placeholder; FlorisBoard v0.7 targets the same; HeliBoard #326 has 32 reactions [FR-7, F1, COMM-A, PAIN-14].
+
+- ✅ **Next-7.1** shipped 2026-05-15 (UX surface complete; runtime drag + resize handles already in place from FlorisBoard upstream's `ImeWindowEditorHandles.kt` 457-line implementation). New `prefs.keyboard.startInFloatingMode` boolean (default off) surfaced under Settings → Keyboard. The runtime user can still flip via the existing `TOGGLE_COMPACT_LAYOUT` smartbar quick-action / swipe binding, but this toggle covers the "I want floating mode every time" persistent-default case. `ImeWindowController.onWindowShown` consumes the pref on first session show, with fallthrough to the previously-saved `ImeWindowConfig`. **Next-7.1a shipped 2026-05-15:** first floating-mode entry now shows the one-shot "Drag the handle to move; pinch the corner to resize." overlay, auto-dismisses after 4 seconds, marks `prefs.keyboard.floatingOnboardingShown`, and Settings → Keyboard exposes a reset action.
+- ✅ **Next-7.2** shipped 2026-05-15 (foundation) and completed 2026-05-17 (v1.8.62 renderer). New `ImeWindowMode.Fixed.SPLIT` sub-mode + matching `ImeWindowConstraints.Fixed.Split(rootInsets)` class with an 80dp default gutter and a 600dp minimum-tablet-width viability check (`isViable` returns false on phones too narrow to host both halves without collapsing the gutter below thumb-stride). New `prefs.keyboard.splitKeyboardEnabled` boolean (default **off**) — once set, the runtime check funnels fixed-mode renders through `Fixed.SPLIT` instead of `Fixed.NORMAL` on form factors at or above `minTabletWidthDp`. v1.8.62 adds the layout-engine key-rect distribution: `TextKeyboardLayout` lays out character rows at `keyboardWidth - gutter`, `SplitGutterPostPass` shifts right-half touch/visible bounds into place, and `TextKeyboard.getNearestKeyForPos` refuses adaptive nearest-key rescue inside the generated gutter. Mirrors SwiftKey + Samsung split layouts and closes the long-running AnySoftKeyboard #1952 / HeliBoard #326 requests.
+- ✅ **Next-7.3** verified shipped 2026-05-14 (v1.7.9 audit; functionality landed across FlorisBoard upstream + earlier SwiftFloris work). `TOGGLE_COMPACT_LAYOUT` keycode + `TextKeyData.TOGGLE_COMPACT_LAYOUT` predefined + `SwipeAction.TOGGLE_COMPACT_LAYOUT` + smartbar QuickAction (`R.string.quick_action__one_handed_mode`) all wired into `KeyboardManager.handleKeyEvent` → `ImeWindowController.actions.toggleCompactLayout()` / `compactLayoutToLeft()` / `compactLayoutToRight()` / `compactLayoutFlipSide()`. `ImeWindow.OneHandedPanel` ships drag-resize affordance + chevron flip-side + dismiss / zoom controls. **Pending future polish:** Settings → Keyboard → "Start in one-handed mode" default-on preference; explicit citation here so future contributors don't re-derive the audit.
+
+### Next-8. Programmer mode (Hacker's Keyboard successor)
+
+No maintained option exists since Hacker's Keyboard stalled (klausw #875) [PAIN-19, FR-9, COMM-A]. Unexpected Keyboard is closest but has no autocorrect.
+
+- ✅ **Next-8.1** shipped 2026-05-14 (v1.7.9; smartbar-surface MVP). New `SmartbarActionProfile.CODE` enum surfaces Tab + Esc + arrow keys + start-of-line + end-of-line + paste + settings as priority actions when the editor's package matches a curated terminal/IDE list. Predefined `TextKeyData.TAB` (code 9, `CHARACTER` type) and `TextKeyData.ESCAPE` (code 27) added.
+- ✅ **Next-8.1a** shipped 2026-05-15 (bottom-row preset). New `BottomRowPreset.Programmer` surfaces VIEW_SYMBOLS / Tab / Esc / Space / Period / Slash / Enter directly in the main letter view. The Slash key carries a long-press popup with the full bracket-cluster: `\` (main) + `{` `}` `[` `]` `(` `)` `<` `>` `|` `` ` `` `~`. New `BottomRowKey` enum values: `TAB`, `ESCAPE`, `SLASH`. User selects this preset under Settings → Keyboard → Bottom-row preset → "Programmer". Complements the Next-8.2 CODE smartbar profile (which only changes smartbar slots, not in-keyboard keys). **Remaining:** swipe-to-symbol on every key, regex-snippet macros, paths/IPs/UUIDs as first-class clipboard types — promoted to Next-8.1b for a future pass.
+- ✅ **Next-8.2** shipped 2026-05-14 (v1.7.9). `SmartbarActionProfiles.detect(editorInfo)` now matches Termux / JuiceSSH / Acode / Spck / Quoda / ConnectBot / Termius / JetBrains family / GitHub mobile / VimTouch / sshd-like packages (substring match on lowercased package name) and emits `SmartbarActionProfile.CODE`. CODE wins the matcher over CHAT for SHORT_MESSAGE-input-type editors so terminal users don't get a chat smartbar. Test coverage in `SmartbarActionProfilesTest` (Termux dispatch, JuiceSSH-over-SHORT_MESSAGE precedence, full priority-action ordering assertion).
+
+### Next-9. Inline autofill for password managers (Bitwarden / KeePass / Proton Pass)
+
+`android:supportsInlineSuggestions=true` + `InlinePresentationRenderer` (API 30+) — render password-manager chips inline in the suggestion strip [STD-INLINE-AUTOFILL, COMM-D, COMM-G PAIN-12, FR-6].
+
+- ✅ **Next-9.1** verified shipped (inherited FlorisBoard upstream + audited 2026-05-14 v1.7.9). `app/src/main/res/xml/method.xml` declares `android:supportsInlineSuggestions="true"` plus `android:supportsSwitchingToNextInputMethod="true"`.
+- ✅ **Next-9.2** verified shipped (inherited FlorisBoard upstream + audited 2026-05-14 v1.7.9). `FlorisImeService.onCreateInlineSuggestionsRequest(uiExtras)` builds an `InlineSuggestionsRequest` with `SUGGESTION_COUNT_UNLIMITED` + a single `InlinePresentationSpec` sized to one smartbar row. `NlpInlineAutofill` inflates each provider-supplied View off-thread into a `StateFlow<List<NlpInlineAutofillSuggestion>>`. `Smartbar.shouldShowInlineSuggestionsUi` (line 153 + 219 + 315 + 323) routes the chip row into `InlineSuggestionsUi.kt`, which renders each `InlineSuggestion`'s `android.view.View` as an `AndroidView` inside `florisHorizontalScroll`, with clip-bounds gymnastics so chips truncate cleanly. Inline-autofill chips are themed via the `InlineAutofillChip` Snygg element so they inherit the active keyboard theme.
+- ✅ **Next-9.3** shipped 2026-05-14 (v1.7.9). New `docs/INLINE_AUTOFILL.md` matrix: Bitwarden 2026.4.x (FOSS F-Droid build), KeePassDX 4.3.x (F-Droid), Proton Pass 1.32.x, 1Password 8.10.x, Aegis 2.4.x (TOTP) — each version-pinned per Android version (14 / 16). Known-partial / non-compatible: Google Password Manager (Play Services side-check; out unless we add cloud), LastPass (cloud-bound, not in our test matrix), Samsung Pass (OEM-bound). Includes the re-verification recipe to run on every release that touches `onCreateInlineSuggestionsRequest`, `Smartbar.kt`, `InlineSuggestionsUi.kt`, or `NlpInlineAutofill.kt`. Closes [COMM-D #2728].
+
+- ✅ **Next-9.4** shipped 2026-05-15 (all four pieces) and completed its palette UI in v1.8.127. 1) **Custom user emoji tags** — `CustomEmojiTagStore` with atomic-rename JSON writes + 16-tag/emoji + 5,000-tagged-emoji + 32-char-tag-length caps (initial v1.8.0 commit). 2) **Predict-by-tag** — `EmojiSuggestionProvider` parallel-stream candidate scoring blends `nameWeight*0.55 + keywordWeight*0.25 + customTagWeight*0.20` so a user-tagged emoji surfaces in the IME suggestion strip from the typed word. 3) **Search-by-tag** — `EmojiSearch.results(...)` now accepts a `CustomEmojiTagStore?`; custom-tag exact match scores **2** (between bundled-name exact at 1 and bundled-keyword exact at 3) so the palette search row promotes user tags above Emojibase keywords. 4) **Pin emoji together** — `EmojiPinGroupStore` provides 32-group / 12-emoji-per-group / 32-char-name caps, atomic JSON storage, `pinEmojiToGroup` / `unpinEmojiFromGroup` / `removeGroup` / `clearAll`, and v1.8.127 wires the in-keyboard "Pin to group..." sheet plus the "Pinned groups" chip row recall path. Closes [H-EMOJI-1231].
+
+SwiftFloris already **is the first OSS keyboard with parity to Gboard's password-manager UX** as of v1.7.9 [docs/INLINE_AUTOFILL.md].
+
+### Next-10. Plugin / addon APK loading (fcitx5 pattern)
+
+Allow community-built dictionaries, themes, and language-pack APKs to self-register via broadcast intent [O14, O4]. AnySoftKeyboard already does this for language packs; fcitx5-android does it for input addons; no Floris-lineage keyboard does. Architectural payoff: base APK stays small, long-tail languages ship as separate Play/F-Droid products.
+
+- ✅ **Next-10.1** shipped 2026-05-14 (v1.7.9). New `dev.patrickgold.florisboard.ime.addon` package: `AddonContract.Action.{REGISTER, REGISTER_LANGUAGE_PACK, REGISTER_THEME_PACK, REGISTER_DICTIONARY_PACK, REGISTER_LAYOUT_PACK, REGISTER_POPUP_MAPPING_PACK, INVALIDATE}`, `AddonContract.MetadataKey.{ADDON_DESCRIPTOR, ADDON_TYPE, ADDON_VERSION, ADDON_LICENSE}`, `ADDON_SIGNATURE_PERMISSION = "dev.patrickgold.florisboard.permission.REGISTER_ADDON"`, `ADDON_ID_PREFIX = "addon:"`, `ADDON_MAX_BUNDLE_BYTES = 64 MB`. `AddonType` enum (LANGUAGE_PACK / THEME_PACK / DICTIONARY_PACK / LAYOUT_PACK / POPUP_MAPPING_PACK). `AddonManifest` data class with strict invariants (non-negative version, bundle size cap, AB:CD:… fingerprint regex). `AndroidManifest.xml` declares the signature-protected permission + the Android 11+ `<queries>` entries for every REGISTER_* action so the IME can see addon packages.
+- ✅ **Next-10.2** shipped 2026-05-14 (v1.7.9). `AddonEnumerator.snapshot()` scans `PackageManager.getInstalledPackages(GET_META_DATA | GET_PERMISSIONS)` (with TIRAMISU `PackageInfoFlags` path), evaluates each candidate, and returns the accepted set. Rejection paths (logged via `flogInfo` so a future Settings → Addons → "Why was X rejected?" surface can replay): missing addon-type metadata (silent skip — common case), unknown addon-type (forward-compat: newer addons skip on older IME), banned network permission (INTERNET / ACCESS_NETWORK_STATE / ACCESS_WIFI_STATE / CHANGE_NETWORK_STATE / CHANGE_WIFI_STATE — hard reject), missing descriptor / version / license metadata, unreadable signing certificate. Uses the existing N7.5 `SigningFingerprint.sha256OfPackage(context, packageName)` (added in v1.7.9 to support arbitrary-package fingerprint reads, not just the IME's own). 9 unit tests pin the contract (`AddonManifestTest`).
+- ✅ **Next-10.3** shipped 2026-05-15 (foundation). New `DictionaryPackDescriptor` data class + `DictionaryPackDescriptor.parse(rawJson)` pin the on-disk JSON schema every dictionary-pack addon must follow (`schema`, `language` lowercased ISO 639-1, `displayName`, `wordCount`, `fldicAssetPath`, optional `zipfAssetPath`, `source`, `license`, `minSchemaCompat`). Strict invariants reject blank fields, mixed-case language codes, absolute asset paths, and future-schema descriptors via `isCompatibleWithIme()` (forward-compat reject path, not a crash). `DictionaryPackDescriptorTest` covers six cases (Polish baseline parse, optional `zipfAssetPath`, future-schema rejection, malformed-JSON tolerance, invalid `language` and absolute-asset-path validation). New `docs/addons/dictionary-pack-spec.md` writes up the full AndroidManifest + descriptor + assets contract addon authors must follow — including the banned-network-permission rule that keeps the §1 no-network philosophy intact across third-party packs. The Polish (2025 baseline) APK itself ships in a sibling repo; this commit lands the IME-side schema + spec + parser so a follow-up dataset-extraction batch can plug straight in. [STD-LATIN-LEAPFROG]
+- ✅ **Next-10.3a** shipped 2026-05-17 (v1.8.81). New `AddonRegistry` is the process-local live-state companion to `AddonEnumerator`: it pins first-seen signing certificates by package name, rejects package-name hijacks when a later scan reports a different certificate, preserves stale pins across uninstall/reinstall gaps, and exposes deterministic lookup lists by addon type, package name, stable id, and dictionary-pack type. New `DictionaryPackCatalog` turns enrolled dictionary-pack manifests plus descriptor JSON into validated entries with `AddonProvenanceReport`s, rejects missing / malformed / future-schema descriptors without crashing, and provides language lookups for Settings → Addons and future dictionary-loader routing. `AddonRegistryTest` and `DictionaryPackCatalogTest` cover the reconciliation and descriptor-gate rules. Persisted pins, startup wiring, Settings status UI, trust controls, asset mounting, and catalog/install-hint polish shipped in v1.8.82-v1.8.126.
+- ✅ **Next-10.3b** shipped 2026-05-17 (v1.8.82) and was extended 2026-05-18 (v1.8.124). New `AddonSigningPinSet` is the persisted trust-store codec for addon signing certificates. It parses the `prefs.addon.signingCertPins` newline-string format (`packageName=SHA-256`), ignores malformed/corrupt lines, encodes sorted validated pins, preserves first-seen pins when a later manifest for the same package carries a changed certificate, and now exposes `withoutPackage(...)` for confirmed per-package trust reset. `AddonRegistry` exposes `fromPinnedSigningPinSet(...)` and `pinnedSigningPinSet()` helpers so startup and Settings code can round-trip persisted trust without the pure registry depending on JetPref. `AddonSigningPinSetTest` covers parsing, malformed-line tolerance, encoding, first-seen preservation, targeted removal, and registry codec round-trip.
+- ✅ **Next-10.3c** shipped 2026-05-17 (v1.8.83). `FlorisImeService.onCreate()` now launches addon startup reconciliation on `Dispatchers.Default`: `AddonEnumerator` scans installed packages, `AddonRegistryStartup` reconciles discovered manifests against `prefs.addon.signingCertPins`, `AddonRegistryStore` publishes the active process-wide registry, and canonical pins are persisted only when first-seen addons or malformed stored lines change the trust set. `AddonRegistryStartupTest` covers new-addon enrolment, changed-certificate rejection, corrupt stored-line cleanup, store publish/reset, and registry-generation changes used by the dictionary-loader cache. Settings status/rescan UI shipped in v1.8.84, trust controls shipped in v1.8.124, and asset mounting shipped in v1.8.125.
+- ✅ **Next-10.3d** shipped 2026-05-17 (v1.8.84) and gained trust-management controls 2026-05-18 (v1.8.124). Settings → Addons now exposes an installed-addon status screen under Data & extensions. `AddonsSettingsScreen` reads the active `AddonRegistryStore`, observes `prefs.addon.signingCertPins` for pinned-count status, lists accepted addons with package/type/version/license/size/signing-fingerprint details, lists rejected addon reasons from the latest snapshot, provides a manual "Rescan installed addons" action that reuses `AddonEnumerator` + `AddonRegistryStartup` on `Dispatchers.Default`, and includes confirmed reset-all trust plus trust-current-certificate actions. Dictionary asset mounting shipped in v1.8.125; Settings catalog/install-hint polish shipped in v1.8.126.
+- ✅ **Next-10.4a** shipped 2026-05-18 (v1.8.125). `AddonDictionaryAssetMounts` reads dictionary-pack descriptor JSON resources and mounted addon APK assets through `PackageManager#getResourcesForApplication(...)` / `AssetManager`, never extraction or temp copies, and enforces the existing addon asset byte cap before materializing text. `LatinDictionaryStore` now asks an asset planner for language-specific dictionary and Zipf paths, puts addon paths ahead of bundled paths, merges every readable dictionary into one snapshot, and clears cached snapshots when `AddonRegistryStore.generation()` changes after startup or Settings rescans. `AddonDictionaryAssetMountsTest`, `LatinDictionaryStoreTest`, and `AddonRegistryStartupTest` cover the path codec, capped asset reads, generation reload, addon/bundled merge, and store generation.
+- ✅ **Next-10.4b** shipped 2026-05-18 (v1.8.126). `DictionaryPackCatalogReader` centralises descriptor-resource reads for Settings and the runtime loader. Settings -> Addons now has a Dictionary packs group that lists mounted pack language, word count, dataset license, and source, plus descriptor-level rejection rows for accepted addon APKs whose descriptor JSON is missing, malformed, or schema-incompatible. Install guidance now reflects the shipped loader and points users to verifiable F-Droid / Obtainium / direct APK sources.
+
+### Next-11. Material 3 Expressive theme refresh
+
+M3 Expressive launched at I/O 2025; springy stack-respond animations + envelope haptics + 35 new shape morphs [STD-M3E, AI15].
+
+- ✅ **Next-11.1** shipped 2026-05-15. Seven new M3 Expressive bundled themes: **Nord (light + dark)**, **Tokyo Night**, **Dracula**, **Catppuccin Mocha**, and **SwiftKey Pure (M3E, light + dark)**. Each derived from `swift_slate.json` so the ~500-line Snygg selector tree (window/key/popup/smartbar/clipboard/extracted-input/glide-trail/inline-autofill) stays consistent with the well-tested baseline — only the `@defines` palette and the shape tokens change. `--shape-chip` moves off the pill/stadium `rounded-corner(50%)` to `rounded-corner(12dp)` to comply with the project no-pill-backdrop rule. Generated via `scripts/gen_m3e_themes.py` so the seven sheets stay byte-identical to re-runs. Theme extension manifest version bumped 0.2.0 → 0.3.0; new themes are registered alongside the existing Swift Slate / Floris / SwiftKey Pure variants. Per-app accent surface wiring (`LocalPerAppAccent` from Next-11.3a) is already in place — when the user enables Settings → Theme → "Tint to active app's icon", the active app's accent overrides `--primary` at the compose-tree root regardless of which M3E theme is selected.
+- ✅ **Next-11.2** shipped 2026-05-14 (v1.7.9). `AnimatedVisibility` wraps the Next-3.4 confirmation overlay: enter = `scaleIn(initialScale = 0.85f, animationSpec = spring(DampingRatioMediumBouncy, StiffnessMedium)) + fadeIn(spring(StiffnessMedium))`; exit = `scaleOut(spring(StiffnessHigh), targetScale = 0.9f) + fadeOut(spring(StiffnessHigh))`. Reads as a deliberate action rather than a flash; cancel gets immediate feedback. **Paired envelope-haptic rumble** still pending — gates on the N3.3a Android 16 PWLE haptic envelope item.
+- ✅ **Next-11.3** shipped 2026-05-14 (v1.7.9; foundation only). New `PerAppAccentResolver(context, cacheCapacity = 64)` extracts the editor's app icon (via `PackageManager.getApplicationInfo(pkg, 0).loadIcon(pm)`), rasterizes to a 32×32 ARGB bitmap, scans every pixel, computes HSV inline, rejects near-grey (saturation < 0.25), near-black (value < 0.20), near-white (value > 0.92), and returns the highest-saturation candidate as `androidx.compose.ui.graphics.Color`. LRU(64) cache with `AccentResult` sentinel wrapper (androidx.collection.LruCache rejects nullable V). **No `PACKAGE_USAGE_STATS` permission needed** — the editor's package name comes from the standard IME contract, so this never escalates beyond what the IME already sees. References: Chrooma's Chameleon pattern (closed-source), [C7].
+- ✅ **Next-11.3a** shipped 2026-05-15. Per-app accent **surface wiring**. New `PerAppAccentController(context)` owns a `StateFlow<Color?>` (`activeAccent`) gated on the new `prefs.theme.perAppAccentEnabled` toggle (default **off** — privacy-by-default stance even though no extra permission is required). `FlorisImeService.onStartInputView` calls `perAppAccentController.setActiveEditorPackage(editorInfo.packageName)` so the flow updates on every editor focus. `ImeRootView.Content` provides the value to the compose tree via the new `LocalPerAppAccent` `CompositionLocal`; consumers throughout the smartbar / suggestion strip / future M3 Expressive theme regen can opt-in by reading `LocalPerAppAccent.current` (null = fall through to the active Snygg theme's `--primary`). Settings → Theme adds a SwitchPreference titled "Tint to active app's icon" with a summary explicitly noting "all on-device — no extra permissions, no network". `FlorisApplication` exposes `perAppAccentController` as a `lazy {}` field with a `Context.perAppAccentController()` extension accessor matching the project's manager-injection pattern.
+
+### Next-12. Performance instrumentation + Roborazzi visual regression
+
+IMPROVEMENT_PLAN Workstream 7 (In progress, P1) — promote concrete deliverables.
+
+- ✅ **Next-12.1** shipped 2026-05-15 (harness; numbers populated as releases roll). New `benchmark/src/main/kotlin/.../KeyboardLatencyBenchmark.kt` adds four Macrobenchmark tests on top of the existing `StartupBenchmark` family: `imeFirstRender` (cold IME view inflation, FrameTimingMetric + `swiftfloris.ime.firstRender` TraceSection), `suggestionStripRecomposition` (warm-start with typed text, `swiftfloris.nlp.suggest` + `swiftfloris.smartbar.candidates.recompose` sections), `dictionaryColdLoad` (memory + `swiftfloris.dict.load` + `swiftfloris.nlp.symspell.build`), and `themeSwitch` (FrameTimingMetric + `swiftfloris.theme.switch`). Trace-section convention `swiftfloris.<subsystem>.<action>` documented so any production hot path can become measurable by wrapping with `androidx.tracing.Trace.beginSection`. Run via `./gradlew :benchmark:connectedBenchmarkAndroidTest` on a device with locked clocks; release notes record before/after per §15 Definition of Done.
+- ✅ **Next-12.2** shipped 2026-05-15 (scaffold). Roborazzi 1.43.1 + Robolectric 4.14.1 wired as `testImplementation` deps; first sample suite `ExtensionMaintainerChipScreenshotTest` pins three configurations of `ExtensionMaintainerChip` (name only / name + email / name + url) as JVM screenshot tests via `captureRoboImage` at `xxhdpi w360dp-h640dp` qualifiers. `junit-vintage-engine` lets the JUnit-4-style Robolectric `@Rule` tests run alongside the project-wide Kotest JUnit-5 platform. Roborazzi Gradle **plugin** intentionally left un-applied — its 1.43.x line still calls the AGP `TestedExtension` API that AGP 9.0.0 removed, so applying it fails the build; once Roborazzi ships an AGP-9-compatible release (`1.44.0-stable` is expected to land the new variant API per the active `1.44.0-alpha03` line), re-enable the plugin alias for the `recordRoborazzi*` / `verifyRoborazzi*` task wiring. Until then, JUnit runs trigger captures directly. Coverage will extend in follow-up batches to the smartbar candidates row, the seven new M3 Expressive theme keys, the floating-window border, and the stylus-handwriting overlay (when Next-4.2 lands). [STD-ROBORAZZI]
+- ✅ **Next-12.3** shipped 2026-05-14 (v1.7.9). New `LatinSuggesterPropertyTest` ships 11 `checkAll` invariants over the autocorrect surface: `normalizeWord` idempotency, null-on-non-letter input, no-typed-literal-autocommit, candidate-cap respect, dedup-by-lowercase, Damerau-Levenshtein ≤ 2 on corrections (verified against an *independent* DL implementation so a bug in the suggester can't silently match a bug in the test oracle), delete-and-retype identity, Title Case / ALL_CAPS case-preserve over the dictionary word generator (filtered to letter-only prefixes so contractions like `i'd` don't break the assumption), and crash-resistance on repeated-character substrings. All pass; integrated into `:app:testDebugUnitTest`.
+
+- ✅ **Next-12.4** shipped 2026-05-15. `.github/workflows/android.yml` now runs `zipalign -c -P 16 -v 4 app-debug.apk` after `:app:assembleDebug` on every push/PR. Locates the SDK build-tools dir dynamically (`ls -1 $ANDROID_HOME/build-tools | sort -V | tail -1`) so future build-tools bumps don't break the gate. If any shipped `.so` is misaligned, the workflow step emits a `::error::` and exits 1 with a pointer back to the ROADMAP §7 Next-12.4 reference + [STD-A15-16KB] documentation. No-op for the current SwiftFloris APK (zero native libs shipped), but engaged the moment Next-2 (`whisper.cpp`) / N1.2 (CleverKeys ONNX) / L1 (LiteRT-LM) / L7 (MCP) bring native code back. `gradle.properties` already pins **NDK 29.0.14206865** + AGP **9.2.1** so the toolchain produces aligned `.so` by default.
+
+---
+
+## 8. LATER (v2.1+, 2027 — high value but heavier or platform-gated)
+
+Each requires either heavy engineering (months), a platform readiness gate, or external dependency (HeliBoard NLnet drop, Android 17, Gemma 3 270M tooling).
+
+### L1. On-device LLM smart-compose (Gemma 3 270M Q4 INT4)
+
+- ✅ **L1 facade** shipped 2026-05-15. New `ime/smartcompose/` package: `SmartComposeProvider` interface (`predictNextTokens(context, maxCandidates)`, `isReady(locale)`, `activeModel`, `supportedLocales`); `SmartComposeContext` (preceding text + composing prefix + locale + editor-package for L1.3 per-app LoRA routing); `LiteRtModelDescriptor` mirrors the `.litertlm` header (modelId, preferredBackend in cpu/gpu/npu/auto, supportedLocales, sizeBytes, quantization in int4/int8/fp16/bf16, supportsLora); `SmartComposeResult.{NoSuggestion, Suggestion}` distinguishes "no model loaded" from "no confident candidate"; `SmartComposeProviderRegistry` mediates active provider. LiteRT-LM runtime stays out of `:app` (multi-MB native runtime + GPU/NPU backend dispatch) — the actual binding ships in `addons/smart-compose-litert/` and registers through the registry. `SmartComposeProviderTest` covers seven invariants. [STD-LITERT-LM]
+
+The most hyped-but-actually-shippable AI feature. ~135MB on disk; ~0.75% Pixel 9 Pro battery for 25 conversations [AI1, AI2]; opt-in Smart Compose toggle behind a long-press space gesture (battery-aware, not per-keystroke).
+
+- **L1.1** **LiteRT-LM runtime** (updated 2026-05-15). The MediaPipe LLM Inference API on Android/iOS is now deprecated by Google in favor of **LiteRT-LM** [STD-LITERT-LM] — the same orchestration layer Google uses for Gemini Nano on Chrome and Pixel Watch. Broad model support: Gemma, Llama, Phi-4, Qwen + multimodal text/image/audio + function-calling (`FunctionGemma` 2026 release) + KV-cache management (Prefill / Decode split, quadratic→linear). On a Galaxy S25 Ultra, LiteRT outperforms `llama.cpp` on CPU/GPU for prefill+decode, with NPU acceleration adding **3× over GPU for prefill**. Gemma 4 MTP (multi-token prediction) supercharges decode (>2× faster on mobile GPU with zero quality degradation). Models load from `.litertlm` format (Gemma-3n E2B/E4B and Gemma-3 1B available now). Replaces the L1.1 MediaPipe reference in v4.0.
+- **L1.2** GPU/NPU on Snapdragon 8 / Dimensity Ultra; CPU fallback graceful. LiteRT-LM's `preferredBackend` option already exposes CPU/GPU choice for Gemma-3 1B on Android.
+- **L1.3** **LoRA hot-swap** per user-domain (formal email vs casual chat). LiteRT-LM supports LoRA on the GPU backend for Gemma-2 2B, Gemma 2B, Phi-2 (attention-layer LoRA only as of 2026-Q2). Base models must be downloaded as `safetensors`. Use the existing SwiftFloris per-app smartbar profile detection to route LoRA selection.
+- **L1.4** Inline ghost-text completion (Apple QuickType pattern; matches Gboard Smart Compose's gray-text/swipe-space-to-accept pattern [GBOARD-SMARTCOMPOSE]) — gray suggestion that auto-accepts on space [AI17, COMM-D]. Long-press space gesture toggles the feature on/off; battery-aware (gates on charging or > 30% battery by default).
+
+### L2. Inline translation (Bergamot WASM offline NMT)
+
+- ✅ **L2 facade** shipped 2026-05-15. New `ime/translate/` package: `InlineTranslator` interface (`translate(text, src, target)`, `isLanguagePairReady(src, target)`, `installedPairs`); `LanguagePairDescriptor` (lowercase ISO 639-1 src + target, bundle path, size bytes, quality tier in tiny/base/high); `TranslationResult.{Unavailable, Translated}`; `InlineTranslatorRegistry` for runtime swap. Bergamot WASM runtime stays out of `:app` (WASM + marian-decoder native + model bundles 17 MB+ per pair) — actual binding ships in `addons/translator-bergamot/`. `InlineTranslatorTest` pins descriptor + result validation.
+
+Microsoft's Hub Keyboard's idea, finally executed [C9, AI19]. Type English, see Spanish above the prediction row, tap to swap. Bergamot is the Mozilla-coordinated consortium's Apache-2.0 offline translator (Marian NMT, CPU WASM) [STD-BERGAMOT]. **Active fork:** `browsermt/bergamot-translator`. Mozilla's `mozilla/bergamot-translator` is now INACTIVE. Reference Android port: `DavidVentura/offline-translator` (Firefox Translation Models on-device via Bergamot, recently maintained) — provides a working blueprint and surfaces the CMake / Emscripten gotchas (pcre2 dep, NDK setup) you'll hit. Likely path: ship the Bergamot WASM artifact + Firefox translation models, run via `androidx.javascriptengine` or Wasmer/WasmEdge JNI.
+
+- **L2.1** Wire as a smartbar quick action (like SwiftKey's translation toolbar).
+- **L2.2** Per-language pair model download UI matches the voice-model pattern (Next-2.3).
+- **L2.3** Inline "type EN, see ES on row above" preview surface — like Microsoft's Hub Keyboard, but executed cleanly without the cloud round-trip.
+
+### L3. CJK Pinyin / Jyutping / Zhuyin via librime JNI — **urgency raised 2026-05-15**
+
+- ✅ **L3 facade** shipped 2026-05-15. New `ime/cjk/` package: `CjkInputProvider` interface (`convert(input, schema, maxCandidates)`, `commit(candidate, schema)`, `supportedSchemas`); `CjkSchema` enum maps onto librime schema-yaml ids (PINYIN_SIMPLIFIED→`luna_pinyin`, PINYIN_TRADITIONAL→`luna_pinyin_tw`, JYUTPING→`jyutping`, ZHUYIN→`bopomofo`, CANGJIE_5→`cangjie5`, WUBI_86→`wubi86`, QUICK_3→`double_pinyin_xiaohe`, JAPANESE_MOZC→`mozc_ja`, KOREAN_JAMO→`hangul_2bul`); `CjkCandidate(text, annotation, confidence, isPreferred)`; `CjkInputProviderRegistry`. librime JNI bring-up ships in `addons/cjk-librime/`; the Compose candidate-row UI consumes this facade.
+
+The single largest competitive gap vs Gboard [STD-CJK, FR-16, PAIN-16]. FlorisBoard upstream's Han support is shape-based only ("not recommended for daily use"). librime is BSD; bundles cleanly via JNI. **Urgency update:** FUTO Keyboard v0.1.28 now ships Traditional + Simplified Chinese (Pinyin, fuzzy Pinyin, Double Pinyin, rudimentary stroke) plus Vietnamese Telex/VNI [FUTO-V0-1-28], so the FOSS CJK gap is closing without SwiftFloris — promote L3 ahead of L4 if a SwiftFloris user base in the CJK market is a 2026 priority.
+
+- **L3.1:** librime JNI module with Pinyin/Jyutping/Zhuyin schemas (use fcitx5-android's librime wrapper as reference).
+- **L3.2:** Compose UI for candidate selection (mirrors fcitx5-android's pattern).
+- **L3.3:** Japanese via mozc, Korean via Jamo IME (FUTO ships these — references for design, can't copy code).
+
+### L4. Real RTL shaping for Arabic / Persian / Urdu / Hebrew
+
+- ✅ **L4 BiDi analyser** shipped 2026-05-15 (uses **JVM stdlib `java.text.Bidi`** — zero external dependency, no native runtime). New `ime/bidi/RtlBidiResolver.analyze(text, baseDirection)` returns a `BidiAnalysis` (isLeftToRight, isMixed, runs[]) where each `BidiRun` carries `start`, `endExclusive`, `level`, `isRightToLeft`. `primaryDirection(text)` is the fast LTR/RTL check; `hasMixedDirections(text)` is the predicate the IME uses to decide whether to engage the per-run pass. Closes the upstream FlorisBoard layout-only RTL bug class for mixed Arabic/Hebrew/Persian/Urdu + Latin composing text. `RtlBidiResolverTest` covers seven invariants including the forced-base-direction overrides. Persian Yeh/Kaf normalisation + Arabic connected-form shaping + Urdu Nastaliq positional forms land in Next-L4.2 alongside the bundled Noto Nastaliq Urdu font asset.
+
+FlorisBoard upstream RTL is layout-only [STD-RTL]; Gboard struggles with mixed BiDi. SwiftFloris could become best-in-class for ~600M speakers.
+
+- ✅ **L4.1** shipped 2026-05-15 (v1.8.2). `ArabicShaper.shape(text)` rewrites every base-form Arabic codepoint (U+0621-U+064A) into the appropriate Forms-B presentation glyph (U+FE70-U+FEFC) by position in a connected run (isolated / initial / medial / final). Right-joining-only letters (Alef, Dal, Reh, Waw, Teh-Marbuta) take final-form after a joining letter but never produce medial / initial glyphs. 7 unit tests pin the joining contract.
+- ✅ **L4.2** shipped 2026-05-15 (v1.8.2). `PersianUrduNormalizer.normalize` rewrites Arabic Yeh `\u064A` → Farsi Yeh `\u06CC`, Arabic Kaf `\u0643` → Farsi Kaf `\u06A9`, Alef Maksura `\u0649` → Farsi Yeh. Optional `stripTatweel` clears U+0640 stretch glyphs. `PersianDigitMode` enum supports KEEP_ARABIC / TO_PERSIAN (Western 0-9 → U+06F0..U+06F9) / TO_LATIN (Arabic-Indic → Western). 8 unit tests.
+
+### L5. Indic transliteration suite
+
+- ✅ **L5 transliterator + Devanagari table** shipped 2026-05-15. New `ime/indic/IndicTransliterator` runs a greedy longest-prefix-match conversion against a pluggable `IndicScriptTable`. `IndicScriptTable.ItransToDevanagari` ships the canonical ITRANS → Devanagari (Hindi/Marathi/Sanskrit) mapping covering consonants, independent vowels, halant/anusvara/visarga, Devanagari digits 0-9, and the danda/double-danda punctuation. Unknown chars pass through unchanged so the user can mix Latin punctuation with Indic script naturally. Bengali / Tamil / Telugu / Marathi / Gujarati / Punjabi / Kannada tables ride on the same engine in subsequent L5.x slices. `IndicTransliteratorTest` covers eight invariants including greedy-longest-match (`aa` → आ vs `a` + `a`).
+
+Hindi / Bengali / Tamil / Telugu / Marathi / Gujarati / Punjabi / Kannada via [varnam](https://github.com/varnamproject/govarnam) (MPL-2) or Aksharamukha tables [STD-INDIC, FR-16]. Zero current OSS keyboard does all 8 well.
+
+### L6. Ge'ez script (Amharic / Tigrinya / Tigre / Blin)
+
+- ✅ **L6 SERA transliterator** shipped 2026-05-15. New `ime/geez/GeezSeraTransliterator` consumes SERA-romanised text and emits Ge'ez/Ethiopic (U+1200–U+137F). The bundled table covers ~28 consonant radicals × 7 vowel forms (ä/u/i/a/ē/ə/o) — the canonical Amharic + Tigrinya glyph set — plus Ethiopic punctuation (wordspace, full-stop, comma, semicolon, colon, question) and Ethiopic digits 1-9. Greedy longest-match algorithm; out-of-table Latin chars fall through. `GeezSeraTransliteratorTest` covers seven invariants. The remaining work — bundling a proper "geez.json" layout file in `assets/ime/keyboard/.../layouts/characters/` that wires the SERA mapping into the keyboard's tap surface — ships in L6.1 alongside the Amharic subtype preset.
+
+Closed-source GeezIME owns the niche today [STD-GEEZ]. Apache-2 SERA implementation + Compose layout = best-in-class for ~110M speakers.
+
+### L7. Native MCP local-LLM bridge (Deskdrop pattern)
+
+User points SwiftFloris at home Ollama / LM Studio over Tailscale; default off; never invoked silently [O7]. Expose MCP-tool-server protocol for composable agent surfaces (calendar, weather, SMS — same toolset Deskdrop's 17 tools demonstrate).
+
+- ✅ **L7 contract** shipped 2026-05-15 (foundation). New `ime/mcp/` package: `McpBridgeContract` pins the bind-time Intent action (`dev.patrickgold.florisboard.action.BIND_MCP_DAEMON`), the signature-protected `permission.BIND_MCP`, the `<meta-data>` keys for tool-catalog + protocol-version discovery, and the 4 MB payload cap; `McpToolDescriptor` mirrors the upstream MCP spec's `tools/list` entry shape (name + description + JSON-Schema parameter spec); `McpToolResult` is the cross-package result envelope distinguishing success (`payloadJson != null`) from failure (`isError && errorMessage != null`). AIDL bring-up + the in-IME `McpClient` + the addon-enumerator discovery ride in L7.1–L7.4. Stays **on-device only** by hard contract — the daemon binds locally over Android service-binding, never a network socket, so the §1 no-network promise holds even when an MCP daemon is installed. `McpBridgeContractTest` covers the constant namespace, payload cap, and `McpToolDescriptor` / `McpToolResult` validation surfaces.
+
+### L8. Keyman LDML keyboard importer (2,500+ language coverage)
+
+Single biggest layout-coverage moat per import. Keyman has 1,000 keyboards spanning 2,500+ languages under MIT [O15]. Importer parses LDML keyboards XML → SwiftFloris layout JSON.
+
+- ✅ **L8 parser** shipped 2026-05-15. New `ime/hardware/KeymanLdmlParser.parse(xml)` uses `javax.xml.parsers.DocumentBuilderFactory` (JVM stdlib, zero external dep) to convert LDML keyboard XML into a `HardwareKeyboardLayout` (reusing the Next-6.4 cross-format target type). Parses the `<keyboard locale>` + `<names>` + `<keys>` sub-tree; each `<key id="A01" output="ሰ" longPress="ሠ">` becomes one `HardwareKeyEntry`. **OWASP XXE-hardened** — disables DOCTYPE, external general / parameter entities, XInclude, entity-reference expansion (addon-supplied LDML crosses the addon-IME trust boundary). Tolerates malformed XML by returning Empty rather than throwing. `KeymanLdmlParserTest` covers seven invariants including XXE-relevant defenses. L8.1 added `<transforms>` dead-key / ligature sequencing; L8.2 added `<displays>` visual-glyph labels via `HardwareKeyEntry.displayLabel`.
+- ✅ **L8.3 / Tier-3 #34 partial** shipped 2026-05-17 (v1.8.78). New `ime/hardware/KeymanPackageParser.parse(...)` opens `.kmp` ZIP-compatible Keyman packages, reads `kmp.json`, records contained files, extracts any LDML XML layouts through the existing `KeymanLdmlParser`, skips traversal / absolute / drive-letter entry paths, and classifies packages as `LdmlReady`, `LexicalModelOnly`, `MixedPackageUnsupported`, `MetadataOnly`, `Invalid`, or `CompiledEngineRequired`. This is the safe intake/classifier layer only: compiled `.kmx` bytecode and `.js` keyboard execution remain future addon/runtime work, not a hidden dependency in `:app`.
+
+### L9. Honeycomb / hexagonal / T9 / Colemak / Dvorak / Workman alt layouts
+
+Typewise's honeycomb won CES Innovation 2021+2022 [C5]; T9 vacated by TouchPal collapse [C8]; Colemak/Dvorak/Workman are perennial requests. Layout engine work converges here.
+
+- ✅ **L9 audit shipped 2026-05-15.** `app/src/main/assets/ime/keyboard/org.florisboard.layouts/layouts/characters/` already ships: `qwerty.json`, `colemak.json`, `colemak_dh.json`, `colemak_dhm.json`, `dvorak.json`, `dvorak_de.json`, `dvorak_es.json`, `dvorak_se.json`, `workman.json` — Colemak / Dvorak / Workman are **already in tree** from the FlorisBoard upstream layout pack. T9-shaped layouts remain future renderer work.
+- ✅ **L9.2 / Tier-3 #35 production wire-up** shipped 2026-05-17 (v1.8.79).
+  `extension.json` now registers the bundled `honeycomb` character layout,
+  `LayoutManager` marks that layout as `TextKeyboardLayoutStyle.Honeycomb`,
+  `TextKeyboard.layoutHoneycomb(...)` positions real `TextKey` instances in the
+  hex tessellation, `TextKeyboardLayout` clips production Snygg key surfaces to
+  `HoneycombHexShape`, and honeycomb hit testing rejects bounding-box corners
+  and inter-key gaps instead of rescuing them through rectangular nearest-key
+  logic.
+
+### L10. WebAuthn passkey injection from IME
+
+- ✅ **L10 detector + adapter contract** shipped 2026-05-15. New `ime/passkey/` package: `PasskeyAdapter` interface (`hasPasskeyFor(rpId)`, suspend `requestAssertion(rpId, challenge)`); `PasskeyFieldDetector.detect(autofillHints, extras)` consumes `EditorInfo.extras` (EXTRA_RP_ID + EXTRA_CHALLENGE keys) + the field's autofill hints, fires only when a password-class hint AND the WebAuthn relying-party id + challenge are present (conservative — no false positives on password fields without WebAuthn signal); `PasskeyAssertionRequest` is the cross-process assertion envelope (Base64URL-encoded WebAuthn fields the focused editor forwards to its relying-party server); `PasskeyFieldHint` carries the active-field state with content-based ByteArray equality. The actual Android Credential Manager ceremony is Activity-bound and lives in `addons/passkey-adapter/`. `PasskeyInjectorTest` pins six invariants including the conservative detect contract.
+
+When `autofillHints="password"` is focused, IME directly drives passkey ceremony — no other OSS keyboard ships this [AI WILD-WEBAUTHN].
+
+### L11. Espanso config import + native snippet engine
+
+Espanso is the de facto Linux/macOS text expander [AI19]; native parser of `~/.config/espanso/match/*.yml` would make SwiftFloris the only IME with cross-platform expander interop. Tasker intent endpoints (`swiftfloris.action.INSERT_TEXT`, `…INSERT_CLIP`, `…SWITCH_LAYOUT`, `…TRIGGER_VOICE`) ride alongside [STD-TASKER].
+
+- ✅ **L11 parser** shipped 2026-05-15. New `ime/snippet/EspansoMatchParser.parse(yaml)` consumes the `matches:` list shape from `~/.config/espanso/match/base.yml`: inline scalar / single-quoted / double-quoted strings, escaped `\n` + `\t` in inline values, literal `|` and folded `>` block scalars with indent-stripping termination, full-line `#` comments outside block scalars, and silent-skip of blank-trigger rows. Snakeyaml would pull a 600KB+ runtime; this hand-rolled parser stays under 200 lines and covers the 95% case (Espanso `vars:` interpolation, regex triggers, image/clipboard/form matches deferred to L11a). `EspansoMatchParserTest` covers seven cases including the literal-block multi-line shape and quote-stripping. The Tasker intent surface lands as L11.1 alongside the in-IME snippet engine that consumes these matches.
+
+### L12. WhisperInput-style streaming voice + WordStyles
+
+WordStyles (FUTO v0.1.25) renders typed text as styled images [O5] — niche but zero competitors.
+
+- ✅ **L12 WordStyles renderer facade** shipped 2026-05-15. New `ime/wordstyles/` package: `WordStylesRenderer` interface (`renderStyledImage(text, style)` returns PNG bytes for `commitContent(InputContentInfoCompat)`); `WordStyle` data class with strict RGBA-hex validation on foreground / background / gradient, font-size 8..240sp clamp, shadow-radius 0..32dp clamp, padding 0..96dp clamp; four built-in `BuiltIns` styles (Neon / Gradient Sunset / Retro Typewriter / Soft Pastel); `WordStylesRendererRegistry` for runtime swap. The Canvas/Paint render path lives in a future `WordStylesAndroidRenderer` (L12.1) so this facade stays cross-cutting. The **streaming-voice WhisperInput** sub-item is already covered by Next-2.4 (`StreamingVoiceTranscriptBuffer.consumeStreamingChunk`) which shipped in v1.7.9. `WordStylesRendererTest` pins five invariants including the RGBA-hex validation surface.
+
+---
+
+## 9. UNDER CONSIDERATION (no commitment; will graduate or retire)
+
+| Item | Why it's interesting | What blocks commitment |
+|---|---|---|
+| Userscripts for keyboards (Tampermonkey-for-IME) | No precedent in OSS keyboards; could borrow ScriptVault's Monaco/MV3 architecture [AI WILD-USERSCRIPTS] | Android's IME security model forbids in-process untrusted code; needs a sandboxed signed-Kotlin-DSL shape, not raw JS |
+| $1 Unistroke recognizer for chord macros | 100 LoC per Wobbrock; lets users draw a sigil to fire a custom action [AI WILD-DOLLAR] | UX research needed — does anyone want this on a keyboard? |
+| Federated-learning opt-in via FedAvg over Syncthing | Single-user federated training across phone+tablet to fine-tune Gemma LoRA adapters [AI WILD-FED] | Heavy ML tooling burden; defer until L1 lands |
+| Per-app "tone profile" (KenLM weight swap by package name) | Slack=informal, Outlook=formal — same package-detection plumbing as N4.3 | Useful only after Next-3.1 ships KenLM |
+| Audit log: "what got typed into which package" (locally encrypted) | Verifiable + defensive privacy proof; users can self-confirm no exfil [AI WILD-AUDIT] | UX for "where did this log go?" needs design; privacy-paradox risk |
+| Aurora Store / Obtainium auto-update wiring beyond manual subscription | Smoother first-time onboarding | Solved by N6.5 (one-tap URL) for now; revisit if user demand |
+| NLnet Mobifree funding application | HeliBoard + Unexpected Keyboard both got funded [O2, O10] | Wait until v2.0 ships, then apply with concrete deliverables |
+| Cinematic key-click haptics scripted per theme | First themed-haptic keyboard [AI WILD-CINEMATIC] | Follows N3.3 + N11.2; promote when haptic envelope lands |
+
+---
+
+## 10. EXPLICITLY REJECTED (with reasoning, so this doesn't get re-litigated)
+
+| Rejected | Why |
+|---|---|
+| Cloud sync of personal LM via vendor servers | Violates §1 no-network. Replace with N5 P2P CRDT |
+| Microsoft / Google / any account requirement | Same. SwiftKey forcing MS account by 2026-05-31 [C2] is a switch trigger driving users to us, not a feature to imitate |
+| GPL / AGPL / Source-First / undeclared-license code in main app | Apache-2.0 ceiling. Conceptual borrowing only; module isolation acceptable for modules under their own license, never linked into `:app` |
+| Bundling closed-source `libjni_latinimegoogle.so` from old GApps | Violates auditability. HeliBoard's reluctant binary distribution of this file is exactly the antipattern we exist to avoid |
+| Telemetry / federated learning to vendor cloud | Violates §1. Local-only per-device opt-in (L1.3 LoRA) is the maximum |
+| In-keyboard ads or sponsored content | Violates trust posture. ASK #2803 (43 reactions) [PAIN-23] is the user verdict |
+| Bing / Copilot / Gemini API integration in core | Cloud-bound; account-bound; vendor-bound. L7's MCP bridge is the opt-in escape valve for users who want it on their own infra |
+| Default-on T9 layout | Acceptable as alt layout (Later L9); not as default — would alienate the SwiftKey-parity audience |
+| In-keyboard search (Maps/YouTube/web) à la Gboard | Cloud-bound, telemetry surface, tracking risk. Out unless someone designs a fully-local SearXNG plugin (Under Consideration material) |
+| GIF keyboard that hits Tenor / Giphy | Same — cloud + telemetry. Bundled local sticker packs + image-paste from clipboard (N9) are the offline equivalent |
+| Google Play Store as primary distribution | Forces target-SDK churn, Integrity-API entanglement, Data-Safety-form privacy framing we'd rather avoid; revisit only as a separately-signed mirror track |
+| Google's `libjni_latinimegoogle.so` closed swipe blob (re-statement) | Rejected. N1.1 / N1.2 / N1.3 are the only acceptable paths |
+| Self-update (in-app APK download + install) | Supply-chain risk; let Obtainium / F-Droid / IzzyOnDroid handle update orchestration. We pin SHA256 in README (N6.2/N6.3) |
+| Mandatory analytics opt-out toggle that defaults on | If we adopt ACRA later (Next-class), it's opt-in only [AI ACRA] |
+
+---
+
+## 10.5. External-Work Backlog (post-v1.8.2)
+
+After three autonomous ROADMAP passes (v1.8.0 / v1.8.1 / v1.8.2) every NEXT- and LATER-tier item has at least a working scaffold + tests + a clear adapter pattern in tree. The L4.2 font asset/routing item is now closed in v1.8.128. What remains is **external or heavy runtime work** that requires one of: an upstream library release, a separate addon APK that ships heavy native runtime, a real dataset extraction, an interactive Compose UI screen, JNI/native work, or a hardware-locked benchmark run.
+
+Each entry below lists: the **scaffold seam** (file path), the **blocker** (what specifically needs to happen), the **acceptance criteria** for closing it, and a cross-reference to `docs/AI_PROMPTS_EXTERNAL_WORK.md` for a self-contained AI prompt you can paste into a fresh chat to make progress.
+
+### A. Upstream-release waits
+
+| Item | Scaffold seam | Blocker | Acceptance |
+|---|---|---|---|
+| **N1.1** Open-source glide-typing | `prefs.glide.engine` flag (Next placeholder; default remains `swiftfloris-statistical`) | HeliBoard NLnet R&D grant Jun 2025 → Jun 2026 [NLNET-GT]. As of 2026-05-17, no drop-in open library is released; HeliBoard `#2226` remains open, `v3.9` is still latest, and gesture data collection runs through 2026-11-30 [GH-HELIBOARD-RELEASES, H1-GESTURE-DATA]. | A permissively-licensed drop-in replaces `swypelibs`; glide accuracy meets or exceeds the current `GlideTypingManager.statistical` heuristic on a 1,000-trace eval set. |
+| **N1.2** CleverKeys-architecture port | `ime/nlp/cleverkeys/` (not yet present — created when library lands) | CleverKeys roadmap targets Q2-Q3 2026 for multi-layout / multi-script gesture model. Code is GPL-3.0 → architecture-borrow only. Tracked at [CK-DEEPWIKI](https://deepwiki.com/cleverkeys/cleverkeys). | Train an Apache-2.0 model from N1.1 dataset, ship via ONNX Runtime Mobile. |
+| **N10.1** Noto Color Emoji 17.0 | `androidx-emoji2 = "1.6.0"` in `libs.versions.toml` | Either: (a) `androidx.emoji2` 1.7.0+ published with Emoji 17, OR (b) ship `NotoColorEmoji.ttf` v17 directly + route through `EmojiCompat.Config(BundledEmojiCompatConfig)`. Track [emoji2 releases](https://developer.android.com/jetpack/androidx/releases/emoji2). | Emoji 17 glyphs (Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest) render correctly in the palette. |
+| **Next-12.2 plugin / N14.1** | `app/build.gradle.kts:30` — was `// alias(libs.plugins.roborazzi)` | ✅ **CLOSED 2026-05-16 (v1.8.43), hard-gated 2026-05-18 (v1.8.123).** Roborazzi **1.55.0** bumped in `gradle/libs.versions.toml`; `alias(libs.plugins.roborazzi)` uncommented in `app/build.gradle.kts`. `:app:verifyRoborazziDebug` is now a hard CI gate backed by committed baselines under `app/src/test/snapshots/`. **Moved to §3 Recently Shipped.** | n/a |
+
+### B. Out-of-tree addon APKs (heavy native runtime)
+
+Each of these moves real-runtime work into a sibling repo so the base APK stays lean and the §1 no-INTERNET promise holds across third-party addons.
+
+| Item | Scaffold seam | Blocker | Acceptance |
+|---|---|---|---|
+| **L1.1a** LiteRT-LM smart-compose | `ime/smartcompose/SmartComposeProvider` | Need `addons/smart-compose-litert/` APK with the LiteRT-LM `.so` libs + a Gemma 3 1B int4 model + a `SmartComposeProvider` implementation registered via `setActive`. ~25-40 MB APK depending on model. | Smart-compose ghost-text inserts on space in editors when the addon is installed; reverts cleanly to bigram chain when uninstalled. |
+| **L2.1a** Bergamot translator | `ime/translate/InlineTranslator` | Need `addons/translator-bergamot/` APK with the Marian WASM runtime + at least the EN↔ES + EN↔FR + EN↔DE Mozilla model bundles (~17 MB per pair). | Translation chip in smartbar produces translated text; per-pair download UI surfaces installed pairs. |
+| **L3.1 + L3.2** librime CJK | `ime/cjk/CjkInputProvider` | JNI to librime C++ (BSD-3). Use fcitx5-android's wrapper as reference (Apache-2.0 — conceptual borrow only). `addons/cjk-librime/` APK with librime + at least Pinyin Simplified + Jyutping + Zhuyin schemas. Compose candidate-row UI consuming the facade. | Typing `nihao` surfaces `你好` etc. in the candidate row; commit + history works. |
+| **L3.3** Japanese + Korean | `ime/cjk/CjkInputProvider` (`mozc_ja` + `hangul_2bul` enum slots already present) | Two more addons: mozc (BSD-3) for Japanese, jamo-style 2-bul for Korean. FUTO ships both — design reference only, no code copy. | Both schemas surface candidates; Hangul auto-stacks correctly. |
+| **L10 addon** Passkey adapter | `ime/passkey/PasskeyAdapter` | `addons/passkey-adapter/` APK with an Activity that owns the Android Credential Manager `getCredential` call + returns a `PasskeyAssertionRequest`. Activity-bound flow can't live in the IME service. | Focusing a WebAuthn-friendly field (rpId + challenge in `EditorInfo.extras`) surfaces a "Use passkey" chip; tapping it runs the ceremony + commits the assertion via `commitContent`. |
+| **Next-4.2a** ML Kit Digital Ink | `ime/handwriting/StrokeRecognizer` | `addons/handwriting-mlkit/` APK with `com.google.mlkit:digital-ink-recognition` + bundled model files (user-installed via file picker — same pattern as `VoiceModelManager`). | Stylus strokes recognise to text in the smartbar candidate row on Pixel Tablet / S25 Ultra; per-subtype refinement comes online (Next-4.3a). |
+
+### C. Dataset extractions + dictionary packs
+
+| Item | Scaffold seam | Blocker | Acceptance |
+|---|---|---|---|
+| **Next-3.2 SUBTLEX full table** | `assets/freq/{en,cs,de,es,fr,it,pt}.tsv` (~1k seed entries each) | Extract the full SUBTLEX-US (~75k entries) + de + es + fr + pt subtitle-frequency tables from the [SUBTLEX corpora](http://crr.ugent.be/programs-data/subtitle-frequencies) per the rspeer/wordfreq pipeline. Move to a Next-10.3 dictionary-pack addon to keep base APK lean. | Auto-correction ranking measurably better on conversational text (e.g. `recieved` → `received` confidence ≥ 0.92 in dictionary-coverage tests). |
+| **Next-3.1b** KenLM trie body parser | `ime/nlp/kenlm/KenLmTrieReader` | Implement Bhiksha-encoded next-pointer decoding + quantised probability/backoff table reads. Reference: [kpu/kenlm `lm/trie.hh`](https://github.com/kpu/kenlm/blob/master/lm/trie.hh). Or JNI to the upstream C++ library. | `KenLmReader.score(words: List<String>): Float` returns sane log-prob values for a real edugp/kenlm Hungarian model from HF; matches the `query` reference tool's output within 1e-3. |
+| **Next-10.3 Polish addon** | `docs/addons/dictionary-pack-spec.md` (descriptor schema in tree) | Build `addons/dictionary-pack-polish/` APK: extract OpenSubtitles 2024 PL + Wiktionary PL frequency lists into a `.fldic` file + a Zipf `.tsv`. CC-BY-SA attribution in the addon. | Polish subtype loads dictionary from the addon; vocabulary > 250k words; user dictionary handoff works. |
+| ✅ **L4.2 Nastaliq font** | `ime/bidi/NastaliqFontProvider` + `TextKeyboardLayout` | Shipped v1.8.128: committed the official OFL-1.1 Noto Nastaliq Urdu hinted TTF + OFL text under `app/src/main/assets/fonts/`, exposed a Compose `FontFamily`, and routed Urdu subtype Arabic-script key labels/hints through the bundled font. | Urdu subtype key text renders with Nastaliq glyphs instead of fallback Naskh while Latin/non-Urdu labels keep the active Snygg font. |
+
+### D. In-IME integration work (no external dep, but heavier)
+
+| Item | Scaffold seam | Notes | Acceptance |
+|---|---|---|---|
+| **Next-2.5** Rambler streaming-voice cleanup | `StreamingVoiceTranscriptBuffer` | Gates on L1.1a addon. Pass committed-text through Gemma 3 270M rewrite on hold-and-release. | Hold-mic + ramble → clean polished text; user toggle in Settings → Voice. |
+| **Next-5.1a** Automerge-rs JNI | `ime/sync/PersonalDictionaryCrdt` + `Merger` | Current merge engine is observed-add / LWW-delete (good enough for personal dict). Real Automerge gives richer CRDT semantics + the standard wire format. JNI to automerge-rs. | Three-device cluster converges; merge is associative + idempotent under property tests. |
+| ✅ **Next-5.3a** Sync UI screen | `ime/sync/SyncChannel` taxonomy | Shipped 2026-05-15: `SyncSettingsScreen`, route wiring, channel picker, QR pairing display, receive/paste fallback, and paired-device list. | Opening Settings → Sync shows the picker and QR control plane; transport still rides in the next sync slices. |
+| ✅ **Next-7.1a** Floating-mode onboarding | `prefs.keyboard.startInFloatingMode` + `prefs.keyboard.floatingOnboardingShown` | Shipped 2026-05-15: first-floating-mode entry queues a one-shot overlay in `ImeWindow`, auto-dismisses after 4 s or tap, remembers the display in datastore, and Settings → Keyboard can reset it for testing. | Tooltip appears once after first floating-mode entry; dismissable + remembered. |
+| ✅ **Next-7.2 renderer wire-up** | `SplitKeyboardLayoutCalculator` | Shipped v1.8.62: per-row gutter emission inside `TextKeyboardLayout` plus gutter-aware touch hit testing. | Enabling `prefs.keyboard.splitKeyboardEnabled` on a tablet renders the split layout with correct touch targets. |
+| ✅ **Next-9.4a** Pinned-groups palette row | `EmojiPinGroupStore` + `PinToGroupSheet` | Shipped v1.8.29 row scaffold and completed v1.8.127 sheet integration: long-press emoji → existing/new group pinning, inline validation, chip-row recall. | User can pin a set of emoji to a named group + recall from the palette. |
+| **Next-12.1 benchmark numbers** | `benchmark/KeyboardLatencyBenchmark` | ✅ **Trace sections wired 2026-05-16 (v1.8.34).** All six `swiftfloris.<subsystem>.<action>` sections now emitted from production hot paths (`onCreateInputView`, `LatinLanguageProvider.suggest`, `CandidatesRow` recomposition, `ThemeManager.updateActiveTheme`, dictionary load, `SymSpellIndex.build`). v1.8.159 reactivated `:benchmark` on AGP 9 and committed the first SM-S938B / Android 16 `imeFirstRender` adb baseline: `am start -W` median `TotalTime` 31.0 ms / `WaitTime` 34.0 ms and benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms. v1.8.160 adds the cold provider-direct first suggestion baseline for `teh`: median `swiftfloris.nlp.firstSuggestionMs` 1878.616249 ms with eight candidates. v1.8.161 adds dictionary cold-load/preload evidence for `zzzxqq`: median `swiftfloris.dict.loadMs` 757.353333 ms, median preload 772.080625 ms, SymSpell d1 500.230156 ms, and SymSpell d2 532.298281 ms. v1.8.162 adds candidate-row recomposition evidence for `hello world this is a test`: median 9.0 recompositions/run, median body 0.326563 ms, median max 0.770365 ms, and median total 4.069529 ms. v1.8.163 adds theme-switch evidence across SwiftKey Pure / M3E themes while the IME is visible: median body 18.541197 ms, median max 19.587708 ms, median total 57.505571 ms, median cold step 19.221354 ms, and median cached warm step 0.2808075 ms. v1.8.164 adds backup/restore evidence for a default preferences + keyboard/theme archive: median backup create 12.653698 ms, median archive size 22,034 bytes, median restore prepare 4.062604 ms, median restore apply 5.727604 ms, and median restore total 9.874167 ms with 3/3 sections restored. | Benchmark report committed to `docs/BENCHMARKS.md` with `imeFirstRender`, `firstSuggestionLatency`, `dictionaryColdLoad`, `candidateRowRecomposition`, `themeSwitch`, and `backupRestore` populated. |
+| ~~**L7.1-7.4** AIDL MCP daemon~~ | `ime/mcp/IMcpDaemon.aidl` + `AndroidMcpClient` + `McpServiceConnectionManager` + `McpAndroidDiscoverer` + `McpServiceLifecycle` | ✅ **ALL SHIPPED 2026-05-16 (v1.8.35–v1.8.38).** AIDL Binder surface (`IMcpDaemon.aidl`), `AndroidMcpClient` translating five failure modes into `McpToolCallResponse`, per-daemon `ServiceConnection` lifecycle, `PackageManager.queryIntentServices`→ `DiscoveryCandidate` shaper, and `McpServiceLifecycle.start(context)` wired into `FlorisImeService.onCreate`. Settings → MCP daemon bridge (v1.8.39) + per-daemon enable/disable (v1.8.40) close the user-facing loop. | A reference MCP daemon APK can register and the IME calls its tools. **Closed — moved to §3 Recently Shipped.** |
+| ✅ **L8.2** LDML `<displays>` | `ime/hardware/KeymanLdmlParser` | Shipped 2026-05-15. `HardwareKeyEntry.displayLabel` now carries LDML visual-glyph hints. Parser accepts `to=` and current `output=` display targets, `keyId=` / legacy `id=` key targets, and LDML `\uXXXX` / `\u{XXXX}` escapes. | `KeymanLdmlParserTest` covers Khmer `to=`, Lao `output=`, Tibetan `keyId=`, legacy `id=`, unmatched shared display maps, and Burmese combining-medial labels. |
+| ✅ **L9.2** Honeycomb hex layout | `HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader` (foundation v1.8.31–v1.8.33) + `TextKeyboardLayoutStyle.Honeycomb` / `TextKeyboard.layoutHoneycomb(...)` (wire-up v1.8.79) | ✅ **CLOSED 2026-05-17 (v1.8.79).** `honeycomb.json` is registered in `extension.json`, `LayoutManager` marks that character layout as honeycomb, the production `TextKeyboardLayout` path clips real Snygg key surfaces to `HoneycombHexShape`, and hit testing now uses the actual hex shape instead of rectangular key bounds. **Typewise pivoted to enterprise AI 2026** [TYPEWISE-2026]; consumer honeycomb keyboard now in maintenance — the niche is genuinely vacated. | Hex layout selectable in subtype settings; touch-hit works correctly across hex tessellation. **Closed — moved to §3 Recently Shipped.** |
+| ✅ **L11.1 receiver** | `ime/tasker/TaskerIntentContract` | Shipped 2026-05-15. `TaskerActionReceiver` is declared in `AndroidManifest.xml` behind the existing signature `REGISTER_ADDON` permission and dispatches validated broadcasts through `TaskerActionDispatcher` to insert text, paste clipboard, switch the active subtype's character layout, or trigger voice input. | `TaskerActionReceiverTest` covers all four actions, invalid-payload rejection, and the exported + permission-protected manifest declaration. |
+
+**See [`docs/AI_PROMPTS_EXTERNAL_WORK.md`](docs/AI_PROMPTS_EXTERNAL_WORK.md) for one self-contained AI prompt per item above. Paste any of those into a fresh chat to make progress.**
+
+---
+
+## 11. Cross-Cutting Concerns (every category named, none silently dropped)
+
+This section guarantees nothing fell through the cracks. Each is either represented in §6/§7/§8, scheduled below, or explicitly out of scope with reason.
+
+| Concern | Where addressed |
+|---|---|
+| **Security** | N7 (privacy hardening — all of N7.1/7.2/7.3/7.4/7.5 shipped), N6.4 (CVE scan), Next-5 (CRDT E2EE sync), L7 (MCP key vault pattern), Next-10 (addon enrolment's no-INTERNET hard reject — supply-chain protection for the plugin surface). Threat model: CAKI [STD-CAKI], password-field guards [STD-A11Y-IMETRY], `docs/THREAT_MODEL.md` |
+| **Accessibility (a11y)** | N8 (scoped pass: target size, contrast, TalkBack labels, reduced motion, switch access, voice access) + Later: dwell-tap, bounce/slow/sticky keys in IME, thumb-zone heatmap [PAIN-D-3] |
+| **i18n / l10n** | N2 (multilingual auto-detect), Next-1 (broader Latin dictionaries), L3-L6 (CJK / RTL / Indic / Ge'ez). Crowdin already wired for UI strings |
+| **Observability / telemetry** | Opt-in only. ACRA self-hosted *or* manual GitHub-issue crash file (no auto-upload) [STD-ACRA]. Local Macrobenchmark + Perfetto for development (N12.1) [STD-MACROBENCH] |
+| **Testing** | N12.3 (property-based autocorrect), N12.2 (Roborazzi visual regression), expanded Kotest coverage of `KeyboardManager`, `EditorInstance`, `NlpManager`. IMPROVEMENT_PLAN Workstream 1 fully promoted into roadmap |
+| **Docs** | ✅ 2026-05-17 docs-only sweeps: root `ARCHITECTURE.md` now consolidates module layout, runtime entrypoints, package ownership, typing/media/addon boundaries, security invariants, CI, and testing; root `CONTRIBUTING.md` now captures setup, project rules, verification, privacy, release-note, PR, AI-assisted contribution, and licensing expectations; root multilingual / voice guides moved into `docs/` (`docs/GESTURE_TYPING_MULTILINGUAL.md`, `docs/GESTURE_TYPING_MULTILINGUAL_RESEARCH.md`, `docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`, `docs/VOICE_COMMANDS.md`). Per-feature release notes pattern continues as a new `## v1.X.Y` section appended to `CHANGELOG.md`. |
+| **Distribution / packaging** | N6.2 + N6.3 (signed releases + F-Droid reproducible verified badge — F-Droid's 2025 Reproducibility Status pages [STD-FDROID-VERIFIED] are now live, so SwiftFloris targets the `Reproducible` tier (developer-signed + verified) once `fdroiddata` PR lands); N6.5 (Obtainium one-tap URL); IzzyOnDroid + Accrescent listings as Next-class side-quests [STD-FDROID-REPRO, STD-FDROID-OBTAINIUM]. Next-12.4 (16KB-page CI gate) when native code is back in tree |
+| **Plugin ecosystem** | Next-10.1 + Next-10.2 shipped v1.7.9 (manifest schema + enumerator + AndroidManifest queries + signature-protected permission); Next-10.3a shipped v1.8.81 (`AddonRegistry` live state + dictionary-pack catalog validation); Next-10.3b shipped v1.8.82 (persisted signing-pin codec + `prefs.addon.signingCertPins`) and v1.8.124 (`withoutPackage(...)` targeted pin removal); Next-10.3c shipped v1.8.83 (IME-startup scan/reconcile/publish through persisted pins); Next-10.3d shipped v1.8.84 (Settings → Addons status/rescan UI) and v1.8.124 (confirmed trust reset / changed-certificate controls); Next-10.4a shipped v1.8.125 (no-extraction dictionary-pack asset mounting into `LatinDictionaryStore`); Next-10.4b shipped v1.8.126 (Settings dictionary-pack catalog/install-hint polish). L8 (Keyman LDML import), Snygg theme distribution via FlorisBoard Addons Store [STD-FLORIS-EXT] |
+| **Mobile-specific (form factors)** | Next-7 (floating + split + one-handed), Next-4 (stylus handwriting); foldables ship as a sub-task of split-keyboard testing matrix [PAIN-14] |
+| **Offline / resilience** | The whole product. Specifically: voice (Next-2), translation (L2), LLM (L1), sync (N5) — all offline-only by construction |
+| **Multi-user / collab** | Next-5 (E2EE personal-dict sync between user's own devices). Multi-user-on-one-device is out of scope (Android IME is per-user by platform design) |
+| **Migration paths** | Next-6 (Gboard / HeliBoard / FlorisBoard / KLFC importers); SwiftKey unfortunately out of reach without root [MIG-SK] |
+| **Upgrade strategy** | Semver `v1.X.Y`; major bumps only on breaking dictionary-format or extension-format changes; database migrations via Room AutoMigrations starting Next class. Documented per-release in `CHANGELOG.md` under a new `## vX.Y.Z` section |
+
+---
+
+## 12. Operating Cadence
+
+- **Bi-weekly minor releases** (one Now-tier item per release, on a 2-week target).
+- **Monthly Next-tier slice** (one bullet of one Next item; Next items are decomposable).
+- **Quarterly Later prep** — at the start of each quarter, pick one Later item and convert its first scoping bullet into a Next slice.
+- **Continuous correctness floor** — IMPROVEMENT_PLAN.md Workstreams 1 (Test Coverage), 2 (Lint Debt), 3 (Pure Core Extraction), 4 (Input Hardening), 9 (Repo Hygiene), 14 (Build/Dep Hygiene) run alongside roadmap work; not a separate track.
+- **Verification before "shipped"** — every release passes `:app:testDebugUnitTest`, `:app:lintDebug`, `:app:assembleDebug`, an `adb install` smoke on a real device, and a manual QA pass per the (forthcoming, N6) checklist.
+
+---
+
+## 13. Out-of-Scope Adjacent Wins (worth one sentence each)
+
+These came up in research but don't fit SwiftFloris; calling them out so future contributors don't propose them as roadmap items:
+
+- **A separate Voice IME** (Sayboard pattern) — out; voice belongs *inside* the keyboard (Next-2), not as a separate IME.
+- **A separate Clipboard manager app** — out; clipboard already lives inside the IME.
+- **AOSP LatinIME maintenance** — out; that's HeliBoard's mandate.
+- **Trinity / WhisperInput stand-alone keyboard** — out; voice integrates as Next-2 inside SwiftFloris.
+- **Generic Android system-wide spellcheck service** — interesting (and `FlorisSpellCheckerService.kt:141` is the existing hook, now a documented delegate to AOSP per N11.3), but Out for this roadmap pass; revisit only if we have spare capacity after L1.
+
+---
+
+## 14. Risk Register
+
+| Risk | Likelihood | Impact | Mitigation |
+|---|---|---|---|
+| FlorisBoard upstream merges back the v0.6 glide work and obviates N1 | Medium | Medium | Re-base; ship per-language polish on top |
+| HeliBoard's NLnet glide drop ships first and becomes the de facto OSS swipe lib | Medium | Low (good for users; we adopt it; positive outcome) | N1.1 remains ready as an additive integration path behind `prefs.glide.engine` once a permissive open library + dataset land |
+| Gemma 3 270M licensing changes break L1 plan | Low | Medium | Have Phi-3 / Llama 3.2 1B fallback on stand-by; LiteRT-LM is model-agnostic |
+| F-Droid reproducible-build verification fails due to Gradle/AGP/NDK churn | Medium | Low | Pin everything in `gradle.properties`; subscribe to F-Droid Reproducible Builds discussion; address per release |
+| ~~The two `TODO("…")` runtime stubs get hit in the wild~~ — **Resolved in v1.7.0 (N11.1/N11.2/N11.3)**; preserved here as audit trail | n/a | Resolved | n/a |
+| Kotlin 2.3 / Compose 2026.05.00 BOM regressions | Medium | Medium | Keep Roborazzi baselines current and require a reproducible visual / inset / focus regression before reverting dependency patches |
+| Personal-dictionary growth balloons Room DB; Room main-thread query adds lag | Medium | Medium | The current `allowMainThreadQueries()` flag is a known concern; convert to suspend-only access on a Next-class refactor |
+| Unicode 17 / Emoji 17 backports break `EmojiCompat` lazy loader | Low | Low | N10.2 verifies pre-release |
+| The malicious closed-source FlorisBoard fork "CleverType AI Keyboard" [F3] confuses SwiftFloris's positioning | Low | Low | README + Settings → About explicitly distance from any closed fork |
+| Microsoft SwiftKey account-retirement cutoff 2026-05-31 [SK-RETIRE] consumes user attention; SwiftFloris missing the migration window means defectors land on FUTO / HeliBoard / CleverType instead | High | Medium (one-shot opportunity) | Ship a release-day blog + reddit thread on 2026-05-31 with `docs/MIGRATE_FROM_SWIFTKEY.md` and the Obtainium URL front-and-center; pin a GitHub release the same day; consider a v1.7.10 marketing-only retag if v1.7.9 doesn't sign by then |
+| AOSP 2026 cadence change [STD-AOSP-2026] (source published only Q2 + Q4) extends the gap between SwiftFloris seeing new platform APIs and being able to test against them | Medium | Low | Switch upstream tracking to `android-latest-release` branch as Google now recommends; treat developer previews as the API-discovery surface, AOSP drops as the integration window |
+| LiteRT-LM migration [STD-LITERT-LM] forces L1 to retarget if MediaPipe LLM Inference path was already chosen | Low (we hadn't started) | Low | L1.1 retargeted to LiteRT-LM as of v5.0; no code yet to migrate |
+| HeliBoard NLnet open-glide deadline 2026-06-01 [NLNET-GT] slips | High (base case as of v1.8.72) | Medium (delays N1.1, keeps SwiftFloris on the bounded statistical classifier) | Treat N1.3 / `swiftfloris-statistical` as production, not placeholder; improve it with N1.4 replay benchmarks, then integrate N1.1 only when a permissive open library + dataset land |
+
+---
+
+## 15. Definition of Done (for individual items)
+
+Every item, before being marked complete:
+
+1. Implementation lands.
+2. Tests added (unit at minimum; Roborazzi if visual; Macrobenchmark if perf-sensitive after N12.1).
+3. Documentation updated (README badge, new `## vX.Y.Z` section in `CHANGELOG.md`, `IMPROVEMENT_PLAN.md` if a workstream task closes).
+4. `:app:assembleDebug`, `:app:testDebugUnitTest`, `:app:lintDebug` all green locally.
+5. Manual QA pass on a real device (Galaxy R5CY34G070L is the current reference).
+6. Source/license attribution updated (`NOTICE`, `LICENSES/`) if a new dependency entered.
+7. APK signed and installable; SHA256 published.
+
+---
+
+## 16. Glossary
+
+- **AOSP** — Android Open Source Project.
+- **CRDT** — Conflict-free Replicated Data Type; merge structure that converges across devices without coordination.
+- **IME** — Input Method Editor; what Android calls a soft keyboard.
+- **LiteRT** — TensorFlow's renamed mobile runtime (formerly TFLite); production successor as of TensorFlow 2.21.
+- **MCP** — Model Context Protocol; emerging tool-server standard for AI assistants.
+- **NMT** — Neural Machine Translation.
+- **SCOWL** — Spell-Checker Oriented Word Lists (Kevin Atkinson, Apache-2.0-compatible BSD).
+- **SLM / LLM** — Small / Large Language Model.
+- **Snygg** — FlorisBoard's theme engine ("snygg" is Swedish for "stylish").
+- **WCAG** — Web Content Accessibility Guidelines.
+- **PWLE** — Piecewise Linear Envelope; Android 16's normalised haptic API (`VibrationEffect.WaveformEnvelopeBuilder`) that abstracts per-device actuator differences so identical primitives feel similar across hardware.
+- **MTP** — Multi-Token Prediction; LiteRT-LM technique that lets Gemma 4 generate multiple decode tokens per inference step, >2× faster decode on mobile GPU.
+- **PWA / Q4 / INT4 / INT8 / QAT** — Quantization-aware training and integer-quantised model formats used to shrink LLM disk + runtime footprint without losing quality.
+- **swypelibs** — Slang for the closed-source `libjni_latinimegoogle.so` blob historically extracted from GApps and used by HeliBoard for swipe typing. SwiftFloris **rejects** bundling this.
+
+---
+
+## Appendix — Source URLs (every claim above traces here)
+
+### Internal (this repo)
+
+- `CHANGELOG.md#v1.5.3`, `v1.5.4.md`, `v1.5.5.md`, `v1.6.0.md`, `v1.7.0.md`, `v1.7.1.md`, `v1.7.2.md`, `v1.7.3.md`, `v1.7.4.md`, `v1.7.5.md`, `v1.7.6.md`, `v1.7.7.md`, `v1.7.9.md` (v1.7.8 rebadged to v1.7.9 after pre-existing tag collision)
+- `IMPROVEMENT_PLAN.md` (workstreams 1–15)
+- `docs/THREAT_MODEL.md` (N7.3), `docs/REPRODUCIBLE_BUILDS.md` (N6.3), `docs/INLINE_AUTOFILL.md` (Next-9.3, v1.7.9), `docs/MIGRATE_FROM_SWIFTKEY.md` (Next-6.3, v1.7.9)
+- `app/build.gradle.kts`, `gradle/libs.versions.toml`, `gradle/tools.versions.toml`, `gradle.properties`
+- `app/proguard-rules.pro` (R8 missing-class suppressions for Tink errorprone/javax.annotation, v1.7.9)
+- `app/src/main/AndroidManifest.xml` (signature-protected `permission.REGISTER_ADDON` + `<queries>` for Next-10.1 v1.7.9)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/{AddonContract,AddonEnumerator}.kt` (Next-10.1/10.2)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryImporter.kt` (Next-6.1/6.2)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/PerAppAccentResolver.kt` (Next-11.3 foundation)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/voice/{VoiceInputManager,StreamingVoiceTranscriptBuffer,VoiceModelSelector,VoiceRecognitionEngineSelector,VoiceModelInstallStore,VoiceModelCatalog}.kt` (Next-2.1/2.2/2.3/2.4)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt` (SQLCipher-encrypted at rest, N7.4)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/{NlpManager,ImmediateAutocorrect,MultilingualTokenScorer,TypingContextExtractor,SwiftKeyCandidateRanker,SwiftKeyCandidateTuning,GlideContextTuning,GlideContextRescorer,latin/{LatinLanguageProvider,SymSpellIndex,ColdStartNextWordPriors,LatinDictionarySnapshot}}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/quickaction/{SmartbarActionProfiles,QuickAction,QuickActionsEditorPanel,QuickActionButton}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/{CandidatesRow,InlineSuggestionsUi,Smartbar}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/{TextKeyboardLayout,TextKeyData,AdaptiveTouchModel,BottomRowPreset}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/{PersonalBigramStore,PersonalTrigramStore}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/{ImeWindow,ImeWindowController,ImeWindowEditorHandles,ImeWindowMode,ImeWindowConfig,ImeWindowConstraints}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/{FlorisImeThemeBaseStyle,ThemeManager}.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/about/SigningFingerprint.kt` (N7.5, `sha256OfPackage` arbitrary-package variant added v1.7.9)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/FlorisLocale.kt` (hard-coded `supportsCapitalization` / `supportsAutoSpace` tables; ICU replacement open)
+- `app/src/test/kotlin/.../**Test.kt` × 60 (`LatinDictionarySuggesterTest`, `LatinSuggesterPropertyTest`, `AddonManifestTest`, `PerAppAccentResolverTest`, `DictionaryImporterTest`, `SmartbarActionProfilesTest`, `ThemeContrastTest`, `TouchTargetWcagTest`, `MultilingualTokenScorerTest`, `GlideContextRescorerTest`, `SwiftKeyTraceReplayFixtureTest`, `PersonalDictionaryEncryptionTest`, `PersonalDictionaryIsolationTest`, …)
+- `.github/workflows/{android,release,dependency-scan,crowdin-upload,validate-strings-no-translations}.yml`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/window/ImeWindowMode.kt` (floating placeholder)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/FlorisLocale.kt` (hard-coded locales)
+
+### F — FlorisBoard ecosystem
+
+- [F1] [FlorisBoard repo](https://github.com/florisboard/florisboard) · [ROADMAP](https://github.com/florisboard/florisboard/blob/main/ROADMAP.md) · [Releases](https://github.com/florisboard/florisboard/releases)
+- [F2] FlorisBoard issues: [#3233 k3lp Unicode-Keyboard-v3](https://github.com/florisboard/florisboard/issues/3233), [#3225 PIN scrambling](https://github.com/florisboard/florisboard/issues/3225), [#3280 Snygg v2](https://github.com/florisboard/florisboard/issues/3280)
+- [F3] [FlorisBoard #3234 — malicious closed fork "CleverType AI Keyboard"](https://github.com/florisboard/florisboard/issues/3234)
+- [FlorisBoard privacy policy](https://florisboard.org/legal/privacy/)
+- [FlorisBoard extensions docs](https://docs.florisboard.org/extensions)
+
+### O — OSS competitors
+
+- [O1] [CleverKeys repo](https://github.com/tribixbite/CleverKeys) · [CleverKeys-ML training repo](https://github.com/tribixbite/CleverKeys-ML) · [project site](https://cleverkeys.app/)
+- [O2] [HeliBoard repo](https://github.com/Helium314/HeliBoard) · [Wiki](https://github.com/Helium314/HeliBoard/wiki) · [layouts.md](https://github.com/Helium314/HeliBoard/blob/main/layouts.md)
+- [aosp-dictionaries (HeliBoard)](https://codeberg.org/Helium314/aosp-dictionaries)
+- [O3] [OpenBoard repo](https://github.com/openboard-team/openboard) · [PrivacyGuides successor thread](https://discuss.privacyguides.net/t/openboard-android-keyboard-removed-from-google-app-store-lets-search-the-forks/13602)
+- [O4] [AnySoftKeyboard repo](https://github.com/AnySoftKeyboard/AnySoftKeyboard) · [LanguagePack repo](https://github.com/AnySoftKeyboard/LanguagePack) · [project site](https://anysoftkeyboard.github.io/) · [addons CONTRIBUTING](https://github.com/AnySoftKeyboard/AnySoftKeyboard/blob/main/addons/CONTRIBUTING.md)
+- [O5] [FUTO Keyboard mirror](https://github.com/futo-org/android-keyboard) · [Releases](https://github.com/futo-org/android-keyboard/releases) · [docs language models](https://docs.keyboard.futo.org/settings/languagesmodels) · [text prediction](https://docs.keyboard.futo.org/settings/textprediction)
+- [O6] [FUTO Voice Input repo](https://github.com/futo-org/voice-input) · [whisper-acft v3 turbo issue](https://github.com/futo-org/whisper-acft/issues/9)
+- [O7] [Deskdrop repo](https://github.com/SvReenen/Deskdrop) · [project site](https://svreenen.github.io/Deskdrop/) · [LeanType repo](https://github.com/LeanBitLab/HeliboardL)
+- [O8] [Thumb-Key repo](https://github.com/dessalines/thumb-key)
+- [O9] [Unexpected Keyboard repo](https://github.com/Julow/Unexpected-Keyboard)
+- [O10] [Simple Keyboard](https://github.com/SimpleMobileTools/Simple-Keyboard) · [Fossify Keyboard](https://github.com/FossifyOrg/Keyboard)
+- [O11] [Sayboard repo](https://github.com/ElishaAz/Sayboard)
+- [O12] [Hacker's Keyboard #875](https://github.com/klausw/hackerskeyboard/issues/875)
+- [O14] [fcitx5-android repo](https://github.com/fcitx5-android/fcitx5-android)
+- [O15] [Keyman repo](https://github.com/keymanapp/keyman) · [keyboards repo](https://github.com/keymanapp/keyboards) · [keyman.com get-involved](https://keyman.com/about/get-involved)
+- [H1] HeliBoard issues: [#2226 NLnet open glide](https://github.com/Helium314/HeliBoard/issues/2226), [#326 floating tablet](https://github.com/Helium314/HeliBoard/issues/326), [#363 GIFs](https://github.com/Helium314/HeliBoard/issues/363), [#490 clipboard images](https://github.com/Helium314/HeliBoard/issues/490), [#695 toolbar customization](https://github.com/Helium314/HeliBoard/issues/695), [#786 Asian languages](https://github.com/Helium314/HeliBoard/issues/786), [#891 Accrescent](https://github.com/Helium314/HeliBoard/issues/891), [#1055 Gboard look](https://github.com/Helium314/HeliBoard/issues/1055), [#1289 horizontal-swipe-on-backspace](https://github.com/Helium314/HeliBoard/issues/1289), [#1342 scalable font/key](https://github.com/Helium314/HeliBoard/issues/1342), [#2124 multi-lang autocorrect bleed](https://github.com/Helium314/HeliBoard/issues/2124), [#2165 dual-finger gestures](https://github.com/Helium314/HeliBoard/issues/2165)
+
+### C — Commercial competitors
+
+- [C1] [Microsoft SwiftKey official](https://www.microsoft.com/en-us/microsoft-copilot/for-individuals/do-more-with-ai/general-ai/all-you-can-do-swiftkey-ai-keyboard)
+- [C2] [SwiftKey requires MS Account by 2026-05-31 — Windows Central](https://www.windowscentral.com/software-apps/swiftkey-will-soon-require-a-microsoft-account-data-to-be-moved-to-onedrive)
+- [C3] [SwiftKey Copilot removed 2025 — Microsoft Support FAQ](https://support.microsoft.com/en-us/topic/faqs-for-copilot-changes-in-swiftkey-c02289e6-c5b3-401c-af8d-f6c88409a2d2)
+- [C4] [SwiftKey Clarity multi-word — TechCrunch](https://techcrunch.com/2015/04/27/swiftkey-debuts-clarity-an-experimental-keyboard-featuring-multi-word-autocorrect/)
+- [C5] [Typewise CES 2021+2022 award](https://www.neowin.net/news/typewise039s-honeycomb-ai-keyboard-app-secures-ces-innovation-award-once-again/)
+- [C6] [Gboard Sept 2025 AI writing tools — Google blog](https://blog.google/products-and-platforms/platforms/android/new-android-features-september-2025/)
+- [C7] [Chrooma Keyboard — APKMirror](https://www.apkmirror.com/apk/loopsie-srl/chrooma-keyboard/)
+- [C8] [TouchPal Wikipedia (CooTek + adware ban)](https://en.wikipedia.org/wiki/TouchPal); [Grammarly Mobile](https://www.grammarly.com/mobile)
+- [C9] [Microsoft Hub Keyboard — Liliputing](https://liliputing.com/microsoft-hub-keyboard-for-android-includes-translation-clipboard-search-tools/) · [Hub image translation — 9to5Google](https://9to5google.com/2016/04/21/microsoft-image-inline-translation-translator-hub-keyboard/)
+- [GBOARD-VOICE] [Google disabled offline voice typing on Gboard for non-Pixel — GrapheneOS forum](https://discuss.grapheneos.org/d/26041-google-disabled-voice-typing-on-gboard-without-network-access)
+- [Gboard one-handed help](https://fotoai.app/b/enable-one-handed-mode-on-android-keyboard); [Samsung One UI 7 Galaxy AI any keyboard](https://www.sammobile.com/news/one-ui-7-0-galaxy-ai-writing-tools-any-keyboard/)
+- [Apple Intelligence iOS 18 Writing Tools — AppleMagazine](https://applemagazine.com/predictive-text-engine-012)
+- [SMART-EDIT] [Gboard Smart Edit voice — XDA / Pixel Drop](https://www.xda-developers.com/google-smart-compose-gboard-android-messages-telegram-whatsapp/)
+
+### COMM — Community pain & feature requests (selected)
+
+- [COMM-A] [r/SwiftKey + complaints synthesis — Cybernews](https://cybernews.com/tech/microsoft-switfkey-service-logins/)
+- [COMM-B] [SwiftKey Account requires MS account — HN 35597152](https://news.ycombinator.com/item?id=35597152)
+- [COMM-C] [FlorisBoard #1283 (32 reactions) — autocorrect demand](https://github.com/florisboard/florisboard/issues/1283); [#1474 predictions](https://github.com/florisboard/florisboard/issues/1474); [#677 OOM (36 reactions)](https://github.com/florisboard/florisboard/issues/677); [#2362 invisible keys regression](https://github.com/florisboard/florisboard/issues/2362)
+- [COMM-D] FlorisBoard issues: [#45 emoji search (80 reactions)](https://github.com/florisboard/florisboard/issues/45); [#196 customizable layout (21)](https://github.com/florisboard/florisboard/issues/196); [#229 modifier keys (24)](https://github.com/florisboard/florisboard/issues/229); [#155 multilingual](https://github.com/florisboard/florisboard/issues/155); [#1007 capitalization-aware](https://github.com/florisboard/florisboard/issues/1007); [#938 randomized password layout](https://github.com/florisboard/florisboard/issues/938); [#1888 search clipboard history](https://github.com/florisboard/florisboard/issues/1888); [#2728 inline autofill](https://github.com/florisboard/florisboard/issues/2728); [#116 dual-finger gestures (35)](https://github.com/florisboard/florisboard/issues/116); [#737 delete learned word](https://github.com/florisboard/florisboard/issues/737)
+- [COMM-E] AnySoftKeyboard issues: [#1832 customizable bottom row](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1832), [#1404 cursor placement (highly upvoted)](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1404), [#4426 random period/space](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/4426), [#1399 delete from learned dict](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1399), [#1684 auto-replace shortcuts](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1684), [#2803 ad/nag suggestion bar (43 reactions)](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/2803), [#1952 split keyboard](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1952), [#1412 T9 layout](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1412), [#1233 CJKV demand](https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/1233)
+- [COMM-F] OpenBoard issues: [#7 multilingual (55 reactions)](https://github.com/openboard-team/openboard/issues/7), [#167 wrong-language correction (49)](https://github.com/openboard-team/openboard/issues/167), [#3 glide typing (49)](https://github.com/openboard-team/openboard/issues/3), [#35 emoji search (51)](https://github.com/openboard-team/openboard/issues/35), [#387 inline autofill (28)](https://github.com/openboard-team/openboard/issues/387)
+- [COMM-G] [Privacy Guides — what keyboard?](https://discuss.privacyguides.net/t/what-keyboard-are-you-using-on-android/15973); [MakeUseOf — best open-source Gboard alternatives](https://www.makeuseof.com/best-open-source-gboard-alternatives-tested/); [HN 40831489 FUTO discussion](https://news.ycombinator.com/item?id=40831489)
+- [COMM-K] [Computerworld — Android typing trick](https://www.computerworld.com/article/1714907/android-typing-trick.html); [TechWiser — text expanders](https://techwiser.com/text-expander-apps-for-android/)
+- [Bitwarden inline autofill #1156](https://github.com/bitwarden/mobile/issues/1156); [PR #1145](https://github.com/bitwarden/mobile/pull/1145); [#62](https://github.com/bitwarden/mobile/issues/62)
+- [Trinity College Dublin Gboard paper (audio at any time)](https://www.scss.tcd.ie/Doug.Leith/pubs/gboard_kamil.pdf)
+
+### AI — Adjacent / AI-keyboard wave
+
+- [AI1] [Gemma 3 270M intro — Google Developers Blog](https://developers.googleblog.com/en/introducing-gemma-3-270m/)
+- [AI2] [Gemma 3 270M demo — DataCamp](https://www.datacamp.com/tutorial/gemma-3-270m); [On-Device LLMs: State of the Union 2026](https://v-chandra.github.io/on-device-llms/)
+- [AI3] [whisper.cpp](https://github.com/ggml-org/whisper.cpp); [Vosk vs Whisper 2026 guide](https://www.sinologic.net/en/2026-05/vosk-vs-whisper-local-the-ultimate-2026-guide-to-self-hosted-speech-recognition-stt.html)
+- [AI4] [CleverKeys ML training repo](https://github.com/tribixbite/CleverKeys-ML)
+- [AI5] [fastText 157-language vectors](https://fasttext.cc/docs/en/crawl-vectors.html)
+- [AI6] [SymSpell — Symmetric Delete algorithm](https://github.com/wolfgarbe/SymSpell)
+- [AI7] [SymSpell vs BK-tree benchmark](https://medium.com/data-science/symspell-vs-bk-tree-100x-faster-fuzzy-string-search-spell-checking-c4f10d80a078); [In-Depth Comparison of 14 Spelling Correction Tools (LREC 2020)](https://aclanthology.org/2020.lrec-1.228.pdf)
+- [AI8] [WhisperInput keyboard (alex-vt)](https://github.com/alex-vt/WhisperInput); [FUTO larger Whisper models on flagships](https://github.com/futo-org/android-keyboard/issues/1863)
+- [AI9] [Joplin voice typing spec](https://joplinapp.org/help/dev/spec/voice_typing/)
+- [AI10] [Vosk Android](https://alphacephei.com/vosk/android); [Vosk API](https://github.com/alphacep/vosk-api)
+- [AI11] [KenLM toolkit](https://kheafield.com/code/kenlm/); [KenLM estimation](https://kheafield.com/code/kenlm/estimation/)
+- [AI12] [edugp/kenlm 24-language pre-trained models — HF](https://huggingface.co/edugp/kenlm)
+- [AI13] [wordfreq (rspeer)](https://github.com/rspeer/wordfreq)
+- [AI14] [SUBTLEX-US frequency norms](https://www.ugent.be/pp/experimentele-psychologie/en/research/documents/subtlexus); [subs2vec](https://github.com/jvparidon/subs2vec)
+- [AI15] [Real-Time Optimized N-gram for Mobile (arXiv)](https://arxiv.org/pdf/2101.03967)
+- [AI16] [MediaPipe LLM Inference Android](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference/android)
+- [AI17] [Apple Intelligence Foundation Language Models](https://arxiv.org/html/2507.13575v1); [Apple iOS 17 transformer autocorrect — TechCrunch](https://techcrunch.com/2023/06/05/thanks-to-ai-ios-17-will-learn-your-swears/)
+- [AI18] [Local-first CRDTs over Syncthing (tonsky)](https://tonsky.me/blog/crdt-filesync/); [Automerge / Yjs landscape](https://crdt.tech/implementations); [Yjs](https://github.com/yjs/yjs)
+- [AI19] [Espanso options](https://espanso.org/docs/configuration/options/); [Espanso extensions](https://espanso.org/docs/matches/extensions/)
+- [AI22] [Joplin tiered voice typing](https://joplinapp.org/help/dev/spec/voice_typing/)
+- [AI ACRA] [ACRA](https://github.com/ACRA/acra); [Sentry mobile privacy](https://docs.sentry.io/security-legal-pii/security/mobile-privacy/)
+- AI WILD: see "Wild Ideas" section in adjacent-research output (userscripts, $1 Unistroke, federated learning, audit log, cinematic haptics, WebAuthn injection)
+
+### STD — Standards / a11y / i18n / security
+
+- [STD-INPUTSERVICE] [InputMethodService API](https://developer.android.com/reference/android/inputmethodservice/InputMethodService); [InputConnection](https://developer.android.com/reference/android/view/inputmethod/InputConnection)
+- [STD-A14] [Android 14 features](https://developer.android.com/about/versions/14/features); [Android 16 release notes](https://developer.android.com/about/versions/16/release-notes); [SDK setup](https://developer.android.com/about/versions/16/setup-sdk)
+- [STD-STYLUS] [Stylus in text fields](https://developer.android.com/develop/ui/views/touch-and-input/stylus-input/stylus-input-in-text-fields); [Compose stylus](https://developer.android.com/develop/ui/compose/touch-input/stylus-input/stylus-input-in-text-fields)
+- [STD-INK] (Google ML Kit Digital Ink Recognition — official Android docs surface)
+- [STD-INLINE-AUTOFILL] [Integrate autofill with IMEs](https://developer.android.com/identity/autofill/ime-autofill); [Create input method (Switch Access)](https://developer.android.com/develop/ui/views/touch-and-input/creating-input-method)
+- [STD-A16-HAPTIC] [Android custom haptic effects (16+ envelopes)](https://developer.android.com/develop/ui/views/haptics/custom-haptic-effects); [haptics design principles](https://developer.android.com/develop/ui/views/haptics/haptics-principles)
+- [STD-Material3] [M3 design tokens](https://m3.material.io/foundations/design-tokens)
+- [STD-M3E] [Material 3 Expressive launch — Google blog](https://blog.google/products-and-platforms/platforms/android/material-3-expressive-android-wearos-launch/)
+- [STD-TALKBACK] [TalkBack keyboard shortcuts](https://support.google.com/accessibility/android/answer/6110948); [TalkBack 16.2](https://support.google.com/accessibility/android/answer/16800105); [SwiftKey + TalkBack](https://support.microsoft.com/en-us/topic/accessibility-in-microsoft-swiftkey-keyboard-a3b12d18-61ba-4e2c-82bc-c42e8f12c62c)
+- [STD-A11Y-IMETRY] [TalkBack braille](https://support.google.com/accessibility/android/answer/9728765); [Voice Access](https://support.google.com/accessibility/android/answer/6151848)
+- [STD-WCAG-TARGET] [WCAG 2.5.5 Target Size](https://www.w3.org/WAI/WCAG21/Understanding/target-size); [WCAG 2.5.8 (TestParty)](https://testparty.ai/blog/wcag-target-size-guide)
+- [STD-WCAG-CONTRAST] (WCAG 2.1 1.4.3 Contrast Minimum — W3C reference)
+- [STD-REDUCED-MOTION] [Android reduced motion (eevis.codes)](https://eevis.codes/blog/2022-12-12/android-animations-and-reduced-motion/)
+- [STD-SWITCH] [Voice Access activation keys](https://support.google.com/accessibility/android/answer/6151843?hl=en)
+- [STD-CJK] [FlorisBoard Chinese language packs](https://github.com/florisboard/florisboard/blob/main/LANGUAGEPACKS-CHINESE.md); [Issue #2211 Pinyin](https://github.com/florisboard/florisboard/issues/2211)
+- [STD-RTL] (FlorisBoard upstream RTL state — repo audit)
+- [STD-INDIC] [FlorisBoard #1327 Hindi transcription](https://github.com/florisboard/florisboard/issues/1327)
+- [STD-LATIN-LEAPFROG] [HeliBoard FAQ](https://github.com/HeliBorg/HeliBoard/wiki/FAQ); [HeliBoard #2067 / #1699 word-learning threshold](https://github.com/HeliBorg/HeliBoard/issues/2067)
+- [STD-GEEZ] [GeezIME 2025](https://play.google.com/store/apps/details?id=com.geezlab.geezime); [Keyman Ge'ez keyboard](https://keyman.com/keyboards/gff_geez)
+- [STD-UNICODE17] [ICU releases](https://github.com/unicode-org/icu/releases); [Android i18n via ICU](https://developer.android.com/guide/topics/resources/internationalization)
+- [STD-EMOJI17] [Unicode 17 / Emoji 17 (Emojipedia)](https://blog.emojipedia.org/whats-new-in-unicode-17-0/); [Emoji 16 on Android 16 (TechRadar)](https://www.techradar.com/phones/android/android-16-users-can-get-early-access-to-163-new-emojis-thatll-soon-be-everywhere-heres-how)
+- [STD-API-DELETE-CODEPOINTS] (`InputConnection#deleteSurroundingTextInCodePoints` — Android docs)
+- [STD-FDROID-REPRO] [F-Droid keyboards reproducible (March 2025)](https://f-droid.org/en/2025/03/04/even-my-keyboard-is-built-reproducibly.html); [F-Droid reproducible builds docs](https://f-droid.org/docs/Reproducible_Builds/)
+- [STD-FDROID-OBTAINIUM] [F-Droid 2025 status update](https://f-droid.org/en/2026/01/23/fdroid-in-2025-strengthening-our-foundations-in-a-changing-mobile-landscape.html); [Google Play target SDK](https://developer.android.com/google/play/requirements/target-sdk); [Play Integrity overview](https://developer.android.com/google/play/integrity/overview)
+- [STD-CVE] [Android Dec 2025 bulletin](https://source.android.com/docs/security/bulletin/2025-12-01); [CVE-2025-48593](https://socprime.com/blog/cve-2025-48593-vulnerability-in-android/)
+- [STD-CAKI] [CAKI ESORICS paper](https://staff.ie.cuhk.edu.hk/~khzhang/my-papers/2015-esorics-ime.pdf)
+- [STD-PERS-DICT-ENC] [Tink Java AndroidKeystore / AndroidKeysetManager](https://github.com/tink-crypto/tink-java); [SQLCipher — Zetetic]
+- [STD-MACROBENCH] [Macrobenchmark](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview)
+- [STD-PERFETTO] (`androidx.tracing:tracing-perfetto:1.0.0` — official Android perf docs)
+- [STD-ROBORAZZI] [Roborazzi](https://github.com/takahirom/roborazzi)
+- [STD-ACRA] [ACRA](https://github.com/ACRA/acra)
+- [STD-SYNC] [Syncthing device IDs](https://docs.syncthing.net/v0.11.7/dev/device-ids); [KryptEY E2EE keyboard](https://github.com/amnesica/KryptEY)
+- [STD-TASKER] [Tasker plugin intro](https://tasker.joaoapps.com/plugins-intro.html); [HeliBoard Tasker PR #290](https://github.com/HeliBorg/HeliBoard/pull/290); [AutoInput + Tasker](https://blog.php-systems.com/setting-up-autoinput-with-tasker/)
+- [STD-FLORIS-EXT] [FlorisBoard extensions docs](https://docs.florisboard.org/extensions)
+- [STD-NO-INTERNET] (FlorisBoard's no-INTERNET-permission posture — manifest audit)
+- [MIG-GBOARD] [Gboard PersonalDictionary export — How-To Geek](https://www.howtogeek.com/how-to-speed-up-your-typing-game-with-gboards-personal-dictionary/)
+- [MIG-SK] [SwiftKey Backup & Sync — MS Support](https://support.microsoft.com/en-us/topic/how-to-use-backup-sync-in-microsoft-swiftkey-keyboard-3604cb8a-47e9-4045-82de-fd301904e59a)
+- [MIG-KLFC] [KLFC layout converter](https://github.com/39aldo39/klfc)
+- [Hub Keyboard Microsoft Garage profile](https://www.microsoft.com/en-us/garage/profiles/hub-keyboard/)
+- [PAIN-D-3] [BLTT keyboards-for-disabled-people](https://bltt.org/keyboards-for-disabled-people/); [OT-with-Apps motor accessibility](https://otswithapps.com/2015/11/08/keyboard-accessibility-for-individuals-with-motor-impairment-for-computers-and-mobile-devices/); [Android accessibility help — physical keyboard a11y](https://support.google.com/accessibility/android/answer/16323943)
+- [PAIN-29] [Android accessibility — bounce/slow/sticky](https://support.google.com/accessibility/android/answer/16318538)
+
+### New sources (v5.0, 2026-05-15)
+
+- [NLNET-GT] [NLnet — Gesture Typing for AOSP-derived Keyboards](https://nlnet.nl/project/GestureTyping/) — NGI Mobifree-funded R&D programme, project formally runs Jun 2025 → Jun 1 2026; library will be a drop-in replacement for the closed `swypelibs` blob.
+- [H1-2026] [HeliBoard v3.7-beta1 (2026-02-22)](https://github.com/HeliBorg/HeliBoard/releases) — ships optional gesture data gathering, RTL improvements, non-inline emoji search.
+- [H-EMOJI-1231] [HeliBoard #1231 — extended emoji support](https://github.com/Helium314/HeliBoard/issues/1231) — emoji search/predict by tag, pinned emoji, custom emoji tags, GIF support.
+- [FUTO-CJK-2026] [FUTO Keyboard releases](https://github.com/futo-org/android-keyboard/releases) — Traditional + Simplified Chinese (standard / fuzzy / Double Pinyin + rudimentary stroke), Vietnamese Telex + VNI, image clipboard.
+- [FUTO-VOICE-MODELS] [FUTO Voice Input Models](https://keyboard.futo.org/voice-input-models) — OpenAI Whisper tiny/base/small finetuned with ACFT, GGML format.
+- [FLOR-DISC-2197] [FlorisBoard Discussion #2197 — NLP implementation status](https://github.com/florisboard/florisboard/discussions/2197) — NLP core hosted in a separate repo, bridge work in progress; word-prediction/spell-checking shipping in 0.6.
+- [FLOR-DISC-84] [FlorisBoard Issue #84 — Change language on the fly](https://github.com/florisboard/florisboard/issues/84) — long-standing high-traffic request; SwiftFloris's per-token multilingual scoring is the answer.
+- [FLOR-LAYOUT-EDITOR] [FlorisBoard ROADMAP](https://github.com/florisboard/florisboard/blob/main/ROADMAP.md) — on-board layout editor planned for 0.7; could surface as a SwiftFloris Under Consideration item.
+- [CK-DEEPWIKI] [CleverKeys DeepWiki](https://deepwiki.com/tribixbite/CleverKeys) — transformer encoder-decoder (5.4MB + 7.4MB), beam search 8 hypotheses, XNNPACK, sub-200ms on Pixel 7; v1 EN+QWERTY only; multi-layout / multi-script model on the roadmap for Q2-Q3 2026. GPL-3.0 — architecture-only reference.
+- [CK-FDROID] [CleverKeys on F-Droid](https://f-droid.org/packages/tribixbite.cleverkeys/) — confirms public availability + reproducible build status.
+- [STD-A16-PWLE] [Android 16 release notes — haptic envelopes](https://source.android.com/docs/whatsnew/android-16-release); [Android 16 Features](https://developer.android.com/about/versions/16/features) — `VibrationEffect.WaveformEnvelopeBuilder` + `Vibrator.areEnvelopeEffectsSupported()`; primitive set CLICK / TICK / LOW_TICK / SLOW_RISE / QUICK_RISE / QUICK_FALL / THUD / SPIN.
+- [STD-A15-16KB] [Android 16 KB memory pages](https://developer.android.com/guide/practices/page-sizes); [Google Play Aug 2025 requirement](https://medium.com/@dfs.techblog/androids-16-kb-page-size-what-it-means-for-your-app-and-why-you-should-act-now-b0c65cee86d4) — NDK r28+ defaults to 16K alignment; AGP 8.5.1+ for AAB packaging; `android:pageSizeCompat` for Android 16 compatibility mode.
+- [STD-AOSP-2026] [AOSP release cadence change](https://source.android.com/docs/whatsnew/android-16-release) — AOSP source now published Q2 + Q4 only; track `android-latest-release` branch.
+- [STD-LITERT-LM] [LiteRT-LM Overview](https://ai.google.dev/edge/litert-lm/overview); [LiteRT-LM repo](https://github.com/google-ai-edge/LiteRT-LM); [Deploy Gemma on mobile](https://ai.google.dev/gemma/docs/integrations/mobile); [LiteRT: The Universal Framework for On-Device AI](https://developers.googleblog.com/litert-the-universal-framework-for-on-device-ai/); [MediaPipe LLM Inference (now deprecated on Android/iOS)](https://ai.google.dev/edge/mediapipe/solutions/genai/llm_inference) — supports Gemma / Llama / Phi-4 / Qwen, NPU 3× over GPU prefill on S25 Ultra, Gemma 4 MTP >2× faster decode, LoRA on attention layers (Gemma-2 2B / Gemma 2B / Phi-2).
+- [STD-FUNCTIONGEMMA] [FunctionGemma announcement](https://blog.google/innovation-and-ai/technology/developers-tools/functiongemma/); [InfoQ coverage](https://www.infoq.com/news/2026/01/functiongemma-edge-function-call/) — Gemma 3 270M variant fine-tuned for natural-language → structured function/API calls; on-device agentic AI surface.
+- [STD-GEMMA3-270M] [Gemma 3 270M introduction](https://developers.googleblog.com/en/introducing-gemma-3-270m/); [DataCamp Gemma 3 270M Android tutorial](https://www.datacamp.com/tutorial/gemma-3-270m) — 270M params (170M embedding + 100M transformer), 256k vocab, INT4-QAT uses 0.75% Pixel 9 Pro battery per 25 conversations.
+- [STD-BERGAMOT] [Bergamot Translator (active fork)](https://github.com/browsermt/bergamot-translator); [Bergamot Translator (mozilla, INACTIVE)](https://github.com/mozilla/bergamot-translator); [Bergamot Firefox docs](https://firefox-source-docs.mozilla.org/toolkit/components/translations/resources/03_bergamot.html); [DavidVentura/offline-translator Android port](https://github.com/DavidVentura/offline-translator); [Mobile translator blog](https://blog.davidv.dev/posts/mobile-translator/) — Apache-2.0 offline NMT; Mozilla's repo INACTIVE; `browsermt/bergamot-translator` is the maintained surface; Android port references the build gotchas (pcre2 + NDK).
+- [STD-WHISPER-CTRANSLATE2] [whisper.cpp](https://github.com/ggml-org/whisper.cpp); [Vosk vs Whisper 2026 hybrid guide](https://www.sinologic.net/en/2026-05/vosk-vs-whisper-local-the-ultimate-2026-guide-to-self-hosted-speech-recognition-stt.html); [Vosk Android](https://alphacephei.com/vosk/android) — Vosk for live streaming, Whisper for final-polish; CTranslate2 4-5× faster than original Whisper.
+- [STD-FDROID-VERIFIED] [F-Droid: Making reproducible builds visible (May 2025)](https://f-droid.org/2025/05/21/making-reproducible-builds-visible.html); [F-Droid Reproducible Builds docs](https://f-droid.org/docs/Reproducible_Builds/) — Reproducibility Status page live per app; tier ladder `Reproducible` / `Verified` / `Soon to be Verified` / `Not verified`.
+- [STD-ANDROID-16-RELEASE] [Android 16 release notes](https://source.android.com/docs/whatsnew/android-16-release); [Android 16 stylus features](https://developer.android.com/develop/ui/compose/touch-input/stylus-input/stylus-input-in-text-fields).
+- [STD-INPUTMETHOD-SERVICE] [InputMethodService reference](https://developer.android.com/reference/android/inputmethodservice/InputMethodService).
+- [STD-CVE-2026] [Android Security Bulletin May 2026 (CVE-2026-0073)](https://source.android.com/docs/security/bulletin/2026/2026-05-01); [Android Security Bulletin March 2026 (CVE-2026-21385 active exploitation)](https://source.android.com/docs/security/bulletin/2026/2026-03-01); [Android Security Bulletin April 2026](https://source.android.com/docs/security/bulletin/2026/2026-04-01) — operational hardening reference; no IME-specific CVEs in the window but Framework / Media Codecs / System component RCEs surface regularly.
+- [GBOARD-AI-2025] [Google blog: AI writing tools in Gboard (Sept 2025)](https://blog.google/products-and-platforms/platforms/android/new-android-features-september-2025/) — on-device Gemini Nano powers tone rewrite / proofread / grammar in Gboard; 8 languages with full AI features (EN / zh-Hans / fr / it / ja / ko / pt / es), +10 more planned 2026.
+- [GBOARD-SMARTCOMPOSE] [XDA-Developers: Smart Compose rollout to messaging](https://www.xda-developers.com/google-smart-compose-gboard-android-messages-telegram-whatsapp/) — gray ghost-text completion, swipe-right-on-spacebar to accept, ~40% phrases / 60% single words.
+- [GBOARD-RAMBLER] [Android 17 Gemini Intelligence](https://www.digitbin.com/android-17-gemini-intelligence-explained/); [Android Show I/O 2026](https://www.android.com/new-features-on-android/io-2026/) — Gboard's Rambler mode (hold mic + ramble + clean polished text including mid-language switches).
+- [SK-RETIRE] [SwiftKey accounts retiring May 31 2026 — Microsoft Support](https://support.microsoft.com/en-us/topic/account-a3c38581-903f-4d22-a388-cc13c7debf0e); [Windows Central coverage](https://www.windowscentral.com/software-apps/swiftkey-will-soon-require-a-microsoft-account-data-to-be-moved-to-onedrive); [Android Authority](https://www.androidauthority.com/microsoft-swiftkey-accounts-change-3650203/) — Google / Apple / legacy SwiftKey logins permanently removed; only Microsoft account login supported; all non-Microsoft-account data permanently deleted post-cutoff.
+- [ASK-2026] [AnySoftKeyboard 1.13.547 beta (Feb 2026) APKMirror release](https://www.apkmirror.com/apk/anysoftkeyboard/anysoftkeyboard-github-version/anysoftkeyboard-github-version-1-13-547-release/) — Android 15 16KB memory pages support, gesture-typing accuracy, Android 15+ emoji updates, edge-to-edge polish; competitor parity check.
+- [PG-DISC-2026] [Privacy Guides — Keyboard recommendations 2026](https://discuss.privacyguides.net/t/what-keyboard-are-you-using-on-android/15973); [Factually 2026 keyboard comparison](https://factually.co/product-reviews/electronics-tech/best-android-keyboard-for-privacy-2026-384072) — community sentiment 2026: HeliBoard + FUTO + CleverType the named SwiftKey defectors' destinations; predictive-text quality gap remains the #1 perception barrier on FOSS keyboards.
+- [STD-STYLUS-COMPOSE] [Compose stylus input in TextFields](https://developer.android.com/develop/ui/compose/touch-input/stylus-input/stylus-input-in-text-fields); [Advanced stylus features](https://developer.android.com/develop/ui/compose/touch-input/stylus-input/advanced-stylus-features) — `setAutoHandwritingEnabled` / `setHandwritingBoundsOffsets` / handwriting delegation; motion-prediction library to reduce perceived latency; palm-rejection contract.
+- [HF-EDUGP-KENLM] [edugp/kenlm 24-language pre-trained models](https://huggingface.co/edugp/kenlm) — Next-3.1 reference.
+- [STD-UNICODE17-EMOJI] [Emoji 17 Emojipedia announcement](https://blog.emojipedia.org/whats-new-in-unicode-17-0/) — Distorted Face, Fight Cloud, Hairy Creature, Orca, Landslide, Trombone, Treasure Chest (7 new glyphs).
+- [V1.7.9-DOCS] `docs/INLINE_AUTOFILL.md` (Next-9.3), `docs/MIGRATE_FROM_SWIFTKEY.md` (Next-6.3), `CHANGELOG.md#v1.7.9` — internal sources for v1.7.9 shipped surfaces.
+
+### New sources (v5.1, 2026-05-16)
+
+#### OSS competitor activity snapshot (queried 2026-05-16)
+
+`Last commit` is the latest default-branch commit author date returned by the GitHub API. `Maintainer signal` is the top public contributor list returned by GitHub, not a governance guarantee.
+
+| Project | Stars | Last commit | Latest GitHub release | Maintainer signal |
+|---|---:|---|---|---|
+| [FlorisBoard](https://github.com/florisboard/florisboard) | 8,333 | 2026-04-24 | v0.5.2 | patrickgold, lm41, X-yl, florisboard-bot, Hayleia |
+| [HeliBoard](https://github.com/HeliBorg/HeliBoard) | 5,216 | 2026-05-15 | v3.9 | Helium314, dslul, MajeurAndroid, BlackyHawky, eranl |
+| [AnySoftKeyboard](https://github.com/AnySoftKeyboard/AnySoftKeyboard) | 3,300 | 2026-05-13 | 1.13-r1 | menny, anysoftkeyboard-bot, herrlado, ArenaL5, martholomew |
+| [FUTO Keyboard](https://github.com/futo-org/android-keyboard) | 2,472 | 2026-05-08 | 0.1.28 | tgtakaoka, ksk9687, satok16, abb128, kep-google |
+| [fcitx5-android](https://github.com/fcitx5-android/fcitx5-android) | 5,214 | 2026-05-16 | 0.1.2 | rocka, berberman, transifex-integration[bot], eagleoflqj, keta1 |
+| [Unexpected Keyboard](https://github.com/Julow/Unexpected-Keyboard) | 2,999 | 2026-05-14 | 2.0.3 | Julow, sdrapha, Spike-from-NH, eandersons, ChasmSolacer |
+| [OpenBoard](https://github.com/openboard-team/openboard) | 2,724 | 2022-12-17 | v1.4.5 | dslul, MajeurAndroid, tkterris, RHJihan, noscirep |
+| [Simple Keyboard](https://github.com/rkkr/simple-keyboard) | 1,517 | 2026-05-13 | 144 | rkkr, wittmane, soshial, Shunnuo, EmmanuelMess |
+| [Hacker's Keyboard](https://github.com/klausw/hackerskeyboard) | 2,307 | 2024-10-09 | 1.40.7 | klausw, tgtakaoka, satok16, kruton, dsalt |
+| [Keyman](https://github.com/keymanapp/keyman) | 507 | 2026-05-15 | linux-release-stable-11.0.120 | mcdurdin, jahorton, darcywong00, keyman-server, ermshiperete |
+| [Sayboard](https://github.com/ElishaAz/Sayboard) | 563 | 2025-07-01 | v4.2.1 | ElishaAz, nshmyrev, lucasmz-dev, weblate, dark0ghost |
+| [8Vim](https://github.com/8VIM/8VIM) | 573 | 2026-03-12 | v0.17.5 | flide, MaethorNaur, github-actions[bot], dependabot[bot], adaschma |
+| [Giella Keyboard for Android](https://github.com/divvun/giellakbd-android) | 14 | 2025-10-10 | none | bbqsrc, Rawa, dylanhand, lenguyenthanh, snomos |
+| [CleverKeys](https://github.com/tribixbite/CleverKeys) | 349 | 2026-05-03 | v1.4.0 | tribixbite, claude |
+
+- [ROBORAZZI-RELEASES] [Roborazzi releases · takahirom/roborazzi](https://github.com/takahirom/roborazzi/releases); [Roborazzi 1.55.0 on Maven](https://mvnrepository.com/artifact/io.github.takahirom.roborazzi/roborazzi-core/1.55.0); [Roborazzi 1.55.0 Gradle plugin on Maven](https://mvnrepository.com/artifact/io.github.takahirom.roborazzi/roborazzi-gradle-plugin/1.55.0) — AGP 9 support via PR #782 + LaunchedEffect support via PR #779 + `generatedTestClassCount` parallel-test option. **Unblocks the v5.0 "wait for 1.44.0-stable" gate on the Roborazzi plugin alias.**
+- [AGP-9-2-0] [Android Gradle plugin 9.2.0 release notes (April 2026)](https://developer.android.com/build/releases/agp-9-2-0-release-notes); [Android Studio Panda 4 Patch 1 / AGP 9.2.1 stable patch](https://androidstudio.googleblog.com/2026/05/); [AGP 9.1.1 (April 2026)](https://developer.android.com/build/releases/agp-9-1-0-release-notes); [AGP 9.0.1 (January 2026)](https://developer.android.com/build/releases/agp-9-0-0-release-notes) — Built-in Kotlin support enabled by default; max API level 36.1 on AGP 9.2 release notes; AGP 9.2.1 is the stable patch-line target in Google Maven and fixes the `RecordTag` class issue noted in Panda 4 Patch 1.
+- [KOTLIN-2321] [Kotlin 2.3.21 release · GitHub](https://github.com/JetBrains/kotlin/releases/tag/v2.3.21); [Kotlin 2.3.21 fixes — DEV community summary](https://dev.to/krun_dev/kotlin-2321-fixes-3nl9); [Kotlin release process](https://kotlinlang.org/docs/releases.html) — Apr 23 2026 bug-fix release: KT-84610 Wasm IC mode, KT-85399 K/N ObjC protocol metaclass cast, KT-85257 AGP 9.1 R8 artifact clear regression. Kotlin 2.4.0 planned Jun-Jul 2026 (stable context parameters, Java 26).
+- [STD-A17-UNVEIL] [Android Show 2026 Android 17 announcement — Android Central](https://www.androidcentral.com/apps-software/android-os/top-android-17-announcements-from-the-android-show-2026); [Android 17 features tracker — Android Authority](https://www.androidauthority.com/android-17-3561251/); [Android 17 release roundup — TechPP](https://techpp.com/roundup/android-17/) — Unveiled 2026-05-12; codename "Cinnamon Bun"; release pegged to Pixel 11 launch window Aug/Sep 2026 or later QPR; cadence shift continued from Android 16.
+- [STD-A17-BEHAVIOR] [Android 17 behavior changes (apps targeting API 37)](https://developer.android.com/about/versions/17/behavior-changes-17); [Android 17 behavior changes (all apps)](https://developer.android.com/about/versions/17/behavior-changes-all) — CJKV IME accessibility (`TextAttribute.Builder.setTextSuggestionSelected()` + `AccessibilityEvent.setTextChangeTypes()`); IME visibility no longer auto-restored across config changes; `show_passwords_physical` / `show_passwords_touch` split for password-field rendering on hardware-keyboard input.
+- [STD-A17-RAMBLER] [Gemini Intelligence + Gboard Rambler announcement — 9to5Google](https://9to5google.com/2026/05/12/gemini-intelligence-announcement/) — Gboard's Rambler voice mode + multilingual mid-message language switch + Smart Edit ("no longer want apples" excises item from dictated list) coming with Pixel 11 Gemini Intelligence; on-device for Pixel/Samsung.
+- [GBOARD-CURSOR-2026] [Gboard free-movement Cursor mode in beta v16.8 — PhoneArena](https://www.phonearena.com/news/new-gboard-feature-to-makes-fixing-typos-easier_id178199); [Gboard typing improvements coming — PhoneArena](https://www.phonearena.com/news/typing-on-android-is-about-to-get-faster-with-this-gboard-update_id177627) — Long-press space → unrestricted virtual trackpad (vertical + horizontal, cross-paragraph); matches SwiftKey's existing tap-and-hold-space trackpad.
+- [GBOARD-AUTOSWITCH-2026] [Gboard auto-switch-after-apostrophe in beta v16.6 — Android Police](https://www.androidpolice.com/unexpected-gboard-feature-reignited-my-love-for-pixel/) — After typing `'` from symbols panel, auto-flip back to letters; saves the manual `?123` press.
+- [GBOARD-SMART-EDIT-2026] [Gboard SmartEdit AI features — Android Central](https://www.androidcentral.com/apps-software/gboard-add-smartedit-more-rumored-pixel-ai); [Gboard upgrades preview — Android Police](https://www.androidpolice.com/gboard-is-readying-an-upgrade-to-make-typing-noticeably-better/) — Gemini-driven mid-dictation list editing; works with Rambler voice mode.
+- [GBOARD-FLICK-2026] [Gboard 2026 features Pixel coverage — Android Police](https://www.androidpolice.com/brilliant-gboard-features-ill-keep-avoiding-in-2026/); [March Pixel Feature Drop summary — Droid-Life](https://www.droid-life.com/2026/03/03/march-pixel-feature-drop-update/) — M3 Expressive rollout in Gboard, Flick keys shortcut, dedicated keyboard font-size setting; pill-shaped Suggestion strip tweak.
+- [FLORIS-0.6-ALPHA] [FlorisBoard releases · v0.6.0-alpha01 + v0.6.0-alpha02](https://github.com/florisboard/florisboard/releases); [FlorisBoard ROADMAP](https://raw.githubusercontent.com/florisboard/florisboard/main/ROADMAP.md); [Discussion #2197 NLP status](https://github.com/florisboard/florisboard/discussions/2197) — 0.5 milestone split: word suggestions moved to 0.6, theme editor on 0.5; NLP core ready, building Kotlin↔native bridge to compile for all Android targets so NLP ships with the APK.
+- [FUTO-V0-1-24-2] [FUTO Keyboard v0.1.24.2 release · futo-org/android-keyboard](https://github.com/futo-org/android-keyboard/releases/tag/0.1.24.2); [FUTO Voice Input Japanese coverage — GIGAZINE](https://gigazine.net/gsc_news/en/20260328-voiceinput/); [FUTO Keyboard releases page](https://github.com/futo-org/android-keyboard/releases) — Korean layout contributed by @tenextractor; Japanese WordStyles back-button fix; voice models now include Japanese Whisper via FUTO Voice Input.
+- [FUTO-V0-1-28] [FUTO Keyboard v0.1.28 release · futo-org/android-keyboard](https://github.com/futo-org/android-keyboard/releases/tag/0.1.28) — Traditional and Simplified Chinese through RIME (Pinyin, fuzzy Pinyin, Double Pinyin, rudimentary stroke), image clipboard paste/history, Vietnamese Telex/VNI, IPA QWERTY, Toki Pona, physical-keyboard hide/show option, email-field suggestions, and swipe-status note that the public swipe data set passed 1M swipes.
+- [HF-FUTO-SWIPE] [futo-org/swipe.futo.org on Hugging Face](https://hf.co/datasets/futo-org/swipe.futo.org) — MIT-licensed filtered public volunteer swipe data set, JSON/tabular/text tags, `1M<n<10M` size class, updated 2025-03-17.
+- [ASK-2026-547] [AnySoftKeyboard 1.13.547 beta · APKMirror](https://www.apkmirror.com/apk/anysoftkeyboard/anysoftkeyboard-github-version/anysoftkeyboard-github-version-1-13-547-release/); [AnySoftKeyboard releases](https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases) — Feb 2026 release: gesture-typing accuracy, Android 15 16KB memory page support, Android 15+ emoji updates, emoji-keyboard-crash fix, edge-to-edge polish, minSdk Android 6.0.
+- [TYPEWISE-2026] [Typewise — Wikipedia overview + company pivot](https://en.wikipedia.org/wiki/Typewise); [Typewise Custom Keyboard APK 4.4.43 — Uptodown (flagged "Discontinued app")](https://typewise-keyboard.en.uptodown.com/android/download); [Typewise CES 2021+2022 award (historical)](https://www.neowin.net/news/typewise039s-honeycomb-ai-keyboard-app-secures-ces-innovation-award-once-again/) — Swiss deep-tech firm fully pivoted to enterprise AI agents for customer-service; consumer keyboard in maintenance, iOS stalled since Nov 2024, Uptodown flags as discontinued. **The honeycomb-layout niche is genuinely vacated.**
+- [PG-FUTO-2026] [Privacy Guides — FUTO Keyboard suggestion thread](https://discuss.privacyguides.net/t/futo-keyboard/18896); [Privacy Guides — HeliBoard suggestion thread](https://discuss.privacyguides.net/t/heliboard-offline-keyboard-for-android/28093); [Factually long-term HeliBoard review](https://factually.co/product-reviews/electronics-tech/long-term-privacy-review-heliboard-privacy-focused-keyboards-multi-month-testing-2eddfa) — 2026 community sentiment: HeliBoard is the most polished FOSS option but predictive-text quality gap remains the #1 perception barrier; FUTO has better out-of-the-box swipe + offline voice but non-OSI license.
+- [SK-RETIRE-2026] [PSA: Microsoft is deleting SwiftKey accounts this month — Neowin](https://www.neowin.net/news/psa-microsoft-is-deleting-swiftkey-accounts-this-month-here-is-what-you-need-to-do/); [SwiftKey accounts officially retiring — Yahoo Tech](https://tech.yahoo.com/apps/articles/swiftkey-accounts-officially-retiring-hapen-114613697.html); [Will SwiftKey survive mandatory MS Account integration — Stuff South Africa](https://stuff.co.za/2026/03/19/lets-see-if-swiftkey-survives-mandatory-microsoft-account-and-onedrive-integration/) — 2026-05-31 cutoff; all non-Microsoft-account login data permanently deleted; users can retrieve data at data.swiftkey.com before the cutoff. Migration window is **15 days from this update** (2026-05-16 → 2026-05-31).
+- [MCP-2026-ROADMAP] [MCP 2026 Roadmap blog](https://blog.modelcontextprotocol.io/posts/2026-mcp-roadmap/); [MCP spec 2025-11-25](https://modelcontextprotocol.io/specification/2025-11-25); [MCP GitHub spec repo](https://github.com/modelcontextprotocol/modelcontextprotocol) — No spec version cut since 2025-11-25; 2026 work focuses on streamable-HTTP improvements (stateful-session vs load-balancer, horizontal scaling), `.well-known` capability metadata for crawlers/registries, and enterprise readiness (audit trails, SSO, gateway behavior, config portability) — most enterprise work landing as extensions, not core. **SwiftFloris's L7 MCP bridge stays aligned with the stable 2025-11-25 spec.**
+- [LITERT-LM-0-11-0] [LiteRT-LM repo · google-ai-edge/LiteRT-LM](https://github.com/google-ai-edge/LiteRT-LM); [Gemma 3 270M on Hugging Face (LiteRT community)](https://huggingface.co/litert-community/gemma-3-270m-it); [Gemma 4 E2B on the Edge — Medium](https://medium.com/google-developer-experts/bringing-multimodal-gemma-4-e2b-to-the-edge-a-deep-dive-into-litert-lm-and-qualcomm-qnn-4e1e06f3030c) — 0.11.0 (Apr 2026) adds Gemma 4 support (E2B device variant + 4B/12B desktop), Multi-token Prediction (>2× decode speedup), Windows CLI. Gemma 3 270M Android GPU acceleration still WIP per HF model card.
+- [CLEVERKEYS-V1-4] [CleverKeys v1.4.0 release page](https://github.com/tribixbite/CleverKeys/releases/tag/v1.4.0); [CleverKeys F-Droid page](https://f-droid.org/packages/tribixbite.cleverkeys/) — Apr 26 2026 release: tensor reuse in beam search (-90% allocations), user-configurable XNNPACK thread count (1-8), batched beam decoding toggle, ONNX inference native memory-leak fix. Multi-layout / multi-script model still on the Q2-Q3 2026 roadmap, not yet shipped.
+- [STD-EMOJI17-RELEASE] [Unicode 17.0 emoji list — Emojipedia](https://emojipedia.org/unicode-17.0); [Android 16 QPR3 adds 163 new Emoji 17 — FindArticles](https://www.findarticles.com/android-16-qpr3-adds-163-new-emoji-with-unicode-17-support/); [Support modern emoji — Android Developers](https://developer.android.com/develop/ui/views/text-and-emoji/emoji2); [emoji2 release notes](https://developer.android.com/jetpack/androidx/releases/emoji2) — Android 16 QPR3 March 2026 ships 163 Unicode 17 emoji + sequences (Ballet Dancers, multiple skin-tone variants for People with Bunny Ears + Wrestling). emoji2 1.7.0 NOT yet released; Emoji 16 still the latest documented Jetpack support. **Bundling `NotoColorEmoji.ttf` v17 directly may now be the right N10.1 path.**
+- [GH-FLORISBOARD-RELEASES] [FlorisBoard Releases](https://github.com/florisboard/florisboard/releases) — v0.6.0-alpha02 + v0.6.0-alpha01 shipping; v0.5.2 last 0.5; alpha cadence active.
+- [GH-HELIBOARD-RELEASES] [HeliBoard Releases](https://github.com/HeliBorg/HeliBoard/releases); [HeliBoard v3.9](https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9); [HeliBoard #2226](https://github.com/HeliBorg/HeliBoard/issues/2226) — re-checked 2026-05-17: latest release is still v3.9, issue #2226 remains open, and the public status is gesture-data gathering / passive-mode tuning rather than a released open library.
+- [H1-GESTURE-DATA] [HeliBoard gesture-data contribution wiki](https://github.com/HeliBorg/HeliBoard/wiki/Tutorial:-How-to-Contribute-Gesture-Data) — edited 2026-03-06; says the data collection period ends 2026-11-30 and contributors still need to load an appropriate gesture typing library before gathering data.
+- [GH-SWIFTF-ISSUE-1] [SwiftFloris issue #1 — Choosing an emoji crashes the board](https://github.com/SysAdminDoc/SwiftFloris/issues/1) — open local issue requiring Now-tier crash triage.
+
+### New sources (v5.2, 2026-05-16)
+
+#### Internal repository anchors
+
+- [INT-README] `README.md` — local repo README checked 2026-05-16 for version/link drift.
+- [INT-ROADMAP] `ROADMAP.md` — existing v5.1 roadmap reconciled in-place.
+- [INT-REL] `CHANGELOG.md` v1.8.40 → v1.8.47 sections — local release-note stream through v1.8.47 plus v1.8.46 manifest/source diff.
+- [INT-TODO] `rg "TODO|FIXME|HACK|XXX|@deprecated"` over the local source tree — production markers are design debt, not active `TODO()` crashes.
+- [INT-CI] `.github/workflows/android.yml`, `.github/workflows/release.yml`, `.github/workflows/dependency-scan.yml` — CI/release/security workflow state.
+- [INT-REPRO] `docs/REPRODUCIBLE_BUILDS.md` — pinned toolchain and F-Droid rebuild plan.
+- [INT-THREAT] `docs/THREAT_MODEL.md` — no-network/no-telemetry/security posture.
+- [INT-DICTPACK] `docs/addons/dictionary-pack-spec.md` — dictionary-pack contract and addon provenance surface.
+- [INT-TASKER] `docs/TASKER_INTEGRATION.md` — local automation contract and signature-protected receiver surface.
+
+#### OSS competitors and adjacent projects
+
+- [OSS-FLORIS-GH] [FlorisBoard](https://github.com/florisboard/florisboard) — upstream privacy-first Android keyboard, releases and roadmap compared.
+- [OSS-HELI-GH] [HeliBoard](https://github.com/HeliBorg/HeliBoard) — active OpenBoard fork, gesture/open-glide and privacy benchmark competitor.
+- [OSS-ASK-GH] [AnySoftKeyboard](https://github.com/AnySoftKeyboard/AnySoftKeyboard) — multi-language no-internet Android keyboard competitor.
+- [OSS-UNEXPECTED-GH] [Unexpected Keyboard](https://github.com/Julow/Unexpected-Keyboard) — lightweight layout/script-heavy Android keyboard reference.
+- [OSS-THUMB-GH] [Thumb-Key](https://github.com/dessalines/thumb-key) — thumb-first keyboard with custom-layout validation and navigation requests.
+- [OSS-FCITX-GH] [fcitx5-android](https://github.com/fcitx5-android/fcitx5-android) — Android port of the Fcitx engine/framework model.
+- [OSS-TRIME-GH] [Trime](https://github.com/osfans/trime) — Android Rime implementation and schema-driven CJK reference.
+- [OSS-FUTO-GH] [FUTO Keyboard](https://github.com/futo-org/android-keyboard) — source mirror/issue tracker used for CJK, voice, and image-clipboard feature signals.
+- [OSS-CLEVER-GH] [CleverKeys](https://github.com/tribixbite/CleverKeys) — neural swipe architecture reference; GPL-3.0 code cannot enter main app.
+- [OSS-INDIC-GH] [Indic Keyboard](https://github.com/smc/Indic-Keyboard) — Indic input-method reference.
+- [OSS-DIVVUN-GH] [Divvun/Giella keyboard](https://github.com/divvun/divvun-keyboard) — minority-language keyboard reference.
+- [OSS-FOSSIFY-GH] [Fossify Keyboard](https://github.com/FossifyOrg/Keyboard) — simple FOSS keyboard competitor.
+- [OSS-HACKERS-GH] [Hacker's Keyboard](https://github.com/klausw/hackerskeyboard) — physical-keyboard/code-entry legacy competitor.
+- [OSS-OPENBOARD-GH] [OpenBoard](https://github.com/openboard-team/openboard) — AOSP-derived baseline predecessor for HeliBoard.
+- [OSS-RIME] [librime](https://github.com/rime/librime) — BSD-licensed Rime engine for schema-based CJK.
+- [OSS-KEYMAN] [Keyman](https://github.com/keymanapp/keyman) — LDML/keyboarding ecosystem reference.
+
+#### Commercial, community, platform, dependency, and research anchors
+
+- [COMM-SWIFTKEY-ONEDRIVE] [Microsoft Support — SwiftKey Backup and Sync with OneDrive](https://support.microsoft.com/en-gb/topic/swiftkey-backup-and-sync-with-onedrive-c4124048-e64a-42c9-b8c8-24d2febca1bb); [Windows Central coverage](https://www.windowscentral.com/software-apps/swiftkey-will-soon-require-a-microsoft-account-data-to-be-moved-to-onedrive) — SwiftKey account retirement and OneDrive migration signal.
+- [COMM-SWIFTKEY-COPILOT] [Microsoft Support — FAQs for Copilot changes in SwiftKey](https://support.microsoft.com/en-gb/topic/faqs-for-copilot-changes-in-swiftkey-c02289e6-c5b3-401c-af8d-f6c88409a2d2) — Copilot/Compose removal from SwiftKey.
+- [COMM-GBOARD-PLAY] [Gboard Google Play listing](https://play.google.com/store/apps/details?id=com.google.android.inputmethod.latin) — Glide, voice, handwriting, translate, emoji/GIF feature baseline.
+- [COMM-GBOARD-VOICE] [Gboard voice typing help](https://support.google.com/gboard/answer/2781851); [TechRadar Bluetooth-mic report](https://www.techradar.com/phones/gboard-could-soon-get-a-useful-feature-you-probably-assumed-it-already-had) — voice-typing expectations and headset-mic signal.
+- [COMM-SAMSUNG-WRITING] [Samsung Writing Assist support](https://www.samsung.com/us/support/answer/ANS10000943/) — commercial AI rewrite/translate/tone surface.
+- [COMMUNITY-SWIFTKEY-ONEDRIVE] [r/SwiftKey backup migration complaint](https://www.reddit.com/r/Swiftkey/comments/1rna5ky/swiftkey_backup_migration_to_onedrive/); [r/technology SwiftKey account thread](https://www.reddit.com/r/technology/comments/1rxlxeh/swiftkey_will_soon_require_a_microsoft_account/) — user pain around account migration and data loss.
+- [COMMUNITY-GBOARD-VOICE] [r/GooglePixel Gboard voice complaint](https://www.reddit.com/r/GooglePixel/comments/1ta90yi/gboard_voice_typing_becoming_unusable/) — community signal for voice reliability and local/cloud tension.
+- [LIST-ANDROID-FOSS] [Best Open Source Android Apps — Keyboards](https://albertomosconi.github.io/foss-apps/categories/keyboards.html); [MakeUseOf FOSS Android keyboards list](https://www.makeuseof.com/tag/best-free-open-source-android-keyboards/) — discovery cross-checks for long-tail keyboard competitors.
+- [STD-IME-AUTOFILL-2026] [Android Developers — integrate autofill with IMEs](https://developer.android.com/guide/topics/text/ime-autofill); [InlineSuggestionsRequest reference](https://developer.android.com/reference/android/view/inputmethod/InlineSuggestionsRequest) — inline-autofill privacy/IME contract.
+- [STD-STYLUS-FIELDS-2026] [Android Developers — stylus input in text fields](https://developer.android.com/develop/ui/views/touch-and-input/stylus-input/stylus-input-in-text-fields); [custom text editors](https://developer.android.com/develop/ui/views/touch-and-input/stylus-input/custom-text-editors) — Android 14+ handwriting and IME support.
+- [STD-A16-BEHAVIOR] [Android Developers — behavior changes for apps targeting Android 16](https://developer.android.com/about/versions/16/behavior-changes-16) — edge-to-edge and target SDK behavior drift.
+- [STD-A16-ALL] [Android Developers — Android 16 behavior changes for all apps](https://developer.android.com/about/versions/16/behavior-changes-all) — accessibility announcement deprecation and large-screen behavior changes.
+- [STD-16KB-BLOG] [Android Developers Blog — prepare apps for 16 KB page-size requirement](https://android-developers.googleblog.com/2025/05/prepare-play-apps-for-devices-with-16kb-page-size.html); [transition guide](https://android-developers.googleblog.com/2025/07/transition-to-16-kb-page-sizes-android-apps-games-android-studio.html) — native packaging requirement background.
+- [STD-MACROBENCH-2026] [Android Developers — Macrobenchmark](https://developer.android.com/topic/performance/benchmarking/macrobenchmark-overview) — benchmark evidence format for app startup/frame/hot-path work.
+- [DEP-EMOJI2-2026] [AndroidX emoji2 release notes](https://developer.android.com/jetpack/androidx/releases/emoji2); [Support modern emoji](https://developer.android.com/develop/ui/views/text-and-emoji/emoji2) — emoji compatibility path.
+- [DEP-ROOM-2026] [AndroidX Room release notes](https://developer.android.com/jetpack/androidx/releases/room) — database dependency drift watch.
+- [DEP-WINDOW-2026] [AndroidX WindowManager release notes](https://developer.android.com/jetpack/androidx/releases/window) — foldable/window/insets dependency drift watch.
+- [DEP-COMPOSE-BOM-2026] [Compose release notes](https://developer.android.com/jetpack/androidx/releases/compose); [Compose BOM Maven metadata](https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml) — Compose/Material patch-cadence watch; Google Maven reports `2026.05.00` as latest/release on 2026-05-17.
+- [DEP-ROBORAZZI-2026] [Roborazzi releases](https://github.com/takahirom/roborazzi/releases) — visual regression tooling state.
+- [SEC-OSV-2026] [OSV](https://osv.dev/) and direct package queries for core deps — zero known vulnerabilities returned on 2026-05-16 for AGP, Kotlin stdlib, SQLCipher, Room, security-crypto, core-ktx, Roborazzi, and Robolectric. v1.8.68 replaces security-crypto with Tink Android 1.21.0; the next release-time OSV scan should include that new runtime dependency.
+- [RESEARCH-HUOZIIME] [HUOZIIME: An On-Device LLM-enhanced Input Method for Deep Personalization](https://arxiv.org/abs/2604.14159) — recent academic signal for local personalized IMEs.
+- [RESEARCH-KEYSENSE] [KeySense: LLM-Powered Hands-Down, Ten-Finger Typing on Commodity Touchscreens](https://arxiv.org/abs/2602.12432) — experimental text-input direction, tracked as research not roadmap commitment.
+- [RESEARCH-ONDEVICE-PERS] [On-device LLM personalization with self-supervised data selection](https://arxiv.org/abs/2311.12275) — adjacent personalization technique for future local-only models.
+
+---
+
+*End of ROADMAP v5.3. Total source URLs cited: 230+. Total feature/initiative items: 120+ across Now/Next/Later/Under Consideration/Rejected after the v5.2 harvest matrix is included. This document supersedes ROADMAP v5.2 (2026-05-16). v5.0-v5.2 entries are preserved with shipped markers updated in-place; v5.3 reflects v1.8.84 at HEAD plus the fifth-pass correction layer for dependency targets, `androidx-activity`, the completed AndroidX Security Crypto → Tink migration, Bump-batches A/B/C, local tag catch-up, the Samsung / Grammarly README migration-window callouts, the HeliBoard / NLnet slip-base-case roadmap correction, the root crash/replay-log CI guardrail, the macOS `.keylayout` parser, the hardware-keyboard runtime mapper, the user-imported sticker folder, the Keyman `.kmp` package import foundation, the honeycomb hex layout production wire-up, the SQLCipher provider migration plan, the addon catalog foundation, the addon signing-pin persistence foundation, the addon registry startup wiring, and the Settings → Addons read-only status/rescan surface. Next planned reconcile: after the SwiftKey cutoff lands (post-2026-05-31 retrospective), when the HeliBoard NLnet open-glide library drops, when the compiled Keyman addon/runtime path is scoped, or when Android 17 compile/target SDK gates are implemented, whichever comes first.*
