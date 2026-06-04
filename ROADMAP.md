@@ -176,6 +176,51 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 13 - 2026-06-04)
+
+- [x] 🔬 `personal-ngram-stats-reset-race-recheck-2026-06-04` - synced
+  `master` after the Cycle 12 docs push, rechecked the deferred
+  `totalEntryCount()` / `resetAndAwait()` audit against live bigram/trigram
+  stores and the typing-stats screen. This cycle adds one focused row for
+  serializing personal n-gram stats counting with reset cleanup.
+
+#### Personal n-gram stats consistency
+
+- [ ] 🤖 P2 — Serialize personal n-gram stats counting with reset cleanup (R13-1)
+  - Why: Settings -> Typing stats refreshes personal bigram/trigram totals from
+    `totalEntryCount()`, but each store builds its persisted-locale set outside
+    `loadGuard` and then calls `ensureLoaded(localeTag)`. `resetAndAwait()`
+    clears in-memory tables and deletes matching files under `loadGuard`, so a
+    stats refresh can observe stale filenames or reload a locale around a reset
+    and make a just-cleared learning store appear non-empty. The bug is distinct
+    from R12-1's file replacement durability: this is the read/reset
+    interleaving visible to the Settings stats UI.
+  - Evidence: `PersonalBigramStore.kt:224-242` lists
+    `personal_bigrams_*.tsv`, merges `tablesByLocale.keys`, and then calls
+    `ensureLoaded(localeTag)` for each tag without holding `loadGuard`;
+    `PersonalBigramStore.kt:367-376` clears bigram tables and deletes matching
+    files under `loadGuard`; `PersonalTrigramStore.kt:229-245` and
+    `PersonalTrigramStore.kt:368-375` repeat the same count/reset shape for
+    trigrams; `TypingStatsScreen.kt:137-143` displays both counts immediately in
+    Settings; `PersonalNgramFlushIsolationTest.kt:64-68` only checks that reset
+    is the broad cleanup path, not that stats counting is serialized with it;
+    the deferred audit records the race in `docs/AUDIT_2026-05-28.md:58-60`.
+  - Touches: `PersonalBigramStore.kt`, `PersonalTrigramStore.kt`, and a focused
+    JVM/source contract test such as `PersonalNgramFlushIsolationTest` or a new
+    personal n-gram stats/reset test. Keep the R12-1 atomic-replace work and the
+    v1.8.234 per-locale flush isolation intact.
+  - Acceptance: both stores compute `totalEntryCount()` under the same
+    serialization boundary as `resetAndAwait()` or from a reset-safe snapshot;
+    file enumeration, `tablesByLocale` key collection, and `ensureLoaded()` do
+    not interleave with reset deletion; a reset followed by or racing with a
+    stats refresh returns zero rather than resurrecting deleted locales; tests
+    fail if either store reintroduces unlocked file enumeration plus
+    `ensureLoaded()` in `totalEntryCount()`.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.dictionary.PersonalNgramFlushIsolationTest"`
+    or the new focused stats/reset test class.
+  - Complexity: S
+
 ### Researcher Queue (Cycle 12 - 2026-06-04)
 
 - [x] 🔬 `personal-ngram-atomic-replace-recheck-2026-06-04` - synced
