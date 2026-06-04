@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.230-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.231-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.230 | Privacy posture |
+| Area | What's in v1.8.231 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -226,7 +226,7 @@ See [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) for the toolcha
 
 - **Personal dictionary:** SQLCipher-encrypted Room database, with the
   SQLCipher passphrase wrapped by Tink / AndroidKeystore.
-- **IME window:** `FLAG_SECURE` set on password fields so the keyboard is excluded from screenshots and screen-recording overlays.
+- **IME window:** `FLAG_SECURE` set on password/no-personalized-learning fields and while incognito is active, including mid-session dynamic incognito toggles, so the keyboard is excluded from screenshots and screen-recording overlays.
 - **Long-press popups:** suppressed on every `KeyVariation.PASSWORD` (Android 17 password-visibility behavior closed on the IME side as of v1.8.44).
 - **Personalized learning:** clipboard write / dictionary learn paths skip password and `IME_FLAG_NO_PERSONALIZED_LEARNING` fields.
 - **Opt-in addon surfaces (smart-compose, translation, MCP):** every invocation runs through `SensitiveFieldGuard` first; sensitive fields short-circuit to a safe no-result.
@@ -286,6 +286,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.231** (2026-06-04) — Dynamic incognito toggles now immediately re-apply the IME window screen-capture guard for the active field. ([notes](CHANGELOG.md#v1.8.231))
 - **v1.8.230** (2026-06-04) — Sync sealed-box envelopes now have fixed v1 schema constants, deterministic X25519/AES-GCM vector coverage, and documented compatibility policy before transport activation. ([notes](CHANGELOG.md#v1.8.230))
 - **v1.8.229** (2026-06-04) — Non-co-signed addon APKs now require an explicit Settings trust action before enrollment; co-signed addons still load automatically. ([notes](CHANGELOG.md#v1.8.229))
 - **v1.8.228** (2026-06-04) — Clipboard history search is now wired into the keyboard palette with a settings toggle, clear/no-results states, and query plus type-filter composition coverage. ([notes](CHANGELOG.md#v1.8.228))
@@ -459,7 +460,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.230** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.231** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

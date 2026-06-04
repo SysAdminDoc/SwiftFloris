@@ -2,6 +2,52 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.231"></a>
+## v1.8.231
+
+Released: 2026-06-04
+
+### Incognito screen-capture guard
+
+R7-1 is closed. Dynamic incognito toggles now re-apply the IME window `FLAG_SECURE` policy immediately for the current field instead of waiting for the next `onStartInputView`.
+
+### Changes
+
+- **`KeyboardManager.kt` / `FlorisImeService.kt`** - add a lifecycle-cleared incognito-mode change callback from the application-level keyboard manager to the active IME service, route the callback through `Dispatchers.Main.immediate`, and re-run the current field's secure-window policy before the next keypress.
+- **`FlagSecurePolicy.kt` / `FlagSecurePolicyTest.kt`** - extract the password/incognito/off decision into a pure policy and pin the four sensitive-window combinations.
+- **`docs/THREAT_MODEL.md` / `docs/PRIVACY_AND_AI.md` / `docs/AUDIT_2026-06-02.md` / `docs/INLINE_AUTOFILL.md`** - update the privacy contract so it documents password, no-personalized-learning, and dynamic-incognito coverage.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.231 / versionCode 2031 and closes R7-1.
+
+### Verification
+
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2031.
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.security.FlagSecurePolicyTest"` - PASS in 1m10s after the PowerShell `-Dorg.gradle.jvmargs` parsing issue was avoided with `cmd /c`.
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1024m -Dkotlin.daemon.jvm.options=-Xmx768m :app:kspDebugKotlin --stacktrace"` - PASS in 14s.
+- Manual screenshot/screen-recording evidence was not run in this local batch because it requires an attached Android device. APK assembly was intentionally skipped per operator request.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/FlagSecurePolicy.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/security/FlagSecurePolicyTest.kt` (new)
+- `docs/AUDIT_2026-06-02.md`
+- `docs/INLINE_AUTOFILL.md`
+- `docs/PRIVACY_AND_AI.md`
+- `docs/THREAT_MODEL.md`
+- `fastlane/metadata/android/en-US/changelogs/2031.txt` (new)
+- `fastlane/metadata/android/en-US/full_description.txt`
+- `gradle.properties` (versionCode 2030->2031, versionName 1.8.230->1.8.231)
+
 <a id="v1.8.230"></a>
 ## v1.8.230
 

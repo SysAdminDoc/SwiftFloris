@@ -20,7 +20,7 @@
     <li>No vendor account — Microsoft, Google, Samsung, or otherwise</li>
     <li>Personal dictionary encrypted at rest (SQLCipher 4.16.0 + Google Tink + AndroidKeystore AES-256-GCM)</li>
     <li>Sensitive-clip and incognito-field guards across cut/copy/paste, voice handoff, and learning</li>
-    <li><tt>FLAG_SECURE</tt> on password fields blocks screenshots / screen recording during credential entry</li>
+    <li><tt>FLAG_SECURE</tt> on password and incognito fields blocks screenshots / screen recording during private typing</li>
     <li>First-run AI/ML transparency screen + reopenable Settings → About → AI features explainer</li>
     <li>Reproducible-build verification in CI; 16 KB native page alignment for Android 15+; weekly OSV CVE scan; signature-protected addon enrolment</li>
 </ul>

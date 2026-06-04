@@ -15,7 +15,7 @@ active.
 against live `FlorisImeService` and smartbar toggle code. Password-field and
 field-start incognito coverage already exist, so this cycle adds R7-1: re-apply
 the secure-window policy immediately when dynamic incognito is toggled
-mid-session.
+mid-session. R7-1 was later closed in v1.8.231.
 
 2026-06-04 Cycle 6 note: after the Cycle 5 docs push, `master` is clean at
 `49e9fd6`. Cycle 6 rechecked the editor hot-path audit against live
@@ -93,7 +93,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.230, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, and the sync sealed-box v1 envelope is pinned by deterministic vector coverage. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.231, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, and dynamic incognito toggles re-apply the IME window screen-capture guard immediately. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -116,7 +116,7 @@ Top opportunities (one line each):
 17. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
 18. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
 19. **Editor batch critical sections** — selection/commit hot paths keep `InputConnection` batch edits open while `runBlocking` and expected-content queue locks run (R6-1, P2). [Verified]
-20. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes do not re-run the secure-window policy until the next field start (R7-1, P2). [Verified]
+20. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
 21. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work consumes system back without feedback (R8-1, P3). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
@@ -223,8 +223,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Medium] Editor batch critical sections** → R6-1. Move expected-content
   generation/queue locks out of open `InputConnection` batches and pair batch
   edits with `try/finally`.
-- **[Medium] Mid-session incognito `FLAG_SECURE` gap** → R7-1. Re-run the
-  existing secure-window policy when the smartbar incognito toggle changes.
+- **[Closed v1.8.231] Mid-session incognito `FLAG_SECURE` gap** → R7-1. The
+  smartbar incognito toggle now re-runs the existing secure-window policy for
+  the active field before the next keypress.
 - **[Minor] User-dictionary blocked-back feedback** → R8-1. Keep blocking
   exits during active dictionary operations, but make the intercepted system
   back gesture announce why navigation did not happen.
@@ -236,6 +237,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   key/envelope vector, malformed-envelope behavior, and compatibility policy.
   Because the transport is still scaffold-level, this closes the pre-release
   hardening gap without introducing a production decrypt migration.
+- **Sensitive-window policy:** v1.8.231 keeps the `FLAG_SECURE` decision in a
+  pure password/incognito policy and re-applies it through the live IME service
+  whenever dynamic incognito changes mid-session.
 - **MIME helper contract:** SwiftFloris intentionally accepts wildcard fragments
   that AndroidX's helper does not. R4-3 keeps that broader local contract only
   if tests and KDoc make the divergence explicit.

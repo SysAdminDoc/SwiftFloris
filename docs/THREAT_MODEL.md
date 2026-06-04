@@ -1,6 +1,6 @@
 # SwiftFloris Threat Model
 
-**Last updated:** 2026-06-04 (v1.8.230)
+**Last updated:** 2026-06-04 (v1.8.231)
 **Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules — none ship today, none are planned).
 **Audience:** maintainers, reviewers, and security-conscious users evaluating SwiftFloris vs proprietary keyboards.
 
@@ -61,6 +61,10 @@ and [SEVENTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.
 - **v1.8.230** — Sync sealed-box envelopes now have deterministic v1 schema/vector coverage:
   fixed X25519 keys pin the ephemeral-public-key + nonce + AES-GCM ciphertext shape before any
   CRDT sync transport persists envelopes.
+- **v1.8.231** — Dynamic incognito toggles now re-apply the IME window `FLAG_SECURE`
+  policy immediately for the active field. Plain fields become screenshot-blocked when
+  incognito turns on, and password / no-personalized-learning fields stay protected when
+  the user attempts to toggle incognito off.
 - **v1.8.174** — Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
   `*.keystore` / `local.properties` / `*.backup*` / large branding PNGs. Closes the supply-
   chain footgun where a maintainer's working-tree keystore could land in a commit.
@@ -143,8 +147,11 @@ Out of scope:
   AnySoftKeyboard #1399).
 - IME-local clipboard history skips writes from `performClipboardCut` /
   `performClipboardCopy` when the active field is a password variation.
-- **Pending:** `WindowManager.LayoutParams.FLAG_SECURE` on suggestion-strip popups
-  (next pass — N7.2 still has open work).
+- `WindowManager.LayoutParams.FLAG_SECURE` is set on the IME window for password
+  fields and when incognito mode is active, including mid-session dynamic
+  incognito toggles. This keeps the suggestion strip and long-press preview out
+  of screenshots, screen recordings, and non-secure external displays during
+  private typing.
 
 ### 3.4 Encrypted clipboard
 - Clipboard items are AES-256-GCM encrypted at rest (max 50 entries). The
@@ -216,7 +223,6 @@ Out of scope:
 
 | Gap | Severity | Tracker |
 |---|---|---|
-| `FLAG_SECURE` not set on suggestion-strip popups (screen-recorders may capture them) | Medium | N7.2 follow-up |
 | Reproducible-build verification not yet active on F-Droid | Medium | N6.3 |
 | `allowMainThreadQueries()` on the personal dictionary Room DB — small UI lag risk on cold reads | Low | Risk-register entry, see ROADMAP §14 |
 | Voice-command parser uses external FUTO Voice Input — that app has its own threat model and permissions | Low (FUTO is offline; user makes the trust decision when installing it) | Documented under "External components" in README |

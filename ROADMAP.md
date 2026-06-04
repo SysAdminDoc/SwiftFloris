@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.230 (versionCode 2030). **Local verification:** fastlane metadata gate passed for versionCode 2030; reduced-resource `:app:testDebugUnitTest` passed in 3m05s; focused `SealedBoxCryptoTest` passed in 45s after the final UTF-8 vector-source patch; APK assembly was intentionally not run for this contract-test follow-up.
+**Current release:** v1.8.231 (versionCode 2031). **Local verification:** fastlane metadata gate passed for versionCode 2031; focused `FlagSecurePolicyTest` passed in 1m10s with one Gradle worker after compiling the app Kotlin sources; `:app:kspDebugKotlin` passed in 14s with the corrected `cmd /c` Gradle invocation; `git diff --check` passed; APK assembly and device screenshot/screen-recording QA were intentionally not run for this privacy-callback follow-up.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -220,7 +220,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Sensitive-window privacy
 
-- [ ] 🤖 P2 — Re-apply `FLAG_SECURE` when incognito mode toggles mid-session (R7-1)
+- [x] 🤖 P2 — Re-apply `FLAG_SECURE` when incognito mode toggles mid-session (R7-1)
   - Why: `FLAG_SECURE` now covers password fields and incognito state when a
     field starts, but the user can toggle incognito from the smartbar while
     staying in the same ordinary text field. In that path, the IME updates
@@ -252,6 +252,11 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     IME smoke with a normal field, password field, dynamic incognito on/off, and
     screenshot/screen-recording attempt.
   - Complexity: S-M
+  - Shipped: v1.8.231 (2026-06-04) with a lifecycle-cleared
+    `KeyboardManager` -> `FlorisImeService` incognito callback, main-thread
+    secure-window reapplication, pure `FlagSecurePolicy` coverage, and updated
+    privacy/threat-model docs. Device screenshot/screen-recording proof remains
+    hardware-gated.
 
 ### Researcher Queue (Cycle 6 - 2026-06-04)
 

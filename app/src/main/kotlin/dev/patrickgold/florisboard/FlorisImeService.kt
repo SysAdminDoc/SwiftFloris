@@ -54,12 +54,14 @@ import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
+import dev.patrickgold.florisboard.ime.editor.InputAttributes
 import dev.patrickgold.florisboard.ime.input.InputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.isFullscreenInputRequired
 import dev.patrickgold.florisboard.ime.landscapeinput.ExtractedInputRootView
 import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
+import dev.patrickgold.florisboard.ime.security.FlagSecurePolicy
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
@@ -351,6 +353,10 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     private val wallpaperChangeReceiver = WallpaperChangeReceiver()
     private var wallpaperReceiverRegistered = false
+    private var flagSecureEditorInfo: FlorisEditorInfo? = null
+    private val flagSecureIncognitoModeChangedListener: (Boolean) -> Unit = {
+        reapplyFlagSecureForCurrentField()
+    }
 
     /** ROADMAP §10.5 L7.5b — MCP daemon bridge lifecycle, owned by the IME service. */
     private var mcpLifecycle: dev.patrickgold.florisboard.ime.mcp.McpServiceLifecycle? = null
@@ -363,6 +369,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onCreate()
         FlorisImeServiceReference = WeakReference(this)
         systemLocalesFlow.value = resources.configuration.locales
+        keyboardManager.setIncognitoModeChangedListener(flagSecureIncognitoModeChangedListener)
 
         // Initialize voice input manager
         voiceInputManager.initialize()
@@ -528,6 +535,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         try { NlpInlineAutofill.clearInlineSuggestions() } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "NlpInlineAutofill.clearInlineSuggestions() failed: $e" }
         }
+        keyboardManager.clearIncognitoModeChangedListener()
         FlorisImeServiceReference = WeakReference(null)
         super.onDestroy()
     }
@@ -590,6 +598,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         super.onStartInputView(info, restarting)
         if (info == null) return
         val editorInfo = FlorisEditorInfo.wrap(info)
+        flagSecureEditorInfo = editorInfo
         subtypeManager.onEditorPackageFocus(editorInfo.packageName)
         activeState.batchEdit {
             if (activeState.imeUiMode != ImeUiMode.CLIPBOARD || prefs.clipboard.historyHideOnNextTextField.get()) {
@@ -606,33 +615,43 @@ class FlorisImeService : LifecycleInputMethodService() {
         perAppAccentController.setActiveEditorPackage(editorInfo.packageName)
     }
 
+    private fun reapplyFlagSecureForCurrentField() {
+        flagSecureEditorInfo?.let(::applyFlagSecureForCurrentField)
+    }
+
     /**
-     * ROADMAP §6 N7.2 — set [WindowManager.LayoutParams.FLAG_SECURE] on the IME window
-     * whenever the active editor is a password / visible-password / web-password field.
-     * Prevents screenshots, screen recordings, and external display mirroring from
-     * capturing the long-press preview popup or the suggestion strip.
+     * ROADMAP §6 N7.2 / R7-1 — set [WindowManager.LayoutParams.FLAG_SECURE] on the
+     * IME window whenever the active editor is a password / visible-password /
+     * web-password / app-private field or incognito mode is active. Prevents
+     * screenshots, screen recordings, and external display mirroring from capturing
+     * the long-press preview popup or the suggestion strip.
      *
-     * The flag is cleared when the user moves to a non-password field, so the user can
-     * still screenshot the keyboard for support / bug-report purposes outside of
-     * credential-entry contexts.
+     * The flag is cleared when the user moves to a plain non-incognito field, so the
+     * user can still screenshot the keyboard for support / bug-report purposes outside
+     * of private-entry contexts.
      */
     private fun applyFlagSecureForCurrentField(editorInfo: FlorisEditorInfo) {
         val w = window?.window ?: return
         val isPasswordField = when (editorInfo.inputAttributes.variation) {
-            dev.patrickgold.florisboard.ime.editor.InputAttributes.Variation.PASSWORD,
-            dev.patrickgold.florisboard.ime.editor.InputAttributes.Variation.VISIBLE_PASSWORD,
-            dev.patrickgold.florisboard.ime.editor.InputAttributes.Variation.WEB_PASSWORD,
+            InputAttributes.Variation.PASSWORD,
+            InputAttributes.Variation.VISIBLE_PASSWORD,
+            InputAttributes.Variation.WEB_PASSWORD,
             -> true
             else -> false
         }
+        val isAppPrivateField = editorInfo.imeOptions.flagNoPersonalizedLearning
         // Also honour incognito: every other sensitive-data gate (voice handoff,
         // dictionary learning, clipboard history) treats incognito as equal to a
         // password field, but FLAG_SECURE only checked the field variation, leaving
         // the IME window screenshot-/record-able while the user types privately into
-        // an ordinary field in incognito mode. NOTE: this re-applies on each
-        // onStartInputView; a mid-session TOGGLE_INCOGNITO_MODE won't re-run it until
-        // the next field start (the toggle-path callback is left as follow-up work).
-        if (isPasswordField || activeState.isIncognitoMode) {
+        // an ordinary field in incognito mode. The keyboard-manager toggle callback
+        // re-applies this policy for the active field before the next keypress.
+        val shouldSecureImeWindow = FlagSecurePolicy.shouldSecureImeWindow(
+            isPasswordField = isPasswordField,
+            isAppPrivateField = isAppPrivateField,
+            isIncognitoMode = activeState.isIncognitoMode,
+        )
+        if (shouldSecureImeWindow) {
             w.addFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
         } else {
             w.clearFlags(android.view.WindowManager.LayoutParams.FLAG_SECURE)
@@ -669,6 +688,7 @@ class FlorisImeService : LifecycleInputMethodService() {
     override fun onFinishInputView(finishingInput: Boolean) {
         flogInfo { "finishing=$finishingInput" }
         super.onFinishInputView(finishingInput)
+        flagSecureEditorInfo = null
         editorInstance.handleFinishInputView()
     }
 
