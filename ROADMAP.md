@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.245 (versionCode 2045). **Local verification:** docs-only Fastlane changelog guide verified with `git diff --check`, `bash scripts/check-fastlane-metadata.sh`, and `bash scripts/check-repo-hygiene.sh`; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.246 (versionCode 2046). **Local verification:** docs-only module build-cache hygiene note verified with `git diff --check`, `bash scripts/check-fastlane-metadata.sh`, and `bash scripts/check-repo-hygiene.sh`; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -106,11 +106,14 @@ items belong in `COMPLETED.md`.
   - Shipped: v1.8.245 (2026-06-04) with Fastlane changelog drafting rules in
     repo hygiene, local verification, contributor, and agent-facing release
     docs.
-- [ ] P3 — Document module build-cache survival (O1)
+- [x] P3 — Document module build-cache survival (O1)
   - Why: `lib/<module>/build/` cache survives `git rm --cached`; this surprises contributors.
   - Touches: note in `docs/REPO_HYGIENE.md`.
   - Acceptance: behavior documented.
   - Source: docs/archive/TODO_2026-06-03.md A5 / second-pass O1.
+  - Shipped: v1.8.246 (2026-06-04) with repo-hygiene guidance for
+    `git rm --cached`, surviving ignored module `build/` directories, and safe
+    local cleanup expectations.
 
 ### External-action-blocked / sibling-repo / XL (maintainer decision required)
 

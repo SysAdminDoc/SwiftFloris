@@ -2,6 +2,41 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.246"></a>
+## v1.8.246
+
+Released: 2026-06-04
+
+### Module build-cache cleanup guidance
+
+O1 is closed. Repo hygiene now documents that `git rm --cached` removes tracked generated files from the index but does not delete ignored local `lib/<module>/build/` caches, so contributors know to treat those directories as local output rather than release evidence.
+
+### Changes
+
+- **`docs/REPO_HYGIENE.md`** - adds a module build-cache survival note under the generated-output rule, with explicit index-vs-local-cache expectations and safe cleanup guidance.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.246 / versionCode 2046 and closes O1.
+
+### Verification
+
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2046.
+- `bash scripts/check-repo-hygiene.sh` - PASS.
+- APK assembly was intentionally skipped in this local docs-only batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `docs/REPO_HYGIENE.md`
+- `fastlane/metadata/android/en-US/changelogs/2046.txt` (new)
+- `gradle.properties` (versionCode 2045->2046, versionName 1.8.245->1.8.246)
+
 <a id="v1.8.245"></a>
 ## v1.8.245
 
