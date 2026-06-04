@@ -176,6 +176,50 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 12 - 2026-06-04)
+
+- [x] 🔬 `personal-ngram-atomic-replace-recheck-2026-06-04` - synced
+  `master` after the Cycle 11 docs push, rechecked the deferred personal
+  n-gram persistence data-loss audit against live bigram/trigram stores and the
+  current locale-isolation tests. This cycle adds one focused row for atomic
+  replacement of the personal n-gram TSV files.
+
+#### Personal n-gram persistence
+
+- [ ] 🤖 P2 — Replace personal n-gram files atomically without deleting live data first (R12-1)
+  - Why: Both personal n-gram stores write a `.tmp` file, attempt
+    `renameTo(dst)`, then delete the live destination before a second rename if
+    the first rename fails. That fallback breaks the atomicity the temp-write
+    pattern is meant to provide: a transient rename failure, destination-exists
+    edge case, or second rename failure can remove the last known-good personal
+    prediction data for that locale. The current tests pin per-locale flush
+    isolation, but not safe replacement semantics.
+  - Evidence: `PersonalBigramStore.kt:303-320` writes a temp file and falls back
+    to `fileFor(localeTag).delete(); tmp.renameTo(fileFor(localeTag))`;
+    `PersonalTrigramStore.kt:305-324` uses the same fallback; both stores have
+    minSdk-compatible access to `java.nio.file.Files.move` via Android API 26+;
+    `PersonalNgramFlushIsolationTest.kt:28-50` covers bigram/trigram locale
+    flush targeting; `PersonalNgramFlushIsolationTest.kt:53-69` inspects the
+    flush body for locale scope and broad reset cleanup, but does not reject
+    destination deletion or require atomic/replace-existing moves; the deferred
+    audit records the data-loss window in `docs/AUDIT_2026-05-28.md:31-34`.
+  - Touches: `PersonalBigramStore.kt`, `PersonalTrigramStore.kt`, and
+    `PersonalNgramFlushIsolationTest.kt` or a small file-replacement helper test.
+    Keep the v1.8.234 per-locale flush isolation and concurrency guards intact.
+  - Acceptance: the stores never delete the destination before a successful
+    replacement exists; the preferred path uses `Files.move(tmp, dst,
+    REPLACE_EXISTING, ATOMIC_MOVE)` where supported; fallback handles
+    `AtomicMoveNotSupportedException` without removing the live file until a
+    replacement is durable; `.tmp` cleanup is best-effort and never sacrifices
+    the destination; tests fail if either store reintroduces
+    `dst.delete(); tmp.renameTo(dst)` or equivalent live-file deletion before
+    success.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.dictionary.PersonalNgramFlushIsolationTest"`
+    plus a small manual/debug file-write smoke if the implementation extracts a
+    helper for replace failure injection.
+  - Complexity: S
+
 ### Researcher Queue (Cycle 11 - 2026-06-04)
 
 - [x] 🔬 `prefs-init-splash-recovery-recheck-2026-06-04` - synced
