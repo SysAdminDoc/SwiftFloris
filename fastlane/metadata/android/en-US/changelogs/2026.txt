@@ -1,0 +1,3 @@
+v1.8.226 - post-audit release ledger.
+
+Covers pushed post-v1.8.225 fixes: per-locale n-gram safety, thread handling, sealed-box KDF/scrubbing, private-session trace suppression, Arabic shaping, Snygg selector/contentScale recovery, and the clipboard media fallback compile repair. No network permission added.

@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.225 (versionCode 2025). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.226 (versionCode 2026). **Local verification:** fastlane metadata green; full Gradle gate stopped on maintainer request before a final success summary after the rerun passed the prior Kotlin compile failure and reached `:app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -290,7 +290,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Release/source-of-truth hygiene
 
-- [ ] 🤖 P0 — Reconcile post-v1.8.225 local fixes into a versioned release ledger (R3-1)
+- [x] 🤖 P0 — Reconcile post-v1.8.225 local fixes into a versioned release ledger (R3-1)
   - Why: The branch is `v1.8.223-6-gdc72e32`, `HEAD` is untagged, and three
     local code-fix commits after the v1.8.225 docs marker change privacy,
     crypto, i18n, and theme-engine behavior without a matching new version,
@@ -314,6 +314,9 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Verify: `git describe --tags --dirty --always`; `bash
     scripts/check-fastlane-metadata.sh`; full release gate after the build
     machine performs the version bump.
+  - Shipped: v1.8.226 (2026-06-04) with versionCode 2026, fastlane changelog
+    `2026.txt`, release tag `v1.8.226`, and a local verification caveat in
+    `CHANGELOG.md#v1.8.226`.
   - Complexity: S-M
 
 #### Clipboard UX

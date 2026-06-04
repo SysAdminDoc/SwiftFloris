@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.226"></a>
+## v1.8.226
+
+Released: 2026-06-04
+
+### Post-audit release ledger
+
+R3-1 is closed. This release reconciles the pushed post-v1.8.225 fix commits into the normal version, changelog, fastlane, and tag stream so Obtainium, F-Droid, reproducible-build, and source readers can identify the APK that carries them.
+
+### Changes
+
+- **`PersonalBigramStore.kt` / `PersonalTrigramStore.kt` / `DictionaryManager.kt` / `NlpManager.kt`** - covers the pass-2 audit fixes for per-locale n-gram flush/data-loss risk and dictionary/NLP thread-safety paths from `4fda240`.
+- **`SealedBoxCrypto.kt`** - covers the KDF hardening and shared-secret scrubbing changes from `4fda240` and `86c9885`.
+- **`SwiftKeyTypingTraceRecorder.kt` / `SetupScreen.kt` / `KeyboardState.kt`** - covers private-session trace suppression, startup/privacy, and keyboard-state cleanup from `4fda240`.
+- **`ArabicShaper.kt`** - covers combining-mark join-context handling from `86c9885`.
+- **`SnyggRule.kt` / `SnyggUriValue.kt`** - covers unknown-selector fallback and `contentScale` serialization id fixes from `76a74c2`.
+- **`ClipboardInputLayout.kt`** - repairs the v1.8.225 corrupted image/video fallback compile labels by returning from the active `SnyggBox` content lambda.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.226 / versionCode 2026 and closes R3-1.
+
+### Verification
+
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2026.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> first run failed at `ClipboardInputLayout.kt` unresolved `return@SnyggSurface` labels; fixed in this release.
+- Gradle rerun passed the prior Kotlin compile failure and reached `:app:assembleDebug` with unit tests streaming green, then was stopped at maintainer request to avoid local OpenJDK memory pressure. No final full-gate success summary was produced on this host.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `fastlane/metadata/android/en-US/changelogs/2026.txt` (new)
+- `gradle.properties` (versionCode 2025->2026, versionName 1.8.225->1.8.226)
+
 <a id="v1.8.225"></a>
 ## v1.8.225
 
@@ -13517,4 +13556,3 @@ Released: 2026-05-05
 - File: `SwiftFloris-v1.5.3.apk`
 - SHA-256: `1d5f414ab1c0decd74d97c00aadea2769bc07d19010fdbc76f4ed2caaca1e777`
 - Signing certificate SHA-256: `b5d537420ded9e11382b3df17dc3616f212b9d9f35138e4fbb3f2adffe50f70a`
-
