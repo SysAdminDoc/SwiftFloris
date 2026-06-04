@@ -2,6 +2,50 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.201"></a>
+## v1.8.201
+
+Released: 2026-06-04
+
+### Baseline-pending Roborazzi classes for remaining F40 surfaces
+
+F40's first phase needed concrete Roborazzi test classes for the remaining
+screen-level and keyboard-adjacent surfaces without forcing missing baseline PNGs
+into `verifyRoborazziDebug`. This adds two disabled, compile-checked capture
+classes: one for the pending Settings screens (`McpSettingsScreen`,
+`TypingStatsScreen`, `VoiceInputScreen`, `AiFeaturesScreen`) and one for the
+keyboard surfaces (honeycomb preview plus all glide-trail theme ramps).
+`AddonsSettingsScreen` stays covered by the existing active
+`ThemeAndAddonsScreenshotTest`.
+
+The new classes carry class-level `@Ignore` annotations by design. The remaining
+Tier B F40 capture phase is to run `recordRoborazziDebug`, commit the produced
+PNG baselines, and remove those ignores so visual CI can start diffing them.
+
+### Changes
+
+- **`PendingSettingsScreensScreenshotTest.kt`** (new) — baseline-pending screen
+  captures for MCP, typing stats, voice input, and AI feature disclosure screens,
+  with seeded MCP daemon rows for a non-empty visual state.
+- **`PendingKeyboardSurfacesScreenshotTest.kt`** (new) — baseline-pending
+  honeycomb keyboard and glide-trail theme-ramp captures.
+- **`TODO.md`** — F40 test-class phase closed; capture phase left open with the
+  explicit enablement step.
+
+### Verification
+
+- `./gradlew.bat :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.screenshot.Pending*"` -> green; the six F40 pending tests compile and are skipped by the class-level `@Ignore`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/PendingSettingsScreensScreenshotTest.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/PendingKeyboardSurfacesScreenshotTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2001.txt` (new)
+- `gradle.properties` (versionCode 2000->2001, versionName 1.8.200->1.8.201)
+- `README.md` (version badge/current release)
+- `TODO.md` (F40 test-class phase ticked)
+
 <a id="v1.8.200"></a>
 ## v1.8.200
 

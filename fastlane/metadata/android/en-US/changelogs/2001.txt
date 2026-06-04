@@ -1,0 +1,3 @@
+v1.8.201 — stage the next Roborazzi coverage targets.
+
+Adds baseline-pending screenshot test classes for MCP, typing stats, voice input, AI feature disclosure, honeycomb keyboard, and glide-trail theme surfaces. Existing visual CI stays green until the Tier B baseline capture enables them.
