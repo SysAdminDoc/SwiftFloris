@@ -173,6 +173,8 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             keyboard.incognitoDisplayMode to "keyboard.incognitoDisplayMode",
             localization.displayLanguageNamesIn to "localization.displayLanguageNamesIn",
             localization.displayKeyboardLabelsInSubtypeLanguage to "localization.displayKeyboardLabelsInSubtypeLanguage",
+            localization.rememberSubtypePerAppEnabled to "localization.rememberSubtypePerAppEnabled",
+            localization.perAppSubtypeMemory to "localization.perAppSubtypeMemory",
             localization.activeSubtypeId to "localization.activeSubtypeId",
             localization.subtypes to "localization.subtypes",
             privacy.smartComposeConsent to "privacy.smartComposeConsent",

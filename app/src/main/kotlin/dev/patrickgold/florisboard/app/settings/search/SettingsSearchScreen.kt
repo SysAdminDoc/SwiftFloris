@@ -150,6 +150,7 @@ private fun androidx.navigation.NavController.navigateSearchDestination(destinat
         SettingsSearchDestination.HOME -> navigate(Routes.Settings.Home)
         SettingsSearchDestination.LOCALIZATION -> navigate(Routes.Settings.Localization)
         SettingsSearchDestination.SELECT_LOCALE -> navigate(Routes.Settings.SelectLocale)
+        SettingsSearchDestination.PER_APP_LANGUAGE -> navigate(Routes.Settings.PerAppLanguage)
         SettingsSearchDestination.LANGUAGE_PACK_MANAGER ->
             navigate(Routes.Settings.LanguagePackManager(LanguagePackManagerScreenAction.MANAGE))
         SettingsSearchDestination.SUBTYPE_ADD -> navigate(Routes.Settings.SubtypeAdd)

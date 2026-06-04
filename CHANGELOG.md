@@ -2,6 +2,54 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.206"></a>
+## v1.8.206
+
+Released: 2026-06-04
+
+### Remember keyboard language per app
+
+F31 ships the permission-free version of per-app keyboard-language memory. Instead of reading app locale APIs that require privileged permissions, SwiftFloris now offers an opt-in local preference that remembers the subtype a user manually selected while typing in each app package.
+
+When enabled, manual subtype changes through the language key, subtype panel, or subtype switch gestures update a persisted package-to-subtype map. When an editor receives focus later, `FlorisImeService.onStartInputView(...)` asks `SubtypeManager` to restore the remembered subtype if it still exists. Deleted subtypes are pruned from the map, automatic restores do not re-record themselves, and the new Settings screen can clear remembered apps.
+
+### Changes
+
+- **`SubtypeManager.kt`** — added `PerAppSubtypeMemory`, manual-vs-restore subtype switch sources, active editor package tracking, focus-time restore, and stale-subtype pruning.
+- **`FlorisImeService.kt`** — publishes the focused editor package to the subtype manager before the input-view setup path renders.
+- **`LocalizationPrefs.kt` / `FlorisPreferenceModelImpl.kt`** — added the opt-in toggle and persisted package-to-subtype memory preference.
+- **`PerAppLanguageScreen.kt`** (new) — Settings -> Languages & Layouts entry for enabling per-app language memory and clearing remembered apps.
+- **`Routes.kt` / Settings search** — registered the per-app language route, deep link, and searchable catalog entry.
+- **`PerAppSubtypeMemoryTest.kt` / `AppPrefsPartitionTest.kt`** — JVM coverage for memory serialization, stale subtype pruning, corrupt JSON fallback, legacy list-shape parsing, and preference key/default stability.
+- **`ROADMAP.md` / `COMPLETED.md`** — F31 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:testDebugUnitTest` -> green.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green.
+- `bash scripts/check-fastlane-metadata.sh` -> green.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisPreferenceModelImpl.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/prefs/LocalizationPrefs.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/localization/LocalizationScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/localization/PerAppLanguageScreen.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/core/SubtypeManager.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsPartitionTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/core/PerAppSubtypeMemoryTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2006.txt` (new)
+- `gradle.properties` (versionCode 2005->2006, versionName 1.8.205->1.8.206)
+- `README.md` (version badge/current release)
+- `ROADMAP.md` / `COMPLETED.md` (F31 moved to shipped work)
+
 <a id="v1.8.205"></a>
 ## v1.8.205
 

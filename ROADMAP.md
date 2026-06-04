@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.205 (versionCode 2005). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.206 (versionCode 2006). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -12,11 +12,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Settings & UX surfaces
 
-- [ ] P1 — "Remember keyboard language per app" (F31, reframed)
-  - Why: Original per-app-language spec needed the privileged `READ_APP_SPECIFIC_LOCALES` permission, which conflicts with the clean-permission posture. Reframe to a permission-free remembered subtype.
-  - Touches: `ime/core/` (persisted `editorPackage -> subtypeId` map + pure `PerAppSubtypeMemory` to unit-test), new `PerAppLanguageScreen`, `AppPrefs.localization` pref, `FlorisImeService.onStartInputView` hook (~line 569-587).
-  - Acceptance: opt-in (default off); manual subtype switch is recorded per package and auto-restored on focus.
-  - Source: TODO.md A3 / research feature plan F31.
 - [ ] P1 — Voice route empty-state explainer (EI7)
   - Why: Empty voice route gives no guidance; should explain "what is FUTO" with an Install link as a generic recommendation (drop migration-window framing).
   - Touches: voice route empty state UI.

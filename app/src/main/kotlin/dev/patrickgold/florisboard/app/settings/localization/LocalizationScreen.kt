@@ -111,6 +111,13 @@ fun LocalizationScreen() = FlorisScreen {
                 prefs.localization.displayKeyboardLabelsInSubtypeLanguage,
                 title = stringRes(R.string.settings__localization__display_keyboard_labels_in_subtype_language),
             )
+            Preference(
+                title = stringRes(R.string.settings__per_app_language__title),
+                summary = stringRes(R.string.settings__per_app_language__summary),
+                onClick = {
+                    navController.navigate(Routes.Settings.PerAppLanguage)
+                },
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__localization__group_language_packs__label)) {

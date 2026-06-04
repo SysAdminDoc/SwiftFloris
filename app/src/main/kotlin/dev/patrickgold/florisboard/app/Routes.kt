@@ -70,6 +70,7 @@ import dev.patrickgold.florisboard.app.settings.keyboard.KeyboardScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreen
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.localization.LocalizationScreen
+import dev.patrickgold.florisboard.app.settings.localization.PerAppLanguageScreen
 import dev.patrickgold.florisboard.app.settings.localization.SelectLocaleScreen
 import dev.patrickgold.florisboard.app.settings.localization.SubtypeEditorScreen
 import dev.patrickgold.florisboard.app.settings.media.MediaScreen
@@ -127,6 +128,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/localization/select-locale")
         object SelectLocale
+
+        @Serializable
+        @Deeplink("settings/localization/per-app-language")
+        object PerAppLanguage
 
         @Serializable
         @Deeplink("settings/localization/language-pack-manage")
@@ -320,6 +325,7 @@ object Routes {
 
             composableWithDeepLink(Settings.Localization::class) { LocalizationScreen() }
             composableWithDeepLink(Settings.SelectLocale::class) { SelectLocaleScreen() }
+            composableWithDeepLink(Settings.PerAppLanguage::class) { PerAppLanguageScreen() }
             composableWithDeepLink(Settings.LanguagePackManager::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.LanguagePackManager>()
                 LanguagePackManagerScreen(payload.action)

@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 187
+        rows shouldHaveSize 189
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -189,6 +189,8 @@ keyboard__window_config	s	{}
 localization__active_subtype_id	l	-1
 localization__display_keyboard_labels_in_subtype_language	b	false
 localization__display_language_names_in	s	SYSTEM_LOCALE
+localization__per_app_subtype_memory	s	{}
+localization__remember_subtype_per_app_enabled	b	false
 localization__subtypes	s	[]
 mcp__disabled_daemon_packages	s	<empty>
 mcp__disabled_tools	s	<empty>
