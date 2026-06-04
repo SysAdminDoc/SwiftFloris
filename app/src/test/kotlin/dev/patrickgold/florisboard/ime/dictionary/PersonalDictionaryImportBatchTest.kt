@@ -107,6 +107,33 @@ class PersonalDictionaryImportBatchTest : FunSpec({
         dao.queryAll().single().word shouldBe "valid"
     }
 
+    test("excluded preview rows are not inserted or updated") {
+        val dao = FakeUserDictionaryDao()
+        dao.seed("existing", 100, "en")
+
+        val result = PersonalDictionaryImportBatch.import(
+            parsedEntries = listOf(
+                PersonalDictionaryEntry(word = "imported", frequency = 200, shortcut = null, locale = "en"),
+                PersonalDictionaryEntry(word = "existing", frequency = 240, shortcut = null, locale = "en"),
+                PersonalDictionaryEntry(word = "also-imported", frequency = 180, shortcut = null, locale = "en"),
+            ),
+            dao = dao,
+            format = DictionaryImportFormat.JSON,
+            excludedEntryIndexes = setOf(1),
+        )
+
+        result.insertedCount shouldBe 2
+        result.updatedExistingCount shouldBe 0
+        result.excludedCount shouldBe 1
+        result.totalParsedCount shouldBe 3
+        dao.queryAll().map { it.word } shouldContainExactlyInAnyOrder listOf(
+            "existing",
+            "imported",
+            "also-imported",
+        )
+        dao.queryAll().first { it.word == "existing" }.freq shouldBe 100
+    }
+
     test("out-of-range frequencies are clamped, not rejected") {
         val dao = FakeUserDictionaryDao()
 

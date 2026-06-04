@@ -47,6 +47,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] F31 (P1, reframed) — Permission-free per-app subtype memory with opt-in localization preference, Settings screen, persisted package-to-subtype map, manual-switch recording, focus-time restore, stale-subtype pruning, and JVM memory/golden coverage. Shipped v1.8.206. — *Source: TODO_2026-06-03.md*
 - [x] EI7 (P1, reframed) — Voice input empty state now explains FUTO as a separate offline Android voice keyboard and keeps the F-Droid install action visible without migration-window framing. Shipped v1.8.207. — *Source: TODO_2026-06-03.md*
 - [x] F3 (P0, reframed) — First-run "Import your dictionary" setup hint for post-cutoff local keyboard exports, routing SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV/.flbackup/.fldic, and SwiftFloris exports into the existing personal-dictionary importer. Shipped v1.8.208. — *Source: TODO_2026-06-03.md*
+- [x] EI3 (P2) — Personal dictionary bulk-import preview for modular imports, with first-50-row review, row exclusion before commit, excluded-row summary counts, and persisted skip-preview opt-out. Shipped v1.8.209. — *Source: TODO_2026-06-03.md*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 

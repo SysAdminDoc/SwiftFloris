@@ -58,12 +58,14 @@ object PersonalDictionaryImportBatch {
         parsedEntries: List<PersonalDictionaryEntry>,
         dao: UserDictionaryDao,
         format: DictionaryImportFormat?,
+        excludedEntryIndexes: Set<Int> = emptySet(),
     ): PersonalDictionaryImportResult {
         if (parsedEntries.isEmpty()) {
             return PersonalDictionaryImportResult(
                 insertedIds = emptyList(),
                 updatedExistingCount = 0,
                 skippedCount = 0,
+                excludedCount = 0,
                 totalParsedCount = 0,
                 format = format,
             )
@@ -82,7 +84,12 @@ object PersonalDictionaryImportBatch {
         val insertedKeys = HashSet<Pair<String, String?>>()
         var updated = 0
         var skipped = 0
-        for (entry in parsedEntries) {
+        var excluded = 0
+        for ((index, entry) in parsedEntries.withIndex()) {
+            if (index in excludedEntryIndexes) {
+                excluded++
+                continue
+            }
             val word = entry.word.trim()
             if (word.isEmpty()) {
                 skipped++
@@ -128,6 +135,7 @@ object PersonalDictionaryImportBatch {
             insertedIds = insertedIds,
             updatedExistingCount = updated,
             skippedCount = skipped,
+            excludedCount = excluded,
             totalParsedCount = parsedEntries.size,
             format = format,
         )
@@ -176,6 +184,8 @@ object PersonalDictionaryImportBatch {
  * - [skippedCount] is the number of parsed entries that were dropped
  *   for a blank `word`. Lets the UI honestly report "X imported, Y
  *   skipped" instead of just the larger raw count.
+ * - [excludedCount] is the number of previewed entries the user left
+ *   unchecked before committing the batch.
  * - [totalParsedCount] is the size of the raw parsed list.
  * - [format] is the source format the importer detected.
  */
@@ -183,6 +193,7 @@ data class PersonalDictionaryImportResult(
     val insertedIds: List<Long>,
     val updatedExistingCount: Int,
     val skippedCount: Int,
+    val excludedCount: Int,
     val totalParsedCount: Int,
     val format: DictionaryImportFormat?,
 ) {

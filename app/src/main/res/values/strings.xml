@@ -909,6 +909,8 @@
     <string name="pref__dictionary__enable_internal_user_dictionary__summary" comment="Preference summary">Suggest words stored in the internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__label" comment="Preference title">Manage internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__summary" comment="Preference summary">Add, view, and remove entries for the internal user dictionary</string>
+    <string name="pref__dictionary__preview_imports__label" comment="Preference title">Preview imports before saving</string>
+    <string name="pref__dictionary__preview_imports__summary" comment="Preference summary">Review parsed dictionary rows and exclude mistakes before they are added.</string>
     <string name="settings__udm__title_floris" comment="Title of the User Dictionary Manager activity for internal">Internal User Dictionary</string>
     <string name="settings__udm__title_system" comment="Title of the User Dictionary Manager activity for system">System User Dictionary</string>
     <string name="settings__udm__no_words_in_dictionary" comment="String to show if no words are present in the dictionary">No words are saved in this dictionary yet. Add custom words to make suggestions and corrections feel more personal.</string>
@@ -945,6 +947,7 @@
     <string name="settings__udm__import_summary__inserted" comment="Summary line of newly inserted words. Placeholder is the integer count.">Added {count} new words</string>
     <string name="settings__udm__import_summary__updated" comment="Summary line of in-place updated words. Placeholder is the integer count.">Updated {count} existing words</string>
     <string name="settings__udm__import_summary__skipped" comment="Summary line of skipped malformed entries. Placeholder is the integer count.">Skipped {count} malformed entries</string>
+    <string name="settings__udm__import_summary__excluded" comment="Summary line of preview-excluded entries. Placeholder is the integer count.">Excluded {count} previewed entries</string>
     <string name="settings__udm__import_summary__no_changes" comment="Summary line shown when the import made no changes (e.g. empty input or only blank words).">No changes were made to your dictionary.</string>
     <string name="settings__udm__import_summary__format__json" comment="Source-format label for SwiftKey JSON imports">SwiftKey JSON export</string>
     <string name="settings__udm__import_summary__format__xml" comment="Source-format label for Gboard XML imports">Gboard XML export</string>
@@ -956,6 +959,15 @@
     <string name="settings__udm__import_summary__rollback" comment="Action button on the post-import dialog that undoes the import">Undo import</string>
     <string name="settings__udm__import_summary__keep" comment="Action button on the post-import dialog that dismisses the dialog without undoing">Keep imported words</string>
     <string name="settings__udm__import_summary__rollback_done" comment="Toast shown after a successful rollback. Placeholder is the integer count of rows deleted.">Removed {count} imported words.</string>
+    <string name="settings__udm__import_preview__title" comment="Title of the pre-import preview dialog">Preview import</string>
+    <string name="settings__udm__import_preview__summary" comment="Summary for the pre-import preview dialog. Placeholder is the integer count of parsed entries.">Review {count} parsed entries before saving. Selected rows will be imported.</string>
+    <string name="settings__udm__import_preview__selected_count" comment="Selected row count in the import preview. Placeholders are selected and total integer counts.">{selected_count} of {total_count} selected</string>
+    <string name="settings__udm__import_preview__first_rows" comment="Explains that only the first rows are shown in the import preview. Placeholders are integer counts.">Showing first {shown_count} of {total_count}. Entries not shown here will be imported unless you cancel.</string>
+    <string name="settings__udm__import_preview__entry_frequency" comment="Frequency metadata in a previewed import row. Placeholder is the integer frequency.">Frequency: {freq}</string>
+    <string name="settings__udm__import_preview__entry_language" comment="Language metadata in a previewed import row. Placeholder is a BCP-47 language tag.">Language: {locale}</string>
+    <string name="settings__udm__import_preview__entry_shortcut" comment="Shortcut metadata in a previewed import row. Placeholder is the shortcut text.">Shortcut: {shortcut}</string>
+    <string name="settings__udm__import_preview__skip_next_time" comment="Checkbox label for disabling future dictionary import previews">Skip this preview next time</string>
+    <string name="settings__udm__import_preview__import_selected" comment="Button label for committing selected preview rows">Import selected</string>
     <string name="settings__udm__dialog__title_add" comment="Label for the title (when in adding mode) in the user dictionary add/edit dialog">Add word</string>
     <string name="settings__udm__dialog__title_edit" comment="Label for the title (when in editing mode) in the user dictionary add/edit dialog">Edit word</string>
     <string name="settings__udm__dialog__word_label" comment="Label for the word in the user dictionary add/edit dialog">Word</string>

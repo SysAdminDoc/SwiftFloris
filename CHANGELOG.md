@@ -2,6 +2,51 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.209"></a>
+## v1.8.209
+
+Released: 2026-06-04
+
+### Personal dictionary import preview
+
+EI3 adds a pre-commit preview to modular personal-dictionary imports. SwiftKey JSON, Gboard XML/ZIP, CSV, `.flbackup`, `.fldic`, and encrypted SwiftFloris dictionary imports now parse first, show the first 50 rows with the total parsed count, and let users uncheck rows before anything is written to the dictionary database.
+
+Excluded preview rows are passed into `PersonalDictionaryImportBatch.import(...)`, so unchecked entries are neither inserted nor used to update existing words. The post-import summary now reports excluded rows alongside inserted, updated, skipped, and rollback-eligible counts. A new Dictionary setting keeps previews enabled by default, and the preview dialog's "Skip this preview next time" checkbox persists the opt-out.
+
+### Changes
+
+- **`PersonalDictionaryImportPreviewDialog.kt`** (new) — review UI for the first 50 parsed entries, selected/total counts, row checkboxes, and the persisted skip-preview checkbox.
+- **`UserDictionaryScreen.kt`** — split modular import parsing from committing, route plain/encrypted imports through preview when enabled, and preserve the legacy combined-list fallback.
+- **`PersonalDictionaryImportBatch.kt`** — added excluded-index filtering plus `excludedCount` in the result envelope.
+- **`DictionaryPrefs.kt` / `DictionaryScreen.kt` / `FlorisPreferenceModelImpl.kt`** — added the persistent "Preview imports before saving" preference.
+- **`ROADMAP.md` / `COMPLETED.md`** — EI3 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:compileDebugKotlin :app:compileDebugUnitTestKotlin` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `git diff --check` -> green; CRLF normalization warnings only.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2009.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/PersonalDictionaryImportPreviewDialog.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/PersonalDictionaryImportSummaryDialog.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/DictionaryScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/prefs/DictionaryPrefs.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisPreferenceModelImpl.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/PersonalDictionaryImportBatch.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/dictionary/PersonalDictionaryImportBatchTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsPartitionTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2009.txt` (new)
+- `gradle.properties` (versionCode 2008->2009, versionName 1.8.208->1.8.209)
+- `README.md` (version badge/current release/highlights)
+- `ROADMAP.md` / `COMPLETED.md` (EI3 moved to shipped work)
+
 <a id="v1.8.208"></a>
 ## v1.8.208
 

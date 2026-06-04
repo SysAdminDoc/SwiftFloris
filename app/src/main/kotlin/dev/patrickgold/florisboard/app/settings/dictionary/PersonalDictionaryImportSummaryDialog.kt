@@ -85,14 +85,22 @@ fun PersonalDictionaryImportSummaryDialog(
                         ),
                     )
                 }
-                if (result.skippedCount > 0) {
-                    Text(
-                        text = stringRes(
-                            R.string.settings__udm__import_summary__skipped,
-                            "count" to result.skippedCount,
-                        ),
-                    )
-                }
+            }
+            if (result.skippedCount > 0) {
+                Text(
+                    text = stringRes(
+                        R.string.settings__udm__import_summary__skipped,
+                        "count" to result.skippedCount,
+                    ),
+                )
+            }
+            if (result.excludedCount > 0) {
+                Text(
+                    text = stringRes(
+                        R.string.settings__udm__import_summary__excluded,
+                        "count" to result.excludedCount,
+                    ),
+                )
             }
             result.format?.let { format ->
                 Text(
