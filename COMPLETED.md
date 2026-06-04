@@ -76,6 +76,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] RA-4 (P2) — Settings search now has TalkBack-oriented field labels/state, polite result-status live regions, merged button-role result labels, focused accessibility contract coverage, and manual QA checklist coverage. Shipped v1.8.235. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
 - [x] R9-1 (P2) — Suggestion candidate generation now snapshots request-scoped incognito, no-personalized-learning/editor sensitivity, suggestion enabled, offensive-content, and emoji-count inputs before async provider, trace, and ghost-text work begins. Shipped v1.8.236. — *Source: ROADMAP.md Researcher Queue Cycle 9.*
 - [x] RA-9 (P2) — Settings search destination highlights now consume the process-wide target once into local screen state, expose a close action, and do not reappear on later visits without a new search. Shipped v1.8.237. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
+- [x] R4-2 (P3) — Clipboard image/video history tiles now expose localized TalkBack labels with media type, history group, and copied-time context while keeping thumbnail/video overlay icons decorative. Shipped v1.8.238. — *Source: ROADMAP.md Researcher Queue Cycle 4.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 
