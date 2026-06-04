@@ -30,6 +30,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import org.florisboard.lib.kotlin.collectLatestIn
 
@@ -37,6 +38,94 @@ val SubtypeJsonConfig = Json {
     encodeDefaults = true
     ignoreUnknownKeys = true
     isLenient = false
+}
+
+@Serializable
+data class PerAppSubtypeMemoryEntry(
+    val packageName: String,
+    val subtypeId: Long,
+)
+
+data class PerAppSubtypeMemoryDecision(
+    val subtypeId: Long?,
+    val prunedRawJson: String,
+)
+
+object PerAppSubtypeMemory {
+    const val EmptyJson = "{}"
+
+    private val JsonConfig = Json {
+        ignoreUnknownKeys = true
+        explicitNulls = false
+        encodeDefaults = true
+    }
+
+    fun isRecordablePackageName(packageName: String?): Boolean {
+        val trimmed = packageName?.trim() ?: return false
+        return trimmed.isNotEmpty() && trimmed.length <= 255 && '/' !in trimmed
+    }
+
+    fun parse(rawJson: String): Map<String, Long> {
+        if (rawJson.isBlank()) return emptyMap()
+        return runCatching {
+            JsonConfig.decodeFromString<Map<String, Long>>(rawJson)
+        }.recoverCatching {
+            JsonConfig.decodeFromString<List<PerAppSubtypeMemoryEntry>>(rawJson)
+                .associate { it.packageName to it.subtypeId }
+        }.getOrElse {
+            emptyMap()
+        }.filterKeys(::isRecordablePackageName)
+    }
+
+    fun serialize(memory: Map<String, Long>): String {
+        if (memory.isEmpty()) return EmptyJson
+        val sorted = memory.toSortedMap().entries.associate { (key, value) -> key to value }
+        return JsonConfig.encodeToString<Map<String, Long>>(sorted)
+    }
+
+    fun remember(
+        rawJson: String,
+        packageName: String?,
+        subtypeId: Long,
+        availableSubtypeIds: Set<Long>,
+    ): String {
+        if (!isRecordablePackageName(packageName) || subtypeId !in availableSubtypeIds) {
+            return prune(rawJson, availableSubtypeIds)
+        }
+        val next = parse(rawJson)
+            .filterValues { it in availableSubtypeIds }
+            .plus(packageName!!.trim() to subtypeId)
+        return serialize(next)
+    }
+
+    fun resolve(
+        rawJson: String,
+        packageName: String?,
+        availableSubtypeIds: Set<Long>,
+    ): PerAppSubtypeMemoryDecision {
+        if (!isRecordablePackageName(packageName)) {
+            val prunedRawJson = prune(rawJson, availableSubtypeIds)
+            return PerAppSubtypeMemoryDecision(subtypeId = null, prunedRawJson = prunedRawJson)
+        }
+        val pruned = parse(rawJson).filterValues { it in availableSubtypeIds }
+        return PerAppSubtypeMemoryDecision(
+            subtypeId = pruned[packageName!!.trim()],
+            prunedRawJson = serialize(pruned),
+        )
+    }
+
+    fun prune(rawJson: String, availableSubtypeIds: Set<Long>): String {
+        return serialize(parse(rawJson).filterValues { it in availableSubtypeIds })
+    }
+
+    fun count(rawJson: String, availableSubtypeIds: Set<Long>? = null): Int {
+        val parsed = parse(rawJson)
+        return if (availableSubtypeIds == null) {
+            parsed.size
+        } else {
+            parsed.count { it.value in availableSubtypeIds }
+        }
+    }
 }
 
 /**
@@ -59,6 +148,9 @@ class SubtypeManager(context: Context) {
     inline var activeSubtype
         get() = activeSubtypeFlow.value
         private set(v) { activeSubtypeFlow.value = v }
+
+    @Volatile
+    private var activeEditorPackageName: String? = null
 
     init {
         prefs.localization.subtypes.asFlow().collectLatestIn(scope) { listRaw ->
@@ -93,10 +185,58 @@ class SubtypeManager(context: Context) {
     private fun evaluateActiveSubtype(list: List<Subtype>) = scope.launch {
         val activeSubtypeId = prefs.localization.activeSubtypeId.get()
         val subtype = list.find { it.id == activeSubtypeId } ?: list.firstOrNull() ?: Subtype.DEFAULT
-        if (subtype.id != activeSubtypeId) {
-            prefs.localization.activeSubtypeId.set(subtype.id)
+        activateSubtype(subtype, source = SubtypeSwitchSource.System, persist = subtype.id != activeSubtypeId)
+    }
+
+    fun onEditorPackageFocus(packageName: String?) {
+        activeEditorPackageName = packageName?.trim()?.takeIf(PerAppSubtypeMemory::isRecordablePackageName)
+        if (!prefs.localization.rememberSubtypePerAppEnabled.get()) return
+        val subtypeIds = subtypes.map { it.id }.toSet()
+        val rawMemory = prefs.localization.perAppSubtypeMemory.get()
+        val decision = PerAppSubtypeMemory.resolve(
+            rawJson = rawMemory,
+            packageName = activeEditorPackageName,
+            availableSubtypeIds = subtypeIds,
+        )
+        if (decision.prunedRawJson != rawMemory) {
+            scope.launch { prefs.localization.perAppSubtypeMemory.set(decision.prunedRawJson) }
         }
+        val rememberedSubtype = decision.subtypeId?.let(::getSubtypeById) ?: return
+        if (rememberedSubtype.id != activeSubtype.id) {
+            activateSubtype(rememberedSubtype, source = SubtypeSwitchSource.Restore)
+        }
+    }
+
+    private fun activateSubtype(
+        subtype: Subtype,
+        source: SubtypeSwitchSource,
+        persist: Boolean = true,
+    ) {
         activeSubtype = subtype
+        scope.launch {
+            if (persist) {
+                prefs.localization.activeSubtypeId.set(subtype.id)
+            }
+            if (source == SubtypeSwitchSource.Manual) {
+                rememberManualSubtypeSwitch(subtype.id)
+            }
+        }
+    }
+
+    private suspend fun rememberManualSubtypeSwitch(subtypeId: Long) {
+        if (!prefs.localization.rememberSubtypePerAppEnabled.get()) return
+        val packageName = activeEditorPackageName ?: return
+        val subtypeIds = subtypes.map { it.id }.toSet()
+        val rawMemory = prefs.localization.perAppSubtypeMemory.get()
+        val nextMemory = PerAppSubtypeMemory.remember(
+            rawJson = rawMemory,
+            packageName = packageName,
+            subtypeId = subtypeId,
+            availableSubtypeIds = subtypeIds,
+        )
+        if (nextMemory != rawMemory) {
+            prefs.localization.perAppSubtypeMemory.set(nextMemory)
+        }
     }
 
     /**
@@ -239,8 +379,7 @@ class SubtypeManager(context: Context) {
         } else {
             subtypeList[(currentIndex - 1 + subtypeList.size) % subtypeList.size]
         }
-        prefs.localization.activeSubtypeId.set(newActiveSubtype.id)
-        activeSubtype = newActiveSubtype
+        activateSubtype(newActiveSubtype, source = SubtypeSwitchSource.Manual)
     }
 
     /**
@@ -257,14 +396,18 @@ class SubtypeManager(context: Context) {
         } else {
             subtypeList[(currentIndex + 1) % subtypeList.size]
         }
-        prefs.localization.activeSubtypeId.set(newActiveSubtype.id)
-        activeSubtype = newActiveSubtype
+        activateSubtype(newActiveSubtype, source = SubtypeSwitchSource.Manual)
     }
 
     fun switchToSubtypeById(id: Long) = scope.launch {
         if (subtypes.any { it.id == id }) {
-            activeSubtype = getSubtypeById(id)!!
-            prefs.localization.activeSubtypeId.set(id)
+            activateSubtype(getSubtypeById(id)!!, source = SubtypeSwitchSource.Manual)
         }
+    }
+
+    private enum class SubtypeSwitchSource {
+        Manual,
+        Restore,
+        System,
     }
 }

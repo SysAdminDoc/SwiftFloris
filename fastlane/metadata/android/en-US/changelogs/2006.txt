@@ -1,0 +1,1 @@
+Added opt-in remembered keyboard language per app. Manual subtype switches are stored locally by app package and restored on the next focus without privileged app-locale permissions. Settings now includes a per-app language screen with a clear-remembered-apps action.

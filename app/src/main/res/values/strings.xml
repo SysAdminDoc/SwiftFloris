@@ -216,6 +216,16 @@
     <string name="settings__localization__group_language_packs__label" comment="Preference group title">Language packs</string>
     <string name="settings__localization__display_language_names_in__label" comment="Label of Display language names in preference">Display language names in</string>
     <string name="settings__localization__display_keyboard_labels_in_subtype_language" comment="Label of Display keyboard labels in subtype language preference">Display keyboard labels in subtype language</string>
+    <string name="settings__per_app_language__title">Remember language per app</string>
+    <string name="settings__per_app_language__summary">Restore the last manually selected keyboard language for each app</string>
+    <string name="settings__per_app_language__group_memory">Memory</string>
+    <string name="settings__per_app_language__enabled">Remember keyboard language per app</string>
+    <string name="settings__per_app_language__enabled_summary">When enabled, manual language switches are stored by app package and restored the next time that app receives focus.</string>
+    <string name="settings__per_app_language__clear">Clear remembered apps</string>
+    <string name="settings__per_app_language__clear_summary">Currently remembering {count} apps.</string>
+    <string name="settings__per_app_language__group_behavior">Behavior</string>
+    <string name="settings__per_app_language__privacy_title">Local package-name map</string>
+    <string name="settings__per_app_language__privacy_summary">SwiftFloris stores only app package names and subtype IDs in local preferences. This feature does not request app-locale permissions.</string>
     <string name="settings__localization__group_subtypes__label" comment="Label of subtypes group">Active keyboard languages</string>
     <string name="settings__localization__subtype_add_title" comment="Title of subtype dialog when adding a new subtype">Add subtype</string>
     <string name="settings__localization__language_pack_title" comment="Title of the language pack manager screen for managing installed and custom language packs">Manage installed language packs</string>

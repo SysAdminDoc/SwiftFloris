@@ -79,6 +79,14 @@ open class LocalizationPrefs : PreferenceModel() {
         key = "localization__display_keyboard_labels_in_subtype_language",
         default = false,
     )
+    val rememberSubtypePerAppEnabled = boolean(
+        key = "localization__remember_subtype_per_app_enabled",
+        default = false,
+    )
+    val perAppSubtypeMemory = string(
+        key = "localization__per_app_subtype_memory",
+        default = "{}",
+    )
     val activeSubtypeId = long(
         key = "localization__active_subtype_id",
         default = Subtype.DEFAULT.id,
