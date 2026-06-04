@@ -1,0 +1,1 @@
+Snapshots suggestion privacy inputs before async candidate generation. Emoji/word providers, private trace gating, and smart-compose ghost text now use the same request-scoped incognito, no-personalized-learning/editor sensitivity, enabled flag, offensive-content, and emoji-count decisions. Focused JVM tests passed; APK assembly skipped per operator request.

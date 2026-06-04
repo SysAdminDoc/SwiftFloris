@@ -9,7 +9,7 @@ smart-compose sensitive-field guards, and Android `EditorInfo` privacy docs.
 Existing `SuggestionPrivacyPolicy` tests cover the policy decisions, but not
 request-scoped propagation across the async suggestion boundary. This cycle
 adds R9-1: snapshot suggestion privacy inputs before background candidate
-generation.
+generation. R9-1 was later closed in v1.8.236.
 
 2026-06-04 Cycle 8 note: after the Cycle 7 docs push, `master` is clean at
 `1d5bf2e`. Cycle 8 rechecked the user-dictionary operation/back-navigation
@@ -104,7 +104,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.235, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, and Settings search now has TalkBack labels/live result-status/result-row context. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility polish, while highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.236, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility polish, while highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -130,7 +130,7 @@ Top opportunities (one line each):
 20. **Editor batch critical sections** — selection/commit hot paths now compute expected content before opening `InputConnection` batch edits, and batch pairs use `try/finally` (R6-1). [Closed]
 21. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
 22. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
-23. **Suggestion privacy request snapshot** — async candidate generation re-reads live incognito/editor state instead of using request-scoped privacy inputs (R9-1, P2). [Verified]
+23. **Suggestion privacy request snapshot** — async candidate generation now freezes incognito/editor sensitivity and suggestion preference inputs before provider, trace, and ghost-text work runs (R9-1). [Closed]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -180,11 +180,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   incognito coverage, and dynamic-incognito toggle re-application now exist.
   v1.8.231 closes R7-1 by re-running the secure-window policy for the active
   field whenever dynamic incognito changes. [Closed]
-- **Suggestion privacy request scope (partial):** field-start policy correctly
-  resolves `activeState.isIncognitoMode`, and `SuggestionPrivacyPolicy` covers
-  the policy functions, but `NlpManager.suggest` still re-reads live incognito
-  and editor-info state inside async candidate generation. R9-1 freezes those
-  request inputs before providers, traces, and ghost text run. [Verified]
+- **Suggestion privacy request scope:** field-start policy correctly resolves
+  `activeState.isIncognitoMode`, and v1.8.236 closes R9-1 by making
+  `NlpManager.suggest` snapshot private-session state, editor sensitivity,
+  suggestion enabled flags, offensive-content preference, and emoji count
+  before async provider, trace, and ghost-text work runs. [Closed]
 - **User-dictionary operation UX:** entry save/delete and dictionary
   import/export operations are gated by `UserDictionaryEntryPolicy` and visible
   progress cards. v1.8.232 closes R8-1 by adding blocked-back feedback for the
@@ -256,10 +256,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Closed v1.8.232] User-dictionary blocked-back feedback** → R8-1. Active
   dictionary operations still block exits, but the intercepted system-back
   gesture now shows operation-specific keep-screen-open feedback.
-- **[Medium] Suggestion privacy request snapshot** → R9-1. Snapshot incognito,
-  sensitivity, and suggestion preference inputs before async candidate
-  generation, so stale requests cannot use privacy state from a later field or
-  toggle.
+- **[Closed v1.8.236] Suggestion privacy request snapshot** → R9-1. Async
+  candidate generation now consumes a request-scoped snapshot for incognito,
+  editor sensitivity, suggestion preference, offensive-content, and emoji-count
+  inputs.
 
 ## Architecture & Technical Findings
 
@@ -284,10 +284,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Editor hot path:** v1.8.233 keeps the existing expected-content model but
   removes blocking/queue work from the selected open editor batches and pins the
   synchronous `InputConnection` call order with tests.
-- **Suggestion request boundary:** `NlpManager.suggest` has request-id ordering,
-  but privacy and editor sensitivity are not part of the request object. R9-1
-  should keep the request ordering and add immutable request inputs for provider
-  calls, typing traces, and ghost-text gating.
+- **Suggestion request boundary:** v1.8.236 keeps `NlpManager.suggest` request-id
+  ordering and adds immutable request inputs for provider calls, typing traces,
+  and ghost-text gating, so delayed work does not re-read live incognito or
+  editor-info state after the async boundary.
 - **User-dictionary navigation policy:** `UserDictionaryEntryPolicy` correctly
   centralizes leave/mutation/transfer gates. v1.8.232 keeps that policy and
   adds a visible response when Compose back handling blocks the gesture during
@@ -321,8 +321,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
    clipboard media labels are hard to validate with JVM tests alone.
 4. v1.8.232 still needs manual system-back and TalkBack verification during an
    active dictionary import/export or save/delete operation.
-5. R9-1 needs fake-provider tests for delayed suggestions plus a manual dynamic
-   incognito smoke; no maintainer product decision is required.
+5. v1.8.236 still needs manual dynamic-incognito smoke during typing; the
+   request-boundary contract is covered by focused JVM tests.
 
 ## Archived Evidence
 

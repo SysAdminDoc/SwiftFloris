@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.236"></a>
+## v1.8.236
+
+Released: 2026-06-04
+
+### Suggestion privacy snapshots
+
+R9-1 is closed. Async suggestion candidate generation now consumes one request-scoped privacy snapshot for emoji suggestions, word suggestions, private trace gating, and smart-compose ghost-text sensitivity, so delayed work cannot borrow incognito or editor privacy state from a later field/session.
+
+### Changes
+
+- **`NlpManager.kt`** - snapshots emoji enabled/count, word-suggestion enabled state, offensive-content preference, current private-session state, and editor sensitivity before `scope.launch`, then passes the immutable snapshot through provider calls, trace recording, and ghost-text gating.
+- **`SuggestionPrivacyPolicy.kt`** - adds `SuggestionRequestPrivacySnapshot` plus a small factory that normalizes the offensive-content preference into the provider-facing allow flag.
+- **`NlpManagerSuggestionPrivacySnapshotTest.kt`** - adds focused JVM source/request-contract coverage proving the async suggestion body consumes the snapshot rather than live preference, incognito, or editor-info reads after launch.
+- **`docs/PRIVACY_AND_AI.md` / `docs/THREAT_MODEL.md`** - documents the request-scoped suggestion privacy contract and threat-model mitigation.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.236 / versionCode 2036 and closes R9-1.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.nlp.NlpManagerSuggestionPrivacySnapshotTest"` - PASS in 43s.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2036.
+- APK assembly and manual dynamic-incognito device smoke were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/SuggestionPrivacyPolicy.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManagerSuggestionPrivacySnapshotTest.kt` (new)
+- `docs/PRIVACY_AND_AI.md`
+- `docs/THREAT_MODEL.md`
+- `fastlane/metadata/android/en-US/changelogs/2036.txt` (new)
+- `gradle.properties` (versionCode 2035->2036, versionName 1.8.235->1.8.236)
+
 <a id="v1.8.235"></a>
 ## v1.8.235
 

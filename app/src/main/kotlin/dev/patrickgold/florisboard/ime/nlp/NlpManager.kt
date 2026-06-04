@@ -31,6 +31,10 @@ import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
+import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
+import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext
+import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeProviderRegistry
+import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeResult
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
@@ -211,21 +215,33 @@ class NlpManager(context: Context) {
     fun suggest(subtype: Subtype, content: EditorContent) {
         autoCommitSuppression.onContentChanged(content.autoCommitWord(), content.autoCommitWordStart())
         val requestId = suggestionsRequestCounter.incrementAndGet()
+        val editorInfo = editorInstance.activeInfo
+        val requestPrivacy = SuggestionPrivacyPolicy.snapshotSuggestionRequest(
+            emojiSuggestionEnabled = prefs.emoji.suggestionEnabled.get(),
+            emojiMaxCandidateCount = prefs.emoji.suggestionCandidateMaxCount.get(),
+            wordSuggestionEnabled = prefs.suggestion.enabled.get(),
+            blockPossiblyOffensive = prefs.suggestion.blockPossiblyOffensive.get(),
+            isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+            isEditorSensitive = SensitiveFieldGuard.isSensitive(
+                editorInfo.inputAttributes.raw,
+                editorInfo.imeOptions.raw,
+            ),
+        )
         scope.launch {
             val emojiSuggestions = when {
-                prefs.emoji.suggestionEnabled.get() -> {
+                requestPrivacy.emojiSuggestionEnabled -> {
                     emojiSuggestionProvider.suggest(
                         subtype = subtype,
                         content = content,
-                        maxCandidateCount = prefs.emoji.suggestionCandidateMaxCount.get(),
-                        allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
-                        isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                        maxCandidateCount = requestPrivacy.emojiMaxCandidateCount,
+                        allowPossiblyOffensive = requestPrivacy.allowPossiblyOffensive,
+                        isPrivateSession = requestPrivacy.isPrivateSession,
                     )
                 }
                 else -> emptyList()
             }
             val suggestionProvider = providerRegistry.suggestionProvider(subtype)
-            val suggestionsEnabled = prefs.suggestion.enabled.get() || suggestionProvider.forcesSuggestionOn
+            val suggestionsEnabled = requestPrivacy.wordSuggestionEnabled || suggestionProvider.forcesSuggestionOn
             val userDictionarySuggestions = if (suggestionsEnabled) {
                 userDictionarySuggestions(
                     subtype = subtype,
@@ -240,8 +256,8 @@ class NlpManager(context: Context) {
                     subtype = subtype,
                     content = content,
                     maxCandidateCount = 8,
-                    allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
-                    isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                    allowPossiblyOffensive = requestPrivacy.allowPossiblyOffensive,
+                    isPrivateSession = requestPrivacy.isPrivateSession,
                 )
             } else {
                 emptyList()
@@ -283,7 +299,7 @@ class NlpManager(context: Context) {
                         fallback = suggestions,
                     ),
                     rankedCandidates = wordSuggestions,
-                    isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                    isPrivateSession = requestPrivacy.isPrivateSession,
                 )
             }
             // ROADMAP §0 P1 — Smart-Compose inline ghost-text. When a
@@ -292,7 +308,12 @@ class NlpManager(context: Context) {
             // provider returns NoSuggestion, so this path is invisible
             // until the L1.1a addon is installed.
             val ghostTextCandidate = if (suggestionsEnabled) {
-                buildGhostTextCandidate(subtype, content, currentWord)
+                buildGhostTextCandidate(
+                    subtype = subtype,
+                    content = content,
+                    currentWord = currentWord,
+                    isEditorSensitive = requestPrivacy.isEditorSensitive,
+                )
             } else {
                 null
             }
@@ -313,33 +334,27 @@ class NlpManager(context: Context) {
         subtype: Subtype,
         content: EditorContent,
         currentWord: String,
+        isEditorSensitive: Boolean,
     ): GhostTextSuggestionCandidate? {
         // Honor sensitive fields before deriving ghost text from the user's personal
         // n-gram history. The composing-disabled gate only covers password *variations*;
         // it does NOT cover IME_FLAG_NO_PERSONALIZED_LEARNING, which a field can set to
         // ask the IME to suppress personalized output. SensitiveFieldGuard covers both,
         // keeping ghost text consistent with the rest of the sensitive-field surface.
-        val editorInfo = editorInstance.activeInfo
-        if (dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard.isSensitive(
-                editorInfo.inputAttributes.raw,
-                editorInfo.imeOptions.raw,
-            )
-        ) {
+        if (isEditorSensitive) {
             return null
         }
-        val provider = dev.patrickgold.florisboard.ime.smartcompose
-            .SmartComposeProviderRegistry.active
+        val provider = SmartComposeProviderRegistry.active
         val locale = subtype.primaryLocale.languageTag()
         if (!provider.isReady(locale)) return null
-        val context = dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext(
-            precedingText = content.textBeforeSelection.toString(),
+        val context = SmartComposeContext(
+            precedingText = content.textBeforeSelection,
             composingPrefix = currentWord,
             locale = locale,
             editorPackageName = null,
         )
         val result = provider.predictNextTokens(context, maxCandidates = 1)
-        val top = (result as? dev.patrickgold.florisboard.ime.smartcompose
-            .SmartComposeResult.Suggestion)?.candidates?.firstOrNull()
+        val top = (result as? SmartComposeResult.Suggestion)?.candidates?.firstOrNull()
             ?: return null
         if (top.confidence < 0.45f) return null
         return GhostTextSuggestionCandidate(
