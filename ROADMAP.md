@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 11 - 2026-06-04.
+> Last researched: Cycle 16 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -175,6 +175,45 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 16 - 2026-06-04)
+
+- [x] 🔬 `subtype-switch-by-id-double-read-recheck-2026-06-04` - synced
+  `master` after the Cycle 15 docs push, rechecked the deferred subtype
+  switch-by-id audit against live subtype manager code, the subtype chooser
+  caller, and the closed next/previous subtype fallback audit. This cycle adds
+  one focused row for collapsing the switch-by-id path to a single nullable
+  subtype lookup before activation.
+
+#### Subtype switch-by-id crash hardening
+
+- [ ] 🤖 P2 — Collapse subtype switch-by-id to a single nullable lookup (R16-1)
+  - Why: `switchToSubtypeById(id)` validates the id against one `subtypes`
+    snapshot, then calls `getSubtypeById(id)!!`, which snapshots the list again
+    and can throw if the subtype list changes between the two reads. Subtype
+    edits, restore flows, or localization updates should turn a stale id into a
+    no-op, not a crash from a forced null assertion.
+  - Evidence: `SubtypeManager.kt:276-278` snapshots `subtypes` in
+    `getSubtypeById(id)`; `SubtypeManager.kt:402-404` performs the separate
+    existence check and forced `!!` lookup; `SelectSubtypePanel.kt:83` reaches
+    this path from the subtype chooser; `docs/AUDIT_2026-05-28.md:61-63`
+    records the TOCTOU/NPE finding; `docs/AUDIT_2026-06-02.md:37` closes only
+    the next/previous fallback path, leaving switch-by-id open. Kotlin
+    `StateFlow` docs describe thread-safe access, but Kotlin null-safety docs
+    still make `!!` an NPE boundary when the second lookup returns null:
+    https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/,
+    https://kotlinlang.org/docs/null-safety.html.
+  - Touches: `SubtypeManager.kt`; add a focused `SubtypeManager` switch-by-id
+    regression test or a narrow source-level guard test under
+    `app/src/test/kotlin/dev/patrickgold/florisboard/ime/core/`.
+  - Acceptance: `switchToSubtypeById(id)` stores one nullable lookup result in a
+    local value and returns when absent; valid ids still activate through the
+    manual subtype path; stale/mutated ids do not throw; existing
+    `switchToNextSubtype` / `switchToPrevSubtype` fallback behavior is
+    unchanged.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.core.*Subtype*"`
+  - Complexity: XS
 
 ### Researcher Queue (Cycle 15 - 2026-06-04)
 
