@@ -2,21 +2,13 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.210 (versionCode 2010). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.211 (versionCode 2011). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
 ## Existing Planned Work
-
-### Settings & UX surfaces
-
-- [ ] P3 — Settings home cosmetic re-bucket (EI2)
-  - Why: Settings home is already grouped into four labelled sections (Essentials / Experience / Data / System); the research's "15 sub-screens at one level" premise is stale. Only residual value is a cosmetic re-bucket into the 5 research groups.
-  - Touches: `HomeScreen.kt` grouping.
-  - Acceptance: do only as low-value polish; no behavior change.
-  - Source: TODO.md A3 / second-pass EI2.
 
 ### Keyboard surface & visual polish (device-gated)
 

@@ -1,0 +1,1 @@
+Settings home now uses the archived five-bucket information architecture: Typing experience, Personalization, Privacy & data, Advanced, and About. Existing destinations keep their deep links, with Physical keyboard surfaced directly under Advanced. No new permissions, network, or telemetry.

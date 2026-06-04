@@ -49,6 +49,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] F3 (P0, reframed) — First-run "Import your dictionary" setup hint for post-cutoff local keyboard exports, routing SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV/.flbackup/.fldic, and SwiftFloris exports into the existing personal-dictionary importer. Shipped v1.8.208. — *Source: TODO_2026-06-03.md*
 - [x] EI3 (P2) — Personal dictionary bulk-import preview for modular imports, with first-50-row review, row exclusion before commit, excluded-row summary counts, and persisted skip-preview opt-out. Shipped v1.8.209. — *Source: TODO_2026-06-03.md*
 - [x] F6 (P2) — Per-app accent opt-in discovery hint and Settings preview, with process-local three-app threshold tracking, persisted hint state only, Settings search coverage, and privacy docs. Shipped v1.8.210. — *Source: TODO_2026-06-03.md*
+- [x] EI2 (P3, reframed) — Settings home regrouped into Typing experience, Personalization, Privacy & data, Advanced, and About buckets, with Physical keyboard surfaced directly under Advanced while preserving existing deep links. Shipped v1.8.211. — *Source: TODO_2026-06-03.md*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 
@@ -56,7 +57,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 
 - [STALE] F33 — *Reason: Rejected; no longer in the active queue. Source: TODO_2026-06-03.md*
 - [STALE] O5 — Settings -> Sync screen "missing" finding — *Reason: Incorrect; `SyncSettingsScreen.kt` (443 LOC) already exists, is registered in `Routes.kt` (`@Deeplink settings/sync`), and is reachable from `HomeScreen` (verified 2026-05-28). Source: TODO_2026-06-03.md*
-- [STALE] EI2 (original premise) — "15 sub-screens at one level" — *Reason: Stale; Settings home is already grouped into four labelled sections in `HomeScreen.kt`. Only a low-value cosmetic re-bucket survives as P3 in ROADMAP. Source: TODO_2026-06-03.md*
+- [STALE] EI2 (original premise) — "15 sub-screens at one level" — *Reason: Stale; Settings home was already grouped before the research refresh. The surviving low-value cosmetic re-bucket shipped in v1.8.211. Source: TODO_2026-06-03.md*
 - [STALE] F31 (original spec) — per-app language via `LocaleManager.getApplicationLocales(packageName)` — *Reason: Requires the privileged `READ_APP_SPECIFIC_LOCALES` permission, not grantable to a normal IME and contrary to the clean-permission posture; reframed to a permission-free remembered-subtype feature in ROADMAP. Source: TODO_2026-06-03.md*
 - [STALE] F3 / EI7 (migration-window framing) — *Reason: The 2026-05-31 SwiftKey cloud-export cutoff has passed; the import/voice-install discovery value is permanent, so both items were reframed as generic surfaces in ROADMAP (migration-window framing dropped). Source: TODO_2026-06-03.md*
 
