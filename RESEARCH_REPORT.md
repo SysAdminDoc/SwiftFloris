@@ -98,13 +98,13 @@ F22/F10/F12/API 37 work.
 
 2026-06-04 docs-source note: v1.8.220 closed R2-3 and RA-8. Root onboarding now routes open work to `ROADMAP.md`, shipped state to `COMPLETED.md`, release notes to `CHANGELOG.md` plus fastlane metadata, and archived parity/improvement plans to historical context. Settings Home already exposes the search route through the top app-bar action, so entry-point discoverability required documentation only.
 
-2026-06-04 search-highlight note: local source inspection added RA-9. Search result highlighting uses a process-wide `SettingsSearchHighlightStore` that is marked from `SettingsSearchScreen` and rendered by `FlorisScreen`, but production code never consumes or clears it after the destination screen displays. The implementation target is a one-shot consume/dismiss contract, not a new search feature.
+2026-06-04 search-highlight note: local source inspection added RA-9. Search result highlighting uses a process-wide `SettingsSearchHighlightStore` that is marked from `SettingsSearchScreen` and rendered by `FlorisScreen`, but production code never consumes or clears it after the destination screen displays. The implementation target is a one-shot consume/dismiss contract, not a new search feature. RA-9 was later closed in v1.8.237.
 
 2026-06-04 search-scroll note: local source inspection added RA-10. Settings search recomputes ranked results from `searchQuery`, but the `LazyColumn` keeps a single `rememberLazyListState()` across query changes and only has a first-open focus `LaunchedEffect`. The implementation target is a query-keyed scroll reset so a previous query's scroll offset does not hide the top hit for the next query.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.236, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility polish, while highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.237, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
 
 Top opportunities (one line each):
 
@@ -120,7 +120,7 @@ Top opportunities (one line each):
 10. **Clipboard history search UI** — the in-keyboard clipboard palette now exposes the existing pure filter through a compact search row, composes query with type filters, and keeps no-results/clear states local-only (R3-2). [Closed]
 11. **Sealed-box contract vectors** — sync crypto now has deterministic v1 envelope/KDF vector coverage and compatibility docs before CRDT transport persists or exchanges encrypted deltas (R3-3). [Closed]
 12. **Post-hotfix regression tests** — Arabic combining-mark shaping, Snygg selector/value recovery, private trace suppression, and per-locale n-gram flush behavior now have focused guards (R3-4). [Closed]
-13. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]
+13. **Search highlight lifecycle** — destination highlights now consume the global search target once into local screen state and expose a close action, so stale cards do not reappear after the original search flow (RA-9). [Closed]
 14. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
 15. **Japanese locale capability gate** — `supportsAutoSpace` now uses the BCP-47 Japanese language subtag `ja`, and adjacent capability tables are pinned by `FlorisLocaleTest` (R4-1). [Closed]
 16. **Clipboard media TalkBack labels** — image/video history tiles expose visual thumbnails without a user-meaningful accessibility description (R4-2, P3). [Verified]
@@ -147,7 +147,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Feature Inventory (delta focus)
 
-- **Settings search (v1.8.204, NEW):** accessed via Settings → Search route (`Routes.Settings` arm added in `1966c69`) and exposed from Settings Home through the app-bar search action; implemented as a static catalog in `SettingsSearchIndex` (entries with title/summary/screen-title/keyword haystacks, weighted `score()` ranking) rendered by `SettingsSearchScreen` (TextField + `LazyColumn` of `JetPrefListItem`). Highlight handoff via `SettingsSearchHighlightStore`. Maturity: shipped with ranking tests, the v1.8.221 real-resource/typed-route drift guard, the v1.8.222 no-results Settings Home action, the v1.8.223 synonym-hit coverage, the v1.8.224 query-change scroll reset, and the v1.8.235 TalkBack/accessibility checklist pass; stale highlight state after result navigation remains open. [Verified]
+- **Settings search (v1.8.204, NEW):** accessed via Settings → Search route (`Routes.Settings` arm added in `1966c69`) and exposed from Settings Home through the app-bar search action; implemented as a static catalog in `SettingsSearchIndex` (entries with title/summary/screen-title/keyword haystacks, weighted `score()` ranking) rendered by `SettingsSearchScreen` (TextField + `LazyColumn` of `JetPrefListItem`). Highlight handoff via `SettingsSearchHighlightStore`. Maturity: shipped with ranking tests, the v1.8.221 real-resource/typed-route drift guard, the v1.8.222 no-results Settings Home action, the v1.8.223 synonym-hit coverage, the v1.8.224 query-change scroll reset, the v1.8.235 TalkBack/accessibility checklist pass, and the v1.8.237 one-shot dismissible highlight lifecycle. [Closed]
 - **Clipboard history search (partial):** `ClipboardHistoryFilter` and
   `ClipboardHistoryFilterTest` pin a privacy-neutral text-query contract, and
   `prefs.clipboard.historySearchEnabled` exists, but `ClipboardInputLayout`
@@ -218,7 +218,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   position, setting title, destination screen, and summary context.
 - **[Closed v1.8.215] No diacritic folding** → RA-5. (`SettingsSearchIndex.kt`.)
 - **[Closed] Entry-point discoverability** → RA-8. `HomeScreen.kt` exposes `Routes.Settings.Search` through a top app-bar `FlorisIconButton`, so search is reachable from Settings Home without scrolling.
-- **[Minor] Search highlight lifecycle** → RA-9. `SettingsSearchScreen.kt` marks `SettingsSearchHighlightStore.activeTarget`, `FlorisScreen.kt` renders the card whenever the target title matches, and production code has no `clear()` caller; add a one-shot consume/dismiss contract.
+- **[Closed v1.8.237] Search highlight lifecycle** → RA-9. `SettingsSearchScreen.kt` marks `SettingsSearchHighlightStore.activeTarget`, while `FlorisScreen.kt` now consumes matching targets once into local state and exposes a close action so stale cards do not persist across later visits.
 - **[Closed v1.8.224] Search result scroll reset** → RA-10. `SettingsSearchScreen` now scrolls populated non-blank result sets back to item 0 when the query changes, guarded by `SettingsSearchScreenStateTest`.
 - **[Closed v1.8.218] Staged startup exception is never surfaced** → R2-1. `CrashUtility.consumeStagedException(...)` now persists the staged report without the process-killing handler, and `FlorisAppActivity` opens the crash dialog before installing the splash-screen keep condition.
 - **[Closed v1.8.219] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` failure diagnostics now use `flogError`, restore UI copy falls back to the existing "Unknown error" string for null/blank throwable messages, and `CrashUtility.writeToFile` logs through `LogTopic.CRASH_UTILITY`.
@@ -316,12 +316,11 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 ## Open Questions (genuine blockers only)
 
 1. v1.8.235 still needs manual Settings search TalkBack verification on a device.
-2. RA-9 is a code-local follow-up and does not require a product decision before implementation.
-3. R4-2 needs a short manual TalkBack pass after strings land, because spoken
+2. R4-2 needs a short manual TalkBack pass after strings land, because spoken
    clipboard media labels are hard to validate with JVM tests alone.
-4. v1.8.232 still needs manual system-back and TalkBack verification during an
+3. v1.8.232 still needs manual system-back and TalkBack verification during an
    active dictionary import/export or save/delete operation.
-5. v1.8.236 still needs manual dynamic-incognito smoke during typing; the
+4. v1.8.236 still needs manual dynamic-incognito smoke during typing; the
    request-boundary contract is covered by focused JVM tests.
 
 ## Archived Evidence

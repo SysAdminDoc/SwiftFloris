@@ -22,6 +22,10 @@ import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.shouldBe
 
 class SettingsSearchIndexTest : FunSpec({
+    beforeTest {
+        SettingsSearchHighlightStore.clear()
+    }
+
     test("blank query returns no results") {
         SettingsSearchIndex.search("   ", ::resolve).shouldBeEmpty()
     }
@@ -86,8 +90,25 @@ class SettingsSearchIndexTest : FunSpec({
             summary = "FUTO setup, offline language models, and voice keyboard status",
             query = "futo",
         )
+    }
 
-        SettingsSearchHighlightStore.clear()
+    test("search target is consumed once for its matching destination screen") {
+        val result = SettingsSearchIndex.search("futo", ::resolve).first()
+
+        SettingsSearchHighlightStore.mark(result.entry, " futo ", ::resolve)
+
+        SettingsSearchHighlightStore.consumeTargetFor("Typing") shouldBe null
+        SettingsSearchHighlightStore.activeTarget?.entryId shouldBe "voice"
+
+        SettingsSearchHighlightStore.consumeTargetFor("Voice input") shouldBe SettingsSearchTarget(
+            entryId = "voice",
+            screenTitle = "Voice input",
+            title = "Voice input",
+            summary = "FUTO setup, offline language models, and voice keyboard status",
+            query = "futo",
+        )
+        SettingsSearchHighlightStore.activeTarget shouldBe null
+        SettingsSearchHighlightStore.consumeTargetFor("Voice input") shouldBe null
     }
 })
 

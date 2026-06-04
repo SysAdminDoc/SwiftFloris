@@ -17,19 +17,32 @@
 package dev.patrickgold.florisboard.lib.compose
 
 import android.app.Activity
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -51,12 +64,12 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.settings.search.SettingsSearchHighlightStore
+import dev.patrickgold.florisboard.app.settings.search.SettingsSearchTarget
 import dev.patrickgold.jetpref.datastore.ui.PreferenceLayout
 import dev.patrickgold.jetpref.datastore.ui.PreferenceUiContent
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisAppBar
 import org.florisboard.lib.compose.FlorisIconButton
-import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.autoMirrorForRtl
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
@@ -232,9 +245,17 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                         .then(scrollModifier),
                     iconSpaceReserved = iconSpaceReserved,
                     content = {
-                        val searchTarget = SettingsSearchHighlightStore.activeTarget
-                        if (searchTarget?.screenTitle == title) {
-                            FlorisInfoCard(
+                        val pendingSearchTarget = SettingsSearchHighlightStore.activeTarget
+                        var displayedSearchTarget by remember(title) {
+                            mutableStateOf<SettingsSearchTarget?>(null)
+                        }
+                        LaunchedEffect(title, pendingSearchTarget) {
+                            SettingsSearchHighlightStore.consumeTargetFor(title)?.let { target ->
+                                displayedSearchTarget = target
+                            }
+                        }
+                        displayedSearchTarget?.let { searchTarget ->
+                            SettingsSearchHighlightCard(
                                 modifier = Modifier.padding(8.dp),
                                 text = stringRes(
                                     R.string.settings__search__highlight_title,
@@ -244,10 +265,68 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                                     R.string.settings__search__highlight_summary,
                                     "screen_title" to searchTarget.screenTitle,
                                 ),
+                                onDismiss = { displayedSearchTarget = null },
                             )
                         }
                         content()
                     },
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsSearchHighlightCard(
+    text: String,
+    secondaryText: String,
+    modifier: Modifier = Modifier,
+    onDismiss: () -> Unit,
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(
+            width = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Row(
+            modifier = Modifier
+                .defaultMinSize(minHeight = 64.dp)
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Icon(
+                modifier = Modifier
+                    .padding(end = 16.dp)
+                    .size(24.dp),
+                imageVector = Icons.Default.Info,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+            )
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = text,
+                    style = MaterialTheme.typography.titleSmall,
+                )
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = secondaryText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                )
+            }
+            IconButton(onClick = onDismiss) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = stringRes(R.string.action__close),
                 )
             }
         }
