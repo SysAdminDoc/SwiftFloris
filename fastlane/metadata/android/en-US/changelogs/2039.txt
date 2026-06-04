@@ -1,0 +1,1 @@
+Editor content-generation jobs now cancel or supersede stale start/selection work across reset, finishInput, and field switches so delayed jobs cannot republish old editor state or touch a captured InputConnection.

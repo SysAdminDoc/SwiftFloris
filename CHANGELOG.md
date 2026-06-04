@@ -2,6 +2,44 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.239"></a>
+## v1.8.239
+
+Released: 2026-06-04
+
+### Editor content-generation lifecycle
+
+R10-1 is closed. Editor start-view and selection-update content generation now belongs to one pending job/generation token, cancels or supersedes stale work across reset, finishInput, start-view, and selection updates, and re-checks the current `InputConnection` identity before generation and publication.
+
+### Changes
+
+- **`AbstractEditorInstance.kt`** - adds pending content-generation job tracking, generation tokens, reset/finishInput cancellation, start/selection supersession, current-connection identity checks, and a protected shift-state reevaluation hook for focused tests.
+- **`EditorContentGenerationLifecycleTest.kt`** - adds delayed-job Robolectric coverage proving reset/finishInput cancellation, start-view supersession, selection-update cancellation, and stale connection identity rejection.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.239 / versionCode 2039 and closes R10-1.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.editor.EditorContentGenerationLifecycleTest"` - PASS in 1m34s.
+- Initial focused run compiled touched app code, then failed unit-test compilation because the new test stored the `StandardTestDispatcher` factory as a concrete type; the test now stores it as `TestDispatcher`.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2039.
+- APK assembly and manual field-switch/composing smoke were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/editor/EditorContentGenerationLifecycleTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2039.txt` (new)
+- `gradle.properties` (versionCode 2038->2039, versionName 1.8.238->1.8.239)
+
 <a id="v1.8.238"></a>
 ## v1.8.238
 
