@@ -11,7 +11,7 @@ This report summarizes current research conclusions. The full 2026-05-25 researc
 2026-06-04 Cycle 2 note: local reconciliation found three gaps that were not
 already represented in `ROADMAP.md`: a staged startup-exception path that was
 never drained (`R2-1`, closed v1.8.218), stale root onboarding/release docs
-after the v1.8.170 -> v1.8.219 release run (`R2-3`), and a smaller
+after the release run (`R2-3`, closed v1.8.220), and a smaller
 diagnostic-consistency row (`R2-2`) for remaining `printStackTrace()` paths
 without claiming release-build file logging. External checks did not create new upstream rows: FlorisBoard has
 `v0.6.0-alpha02` in tags while the latest GitHub release page is `v0.5.2`,
@@ -26,9 +26,11 @@ F22/F10/F12/API 37 work.
 
 2026-06-04 restore-diagnostics note: v1.8.219 closed R2-2. Restore failure diagnostics now use `flogError`, restore cards/toasts resolve null or blank throwable messages to stable fallback copy, and `CrashUtility.writeToFile(...)` logs stacktrace write failures through `LogTopic.CRASH_UTILITY` without claiming release-build persisted file logging.
 
+2026-06-04 docs-source note: v1.8.220 closed R2-3 and RA-8. Root onboarding now routes open work to `ROADMAP.md`, shipped state to `COMPLETED.md`, release notes to `CHANGELOG.md` plus fastlane metadata, and archived parity/improvement plans to historical context. Settings Home already exposes the search route through the top app-bar action, so entry-point discoverability required documentation only.
+
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.219 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped in v1.8.204 (commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.220 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped in v1.8.204 (commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
 
 Top opportunities (one line each):
 
@@ -37,9 +39,9 @@ Top opportunities (one line each):
 3. **Search UX polish** — clear button, `ImeAction.Search`, auto-focus, and diacritic folding shipped in v1.8.215 (RA-5/6/7). [Closed]
 4. **Keyword/synonym coverage** — most entries ship no `keywords`; capability terms like "dark mode"/"haptic" miss (RA-3, P2). [Verified]
 5. **TalkBack pass over search** — no semantics/live-region on results or count; not in `ACCESSIBILITY.md` QA checklist (RA-4, P2). [Verified]
-6. **Search entry-point discoverability** from Settings home (RA-8, P3). [Likely]
+6. **Search entry-point discoverability** from Settings home was already satisfied by the app-bar search action (RA-8). [Closed]
 7. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths were replaced with project logging plus user-safe fallback copy in v1.8.219 (R2-2). [Closed]
-8. **Root docs source-of-truth refresh** — onboarding docs still mix v1.8.170-era facts, archived plan routes, and retired release-note instructions (R2-3, P2). [Verified]
+8. **Root docs source-of-truth refresh** — onboarding docs now route open work, shipped state, release notes, and archived planning context consistently (R2-3). [Closed]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -56,7 +58,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Feature Inventory (delta focus)
 
-- **Settings search (v1.8.204, NEW):** accessed via Settings → Search route (`Routes.Settings` arm added in `1966c69`); implemented as a static catalog in `SettingsSearchIndex` (entries with title/summary/screen-title/keyword haystacks, weighted `score()` ranking) rendered by `SettingsSearchScreen` (TextField + `LazyColumn` of `JetPrefListItem`). Highlight handoff via `SettingsSearchHighlightStore`. Maturity: shipped but thin — 1 test class with a fake string resolver, no drift/integrity guard, no diacritic folding, no clear/auto-focus/IME-action, dead-end no-results, not in the a11y QA checklist. [Verified]
+- **Settings search (v1.8.204, NEW):** accessed via Settings → Search route (`Routes.Settings` arm added in `1966c69`) and exposed from Settings Home through the app-bar search action; implemented as a static catalog in `SettingsSearchIndex` (entries with title/summary/screen-title/keyword haystacks, weighted `score()` ranking) rendered by `SettingsSearchScreen` (TextField + `LazyColumn` of `JetPrefListItem`). Highlight handoff via `SettingsSearchHighlightStore`. Maturity: shipped but still thin — 1 test class with a fake string resolver, no drift/integrity guard, dead-end no-results, sparse keyword coverage, and no search row in the a11y QA checklist. [Verified]
 - Established surfaces (autocorrect/SymSpell, glide classifier, clipboard, addons, voice handoff, sync, MCP, hardware-keyboard import) are covered by `COMPLETED.md` and the audits; no net-new gap surfaced beyond what the roadmap already tracks.
 
 ## Competitive Landscape
@@ -74,7 +76,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Minor] Sparse keyword coverage** → RA-3. (`SettingsSearchIndex.kt:103-204`.)
 - **[Minor] Search a11y gap** → RA-4. (`SettingsSearchScreen.kt:82-143`; `docs/ACCESSIBILITY.md` checklist.)
 - **[Closed v1.8.215] No diacritic folding** → RA-5. (`SettingsSearchIndex.kt`.)
-- **[Cosmetic] Entry-point discoverability** → RA-8. (`HomeScreen.kt` per `1966c69`.)
+- **[Closed] Entry-point discoverability** → RA-8. `HomeScreen.kt` exposes `Routes.Settings.Search` through a top app-bar `FlorisIconButton`, so search is reachable from Settings Home without scrolling.
 - **[Closed v1.8.218] Staged startup exception is never surfaced** → R2-1. `CrashUtility.consumeStagedException(...)` now persists the staged report without the process-killing handler, and `FlorisAppActivity` opens the crash dialog before installing the splash-screen keep condition.
 - **[Closed v1.8.219] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` failure diagnostics now use `flogError`, restore UI copy falls back to the existing "Unknown error" string for null/blank throwable messages, and `CrashUtility.writeToFile` logs through `LogTopic.CRASH_UTILITY`.
 
@@ -85,7 +87,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Overgrown files:** `IndicTransliterator.kt` (~86 KB), `TextKeyboardLayout.kt` (~76 KB), `LatinLanguageProvider.kt` (~60 KB), `KeyboardManager.kt` (~60 KB) are large but the SHIFT state machine was already extracted (F27 shipped) and the audits already track `LatinLanguageProvider` heap risk (A1). Left as-is — no speculative refactor proposed.
 - **Testability:** 217 JVM test files, 5 androidTest. The search subsystem is the thinnest-tested new code; RA-1/RA-3 close that.
 - **Release automation:** mature (reproducible build, SBOM/provenance and signed-tags already roadmapped as maintainer-gated). No new item.
-- **Documentation routing:** root docs lag the roadmap. `PROJECT_CONTEXT.md` / `ARCHITECTURE.md` still frame the stack as v1.8.170, `CONTRIBUTING.md` still asks for root `RELEASE_NOTES_v*.md`, and several files point to root `IMPROVEMENT_PLAN.md` even though the live plan is archived. R2-3 closes this before future implementers pick stale instructions.
+- **Documentation routing:** root docs now align with the roadmap source-of-truth contract. `ROADMAP.md` owns active work, `COMPLETED.md` summarizes shipped state, `CHANGELOG.md` plus fastlane metadata owns release notes, and archived parity/improvement plans remain historical context. R2-3 closed this in v1.8.220 before future implementers pick stale instructions.
 
 ## Security / Privacy / Data Safety
 

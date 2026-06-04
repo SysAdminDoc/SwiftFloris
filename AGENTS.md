@@ -18,21 +18,21 @@ and sourced reasoning; mine them for *why*, but pick the next task from
 `ROADMAP.md`.
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
-   project context. Pins the load-bearing invariants, the v1.8.170
-   stack, the module layout, the roadmap-file routing, and the current
-   sprint state.
+   project context. Pins the load-bearing invariants, current v1.8.220
+   stack, the module layout, roadmap-file routing, and current source-of-truth
+   state.
 2. [`ARCHITECTURE.md`](ARCHITECTURE.md) — contributor-facing module,
    package, runtime, privacy-boundary, and CI map.
 3. [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup,
    verification, privacy, release-note, and PR expectations.
-4. [`ROADMAP.md`](ROADMAP.md) — full roadmap with history; ~340 KB,
-   tiered NOW / NEXT / LATER / UNDER CONSIDERATION / REJECTED with
-   sourced appendix.
+4. [`ROADMAP.md`](ROADMAP.md) — active open-work source of truth with
+   retained historical context and sourced appendix.
 5. [`docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
-   — current sprint plan (Phase A → E) timed to the 2026-05-31 SwiftKey
-   account-retirement cutoff.
-6. [`IMPROVEMENT_PLAN.md`](IMPROVEMENT_PLAN.md) — execution-focused
-   quality / a11y / perf / test / build / release plan; 15 workstreams.
+   — archived sprint snapshot (Phase A -> E) timed to the 2026-05-31 SwiftKey
+   account-retirement cutoff; active carry-forward items live in `ROADMAP.md`.
+6. [`docs/archive/IMPROVEMENT_PLAN_2026-05-18.md`](docs/archive/IMPROVEMENT_PLAN_2026-05-18.md)
+   — archived execution-focused quality / a11y / perf / test / build /
+   release plan; active carry-forward items live in `ROADMAP.md`.
 7. [`docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md`](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md)
    — most recent research-run additions and corrections, not yet folded
    into `ROADMAP.md`.
@@ -91,7 +91,7 @@ evidence. A matching `fastlane/metadata/android/en-US/changelogs/<versionCode>.t
 
 `gradle.properties` `projectVersionCode` + `projectVersionName` bump in lockstep
 with the changelog commit. Tag the release commit at the same time
-(`git push --tags`). HEAD is `v1.8.187` (versionCode 1987) as of 2026-05-28.
+(`git push --tags`). HEAD is `v1.8.220` (versionCode 2020) as of 2026-06-04.
 
 ### 5. Definition of Done (per [ROADMAP.md](ROADMAP.md) §15)
 
@@ -111,7 +111,8 @@ Before marking a roadmap item complete:
 ### 6. Per-PR scope discipline
 
 One logical improvement per commit / PR. Don't bundle unrelated
-refactors. `IMPROVEMENT_PLAN.md` §9 Repo Hygiene explicitly tracks this.
+refactors. Repo hygiene and scope rules live in
+[`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md).
 
 ### 7. Verification surface for any code change
 
@@ -143,7 +144,7 @@ commands above.
 | One feature slice, one release | A new `## vX.Y.Z` section in [`CHANGELOG.md`](CHANGELOG.md) + a `gradle.properties` bump + a fastlane changelog |
 | A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
 | A roadmap-tier change (NOW / NEXT / LATER / UNDER CONSIDERATION) | [ROADMAP.md](ROADMAP.md) §6/§7/§8/§9 |
-| A quality / a11y / perf / test / CI / release-hygiene workstream | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
+| A quality / a11y / perf / test / CI / release-hygiene workstream | [ROADMAP.md](ROADMAP.md); historical workstream context is archived at [docs/archive/IMPROVEMENT_PLAN_2026-05-18.md](docs/archive/IMPROVEMENT_PLAN_2026-05-18.md) |
 | A research finding | New `.ai/research/<YYYY-MM-DD>/` directory; updates fold into the next `ROADMAP.md` `v5.X` refresh |
 | A security / dependency / crypto migration | [docs/SECURITY.md](docs/SECURITY.md) + [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) + [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md) |
 | Addon spec (theme / dict / language / layout / popup-mapping pack) | [docs/addons/](docs/addons/) |

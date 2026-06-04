@@ -30,7 +30,7 @@ addon instead of weakening the base app.
 
 Required:
 
-- JDK 17.
+- JDK 21.
 - Android SDK with compile SDK 36 and Build Tools 36.0.0.
 - The bundled Gradle wrapper.
 - An Android device or emulator for manual IME smoke tests.
@@ -142,7 +142,10 @@ alone.
 Versioned releases use:
 
 - `gradle.properties` version code/name bump.
-- A root `RELEASE_NOTES_vX.Y.Z.md` file.
+- A new `## vX.Y.Z` section in root `CHANGELOG.md` with an
+  `<a id="vX.Y.Z"></a>` anchor.
+- A matching `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
+  file.
 - Updates to `README.md`, `ROADMAP.md`, and `PROJECT_CONTEXT.md` when user-facing
   state changes.
 - A local annotated tag for the release commit.
