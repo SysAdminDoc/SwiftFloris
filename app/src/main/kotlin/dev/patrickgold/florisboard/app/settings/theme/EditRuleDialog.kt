@@ -57,6 +57,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -94,7 +95,8 @@ import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import dev.patrickgold.jetpref.material.ui.JetPrefTextFieldDefaults
-import org.florisboard.lib.android.showShortToastSync
+import kotlinx.coroutines.launch
+import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisChip
 import org.florisboard.lib.compose.FlorisIconButton
@@ -422,6 +424,7 @@ private fun EditCodeValueDialog(
 
     var isRecordingKey by remember { mutableStateOf(false) }
     var lastRecordingToast by remember { mutableStateOf<Toast?>(null) }
+    val toastScope = rememberCoroutineScope()
     val recordingKeyColor = if (isRecordingKey) {
         rememberInfiniteTransition().animateColor(
             initialValue = LocalContentColor.current,
@@ -435,17 +438,25 @@ private fun EditCodeValueDialog(
         LocalContentColor.current
     }
 
+    fun showRecordingToast(block: suspend () -> Toast) {
+        lastRecordingToast?.cancel()
+        toastScope.launch {
+            lastRecordingToast = block()
+        }
+    }
+
     fun requestStartRecording() {
         if (isRecordingKey) {
             isRecordingKey = false
             return
         }
         if (!isFlorisBoardEnabled || !isFlorisBoardSelected) {
-            lastRecordingToast?.cancel()
-            lastRecordingToast = context.showShortToastSync(
-                R.string.settings__theme_editor__code_recording_requires_default_ime_floris,
-                "app_name" to context.stringRes(R.string.app_name),
-            )
+            showRecordingToast {
+                context.showShortToast(
+                    R.string.settings__theme_editor__code_recording_requires_default_ime_floris,
+                    "app_name" to context.stringRes(R.string.app_name),
+                )
+            }
             InputMethodUtils.showImePicker(context)
             return
         }
@@ -467,13 +478,15 @@ private fun EditCodeValueDialog(
             }
             val defaultReceiver = keyboardManager.inputEventDispatcher.keyEventReceiver
             keyboardManager.inputEventDispatcher.keyEventReceiver = receiver
-            lastRecordingToast?.cancel()
-            lastRecordingToast = context.showShortToastSync(R.string.settings__theme_editor__code_recording_started)
+            showRecordingToast {
+                context.showShortToast(R.string.settings__theme_editor__code_recording_started)
+            }
             focusRequester.requestFocus()
             onDispose {
                 keyboardManager.inputEventDispatcher.keyEventReceiver = defaultReceiver
-                lastRecordingToast?.cancel()
-                lastRecordingToast = context.showShortToastSync(R.string.settings__theme_editor__code_recording_stopped)
+                showRecordingToast {
+                    context.showShortToast(R.string.settings__theme_editor__code_recording_stopped)
+                }
             }
         }
     }

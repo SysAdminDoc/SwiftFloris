@@ -115,8 +115,14 @@ interface UserDictionaryDao {
     @Query("$SELECT_ALL_FROM_WORDS WHERE ${UserDictionary.Words.WORD} = :word AND $LOCALE_MATCHES")
     fun queryExactFuzzyLocale(word: String, locale: FlorisLocale?): List<UserDictionaryEntry>
 
-    @Query("SELECT DISTINCT ${UserDictionary.Words.LOCALE} FROM $WORDS_TABLE")
-    fun queryLanguageList(): List<FlorisLocale?>
+    @Query("SELECT DISTINCT COALESCE(${UserDictionary.Words.LOCALE}, '') FROM $WORDS_TABLE")
+    fun queryLanguageTagList(): List<String>
+
+    fun queryLanguageList(): List<FlorisLocale?> {
+        return queryLanguageTagList().map { languageTag ->
+            languageTag.takeIf { it.isNotEmpty() }?.let { FlorisLocale.fromTag(it) }
+        }
+    }
 
     @Insert
     fun insert(entry: UserDictionaryEntry)
@@ -443,7 +449,7 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
             }
         }
 
-        override fun queryLanguageList(): List<FlorisLocale?> {
+        override fun queryLanguageTagList(): List<String> {
             val resolver = applicationContext.get()?.contentResolver ?: return listOf()
             val cursor = resolver.query(
                 UserDictionary.Words.CONTENT_URI,
@@ -457,13 +463,13 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
                     return listOf()
                 }
                 val localeIndex = c.getColumnIndex(UserDictionary.Words.LOCALE)
-                val retList = mutableSetOf<FlorisLocale?>()
+                val retList = mutableSetOf<String>()
                 while (c.moveToNext()) {
                     val localeStr = c.getString(localeIndex)
                     if (localeStr == null) {
-                        retList.add(null)
+                        retList.add("")
                     } else {
-                        retList.add(FlorisLocale.fromTag(localeStr))
+                        retList.add(localeStr)
                     }
                 }
                 return retList.toList()

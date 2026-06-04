@@ -277,7 +277,7 @@ private class FakeUserDictionaryDao : UserDictionaryDao {
     override fun queryAll(locale: FlorisLocale?): List<UserDictionaryEntry> = fail("queryAll(locale)")
     override fun queryExactFuzzyLocale(word: String, locale: FlorisLocale?): List<UserDictionaryEntry> =
         fail("queryExactFuzzyLocale")
-    override fun queryLanguageList(): List<FlorisLocale?> = fail("queryLanguageList")
+    override fun queryLanguageTagList(): List<String> = fail("queryLanguageTagList")
 
     private fun fail(name: String): Nothing =
         throw AssertionError("FakeUserDictionaryDao.$name should not be called by PersonalDictionaryImportBatch")

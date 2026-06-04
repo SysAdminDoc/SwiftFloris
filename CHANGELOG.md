@@ -2,6 +2,46 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.203"></a>
+## v1.8.203
+
+Released: 2026-06-04
+
+### WS14 warning cleanup
+
+WS14 closes the warning-cleanup batch that remained after the roadmap consolidation. Compose surfaces that already own coroutine scopes now call the suspend toast helpers instead of deprecated synchronous wrappers, the user-dictionary language query no longer asks Room to materialize a nullable generic list directly, and the stale Kotlin `-Xwhen-guards` flag is no longer passed to app or shared Android module compilation.
+
+The remaining synchronous toast calls are intentionally limited to IME/runtime code paths that do not have a local Compose coroutine scope.
+
+### Changes
+
+- **Compose toast feedback** — migrated Android locales export feedback, debug-log copy feedback, duplicate theme/component id toasts, theme rule recording toasts, and clipboard clear-history feedback to `showShortToast`/`showLongToast` launched from local coroutine scopes.
+- **`UserDictionaryDao`** — replaced the nullable Room result with `queryLanguageTagList(): List<String>` using an empty-string sentinel, then mapped back to `List<FlorisLocale?>` in the default DAO method to preserve all-languages behavior.
+- **Kotlin compiler args** — removed the stale `-Xwhen-guards` flag from `:app` and `:lib:android`; other experimental flags remain until separately proven safe to remove.
+- **`ROADMAP.md` / `COMPLETED.md`** — WS14 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:kspDebugKotlin :app:compileDebugKotlin :app:compileDebugUnitTestKotlin` -> green; the WS14 compiler-warning slice is clear.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `app/build.gradle.kts`
+- `lib/android/build.gradle.kts`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/devtools/AndroidLocalesScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/devtools/ExportDebugLogScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/ext/ExtensionEditScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/theme/EditRuleDialog.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/theme/ThemeEditorScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/UserDictionary.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/dictionary/PersonalDictionaryImportBatchTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2003.txt` (new)
+- `gradle.properties` (versionCode 2002->2003, versionName 1.8.202->1.8.203)
+- `README.md` (version badge/current release)
+- `ROADMAP.md` / `COMPLETED.md` (WS14 moved to shipped work)
+
 <a id="v1.8.202"></a>
 ## v1.8.202
 

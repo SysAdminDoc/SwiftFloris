@@ -54,7 +54,6 @@ kotlin {
         freeCompilerArgs.set(listOf(
             "-opt-in=kotlin.contracts.ExperimentalContracts",
             "-jvm-default=enable",
-            "-Xwhen-guards",
             "-Xexplicit-backing-fields",
             "-Xcontext-parameters",
             "-XXLanguage:+LocalTypeAliases",

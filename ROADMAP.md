@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.202 (versionCode 2002). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.203 (versionCode 2003). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -83,14 +83,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
   - Touches: backup/restore overwrite-vs-merge; clipboard media missing-file/path-safety; extension-import path-traversal.
   - Acceptance: overwrite/merge, missing-media, and traversal behaviors confirmed on-device.
   - Source: TODO.md B / improvement-plan WS13.
-
-### Code cleanup & technical debt
-
-- [ ] P2 — Deprecated-API and compiler-flag cleanup (WS14)
-  - Why: Deprecated synchronous toast calls, a Room nullable-DAO warning, and stale Kotlin compiler flags remain.
-  - Touches: replace deprecated synchronous toast calls in Compose screens where a coroutine scope is available; fix or document the Room nullable-DAO warning; prune the stale `-Xwhen-guards` and other compiler flags only when confirmed safe.
-  - Acceptance: toasts migrated; DAO warning resolved or documented; only confirmed-safe flags removed.
-  - Source: TODO.md A2 / improvement-plan WS14.
 
 ### CI, build & release hardening
 
