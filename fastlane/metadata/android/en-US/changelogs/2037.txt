@@ -1,0 +1,1 @@
+Fixes stale Settings search highlight cards. Destination highlights now consume the search target once, stay visible only for the first target-screen visit, and expose a close action, so returning later does not show old "Search result" cards. Focused JVM tests passed; APK assembly skipped per operator request.

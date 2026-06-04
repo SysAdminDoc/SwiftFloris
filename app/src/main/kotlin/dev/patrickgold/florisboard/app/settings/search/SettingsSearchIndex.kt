@@ -95,6 +95,16 @@ object SettingsSearchHighlightStore {
         )
     }
 
+    fun consumeTargetFor(screenTitle: String): SettingsSearchTarget? {
+        val target = activeTarget
+        return if (target?.screenTitle == screenTitle) {
+            activeTarget = null
+            target
+        } else {
+            null
+        }
+    }
+
     fun clear() {
         activeTarget = null
     }

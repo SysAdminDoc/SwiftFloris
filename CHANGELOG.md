@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.237"></a>
+## v1.8.237
+
+Released: 2026-06-04
+
+### Settings search highlight lifecycle
+
+RA-9 is closed. Settings search destination highlights now consume the process-wide search target once into local screen state, remain dismissible on the first target-screen visit, and stop reappearing on later visits unless the user runs a new search.
+
+### Changes
+
+- **`SettingsSearchIndex.kt`** - adds `SettingsSearchHighlightStore.consumeTargetFor(...)`, which returns and clears a matching target while preserving non-matching targets for their destination screen.
+- **`FlorisScreen.kt`** - consumes search targets into local displayed state, renders a dismissible search-highlight card with a close icon, and avoids reading the process-wide target directly for repeated renders.
+- **`SettingsSearchHighlightStoreTest.kt`** - adds JUnit coverage for resolved label storage, one-shot matching-screen consumption, wrong-screen preservation, and the scaffold source contract.
+- **`SettingsSearchIndexTest.kt`** - clears highlight-store state before each Kotest search-index case and mirrors the one-shot consume contract in the existing search package coverage.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.237 / versionCode 2037 and closes RA-9.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.app.settings.search.SettingsSearchHighlightStoreTest"` - PASS in 31s.
+- Earlier focused Kotest filter attempt for `SettingsSearchIndexTest` / `SettingsSearchScreenStateTest` compiled the touched app code, then failed with Gradle `No tests found for given includes`; the JUnit guard above is the selected focused verification.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2037.
+- APK assembly and manual Settings search navigation smoke were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/compose/FlorisScreen.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchHighlightStoreTest.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndexTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2037.txt` (new)
+- `gradle.properties` (versionCode 2036->2037, versionName 1.8.236->1.8.237)
+
 <a id="v1.8.236"></a>
 ## v1.8.236
 

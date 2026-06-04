@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.236 (versionCode 2036). **Local verification:** focused `NlpManagerSuggestionPrivacySnapshotTest` passed in 43s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly and manual dynamic-incognito device smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.237 (versionCode 2037). **Local verification:** focused `SettingsSearchHighlightStoreTest` passed in 31s with one Gradle worker after a first Kotest-filter attempt compiled the touched code but failed test selection; `git diff --check` and fastlane metadata gates passed; APK assembly and manual Settings search navigation smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -856,7 +856,7 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
     accessibility contract test, and manual checklist coverage. Manual TalkBack
     smoke remains device-gated.
   - Complexity: M
-- [ ] P2 — Consume or dismiss Settings search highlight state after the target screen is reached (RA-9)
+- [x] P2 — Consume or dismiss Settings search highlight state after the target screen is reached (RA-9)
   - Why: the search-result highlight card is stored in a process-wide Compose
     singleton and rendered by the shared settings scaffold. Because production
     code never clears it, the same "Search result" card can reappear whenever
@@ -879,6 +879,11 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
     stale card; users can dismiss the card explicitly if it remains visible.
   - Verify: focused JVM test for the consume/clear contract; `:app:assembleDebug`;
     optional manual Settings search -> destination -> back -> destination smoke.
+  - Shipped: v1.8.237 (2026-06-04) with one-shot
+    `SettingsSearchHighlightStore.consumeTargetFor(...)`, local
+    `FlorisScreen` displayed-target state, an explicit close action on the
+    highlight card, and focused JUnit coverage. Manual navigation smoke remains
+    pending.
   - Complexity: M
 - [x] P3 — Surface settings search from Settings home (entry-point discoverability) (RA-8)
   - Confirmed 2026-06-04: Settings Home already exposes the search route as a
