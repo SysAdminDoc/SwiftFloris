@@ -43,6 +43,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] EI1 (P2) — `AppPrefs.kt` partitioned into feature-area preference models under `app/prefs`, with a source-level merged `FlorisPreferenceModelImpl` and 187-row key/type/default golden test preserving datastore compatibility. Shipped v1.8.202. — *Source: TODO_2026-06-03.md*
 - [x] WS14 (P2) — Deprecated warning cleanup for Compose toast call sites, the Room dictionary-language DAO query, and the stale `-Xwhen-guards` compiler flag. Shipped v1.8.203. — *Source: TODO_2026-06-03.md*
 - [x] F4 (P1) — Settings search entry point, static searchable catalog for every Settings destination, result ranking, destination navigation, and global search-target highlight card. Shipped v1.8.204. — *Source: TODO_2026-06-03.md*
+- [x] F29 (P1) — `PhysicalKeyboardScreen` custom hardware layout import for Windows KLC, macOS `.keylayout`, and Keyman `.kmp` LDML packages, with private persisted catalog, attached-device picker, runtime apply action, and JVM policy/store coverage. Shipped v1.8.205. — *Source: TODO_2026-06-03.md*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 

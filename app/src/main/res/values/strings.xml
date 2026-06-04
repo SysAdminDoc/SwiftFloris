@@ -1135,11 +1135,58 @@
 
     <!-- Physical keyboard -->
     <string name="physical_keyboard__title">Physical keyboard</string>
+    <string name="physical_keyboard__system_group_title">System</string>
     <string name="physical_keyboard__system_settings__title">System physical keyboard settings</string>
     <string name="physical_keyboard__system_settings__summary">Layouts, keyboard shortcuts and modifier keys</string>
     <string name="physical_keyboard__system_settings__summary_not_attached">Only available when keyboard is attached</string>
     <string name="physical_keyboard__show_on_screen_keyboard__title">Show on-screen keyboard</string>
     <string name="physical_keyboard__show_on_screen_keyboard__summary">Show on-screen keyboard while using physical keyboard</string>
+    <string name="physical_keyboard__custom_layouts__title">Custom layouts</string>
+    <string name="physical_keyboard__custom_layouts__info_title">Imported hardware layouts</string>
+    <string name="physical_keyboard__custom_layouts__info_summary">Import Windows KLC, macOS .keylayout, or Keyman KMP packages that contain LDML XML layouts.</string>
+    <string name="physical_keyboard__custom_layouts__empty">No custom layouts imported</string>
+    <string name="physical_keyboard__custom_layouts__empty_summary">Import a supported hardware layout file to select it here.</string>
+    <string name="physical_keyboard__custom_layout__summary" comment="Summary for imported hardware keyboard layout. source_format is the layout source type, locale is a locale tag, key_count is a number, source_name is the original file name.">{source_format} - {locale} - {key_count} mapped keys - {source_name}</string>
+    <string name="physical_keyboard__custom_layout__locale_unknown">unknown locale</string>
+    <string name="physical_keyboard__custom_layout__unknown">selected layout</string>
+    <string name="physical_keyboard__custom_layout__format_klc">Windows KLC</string>
+    <string name="physical_keyboard__custom_layout__format_keylayout">macOS keylayout</string>
+    <string name="physical_keyboard__custom_layout__format_keyman">Keyman LDML package</string>
+    <string name="physical_keyboard__import_layout__title">Import custom layout</string>
+    <string name="physical_keyboard__import_layout__summary">Select a .klc, .keylayout, or .kmp file</string>
+    <string name="physical_keyboard__import_layout__in_progress">Importing layout</string>
+    <string name="physical_keyboard__import_layout__in_progress_summary">Reading and validating the selected hardware layout file.</string>
+    <string name="physical_keyboard__import_layout__success">Layout imported</string>
+    <string name="physical_keyboard__import_layout__success_summary">Select an attached hardware keyboard below, then apply the layout.</string>
+    <string name="physical_keyboard__import_layout__unsupported">Unsupported file type</string>
+    <string name="physical_keyboard__import_layout__unsupported_summary">Supported formats are Windows KLC, macOS .keylayout, and Keyman KMP packages with LDML XML layouts.</string>
+    <string name="physical_keyboard__import_layout__no_layout">No importable layout found</string>
+    <string name="physical_keyboard__import_layout__no_layout_summary">The selected file did not contain mapped hardware-key entries.</string>
+    <string name="physical_keyboard__import_layout__too_large">Layout file is too large</string>
+    <string name="physical_keyboard__import_layout__too_large_summary">Select a smaller hardware layout file.</string>
+    <string name="physical_keyboard__import_layout__failure">Layout import failed</string>
+    <string name="physical_keyboard__import_layout__failure_summary">SwiftFloris could not read the selected layout file.</string>
+    <string name="physical_keyboard__forget_layout__title">Forget selected layout</string>
+    <string name="physical_keyboard__forget_layout__summary">Remove the selected imported layout from private app storage.</string>
+    <string name="physical_keyboard__forget_layout__in_progress">Removing layout</string>
+    <string name="physical_keyboard__forget_layout__in_progress_summary">Deleting the selected imported layout.</string>
+    <string name="physical_keyboard__forget_layout__success">Layout removed</string>
+    <string name="physical_keyboard__forget_layout__success_summary">The imported hardware layout was removed.</string>
+    <string name="physical_keyboard__forget_layout__failure">Layout removal failed</string>
+    <string name="physical_keyboard__forget_layout__failure_summary">The selected imported layout could not be removed.</string>
+    <string name="physical_keyboard__attached_devices__title">Attached keyboards</string>
+    <string name="physical_keyboard__attached_devices__summary" comment="Summary for attached hardware keyboard option. device_id is an Android InputDevice id.">Android device ID {device_id}</string>
+    <string name="physical_keyboard__attached_devices__empty">No hardware keyboard detected</string>
+    <string name="physical_keyboard__attached_devices__empty_summary">Attach a USB or Bluetooth keyboard, then refresh this list.</string>
+    <string name="physical_keyboard__attached_devices__unknown">selected hardware keyboard</string>
+    <string name="physical_keyboard__refresh_devices__title">Refresh attached keyboards</string>
+    <string name="physical_keyboard__refresh_devices__summary">Reload the current Android hardware keyboard device list.</string>
+    <string name="physical_keyboard__apply_layout__title">Apply selected layout</string>
+    <string name="physical_keyboard__apply_layout__summary">Bind the selected imported layout to the selected attached keyboard.</string>
+    <string name="physical_keyboard__apply_layout__success">Layout applied</string>
+    <string name="physical_keyboard__apply_layout__success_summary" comment="Summary after applying a hardware keyboard layout. layout is the imported layout name, device is the hardware keyboard display name.">{layout} is now active for {device}.</string>
+    <string name="physical_keyboard__apply_layout__failure">Layout was not applied</string>
+    <string name="physical_keyboard__apply_layout__failure_summary">Select an imported layout and an attached hardware keyboard before applying.</string>
 
     <!-- Back up & Restore -->
     <string name="backup_and_restore__title">Back up &amp; Restore</string>

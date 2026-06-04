@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.hardware
 
+import kotlinx.serialization.Serializable
+
 /**
  * ROADMAP §7 Next-6.4 — hardware-keyboard layout descriptor.
  *
@@ -29,6 +31,7 @@ package dev.patrickgold.florisboard.ime.hardware
  * device IDs so the IME can remap physical keystrokes from USB / Bluetooth
  * hardware keyboards through one of these layouts.
  */
+@Serializable
 data class HardwareKeyboardLayout(
     /** Display name, e.g. `"US Dvorak"` or `"German (T2)"`. */
     val name: String,
@@ -93,6 +96,7 @@ data class HardwareKeyboardLayout(
  * Dead keys carry a non-null [HardwareKeyEntry.deadKeyTrigger] and are
  * resolved through a follow-up dead-key composition pass at input time.
  */
+@Serializable
 data class HardwareKeyEntry(
     /** Source key identifier, e.g. `"VK_A"`, `"OEM_3"`, `"MAC_0"`, or `"A01"`. */
     val virtualKeyName: String,
