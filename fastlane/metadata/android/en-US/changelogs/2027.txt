@@ -1,0 +1,3 @@
+v1.8.227 - Japanese locale gates.
+
+Japanese now uses the valid BCP-47 `ja` language subtag for no-capitalization and no-auto-space behavior. Adds focused FlorisLocale JVM coverage for Japanese, existing CJK/Thai/Bengali/Hindi behavior, an English control, and tag serialization.
