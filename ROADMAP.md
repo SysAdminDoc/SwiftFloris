@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.223 (versionCode 2023). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.225 (versionCode 2025). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -261,7 +261,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
 
-This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, v1.8.222 adds a no-results escape hatch, and v1.8.223 adds high-traffic synonym coverage, while the remaining work is result-scroll, accessibility, and highlight-lifecycle polish.
+This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, v1.8.222 adds a no-results escape hatch, v1.8.223 adds high-traffic synonym coverage, and v1.8.224 resets result scrolling when the query changes, while the remaining work is accessibility and highlight-lifecycle polish.
 
 ### Quick Wins
 
@@ -292,23 +292,23 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Acceptance: from a zero-result query the user can reach Settings home in one tap; copy is translation-safe.
   - Verify: focused search tests plus `:app:assembleDebug`; full Gradle gate.
   - Complexity: S
-- [ ] P2 — Reset settings-search result scroll when the query changes (RA-10)
+- [x] P2 — Reset settings-search result scroll when the query changes (RA-10)
+  - Shipped v1.8.224: `SettingsSearchScreen` now scrolls populated
+    non-blank result sets back to item 0 whenever the query changes, while
+    blank and no-result states stay untouched. `SettingsSearchScreenStateTest`
+    pins the reset guard.
   - Why: settings search ranks results per query, but the list keeps one
     `LazyListState` across every edit. A user who scrolls down one query and
     then types a different query can land mid-list for the new result set,
     hiding the highest-ranked destination until they manually scroll back up.
-  - Evidence: `SettingsSearchScreen.kt:83-86` recomputes `results` from
-    `searchQuery` but creates `val state = rememberLazyListState()` without a
-    query key; `SettingsSearchScreen.kt:161-166` passes that same state to the
-    results `LazyColumn`; the only `LaunchedEffect` in the screen handles
-    initial focus, not result-list position.
-  - Touches: `SettingsSearchScreen` only. Add a query-keyed scroll reset such
-    as `LaunchedEffect(searchQuery) { state.scrollToItem(0) }`, guarding blank
-    or empty-result states if needed to avoid unnecessary work.
+  - Evidence: pre-fix `SettingsSearchScreen` recomputed `results` from
+    `searchQuery` but created one unkeyed `rememberLazyListState()` for the
+    lifetime of the screen; only the initial-focus `LaunchedEffect` existed.
+  - Touches: `SettingsSearchScreen`; `SettingsSearchScreenStateTest`.
   - Acceptance: after changing a non-blank query, the result list starts at the
     first/highest-ranked result; clearing or entering a no-results query does not
     leave the next populated query scrolled into the middle.
-  - Verify: `:app:assembleDebug`; optional Compose UI/manual search scroll smoke.
+  - Verify: focused search package tests plus full Gradle gate.
   - Complexity: S
 - [x] P2 — Keyword/synonym coverage audit for high-traffic settings terms (RA-3)
   - Shipped v1.8.223: `SettingsSearchIndex` now adds targeted keyword
@@ -341,12 +341,15 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Evidence: `SettingsSearchScreen.kt:158-164` calls
     `SettingsSearchHighlightStore.mark(...)`; `FlorisScreen.kt:234-247`
     renders a `FlorisInfoCard` whenever `activeTarget.screenTitle == title`;
-    `SettingsSearchIndex.kt:84-99` exposes `clear()`, but `rg
-    "SettingsSearchHighlightStore.clear"` finds only the JVM test caller.
+    `SettingsSearchIndex.kt:84-99` stores already-resolved display strings and
+    exposes `clear()`, but `rg "SettingsSearchHighlightStore.clear"` finds only
+    the JVM test caller.
   - Touches: `SettingsSearchHighlightStore` plus the `FlorisScreen` search-card
     rendering path. Prefer a one-shot `consumeTargetFor(screenTitle)` API or a
     local displayed-target copy with a dismiss action, so the card survives the
     first target-screen composition but does not persist across later visits.
+    If practical, match by a stable destination/screen key instead of localized
+    title text.
   - Acceptance: selecting a search result still shows the destination card once;
     leaving and returning to that screen without a new search does not show the
     stale card; users can dismiss the card explicitly if it remains visible.

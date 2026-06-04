@@ -92,6 +92,11 @@ fun SettingsSearchScreen() = FlorisScreen {
                 initialFocusRequested = true
             }
         }
+        LaunchedEffect(searchQuery, results.size) {
+            if (shouldResetSearchResultsScroll(searchQuery, results.size)) {
+                state.scrollToItem(0)
+            }
+        }
 
         Column(modifier = Modifier.fillMaxSize()) {
             TextField(
@@ -231,6 +236,10 @@ internal fun SettingsSearchDestination.toSearchRoute(): Any {
         SettingsSearchDestination.THIRD_PARTY_LICENSES -> Routes.Settings.ThirdPartyLicenses
         SettingsSearchDestination.DEVTOOLS -> Routes.Devtools.Home
     }
+}
+
+internal fun shouldResetSearchResultsScroll(query: String, resultCount: Int): Boolean {
+    return query.isNotBlank() && resultCount > 0
 }
 
 private fun androidx.navigation.NavController.navigateSearchDestination(destination: SettingsSearchDestination) {
