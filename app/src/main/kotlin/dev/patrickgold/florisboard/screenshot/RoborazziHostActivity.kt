@@ -29,9 +29,8 @@ import androidx.activity.ComponentActivity
  * Activity carries the full nav graph). This shim exists purely so
  * the screenshot tests can launch an empty `ComponentActivity` host.
  *
- * Declared only under the **debug** manifest overlay
- * (`app/src/debug/AndroidManifest.xml`), so it never ships in release
- * builds and never widens the production attack surface. Set
- * `exported=false` so no external app can launch it even on debug.
+ * Declared only under the **debug** and **releaseRoborazzi** manifest overlays,
+ * so it never ships in release builds and never widens the production attack
+ * surface. Set `exported=false` so no external app can launch it even on debug.
  */
 class RoborazziHostActivity : ComponentActivity()

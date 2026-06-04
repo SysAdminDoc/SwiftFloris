@@ -60,10 +60,11 @@ import org.robolectric.annotation.GraphicsMode
 // still representative because Roborazzi snapshots are layout-driven
 // rather than API-level-dependent.
 //
-// Next-12.2a fix: the test-only AndroidManifest at app/src/test/AndroidManifest.xml
-// declares the androidx.activity.ComponentActivity launcher Robolectric
-// needs to back createComposeRule(). The activity never lands in any
-// shipped APK — Robolectric reads it via the test classpath only.
+// Next-12.2a/F24 fix: the test-only AndroidManifest at
+// app/src/test/AndroidManifest.xml declares RoborazziHostActivity so
+// Robolectric can resolve createAndroidComposeRule() for both debug and
+// release unit-test variants. The activity never lands in any shipped APK;
+// Robolectric reads it via the unit-test classpath only.
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

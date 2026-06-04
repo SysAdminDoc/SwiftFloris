@@ -28,9 +28,12 @@ plugins {
     alias(libs.plugins.kotlinx.kover)
     // Roborazzi 1.55.0 (Jan 2026 line) ships AGP-9 support via PR #782,
     // so the Gradle plugin is now applied. This lights up the
-    // `:app:recordRoborazziDebug` (baseline capture) and
-    // `:app:verifyRoborazziDebug` (regression verify) tasks so CI can
-    // gate every PR on a visual diff. Baseline images live under
+    // `:app:recordRoborazziDebug` (baseline capture),
+    // `:app:verifyRoborazziDebug` (PR/push regression verify), and the
+    // `:app:verifyRoborazziRelease` alias backed by the non-shipping
+    // releaseRoborazzi variant so the release workflow can run the same
+    // baselines against release resources/build flags before publishing.
+    // Baseline images live under
     // `app/src/test/snapshots/images/` per Roborazzi convention.
     alias(libs.plugins.roborazzi)
 }
@@ -164,6 +167,16 @@ configure<ApplicationExtension> {
             // Use the release signing config when the env-driven keystore is present;
             // otherwise fall back to debug signing so the build still produces an APK.
             signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+        }
+
+        create("releaseRoborazzi") {
+            initWith(getByName("release"))
+            matchingFallbacks += listOf("release")
+
+            // F24: non-shipping release-equivalent variant used only by
+            // :app:verifyRoborazziRelease. Its source-set overlay declares the
+            // screenshot host activity that Robolectric needs; the real release
+            // APK manifest stays untouched.
         }
 
         create("benchmark") {
@@ -317,6 +330,15 @@ afterEvaluate {
 // is caught. Wired against AGP's SingleArtifact.MERGED_MANIFEST so the task
 // runs after the manifest merger and before assemble.
 androidComponents {
+    beforeVariants(selector().withBuildType("releaseRoborazzi")) { variantBuilder ->
+        // F24: AGP only creates the debug unit-test component by default for
+        // application modules. Roborazzi wires tasks from AGP UnitTest
+        // components, so explicitly enable unit tests on the non-shipping
+        // releaseRoborazzi variant and expose it through the stable
+        // :app:verifyRoborazziRelease alias below.
+        (variantBuilder as com.android.build.api.variant.HasUnitTestBuilder).enableUnitTest = true
+    }
+
     onVariants { variant ->
         val verifyMerged = tasks.register("verifyNoInternetPermissionMerged${variant.name.replaceFirstChar { it.uppercase() }}") {
             group = "verification"
@@ -356,6 +378,12 @@ androidComponents {
             tasks.findByName("assemble${variant.name.replaceFirstChar { it.uppercase() }}")?.dependsOn(verifyMerged)
         }
     }
+}
+
+tasks.register("verifyRoborazziRelease") {
+    group = "verification"
+    description = "Runs Roborazzi against the non-shipping releaseRoborazzi variant, which mirrors release build flags and carries only the test host overlay (F24)."
+    dependsOn("verifyRoborazziReleaseRoborazzi")
 }
 
 // ROADMAP §6 N7.4 — pin the load-bearing excludes in

@@ -2,12 +2,12 @@
 <!--
     ROADMAP §7 Next-12.2a — Test-only AndroidManifest overlay.
 
-    Robolectric's `createComposeRule()` is internally backed by
-    `ActivityScenario.launch(ComponentActivity::class)`, which itself
-    needs the activity declared in the merged manifest. The :app
-    module's production manifest only declares the IME service, so
-    ComponentActivity is "unresolvable" — the same failure shape
-    documented in https://github.com/robolectric/robolectric/pull/4736.
+    Robolectric's `createAndroidComposeRule<RoborazziHostActivity>()` is
+    internally backed by ActivityScenario, which needs the activity declared in
+    the merged unit-test manifest. The :app module's production manifest only
+    declares the IME service, so the screenshot host is "unresolvable" unless
+    this test-only overlay declares it — the same failure shape documented in
+    https://github.com/robolectric/robolectric/pull/4736.
 
     This test-tier manifest adds a stub declaration so Roborazzi
     captures work. The file is *only* picked up by the unit-test
@@ -18,7 +18,7 @@
     xmlns:tools="http://schemas.android.com/tools">
     <application>
         <activity
-            android:name="androidx.activity.ComponentActivity"
+            android:name="dev.patrickgold.florisboard.screenshot.RoborazziHostActivity"
             android:exported="false"
             tools:node="merge">
             <intent-filter>

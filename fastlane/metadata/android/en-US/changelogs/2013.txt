@@ -1,0 +1,1 @@
+Release publication now runs SwiftFloris's release-equivalent Roborazzi screenshot gate before APK signing or publishing. The non-shipping releaseRoborazzi variant mirrors release build flags and exposes :app:verifyRoborazziRelease without changing the real release APK manifest, permissions, network, or telemetry.
