@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 4 - 2026-06-04.
+> Last researched: Cycle 5 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -160,6 +160,59 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 5 - 2026-06-04)
+
+- [x] 🔬 `addon-trust-boundary-recheck-2026-06-04` - synced
+  `master` at the v1.8.226 release-ledger baseline, checked the older
+  trust-boundary audit backlog against live addon code and current Android
+  package-visibility/signature-permission docs, and avoided duplicating the
+  already-fixed signing-history and Tasker extras-bounds findings. This cycle
+  adds one implementation-ready addon trust row.
+
+#### Addon trust boundary
+
+- [ ] 🤖 P1 — Require explicit first-run trust for non-co-signed addon APK enrollment (R5-1)
+  - Why: SwiftFloris' addon contract says addon packages must be co-signed with
+    the IME or explicitly trusted by the user in Settings, but the current
+    first-seen registry path auto-pins any package that passes manifest,
+    no-network, and descriptor screening. Because Android package visibility
+    `<queries>` intentionally lets the IME discover packages matching addon
+    intent signatures, discovery should not be treated as user consent.
+  - Evidence: `AddonContract.kt:108-110` and `AndroidManifest.xml:15-19`
+    promise co-signed addons or explicit Settings opt-in; `AddonEnumerator.kt:118-183`
+    accepts any package with addon metadata, no banned network permission,
+    required descriptor/version/license fields, and a readable signing
+    fingerprint; `AddonRegistry.kt:55-60` auto-pins first-seen signing
+    certificates when `pinnedFingerprint == null`; `AddonRegistryTest.kt:48-72`
+    and `AddonRegistryStartupTest.kt:46-56` currently assert first-seen
+    auto-enrollment from an empty pin set; `AddonsSettingsScreen.kt:104-145`
+    only exposes rescan/reset flows, while `AddonsSettingsScreen.kt:252-292`
+    can trust a changed certificate only after an existing pin rejected it;
+    `docs/AUDIT_2026-05-28.md:84-86` records the same contract mismatch.
+    Android's `<permission>` docs define `signature` permissions as granted
+    only to apps signed with the same certificate
+    (`https://developer.android.com/guide/topics/manifest/permission-element`);
+    Android package-visibility docs say apps can use `<queries>` intent
+    signatures to discover matching packages, and that package visibility is a
+    privacy-sensitive capability
+    (`https://developer.android.com/training/package-visibility`,
+    `https://developer.android.com/training/package-visibility/declaring`).
+  - Touches: `AddonRegistry.kt`, `AddonRegistryStartup.kt`,
+    `AddonsSettingsScreen.kt`, addon strings, `docs/addons/dictionary-pack-spec.md`,
+    `docs/THREAT_MODEL.md`, `AddonRegistryTest`, `AddonRegistryStartupTest`,
+    and focused Settings tests if the pending-trust UI state is extracted.
+  - Acceptance: first-seen packages whose signing fingerprint does not match
+    `SigningFingerprint.sha256(context)` are shown as pending/rejected until the
+    user explicitly trusts that fingerprint; co-signed packages still enroll
+    without extra prompts; changed-certificate packages remain rejected until a
+    separate explicit trust action; reset-all trust clears both accepted and
+    pending decisions; docs describe the exact trust states.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.addon.*"` plus a manual Settings -> Addons
+    pass with co-signed, unsigned-untrusted, unsigned-trusted, changed-cert, and
+    reset-all cases.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 4 - 2026-06-04)
 
