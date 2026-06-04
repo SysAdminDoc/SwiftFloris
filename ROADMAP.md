@@ -8,6 +8,25 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
+> Last researched: Cycle 1 - 2026-06-04.
+
+## Implementer Instructions
+
+- Treat this roadmap as the planning history and `PROJECT_CONTEXT.md` /
+  `AGENTS.md` as the operational entry point. Shipped work belongs in
+  `CHANGELOG.md`; completed roadmap items belong in `COMPLETED.md`.
+- Keep the `:app` invariant strict: no internet/network permissions, Apache-2.0
+  ceiling, no closed-source blobs, and network or incompatible features only in
+  isolated addon APKs.
+- Do not run Gradle on this VM unless explicitly asked. Use the Android SDK host
+  for `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug
+  :app:assembleDebug` and device-gated manual QA.
+- For release work, keep `gradle.properties`, consolidated `CHANGELOG.md`, and
+  fastlane changelog metadata in lockstep with the version bump.
+- Researcher-queue ownership tags: `🤖` means implementer-actionable, `🔧`
+  means user/external/manual gated, `🔬` means researcher-added this cycle, and
+  `✅` means implemented/closed by the build lane.
+
 ## Existing Planned Work
 
 ### Keyboard surface & visual polish (device-gated)
@@ -56,6 +75,11 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Docs & hygiene
 
+- [ ] P3 — Low-risk dependency freshness batch after v1.8.207
+  - Why: 2026-06-04 Maven metadata shows small freshness drift after the current release: Kotlin 2.4.0, Compose BOM 2026.05.01, AndroidX Core 1.19.0, and Roborazzi 1.63.0 are newer than the pinned versions. Room 2.8.4, SQLCipher 4.16.0, Tink 1.21.0, and Robolectric 4.16.1 still match current metadata; Google Maven's newest AGP is 9.3 alpha, so do not churn AGP blindly.
+  - Touches: `gradle/libs.versions.toml`, release notes if bumped.
+  - Acceptance: bump only compatible low-risk pins; `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` green on an Android SDK host; no new permission or dependency-license surface.
+  - Source: 2026-06-04 research refresh.
 - [ ] P2 — Confirm absence of lint baseline / close EI10 (EI10)
   - Why: Research says no `app/lint-baseline.xml` exists; confirm and note.
   - Touches: one-line note; `bash scripts/run-lint-debug-with-baseline-check.sh` exits 0.
@@ -142,6 +166,15 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 1 - 2026-06-04)
+
+- [x] 🔬 `voice-copy-dependency-refresh-2026-06-04` - rechecked the v1.8.207
+  voice-copy slice and public dependency metadata without running Gradle on this
+  VM. FUTO Voice Input remains the correct privacy-preserving handoff for voice
+  copy, Android 17/API 37 remains future behavior-gate work, and dependency
+  drift is low-risk maintenance rather than a security item. The new P3
+  dependency freshness row is the build-lane handoff.
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
 
