@@ -2,6 +2,44 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.227"></a>
+## v1.8.227
+
+Released: 2026-06-04
+
+### Japanese locale capability gates
+
+R4-1 is closed. Japanese now uses the valid BCP-47 language subtag `ja` in the hard-coded locale capability gates, so Japanese subtypes no longer fall through as auto-space or capitalization languages.
+
+### Changes
+
+- **`FlorisLocale.kt`** - adds `ja` to the no-capitalization and no-auto-space language gates and removes the invalid `jp` auto-space check.
+- **`FlorisLocaleTest.kt`** - pins Japanese `ja` / `ja-JP`, existing `zh` / `ko` / `th` no-auto-space locales, `bn` / `hi` no-capitalization locales, an English Latin control, and `languageTag()` / `localeTag()` round-trips.
+- **`docs/AUTOCORRECT_LIFECYCLE.md`** - records `FlorisLocaleTest` as the focused coverage for locale capitalization and auto-space gates.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.227 / versionCode 2027 and closes R4-1.
+
+### Verification
+
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2027.
+- `./gradlew.bat --no-daemon --no-parallel --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx2048m" "-Dkotlin.daemon.jvm.options=-Xmx1536m" :app:testDebugUnitTest` - PASS, including `FlorisLocaleTest`.
+- Focused Gradle `--tests` filters for `FlorisLocaleTest` / `EditorInputBehaviorPolicyTest` returned Gradle "No tests found" before the broad JVM test run, so the final local proof is the full debug unit-test task above.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/FlorisLocale.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/lib/FlorisLocaleTest.kt` (new)
+- `docs/AUTOCORRECT_LIFECYCLE.md`
+- `fastlane/metadata/android/en-US/changelogs/2027.txt` (new)
+- `gradle.properties` (versionCode 2026->2027, versionName 1.8.226->1.8.227)
+
 <a id="v1.8.226"></a>
 ## v1.8.226
 

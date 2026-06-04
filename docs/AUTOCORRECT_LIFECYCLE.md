@@ -157,4 +157,5 @@ Manual scenarios:
 | Software punctuation / non-letter flush policy | `KeyboardAutoCommitFlushPolicyTest` |
 | Hardware space / enter / delete / mapped letter / mapped punctuation routing | `HardwareKeyboardInputPolicyTest` |
 | Auto-space, phantom-space, double-space period, sentence capitalization, glide delete escalation | `EditorInputBehaviorPolicyTest`, `EditorSpacingLifecycleStateTest` |
+| Locale capitalization and auto-space capability gates | `FlorisLocaleTest` |
 | Multilingual confidence and bilingual literal protection | `SwiftKeyCandidateRankerTest`, `SwiftKeyTypingReplayHarnessTest`, `SwiftKeyTraceReplayFixtureTest` |

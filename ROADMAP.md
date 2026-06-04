@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.226 (versionCode 2026). **Local verification:** fastlane metadata green; full Gradle gate stopped on maintainer request before a final success summary after the rerun passed the prior Kotlin compile failure and reached `:app:assembleDebug`.
+**Current release:** v1.8.227 (versionCode 2027). **Local verification:** fastlane metadata green; `:app:testDebugUnitTest` green, including `FlorisLocaleTest`. APK assembly intentionally not rerun for this small follow-up.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -174,7 +174,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Locale correctness
 
-- [ ] 🤖 P1 — Correct Japanese locale capability gates and pin them with tests (R4-1)
+- [x] 🤖 P1 — Correct Japanese locale capability gates and pin them with tests (R4-1)
   - Why: `FlorisLocale.supportsAutoSpace` disables auto-space for `"jp"`, but
     Android/BCP-47 Japanese locales use language subtag `"ja"`; `"JP"` is only a
     region subtag. Japanese therefore falls through as an auto-space language,
@@ -199,6 +199,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
     "dev.patrickgold.florisboard.lib.FlorisLocaleTest"` plus the existing
     editor spacing policy tests.
+  - Shipped: v1.8.227 (2026-06-04) with `FlorisLocaleTest` coverage.
 
 #### Clipboard media accessibility
 
