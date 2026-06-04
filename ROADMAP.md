@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 6 - 2026-06-04.
+> Last researched: Cycle 7 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -160,6 +160,49 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 7 - 2026-06-04)
+
+- [x] 🔬 `flag-secure-incognito-toggle-recheck-2026-06-04` - synced
+  `master` at the Cycle 6 pushed tip, rechecked the remaining `FLAG_SECURE`
+  audit note against live IME startup and smartbar incognito-toggle code, and
+  avoided duplicating older password-field `FLAG_SECURE` coverage. This cycle
+  adds one focused privacy row for mid-session incognito toggles.
+
+#### Sensitive-window privacy
+
+- [ ] 🤖 P2 — Re-apply `FLAG_SECURE` when incognito mode toggles mid-session (R7-1)
+  - Why: `FLAG_SECURE` now covers password fields and incognito state when a
+    field starts, but the user can toggle incognito from the smartbar while
+    staying in the same ordinary text field. In that path, the IME updates
+    privacy state and toasts, but does not re-run the secure-window policy until
+    the next `onStartInputView`, leaving the keyboard screenshot-/record-able
+    during the current private session.
+  - Evidence: `FlorisImeService.kt:599` calls
+    `applyFlagSecureForCurrentField(editorInfo)` only during input-view start;
+    `FlorisImeService.kt:617-636` adds `FLAG_SECURE` for password fields or
+    `activeState.isIncognitoMode` and explicitly notes the missing mid-session
+    toggle callback; `KeyboardManager.kt:738-755` flips
+    `activeState.isIncognitoMode` for `KeyCode.TOGGLE_INCOGNITO_MODE` and shows
+    a toast without notifying the service/window; `docs/AUDIT_2026-06-02.md:89-92`
+    records the same follow-up. Android `WindowManager.LayoutParams.FLAG_SECURE`
+    docs define the flag as preventing the window content from appearing in
+    screenshots or on non-secure displays
+    (`https://developer.android.com/reference/android/view/WindowManager.LayoutParams`).
+  - Touches: `FlorisImeService.kt`, `KeyboardManager.kt` or a small
+    `FlagSecurePolicy` helper, focused unit tests around password/incognito/off
+    combinations, and `docs/THREAT_MODEL.md` / `docs/PRIVACY_AND_AI.md` if the
+    runtime guarantee is documented there.
+  - Acceptance: toggling dynamic incognito on in a non-password field applies
+    `FLAG_SECURE` immediately; toggling it off clears the flag only when the
+    active field is not password/no-personalized-learning protected; password
+    fields remain secure across toggle attempts; existing field-start behavior
+    is unchanged; manual screenshot or screen-recording evidence confirms the
+    current IME window blocks capture after the toggle.
+  - Verify: focused JVM tests for the extracted policy/callback plus manual
+    IME smoke with a normal field, password field, dynamic incognito on/off, and
+    screenshot/screen-recording attempt.
+  - Complexity: S-M
 
 ### Researcher Queue (Cycle 6 - 2026-06-04)
 
