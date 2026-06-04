@@ -206,11 +206,17 @@
     <string name="settings__home__about_summary" comment="Home screen preference summary">Version, AI disclosures, privacy policy, source, and licenses</string>
     <string name="settings__search__title" comment="Settings search screen title">Search settings</string>
     <string name="settings__search__placeholder" comment="Settings search text field placeholder">Search settings</string>
+    <string name="settings__search__field_content_description" comment="Settings search field accessibility label">Search settings field</string>
     <string name="settings__search__clear" comment="Content description for the settings search clear button">Clear search</string>
     <string name="settings__search__empty_query" comment="Settings search empty query message">Type to find settings by name, screen, or description.</string>
+    <string name="settings__search__empty_query_a11y" comment="Settings search empty query accessibility status">Search settings. Type to find settings by name, screen, or description.</string>
     <string name="settings__search__no_results" comment="Settings search no results message">No settings match \"{search_term}\".</string>
+    <string name="settings__search__no_results_a11y" comment="Settings search no results accessibility status">No settings results for \"{search_term}\".</string>
+    <string name="settings__search__results_count_a11y" comment="Settings search results count accessibility status">Showing {result_count} matching settings for \"{search_term}\".</string>
     <string name="settings__search__browse_all" comment="Settings search no results action">Browse all settings</string>
     <string name="settings__search__result_summary" comment="Settings search result summary with destination screen and setting summary">{screen_title} — {summary}</string>
+    <string name="settings__search__result_a11y" comment="Settings search result accessibility label with setting title, destination screen, result position, and summary">Result {result_position} of {result_count}: {setting_title}, in {screen_title}. {setting_summary}</string>
+    <string name="settings__search__result_a11y_no_summary" comment="Settings search result accessibility label with setting title, destination screen, and result position">Result {result_position} of {result_count}: {setting_title}, in {screen_title}.</string>
     <string name="settings__search__highlight_title" comment="Settings search target highlight title">Search result: {setting_title}</string>
     <string name="settings__search__highlight_summary" comment="Settings search target highlight fallback summary">Opened from Settings search in {screen_title}.</string>
 
