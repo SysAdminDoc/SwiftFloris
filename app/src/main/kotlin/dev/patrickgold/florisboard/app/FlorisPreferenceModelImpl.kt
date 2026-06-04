@@ -66,6 +66,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             voice.recognitionEnginePreference to "voice.recognitionEnginePreference",
             voice.embeddedModelPreference to "voice.embeddedModelPreference",
             voice.customCommands to "voice.customCommands",
+            dictionary.previewPersonalDictionaryImports to "dictionary.previewPersonalDictionaryImports",
             emoji.preferredSkinTone to "emoji.preferredSkinTone",
             emoji.preferredHairStyle to "emoji.preferredHairStyle",
             emoji.historyEnabled to "emoji.historyEnabled",

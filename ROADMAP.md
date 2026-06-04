@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.208 (versionCode 2008). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.209 (versionCode 2009). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -12,11 +12,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Settings & UX surfaces
 
-- [ ] P2 — Personal dictionary bulk-import preview (EI3)
-  - Why: Bulk import commits blind; users need to preview and exclude rows before commit. Touches the rollback flow — handle carefully.
-  - Touches: import preview (first ~50 entries + total + exclude-row checkboxes) with a "Skip preview" opt-out.
-  - Acceptance: preview shown before commit; excluded rows are not imported; opt-out persists.
-  - Source: TODO.md A3 / research feature plan EI3.
 - [ ] P2 — Per-app accent opt-in discovery hint + preview (F6)
   - Why: Per-app accent feature is undiscoverable.
   - Touches: single-fire discovery hint + Settings preview.

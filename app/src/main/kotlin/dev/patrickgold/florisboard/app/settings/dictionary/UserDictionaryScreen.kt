@@ -62,8 +62,10 @@ import androidx.compose.ui.unit.dp
 import android.app.Activity
 import android.view.WindowManager
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.settings.theme.DialogProperty
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryImportFormat
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryImportException
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryImporter
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
@@ -73,6 +75,7 @@ import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MAX
 import dev.patrickgold.florisboard.ime.dictionary.FREQUENCY_MIN
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportBatch
 import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryImportResult
+import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryEntry
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDatabase
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDao
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
@@ -82,6 +85,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.compose.Validation
 import dev.patrickgold.florisboard.lib.rememberValidationResult
 import dev.patrickgold.florisboard.lib.util.launchActivity
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
@@ -109,6 +113,16 @@ private const val EncryptedUserDictionaryMediaType = "application/octet-stream"
 private const val EncryptedUserDictionaryDefaultFileName = "my-personal-dictionary.sfexp"
 private const val SystemUserDictionaryUiIntentAction = "android.settings.USER_DICTIONARY_SETTINGS"
 
+private data class ParsedDictionaryImport(
+    val entries: List<PersonalDictionaryEntry>,
+    val format: DictionaryImportFormat?,
+)
+
+private sealed interface DictionaryImportFlowResult {
+    data class Preview(val import: ParsedDictionaryImport) : DictionaryImportFlowResult
+    data class Applied(val result: PersonalDictionaryImportResult?) : DictionaryImportFlowResult
+}
+
 enum class UserDictionaryType(val id: String) {
     FLORIS("floris"),
     SYSTEM("system");
@@ -133,7 +147,9 @@ fun UserDictionaryScreen(
     val navController = LocalNavController.current
     val context = LocalContext.current
     val dictionaryManager = DictionaryManager.default()
+    val prefs by FlorisPreferenceStore
     val scope = rememberCoroutineScope()
+    val previewPersonalDictionaryImports by prefs.dictionary.previewPersonalDictionaryImports.collectAsState()
 
     var currentLocale by remember { mutableStateOf<FlorisLocale?>(null) }
     var languageList by remember { mutableStateOf(emptyList<FlorisLocale>()) }
@@ -144,6 +160,7 @@ fun UserDictionaryScreen(
     // successful modular DictionaryImporter run so the user can
     // see what landed and optionally roll the inserts back.
     var importSummary by remember { mutableStateOf<PersonalDictionaryImportResult?>(null) }
+    var pendingImportPreview by remember { mutableStateOf<PersonalDictionaryImportPreview?>(null) }
     var encryptedExportDialogVisible by rememberSaveable { mutableStateOf(false) }
     var encryptedImportUri by remember { mutableStateOf<Uri?>(null) }
     var pendingEncryptedExportPassphrase by remember { mutableStateOf<CharArray?>(null) }
@@ -301,6 +318,60 @@ fun UserDictionaryScreen(
         }
     }
 
+    fun shouldPreviewImport(entries: List<PersonalDictionaryEntry>): Boolean {
+        return previewPersonalDictionaryImports && entries.isNotEmpty()
+    }
+
+    fun parsePlainDictionaryImport(uri: Uri): ParsedDictionaryImport {
+        val importer = DictionaryImporter()
+        val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
+            importer.import(stream)
+        } ?: throw DictionaryImportException("Could not read selected file.")
+        val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
+            val sniffBuffer = ByteArray(1024)
+            val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
+            importer.detectFormat(sniffBuffer.copyOf(sniffed))
+        }
+        return ParsedDictionaryImport(parsed, format)
+    }
+
+    fun applyParsedDictionaryImport(
+        parsed: ParsedDictionaryImport,
+        excludedEntryIndexes: Set<Int> = emptySet(),
+    ) {
+        if (!canStartDictionaryTransfer()) {
+            return
+        }
+        val dao = userDictionaryDao()
+        if (dao == null) {
+            scope.launch {
+                context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
+            }
+            return
+        }
+        scope.launch {
+            startDictionaryTransfer(UserDictionaryTransferOperation.Importing)
+            try {
+                runCatching {
+                    withContext(Dispatchers.IO) {
+                        PersonalDictionaryImportBatch.import(
+                            parsedEntries = parsed.entries,
+                            dao = dao,
+                            format = parsed.format,
+                            excludedEntryIndexes = excludedEntryIndexes,
+                        )
+                    }
+                }.onSuccess { result ->
+                    handleImportSuccess(result)
+                }.onFailure { error ->
+                    handleImportFailure(error)
+                }
+            } finally {
+                finishDictionaryTransfer()
+            }
+        }
+    }
+
     fun importPlainDictionary(uri: Uri) {
         if (!canStartDictionaryTransfer()) {
             return
@@ -330,28 +401,34 @@ fun UserDictionaryScreen(
                 runCatching {
                     withContext(Dispatchers.IO) {
                         runCatching {
-                            val importer = DictionaryImporter()
-                            val parsed = context.contentResolver.openInputStream(uri)?.use { stream ->
-                                importer.import(stream)
-                            } ?: throw DictionaryImportException("Could not read selected file.")
-                            val format = context.contentResolver.openInputStream(uri)?.use { sniffStream ->
-                                val sniffBuffer = ByteArray(1024)
-                                val sniffed = sniffStream.read(sniffBuffer).coerceAtLeast(0)
-                                importer.detectFormat(sniffBuffer.copyOf(sniffed))
+                            val parsed = parsePlainDictionaryImport(uri)
+                            if (shouldPreviewImport(parsed.entries)) {
+                                DictionaryImportFlowResult.Preview(parsed)
+                            } else {
+                                DictionaryImportFlowResult.Applied(
+                                    PersonalDictionaryImportBatch.import(
+                                        parsedEntries = parsed.entries,
+                                        dao = dao,
+                                        format = parsed.format,
+                                    )
+                                )
                             }
-                            PersonalDictionaryImportBatch.import(
-                                parsedEntries = parsed,
-                                dao = dao,
-                                format = format,
-                            )
                         }.recoverCatching { modularError ->
                             if (modularError !is DictionaryImportException) throw modularError
                             db.importCombinedList(context, uri)
-                            null
+                            DictionaryImportFlowResult.Applied(null)
                         }.getOrThrow()
                     }
                 }.onSuccess { result ->
-                    handleImportSuccess(result)
+                    when (result) {
+                        is DictionaryImportFlowResult.Preview -> {
+                            pendingImportPreview = PersonalDictionaryImportPreview(
+                                entries = result.import.entries,
+                                format = result.import.format,
+                            )
+                        }
+                        is DictionaryImportFlowResult.Applied -> handleImportSuccess(result.result)
+                    }
                 }.onFailure { error ->
                     handleImportFailure(error)
                 }
@@ -391,18 +468,32 @@ fun UserDictionaryScreen(
                             val parsed = importer.import(ByteArrayInputStream(plaintext))
                             sniff = plaintext.copyOf(minOf(plaintext.size, 1024))
                             val format = importer.detectFormat(sniff)
-                            PersonalDictionaryImportBatch.import(
-                                parsedEntries = parsed,
-                                dao = dao,
-                                format = format,
-                            )
+                            if (shouldPreviewImport(parsed)) {
+                                DictionaryImportFlowResult.Preview(ParsedDictionaryImport(parsed, format))
+                            } else {
+                                DictionaryImportFlowResult.Applied(
+                                    PersonalDictionaryImportBatch.import(
+                                        parsedEntries = parsed,
+                                        dao = dao,
+                                        format = format,
+                                    )
+                                )
+                            }
                         } finally {
                             plaintext.fill(0)
                             sniff?.fill(0)
                         }
                     }
                 }.onSuccess { result ->
-                    handleImportSuccess(result)
+                    when (result) {
+                        is DictionaryImportFlowResult.Preview -> {
+                            pendingImportPreview = PersonalDictionaryImportPreview(
+                                entries = result.import.entries,
+                                format = result.import.format,
+                            )
+                        }
+                        is DictionaryImportFlowResult.Applied -> handleImportSuccess(result.result)
+                    }
                 }.onFailure { error ->
                     handleImportFailure(error)
                 }
@@ -931,6 +1022,29 @@ fun UserDictionaryScreen(
                     }
                 }
             }
+        }
+
+        val importPreview = pendingImportPreview
+        if (importPreview != null) {
+            PersonalDictionaryImportPreviewDialog(
+                preview = importPreview,
+                onImport = { excludedEntryIndexes, skipFuturePreview ->
+                    pendingImportPreview = null
+                    if (skipFuturePreview) {
+                        scope.launch {
+                            prefs.dictionary.previewPersonalDictionaryImports.set(false)
+                        }
+                    }
+                    applyParsedDictionaryImport(
+                        parsed = ParsedDictionaryImport(
+                            entries = importPreview.entries,
+                            format = importPreview.format,
+                        ),
+                        excludedEntryIndexes = excludedEntryIndexes,
+                    )
+                },
+                onDismiss = { pendingImportPreview = null },
+            )
         }
 
         // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §A2/A3 — post-import summary.

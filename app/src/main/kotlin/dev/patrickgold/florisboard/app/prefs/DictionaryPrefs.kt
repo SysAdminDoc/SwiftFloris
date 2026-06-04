@@ -79,4 +79,8 @@ open class DictionaryPrefs : PreferenceModel() {
         key = "suggestion__enable_floris_user_dictionary",
         default = true,
     )
+    val previewPersonalDictionaryImports = boolean(
+        key = "dictionary__preview_personal_imports",
+        default = true,
+    )
 }

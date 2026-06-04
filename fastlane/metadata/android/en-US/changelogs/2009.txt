@@ -1,0 +1,1 @@
+Personal dictionary imports now show a preview before saving. Review the first 50 parsed rows, uncheck mistakes, and import only selected entries; skipped rows are reported in the import summary. A new Dictionary setting keeps previews on by default and can persistently skip them. No network permission added.
