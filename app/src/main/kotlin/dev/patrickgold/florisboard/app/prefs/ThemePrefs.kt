@@ -53,6 +53,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyHintConfiguration
 import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
+import dev.patrickgold.florisboard.ime.theme.PerAppAccentDiscoveryHintState
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.theme.extCoreTheme
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
@@ -99,6 +100,10 @@ open class ThemePrefs : PreferenceModel() {
     val perAppAccentEnabled = boolean(
         key = "theme__per_app_accent_enabled",
         default = false,
+    )
+    val perAppAccentDiscoveryHintState = enum(
+        key = "theme__per_app_accent_discovery_hint_state",
+        default = PerAppAccentDiscoveryHintState.COLLECTING,
     )
     val sunriseTime = localTime(
         key = "theme__sunrise_time",

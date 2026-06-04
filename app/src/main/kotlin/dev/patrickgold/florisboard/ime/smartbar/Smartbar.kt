@@ -61,6 +61,7 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionButton
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionsRow
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.ToggleOverflowPanelAction
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.ime.theme.PerAppAccentDiscoveryHintState
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -158,6 +159,10 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     val extendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
 
     val shouldAnimate by prefs.smartbar.sharedActionsExpandWithAnimation.collectAsState()
+    val perAppAccentEnabled by prefs.theme.perAppAccentEnabled.collectAsState()
+    val perAppAccentDiscoveryHintState by prefs.theme.perAppAccentDiscoveryHintState.collectAsState()
+    val shouldShowPerAppAccentHint =
+        !perAppAccentEnabled && perAppAccentDiscoveryHintState == PerAppAccentDiscoveryHintState.READY
 
     @Composable
     fun SharedActionsToggle() {
@@ -202,6 +207,15 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     }
 
     @Composable
+    fun SuggestionsContent(modifier: Modifier = Modifier) {
+        when {
+            shouldShowPerAppAccentHint -> PerAppAccentDiscoveryHint(modifier)
+            shouldShowInlineSuggestionsUi -> InlineSuggestionsUi(inlineSuggestions, modifier)
+            else -> CandidatesRow(modifier)
+        }
+    }
+
+    @Composable
     fun RowScope.CenterContent() {
         val expanded = sharedActionsExpanded && smartbarLayout == SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED
         Box(
@@ -216,11 +230,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
                 enter = enterTransition,
                 exit = exitTransition,
             ) {
-                if (shouldShowInlineSuggestionsUi) {
-                    InlineSuggestionsUi(inlineSuggestions)
-                } else {
-                    CandidatesRow()
-                }
+                SuggestionsContent()
             }
             this@CenterContent.AnimatedVisibility(
                 visible = expanded,
@@ -312,11 +322,7 @@ private fun SmartbarMainRow(modifier: Modifier = Modifier) {
     ) {
         when (smartbarLayout) {
             SmartbarLayout.SUGGESTIONS_ONLY -> {
-                if (shouldShowInlineSuggestionsUi) {
-                    InlineSuggestionsUi(inlineSuggestions)
-                } else {
-                    CandidatesRow()
-                }
+                SuggestionsContent()
             }
 
             SmartbarLayout.ACTIONS_ONLY -> {

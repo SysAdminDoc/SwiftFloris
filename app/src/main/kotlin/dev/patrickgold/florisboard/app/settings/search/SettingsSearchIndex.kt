@@ -156,6 +156,7 @@ object SettingsSearchIndex {
         entry("theme.day", R.string.settings__theme__title, R.string.pref__theme__day, destination = SettingsSearchDestination.THEME),
         entry("theme.night", R.string.settings__theme__title, R.string.pref__theme__night, destination = SettingsSearchDestination.THEME),
         entry("theme.accent", R.string.settings__theme__title, R.string.pref__theme__theme_accent_color__label, destination = SettingsSearchDestination.THEME),
+        entry("theme.per-app-accent", R.string.settings__theme__title, R.string.pref__theme__per_app_accent_enabled__label, R.string.pref__theme__per_app_accent_enabled__summary, SettingsSearchDestination.THEME),
         entry("theme.customization", R.string.settings__theme__title, R.string.pref__theme__customization__label, R.string.pref__theme__customization__summary, SettingsSearchDestination.THEME),
         entry("theme.manager", R.string.ext__list__ext_theme, R.string.settings__theme_manager__title_manage, destination = SettingsSearchDestination.THEME_MANAGER, keywords = "installed themes"),
 

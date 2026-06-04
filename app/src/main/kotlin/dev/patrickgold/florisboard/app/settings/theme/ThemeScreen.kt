@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.WbTwilight
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
@@ -34,6 +35,8 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.app.ext.ExtensionListScreenType
+import dev.patrickgold.florisboard.ime.theme.PerAppAccentDiscoveryHintState
+import dev.patrickgold.florisboard.ime.theme.PerAppAccentPreview
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -69,6 +72,15 @@ fun ThemeScreen() = FlorisScreen {
     content {
         val dayThemeId by prefs.theme.dayThemeId.collectAsState()
         val nightThemeId by prefs.theme.nightThemeId.collectAsState()
+        val perAppAccentEnabled by prefs.theme.perAppAccentEnabled.collectAsState()
+
+        LaunchedEffect(perAppAccentEnabled) {
+            if (perAppAccentEnabled &&
+                prefs.theme.perAppAccentDiscoveryHintState.get() != PerAppAccentDiscoveryHintState.DISMISSED
+            ) {
+                prefs.theme.perAppAccentDiscoveryHintState.set(PerAppAccentDiscoveryHintState.DISMISSED)
+            }
+        }
 
         PreferenceGroup(title = stringRes(R.string.pref__theme__group_schedule__label)) {
             ListPreference(
@@ -145,11 +157,12 @@ fun ThemeScreen() = FlorisScreen {
             // and fall through to the active Snygg theme's `--primary` token
             // when the toggle is off (or when the resolver finds no usable
             // accent in the active editor's app icon).
+            PerAppAccentPreview()
             SwitchPreference(
                 pref = prefs.theme.perAppAccentEnabled,
                 icon = Icons.Default.ColorLens,
-                title = "Tint to active app's icon",
-                summary = "When typing in an app, tint the keyboard accent to match the dominant color of that app's launcher icon. All on-device — no extra permissions, no network.",
+                title = stringRes(R.string.pref__theme__per_app_accent_enabled__label),
+                summary = stringRes(R.string.pref__theme__per_app_accent_enabled__summary),
             )
         }
     }

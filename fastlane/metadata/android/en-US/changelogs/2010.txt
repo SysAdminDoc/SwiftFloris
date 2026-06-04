@@ -1,0 +1,1 @@
+Per-app accent is easier to discover: Theme settings now show an illustrative app-color keyboard preview, and the Smartbar can offer a one-time opt-in hint after SwiftFloris is used in three distinct apps. The hint stores only its state, not app package names. No network or new permissions.

@@ -204,6 +204,8 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
   IME contract) and that app's icon bitmap.
 - **Data sent.** Nothing leaves the device. **No `PACKAGE_USAGE_STATS`
   permission required** — the package name comes from the IME contract.
+- **Discovery hint.** The one-time Smartbar hint counts distinct editor apps
+  in memory only. SwiftFloris persists the hint state, not the package names.
 - **Off switch.** Settings → Theme → "Tint to active app's icon"
   (default **off** — privacy-by-default even though no extra permission
   is required).

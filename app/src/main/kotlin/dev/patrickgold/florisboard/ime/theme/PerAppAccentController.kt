@@ -20,9 +20,13 @@ import android.content.Context
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 
 /**
  * ROADMAP §7 Next-11.3a — runtime controller that owns the active per-app
@@ -51,7 +55,9 @@ class PerAppAccentController(context: Context) {
 
     private val appContext: Context = context.applicationContext
     private val resolver = PerAppAccentResolver(appContext)
+    private val discoveryHintTracker = PerAppAccentDiscoveryHintTracker(appContext.packageName)
     private val prefs by FlorisPreferenceStore
+    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private val _activeAccent = MutableStateFlow<Color?>(null)
     val activeAccent: StateFlow<Color?> = _activeAccent.asStateFlow()
@@ -68,9 +74,12 @@ class PerAppAccentController(context: Context) {
      * keystroke.
      */
     fun setActiveEditorPackage(packageName: String?) {
+        val perAppAccentEnabled = prefs.theme.perAppAccentEnabled.get()
+        updateDiscoveryHint(packageName, perAppAccentEnabled)
+
         // Skip when the user has the feature off entirely. Cheap guard
         // against doing the icon-load work for nothing.
-        if (!prefs.theme.perAppAccentEnabled.get()) {
+        if (!perAppAccentEnabled) {
             if (_activeAccent.value != null) _activeAccent.value = null
             lastPackageName = packageName
             return
@@ -85,6 +94,20 @@ class PerAppAccentController(context: Context) {
     /** Drop every cached entry. Use during low-memory callbacks. */
     fun onLowMemory() {
         resolver.invalidateAll()
+    }
+
+    private fun updateDiscoveryHint(packageName: String?, perAppAccentEnabled: Boolean) {
+        val currentState = prefs.theme.perAppAccentDiscoveryHintState.get()
+        val nextState = discoveryHintTracker.observe(
+            packageName = packageName,
+            state = currentState,
+            perAppAccentEnabled = perAppAccentEnabled,
+        )
+        if (nextState != currentState) {
+            scope.launch {
+                prefs.theme.perAppAccentDiscoveryHintState.set(nextState)
+            }
+        }
     }
 }
 
