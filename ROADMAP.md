@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.209 (versionCode 2009). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.210 (versionCode 2010). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -12,11 +12,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Settings & UX surfaces
 
-- [ ] P2 — Per-app accent opt-in discovery hint + preview (F6)
-  - Why: Per-app accent feature is undiscoverable.
-  - Touches: single-fire discovery hint + Settings preview.
-  - Acceptance: hint fires once; Settings shows a preview.
-  - Source: TODO.md A3 / research feature plan F6.
 - [ ] P3 — Settings home cosmetic re-bucket (EI2)
   - Why: Settings home is already grouped into four labelled sections (Essentials / Experience / Data / System); the research's "15 sub-screens at one level" premise is stale. Only residual value is a cosmetic re-bucket into the 5 research groups.
   - Touches: `HomeScreen.kt` grouping.

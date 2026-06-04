@@ -2,6 +2,52 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.210"></a>
+## v1.8.210
+
+Released: 2026-06-04
+
+### Per-app accent discovery and preview
+
+F6 makes the existing opt-in per-app accent feature visible without changing its privacy posture. Settings -> Theme now includes an illustrative preview that compares the active theme accent with app-tinted samples for Slack, WhatsApp, Discord, and Telegram. The preview is static: runtime tinting still computes locally from the focused editor app's launcher icon.
+
+The Smartbar can now show a one-time opt-in hint after SwiftFloris sees three distinct editor packages in the current IME process. Package names are not persisted for the hint; SwiftFloris stores only the discovery state (`COLLECTING`, `READY`, or `DISMISSED`). Enabling the feature or tapping Skip dismisses the hint permanently.
+
+### Changes
+
+- **`PerAppAccentPreview.kt`** (new) - compact Theme settings preview with selectable app-color samples and side-by-side keyboard illustrations.
+- **`PerAppAccentDiscoveryHint.kt`** (new, theme policy) - process-local three-app threshold tracker plus persisted hint-state enum.
+- **`PerAppAccentController.kt`** - observes editor package focus, promotes the hint state asynchronously, and suppresses future hints once per-app accent is enabled.
+- **`PerAppAccentDiscoveryHint.kt`** (new, Smartbar UI) / **`Smartbar.kt`** - renders the one-time enable/skip hint in the suggestion slot when the hint reaches `READY`.
+- **`ThemeScreen.kt` / `SettingsSearchIndex.kt`** - surfaces the preview, resource-backed switch copy, and searchable per-app accent entry.
+- **`PRIVACY_AND_AI.md`** - documents that discovery tracking does not persist package names.
+
+### Verification
+
+- `./gradlew.bat :app:compileDebugKotlin :app:compileDebugUnitTestKotlin` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `git diff --check` -> green; CRLF normalization warnings only.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2010.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisPreferenceModelImpl.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/prefs/ThemePrefs.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/theme/ThemeScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/PerAppAccentDiscoveryHint.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/Smartbar.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/PerAppAccentController.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/PerAppAccentDiscoveryHint.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/PerAppAccentPreview.kt` (new)
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsPartitionTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/theme/PerAppAccentDiscoveryHintTrackerTest.kt` (new)
+- `docs/PRIVACY_AND_AI.md`
+- `fastlane/metadata/android/en-US/changelogs/2010.txt` (new)
+
 <a id="v1.8.209"></a>
 ## v1.8.209
 

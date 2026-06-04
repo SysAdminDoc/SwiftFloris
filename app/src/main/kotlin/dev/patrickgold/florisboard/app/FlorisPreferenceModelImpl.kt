@@ -212,6 +212,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             theme.nightThemeId to "theme.nightThemeId",
             theme.accentColor to "theme.accentColor",
             theme.perAppAccentEnabled to "theme.perAppAccentEnabled",
+            theme.perAppAccentDiscoveryHintState to "theme.perAppAccentDiscoveryHintState",
             theme.sunriseTime to "theme.sunriseTime",
             theme.sunsetTime to "theme.sunsetTime",
             theme.editorColorRepresentation to "theme.editorColorRepresentation",

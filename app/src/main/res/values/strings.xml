@@ -452,6 +452,12 @@
     </string>
     <string name="pref__theme__customization__label" comment="Label of the shortcut that opens theme customization">Theme customization</string>
     <string name="pref__theme__customization__summary" comment="Summary of the shortcut that opens theme customization">Create, edit, import, or manage keyboard theme extensions</string>
+    <string name="pref__theme__per_app_accent_enabled__label" comment="Preference title">Tint to active app\'s icon</string>
+    <string name="pref__theme__per_app_accent_enabled__summary" comment="Preference summary">When typing in an app, tint the keyboard accent to match that app\'s launcher icon. All on-device, no extra permissions, no network.</string>
+    <string name="settings__per_app_accent_preview__title" comment="Theme settings preview title">Per-app accent preview</string>
+    <string name="settings__per_app_accent_preview__summary" comment="Theme settings preview summary">Illustrative samples only. Real colors are computed on device from the active editor app\'s launcher icon.</string>
+    <string name="settings__per_app_accent_preview__default_label" comment="Label for preview without app tint">Theme accent</string>
+    <string name="settings__per_app_accent_preview__app_label" comment="Label for preview with selected app tint">{app} tint</string>
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
     <string name="settings__theme_manager__empty_title">No themes available</string>
     <string name="settings__theme_manager__empty_message">Bundled themes should appear here. If this stays empty, reinstall SwiftFloris or import a trusted theme extension.</string>
@@ -784,6 +790,9 @@
     <string name="pref__smartbar__flip_toggles__label" comment="Preference title">Flip toggle buttons</string>
     <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Move action row toggles to the opposite side</string>
     <string name="pref__smartbar__extended_actions_placement__label" comment="Preference title">Action row placement</string>
+    <string name="ime__per_app_accent_hint__message" comment="One-time Smartbar hint for per-app accent">App tint?</string>
+    <string name="ime__per_app_accent_hint__enable" comment="Smartbar hint action to enable per-app accent">Enable</string>
+    <string name="ime__per_app_accent_hint__dismiss" comment="Smartbar hint action to dismiss per-app accent">Skip</string>
 
     <!-- Typing strings -->
     <string name="settings__typing__title" comment="Title of Typing screen">Typing</string>

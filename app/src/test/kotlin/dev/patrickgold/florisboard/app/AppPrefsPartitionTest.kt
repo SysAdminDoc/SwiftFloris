@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 191
+        rows shouldHaveSize 192
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -239,6 +239,7 @@ theme__editor_display_kbd_after_dialogs	s	REMEMBER
 theme__editor_level	s	ADVANCED
 theme__mode	s	ALWAYS_NIGHT
 theme__night_theme_id	s	org.florisboard.themes:swiftkey_pure_dark
+theme__per_app_accent_discovery_hint_state	s	COLLECTING
 theme__per_app_accent_enabled	b	false
 theme__sunrise_time	s	06:00:00.000
 theme__sunset_time	s	18:00:00.000
