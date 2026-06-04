@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.232 (versionCode 2032). **Local verification:** focused `UserDictionaryEntryPolicyTest` passed in 1m08s with one Gradle worker; fastlane metadata gate passed for versionCode 2032; `git diff --check` passed; APK assembly and device system-back/TalkBack QA were intentionally not run for this dictionary-navigation feedback follow-up.
+**Current release:** v1.8.233 (versionCode 2033). **Local verification:** focused `EditorInputConnectionBatchTest` passed in 2m08s with one Gradle worker; fastlane metadata gate passed for versionCode 2033; `git diff --check` passed; APK assembly and low-end sustained-typing device smoke were intentionally not run for this editor batch follow-up.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -272,7 +272,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Editor hot-path reliability
 
-- [ ] 🤖 P2 — Keep `InputConnection` batch edits free of `runBlocking` and queue-lock work (R6-1)
+- [x] 🤖 P2 — Keep `InputConnection` batch edits free of `runBlocking` and queue-lock work (R6-1)
   - Why: `beginBatchEdit()` / `endBatchEdit()` should bracket the smallest
     synchronous editor mutation set. Several IME hot paths currently open a
     batch edit before doing `runBlocking`, generating expected content, and
@@ -304,6 +304,12 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     "dev.patrickgold.florisboard.ime.editor.*"` plus manual sustained-typing
     smoke on a low-end device if available.
   - Complexity: M
+  - Shipped: v1.8.233 (2026-06-04) with expected-content generation and queue
+    pushes moved before the selection, text-commit, composing-finalize, and
+    composing-region replacement batches; `EditorInputConnectionBatch` pairs
+    begin/end with `try/finally`, and `EditorInputConnectionBatchTest` pins
+    representative call order and batch depth. Low-end sustained-typing smoke
+    remains device-gated.
 
 ### Researcher Queue (Cycle 5 - 2026-06-04)
 

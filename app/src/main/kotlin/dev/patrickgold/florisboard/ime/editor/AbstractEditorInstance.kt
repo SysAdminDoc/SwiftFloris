@@ -101,7 +101,7 @@ abstract class AbstractEditorInstance(context: Context) {
         return runBlocking { expectedContentQueue.peekNewestOrNull() }
     }
 
-    private fun currentInputConnection() = FlorisImeService.currentInputConnection()
+    protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     open fun handleStartInput(editorInfo: FlorisEditorInfo) {
         activeInfo = editorInfo
@@ -313,16 +313,14 @@ abstract class AbstractEditorInstance(context: Context) {
         val content = activeContent
         if (content.selection == selection) return true
         val ic = currentInputConnection() ?: return false
-        ic.beginBatchEdit()
-        runBlocking {
+        val newContent = runBlocking {
             val newContent = content
                 .copy(localSelection = selection.translatedBy(-content.offset))
                 .generateCopy(selection = selection)
             expectedContentQueue.push(newContent)
-            ic.setSelection(selection.start, selection.end)
-            ic.setComposingRegion(newContent.composing)
+            newContent
         }
-        ic.endBatchEdit()
+        EditorInputConnectionBatch.applySelection(ic, selection, newContent.composing)
         return true
     }
 
@@ -361,28 +359,28 @@ abstract class AbstractEditorInstance(context: Context) {
         }
         if (rm <= 0) {
             commitTextInternal(finalText)
-        } else runBlocking {
-            ic.beginBatchEdit()
+        } else {
             val newSelection = EditorRange.cursor(selection.start - rm + finalText.length)
-            val newContent = content.generateCopy(
-                selection = newSelection,
-                textBeforeSelection = buildString {
-                    append(content.textBeforeSelection.dropLast(rm))
-                    append(finalText)
-                },
-                selectedText = "",
+            val newContent = runBlocking {
+                val newContent = content.generateCopy(
+                    selection = newSelection,
+                    textBeforeSelection = buildString {
+                        append(content.textBeforeSelection.dropLast(rm))
+                        append(finalText)
+                    },
+                    selectedText = "",
+                )
+                expectedContentQueue.push(newContent)
+                newContent
+            }
+            EditorInputConnectionBatch.replacePreviousWithComposingRegion(
+                ic = ic,
+                // Some editors mishandle negative composing-region starts when deletePreviousSpace bumps rm.
+                replaceStart = (content.selection.start - rm).coerceAtLeast(0),
+                replaceEnd = content.selection.start,
+                text = finalText,
+                composing = newContent.composing,
             )
-            expectedContentQueue.push(newContent)
-            // Utilize composing region to replace previous chars without using delete. This avoids flickering in the
-            // target editor and improves the UX
-            // coerceAtLeast(0): in a corner case (deletePreviousSpace bumping rm
-            // past the cursor offset) start-rm could go negative, which different
-            // editors handle inconsistently and can drop the subsequent edit.
-            ic.setComposingRegion((content.selection.start - rm).coerceAtLeast(0), content.selection.start)
-            ic.setComposingText(finalText, 1)
-            // Now set the proper composing region we expect
-            ic.setComposingRegion(newContent.composing)
-            ic.endBatchEdit()
         }
         return true
     }
@@ -393,25 +391,28 @@ abstract class AbstractEditorInstance(context: Context) {
         val ic = currentInputConnection() ?: return false
         val content = activeContent
         val selection = content.selection
-        ic.beginBatchEdit()
-        ic.finishComposingText()
         if (activeInfo.isRawInputEditor) {
-            ic.commitText(text, 1)
-        } else runBlocking {
-            val newSelection = EditorRange.cursor(selection.start + text.length)
-            val newContent = content.generateCopy(
-                selection = newSelection,
-                textBeforeSelection = buildString {
-                    append(content.textBeforeSelection)
-                    append(text)
-                },
-                selectedText = "",
+            EditorInputConnectionBatch.commitText(ic, text, composing = null)
+        } else {
+            val newContent = runBlocking {
+                val newSelection = EditorRange.cursor(selection.start + text.length)
+                val newContent = content.generateCopy(
+                    selection = newSelection,
+                    textBeforeSelection = buildString {
+                        append(content.textBeforeSelection)
+                        append(text)
+                    },
+                    selectedText = "",
+                )
+                expectedContentQueue.push(newContent)
+                newContent
+            }
+            EditorInputConnectionBatch.commitText(
+                ic = ic,
+                text = text,
+                composing = newContent.composing,
             )
-            expectedContentQueue.push(newContent)
-            ic.commitText(text, 1)
-            ic.setComposingRegion(newContent.composing)
         }
-        ic.endBatchEdit()
         return true
     }
 
@@ -426,8 +427,7 @@ abstract class AbstractEditorInstance(context: Context) {
         if (activeInfo.isRawInputEditor || composing.isNotValid) {
             return false
         }
-        ic.beginBatchEdit()
-        runBlocking {
+        val newContent = runBlocking {
             val newSelection = EditorRange.cursor(composing.end + (text.length - content.composingText.length))
             val newContent = content.generateCopy(
                 selection = newSelection,
@@ -438,11 +438,10 @@ abstract class AbstractEditorInstance(context: Context) {
                 selectedText = "",
             )
             expectedContentQueue.push(newContent)
-            ic.setComposingText(text, 1)
-            ic.finishComposingText()
-            _lastCommitPosition.handleCommit(newContent.selection)
+            newContent
         }
-        ic.endBatchEdit()
+        EditorInputConnectionBatch.finalizeComposingText(ic, text)
+        _lastCommitPosition.handleCommit(newContent.selection)
         return true
     }
 

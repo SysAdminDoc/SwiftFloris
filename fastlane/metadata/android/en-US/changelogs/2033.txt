@@ -1,0 +1,3 @@
+v1.8.233 - Editor batch hardening.
+
+IME editor selection, text commit, composing-finalize, and composing-region replacement paths now compute expected content before opening InputConnection batch edits. A small batch helper uses try/finally around begin/end, with focused tests pinning call order and depth.
