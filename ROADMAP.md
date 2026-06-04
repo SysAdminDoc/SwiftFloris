@@ -161,6 +161,60 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 10 - 2026-06-04)
+
+- [x] 🔬 `editor-content-job-lifecycle-recheck-2026-06-04` - synced
+  `master` after the Cycle 9 docs push, rechecked the deferred editor
+  content-generation lifecycle audit against live `AbstractEditorInstance`
+  after v1.8.233 closed only the synchronous batch-edit critical sections.
+  This cycle adds one focused row for stale async content jobs that can still
+  publish against a finished input session.
+
+#### Editor session lifecycle
+
+- [ ] 🤖 P2 — Cancel stale editor content-generation jobs on reset/finishInput (R10-1)
+  - Why: `handleStartInputView(...)` and `handleSelectionUpdate(...)` launch
+    background content generation using a captured `InputConnection`, then
+    publish `activeCursorCapsMode`, `activeContent`, shift-state reevaluation,
+    and composing-region updates when the coroutine resumes. `reset()`,
+    `handleFinishInputView()`, and `handleFinishInput()` clear editor state, but
+    they do not cancel those launched jobs or gate publication by a session
+    generation. A delayed job can therefore repopulate editor state and call
+    `setComposingRegion` / `finishComposingText` on an old connection after the
+    IME has switched fields or finished input. v1.8.233 closed the selected
+    synchronous batch critical sections; this is the remaining async lifecycle
+    boundary.
+  - Evidence: `AbstractEditorInstance.kt:69` owns a `MainScope`;
+    `AbstractEditorInstance.kt:141-153` launches from `handleStartInputView`
+    with a captured `ic` and publishes state plus `ic.setComposingRegion(...)`;
+    `AbstractEditorInstance.kt:165-209` repeats the pattern for selection
+    updates; `AbstractEditorInstance.kt:212-227` resets active info, caps,
+    content, expected-content queue, and last-commit position without cancelling
+    launched jobs or incrementing a request/session generation;
+    `AbstractEditorInstance.kt:303-308` maps invalid composing ranges to
+    `finishComposingText()`, so stale jobs can still mutate the old editor;
+    `EditorInputConnectionBatchTest.kt:27-189` covers synchronous batch helper
+    call ordering but no delayed content-generation lifecycle; the deferred
+    audit already isolates this as distinct from the v1.8.233 batch fix
+    (`docs/AUDIT_2026-05-28.md:51-57`).
+  - Touches: `AbstractEditorInstance.kt` plus focused JVM tests under
+    `app/src/test/.../ime/editor`; introduce a small pending-content `Job`,
+    generation token, or request object as needed. Keep the v1.8.233
+    `EditorInputConnectionBatch` helper behavior unchanged.
+  - Acceptance: launching a new start-input-view or selection-update content
+    pass cancels or supersedes any previous pending pass; `reset()`,
+    `handleFinishInputView()`, and `handleFinishInput()` prevent pending jobs
+    from publishing state or touching their captured `InputConnection`; resumed
+    jobs re-check the active generation and current connection identity before
+    setting caps/content, reevaluating shift state, or setting/finishing a
+    composing region; tests simulate a delayed first job, then reset or switch
+    sessions, and prove only the current session can publish.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.editor.*"` plus a manual smoke switching
+    fields while composing text and confirming no stale composing region appears
+    in the previous field.
+  - Complexity: M
+
 ### Researcher Queue (Cycle 9 - 2026-06-04)
 
 - [x] 🔬 `nlp-request-privacy-snapshot-recheck-2026-06-04` - synced
