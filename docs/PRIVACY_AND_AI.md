@@ -250,6 +250,11 @@ Every surface above is subject to:
 - The **`SensitiveFieldGuard`** check at every addon dispatch site — sensitive
   fields (password / numeric-PIN / no-personalised-learning) return a safe
   no-result before any AI provider is asked.
+- The **request-scoped suggestion privacy snapshot** — `NlpManager.suggest`
+  freezes incognito, no-personalised-learning/editor sensitivity, suggestion
+  enabled flags, offensive-content preference, and emoji candidate limits before
+  async provider work starts, so delayed candidate generation cannot borrow
+  privacy state from a later field or toggle.
 - The **`FLAG_SECURE`** window flag on password / visible-password /
   web-password fields and while incognito is active. Dynamic incognito toggles
   re-apply the policy immediately, so the keyboard itself is excluded from

@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.235 (versionCode 2035). **Local verification:** focused Settings search tests passed in 1m02s with one Gradle worker after correcting the source-guard lookup; XML test results confirmed the Kotest search index/state guards were selected; fastlane metadata and `git diff --check` gates passed; APK assembly and manual TalkBack device QA were intentionally not run for this accessibility batch per operator request.
+**Current release:** v1.8.236 (versionCode 2036). **Local verification:** focused `NlpManagerSuggestionPrivacySnapshotTest` passed in 43s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly and manual dynamic-incognito device smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -173,7 +173,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### NLP request privacy
 
-- [ ] 🤖 P2 — Snapshot suggestion privacy inputs before async candidate generation (R9-1)
+- [x] 🤖 P2 — Snapshot suggestion privacy inputs before async candidate generation (R9-1)
   - Why: `NlpManager.suggest` captures the `EditorContent` and `Subtype` for a
     request, then launches background work that re-reads live preference,
     incognito, and editor-info state before calling suggestion providers,
@@ -217,6 +217,11 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     "dev.patrickgold.florisboard.ime.nlp.*"` plus a manual smoke where dynamic
     incognito is toggled during typing and suggestions/typing-trace output stay
     aligned with the request that produced the candidates.
+  - Shipped: v1.8.236 (2026-06-04) with immutable
+    `SuggestionRequestPrivacySnapshot` propagation through emoji/word
+    providers, trace gating, and ghost-text sensitivity checks. Focused
+    source/request contract tests passed; manual dynamic-incognito smoke remains
+    pending.
   - Complexity: M
 
 ### Researcher Queue (Cycle 8 - 2026-06-04)

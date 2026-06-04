@@ -20,6 +20,24 @@ import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 
 internal object SuggestionPrivacyPolicy {
+    fun snapshotSuggestionRequest(
+        emojiSuggestionEnabled: Boolean,
+        emojiMaxCandidateCount: Int,
+        wordSuggestionEnabled: Boolean,
+        blockPossiblyOffensive: Boolean,
+        isPrivateSession: Boolean,
+        isEditorSensitive: Boolean,
+    ): SuggestionRequestPrivacySnapshot {
+        return SuggestionRequestPrivacySnapshot(
+            emojiSuggestionEnabled = emojiSuggestionEnabled,
+            emojiMaxCandidateCount = emojiMaxCandidateCount,
+            wordSuggestionEnabled = wordSuggestionEnabled,
+            allowPossiblyOffensive = !blockPossiblyOffensive,
+            isPrivateSession = isPrivateSession,
+            isEditorSensitive = isEditorSensitive,
+        )
+    }
+
     fun resolveIncognitoMode(
         appDeclaredNoPersonalizedLearning: Boolean,
         preference: IncognitoMode,
@@ -60,3 +78,12 @@ internal object SuggestionPrivacyPolicy {
             keyVariation != KeyVariation.PASSWORD
     }
 }
+
+internal data class SuggestionRequestPrivacySnapshot(
+    val emojiSuggestionEnabled: Boolean,
+    val emojiMaxCandidateCount: Int,
+    val wordSuggestionEnabled: Boolean,
+    val allowPossiblyOffensive: Boolean,
+    val isPrivateSession: Boolean,
+    val isEditorSensitive: Boolean,
+)

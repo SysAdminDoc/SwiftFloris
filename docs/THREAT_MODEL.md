@@ -65,6 +65,10 @@ and [SEVENTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.
   policy immediately for the active field. Plain fields become screenshot-blocked when
   incognito turns on, and password / no-personalized-learning fields stay protected when
   the user attempts to toggle incognito off.
+- **v1.8.236** — Async suggestion candidate generation now consumes an immutable request
+  privacy snapshot. Emoji/word providers, typing-trace gating, and smart-compose ghost
+  text use the field/session privacy facts captured before coroutine launch instead of
+  re-reading live incognito or editor-info state after a field switch or privacy toggle.
 - **v1.8.174** — Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
   `*.keystore` / `local.properties` / `*.backup*` / large branding PNGs. Closes the supply-
   chain footgun where a maintainer's working-tree keystore could land in a commit.
