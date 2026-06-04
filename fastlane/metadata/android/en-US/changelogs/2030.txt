@@ -1,0 +1,3 @@
+v1.8.230 - Sync envelope vectors.
+
+Sealed-box sync envelopes now have fixed v1 schema constants, deterministic X25519/AES-GCM vector coverage, malformed-envelope null-return tests, temporary-buffer scrubbing, and documented compatibility policy before CRDT transport activation.

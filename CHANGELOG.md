@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.230"></a>
+## v1.8.230
+
+Released: 2026-06-04
+
+### Sync sealed-box envelope contract
+
+R3-3 is closed. The sync sealed-box scaffold now has explicit v1 schema constants, fixed-key deterministic X25519/AES-GCM vector coverage, and documented compatibility rules before any CRDT sync transport persists envelopes.
+
+### Changes
+
+- **`SealedBoxCrypto.kt`** - adds explicit v1 envelope constants, a deterministic internal sealing seam for tests, raw X25519 output scrubbing, nonce/KDF temporary-buffer scrubbing, and corrected HKDF/KDF comments.
+- **`SealedBoxCryptoTest.kt`** - pins fixed RFC-style X25519 recipient/ephemeral keypairs, the derived v1 nonce, the full envelope hex, malformed nonce null-return behavior, and schema/header/minimum length constants.
+- **`docs/THREAT_MODEL.md`** - documents the v1 envelope byte layout, KDF info string, derived nonce formula, no-network transport boundary, compatibility policy, and test coverage.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.230 / versionCode 2030 and closes R3-3.
+
+### Verification
+
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2030.
+- `./gradlew.bat --no-daemon --no-parallel --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx2048m" "-Dkotlin.daemon.jvm.options=-Xmx1536m" :app:testDebugUnitTest` - PASS in 3m05s, including `SealedBoxCryptoTest`.
+- `./gradlew.bat --no-daemon --no-parallel --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx2048m" "-Dkotlin.daemon.jvm.options=-Xmx1536m" :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.ime.sync.SealedBoxCryptoTest"` - PASS in 45s after the final UTF-8 vector-source patch.
+- Manual review confirmed no network permission or native dependency was introduced. APK assembly was intentionally skipped for this contract-test follow-up.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/SealedBoxCrypto.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/sync/SealedBoxCryptoTest.kt`
+- `docs/THREAT_MODEL.md`
+- `fastlane/metadata/android/en-US/changelogs/2030.txt` (new)
+- `gradle.properties` (versionCode 2029->2030, versionName 1.8.229->1.8.230)
+
 <a id="v1.8.229"></a>
 ## v1.8.229
 

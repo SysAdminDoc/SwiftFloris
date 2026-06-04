@@ -51,6 +51,10 @@ import javax.crypto.spec.SecretKeySpec
  *         ‖ ciphertext + tag  (n + 16 B)
  *  ```
  *
+ * The v1 envelope version is currently implicit in that fixed shape and in
+ * [HKDF_INFO_KEY]. A future incompatible wire-format change must use a distinct
+ * schema/version before sync transport persists envelopes.
+ *
  * The recipient owns a long-lived X25519 keypair (its half of the
  * QR-pair handshake in [PairingPayload]); each delta uses a freshly-
  * generated ephemeral keypair so the recipient learns the symmetric
@@ -71,8 +75,13 @@ object SealedBoxCrypto {
 
     private const val NONCE_LENGTH = 12
     private const val TAG_LENGTH_BITS = 128
+    private const val TAG_LENGTH_BYTES = 16
     private const val SECRET_LENGTH = 32
     private const val PUBKEY_LENGTH = 32
+
+    internal const val ENVELOPE_SCHEMA_VERSION = 1
+    internal const val ENVELOPE_HEADER_LENGTH = PUBKEY_LENGTH + NONCE_LENGTH
+    internal const val MIN_ENVELOPE_LENGTH = ENVELOPE_HEADER_LENGTH + TAG_LENGTH_BYTES
 
     /**
      * Generate a fresh X25519 keypair for use as a long-lived recipient
@@ -94,14 +103,40 @@ object SealedBoxCrypto {
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun seal(plaintext: ByteArray, recipientPublicKey: ByteArray): ByteArray {
+        return sealWithEphemeral(
+            plaintext = plaintext,
+            recipientPublicKey = recipientPublicKey,
+            ephemeral = generateKeyPair(),
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    internal fun sealWithEphemeralForTest(
+        plaintext: ByteArray,
+        recipientPublicKey: ByteArray,
+        ephemeral: KeyPair,
+    ): ByteArray {
+        return sealWithEphemeral(
+            plaintext = plaintext,
+            recipientPublicKey = recipientPublicKey,
+            ephemeral = ephemeral,
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun sealWithEphemeral(
+        plaintext: ByteArray,
+        recipientPublicKey: ByteArray,
+        ephemeral: KeyPair,
+    ): ByteArray {
         require(recipientPublicKey.size == PUBKEY_LENGTH) {
             "recipientPublicKey must be 32 bytes; was ${recipientPublicKey.size}"
         }
-        val ephemeral = generateKeyPair()
         val ephemeralPubBytes = ephemeral.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
         val sharedSecret = computeSharedSecret(ephemeral.private, recipientPublicKey)
+        var nonce: ByteArray? = null
         try {
-            val nonce = deriveNonce(sharedSecret, ephemeralPubBytes, recipientPublicKey)
+            nonce = deriveNonce(sharedSecret, ephemeralPubBytes, recipientPublicKey)
             val key = SecretKeySpec(sharedSecret, AES_KEY_ALGORITHM)
             val cipher = Cipher.getInstance(AES_GCM_TRANSFORM)
             cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(TAG_LENGTH_BITS, nonce))
@@ -109,6 +144,7 @@ object SealedBoxCrypto {
             return ephemeralPubBytes + nonce + ciphertextWithTag
         } finally {
             Arrays.fill(sharedSecret, 0.toByte())
+            nonce?.let { Arrays.fill(it, 0.toByte()) }
         }
     }
 
@@ -119,7 +155,7 @@ object SealedBoxCrypto {
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     fun open(sealedEnvelope: ByteArray, recipientKeyPair: KeyPair): ByteArray? {
-        if (sealedEnvelope.size < PUBKEY_LENGTH + NONCE_LENGTH + 16) return null
+        if (sealedEnvelope.size < MIN_ENVELOPE_LENGTH) return null
         val ephemeralPub = sealedEnvelope.copyOfRange(0, PUBKEY_LENGTH)
         val nonce = sealedEnvelope.copyOfRange(PUBKEY_LENGTH, PUBKEY_LENGTH + NONCE_LENGTH)
         val ciphertext = sealedEnvelope.copyOfRange(
@@ -127,10 +163,12 @@ object SealedBoxCrypto {
             sealedEnvelope.size,
         )
         var sharedSecret: ByteArray? = null
+        var expectedNonce: ByteArray? = null
+        var recipientPub: ByteArray? = null
         return try {
             sharedSecret = computeSharedSecret(recipientKeyPair.private, ephemeralPub)
-            val recipientPub = recipientKeyPair.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
-            val expectedNonce = deriveNonce(sharedSecret, ephemeralPub, recipientPub)
+            recipientPub = recipientKeyPair.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
+            expectedNonce = deriveNonce(sharedSecret, ephemeralPub, recipientPub)
             if (!nonce.contentEquals(expectedNonce)) return null
             val key = SecretKeySpec(sharedSecret, AES_KEY_ALGORITHM)
             val cipher = Cipher.getInstance(AES_GCM_TRANSFORM)
@@ -140,6 +178,8 @@ object SealedBoxCrypto {
             null
         } finally {
             sharedSecret?.let { Arrays.fill(it, 0.toByte()) }
+            expectedNonce?.let { Arrays.fill(it, 0.toByte()) }
+            recipientPub?.let { Arrays.fill(it, 0.toByte()) }
         }
     }
 
@@ -164,10 +204,15 @@ object SealedBoxCrypto {
         agreement.init(privateKey)
         agreement.doPhase(recipientPub, true)
         val sharedRaw = agreement.generateSecret()
-        // HKDF-Extract using SHA-256 to spread the X25519 secret into
-        // a 32-byte AES-256 key. Salt = ephemeral || recipient
-        // pubkey concatenation, info constant for this scheme.
-        return hkdfExtract(sharedRaw, info = HKDF_INFO_KEY)
+        // RFC-5869-style Extract+Expand using SHA-256 to spread the X25519
+        // output into a 32-byte AES-256 key. The all-zero salt is paired with
+        // a versioned info constant so persisted envelopes fail closed if a
+        // future schema intentionally changes the KDF.
+        return try {
+            hkdfExtractAndExpand(sharedRaw, info = HKDF_INFO_KEY)
+        } finally {
+            Arrays.fill(sharedRaw, 0.toByte())
+        }
     }
 
     private fun deriveNonce(
@@ -175,16 +220,31 @@ object SealedBoxCrypto {
         ephemeralPub: ByteArray,
         recipientPub: ByteArray,
     ): ByteArray {
-        val seed = sharedSecret + ephemeralPub + recipientPub
+        val seed = ByteArray(sharedSecret.size + ephemeralPub.size + recipientPub.size)
+        var offset = 0
+        sharedSecret.copyInto(seed, destinationOffset = offset)
+        offset += sharedSecret.size
+        ephemeralPub.copyInto(seed, destinationOffset = offset)
+        offset += ephemeralPub.size
+        recipientPub.copyInto(seed, destinationOffset = offset)
         val digest = MessageDigest.getInstance("SHA-256").digest(seed)
-        return digest.copyOf(NONCE_LENGTH)
+        return try {
+            digest.copyOf(NONCE_LENGTH)
+        } finally {
+            Arrays.fill(seed, 0.toByte())
+            Arrays.fill(digest, 0.toByte())
+        }
     }
 
-    private fun hkdfExtract(ikm: ByteArray, info: String): ByteArray {
+    private fun hkdfExtractAndExpand(ikm: ByteArray, info: String): ByteArray {
         val salt = ByteArray(32)
         val mac = Mac.getInstance("HmacSHA256")
-        mac.init(SecretKeySpec(salt, "HmacSHA256"))
-        val prk = mac.doFinal(ikm)
+        val prk = try {
+            mac.init(SecretKeySpec(salt, "HmacSHA256"))
+            mac.doFinal(ikm)
+        } finally {
+            Arrays.fill(salt, 0.toByte())
+        }
         try {
             val infoBytes = info.toByteArray(Charsets.US_ASCII)
             mac.init(SecretKeySpec(prk, "HmacSHA256"))
