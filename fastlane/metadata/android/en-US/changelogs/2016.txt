@@ -1,0 +1,3 @@
+v1.8.216 - compatible dependency freshness.
+
+Updated Compose BOM to 2026.05.01, KSP to 2.3.9, and Roborazzi to 1.63.0. Kotlin 2.4.0 remains deferred until a matching KSP plugin publishes; AndroidX Core 1.19.0 remains deferred because it requires compileSdk 37.
