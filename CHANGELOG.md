@@ -2,6 +2,47 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.233"></a>
+## v1.8.233
+
+Released: 2026-06-04
+
+### Editor batch critical sections
+
+R6-1 is closed. The IME editor now computes expected content and pushes the expected-content queue before opening the `InputConnection` batch edits for selection changes, text commits, composing finalization, and composing-region replacement commits.
+
+### Changes
+
+- **`AbstractEditorInstance.kt`** - moves `runBlocking` expected-content generation/queue pushes out of open batch edits for `setSelection`, `commitTextInternal`, `finalizeComposingText`, and the `commitChar` replacement branch.
+- **`EditorInputConnectionBatch.kt` / `EditorInputConnectionBatchTest.kt`** - adds a small internal batch helper with `try/finally` begin/end pairing and focused fake-`InputConnection` tests for call order, depth, raw commits, replacement commits, finalize-composing, and exception cleanup.
+- **`EditorInstance.kt`** - keeps current-input-connection access behind the `AbstractEditorInstance` override seam used by the editor hierarchy.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `docs/AUDIT_2026-05-28.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.233 / versionCode 2033 and closes R6-1.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.editor.EditorInputConnectionBatchTest"` - PASS in 2m08s after restoring the local composing-region helper for untouched editor paths.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2033.
+- Manual sustained-typing smoke on a low-end device was not run in this local batch because no device was attached. APK assembly was intentionally skipped per operator request.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInputConnectionBatch.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInputConnectionBatchTest.kt` (new)
+- `docs/AUDIT_2026-05-28.md`
+- `fastlane/metadata/android/en-US/changelogs/2033.txt` (new)
+- `gradle.properties` (versionCode 2032->2033, versionName 1.8.232->1.8.233)
+
 <a id="v1.8.232"></a>
 ## v1.8.232
 

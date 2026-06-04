@@ -22,7 +22,8 @@ mid-session. R7-1 was later closed in v1.8.231.
 `AbstractEditorInstance` code and Android `InputConnection` docs. The prior
 unbalanced early-return batch bug is already fixed, so this cycle adds R6-1:
 keep `InputConnection` batch edits free of `runBlocking`, expected-content
-queue locks, and non-`try/finally` batch pairing.
+queue locks, and non-`try/finally` batch pairing. R6-1 was later closed in
+v1.8.233.
 
 2026-06-04 Cycle 5 note: after the v1.8.226 release-ledger push, `master` is
 clean at `8cbd0d4` and tagged `v1.8.226`. Cycle 5 rechecked older
@@ -93,7 +94,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.232, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, and blocked user-dictionary system-back gestures now explain active save/delete/import/export work. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.233, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, and blocked user-dictionary system-back gestures now explain active save/delete/import/export work. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -115,7 +116,7 @@ Top opportunities (one line each):
 16. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
 17. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
 18. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
-19. **Editor batch critical sections** — selection/commit hot paths keep `InputConnection` batch edits open while `runBlocking` and expected-content queue locks run (R6-1, P2). [Verified]
+19. **Editor batch critical sections** — selection/commit hot paths now compute expected content before opening `InputConnection` batch edits, and batch pairs use `try/finally` (R6-1). [Closed]
 20. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
 21. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
 
@@ -158,11 +159,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   non-co-signed first-seen packages are in place. v1.8.229 closes R5-1 by
   aligning runtime behavior with the documented co-signed or user-trusted
   contract. [Closed]
-- **Editor mutation pipeline (partial):** the expected-content mirror is the
-  right abstraction for reconciling IME writes with selection updates, but some
-  cursor/commit paths hold open `InputConnection` batch edits while doing
-  blocking/suspending queue work. R6-1 narrows those critical sections and pins
-  batch-pairing tests. [Verified]
+- **Editor mutation pipeline:** the expected-content mirror remains the
+  reconciliation abstraction for IME writes and selection updates. v1.8.233
+  closes R6-1 by moving expected-content generation/queue pushes before the
+  selected `InputConnection` batches and by pinning `try/finally` batch-pairing
+  tests. [Closed]
 - **Sensitive-window privacy (partial):** password-field `FLAG_SECURE` and
   field-start incognito coverage exist, but dynamic incognito toggles do not
   re-apply the window flag until the next field start. R7-1 closes the
@@ -220,9 +221,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Medium] Addon first-seen trust mismatch** → R5-1. Closed in v1.8.229:
   the registry now auto-loads co-signed packages only, and otherwise requires a
   Settings-confirmed explicit pin.
-- **[Medium] Editor batch critical sections** → R6-1. Move expected-content
-  generation/queue locks out of open `InputConnection` batches and pair batch
-  edits with `try/finally`.
+- **[Closed v1.8.233] Editor batch critical sections** → R6-1. Expected-content
+  generation and queue pushes now happen before the selected `InputConnection`
+  batches, and the synchronous editor-call batches pair begin/end with
+  `try/finally`.
 - **[Closed v1.8.231] Mid-session incognito `FLAG_SECURE` gap** → R7-1. The
   smartbar incognito toggle now re-runs the existing secure-window policy for
   the active field before the next keypress.
@@ -250,9 +252,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   changed-certificate trust repair, and an explicit-trust path for first-seen
   non-co-signed packages, so package discovery and signature capture no longer
   collapse into enrollment.
-- **Editor hot path:** `AbstractEditorInstance` still concentrates `runBlocking`
-  around selection and commit operations. R6-1 keeps the existing
-  expected-content model but removes blocking work from open editor batches.
+- **Editor hot path:** v1.8.233 keeps the existing expected-content model but
+  removes blocking/queue work from the selected open editor batches and pins the
+  synchronous `InputConnection` call order with tests.
 - **User-dictionary navigation policy:** `UserDictionaryEntryPolicy` correctly
   centralizes leave/mutation/transfer gates. v1.8.232 keeps that policy and
   adds a visible response when Compose back handling blocks the gesture during
@@ -265,7 +267,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R7-1 is privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 is privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
