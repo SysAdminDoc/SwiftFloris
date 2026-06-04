@@ -10,10 +10,12 @@ mode, etc.). Tool-specific files like [`CLAUDE.md`](CLAUDE.md) carry
 
 ## Read this first
 
-**The live open-work list is [`TODO.md`](TODO.md)** — the single source of truth
-for "what needs doing", consolidated from the planning docs below. Completed work
-lives in [`CHANGELOG.md`](CHANGELOG.md). The files below are historical context and
-sourced reasoning; mine them for *why*, but pick the next task from `TODO.md`.
+**The live open-work list is [`ROADMAP.md`](ROADMAP.md)** — the single source of
+truth for "what needs doing", consolidated from the planning docs below.
+Completed work lives in [`COMPLETED.md`](COMPLETED.md) and release-level detail
+lives in [`CHANGELOG.md`](CHANGELOG.md). The files below are historical context
+and sourced reasoning; mine them for *why*, but pick the next task from
+`ROADMAP.md`.
 
 1. [`PROJECT_CONTEXT.md`](PROJECT_CONTEXT.md) — single-page consolidated
    project context. Pins the load-bearing invariants, the v1.8.170

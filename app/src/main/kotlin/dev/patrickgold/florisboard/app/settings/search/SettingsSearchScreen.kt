@@ -24,14 +24,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,7 +45,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.RectangleShape
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalResources
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -68,14 +76,27 @@ fun SettingsSearchScreen() = FlorisScreen {
 
     content {
         var searchQuery by rememberSaveable { mutableStateOf("") }
+        var initialFocusRequested by rememberSaveable { mutableStateOf(false) }
+        val focusRequester = remember { FocusRequester() }
+        val keyboardController = LocalSoftwareKeyboardController.current
         val results = remember(searchQuery, resources) {
             SettingsSearchIndex.search(searchQuery, resolveString)
         }
         val state = rememberLazyListState()
 
+        LaunchedEffect(Unit) {
+            if (!initialFocusRequested) {
+                focusRequester.requestFocus()
+                keyboardController?.show()
+                initialFocusRequested = true
+            }
+        }
+
         Column(modifier = Modifier.fillMaxSize()) {
             TextField(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .focusRequester(focusRequester),
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text(stringRes(R.string.settings__search__placeholder)) },
@@ -85,7 +106,20 @@ fun SettingsSearchScreen() = FlorisScreen {
                         contentDescription = null,
                     )
                 },
+                trailingIcon = if (searchQuery.isNotEmpty()) {
+                    {
+                        IconButton(onClick = { searchQuery = "" }) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = stringRes(R.string.settings__search__clear),
+                            )
+                        }
+                    }
+                } else {
+                    null
+                },
                 singleLine = true,
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 shape = RectangleShape,
                 colors = TextFieldDefaults.colors(
                     focusedIndicatorColor = Color.Transparent,
