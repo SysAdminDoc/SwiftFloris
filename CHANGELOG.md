@@ -2,6 +2,50 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.228"></a>
+## v1.8.228
+
+Released: 2026-06-04
+
+### Clipboard history search
+
+R3-2 is closed. The in-keyboard clipboard palette now exposes the existing local-only clipboard history search contract instead of limiting users to type chips.
+
+### Changes
+
+- **`ClipboardInputLayout.kt`** - adds a compact search row gated by `prefs.clipboard.historySearchEnabled`, composes search with text/image/video type filters, shows query-aware no-results copy, keeps the clear action local to the field, and resets the clipboard grid to the first result when the query or type filters change.
+- **`ClipboardHistoryFilter.kt` / `ClipboardHistoryFilterTest.kt`** - adds and pins the pure query plus type-filter composition path used by the palette.
+- **`ClipboardScreen.kt` / `SettingsSearchIndex.kt` / `strings.xml`** - surfaces the default-on search toggle in Settings -> Clipboard and makes it discoverable through Settings search.
+- **`FlorisImeUi.kt` / `FlorisImeThemeBaseStyle.kt`** - adds clipboard search row/button Snygg elements so themes can target the new controls.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.228 / versionCode 2028 and closes R3-2.
+
+### Verification
+
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2028.
+- `./gradlew.bat --no-daemon --no-parallel --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx2048m" "-Dkotlin.daemon.jvm.options=-Xmx1536m" :app:testDebugUnitTest` - PASS, including `ClipboardHistoryFilterTest` and Settings-search resource integrity coverage.
+- Manual keyboard clipboard palette smoke (text, sensitive text, image, video, no-results, and locked-device state) was not run in this local batch.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/clipboard/ClipboardScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardHistoryFilter.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/FlorisImeThemeBaseStyle.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/theme/FlorisImeUi.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardHistoryFilterTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2028.txt` (new)
+- `gradle.properties` (versionCode 2027->2028, versionName 1.8.227->1.8.228)
+
 <a id="v1.8.227"></a>
 ## v1.8.227
 

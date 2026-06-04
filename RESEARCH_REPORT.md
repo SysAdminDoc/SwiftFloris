@@ -19,7 +19,7 @@ fixes Japanese `ja` locale capability gates; R4-2 adds clipboard media TalkBack
 labels; R4-3 pins MIME aggregate helper behavior and removes constructor stdout;
 R4-4 hardens the native string bridge. WS13 was sharpened with the deferred
 `StickerMediaProvider.openFile` SAF allow-list validation. R4-1 was later
-closed in v1.8.227.
+closed in v1.8.227. R3-2 was later closed in v1.8.228.
 
 2026-06-04 Cycle 3 note: after the Cycle 3 docs push, `master` is clean at
 `dc72e32`, with `git describe` returning `v1.8.223-6-gdc72e32` and no tag
@@ -71,7 +71,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.227, the post-v1.8.225 pushed fixes are covered by a release ledger and the Japanese locale capability typo is fixed. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the already-partial clipboard search surface, sync-crypto contract tests, and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.228, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, and clipboard history search is wired into the keyboard palette. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on sync-crypto contract tests and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -84,7 +84,7 @@ Top opportunities (one line each):
 7. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths were replaced with project logging plus user-safe fallback copy in v1.8.219 (R2-2). [Closed]
 8. **Root docs source-of-truth refresh** — onboarding docs now route open work, shipped state, release notes, and archived planning context consistently (R2-3). [Closed]
 9. **Release-ledger reconciliation** — post-v1.8.225 fixes now have a normal version/changelog/fastlane/tag handoff in v1.8.226 (R3-1). [Closed]
-10. **Clipboard history search UI** — pure filtering and a default-on pref exist, but the in-keyboard clipboard palette still only exposes type filters; FUTO v0.1.29 adds clipboard history search as current parity evidence (R3-2, P1). [Verified]
+10. **Clipboard history search UI** — the in-keyboard clipboard palette now exposes the existing pure filter through a compact search row, composes query with type filters, and keeps no-results/clear states local-only (R3-2). [Closed]
 11. **Sealed-box contract vectors** — sync crypto tests need deterministic envelope/KDF vectors before CRDT transport persists or exchanges encrypted deltas (R3-3, P1). [Verified]
 12. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]
 13. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
@@ -113,7 +113,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Clipboard history search (partial):** `ClipboardHistoryFilter` and
   `ClipboardHistoryFilterTest` pin a privacy-neutral text-query contract, and
   `prefs.clipboard.historySearchEnabled` exists, but `ClipboardInputLayout`
-  currently applies only item-type filters. R3-2 is the UI wire-up, not a new
+  previously applied only item-type filters. v1.8.228 closes R3-2 as the UI wire-up, not a new
   storage feature. [Verified]
 - **Locale capability gates:** `FlorisLocale` centralizes capitalization and
   auto-space support decisions. v1.8.227 closes R4-1 by using `ja` for Japanese
@@ -162,7 +162,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Closed v1.8.219] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` failure diagnostics now use `flogError`, restore UI copy falls back to the existing "Unknown error" string for null/blank throwable messages, and `CrashUtility.writeToFile` logs through `LogTopic.CRASH_UTILITY`.
 - **[High] Local release ledger drift** → R3-1. Three code-fix commits after
   the v1.8.225 docs marker are untagged and absent from the release ledger.
-- **[Medium] Clipboard query helper not surfaced in the IME palette** → R3-2.
+- **[Medium] Clipboard query helper not surfaced in the IME palette** → R3-2. Closed in v1.8.228.
   The pure helper and pref exist; the user-facing keyboard UI does not expose a
   search field yet.
 - **[Medium] Japanese auto-space gate typo** → R4-1. `supportsAutoSpace`

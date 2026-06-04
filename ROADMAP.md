@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.227 (versionCode 2027). **Local verification:** fastlane metadata green; `:app:testDebugUnitTest` green, including `FlorisLocaleTest`. APK assembly intentionally not rerun for this small follow-up.
+**Current release:** v1.8.228 (versionCode 2028). **Local verification:** fastlane metadata green; `:app:testDebugUnitTest` green, including `ClipboardHistoryFilterTest`. APK assembly intentionally not rerun for this UI/test follow-up; manual keyboard clipboard smoke remains device-gated.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -375,7 +375,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Clipboard UX
 
-- [ ] 🤖 P1 — Wire clipboard-history text search into the in-keyboard clipboard palette (R3-2)
+- [x] 🤖 P1 — Wire clipboard-history text search into the in-keyboard clipboard palette (R3-2)
   - Why: SwiftFloris already has a tested pure `ClipboardHistoryFilter` and a
     `historySearchEnabled` preference, but the live `ClipboardInputLayout`
     exposes only type filters. FUTO Keyboard v0.1.29 added clipboard-history
@@ -399,6 +399,9 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     "dev.patrickgold.florisboard.ime.clipboard.*"`; manual keyboard clipboard
     palette smoke with text, sensitive text, image, video, no-results, and
     device-locked states.
+  - Shipped: v1.8.228 (2026-06-04) with `ClipboardHistoryFilterTest` coverage
+    for query plus type-filter composition and a local verification caveat for
+    manual TalkBack/device smoke.
   - Complexity: M
 
 #### Sync crypto contract

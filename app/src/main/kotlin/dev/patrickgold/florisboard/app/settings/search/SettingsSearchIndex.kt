@@ -178,6 +178,7 @@ object SettingsSearchIndex {
         entry("clipboard.internal", R.string.settings__clipboard__title, R.string.pref__clipboard__use_internal_clipboard__label, R.string.pref__clipboard__use_internal_clipboard__summary, SettingsSearchDestination.CLIPBOARD),
         entry("clipboard.history", R.string.settings__clipboard__title, R.string.pref__clipboard__enable_clipboard_history__label, R.string.pref__clipboard__enable_clipboard_history__summary, SettingsSearchDestination.CLIPBOARD),
         entry("clipboard.suggestion", R.string.settings__clipboard__title, R.string.pref__clipboard__suggestion_enabled__label, R.string.pref__clipboard__suggestion_enabled__summary, SettingsSearchDestination.CLIPBOARD),
+        entry("clipboard.search", R.string.settings__clipboard__title, R.string.pref__clipboard__history_search_enabled__label, R.string.pref__clipboard__history_search_enabled__summary, SettingsSearchDestination.CLIPBOARD),
         entry("clipboard.cleanup", R.string.settings__clipboard__title, R.string.pref__clipboard__clean_up_old__label, R.string.pref__clipboard__clean_up_old__summary, SettingsSearchDestination.CLIPBOARD),
         entry("clipboard.sensitive", R.string.settings__clipboard__title, R.string.pref__clipboard__auto_clean_sensitive__label, R.string.pref__clipboard__auto_clean_sensitive__summary, SettingsSearchDestination.CLIPBOARD),
 

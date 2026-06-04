@@ -1,0 +1,3 @@
+v1.8.228 - Clipboard history search.
+
+Adds in-keyboard clipboard text search with a Settings toggle, clear/no-results states, and query plus type-filter composition. Pins the pure filter contract with focused JVM coverage while preserving local-only clipboard behavior.
