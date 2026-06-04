@@ -8,12 +8,12 @@ This report summarizes current research conclusions. The full 2026-05-25 researc
 
 2026-06-04 dependency note: v1.8.216 closed the compatible portion of the P3 freshness row by bumping Compose BOM `2026.05.01`, KSP `2.3.9`, and Roborazzi `1.63.0`. Kotlin `2.4.0` remains deferred because the KSP Gradle plugin metadata currently tops out at `2.3.9`; AndroidX Core `1.19.0` remains deferred because `:app:checkDebugAarMetadata` reports a `compileSdk 37` requirement.
 
-2026-06-04 Cycle 2 note: local reconciliation found two active gaps that were
-not already represented in `ROADMAP.md`: a staged startup-exception path that is
-never drained (`R2-1`) and stale root onboarding/release docs after the v1.8.170
--> v1.8.216 release run (`R2-3`). A smaller diagnostic-consistency row (`R2-2`)
-captures remaining `printStackTrace()` paths without claiming release-build
-file logging. External checks did not create new upstream rows: FlorisBoard has
+2026-06-04 Cycle 2 note: local reconciliation found three gaps that were not
+already represented in `ROADMAP.md`: a staged startup-exception path that was
+never drained (`R2-1`, closed v1.8.218), stale root onboarding/release docs
+after the v1.8.170 -> v1.8.218 release run (`R2-3`), and a smaller
+diagnostic-consistency row (`R2-2`) for remaining `printStackTrace()` paths
+without claiming release-build file logging. External checks did not create new upstream rows: FlorisBoard has
 `v0.6.0-alpha02` in tags while the latest GitHub release page is `v0.5.2`,
 HeliBoard `v3.9` and AnySoftKeyboard `1.13-r1` reinforce the existing gesture,
 backup/restore, 16 KB, edge-to-edge, and emoji rows, and CLDR 48.2 / Unicode
@@ -22,9 +22,11 @@ F22/F10/F12/API 37 work.
 
 2026-06-04 lint-baseline note: v1.8.217 closed EI10. No `app/lint-baseline.xml` exists in the checkout, `docs/LOCAL_VERIFICATION.md` now documents the baseline-free lint contract, and `bash scripts/run-lint-debug-with-baseline-check.sh` passed with the verified JDK 21 path.
 
+2026-06-04 startup-diagnostics note: v1.8.218 closed R2-1 with a recoverable staged-init path. `CrashUtility.consumeStagedException(...)` persists the staged stacktrace without invoking the process-killing uncaught handler, and `FlorisAppActivity` redirects to `CrashDialogActivity` before the splash screen can wait on unloaded preferences.
+
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.217 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped in v1.8.204 (commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.218 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped in v1.8.204 (commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
 
 Top opportunities (one line each):
 
@@ -34,9 +36,8 @@ Top opportunities (one line each):
 4. **Keyword/synonym coverage** — most entries ship no `keywords`; capability terms like "dark mode"/"haptic" miss (RA-3, P2). [Verified]
 5. **TalkBack pass over search** — no semantics/live-region on results or count; not in `ACCESSIBILITY.md` QA checklist (RA-4, P2). [Verified]
 6. **Search entry-point discoverability** from Settings home (RA-8, P3). [Likely]
-7. **Startup crash diagnosability** — staged synchronous application-init exceptions are never drained into the existing crash surface (R2-1, P1). [Verified]
-8. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths need project logging plus user-safe fallback copy (R2-2, P2). [Verified]
-9. **Root docs source-of-truth refresh** — onboarding docs still mix v1.8.170-era facts, archived plan routes, and retired release-note instructions (R2-3, P2). [Verified]
+7. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths need project logging plus user-safe fallback copy (R2-2, P2). [Verified]
+8. **Root docs source-of-truth refresh** — onboarding docs still mix v1.8.170-era facts, archived plan routes, and retired release-note instructions (R2-3, P2). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -72,7 +73,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Minor] Search a11y gap** → RA-4. (`SettingsSearchScreen.kt:82-143`; `docs/ACCESSIBILITY.md` checklist.)
 - **[Closed v1.8.215] No diacritic folding** → RA-5. (`SettingsSearchIndex.kt`.)
 - **[Cosmetic] Entry-point discoverability** → RA-8. (`HomeScreen.kt` per `1966c69`.)
-- **[Major] Staged startup exception is never surfaced** → R2-1. `FlorisApplication.kt:156` stages and returns; `CrashUtility.kt:166-170` has the drain function; repo-wide grep finds no call site; `FlorisAppActivity.kt` opens without consulting `CrashUtility`. This is rare but high-trust because it makes startup failure invisible.
+- **[Closed v1.8.218] Staged startup exception is never surfaced** → R2-1. `CrashUtility.consumeStagedException(...)` now persists the staged report without the process-killing handler, and `FlorisAppActivity` opens the crash dialog before installing the splash-screen keep condition.
 - **[Minor] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` and `CrashUtility.writeToFile` still bypass the project logging idiom; `BackupScreen` already shows the preferred local pattern. The item is framed as consistency + fallback-copy work, not release persisted logging.
 
 ## Architecture & Technical Findings
@@ -86,7 +87,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the empty/no-results system-settings deep-link (RA-2) uses Android's documented `Settings.ACTION_INPUT_METHOD_SETTINGS` intent and does not weaken the no-network posture. R2-1/R2-2 are diagnostic-safety work: they should surface failures without adding network, telemetry, or broad file export. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the empty/no-results system-settings deep-link (RA-2) uses Android's documented `Settings.ACTION_INPUT_METHOD_SETTINGS` intent and does not weaken the no-network posture. R2-1 closed as local diagnostic-safety work without adding network, telemetry, or broad file export; R2-2 should keep that same constraint. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
@@ -103,7 +104,6 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 
 1. Is the Settings-home search affordance already a top-of-screen bar or a buried row? (decides whether RA-8 is a no-op) — needs an on-device look at `HomeScreen.kt` rendering. [Needs validation]
 2. Should the no-results state deep-link to Android system IME settings, or stay app-internal only? (product call for RA-2; affects copy and the no-network optics even though the intent itself sends no data). [Needs validation]
-3. For R2-1, should staged startup failures intentionally route through the existing uncaught handler (which kills the process after writing/notifying), or should SwiftFloris add a recoverable staged-init stacktrace path for Settings to show without a process kill? [Implementation choice]
 
 ## Archived Evidence
 

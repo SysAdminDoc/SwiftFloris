@@ -56,6 +56,8 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.LocalPreviewFieldController
 import dev.patrickgold.florisboard.lib.compose.PreviewKeyboardField
 import dev.patrickgold.florisboard.lib.compose.rememberPreviewFieldController
+import dev.patrickgold.florisboard.lib.crashutility.CrashDialogActivity
+import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import dev.patrickgold.florisboard.lib.util.AppVersionUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
@@ -98,6 +100,15 @@ class FlorisAppActivity : ComponentActivity() {
     private var intentToBeHandled by mutableStateOf<Intent?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // R2-1: application init can stage a recoverable startup exception
+        // before prefs load. Surface it before the splash keep condition can
+        // wait forever on preferenceStoreLoaded.
+        stagedStartupCrashIntent(this)?.let { crashIntent ->
+            super.onCreate(savedInstanceState)
+            startActivity(crashIntent)
+            finish()
+            return
+        }
         // Splash screen should be installed before calling super.onCreate()
         installSplashScreen().apply {
             setKeepOnScreenCondition { !appContext.preferenceStoreLoaded.value }
@@ -296,5 +307,13 @@ class FlorisAppActivity : ComponentActivity() {
             @Suppress("DEPRECATION")
             getParcelableExtra(Intent.EXTRA_STREAM)
         }
+    }
+}
+
+internal fun stagedStartupCrashIntent(context: Context): Intent? {
+    return if (CrashUtility.consumeStagedException(context.applicationContext)) {
+        Intent(context, CrashDialogActivity::class.java)
+    } else {
+        null
     }
 }

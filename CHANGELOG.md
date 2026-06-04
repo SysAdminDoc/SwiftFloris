@@ -2,6 +2,43 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.218"></a>
+## v1.8.218
+
+Released: 2026-06-04
+
+### Startup crash recovery
+
+R2-1 is closed with a recoverable staged-init crash path. If `FlorisApplication.onCreate()` catches and stages a startup exception before preferences finish loading, Settings now consumes that staged exception before installing the splash-screen keep condition, persists the report through the existing crash utility file store, and opens `CrashDialogActivity`.
+
+This deliberately does not call the existing uncaught-exception handler, because that path writes/notifies and then kills the process. The new path keeps the failure visible without leaving the user stuck behind an indefinite splash screen.
+
+### Changes
+
+- **`CrashUtility.kt`** - adds `consumeStagedException(context)`, which persists the staged stacktrace and clears the staged state without invoking the process-killing handler.
+- **`FlorisAppActivity.kt`** - redirects to `CrashDialogActivity` before the splash screen can wait on `preferenceStoreLoaded`.
+- **`StartupCrashRecoveryTest.kt`** - pins the persistence, one-shot consumption, and crash-dialog intent behavior.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - closes R2-1 and leaves R2-2/R2-3 as the next Cycle 2 implementer work.
+- **`README.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.218 / versionCode 2018.
+
+### Verification
+
+- `./gradlew.bat --no-daemon :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.StartupCrashRecoveryTest"` -> green.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisAppActivity.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/crashutility/CrashUtility.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/StartupCrashRecoveryTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2018.txt` (new)
+- `gradle.properties` (versionCode 2017->2018, versionName 1.8.217->1.8.218)
+
 <a id="v1.8.217"></a>
 ## v1.8.217
 

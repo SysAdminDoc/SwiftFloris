@@ -173,6 +173,25 @@ abstract class CrashUtility private constructor() {
         }
 
         /**
+         * Persists a startup exception that was caught before the app UI could
+         * render. Unlike [handleStagedButUnhandledExceptions], this path does
+         * not call the process-killing uncaught handler; callers can redirect to
+         * [CrashDialogActivity] and let the user read/copy the persisted report.
+         */
+        fun consumeStagedException(context: Context?): Boolean {
+            val e = stagedException ?: return false
+            context ?: return false
+            stagedException = null
+
+            val timestamp = System.currentTimeMillis()
+            val stacktrace = Log.getStackTraceString(e)
+            writeToFile(context.getUstFile(timestamp), stacktrace)
+            setLastCrashTimestamp(context, timestamp)
+            pushCrashOnceNotification(context)
+            return true
+        }
+
+        /**
          * Reads and returns all unhandled stacktrace files.
          *
          * @param context The current package context. If null is supplied, this function returns
