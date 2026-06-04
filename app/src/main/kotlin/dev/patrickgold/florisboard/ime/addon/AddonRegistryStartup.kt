@@ -28,9 +28,13 @@ object AddonRegistryStartup {
     fun reconcile(
         discovered: List<AddonManifest>,
         persistedSigningPinsRaw: String,
+        trustedRootSigningCertSha256: String? = null,
     ): Result {
         val persistedPins = AddonSigningPinSet.parse(persistedSigningPinsRaw)
-        val registry = AddonRegistry.fromPinnedSigningPinSet(persistedPins)
+        val registry = AddonRegistry.fromPinnedSigningPinSet(
+            pinSet = persistedPins,
+            trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
+        )
         val snapshot = registry.refresh(discovered)
         val encodedPins = registry.pinnedSigningPinSet().encode()
         val normalizedExistingPins = persistedSigningPinsRaw.trim()

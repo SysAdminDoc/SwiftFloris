@@ -23,13 +23,15 @@ import java.util.Locale
  *
  * [AddonEnumerator] performs the Android PackageManager scan. This registry
  * owns the next step: reconcile that snapshot with the signing-certificate
- * pins captured at first enrolment, expose deterministic lookup lists for UI
- * and runtime consumers, and keep stale pins even when an addon is temporarily
- * uninstalled. Startup persistence is handled by [AddonRegistryStartup]; the
- * reconciliation rules stay pure and unit-testable here.
+ * pins captured after explicit user trust, expose deterministic lookup lists
+ * for UI and runtime consumers, and keep stale pins even when an addon is
+ * temporarily uninstalled. Startup persistence is handled by
+ * [AddonRegistryStartup]; the reconciliation rules stay pure and unit-testable
+ * here.
  */
 class AddonRegistry(
     initialPinnedSigningCertificates: Map<String, String> = emptyMap(),
+    private val trustedRootSigningCertSha256: String? = null,
 ) {
     private val pinnedSigningCertificates = initialPinnedSigningCertificates.toMutableMap()
     private val liveManifests = linkedMapOf<String, AddonManifest>()
@@ -38,10 +40,12 @@ class AddonRegistry(
     /**
      * Reconcile a fresh PackageManager scan into live addon state.
      *
-     * A package whose signing certificate changes after first enrolment is
+     * A package whose signing certificate changes after explicit trust is
      * rejected even if the new APK otherwise satisfies the addon manifest
      * contract. The old pin stays in place so uninstall/reinstall hijacks do
-     * not clear trust silently.
+     * not clear trust silently. First-seen packages are accepted only when
+     * co-signed with the base IME; every other package remains rejected until
+     * Settings writes an explicit pin.
      */
     @Synchronized
     fun refresh(discovered: List<AddonManifest>): Snapshot {
@@ -54,18 +58,27 @@ class AddonRegistry(
         for ((packageName, manifest) in newestByPackage.toSortedMap()) {
             val pinnedFingerprint = pinnedSigningCertificates[packageName]
             when {
-                pinnedFingerprint == null -> {
-                    pinnedSigningCertificates[packageName] = manifest.signingCertSha256
+                pinnedFingerprint == null &&
+                    manifest.signingCertSha256 == trustedRootSigningCertSha256 -> {
                     accepted += manifest
                 }
                 pinnedFingerprint == manifest.signingCertSha256 -> {
                     accepted += manifest
                 }
+                pinnedFingerprint == null -> {
+                    rejected += RejectedAddon(
+                        packageName = packageName,
+                        displayName = manifest.displayName,
+                        signingCertSha256 = manifest.signingCertSha256,
+                        reason = ReasonExplicitTrustRequired,
+                    )
+                }
                 else -> {
                     rejected += RejectedAddon(
                         packageName = packageName,
                         displayName = manifest.displayName,
-                        reason = "signing certificate changed",
+                        signingCertSha256 = manifest.signingCertSha256,
+                        reason = ReasonSigningCertificateChanged,
                     )
                 }
             }
@@ -126,12 +139,22 @@ class AddonRegistry(
     data class RejectedAddon(
         val packageName: String,
         val displayName: String?,
+        val signingCertSha256: String,
         val reason: String,
     )
 
     companion object {
-        fun fromPinnedSigningPinSet(pinSet: AddonSigningPinSet): AddonRegistry =
-            AddonRegistry(initialPinnedSigningCertificates = pinSet.asMap())
+        const val ReasonExplicitTrustRequired = "explicit trust required"
+        const val ReasonSigningCertificateChanged = "signing certificate changed"
+
+        fun fromPinnedSigningPinSet(
+            pinSet: AddonSigningPinSet,
+            trustedRootSigningCertSha256: String? = null,
+        ): AddonRegistry =
+            AddonRegistry(
+                initialPinnedSigningCertificates = pinSet.asMap(),
+                trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
+            )
 
         val DisplayOrder: Comparator<AddonManifest> =
             compareBy<AddonManifest> { it.type.metadataValue }

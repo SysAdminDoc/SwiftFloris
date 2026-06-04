@@ -1,6 +1,6 @@
 # SwiftFloris Threat Model
 
-**Last updated:** 2026-05-25 (v1.8.176)
+**Last updated:** 2026-06-04 (v1.8.229)
 **Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules — none ship today, none are planned).
 **Audience:** maintainers, reviewers, and security-conscious users evaluating SwiftFloris vs proprietary keyboards.
 
@@ -55,6 +55,9 @@ and [SEVENTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.
   without losing trust for the rest of the addon set.
 - **v1.8.125** — Addon dictionary-pack assets mount via `PackageManager#getResourcesForApplication`,
   no extraction, no temp copies. Closes the symlink-vs-extracted-file confusion class.
+- **v1.8.229** — First-seen non-co-signed addon APKs now stay rejected until Settings records an
+  explicit signing-certificate pin for the displayed fingerprint; co-signed addons still enroll
+  automatically. Closes the discovery-as-consent gap in optional addon enrollment.
 - **v1.8.174** — Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
   `*.keystore` / `local.properties` / `*.backup*` / large branding PNGs. Closes the supply-
   chain footgun where a maintainer's working-tree keystore could land in a commit.

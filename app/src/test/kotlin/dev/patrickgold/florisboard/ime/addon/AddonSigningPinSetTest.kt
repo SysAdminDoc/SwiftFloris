@@ -80,15 +80,11 @@ class AddonSigningPinSetTest : FunSpec({
         encoded shouldBe "org.swiftfloris.dict.de=$PIN_SHA_B\norg.swiftfloris.dict.pl=$PIN_SHA_A"
     }
 
-    test("withFirstSeen preserves existing pins and adds new packages") {
+    test("withPinnedCertificate replaces an existing explicit trust decision") {
         val pins = AddonSigningPinSet.parse("org.swiftfloris.dict.pl=$PIN_SHA_A")
-            .withFirstSeen(pinnedManifest("org.swiftfloris.dict.pl", PIN_SHA_B))
-            .withFirstSeen(pinnedManifest("org.swiftfloris.dict.de", PIN_SHA_B))
+            .withPinnedCertificate("org.swiftfloris.dict.pl", PIN_SHA_B)
 
-        pins.asMap() shouldBe mapOf(
-            "org.swiftfloris.dict.de" to PIN_SHA_B,
-            "org.swiftfloris.dict.pl" to PIN_SHA_A,
-        )
+        pins.asMap() shouldBe mapOf("org.swiftfloris.dict.pl" to PIN_SHA_B)
     }
 
     test("withoutPackage removes only the requested pin") {
@@ -109,7 +105,7 @@ class AddonSigningPinSetTest : FunSpec({
         pins.asMap() shouldBe mapOf("org.swiftfloris.dict.pl" to PIN_SHA_A)
     }
 
-    test("registry can round-trip through the pin set codec") {
+    test("registry round-trip preserves explicit pins without auto-pinning pending addons") {
         val registry = AddonRegistry.fromPinnedSigningPinSet(
             AddonSigningPinSet.parse("org.swiftfloris.dict.pl=$PIN_SHA_A"),
         )
@@ -117,6 +113,6 @@ class AddonSigningPinSetTest : FunSpec({
         registry.refresh(listOf(pinnedManifest("org.swiftfloris.dict.de", PIN_SHA_B)))
 
         val encoded = registry.pinnedSigningPinSet().encode()
-        encoded shouldBe "org.swiftfloris.dict.de=$PIN_SHA_B\norg.swiftfloris.dict.pl=$PIN_SHA_A"
+        encoded shouldBe "org.swiftfloris.dict.pl=$PIN_SHA_A"
     }
 })

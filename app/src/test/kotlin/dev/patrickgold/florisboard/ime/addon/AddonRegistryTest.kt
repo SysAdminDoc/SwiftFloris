@@ -26,6 +26,9 @@ private const val REGISTRY_SHA_A =
 private const val REGISTRY_SHA_B =
     "BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:" +
         "BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB:BB"
+private const val REGISTRY_SHA_C =
+    "CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:" +
+        "CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC:CC"
 
 private fun registryManifest(
     packageName: String,
@@ -45,8 +48,8 @@ private fun registryManifest(
 )
 
 class AddonRegistryTest : FunSpec({
-    test("refresh pins first-seen signing certificates and exposes deterministic state") {
-        val registry = AddonRegistry()
+    test("refresh accepts co-signed addons without creating saved trust pins") {
+        val registry = AddonRegistry(trustedRootSigningCertSha256 = REGISTRY_SHA_A)
         val dictionary = registryManifest(
             packageName = "org.swiftfloris.dict.pl",
             displayName = "Polish",
@@ -67,9 +70,41 @@ class AddonRegistryTest : FunSpec({
         registry.dictionaryPacks() shouldContainExactly listOf(dictionary)
         registry.manifestForPackage("org.swiftfloris.theme.dark") shouldBe theme
         registry.manifestForStableId("addon:org.swiftfloris.dict.pl") shouldBe dictionary
+        registry.pinnedSigningCertificates() shouldBe emptyMap()
+    }
+
+    test("refresh rejects first-seen non-co-signed addons until explicitly trusted") {
+        val registry = AddonRegistry(trustedRootSigningCertSha256 = REGISTRY_SHA_A)
+        val external = registryManifest(
+            packageName = "org.swiftfloris.dict.external",
+            signingCertSha256 = REGISTRY_SHA_B,
+        )
+
+        val snapshot = registry.refresh(listOf(external))
+
+        snapshot.accepted shouldBe emptyList()
+        snapshot.rejected.single().packageName shouldBe "org.swiftfloris.dict.external"
+        snapshot.rejected.single().reason shouldBe AddonRegistry.ReasonExplicitTrustRequired
+        snapshot.rejected.single().signingCertSha256 shouldBe REGISTRY_SHA_B
+        registry.pinnedSigningCertificates() shouldBe emptyMap()
+    }
+
+    test("refresh accepts explicitly pinned non-co-signed addons") {
+        val registry = AddonRegistry(
+            initialPinnedSigningCertificates = mapOf("org.swiftfloris.dict.external" to REGISTRY_SHA_B),
+            trustedRootSigningCertSha256 = REGISTRY_SHA_A,
+        )
+        val external = registryManifest(
+            packageName = "org.swiftfloris.dict.external",
+            signingCertSha256 = REGISTRY_SHA_B,
+        )
+
+        val snapshot = registry.refresh(listOf(external))
+
+        snapshot.accepted shouldBe listOf(external)
+        snapshot.rejected shouldBe emptyList()
         registry.pinnedSigningCertificates() shouldBe mapOf(
-            "org.swiftfloris.dict.pl" to REGISTRY_SHA_A,
-            "org.swiftfloris.theme.dark" to REGISTRY_SHA_A,
+            "org.swiftfloris.dict.external" to REGISTRY_SHA_B,
         )
     }
 
@@ -79,14 +114,15 @@ class AddonRegistryTest : FunSpec({
         )
         val hijacked = registryManifest(
             packageName = "org.swiftfloris.dict.pl",
-            signingCertSha256 = REGISTRY_SHA_B,
+            signingCertSha256 = REGISTRY_SHA_C,
         )
 
         val snapshot = registry.refresh(listOf(hijacked))
 
         snapshot.accepted shouldBe emptyList()
         snapshot.rejected.single().packageName shouldBe "org.swiftfloris.dict.pl"
-        snapshot.rejected.single().reason shouldBe "signing certificate changed"
+        snapshot.rejected.single().reason shouldBe AddonRegistry.ReasonSigningCertificateChanged
+        snapshot.rejected.single().signingCertSha256 shouldBe REGISTRY_SHA_C
         registry.snapshot() shouldBe emptyList()
         registry.pinnedSigningCertificates() shouldBe mapOf(
             "org.swiftfloris.dict.pl" to REGISTRY_SHA_A,
@@ -94,8 +130,9 @@ class AddonRegistryTest : FunSpec({
     }
 
     test("refresh keeps stale pins when addons disappear") {
-        val registry = AddonRegistry()
-        registry.refresh(listOf(registryManifest("org.swiftfloris.dict.pl")))
+        val registry = AddonRegistry(
+            initialPinnedSigningCertificates = mapOf("org.swiftfloris.dict.pl" to REGISTRY_SHA_A),
+        )
 
         registry.refresh(emptyList())
 
@@ -106,7 +143,7 @@ class AddonRegistryTest : FunSpec({
     }
 
     test("duplicate package entries collapse to newest version") {
-        val registry = AddonRegistry()
+        val registry = AddonRegistry(trustedRootSigningCertSha256 = REGISTRY_SHA_A)
         val old = registryManifest("org.swiftfloris.dict.pl", version = 1L)
         val newest = registryManifest("org.swiftfloris.dict.pl", version = 3L)
 
@@ -116,7 +153,9 @@ class AddonRegistryTest : FunSpec({
     }
 
     test("clearRuntimeState does not clear signing pins") {
-        val registry = AddonRegistry()
+        val registry = AddonRegistry(
+            initialPinnedSigningCertificates = mapOf("org.swiftfloris.dict.pl" to REGISTRY_SHA_A),
+        )
         registry.refresh(listOf(registryManifest("org.swiftfloris.dict.pl")))
 
         registry.clearRuntimeState()

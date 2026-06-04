@@ -43,9 +43,9 @@ import kotlinx.serialization.json.JsonPrimitive
  *   [DictionaryPackDescriptor]) but null for other types. The addon-level [AddonManifest.licenseSpdxId] always
  *   carries the *APK code* license (Apache-2.0 / GPL-3.0-only / etc.), which may differ from the *dataset* license
  *   for a dictionary pack — e.g. a GPL-licensed APK shipping a CC-BY-SA word list.
- * - `signingCertSha256` is the upper-cased colon-separated SHA-256 fingerprint of the addon's signing certificate,
- *   pinned by [AddonEnumerator] at first enrolment. Users can compare it against a fingerprint published by the
- *   addon maintainer.
+ * - `signingCertSha256` is the upper-cased colon-separated SHA-256 fingerprint of the addon's signing certificate.
+ *   Co-signed addons can load automatically; non-co-signed addons are shown in Settings until users explicitly
+ *   pin this fingerprint. Users can compare it against a fingerprint published by the addon maintainer.
  */
 data class AddonProvenanceReport(
     val packageName: String,

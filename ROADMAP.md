@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.228 (versionCode 2028). **Local verification:** fastlane metadata green; `:app:testDebugUnitTest` green, including `ClipboardHistoryFilterTest`. APK assembly intentionally not rerun for this UI/test follow-up; manual keyboard clipboard smoke remains device-gated.
+**Current release:** v1.8.229 (versionCode 2029). **Local verification:** fastlane metadata gate passed for versionCode 2029; reduced-resource `:app:testDebugUnitTest` passed in 3m37s; APK assembly was intentionally not run for this trust-policy follow-up.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -258,7 +258,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Addon trust boundary
 
-- [ ] 🤖 P1 — Require explicit first-run trust for non-co-signed addon APK enrollment (R5-1)
+- [x] 🤖 P1 — Require explicit first-run trust for non-co-signed addon APK enrollment (R5-1)
   - Why: SwiftFloris' addon contract says addon packages must be co-signed with
     the IME or explicitly trusted by the user in Settings, but the current
     first-seen registry path auto-pins any package that passes manifest,
@@ -298,6 +298,9 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     "dev.patrickgold.florisboard.ime.addon.*"` plus a manual Settings -> Addons
     pass with co-signed, unsigned-untrusted, unsigned-trusted, changed-cert, and
     reset-all cases.
+  - Shipped: v1.8.229 (2026-06-04) with focused addon registry/startup/pin-set
+    coverage under the broad debug JVM unit-test task. Manual Settings ->
+    Addons package-state smoke remains device-gated.
   - Complexity: M
 
 ### Researcher Queue (Cycle 4 - 2026-06-04)

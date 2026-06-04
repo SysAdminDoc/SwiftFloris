@@ -47,6 +47,7 @@ import androidx.core.view.WindowCompat
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
@@ -424,6 +425,7 @@ class FlorisImeService : LifecycleInputMethodService() {
                 val result = AddonRegistryStartup.reconcile(
                     discovered = discovered,
                     persistedSigningPinsRaw = prefs.addon.signingCertPins.get(),
+                    trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
                 )
                 AddonRegistryStore.setActive(result.registry)
                 if (result.signingPinsChanged) {

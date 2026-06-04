@@ -40,19 +40,10 @@ data class AddonSigningPinSet(
         return AddonSigningPinSet(pinsByPackageName - packageName)
     }
 
-    fun withFirstSeen(manifest: AddonManifest): AddonSigningPinSet {
-        if (contains(manifest.packageName)) return this
-        return AddonSigningPinSet(
-            pinsByPackageName + (manifest.packageName to manifest.signingCertSha256),
-        )
-    }
-
-    fun withFirstSeen(manifests: Iterable<AddonManifest>): AddonSigningPinSet {
-        var next = this
-        for (manifest in manifests) {
-            next = next.withFirstSeen(manifest)
-        }
-        return next
+    fun withPinnedCertificate(packageName: String, fingerprint: String): AddonSigningPinSet {
+        if (!AddonSigningPinSet.isValidPackageName(packageName)) return this
+        if (!AddonSigningPinSet.isValidFingerprint(fingerprint)) return this
+        return AddonSigningPinSet(pinsByPackageName + (packageName to fingerprint))
     }
 
     fun encode(): String = encode(pinsByPackageName)
