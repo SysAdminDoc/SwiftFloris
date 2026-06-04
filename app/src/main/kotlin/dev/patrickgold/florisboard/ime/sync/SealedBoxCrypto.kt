@@ -100,12 +100,16 @@ object SealedBoxCrypto {
         val ephemeral = generateKeyPair()
         val ephemeralPubBytes = ephemeral.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
         val sharedSecret = computeSharedSecret(ephemeral.private, recipientPublicKey)
-        val nonce = deriveNonce(sharedSecret, ephemeralPubBytes, recipientPublicKey)
-        val key = SecretKeySpec(sharedSecret, AES_KEY_ALGORITHM)
-        val cipher = Cipher.getInstance(AES_GCM_TRANSFORM)
-        cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(TAG_LENGTH_BITS, nonce))
-        val ciphertextWithTag = cipher.doFinal(plaintext)
-        return ephemeralPubBytes + nonce + ciphertextWithTag
+        try {
+            val nonce = deriveNonce(sharedSecret, ephemeralPubBytes, recipientPublicKey)
+            val key = SecretKeySpec(sharedSecret, AES_KEY_ALGORITHM)
+            val cipher = Cipher.getInstance(AES_GCM_TRANSFORM)
+            cipher.init(Cipher.ENCRYPT_MODE, key, GCMParameterSpec(TAG_LENGTH_BITS, nonce))
+            val ciphertextWithTag = cipher.doFinal(plaintext)
+            return ephemeralPubBytes + nonce + ciphertextWithTag
+        } finally {
+            Arrays.fill(sharedSecret, 0.toByte())
+        }
     }
 
     /**
@@ -122,8 +126,9 @@ object SealedBoxCrypto {
             PUBKEY_LENGTH + NONCE_LENGTH,
             sealedEnvelope.size,
         )
+        var sharedSecret: ByteArray? = null
         return try {
-            val sharedSecret = computeSharedSecret(recipientKeyPair.private, ephemeralPub)
+            sharedSecret = computeSharedSecret(recipientKeyPair.private, ephemeralPub)
             val recipientPub = recipientKeyPair.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
             val expectedNonce = deriveNonce(sharedSecret, ephemeralPub, recipientPub)
             if (!nonce.contentEquals(expectedNonce)) return null
@@ -133,6 +138,8 @@ object SealedBoxCrypto {
             cipher.doFinal(ciphertext)
         } catch (_: Throwable) {
             null
+        } finally {
+            sharedSecret?.let { Arrays.fill(it, 0.toByte()) }
         }
     }
 

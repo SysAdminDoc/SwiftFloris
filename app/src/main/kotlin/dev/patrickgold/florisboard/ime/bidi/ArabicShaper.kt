@@ -66,8 +66,8 @@ object ArabicShaper {
                 output.appendCodePoint(cp)
                 continue
             }
-            val joinsPrev = i > 0 && SHAPING_TABLE[cps[i - 1]]?.canJoinNext == true
-            val joinsNext = i < cps.lastIndex && SHAPING_TABLE[cps[i + 1]]?.canJoinPrev == true
+            val joinsPrev = findBaseLetterBefore(cps, i)?.let { SHAPING_TABLE[it]?.canJoinNext } == true
+            val joinsNext = findBaseLetterAfter(cps, i)?.let { SHAPING_TABLE[it]?.canJoinPrev } == true
             val form = when {
                 joinsPrev && joinsNext -> info.medial
                 joinsPrev && !joinsNext -> info.final
@@ -95,6 +95,18 @@ object ArabicShaper {
      *    joining-only" letters: Alef, Dal, Reh, Waw, etc.
      *  - [canJoinNext] — letter accepts a join from the next letter.
      */
+    private fun findBaseLetterBefore(cps: IntArray, i: Int): Int? {
+        var j = i - 1
+        while (j >= 0 && Character.getType(cps[j]) == Character.NON_SPACING_MARK.toInt()) j--
+        return if (j >= 0) cps[j] else null
+    }
+
+    private fun findBaseLetterAfter(cps: IntArray, i: Int): Int? {
+        var j = i + 1
+        while (j < cps.size && Character.getType(cps[j]) == Character.NON_SPACING_MARK.toInt()) j++
+        return if (j < cps.size) cps[j] else null
+    }
+
     private data class ShapeInfo(
         val isolated: Int,
         val final: Int,
