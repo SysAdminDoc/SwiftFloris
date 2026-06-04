@@ -2,10 +2,11 @@ name: Release
 
 # ROADMAP §6 N6.2 — manual-trigger release workflow:
 #   1. Requires the reproducible-build verifier to pass for the same commit.
-#   2. Builds the release variant.
-#   3. Signs with the keystore stored as an encrypted secret.
-#   4. Uploads the signed APK + SHA-256 manifest to a GitHub Release.
-#   5. NOTICE / LICENSES attribution check (Apache-2.0 + SCOWL + LDNOOBW + FlorisBoard upstream).
+#   2. Runs release-variant Roborazzi screenshot verification.
+#   3. Builds the release variant.
+#   4. Signs with the keystore stored as an encrypted secret.
+#   5. Uploads the signed APK + SHA-256 manifest to a GitHub Release.
+#   6. NOTICE / LICENSES attribution check (Apache-2.0 + SCOWL + LDNOOBW + FlorisBoard upstream).
 #
 # Required repo secrets (set up under Settings → Secrets and variables → Actions):
 #   SIGNING_KEYSTORE_BASE64   — base64-encoded contents of the .jks file
@@ -90,6 +91,15 @@ jobs:
 
       - name: Run unit tests
         run: ./gradlew :app:testDebugUnitTest
+
+      # F24 — release resources / BuildConfig can drift from the debug visual
+      # gate. The app module exposes :app:verifyRoborazziRelease as a stable
+      # alias backed by the non-shipping releaseRoborazzi variant, which
+      # initWith(release) but carries only the screenshot host overlay. Keep
+      # this before APK signing/publication so a release-only screenshot
+      # regression blocks the dispatch.
+      - name: Roborazzi visual-regression verify (release variant)
+        run: ./gradlew :app:verifyRoborazziRelease
 
       - name: Lint debug
         run: ./gradlew :app:lintDebug

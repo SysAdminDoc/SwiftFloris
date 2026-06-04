@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.212-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.213-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.212 | Privacy posture |
+| Area | What's in v1.8.213 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -185,6 +185,9 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
 
 # Roborazzi screenshot verify (visual-regression CI)
 ./gradlew :app:verifyRoborazziDebug
+
+# Release-variant Roborazzi gate (run before publishing)
+./gradlew :app:verifyRoborazziRelease
 ```
 
 **Signed release build**
@@ -269,7 +272,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
-- **Visual regression:** Roborazzi 1.60.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, backed by committed baselines for the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
+- **Visual regression:** Roborazzi 1.60.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, and the release workflow runs `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
 - **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines.
 - **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 - **Lint drift:** CI lint runs through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
@@ -442,7 +445,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.212** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.213** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

@@ -1,6 +1,6 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-05-25 for v1.8.176.
+Last updated: 2026-06-04 for v1.8.213.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
@@ -27,6 +27,8 @@ Expected result:
 - `testDebugUnitTest` passes the JVM policy, parser, trust-state, accessibility,
   and screenshot-host tests.
 - `verifyRoborazziDebug` hard-fails if committed screenshot baselines drift.
+- `verifyRoborazziRelease` runs the non-shipping `releaseRoborazzi` variant and
+  should pass before publishing a tag or release APK.
 - `lintDebug` writes `app/build/reports/lint-results-debug.*`. Any lint-baseline
   drift must be resolved in the same change that fixes the underlying warning.
 - `assembleDebug` produces `app/build/outputs/apk/debug/app-debug.apk`.

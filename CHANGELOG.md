@@ -2,6 +2,51 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.213"></a>
+## v1.8.213
+
+Released: 2026-06-04
+
+### Release Roborazzi gate
+
+F24 adds a non-shipping `releaseRoborazzi` build type that `initWith(release)` and carries only the Robolectric screenshot-host manifest overlay. A stable `:app:verifyRoborazziRelease` alias runs Roborazzi against that release-equivalent variant, and the manual Release workflow now runs the alias before lint, APK assembly, signing, artifact upload, or GitHub Release creation.
+
+This gives release dispatches their own screenshot-baseline check against release resources and build flags, closing the gap where the PR/push gate only exercised `debug`.
+
+### Changes
+
+- **`app/build.gradle.kts`** - adds the non-shipping `releaseRoborazzi` build type, enables its UnitTest component, and exposes a stable `verifyRoborazziRelease` alias.
+- **`app/src/releaseRoborazzi/AndroidManifest.xml`** - declares the screenshot host only for the release-equivalent Roborazzi variant, keeping the real release manifest unchanged.
+- **`release.yml`** - adds a required release-variant Roborazzi step before signing/publication.
+- **`README.md` / `LOCAL_VERIFICATION.md`** - document the release visual gate next to the existing debug gate.
+- **`ROADMAP.md` / `COMPLETED.md`** - moved F24 out of active work and into shipped state.
+
+### Verification
+
+- `./gradlew.bat :app:tasks --all` -> exposes `verifyRoborazziRelease` with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyRoborazziRelease` -> green with the same `JAVA_HOME`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with the same `JAVA_HOME`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with the same `JAVA_HOME`.
+- `./gradlew.bat :app:assembleRelease` -> green with the same `JAVA_HOME`.
+- `aapt2 dump xmltree --file AndroidManifest.xml app/build/outputs/apk/release/app-release.apk` -> confirms the real release manifest excludes `RoborazziHostActivity`.
+- `git diff --check` -> green; CRLF normalization warnings only.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2013.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `.github/workflows/release.yml`
+- `app/build.gradle.kts`
+- `app/src/releaseRoborazzi/AndroidManifest.xml` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/screenshot/RoborazziHostActivity.kt`
+- `app/src/test/AndroidManifest.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/ExtensionMaintainerChipScreenshotTest.kt`
+- `docs/LOCAL_VERIFICATION.md`
+- `fastlane/metadata/android/en-US/changelogs/2013.txt` (new)
+- `gradle.properties` (versionCode 2012->2013, versionName 1.8.212->1.8.213)
+- `README.md` (version badge/current release/verification docs)
+- `ROADMAP.md` / `COMPLETED.md` (F24 moved to shipped work)
+
 <a id="v1.8.212"></a>
 ## v1.8.212
 
