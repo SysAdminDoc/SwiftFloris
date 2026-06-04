@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.240 (versionCode 2040). **Local verification:** focused `StartupCrashRecoveryTest` passed in 45s with one Gradle worker after an initial run exposed and fixed JUnit4 expression-bodied `runBlocking` test methods; `git diff --check` and fastlane metadata gates passed; APK assembly and manual forced preference-init smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.241 (versionCode 2041). **Local verification:** focused pure-JVM `MimeTypeFilterTest` passed in 31s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -617,7 +617,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### MIME helper contract
 
-- [ ] 🤖 P3 — Pin `MimeTypeFilter` aggregate semantics and remove constructor stdout (R4-3)
+- [x] 🤖 P3 — Pin `MimeTypeFilter` aggregate semantics and remove constructor stdout (R4-3)
   - Why: The shared MIME helper is used by extension-file import and
     copy-to-clipboard image routing, but its aggregate helpers still carry
     "document and test" TODOs and the constructor prints compiled regex filters
@@ -643,6 +643,12 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     the intentional fragment-wildcard cases used by font/image import filters.
   - Verify: `./gradlew.bat :lib:kotlin:testDebugUnitTest --tests
     "org.florisboard.lib.kotlin.MimeTypeFilterTest"`.
+  - Shipped: v1.8.241 (2026-06-04) with constructor stdout removed,
+    aggregate KDoc, null/empty/all/any/exactly-one/case-sensitive focused
+    coverage, and explicit legacy fragment-wildcard coverage for font/import
+    MIME strings. Verified with the pure-JVM `:lib:kotlin:test --tests
+    "org.florisboard.lib.kotlin.MimeTypeFilterTest"` task because
+    `lib/kotlin` is not an Android unit-test module.
 
 #### Native bridge hardening
 

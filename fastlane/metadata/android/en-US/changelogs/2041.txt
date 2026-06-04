@@ -1,0 +1,1 @@
+MimeTypeFilter aggregate helpers are now documented and covered for null, empty, exact-one, case-sensitive, and legacy fragment-wildcard inputs. Constructor stdout logging is removed.

@@ -50,7 +50,6 @@ class MimeTypeFilter {
             val filter1 = filterTypeParts[1].replace("*", "[^\\s]+").toRegex()
             filter0 to filter1
         }
-        println(filters)
     }
 
     private fun matchMimeTypeAgainstFilters(mimeType: String): Boolean {
@@ -77,7 +76,11 @@ class MimeTypeFilter {
         return matchMimeTypeAgainstFilters(mimeType)
     }
 
-    // TODO: document and test
+    /**
+     * Returns true only if [mimeTypes] is non-null, non-empty, and every entry
+     * matches at least one filter. Null, empty, and ill-formatted entries make
+     * the aggregate fail.
+     */
     fun matchesAll(mimeTypes: List<String?>?): Boolean {
         if (mimeTypes.isNullOrEmpty()) {
             return false
@@ -90,7 +93,11 @@ class MimeTypeFilter {
         return true
     }
 
-    // TODO: document and test
+    /**
+     * Returns true if [mimeTypes] is non-null, non-empty, and at least one entry
+     * matches a filter. Null, empty, and ill-formatted entries are ignored unless
+     * no other entry matches.
+     */
     fun matchesAny(mimeTypes: List<String?>?): Boolean {
         if (mimeTypes.isNullOrEmpty()) {
             return false
@@ -103,7 +110,11 @@ class MimeTypeFilter {
         return false
     }
 
-    // TODO: document and test
+    /**
+     * Returns true only if [mimeTypes] is non-null, non-empty, and exactly one
+     * entry matches a filter. Null, empty, and ill-formatted entries do not count
+     * as matches.
+     */
     fun matchesOne(mimeTypes: List<String?>?): Boolean {
         if (mimeTypes.isNullOrEmpty()) {
             return false

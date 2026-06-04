@@ -77,6 +77,7 @@ private const val MaxEditorAssetImportBytes = 25L * 1024L * 1024L
 val MIME_TYPES = mapOf(
     FONTS to mimeTypeFilterOf(
         // Source: https://www.alienfactory.co.uk/articles/mime-types-for-web-fonts-in-bedsheet#mimeTypes
+        // MimeTypeFilter intentionally allows fragment wildcards for legacy font MIME strings.
         "font/*",
         "application/font-*",
         "application/x-font-*",

@@ -1,6 +1,11 @@
 # SwiftFloris Research Report
 
-This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 11.
+This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through v1.8.241.
+
+2026-06-04 implementation note: v1.8.241 closed R4-3. `MimeTypeFilter`
+constructor stdout logging is removed, aggregate helper semantics are documented
+and covered for null/empty/all/any/exactly-one inputs, and the intentional
+legacy fragment-wildcard contract is pinned by focused tests.
 
 2026-06-04 Cycle 11 note: after the Cycle 10 docs push, `master` is clean at
 `31cfa44` (`v1.8.237-1-g31cfa44`). Cycle 11 rechecked the async preference
@@ -68,7 +73,8 @@ fixes Japanese `ja` locale capability gates; R4-2 adds clipboard media TalkBack
 labels; R4-3 pins MIME aggregate helper behavior and removes constructor stdout;
 R4-4 hardens the native string bridge. WS13 was sharpened with the deferred
 `StickerMediaProvider.openFile` SAF allow-list validation. R4-1 was later
-closed in v1.8.227. R3-2 was later closed in v1.8.228.
+closed in v1.8.227. R3-2 was later closed in v1.8.228. R4-2 was later
+closed in v1.8.238, and R4-3 was later closed in v1.8.241.
 
 2026-06-04 Cycle 3 note: after the Cycle 3 docs push, `master` is clean at
 `dc72e32`, with `git describe` returning `v1.8.223-6-gdc72e32` and no tag
@@ -121,7 +127,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.240, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, clipboard image/video history tiles have TalkBack labels, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, stale editor content-generation jobs are cancelled or superseded across input-session boundaries, async preference-store init failures now unblock Settings into the crash recovery path, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.241, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, clipboard image/video history tiles have TalkBack labels, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, stale editor content-generation jobs are cancelled or superseded across input-session boundaries, async preference-store init failures now unblock Settings into the crash recovery path, MIME helper aggregate semantics are documented and pinned without constructor stdout, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
 
 Top opportunities (one line each):
 
@@ -141,7 +147,7 @@ Top opportunities (one line each):
 14. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
 15. **Japanese locale capability gate** — `supportsAutoSpace` now uses the BCP-47 Japanese language subtag `ja`, and adjacent capability tables are pinned by `FlorisLocaleTest` (R4-1). [Closed]
 16. **Clipboard media TalkBack labels** — image/video history tiles now expose localized media type, group, and copied-time descriptions while decorative overlays stay hidden (R4-2). [Closed]
-17. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
+17. **MIME helper contract cleanup** — aggregate helper behavior is now documented/tested, case-sensitive and legacy fragment-wildcard matching are pinned, and constructor stdout logging is removed (R4-3). [Closed]
 18. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
 19. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
 20. **Editor batch critical sections** — selection/commit hot paths now compute expected content before opening `InputConnection` batch edits, and batch pairs use `try/finally` (R6-1). [Closed]
@@ -180,6 +186,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   description behavior, and v1.8.238 closes R4-2 by giving image/video tiles
   localized media type, history group, and copied-time labels without changing
   clipboard storage, redaction, or paste behavior. [Closed]
+- **MIME helper contract:** v1.8.241 closes R4-3 by documenting
+  `matchesAll`, `matchesAny`, and `matchesOne`, removing constructor stdout,
+  and pinning case-sensitive plus legacy fragment-wildcard behavior in focused
+  pure-JVM tests. [Closed]
 - **Sync sealed-box scaffold (partial):** `SealedBoxCrypto` uses X25519 +
   AES-GCM and an HMAC-based KDF after the latest local fix, and v1.8.230 closes
   R3-3 by pinning explicit envelope constants, a deterministic fixed-key vector,
@@ -275,9 +285,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   R4-2. Image/video tiles now expose non-sensitive localized labels for media
   type, Pinned/Recent/Other group context, and copied time while keeping
   decorative overlay icons hidden.
-- **[Minor] MIME helper stdout and aggregate semantics** → R4-3. Remove the
-  constructor print and pin `matchesAll` / `matchesAny` / `matchesOne` behavior
-  before more import/provider code depends on the helper.
+- **[Closed v1.8.241] MIME helper stdout and aggregate semantics** → R4-3.
+  Constructor stdout logging is removed, aggregate helper behavior is
+  documented, and focused tests pin null/empty/exactly-one, case-sensitive, and
+  legacy fragment-wildcard matching.
 - **[Medium] Addon first-seen trust mismatch** → R5-1. Closed in v1.8.229:
   the registry now auto-loads co-signed packages only, and otherwise requires a
   Settings-confirmed explicit pin.
@@ -310,9 +321,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Sensitive-window policy:** v1.8.231 keeps the `FLAG_SECURE` decision in a
   pure password/incognito policy and re-applies it through the live IME service
   whenever dynamic incognito changes mid-session.
-- **MIME helper contract:** SwiftFloris intentionally accepts wildcard fragments
-  that AndroidX's helper does not. R4-3 keeps that broader local contract only
-  if tests and KDoc make the divergence explicit.
+- **MIME helper contract:** v1.8.241 keeps SwiftFloris' intentional wildcard
+  fragments that AndroidX's helper does not allow, but now documents the
+  aggregate helper semantics, removes constructor stdout, and pins the broader
+  local contract with focused tests.
 - **Native string bridge:** `NativeStr.toJavaString()` handles direct buffers
   with `remaining()` but heap buffers with the whole backing array. R4-4 aligns
   heap/direct behavior before native addon surfaces make sliced buffers common.
@@ -349,7 +361,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R11-1 closes the async side of startup diagnostics by surfacing preference-store init failures through the existing local crash recovery path without adding storage, permissions, or outbound data. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R11-1 closes the async side of startup diagnostics by surfacing preference-store init failures through the existing local crash recovery path without adding storage, permissions, or outbound data. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3 are closed local correctness/a11y/API-contract work, and R4-4 remains local API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 

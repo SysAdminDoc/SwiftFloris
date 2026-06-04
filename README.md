@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.240-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.241-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.240 | Privacy posture |
+| Area | What's in v1.8.241 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026; see [docs/HONEYCOMB_LAYOUT.md](docs/HONEYCOMB_LAYOUT.md)) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper with no committed app lint baseline, startup crash recovery via the local crash dialog, restore/crash diagnostics routed through project logging with safe fallback copy, settings-search resource/route drift guard, post-hotfix regression coverage for Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
+| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper with no committed app lint baseline, startup crash recovery via the local crash dialog, restore/crash diagnostics routed through project logging with safe fallback copy, settings-search resource/route drift guard, MIME helper aggregate-contract tests, post-hotfix regression coverage for Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
 
 ## Distribution
 
@@ -287,6 +287,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.241** (2026-06-04) — MIME helper aggregate semantics are now documented and covered, constructor stdout logging is removed, and legacy font wildcard matching is explicit. ([notes](CHANGELOG.md#v1.8.241))
 - **v1.8.240** (2026-06-04) — Async preference-store init failures now stage a crash report, unblock the Settings splash wait, and redirect to recovery instead of hanging. ([notes](CHANGELOG.md#v1.8.240))
 - **v1.8.239** (2026-06-04) — Editor start/selection content-generation jobs now cancel or supersede stale work before reset, finishInput, or field switches can republish old state. ([notes](CHANGELOG.md#v1.8.239))
 - **v1.8.238** (2026-06-04) — Clipboard image/video history tiles now expose localized TalkBack labels with media type, history group, and copied-time context while keeping decorative thumbnail overlays hidden. ([notes](CHANGELOG.md#v1.8.238))
@@ -470,7 +471,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.240** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.241** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
