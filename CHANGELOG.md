@@ -2,6 +2,47 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.214"></a>
+## v1.8.214
+
+Released: 2026-06-04
+
+### Benchmark trend-regression workflow
+
+EI9 adds a manual `Benchmark Regression` workflow that builds the benchmark APKs, boots an emulator, runs the adb benchmark suite, writes candidate JSON under `build/benchmark-results/`, and compares those candidates against the committed `docs/benchmark-results/baseline-*.json` files.
+
+The new `scripts/check-benchmark-trends.py` comparator pairs results by each JSON file's `benchmark` field, watches the documented latency medians, fails regressions above the +8 % hold window, calls out improvements at -5 % or better, and keeps functional guardrails such as restore failures and theme load failures at zero. `docs/BENCHMARKS.md` now documents the watched metrics, target ranges, hold ranges, and guardrails in one table.
+
+### Changes
+
+- **`.github/workflows/benchmark-regression.yml`** - adds the manual emulator-backed trend-regression workflow and artifact upload.
+- **`scripts/check-benchmark-trends.py`** - adds the deterministic baseline/candidate JSON comparator and markdown report writer.
+- **`docs/BENCHMARKS.md`** - documents the workflow, local compare command, watched metrics, +8 % hold threshold, -5 % improvement note threshold, and zero guardrails.
+- **`README.md` / `LOCAL_VERIFICATION.md`** - surface the benchmark trend gate next to the existing adb harness.
+- **`ROADMAP.md` / `COMPLETED.md`** - moved EI9 out of active work and into shipped state.
+
+### Verification
+
+- `python -m py_compile scripts/check-benchmark-trends.py` -> green.
+- `python scripts/check-benchmark-trends.py --baseline-dir docs/benchmark-results --candidate-dir build/benchmark-results-ei9-pass --report build/benchmark-results-ei9-pass/benchmark-trend-report.md --require-all-baselines` -> green against copied baseline fixtures.
+- Planted candidate regression fixture -> comparator exits 1 and reports the regressed metric.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `python -c "import pathlib, yaml; yaml.safe_load(pathlib.Path('.github/workflows/benchmark-regression.yml').read_text())"` -> green.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2014.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+- `git diff --check` -> green; CRLF normalization warnings only.
+
+### Files Touched
+
+- `.github/workflows/benchmark-regression.yml` (new)
+- `scripts/check-benchmark-trends.py` (new)
+- `docs/BENCHMARKS.md`
+- `docs/LOCAL_VERIFICATION.md`
+- `fastlane/metadata/android/en-US/changelogs/2014.txt` (new)
+- `gradle.properties` (versionCode 2013->2014, versionName 1.8.213->1.8.214)
+- `README.md`
+- `ROADMAP.md` / `COMPLETED.md` (EI9 moved to shipped work)
+
 <a id="v1.8.213"></a>
 ## v1.8.213
 

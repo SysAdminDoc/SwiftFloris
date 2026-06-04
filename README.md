@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.213-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.214-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.213 | Privacy posture |
+| Area | What's in v1.8.214 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -54,7 +54,7 @@
 | **Migration** | First-run local dictionary import hint; preview-before-save personal dictionary imports with row exclusion; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026; see [docs/HONEYCOMB_LAYOUT.md](docs/HONEYCOMB_LAYOUT.md)) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose | On-device, no account, no telemetry |
-| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
+| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report | Audit-friendly |
 
 ## Distribution
 
@@ -110,7 +110,7 @@ Project-internal docs all live in the repository:
 - [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — privacy / security threat model and mitigations.
 - [`docs/SQLCIPHER_PROVIDER_MIGRATION.md`](docs/SQLCIPHER_PROVIDER_MIGRATION.md) — SQLCipher crypto-provider migration triggers, OpenSSL proof-of-concept path, and 16 KB verification gates.
 - [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) — pinned toolchain and F-Droid rebuild plan.
-- [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — Macrobenchmark trace sections and regression threshold contract.
+- [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — Macrobenchmark trace sections, workflow, and regression threshold contract.
 - [`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md) — maintainer local test/build/lint/device commands.
 - [`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md) — generated-output, deleted-doc, commit-scope, and handoff rules.
 - [`docs/INLINE_AUTOFILL.md`](docs/INLINE_AUTOFILL.md) — inline-autofill matrix and password-manager verification.
@@ -267,13 +267,13 @@ Six Macrobenchmark trace sections are emitted from production code paths:
 - `swiftfloris.dict.load` (`loadSpecificDictionary`)
 - `swiftfloris.nlp.symspell.build` (lazy index init)
 
-Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`, dictionary cold-load / preload medians of 757.353333 ms / 772.080625 ms with lazy SymSpell d1/d2 index medians of 500.230156 ms / 532.298281 ms, candidate-row warm-typing recomposition median body / max / total of 0.326563 ms / 0.770365 ms / 4.069529 ms, theme-switch median body / max / total of 18.541197 ms / 19.587708 ms / 57.505571 ms with 0.2808075 ms cached warm switches, and backup/restore default-archive medians of 12.653698 ms backup create / 9.874167 ms restore total with 3/3 sections restored. The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section or log marker that produced them.
+Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`, dictionary cold-load / preload medians of 757.353333 ms / 772.080625 ms with lazy SymSpell d1/d2 index medians of 500.230156 ms / 532.298281 ms, candidate-row warm-typing recomposition median body / max / total of 0.326563 ms / 0.770365 ms / 4.069529 ms, theme-switch median body / max / total of 18.541197 ms / 19.587708 ms / 57.505571 ms with 0.2808075 ms cached warm switches, and backup/restore default-archive medians of 12.653698 ms backup create / 9.874167 ms restore total with 3/3 sections restored. The manual Benchmark Regression workflow compares candidate JSON against those baselines and fails watched medians above the documented +8 % window. The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section or log marker that produced them.
 
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
 - **Visual regression:** Roborazzi 1.60.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, and the release workflow runs `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
-- **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines.
+- **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines. The manual Benchmark Regression workflow runs the adb suite, uploads candidate JSON, and compares watched medians against the committed baseline set.
 - **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 - **Lint drift:** CI lint runs through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
 - **Emulator smoke:** The manual `Android Emulator Smoke` workflow builds the debug APK, launches the Settings app on an emulator, and uploads logcat for crash triage.
@@ -445,7 +445,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.213** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.214** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

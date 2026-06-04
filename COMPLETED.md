@@ -52,6 +52,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] EI2 (P3, reframed) — Settings home regrouped into Typing experience, Personalization, Privacy & data, Advanced, and About buckets, with Physical keyboard surfaced directly under Advanced while preserving existing deep links. Shipped v1.8.211. — *Source: TODO_2026-06-03.md*
 - [x] F23 (P1) — Release workflow now depends on the reusable reproducible-build verifier before signing or GitHub Release publication, blocking release dispatches when the build-twice APK check fails. Shipped v1.8.212. — *Source: TODO_2026-06-03.md*
 - [x] F24 (P1) — Non-shipping `releaseRoborazzi` variant mirrors release build flags for Roborazzi, exposed through `:app:verifyRoborazziRelease`; the release workflow runs it before APK signing/publication. Shipped v1.8.213. — *Source: TODO_2026-06-03.md*
+- [x] EI9 (P2) — Manual benchmark-regression workflow now runs the adb benchmark suite, compares candidate JSON against committed baselines with `scripts/check-benchmark-trends.py`, uploads a markdown trend report, and fails watched medians above the documented +8 % window. Shipped v1.8.214. — *Source: TODO_2026-06-03.md*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 

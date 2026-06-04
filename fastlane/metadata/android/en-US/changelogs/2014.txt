@@ -1,0 +1,1 @@
+Benchmark trend checks now have a manual workflow that runs the adb benchmark suite, compares candidate JSON against committed baselines, uploads a markdown report, and fails when watched latency medians regress by more than 8% or functional guardrails drift.

@@ -34,12 +34,25 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File tools/benchmark-backup-restore.ps1
 
 # AndroidX Macrobenchmark trace/frame runs.
 ./gradlew :benchmark:connectedBenchmarkAndroidTest
+
+# Offline trend compare for candidate JSON already collected under build/.
+python scripts/check-benchmark-trends.py \
+  --baseline-dir docs/benchmark-results \
+  --candidate-dir build/benchmark-results \
+  --report build/benchmark-results/benchmark-trend-report.md \
+  --require-all-baselines
 ```
 
 Collect output from
 `benchmark/build/outputs/connected_android_test_additional_output/` for
 AndroidX Macrobenchmark runs. The adb harness scripts write JSON to
 `docs/benchmark-results/`.
+
+The manual GitHub Actions gate lives at
+`.github/workflows/benchmark-regression.yml`. It builds the benchmark APK,
+boots an emulator, writes candidate JSON under `build/benchmark-results/`,
+runs `scripts/check-benchmark-trends.py`, and uploads both the candidate JSON
+and markdown trend report.
 
 ## Latency baseline
 
@@ -51,6 +64,23 @@ AndroidX Macrobenchmark runs. The adb harness scripts write JSON to
 | `candidateRowRecomposition` (warm typing phrase) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: 9.0 recompositions/run; median body 0.326563 ms; median max 0.770365 ms; median total 4.069529 ms; paired median `swiftfloris.nlp.suggestMs` 0.339896 ms | [`baseline-2026-05-18-ime-candidate-row.json`](benchmark-results/baseline-2026-05-18-ime-candidate-row.json) |
 | `themeSwitch` (Snygg stylesheet swap) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: 5.0 switches/run; median body 18.541197 ms; median max 19.587708 ms; median total 57.505571 ms; cold-step median 19.221354 ms; warm cached-step median 0.2808075 ms; 0 load failures | [`baseline-2026-05-18-ime-theme-switch.json`](benchmark-results/baseline-2026-05-18-ime-theme-switch.json) |
 | `backupRestore` (default prefs + keyboard/theme archive) | Samsung SM-S938B / Android 16, 5 runs | `am start -W`: activity launch recorded per run | `SwiftFlorisPerf`: backup create 12.653698 ms; archive 22,034 bytes; restore prepare 4.062604 ms; merge apply 5.727604 ms; restore total 9.874167 ms; 3/3 sections restored, 0 failed | [`baseline-2026-05-18-backup-restore.json`](benchmark-results/baseline-2026-05-18-backup-restore.json) |
+
+## Trend-regression ranges
+
+The EI9 gate compares candidate JSON `summary` metrics against the latest
+committed baseline for the same `benchmark` field. Timings target the baseline
+or better, improvements at **5 % faster** are called out in the report, and
+regressions **> 8 % slower** fail the workflow. Functional guardrails must stay
+at zero where noted.
+
+| Benchmark | Watched timing metrics | Target / pass range | Hold range | Guardrails |
+|---|---|---|---|---|
+| `imeFirstRender` | `activityTotalTimeMedianMs`, `activityWaitTimeMedianMs`, `imeFirstRenderMedianMs` | <= baseline, or <= +8 % noise window | > +8 % | n/a |
+| `firstSuggestionLatency` | `suggestionLatencyMedianMs` | <= baseline, or <= +8 % noise window | > +8 % | n/a |
+| `dictionaryLoadAndPreload` | `dictionaryLoadMedianMs`, `dictionaryPreloadMedianMs`, `symSpellDistance1BuildMedianMs`, `symSpellDistance2BuildMedianMs`, `postPreloadSpellMedianMs`, `postPreloadSuggestionMedianMs` | <= baseline, or <= +8 % noise window | > +8 % | n/a |
+| `candidateRowRecomposition` | `recomposeMedianOfRunMediansMs`, `recomposeMaxMedianMs`, `recomposeTotalMedianMs`, `nlpSuggestMedianOfRunMediansMs`, `nlpSuggestMaxMedianMs` | <= baseline, or <= +8 % noise window | > +8 % | n/a |
+| `themeSwitch` | `themeSwitchMedianOfRunMediansMs`, `themeSwitchMaxMedianMs`, `themeSwitchTotalMedianMs`, `benchmarkStepMedianOfRunMediansMs`, `benchmarkStepMaxMedianMs`, `benchmarkColdStepMedianMs`, `benchmarkWarmStepMedianMs` | <= baseline, or <= +8 % noise window | > +8 % | `loadFailureCountMedian == 0` |
+| `backupRestore` | `backupCreateMedianMs`, `restorePrepareMedianMs`, `restoreApplyMedianMs`, `restoreTotalMedianMs` | <= baseline, or <= +8 % noise window | > +8 % | `missingSectionsMedian == 0`, `failedSectionsMedian == 0` |
 
 ## Glide trace benchmark — pending first corpus run
 
@@ -115,10 +145,12 @@ script-emitted JSON for adb-only baselines.
 
 ## How to read a regression
 
-A median frame increase **> 8 %** vs the immediately-preceding
-baseline on the same device + build configuration is the
-regression threshold. The CI baseline keeps both numbers + the
-% delta + a Macrobenchmark output link so triage is one click.
+A watched median increase **> 8 %** vs the immediately-preceding baseline is
+the regression threshold. The manual workflow records both numbers, the %
+delta, the device labels, and the candidate JSON artifact so triage is one
+click. Compare against the same device + build configuration whenever possible;
+cross-device comparisons are useful for smoke evidence but should not become a
+new committed baseline without maintainer review.
 
 ## Definition of done
 

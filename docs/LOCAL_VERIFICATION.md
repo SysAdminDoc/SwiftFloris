@@ -1,6 +1,6 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-06-04 for v1.8.213.
+Last updated: 2026-06-04 for v1.8.214.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
@@ -72,6 +72,7 @@ pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\benchmark-ime-dictionary-l
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\benchmark-ime-candidate-row.ps1 -Iterations 5
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\benchmark-ime-theme-switch.ps1 -Iterations 5
 pwsh -NoProfile -ExecutionPolicy Bypass -File .\tools\benchmark-backup-restore.ps1 -Iterations 5
+python .\scripts\check-benchmark-trends.py --baseline-dir .\docs\benchmark-results --candidate-dir .\build\benchmark-results --report .\build\benchmark-results\benchmark-trend-report.md --require-all-baselines
 ```
 
 Commit new JSON baselines under `docs/benchmark-results/` only when the

@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.213 (versionCode 2013). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.214 (versionCode 2014). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -61,12 +61,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
   - Source: TODO.md B / improvement-plan WS13.
 
 ### CI, build & release hardening
-
-- [ ] P2 — Macrobenchmark trend-regression job (EI9)
-  - Why: No automated regression check against benchmark baselines.
-  - Touches: `workflow_dispatch` job diffing against `docs/benchmark-results/baseline-*.json`; floor/target ranges documented in `docs/BENCHMARKS.md`.
-  - Acceptance: job reports regressions against the baseline within documented ranges.
-  - Source: TODO.md A4 / research feature plan EI9.
 
 ### Docs & hygiene
 
