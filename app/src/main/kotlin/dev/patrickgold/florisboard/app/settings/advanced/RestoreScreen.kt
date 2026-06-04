@@ -53,6 +53,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
@@ -186,12 +187,14 @@ fun RestoreScreen() = FlorisScreen {
                 }.onSuccess { workspace ->
                     restoreWorkspace = workspace
                 }.onFailure { error ->
+                    flogError { error.stackTraceToString() }
+                    val errorMessage = BackupRestorePolicy.restoreErrorMessage(error, unknownRestoreError)
                     context.showLongToast(
                         R.string.backup_and_restore__restore__failure,
-                        "error_message" to error.localizedMessage,
+                        "error_message" to errorMessage,
                     )
                     lastRestoreNotice = RestoreFlowNotice.Failure
-                    lastRestoreErrorMessage = error.localizedMessage
+                    lastRestoreErrorMessage = errorMessage
                 }
                 isRestoreInProgress = false
             }
@@ -216,9 +219,10 @@ fun RestoreScreen() = FlorisScreen {
         }
 
         fun markFailed(error: Throwable) {
+            val errorMessage = BackupRestorePolicy.restoreErrorMessage(error, unknownRestoreError)
             summary = summary.copy(
                 failedSections = summary.failedSections + 1,
-                firstFailureMessage = summary.firstFailureMessage ?: error.localizedMessage,
+                firstFailureMessage = summary.firstFailureMessage ?: errorMessage,
             )
         }
 
@@ -236,7 +240,7 @@ fun RestoreScreen() = FlorisScreen {
             }.onSuccess {
                 markRestored()
             }.onFailure { error ->
-                error.printStackTrace()
+                flogError { error.stackTraceToString() }
                 markFailed(error)
             }
         }
@@ -381,7 +385,7 @@ fun RestoreScreen() = FlorisScreen {
                     RestoreOperationResult.Failure -> {
                         context.showLongToast(
                             R.string.backup_and_restore__restore__failure,
-                            "error_message" to unknownRestoreError,
+                            "error_message" to (lastRestoreErrorMessage ?: unknownRestoreError),
                         )
                     }
                     RestoreOperationResult.Cancelled -> {
@@ -389,12 +393,13 @@ fun RestoreScreen() = FlorisScreen {
                     }
                 }
             } catch (e: Throwable) {
-                e.printStackTrace()
+                flogError { e.stackTraceToString() }
+                val errorMessage = BackupRestorePolicy.restoreErrorMessage(e, unknownRestoreError)
                 lastRestoreNotice = RestoreFlowNotice.Failure
-                lastRestoreErrorMessage = e.localizedMessage
+                lastRestoreErrorMessage = errorMessage
                 context.showLongToast(
                     R.string.backup_and_restore__restore__failure,
-                    "error_message" to e.localizedMessage,
+                    "error_message" to errorMessage,
                 )
             } finally {
                 isRestoreInProgress = false
@@ -533,13 +538,15 @@ fun RestoreScreen() = FlorisScreen {
                 runCatching {
                     restoreDataFromFileSystemLauncher.launch("*/*")
                 }.onFailure { error ->
+                    flogError { error.stackTraceToString() }
+                    val errorMessage = BackupRestorePolicy.restoreErrorMessage(error, unknownRestoreError)
                     lastRestoreNotice = RestoreFlowNotice.Failure
-                    lastRestoreErrorMessage = error.localizedMessage
+                    lastRestoreErrorMessage = errorMessage
                     lastRestoreSummary = null
                     restoreScope.launch {
                         context.showLongToast(
                             R.string.backup_and_restore__restore__failure,
-                            "error_message" to error.localizedMessage,
+                            "error_message" to errorMessage,
                         )
                     }
                 }

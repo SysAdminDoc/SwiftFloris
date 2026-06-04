@@ -156,6 +156,12 @@ internal object BackupRestorePolicy {
             else -> RestoreOperationResult.Failure
         }
     }
+
+    fun restoreErrorMessage(error: Throwable, fallbackMessage: String): String {
+        return error.localizedMessage
+            ?.takeIf { it.isNotBlank() }
+            ?: fallbackMessage
+    }
 }
 
 internal enum class BackupDocumentResult {

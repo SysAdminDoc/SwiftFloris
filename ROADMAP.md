@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.218 (versionCode 2018). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.219 (versionCode 2019). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -198,7 +198,12 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Verify: `:app:testDebugUnitTest`; manual debug build with a temporary
     injected pre-`init()` failure before removing the injection.
   - Complexity: M
-- [ ] 🤖 P2 — Replace remaining restore/crash diagnostic `printStackTrace()` paths with project logging plus user-safe fallback copy (R2-2)
+- [x] 🤖 P2 — Replace remaining restore/crash diagnostic `printStackTrace()` paths with project logging plus user-safe fallback copy (R2-2)
+  - Shipped v1.8.219: restore archive-load, per-section restore, restore
+    launcher, and top-level restore failures now route diagnostics through
+    `flogError`, restore cards/toasts use `BackupRestorePolicy.restoreErrorMessage(...)`
+    to avoid null/blank user copy, and crash stacktrace write failures use the
+    `CRASH_UTILITY` logging topic instead of raw `printStackTrace()`.
   - Why: The restore flow and crash-file write helper still fall back to raw
     `printStackTrace()` on exceptional diagnostic paths, while adjacent code
     already uses `flogError`. The fix should improve consistency and user-facing
@@ -222,7 +227,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Docs & source-of-truth
 
-- [ ] 🤖 P2 — Refresh root onboarding docs to the v1.8.218 source of truth (R2-3)
+- [ ] 🤖 P2 — Refresh root onboarding docs to the v1.8.219 source of truth (R2-3)
   - Why: The live roadmap is current, but the fast onboarding docs still mix
     v1.8.170-era stack facts, archived `IMPROVEMENT_PLAN.md` references, and a
     retired root `RELEASE_NOTES_v*.md` instruction. Future build passes use
@@ -236,13 +241,13 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     `RELEASE_NOTES_vX.Y.Z.md` even though `AGENTS.md:84-86` and `CHANGELOG.md:3`
     say the consolidated changelog replaced that pattern; `README.md:286-288`
     starts its release-stream summary at v1.8.170 while current release is
-    v1.8.218.
+    v1.8.219.
   - Touches: `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`,
     `README.md`, and any stale root `IMPROVEMENT_PLAN.md` pointers in
     docs/hygiene files.
   - Acceptance: root docs agree that `ROADMAP.md` is the open-work source,
     `COMPLETED.md` is shipped-state summary, `CHANGELOG.md` is the only release
-    note stream, and current stack/release facts match v1.8.218.
+    note stream, and current stack/release facts match v1.8.219.
   - Verify: `rg -n "v1\\.8\\.170|RELEASE_NOTES|IMPROVEMENT_PLAN\\.md|TODO\\.md|~340 KB" AGENTS.md PROJECT_CONTEXT.md ARCHITECTURE.md CONTRIBUTING.md README.md docs/REPO_HYGIENE.md`
     returns only deliberate archived-context references.
   - Complexity: M

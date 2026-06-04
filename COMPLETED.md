@@ -57,6 +57,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] Dependency freshness compatible batch (P3) — Compose BOM `2026.05.01`, KSP `2.3.9`, and Roborazzi `1.63.0` shipped while Kotlin `2.4.0` and AndroidX Core `1.19.0` stayed deferred on KSP/compileSdk gates. Shipped v1.8.216. — *Source: ROADMAP.md Docs & hygiene.*
 - [x] EI10 (P2) — Confirmed no committed `app/lint-baseline.xml`, documented the baseline-free lint state, and reran `scripts/run-lint-debug-with-baseline-check.sh` successfully after setting the verified JDK 21 path. Shipped v1.8.217. — *Source: ROADMAP.md Docs & hygiene.*
 - [x] R2-1 (P1) — Staged startup exceptions now persist to the existing crash-report file store and redirect Settings to `CrashDialogActivity` before the splash screen can wait forever on unloaded preferences. Shipped v1.8.218. — *Source: ROADMAP.md Researcher Queue Cycle 2.*
+- [x] R2-2 (P2) — Restore and crash diagnostic failure paths now use project logging, and restore toasts/cards use stable fallback copy when throwable messages are null or blank. Shipped v1.8.219. — *Source: ROADMAP.md Researcher Queue Cycle 2.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 
