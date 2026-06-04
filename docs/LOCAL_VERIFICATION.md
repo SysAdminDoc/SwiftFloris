@@ -1,9 +1,13 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-06-04 for v1.8.217.
+Last updated: 2026-06-04 for v1.8.244.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
+
+For UI, IME behavior, setup, backup/restore, import/export, accessibility, or
+release publication, use [`QA_CHECKLISTS.md`](QA_CHECKLISTS.md) to record the
+visual-QA matrix, manual-QA flow, and release-evidence rows that apply.
 
 ## Standard Local Gate
 
@@ -64,6 +68,10 @@ adb shell logcat -d -t 2000 | Select-String -Pattern "FATAL EXCEPTION|AndroidRun
 
 The app should open the settings surface without a crash. CI also exposes the
 manual `Android Emulator Smoke` workflow for this settings-launch check.
+
+After the smoke launch, continue with the manual QA flow in
+[`QA_CHECKLISTS.md`](QA_CHECKLISTS.md) for any user-facing behavior touched by
+the change.
 
 ## Performance Baselines
 

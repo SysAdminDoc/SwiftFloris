@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.243-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.244-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.243 | Privacy posture |
+| Area | What's in v1.8.244 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -114,6 +114,7 @@ Project-internal docs all live in the repository:
 - [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) — pinned toolchain and F-Droid rebuild plan.
 - [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — Macrobenchmark trace sections, workflow, and regression threshold contract.
 - [`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md) — maintainer local test/build/lint/device commands.
+- [`docs/QA_CHECKLISTS.md`](docs/QA_CHECKLISTS.md) — visual-QA, manual-QA, and release-evidence checklists.
 - [`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md) — generated-output, deleted-doc, commit-scope, localization-copy, and handoff rules.
 - [`docs/INLINE_AUTOFILL.md`](docs/INLINE_AUTOFILL.md) — inline-autofill matrix and password-manager verification.
 - [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md) — Tasker intent contract.
@@ -287,6 +288,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.244** (2026-06-04) — Visual-QA, manual-QA, and release-evidence checklists now live in `docs/QA_CHECKLISTS.md` and are linked from verification docs. ([notes](CHANGELOG.md#v1.8.244))
 - **v1.8.243** (2026-06-04) — Localization copy now avoids Turkish repeated-word lint, uses clearer source labels, and standardizes trust-sensitive failure/destructive copy with focused resource tests. ([notes](CHANGELOG.md#v1.8.243))
 - **v1.8.242** (2026-06-04) — `NativeStr.toJavaString()` now decodes only ByteBuffer remaining bytes across heap, sliced, direct, and read-only buffers without consuming caller position. ([notes](CHANGELOG.md#v1.8.242))
 - **v1.8.241** (2026-06-04) — MIME helper aggregate semantics are now documented and covered, constructor stdout logging is removed, and legacy font wildcard matching is explicit. ([notes](CHANGELOG.md#v1.8.241))
@@ -473,7 +475,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.243** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.244** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

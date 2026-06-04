@@ -2,6 +2,46 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.244"></a>
+## v1.8.244
+
+Released: 2026-06-04
+
+### QA and release evidence checklists
+
+WS10 / WS15 is closed. Visual-QA, manual-QA, and release-evidence capture now have one repeatable checklist document linked from the verification, contributor, accessibility, and README entry points.
+
+### Changes
+
+- **`docs/QA_CHECKLISTS.md`** - adds the visual matrix for portrait/landscape/compact/floating/split/dark/high-contrast/high-font-scale/reduced-motion/RTL, the manual QA flow, and the release evidence checklist.
+- **`docs/LOCAL_VERIFICATION.md`** - links the checklist document from the standard local verification and device-smoke sections.
+- **`CONTRIBUTING.md` / `docs/ACCESSIBILITY.md` / `README.md`** - point contributors to the shared checklist for manual, accessibility, and release evidence rows.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.244 / versionCode 2044 and closes WS10 / WS15.
+
+### Verification
+
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2044.
+- `bash scripts/check-repo-hygiene.sh` - PASS.
+- APK assembly was intentionally skipped in this local docs-only batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `CONTRIBUTING.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `docs/ACCESSIBILITY.md`
+- `docs/LOCAL_VERIFICATION.md`
+- `docs/QA_CHECKLISTS.md` (new)
+- `fastlane/metadata/android/en-US/changelogs/2044.txt` (new)
+- `gradle.properties` (versionCode 2043->2044, versionName 1.8.243->1.8.244)
+
 <a id="v1.8.243"></a>
 ## v1.8.243
 
