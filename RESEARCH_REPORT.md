@@ -112,7 +112,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.237, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small lifecycle/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.238, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, clipboard image/video history tiles have TalkBack labels, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
 
 Top opportunities (one line each):
 
@@ -131,7 +131,7 @@ Top opportunities (one line each):
 13. **Search highlight lifecycle** — destination highlights now consume the global search target once into local screen state and expose a close action, so stale cards do not reappear after the original search flow (RA-9). [Closed]
 14. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
 15. **Japanese locale capability gate** — `supportsAutoSpace` now uses the BCP-47 Japanese language subtag `ja`, and adjacent capability tables are pinned by `FlorisLocaleTest` (R4-1). [Closed]
-16. **Clipboard media TalkBack labels** — image/video history tiles expose visual thumbnails without a user-meaningful accessibility description (R4-2, P3). [Verified]
+16. **Clipboard media TalkBack labels** — image/video history tiles now expose localized media type, group, and copied-time descriptions while decorative overlays stay hidden (R4-2). [Closed]
 17. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
 18. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
 19. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
@@ -166,9 +166,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   auto-space support decisions. v1.8.227 closes R4-1 by using `ja` for Japanese
   no-capitalization/no-auto-space behavior and pinning the table with
   `FlorisLocaleTest`. [Verified]
-- **Clipboard media accessibility (partial):** clipboard text items have richer
-  semantic context than image/video tiles. R4-2 adds localized media labels
-  without changing clipboard storage, redaction, or paste behavior. [Verified]
+- **Clipboard media accessibility:** clipboard text items keep URL/email/phone
+  description behavior, and v1.8.238 closes R4-2 by giving image/video tiles
+  localized media type, history group, and copied-time labels without changing
+  clipboard storage, redaction, or paste behavior. [Closed]
 - **Sync sealed-box scaffold (partial):** `SealedBoxCrypto` uses X25519 +
   AES-GCM and an HMAC-based KDF after the latest local fix, and v1.8.230 closes
   R3-3 by pinning explicit envelope constants, a deterministic fixed-key vector,
@@ -250,9 +251,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   tests or source-level guards.
 - **[Medium] Japanese auto-space gate typo** → R4-1. `supportsAutoSpace`
   excludes `jp`, while Android and IANA use `ja` for Japanese.
-- **[Minor] Clipboard media thumbnails lack useful spoken labels** → R4-2.
-  The image/video thumbnail content descriptions are null; add localized labels
-  while keeping decorative overlay icons hidden.
+- **[Closed v1.8.238] Clipboard media thumbnails lack useful spoken labels** →
+  R4-2. Image/video tiles now expose non-sensitive localized labels for media
+  type, Pinned/Recent/Other group context, and copied time while keeping
+  decorative overlay icons hidden.
 - **[Minor] MIME helper stdout and aggregate semantics** → R4-3. Remove the
   constructor print and pin `matchesAll` / `matchesAny` / `matchesOne` behavior
   before more import/provider code depends on the helper.
@@ -324,7 +326,7 @@ No net-new permission or data-egress finding. The settings-search additions are 
 
 ## UX & Accessibility
 
-The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `TouchTargetWcagTest`, RTL mirroring, candidate-row custom actions). The **settings search** gap is now implementation-closed: v1.8.235 adds field labels/state, polite live result status, result-row position/screen/title/summary context, and a manual-QA checklist row. The **clipboard media** gap is narrower but user-facing: image/video history tiles need spoken labels and state context while decorative overlay icons remain hidden (R4-2). The **user-dictionary back** gap is now implementation-closed: operation progress is visible and v1.8.232 gives blocked system back an equivalent visible reason, with manual device/TalkBack proof still needed. UX polish (auto-focus, clear, IME Search, diacritic folding, no-results escape) brings search to parity with platform expectations without scope creep.
+The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `TouchTargetWcagTest`, RTL mirroring, candidate-row custom actions). The **settings search** gap is now implementation-closed: v1.8.235 adds field labels/state, polite live result status, result-row position/screen/title/summary context, and a manual-QA checklist row. The **clipboard media** gap is now implementation-closed: v1.8.238 gives image/video history tiles spoken media type, group, and copied-time context while decorative overlay icons remain hidden. The **user-dictionary back** gap is now implementation-closed: operation progress is visible and v1.8.232 gives blocked system back an equivalent visible reason, with manual device/TalkBack proof still needed. UX polish (auto-focus, clear, IME Search, diacritic folding, no-results escape) brings search to parity with platform expectations without scope creep.
 
 ## Explicit Non-Goals (rejected + why)
 
@@ -336,8 +338,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 ## Open Questions (genuine blockers only)
 
 1. v1.8.235 still needs manual Settings search TalkBack verification on a device.
-2. R4-2 needs a short manual TalkBack pass after strings land, because spoken
-   clipboard media labels are hard to validate with JVM tests alone.
+2. v1.8.238 still needs manual clipboard media TalkBack verification on a
+   device.
 3. v1.8.232 still needs manual system-back and TalkBack verification during an
    active dictionary import/export or save/delete operation.
 4. v1.8.236 still needs manual dynamic-incognito smoke during typing; the

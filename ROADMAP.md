@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.237 (versionCode 2037). **Local verification:** focused `SettingsSearchHighlightStoreTest` passed in 31s with one Gradle worker after a first Kotest-filter attempt compiled the touched code but failed test selection; `git diff --check` and fastlane metadata gates passed; APK assembly and manual Settings search navigation smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.238 (versionCode 2038). **Local verification:** focused `ClipboardMediaAccessibilityTest` passed in 1m33s with one Gradle worker after an initial 4m47s run exposed and then verified cleanup of new `@StringRes` annotation-target warnings; `git diff --check` and fastlane metadata gates passed; APK assembly and manual clipboard TalkBack smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -527,7 +527,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Clipboard media accessibility
 
-- [ ] 🤖 P3 — Add TalkBack descriptions for clipboard image/video history tiles (R4-2)
+- [x] 🤖 P3 — Add TalkBack descriptions for clipboard image/video history tiles (R4-2)
   - Why: Text clips can surface URL/email/phone descriptions, but image and
     video history tiles expose only visual thumbnails. A screen-reader user can
     focus and activate the tile without hearing whether it is an image, video,
@@ -550,6 +550,10 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Verify: `./gradlew.bat :app:testDebugUnitTest` plus manual TalkBack pass over
     text/image/video clipboard history, long-press popup, and paste/delete
     actions.
+  - Shipped: v1.8.238 (2026-06-04) with localized image/video media labels,
+    Pinned/Recent/Other group context, copied-time context, decorative thumbnail
+    overlay semantics preserved, focused JUnit/resource/source coverage, and
+    manual TalkBack smoke still pending.
 
 #### MIME helper contract
 

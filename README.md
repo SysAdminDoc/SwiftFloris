@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.237-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.238-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.237 | Privacy posture |
+| Area | What's in v1.8.238 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -45,7 +45,7 @@
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
 | **Voice input** | FUTO Voice Input handoff (live path), FUTO install guidance when no voice keyboard is available, plus preview-only local Whisper/Vosk route selector and model catalog until a recognizer runtime ships | SwiftFloris itself does not record audio |
 | **Emoji & stickers** | Emoji search/history/pinned groups with an in-keyboard pin-to-group sheet, bundled local sticker packs, and user-imported SAF sticker folders for PNG / WebP / JPEG / GIF files | Local folder URI only |
-| **Clipboard** | Room-backed history with pinning + per-app source tag, media/provider metadata, sensitive-item gates, startup/restore reconciliation, and in-keyboard text search with type-filter composition | On-device |
+| **Clipboard** | Room-backed history with pinning + per-app source tag, media/provider metadata, sensitive-item gates, startup/restore reconciliation, in-keyboard text search with type-filter composition, and TalkBack labels for image/video media history tiles | On-device |
 | **Productivity** | Calendar quick-insert reads local agenda entries for today + next 7 days; task quick-insert sends selected text to user-chosen task / note apps | Calendar permission is explicit opt-in; no network |
 | **Themes** | 21 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent with Settings preview and one-time opt-in hint | No telemetry |
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
@@ -287,6 +287,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.238** (2026-06-04) — Clipboard image/video history tiles now expose localized TalkBack labels with media type, history group, and copied-time context while keeping decorative thumbnail overlays hidden. ([notes](CHANGELOG.md#v1.8.238))
 - **v1.8.237** (2026-06-04) — Settings search destination highlights are now one-shot and dismissible, so stale search-result cards do not reappear on later visits. ([notes](CHANGELOG.md#v1.8.237))
 - **v1.8.236** (2026-06-04) — Suggestion candidate generation now snapshots incognito, no-personalized-learning, preference, and ghost-text sensitivity inputs before async provider work begins. ([notes](CHANGELOG.md#v1.8.236))
 - **v1.8.235** (2026-06-04) — Settings search now exposes TalkBack field labels/state, polite result-status changes, and result rows with position, screen, title, and summary context. ([notes](CHANGELOG.md#v1.8.235))
@@ -467,7 +468,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.237** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.238** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

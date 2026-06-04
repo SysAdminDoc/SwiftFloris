@@ -1,0 +1,1 @@
+Adds TalkBack labels for clipboard image and video history tiles. Media clips now announce whether they are images or videos, their Pinned/Recent/Other group when shown, and copied-time context while decorative thumbnail overlays stay hidden. Focused JVM tests passed; APK assembly skipped per operator request.

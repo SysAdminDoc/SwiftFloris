@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.238"></a>
+## v1.8.238
+
+Released: 2026-06-04
+
+### Clipboard media accessibility
+
+R4-2 is closed. Clipboard image and video history tiles now expose localized TalkBack labels with the media type, Pinned/Recent/Other group context when shown, and copied-time context, while thumbnail and video overlay icons remain decorative.
+
+### Changes
+
+- **`ClipboardInputLayout.kt`** - adds media-specific accessibility descriptions for clipboard image/video tiles, threads Pinned/Recent/Other group context into the grid item renderer, and keeps thumbnail/video overlay icons `contentDescription = null`.
+- **`strings.xml`** - adds localized clipboard image/video media labels and media-item accessibility templates with and without history group context.
+- **`ClipboardMediaAccessibilityTest.kt`** - adds JUnit/Robolectric coverage for media-kind classification, real resource strings, and source-level semantics/decorative-overlay wiring.
+- **`docs/ACCESSIBILITY.md`** - adds clipboard media history to the manual TalkBack QA checklist.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.238 / versionCode 2038 and closes R4-2.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.clipboard.ClipboardMediaAccessibilityTest"` - PASS in 1m33s after making the new `@StringRes` annotation targets explicit.
+- Initial focused run passed in 4m47s but exposed new Kotlin annotation-target warnings from the first enum annotation form; those warnings were removed before the final focused run.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2038.
+- APK assembly and manual clipboard TalkBack smoke were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardMediaAccessibilityTest.kt` (new)
+- `docs/ACCESSIBILITY.md`
+- `fastlane/metadata/android/en-US/changelogs/2038.txt` (new)
+- `gradle.properties` (versionCode 2037->2038, versionName 1.8.237->1.8.238)
+
 <a id="v1.8.237"></a>
 ## v1.8.237
 

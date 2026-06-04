@@ -180,6 +180,12 @@ candidate to be the first one TalkBack reaches.
 - **Candidate row:** type enough text to show predictions. TalkBack should read
   each candidate's type, position, and text, and eligible candidates should
   expose the remove-from-predictions custom action.
+- **Clipboard media history:** copy one text clip, one image clip, and one
+  video clip, then open the keyboard clipboard panel with TalkBack enabled.
+  Text clips should keep their URL/email/phone descriptions when applicable;
+  image and video tiles should announce their media type, group
+  (Pinned/Recent/Other when shown), and copied time, while thumbnail and video
+  overlay icons remain decorative.
 - **Settings search:** open Settings -> Search, verify the field is announced as
   a search field with changing result-count state, type a query with results,
   swipe the result list, and confirm each row reads result position, setting

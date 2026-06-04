@@ -1353,6 +1353,10 @@
     <string name="clipboard__item_description_email">Email</string>
     <string name="clipboard__item_description_url">URL</string>
     <string name="clipboard__item_description_phone">Phone</string>
+    <string name="clipboard__item_description_image" comment="Clipboard media item type for accessibility labels">Clipboard image</string>
+    <string name="clipboard__item_description_video" comment="Clipboard media item type for accessibility labels">Clipboard video</string>
+    <string name="clipboard__media_item_a11y" comment="Accessibility label for a clipboard image or video tile with its history group and copied time">{media_type}, {group}, copied {copied_time}.</string>
+    <string name="clipboard__media_item_a11y_no_group" comment="Accessibility label for a clipboard image or video tile when no history group is shown">{media_type}, copied {copied_time}.</string>
     <string name="clip__clear_history">Clear history</string>
     <string name="clip__unpin_item">Unpin item</string>
     <string name="clip__pin_item">Pin item</string>

@@ -343,26 +343,53 @@ fun ClipboardInputLayout(
         elementName: String,
         item: ClipboardItem,
         contentScrollInsteadOfClip: Boolean,
+        mediaGroup: ClipboardMediaItemGroup?,
         modifier: Modifier = Modifier,
     ) {
         val attributes = remember(item) {
             mapOf("type" to item.type.toString().lowercase())
         }
+        val formatter = LocalLocalizedDateTimeFormatter.current
+        val mediaDescriptionKind = clipboardMediaDescriptionKind(item)
+        val mediaA11yDescription = mediaDescriptionKind?.let { kind ->
+            val mediaType = stringRes(kind.labelResId)
+            val copiedTime = formatter.format(Instant.ofEpochMilli(item.creationTimestampMs))
+            mediaGroup?.let { group ->
+                stringRes(
+                    R.string.clipboard__media_item_a11y,
+                    "media_type" to mediaType,
+                    "group" to stringRes(group.labelResId),
+                    "copied_time" to copiedTime,
+                )
+            } ?: stringRes(
+                R.string.clipboard__media_item_a11y_no_group,
+                "media_type" to mediaType,
+                "copied_time" to copiedTime,
+            )
+        }
         SnyggBox(
             elementName = elementName,
             attributes = attributes,
             modifier = modifier.fillMaxWidth(),
-            clickAndSemanticsModifier = Modifier.combinedClickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = ripple(),
-                enabled = popupItem == null,
-                onLongClick = {
-                    popupItem = item
-                },
-                onClick = {
-                    clipboardManager.pasteItem(item)
-                },
-            ),
+            clickAndSemanticsModifier = Modifier
+                .run {
+                    if (mediaA11yDescription != null) {
+                        semantics { contentDescription = mediaA11yDescription }
+                    } else {
+                        this
+                    }
+                }
+                .combinedClickable(
+                    interactionSource = remember { MutableInteractionSource() },
+                    indication = ripple(),
+                    enabled = popupItem == null,
+                    onLongClick = {
+                        popupItem = item
+                    },
+                    onClick = {
+                        clipboardManager.pasteItem(item)
+                    },
+                ),
         ) {
             if (item.type == ItemType.IMAGE) {
                 val uri = item.uri
@@ -485,6 +512,7 @@ fun ClipboardInputLayout(
                 items: List<ClipboardItem>,
                 key: String,
                 @StringRes title: Int,
+                mediaGroup: ClipboardMediaItemGroup,
             ) {
                 if (items.isNotEmpty()) {
                     item(key, span = StaggeredGridItemSpan.FullLine) {
@@ -495,6 +523,7 @@ fun ClipboardInputLayout(
                             elementName = FlorisImeUi.ClipboardItem.elementName,
                             item = item,
                             contentScrollInsteadOfClip = false,
+                            mediaGroup = mediaGroup,
                         )
                     }
                 }
@@ -603,16 +632,19 @@ fun ClipboardInputLayout(
                             items = filteredHistory.pinned,
                             key = "pinned-header",
                             title = R.string.clipboard__group_pinned,
+                            mediaGroup = ClipboardMediaItemGroup.PINNED,
                         )
                         clipboardItems(
                             items = filteredHistory.recent,
                             key = "recent-header",
                             title = R.string.clipboard__group_recent,
+                            mediaGroup = ClipboardMediaItemGroup.RECENT,
                         )
                         clipboardItems(
                             items = filteredHistory.other,
                             key = "other-header",
                             title = R.string.clipboard__group_other,
+                            mediaGroup = ClipboardMediaItemGroup.OTHER,
                         )
                     }
                 }
@@ -636,6 +668,11 @@ fun ClipboardInputLayout(
                                 .weight(1f, fill = false),
                             item = popupItem!!,
                             contentScrollInsteadOfClip = true,
+                            mediaGroup = if (popupItem!!.isPinned) {
+                                ClipboardMediaItemGroup.PINNED
+                            } else {
+                                null
+                            },
                         )
                         SnyggBox(FlorisImeUi.ClipboardItemTimestamp.elementName) {
                             val formatter = LocalLocalizedDateTimeFormatter.current
@@ -889,6 +926,17 @@ internal enum class ClipboardItemDescriptionKind {
     PHONE,
 }
 
+internal enum class ClipboardMediaDescriptionKind(@param:StringRes val labelResId: Int) {
+    IMAGE(R.string.clipboard__item_description_image),
+    VIDEO(R.string.clipboard__item_description_video),
+}
+
+internal enum class ClipboardMediaItemGroup(@param:StringRes val labelResId: Int) {
+    PINNED(R.string.clipboard__group_pinned),
+    RECENT(R.string.clipboard__group_recent),
+    OTHER(R.string.clipboard__group_other),
+}
+
 internal fun clipboardItemDescriptionKind(item: ClipboardItem): ClipboardItemDescriptionKind? {
     if (item.type != ItemType.TEXT || item.isSensitive) {
         return null
@@ -899,6 +947,14 @@ internal fun clipboardItemDescriptionKind(item: ClipboardItem): ClipboardItemDes
         NetworkUtils.isUrl(text) -> ClipboardItemDescriptionKind.URL
         NetworkUtils.isPhoneNumber(text) -> ClipboardItemDescriptionKind.PHONE
         else -> null
+    }
+}
+
+internal fun clipboardMediaDescriptionKind(item: ClipboardItem): ClipboardMediaDescriptionKind? {
+    return when (item.type) {
+        ItemType.IMAGE -> ClipboardMediaDescriptionKind.IMAGE
+        ItemType.VIDEO -> ClipboardMediaDescriptionKind.VIDEO
+        ItemType.TEXT -> null
     }
 }
 
