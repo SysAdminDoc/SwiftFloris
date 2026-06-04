@@ -31,6 +31,7 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -67,6 +68,8 @@ abstract class AbstractEditorInstance(context: Context) {
     private val subtypeManager by context.subtypeManager()
     private val nlpManager by context.nlpManager()
     private val scope = MainScope()
+    private var pendingContentGenerationJob: Job? = null
+    private var contentGenerationSerial: Long = 0L
     protected val breakIterators = BreakIteratorGroup()
 
     private val _activeInfoFlow = MutableStateFlow(FlorisEditorInfo.Unspecified)
@@ -104,6 +107,7 @@ abstract class AbstractEditorInstance(context: Context) {
     protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     open fun handleStartInput(editorInfo: FlorisEditorInfo) {
+        cancelPendingContentGeneration()
         activeInfo = editorInfo
         activeCursorCapsMode = editorInfo.initialCapsMode
         activeContent = EditorContent.Unspecified
@@ -114,13 +118,14 @@ abstract class AbstractEditorInstance(context: Context) {
         if (isRestart) {
             reset() // Just to make sure our state is correct after a restart
         }
+        cancelPendingContentGeneration()
         val ic = currentInputConnection()
         activeInfo = editorInfo
         var selection = editorInfo.initialSelection
         if (ic == null || selection.isNotValid || editorInfo.isRawInputEditor) {
             activeCursorCapsMode = InputAttributes.CapsMode.NONE
             activeContent = EditorContent.Unspecified
-            keyboardManager.reevaluateInputShiftState()
+            reevaluateInputShiftState()
             return
         }
 
@@ -138,22 +143,22 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
 
-        scope.launch {
-            val content = generateContent(
-                editorInfo,
-                selection,
-                textBeforeSelection,
-                textAfterSelection,
-                selectedText,
-            )
-            activeCursorCapsMode = content.cursorCapsMode()
-            activeContent = content
-            keyboardManager.reevaluateInputShiftState()
-            ic.setComposingRegion(content.composing)
-        }
+        launchContentGeneration(
+            inputConnection = ic,
+            generate = {
+                generateContent(editorInfo, selection, textBeforeSelection, textAfterSelection, selectedText)
+            },
+            publish = { content ->
+                activeCursorCapsMode = content.cursorCapsMode()
+                activeContent = content
+                reevaluateInputShiftState()
+                ic.setComposingRegion(content.composing)
+            },
+        )
     }
 
     protected fun handleMassSelectionUpdate(newSelection: EditorRange, composing: EditorRange) {
+        cancelPendingContentGeneration()
         activeCursorCapsMode = InputAttributes.CapsMode.NONE
         activeContent = EditorContent.selectionOnly(newSelection)
         if (composing.isValid) {
@@ -163,12 +168,13 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     open fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
+        cancelPendingContentGeneration()
         val ic = currentInputConnection()
         val editorInfo = activeInfo
         if (ic == null || newSelection.isNotValid || editorInfo.isRawInputEditor) {
             activeCursorCapsMode = InputAttributes.CapsMode.NONE
             activeContent = EditorContent.Unspecified
-            keyboardManager.reevaluateInputShiftState()
+            reevaluateInputShiftState()
             return
         }
 
@@ -182,7 +188,7 @@ abstract class AbstractEditorInstance(context: Context) {
         if (expected != null) {
             activeCursorCapsMode = expected.cursorCapsMode()
             activeContent = expected
-            keyboardManager.reevaluateInputShiftState()
+            reevaluateInputShiftState()
             return
         }
 
@@ -192,21 +198,20 @@ abstract class AbstractEditorInstance(context: Context) {
         val textAfterSelection = ic.getTextAfterCursor(NumCharsAfterCursor, 0) ?: ""
         val selectedText = if (newSelection.isSelectionMode) ic.getSelectedText(0) ?: "" else ""
 
-        scope.launch {
-            val content = generateContent(
-                editorInfo,
-                newSelection,
-                textBeforeSelection,
-                textAfterSelection,
-                selectedText,
-            )
-            activeCursorCapsMode = content.cursorCapsMode()
-            activeContent = content
-            keyboardManager.reevaluateInputShiftState()
-            if (content.composing != composing) {
-                ic.setComposingRegion(content.composing)
-            }
-        }
+        launchContentGeneration(
+            inputConnection = ic,
+            generate = {
+                generateContent(editorInfo, newSelection, textBeforeSelection, textAfterSelection, selectedText)
+            },
+            publish = { content ->
+                activeCursorCapsMode = content.cursorCapsMode()
+                activeContent = content
+                reevaluateInputShiftState()
+                if (content.composing != composing) {
+                    ic.setComposingRegion(content.composing)
+                }
+            },
+        )
     }
 
     open fun handleFinishInputView() {
@@ -219,11 +224,56 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     protected open fun reset() {
+        cancelPendingContentGeneration()
         activeInfo = FlorisEditorInfo.Unspecified
         activeCursorCapsMode = InputAttributes.CapsMode.NONE
         activeContent = EditorContent.Unspecified
         runBlocking { expectedContentQueue.clear() }
         _lastCommitPosition.reset()
+    }
+
+    protected open fun reevaluateInputShiftState() {
+        keyboardManager.reevaluateInputShiftState()
+    }
+
+    private fun launchContentGeneration(
+        inputConnection: InputConnection,
+        generate: suspend () -> EditorContent,
+        publish: (EditorContent) -> Unit,
+    ) {
+        val serial = startContentGeneration()
+        pendingContentGenerationJob = scope.launch {
+            try {
+                if (!isCurrentContentGeneration(serial, inputConnection)) {
+                    return@launch
+                }
+                val content = generate()
+                if (!isCurrentContentGeneration(serial, inputConnection)) {
+                    return@launch
+                }
+                publish(content)
+            } finally {
+                if (contentGenerationSerial == serial) {
+                    pendingContentGenerationJob = null
+                }
+            }
+        }
+    }
+
+    private fun startContentGeneration(): Long {
+        pendingContentGenerationJob?.cancel()
+        contentGenerationSerial += 1
+        return contentGenerationSerial
+    }
+
+    private fun cancelPendingContentGeneration() {
+        pendingContentGenerationJob?.cancel()
+        pendingContentGenerationJob = null
+        contentGenerationSerial += 1
+    }
+
+    private fun isCurrentContentGeneration(serial: Long, inputConnection: InputConnection): Boolean {
+        return contentGenerationSerial == serial && currentInputConnection() === inputConnection
     }
 
     private suspend fun generateContent(

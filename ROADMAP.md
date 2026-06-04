@@ -2,13 +2,13 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.238 (versionCode 2038). **Local verification:** focused `ClipboardMediaAccessibilityTest` passed in 1m33s with one Gradle worker after an initial 4m47s run exposed and then verified cleanup of new `@StringRes` annotation-target warnings; `git diff --check` and fastlane metadata gates passed; APK assembly and manual clipboard TalkBack smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.239 (versionCode 2039). **Local verification:** focused `EditorContentGenerationLifecycleTest` passed in 1m34s with one Gradle worker after an initial compile-only run exposed and fixed the coroutine-test dispatcher type; `git diff --check` and fastlane metadata gates passed; APK assembly and manual field-switch/composing smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 9 - 2026-06-04.
+> Last researched: Cycle 11 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -222,7 +222,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Editor session lifecycle
 
-- [ ] 🤖 P2 — Cancel stale editor content-generation jobs on reset/finishInput (R10-1)
+- [x] 🤖 P2 — Cancel stale editor content-generation jobs on reset/finishInput (R10-1)
   - Why: `handleStartInputView(...)` and `handleSelectionUpdate(...)` launch
     background content generation using a captured `InputConnection`, then
     publish `activeCursorCapsMode`, `activeContent`, shift-state reevaluation,
@@ -264,6 +264,11 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     fields while composing text and confirming no stale composing region appears
     in the previous field.
   - Complexity: M
+  - Shipped: v1.8.239 (2026-06-04) with a pending content-generation `Job`,
+    generation token, current-connection identity check before generation and
+    publication, reset/finishInput cancellation, start/selection supersession,
+    and focused delayed-job JVM/Robolectric coverage. Manual field-switch smoke
+    remains pending.
 
 ### Researcher Queue (Cycle 9 - 2026-06-04)
 
