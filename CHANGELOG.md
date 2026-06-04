@@ -2,6 +2,42 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.223"></a>
+## v1.8.223
+
+Released: 2026-06-04
+
+### Settings search synonym coverage
+
+RA-3 is closed. Settings search now covers high-traffic capability terms users are likely to type instead of exact preference labels: dark/light theme mode, haptic feedback, trace/shape-writing gestures, punctuation spacing, and privacy audit.
+
+### Changes
+
+- **`SettingsSearchIndex.kt`** - adds targeted keyword synonyms to existing theme, gesture, typing, and privacy audit rows without changing the search algorithm or navigation behavior.
+- **`SettingsSearchIndexTest.kt`** - pins the requested "dark theme", "haptic", "trace", "punctuation", and "privacy" queries to the expected destinations, with exact target-row assertions for dark mode, punctuation, and privacy.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - closes RA-3, preserves the new RA-10 result-scroll follow-up, and leaves RA-4, RA-9, and RA-10 as the remaining settings-search queue.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.223 / versionCode 2023.
+
+### Verification
+
+- `./gradlew.bat --no-daemon :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.*"` -> green.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndexTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2023.txt` (new)
+- `gradle.properties` (versionCode 2022->2023, versionName 1.8.222->1.8.223)
+
 <a id="v1.8.222"></a>
 ## v1.8.222
 

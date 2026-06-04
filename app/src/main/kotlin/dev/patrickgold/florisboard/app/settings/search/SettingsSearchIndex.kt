@@ -141,7 +141,7 @@ object SettingsSearchIndex {
         entry("typing.auto-capitalization", R.string.settings__typing__title, R.string.pref__correction__auto_capitalization__label, R.string.pref__correction__auto_capitalization__summary, SettingsSearchDestination.TYPING),
         entry("typing.autocorrect", R.string.settings__typing__title, R.string.pref__correction__auto_correct__label, R.string.pref__correction__auto_correct__summary, SettingsSearchDestination.TYPING),
         entry("typing.quick-prediction", R.string.settings__typing__title, R.string.pref__correction__quick_prediction_insert__label, R.string.pref__correction__quick_prediction_insert__summary, SettingsSearchDestination.TYPING),
-        entry("typing.auto-space-punctuation", R.string.settings__typing__title, R.string.pref__correction__auto_space_punctuation__label, R.string.pref__correction__auto_space_punctuation__summary, SettingsSearchDestination.TYPING),
+        entry("typing.auto-space-punctuation", R.string.settings__typing__title, R.string.pref__correction__auto_space_punctuation__label, R.string.pref__correction__auto_space_punctuation__summary, SettingsSearchDestination.TYPING, "punctuation period spacing auto space"),
         entry("typing.double-space-period", R.string.settings__typing__title, R.string.pref__correction__double_space_period__label, R.string.pref__correction__double_space_period__summary, SettingsSearchDestination.TYPING),
         entry("typing.adaptive-touch", R.string.settings__typing__title, R.string.pref__correction__adaptive_touch_model__label, R.string.pref__correction__adaptive_touch_model__summary, SettingsSearchDestination.TYPING),
         entry("typing.next-word", R.string.settings__typing__title, R.string.pref__suggestion__next_word_prediction__label, R.string.pref__suggestion__next_word_prediction__summary, SettingsSearchDestination.TYPING),
@@ -151,7 +151,7 @@ object SettingsSearchIndex {
         entry("typing.stats", R.string.settings__typing_stats__title, R.string.settings__typing_stats__title, R.string.settings__typing_stats__summary, SettingsSearchDestination.TYPING_STATS, "erase dictionary learned words trace"),
 
         entry("theme", R.string.settings__theme__title, R.string.settings__theme__title, R.string.settings__home__theme_summary, SettingsSearchDestination.THEME),
-        entry("theme.mode", R.string.settings__theme__title, R.string.pref__theme__mode__label, destination = SettingsSearchDestination.THEME),
+        entry("theme.mode", R.string.settings__theme__title, R.string.pref__theme__mode__label, destination = SettingsSearchDestination.THEME, keywords = "dark light system appearance mode"),
         entry("theme.sunrise", R.string.settings__theme__title, R.string.pref__theme__sunrise_time__label, destination = SettingsSearchDestination.THEME),
         entry("theme.sunset", R.string.settings__theme__title, R.string.pref__theme__sunset_time__label, destination = SettingsSearchDestination.THEME),
         entry("theme.day", R.string.settings__theme__title, R.string.pref__theme__day, destination = SettingsSearchDestination.THEME),
@@ -162,8 +162,8 @@ object SettingsSearchIndex {
         entry("theme.manager", R.string.ext__list__ext_theme, R.string.settings__theme_manager__title_manage, destination = SettingsSearchDestination.THEME_MANAGER, keywords = "installed themes"),
 
         entry("gestures", R.string.settings__gestures__title, R.string.settings__gestures__title, R.string.settings__home__gestures_summary, SettingsSearchDestination.GESTURES, "glide swipe trail"),
-        entry("gestures.glide", R.string.settings__gestures__title, R.string.pref__glide__enabled__label, destination = SettingsSearchDestination.GESTURES),
-        entry("gestures.trail", R.string.settings__gestures__title, R.string.pref__glide__show_trail__label, destination = SettingsSearchDestination.GESTURES),
+        entry("gestures.glide", R.string.settings__gestures__title, R.string.pref__glide__enabled__label, destination = SettingsSearchDestination.GESTURES, keywords = "swipe trace shape writing gesture typing"),
+        entry("gestures.trail", R.string.settings__gestures__title, R.string.pref__glide__show_trail__label, destination = SettingsSearchDestination.GESTURES, keywords = "trace shape writing path"),
 
         entry("voice", R.string.settings__voice_input__title, R.string.settings__voice_input__title, R.string.settings__home__voice_input_summary, SettingsSearchDestination.VOICE_INPUT, "futo microphone whisper vosk dictation"),
         entry("voice.engine", R.string.settings__voice_input__title, R.string.settings__voice_input__recognition_engine_preference, destination = SettingsSearchDestination.VOICE_INPUT),
@@ -190,7 +190,7 @@ object SettingsSearchIndex {
         entry("mcp", R.string.settings__mcp__title, R.string.settings__mcp__title, R.string.settings__home__mcp_summary, SettingsSearchDestination.MCP, "daemon bridge tools"),
         entry("addons", R.string.settings__addons__title, R.string.settings__addons__title, R.string.settings__home__addons_summary, SettingsSearchDestination.ADDONS, "apk dictionary packs rejected install"),
         entry("extensions", R.string.ext__home__title, R.string.ext__home__title, R.string.settings__home__extensions_summary, SettingsSearchDestination.EXTENSIONS, "keyboard theme language extension"),
-        entry("privacy-audit", R.string.settings__privacy_audit__title, R.string.settings__privacy_audit__title, R.string.settings__privacy_audit__home_summary, SettingsSearchDestination.PRIVACY_AUDIT, "local audit log addon"),
+        entry("privacy-audit", R.string.settings__privacy_audit__title, R.string.settings__privacy_audit__title, R.string.settings__privacy_audit__home_summary, SettingsSearchDestination.PRIVACY_AUDIT, "local audit log addon privacy data safety"),
 
         entry("other", R.string.settings__other__title, R.string.settings__other__title, R.string.settings__home__other_summary, SettingsSearchDestination.OTHER, "system advanced"),
         entry("other.theme", R.string.settings__other__title, R.string.pref__other__settings_theme__label, destination = SettingsSearchDestination.OTHER),

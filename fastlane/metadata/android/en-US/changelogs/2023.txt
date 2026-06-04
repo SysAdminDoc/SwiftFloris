@@ -1,0 +1,1 @@
+Settings search now resolves high-traffic capability synonyms such as dark theme, haptic feedback, trace/shape writing, punctuation spacing, and privacy audit to the intended Settings destinations. Adds JVM coverage so those terms stay pinned.

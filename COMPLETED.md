@@ -62,6 +62,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] RA-8 (P3) — Settings search entry-point discoverability was already satisfied by the Settings Home top app-bar search action. Confirmed and documented in v1.8.220. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
 - [x] RA-1 (P1) — Settings search now has a JVM/Robolectric drift guard for unique entry IDs, real non-blank string resources, and exhaustive typed destination-route mapping. Shipped v1.8.221. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
 - [x] RA-2 (P2) — Settings search no-results states now include a one-tap Browse all settings action back to Settings Home. Shipped v1.8.222. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
+- [x] RA-3 (P2) — Settings search high-traffic capability synonyms now cover dark/light theme mode, haptic feedback, trace/shape-writing gestures, punctuation spacing, and privacy audit queries with JVM ranking coverage. Shipped v1.8.223. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 
