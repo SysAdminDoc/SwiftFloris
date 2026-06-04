@@ -1,10 +1,11 @@
 name: Release
 
 # ROADMAP §6 N6.2 — manual-trigger release workflow:
-#   1. Builds the release variant.
-#   2. Signs with the keystore stored as an encrypted secret.
-#   3. Uploads the signed APK + SHA-256 manifest to a GitHub Release.
-#   4. NOTICE / LICENSES attribution check (Apache-2.0 + SCOWL + LDNOOBW + FlorisBoard upstream).
+#   1. Requires the reproducible-build verifier to pass for the same commit.
+#   2. Builds the release variant.
+#   3. Signs with the keystore stored as an encrypted secret.
+#   4. Uploads the signed APK + SHA-256 manifest to a GitHub Release.
+#   5. NOTICE / LICENSES attribution check (Apache-2.0 + SCOWL + LDNOOBW + FlorisBoard upstream).
 #
 # Required repo secrets (set up under Settings → Secrets and variables → Actions):
 #   SIGNING_KEYSTORE_BASE64   — base64-encoded contents of the .jks file
@@ -33,7 +34,14 @@ permissions:
   contents: write
 
 jobs:
+  reproducible:
+    name: Reproducible APK verification
+    uses: ./.github/workflows/reproducible-build.yml
+    permissions:
+      contents: read
+
   build:
+    needs: reproducible
     runs-on: ubuntu-latest
     env:
       SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}

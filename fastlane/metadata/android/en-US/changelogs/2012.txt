@@ -1,0 +1,1 @@
+Release publication now waits for SwiftFloris's reproducible-build verifier. The build-twice APK check is reusable from the Release workflow, and signing/GitHub Release creation cannot run unless that check passes for the same commit. No app behavior, permission, network, or telemetry changes.
