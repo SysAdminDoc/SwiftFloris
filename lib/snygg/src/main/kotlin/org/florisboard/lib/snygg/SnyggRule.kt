@@ -542,7 +542,7 @@ enum class SnyggSelector(val id: String) {
         internal fun from(str: String): SnyggSelector {
             if (str.isNotEmpty()) {
                 val selector = str.substring(1)
-                return entries.first { it.id == selector }
+                return entries.firstOrNull { it.id == selector } ?: NONE
             }
             return NONE
         }

@@ -54,7 +54,7 @@ data class SnyggUriValue(val uri: String) : SnyggValue {
 
 data class SnyggContentScaleValue(val contentScale: ContentScale) : SnyggValue {
     companion object : SnyggEnumLikeValueEncoder<ContentScale>(
-        serializationId = "textAlign",
+        serializationId = "contentScale",
         serializationMapping = mapOf(
             "crop" to ContentScale.Crop,
             "fill-bounds" to ContentScale.FillBounds,
