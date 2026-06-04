@@ -2,6 +2,41 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.211"></a>
+## v1.8.211
+
+Released: 2026-06-04
+
+### Settings home five-bucket regroup
+
+EI2 closes the remaining low-value Settings home IA polish. The original research premise was stale because the home screen was already grouped, so this release keeps the behavior surface intact and reshuffles the existing destinations into the archived five-bucket model: Typing experience, Personalization, Privacy & data, Advanced, and About.
+
+The existing Physical keyboard screen is now surfaced directly under Advanced while retaining its `settings/other/physical-keyboard` deep link and its existing entry inside Other. No settings route was removed, and no new permission, network, account, or telemetry surface was added.
+
+### Changes
+
+- **`HomeScreen.kt`** - regrouped home preferences into the five archived EI2 buckets and added a direct Physical keyboard row under Advanced.
+- **`strings.xml`** - replaced the old four home-section labels with resource-backed five-bucket section labels.
+- **`ROADMAP.md` / `COMPLETED.md`** - moved the reframed EI2 polish item out of active work and into shipped state.
+
+### Verification
+
+- `./gradlew.bat :app:compileDebugKotlin` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `git diff --check` -> green; CRLF normalization warnings only.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2011.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/HomeScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/2011.txt` (new)
+- `gradle.properties` (versionCode 2010->2011, versionName 1.8.210->1.8.211)
+- `README.md` (version badge/current release/highlights)
+- `ROADMAP.md` / `COMPLETED.md` (EI2 moved to shipped work)
+
 <a id="v1.8.210"></a>
 ## v1.8.210
 

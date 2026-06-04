@@ -180,10 +180,11 @@
     <string name="settings__home__ime_not_selected" comment="Warning message shown in Home fragment when SwiftFloris is not selected as the default keyboard">SwiftFloris is enabled but not selected</string>
     <string name="settings__home__ime_not_selected_summary" comment="Warning summary shown in Home fragment when SwiftFloris is not selected as the default keyboard">Choose SwiftFloris as your active keyboard. You can switch back from the Android keyboard picker at any time.</string>
     <string name="settings__home__choose_keyboard" comment="Action label shown on Home status card">Choose keyboard</string>
-    <string name="settings__home__section_essentials" comment="Home screen section title">Start here</string>
-    <string name="settings__home__section_experience" comment="Home screen section title">Typing experience</string>
-    <string name="settings__home__section_data" comment="Home screen section title">Data &amp; extensions</string>
-    <string name="settings__home__section_system" comment="Home screen section title">System</string>
+    <string name="settings__home__section_typing" comment="Home screen section title">Typing experience</string>
+    <string name="settings__home__section_personalization" comment="Home screen section title">Personalization</string>
+    <string name="settings__home__section_privacy_data" comment="Home screen section title">Privacy &amp; data</string>
+    <string name="settings__home__section_advanced" comment="Home screen section title">Advanced</string>
+    <string name="settings__home__section_about" comment="Home screen section title">About</string>
     <string name="settings__home__localization_summary" comment="Home screen preference summary">Languages, layouts, subtype presets, and language packs</string>
     <string name="settings__home__typing_summary" comment="Home screen preference summary">Word suggestions, autocorrect, spelling, and dictionaries</string>
     <string name="settings__home__keyboard_summary" comment="Home screen preference summary">Rows, labels, popups, spacing, and key behavior</string>

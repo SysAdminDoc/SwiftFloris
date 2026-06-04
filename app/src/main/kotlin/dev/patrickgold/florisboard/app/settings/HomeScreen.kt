@@ -40,7 +40,9 @@ import androidx.compose.material.icons.outlined.Palette
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -99,13 +101,7 @@ fun HomeScreen() = FlorisScreen {
             )
         }
 
-        PreferenceGroup(title = stringRes(R.string.settings__home__section_essentials)) {
-            Preference(
-                icon = Icons.Default.Language,
-                title = stringRes(R.string.settings__localization__title),
-                summary = stringRes(R.string.settings__home__localization_summary),
-                onClick = { navController.navigate(Routes.Settings.Localization) },
-            )
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_typing)) {
             Preference(
                 icon = Icons.Outlined.Keyboard,
                 title = stringRes(R.string.settings__keyboard__title),
@@ -118,15 +114,6 @@ fun HomeScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__home__typing_summary),
                 onClick = { navController.navigate(Routes.Settings.Typing) },
             )
-            Preference(
-                icon = Icons.Outlined.Palette,
-                title = stringRes(R.string.settings__theme__title),
-                summary = stringRes(R.string.settings__home__theme_summary),
-                onClick = { navController.navigate(Routes.Settings.Theme) },
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__home__section_experience)) {
             Preference(
                 icon = Icons.Default.SmartButton,
                 title = stringRes(R.string.settings__smartbar__title),
@@ -151,11 +138,14 @@ fun HomeScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__home__voice_input_summary),
                 onClick = { navController.navigate(Routes.Settings.VoiceInput) },
             )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_personalization)) {
             Preference(
-                icon = Icons.AutoMirrored.Outlined.Assignment,
-                title = stringRes(R.string.settings__clipboard__title),
-                summary = stringRes(R.string.settings__home__clipboard_summary),
-                onClick = { navController.navigate(Routes.Settings.Clipboard) },
+                icon = Icons.Outlined.Palette,
+                title = stringRes(R.string.settings__theme__title),
+                summary = stringRes(R.string.settings__home__theme_summary),
+                onClick = { navController.navigate(Routes.Settings.Theme) },
             )
             Preference(
                 icon = Icons.Default.SentimentSatisfiedAlt,
@@ -163,20 +153,26 @@ fun HomeScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__home__media_summary),
                 onClick = { navController.navigate(Routes.Settings.Media) },
             )
+            Preference(
+                icon = Icons.Default.Language,
+                title = stringRes(R.string.settings__localization__title),
+                summary = stringRes(R.string.settings__home__localization_summary),
+                onClick = { navController.navigate(Routes.Settings.Localization) },
+            )
         }
 
-        PreferenceGroup(title = stringRes(R.string.settings__home__section_data)) {
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_privacy_data)) {
+            Preference(
+                icon = Icons.AutoMirrored.Outlined.Assignment,
+                title = stringRes(R.string.settings__clipboard__title),
+                summary = stringRes(R.string.settings__home__clipboard_summary),
+                onClick = { navController.navigate(Routes.Settings.Clipboard) },
+            )
             Preference(
                 icon = Icons.AutoMirrored.Filled.LibraryBooks,
                 title = stringRes(R.string.settings__dictionary__title),
                 summary = stringRes(R.string.settings__home__dictionary_summary),
                 onClick = { navController.navigate(Routes.Settings.Dictionary) },
-            )
-            Preference(
-                icon = Icons.Default.Extension,
-                title = stringRes(R.string.ext__home__title),
-                summary = stringRes(R.string.settings__home__extensions_summary),
-                onClick = { navController.navigate(Routes.Ext.Home) },
             )
             Preference(
                 icon = Icons.Default.Sync,
@@ -185,16 +181,10 @@ fun HomeScreen() = FlorisScreen {
                 onClick = { navController.navigate(Routes.Settings.Sync) },
             )
             Preference(
-                icon = Icons.Default.Extension,
-                title = stringRes(R.string.settings__mcp__title),
-                summary = stringRes(R.string.settings__home__mcp_summary),
-                onClick = { navController.navigate(Routes.Settings.Mcp) },
-            )
-            Preference(
-                icon = Icons.Default.Extension,
-                title = stringRes(R.string.settings__addons__title),
-                summary = stringRes(R.string.settings__home__addons_summary),
-                onClick = { navController.navigate(Routes.Settings.Addons) },
+                icon = Icons.Default.Shield,
+                title = stringRes(R.string.settings__privacy_audit__title),
+                summary = stringRes(R.string.settings__privacy_audit__home_summary),
+                onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
             )
             Preference(
                 icon = Icons.Default.Archive,
@@ -208,21 +198,42 @@ fun HomeScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__home__restore_summary),
                 onClick = { navController.navigate(Routes.Settings.Restore) },
             )
-            Preference(
-                icon = Icons.Default.Shield,
-                title = stringRes(R.string.settings__privacy_audit__title),
-                summary = stringRes(R.string.settings__privacy_audit__home_summary),
-                onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
-            )
         }
 
-        PreferenceGroup(title = stringRes(R.string.settings__home__section_system)) {
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_advanced)) {
+            Preference(
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.ext__home__title),
+                summary = stringRes(R.string.settings__home__extensions_summary),
+                onClick = { navController.navigate(Routes.Ext.Home) },
+            )
+            Preference(
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.settings__addons__title),
+                summary = stringRes(R.string.settings__home__addons_summary),
+                onClick = { navController.navigate(Routes.Settings.Addons) },
+            )
+            Preference(
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.settings__mcp__title),
+                summary = stringRes(R.string.settings__home__mcp_summary),
+                onClick = { navController.navigate(Routes.Settings.Mcp) },
+            )
+            Preference(
+                icon = ImageVector.vectorResource(R.drawable.ic_keyboard_keys),
+                title = stringRes(R.string.physical_keyboard__title),
+                summary = stringRes(R.string.settings__other__physical_keyboard_summary),
+                onClick = { navController.navigate(Routes.Settings.PhysicalKeyboard) },
+            )
             Preference(
                 icon = Icons.Outlined.Build,
                 title = stringRes(R.string.settings__other__title),
                 summary = stringRes(R.string.settings__home__other_summary),
                 onClick = { navController.navigate(Routes.Settings.Other) },
             )
+        }
+
+        PreferenceGroup(title = stringRes(R.string.settings__home__section_about)) {
             Preference(
                 icon = Icons.Outlined.Info,
                 title = stringRes(R.string.about__title),
