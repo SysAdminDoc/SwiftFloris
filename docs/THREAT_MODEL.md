@@ -1,6 +1,6 @@
 # SwiftFloris Threat Model
 
-**Last updated:** 2026-06-04 (v1.8.229)
+**Last updated:** 2026-06-04 (v1.8.230)
 **Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules — none ship today, none are planned).
 **Audience:** maintainers, reviewers, and security-conscious users evaluating SwiftFloris vs proprietary keyboards.
 
@@ -58,6 +58,9 @@ and [SEVENTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.
 - **v1.8.229** — First-seen non-co-signed addon APKs now stay rejected until Settings records an
   explicit signing-certificate pin for the displayed fingerprint; co-signed addons still enroll
   automatically. Closes the discovery-as-consent gap in optional addon enrollment.
+- **v1.8.230** — Sync sealed-box envelopes now have deterministic v1 schema/vector coverage:
+  fixed X25519 keys pin the ephemeral-public-key + nonce + AES-GCM ciphertext shape before any
+  CRDT sync transport persists envelopes.
 - **v1.8.174** — Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
   `*.keystore` / `local.properties` / `*.backup*` / large branding PNGs. Closes the supply-
   chain footgun where a maintainer's working-tree keystore could land in a commit.
@@ -162,7 +165,23 @@ Out of scope:
   but cannot recover the passphrase, the app fails closed instead of generating
   a new passphrase that would orphan an existing encrypted database.
 
-### 3.6 Supply-chain integrity
+### 3.6 Sync sealed-box envelopes
+- Base-APK sync remains transport-neutral: SwiftFloris can write encrypted CRDT deltas to the
+  user's chosen local folder / Syncthing / Nextcloud-style channel, but it still declares no
+  network permission and does not contact a vendor server.
+- Pairing payloads carry raw 32-byte X25519 public keys as lowercase hex. Private keys stay on
+  the device that generated them.
+- The sealed-box envelope schema is v1 and intentionally fixed before transport activation:
+  `ephemeralPublicKey(32) || nonce(12) || aesGcmCiphertextPlusTag(n + 16)`.
+- Key material is `HKDF-SHA-256(sharedX25519, zeroSalt, info="swiftfloris-sealed-box-key-v1")`.
+  The nonce is `SHA-256(derivedKey || ephemeralPublicKey || recipientPublicKey)[0..12)`.
+- Incompatible envelope or KDF changes must introduce a new schema/version before persisted
+  envelopes exist; silent reinterpretation of v1 bytes is not allowed.
+- `SealedBoxCryptoTest` pins a deterministic fixed-key v1 vector plus malformed/tampered
+  envelope null-return behavior. Raw X25519 output and temporary KDF/nonce buffers are scrubbed
+  where the JVM exposes mutable arrays.
+
+### 3.7 Supply-chain integrity
 - APK signing fingerprint visible in Settings → About → APK signing fingerprint
   (N7.5). Users can compare the SHA-256 against the value pinned in the README
   to detect a swap.
@@ -170,7 +189,7 @@ Out of scope:
   `.github/workflows/reproducible-build.yml`; F-Droid verified rebuild remains
   the public distribution target.
 
-### 3.7 CAKI (cross-app KeyEvent injection)
+### 3.8 CAKI (cross-app KeyEvent injection)
 - IME does not expose AIDL services beyond the platform `InputMethodService`.
 - KeyEvent dispatch in `AbstractEditorInstance.sendDownUpKeyEvent` always
   attaches `KeyCharacterMap.VIRTUAL_KEYBOARD` source; the host editor remains
@@ -179,7 +198,7 @@ Out of scope:
   cross-app origin (the platform handles this); a defense-in-depth pass on
   `metaState` validation is on the longer roadmap.
 
-### 3.8 Auditability
+### 3.9 Auditability
 - Apache-2.0 codebase, no obfuscation in debug builds, ProGuard rules visible
   in `app/proguard-rules.pro` for release builds.
 - No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); the base

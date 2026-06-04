@@ -50,8 +50,8 @@ with this glide evidence, and R3-2 was added to finish SwiftFloris' already
 tested clipboard-query helper by wiring it into the keyboard clipboard palette.
 R3-3 freezes the sealed-box envelope/KDF contract with deterministic vectors
 before sync transport persists envelopes, using libsodium sealed-box docs and
-RFC 5869 as primary references. R3-4 backfills regression tests for the newest
-hotfix surfaces.
+RFC 5869 as primary references. R3-3 was later closed in v1.8.230. R3-4
+backfills regression tests for the newest hotfix surfaces.
 
 2026-06-04 freshness note: the live dirty tree has already moved EI7 out of active work into v1.8.207 release docs, with `VoiceInputEmptyStateCopyTest.kt` pinning the FUTO explanation and F-Droid install action. This pass did not run Gradle because repo instructions say not to run Android gates from this VM unless asked; the changelog's green Gradle evidence remains unverified here. Current external checks support the copy: FUTO's Voice Input page describes it as working entirely on-device with no stored data, latest F-Droid/standalone version v1.3.6 (28), and the source mirror says FUTO Voice Input remains available for third-party keyboards even though FUTO development has shifted toward FUTO Keyboard. Android-platform sources also moved: Android 17 API 37 setup docs are current, but SwiftFloris already keeps API 37 as a future behavior-gate decision. Maven metadata shows low-priority freshness drift rather than a security issue: Kotlin 2.4.0, Compose BOM 2026.05.01, AndroidX Core 1.19.0, and Roborazzi 1.63.0 are newer than the pinned versions, while Room 2.8.4, SQLCipher 4.16.0, Tink 1.21.0, and Robolectric 4.16.1 still match current metadata. A P3 dependency-refresh row was added to `ROADMAP.md`.
 
@@ -85,7 +85,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.229, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, and non-co-signed addon enrollment now requires explicit Settings trust. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on sync-crypto contract tests and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.230, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, and the sync sealed-box v1 envelope is pinned by deterministic vector coverage. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -99,7 +99,7 @@ Top opportunities (one line each):
 8. **Root docs source-of-truth refresh** — onboarding docs now route open work, shipped state, release notes, and archived planning context consistently (R2-3). [Closed]
 9. **Release-ledger reconciliation** — post-v1.8.225 fixes now have a normal version/changelog/fastlane/tag handoff in v1.8.226 (R3-1). [Closed]
 10. **Clipboard history search UI** — the in-keyboard clipboard palette now exposes the existing pure filter through a compact search row, composes query with type filters, and keeps no-results/clear states local-only (R3-2). [Closed]
-11. **Sealed-box contract vectors** — sync crypto tests need deterministic envelope/KDF vectors before CRDT transport persists or exchanges encrypted deltas (R3-3, P1). [Verified]
+11. **Sealed-box contract vectors** — sync crypto now has deterministic v1 envelope/KDF vector coverage and compatibility docs before CRDT transport persists or exchanges encrypted deltas (R3-3). [Closed]
 12. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]
 13. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
 14. **Japanese locale capability gate** — `supportsAutoSpace` now uses the BCP-47 Japanese language subtag `ja`, and adjacent capability tables are pinned by `FlorisLocaleTest` (R4-1). [Closed]
@@ -139,9 +139,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   semantic context than image/video tiles. R4-2 adds localized media labels
   without changing clipboard storage, redaction, or paste behavior. [Verified]
 - **Sync sealed-box scaffold (partial):** `SealedBoxCrypto` uses X25519 +
-  AES-GCM and an HMAC-based KDF after the latest local fix, but it is still
-  scaffold/test-surface rather than a full production transport. R3-3 asks for
-  vectors/schema docs before transport lands. [Verified]
+  AES-GCM and an HMAC-based KDF after the latest local fix, and v1.8.230 closes
+  R3-3 by pinning explicit envelope constants, a deterministic fixed-key vector,
+  malformed-envelope null-return behavior, and threat-model compatibility docs.
+  The transport is still scaffold/test-surface rather than a full production
+  sync channel. [Closed]
 - **Addon trust boundary:** addon package visibility, no-network screening,
   fingerprint capture, changed-certificate rejection, and explicit trust for
   non-co-signed first-seen packages are in place. v1.8.229 closes R5-1 by
@@ -190,6 +192,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Medium] Clipboard query helper not surfaced in the IME palette** → R3-2. Closed in v1.8.228.
   The pure helper and pref exist; the user-facing keyboard UI does not expose a
   search field yet.
+- **[Medium] Sealed-box contract vectors** → R3-3. Closed in v1.8.230:
+  fixed X25519 keypairs now pin the v1 envelope bytes before sync transport
+  persists encrypted deltas.
 - **[Medium] Japanese auto-space gate typo** → R4-1. `supportsAutoSpace`
   excludes `jp`, while Android and IANA use `ja` for Japanese.
 - **[Minor] Clipboard media thumbnails lack useful spoken labels** → R4-2.
@@ -210,10 +215,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 ## Architecture & Technical Findings
 
 - **Module boundaries:** clean `:app` + `:lib:*` split; addon capability isolation is a deliberate, well-documented pattern. No new boundary issue surfaced.
-- **Sync crypto contract:** the recent HMAC-KDF correction is the right
-  direction, but deterministic vectors and envelope-schema docs are missing.
-  Because the transport is still scaffold-level, this is a pre-release
-  hardening item rather than a production decrypt-migration incident.
+- **Sync crypto contract:** v1.8.230 pins the sealed-box v1 constants, fixed
+  key/envelope vector, malformed-envelope behavior, and compatibility policy.
+  Because the transport is still scaffold-level, this closes the pre-release
+  hardening gap without introducing a production decrypt migration.
 - **MIME helper contract:** SwiftFloris intentionally accepts wildcard fragments
   that AndroidX's helper does not. R4-3 keeps that broader local contract only
   if tests and KDoc make the divergence explicit.
@@ -235,7 +240,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 is sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 is a trust-boundary hardening item for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R7-1 is privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 is a trust-boundary hardening item for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R7-1 is privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 

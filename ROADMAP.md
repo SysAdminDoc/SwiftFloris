@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.229 (versionCode 2029). **Local verification:** fastlane metadata gate passed for versionCode 2029; reduced-resource `:app:testDebugUnitTest` passed in 3m37s; APK assembly was intentionally not run for this trust-policy follow-up.
+**Current release:** v1.8.230 (versionCode 2030). **Local verification:** fastlane metadata gate passed for versionCode 2030; reduced-resource `:app:testDebugUnitTest` passed in 3m05s; focused `SealedBoxCryptoTest` passed in 45s after the final UTF-8 vector-source patch; APK assembly was intentionally not run for this contract-test follow-up.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -495,7 +495,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Sync crypto contract
 
-- [ ] 🤖 P1 — Freeze the sealed-box envelope/KDF contract with vectors before sync transport ships (R3-3)
+- [x] 🤖 P1 — Freeze the sealed-box envelope/KDF contract with vectors before sync transport ships (R3-3)
   - Why: The local sealed-box scaffold now uses X25519 + AES-GCM with an
     RFC-5869-style HMAC KDF and scrubs the derived shared secret, but tests only
     cover generated-key round-trips. Before CRDT sync starts persisting or
@@ -520,6 +520,9 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Verify: `:app:testDebugUnitTest --tests
     "dev.patrickgold.florisboard.ime.sync.SealedBoxCryptoTest"`; manual review
     that no network permission or native dependency was introduced.
+  - Shipped: v1.8.230 (2026-06-04) with explicit v1 envelope constants,
+    fixed-key deterministic vector coverage, malformed-envelope null-return
+    coverage, temporary-buffer scrubbing, and threat-model compatibility docs.
   - Complexity: M
 
 #### Regression coverage
