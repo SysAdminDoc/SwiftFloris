@@ -2,6 +2,43 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.212"></a>
+## v1.8.212
+
+Released: 2026-06-04
+
+### Release reproducibility gate
+
+F23 makes release publication depend on the existing reproducible-build verifier. The build-twice APK workflow is now reusable via `workflow_call`, and the manual Release workflow has a required `reproducible` job before the signing/build/publish job. If the reproducibility check fails for the selected commit, the signed APK and GitHub Release creation steps never run.
+
+This keeps the existing standalone reproducible-build triggers intact (`workflow_dispatch`, push, and pull request path filters) while closing the release-flow gap where a maintainer could publish before the matching reproducibility signal completed.
+
+### Changes
+
+- **`reproducible-build.yml`** - added `workflow_call` so the verifier can be used as a required job by other workflows.
+- **`release.yml`** - added a `Reproducible APK verification` reusable-workflow job and made the release build job depend on it.
+- **`REPRODUCIBLE_BUILDS.md`** - documented that release dispatches are now blocked by the build-twice verifier.
+- **`ROADMAP.md` / `COMPLETED.md`** - moved F23 out of active work and into shipped state.
+
+### Verification
+
+- `python -c "import yaml, pathlib; [yaml.safe_load(p.read_text(encoding='utf-8')) for p in pathlib.Path('.github/workflows').glob('*.yml')]; print('pyyaml ok')"` -> green.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `git diff --check` -> green; CRLF normalization warnings only.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2012.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `.github/workflows/release.yml`
+- `.github/workflows/reproducible-build.yml`
+- `docs/REPRODUCIBLE_BUILDS.md`
+- `fastlane/metadata/android/en-US/changelogs/2012.txt` (new)
+- `gradle.properties` (versionCode 2011->2012, versionName 1.8.211->1.8.212)
+- `README.md` (version badge/current release/highlights)
+- `ROADMAP.md` / `COMPLETED.md` (F23 moved to shipped work)
+
 <a id="v1.8.211"></a>
 ## v1.8.211
 

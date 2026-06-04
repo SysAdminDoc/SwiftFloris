@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.211 (versionCode 2011). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.212 (versionCode 2012). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -43,11 +43,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### CI, build & release hardening
 
-- [ ] P1 — Chain reproducible-build verification to release-tag flow (F23)
-  - Why: Reproducible-build verification is not gated on release.
-  - Touches: `workflow_call` from `release.yml`, or block tag publish until repro is green.
-  - Acceptance: a tag cannot publish unless reproducible-build verification passes.
-  - Source: TODO.md A4 / research feature plan F23.
 - [ ] P1 — `:app:verifyRoborazziRelease` gate (F24)
   - Why: R8/minify can rename Compose semantics nodes and nothing catches it today.
   - Touches: add a release-variant Roborazzi verification task.

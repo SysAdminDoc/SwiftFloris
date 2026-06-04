@@ -43,10 +43,14 @@ Gradle build cache disabled and tasks re-run, then compares the two APKs
 byte-for-byte.
 
 `.github/workflows/reproducible-build.yml` runs this verifier on
-`workflow_dispatch`, and on pushes / pull requests that touch app, Gradle,
-workflow, or reproducible-build documentation surfaces. On mismatch, the
-script writes per-entry SHA-256 manifests excluding `META-INF/` so maintainers
-can tell whether the drift is payload content or signing / ZIP metadata.
+`workflow_dispatch`, as a reusable `workflow_call` from the release workflow,
+and on pushes / pull requests that touch app, Gradle, workflow, or
+reproducible-build documentation surfaces. On mismatch, the script writes
+per-entry SHA-256 manifests excluding `META-INF/` so maintainers can tell
+whether the drift is payload content or signing / ZIP metadata. The release
+workflow's signing and GitHub Release publication job depends on this reusable
+verifier, so a release dispatch cannot publish a tag unless the build-twice
+reproducibility check has passed for the same commit.
 
 ## What can still drift?
 
