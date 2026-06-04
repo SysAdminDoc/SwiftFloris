@@ -2,6 +2,42 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.222"></a>
+## v1.8.222
+
+Released: 2026-06-04
+
+### Settings search no-results action
+
+RA-2 is closed. Settings search now gives zero-result queries a visible `Browse all settings` action that returns to Settings Home instead of leaving users at a dead-end message.
+
+### Changes
+
+- **`SettingsSearchScreen.kt`** - changes the no-results branch from a single text message to a message plus centered text button that navigates to `Routes.Settings.Home`.
+- **`strings.xml`** - adds the default English `settings__search__browse_all` action copy.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - closes RA-2 and leaves RA-3, RA-4, and RA-9 as the remaining settings-search follow-ups.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.222 / versionCode 2022.
+
+### Verification
+
+- `./gradlew.bat --no-daemon :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.*" :app:assembleDebug` -> green.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `fastlane/metadata/android/en-US/changelogs/2022.txt` (new)
+- `gradle.properties` (versionCode 2021->2022, versionName 1.8.221->1.8.222)
+
 <a id="v1.8.221"></a>
 ## v1.8.221
 

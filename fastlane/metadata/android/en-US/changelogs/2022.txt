@@ -1,0 +1,3 @@
+v1.8.222 - Settings search no-results action.
+
+Zero-result searches now show a Browse all settings action that returns to Settings Home instead of leaving users at a dead-end message.
