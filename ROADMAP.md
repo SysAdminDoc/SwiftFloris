@@ -176,6 +176,42 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 15 - 2026-06-04)
+
+- [x] 🔬 `honeycomb-parse-diagnostics-recheck-2026-06-04` - synced
+  `master` after the Cycle 14 docs push, rechecked the deferred keyboard-layout
+  parse diagnostics audit against live Honeycomb parser and tests. This cycle
+  adds one focused row for logging malformed honeycomb layout JSON before the
+  fail-safe empty-layout fallback.
+
+#### Honeycomb layout diagnostics
+
+- [ ] 🤖 P2 — Log Honeycomb layout parse failures before fail-safe empty layout (R15-1)
+  - Why: `HoneycombLayoutLoader.parse(...)` intentionally returns `emptyList()`
+    for malformed layout JSON so a corrupt disk/addon layout does not crash the
+    IME, but the catch block drops the exception with no diagnostic. The result
+    can be an empty character keyboard with no support signal, while sibling
+    parser/degradation paths such as `ZipfFrequencyTable.parse(...)` already log
+    before returning a safe empty/default result.
+  - Evidence: `HoneycombLayoutLoader.kt:39-43` documents the fail-safe malformed
+    input policy; `HoneycombLayoutLoader.kt:59-79` catches `Exception` and
+    returns `emptyList()` without `flogWarning`/`flogError`;
+    `HoneycombLayoutLoaderTest.kt:152-156` pins the malformed-JSON empty-list
+    fallback but not diagnostic emission; `ZipfFrequencyTable.kt:109-117`
+    catches parse failures and logs them with `flogError`; the deferred audit
+    records the silent empty-keyboard path in `docs/AUDIT_2026-05-28.md:72-74`.
+  - Touches: `HoneycombLayoutLoader.kt` and `HoneycombLayoutLoaderTest.kt` or a
+    small source-level logging contract test. Preserve the fail-safe return
+    value and do not turn malformed layouts into crashes.
+  - Acceptance: malformed JSON still returns `emptyList()`, but the catch path
+    emits one actionable diagnostic through the project logging stack naming
+    `HoneycombLayoutLoader` and the parse failure; valid layouts and modifier
+    filtering are unchanged; tests fail if the catch block silently returns
+    `emptyList()` again.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.text.keyboard.HoneycombLayoutLoaderTest"`
+  - Complexity: XS
+
 ### Researcher Queue (Cycle 14 - 2026-06-04)
 
 - [x] 🔬 `personal-ngram-control-token-recheck-2026-06-04` - synced
