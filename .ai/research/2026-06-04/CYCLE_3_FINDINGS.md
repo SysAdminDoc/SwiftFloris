@@ -2,24 +2,24 @@
 
 ## Scope
 
-Cycle 3 began after `git pull --rebase` reported `master` up to date with the
-remote, while the local branch remained five commits ahead of `origin/master`.
-The worktree was clean. This pass did not edit feature code; it reconciled local
+Cycle 3 began after `git pull --rebase` reported `master` up to date. The
+worktree was clean. This pass did not edit feature code; it reconciled
 post-v1.8.225 commits, checked current Android-keyboard competitor releases, and
 looked for net-new roadmap work not already covered by RA-4/RA-9, F21/F22, or
-the device/maintainer-gated queues.
+the device/maintainer-gated queues. After the docs push, the current pushed
+Cycle 3 state is `dc72e32`.
 
 ## Local Evidence
 
-- `git describe --tags --dirty --always` returned `v1.8.223-5-g8142536`, and
+- `git describe --tags --dirty --always` returned `v1.8.223-6-gdc72e32`, and
   `git tag --points-at HEAD` returned nothing.
 - `CHANGELOG.md` has a top `v1.8.225` section, while the newest local commits
   after the docs marker are:
-  - `1917583` - n-gram per-locale counters, thread-safety, crypto KDF, trace
+  - `4fda240` - n-gram per-locale counters, thread-safety, crypto KDF, trace
     privacy gates.
-  - `5df1cfa` - sealed-box shared-secret scrubbing and Arabic combining-mark
+  - `86c9885` - sealed-box shared-secret scrubbing and Arabic combining-mark
     join-context handling.
-  - `8142536` - Snygg selector fallback and `contentScale` serialization id.
+  - `76a74c2` - Snygg selector fallback and `contentScale` serialization id.
 - `ClipboardHistoryFilter.kt` and `ClipboardPrefs.historySearchEnabled` already
   implement/test the privacy-neutral query contract, but `ClipboardInputLayout`
   currently wires only item-type filters.

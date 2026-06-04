@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 3 - 2026-06-04.
+> Last researched: Cycle 4 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -65,9 +65,9 @@ items belong in `COMPLETED.md`.
 
 - [ ] P1 — Backup/restore + import path-safety device confirmation (WS13 device portions)
   - Why: Unit tests for these paths are Tier A and done; the on-device confirmation is still required.
-  - Touches: backup/restore overwrite-vs-merge; clipboard media missing-file/path-safety; extension-import path-traversal.
-  - Acceptance: overwrite/merge, missing-media, and traversal behaviors confirmed on-device.
-  - Source: docs/archive/TODO_2026-06-03.md B / improvement-plan WS13.
+  - Touches: backup/restore overwrite-vs-merge; clipboard media missing-file/path-safety; extension-import path-traversal; `StickerMediaProvider.openFile` SAF-grant allow-list validation for imported stickers.
+  - Acceptance: overwrite/merge, missing-media, traversal, and imported-sticker open-file behaviors are confirmed on-device; forged encoded sticker URIs are rejected without breaking legitimate user-picked sticker folders.
+  - Source: docs/archive/TODO_2026-06-03.md B / improvement-plan WS13; `docs/AUDIT_2026-06-02.md:159-164`.
 
 ### CI, build & release hardening
 
@@ -161,29 +161,146 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 4 - 2026-06-04)
+
+- [x] 🔬 `locale-a11y-mime-native-audit-2026-06-04` - synced
+  `master`, confirmed the Cycle 3 docs push is now at `dc72e32`, refreshed the
+  post-v1.8.225 release-ledger evidence to the rewritten pushed hashes, checked
+  current audit carry-forwards for duplicates, and widened into language-tag,
+  Compose semantics, MIME-filter, and ByteBuffer platform contracts. Existing
+  R3-1/R3-4, RA-4/RA-9, and device-gated work remain valid; this cycle adds
+  four small, implementation-ready correctness/a11y/contract items and sharpens
+  WS13 with the deferred sticker-provider SAF validation.
+
+#### Locale correctness
+
+- [ ] 🤖 P1 — Correct Japanese locale capability gates and pin them with tests (R4-1)
+  - Why: `FlorisLocale.supportsAutoSpace` disables auto-space for `"jp"`, but
+    Android/BCP-47 Japanese locales use language subtag `"ja"`; `"JP"` is only a
+    region subtag. Japanese therefore falls through as an auto-space language,
+    and the adjacent capitalization table has no regression coverage for the
+    same class of language-tag mistakes.
+  - Evidence: `FlorisLocale.kt:219-231` hard-codes no-capitalization and
+    no-auto-space language lists, including `"jp"` but not `"ja"`;
+    `EditorInstance.kt:701` and `KeyboardManager.kt:678,728` consume
+    `primaryLocale.supportsAutoSpace`; `LayoutScriptClassifier.kt:139` already
+    classifies `"ja"` as Japanese; IANA Language Subtag Registry lists `Subtag:
+    ja` / `Description: Japanese` and region `Subtag: JP` / `Description:
+    Japan` (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`);
+    Android `Locale` docs recommend BCP 47 `forLanguageTag` / `toLanguageTag`
+    for conforming locale strings (`https://developer.android.com/reference/java/util/Locale`).
+  - Touches: `FlorisLocale.kt`, new `FlorisLocaleTest` or equivalent JVM test,
+    `docs/AUTOCORRECT_LIFECYCLE.md` if the locale capability contract is
+    documented there.
+  - Acceptance: `FlorisLocale.from("ja").supportsAutoSpace == false` and
+    `FlorisLocale.from("ja").supportsCapitalization == false`; existing `zh`,
+    `ko`, `th`, `bn`, `hi`, and a Latin control locale are pinned; no
+    regression to `languageTag()` / `localeTag()` serialization.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.lib.FlorisLocaleTest"` plus the existing
+    editor spacing policy tests.
+
+#### Clipboard media accessibility
+
+- [ ] 🤖 P3 — Add TalkBack descriptions for clipboard image/video history tiles (R4-2)
+  - Why: Text clips can surface URL/email/phone descriptions, but image and
+    video history tiles expose only visual thumbnails. A screen-reader user can
+    focus and activate the tile without hearing whether it is an image, video,
+    pinned/recent item, or the copied timestamp. The prior audit deferred this
+    only to avoid Crowdin churn, not because the gap was invalid.
+  - Evidence: `ClipboardInputLayout.kt:282-357` renders image/video `Image`
+    thumbnails and the video overlay icon with `contentDescription = null`;
+    `docs/AUDIT_2026-05-29.md:163-164` records the missing clipboard
+    image/video `contentDescription`; Compose semantics docs say semantic
+    properties give accessibility services additional context and that
+    `contentDescription` conveys an icon/image's meaning
+    (`https://developer.android.com/develop/ui/compose/accessibility/semantics`).
+  - Touches: `ClipboardInputLayout.kt`, `strings.xml` / translations,
+    `docs/ACCESSIBILITY.md`, optional semantics or screenshot test if the helper
+    can be extracted without brittle IME rendering.
+  - Acceptance: clipboard image and video tiles expose localized, non-sensitive
+    labels such as "Clipboard image" / "Clipboard video" plus pinned/recent and
+    copied-time context where available; decorative overlay icons remain hidden;
+    sensitive text-description protections remain unchanged.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest` plus manual TalkBack pass over
+    text/image/video clipboard history, long-press popup, and paste/delete
+    actions.
+
+#### MIME helper contract
+
+- [ ] 🤖 P3 — Pin `MimeTypeFilter` aggregate semantics and remove constructor stdout (R4-3)
+  - Why: The shared MIME helper is used by extension-file import and
+    copy-to-clipboard image routing, but its aggregate helpers still carry
+    "document and test" TODOs and the constructor prints compiled regex filters
+    to stdout. It also deliberately permits wildcard fragments like
+    `application/font-*`, which differs from AndroidX `MimeTypeFilter`; that
+    divergence should be explicit and tested before more provider/import code
+    depends on it.
+  - Evidence: `MimeTypeFilter.kt:31-127` documents wildcard-at-any-position
+    behavior, has `println(filters)` in the constructor, and leaves
+    `matchesAll`, `matchesAny`, and `matchesOne` undocumented/test TODOs;
+    `MimeTypeFilterTest.kt:23-124` covers only single-MIME `matches`; AndroidX
+    `MimeTypeFilter` allows wildcards only as the whole type/subtype and notes
+    Android framework MIME matching is case-sensitive
+    (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`);
+    Android `ClipDescription.compareMimeTypes` documents the platform pattern
+    comparison used elsewhere in the IME
+    (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`).
+  - Touches: `lib/kotlin/src/main/kotlin/org/florisboard/lib/kotlin/MimeTypeFilter.kt`,
+    `lib/kotlin/src/test/kotlin/org/florisboard/lib/kotlin/MimeTypeFilterTest.kt`,
+    call-site comments if any behavior is intentionally broader than AndroidX.
+  - Acceptance: no constructor stdout; aggregate helpers have KDoc and tests for
+    null/empty lists, exactly-one vs many matches, case-sensitive behavior, and
+    the intentional fragment-wildcard cases used by font/image import filters.
+  - Verify: `./gradlew.bat :lib:kotlin:testDebugUnitTest --tests
+    "org.florisboard.lib.kotlin.MimeTypeFilterTest"`.
+
+#### Native bridge hardening
+
+- [ ] 🤖 P3 — Make `NativeStr.toJavaString()` honor ByteBuffer position/limit/arrayOffset (R4-4)
+  - Why: The native string bridge currently returns the whole backing array
+    whenever `hasArray()` is true, ignoring `position()`, `limit()`, and
+    `arrayOffset()`. The current caller surface is small, but CJK/native addon
+    work will make this bridge harder to reason about if sliced heap buffers
+    decode stale prefix/suffix bytes.
+  - Evidence: `Native.kt:39-46` uses `array()` directly on heap-backed buffers
+    but copies only `remaining()` bytes for direct buffers; `docs/AUDIT_2026-05-29.md:165-166`
+    records the latent offset/position bug; Android `ByteBuffer` docs state
+    `hasArray()` permits `array()`/`arrayOffset()`, and buffer content-sensitive
+    operations depend on remaining elements from `position()` to `limit() - 1`
+    (`https://developer.android.com/reference/java/nio/ByteBuffer`).
+  - Touches: `Native.kt`, new focused JVM test for heap, sliced heap, direct,
+    read-only/direct-equivalent, and non-zero-position buffers.
+  - Acceptance: `toJavaString()` decodes exactly the remaining bytes without
+    mutating the caller-visible position, or documents and tests the mutation if
+    preserving position is not feasible; direct and heap-backed buffers behave
+    the same.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.lib.NativeStrTest"`.
+
 ### Researcher Queue (Cycle 3 - 2026-06-04)
 
 - [x] 🔬 `post-1.8.225-sync-and-futo-swipe-refresh-2026-06-04` - synced
-  `master`, found the repo clean but five commits ahead of `origin/master`,
-  reconciled the post-v1.8.225 local fixes against the current roadmap, and
-  checked current competitor/standards sources. Existing RA-4/RA-9, device-gated
-  visual work, and maintainer-gated release items remain valid; this cycle adds
-  only net-new release-ledger, clipboard-search, and sync-crypto-contract work,
-  plus sharper evidence on F21 from the FUTO Keyboard v0.1.29 swipe release.
+  `master`, reconciled the post-v1.8.225 local fixes against the current
+  roadmap, later confirmed the pushed docs state at `dc72e32`, and checked
+  current competitor/standards sources. Existing RA-4/RA-9, device-gated visual
+  work, and maintainer-gated release items remain valid; this cycle adds only
+  net-new release-ledger, clipboard-search, and sync-crypto-contract work, plus
+  sharper evidence on F21 from the FUTO Keyboard v0.1.29 swipe release.
 
 #### Release/source-of-truth hygiene
 
 - [ ] 🤖 P0 — Reconcile post-v1.8.225 local fixes into a versioned release ledger (R3-1)
-  - Why: The branch is `v1.8.223-5-g8142536`, `HEAD` is untagged, and three
+  - Why: The branch is `v1.8.223-6-gdc72e32`, `HEAD` is untagged, and three
     local code-fix commits after the v1.8.225 docs marker change privacy,
     crypto, i18n, and theme-engine behavior without a matching new version,
     fastlane changelog, or top-of-README release entry. That breaks the repo's
     own "one shipped release = version + changelog + fastlane metadata + tag"
     contract and makes it hard for Obtainium/F-Droid/reproducible-build readers
     to know which APK contains the fixes.
-  - Evidence: `git describe --tags --dirty --always` -> `v1.8.223-5-g8142536`;
+  - Evidence: `git describe --tags --dirty --always` -> `v1.8.223-6-gdc72e32`;
     `git tag --points-at HEAD` is empty; `CHANGELOG.md:5-78` documents
-    v1.8.225 but not commits `1917583`, `5df1cfa`, or `8142536`;
+    v1.8.225 but not commits `4fda240`, `86c9885`, or `76a74c2`;
     `gradle.properties:18-19` still reports versionCode 2025 / versionName
     1.8.225 after those commits.
   - Touches: `CHANGELOG.md`, `README.md`, `PROJECT_CONTEXT.md`,
@@ -264,11 +381,11 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     same regressions can reappear while the release ledger says the fixes are
     shipped.
   - Evidence: `ArabicShaperTest.kt:24-58` lacks a combining-mark case even
-    though `5df1cfa` changed mark-skipping join context; `SnyggRuleTest.kt`
+    though `86c9885` changed mark-skipping join context; `SnyggRuleTest.kt`
     covers valid/invalid selectors but not unknown-selector fallback after
-    `8142536`; `rg "contentScale|SnyggContentScaleValue" lib/snygg/src/test`
+    `76a74c2`; `rg "contentScale|SnyggContentScaleValue" lib/snygg/src/test`
     finds no serializer-id test; `SwiftKeyTypingTraceRecorder.kt` gained
-    private-session gates in `1917583` without a focused recorder test.
+    private-session gates in `4fda240` without a focused recorder test.
   - Touches: `ArabicShaperTest.kt`, `SnyggRuleTest.kt` / Snygg value tests,
     `SwiftKeyTypingTraceRecorder` tests, and n-gram per-locale flush tests if
     the stores already expose a tractable test seam.
