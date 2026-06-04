@@ -3,7 +3,9 @@
 This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 4.
 
 2026-06-04 Cycle 4 note: after the Cycle 3 docs push, `master` is clean at
-`dc72e32` (`v1.8.223-6-gdc72e32`) with no tag at HEAD. Cycle 4 widened into
+`dc72e32` (`v1.8.223-6-gdc72e32`) with no tag at HEAD. R3-1 was later closed
+in v1.8.226 so the pushed post-v1.8.225 fixes now have a release ledger.
+Cycle 4 widened into
 language-tag, Compose semantics, MIME helper, and ByteBuffer contracts. R4-1
 fixes Japanese `ja` locale capability gates; R4-2 adds clipboard media TalkBack
 labels; R4-3 pins MIME aggregate helper behavior and removes constructor stdout;
@@ -15,9 +17,9 @@ R4-4 hardens the native string bridge. WS13 was sharpened with the deferred
 pointing at HEAD. The latest three code-fix commits after the v1.8.225 docs
 marker are `4fda240`, `86c9885`, and `76a74c2`; they cover n-gram data loss,
 thread safety, SealedBoxCrypto KDF/scrubbing, private-session trace suppression,
-Arabic combining-mark shaping, and Snygg selector/contentScale handling, but
-the release ledger still tops out at v1.8.225 / versionCode 2025. R3-1 was
-added as a P0 release/source-of-truth reconciliation item. External checks found
+Arabic combining-mark shaping, and Snygg selector/contentScale handling. R3-1
+was added as a P0 release/source-of-truth reconciliation item and closed in
+v1.8.226 / versionCode 2026. External checks found
 FUTO Keyboard v0.1.29 (2026-06-01) as the main new competitor signal: FUTO Swipe
 publishes a 1M-swipe public dataset, top-1/top-4 benchmark framing, accepted+3
 alternative glide behavior, and clipboard-history search. F21 was sharpened
@@ -60,7 +62,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.225 plus the three untagged pushed post-release fixes, the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on source-of-truth release hygiene, the already-partial clipboard search surface, sync-crypto contract tests, Japanese locale capability correctness, and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.226, the post-v1.8.225 pushed fixes are now covered by a release ledger, and the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the already-partial clipboard search surface, sync-crypto contract tests, Japanese locale capability correctness, and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -72,7 +74,7 @@ Top opportunities (one line each):
 6. **Search entry-point discoverability** from Settings home was already satisfied by the app-bar search action (RA-8). [Closed]
 7. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths were replaced with project logging plus user-safe fallback copy in v1.8.219 (R2-2). [Closed]
 8. **Root docs source-of-truth refresh** — onboarding docs now route open work, shipped state, release notes, and archived planning context consistently (R2-3). [Closed]
-9. **Release-ledger reconciliation** — local post-v1.8.225 fixes need a new version/changelog/fastlane/tag handoff before they are treated as shipped (R3-1, P0). [Verified]
+9. **Release-ledger reconciliation** — post-v1.8.225 fixes now have a normal version/changelog/fastlane/tag handoff in v1.8.226 (R3-1). [Closed]
 10. **Clipboard history search UI** — pure filtering and a default-on pref exist, but the in-keyboard clipboard palette still only exposes type filters; FUTO v0.1.29 adds clipboard history search as current parity evidence (R3-2, P1). [Verified]
 11. **Sealed-box contract vectors** — sync crypto tests need deterministic envelope/KDF vectors before CRDT transport persists or exchanges encrypted deltas (R3-3, P1). [Verified]
 12. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]

@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-06-04 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.225).
+through v1.8.226).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -47,7 +47,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.225)
+## 3. Stack at HEAD (v1.8.226)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.01 · Material 3 + material-kolor 4.1.1
@@ -200,7 +200,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 - v1.8.225** ships the seventh research-pass privacy,
+**v1.8.104 - v1.8.226** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup and
 performance-baseline / CI-quality / repo-hygiene / destructive-confirmation
@@ -534,7 +534,7 @@ keyboard preview field now renders as a distinct bottom surface, exposes
 ready/active focus-state feedback, preserves bottom-bar traversal ordering, and
 uses coroutine-safe feedback when Android cannot open the keyboard picker.
 
-v1.8.171 through v1.8.225 refresh the release front door after the 2026-05-31
+v1.8.171 through v1.8.226 refresh the release front door after the 2026-05-31
 SwiftKey account-export cutoff, consolidate planning into `ROADMAP.md`,
 backfill audit docs, ship settings search and search polish, add hardware
 keyboard import and per-app language/accent discovery, harden release gates
@@ -546,6 +546,11 @@ typed-route drift guard for settings search, give zero-result searches a
 one-tap path back to Settings Home, pin high-traffic search synonyms for
 theme, haptic feedback, trace gestures, punctuation spacing, and privacy audit,
 and reset populated search results to the top when the query changes.
+v1.8.226 restores the release ledger after the pushed post-v1.8.225 fix
+commits, covering n-gram/data-loss hardening, thread-safety cleanup,
+SealedBoxCrypto KDF/scrubbing, private-session trace suppression, Arabic
+combining-mark shaping, Snygg selector/contentScale recovery, and the
+clipboard missing-media fallback compile repair.
 
 ## 4. Module layout
 
@@ -579,12 +584,11 @@ subsystem map in
 - **Target:** F-Droid (verified-reproducible badge; metadata submission outstanding)
 - **Not on Google Play** by design (Play forces target-SDK churn and Integrity-API
   tradeoffs that conflict with the no-telemetry posture)
-- **Tag cadence recovered locally** — release tags `v1.8.41` through
+- **Tag cadence recovered** — release tags `v1.8.41` through
   `v1.8.69` were backfilled on 2026-05-17 from their matching
   `gradle.properties` version-bump commits, and `v1.8.70` through `v1.8.84`
-  are tagged with their release commits. The tags still need to be
-  pushed from the maintainer host because this VM cannot push to
-  `SysAdminDoc/SwiftFloris`.
+  are tagged with their release commits. Current maintainer hosts can push
+  commits and tags directly to `SysAdminDoc/SwiftFloris`.
 
 ## 6. Roadmap structure (where to put what)
 

@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.225-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.226-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.225 | Privacy posture |
+| Area | What's in v1.8.226 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -285,7 +285,9 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-- **v1.8.225** (2026-06-04) — Settings search now resets populated result lists to the top when the query changes so stale scroll offsets do not hide the highest-ranked result. ([notes](CHANGELOG.md#v1.8.225))
+- **v1.8.226** (2026-06-04) — Post-audit release ledger for pushed n-gram, thread-safety, crypto, trace-privacy, Arabic-shaping, Snygg selector/contentScale, and clipboard media fallback fixes. ([notes](CHANGELOG.md#v1.8.226))
+- **v1.8.225** (2026-06-04) — Deep engineering audit hardening across IME core, clipboard, dictionary import, privacy backup rules, settings sliders, haptics, and CI release gates. ([notes](CHANGELOG.md#v1.8.225))
+- **v1.8.224** (2026-06-04) — Settings search now resets populated result lists to the top when the query changes so stale scroll offsets do not hide the highest-ranked result. ([notes](CHANGELOG.md#v1.8.224))
 - **v1.8.223** (2026-06-04) — Settings search now resolves high-traffic capability synonyms such as dark theme, haptic, trace, punctuation, and privacy to the intended settings destinations. ([notes](CHANGELOG.md#v1.8.223))
 - **v1.8.222** (2026-06-04) — Settings search no-results states now include a one-tap Browse all settings action back to Settings Home. ([notes](CHANGELOG.md#v1.8.222))
 - **v1.8.221** (2026-06-04) — Settings search now has a JVM/Robolectric drift guard for duplicate entry IDs, real string-resource resolution, and typed destination-route mapping. ([notes](CHANGELOG.md#v1.8.221))
@@ -452,7 +454,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.225** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.226** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

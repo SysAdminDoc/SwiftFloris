@@ -283,7 +283,7 @@ fun ClipboardInputLayout(
                 val uri = item.uri
                 if (uri == null) {
                     SnyggText(modifier = Modifier.fillMaxWidth(), text = "Missing image URI")
-                    return@SnyggSurface
+                    return@SnyggBox
                 }
                 val id = ContentUris.parseId(uri)
                 val file = ClipboardFileStorage.getFileForId(context, id)
@@ -312,7 +312,7 @@ fun ClipboardInputLayout(
                 val uri = item.uri
                 if (uri == null) {
                     SnyggText(modifier = Modifier.fillMaxWidth(), text = "Missing video URI")
-                    return@SnyggSurface
+                    return@SnyggBox
                 }
                 val id = ContentUris.parseId(uri)
                 val file = ClipboardFileStorage.getFileForId(context, id)
