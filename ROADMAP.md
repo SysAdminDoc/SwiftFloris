@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.241 (versionCode 2041). **Local verification:** focused pure-JVM `MimeTypeFilterTest` passed in 31s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.242 (versionCode 2042). **Local verification:** focused `NativeStrTest` passed in 1m17s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -652,7 +652,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Native bridge hardening
 
-- [ ] 🤖 P3 — Make `NativeStr.toJavaString()` honor ByteBuffer position/limit/arrayOffset (R4-4)
+- [x] 🤖 P3 — Make `NativeStr.toJavaString()` honor ByteBuffer position/limit/arrayOffset (R4-4)
   - Why: The native string bridge currently returns the whole backing array
     whenever `hasArray()` is true, ignoring `position()`, `limit()`, and
     `arrayOffset()`. The current caller surface is small, but CJK/native addon
@@ -672,6 +672,10 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     the same.
   - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
     "dev.patrickgold.florisboard.lib.NativeStrTest"`.
+  - Shipped: v1.8.242 (2026-06-04) with duplicate-view decoding that respects
+    `position()`, `limit()`, and sliced heap `arrayOffset()` without consuming
+    the caller-visible buffer. Focused coverage pins heap, sliced heap, direct,
+    read-only, non-zero-position, and `toNativeStr` round-trip behavior.
 
 ### Researcher Queue (Cycle 3 - 2026-06-04)
 

@@ -2,6 +2,43 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.242"></a>
+## v1.8.242
+
+Released: 2026-06-04
+
+### Native string bridge
+
+R4-4 is closed. `NativeStr.toJavaString()` now decodes from a duplicated ByteBuffer view so heap, sliced heap, direct, and read-only buffers all use exactly their remaining bytes without moving the caller-visible position.
+
+### Changes
+
+- **`Native.kt`** - replaces the heap-only `array()` shortcut with duplicate-view decoding over `remaining()` bytes, aligning heap-backed and direct-buffer behavior.
+- **`NativeStrTest.kt`** - adds focused coverage for heap buffers, sliced heap buffers with array offsets, direct buffers, read-only buffers, non-zero position/limit windows, and `toNativeStr` round-trips without consumption.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.242 / versionCode 2042 and closes R4-4.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.lib.NativeStrTest"` - PASS in 1m17s.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2042.
+- APK assembly was intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/Native.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/lib/NativeStrTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2042.txt` (new)
+- `gradle.properties` (versionCode 2041->2042, versionName 1.8.241->1.8.242)
+
 <a id="v1.8.241"></a>
 ## v1.8.241
 
