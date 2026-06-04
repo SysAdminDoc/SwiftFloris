@@ -8,7 +8,7 @@ audit against live `UserDictionaryScreen` state, `UserDictionaryEntryPolicy`
 tests, localized progress-card copy, and AndroidX `BackHandler` docs. Transfer
 gating and progress cards already exist, so this cycle adds R8-1: give blocked
 system-back gestures explicit feedback while save/delete/import/export work is
-active.
+active. R8-1 was later closed in v1.8.232.
 
 2026-06-04 Cycle 7 note: after the Cycle 6 docs push, `master` is clean at
 `7c066d5`. Cycle 7 rechecked the remaining `FLAG_SECURE` incognito follow-up
@@ -93,7 +93,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.231, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, and dynamic incognito toggles re-apply the IME window screen-capture guard immediately. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.232, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, and blocked user-dictionary system-back gestures now explain active save/delete/import/export work. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -117,7 +117,7 @@ Top opportunities (one line each):
 18. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
 19. **Editor batch critical sections** — selection/commit hot paths keep `InputConnection` batch edits open while `runBlocking` and expected-content queue locks run (R6-1, P2). [Verified]
 20. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
-21. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work consumes system back without feedback (R8-1, P3). [Verified]
+21. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -167,11 +167,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   field-start incognito coverage exist, but dynamic incognito toggles do not
   re-apply the window flag until the next field start. R7-1 closes the
   mid-session gap. [Verified]
-- **User-dictionary operation UX (partial):** entry save/delete and dictionary
+- **User-dictionary operation UX:** entry save/delete and dictionary
   import/export operations are gated by `UserDictionaryEntryPolicy` and visible
-  progress cards, but the system back path consumes gestures with no feedback
-  while the same work is active. R8-1 adds the missing blocked-back feedback
-  without weakening the leave-blocking policy. [Verified]
+  progress cards. v1.8.232 closes R8-1 by adding blocked-back feedback for the
+  same save/delete/import/export work without weakening the leave-blocking
+  policy. [Closed]
 - Established surfaces (autocorrect/SymSpell, glide classifier, clipboard, addons, voice handoff, sync, MCP, hardware-keyboard import) are covered by `COMPLETED.md` and the audits; no net-new gap surfaced beyond what the roadmap already tracks.
 
 ## Competitive Landscape
@@ -226,9 +226,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Closed v1.8.231] Mid-session incognito `FLAG_SECURE` gap** → R7-1. The
   smartbar incognito toggle now re-runs the existing secure-window policy for
   the active field before the next keypress.
-- **[Minor] User-dictionary blocked-back feedback** → R8-1. Keep blocking
-  exits during active dictionary operations, but make the intercepted system
-  back gesture announce why navigation did not happen.
+- **[Closed v1.8.232] User-dictionary blocked-back feedback** → R8-1. Active
+  dictionary operations still block exits, but the intercepted system-back
+  gesture now shows operation-specific keep-screen-open feedback.
 
 ## Architecture & Technical Findings
 
@@ -254,9 +254,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   around selection and commit operations. R6-1 keeps the existing
   expected-content model but removes blocking work from open editor batches.
 - **User-dictionary navigation policy:** `UserDictionaryEntryPolicy` correctly
-  centralizes leave/mutation/transfer gates. R8-1 should keep that policy but
-  add a visible or spoken response when Compose back handling blocks the
-  gesture during active work.
+  centralizes leave/mutation/transfer gates. v1.8.232 keeps that policy and
+  adds a visible response when Compose back handling blocks the gesture during
+  active work.
 - **Dependency health:** the security-sensitive pins checked here are still current for SQLCipher 4.16.0 and Tink 1.21.0, and Room/Robolectric also match metadata. The compatible P3 maintenance batch shipped in v1.8.216 (Compose BOM `2026.05.01`, KSP `2.3.9`, Roborazzi `1.63.0`). Kotlin `2.4.0` and AndroidX Core `1.19.0` remain gated on KSP publication and compileSdk 37 respectively; AGP 9.2.1 appears to be the stable baseline while Google Maven's newest AGP metadata is 9.3 alpha. [Verified via Maven metadata]
 - **Overgrown files:** `IndicTransliterator.kt` (~86 KB), `TextKeyboardLayout.kt` (~76 KB), `LatinLanguageProvider.kt` (~60 KB), `KeyboardManager.kt` (~60 KB) are large but the SHIFT state machine was already extracted (F27 shipped) and the audits already track `LatinLanguageProvider` heap risk (A1). Left as-is — no speculative refactor proposed.
 - **Testability:** 218 JVM test files, 5 androidTest. The search catalog's integrity and synonym-hit coverage are now pinned by RA-1 and RA-3, and the RA-10 scroll-reset guard is covered; RA-4 remains the manual/accessibility coverage gap.
@@ -269,7 +269,7 @@ No net-new permission or data-egress finding. The settings-search additions are 
 
 ## UX & Accessibility
 
-The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `TouchTargetWcagTest`, RTL mirroring, candidate-row custom actions). The **settings search** gap is that the new screen was not brought under that umbrella: no field label/semantics, no live-region result-count announcement, and no entry in the manual-QA checklist (RA-4). The **clipboard media** gap is narrower but user-facing: image/video history tiles need spoken labels and state context while decorative overlay icons remain hidden (R4-2). The **user-dictionary back** gap is also narrow: operation progress is visible, but blocked system back should produce an equivalent visible/spoken reason so keyboard, gesture, and TalkBack users are not left with a silent no-op (R8-1). UX polish (auto-focus, clear, IME Search, diacritic folding, no-results escape) brings search to parity with platform expectations without scope creep.
+The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `TouchTargetWcagTest`, RTL mirroring, candidate-row custom actions). The **settings search** gap is that the new screen was not brought under that umbrella: no field label/semantics, no live-region result-count announcement, and no entry in the manual-QA checklist (RA-4). The **clipboard media** gap is narrower but user-facing: image/video history tiles need spoken labels and state context while decorative overlay icons remain hidden (R4-2). The **user-dictionary back** gap is now implementation-closed: operation progress is visible and v1.8.232 gives blocked system back an equivalent visible reason, with manual device/TalkBack proof still needed. UX polish (auto-focus, clear, IME Search, diacritic folding, no-results escape) brings search to parity with platform expectations without scope creep.
 
 ## Explicit Non-Goals (rejected + why)
 
@@ -284,8 +284,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 2. RA-9 is a code-local follow-up and does not require a product decision before implementation.
 3. R4-2 needs a short manual TalkBack pass after strings land, because spoken
    clipboard media labels are hard to validate with JVM tests alone.
-4. R8-1 needs manual system-back and TalkBack verification during an active
-   dictionary import/export or save/delete operation.
+4. v1.8.232 still needs manual system-back and TalkBack verification during an
+   active dictionary import/export or save/delete operation.
 
 ## Archived Evidence
 

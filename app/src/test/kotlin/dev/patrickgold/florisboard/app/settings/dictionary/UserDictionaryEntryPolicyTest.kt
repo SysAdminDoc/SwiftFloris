@@ -87,6 +87,33 @@ class UserDictionaryEntryPolicyTest : FunSpec({
         ) shouldBe UserDictionaryTransferNotice.None
     }
 
+    test("blocked back feedback names the active dictionary operation") {
+        UserDictionaryEntryPolicy.resolveBlockedBackNotice(
+            activeEntryOperation = UserDictionaryEntryOperation.Saving,
+            activeTransferOperation = null,
+        ) shouldBe UserDictionaryBlockedBackNotice.Saving
+
+        UserDictionaryEntryPolicy.resolveBlockedBackNotice(
+            activeEntryOperation = UserDictionaryEntryOperation.Deleting,
+            activeTransferOperation = null,
+        ) shouldBe UserDictionaryBlockedBackNotice.Deleting
+
+        UserDictionaryEntryPolicy.resolveBlockedBackNotice(
+            activeEntryOperation = null,
+            activeTransferOperation = UserDictionaryTransferOperation.Importing,
+        ) shouldBe UserDictionaryBlockedBackNotice.Importing
+
+        UserDictionaryEntryPolicy.resolveBlockedBackNotice(
+            activeEntryOperation = null,
+            activeTransferOperation = UserDictionaryTransferOperation.Exporting,
+        ) shouldBe UserDictionaryBlockedBackNotice.Exporting
+
+        UserDictionaryEntryPolicy.resolveBlockedBackNotice(
+            activeEntryOperation = null,
+            activeTransferOperation = null,
+        ) shouldBe UserDictionaryBlockedBackNotice.None
+    }
+
     test("entry operation results map to terminal notices") {
         UserDictionaryEntryPolicy.saveResult(saved = true) shouldBe UserDictionaryEntryNotice.SaveSuccess
         UserDictionaryEntryPolicy.saveResult(saved = false) shouldBe UserDictionaryEntryNotice.SaveFailure

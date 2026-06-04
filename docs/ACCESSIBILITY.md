@@ -187,6 +187,9 @@ candidate to be the first one TalkBack reaches.
   delete, dictionary import/export, home readiness, and voice readiness states.
   Readiness, progress, warning, error, cancellation, and success must be clear
   from icon shape and copy, not color alone.
+- **Blocked navigation feedback:** during active user-dictionary save, delete,
+  import, or export work, system back should keep the user on the screen and
+  provide visible/spoken keep-screen-open feedback instead of a silent no-op.
 - **Theme/layout cross-check:** repeat the affected flow in dark theme,
   SwiftKey High Contrast, phone portrait, landscape, compact, floating, and
   split/tablet layouts when the change touches IME or settings layout.

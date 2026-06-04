@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.231 (versionCode 2031). **Local verification:** fastlane metadata gate passed for versionCode 2031; focused `FlagSecurePolicyTest` passed in 1m10s with one Gradle worker after compiling the app Kotlin sources; `:app:kspDebugKotlin` passed in 14s with the corrected `cmd /c` Gradle invocation; `git diff --check` passed; APK assembly and device screenshot/screen-recording QA were intentionally not run for this privacy-callback follow-up.
+**Current release:** v1.8.232 (versionCode 2032). **Local verification:** focused `UserDictionaryEntryPolicyTest` passed in 1m08s with one Gradle worker; fastlane metadata gate passed for versionCode 2032; `git diff --check` passed; APK assembly and device system-back/TalkBack QA were intentionally not run for this dictionary-navigation feedback follow-up.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -172,7 +172,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### User-dictionary navigation feedback
 
-- [ ] 🤖 P3 — Give blocked user-dictionary back gestures explicit feedback (R8-1)
+- [x] 🤖 P3 — Give blocked user-dictionary back gestures explicit feedback (R8-1)
   - Why: save/delete/import/export operations deliberately block leaving the
     user-dictionary screen so mutable dictionary work is not interrupted. The
     toolbar back button is disabled and progress cards explain that work is in
@@ -209,6 +209,10 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     Settings -> Dictionary smoke for save/delete/import/export in progress,
     hardware/gesture back, toolbar back, and TalkBack announcement behavior.
   - Complexity: S
+  - Shipped: v1.8.232 (2026-06-04) with operation-specific blocked-back toasts,
+    a pure `UserDictionaryBlockedBackNotice` resolver, and focused policy
+    coverage for save/delete/import/export/idle decisions. Manual system-back
+    and TalkBack proof remains device-gated.
 
 ### Researcher Queue (Cycle 7 - 2026-06-04)
 

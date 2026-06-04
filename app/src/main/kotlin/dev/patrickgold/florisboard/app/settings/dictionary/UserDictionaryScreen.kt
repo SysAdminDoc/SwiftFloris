@@ -210,6 +210,22 @@ fun UserDictionaryScreen(
         activeDictionaryTransfer = null
     }
 
+    fun showBlockedBackFeedback() {
+        val messageId = when (UserDictionaryEntryPolicy.resolveBlockedBackNotice(
+            activeEntryOperation = activeEntryOperation,
+            activeTransferOperation = activeDictionaryTransfer,
+        )) {
+            UserDictionaryBlockedBackNotice.None -> return
+            UserDictionaryBlockedBackNotice.Saving -> R.string.settings__udm__blocked_back_saving
+            UserDictionaryBlockedBackNotice.Deleting -> R.string.settings__udm__blocked_back_deleting
+            UserDictionaryBlockedBackNotice.Importing -> R.string.settings__udm__blocked_back_importing
+            UserDictionaryBlockedBackNotice.Exporting -> R.string.settings__udm__blocked_back_exporting
+        }
+        scope.launch {
+            context.showLongToast(messageId)
+        }
+    }
+
     fun userDictionaryDao(): UserDictionaryDao? {
         return when (type) {
             UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDao()
@@ -723,6 +739,8 @@ fun UserDictionaryScreen(
             if (canLeaveDictionaryScreen && currentLocale != null) {
                 currentLocale = null
                 buildUi()
+            } else if (!canLeaveDictionaryScreen) {
+                showBlockedBackFeedback()
             }
         }
 
