@@ -1,0 +1,3 @@
+v1.8.218 - startup crash recovery.
+
+Staged startup exceptions now persist to the local crash report store and open the crash dialog before Settings can hang behind the splash screen.
