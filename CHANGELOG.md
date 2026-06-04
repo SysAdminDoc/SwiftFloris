@@ -2,6 +2,39 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.217"></a>
+## v1.8.217
+
+Released: 2026-06-04
+
+### Lint baseline confirmation
+
+EI10 is closed. The checkout has no committed `app/lint-baseline.xml`, so Android Lint reports current findings directly instead of hiding them behind a baseline file. `docs/LOCAL_VERIFICATION.md` now records that baseline-free contract while keeping the existing lint wrapper as the CI guard for any future stale-baseline message.
+
+### Changes
+
+- **`docs/LOCAL_VERIFICATION.md`** - documents that SwiftFloris has no committed app lint baseline as of v1.8.217.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - moves EI10 out of active work and records the evidence used to close it.
+- **`README.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.217 / versionCode 2017.
+
+### Verification
+
+- `Get-ChildItem -Path . -Recurse -Filter 'lint-baseline.xml' -File` -> no results.
+- Initial `bash scripts/run-lint-debug-with-baseline-check.sh` attempt failed before Gradle because the shell inherited stale `JAVA_HOME=C:\Program Files\Android\openjdk\jdk-21.0.8`.
+- `$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot'; bash scripts/run-lint-debug-with-baseline-check.sh` -> green.
+- `$env:JAVA_HOME='C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot'; ./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `docs/LOCAL_VERIFICATION.md`
+- `fastlane/metadata/android/en-US/changelogs/2017.txt` (new)
+- `gradle.properties` (versionCode 2016->2017, versionName 1.8.216->1.8.217)
+
 <a id="v1.8.216"></a>
 ## v1.8.216
 

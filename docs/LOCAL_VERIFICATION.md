@@ -1,6 +1,6 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-06-04 for v1.8.214.
+Last updated: 2026-06-04 for v1.8.217.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
@@ -45,6 +45,11 @@ The wrapper runs `:app:lintDebug`, saves the console log to
 `app/build/reports/lintDebug-console.log`, and fails if Android Lint reports
 stale baseline entries. Use it locally from Git Bash or WSL when touching
 `app/lint.xml`, lint configuration, or warning cleanup.
+
+As of v1.8.217, SwiftFloris commits no `app/lint-baseline.xml`; `lintDebug`
+therefore reports current warnings directly instead of hiding them behind a
+baseline file. Keep the wrapper in place so any future baseline introduction or
+stale-baseline message remains visible in CI.
 
 ## Device Smoke
 
