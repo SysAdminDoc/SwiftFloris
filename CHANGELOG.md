@@ -2,6 +2,40 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.207"></a>
+## v1.8.207
+
+Released: 2026-06-04
+
+### Voice route empty-state explainer
+
+EI7 reframes the Voice input screen's no-provider state as permanent setup guidance instead of migration-window copy. When no external voice keyboard is ready, the status card now explains that FUTO Voice Input is a separate offline Android voice keyboard and keeps the F-Droid install action visible.
+
+The FUTO setup install row now carries the same generic recommendation framing: FUTO is recommended for offline dictation, and users should enable it in Android keyboard settings after installation. SwiftFloris still does not record audio itself, and local Whisper/Vosk routes remain preview-only until a recognizer runtime ships.
+
+### Changes
+
+- **`strings.xml`** — updated the no-provider Voice input title/summary and the FUTO setup install summary.
+- **`VoiceInputEmptyStateCopyTest.kt`** (new) — JVM resource coverage pins the FUTO explanation and install action copy.
+- **`ROADMAP.md` / `COMPLETED.md`** — EI7 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:testDebugUnitTest` -> green.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green.
+- `bash scripts/check-fastlane-metadata.sh` -> green.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/voice/VoiceInputEmptyStateCopyTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2007.txt` (new)
+- `gradle.properties` (versionCode 2006->2007, versionName 1.8.206->1.8.207)
+- `README.md` (version badge/current release)
+- `ROADMAP.md` / `COMPLETED.md` (EI7 moved to shipped work)
+
 <a id="v1.8.206"></a>
 ## v1.8.206
 

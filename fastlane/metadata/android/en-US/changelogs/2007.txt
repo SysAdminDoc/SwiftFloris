@@ -1,0 +1,1 @@
+Voice input now explains FUTO Voice Input when no external voice keyboard is ready. The empty state describes FUTO as a separate offline Android voice keyboard, keeps the F-Droid install action visible, and removes migration-window framing from the setup guidance.
