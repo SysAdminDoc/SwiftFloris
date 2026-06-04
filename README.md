@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.215-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.216-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.215 | Privacy posture |
+| Area | What's in v1.8.216 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -54,7 +54,7 @@
 | **Migration** | First-run local dictionary import hint; preview-before-save personal dictionary imports with row exclusion; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026; see [docs/HONEYCOMB_LAYOUT.md](docs/HONEYCOMB_LAYOUT.md)) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose | On-device, no account, no telemetry |
-| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report | Audit-friendly |
+| **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
 
 ## Distribution
 
@@ -131,10 +131,10 @@ Project-internal docs all live in the repository:
 
 **Language and build**
 
-- Kotlin 2.3.21, Compose BOM 2026.05.00, Material 3 + material-kolor.
+- Kotlin 2.3.21, Compose BOM 2026.05.01, Material 3 + material-kolor.
 - AGP 9.2.1, Gradle 9.5.1, JDK 17.
-- KSP 2.3.8, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0.
-- Kotest 6.1.11 unit-test runner; Roborazzi 1.60.0 and Robolectric 4.16.1
+- KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0.
+- Kotest 6.1.11 unit-test runner; Roborazzi 1.63.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16, with Android 17 / API 37 behavior gates wired).
 - Crowdin pipeline for translations.
@@ -272,7 +272,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
-- **Visual regression:** Roborazzi 1.60.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, and the release workflow runs `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
+- **Visual regression:** Roborazzi 1.63.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, and the release workflow runs `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
 - **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines. The manual Benchmark Regression workflow runs the adb suite, uploads candidate JSON, and compares watched medians against the committed baseline set.
 - **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 - **Lint drift:** CI lint runs through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
@@ -445,7 +445,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.215** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.216** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

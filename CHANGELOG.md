@@ -2,6 +2,44 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.216"></a>
+## v1.8.216
+
+Released: 2026-06-04
+
+### Compatible dependency freshness batch
+
+The P3 dependency freshness row is closed as a compatible-only bump: Compose BOM moves from `2026.05.00` to `2026.05.01`, KSP moves from `2.3.8` to `2.3.9`, and Roborazzi moves from `1.60.0` to `1.63.0`.
+
+Two advertised upstream versions stay deferred rather than being forced into this release. Kotlin `2.4.0` is current on Maven Central, but the KSP Gradle plugin line currently tops out at `2.3.9`, with no `2.4.0` plugin artifact published. AndroidX Core `1.19.0` is current on Google Maven, but the smoke build showed its AAR metadata requires `compileSdk 37`; SwiftFloris remains on `compileSdk 36` until the API 37 behavior-gate plan is ready.
+
+### Changes
+
+- **`gradle/libs.versions.toml`** - bumps compatible low-risk pins: Compose BOM `2026.05.01`, KSP `2.3.9`, and Roborazzi `1.63.0`; keeps Kotlin `2.3.21` and AndroidX Core `1.18.0`.
+- **`docs/DEPENDENCY_TRIAGE.md`** - records the metadata check, the Core `compileSdk 37` failure, and the KSP/Kotlin compatibility hold.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - moves the completed compatible freshness batch out of active work and leaves the API 37/Kotlin compatibility follow-up as the future gated row.
+
+### Verification
+
+- Maven Central / Google Maven metadata checked for Kotlin Gradle Plugin `2.4.0`, Compose BOM `2026.05.01`, AndroidX Core `1.19.0`, Roborazzi `1.63.0`, and KSP `2.3.9`.
+- `./gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.SettingsSearchIndexTest"` -> green after reverting AndroidX Core to `1.18.0`.
+- Trial AndroidX Core `1.19.0` smoke -> failed `:app:checkDebugAarMetadata` because Core requires `compileSdk 37`; left deferred.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+- `./gradlew.bat --no-daemon :app:verifyRoborazziDebug` -> green.
+- `bash scripts/check-fastlane-metadata.sh`; `bash scripts/check-repo-hygiene.sh`; `git diff --check` -> green.
+
+### Files Touched
+
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `README.md`
+- `docs/DEPENDENCY_TRIAGE.md`
+- `fastlane/metadata/android/en-US/changelogs/2016.txt` (new)
+- `gradle.properties` (versionCode 2015->2016, versionName 1.8.215->1.8.216)
+- `gradle/libs.versions.toml`
+
 <a id="v1.8.215"></a>
 ## v1.8.215
 

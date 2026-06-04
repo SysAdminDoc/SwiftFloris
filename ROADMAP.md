@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.215 (versionCode 2015). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.216 (versionCode 2016). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -62,13 +62,14 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### CI, build & release hardening
 
+- [ ] P3 — API 37 / Kotlin 2.4 dependency compatibility follow-up
+  - Why: The v1.8.216 freshness pass verified Kotlin `2.4.0` and AndroidX Core `1.19.0` as current, but Kotlin has no matching KSP `2.4.0` plugin artifact yet and AndroidX Core `1.19.0` requires `compileSdk 37`.
+  - Touches: `gradle/libs.versions.toml`, `gradle/tools.versions.toml`, API 37 behavior-gate docs.
+  - Acceptance: bump Kotlin only after a compatible KSP plugin is published; bump AndroidX Core only with the compileSdk 37 behavior-gate plan and full Gradle/Roborazzi verification.
+  - Source: v1.8.216 dependency freshness pass.
+
 ### Docs & hygiene
 
-- [ ] P3 — Low-risk dependency freshness batch after v1.8.207
-  - Why: 2026-06-04 Maven metadata shows small freshness drift after the current release: Kotlin 2.4.0, Compose BOM 2026.05.01, AndroidX Core 1.19.0, and Roborazzi 1.63.0 are newer than the pinned versions. Room 2.8.4, SQLCipher 4.16.0, Tink 1.21.0, and Robolectric 4.16.1 still match current metadata; Google Maven's newest AGP is 9.3 alpha, so do not churn AGP blindly.
-  - Touches: `gradle/libs.versions.toml`, release notes if bumped.
-  - Acceptance: bump only compatible low-risk pins; `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` green on an Android SDK host; no new permission or dependency-license surface.
-  - Source: 2026-06-04 research refresh.
 - [ ] P2 — Confirm absence of lint baseline / close EI10 (EI10)
   - Why: Research says no `app/lint-baseline.xml` exists; confirm and note.
   - Touches: one-line note; `bash scripts/run-lint-debug-with-baseline-check.sh` exits 0.
