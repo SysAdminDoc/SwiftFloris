@@ -176,6 +176,51 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 17 - 2026-06-04)
+
+- [x] 🔬 `mcp-tool-name-scope-recheck-2026-06-04` - synced `master` after the
+  upstream Cycle 16 docs push, rechecked the deferred MCP tool-name audit against
+  live daemon discovery, registry, dispatch router, and tests. This cycle adds
+  one focused row for constraining advertised tool names and removing
+  cross-daemon first-match ambiguity before tool dispatch.
+
+#### MCP daemon tool identity
+
+- [ ] 🤖 P3 — Scope MCP daemon tool dispatch by daemon and constrain tool names (R17-1)
+  - Why: MCP daemon discovery trims tool names and rejects only blank strings.
+    The registry then resolves `findTool(toolName)` by returning the first daemon
+    that advertises that name, and `McpDispatchRouter` dispatches by that global
+    string. Two installed daemons can therefore collide on the same tool name,
+    and malformed names can enter Settings summaries, disable keys, and dispatch
+    logs without a shared shape contract. MCP calls already carry a resolved
+    `DaemonKey` at the client boundary, so the ambiguity should be removed before
+    dispatch.
+  - Evidence: `McpDaemonDiscoverer.kt:91-109` accepts any nonblank parsed
+    `name`; `McpToolDescriptor` only requires nonblank names in
+    `McpBridgeContract.kt:84-94`; `McpDaemonRegistry.kt:85-93` scans all active
+    daemons and returns the first matching tool; `McpDispatchRouter.kt:53-83`
+    accepts only `Request.toolName`, resolves it through `RegistryView.findTool`,
+    then calls `client.callTool(daemonKey = resolved.daemon, toolName =
+    request.toolName, ...)`; `McpDaemonDiscovererTest.kt:85-100` only covers blank
+    name skipping; `McpDaemonRegistryTest.kt:53-70` covers multi-daemon lookup
+    with distinct names, not duplicate-name behavior; the deferred audit records
+    the collision/shadowing risk in `docs/AUDIT_2026-05-28.md:80-82`.
+  - Touches: `McpDaemonDiscoverer.kt`, `McpDaemonRegistry.kt`,
+    `McpDispatchRouter.kt`, MCP Settings/disable-key surfaces if they depend on a
+    flat name, and focused MCP discoverer/registry/router tests. Preserve the
+    no-network, signature-permission, payload-size, consent, and sensitive-field
+    gates.
+  - Acceptance: discovery rejects tool names outside a documented bounded
+    charset/length; duplicate names across daemons cannot be dispatched by
+    first-match global lookup; dispatch either carries a `DaemonKey` plus tool
+    name or uses a generated stable scoped tool id; Settings summaries and
+    per-tool enable/disable keys use the same scoped identity; tests fail for
+    malformed names and for two daemons advertising the same name where the old
+    first daemon would silently shadow the second.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.mcp.*"`
+  - Complexity: M
+
 ### Researcher Queue (Cycle 16 - 2026-06-04)
 
 - [x] 🔬 `subtype-switch-by-id-double-read-recheck-2026-06-04` - synced

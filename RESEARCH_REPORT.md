@@ -1,6 +1,6 @@
 # SwiftFloris Research Report
 
-This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 16 and v1.8.246 implementation notes.
+This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 17 and v1.8.246 implementation notes.
 
 2026-06-04 implementation note: v1.8.241 closed R4-3. `MimeTypeFilter`
 constructor stdout logging is removed, aggregate helper semantics are documented
@@ -37,6 +37,13 @@ must remain local generated output rather than review evidence.
 `2.4.0` as current, but KSP Gradle plugin metadata still tops out at `2.3.9`.
 AndroidX Core `1.19.0` remains blocked on the API 37 behavior-gate because the
 published `core-1.19.0.aar` metadata declares `minCompileSdk=37`.
+
+2026-06-04 Cycle 17 note: after the upstream Cycle 16 docs push, `master` is
+clean at `2076f49` (`v1.8.246-5-g2076f49`). Cycle 17 rechecked the deferred MCP
+daemon tool-name audit against live discovery, registry, dispatch router, and
+tests. This cycle adds R17-1: scope MCP tool dispatch by daemon and constrain
+advertised tool-name shape so duplicate names cannot resolve by global
+first-match order.
 
 2026-06-04 Cycle 16 note: after the Cycle 15 docs push, `master` is clean at
 `caf6bea` (`v1.8.246-4-gcaf6bea`). Cycle 16 rechecked the deferred
@@ -227,6 +234,7 @@ Top opportunities (one line each):
 28. **Personal n-gram TSV token safety** — learned bigram/trigram tokens can still contain tab/newline/NUL/control separators that corrupt TSV rows or trigram context keys on reload (R14-1, P2). [Verified]
 29. **Honeycomb layout parse diagnostics** — malformed honeycomb layout JSON degrades to an empty keyboard without logging the parse failure (R15-1, P2). [Verified]
 30. **Subtype switch-by-id double-read** — `switchToSubtypeById(id)` proves existence against one subtype-list snapshot, then force-unwraps a second lookup that can become null after subtype list mutation (R16-1, P2). [Verified]
+31. **MCP daemon tool identity** — daemon discovery accepts any nonblank tool name and dispatch resolves duplicate names by first-match global lookup instead of a scoped daemon/tool identity (R17-1, P3). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -237,6 +245,9 @@ No Critical or Major reliability/security defects were found that are not alread
   `docs/AUDIT_2026-05-28.md`, `docs/AUDIT_2026-06-02.md`, and
   `app/src/test/kotlin/dev/patrickgold/florisboard/ime/core/` test coverage
   inventory.
+- **Cycle 17 key files:** `McpDaemonDiscoverer.kt`, `McpDaemonRegistry.kt`,
+  `McpDispatchRouter.kt`, `McpToolCallEnvelope.kt`, `McpBridgeContract.kt`,
+  `McpDaemonDiscovererTest.kt`, and `McpDaemonRegistryTest.kt`.
 - **Git range:** `git log --oneline -n 40`; `git show --stat --oneline v1.8.223..HEAD` confirmed v1.8.224 -> v1.8.225 docs/build/release movement plus pushed n-gram/thread-safety/crypto/privacy, Arabic-shaping, Snygg, and Cycle 3 docs commits through `dc72e32`.
 - **External sources / standards:** IANA Language Subtag Registry (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`); Android `Locale` reference (`https://developer.android.com/reference/java/util/Locale`); Android `EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING` reference (`https://developer.android.com/reference/android/view/inputmethod/EditorInfo#IME_FLAG_NO_PERSONALIZED_LEARNING`); Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); AndroidX `BackHandler` reference (`https://developer.android.com/reference/kotlin/androidx/activity/compose/BackHandler.composable`); AndroidX `MimeTypeFilter` reference (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`); Android `ClipDescription.compareMimeTypes` reference (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`); Android `ByteBuffer` reference (`https://developer.android.com/reference/java/nio/ByteBuffer`); Android `InputConnection` reference (`https://developer.android.com/reference/android/view/inputmethod/InputConnection`); Android `WindowManager.LayoutParams.FLAG_SECURE` reference (`https://developer.android.com/reference/android/view/WindowManager.LayoutParams`); Android custom `<permission>` / `signature` protection docs (`https://developer.android.com/guide/topics/manifest/permission-element`); Android package visibility and `<queries>` docs (`https://developer.android.com/training/package-visibility`, `https://developer.android.com/training/package-visibility/declaring`); Android `SigningInfo` reference (`https://developer.android.com/reference/android/content/pm/SigningInfo`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
 - **Cycle 16 external sources / standards:** Android `InputMethodSubtype` (`https://developer.android.com/reference/android/view/inputmethod/InputMethodSubtype`); Android `InputMethodManager` (`https://developer.android.com/reference/android/view/inputmethod/InputMethodManager`); Android 17 behavior changes (`https://developer.android.com/about/versions/17/behavior-changes-all`); Google Play target API policy (`https://developer.android.com/google/play/requirements/target-sdk`); Android 16 KB page-size support (`https://developer.android.com/guide/practices/page-sizes`); Kotlin `StateFlow` and `MutableStateFlow` (`https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-state-flow/`, `https://kotlinlang.org/api/kotlinx.coroutines/kotlinx-coroutines-core/kotlinx.coroutines.flow/-mutable-state-flow/`); Kotlin null safety (`https://kotlinlang.org/docs/null-safety.html`); Unicode LDML keyboards (`https://www.unicode.org/reports/tr35/tr35-keyboards.html`); Keyman Android engine (`https://help.keyman.com/developer/engine/android/`); AOSP LatinIME (`https://android.googlesource.com/platform/packages/inputmethods/LatinIME/`); OpenBoard (`https://github.com/openboard-team/openboard`); Rime (`https://github.com/rime/librime`); Mozc (`https://github.com/google/mozc`); SQLCipher 4.16.0 (`https://www.zetetic.net/blog/2026/05/12/sqlcipher-4.16.0-release/`).
@@ -323,6 +334,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   `switchToSubtypeById(id)` still checks one subtype-list snapshot and
   force-unwraps a second lookup. R16-1 collapses that path to one nullable
   lookup before manual activation. [Verified]
+- **MCP daemon bridge (partial):** consent, sensitive-field, payload-size, and
+  signature-permission gates are already present, but tool identity is still a
+  flat string at dispatch. R17-1 adds the daemon-scoped name/identity contract so
+  duplicate advertised tool names cannot shadow one another. [Verified]
 - Established surfaces (autocorrect/SymSpell, glide classifier, clipboard, addons, voice handoff, sync, MCP, hardware-keyboard import) are covered by `COMPLETED.md` and the audits; no net-new gap surfaced beyond what the roadmap already tracks.
 
 ## Competitive Landscape
@@ -376,6 +391,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   `getSubtypeById(id)` result once and return when absent, so subtype-list
   mutation between validation and activation cannot turn a stale id into a
   forced-null crash.
+- **[Low] MCP daemon tool identity** → R17-1. Constrain advertised tool names and
+  scope dispatch by daemon/tool identity instead of first-match global
+  `findTool(toolName)` lookup.
 - **[Closed v1.8.219] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` failure diagnostics now use `flogError`, restore UI copy falls back to the existing "Unknown error" string for null/blank throwable messages, and `CrashUtility.writeToFile` logs through `LogTopic.CRASH_UTILITY`.
 - **[High] Local release ledger drift** → R3-1. Three code-fix commits after
   the v1.8.225 docs marker are untagged and absent from the release ledger.
@@ -484,6 +502,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   v1.8.242, but `switchToSubtypeById(id)` still validates one snapshot and
   force-unwraps a second `getSubtypeById(id)` lookup. Cycle 16 adds the same
   single-read/no-op boundary for switch-by-id.
+- **MCP dispatch identity boundary:** `McpClient.callTool(...)` already accepts a
+  `DaemonKey`, but `McpDispatchRouter.Request` still starts from a flat
+  `toolName`. Cycle 17 adds the missing scoped identity boundary before dispatch
+  and per-tool settings keys grow around ambiguous names.
 - **Dependency health:** the security-sensitive pins checked here are still current for SQLCipher 4.16.0 and Tink 1.21.0, and Room/Robolectric also match metadata. The compatible P3 maintenance batch shipped in v1.8.216 (Compose BOM `2026.05.01`, KSP `2.3.9`, Roborazzi `1.63.0`). Kotlin `2.4.0` and AndroidX Core `1.19.0` remain gated on KSP publication and compileSdk 37 respectively; AGP 9.2.1 appears to be the stable baseline while Google Maven's newest AGP metadata is 9.3 alpha. [Verified via Maven metadata]
 - **Overgrown files:** `IndicTransliterator.kt` (~86 KB), `TextKeyboardLayout.kt` (~76 KB), `LatinLanguageProvider.kt` (~60 KB), `KeyboardManager.kt` (~60 KB) are large but the SHIFT state machine was already extracted (F27 shipped) and the audits already track `LatinLanguageProvider` heap risk (A1). Left as-is — no speculative refactor proposed.
 - **Testability:** 221 JVM test files, 5 androidTest. The search catalog's integrity and synonym-hit coverage are now pinned by RA-1 and RA-3, the RA-10 scroll-reset guard is covered, RA-4 has source/resource accessibility contract coverage, and R3-4 backfills the post-hotfix Arabic/Snygg/trace/n-gram regression surface.
@@ -492,7 +514,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R11-1 closes the async side of startup diagnostics by surfacing preference-store init failures through the existing local crash recovery path without adding storage, permissions, or outbound data. R12-1 is local personal-prediction durability hardening and does not change dictionary retention, export, permissions, or outbound data. R13-1 is local stats/reset consistency hardening for the same personal n-gram files and likewise does not change retention, export, permissions, or outbound data. R14-1 is local write-time token-safety hardening for existing personal n-gram persistence and does not add collection, retention, export, permissions, or outbound data. R15-1 is local parser diagnostics for existing honeycomb layout JSON and does not add permissions, storage, export, or outbound data. R16-1 is local subtype-switch crash hardening and does not add permissions, storage, export, or outbound data. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are closed local correctness/a11y/API-contract work. WS12 and WS10/WS15 are docs/resource-only and do not change permissions, retention, or storage behavior. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R11-1 closes the async side of startup diagnostics by surfacing preference-store init failures through the existing local crash recovery path without adding storage, permissions, or outbound data. R12-1 is local personal-prediction durability hardening and does not change dictionary retention, export, permissions, or outbound data. R13-1 is local stats/reset consistency hardening for the same personal n-gram files and likewise does not change retention, export, permissions, or outbound data. R14-1 is local write-time token-safety hardening for existing personal n-gram persistence and does not add collection, retention, export, permissions, or outbound data. R15-1 is local parser diagnostics for existing honeycomb layout JSON and does not add permissions, storage, export, or outbound data. R16-1 is local subtype-switch crash hardening and does not add permissions, storage, export, or outbound data. R17-1 is local MCP identity hardening for the existing signature-gated daemon bridge and does not add network permission, storage, export, or outbound data. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are closed local correctness/a11y/API-contract work. WS12 and WS10/WS15 are docs/resource-only and do not change permissions, retention, or storage behavior. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
@@ -528,6 +550,9 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
     maintainer product decision is required.
 11. R16-1 needs a focused subtype switch-by-id stale-id regression test; no
     maintainer product decision is required.
+12. R17-1 needs focused MCP daemon duplicate-name and malformed-name tests; no
+    maintainer product decision is required unless maintainers prefer a different
+    scoped tool-id encoding.
 
 ## Archived Evidence
 
@@ -570,3 +595,4 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
   method docs, Kotlin StateFlow/null-safety docs, Android 17 / Google Play /
   16 KB platform policy docs, active FLOSS keyboard releases, Unicode LDML
   keyboard docs, and compatible input-method engine references.
+- Cycle 17 companion: `.ai/research/2026-06-04/CYCLE_17_FINDINGS.md`.
