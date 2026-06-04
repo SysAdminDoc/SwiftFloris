@@ -2,6 +2,42 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.202"></a>
+## v1.8.202
+
+Released: 2026-06-04
+
+### App preferences partition with datastore golden guard
+
+EI1 split the monolithic `AppPrefs.kt` preference declarations into feature-area models under `app/prefs/` while preserving the existing `prefs.<group>.<key>` root access shape. JetPref's KSP processor only discovers declarations directly inside the annotated model, so the merged `FlorisPreferenceModelImpl` now lives in source and explicitly registers the 187 app preference entries.
+
+A new `AppPrefsPartitionTest` snapshots every generated runtime row as `datastoreKey/type/encodedDefault`, ensuring future refactors cannot silently rename a Datastore key or alter a default.
+
+### Changes
+
+- **`app/prefs/*Prefs.kt`** (new) — feature-area preference bodies for clipboard, correction, keyboard, smartbar, theme, voice, and the remaining app preference groups.
+- **`FlorisPreferenceModelImpl.kt`** (new) — source-level merged preference registry with duplicate-key detection matching JetPref's generated behavior.
+- **`AppPrefs.kt`** — reduced to the datastore singleton, root group re-exports, and migration rules.
+- **`AppPrefsPartitionTest.kt`** (new) — golden coverage for all 187 key/type/default rows plus root group re-export checks.
+- **`ROADMAP.md` / `COMPLETED.md`** — EI1 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:kspDebugKotlin :app:compileDebugKotlin` -> green; no stale JetPref generated app preference model remains.
+- `./gradlew.bat :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.AppPrefsPartitionTest"` -> green.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/AppPrefs.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisPreferenceModelImpl.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/prefs/*Prefs.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsPartitionTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2002.txt` (new)
+- `gradle.properties` (versionCode 2001->2002, versionName 1.8.201->1.8.202)
+- `README.md` (version badge/current release)
+- `ROADMAP.md` / `COMPLETED.md` (EI1 moved to shipped work)
+
 <a id="v1.8.201"></a>
 ## v1.8.201
 

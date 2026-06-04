@@ -1,0 +1,1 @@
+Partitioned app preferences by feature area while preserving datastore keys/defaults. Added a source-level merged preference registry and a golden test covering all 187 key/type/default rows.
