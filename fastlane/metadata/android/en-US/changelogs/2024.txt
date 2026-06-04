@@ -1,0 +1,1 @@
+Settings search now scrolls populated result lists back to the top when the query changes, keeping the highest-ranked match visible after editing from a previously scrolled query. Blank and no-result states remain untouched.
