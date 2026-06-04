@@ -1,6 +1,6 @@
 # SwiftFloris Repo Hygiene
 
-Last updated: 2026-06-04 for v1.8.220.
+Last updated: 2026-06-04 for v1.8.243.
 
 This repository uses one commit per release slice. Keep code, roadmap state,
 release notes, and verification evidence together so the next maintainer can
@@ -67,6 +67,29 @@ Each commit should map to one of these:
 
 Do not mix dependency bumps, product behavior, broad cleanup, and visual polish
 unless the roadmap explicitly groups them.
+
+## Localization And Copy Cleanup Rule
+
+Treat source-English string edits as product changes. Keep cleanup small enough
+for translators to review the changed keys, and do not rewrite translated files
+unless the change is a native-language fix or a lint-safe mechanical cleanup.
+
+- Turkish repeated-word cleanup should not blindly delete valid idioms. Prefer
+  equivalent Turkish wording that avoids adjacent duplicates, and ignore
+  placeholder false positives such as `{url}` followed by "URL" only when the
+  user-facing copy is already clear.
+- Source labels should name the concrete source: bundled assets,
+  app-private storage, external document providers, CSV dictionary files, ZIP
+  dictionary archives, or legacy dictionary files. Avoid labels like "Provider",
+  "File", or "Storage" when the UI has room for the actual source.
+- Backup, restore, import, and export failures should say what stayed
+  unchanged, then provide a recovery path or technical detail. Use the pattern
+  "Could not ... . <unchanged state>. Details: {error_message}" for compact
+  toast/status copy, and keep longer card summaries calm and retry-oriented.
+- Destructive confirmations should name the local effect and whether saving is
+  required before installed data changes. Generic delete dialogs should say the
+  item is permanently removed from this device instead of relying only on
+  "cannot be undone."
 
 ## Handoff Rule
 

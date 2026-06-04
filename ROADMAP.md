@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.242 (versionCode 2042). **Local verification:** focused `NativeStrTest` passed in 1m17s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.243 (versionCode 2043). **Local verification:** focused `LocalizationCopyTest` passed in 1m44s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -79,11 +79,16 @@ items belong in `COMPLETED.md`.
 
 ### Docs & hygiene
 
-- [ ] P2 — Localization content-quality pass (WS12)
+- [x] P2 — Localization content-quality pass (WS12)
   - Why: Turkish repeated-word lint, vague/abrupt English source labels, and inconsistent failure/destructive copy need cleanup.
   - Touches: native-safe Turkish repeated-word review; tighten English source labels; standardize backup/restore/import/export failure + destructive-confirmation copy; document translation-safe cleanup rules.
   - Acceptance: lint warnings reviewed; copy standardized; rules documented.
   - Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS12.
+  - Shipped: v1.8.243 (2026-06-04) with native-safe Turkish repeated-word
+    cleanup, clearer theme/import source labels, standardized backup/restore/
+    dictionary/extension failure and generic destructive-confirmation copy,
+    repo-hygiene translation-safe cleanup rules, and focused
+    `LocalizationCopyTest` resource coverage.
 - [ ] P2 — Visual-QA + manual-QA + release-evidence checklists (WS10 / WS15)
   - Why: No standing checklists for the portrait/landscape/compact/floating/dark/high-font-scale matrix, manual QA, or release evidence.
   - Touches: docs for visual-QA matrix, manual-QA flow, and release-evidence capture.
