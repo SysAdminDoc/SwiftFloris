@@ -130,6 +130,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             `internal`.homeIsBetaToolboxCollapsed to "internal.homeIsBetaToolboxCollapsed",
             `internal`.isImeSetUp to "internal.isImeSetUp",
             `internal`.aiFeaturesExplainerSeen to "internal.aiFeaturesExplainerSeen",
+            `internal`.firstRunImportHintSeen to "internal.firstRunImportHintSeen",
             `internal`.versionOnInstall to "internal.versionOnInstall",
             `internal`.versionLastUse to "internal.versionLastUse",
             `internal`.versionLastChangelog to "internal.versionLastChangelog",

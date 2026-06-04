@@ -2,6 +2,50 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.208"></a>
+## v1.8.208
+
+Released: 2026-06-04
+
+### First-run dictionary import hint
+
+F3 adds a first-run setup step for importing existing personal-dictionary exports without reviving the expired SwiftKey cloud-export window. After the local-AI explainer, setup now offers a one-time "Import your dictionary" prompt that names SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV, `.flbackup`, and `.fldic` files and opens Android's file picker.
+
+The picker routes into the existing Floris personal-dictionary screen with a one-shot import action, so selected files continue through `DictionaryImporter`'s byte-sniffing pipeline and the existing encrypted/plain import summary flows. The new internal `firstRunImportHintSeen` preference keeps the hint from repeating once the user imports or skips it.
+
+### Changes
+
+- **`SetupScreen.kt` / `SetupStepPolicy.kt`** — inserted the import-discovery setup step after AI disclosure and before Android IME enablement, with JVM policy coverage for step ordering.
+- **`UserDictionaryScreen.kt` / `Routes.kt`** — added a typed one-shot import route action that launches the existing SAF picker on screen open.
+- **`InternalPrefs.kt` / `FlorisPreferenceModelImpl.kt`** — persisted and registered the one-time import-hint state with the preference golden updated.
+- **`README.md`** — reframed the SwiftKey migration block around post-cutoff local import paths.
+- **`ROADMAP.md` / `COMPLETED.md`** — F3 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:compileDebugKotlin :app:compileDebugUnitTestKotlin` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with the same `JAVA_HOME`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with the same `JAVA_HOME`.
+- `git diff --check` -> green; CRLF normalization warnings only.
+- `bash scripts/check-fastlane-metadata.sh` -> green (versionCode 2008).
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/setup/SetupScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/setup/SetupStepPolicy.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/prefs/InternalPrefs.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/FlorisPreferenceModelImpl.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/setup/SetupStepPolicyTest.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/AppPrefsPartitionTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2008.txt` (new)
+- `gradle.properties` (versionCode 2007->2008, versionName 1.8.207->1.8.208)
+- `README.md` (version badge, migration copy, highlights)
+- `ROADMAP.md` / `COMPLETED.md` (F3 moved to shipped work)
+
 <a id="v1.8.207"></a>
 ## v1.8.207
 

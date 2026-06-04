@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 189
+        rows shouldHaveSize 190
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -151,6 +151,7 @@ input_feedback__haptic_vibration_duration	i	20
 input_feedback__haptic_vibration_mode	s	USE_VIBRATOR_DIRECTLY
 input_feedback__haptic_vibration_strength	i	60
 internal__ai_features_explainer_seen	b	false
+internal__first_run_import_hint_seen	b	false
 internal__home_is_beta_toolbox_collapsed_040a01	b	false
 internal__is_ime_set_up	b	false
 internal__notification_permission_state	s	NOT_SET

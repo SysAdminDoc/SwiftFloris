@@ -114,8 +114,15 @@ enum class UserDictionaryType(val id: String) {
     SYSTEM("system");
 }
 
+enum class UserDictionaryScreenAction(val id: String) {
+    IMPORT("import");
+}
+
 @Composable
-fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
+fun UserDictionaryScreen(
+    type: UserDictionaryType,
+    action: UserDictionaryScreenAction? = null,
+) = FlorisScreen {
     title = stringRes(when (type) {
         UserDictionaryType.FLORIS -> R.string.settings__udm__title_floris
         UserDictionaryType.SYSTEM -> R.string.settings__udm__title_system
@@ -426,6 +433,18 @@ fun UserDictionaryScreen(type: UserDictionaryType) = FlorisScreen {
             }
         },
     )
+
+    var importActionConsumed by rememberSaveable(action?.id) { mutableStateOf(false) }
+    LaunchedEffect(action, entryActionsEnabled) {
+        if (
+            action == UserDictionaryScreenAction.IMPORT &&
+            entryActionsEnabled &&
+            !importActionConsumed
+        ) {
+            importActionConsumed = true
+            importDictionary.launch("*/*")
+        }
+    }
 
     val exportDictionary = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(UserDictionaryMediaType),

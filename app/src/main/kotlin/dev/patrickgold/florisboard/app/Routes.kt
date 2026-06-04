@@ -62,6 +62,7 @@ import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
+import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreenAction
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.gestures.GesturesScreen
@@ -191,7 +192,10 @@ object Routes {
 
         @Serializable
         @Deeplink("settings/dictionary/user-dictionary")
-        data class UserDictionary(val type: UserDictionaryType)
+        data class UserDictionary(
+            val type: UserDictionaryType,
+            val action: UserDictionaryScreenAction? = null,
+        )
 
         @Serializable
         @Deeplink("settings/gestures")
@@ -358,7 +362,7 @@ object Routes {
             composableWithDeepLink(Settings.Addons::class) { AddonsSettingsScreen() }
             composableWithDeepLink(Settings.UserDictionary::class) { navBackStack ->
                 val payload = navBackStack.toRoute<Settings.UserDictionary>()
-                UserDictionaryScreen(payload.type)
+                UserDictionaryScreen(payload.type, payload.action)
             }
 
             composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }

@@ -1,28 +1,21 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.207-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![SwiftKey migration](https://img.shields.io/badge/SwiftKey%20migration-window%20closes%202026--05--31-red)
+![Version](https://img.shields.io/badge/version-v1.8.208-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
 > **Zero cloud processing. Zero telemetry. Zero account. All features work offline.**
 
-> ## ⚠️ SwiftKey users — your account-backed data is being deleted on **2026-05-31**
+> ## Keyboard migration
 >
-> Microsoft is retiring standalone SwiftKey accounts and shutting down the
-> [`data.swiftkey.com`](https://data.swiftkey.com) export endpoint on 2026-05-31. After that date your
-> non-Microsoft-account learned vocabulary, shortcuts, and clipboard sync are permanently gone.
+> Microsoft retired standalone SwiftKey accounts and shut down the
+> [`data.swiftkey.com`](https://data.swiftkey.com) export endpoint on 2026-05-31. Cloud exports from that endpoint are no longer available, but SwiftFloris still supports local import paths for files you already exported and for exports from other keyboards.
 >
-> **Two no-cloud paths off SwiftKey:**
+> **No-cloud import paths:**
 >
-> 1. **Right now** (before the cutoff) — export `swiftkey-cloud.json` from
->    [`data.swiftkey.com`](https://data.swiftkey.com), install SwiftFloris via the [Obtainium one-tap link](#option-a--obtainium-recommended-for-auto-updates) below,
->    then in SwiftFloris go to **Settings → Personal dictionary → Import** and pick the file.
->    SwiftFloris ingests the JSON shape directly (see [v1.8.46 release notes](CHANGELOG.md#v1.8.46)
->    and the [migration walk-through](docs/MIGRATE_FROM_SWIFTKEY.md)).
-> 2. **If you missed the cutoff** — your learned words are gone from the cloud but everything still
->    in the on-device SwiftKey personal dictionary can still be re-typed; SwiftFloris's
->    [instant-remember overlay](CHANGELOG.md#v1.8.26) climbs the words back to the top of the
->    prediction strip after a single use.
+> 1. **During setup** — use the first-run **Import your dictionary** step and choose a SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV, `.flbackup`, `.fldic`, or SwiftFloris dictionary export.
+> 2. **Any time later** — go to **Settings → Personal dictionary → Import** and pick the same local export files. SwiftFloris ingests SwiftKey JSON directly (see [v1.8.46 release notes](CHANGELOG.md#v1.8.46) and the [migration walk-through](docs/MIGRATE_FROM_SWIFTKEY.md)).
+> 3. **If you missed the SwiftKey cutoff** — your learned words are gone from the cloud, but everything still in the on-device SwiftKey personal dictionary can still be re-typed; SwiftFloris's [instant-remember overlay](CHANGELOG.md#v1.8.26) climbs the words back to the top of the prediction strip after a single use.
 >
 > SwiftFloris **never** binds your data to a Microsoft (or any other vendor) account, so the next
 > account-retirement notice that lands in your inbox won't include this app.
@@ -44,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.207 | Privacy posture |
+| Area | What's in v1.8.208 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -58,7 +51,7 @@
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
 | **Addon packs** | Addon manifest/enumerator contracts, IME-startup registry reconciliation, Settings -> Addons status/rescan, trust reset/changed-certificate controls, dictionary-pack catalog details, persisted signing-certificate pins, descriptor validation, provenance reports, typed dictionary-pack catalog, and addon APK dictionary asset mounting | No-network addon rejection |
 | **Settings UX** | Clearer empty states for voice setup, selected user-dictionary languages, extension categories, language packs, filtered clipboard history, and theme-manager recovery; surfaced keyboard preview field with ready/active state feedback | Local UI only |
-| **Migration** | Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
+| **Migration** | First-run local dictionary import hint; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026; see [docs/HONEYCOMB_LAYOUT.md](docs/HONEYCOMB_LAYOUT.md)) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose | On-device, no account, no telemetry |
 | **CI / build** | No-network gate, repo-hygiene gate, OSV dep scan, Dependabot version review, lint baseline-drift wrapper, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths | Audit-friendly |
@@ -449,7 +442,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.207** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.208** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
