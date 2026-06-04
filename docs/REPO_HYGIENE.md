@@ -1,11 +1,11 @@
 # SwiftFloris Repo Hygiene
 
-Last updated: 2026-05-25 for v1.8.174.
+Last updated: 2026-06-04 for v1.8.220.
 
 This repository uses one commit per release slice. Keep code, roadmap state,
 release notes, and verification evidence together so the next maintainer can
-resume from `git log`, `PROJECT_CONTEXT.md`, and `IMPROVEMENT_PLAN.md` without
-guessing what happened.
+resume from `git log`, `ROADMAP.md`, `COMPLETED.md`, `CHANGELOG.md`, and
+`PROJECT_CONTEXT.md` without guessing what happened.
 
 ## Current Legacy Markdown Decision
 

@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.220"></a>
+## v1.8.220
+
+Released: 2026-06-04
+
+### Root onboarding source of truth
+
+R2-3 is closed. Root onboarding now agrees that `ROADMAP.md` is the open-work source, `COMPLETED.md` summarizes shipped state, `CHANGELOG.md` plus fastlane metadata is the release-note stream, and the parity/improvement plans under `docs/archive/` are historical context rather than active routing targets.
+
+RA-8 is also closed by source inspection: Settings Home already exposes the search route through a top app-bar search action with an accessible content description, so no code change was required for entry-point discoverability.
+
+### Changes
+
+- **`AGENTS.md` / `PROJECT_CONTEXT.md` / `ARCHITECTURE.md` / `CONTRIBUTING.md` / `README.md` / `docs/REPO_HYGIENE.md`** - refresh current stack/release facts, JDK guidance, release-note routing, and active-vs-archived planning guidance.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - close R2-3 and RA-8, keeping remaining settings-search work centered on RA-1 through RA-4.
+- **`gradle.properties` / fastlane metadata** - advances the release marker to v1.8.220 / versionCode 2020.
+
+### Verification
+
+- `rg` stale-reference scans over root onboarding docs -> only deliberate historical/retired-pattern references remain.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+- `bash scripts/check-fastlane-metadata.sh` -> green.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `CONTRIBUTING.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `docs/REPO_HYGIENE.md`
+- `fastlane/metadata/android/en-US/changelogs/2020.txt` (new)
+- `gradle.properties` (versionCode 2019->2020, versionName 1.8.219->1.8.220)
+
 <a id="v1.8.219"></a>
 ## v1.8.219
 

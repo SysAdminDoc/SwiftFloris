@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.219-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.220-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.219 | Privacy posture |
+| Area | What's in v1.8.220 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
@@ -132,7 +132,7 @@ Project-internal docs all live in the repository:
 **Language and build**
 
 - Kotlin 2.3.21, Compose BOM 2026.05.01, Material 3 + material-kolor.
-- AGP 9.2.1, Gradle 9.5.1, JDK 17.
+- AGP 9.2.1, Gradle 9.5.1, JDK 21.
 - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0.
 - Kotest 6.1.11 unit-test runner; Roborazzi 1.63.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
@@ -164,7 +164,7 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
 
 ```bash
 # Android SDK 36 (compile/target)
-# JDK 17+
+# JDK 21+
 # Gradle 9.5.1 (use the bundled wrapper)
 ```
 
@@ -285,6 +285,9 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.220** (2026-06-04) — Root onboarding docs now agree that `ROADMAP.md` is the open-work source, `COMPLETED.md` summarizes shipped state, `CHANGELOG.md` is the release-note stream, and archived planning snapshots are historical context. ([notes](CHANGELOG.md#v1.8.220))
+- **v1.8.219** (2026-06-04) — Restore and crash diagnostic failures now use project logging, and restore toasts/cards use stable fallback copy when Android reports a null or blank throwable message. ([notes](CHANGELOG.md#v1.8.219))
+- **v1.8.218** (2026-06-04) — Staged startup exceptions now persist to the local crash report store and open the crash dialog before Settings can hang behind the splash screen. ([notes](CHANGELOG.md#v1.8.218))
 - **v1.8.170** (2026-05-18) — Keyboard preview field polish: settings preview fields now sit on a distinct bottom surface, expose ready/active feedback, preserve bottom-bar traversal, and use coroutine-safe feedback when Android cannot open the IME picker. ([notes](CHANGELOG.md#v1.8.170))
 - **v1.8.169** (2026-05-18) — Empty-state UX polish: selected dictionary-language views, extension categories, language packs, filtered clipboard history, and the theme manager now explain blank states and route users toward add/import/filter-clear/recovery actions. ([notes](CHANGELOG.md#v1.8.169))
 - **v1.8.168** (2026-05-18) — Addon scan progress: Addons Settings now shows a shared progress card while installed packages and dictionary-pack metadata are rescanned, and the touched preference state read uses the current `collectAsState` API. ([notes](CHANGELOG.md#v1.8.168))
@@ -445,7 +448,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.219** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.220** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

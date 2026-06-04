@@ -1,16 +1,18 @@
 # SwiftFloris — Project Context
 
 **Maintained at root for fast onboarding.**
-**Last consolidated:** 2026-05-18 (from the autonomous research run at
+**Last consolidated:** 2026-06-04 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.170).
+through v1.8.220).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
-[docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md),
-[IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md), or any per-release notes — it
-distills their durable content into one page so those longer documents
-don't have to be re-read every time.
+[COMPLETED.md](COMPLETED.md), [CHANGELOG.md](CHANGELOG.md), or archived
+planning snapshots such as
+[docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md)
+and [docs/archive/IMPROVEMENT_PLAN_2026-05-18.md](docs/archive/IMPROVEMENT_PLAN_2026-05-18.md).
+It distills their durable content into one page so those longer documents
+do not have to be re-read every time.
 
 ---
 
@@ -45,14 +47,14 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.170)
+## 3. Stack at HEAD (v1.8.220)
 
 ```
-Kotlin 2.3.21 · Compose BOM 2026.05.00 · Material 3 + material-kolor 4.1.1
-AGP 9.2.1 · Gradle 9.5.1 · JDK 17 · KSP 2.3.8
+Kotlin 2.3.21 · Compose BOM 2026.05.01 · Material 3 + material-kolor 4.1.1
+AGP 9.2.1 · Gradle 9.5.1 · JDK 21 · KSP 2.3.9
 minSdk 26 (Android 8.0) · targetSdk/compileSdk 36 (Android 16; API 37 gates wired)
 Room 2.8.4 · SQLCipher 4.16.0 · Tink Android 1.21.0 · Coroutines 1.11.0 · Coil 3.4.0 · ZXing 3.5.4
-Kotest 6.1.11 · Roborazzi 1.60.0 (plugin active) · Robolectric 4.16.1
+Kotest 6.1.11 · Roborazzi 1.63.0 (plugin active) · Robolectric 4.16.1
 NDK 29.0.14206865 · Build Tools 36.0.0
 Crowdin localization · No INTERNET permission · 1000+ unit tests
 ```
@@ -68,8 +70,11 @@ AGP 9.0.0 → 9.2.1 and Compose BOM 2026.03.01 → 2026.05.00. The
 local encrypted preference payloads now use Tink Android + direct
 AndroidKeystore wrapping, with one-shot AndroidX encrypted-preference
 migration. `androidx-activity 1.13.0` is stable; do **not** downgrade it.
-Bump-batch B shipped in v1.8.71: Roborazzi 1.55.0 → 1.60.0 and
-Robolectric 4.14.1 → 4.16.1.
+Bump-batch B shipped in v1.8.71: Roborazzi 1.55.0 -> 1.60.0 and
+Robolectric 4.14.1 -> 4.16.1. The compatible dependency freshness pass in
+v1.8.216 moved Compose BOM to 2026.05.01, KSP to 2.3.9, and Roborazzi to
+1.63.0. Kotlin 2.4.0 remains deferred until a matching KSP plugin exists, and
+AndroidX Core 1.19.0 remains deferred until the API 37 compileSdk behavior gate.
 
 v1.8.70 was a docs-only migration-window follow-up: the README now explains
 how Samsung One UI 7+ Galaxy AI Writing Assist and Grammarly for Android can
@@ -195,12 +200,15 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 – v1.8.170** ships the seventh research-pass privacy,
+**v1.8.104 - v1.8.220** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup and
 performance-baseline / CI-quality / repo-hygiene / destructive-confirmation
-polish / addon scan-progress / empty-state UX / preview-field polish layers.
-v1.8.104 – v1.8.110 closed the
+polish / addon scan-progress / empty-state UX / preview-field polish layers,
+followed by migration/import surfaces, settings search, hardware-keyboard
+imports, release gates, dependency freshness, startup crash recovery, restore
+diagnostic hardening, and root-doc source-of-truth cleanup.
+v1.8.104 - v1.8.110 closed the
 app-declared privacy-flag and voice/clipboard data-leak findings
 documented in `ROADMAP.md`; v1.8.111 closes follow-up **G2** and
 **G12** by bounding provider-backed clipboard media clones and rejecting
@@ -254,7 +262,7 @@ Nastaliq Urdu hinted TTF is committed under `app/src/main/assets/fonts/`,
 labels/hints route Arabic-script text through the bundled font while Latin and
 non-Urdu text keep the active Snygg font.
 
-v1.8.129 closes the first `IMPROVEMENT_PLAN.md` editor/input behavior test
+v1.8.129 closes the first archived improvement-plan editor/input behavior test
 item by extracting `EditorInputBehaviorPolicy` and routing `EditorInstance` /
 `KeyboardManager` through it. Focused JVM tests now pin accepted autocorrect
 spacebar commits, rejected-correction protection, suppressed plain-space
@@ -324,7 +332,7 @@ cataloged 6.0.3 for the remaining JUnit-4-style Robolectric test bridge. Lint
 now reports 241 warnings / 1 hint.
 
 v1.8.140 closes the candidate auto-commit policy extraction item from
-`IMPROVEMENT_PLAN.md` Workstream 3. `CandidateAutoCommitPolicy` owns
+archived improvement-plan Workstream 3. `CandidateAutoCommitPolicy` owns
 deterministic ordering and rejection decisions for user-dictionary shortcuts,
 phrase repairs, active-strip autocorrects, immediate fallbacks, quick-prediction
 spacebar insertion, and plain-space prediction suppression. `NlpManager` stays
@@ -332,20 +340,20 @@ responsible for Android-bound state collection and provider lookups, while
 `CandidateAutoCommitPolicyTest` pins the pure JVM contract.
 
 v1.8.141 closes the punctuation-triggered commit-rule extraction item from
-`IMPROVEMENT_PLAN.md` Workstream 3. `KeyboardAutoCommitFlushPolicy` now owns
+archived improvement-plan Workstream 3. `KeyboardAutoCommitFlushPolicy` now owns
 whether software text commits flush a pending autocorrect candidate first:
 media-mode text commits flush, character-mode non-letter commits flush, and
 numeric / phone layout punctuation does not flush. `KeyboardManager` now only
 executes the selected behavior.
 
 v1.8.142 closes the theme rule editing extraction item from
-`IMPROVEMENT_PLAN.md` Workstream 3. `ThemeRuleEditPolicy` now owns add-rule
+archived improvement-plan Workstream 3. `ThemeRuleEditPolicy` now owns add-rule
 selection validation, selector toggling, and key-code attribute parsing /
 replacement decisions. `EditRuleDialog` remains responsible for dialog state
 and user feedback, while focused JVM coverage pins invalid, duplicate,
 unchanged, add, and replace decisions.
 
-v1.8.143 closes `IMPROVEMENT_PLAN.md` Workstream 4. The autocorrect lifecycle
+v1.8.143 closes archived improvement-plan Workstream 4. The autocorrect lifecycle
 contract now lives in `docs/AUTOCORRECT_LIFECYCLE.md`, covering spacebar,
 punctuation, hardware, delete, glide-delete, provider-notification, manual QA,
 and regression coverage. `CandidateCommitSideEffectPolicy` pins provider
@@ -490,7 +498,7 @@ creation, then measures unzip/validation plus merge restore. The first SM-S938B
 5.727604 ms, median restore total 9.874167 ms, and 3/3 selected sections
 restored with zero missing or failed sections.
 
-v1.8.165 closes `IMPROVEMENT_PLAN.md` Workstream 8. Android CI already ran
+v1.8.165 closes archived improvement-plan Workstream 8. Android CI already ran
 unit tests and `assembleDebug` on pull requests; this slice fixes the lint
 configuration so `app/lint.xml` is treated as lint config rather than a stale
 baseline, routes CI lint through `scripts/run-lint-debug-with-baseline-check.sh`,
@@ -498,32 +506,41 @@ adds weekly Dependabot version-review coverage for Gradle and GitHub Actions,
 adds the manual `Android Emulator Smoke` settings-launch workflow, and documents
 the maintainer/local verification commands in `docs/LOCAL_VERIFICATION.md`.
 
-v1.8.166 closes `IMPROVEMENT_PLAN.md` Workstream 9. `docs/REPO_HYGIENE.md`
+v1.8.166 closes archived improvement-plan Workstream 9. `docs/REPO_HYGIENE.md`
 records the intentional legacy root-markdown deletions, commit-scope rules,
 generated-output rules, and final-handoff verification rule. CI now runs
 `scripts/check-repo-hygiene.sh` after the root crash-log guard so tracked build
 or report outputs fail before slower Gradle work.
 
-v1.8.167 continues `IMPROVEMENT_PLAN.md` Workstream 10. Extension draft archive
+v1.8.167 continues archived improvement-plan Workstream 10. Extension draft archive
 file deletion, theme editor rule deletion, and theme property deletion now show
 draft-aware confirmation copy before mutation and clarify that the installed
 extension or theme is unchanged until the draft is saved.
 
-v1.8.168 continues `IMPROVEMENT_PLAN.md` Workstream 10. Addons Settings now
+v1.8.168 continues archived improvement-plan Workstream 10. Addons Settings now
 uses the shared progress-card treatment while installed addon APKs are rescanned
 and dictionary-pack metadata is refreshed. The touched signing-pin preference
 observation also moved from deprecated `observeAsState` to `collectAsState`.
 
-v1.8.169 continues `IMPROVEMENT_PLAN.md` Workstream 10. Selected
+v1.8.169 continues archived improvement-plan Workstream 10. Selected
 user-dictionary languages, extension categories, language-pack management,
 filtered clipboard history, and the theme manager now show specific empty-state
 copy with add/import/filter-clear or recovery guidance instead of leaving blank
 screens or generic labels.
 
-v1.8.170 continues `IMPROVEMENT_PLAN.md` Workstream 10. The shared settings
+v1.8.170 continues archived improvement-plan Workstream 10. The shared settings
 keyboard preview field now renders as a distinct bottom surface, exposes
 ready/active focus-state feedback, preserves bottom-bar traversal ordering, and
 uses coroutine-safe feedback when Android cannot open the keyboard picker.
+
+v1.8.171 through v1.8.220 refresh the release front door after the 2026-05-31
+SwiftKey account-export cutoff, consolidate planning into `ROADMAP.md`,
+backfill audit docs, ship settings search and search polish, add hardware
+keyboard import and per-app language/accent discovery, harden release gates
+with reproducible-build / Roborazzi / benchmark checks, refresh compatible
+dependency pins, surface staged startup crashes, harden restore/crash
+diagnostics, and refresh this root onboarding set to the current
+roadmap/completed/changelog source-of-truth contract.
 
 ## 4. Module layout
 
@@ -568,10 +585,11 @@ subsystem map in
 
 | If your change is… | Lives in… |
 |---|---|
-| One feature slice, one release | A new `## vX.Y.Z` section appended to [CHANGELOG.md](CHANGELOG.md) + a `gradle.properties` bump |
+| One feature slice, one release | A new `## vX.Y.Z` section appended to [CHANGELOG.md](CHANGELOG.md) + a `gradle.properties` bump + matching fastlane changelog |
 | A SwiftKey-parity slice (Phase A/B/C/D/E) | The "Phased plan" in [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) (snapshot; migrate active items into `ROADMAP.md`) |
-| A roadmap-tier change (NOW / NEXT / LATER / UNDER CONSIDERATION) | [ROADMAP.md](ROADMAP.md) §6/§7/§8/§9 |
-| A quality / a11y / perf / test / CI / release-hygiene workstream | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
+| A roadmap or active work change | [ROADMAP.md](ROADMAP.md) |
+| A shipped-state summary | [COMPLETED.md](COMPLETED.md) |
+| A quality / a11y / perf / test / CI / release-hygiene workstream | [ROADMAP.md](ROADMAP.md); historical context is archived at [docs/archive/IMPROVEMENT_PLAN_2026-05-18.md](docs/archive/IMPROVEMENT_PLAN_2026-05-18.md) |
 | A research finding that updates a prior roadmap claim | [docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) (snapshot; fold corrections into `ROADMAP.md`) |
 | A security / dependency / crypto migration | [docs/SECURITY.md](docs/SECURITY.md) + [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) + [docs/REPRODUCIBLE_BUILDS.md](docs/REPRODUCIBLE_BUILDS.md) |
 | Architecture or contributor workflow | [ARCHITECTURE.md](ARCHITECTURE.md) + [CONTRIBUTING.md](CONTRIBUTING.md) |
@@ -579,9 +597,10 @@ subsystem map in
 | An external-research prompt for a fresh AI session | [docs/AI_PROMPTS_EXTERNAL_WORK.md](docs/AI_PROMPTS_EXTERNAL_WORK.md) |
 | Addon spec (theme / dict / language / layout / popup-mapping pack) | [docs/addons/](docs/addons/) |
 
-The roadmap files are intentionally append-mostly. `ROADMAP.md` is now
-~340 KB and tracks the full history; the parity roadmap is the current
-sprint plan.
+`ROADMAP.md` is the active open-work source of truth and intentionally retains
+historical context. `COMPLETED.md` summarizes shipped roadmap state, and
+`CHANGELOG.md` is the only release-note stream. The parity roadmap and
+improvement plan are archived snapshots; do not route new work there.
 
 ## 7. Current sprint anchor
 
@@ -767,7 +786,7 @@ convention so prior runs remain auditable.
 | The big roadmap with full history | [ROADMAP.md](ROADMAP.md) |
 | The current sprint plan | [docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md) |
 | The latest research run's recommendations | [docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md](docs/archive/ROADMAP_RESEARCH_ADDENDUM_2026-05-17.md) (snapshot) |
-| Quality / a11y / perf / test plan | [IMPROVEMENT_PLAN.md](IMPROVEMENT_PLAN.md) |
+| Quality / a11y / perf / test plan | [ROADMAP.md](ROADMAP.md); archived context in [docs/archive/IMPROVEMENT_PLAN_2026-05-18.md](docs/archive/IMPROVEMENT_PLAN_2026-05-18.md) |
 | Threat model + security posture | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) + [docs/SECURITY.md](docs/SECURITY.md) |
 | What ships in the next release | Top section of [CHANGELOG.md](CHANGELOG.md) |
 | What I'm allowed to put in `:app` | §2 above + [ROADMAP.md](ROADMAP.md) §1, §10 |

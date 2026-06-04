@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.219 (versionCode 2019). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.220 (versionCode 2020). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -227,29 +227,27 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Docs & source-of-truth
 
-- [ ] 🤖 P2 — Refresh root onboarding docs to the v1.8.219 source of truth (R2-3)
-  - Why: The live roadmap is current, but the fast onboarding docs still mix
-    v1.8.170-era stack facts, archived `IMPROVEMENT_PLAN.md` references, and a
-    retired root `RELEASE_NOTES_v*.md` instruction. Future build passes use
-    these docs first, so stale routing increases the chance of wrong release or
-    planning edits.
-  - Evidence: `PROJECT_CONTEXT.md:4-6` and `PROJECT_CONTEXT.md:48` still say
-    v1.8.170; `PROJECT_CONTEXT.md:11`, `PROJECT_CONTEXT.md:574`, and
-    `PROJECT_CONTEXT.md:770` link root `IMPROVEMENT_PLAN.md` although the live
-    plan is archived; `ARCHITECTURE.md:3` is still "against the v1.8.170
-    codebase"; `CONTRIBUTING.md:145` still asks for root
-    `RELEASE_NOTES_vX.Y.Z.md` even though `AGENTS.md:84-86` and `CHANGELOG.md:3`
-    say the consolidated changelog replaced that pattern; `README.md:286-288`
-    starts its release-stream summary at v1.8.170 while current release is
-    v1.8.219.
+- [x] 🤖 P2 — Refresh root onboarding docs to the v1.8.220 source of truth (R2-3)
+  - Shipped v1.8.220: root onboarding docs now route open work to
+    `ROADMAP.md`, shipped state to `COMPLETED.md`, release notes to
+    `CHANGELOG.md` plus fastlane metadata, and archived parity/improvement
+    plans are clearly historical context.
+  - Why: The live roadmap is current, but the fast onboarding docs still mixed
+    older stack facts, archived-plan routes, and retired release-note
+    instructions. Future build passes use these docs first, so stale routing
+    increases the chance of wrong release or planning edits.
+  - Evidence: the pre-fix stale scan found outdated stack/version facts and
+    root release-note/planning routes in `PROJECT_CONTEXT.md`,
+    `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/REPO_HYGIENE.md`,
+    and `AGENTS.md`.
   - Touches: `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`,
-    `README.md`, and any stale root `IMPROVEMENT_PLAN.md` pointers in
-    docs/hygiene files.
+    `README.md`, `docs/REPO_HYGIENE.md`, `AGENTS.md`, and release ledgers.
   - Acceptance: root docs agree that `ROADMAP.md` is the open-work source,
     `COMPLETED.md` is shipped-state summary, `CHANGELOG.md` is the only release
-    note stream, and current stack/release facts match v1.8.219.
-  - Verify: `rg -n "v1\\.8\\.170|RELEASE_NOTES|IMPROVEMENT_PLAN\\.md|TODO\\.md|~340 KB" AGENTS.md PROJECT_CONTEXT.md ARCHITECTURE.md CONTRIBUTING.md README.md docs/REPO_HYGIENE.md`
-    returns only deliberate archived-context references.
+    note stream, and current stack/release facts match v1.8.220.
+  - Verify: stale reference scan; `:app:verifyNoInternetPermission`;
+    `:app:testDebugUnitTest`; `:app:lintDebug`; `:app:assembleDebug`;
+    fastlane metadata check; repo hygiene check.
   - Complexity: M
 
 ### Researcher Queue (Cycle 1 - 2026-06-04)
@@ -299,10 +297,16 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Acceptance: TalkBack announces a labelled search field, reads each result's screen + title, and reports result-count changes; checklist documents the flow.
   - Verify: manual TalkBack on-device; `:app:assembleDebug`.
   - Complexity: M
-- [ ] P3 — Surface settings search from Settings home (entry-point discoverability) (RA-8)
+- [x] P3 — Surface settings search from Settings home (entry-point discoverability) (RA-8)
+  - Confirmed 2026-06-04: Settings Home already exposes the search route as a
+    top app-bar action with `settings__search__title` content description, so
+    search is reachable from the first Settings screen without scrolling.
   - Why: Search is a registered route but reaching it depends on the home-screen wiring; a top-of-home search affordance (or app-bar icon) is the conventional discovery point and matches how Gboard/SwiftKey expose their settings search.
-  - Evidence: `git show --stat 1966c69` added `app/.../settings/HomeScreen.kt` (+10 lines) and `Routes.kt` (+6) for the route; confirm whether the entry is a persistent search bar at the top of home vs. a buried row, and align with platform convention.
-  - Touches: `HomeScreen.kt` (promote the search entry to a top affordance if it isn't already); no index changes.
+  - Evidence: `HomeScreen.kt:68-75` defines `actions { FlorisIconButton(...) }`,
+    `onClick = { navController.navigate(Routes.Settings.Search) }`, icon
+    `Icons.Default.Search`, and content description
+    `R.string.settings__search__title`.
+  - Touches: none; source already satisfies the row.
   - Acceptance: search is reachable from the first screen of Settings without scrolling.
-  - Verify: manual on-device.
+  - Verify: source inspection; optional manual on-device smoke.
   - Complexity: S
