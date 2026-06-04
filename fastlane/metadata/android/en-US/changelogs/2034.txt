@@ -1,0 +1,1 @@
+Backfills focused regression tests for post-v1.8.225 hotfixes: Arabic combining-mark shaping, unknown Snygg selectors, contentScale serialization, private-session trace suppression, and locale-scoped personal n-gram flush behavior. Focused app and Snygg unit-test filters passed; APK assembly skipped per operator request.

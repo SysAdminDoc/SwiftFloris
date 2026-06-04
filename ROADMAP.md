@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.233 (versionCode 2033). **Local verification:** focused `EditorInputConnectionBatchTest` passed in 2m08s with one Gradle worker; fastlane metadata gate passed for versionCode 2033; `git diff --check` passed; APK assembly and low-end sustained-typing device smoke were intentionally not run for this editor batch follow-up.
+**Current release:** v1.8.234 (versionCode 2034). **Local verification:** focused app and Snygg regression-test filters passed in 1m29s with one Gradle worker; XML test results confirmed the Kotest Arabic and n-gram guards were selected; fastlane metadata and `git diff --check` gates passed; APK assembly, full Gradle gate, and device QA were intentionally not run for this test-coverage batch per operator request.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -374,9 +374,9 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   post-v1.8.225 release-ledger evidence to the rewritten pushed hashes, checked
   current audit carry-forwards for duplicates, and widened into language-tag,
   Compose semantics, MIME-filter, and ByteBuffer platform contracts. Existing
-  R3-1/R3-4, RA-4/RA-9, and device-gated work remain valid; this cycle adds
-  four small, implementation-ready correctness/a11y/contract items and sharpens
-  WS13 with the deferred sticker-provider SAF validation.
+  RA-4/RA-9 and device-gated work remain valid; R3-1/R3-4 have since closed.
+  This cycle adds four small, implementation-ready correctness/a11y/contract
+  items and sharpens WS13 with the deferred sticker-provider SAF validation.
 
 #### Locale correctness
 
@@ -591,7 +591,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Regression coverage
 
-- [ ] 🤖 P2 — Backfill focused regression tests for the untested post-v1.8.225 hotfix surfaces (R3-4)
+- [x] 🤖 P2 — Backfill focused regression tests for the untested post-v1.8.225 hotfix surfaces (R3-4)
   - Why: The newest local fixes cover fragile crash/privacy/i18n paths, but the
     changed behavior is not fully pinned by tests. Without focused tests, the
     same regressions can reappear while the release ledger says the fixes are
@@ -610,6 +610,10 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     per-locale n-gram flush behavior each have focused regression coverage or a
     documented reason they require an extraction seam first.
   - Verify: focused test packages plus full Gradle gate.
+  - Shipped: v1.8.234 (2026-06-04) with combining-mark Arabic shaping
+    coverage, unknown-selector rejection coverage, full `contentScale`
+    serialization/default coverage, private-session recorder suppression
+    coverage, and source-level locale-scoped bigram/trigram flush guards.
   - Complexity: M
 
 ### Researcher Queue (Cycle 2 - 2026-06-04)

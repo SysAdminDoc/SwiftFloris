@@ -35,6 +35,11 @@ class ArabicShaperTest : FunSpec({
         ArabicShaper.shape("\u0628\u0628\u0628") shouldBe "\uFE91\uFE92\uFE90"
     }
 
+    test("combining marks are preserved while surrounding letters keep join context") {
+        // Beh + Fatha + Beh -> initial Beh + Fatha + final Beh.
+        ArabicShaper.shape("\u0628\u064E\u0628") shouldBe "\uFE91\u064E\uFE90"
+    }
+
     test("right-joining-only letter (Alef) takes final form after a joining letter") {
         // \u0628 + \u0627 (Beh + Alef) → initial Beh + final Alef.
         // Initial Beh = \uFE91, final Alef = \uFE8E.

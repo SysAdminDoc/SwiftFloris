@@ -60,7 +60,8 @@ tested clipboard-query helper by wiring it into the keyboard clipboard palette.
 R3-3 freezes the sealed-box envelope/KDF contract with deterministic vectors
 before sync transport persists envelopes, using libsodium sealed-box docs and
 RFC 5869 as primary references. R3-3 was later closed in v1.8.230. R3-4
-backfills regression tests for the newest hotfix surfaces.
+backfills regression tests for the newest hotfix surfaces and was later closed
+in v1.8.234.
 
 2026-06-04 freshness note: the live dirty tree has already moved EI7 out of active work into v1.8.207 release docs, with `VoiceInputEmptyStateCopyTest.kt` pinning the FUTO explanation and F-Droid install action. This pass did not run Gradle because repo instructions say not to run Android gates from this VM unless asked; the changelog's green Gradle evidence remains unverified here. Current external checks support the copy: FUTO's Voice Input page describes it as working entirely on-device with no stored data, latest F-Droid/standalone version v1.3.6 (28), and the source mirror says FUTO Voice Input remains available for third-party keyboards even though FUTO development has shifted toward FUTO Keyboard. Android-platform sources also moved: Android 17 API 37 setup docs are current, but SwiftFloris already keeps API 37 as a future behavior-gate decision. Maven metadata shows low-priority freshness drift rather than a security issue: Kotlin 2.4.0, Compose BOM 2026.05.01, AndroidX Core 1.19.0, and Roborazzi 1.63.0 are newer than the pinned versions, while Room 2.8.4, SQLCipher 4.16.0, Tink 1.21.0, and Robolectric 4.16.1 still match current metadata. A P3 dependency-refresh row was added to `ROADMAP.md`.
 
@@ -94,7 +95,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.233, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, and blocked user-dictionary system-back gestures now explain active save/delete/import/export work. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.234, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, and blocked user-dictionary system-back gestures now explain active save/delete/import/export work. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -109,16 +110,17 @@ Top opportunities (one line each):
 9. **Release-ledger reconciliation** — post-v1.8.225 fixes now have a normal version/changelog/fastlane/tag handoff in v1.8.226 (R3-1). [Closed]
 10. **Clipboard history search UI** — the in-keyboard clipboard palette now exposes the existing pure filter through a compact search row, composes query with type filters, and keeps no-results/clear states local-only (R3-2). [Closed]
 11. **Sealed-box contract vectors** — sync crypto now has deterministic v1 envelope/KDF vector coverage and compatibility docs before CRDT transport persists or exchanges encrypted deltas (R3-3). [Closed]
-12. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]
-13. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
-14. **Japanese locale capability gate** — `supportsAutoSpace` now uses the BCP-47 Japanese language subtag `ja`, and adjacent capability tables are pinned by `FlorisLocaleTest` (R4-1). [Closed]
-15. **Clipboard media TalkBack labels** — image/video history tiles expose visual thumbnails without a user-meaningful accessibility description (R4-2, P3). [Verified]
-16. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
-17. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
-18. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
-19. **Editor batch critical sections** — selection/commit hot paths now compute expected content before opening `InputConnection` batch edits, and batch pairs use `try/finally` (R6-1). [Closed]
-20. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
-21. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
+12. **Post-hotfix regression tests** — Arabic combining-mark shaping, Snygg selector/value recovery, private trace suppression, and per-locale n-gram flush behavior now have focused guards (R3-4). [Closed]
+13. **Search highlight lifecycle** — the global search highlight target is never consumed by production code, so stale result cards can reappear after the original search flow (RA-9, P2). [Verified]
+14. **Search result scroll reset** — populated non-blank queries now reset the result list to the top when the query changes (RA-10). [Closed]
+15. **Japanese locale capability gate** — `supportsAutoSpace` now uses the BCP-47 Japanese language subtag `ja`, and adjacent capability tables are pinned by `FlorisLocaleTest` (R4-1). [Closed]
+16. **Clipboard media TalkBack labels** — image/video history tiles expose visual thumbnails without a user-meaningful accessibility description (R4-2, P3). [Verified]
+17. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
+18. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
+19. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
+20. **Editor batch critical sections** — selection/commit hot paths now compute expected content before opening `InputConnection` batch edits, and batch pairs use `try/finally` (R6-1). [Closed]
+21. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
+22. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -210,6 +212,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Medium] Sealed-box contract vectors** → R3-3. Closed in v1.8.230:
   fixed X25519 keypairs now pin the v1 envelope bytes before sync transport
   persists encrypted deltas.
+- **[Closed v1.8.234] Post-hotfix regression coverage** → R3-4. Arabic
+  combining-mark shaping, unknown Snygg selectors, `contentScale`
+  serialization/default handling, private-session trace suppression, and
+  locale-scoped personal n-gram flush behavior now have focused regression
+  tests or source-level guards.
 - **[Medium] Japanese auto-space gate typo** → R4-1. `supportsAutoSpace`
   excludes `jp`, while Android and IANA use `ja` for Japanese.
 - **[Minor] Clipboard media thumbnails lack useful spoken labels** → R4-2.
@@ -261,7 +268,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   active work.
 - **Dependency health:** the security-sensitive pins checked here are still current for SQLCipher 4.16.0 and Tink 1.21.0, and Room/Robolectric also match metadata. The compatible P3 maintenance batch shipped in v1.8.216 (Compose BOM `2026.05.01`, KSP `2.3.9`, Roborazzi `1.63.0`). Kotlin `2.4.0` and AndroidX Core `1.19.0` remain gated on KSP publication and compileSdk 37 respectively; AGP 9.2.1 appears to be the stable baseline while Google Maven's newest AGP metadata is 9.3 alpha. [Verified via Maven metadata]
 - **Overgrown files:** `IndicTransliterator.kt` (~86 KB), `TextKeyboardLayout.kt` (~76 KB), `LatinLanguageProvider.kt` (~60 KB), `KeyboardManager.kt` (~60 KB) are large but the SHIFT state machine was already extracted (F27 shipped) and the audits already track `LatinLanguageProvider` heap risk (A1). Left as-is — no speculative refactor proposed.
-- **Testability:** 218 JVM test files, 5 androidTest. The search catalog's integrity and synonym-hit coverage are now pinned by RA-1 and RA-3, and the RA-10 scroll-reset guard is covered; RA-4 remains the manual/accessibility coverage gap.
+- **Testability:** 220 JVM test files, 5 androidTest. The search catalog's integrity and synonym-hit coverage are now pinned by RA-1 and RA-3, the RA-10 scroll-reset guard is covered, and R3-4 backfills the post-hotfix Arabic/Snygg/trace/n-gram regression surface; RA-4 remains the manual/accessibility coverage gap.
 - **Release automation:** mature (reproducible build, SBOM/provenance and signed-tags already roadmapped as maintainer-gated). No new item.
 - **Documentation routing:** root docs now align with the roadmap source-of-truth contract. `ROADMAP.md` owns active work, `COMPLETED.md` summarizes shipped state, `CHANGELOG.md` plus fastlane metadata owns release notes, and archived parity/improvement plans remain historical context. R2-3 closed this in v1.8.220 before future implementers pick stale instructions.
 
