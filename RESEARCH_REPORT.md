@@ -1,6 +1,15 @@
 # SwiftFloris Research Report
 
-This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 8.
+This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 9.
+
+2026-06-04 Cycle 9 note: after the Cycle 8 docs push, `master` is clean at
+`c566b73` (`v1.8.230-1-gc566b73`). Cycle 9 rechecked the suggestion privacy
+audit against live `NlpManager.suggest`, field-start incognito resolution,
+smart-compose sensitive-field guards, and Android `EditorInfo` privacy docs.
+Existing `SuggestionPrivacyPolicy` tests cover the policy decisions, but not
+request-scoped propagation across the async suggestion boundary. This cycle
+adds R9-1: snapshot suggestion privacy inputs before background candidate
+generation.
 
 2026-06-04 Cycle 8 note: after the Cycle 7 docs push, `master` is clean at
 `1d5bf2e`. Cycle 8 rechecked the user-dictionary operation/back-navigation
@@ -121,14 +130,15 @@ Top opportunities (one line each):
 20. **Editor batch critical sections** — selection/commit hot paths now compute expected content before opening `InputConnection` batch edits, and batch pairs use `try/finally` (R6-1). [Closed]
 21. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
 22. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
+23. **Suggestion privacy request snapshot** — async candidate generation re-reads live incognito/editor state instead of using request-scoped privacy inputs (R9-1, P2). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
 ## Evidence Reviewed
 
-- **Key files/dirs:** `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/` (`SettingsSearchIndex.kt`, `SettingsSearchScreen.kt`), `app/src/test/.../settings/search/SettingsSearchIndexTest.kt`, `FlorisLocale.kt`, `LayoutScriptClassifier.kt`, `EditorInstance.kt`, `AbstractEditorInstance.kt`, `KeyboardManager.kt`, `FlorisImeService.kt`, `UserDictionaryScreen.kt`, `UserDictionaryEntryPolicy.kt`, `UserDictionaryEntryPolicyTest.kt`, `ClipboardInputLayout.kt`, `MimeTypeFilter.kt`, `MimeTypeFilterTest.kt`, `Native.kt`, `AddonContract.kt`, `AddonEnumerator.kt`, `AddonRegistry.kt`, `AddonRegistryStartup.kt`, `AddonsSettingsScreen.kt`, `AddonRegistryTest.kt`, `AddonRegistryStartupTest.kt`, `FlorisApplication.kt`, `FlorisAppActivity.kt`, `lib/crashutility/CrashUtility.kt`, `RestoreScreen.kt`, `BackupScreen.kt`, `Flog.kt`, `gradle/libs.versions.toml`, `gradle.properties`, `app/src/main/AndroidManifest.xml`, `app/src/main/res/values/strings.xml`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/ACCESSIBILITY.md`, `docs/addons/dictionary-pack-spec.md`, `docs/THREAT_MODEL.md`, `docs/PRIVACY_AND_AI.md`, `docs/AUDIT_2026-05-28.md`, `docs/AUDIT_2026-05-29.md`, `docs/AUDIT_2026-06-02.md`, `.github/workflows/*`, and the three `docs/AUDIT_2026-*.md` reports (read-only).
+- **Key files/dirs:** `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/` (`SettingsSearchIndex.kt`, `SettingsSearchScreen.kt`), `app/src/test/.../settings/search/SettingsSearchIndexTest.kt`, `FlorisLocale.kt`, `LayoutScriptClassifier.kt`, `EditorInstance.kt`, `AbstractEditorInstance.kt`, `KeyboardManager.kt`, `FlorisImeService.kt`, `NlpManager.kt`, `SuggestionPrivacyPolicy.kt`, `SuggestionPrivacyPolicyTest.kt`, `SensitiveFieldGuard.kt`, `UserDictionaryScreen.kt`, `UserDictionaryEntryPolicy.kt`, `UserDictionaryEntryPolicyTest.kt`, `ClipboardInputLayout.kt`, `MimeTypeFilter.kt`, `MimeTypeFilterTest.kt`, `Native.kt`, `AddonContract.kt`, `AddonEnumerator.kt`, `AddonRegistry.kt`, `AddonRegistryStartup.kt`, `AddonsSettingsScreen.kt`, `AddonRegistryTest.kt`, `AddonRegistryStartupTest.kt`, `FlorisApplication.kt`, `FlorisAppActivity.kt`, `lib/crashutility/CrashUtility.kt`, `RestoreScreen.kt`, `BackupScreen.kt`, `Flog.kt`, `gradle/libs.versions.toml`, `gradle.properties`, `app/src/main/AndroidManifest.xml`, `app/src/main/res/values/strings.xml`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/ACCESSIBILITY.md`, `docs/addons/dictionary-pack-spec.md`, `docs/THREAT_MODEL.md`, `docs/PRIVACY_AND_AI.md`, `docs/AUDIT_2026-05-28.md`, `docs/AUDIT_2026-05-29.md`, `docs/AUDIT_2026-06-02.md`, `.github/workflows/*`, and the three `docs/AUDIT_2026-*.md` reports (read-only).
 - **Git range:** `git log --oneline -n 40`; `git show --stat --oneline v1.8.223..HEAD` confirmed v1.8.224 -> v1.8.225 docs/build/release movement plus pushed n-gram/thread-safety/crypto/privacy, Arabic-shaping, Snygg, and Cycle 3 docs commits through `dc72e32`.
-- **External sources / standards:** IANA Language Subtag Registry (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`); Android `Locale` reference (`https://developer.android.com/reference/java/util/Locale`); Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); AndroidX `BackHandler` reference (`https://developer.android.com/reference/kotlin/androidx/activity/compose/BackHandler.composable`); AndroidX `MimeTypeFilter` reference (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`); Android `ClipDescription.compareMimeTypes` reference (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`); Android `ByteBuffer` reference (`https://developer.android.com/reference/java/nio/ByteBuffer`); Android `InputConnection` reference (`https://developer.android.com/reference/android/view/inputmethod/InputConnection`); Android `WindowManager.LayoutParams.FLAG_SECURE` reference (`https://developer.android.com/reference/android/view/WindowManager.LayoutParams`); Android custom `<permission>` / `signature` protection docs (`https://developer.android.com/guide/topics/manifest/permission-element`); Android package visibility and `<queries>` docs (`https://developer.android.com/training/package-visibility`, `https://developer.android.com/training/package-visibility/declaring`); Android `SigningInfo` reference (`https://developer.android.com/reference/android/content/pm/SigningInfo`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
+- **External sources / standards:** IANA Language Subtag Registry (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`); Android `Locale` reference (`https://developer.android.com/reference/java/util/Locale`); Android `EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING` reference (`https://developer.android.com/reference/android/view/inputmethod/EditorInfo#IME_FLAG_NO_PERSONALIZED_LEARNING`); Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); AndroidX `BackHandler` reference (`https://developer.android.com/reference/kotlin/androidx/activity/compose/BackHandler.composable`); AndroidX `MimeTypeFilter` reference (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`); Android `ClipDescription.compareMimeTypes` reference (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`); Android `ByteBuffer` reference (`https://developer.android.com/reference/java/nio/ByteBuffer`); Android `InputConnection` reference (`https://developer.android.com/reference/android/view/inputmethod/InputConnection`); Android `WindowManager.LayoutParams.FLAG_SECURE` reference (`https://developer.android.com/reference/android/view/WindowManager.LayoutParams`); Android custom `<permission>` / `signature` protection docs (`https://developer.android.com/guide/topics/manifest/permission-element`); Android package visibility and `<queries>` docs (`https://developer.android.com/training/package-visibility`, `https://developer.android.com/training/package-visibility/declaring`); Android `SigningInfo` reference (`https://developer.android.com/reference/android/content/pm/SigningInfo`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
 - **Unverifiable here:** This research-only pass did not run Gradle or device QA; on-device focus/IME-raise behavior, TalkBack output, and clipboard palette interaction remain manual acceptance criteria for the build machine. [Needs validation]
 
 ## Current Product Map
@@ -166,10 +176,15 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   closes R6-1 by moving expected-content generation/queue pushes before the
   selected `InputConnection` batches and by pinning `try/finally` batch-pairing
   tests. [Closed]
-- **Sensitive-window privacy (partial):** password-field `FLAG_SECURE` and
-  field-start incognito coverage exist, but dynamic incognito toggles do not
-  re-apply the window flag until the next field start. R7-1 closes the
-  mid-session gap. [Verified]
+- **Sensitive-window privacy:** password-field `FLAG_SECURE`, field-start
+  incognito coverage, and dynamic-incognito toggle re-application now exist.
+  v1.8.231 closes R7-1 by re-running the secure-window policy for the active
+  field whenever dynamic incognito changes. [Closed]
+- **Suggestion privacy request scope (partial):** field-start policy correctly
+  resolves `activeState.isIncognitoMode`, and `SuggestionPrivacyPolicy` covers
+  the policy functions, but `NlpManager.suggest` still re-reads live incognito
+  and editor-info state inside async candidate generation. R9-1 freezes those
+  request inputs before providers, traces, and ghost text run. [Verified]
 - **User-dictionary operation UX:** entry save/delete and dictionary
   import/export operations are gated by `UserDictionaryEntryPolicy` and visible
   progress cards. v1.8.232 closes R8-1 by adding blocked-back feedback for the
@@ -238,6 +253,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Closed v1.8.232] User-dictionary blocked-back feedback** → R8-1. Active
   dictionary operations still block exits, but the intercepted system-back
   gesture now shows operation-specific keep-screen-open feedback.
+- **[Medium] Suggestion privacy request snapshot** → R9-1. Snapshot incognito,
+  sensitivity, and suggestion preference inputs before async candidate
+  generation, so stale requests cannot use privacy state from a later field or
+  toggle.
 
 ## Architecture & Technical Findings
 
@@ -262,6 +281,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Editor hot path:** v1.8.233 keeps the existing expected-content model but
   removes blocking/queue work from the selected open editor batches and pins the
   synchronous `InputConnection` call order with tests.
+- **Suggestion request boundary:** `NlpManager.suggest` has request-id ordering,
+  but privacy and editor sensitivity are not part of the request object. R9-1
+  should keep the request ordering and add immutable request inputs for provider
+  calls, typing traces, and ghost-text gating.
 - **User-dictionary navigation policy:** `UserDictionaryEntryPolicy` correctly
   centralizes leave/mutation/transfer gates. v1.8.232 keeps that policy and
   adds a visible response when Compose back handling blocks the gesture during
@@ -274,7 +297,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 is privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
@@ -295,6 +318,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
    clipboard media labels are hard to validate with JVM tests alone.
 4. v1.8.232 still needs manual system-back and TalkBack verification during an
    active dictionary import/export or save/delete operation.
+5. R9-1 needs fake-provider tests for delayed suggestions plus a manual dynamic
+   incognito smoke; no maintainer product decision is required.
 
 ## Archived Evidence
 
@@ -323,3 +348,6 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
   `WindowManager.LayoutParams.FLAG_SECURE`.
 - Cycle 8 companion: `.ai/research/2026-06-04/CYCLE_8_FINDINGS.md`.
 - Cycle 8 external source classes checked: AndroidX `BackHandler`.
+- Cycle 9 companion: `.ai/research/2026-06-04/CYCLE_9_FINDINGS.md`.
+- Cycle 9 external source classes checked: Android `EditorInfo` /
+  `IME_FLAG_NO_PERSONALIZED_LEARNING`.

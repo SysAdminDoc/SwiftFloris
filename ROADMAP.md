@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 8 - 2026-06-04.
+> Last researched: Cycle 9 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -160,6 +160,64 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 9 - 2026-06-04)
+
+- [x] 🔬 `nlp-request-privacy-snapshot-recheck-2026-06-04` - synced
+  `master` at the Cycle 8 pushed tip, rechecked the remaining suggestion
+  privacy/state audit against live `NlpManager.suggest`, field-start incognito
+  resolution, smart-compose sensitive-field guards, and Android `EditorInfo`
+  privacy docs. Existing `SuggestionPrivacyPolicy` tests cover the policy
+  decisions, but not the async request boundary. This cycle adds one focused
+  privacy row for request-scoped candidate generation inputs.
+
+#### NLP request privacy
+
+- [ ] 🤖 P2 — Snapshot suggestion privacy inputs before async candidate generation (R9-1)
+  - Why: `NlpManager.suggest` captures the `EditorContent` and `Subtype` for a
+    request, then launches background work that re-reads live preference,
+    incognito, and editor-info state before calling suggestion providers,
+    recording typing traces, and deciding whether smart-compose ghost text is
+    allowed. If the user toggles incognito or the IME switches fields before
+    that coroutine reaches those gates, candidate generation can use privacy
+    facts from a different field/session than the text snapshot it is
+    processing. The request-id guard prevents older results from overwriting
+    newer candidates, but it does not freeze provider inputs or side effects
+    that already ran inside the stale request.
+  - Evidence: `NlpManager.kt:211-214` captures `content`, `subtype`, and a
+    `requestId` before `scope.launch`; `NlpManager.kt:216-244` reads
+    `prefs.emoji.suggestionEnabled`, `prefs.suggestion.blockPossiblyOffensive`,
+    `prefs.suggestion.enabled`, and `keyboardManager.activeState.isIncognitoMode`
+    inside the coroutine; `NlpManager.kt:277-286` records typing-trace evidence
+    using the live incognito flag; `NlpManager.kt:295` and
+    `NlpManager.kt:322-324` let ghost text consult `editorInstance.activeInfo`
+    after the async boundary; `NlpManager.kt:299-306` orders publication by
+    request id but only after providers and trace logging have run;
+    `EditorInstance.kt:151-155` resolves `activeState.isIncognitoMode` from
+    each field's `IME_FLAG_NO_PERSONALIZED_LEARNING` and incognito preference;
+    `KeyboardManager.kt:739-741` mutates the same live state for dynamic
+    incognito toggles; `SuggestionPrivacyPolicyTest.kt:24-113` covers the
+    policy functions but not request-scoped propagation through `NlpManager`.
+    Android `EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING` docs define the
+    host-app privacy request for typing history / personalized language models
+    (`https://developer.android.com/reference/android/view/inputmethod/EditorInfo#IME_FLAG_NO_PERSONALIZED_LEARNING`).
+  - Touches: `NlpManager.kt`, a small immutable request/context data class if
+    helpful, `SuggestionPrivacyPolicy` only if request-snapshot helpers belong
+    there, and focused fake-provider tests under `app/src/test/.../ime/nlp`.
+  - Acceptance: `suggest(...)` snapshots privacy-relevant inputs before
+    launching provider work; emoji/word providers, typing-trace recording, and
+    ghost-text gating all consume the same request-scoped `isPrivateSession`,
+    offensive-content flag, enabled flags, and active editor sensitivity; no
+    content-scoped async path reads `keyboardManager.activeState.isIncognitoMode`
+    or `editorInstance.activeInfo` after the launch boundary; existing request
+    ordering still prevents stale candidate publication; tests simulate
+    incognito/field changes while a fake provider is delayed and prove the
+    original request's privacy decision is preserved.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.nlp.*"` plus a manual smoke where dynamic
+    incognito is toggled during typing and suggestions/typing-trace output stay
+    aligned with the request that produced the candidates.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 8 - 2026-06-04)
 
