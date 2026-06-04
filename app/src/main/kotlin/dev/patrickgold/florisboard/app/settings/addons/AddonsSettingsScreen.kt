@@ -34,8 +34,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonManifest
+import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonSigningPinSet
@@ -73,6 +75,9 @@ fun AddonsSettingsScreen() = FlorisScreen {
     val scope = rememberCoroutineScope()
     val dictionaryCatalogReader = remember(context) {
         DictionaryPackCatalogReader(context.applicationContext)
+    }
+    val trustedRootSigningCertSha256 = remember(context) {
+        SigningFingerprint.sha256(context.applicationContext)
     }
     val persistedPinsRaw by prefs.addon.signingCertPins.collectAsState()
     var snapshot by remember { mutableStateOf(AddonRegistryStore.active().lastRefresh()) }
@@ -116,6 +121,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     AddonRegistryStartup.reconcile(
                         discovered = discovered,
                         persistedSigningPinsRaw = persistedPins,
+                        trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
                     )
                 }
                 publishReconcileResult(result)
@@ -249,7 +255,22 @@ fun AddonsSettingsScreen() = FlorisScreen {
                             .replace("{package}", rejected.packageName)
                             .replace("{reason}", rejected.reason),
                     )
-                    if (rejected.packageName in pinnedPackageNames) {
+                    if (rejected.reason == AddonRegistry.ReasonExplicitTrustRequired) {
+                        Preference(
+                            icon = Icons.Default.Refresh,
+                            title = stringRes(R.string.settings__addons__trust_new_certificate),
+                            summary = stringRes(R.string.settings__addons__trust_new_certificate_summary)
+                                .replace("{package}", rejected.packageName),
+                            enabledIf = { !scanInProgress },
+                            onClick = {
+                                pendingPinAction = SigningPinAction.TrustNewCertificate(
+                                    packageName = rejected.packageName,
+                                    displayName = rejected.displayName,
+                                    signingCertSha256 = rejected.signingCertSha256,
+                                )
+                            },
+                        )
+                    } else if (rejected.packageName in pinnedPackageNames) {
                         Preference(
                             icon = Icons.Default.Refresh,
                             title = stringRes(R.string.settings__addons__trust_changed_certificate),
@@ -260,6 +281,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                                 pendingPinAction = SigningPinAction.TrustChangedCertificate(
                                     packageName = rejected.packageName,
                                     displayName = rejected.displayName,
+                                    signingCertSha256 = rejected.signingCertSha256,
                                 )
                             },
                         )
@@ -283,9 +305,15 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     pendingPinAction = null
                     when (action) {
                         SigningPinAction.ResetAll -> resetTrustDecisions()
+                        is SigningPinAction.TrustNewCertificate -> {
+                            val nextPins = AddonSigningPinSet.parse(prefs.addon.signingCertPins.get())
+                                .withPinnedCertificate(action.packageName, action.signingCertSha256)
+                                .encode()
+                            rescanInstalledAddons(persistedPinsOverride = nextPins)
+                        }
                         is SigningPinAction.TrustChangedCertificate -> {
                             val nextPins = AddonSigningPinSet.parse(prefs.addon.signingCertPins.get())
-                                .withoutPackage(action.packageName)
+                                .withPinnedCertificate(action.packageName, action.signingCertSha256)
                                 .encode()
                             rescanInstalledAddons(persistedPinsOverride = nextPins)
                         }
@@ -350,9 +378,16 @@ private fun formatBundleSize(bytes: Long): String {
 private sealed interface SigningPinAction {
     data object ResetAll : SigningPinAction
 
+    data class TrustNewCertificate(
+        val packageName: String,
+        val displayName: String?,
+        val signingCertSha256: String,
+    ) : SigningPinAction
+
     data class TrustChangedCertificate(
         val packageName: String,
         val displayName: String?,
+        val signingCertSha256: String,
     ) : SigningPinAction
 }
 
@@ -374,6 +409,24 @@ private fun SigningPinActionDialog(
                 Text(text = stringRes(R.string.settings__addons__reset_trust_confirm_message))
             }
         }
+        is SigningPinAction.TrustNewCertificate -> {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__addons__trust_new_certificate_confirm_title),
+                confirmLabel = stringRes(R.string.settings__addons__trust_new_certificate_confirm),
+                onConfirm = onConfirm,
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = onDismiss,
+            ) {
+                Text(
+                    text = stringRes(
+                        R.string.settings__addons__trust_new_certificate_confirm_message,
+                        "package" to action.packageName,
+                        "name" to (action.displayName ?: action.packageName),
+                        "fingerprint" to action.signingCertSha256,
+                    ),
+                )
+            }
+        }
         is SigningPinAction.TrustChangedCertificate -> {
             JetPrefAlertDialog(
                 title = stringRes(R.string.settings__addons__trust_changed_certificate_confirm_title),
@@ -387,6 +440,7 @@ private fun SigningPinActionDialog(
                         R.string.settings__addons__trust_changed_certificate_confirm_message,
                         "package" to action.packageName,
                         "name" to (action.displayName ?: action.packageName),
+                        "fingerprint" to action.signingCertSha256,
                     ),
                 )
             }

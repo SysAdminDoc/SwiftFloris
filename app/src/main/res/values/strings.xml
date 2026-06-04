@@ -1993,9 +1993,9 @@
     <string name="settings__addons__rescan_running_summary" comment="Addons settings progress summary">Keep this screen open while SwiftFloris scans installed packages, verifies addon metadata, and refreshes dictionary-pack details.</string>
     <string name="settings__addons__rescan_summary" comment="Addons settings action summary">Runs the same no-network and signing-certificate checks used by IME startup.</string>
     <string name="settings__addons__reset_trust" comment="Addons settings action title">Reset addon trust decisions</string>
-    <string name="settings__addons__reset_trust_summary" comment="Addons settings action summary">Clears saved signing-certificate pins. Installed addons stay disabled until a rescan records the current certificates again.</string>
+    <string name="settings__addons__reset_trust_summary" comment="Addons settings action summary">Clears saved signing-certificate pins. Non-co-signed addons stay disabled until you explicitly trust their current certificates again.</string>
     <string name="settings__addons__reset_trust_confirm_title" comment="Addons trust reset confirmation title">Reset addon trust?</string>
-    <string name="settings__addons__reset_trust_confirm_message" comment="Addons trust reset confirmation message">This clears every saved addon signing-certificate pin. Rescan only after you have verified the addon APKs you want to trust.</string>
+    <string name="settings__addons__reset_trust_confirm_message" comment="Addons trust reset confirmation message">This clears every saved addon signing-certificate pin. Co-signed addons can still load automatically; every other addon must be trusted again from the rejected list.</string>
     <string name="settings__addons__rescan_failed" comment="Addons settings error row title">Addon scan failed</string>
     <string name="settings__addons__none_installed" comment="Addons settings empty-state title">No addon APKs accepted</string>
     <string name="settings__addons__none_installed_summary" comment="Addons settings empty-state summary">Install a sibling addon APK that declares the SwiftFloris addon metadata, then rescan or restart the IME service.</string>
@@ -2007,12 +2007,17 @@
     <string name="settings__addons__dictionary_pack_rejected" comment="Dictionary-pack descriptor rejection row title">Dictionary pack descriptor rejected</string>
     <string name="settings__addons__dictionary_pack_rejected_summary" comment="Dictionary-pack descriptor rejection row summary; {package}, {reason} = descriptor rejection fields">Package: {package}\nReason: {reason}</string>
     <string name="settings__addons__rejected_summary" comment="Rejected addon row summary; {package} = package name, {reason} = rejection reason">Package: {package}\nReason: {reason}</string>
+    <string name="settings__addons__trust_new_certificate" comment="Addons settings action title">Trust addon certificate</string>
+    <string name="settings__addons__trust_new_certificate_summary" comment="Addons settings action summary; {package} = package name">Enable {package} by saving its current signing certificate as an explicit trust decision.</string>
+    <string name="settings__addons__trust_new_certificate_confirm" comment="Addons new certificate confirmation button">Trust addon</string>
+    <string name="settings__addons__trust_new_certificate_confirm_title" comment="Addons new certificate confirmation title">Trust this addon?</string>
+    <string name="settings__addons__trust_new_certificate_confirm_message" comment="Addons new certificate confirmation message; {name} = display name, {package} = package name, {fingerprint} = SHA-256 fingerprint">Only continue if you intentionally installed {name} ({package}) and verified this signing fingerprint:\n{fingerprint}</string>
     <string name="settings__addons__trust_changed_certificate" comment="Addons settings action title">Trust current certificate</string>
-    <string name="settings__addons__trust_changed_certificate_summary" comment="Addons settings action summary; {package} = package name">Clears the old pin for {package}, rescans, and records the currently installed certificate if the addon still passes validation.</string>
+    <string name="settings__addons__trust_changed_certificate_summary" comment="Addons settings action summary; {package} = package name">Replaces the old saved pin for {package} with the currently installed certificate after confirmation.</string>
     <string name="settings__addons__trust_changed_certificate_confirm" comment="Addons changed certificate confirmation button">Trust certificate</string>
     <string name="settings__addons__trust_changed_certificate_confirm_title" comment="Addons changed certificate confirmation title">Trust changed certificate?</string>
-    <string name="settings__addons__trust_changed_certificate_confirm_message" comment="Addons changed certificate confirmation message; {name} = display name, {package} = package name">Only continue if you verified this update for {name} ({package}). SwiftFloris will forget the old certificate pin and rescan the installed addon.</string>
+    <string name="settings__addons__trust_changed_certificate_confirm_message" comment="Addons changed certificate confirmation message; {name} = display name, {package} = package name, {fingerprint} = SHA-256 fingerprint">Only continue if you verified this update for {name} ({package}). SwiftFloris will replace the old certificate pin with:\n{fingerprint}</string>
     <string name="settings__addons__install_title" comment="Addons install guidance row title">Install trusted local addons only</string>
-    <string name="settings__addons__install_summary" comment="Addons install guidance row summary">SwiftFloris accepts addon APKs only when they declare supported metadata, avoid all network permissions, keep their first-seen signing certificate, and expose compatible descriptor resources. Use trusted local packages from F-Droid, Obtainium, or direct APK sources you can verify.</string>
+    <string name="settings__addons__install_summary" comment="Addons install guidance row summary">SwiftFloris accepts addon APKs only when they declare supported metadata, avoid all network permissions, match the IME signing certificate or an explicit trust decision, and expose compatible descriptor resources. Use trusted local packages from F-Droid, Obtainium, or direct APK sources you can verify.</string>
 
 </resources>

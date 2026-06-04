@@ -42,20 +42,50 @@ private fun startupManifest(
 )
 
 class AddonRegistryStartupTest : FunSpec({
-    test("reconcile accepts new addons and emits updated persisted pins") {
+    test("reconcile accepts co-signed addons without saving explicit pins") {
         val result = AddonRegistryStartup.reconcile(
             discovered = listOf(startupManifest("org.swiftfloris.dict.pl")),
             persistedSigningPinsRaw = "",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
         )
 
         result.snapshot.accepted.map { it.packageName } shouldContainExactly listOf(
             "org.swiftfloris.dict.pl",
         )
-        result.encodedSigningPins shouldBe "org.swiftfloris.dict.pl=$STARTUP_SHA_A"
-        result.signingPinsChanged shouldBe true
+        result.encodedSigningPins shouldBe ""
+        result.signingPinsChanged shouldBe false
         result.registry.dictionaryPacks().map { it.packageName } shouldContainExactly listOf(
             "org.swiftfloris.dict.pl",
         )
+    }
+
+    test("reconcile keeps first-seen external addons pending until a pin exists") {
+        val result = AddonRegistryStartup.reconcile(
+            discovered = listOf(startupManifest("org.swiftfloris.dict.pl", STARTUP_SHA_B)),
+            persistedSigningPinsRaw = "",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
+        )
+
+        result.snapshot.accepted shouldBe emptyList()
+        result.snapshot.rejected.single().reason shouldBe AddonRegistry.ReasonExplicitTrustRequired
+        result.snapshot.rejected.single().signingCertSha256 shouldBe STARTUP_SHA_B
+        result.encodedSigningPins shouldBe ""
+        result.signingPinsChanged shouldBe false
+    }
+
+    test("reconcile accepts explicitly pinned external addons") {
+        val result = AddonRegistryStartup.reconcile(
+            discovered = listOf(startupManifest("org.swiftfloris.dict.pl", STARTUP_SHA_B)),
+            persistedSigningPinsRaw = "org.swiftfloris.dict.pl=$STARTUP_SHA_B",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
+        )
+
+        result.snapshot.accepted.map { it.packageName } shouldContainExactly listOf(
+            "org.swiftfloris.dict.pl",
+        )
+        result.snapshot.rejected shouldBe emptyList()
+        result.encodedSigningPins shouldBe "org.swiftfloris.dict.pl=$STARTUP_SHA_B"
+        result.signingPinsChanged shouldBe false
     }
 
     test("reconcile rejects changed-certificate addon and preserves old pin") {
@@ -65,7 +95,7 @@ class AddonRegistryStartupTest : FunSpec({
         )
 
         result.snapshot.accepted shouldBe emptyList()
-        result.snapshot.rejected.single().reason shouldBe "signing certificate changed"
+        result.snapshot.rejected.single().reason shouldBe AddonRegistry.ReasonSigningCertificateChanged
         result.encodedSigningPins shouldBe "org.swiftfloris.dict.pl=$STARTUP_SHA_A"
         result.signingPinsChanged shouldBe false
     }
@@ -88,6 +118,7 @@ class AddonRegistryStartupTest : FunSpec({
         val result = AddonRegistryStartup.reconcile(
             discovered = listOf(startupManifest("org.swiftfloris.dict.pl")),
             persistedSigningPinsRaw = "",
+            trustedRootSigningCertSha256 = STARTUP_SHA_A,
         )
 
         AddonRegistryStore.setActive(result.registry)

@@ -3,7 +3,7 @@
 **Maintained at root for fast onboarding.**
 **Last consolidated:** 2026-06-04 (from the autonomous research run at
 [`.ai/research/2026-05-17/`](.ai/research/2026-05-17/) plus follow-up slices
-through v1.8.228).
+through v1.8.229).
 
 This file is the single fastest read for an AI session, new contributor, or
 maintainer-context refresh. It does **not** replace [ROADMAP.md](ROADMAP.md),
@@ -47,7 +47,7 @@ them requires changing both the relevant code *and* the gate.
 If a proposed change conflicts with any of these, the answer is "move that
 feature into an addon" — never "loosen the invariant."
 
-## 3. Stack at HEAD (v1.8.228)
+## 3. Stack at HEAD (v1.8.229)
 
 ```
 Kotlin 2.3.21 · Compose BOM 2026.05.01 · Material 3 + material-kolor 4.1.1
@@ -135,7 +135,7 @@ OpenSSL provider state, migration triggers, OpenSSL proof-of-concept steps,
 
 v1.8.81 ships the Next-10.3a addon catalog foundation. `AddonRegistry`
 reconciles `AddonEnumerator` snapshots into process-live addon state, preserves
-first-seen signing-certificate pins, rejects package-name hijacks with changed
+explicit signing-certificate pins, rejects package-name hijacks with changed
 certificates, and exposes deterministic addon lookups. `DictionaryPackCatalog`
 validates enrolled dictionary-pack descriptor JSON, rejects missing/malformed/
 future-schema descriptors, exposes per-language catalog entries, and produces
@@ -144,7 +144,7 @@ asset-mounting slice.
 
 v1.8.82 ships the Next-10.3b persisted signing-pin foundation.
 `AddonSigningPinSet` parses/encodes the newline-string `packageName=SHA-256`
-pin format with malformed-line tolerance and first-seen preservation,
+pin format with malformed-line tolerance and explicit pin replacement,
 `prefs.addon.signingCertPins` is the durable JetPref key, and `AddonRegistry`
 can round-trip through the codec without depending on JetPref directly.
 
@@ -152,8 +152,8 @@ v1.8.83 ships the Next-10.3c addon registry startup wiring.
 `FlorisImeService` scans installed addon manifests on startup through
 `AddonEnumerator`, `AddonRegistryStartup` reconciles that snapshot against the
 persisted signing-pin string, `AddonRegistryStore` publishes the active
-process-wide registry, and canonical pins are written back only when first-seen
-addons or malformed stored lines change the trust set.
+process-wide registry, and canonical pins are written back only when malformed
+stored lines or explicit Settings trust/reset actions change the trust set.
 
 v1.8.84 ships the Next-10.3d Settings -> Addons read-only status surface.
 `AddonsSettingsScreen` lets users inspect accepted/rejected addon APKs, manually
@@ -168,6 +168,10 @@ of bundled Latin dictionary baselines, and invalidated when addon registry
 generation changes. v1.8.126 closes the Settings catalog/install-hint polish
 with a dictionary-pack catalog group, descriptor rejection rows, and updated
 install guidance.
+v1.8.229 closes the addon trust-boundary mismatch: co-signed addons still enroll
+automatically, but every first-seen non-co-signed addon is shown as rejected
+until Settings writes an explicit signing-certificate pin. Changed-certificate
+addons remain rejected until a separate trust action replaces the old pin.
 
 **v1.8.85 – v1.8.103** ships a 19-release session covering the sixth research-
 pass cross-subsystem hardening + the F1 – F12 follow-up roster + outreach
@@ -200,7 +204,7 @@ and in [`ROADMAP.md` §0 v5.5 + v5.4](ROADMAP.md). Net deltas to invariants:
   at `docs/outreach/2026-05-17-swiftkey-migration/` covering
   AlternativeTo, BGR, Android Authority, and r/Swiftkey.
 
-**v1.8.104 - v1.8.228** ships the seventh research-pass privacy,
+**v1.8.104 - v1.8.229** ships the seventh research-pass privacy,
 voice, clipboard, NLP, visual-regression, Addons trust/asset/catalog layer, and
 input-behavior testability plus conservative lint/dependency cleanup and
 performance-baseline / CI-quality / repo-hygiene / destructive-confirmation
@@ -534,7 +538,7 @@ keyboard preview field now renders as a distinct bottom surface, exposes
 ready/active focus-state feedback, preserves bottom-bar traversal ordering, and
 uses coroutine-safe feedback when Android cannot open the keyboard picker.
 
-v1.8.171 through v1.8.228 refresh the release front door after the 2026-05-31
+v1.8.171 through v1.8.229 refresh the release front door after the 2026-05-31
 SwiftKey account-export cutoff, consolidate planning into `ROADMAP.md`,
 backfill audit docs, ship settings search and search polish, add hardware
 keyboard import and per-app language/accent discovery, harden release gates
@@ -557,6 +561,8 @@ JVM coverage for the adjacent script-sensitive language table.
 v1.8.228 wires the existing clipboard search helper into the keyboard clipboard
 palette, adds the visible Settings toggle, composes search with type filters,
 and keeps clear/no-results behavior local-only.
+v1.8.229 requires explicit Settings trust before non-co-signed addon APKs can
+enroll, while preserving automatic enrollment for co-signed addons.
 
 ## 4. Module layout
 

@@ -22,7 +22,7 @@ trust-boundary audit findings against live addon enrollment code and current
 Android package-visibility/signature-permission docs. The signing-history pin
 bypass is already fixed, and Tasker extras bounds are already present, so this
 cycle adds one focused row: R5-1 requires explicit first-run trust before a
-non-co-signed addon package is enrolled.
+non-co-signed addon package is enrolled. R5-1 was later closed in v1.8.229.
 
 2026-06-04 Cycle 4 note: after the Cycle 3 docs push, `master` is clean at
 `dc72e32` (`v1.8.223-6-gdc72e32`) with no tag at HEAD. R3-1 was later closed
@@ -85,7 +85,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.228, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, and clipboard history search is wired into the keyboard palette. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on sync-crypto contract tests and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.229, the post-v1.8.225 pushed fixes are covered by a release ledger, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, and non-co-signed addon enrollment now requires explicit Settings trust. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on sync-crypto contract tests and small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll polish, while accessibility/highlight-lifecycle gaps remain. [Verified]
 
 Top opportunities (one line each):
 
@@ -106,7 +106,7 @@ Top opportunities (one line each):
 15. **Clipboard media TalkBack labels** — image/video history tiles expose visual thumbnails without a user-meaningful accessibility description (R4-2, P3). [Verified]
 16. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
 17. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
-18. **Addon first-run trust gate** — first-seen addon packages are auto-pinned even when they are not co-signed, contrary to the documented co-signed-or-explicit-trust contract (R5-1, P1). [Verified]
+18. **Addon first-run trust gate** — first-seen non-co-signed addon packages now stay rejected until Settings records an explicit signing-certificate pin; co-signed packages still enroll automatically (R5-1). [Closed]
 19. **Editor batch critical sections** — selection/commit hot paths keep `InputConnection` batch edits open while `runBlocking` and expected-content queue locks run (R6-1, P2). [Verified]
 20. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes do not re-run the secure-window policy until the next field start (R7-1, P2). [Verified]
 
@@ -142,11 +142,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   AES-GCM and an HMAC-based KDF after the latest local fix, but it is still
   scaffold/test-surface rather than a full production transport. R3-3 asks for
   vectors/schema docs before transport lands. [Verified]
-- **Addon trust boundary (partial):** addon package visibility, no-network
-  screening, fingerprint capture, and changed-certificate rejection exist, but
-  first-seen non-co-signed packages are accepted and pinned without an explicit
-  trust step. R5-1 aligns runtime behavior with the documented co-signed or
-  user-trusted contract. [Verified]
+- **Addon trust boundary:** addon package visibility, no-network screening,
+  fingerprint capture, changed-certificate rejection, and explicit trust for
+  non-co-signed first-seen packages are in place. v1.8.229 closes R5-1 by
+  aligning runtime behavior with the documented co-signed or user-trusted
+  contract. [Closed]
 - **Editor mutation pipeline (partial):** the expected-content mirror is the
   right abstraction for reconciling IME writes with selection updates, but some
   cursor/commit paths hold open `InputConnection` batch edits while doing
@@ -198,9 +198,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Minor] MIME helper stdout and aggregate semantics** → R4-3. Remove the
   constructor print and pin `matchesAll` / `matchesAny` / `matchesOne` behavior
   before more import/provider code depends on the helper.
-- **[Medium] Addon first-seen trust mismatch** → R5-1. The documented trust
-  contract requires co-signing or explicit Settings trust, but the current
-  first-seen registry path auto-pins any otherwise-valid addon package.
+- **[Medium] Addon first-seen trust mismatch** → R5-1. Closed in v1.8.229:
+  the registry now auto-loads co-signed packages only, and otherwise requires a
+  Settings-confirmed explicit pin.
 - **[Medium] Editor batch critical sections** → R6-1. Move expected-content
   generation/queue locks out of open `InputConnection` batches and pair batch
   edits with `try/finally`.
@@ -220,9 +220,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Native string bridge:** `NativeStr.toJavaString()` handles direct buffers
   with `remaining()` but heap buffers with the whole backing array. R4-4 aligns
   heap/direct behavior before native addon surfaces make sliced buffers common.
-- **Addon enrollment state:** the current registry has accepted/rejected states
-  plus changed-certificate trust repair. R5-1 needs a pending/untrusted state so
-  package discovery and signature capture do not collapse into enrollment.
+- **Addon enrollment state:** the registry has accepted/rejected states,
+  changed-certificate trust repair, and an explicit-trust path for first-seen
+  non-co-signed packages, so package discovery and signature capture no longer
+  collapse into enrollment.
 - **Editor hot path:** `AbstractEditorInstance` still concentrates `runBlocking`
   around selection and commit operations. R6-1 keeps the existing
   expected-content model but removes blocking work from open editor batches.

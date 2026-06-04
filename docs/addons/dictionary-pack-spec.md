@@ -139,10 +139,11 @@ augments rather than blanks out the bundled baseline.
 The enrolment pipeline is read-only: the IME never writes back into the
 addon's APK. As of v1.8.83, IME startup uses `AddonEnumerator` plus
 `AddonRegistryStartup` to reconcile the PackageManager snapshot into
-process-live addon state, keep first-seen signing certificate pins, reject
-changed-certificate package hijacks, publish `AddonRegistryStore`, and clean
-malformed stored pin lines; `DictionaryPackCatalog` then validates the
-descriptor JSON and produces provenance rows for Settings.
+process-live addon state, auto-enroll co-signed addon packages, require explicit
+Settings trust for non-co-signed package fingerprints, reject changed-certificate
+package hijacks, publish `AddonRegistryStore`, and clean malformed stored pin
+lines; `DictionaryPackCatalog` then validates the descriptor JSON and produces
+provenance rows for Settings.
 As of v1.8.84, Settings → Addons can display the accepted/rejected snapshot and
 manually rescan installed addon APKs through the same startup reconciliation
 path. As of v1.8.124, the same screen can reset saved signing-certificate pins
@@ -158,19 +159,23 @@ rejections.
 
 ## 5. Signing certificate pinning
 
-`AddonManifest.signingCertSha256` is captured at first enrolment and
-pinned. If the addon's signing certificate changes between IME launches
-(package-name hijack attempt), the addon is silently skipped on
-subsequent enumerations. To rotate signing keys an addon author should
-publish a new package-name rather than re-signing under the same name.
+`AddonManifest.signingCertSha256` is captured during enumeration. Co-signed
+addons, whose signing fingerprint matches the IME, enroll automatically. Every
+non-co-signed addon stays rejected until Settings records an explicit
+`packageName=SHA-256` pin for the displayed fingerprint. If the addon's signing
+certificate changes between IME launches (package-name hijack attempt), the
+addon stays rejected until the user confirms a separate changed-certificate
+trust action. To rotate signing keys an addon author should publish a new
+package-name rather than re-signing under the same name.
 
 As of v1.8.82, the persisted pin format is implemented by
 `AddonSigningPinSet` and stored at `prefs.addon.signingCertPins` as one
 `packageName=SHA-256` entry per line. The raw preference is not meant to be
 user-edited; Settings → Addons exposes read-only provenance/status in v1.8.84
 and confirmed trust reset / changed-certificate actions in v1.8.124. As of
-v1.8.83, startup writes back the canonical pin string only when first-seen
-addons or malformed stored lines change the trust set. As of v1.8.125,
+v1.8.83, startup writes back the canonical pin string only when malformed stored
+lines change the trust set; Settings trust/reset actions are the only path that
+adds or removes non-co-signed pins. As of v1.8.125,
 dictionary cache invalidation follows `AddonRegistryStore.generation()` so
 startup and Settings rescans can expose newly mounted packs to the loader.
 

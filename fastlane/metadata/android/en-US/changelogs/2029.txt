@@ -1,0 +1,3 @@
+v1.8.229 - Addon trust gate.
+
+Non-co-signed addon APKs now stay rejected until Settings records an explicit signing-certificate pin, while co-signed addons still enroll automatically. Changed certificates require a separate trust action, with focused addon registry/startup/pin tests.

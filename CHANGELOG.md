@@ -2,6 +2,55 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.229"></a>
+## v1.8.229
+
+Released: 2026-06-04
+
+### Addon trust gate
+
+R5-1 is closed. Non-co-signed addon APKs now stay rejected until the user explicitly trusts their current signing fingerprint in Settings -> Addons; co-signed addons still enroll automatically.
+
+### Changes
+
+- **`AddonRegistry.kt` / `AddonRegistryStartup.kt`** - add trusted-root-aware reconciliation, explicit-trust rejected state, changed-certificate fingerprints, and no first-seen auto-pinning.
+- **`AddonSigningPinSet.kt`** - replaces the stale first-seen helper with an explicit `withPinnedCertificate(...)` overwrite path.
+- **`FlorisImeService.kt` / `AddonsSettingsScreen.kt` / `strings.xml`** - pass the IME signing fingerprint into startup/rescan, surface first-run trust and changed-certificate trust actions, and record the confirmed fingerprint before rescanning.
+- **`AddonRegistryTest.kt` / `AddonRegistryStartupTest.kt` / `AddonSigningPinSetTest.kt`** - pin co-signed auto-enrollment, external pending state, explicit external trust, changed-certificate rejection, and pin replacement.
+- **`AddonProvenanceReport.kt` / `docs/addons/dictionary-pack-spec.md` / `docs/THREAT_MODEL.md`** - document the co-signed-or-explicit-trust state machine.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.229 / versionCode 2029 and closes R5-1.
+
+### Verification
+
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2029.
+- `./gradlew.bat --no-daemon --no-parallel --max-workers=2 "-Dorg.gradle.jvmargs=-Xmx2048m" "-Dkotlin.daemon.jvm.options=-Xmx1536m" :app:testDebugUnitTest` - PASS in 3m37s, including `AddonRegistryTest`, `AddonRegistryStartupTest`, and `AddonSigningPinSetTest`.
+- Manual Settings -> Addons package-state smoke (co-signed, unsigned-untrusted, unsigned-trusted, changed-cert, and reset-all cases) was not run in this local batch. APK assembly was intentionally skipped for this trust-policy follow-up.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/addons/AddonsSettingsScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonProvenanceReport.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistry.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryStartup.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/addon/AddonSigningPinSet.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryStartupTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonRegistryTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/addon/AddonSigningPinSetTest.kt`
+- `docs/THREAT_MODEL.md`
+- `docs/addons/dictionary-pack-spec.md`
+- `fastlane/metadata/android/en-US/changelogs/2029.txt` (new)
+- `gradle.properties` (versionCode 2028->2029, versionName 1.8.228->1.8.229)
+
 <a id="v1.8.228"></a>
 ## v1.8.228
 
