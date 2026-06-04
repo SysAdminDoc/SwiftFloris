@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.214 (versionCode 2014). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.215 (versionCode 2015). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -35,22 +35,22 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
   - Why: Candidate-row, smartbar, and software-key states plus the full layout matrix need real-field verification; cannot fully close without a device.
   - Touches: candidate-row selection/pressed/disabled/correction states; smartbar ordering + overflow + long-label resilience; software-key pressed/held/disabled/gesture states; one-handed/floating/split/compact/landscape/tablet layouts.
   - Acceptance: each state and layout verified in real input fields on a device.
-  - Source: TODO.md B / improvement-plan WS11.
+  - Source: docs/archive/TODO_2026-06-03.md B / improvement-plan WS11.
 - [ ] P1 — Glide-trail theme baselines + low-end perf evidence (F9)
   - Why: Glide-trail themes lack Roborazzi baselines and low-end (<=4 GB) performance evidence.
   - Touches: Roborazzi baselines (device/emulator); trace `swiftfloris.glide.trailDrawMs` on Pixel 4a / Galaxy A12-class.
   - Acceptance: baselines recorded; trail-draw timing captured on low-end hardware.
-  - Source: TODO.md B / research feature plan F9.
+  - Source: docs/archive/TODO_2026-06-03.md B / research feature plan F9.
 - [ ] P2 — F40 Roborazzi capture phase (F40 capture)
   - Why: Screen-level Roborazzi test classes ship baseline-pending (v1.8.201); the baseline PNGs still need on-device capture.
   - Touches: `:app:recordRoborazziDebug` for the A1 test classes, then remove the class-level `@Ignore` from the pending F40 screenshot classes.
   - Acceptance: baseline PNGs captured; `@Ignore` removed; gate green.
-  - Source: TODO.md A1/B / research feature plan F40.
+  - Source: docs/archive/TODO_2026-06-03.md A1/B / research feature plan F40.
 - [ ] P2 — Glide-trail reduced-animation + tooltip verification (EI4 residual)
   - Why: Confirm Rainbow/Aurora/Neon glide trails honour `ANIMATOR_DURATION_SCALE == 0f` on-device; the doc disclosure already shipped (v1.8.182).
   - Touches: GesturesScreen "i" tooltip + on-device animation-scale check.
   - Acceptance: trails respect zero animation scale; tooltip present.
-  - Source: TODO.md B / second-pass EI4.
+  - Source: docs/archive/TODO_2026-06-03.md B / second-pass EI4.
 
 ### Data safety, backup/restore & import (device-gated portions)
 
@@ -58,7 +58,7 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
   - Why: Unit tests for these paths are Tier A and done; the on-device confirmation is still required.
   - Touches: backup/restore overwrite-vs-merge; clipboard media missing-file/path-safety; extension-import path-traversal.
   - Acceptance: overwrite/merge, missing-media, and traversal behaviors confirmed on-device.
-  - Source: TODO.md B / improvement-plan WS13.
+  - Source: docs/archive/TODO_2026-06-03.md B / improvement-plan WS13.
 
 ### CI, build & release hardening
 
@@ -73,27 +73,27 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
   - Why: Research says no `app/lint-baseline.xml` exists; confirm and note.
   - Touches: one-line note; `bash scripts/run-lint-debug-with-baseline-check.sh` exits 0.
   - Acceptance: confirmed no baseline file; note added or item closed.
-  - Source: TODO.md A5 / research feature plan EI10.
+  - Source: docs/archive/TODO_2026-06-03.md A5 / research feature plan EI10.
 - [ ] P2 — Localization content-quality pass (WS12)
   - Why: Turkish repeated-word lint, vague/abrupt English source labels, and inconsistent failure/destructive copy need cleanup.
   - Touches: native-safe Turkish repeated-word review; tighten English source labels; standardize backup/restore/import/export failure + destructive-confirmation copy; document translation-safe cleanup rules.
   - Acceptance: lint warnings reviewed; copy standardized; rules documented.
-  - Source: TODO.md A5 / improvement-plan WS12.
+  - Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS12.
 - [ ] P2 — Visual-QA + manual-QA + release-evidence checklists (WS10 / WS15)
   - Why: No standing checklists for the portrait/landscape/compact/floating/dark/high-font-scale matrix, manual QA, or release evidence.
   - Touches: docs for visual-QA matrix, manual-QA flow, and release-evidence capture.
   - Acceptance: three checklists exist and are referenced from the verification docs.
-  - Source: TODO.md A5 / improvement-plan WS10/WS15.
+  - Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS10/WS15.
 - [ ] P3 — Fastlane changelog drafting guide (R5)
   - Why: No documented guidance on drafting the <=480-char fastlane changelog.
   - Touches: add the guide to `docs/LOCAL_VERIFICATION.md` / `docs/REPO_HYGIENE.md`.
   - Acceptance: guide present with the character-budget rule.
-  - Source: TODO.md A5 / second-pass R5.
+  - Source: docs/archive/TODO_2026-06-03.md A5 / second-pass R5.
 - [ ] P3 — Document module build-cache survival (O1)
   - Why: `lib/<module>/build/` cache survives `git rm --cached`; this surprises contributors.
   - Touches: note in `docs/REPO_HYGIENE.md`.
   - Acceptance: behavior documented.
-  - Source: TODO.md A5 / second-pass O1.
+  - Source: docs/archive/TODO_2026-06-03.md A5 / second-pass O1.
 
 ### External-action-blocked / sibling-repo / XL (maintainer decision required)
 
@@ -103,47 +103,47 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Why: 44 stale translated entries across 22 locales; Crowdin web console is source of truth (lint `UnusedResources` until done).
   - Touches: server-side Crowdin sync/pull.
   - Acceptance: translations synced; stale-entry lint clears.
-  - Source: TODO.md C / second-pass R1.
+  - Source: docs/archive/TODO_2026-06-03.md C / second-pass R1.
 - [ ] P1 — FlorisBoard `0.6.0-alpha02` cherry-picks (F22)
   - Why: Upstream CLDR 48, Emoji 17, number-field fix, and floating-window foundation are worth picking up; conflict resolution needs iterative on-device builds and risks regressing shipped features.
   - Touches: cherry-pick + conflict resolution across input/emoji/layout.
   - Acceptance: picks merged without regressing shipped features; on-device verified.
-  - Source: TODO.md C / research feature plan F22.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F22.
 - [ ] P1 — Apache-2.0 glide model trained on the MIT FUTO swipe dataset (F21)
   - Why: A licensed in-tree glide model needs off-device ML training infra (XL, out-of-tree).
   - Touches: external training pipeline + model integration.
   - Acceptance: Apache-2.0-clean model trained and integrated.
-  - Source: TODO.md C / research feature plan F21.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F21.
 - [ ] P2 — Bundled Vosk small-en-us recognizer addon (F8)
   - Why: Needs a sibling addon repo + JNI; `RECORD_AUDIO` only in the addon, never `:app`.
   - Touches: sibling addon repo, JNI binding.
   - Acceptance: recognizer ships as a signed addon; `:app` stays permission-clean.
-  - Source: TODO.md C / research feature plan F8.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F8.
 - [ ] P2 — CycloneDX SBOM + SLSA provenance on release (F10)
   - Why: Needs GitHub Attestations onboarding + release-tag dispatch.
   - Touches: release workflow attestation step.
   - Acceptance: SBOM + provenance attached to releases.
-  - Source: TODO.md C / research feature plan F10.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F10.
 - [ ] P2 — GPG-signed release tags (F11)
   - Why: Needs a maintainer GPG key.
   - Touches: release-tag signing.
   - Acceptance: tags are GPG-signed and verifiable.
-  - Source: TODO.md C / research feature plan F11.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F11.
 - [ ] P2 — F-Droid `fdroiddata` submission (F12)
   - Why: `dev.patrickgold.florisboard(.beta)` package-id collides with upstream; needs a rename/coexistence decision plus a multi-month review queue.
   - Touches: fdroiddata metadata + package-id decision.
   - Acceptance: submission accepted into the F-Droid queue.
-  - Source: TODO.md C / research feature plan F12.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F12.
 - [ ] P2 — FunctionGemma 270M MCP-bridge addon (F30)
   - Why: Needs a sibling addon repo.
   - Touches: sibling addon repo + MCP bridge.
   - Acceptance: addon bridges FunctionGemma over MCP without linking into `:app`.
-  - Source: TODO.md C / research feature plan F30.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F30.
 - [ ] P3 — Cross-platform desktop dictionary-export CLI (F13)
   - Why: Needs a sibling repo.
   - Touches: standalone CLI project.
   - Acceptance: CLI exports the dictionary format cross-platform.
-  - Source: TODO.md C / research feature plan F13.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F13.
 
 #### Open questions blocking the external-action items (maintainer decisions)
 
@@ -171,27 +171,7 @@ This pass focused on the v1.8.204 **settings search** drop (the newest feature, 
 
 ### Quick Wins
 
-- [ ] P3 — Strip diacritics in settings-search normalization (RA-5)
-  - Why: `searchNormalize()` lowercases and folds `& / - _` but does not fold accents, so a user typing `ä`/`ö`/`ç`/`é` (German, Turkish, French — all shipped subtypes) won't match ASCII labels like "Theme"/"Localization"; non-ASCII queries silently return fewer results.
-  - Evidence: `app/.../app/settings/search/SettingsSearchIndex.kt:271-279` — `searchNormalize()` has no `Normalizer.normalize(..., NFD)` + combining-mark strip; `score()` and `search()` both run through it.
-  - Touches: `SettingsSearchIndex.searchNormalize()` (add NFD decompose + `\p{Mn}` strip); add a JVM case to `SettingsSearchIndexTest.kt`.
-  - Acceptance: `search("themé")` and `search("thèmе")` return the Theme entry; ASCII queries unchanged.
-  - Verify: `:app:testDebugUnitTest` (new diacritic test green).
-  - Complexity: S
-- [ ] P3 — Clear ("X") button + Search IME action on the search field (RA-6)
-  - Why: The search `TextField` has no trailing clear affordance and no `KeyboardOptions(imeAction = Search)`; users must select-all-delete to reset and get a newline-style Enter. Every mainstream keyboard's own settings search offers a one-tap clear.
-  - Evidence: `app/.../search/SettingsSearchScreen.kt:77-95` — `TextField` sets `leadingIcon` only, `singleLine = true`, no `trailingIcon`, no `keyboardOptions`.
-  - Touches: `SettingsSearchScreen` (`trailingIcon` when query non-blank → clears; `keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)`).
-  - Acceptance: a clear button appears while typing and resets the query; the on-screen Enter reads as a search action.
-  - Verify: `:app:assembleDebug`; manual on-device tap.
-  - Complexity: S
-- [ ] P3 — Auto-focus the search field on screen open (RA-7)
-  - Why: Opening Settings → Search lands on a blank field that is not focused, so the keyboard does not raise — an extra tap before the user can type. Auto-focus is the platform expectation for a dedicated search screen.
-  - Evidence: `SettingsSearchScreen.kt:70-95` — no `FocusRequester`/`LaunchedEffect{ requester.requestFocus() }`.
-  - Touches: `SettingsSearchScreen` (add `FocusRequester` + `LaunchedEffect(Unit)` request; respect `rememberSaveable` so rotation doesn't re-raise unexpectedly).
-  - Acceptance: the field is focused and the IME is shown on first composition; rotating does not steal focus from an in-progress edit.
-  - Verify: manual on-device.
-  - Complexity: S
+All current quick wins shipped through v1.8.215. Remaining settings-search work is listed under Larger Bets.
 
 ### Larger Bets
 

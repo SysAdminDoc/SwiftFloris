@@ -2,6 +2,55 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.215"></a>
+## v1.8.215
+
+Released: 2026-06-04
+
+### Settings search quick-win polish
+
+RA-5 / RA-6 / RA-7 close the small settings-search UX and matching gaps from the 2026-06-04 research queue. Settings search now folds combining diacritics before matching, so accented queries find the same entries as their ASCII equivalents, and the search field now opens focused on first entry, exposes a clear button while text is present, and advertises the Search IME action.
+
+This pass also corrected the agent-facing planning pointer in `AGENTS.md` so future implementation sessions pick open work from `ROADMAP.md`, and committed the referenced deep-audit documents as searchable markdown inputs.
+
+### Changes
+
+- **`SettingsSearchIndex.kt`** - normalizes labels and queries through NFD decomposition plus combining-mark stripping before scoring.
+- **`SettingsSearchScreen.kt`** - adds one-shot first-open focus, a trailing clear action, and `ImeAction.Search` keyboard options.
+- **`SettingsSearchIndexTest.kt`** - pins diacritic-insensitive matching for Theme queries.
+- **`strings.xml`** - adds the clear-button content description.
+- **`AGENTS.md`** - points future agents at `ROADMAP.md` as the open-work SSOT.
+- **`docs/AUDIT_2026-05-28.md` / `docs/AUDIT_2026-05-29.md` / `docs/AUDIT_2026-06-02.md`** - adds the previously referenced audit inputs as searchable markdown.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - moved RA-5 / RA-6 / RA-7 out of active work and into shipped state.
+
+### Verification
+
+- `./gradlew.bat :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.SettingsSearchIndexTest"` -> green with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot`.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green with the same `JAVA_HOME`.
+- `./gradlew.bat :app:verifyRoborazziDebug` -> green with the same `JAVA_HOME`.
+- `bash scripts/check-fastlane-metadata.sh` -> green for versionCode 2015.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+- `rg -F "\\u0000" docs/AUDIT_2026-05-28.md docs/AUDIT_2026-05-29.md docs/AUDIT_2026-06-02.md` -> green searchable escaped NUL references; no binary NULs remain.
+- Manual on-device tap/focus verification not run on this host.
+
+### Files Touched
+
+- `AGENTS.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndexTest.kt`
+- `docs/AUDIT_2026-05-28.md` (new)
+- `docs/AUDIT_2026-05-29.md` (new)
+- `docs/AUDIT_2026-06-02.md` (new)
+- `fastlane/metadata/android/en-US/changelogs/2015.txt` (new)
+- `gradle.properties` (versionCode 2014->2015, versionName 1.8.214->1.8.215)
+- `README.md`
+
 <a id="v1.8.214"></a>
 ## v1.8.214
 

@@ -4,6 +4,8 @@ This report summarizes current research conclusions. The full 2026-05-25 researc
 
 2026-06-04 freshness note: the live dirty tree has already moved EI7 out of active work into v1.8.207 release docs, with `VoiceInputEmptyStateCopyTest.kt` pinning the FUTO explanation and F-Droid install action. This pass did not run Gradle because repo instructions say not to run Android gates from this VM unless asked; the changelog's green Gradle evidence remains unverified here. Current external checks support the copy: FUTO's Voice Input page describes it as working entirely on-device with no stored data, latest F-Droid/standalone version v1.3.6 (28), and the source mirror says FUTO Voice Input remains available for third-party keyboards even though FUTO development has shifted toward FUTO Keyboard. Android-platform sources also moved: Android 17 API 37 setup docs are current, but SwiftFloris already keeps API 37 as a future behavior-gate decision. Maven metadata shows low-priority freshness drift rather than a security issue: Kotlin 2.4.0, Compose BOM 2026.05.01, AndroidX Core 1.19.0, and Roborazzi 1.63.0 are newer than the pinned versions, while Room 2.8.4, SQLCipher 4.16.0, Tink 1.21.0, and Robolectric 4.16.1 still match current metadata. A P3 dependency-refresh row was added to `ROADMAP.md`.
 
+2026-06-04 delivery note: v1.8.215 closed RA-5 / RA-6 / RA-7. Settings search now folds combining diacritics during normalization, opens the field focused on first entry, exposes a clear action while text is present, and advertises the Search IME action. The remaining research queue starts at RA-1 / RA-2 / RA-3 / RA-4 / RA-8.
+
 ## Executive Summary
 
 SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.204 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the dependency stack is current (Compose BOM 2026.05.00, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped this release (v1.8.204, commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
@@ -12,11 +14,10 @@ Top opportunities (one line each):
 
 1. **Drift guard for the search catalog** — pin destination→route navigability and resId resolution so a renamed/deleted pref or unmapped screen fails the build (RA-1, P1). [Verified]
 2. **No-results dead-end** — add a browse-all / system-keyboard-settings escape hatch to the empty-result state (RA-2, P2). [Verified]
-3. **Search UX polish** — clear button, `ImeAction.Search`, and auto-focus on the search field (RA-5/6/7, P3). [Verified]
+3. **Search UX polish** — clear button, `ImeAction.Search`, auto-focus, and diacritic folding shipped in v1.8.215 (RA-5/6/7). [Closed]
 4. **Keyword/synonym coverage** — most entries ship no `keywords`; capability terms like "dark mode"/"haptic" miss (RA-3, P2). [Verified]
 5. **TalkBack pass over search** — no semantics/live-region on results or count; not in `ACCESSIBILITY.md` QA checklist (RA-4, P2). [Verified]
-6. **Diacritic-insensitive matching** — `searchNormalize()` does not fold accents, hurting German/Turkish/French queries (RA-5, P3). [Verified]
-7. **Search entry-point discoverability** from Settings home (RA-8, P3). [Likely]
+6. **Search entry-point discoverability** from Settings home (RA-8, P3). [Likely]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -46,11 +47,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 - **[Major] Search catalog drift** → RA-1. Enum + ~100 entries mirror the nav graph with resIds inlined; only test uses a fake resolver, so a deleted/renamed string or unmapped destination passes CI. (`SettingsSearchIndex.kt:24-205`, `SettingsSearchScreen.kt:148-188`, test `:79`.)
 - **[Minor] No-results dead-end** → RA-2. (`SettingsSearchScreen.kt:106-115`.)
-- **[Minor] Missing clear button / IME Search action** → RA-6. (`SettingsSearchScreen.kt:77-95`.)
-- **[Minor] No auto-focus on open** → RA-7. (`SettingsSearchScreen.kt:70-95`.)
+- **[Closed v1.8.215] Missing clear button / IME Search action** → RA-6. (`SettingsSearchScreen.kt`.)
+- **[Closed v1.8.215] No auto-focus on open** → RA-7. (`SettingsSearchScreen.kt`.)
 - **[Minor] Sparse keyword coverage** → RA-3. (`SettingsSearchIndex.kt:103-204`.)
 - **[Minor] Search a11y gap** → RA-4. (`SettingsSearchScreen.kt:82-143`; `docs/ACCESSIBILITY.md` checklist.)
-- **[Cosmetic] No diacritic folding** → RA-5. (`SettingsSearchIndex.kt:271-279`.)
+- **[Closed v1.8.215] No diacritic folding** → RA-5. (`SettingsSearchIndex.kt`.)
 - **[Cosmetic] Entry-point discoverability** → RA-8. (`HomeScreen.kt` per `1966c69`.)
 
 ## Architecture & Technical Findings

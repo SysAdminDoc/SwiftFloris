@@ -20,6 +20,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import dev.patrickgold.florisboard.R
+import java.text.Normalizer
 
 enum class SettingsSearchDestination {
     HOME,
@@ -271,12 +272,17 @@ private fun String.normalizeTerms(): List<String> {
     return searchNormalize().split(' ').filter { it.isNotBlank() }
 }
 
+private val CombiningMarkRegex = Regex("\\p{Mn}+")
+private val WhitespaceRegex = Regex("\\s+")
+
 private fun String.searchNormalize(): String {
-    return lowercase()
+    return Normalizer.normalize(this, Normalizer.Form.NFD)
+        .replace(CombiningMarkRegex, "")
+        .lowercase()
         .replace('&', ' ')
         .replace('/', ' ')
         .replace('-', ' ')
         .replace('_', ' ')
-        .replace(Regex("\\s+"), " ")
+        .replace(WhitespaceRegex, " ")
         .trim()
 }

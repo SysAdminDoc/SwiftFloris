@@ -48,6 +48,12 @@ class SettingsSearchIndexTest : FunSpec({
         results.first().entry.destination shouldBe SettingsSearchDestination.KEYBOARD
     }
 
+    test("query normalization folds diacritics") {
+        SettingsSearchIndex.search("theme", ::resolve).first().entry.id shouldBe "theme"
+        SettingsSearchIndex.search("themé", ::resolve).first().entry.id shouldBe "theme"
+        SettingsSearchIndex.search("thème", ::resolve).first().entry.id shouldBe "theme"
+    }
+
     test("search target stores resolved labels for destination highlight") {
         val result = SettingsSearchIndex.search("futo", ::resolve).first()
 
@@ -72,6 +78,8 @@ private val testStrings = mapOf(
     R.string.settings__home__typing_summary to "Word suggestions, autocorrect, spelling, and dictionaries",
     R.string.pref__correction__auto_correct__label to "Autocorrect",
     R.string.pref__correction__auto_correct__summary to "Correct mistyped words automatically",
+    R.string.settings__theme__title to "Theme",
+    R.string.settings__home__theme_summary to "Keyboard colors, dark mode, and custom themes",
     R.string.settings__voice_input__title to "Voice input",
     R.string.settings__home__voice_input_summary to "FUTO setup, offline language models, and voice keyboard status",
 )
