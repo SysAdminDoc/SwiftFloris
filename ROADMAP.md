@@ -2,30 +2,39 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.216 (versionCode 2016). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.217 (versionCode 2017). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 1 - 2026-06-04.
+> Last researched: Cycle 2 - 2026-06-04.
 
-## Implementer Instructions
+## ▶ Implementer Instructions (for the build machine)
 
-- Treat this roadmap as the planning history and `PROJECT_CONTEXT.md` /
-  `AGENTS.md` as the operational entry point. Shipped work belongs in
-  `CHANGELOG.md`; completed roadmap items belong in `COMPLETED.md`.
-- Keep the `:app` invariant strict: no internet/network permissions, Apache-2.0
-  ceiling, no closed-source blobs, and network or incompatible features only in
-  isolated addon APKs.
-- Do not run Gradle on this VM unless explicitly asked. Use the Android SDK host
-  for `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug
-  :app:assembleDebug` and device-gated manual QA.
-- For release work, keep `gradle.properties`, consolidated `CHANGELOG.md`, and
-  fastlane changelog metadata in lockstep with the version bump.
-- Researcher-queue ownership tags: `🤖` means implementer-actionable, `🔧`
-  means user/external/manual gated, `🔬` means researcher-added this cycle, and
-  `✅` means implemented/closed by the build lane.
+This roadmap is fed continuously by an automated research machine. On every
+pass, the implementing machine should:
+
+1. `git pull --rebase` to get the latest researched items before starting.
+2. Work the open 🤖 items top-down by priority (P0 -> P3). Build them properly:
+   multi-file structure, real error handling, no runtime auto-install hacks,
+   version strings synced, docs/CHANGELOG updated in the same commit.
+3. In addition to building items, run a full UX audit each pass. Walk every
+   screen / page / dialog / form / table / empty-loading-error-disabled state
+   across light/dark/high-contrast themes. Check onboarding, navigation clarity,
+   spacing/contrast/alignment, clipping/overflow, hierarchy, microcopy,
+   destructive-action guards, keyboard + screen-reader accessibility, and trust
+   signals. Fix what you find, or file it back as a new 🤖 roadmap item if it
+   is larger than a pass.
+4. Check off ✅ each item you complete (leave it in place with the checkmark),
+   commit per logical change with a "why" message, and push.
+5. Never edit this Implementer Instructions block or the 🔬 Researcher Queue
+   headings. Never force-push.
+
+Keep the `:app` invariant strict: no internet/network permissions, Apache-2.0
+ceiling, no closed-source blobs, and network or incompatible features only in
+isolated addon APKs. Shipped work belongs in `CHANGELOG.md`; completed roadmap
+items belong in `COMPLETED.md`.
 
 ## Existing Planned Work
 
@@ -70,11 +79,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Docs & hygiene
 
-- [ ] P2 — Confirm absence of lint baseline / close EI10 (EI10)
-  - Why: Research says no `app/lint-baseline.xml` exists; confirm and note.
-  - Touches: one-line note; `bash scripts/run-lint-debug-with-baseline-check.sh` exits 0.
-  - Acceptance: confirmed no baseline file; note added or item closed.
-  - Source: docs/archive/TODO_2026-06-03.md A5 / research feature plan EI10.
 - [ ] P2 — Localization content-quality pass (WS12)
   - Why: Turkish repeated-word lint, vague/abrupt English source labels, and inconsistent failure/destructive copy need cleanup.
   - Touches: native-safe Turkish repeated-word review; tighten English source labels; standardize backup/restore/import/export failure + destructive-confirmation copy; document translation-safe cleanup rules.
@@ -156,6 +160,88 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 2 - 2026-06-04)
+
+- [x] 🔬 `startup-diagnostics-and-docs-refresh-2026-06-04` - re-read the
+  current v1.8.217 repo state, the committed audit docs, the last 15 shipped
+  releases, and current upstream/standards sources. Existing settings-search,
+  dependency, upstream FlorisBoard, CLDR/Emoji, F-Droid, device-gated, and
+  maintainer-gated rows remain correctly represented below; this cycle adds
+  only the net-new startup diagnostics and source-of-truth documentation gaps.
+
+#### Reliability & diagnostics
+
+- [ ] 🤖 P1 — Persist or surface staged startup exceptions before Settings opens (R2-1)
+  - Why: A synchronous `FlorisApplication.onCreate()` failure is staged and the
+    application returns, but no production call drains the staged exception into
+    the existing crash-file / notification path. On a privacy keyboard, a silent
+    startup failure is a trust problem even if the failure is rare.
+  - Evidence: `FlorisApplication.kt:100-156` installs Flog/CrashUtility, then
+    catches `Exception` with `CrashUtility.stageException(e); return`;
+    `CrashUtility.kt:159-170` stores and drains staged exceptions; `rg
+    "handleStagedButUnhandledExceptions" app/src/main/kotlin app/src/test/kotlin`
+    finds no production/test call site; `FlorisAppActivity.kt:100-170` opens the
+    Settings activity without reading `CrashUtility`; `docs/AUDIT_2026-05-28.md:16-17`
+    independently verified the same path.
+  - Touches: `FlorisApplication.kt`, `CrashUtility.kt`, `FlorisAppActivity.kt`,
+    and a focused JVM/Robolectric test around the chosen staging/drain policy.
+  - Acceptance: an injected synchronous app-init failure creates a persisted
+    stacktrace or visible crash/recovery surface; the splash screen does not
+    hang silently; the implementation documents whether it intentionally calls
+    the existing uncaught handler (process-killing) or writes a recoverable
+    staged-init stacktrace without killing the Settings activity.
+  - Verify: `:app:testDebugUnitTest`; manual debug build with a temporary
+    injected pre-`init()` failure before removing the injection.
+  - Complexity: M
+- [ ] 🤖 P2 — Replace remaining restore/crash diagnostic `printStackTrace()` paths with project logging plus user-safe fallback copy (R2-2)
+  - Why: The restore flow and crash-file write helper still fall back to raw
+    `printStackTrace()` on exceptional diagnostic paths, while adjacent code
+    already uses `flogError`. The fix should improve consistency and user-facing
+    failure text without overstating release-build file-log coverage, because
+    `Flog` is debug-gated and `fileLog()` is still a stub.
+  - Evidence: `RestoreScreen.kt` failure paths are called out in
+    `docs/AUDIT_2026-05-28.md:19-22`; sibling `BackupScreen.kt:205` and
+    `BackupScreen.kt:338` use `flogError`; `CrashUtility.kt:366-370` still
+    catches crash-file write failures with `e.printStackTrace()`;
+    `Flog.kt:326` tracks the file-logging TODO.
+  - Touches: `RestoreScreen.kt`, `CrashUtility.kt`, possibly `Flog.kt` only if
+    a minimal release-safe sink is added; add focused tests for non-null restore
+    failure messages where practical.
+  - Acceptance: restore failure cards/toasts use stable fallback text when
+    `localizedMessage` is null; diagnostic exceptions route through the project
+    logging idiom; docs/changelog do not claim persisted release logs unless a
+    real persisted sink is implemented.
+  - Verify: `:app:testDebugUnitTest`; manual restore-failure smoke with a bad
+    archive on the Android SDK host.
+  - Complexity: S-M
+
+#### Docs & source-of-truth
+
+- [ ] 🤖 P2 — Refresh root onboarding docs to the v1.8.217 source of truth (R2-3)
+  - Why: The live roadmap is current, but the fast onboarding docs still mix
+    v1.8.170-era stack facts, archived `IMPROVEMENT_PLAN.md` references, and a
+    retired root `RELEASE_NOTES_v*.md` instruction. Future build passes use
+    these docs first, so stale routing increases the chance of wrong release or
+    planning edits.
+  - Evidence: `PROJECT_CONTEXT.md:4-6` and `PROJECT_CONTEXT.md:48` still say
+    v1.8.170; `PROJECT_CONTEXT.md:11`, `PROJECT_CONTEXT.md:574`, and
+    `PROJECT_CONTEXT.md:770` link root `IMPROVEMENT_PLAN.md` although the live
+    plan is archived; `ARCHITECTURE.md:3` is still "against the v1.8.170
+    codebase"; `CONTRIBUTING.md:145` still asks for root
+    `RELEASE_NOTES_vX.Y.Z.md` even though `AGENTS.md:84-86` and `CHANGELOG.md:3`
+    say the consolidated changelog replaced that pattern; `README.md:286-288`
+    starts its release-stream summary at v1.8.170 while current release is
+    v1.8.217.
+  - Touches: `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`,
+    `README.md`, and any stale root `IMPROVEMENT_PLAN.md` pointers in
+    docs/hygiene files.
+  - Acceptance: root docs agree that `ROADMAP.md` is the open-work source,
+    `COMPLETED.md` is shipped-state summary, `CHANGELOG.md` is the only release
+    note stream, and current stack/release facts match v1.8.217.
+  - Verify: `rg -n "v1\\.8\\.170|RELEASE_NOTES|IMPROVEMENT_PLAN\\.md|TODO\\.md|~340 KB" AGENTS.md PROJECT_CONTEXT.md ARCHITECTURE.md CONTRIBUTING.md README.md docs/REPO_HYGIENE.md`
+    returns only deliberate archived-context references.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 1 - 2026-06-04)
 

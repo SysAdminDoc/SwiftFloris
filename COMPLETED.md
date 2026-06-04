@@ -55,6 +55,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] EI9 (P2) — Manual benchmark-regression workflow now runs the adb benchmark suite, compares candidate JSON against committed baselines with `scripts/check-benchmark-trends.py`, uploads a markdown trend report, and fails watched medians above the documented +8 % window. Shipped v1.8.214. — *Source: TODO_2026-06-03.md*
 - [x] RA-5 / RA-6 / RA-7 (P3) — Settings search now folds diacritics during query normalization, opens the search field focused on first entry, shows a clear action while typing, and advertises the Search IME action. Shipped v1.8.215. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
 - [x] Dependency freshness compatible batch (P3) — Compose BOM `2026.05.01`, KSP `2.3.9`, and Roborazzi `1.63.0` shipped while Kotlin `2.4.0` and AndroidX Core `1.19.0` stayed deferred on KSP/compileSdk gates. Shipped v1.8.216. — *Source: ROADMAP.md Docs & hygiene.*
+- [x] EI10 (P2) — Confirmed no committed `app/lint-baseline.xml`, documented the baseline-free lint state, and reran `scripts/run-lint-debug-with-baseline-check.sh` successfully after setting the verified JDK 21 path. Shipped v1.8.217. — *Source: ROADMAP.md Docs & hygiene.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 

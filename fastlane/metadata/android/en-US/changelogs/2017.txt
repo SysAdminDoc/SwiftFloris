@@ -1,0 +1,3 @@
+v1.8.217 - lint baseline confirmation.
+
+Confirmed there is no committed app lint baseline, documented the baseline-free lint contract, and reran the CI lint wrapper successfully with the verified JDK 21 path.
