@@ -98,7 +98,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import org.florisboard.lib.android.showLongToastSync
+import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.color.MaterialYouFlagsSaver
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisOutlinedBox
@@ -615,6 +615,7 @@ private fun ComponentMetaEditorDialog(
     onDismiss: () -> Unit,
 ) {
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     var showValidationErrors by rememberSaveable { mutableStateOf(false) }
 
     var id by rememberSaveable { mutableStateOf(editor.id) }
@@ -649,7 +650,9 @@ private fun ComponentMetaEditorDialog(
             if (!validation.fieldsAreValid) {
                 showValidationErrors = true
             } else if (validation.duplicateId) {
-                context.showLongToastSync(R.string.settings__theme_editor__theme_id_exists)
+                scope.launch {
+                    context.showLongToast(R.string.settings__theme_editor__theme_id_exists)
+                }
             } else {
                 val update = ThemeComponentMetaValidationPolicy.toUpdate(draft)
                 workspace.update {

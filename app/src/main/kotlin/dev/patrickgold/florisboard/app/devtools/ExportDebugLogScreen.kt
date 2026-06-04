@@ -37,12 +37,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
@@ -52,7 +52,8 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.Devtools
-import org.florisboard.lib.android.showShortToastSync
+import kotlinx.coroutines.launch
+import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.florisHorizontalScroll
@@ -66,7 +67,7 @@ fun ExportDebugLogScreen() = FlorisScreen {
 
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
-    val resources = LocalResources.current
+    val scope = rememberCoroutineScope()
     val clipboardManager by context.clipboardManager()
 
     var debugLog by remember { mutableStateOf<List<String>?>(null) }
@@ -84,7 +85,9 @@ fun ExportDebugLogScreen() = FlorisScreen {
                 onClick = {
                     debugLog?.let { log ->
                         clipboardManager.addNewPlaintext(log.joinToString("\n"))
-                        context.showShortToastSync(resources.getString(R.string.devtools__debuglog__copied_to_clipboard))
+                        scope.launch {
+                            context.showShortToast(R.string.devtools__debuglog__copied_to_clipboard)
+                        }
                     }
                 },
                 text = stringRes(R.string.devtools__debuglog__copy_log),
@@ -94,7 +97,9 @@ fun ExportDebugLogScreen() = FlorisScreen {
                 onClick = {
                     formattedDebugLog?.let { log ->
                         clipboardManager.addNewPlaintext(log.joinToString("\n"))
-                        context.showShortToastSync(resources.getString(R.string.devtools__debuglog__copied_to_clipboard))
+                        scope.launch {
+                            context.showShortToast(R.string.devtools__debuglog__copied_to_clipboard)
+                        }
                     }
                 },
                 text = stringRes(R.string.devtools__debuglog__copy_for_github),

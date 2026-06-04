@@ -1,0 +1,1 @@
+Cleaned WS14 warnings: removed stale Kotlin when-guards flags, fixed the Room dictionary-language query warning, and moved Compose toast feedback to suspend toast helpers while preserving runtime-only sync fallbacks.

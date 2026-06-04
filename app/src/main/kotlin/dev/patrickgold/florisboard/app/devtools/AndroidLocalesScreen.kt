@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
@@ -34,8 +35,9 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
+import kotlinx.coroutines.launch
 import java.util.*
-import org.florisboard.lib.android.showLongToastSync
+import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.io.subDir
@@ -47,6 +49,7 @@ fun AndroidLocalesScreen() = FlorisScreen {
     scrollable = false
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val availableLocales = remember { Locale.getAvailableLocales().sortedBy { it.toLanguageTag() } }
 
     actions {
@@ -66,12 +69,16 @@ fun AndroidLocalesScreen() = FlorisScreen {
                             out.appendLine()
                         }
                     }
-                    context.showLongToastSync("Exported available system locales to \"${txtFile.path}\"")
+                    scope.launch {
+                        context.showLongToast("Exported available system locales to \"${txtFile.path}\"")
+                    }
                 } catch (e: Exception) {
-                    context.showLongToastSync(
-                        R.string.error__snackbar_message_template,
-                        "error_message" to e.message.toString(),
-                    )
+                    scope.launch {
+                        context.showLongToast(
+                            R.string.error__snackbar_message_template,
+                            "error_message" to e.message.toString(),
+                        )
+                    }
                 }
             },
             icon = Icons.Default.Save,

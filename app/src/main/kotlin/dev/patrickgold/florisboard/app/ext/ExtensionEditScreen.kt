@@ -100,7 +100,7 @@ import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.android.showLongToastSync
+import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
@@ -733,6 +733,7 @@ private fun <T : ExtensionComponent> CreateComponentScreen(
     })
 
     val context = LocalContext.current
+    val scope = rememberCoroutineScope()
     val extensionManager by context.extensionManager()
     val themeManager by context.themeManager()
 
@@ -782,7 +783,9 @@ private fun <T : ExtensionComponent> CreateComponentScreen(
                     when (createFrom) {
                         CreateFrom.EMPTY -> {
                             if (editor.themes.any { it.id == newId.trim() }) {
-                                context.showLongToastSync(R.string.settings__theme_editor__theme_id_exists)
+                                scope.launch {
+                                    context.showLongToast(R.string.settings__theme_editor__theme_id_exists)
+                                }
                             } else {
                                 val componentEditor = ThemeExtensionComponentEditor(
                                     id = newId.trim(),
