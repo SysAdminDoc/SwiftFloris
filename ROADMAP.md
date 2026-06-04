@@ -161,6 +161,56 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 11 - 2026-06-04)
+
+- [x] 🔬 `prefs-init-splash-recovery-recheck-2026-06-04` - synced
+  `master` after the Cycle 10 docs push, rechecked the older async preference
+  initialization audit against live startup code after v1.8.218 closed only the
+  synchronous staged-exception path. This cycle adds one focused row for
+  preference-store failures that happen inside `FlorisApplication.init()`'s
+  launched coroutine.
+
+#### Startup recovery
+
+- [ ] 🤖 P2 — Guard async preference-store init failures before the splash wait (R11-1)
+  - Why: `FlorisApplication.onCreate()` now stages and surfaces synchronous
+    startup exceptions, but `init()` still launches `FlorisPreferenceStore`
+    initialization on a plain background scope and flips
+    `preferenceStoreLoaded` only after that suspend call succeeds. If
+    `initAndroid(...)` throws or the plain parent job fails, the Settings
+    activity keeps the splash screen because its keep condition waits on the
+    same false flow value, and the existing staged-startup crash redirect has
+    already run. This is separate from R2-1: the failure happens after
+    `onCreate()` returns and outside the synchronous `try/catch`.
+  - Evidence: `FlorisApplication.kt:82` creates
+    `CoroutineScope(Dispatchers.Default)` without a `SupervisorJob`;
+    `FlorisApplication.kt:161-170` launches `FlorisPreferenceStore.initAndroid`
+    and sets `preferenceStoreLoaded.value = true` only after logging the
+    successful result; there is no `try/catch`, `finally`, or failure state in
+    that coroutine; `FlorisAppActivity.kt:102-115` checks only already-staged
+    startup exceptions before installing the splash keep condition
+    `!appContext.preferenceStoreLoaded.value`; `FlorisAppActivity.kt:155-167`
+    defers `setContent` until that flow becomes true; `FlorisAppActivity.kt:313-319`
+    consumes only pre-existing staged exceptions; `StartupCrashRecoveryTest.kt:50-78`
+    covers staged exception persistence/redirects but not async preference
+    initialization failure; the deferred audit tracks this distinct path in
+    `docs/AUDIT_2026-05-28.md:127-129`.
+  - Touches: `FlorisApplication.kt` and focused startup tests, likely by
+    extracting a small preference-init helper or injectable initializer so
+    tests can force an `initAndroid` failure without corrupting real datastore
+    files. Keep the existing R2-1 staged-crash behavior intact.
+  - Acceptance: the preference-init coroutine uses a supervised/error-guarded
+    scope; failures are logged and routed to an existing crash/recovery surface
+    or a deliberately degraded startup state; `preferenceStoreLoaded` cannot
+    remain false indefinitely after init failure; Settings does not keep the
+    splash forever; tests simulate a failing preference initializer and verify
+    crash/recovery visibility plus splash unblock behavior.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.app.*Startup*"` plus a manual debug smoke with
+    a forced preference-init failure confirming Settings leaves the splash and
+    shows the intended recovery path.
+  - Complexity: M
+
 ### Researcher Queue (Cycle 10 - 2026-06-04)
 
 - [x] 🔬 `editor-content-job-lifecycle-recheck-2026-06-04` - synced
