@@ -32,6 +32,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -138,13 +139,23 @@ fun SettingsSearchScreen() = FlorisScreen {
                     )
                 }
                 results.isEmpty() -> {
-                    Text(
+                    Column(
                         modifier = Modifier
                             .padding(16.dp)
                             .align(Alignment.CenterHorizontally),
-                        text = stringRes(R.string.settings__search__no_results, "search_term" to searchQuery),
-                        color = LocalContentColor.current.copy(alpha = 0.54f),
-                    )
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        Text(
+                            text = stringRes(R.string.settings__search__no_results, "search_term" to searchQuery),
+                            color = LocalContentColor.current.copy(alpha = 0.54f),
+                        )
+                        TextButton(
+                            modifier = Modifier.padding(top = 8.dp),
+                            onClick = { navController.navigate(Routes.Settings.Home) },
+                        ) {
+                            Text(text = stringRes(R.string.settings__search__browse_all))
+                        }
+                    }
                 }
             }
             LazyColumn(

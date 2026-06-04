@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.221 (versionCode 2021). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.222 (versionCode 2022). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -261,7 +261,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
 
-This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, while the remaining work is no-results, keyword, accessibility, and highlight-lifecycle polish.
+This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard and v1.8.222 adds a no-results escape hatch, while the remaining work is keyword, accessibility, and highlight-lifecycle polish.
 
 ### Quick Wins
 
@@ -281,12 +281,16 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Acceptance: deleting a referenced string res or adding an unmapped destination fails the test; passes today.
   - Verify: `:app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.*"`; full Gradle gate.
   - Complexity: M
-- [ ] P2 — No-results fallback action in settings search (RA-2)
+- [x] P2 — No-results fallback action in settings search (RA-2)
+  - Shipped v1.8.222: zero-result searches now show a centered
+    `Browse all settings` text button that navigates to `Routes.Settings.Home`.
   - Why: An empty result set renders only gray "no results for X" text — a dead-end. There's no escape hatch (browse-all / jump to Settings home) and, notably, no link into the Android **system** keyboard settings, which is where a missing pref often actually lives (the search index is app-internal only).
-  - Evidence: `SettingsSearchScreen.kt:106-115` — `results.isEmpty()` branch is a single `Text`; no action row.
-  - Touches: `SettingsSearchScreen` no-results branch — add a "Browse all settings" button (nav to `Routes.Settings.Home`) and optionally an "Open system keyboard settings" intent (`Settings.ACTION_INPUT_METHOD_SETTINGS`).
+  - Evidence: pre-fix `SettingsSearchScreen.kt` rendered only a no-results
+    `Text`; the shipped branch now renders the message plus action.
+  - Touches: `SettingsSearchScreen`; default `settings__search__browse_all`
+    string.
   - Acceptance: from a zero-result query the user can reach Settings home in one tap; copy is translation-safe.
-  - Verify: `:app:assembleDebug`; manual.
+  - Verify: focused search tests plus `:app:assembleDebug`; full Gradle gate.
   - Complexity: S
 - [ ] P2 — Keyword/synonym coverage audit for high-traffic settings terms (RA-3)
   - Why: Search matches title/summary/screen-title/keywords substrings, but many discoverable prefs have sparse `keywords` (e.g. "haptic" only on input-feedback, "dark"/"light" not on theme.mode, "swipe" present on gestures but "shape writing"/"trace" partial). Users search by capability words, not the exact shipped label.
