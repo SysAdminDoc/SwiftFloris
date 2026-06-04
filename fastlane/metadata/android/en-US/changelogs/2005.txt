@@ -1,0 +1,1 @@
+Built out Physical keyboard settings with custom layout import for KLC, macOS keylayout, and Keyman KMP LDML layouts. Imported layouts are stored privately, selectable in Settings, and can be applied to an attached hardware keyboard through the runtime mapper.

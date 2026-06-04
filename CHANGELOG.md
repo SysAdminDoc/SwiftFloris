@@ -2,6 +2,47 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.205"></a>
+## v1.8.205
+
+Released: 2026-06-04
+
+### Physical keyboard layout imports
+
+F29 builds out the Settings -> Advanced -> Physical keyboard surface around the hardware-layout parsers that were already present. Users can import Windows KLC files, macOS `.keylayout` files, and Keyman `.kmp` packages containing LDML layouts through the system file picker.
+
+Imported layouts are persisted in a private app catalog, shown in Settings with a selectable summary, and can be applied to an attached hardware keyboard through `KeyboardManager.setHardwareKeyboardLayoutForDevice(...)`. The UI also exposes clear import/apply/delete feedback and keeps all file handling local to the app process.
+
+### Changes
+
+- **`PhysicalKeyboardScreen.kt`** — added custom-layout import, persisted imported-layout picker, attached hardware keyboard picker, refresh action, forget action, and runtime apply flow.
+- **`HardwareKeyboardLayoutImport.kt`** (new) — import classifier, KLC / macOS `.keylayout` / Keyman `.kmp` LDML loading, bounded file-size guard, stable layout IDs, private JSON catalog, and repository wrapper.
+- **`HardwareKeyboardLayout.kt`** — made hardware layout DTOs serializable so imported layouts can be stored without bespoke mappers.
+- **`PhysicalKeyboardPolicy.kt`** (new) — pure operation gating, notice mapping, and selector defaults for the physical-keyboard settings flow.
+- **`HardwareKeyboardLayoutStoreTest.kt` / `PhysicalKeyboardPolicyTest.kt`** (new) — JVM coverage for import persistence, Keyman LDML package handling, compiled-only package rejection, delete persistence, busy-state gating, apply requirements, notice mapping, and selector defaults.
+- **`ROADMAP.md` / `COMPLETED.md`** — F29 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:testDebugUnitTest` -> green.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+- `bash scripts/check-fastlane-metadata.sh` -> green.
+- `bash scripts/check-repo-hygiene.sh` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/PhysicalKeyboardPolicy.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/PhysicalKeyboardScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/HardwareKeyboardLayout.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/hardware/HardwareKeyboardLayoutImport.kt` (new)
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/advanced/PhysicalKeyboardPolicyTest.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/hardware/HardwareKeyboardLayoutStoreTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2005.txt` (new)
+- `gradle.properties` (versionCode 2004->2005, versionName 1.8.204->1.8.205)
+- `README.md` (version badge/current release)
+- `ROADMAP.md` / `COMPLETED.md` (F29 moved to shipped work)
+
 <a id="v1.8.204"></a>
 ## v1.8.204
 
