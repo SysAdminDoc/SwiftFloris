@@ -1,0 +1,1 @@
+Fastlane changelog guidance now documents the 480-character draft budget, store-facing summary rules, and release-evidence expectations for each versionCode.

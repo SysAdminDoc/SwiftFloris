@@ -1,6 +1,6 @@
 # SwiftFloris Local Verification
 
-Last updated: 2026-06-04 for v1.8.244.
+Last updated: 2026-06-04 for v1.8.245.
 
 Run these checks before committing code that changes app behavior, build logic,
 resources, or docs that describe shipped behavior.
@@ -21,6 +21,17 @@ bash scripts/check-fastlane-metadata.sh
 `check-fastlane-metadata.sh` was added in v1.8.175 to catch F-Droid listing drift
 (see [`CHANGELOG.md#v1.8.175`](../CHANGELOG.md#v1.8.175)). Every `projectVersionCode`
 bump must ship with a matching `fastlane/metadata/android/en-US/changelogs/<code>.txt`.
+
+Before running the script, review the matching Fastlane changelog as a
+store-facing draft:
+
+- Keep it at or below 480 characters for headroom; the script enforces the
+  hard 500-character ceiling.
+- Summarize the user-visible or maintainer-visible outcome, not the file list.
+- Omit Gradle commands, internal-only issue IDs, and claims not present in the
+  full `CHANGELOG.md` section or release evidence.
+- For docs-only releases, state the clarified workflow instead of implying
+  product behavior changed.
 
 Expected result:
 
