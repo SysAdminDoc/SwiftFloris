@@ -85,6 +85,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.showShortToastSync
@@ -111,6 +112,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     val resources = KeyboardManagerResources()
     val activeState = ObservableKeyboardState.new()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
+    @Volatile
+    private var incognitoModeChangedListener: ((Boolean) -> Unit)? = null
     private var lastToastReference = WeakReference<Toast>(null)
 
     private val activeEvaluatorGuard = Mutex(locked = false)
@@ -228,6 +231,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 lastCharactersEvaluator.value = computingEvaluator
             }
         }
+    }
+
+    fun setIncognitoModeChangedListener(listener: ((Boolean) -> Unit)?) {
+        incognitoModeChangedListener = listener
+    }
+
+    fun clearIncognitoModeChangedListener() {
+        incognitoModeChangedListener = null
     }
 
     fun reevaluateInputShiftState() {
@@ -739,6 +750,11 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         prefs.suggestion.forceIncognitoModeFromDynamic.set(!prefs.suggestion.forceIncognitoModeFromDynamic.get())
         val newState = !activeState.isIncognitoMode
         activeState.isIncognitoMode = newState
+        incognitoModeChangedListener?.let { listener ->
+            withContext(Dispatchers.Main.immediate) {
+                listener(newState)
+            }
+        }
         lastToastReference.get()?.cancel()
         lastToastReference = WeakReference(
             if (newState) {

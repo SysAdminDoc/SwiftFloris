@@ -1,0 +1,3 @@
+v1.8.231 - Incognito screen-capture guard.
+
+Dynamic incognito toggles now re-apply the IME window FLAG_SECURE policy immediately for the active field. Plain fields become screenshot-blocked when incognito turns on, password/private fields stay protected, and focused policy tests pin the password/incognito/off combinations.

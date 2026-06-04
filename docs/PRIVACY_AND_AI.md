@@ -1,6 +1,6 @@
 # Privacy and AI in SwiftFloris
 
-**Last updated:** 2026-05-17
+**Last updated:** 2026-06-04
 **EU AI Act Article 50 compliance horizon:** 2 August 2026
 
 This document explains every AI/ML surface in SwiftFloris, what it does,
@@ -250,10 +250,10 @@ Every surface above is subject to:
 - The **`SensitiveFieldGuard`** check at every addon dispatch site — sensitive
   fields (password / numeric-PIN / no-personalised-learning) return a safe
   no-result before any AI provider is asked.
-- The **`FLAG_SECURE`** window flag on password / visible-password / web-password
-  fields — the keyboard itself is excluded from screenshots and screen
-  recordings, so screen-recorder OCR cannot snipe credentials from the
-  long-press alt-glyph popup.
+- The **`FLAG_SECURE`** window flag on password / visible-password /
+  web-password fields and while incognito is active. Dynamic incognito toggles
+  re-apply the policy immediately, so the keyboard itself is excluded from
+  screenshots and screen recordings during private typing.
 - The **personal-dictionary isolation contract** — the `learnWord` path
   never references the system `UserDictionary.Words`. The
   `PersonalDictionaryIsolationTest` will fail if a future contributor

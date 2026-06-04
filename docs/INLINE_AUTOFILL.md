@@ -69,11 +69,11 @@ color render correctly inside the strip.
   the manager's icon as an inline chip; tapping it triggers the manager's
   biometric / unlock flow. This is intentional: SwiftFloris never accepts
   unauthenticated credentials.
-- **`FLAG_SECURE` is applied to the IME window in password fields**
-  (N7.2). This is independent of inline autofill — it prevents screenshots
-  / external-display mirroring of the suggestion strip during credential
-  entry. Inline chips are still rendered locally in the IME window for the
-  user.
+- **`FLAG_SECURE` is applied to the IME window in password fields and while
+  incognito is active** (N7.2 / R7-1). This is independent of inline autofill —
+  it prevents screenshots / external-display mirroring of the suggestion strip
+  during credential entry and private typing. Inline chips are still rendered
+  locally in the IME window for the user.
 - **Personalized learning is force-disabled in password fields**
   (`KeyboardManager.learnIfAllowed`, N7.2 hardening). The personal
   dictionary will not record any character typed while a password field is
