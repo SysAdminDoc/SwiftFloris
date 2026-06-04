@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.241"></a>
+## v1.8.241
+
+Released: 2026-06-04
+
+### MIME helper contract
+
+R4-3 is closed. The shared MIME helper no longer prints compiled filters from its constructor, its aggregate helpers document their null/empty/exactly-one semantics, and focused coverage pins case-sensitive matching plus the legacy fragment-wildcard patterns used by extension import filters.
+
+### Changes
+
+- **`MimeTypeFilter.kt`** - removes constructor stdout logging and replaces aggregate-helper TODOs with explicit KDoc for `matchesAll`, `matchesAny`, and `matchesOne`.
+- **`MimeTypeFilterTest.kt`** - adds null/empty/all/any/exactly-one aggregate tests, a stdout-capture guard, case-sensitive matching coverage, and intentional fragment-wildcard aggregate coverage.
+- **`ExtensionEditFilesScreen.kt`** - documents the legacy font MIME wildcard contract at the import filter call site.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.241 / versionCode 2041 and closes R4-3.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :lib:kotlin:test --tests org.florisboard.lib.kotlin.MimeTypeFilterTest"` - PASS in 31s.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2041.
+- APK assembly was intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/ext/ExtensionEditFilesScreen.kt`
+- `fastlane/metadata/android/en-US/changelogs/2041.txt` (new)
+- `gradle.properties` (versionCode 2040->2041, versionName 1.8.240->1.8.241)
+- `lib/kotlin/src/main/kotlin/org/florisboard/lib/kotlin/MimeTypeFilter.kt`
+- `lib/kotlin/src/test/kotlin/org/florisboard/lib/kotlin/MimeTypeFilterTest.kt`
+
 <a id="v1.8.240"></a>
 ## v1.8.240
 
