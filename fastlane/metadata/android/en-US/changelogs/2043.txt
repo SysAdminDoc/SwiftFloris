@@ -1,0 +1,1 @@
+Localization copy now avoids Turkish repeated-word lint, uses clearer source labels, and standardizes failure/destructive wording with focused resource tests.

@@ -81,6 +81,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] R11-1 (P2) — Async preference-store initialization failures now stage a crash report, unblock the Settings splash wait, and redirect to the existing crash recovery surface before normal Settings content renders. Shipped v1.8.240. — *Source: ROADMAP.md Researcher Queue Cycle 11.*
 - [x] R4-3 (P3) — `MimeTypeFilter` aggregate helper behavior is documented and covered for null, empty, many-match, exactly-one, case-sensitive, and legacy fragment-wildcard inputs, and constructor stdout logging is removed. Shipped v1.8.241. — *Source: ROADMAP.md Researcher Queue Cycle 4.*
 - [x] R4-4 (P3) — `NativeStr.toJavaString()` now decodes only ByteBuffer remaining bytes and preserves caller-visible position across heap, sliced heap, direct, and read-only buffers. Shipped v1.8.242. — *Source: ROADMAP.md Researcher Queue Cycle 4.*
+- [x] WS12 (P2) — Localization content-quality pass cleared Turkish adjacent repeated-word lint with native-safe copy, tightened source labels, standardized trust-sensitive failure/destructive wording, and documented translation-safe cleanup rules. Shipped v1.8.243. — *Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS12.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 

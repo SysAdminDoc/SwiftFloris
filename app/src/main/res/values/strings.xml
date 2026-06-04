@@ -470,9 +470,9 @@
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
     <string name="settings__theme_manager__empty_title">No themes available</string>
     <string name="settings__theme_manager__empty_message">Bundled themes should appear here. If this stays empty, reinstall SwiftFloris or import a trusted theme extension.</string>
-    <string name="pref__theme__source_assets" comment="Label for the theme source field">SwiftFloris App Assets</string>
-    <string name="pref__theme__source_internal" comment="Label for the theme source field">Internal Storage</string>
-    <string name="pref__theme__source_external" comment="Label for the theme source field">External Provider</string>
+    <string name="pref__theme__source_assets" comment="Label for the theme source field">Bundled SwiftFloris assets</string>
+    <string name="pref__theme__source_internal" comment="Label for the theme source field">App-private storage</string>
+    <string name="pref__theme__source_external" comment="Label for the theme source field">External document provider</string>
 
     <string name="settings__theme_manager__title_day" comment="Title of the theme manager screen for day theme selection">Select day theme</string>
     <string name="settings__theme_manager__title_night" comment="Title of the theme manager screen for night theme selection">Select night theme</string>
@@ -943,8 +943,8 @@
     <string name="settings__udm__open_system_manager_ui" comment="Label of the Open system manager UI menu option">Open system manager UI</string>
     <string name="settings__udm__dictionary_import_success" comment="Message for dictionary import success">User dictionary imported.</string>
     <string name="settings__udm__dictionary_export_success" comment="Message for dictionary export success">User dictionary exported.</string>
-    <string name="settings__udm__dictionary_import_failure" comment="Message for dictionary import failure">Could not import user dictionary: {error_message}</string>
-    <string name="settings__udm__dictionary_export_failure" comment="Message for dictionary export failure">Could not export user dictionary: {error_message}</string>
+    <string name="settings__udm__dictionary_import_failure" comment="Message for dictionary import failure">Could not import user dictionary. No dictionary changes were saved. Details: {error_message}</string>
+    <string name="settings__udm__dictionary_export_failure" comment="Message for dictionary export failure">Could not export user dictionary. No dictionary file was saved. Details: {error_message}</string>
     <string name="settings__udm__dictionary_import_in_progress" comment="Card title shown while a user dictionary file is being imported">Importing user dictionary</string>
     <string name="settings__udm__dictionary_import_in_progress_summary" comment="Card summary shown while a user dictionary file is being imported">Keep this screen open while SwiftFloris reads the selected file and updates the dictionary list.</string>
     <string name="settings__udm__dictionary_export_in_progress" comment="Card title shown while a user dictionary file is being exported">Exporting user dictionary</string>
@@ -973,10 +973,10 @@
     <string name="settings__udm__import_summary__no_changes" comment="Summary line shown when the import made no changes (e.g. empty input or only blank words).">No changes were made to your dictionary.</string>
     <string name="settings__udm__import_summary__format__json" comment="Source-format label for SwiftKey JSON imports">SwiftKey JSON export</string>
     <string name="settings__udm__import_summary__format__xml" comment="Source-format label for Gboard XML imports">Gboard XML export</string>
-    <string name="settings__udm__import_summary__format__csv" comment="Source-format label for CSV imports">CSV file</string>
-    <string name="settings__udm__import_summary__format__zip" comment="Source-format label for zip-archive imports">Zip archive</string>
+    <string name="settings__udm__import_summary__format__csv" comment="Source-format label for CSV imports">CSV dictionary file</string>
+    <string name="settings__udm__import_summary__format__zip" comment="Source-format label for zip-archive imports">ZIP dictionary archive</string>
     <string name="settings__udm__import_summary__format__floris" comment="Source-format label for SwiftFloris combined-list imports">SwiftFloris dictionary export</string>
-    <string name="settings__udm__import_summary__format__unknown" comment="Source-format label for unknown / legacy imports">Personal dictionary file</string>
+    <string name="settings__udm__import_summary__format__unknown" comment="Source-format label for unknown / legacy imports">Legacy personal dictionary file</string>
     <string name="settings__udm__import_summary__source" comment="Caption showing the detected source format. Placeholder is the format label.">Imported from: {format}</string>
     <string name="settings__udm__import_summary__rollback" comment="Action button on the post-import dialog that undoes the import">Undo import</string>
     <string name="settings__udm__import_summary__keep" comment="Action button on the post-import dialog that dismisses the dialog without undoing">Keep imported words</string>
@@ -1268,7 +1268,7 @@
     <string name="backup_and_restore__back_up__cancelled">Backup cancelled</string>
     <string name="backup_and_restore__back_up__cancelled_summary">No archive was saved. You can adjust the backup contents and try again.</string>
     <string name="backup_and_restore__back_up__failure_title">Backup failed</string>
-    <string name="backup_and_restore__back_up__failure">Could not export backup archive: {error_message}</string>
+    <string name="backup_and_restore__back_up__failure">Could not export backup archive. No backup archive was saved. Details: {error_message}</string>
     <string name="backup_and_restore__back_up__failure_recovery">No backup archive was saved. Check available storage or choose another destination, then try again. Details: {error_message}</string>
     <string name="backup_and_restore__back_up__unknown_error">Unknown error</string>
     <string name="backup_and_restore__back_up__clipboard_privacy_warning_title">Sensitive clipboard items stay private</string>
@@ -1300,7 +1300,7 @@
     <string name="backup_and_restore__restore__cancelled">Restore cancelled</string>
     <string name="backup_and_restore__restore__cancelled_summary">No data was changed. Select an archive and restore mode when you are ready.</string>
     <string name="backup_and_restore__restore__failure_title">Restore failed</string>
-    <string name="backup_and_restore__restore__failure">Could not restore data: {error_message}</string>
+    <string name="backup_and_restore__restore__failure">Could not restore data. Restore stopped before all selected data was imported. Details: {error_message}</string>
     <string name="backup_and_restore__restore__failure_recovery">Restore stopped before all selected data could be imported. Review the archive, select only the needed sections, or retry from a newer backup. Details: {error_message}</string>
     <string name="backup_and_restore__restore__unknown_error">Unknown error</string>
     <string name="backup_and_restore__restore__partial_failure_title">Restore finished with warnings</string>
@@ -1544,11 +1544,11 @@
     <string name="ext__editor__edit_component__title">Edit component</string>
     <string name="ext__editor__edit_component__title_theme">Edit theme component</string>
     <string name="ext__export__success">Extension exported.</string>
-    <string name="ext__export__failure">Could not export extension: {error_message}</string>
+    <string name="ext__export__failure">Could not export extension. No extension archive was saved. Details: {error_message}</string>
     <string name="ext__import__success">Extension imported.</string>
     <string name="ext__import__success_title">Import complete</string>
     <string name="ext__import__success_summary">SwiftFloris imported the selected extension files and refreshed the installed extension list.</string>
-    <string name="ext__import__failure">Could not import extension: {error_message}</string>
+    <string name="ext__import__failure">Could not import extension. Installed extensions were not changed. Details: {error_message}</string>
     <string name="ext__import__failure_title">Import failed</string>
     <string name="ext__import__failure_summary">No extension files were imported or updated. Review the error, choose the files again, and retry. Details: {error_message}</string>
     <string name="ext__import__ext_any" comment="Title of Importer screen for import of any supported SwiftFloris extension">Import extension</string>
@@ -1639,7 +1639,7 @@
     <string name="action__default">Default</string>
     <string name="action__delete">Delete</string>
     <string name="action__delete_confirm_title">Confirm delete</string>
-    <string name="action__delete_confirm_message">Delete \"{name}\"? This cannot be undone.</string>
+    <string name="action__delete_confirm_message">Delete \"{name}\"? This permanently removes the item from this device.</string>
     <string name="action__reset">Reset</string>
     <string name="action__reset_confirm_title">Confirm reset</string>
     <string name="action__reset_confirm_message">Reset \"{name}\"? This cannot be undone.</string>

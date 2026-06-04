@@ -46,7 +46,7 @@
     <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">Son kullanılan emoji bulunamadı. Emoji yazmaya başladığınızda otomatik olarak burada görüneceklerdir.</string>
     <string name="emoji__history__phone_locked_message" comment="Message to show if phone is locked">Emoji geçmişinize erişmek için lütfen önce cihazınızın kilidini açın.</string>
     <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Profesyonel ipucu: Emoji geçmişindeki emojilere uzun basarak onları sabitleyebilir veya kaldırabilirsiniz!</string>
-    <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">{emoji} emoji geçmişinden kaldırıldı</string>
+    <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">Emoji geçmişinden kaldırıldı: {emoji}</string>
     <string name="emoji__history__pinned">Sabitlenmiş</string>
     <string name="emoji__history__recent">Son Kullanılan</string>
     <!-- Quick action strings -->
@@ -549,7 +549,7 @@
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Gizlilik politikası</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Depo</string>
     <string name="setup__enable_ime__title">{app_name} uygulamasını etkinleştirin</string>
-    <string name="setup__enable_ime__description">Android, kullanabilmeniz için her özel klavyenin ayrı ayrı etkinleştirilmesini gerektirir. Sistem <i>Dil ve Giriş</i> Ayarlarını açın, orada \"{app_name}\" öğesini etkinleştirin.</string>
+    <string name="setup__enable_ime__description">Android, kullanabilmeniz için her özel klavyenin ayrı olarak etkinleştirilmesini gerektirir. Sistem <i>Dil ve Giriş</i> Ayarlarını açın, orada \"{app_name}\" öğesini etkinleştirin.</string>
     <string name="setup__enable_ime__open_settings_btn">Sistem Ayarlarını Aç</string>
     <string name="setup__select_ime__title">{app_name} uygulamasını seçin</string>
     <string name="setup__select_ime__description">{app_name} artık sisteminizde etkin. Aktif olarak kullanmak için giriş seçici diyaloğunda seçerek {app_name} uygulamasına geçin!</string>
@@ -611,7 +611,7 @@
     <string name="crash_notification_channel__title" comment="Title of crash notification channel">FlorisBoard hata raporları</string>
     <string name="crash_once_notification__title" comment="Title of the notification for a single crash">FlorisBoard çalışmayı durdurdu…</string>
     <string name="crash_once_notification__body" comment="Body of the notification for a single crash">Hata ayrıntılarını görüntülemek için dokunun</string>
-    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">FlorisBoard tekrar tekrar çalışmayı durduruyor gibi görünüyor…</string>
+    <string name="crash_multiple_notification__title" comment="Title of the notification for consecutive crashes">FlorisBoard art arda çalışmayı durduruyor gibi görünüyor…</string>
     <string name="crash_multiple_notification__body" comment="Body of the notification for consecutive crashes">Sonsuz çökme döngüsünü durdurmak için önceki klavyeye geri dönülüyor. Hata ayrıntılarını görüntülemek için dokunun</string>
     <!-- Clipboard strings -->
     <string name="clipboard__header_title">Pano</string>
@@ -761,7 +761,7 @@
     <string name="ext__import__file_skip_media_not_supported" comment="Reason string when file is loaded in incorrect context">Bir eklenti arşivi bekleniyordu ancak bir medya dosyası (resim, ses, yazı tipi vb.) bulundu.</string>
     <string name="ext__import__error_unexpected_exception" comment="Label when an error occurred during import. The error message will be appended below this text view">İçe aktarma sırasında beklenmedik bir hata oluştu. Aşağıdaki ayrıntılar sağlandı:</string>
     <string name="ext__validation__enter_package_name">Lütfen bir paket adı girin</string>
-    <string name="ext__validation__error_package_name">Paket adı {id_regex} regex\'iyle eşleşmiyor</string>
+    <string name="ext__validation__error_package_name">Paket adı {id_regex} deseniyle eşleşmiyor</string>
     <string name="ext__validation__enter_version">Lütfen bir sürüm girin</string>
     <string name="ext__validation__enter_title">Lütfen bir başlık girin</string>
     <string name="ext__validation__enter_maintainer">Lütfen en az bir geçerli sürdüren girin</string>
@@ -835,7 +835,7 @@
     <string name="error__snackbar_message_template">Bir şeyler ters gitti: {error_message}</string>
     <!-- General strings -->
     <string name="general__example_given" comment="This string is used where an example will be inserted in the {example} block. When translating, use the abbreviation used in your language for 'example given'.">ör. {example}</string>
-    <string name="general__no_browser_app_found_for_url">{url} URL\'sini işlemek için tarayıcı uygulaması bulunamadı</string>
+    <string name="general__no_browser_app_found_for_url">{url} adresini açacak tarayıcı uygulaması bulunamadı</string>
     <string name="general__select_dropdown_value_placeholder">&#45; seçin &#45;</string>
     <string name="general__unlimited">Sınırsız</string>
     <string name="general__file_name">Dosya adı</string>

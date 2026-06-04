@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.243"></a>
+## v1.8.243
+
+Released: 2026-06-04
+
+### Localization copy quality
+
+WS12 is closed. Turkish resource copy now avoids adjacent repeated-word lint without deleting native meaning, source labels name the actual source, and backup/restore/import/export plus generic destructive copy now follows one trust-sensitive pattern.
+
+### Changes
+
+- **`strings.xml`** - tightens theme/import source labels and standardizes backup, restore, dictionary, extension, and generic delete copy around unchanged state plus details.
+- **`values-tr/strings.xml`** - rewrites the Turkish adjacent-word lint candidates with native-safe wording and removes placeholder-adjacent false-positive phrasing where the visible copy was clearer without it.
+- **`LocalizationCopyTest.kt`** - adds focused resource coverage for Turkish adjacent repeated words, specific source labels, trust-sensitive failure copy, and generic destructive confirmation wording.
+- **`docs/REPO_HYGIENE.md`** - documents translation-safe cleanup rules for repeated-word review, source labels, failure copy, and destructive confirmations.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.243 / versionCode 2043 and closes WS12.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.resources.LocalizationCopyTest"` - PASS in 1m44s.
+- Turkish XML duplicate-word scan with placeholders ignored - PASS.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2043.
+- APK assembly was intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/res/values-tr/strings.xml`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/resources/LocalizationCopyTest.kt` (new)
+- `docs/REPO_HYGIENE.md`
+- `fastlane/metadata/android/en-US/changelogs/2043.txt` (new)
+- `gradle.properties` (versionCode 2042->2043, versionName 1.8.242->1.8.243)
+
 <a id="v1.8.242"></a>
 ## v1.8.242
 
