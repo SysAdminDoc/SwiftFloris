@@ -169,6 +169,10 @@ candidate to be the first one TalkBack reaches.
 
 ## Manual QA checklist
 
+The broader release matrix lives in [`QA_CHECKLISTS.md`](QA_CHECKLISTS.md).
+Use this section for accessibility-specific checks and link the completed rows
+from the release evidence when TalkBack or visual accessibility is affected.
+
 - **Settings traversal:** with TalkBack enabled, navigate Settings home → one
   nested settings screen → back. Each screen should announce one pane title,
   then traverse app bar controls, scrollable content, bottom actions, and

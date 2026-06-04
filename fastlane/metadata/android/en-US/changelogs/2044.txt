@@ -1,0 +1,1 @@
+Visual-QA, manual-QA, and release-evidence checklists now live in docs/QA_CHECKLISTS.md and are linked from verification docs.

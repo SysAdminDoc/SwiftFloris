@@ -100,7 +100,10 @@ Also run when relevant:
 .\gradlew.bat :app:installDebug
 ```
 
-Manual QA is required for IME behavior. For keyboard changes, test at least:
+Manual QA is required for IME behavior. Use
+[`docs/QA_CHECKLISTS.md`](docs/QA_CHECKLISTS.md) for the visual matrix,
+manual-flow rows, and release-evidence format. For keyboard changes, test at
+least:
 
 - A normal text field.
 - A password field.
@@ -132,6 +135,9 @@ Accessibility notes for manual QA:
 - Re-check dark theme, SwiftKey High Contrast, compact/floating/split layouts,
   and at least one landscape viewport when the change touches keyboard or
   settings layout.
+
+Record skipped visual or manual rows with a reason. Do not mark a
+device-gated row complete from source inspection alone.
 
 If your machine cannot run Gradle, say exactly which command was attempted and
 why it failed. Do not mark a code change fully verified from source inspection

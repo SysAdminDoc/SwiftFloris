@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.243 (versionCode 2043). **Local verification:** focused `LocalizationCopyTest` passed in 1m44s with one Gradle worker; `git diff --check` and fastlane metadata gates passed; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.244 (versionCode 2044). **Local verification:** docs-only QA checklist pass verified with `git diff --check`, `bash scripts/check-fastlane-metadata.sh`, and `bash scripts/check-repo-hygiene.sh`; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -89,11 +89,14 @@ items belong in `COMPLETED.md`.
     dictionary/extension failure and generic destructive-confirmation copy,
     repo-hygiene translation-safe cleanup rules, and focused
     `LocalizationCopyTest` resource coverage.
-- [ ] P2 — Visual-QA + manual-QA + release-evidence checklists (WS10 / WS15)
+- [x] P2 — Visual-QA + manual-QA + release-evidence checklists (WS10 / WS15)
   - Why: No standing checklists for the portrait/landscape/compact/floating/dark/high-font-scale matrix, manual QA, or release evidence.
   - Touches: docs for visual-QA matrix, manual-QA flow, and release-evidence capture.
   - Acceptance: three checklists exist and are referenced from the verification docs.
   - Source: docs/archive/TODO_2026-06-03.md A5 / improvement-plan WS10/WS15.
+  - Shipped: v1.8.244 (2026-06-04) with `docs/QA_CHECKLISTS.md` covering the
+    visual-QA matrix, manual-QA flow, and release-evidence checklist, plus
+    links from local verification, contributing, accessibility, and README docs.
 - [ ] P3 — Fastlane changelog drafting guide (R5)
   - Why: No documented guidance on drafting the <=480-char fastlane changelog.
   - Touches: add the guide to `docs/LOCAL_VERIFICATION.md` / `docs/REPO_HYGIENE.md`.
