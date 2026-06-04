@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 5 - 2026-06-04.
+> Last researched: Cycle 6 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -160,6 +160,49 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 6 - 2026-06-04)
+
+- [x] 🔬 `editor-batch-critical-section-recheck-2026-06-04` - synced
+  `master` at the Cycle 5 pushed tip, rechecked the editor hot-path audit
+  against live `AbstractEditorInstance` code and Android `InputConnection`
+  contracts, and avoided duplicating already-closed unbalanced-batch fixes. This
+  cycle adds one focused reliability row for batch-edit critical sections.
+
+#### Editor hot-path reliability
+
+- [ ] 🤖 P2 — Keep `InputConnection` batch edits free of `runBlocking` and queue-lock work (R6-1)
+  - Why: `beginBatchEdit()` / `endBatchEdit()` should bracket the smallest
+    synchronous editor mutation set. Several IME hot paths currently open a
+    batch edit before doing `runBlocking`, generating expected content, and
+    acquiring the `ExpectedContentQueue` lock. That keeps the target editor in a
+    nested batch while coroutine/queue work runs on the UI path and also leaves
+    `endBatchEdit()` outside `try/finally` in fragile code paths.
+  - Evidence: `AbstractEditorInstance.kt:311-325` opens a batch in
+    `setSelection`, then enters `runBlocking` to compute `newContent`, push the
+    expected-content queue, and call `setSelection` / `setComposingRegion`;
+    `AbstractEditorInstance.kt:396-414` and `AbstractEditorInstance.kt:429-445`
+    show the same pattern in text commit/finalize paths;
+    `ExpectedContentQueue` uses suspending `withLock` helpers at
+    `AbstractEditorInstance.kt:679-708`; `docs/AUDIT_2026-05-28.md:54-56`
+    records this exact `setSelection` risk. Android `InputConnection` docs
+    define `beginBatchEdit`, `endBatchEdit`, `setSelection`, and composing
+    region/text mutations as editor-facing operations
+    (`https://developer.android.com/reference/android/view/inputmethod/InputConnection`).
+  - Touches: `AbstractEditorInstance.kt`, a small fake/stub `InputConnection`
+    test harness under `app/src/test/.../ime/editor`, and comments only where a
+    hot path must intentionally keep a batch open.
+  - Acceptance: `setSelection`, `commitTextInternal`, `finalizeComposingText`,
+    and the `commitChar` replacement branch have no suspending/blocking queue
+    work between `beginBatchEdit()` and `endBatchEdit()`; batch pairs use
+    `try/finally`; expected-content ordering remains correct for
+    `onUpdateSelection`; tests assert batch depth returns to zero and that the
+    order of `InputConnection` calls is unchanged for representative cursor,
+    commit, and composing-finalization cases.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.editor.*"` plus manual sustained-typing
+    smoke on a low-end device if available.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 5 - 2026-06-04)
 
