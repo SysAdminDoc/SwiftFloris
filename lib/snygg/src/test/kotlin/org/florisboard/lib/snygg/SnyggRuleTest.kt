@@ -103,6 +103,7 @@ class SnyggRuleTest {
             "button::pressed",
             "button::focus",
             "button::disabled",
+            "button:unknown",
             "smartbar:this\$is%illegal",
             "smartbar::",
             "smartbar:",
@@ -156,6 +157,11 @@ class SnyggRuleTest {
             assertAll(invalidRules.map { raw -> {
                 assertNull(SnyggRule.fromOrNull(raw))
             } })
+        }
+
+        @Test
+        fun `unknown selectors are rejected instead of imported as base rules`() {
+            assertNull(SnyggRule.fromOrNull("keyboard:unknown"))
         }
     }
 

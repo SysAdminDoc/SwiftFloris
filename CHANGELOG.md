@@ -2,6 +2,49 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.234"></a>
+## v1.8.234
+
+Released: 2026-06-04
+
+### Post-hotfix regression coverage
+
+R3-4 is closed. The fragile post-v1.8.225 hotfix surfaces now have focused regression coverage for Arabic combining-mark shaping, unknown Snygg selector import, `contentScale` serialization/default handling, private-session trace suppression, and locale-scoped personal n-gram flush behavior.
+
+### Changes
+
+- **`ArabicShaperTest.kt`** - pins that Arabic non-spacing marks stay in place while neighboring letters still see the correct joining context.
+- **`SnyggRuleTest.kt` / `SnyggUriValueTest.kt`** - explicitly reject unknown selectors and cover every `SnyggContentScaleValue` serialization token plus its default.
+- **`SwiftKeyTypingTraceRecorderTest.kt`** - adds Robolectric coverage proving private suggestion and auto-commit trace calls do not create an opt-in trace file even when tracing is enabled.
+- **`PersonalNgramFlushIsolationTest.kt`** - adds source-level guards that bigram/trigram threshold flushes use the current locale tag and that `flush(localeTag)` snapshots/writes only the requested locale instead of broad-clearing per-locale state.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.234 / versionCode 2034 and closes R3-4.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.bidi.ArabicShaperTest --tests dev.patrickgold.florisboard.ime.nlp.SwiftKeyTypingTraceRecorderTest --tests dev.patrickgold.florisboard.ime.dictionary.PersonalNgramFlushIsolationTest :lib:snygg:testDebugUnitTest --tests org.florisboard.lib.snygg.SnyggRuleTest --tests org.florisboard.lib.snygg.value.SnyggUriValueTest"` - PASS in 1m29s.
+- `app/build/test-results/testDebugUnitTest/TEST-Gradle-Test-Run--app-testDebugUnitTest.xml` confirmed the Kotest `ArabicShaperTest` and `PersonalNgramFlushIsolationTest` filters were selected.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2034.
+- Full Gradle gate, APK assembly, and device QA were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/bidi/ArabicShaperTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/dictionary/PersonalNgramFlushIsolationTest.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/nlp/SwiftKeyTypingTraceRecorderTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2034.txt` (new)
+- `gradle.properties` (versionCode 2033->2034, versionName 1.8.233->1.8.234)
+- `lib/snygg/src/test/kotlin/org/florisboard/lib/snygg/SnyggRuleTest.kt`
+- `lib/snygg/src/test/kotlin/org/florisboard/lib/snygg/value/SnyggUriValueTest.kt`
+
 <a id="v1.8.233"></a>
 ## v1.8.233
 
