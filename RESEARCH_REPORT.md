@@ -11,7 +11,7 @@ This report summarizes current research conclusions. The full 2026-05-25 researc
 2026-06-04 Cycle 2 note: local reconciliation found three gaps that were not
 already represented in `ROADMAP.md`: a staged startup-exception path that was
 never drained (`R2-1`, closed v1.8.218), stale root onboarding/release docs
-after the v1.8.170 -> v1.8.218 release run (`R2-3`), and a smaller
+after the v1.8.170 -> v1.8.219 release run (`R2-3`), and a smaller
 diagnostic-consistency row (`R2-2`) for remaining `printStackTrace()` paths
 without claiming release-build file logging. External checks did not create new upstream rows: FlorisBoard has
 `v0.6.0-alpha02` in tags while the latest GitHub release page is `v0.5.2`,
@@ -24,9 +24,11 @@ F22/F10/F12/API 37 work.
 
 2026-06-04 startup-diagnostics note: v1.8.218 closed R2-1 with a recoverable staged-init path. `CrashUtility.consumeStagedException(...)` persists the staged stacktrace without invoking the process-killing uncaught handler, and `FlorisAppActivity` redirects to `CrashDialogActivity` before the splash screen can wait on unloaded preferences.
 
+2026-06-04 restore-diagnostics note: v1.8.219 closed R2-2. Restore failure diagnostics now use `flogError`, restore cards/toasts resolve null or blank throwable messages to stable fallback copy, and `CrashUtility.writeToFile(...)` logs stacktrace write failures through `LogTopic.CRASH_UTILITY` without claiming release-build persisted file logging.
+
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.218 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped in v1.8.204 (commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.219 the feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import) and the compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on the newest code: the **settings search** feature shipped in v1.8.204 (commit `1966c69`). Search is a hand-maintained static catalog (a 33-value `SettingsSearchDestination` enum plus ~100 entry rows) that mirrors the navigation graph and references string resIds directly, with **no drift guard** and several UX/accessibility gaps. [Verified]
 
 Top opportunities (one line each):
 
@@ -36,7 +38,7 @@ Top opportunities (one line each):
 4. **Keyword/synonym coverage** — most entries ship no `keywords`; capability terms like "dark mode"/"haptic" miss (RA-3, P2). [Verified]
 5. **TalkBack pass over search** — no semantics/live-region on results or count; not in `ACCESSIBILITY.md` QA checklist (RA-4, P2). [Verified]
 6. **Search entry-point discoverability** from Settings home (RA-8, P3). [Likely]
-7. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths need project logging plus user-safe fallback copy (R2-2, P2). [Verified]
+7. **Restore/crash diagnostic consistency** — remaining `printStackTrace()` paths were replaced with project logging plus user-safe fallback copy in v1.8.219 (R2-2). [Closed]
 8. **Root docs source-of-truth refresh** — onboarding docs still mix v1.8.170-era facts, archived plan routes, and retired release-note instructions (R2-3, P2). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
@@ -74,7 +76,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Closed v1.8.215] No diacritic folding** → RA-5. (`SettingsSearchIndex.kt`.)
 - **[Cosmetic] Entry-point discoverability** → RA-8. (`HomeScreen.kt` per `1966c69`.)
 - **[Closed v1.8.218] Staged startup exception is never surfaced** → R2-1. `CrashUtility.consumeStagedException(...)` now persists the staged report without the process-killing handler, and `FlorisAppActivity` opens the crash dialog before installing the splash-screen keep condition.
-- **[Minor] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` and `CrashUtility.writeToFile` still bypass the project logging idiom; `BackupScreen` already shows the preferred local pattern. The item is framed as consistency + fallback-copy work, not release persisted logging.
+- **[Closed v1.8.219] Remaining diagnostic `printStackTrace()` paths** → R2-2. `RestoreScreen` failure diagnostics now use `flogError`, restore UI copy falls back to the existing "Unknown error" string for null/blank throwable messages, and `CrashUtility.writeToFile` logs through `LogTopic.CRASH_UTILITY`.
 
 ## Architecture & Technical Findings
 
@@ -87,7 +89,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the empty/no-results system-settings deep-link (RA-2) uses Android's documented `Settings.ACTION_INPUT_METHOD_SETTINGS` intent and does not weaken the no-network posture. R2-1 closed as local diagnostic-safety work without adding network, telemetry, or broad file export; R2-2 should keep that same constraint. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the empty/no-results system-settings deep-link (RA-2) uses Android's documented `Settings.ACTION_INPUT_METHOD_SETTINGS` intent and does not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 

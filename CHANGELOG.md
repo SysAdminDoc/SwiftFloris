@@ -2,6 +2,44 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.219"></a>
+## v1.8.219
+
+Released: 2026-06-04
+
+### Restore diagnostic consistency
+
+R2-2 is closed. Restore failure paths now use the project `flogError` logging idiom instead of raw `printStackTrace()`, and restore failure toasts/cards route through a shared fallback-copy policy so users see stable "Unknown error" text when Android surfaces a null or blank throwable message.
+
+Crash stacktrace write failures now log through the `CRASH_UTILITY` topic. This is intentionally scoped to diagnostic consistency and user-safe copy; it does not claim persisted release-build file logging.
+
+### Changes
+
+- **`RestoreScreen.kt`** - routes archive-load, section restore, top-level restore, and file-selector launch failures through `flogError`, while using `BackupRestorePolicy.restoreErrorMessage(...)` for user-visible failure text.
+- **`BackupRestorePolicy.kt` / `BackupRestorePolicyTest.kt`** - adds and tests stable restore failure copy for null or blank throwable messages.
+- **`CrashUtility.kt`** - replaces the crash-file write helper's raw stacktrace printing with `LogTopic.CRASH_UTILITY` logging.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - closes R2-2 and leaves R2-3 as the next Cycle 2 implementer work.
+- **`README.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.219 / versionCode 2019.
+
+### Verification
+
+- `./gradlew.bat --no-daemon :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.advanced.BackupRestorePolicyTest"` -> green.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupRestorePolicy.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/RestoreScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/crashutility/CrashUtility.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupRestorePolicyTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2019.txt` (new)
+- `gradle.properties` (versionCode 2018->2019, versionName 1.8.218->1.8.219)
+
 <a id="v1.8.218"></a>
 ## v1.8.218
 

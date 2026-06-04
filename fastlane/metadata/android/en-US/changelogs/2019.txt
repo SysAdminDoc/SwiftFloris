@@ -1,0 +1,3 @@
+v1.8.219 - restore diagnostic consistency.
+
+Restore and crash diagnostic failures now use project logging, and restore toasts/cards show stable fallback text when Android reports a null or blank error message.

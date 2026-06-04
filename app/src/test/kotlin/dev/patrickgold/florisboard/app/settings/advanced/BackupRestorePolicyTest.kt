@@ -265,4 +265,21 @@ class BackupRestorePolicyTest : FunSpec({
         summary.result shouldBe RestoreOperationResult.PartialFailure
         summary.firstFailureMessage shouldBe "kept for UI"
     }
+
+    test("restore error message falls back when throwable copy is absent or blank") {
+        BackupRestorePolicy.restoreErrorMessage(
+            error = IllegalStateException("invalid archive"),
+            fallbackMessage = "Unknown error",
+        ) shouldBe "invalid archive"
+
+        BackupRestorePolicy.restoreErrorMessage(
+            error = Throwable(),
+            fallbackMessage = "Unknown error",
+        ) shouldBe "Unknown error"
+
+        BackupRestorePolicy.restoreErrorMessage(
+            error = IllegalArgumentException(" "),
+            fallbackMessage = "Unknown error",
+        ) shouldBe "Unknown error"
+    }
 })

@@ -386,7 +386,9 @@ abstract class CrashUtility private constructor() {
             try {
                 file.writeText(text)
             } catch (e: Exception) {
-                e.printStackTrace()
+                flogError(LogTopic.CRASH_UTILITY) {
+                    "Failed to write stacktrace file '${file.name}':\n$e"
+                }
             }
         }
     }
