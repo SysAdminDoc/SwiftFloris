@@ -186,4 +186,68 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
-<!-- populated by the research pass -->
+*Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
+
+This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph with no drift guard — the highest-leverage net-new work.
+
+### Quick Wins
+
+- [ ] P3 — Strip diacritics in settings-search normalization (RA-5)
+  - Why: `searchNormalize()` lowercases and folds `& / - _` but does not fold accents, so a user typing `ä`/`ö`/`ç`/`é` (German, Turkish, French — all shipped subtypes) won't match ASCII labels like "Theme"/"Localization"; non-ASCII queries silently return fewer results.
+  - Evidence: `app/.../app/settings/search/SettingsSearchIndex.kt:271-279` — `searchNormalize()` has no `Normalizer.normalize(..., NFD)` + combining-mark strip; `score()` and `search()` both run through it.
+  - Touches: `SettingsSearchIndex.searchNormalize()` (add NFD decompose + `\p{Mn}` strip); add a JVM case to `SettingsSearchIndexTest.kt`.
+  - Acceptance: `search("themé")` and `search("thèmе")` return the Theme entry; ASCII queries unchanged.
+  - Verify: `:app:testDebugUnitTest` (new diacritic test green).
+  - Complexity: S
+- [ ] P3 — Clear ("X") button + Search IME action on the search field (RA-6)
+  - Why: The search `TextField` has no trailing clear affordance and no `KeyboardOptions(imeAction = Search)`; users must select-all-delete to reset and get a newline-style Enter. Every mainstream keyboard's own settings search offers a one-tap clear.
+  - Evidence: `app/.../search/SettingsSearchScreen.kt:77-95` — `TextField` sets `leadingIcon` only, `singleLine = true`, no `trailingIcon`, no `keyboardOptions`.
+  - Touches: `SettingsSearchScreen` (`trailingIcon` when query non-blank → clears; `keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search)`).
+  - Acceptance: a clear button appears while typing and resets the query; the on-screen Enter reads as a search action.
+  - Verify: `:app:assembleDebug`; manual on-device tap.
+  - Complexity: S
+- [ ] P3 — Auto-focus the search field on screen open (RA-7)
+  - Why: Opening Settings → Search lands on a blank field that is not focused, so the keyboard does not raise — an extra tap before the user can type. Auto-focus is the platform expectation for a dedicated search screen.
+  - Evidence: `SettingsSearchScreen.kt:70-95` — no `FocusRequester`/`LaunchedEffect{ requester.requestFocus() }`.
+  - Touches: `SettingsSearchScreen` (add `FocusRequester` + `LaunchedEffect(Unit)` request; respect `rememberSaveable` so rotation doesn't re-raise unexpectedly).
+  - Acceptance: the field is focused and the IME is shown on first composition; rotating does not steal focus from an in-progress edit.
+  - Verify: manual on-device.
+  - Complexity: S
+
+### Larger Bets
+
+- [ ] P1 — Drift guard test: every `SettingsSearchDestination` is navigable + every entry resId resolves (RA-1)
+  - Why: The search catalog is a 33-value enum + ~100 hand-curated entries that mirror the navigation graph and reference real string resIds. Nothing fails the build when a Settings screen is added without a search entry, an entry points at a deleted/renamed pref label, or a `destination` loses its `Routes.*` arm. The only existing test (`SettingsSearchIndexTest.kt`) uses a fake `resolve` map and asserts ranking, not integrity. This is the same registry-drift failure mode the project already hit elsewhere (see the partitioned-prefs golden test).
+  - Evidence: `SettingsSearchIndex.kt:24-58` (enum), `:102-205` (entries reference `R.string.*` directly), `SettingsSearchScreen.kt:148-188` (`when(destination)` mapping); `app/src/test/.../search/SettingsSearchIndexTest.kt:79` resolves via a fake map (`"res-$resId"`), so a dangling resId never surfaces in test.
+  - Touches: new JVM/Robolectric test asserting (a) entry `id`s are unique, (b) every `SettingsSearchEntry.titleResId`/`summaryResId`/`screenTitleResId` resolves against real `R.string` (non-blank, not the missing-resource fallback), (c) the `SettingsSearchDestination` enum is exhaustively handled by `navigateSearchDestination` (the `when` is already exhaustive — pin it with a `forEach` over `entries()` that constructs each `Routes.*` without throwing).
+  - Acceptance: deleting a referenced string res or adding an unmapped destination fails the test; passes today.
+  - Verify: `:app:testDebugUnitTest` (or `:app:testDebugUnitTest` + Robolectric for real resId resolution).
+  - Complexity: M
+- [ ] P2 — No-results fallback action in settings search (RA-2)
+  - Why: An empty result set renders only gray "no results for X" text — a dead-end. There's no escape hatch (browse-all / jump to Settings home) and, notably, no link into the Android **system** keyboard settings, which is where a missing pref often actually lives (the search index is app-internal only).
+  - Evidence: `SettingsSearchScreen.kt:106-115` — `results.isEmpty()` branch is a single `Text`; no action row.
+  - Touches: `SettingsSearchScreen` no-results branch — add a "Browse all settings" button (nav to `Routes.Settings.Home`) and optionally an "Open system keyboard settings" intent (`Settings.ACTION_INPUT_METHOD_SETTINGS`).
+  - Acceptance: from a zero-result query the user can reach Settings home in one tap; copy is translation-safe.
+  - Verify: `:app:assembleDebug`; manual.
+  - Complexity: S
+- [ ] P2 — Keyword/synonym coverage audit for high-traffic settings terms (RA-3)
+  - Why: Search matches title/summary/screen-title/keywords substrings, but many discoverable prefs have sparse `keywords` (e.g. "haptic" only on input-feedback, "dark"/"light" not on theme.mode, "swipe" present on gestures but "shape writing"/"trace" partial). Users search by capability words, not the exact shipped label.
+  - Evidence: `SettingsSearchIndex.kt:103-204` — most `entry(...)` rows pass no `keywords`; `theme.mode` (`:151`) has none, so "dark mode" misses unless the label literally contains it.
+  - Touches: `SettingsSearchIndex.entries` keyword strings only (no code path change); extend `SettingsSearchIndexTest` with synonym-hit cases ("dark theme", "haptic", "trace", "punctuation", "privacy").
+  - Acceptance: a documented set of capability synonyms each resolve to the right destination; test pins them.
+  - Verify: `:app:testDebugUnitTest`.
+  - Complexity: M
+- [ ] P2 — Accessibility/TalkBack pass over the search screen + result list (RA-4)
+  - Why: `ACCESSIBILITY.md` does not yet cover the new search surface. The result `JetPrefListItem`s are `clickable` with no `role`/merged-semantics announcement of "result N of M", the leading icon is correctly `contentDescription = null` (decorative) but the field itself has no labelled state, and the empty/no-results text isn't a live region — a TalkBack user won't hear result-count changes as they type.
+  - Evidence: `SettingsSearchScreen.kt:82-143` — no `Modifier.semantics{}`/`liveRegion`/`role` on the field, results, or the count-changing branches; `docs/ACCESSIBILITY.md` "Manual QA checklist" has no search entry.
+  - Touches: `SettingsSearchScreen` semantics (field label, results `role = Role.Button`/merged, `liveRegion = Polite` on the result-count container); add a search row to the `docs/ACCESSIBILITY.md` manual-QA checklist.
+  - Acceptance: TalkBack announces a labelled search field, reads each result's screen + title, and reports result-count changes; checklist documents the flow.
+  - Verify: manual TalkBack on-device; `:app:assembleDebug`.
+  - Complexity: M
+- [ ] P3 — Surface settings search from Settings home (entry-point discoverability) (RA-8)
+  - Why: Search is a registered route but reaching it depends on the home-screen wiring; a top-of-home search affordance (or app-bar icon) is the conventional discovery point and matches how Gboard/SwiftKey expose their settings search.
+  - Evidence: `git show --stat 1966c69` added `app/.../settings/HomeScreen.kt` (+10 lines) and `Routes.kt` (+6) for the route; confirm whether the entry is a persistent search bar at the top of home vs. a buried row, and align with platform convention.
+  - Touches: `HomeScreen.kt` (promote the search entry to a top affordance if it isn't already); no index changes.
+  - Acceptance: search is reachable from the first screen of Settings without scrolling.
+  - Verify: manual on-device.
+  - Complexity: S
