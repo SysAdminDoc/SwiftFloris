@@ -83,6 +83,10 @@ open class InternalPrefs : PreferenceModel() {
         key = "internal__ai_features_explainer_seen",
         default = false,
     )
+    val firstRunImportHintSeen = boolean(
+        key = "internal__first_run_import_hint_seen",
+        default = false,
+    )
     val versionOnInstall = string(
         key = "internal__version_on_install",
         default = VersionName.DEFAULT_RAW,

@@ -1124,6 +1124,12 @@
     <string name="setup__ai_features__acknowledge_btn">I understand</string>
     <string name="setup__ai_features__open_details_btn">Read AI feature details</string>
 
+    <string name="setup__import_hint__title" comment="Title of first-run dictionary import hint">Import your dictionary</string>
+    <string name="setup__import_hint__description_p1" comment="Explains the first-run personal dictionary import option">If you exported words from SwiftKey, Gboard, FlorisBoard, or SwiftFloris, you can import them before typing.</string>
+    <string name="setup__import_hint__description_p2" comment="Lists supported dictionary export formats for the first-run import hint">Supported files include SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, and .fldic exports. SwiftFloris reads the selected file on this device.</string>
+    <string name="setup__import_hint__choose_file_btn" comment="Button label to open the dictionary import file picker during setup">Choose export file</string>
+    <string name="setup__import_hint__skip_btn" comment="Button label to skip first-run dictionary import">Skip import</string>
+
     <string name="setup__enable_ime__title">Enable {app_name}</string>
     <string name="setup__enable_ime__description">Android keeps custom keyboards disabled until you approve them. Open keyboard settings and enable {app_name}.</string>
     <string name="setup__enable_ime__open_settings_btn">Open keyboard settings</string>

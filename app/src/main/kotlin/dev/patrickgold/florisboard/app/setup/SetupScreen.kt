@@ -46,6 +46,8 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreenAction
+import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.compose.FlorisScreenScope
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
@@ -81,6 +83,7 @@ fun SetupScreen() = FlorisScreen {
     val isFlorisBoardSelected by InputMethodUtils.observeIsFlorisboardSelected(foregroundOnly = true)
     val hasNotificationPermission by prefs.internal.notificationPermissionState.collectAsState()
     val aiFeaturesExplainerSeen by prefs.internal.aiFeaturesExplainerSeen.collectAsState()
+    val firstRunImportHintSeen by prefs.internal.firstRunImportHintSeen.collectAsState()
 
     val requestNotification =
         rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -101,6 +104,7 @@ fun SetupScreen() = FlorisScreen {
         requestNotification,
         hasNotificationPermission,
         aiFeaturesExplainerSeen,
+        firstRunImportHintSeen,
         scope,
     )
 }
@@ -114,17 +118,19 @@ private fun FlorisScreenScope.Content(
     requestNotification: ManagedActivityResultLauncher<String, Boolean>,
     hasNotificationPermission: NotificationPermissionState,
     aiFeaturesExplainerSeen: Boolean,
+    firstRunImportHintSeen: Boolean,
     scope: CoroutineScope,
 ) {
 
     val stepState = rememberSaveable(saver = FlorisStepState.Saver) {
-        val initStep = when {
-            !aiFeaturesExplainerSeen -> Steps.AiFeatures.id
-            !isFlorisBoardEnabled -> Steps.EnableIme.id
-            !isFlorisBoardSelected -> Steps.SelectIme.id
-            hasNotificationPermission == NotificationPermissionState.NOT_SET && AndroidVersion.ATLEAST_API33_T -> Steps.SelectNotification.id
-            else -> Steps.FinishUp.id
-        }
+        val initStep = SetupStepPolicy.nextStep(
+            isFlorisBoardEnabled = isFlorisBoardEnabled,
+            isFlorisBoardSelected = isFlorisBoardSelected,
+            notificationPermissionState = hasNotificationPermission,
+            aiFeaturesExplainerSeen = aiFeaturesExplainerSeen,
+            firstRunImportHintSeen = firstRunImportHintSeen,
+            supportsNotificationPermission = AndroidVersion.ATLEAST_API33_T,
+        ).id
         FlorisStepState.new(init = initStep)
     }
 
@@ -134,15 +140,17 @@ private fun FlorisScreenScope.Content(
             isFlorisBoardSelected,
             hasNotificationPermission,
             aiFeaturesExplainerSeen,
+            firstRunImportHintSeen,
         ) {
             stepState.setCurrentAuto(
-                when {
-                    !aiFeaturesExplainerSeen -> Steps.AiFeatures.id
-                    !isFlorisBoardEnabled -> Steps.EnableIme.id
-                    !isFlorisBoardSelected -> Steps.SelectIme.id
-                    hasNotificationPermission == NotificationPermissionState.NOT_SET && AndroidVersion.ATLEAST_API33_T -> Steps.SelectNotification.id
-                    else -> Steps.FinishUp.id
-                }
+                SetupStepPolicy.nextStep(
+                    isFlorisBoardEnabled = isFlorisBoardEnabled,
+                    isFlorisBoardSelected = isFlorisBoardSelected,
+                    notificationPermissionState = hasNotificationPermission,
+                    aiFeaturesExplainerSeen = aiFeaturesExplainerSeen,
+                    firstRunImportHintSeen = firstRunImportHintSeen,
+                    supportsNotificationPermission = AndroidVersion.ATLEAST_API33_T,
+                ).id
             )
         }
 
@@ -152,7 +160,7 @@ private fun FlorisScreenScope.Content(
             while (true) {
                 delay(200L)
                 val isEnabled = InputMethodUtils.isFlorisboardEnabled(context)
-                if (stepState.getCurrentAuto().value == Steps.EnableIme.id &&
+                if (stepState.getCurrentAuto().value == SetupStep.EnableIme.id &&
                     stepState.getCurrentManual().value == -1 &&
                     !isFlorisBoardEnabled &&
                     !isFlorisBoardSelected &&
@@ -226,7 +234,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
 
     return listOfNotNull(
         FlorisStep(
-            id = Steps.AiFeatures.id,
+            id = SetupStep.AiFeatures.id,
             title = stringRes(R.string.setup__ai_features__title),
         ) {
             StepText(stringRes(R.string.setup__ai_features__description_p1))
@@ -246,7 +254,35 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             )
         },
         FlorisStep(
-            id = Steps.EnableIme.id,
+            id = SetupStep.ImportDictionary.id,
+            title = stringRes(R.string.setup__import_hint__title),
+        ) {
+            StepText(stringRes(R.string.setup__import_hint__description_p1))
+            StepText(
+                modifier = Modifier.padding(top = 8.dp),
+                text = stringRes(R.string.setup__import_hint__description_p2),
+            )
+            StepButton(label = stringRes(R.string.setup__import_hint__choose_file_btn)) {
+                scope.launch { this@steps.prefs.internal.firstRunImportHintSeen.set(true) }
+                navController.navigate(
+                    Routes.Settings.UserDictionary(
+                        type = UserDictionaryType.FLORIS,
+                        action = UserDictionaryScreenAction.IMPORT,
+                    )
+                )
+            }
+            FlorisTextButton(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 8.dp),
+                onClick = {
+                    scope.launch { this@steps.prefs.internal.firstRunImportHintSeen.set(true) }
+                },
+                text = stringRes(R.string.setup__import_hint__skip_btn),
+            )
+        },
+        FlorisStep(
+            id = SetupStep.EnableIme.id,
             title = stringRes(R.string.setup__enable_ime__title),
         ) {
             StepText(stringRes(R.string.setup__enable_ime__description))
@@ -255,7 +291,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             }
         },
         FlorisStep(
-            id = Steps.SelectIme.id,
+            id = SetupStep.SelectIme.id,
             title = stringRes(R.string.setup__select_ime__title),
         ) {
             StepText(stringRes(R.string.setup__select_ime__description))
@@ -265,7 +301,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
         },
         if (AndroidVersion.ATLEAST_API33_T) {
             FlorisStep(
-                id = Steps.SelectNotification.id,
+                id = SetupStep.SelectNotification.id,
                 title = stringRes(R.string.setup__grant_notification_permission__title),
             ) {
                 StepText(stringRes(R.string.setup__grant_notification_permission__description))
@@ -275,7 +311,7 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             }
         } else null,
         FlorisStep(
-            id = Steps.FinishUp.id,
+            id = SetupStep.FinishUp.id,
             title = stringRes(R.string.setup__finish_up__title),
         ) {
             StepText(stringRes(R.string.setup__finish_up__description_p1))
@@ -290,12 +326,4 @@ private fun PreferenceUiScope<FlorisPreferenceModel>.steps(
             }
         }
     )
-}
-
-private sealed class Steps(val id: Int) {
-    data object AiFeatures : Steps(id = 1)
-    data object EnableIme : Steps(id = 2)
-    data object SelectIme : Steps(id = 3)
-    data object SelectNotification : Steps(id = 4)
-    data object FinishUp : Steps(id = 5)
 }

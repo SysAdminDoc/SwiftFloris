@@ -1,0 +1,1 @@
+Setup now offers a one-time personal-dictionary import hint for local keyboard exports. It can open Android's file picker for SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV/.flbackup/.fldic, and SwiftFloris exports, then routes the file through the existing offline importer. No network permission added.
