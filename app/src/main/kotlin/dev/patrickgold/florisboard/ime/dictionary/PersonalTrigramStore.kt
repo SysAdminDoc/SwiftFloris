@@ -70,10 +70,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
     private val tablesByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Int>>> = ConcurrentHashMap()
     private val lastSeenByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Long>>> = ConcurrentHashMap()
     private val loadGuard = Mutex()
-    // Atomic, not a plain Int: shared across all locales but previously mutated under
-    // the per-locale synchronized(table) monitor and read outside any lock. See
-    // PersonalBigramStore for the full rationale.
-    private val pendingCommits = AtomicInteger(0)
+    private val pendingCommitsByLocale = java.util.concurrent.ConcurrentHashMap<String, AtomicInteger>()
 
     private fun fileFor(localeTag: String): File =
         File(context.filesDir, "personal_trigrams_${localeTag.ifBlank { "default" }}.tsv")
@@ -152,8 +149,8 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                 val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
                 recencyNextMap[c] = now
             }
-            pendingCommits.incrementAndGet()
-            if (pendingCommits.get() >= FLUSH_EVERY_N_COMMITS) {
+            val counter = pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }
+            if (counter.incrementAndGet() >= FLUSH_EVERY_N_COMMITS) {
                 flush(tag)
             }
         }
@@ -255,7 +252,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                 val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
                 val snapshot: List<TrigramSnapshot>
                 synchronized(table) {
-                    pendingCommits.set(0)
+                    pendingCommitsByLocale[localeTag]?.set(0)
                     if (table.size > MAX_CONTEXTS) {
                         val keepKeys = table.entries
                             .sortedByDescending { e -> e.value.values.sum() }
@@ -352,7 +349,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                     table.remove(k)
                     recencyTable.remove(k)
                 }
-                pendingCommits.set(FLUSH_EVERY_N_COMMITS)
+                pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
             }
             flush(tag)
         }
@@ -372,7 +369,7 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         loadGuard.withLock {
             synchronized(tablesByLocale) { tablesByLocale.clear() }
             synchronized(lastSeenByLocale) { lastSeenByLocale.clear() }
-            pendingCommits.set(0)
+            pendingCommitsByLocale.clear()
             runCatching {
                 context.filesDir.listFiles { _, name -> name.startsWith("personal_trigrams_") }
                     ?.forEach { it.delete() }

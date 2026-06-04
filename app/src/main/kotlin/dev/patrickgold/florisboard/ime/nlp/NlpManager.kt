@@ -283,6 +283,7 @@ class NlpManager(context: Context) {
                         fallback = suggestions,
                     ),
                     rankedCandidates = wordSuggestions,
+                    isPrivateSession = keyboardManager.activeState.isIncognitoMode,
                 )
             }
             // ROADMAP §0 P1 — Smart-Compose inline ghost-text. When a
@@ -466,7 +467,7 @@ class NlpManager(context: Context) {
             originalText = originalText,
             correctedText = candidate.text,
         )
-        typingTraceRecorder.recordAutoCommitAccepted(content, candidate)
+        typingTraceRecorder.recordAutoCommitAccepted(content, candidate, keyboardManager.activeState.isIncognitoMode)
     }
 
     fun rejectAcceptedAutoCommitOnBackspace(content: EditorContent): Boolean {
@@ -482,7 +483,7 @@ class NlpManager(context: Context) {
                     correctedText = pair.corrected,
                 )
             }
-            typingTraceRecorder.recordAutoCommitRejected(content)
+            typingTraceRecorder.recordAutoCommitRejected(content, keyboardManager.activeState.isIncognitoMode)
         }
         return rejected
     }

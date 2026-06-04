@@ -23,8 +23,10 @@ import java.security.KeyPairGenerator
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.security.spec.NamedParameterSpec
+import java.util.Arrays
 import javax.crypto.Cipher
 import javax.crypto.KeyAgreement
+import javax.crypto.Mac
 import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.SecretKeySpec
 
@@ -172,10 +174,19 @@ object SealedBoxCrypto {
     }
 
     private fun hkdfExtract(ikm: ByteArray, info: String): ByteArray {
-        val md = MessageDigest.getInstance("SHA-256")
-        md.update(ikm)
-        md.update(info.toByteArray(Charsets.US_ASCII))
-        return md.digest().copyOf(SECRET_LENGTH)
+        val salt = ByteArray(32)
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec(salt, "HmacSHA256"))
+        val prk = mac.doFinal(ikm)
+        try {
+            val infoBytes = info.toByteArray(Charsets.US_ASCII)
+            mac.init(SecretKeySpec(prk, "HmacSHA256"))
+            mac.update(infoBytes)
+            mac.update(0x01.toByte())
+            return mac.doFinal().copyOf(SECRET_LENGTH)
+        } finally {
+            Arrays.fill(prk, 0.toByte())
+        }
     }
 
     private const val X25519_ALGORITHM = "X25519"

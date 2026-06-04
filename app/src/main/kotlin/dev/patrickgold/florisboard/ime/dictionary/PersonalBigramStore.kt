@@ -67,12 +67,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
     private val tablesByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Int>>> = ConcurrentHashMap()
     private val lastSeenByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Long>>> = ConcurrentHashMap()
     private val loadGuard = Mutex()
-    // Atomic, not a plain Int: this counter is shared across ALL locales but the
-    // increment used to run under the per-locale `synchronized(table)` monitor, so
-    // two locales racing in learn() synchronized on different objects and the
-    // threshold read happened outside any lock entirely. AtomicInteger gives the
-    // cross-locale happens-before the plain Int lacked.
-    private val pendingCommits = AtomicInteger(0)
+    private val pendingCommitsByLocale = java.util.concurrent.ConcurrentHashMap<String, AtomicInteger>()
 
     private fun fileFor(localeTag: String): File =
         File(context.filesDir, "personal_bigrams_${localeTag.ifBlank { "default" }}.tsv")
@@ -149,8 +144,8 @@ class PersonalBigramStore private constructor(private val context: Context) {
                 val recencyNextMap = recencyTable.getOrPut(prev) { HashMap() }
                 recencyNextMap[curr] = now
             }
-            pendingCommits.incrementAndGet()
-            if (pendingCommits.get() >= FLUSH_EVERY_N_COMMITS) {
+            val counter = pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }
+            if (counter.incrementAndGet() >= FLUSH_EVERY_N_COMMITS) {
                 flush(tag)
             }
         }
@@ -260,7 +255,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
                 val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
                 val snapshot: List<BigramSnapshot>
                 synchronized(table) {
-                    pendingCommits.set(0)
+                    pendingCommitsByLocale[localeTag]?.set(0)
                     if (table.size > MAX_PREV_WORDS) {
                         val keepKeys = table.entries
                             .sortedByDescending { e -> e.value.values.sum() }
@@ -352,7 +347,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
                     table.remove(k)
                     recencyTable.remove(k)
                 }
-                pendingCommits.set(FLUSH_EVERY_N_COMMITS)
+                pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
             }
             flush(tag)
         }
@@ -373,7 +368,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
         loadGuard.withLock {
             synchronized(tablesByLocale) { tablesByLocale.clear() }
             synchronized(lastSeenByLocale) { lastSeenByLocale.clear() }
-            pendingCommits.set(0)
+            pendingCommitsByLocale.clear()
             runCatching {
                 // Match the loose prefix so leftover `.tmp` flushes from a
                 // prior crashed save are cleaned up by reset too.

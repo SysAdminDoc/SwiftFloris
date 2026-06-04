@@ -67,7 +67,7 @@ import kotlin.properties.Delegates
  * @property rawValue The internal register used to store the flags and region ints that
  *  this keyboard state represents.
  */
-open class KeyboardState protected constructor(open var rawValue: ULong) {
+open class KeyboardState protected constructor(@Volatile open var rawValue: ULong) {
     companion object {
         const val M_KEYBOARD_MODE: ULong =                  0x0Fu
         const val O_KEYBOARD_MODE: Int =                    0
@@ -110,6 +110,7 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
         return (rawValue and f) != STATE_ALL_ZERO
     }
 
+    @Synchronized
     private fun setFlag(f: ULong, v: Boolean) {
         rawValue = if (v) { rawValue or f } else { rawValue and f.inv() }
     }
@@ -118,6 +119,7 @@ open class KeyboardState protected constructor(open var rawValue: ULong) {
         return ((rawValue shr o) and m).toInt()
     }
 
+    @Synchronized
     private fun setRegion(m: ULong, o: Int, v: Int) {
         rawValue = (rawValue and (m shl o).inv()) or ((v.toULong() and m) shl o)
     }

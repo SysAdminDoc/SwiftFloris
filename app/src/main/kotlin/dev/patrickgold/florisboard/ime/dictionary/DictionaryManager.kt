@@ -213,25 +213,30 @@ class DictionaryManager private constructor(context: Context) {
         UserDictionaryOverlay.get().learn(normalized, locale)
 
         ioScope.launch {
-            val dao = florisUserDictionaryDao() ?: return@launch
-            val existingMatches = dao.queryExactFuzzyLocale(normalized, locale)
-                .filter { it.word.equals(normalized, ignoreCase = true) }
-            if (existingMatches.isNotEmpty()) {
-                val entry = existingMatches.first()
-                val newFreq = (entry.freq + LEARN_INCREMENT).coerceAtMost(LEARN_MAX_FREQUENCY)
-                if (newFreq != entry.freq) {
-                    dao.update(entry.copy(freq = newFreq))
+            runCatching {
+                val dao = florisUserDictionaryDao() ?: return@launch
+                val existingMatches = dao.queryExactFuzzyLocale(normalized, locale)
+                    .filter { it.word.equals(normalized, ignoreCase = true) }
+                if (existingMatches.isNotEmpty()) {
+                    val entry = existingMatches.first()
+                    val newFreq = (entry.freq + LEARN_INCREMENT).coerceAtMost(LEARN_MAX_FREQUENCY)
+                    if (newFreq != entry.freq) {
+                        dao.update(entry.copy(freq = newFreq))
+                    }
+                } else {
+                    dao.insert(
+                        UserDictionaryEntry(
+                            id = 0,
+                            word = normalized,
+                            freq = LEARN_INITIAL_FREQUENCY,
+                            locale = locale.toString(),
+                            shortcut = null,
+                        ),
+                    )
                 }
-            } else {
-                dao.insert(
-                    UserDictionaryEntry(
-                        id = 0,
-                        word = normalized,
-                        freq = LEARN_INITIAL_FREQUENCY,
-                        locale = locale.toString(),
-                        shortcut = null,
-                    ),
-                )
+            }.onFailure { e ->
+                flogError(LogTopic.DICTIONARY) { "learnWord($normalized) DAO write failed: ${e.message}" }
+                UserDictionaryOverlay.get().forget(normalized, locale)
             }
         }
     }
