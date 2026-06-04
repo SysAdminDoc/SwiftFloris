@@ -1,6 +1,13 @@
 # SwiftFloris Research Report
 
-This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 5.
+This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 6.
+
+2026-06-04 Cycle 6 note: after the Cycle 5 docs push, `master` is clean at
+`49e9fd6`. Cycle 6 rechecked the editor hot-path audit against live
+`AbstractEditorInstance` code and Android `InputConnection` docs. The prior
+unbalanced early-return batch bug is already fixed, so this cycle adds R6-1:
+keep `InputConnection` batch edits free of `runBlocking`, expected-content
+queue locks, and non-`try/finally` batch pairing.
 
 2026-06-04 Cycle 5 note: after the v1.8.226 release-ledger push, `master` is
 clean at `8cbd0d4` and tagged `v1.8.226`. Cycle 5 rechecked older
@@ -93,14 +100,15 @@ Top opportunities (one line each):
 16. **MIME helper contract cleanup** — aggregate helper behavior is undocumented/untested, and the constructor still prints compiled filters to stdout (R4-3, P3). [Verified]
 17. **Native string ByteBuffer slices** — heap-backed buffers decode the whole array instead of the remaining position/limit range (R4-4, P3). [Verified]
 18. **Addon first-run trust gate** — first-seen addon packages are auto-pinned even when they are not co-signed, contrary to the documented co-signed-or-explicit-trust contract (R5-1, P1). [Verified]
+19. **Editor batch critical sections** — selection/commit hot paths keep `InputConnection` batch edits open while `runBlocking` and expected-content queue locks run (R6-1, P2). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
 ## Evidence Reviewed
 
-- **Key files/dirs:** `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/` (`SettingsSearchIndex.kt`, `SettingsSearchScreen.kt`), `app/src/test/.../settings/search/SettingsSearchIndexTest.kt`, `FlorisLocale.kt`, `LayoutScriptClassifier.kt`, `EditorInstance.kt`, `KeyboardManager.kt`, `ClipboardInputLayout.kt`, `MimeTypeFilter.kt`, `MimeTypeFilterTest.kt`, `Native.kt`, `AddonContract.kt`, `AddonEnumerator.kt`, `AddonRegistry.kt`, `AddonRegistryStartup.kt`, `AddonsSettingsScreen.kt`, `AddonRegistryTest.kt`, `AddonRegistryStartupTest.kt`, `FlorisApplication.kt`, `FlorisAppActivity.kt`, `lib/crashutility/CrashUtility.kt`, `RestoreScreen.kt`, `BackupScreen.kt`, `Flog.kt`, `gradle/libs.versions.toml`, `gradle.properties`, `app/src/main/AndroidManifest.xml`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/ACCESSIBILITY.md`, `docs/addons/dictionary-pack-spec.md`, `docs/THREAT_MODEL.md`, `docs/AUDIT_2026-05-28.md`, `docs/AUDIT_2026-05-29.md`, `docs/AUDIT_2026-06-02.md`, `.github/workflows/*`, and the three `docs/AUDIT_2026-*.md` reports (read-only).
+- **Key files/dirs:** `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/` (`SettingsSearchIndex.kt`, `SettingsSearchScreen.kt`), `app/src/test/.../settings/search/SettingsSearchIndexTest.kt`, `FlorisLocale.kt`, `LayoutScriptClassifier.kt`, `EditorInstance.kt`, `AbstractEditorInstance.kt`, `KeyboardManager.kt`, `ClipboardInputLayout.kt`, `MimeTypeFilter.kt`, `MimeTypeFilterTest.kt`, `Native.kt`, `AddonContract.kt`, `AddonEnumerator.kt`, `AddonRegistry.kt`, `AddonRegistryStartup.kt`, `AddonsSettingsScreen.kt`, `AddonRegistryTest.kt`, `AddonRegistryStartupTest.kt`, `FlorisApplication.kt`, `FlorisAppActivity.kt`, `lib/crashutility/CrashUtility.kt`, `RestoreScreen.kt`, `BackupScreen.kt`, `Flog.kt`, `gradle/libs.versions.toml`, `gradle.properties`, `app/src/main/AndroidManifest.xml`, `PROJECT_CONTEXT.md`, `ARCHITECTURE.md`, `CONTRIBUTING.md`, `README.md`, `docs/ACCESSIBILITY.md`, `docs/addons/dictionary-pack-spec.md`, `docs/THREAT_MODEL.md`, `docs/AUDIT_2026-05-28.md`, `docs/AUDIT_2026-05-29.md`, `docs/AUDIT_2026-06-02.md`, `.github/workflows/*`, and the three `docs/AUDIT_2026-*.md` reports (read-only).
 - **Git range:** `git log --oneline -n 40`; `git show --stat --oneline v1.8.223..HEAD` confirmed v1.8.224 -> v1.8.225 docs/build/release movement plus pushed n-gram/thread-safety/crypto/privacy, Arabic-shaping, Snygg, and Cycle 3 docs commits through `dc72e32`.
-- **External sources / standards:** IANA Language Subtag Registry (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`); Android `Locale` reference (`https://developer.android.com/reference/java/util/Locale`); Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); AndroidX `MimeTypeFilter` reference (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`); Android `ClipDescription.compareMimeTypes` reference (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`); Android `ByteBuffer` reference (`https://developer.android.com/reference/java/nio/ByteBuffer`); Android custom `<permission>` / `signature` protection docs (`https://developer.android.com/guide/topics/manifest/permission-element`); Android package visibility and `<queries>` docs (`https://developer.android.com/training/package-visibility`, `https://developer.android.com/training/package-visibility/declaring`); Android `SigningInfo` reference (`https://developer.android.com/reference/android/content/pm/SigningInfo`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
+- **External sources / standards:** IANA Language Subtag Registry (`https://www.iana.org/assignments/language-subtag-registry/language-subtag-registry`); Android `Locale` reference (`https://developer.android.com/reference/java/util/Locale`); Android Compose semantics and live-region guidance (`https://developer.android.com/develop/ui/compose/accessibility/semantics`); AndroidX `MimeTypeFilter` reference (`https://developer.android.com/reference/androidx/core/content/MimeTypeFilter`); Android `ClipDescription.compareMimeTypes` reference (`https://developer.android.com/reference/android/content/ClipDescription#compareMimeTypes(java.lang.String,java.lang.String)`); Android `ByteBuffer` reference (`https://developer.android.com/reference/java/nio/ByteBuffer`); Android `InputConnection` reference (`https://developer.android.com/reference/android/view/inputmethod/InputConnection`); Android custom `<permission>` / `signature` protection docs (`https://developer.android.com/guide/topics/manifest/permission-element`); Android package visibility and `<queries>` docs (`https://developer.android.com/training/package-visibility`, `https://developer.android.com/training/package-visibility/declaring`); Android `SigningInfo` reference (`https://developer.android.com/reference/android/content/pm/SigningInfo`); Android `Settings.ACTION_INPUT_METHOD_SETTINGS` reference (`https://developer.android.com/reference/android/provider/Settings.html#ACTION_INPUT_METHOD_SETTINGS`); AOSP Settings search-indexing / `SearchIndexablesProvider` pattern (`https://source.android.com/docs/automotive/hmi/car_settings/search_indexing`); F-Droid reproducible-build docs (`https://f-droid.org/docs/Reproducible_Builds/`); Unicode Emoji 17.0 / Unicode 17.0 (`https://unicode.org/reports/tr51/`, `https://www.unicode.org/versions/latest/`); CLDR 48.2 downloads (`https://cldr.unicode.org/index/downloads`); FlorisBoard v0.6.0-alpha02 (`https://github.com/florisboard/florisboard/releases/tag/v0.6.0-alpha02`); HeliBoard v3.9 (`https://github.com/HeliBorg/HeliBoard/releases/tag/v3.9`); AnySoftKeyboard v1.13-r1 (`https://github.com/AnySoftKeyboard/AnySoftKeyboard/releases/tag/1.13-r1`); FUTO Keyboard v0.1.29 / FUTO Swipe (`https://github.com/futo-org/android-keyboard/releases/tag/0.1.29`); libsodium sealed boxes (`https://doc.libsodium.org/public-key_cryptography/sealed_boxes`); RFC 5869 HKDF (`https://datatracker.ietf.org/doc/html/rfc5869`).
 - **Unverifiable here:** This research-only pass did not run Gradle or device QA; on-device focus/IME-raise behavior, TalkBack output, and clipboard palette interaction remain manual acceptance criteria for the build machine. [Needs validation]
 
 ## Current Product Map
@@ -131,6 +139,11 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   first-seen non-co-signed packages are accepted and pinned without an explicit
   trust step. R5-1 aligns runtime behavior with the documented co-signed or
   user-trusted contract. [Verified]
+- **Editor mutation pipeline (partial):** the expected-content mirror is the
+  right abstraction for reconciling IME writes with selection updates, but some
+  cursor/commit paths hold open `InputConnection` batch edits while doing
+  blocking/suspending queue work. R6-1 narrows those critical sections and pins
+  batch-pairing tests. [Verified]
 - Established surfaces (autocorrect/SymSpell, glide classifier, clipboard, addons, voice handoff, sync, MCP, hardware-keyboard import) are covered by `COMPLETED.md` and the audits; no net-new gap surfaced beyond what the roadmap already tracks.
 
 ## Competitive Landscape
@@ -176,6 +189,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **[Medium] Addon first-seen trust mismatch** → R5-1. The documented trust
   contract requires co-signing or explicit Settings trust, but the current
   first-seen registry path auto-pins any otherwise-valid addon package.
+- **[Medium] Editor batch critical sections** → R6-1. Move expected-content
+  generation/queue locks out of open `InputConnection` batches and pair batch
+  edits with `try/finally`.
 
 ## Architecture & Technical Findings
 
@@ -193,6 +209,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Addon enrollment state:** the current registry has accepted/rejected states
   plus changed-certificate trust repair. R5-1 needs a pending/untrusted state so
   package discovery and signature capture do not collapse into enrollment.
+- **Editor hot path:** `AbstractEditorInstance` still concentrates `runBlocking`
+  around selection and commit operations. R6-1 keeps the existing
+  expected-content model but removes blocking work from open editor batches.
 - **Dependency health:** the security-sensitive pins checked here are still current for SQLCipher 4.16.0 and Tink 1.21.0, and Room/Robolectric also match metadata. The compatible P3 maintenance batch shipped in v1.8.216 (Compose BOM `2026.05.01`, KSP `2.3.9`, Roborazzi `1.63.0`). Kotlin `2.4.0` and AndroidX Core `1.19.0` remain gated on KSP publication and compileSdk 37 respectively; AGP 9.2.1 appears to be the stable baseline while Google Maven's newest AGP metadata is 9.3 alpha. [Verified via Maven metadata]
 - **Overgrown files:** `IndicTransliterator.kt` (~86 KB), `TextKeyboardLayout.kt` (~76 KB), `LatinLanguageProvider.kt` (~60 KB), `KeyboardManager.kt` (~60 KB) are large but the SHIFT state machine was already extracted (F27 shipped) and the audits already track `LatinLanguageProvider` heap risk (A1). Left as-is — no speculative refactor proposed.
 - **Testability:** 218 JVM test files, 5 androidTest. The search catalog's integrity and synonym-hit coverage are now pinned by RA-1 and RA-3, and the RA-10 scroll-reset guard is covered; RA-4 remains the manual/accessibility coverage gap.
@@ -240,3 +259,6 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 - Cycle 5 external source classes checked: Android custom permission
   `signature` protection, Android package visibility / `<queries>`, and
   Android `SigningInfo`.
+- Cycle 6 companion: `.ai/research/2026-06-04/CYCLE_6_FINDINGS.md`.
+- Cycle 6 external source classes checked: Android `InputConnection` batch,
+  selection, composing-region, and composing-text docs.
