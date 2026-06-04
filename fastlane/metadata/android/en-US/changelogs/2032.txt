@@ -1,0 +1,3 @@
+v1.8.232 - Dictionary back feedback.
+
+Settings -> Personal dictionary now explains blocked system-back gestures during active save, delete, import, or export work instead of silently swallowing back. Operation-specific toasts reuse the keep-screen-open guidance, and policy tests pin all feedback decisions.

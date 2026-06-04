@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.232"></a>
+## v1.8.232
+
+Released: 2026-06-04
+
+### Dictionary blocked-back feedback
+
+R8-1 is closed. Settings -> Personal dictionary now explains blocked system-back gestures during active save, delete, import, or export work instead of silently swallowing back while protected dictionary mutations continue.
+
+### Changes
+
+- **`UserDictionaryScreen.kt`** - shows operation-specific long-toast feedback when an enabled `BackHandler` blocks navigation during save, delete, import, or export work, while preserving the existing selected-locale back behavior when no operation is active.
+- **`UserDictionaryEntryPolicy.kt` / `UserDictionaryEntryPolicyTest.kt`** - add a pure `UserDictionaryBlockedBackNotice` resolver and focused coverage for save, delete, import, export, and idle decisions.
+- **`strings.xml` / `docs/ACCESSIBILITY.md` / `docs/AUDIT_2026-05-28.md`** - add localized keep-screen-open feedback copy and close the swallowed-back audit item with a manual TalkBack smoke note.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.232 / versionCode 2032 and closes R8-1.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryEntryPolicyTest"` - PASS in 1m08s.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2032.
+- Manual Settings -> Personal dictionary system-back and TalkBack verification was not run in this local batch because it requires an attached Android device. APK assembly was intentionally skipped per operator request.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryEntryPolicy.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryEntryPolicyTest.kt`
+- `docs/ACCESSIBILITY.md`
+- `docs/AUDIT_2026-05-28.md`
+- `fastlane/metadata/android/en-US/changelogs/2032.txt` (new)
+- `gradle.properties` (versionCode 2031->2032, versionName 1.8.231->1.8.232)
+
 <a id="v1.8.231"></a>
 ## v1.8.231
 

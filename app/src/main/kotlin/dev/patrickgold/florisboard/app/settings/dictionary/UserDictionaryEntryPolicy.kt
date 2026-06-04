@@ -42,6 +42,14 @@ internal enum class UserDictionaryTransferNotice {
     Exporting,
 }
 
+internal enum class UserDictionaryBlockedBackNotice {
+    None,
+    Saving,
+    Deleting,
+    Importing,
+    Exporting,
+}
+
 internal object UserDictionaryEntryPolicy {
     fun canLeave(
         isOperationInProgress: Boolean,
@@ -82,6 +90,19 @@ internal object UserDictionaryEntryPolicy {
             UserDictionaryTransferOperation.Importing -> UserDictionaryTransferNotice.Importing
             UserDictionaryTransferOperation.Exporting -> UserDictionaryTransferNotice.Exporting
             null -> UserDictionaryTransferNotice.None
+        }
+    }
+
+    fun resolveBlockedBackNotice(
+        activeEntryOperation: UserDictionaryEntryOperation?,
+        activeTransferOperation: UserDictionaryTransferOperation?,
+    ): UserDictionaryBlockedBackNotice {
+        return when {
+            activeEntryOperation == UserDictionaryEntryOperation.Saving -> UserDictionaryBlockedBackNotice.Saving
+            activeEntryOperation == UserDictionaryEntryOperation.Deleting -> UserDictionaryBlockedBackNotice.Deleting
+            activeTransferOperation == UserDictionaryTransferOperation.Importing -> UserDictionaryBlockedBackNotice.Importing
+            activeTransferOperation == UserDictionaryTransferOperation.Exporting -> UserDictionaryBlockedBackNotice.Exporting
+            else -> UserDictionaryBlockedBackNotice.None
         }
     }
 
