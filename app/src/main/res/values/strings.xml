@@ -203,6 +203,13 @@
     <string name="settings__home__restore_summary" comment="Home screen preference summary">Inspect and restore data from a SwiftFloris backup archive</string>
     <string name="settings__home__other_summary" comment="Home screen preference summary">Settings app, physical keyboard, launcher icon, and developer tools</string>
     <string name="settings__home__about_summary" comment="Home screen preference summary">Version, AI disclosures, privacy policy, source, and licenses</string>
+    <string name="settings__search__title" comment="Settings search screen title">Search settings</string>
+    <string name="settings__search__placeholder" comment="Settings search text field placeholder">Search settings</string>
+    <string name="settings__search__empty_query" comment="Settings search empty query message">Type to find settings by name, screen, or description.</string>
+    <string name="settings__search__no_results" comment="Settings search no results message">No settings match \"{search_term}\".</string>
+    <string name="settings__search__result_summary" comment="Settings search result summary with destination screen and setting summary">{screen_title} — {summary}</string>
+    <string name="settings__search__highlight_title" comment="Settings search target highlight title">Search result: {setting_title}</string>
+    <string name="settings__search__highlight_summary" comment="Settings search target highlight fallback summary">Opened from Settings search in {screen_title}.</string>
 
     <string name="settings__localization__title" comment="Title of languages and Layout screen">Languages &amp; Layouts</string>
     <string name="settings__localization__group_display__label" comment="Preference group title">Display</string>

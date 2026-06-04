@@ -50,11 +50,13 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.settings.search.SettingsSearchHighlightStore
 import dev.patrickgold.jetpref.datastore.ui.PreferenceLayout
 import dev.patrickgold.jetpref.datastore.ui.PreferenceUiContent
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisAppBar
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.autoMirrorForRtl
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
@@ -229,7 +231,23 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                         .padding(horizontal = 8.dp, vertical = if (scrollable) 8.dp else 0.dp)
                         .then(scrollModifier),
                     iconSpaceReserved = iconSpaceReserved,
-                    content = content,
+                    content = {
+                        val searchTarget = SettingsSearchHighlightStore.activeTarget
+                        if (searchTarget?.screenTitle == title) {
+                            FlorisInfoCard(
+                                modifier = Modifier.padding(8.dp),
+                                text = stringRes(
+                                    R.string.settings__search__highlight_title,
+                                    "setting_title" to searchTarget.title,
+                                ),
+                                secondaryText = searchTarget.summary ?: stringRes(
+                                    R.string.settings__search__highlight_summary,
+                                    "screen_title" to searchTarget.screenTitle,
+                                ),
+                            )
+                        }
+                        content()
+                    },
                 )
             }
         }

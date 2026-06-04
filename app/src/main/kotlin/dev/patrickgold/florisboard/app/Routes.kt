@@ -75,6 +75,7 @@ import dev.patrickgold.florisboard.app.settings.localization.SubtypeEditorScreen
 import dev.patrickgold.florisboard.app.settings.media.MediaScreen
 import dev.patrickgold.florisboard.app.settings.smartbar.SmartbarScreen
 import dev.patrickgold.florisboard.app.settings.mcp.McpSettingsScreen
+import dev.patrickgold.florisboard.app.settings.search.SettingsSearchScreen
 import dev.patrickgold.florisboard.app.settings.sync.SyncSettingsScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreenAction
@@ -114,6 +115,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/home")
         object Home
+
+        @Serializable
+        @Deeplink("settings/search")
+        object Search
 
         @Serializable
         @Deeplink("settings/localization")
@@ -311,6 +316,7 @@ object Routes {
             composable<Setup.Screen> { SetupScreen() }
 
             composableWithDeepLink(Settings.Home::class) { HomeScreen() }
+            composableWithDeepLink(Settings.Search::class) { SettingsSearchScreen() }
 
             composableWithDeepLink(Settings.Localization::class) { LocalizationScreen() }
             composableWithDeepLink(Settings.SelectLocale::class) { SelectLocaleScreen() }
