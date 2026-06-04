@@ -179,45 +179,49 @@ fun SettingsSearchScreen() = FlorisScreen {
     }
 }
 
-private fun androidx.navigation.NavController.navigateSearchDestination(destination: SettingsSearchDestination) {
-    when (destination) {
-        SettingsSearchDestination.HOME -> navigate(Routes.Settings.Home)
-        SettingsSearchDestination.LOCALIZATION -> navigate(Routes.Settings.Localization)
-        SettingsSearchDestination.SELECT_LOCALE -> navigate(Routes.Settings.SelectLocale)
-        SettingsSearchDestination.PER_APP_LANGUAGE -> navigate(Routes.Settings.PerAppLanguage)
+internal fun SettingsSearchDestination.toSearchRoute(): Any {
+    return when (this) {
+        SettingsSearchDestination.HOME -> Routes.Settings.Home
+        SettingsSearchDestination.LOCALIZATION -> Routes.Settings.Localization
+        SettingsSearchDestination.SELECT_LOCALE -> Routes.Settings.SelectLocale
+        SettingsSearchDestination.PER_APP_LANGUAGE -> Routes.Settings.PerAppLanguage
         SettingsSearchDestination.LANGUAGE_PACK_MANAGER ->
-            navigate(Routes.Settings.LanguagePackManager(LanguagePackManagerScreenAction.MANAGE))
-        SettingsSearchDestination.SUBTYPE_ADD -> navigate(Routes.Settings.SubtypeAdd)
-        SettingsSearchDestination.THEME -> navigate(Routes.Settings.Theme)
+            Routes.Settings.LanguagePackManager(LanguagePackManagerScreenAction.MANAGE)
+        SettingsSearchDestination.SUBTYPE_ADD -> Routes.Settings.SubtypeAdd
+        SettingsSearchDestination.THEME -> Routes.Settings.Theme
         SettingsSearchDestination.THEME_MANAGER ->
-            navigate(Routes.Ext.List(ExtensionListScreenType.EXT_THEME, showUpdate = true))
-        SettingsSearchDestination.KEYBOARD -> navigate(Routes.Settings.Keyboard)
-        SettingsSearchDestination.INPUT_FEEDBACK -> navigate(Routes.Settings.InputFeedback)
-        SettingsSearchDestination.SMARTBAR -> navigate(Routes.Settings.Smartbar)
-        SettingsSearchDestination.TYPING -> navigate(Routes.Settings.Typing)
-        SettingsSearchDestination.TYPING_STATS -> navigate(Routes.Settings.TypingStats)
-        SettingsSearchDestination.VOICE_INPUT -> navigate(Routes.Settings.VoiceInput)
-        SettingsSearchDestination.DICTIONARY -> navigate(Routes.Settings.Dictionary)
+            Routes.Ext.List(ExtensionListScreenType.EXT_THEME, showUpdate = true)
+        SettingsSearchDestination.KEYBOARD -> Routes.Settings.Keyboard
+        SettingsSearchDestination.INPUT_FEEDBACK -> Routes.Settings.InputFeedback
+        SettingsSearchDestination.SMARTBAR -> Routes.Settings.Smartbar
+        SettingsSearchDestination.TYPING -> Routes.Settings.Typing
+        SettingsSearchDestination.TYPING_STATS -> Routes.Settings.TypingStats
+        SettingsSearchDestination.VOICE_INPUT -> Routes.Settings.VoiceInput
+        SettingsSearchDestination.DICTIONARY -> Routes.Settings.Dictionary
         SettingsSearchDestination.USER_DICTIONARY_SYSTEM ->
-            navigate(Routes.Settings.UserDictionary(UserDictionaryType.SYSTEM))
+            Routes.Settings.UserDictionary(UserDictionaryType.SYSTEM)
         SettingsSearchDestination.USER_DICTIONARY_FLORIS ->
-            navigate(Routes.Settings.UserDictionary(UserDictionaryType.FLORIS))
-        SettingsSearchDestination.SYNC -> navigate(Routes.Settings.Sync)
-        SettingsSearchDestination.MCP -> navigate(Routes.Settings.Mcp)
-        SettingsSearchDestination.ADDONS -> navigate(Routes.Settings.Addons)
-        SettingsSearchDestination.EXTENSIONS -> navigate(Routes.Ext.Home)
-        SettingsSearchDestination.GESTURES -> navigate(Routes.Settings.Gestures)
-        SettingsSearchDestination.CLIPBOARD -> navigate(Routes.Settings.Clipboard)
-        SettingsSearchDestination.MEDIA -> navigate(Routes.Settings.Media)
-        SettingsSearchDestination.OTHER -> navigate(Routes.Settings.Other)
-        SettingsSearchDestination.PHYSICAL_KEYBOARD -> navigate(Routes.Settings.PhysicalKeyboard)
-        SettingsSearchDestination.BACKUP -> navigate(Routes.Settings.Backup)
-        SettingsSearchDestination.RESTORE -> navigate(Routes.Settings.Restore)
-        SettingsSearchDestination.PRIVACY_AUDIT -> navigate(Routes.Settings.PrivacyAuditLog)
-        SettingsSearchDestination.ABOUT -> navigate(Routes.Settings.About)
-        SettingsSearchDestination.AI_FEATURES -> navigate(Routes.Settings.AiFeatures)
-        SettingsSearchDestination.PROJECT_LICENSE -> navigate(Routes.Settings.ProjectLicense)
-        SettingsSearchDestination.THIRD_PARTY_LICENSES -> navigate(Routes.Settings.ThirdPartyLicenses)
-        SettingsSearchDestination.DEVTOOLS -> navigate(Routes.Devtools.Home)
+            Routes.Settings.UserDictionary(UserDictionaryType.FLORIS)
+        SettingsSearchDestination.SYNC -> Routes.Settings.Sync
+        SettingsSearchDestination.MCP -> Routes.Settings.Mcp
+        SettingsSearchDestination.ADDONS -> Routes.Settings.Addons
+        SettingsSearchDestination.EXTENSIONS -> Routes.Ext.Home
+        SettingsSearchDestination.GESTURES -> Routes.Settings.Gestures
+        SettingsSearchDestination.CLIPBOARD -> Routes.Settings.Clipboard
+        SettingsSearchDestination.MEDIA -> Routes.Settings.Media
+        SettingsSearchDestination.OTHER -> Routes.Settings.Other
+        SettingsSearchDestination.PHYSICAL_KEYBOARD -> Routes.Settings.PhysicalKeyboard
+        SettingsSearchDestination.BACKUP -> Routes.Settings.Backup
+        SettingsSearchDestination.RESTORE -> Routes.Settings.Restore
+        SettingsSearchDestination.PRIVACY_AUDIT -> Routes.Settings.PrivacyAuditLog
+        SettingsSearchDestination.ABOUT -> Routes.Settings.About
+        SettingsSearchDestination.AI_FEATURES -> Routes.Settings.AiFeatures
+        SettingsSearchDestination.PROJECT_LICENSE -> Routes.Settings.ProjectLicense
+        SettingsSearchDestination.THIRD_PARTY_LICENSES -> Routes.Settings.ThirdPartyLicenses
+        SettingsSearchDestination.DEVTOOLS -> Routes.Devtools.Home
     }
+}
+
+private fun androidx.navigation.NavController.navigateSearchDestination(destination: SettingsSearchDestination) {
+    navigate(destination.toSearchRoute())
 }

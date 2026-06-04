@@ -2,6 +2,44 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.221"></a>
+## v1.8.221
+
+Released: 2026-06-04
+
+### Settings search drift guard
+
+RA-1 is closed. Settings search now has a JVM/Robolectric integrity test that fails when catalog entry IDs duplicate, referenced string resources are missing or blank, fake resolver fallback text leaks into coverage, or a `SettingsSearchDestination` no longer maps to the expected typed route.
+
+The production navigation path now uses the same `SettingsSearchDestination.toSearchRoute()` helper that the test pins, so route construction and screen navigation stay in sync.
+
+### Changes
+
+- **`SettingsSearchScreen.kt`** - extracts the destination-to-route mapping into `toSearchRoute()` and uses it from the `NavController` navigation helper.
+- **`SettingsSearchIndexIntegrityTest.kt`** - adds the RA-1 drift guard for unique IDs, real resource resolution, and typed route mapping.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md`** - closes RA-1 and adds RA-9 as a follow-up for stale search-highlight lifecycle state, leaving RA-2 through RA-4 plus RA-9 as the remaining settings-search work.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.221 / versionCode 2021.
+
+### Verification
+
+- `./gradlew.bat --no-daemon :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.*"` -> green.
+- `./gradlew.bat --no-daemon :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndexIntegrityTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2021.txt` (new)
+- `gradle.properties` (versionCode 2020->2021, versionName 1.8.220->1.8.221)
+
 <a id="v1.8.220"></a>
 ## v1.8.220
 

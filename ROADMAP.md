@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.220 (versionCode 2020). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.221 (versionCode 2021). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -261,7 +261,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
 
-This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph with no drift guard — the highest-leverage net-new work.
+This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, while the remaining work is no-results, keyword, accessibility, and highlight-lifecycle polish.
 
 ### Quick Wins
 
@@ -269,12 +269,17 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
 
 ### Larger Bets
 
-- [ ] P1 — Drift guard test: every `SettingsSearchDestination` is navigable + every entry resId resolves (RA-1)
+- [x] P1 — Drift guard test: every `SettingsSearchDestination` is navigable + every entry resId resolves (RA-1)
+  - Shipped v1.8.221: `SettingsSearchIndexIntegrityTest` now fails on
+    duplicate entry IDs, missing/blank real string resources, fake resolver
+    fallback text, and destination-route mapping drift. The screen navigation
+    path uses the same `SettingsSearchDestination.toSearchRoute()` helper the
+    test pins.
   - Why: The search catalog is a 33-value enum + ~100 hand-curated entries that mirror the navigation graph and reference real string resIds. Nothing fails the build when a Settings screen is added without a search entry, an entry points at a deleted/renamed pref label, or a `destination` loses its `Routes.*` arm. The only existing test (`SettingsSearchIndexTest.kt`) uses a fake `resolve` map and asserts ranking, not integrity. This is the same registry-drift failure mode the project already hit elsewhere (see the partitioned-prefs golden test).
-  - Evidence: `SettingsSearchIndex.kt:24-58` (enum), `:102-205` (entries reference `R.string.*` directly), `SettingsSearchScreen.kt:148-188` (`when(destination)` mapping); `app/src/test/.../search/SettingsSearchIndexTest.kt:79` resolves via a fake map (`"res-$resId"`), so a dangling resId never surfaces in test.
-  - Touches: new JVM/Robolectric test asserting (a) entry `id`s are unique, (b) every `SettingsSearchEntry.titleResId`/`summaryResId`/`screenTitleResId` resolves against real `R.string` (non-blank, not the missing-resource fallback), (c) the `SettingsSearchDestination` enum is exhaustively handled by `navigateSearchDestination` (the `when` is already exhaustive — pin it with a `forEach` over `entries()` that constructs each `Routes.*` without throwing).
+  - Evidence: pre-fix `SettingsSearchIndex.kt` held enum/catalog rows directly and `SettingsSearchScreen.kt` kept destination routing inside a private navigation function; the existing `SettingsSearchIndexTest` resolved strings through a fake map.
+  - Touches: `SettingsSearchScreen.kt`; `SettingsSearchIndexIntegrityTest.kt`.
   - Acceptance: deleting a referenced string res or adding an unmapped destination fails the test; passes today.
-  - Verify: `:app:testDebugUnitTest` (or `:app:testDebugUnitTest` + Robolectric for real resId resolution).
+  - Verify: `:app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.*"`; full Gradle gate.
   - Complexity: M
 - [ ] P2 — No-results fallback action in settings search (RA-2)
   - Why: An empty result set renders only gray "no results for X" text — a dead-end. There's no escape hatch (browse-all / jump to Settings home) and, notably, no link into the Android **system** keyboard settings, which is where a missing pref often actually lives (the search index is app-internal only).
@@ -296,6 +301,27 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Touches: `SettingsSearchScreen` semantics (field label, results `role = Role.Button`/merged, `liveRegion = Polite` on the result-count container); add a search row to the `docs/ACCESSIBILITY.md` manual-QA checklist.
   - Acceptance: TalkBack announces a labelled search field, reads each result's screen + title, and reports result-count changes; checklist documents the flow.
   - Verify: manual TalkBack on-device; `:app:assembleDebug`.
+  - Complexity: M
+- [ ] P2 — Consume or dismiss Settings search highlight state after the target screen is reached (RA-9)
+  - Why: the search-result highlight card is stored in a process-wide Compose
+    singleton and rendered by the shared settings scaffold. Because production
+    code never clears it, the same "Search result" card can reappear whenever
+    the user later visits the matching settings screen, pushing content down
+    after the original search context is gone.
+  - Evidence: `SettingsSearchScreen.kt:158-164` calls
+    `SettingsSearchHighlightStore.mark(...)`; `FlorisScreen.kt:234-247`
+    renders a `FlorisInfoCard` whenever `activeTarget.screenTitle == title`;
+    `SettingsSearchIndex.kt:84-99` exposes `clear()`, but `rg
+    "SettingsSearchHighlightStore.clear"` finds only the JVM test caller.
+  - Touches: `SettingsSearchHighlightStore` plus the `FlorisScreen` search-card
+    rendering path. Prefer a one-shot `consumeTargetFor(screenTitle)` API or a
+    local displayed-target copy with a dismiss action, so the card survives the
+    first target-screen composition but does not persist across later visits.
+  - Acceptance: selecting a search result still shows the destination card once;
+    leaving and returning to that screen without a new search does not show the
+    stale card; users can dismiss the card explicitly if it remains visible.
+  - Verify: focused JVM test for the consume/clear contract; `:app:assembleDebug`;
+    optional manual Settings search -> destination -> back -> destination smoke.
   - Complexity: M
 - [x] P3 — Surface settings search from Settings home (entry-point discoverability) (RA-8)
   - Confirmed 2026-06-04: Settings Home already exposes the search route as a
