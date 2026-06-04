@@ -1,0 +1,1 @@
+NativeStr decoding now respects ByteBuffer position, limit, and sliced heap offsets across heap, direct, and read-only buffers without consuming the caller's position.

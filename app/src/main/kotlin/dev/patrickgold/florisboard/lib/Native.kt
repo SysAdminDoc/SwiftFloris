@@ -37,13 +37,9 @@ typealias NativeStr = ByteBuffer
  * Converts a native string to a Java string.
  */
 fun NativeStr.toJavaString(): String {
-    val bytes: ByteArray
-    if (this.hasArray()) {
-        bytes = this.array()
-    } else {
-        bytes = ByteArray(this.remaining())
-        this.get(bytes)
-    }
+    val source = this.asReadOnlyBuffer()
+    val bytes = ByteArray(source.remaining())
+    source.get(bytes)
     return String(bytes, Charsets.UTF_8)
 }
 
