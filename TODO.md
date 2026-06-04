@@ -1,6 +1,6 @@
 # SwiftFloris — TODO (single source of truth for open work)
 
-**Current release:** v1.8.187 (versionCode 1987) · **Baseline:** `:app:verifyNoInternetPermission :app:testDebugUnitTest` green.
+**Current release:** v1.8.201 (versionCode 2001) · **Baseline:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` green.
 
 This file is the **canonical open-work checklist.** It consolidates the open items
 that were previously scattered across [`ROADMAP.md`](ROADMAP.md),
@@ -69,10 +69,14 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
 - [x] **EI6** (P2) — Clipboard reconciliation property test (Kotest property):
   no dangling rows, no orphan files, single-pass convergence over randomised
   inputs. **Shipped v1.8.194 (2026-05-28).**
-- [ ] **F40 (test-class phase)** (P2) — Roborazzi screen-level test *classes* for
+- [x] **F40 (test-class phase)** (P2) — Roborazzi screen-level test *classes* for
   `AddonsSettingsScreen`, `McpSettingsScreen`, `TypingStatsScreen`,
   `VoiceInputScreen`, `AiFeaturesScreen`, honeycomb keyboard surface, glide-trail
-  themes. (Baseline PNG *capture* is Tier B — needs `recordRoborazzi` on device.)
+  themes. Existing `ThemeAndAddonsScreenshotTest` covers `AddonsSettingsScreen`;
+  `PendingSettingsScreensScreenshotTest` and `PendingKeyboardSurfacesScreenshotTest`
+  add the remaining compile-checked, baseline-pending capture targets. **Shipped
+  v1.8.201 (2026-06-04).** (Baseline PNG *capture* remains Tier B — needs
+  `recordRoborazzi` on device/emulator.)
 
 ### A2. Code cleanup / debt
 
@@ -172,7 +176,8 @@ the maintainer's other VM). Auto-commit-and-push per logical change.
 - [ ] **F9** (P1) — Glide-trail theme Roborazzi baselines + low-end (≤4 GB) perf
   evidence (Pixel 4a / Galaxy A12-class). Trace `swiftfloris.glide.trailDrawMs`.
 - [ ] **F40 (capture phase)** — `:app:recordRoborazziDebug` to produce baseline PNGs
-  for the A1 test classes (run on a device/emulator).
+  for the A1 test classes, then remove the class-level `@Ignore` annotations from
+  the pending F40 screenshot classes (run on a device/emulator).
 - [ ] **WS11** (P0/P1) — Keyboard surface polish: candidate-row selection/pressed/
   disabled/correction states; smartbar ordering + overflow + long-label resilience;
   software-key pressed/held/disabled/gesture states; one-handed/floating/split/
@@ -221,6 +226,10 @@ sibling repo, ML infra, or a product decision the code can't make.
 
 ## Recently closed (see `CHANGELOG.md` for detail)
 
+v1.8.201 closed (autonomous session 2026-06-04): **F40 test-class phase**
+(baseline-pending Roborazzi classes for the remaining Settings and keyboard/glide
+surfaces; capture phase remains Tier B).
+
 v1.8.188→v1.8.200 closed (autonomous session 2026-05-28): **F18** (heuristic
 ghost-text), **R3** (malformed-codepoint test), **F28/O7** (Tink crypto test),
 **F27** (ShiftStateMachine + tests), **EI5** (EmojiCompat reflection guard),
@@ -237,6 +246,6 @@ decreasing. Full per-release detail is in `CHANGELOG.md`.
 **Open Tier A queue (next pass):** F31 (reframed — see note), EI3 (import
 preview — touches the rollback flow, handle carefully), F29 (PhysicalKeyboardScreen
 build-out), F4 (Settings search), EI1 (AppPrefs partition — golden-test guarded,
-risky), CI items (F23/F24/EI9/F40 test classes), UX/strings (EI7/F3/F6),
+risky), CI items (F23/F24/EI9), UX/strings (EI7/F3/F6),
 hygiene/docs (WS14 incl. the stale `-Xwhen-guards` flag, R5/O1/EI10, WS10/WS15),
 EI2 (low-value cosmetic). Tier C stays blocked (see §Tier C + open questions).
