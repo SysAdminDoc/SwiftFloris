@@ -1,0 +1,3 @@
+v1.8.221 - Settings search drift guard.
+
+Settings search now fails tests for duplicate entry IDs, missing or blank string resources, fake fallback labels, or destinations that no longer build the expected typed route.
