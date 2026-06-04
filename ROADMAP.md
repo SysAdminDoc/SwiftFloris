@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 2 - 2026-06-04.
+> Last researched: Cycle 3 - 2026-06-04.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -115,10 +115,10 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Acceptance: picks merged without regressing shipped features; on-device verified.
   - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F22.
 - [ ] P1 — Apache-2.0 glide model trained on the MIT FUTO swipe dataset (F21)
-  - Why: A licensed in-tree glide model needs off-device ML training infra (XL, out-of-tree).
-  - Touches: external training pipeline + model integration.
-  - Acceptance: Apache-2.0-clean model trained and integrated.
-  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F21.
+  - Why: A licensed in-tree glide model needs off-device ML training infra (XL, out-of-tree). FUTO Keyboard v0.1.29 now publishes FUTO Swipe, a public 1M-swipe QWERTY English dataset, top-1/top-4 benchmark framing, and an open-source swipe system, sharpening this from "train a model" into "evaluate against a public test set before integrating."
+  - Touches: external training pipeline + model integration; candidate-row top-4 display policy if the model exposes alternatives.
+  - Acceptance: Apache-2.0-clean model trained and integrated; before merge, report top-1 and top-4 error on the public FUTO filtered test-set framing and document whether SwiftFloris should expose accepted word + 3 alternatives after glide completion.
+  - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F21; https://github.com/futo-org/android-keyboard/releases/tag/0.1.29.
 - [ ] P2 — Bundled Vosk small-en-us recognizer addon (F8)
   - Why: Needs a sibling addon repo + JNI; `RECORD_AUDIO` only in the addon, never `:app`.
   - Touches: sibling addon repo, JNI binding.
@@ -160,6 +160,124 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 3 - 2026-06-04)
+
+- [x] 🔬 `post-1.8.225-sync-and-futo-swipe-refresh-2026-06-04` - synced
+  `master`, found the repo clean but five commits ahead of `origin/master`,
+  reconciled the post-v1.8.225 local fixes against the current roadmap, and
+  checked current competitor/standards sources. Existing RA-4/RA-9, device-gated
+  visual work, and maintainer-gated release items remain valid; this cycle adds
+  only net-new release-ledger, clipboard-search, and sync-crypto-contract work,
+  plus sharper evidence on F21 from the FUTO Keyboard v0.1.29 swipe release.
+
+#### Release/source-of-truth hygiene
+
+- [ ] 🤖 P0 — Reconcile post-v1.8.225 local fixes into a versioned release ledger (R3-1)
+  - Why: The branch is `v1.8.223-5-g8142536`, `HEAD` is untagged, and three
+    local code-fix commits after the v1.8.225 docs marker change privacy,
+    crypto, i18n, and theme-engine behavior without a matching new version,
+    fastlane changelog, or top-of-README release entry. That breaks the repo's
+    own "one shipped release = version + changelog + fastlane metadata + tag"
+    contract and makes it hard for Obtainium/F-Droid/reproducible-build readers
+    to know which APK contains the fixes.
+  - Evidence: `git describe --tags --dirty --always` -> `v1.8.223-5-g8142536`;
+    `git tag --points-at HEAD` is empty; `CHANGELOG.md:5-78` documents
+    v1.8.225 but not commits `1917583`, `5df1cfa`, or `8142536`;
+    `gradle.properties:18-19` still reports versionCode 2025 / versionName
+    1.8.225 after those commits.
+  - Touches: `CHANGELOG.md`, `README.md`, `PROJECT_CONTEXT.md`,
+    `gradle.properties`, `fastlane/metadata/android/en-US/changelogs/2026.txt`,
+    `COMPLETED.md` if any roadmap/audit rows are closed, and the release tag.
+  - Acceptance: a new release marker (or explicitly documented untagged-dev
+    marker) covers the n-gram/thread-safety/crypto/privacy, shared-secret
+    scrubbing/Arabic-shaping, and Snygg selector/contentScale fixes; fastlane
+    metadata exists for the new versionCode; `git describe` resolves to the new
+    tag once released.
+  - Verify: `git describe --tags --dirty --always`; `bash
+    scripts/check-fastlane-metadata.sh`; full release gate after the build
+    machine performs the version bump.
+  - Complexity: S-M
+
+#### Clipboard UX
+
+- [ ] 🤖 P1 — Wire clipboard-history text search into the in-keyboard clipboard palette (R3-2)
+  - Why: SwiftFloris already has a tested pure `ClipboardHistoryFilter` and a
+    `historySearchEnabled` preference, but the live `ClipboardInputLayout`
+    exposes only type filters. FUTO Keyboard v0.1.29 added clipboard-history
+    search in its latest release, reinforcing this as table-stakes for long
+    local clipboard histories.
+  - Evidence: `ClipboardHistoryFilter.kt:22-68` defines the query contract and
+    says the search wire-up is missing; `ClipboardPrefs.kt:152-162` defines the
+    default-on UI-density toggle; `ClipboardInputLayout.kt:151-163` filters only
+    by active `ItemType`; FUTO Keyboard v0.1.29 release notes list clipboard
+    history search: https://github.com/futo-org/android-keyboard/releases/tag/0.1.29.
+  - Touches: `ClipboardInputLayout.kt`, clipboard strings, `ClipboardScreen.kt`
+    if the existing toggle needs a visible settings row, and focused Compose or
+    policy tests around query + type-filter composition.
+  - Acceptance: when history search is enabled, the clipboard palette offers a
+    compact search affordance, filters text clips through
+    `ClipboardHistoryFilter.filterByQuery`, composes correctly with image/video
+    type filters, shows a clear/no-results state, preserves sensitive-field and
+    lock-screen redaction behavior, and resets scroll to the first match on
+    query/type changes.
+  - Verify: `:app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.clipboard.*"`; manual keyboard clipboard
+    palette smoke with text, sensitive text, image, video, no-results, and
+    device-locked states.
+  - Complexity: M
+
+#### Sync crypto contract
+
+- [ ] 🤖 P1 — Freeze the sealed-box envelope/KDF contract with vectors before sync transport ships (R3-3)
+  - Why: The local sealed-box scaffold now uses X25519 + AES-GCM with an
+    RFC-5869-style HMAC KDF and scrubs the derived shared secret, but tests only
+    cover generated-key round-trips. Before CRDT sync starts persisting or
+    exchanging envelopes, the byte format and derivation constants need
+    deterministic vectors so a future KDF tweak does not silently strand paired
+    devices.
+  - Evidence: `SealedBoxCrypto.kt:96-143` emits `ephemeralPub || nonce ||
+    ciphertext+tag` and opens the same shape; `SealedBoxCrypto.kt:166-170`
+    derives key material from X25519 output; `SealedBoxCryptoTest.kt:24-68`
+    lacks deterministic vectors or schema/version assertions; libsodium's
+    sealed-box docs define the same ephemeral-public-key-prefixed shape and
+    erase the ephemeral secret after encryption
+    (https://doc.libsodium.org/public-key_cryptography/sealed_boxes); RFC 5869
+    defines HKDF's extract-then-expand construction and publishes SHA-256 test
+    vectors (https://datatracker.ietf.org/doc/html/rfc5869).
+  - Touches: `SealedBoxCrypto.kt`, `SealedBoxCryptoTest.kt`,
+    `docs/THREAT_MODEL.md` or `docs/SECURITY.md` for the sync-envelope contract.
+  - Acceptance: tests pin at least one deterministic vector for nonce/key or a
+    fixed test-key envelope; docs state the envelope schema/version and
+    compatibility policy; raw X25519 output and temporary nonce/KDF buffers are
+    scrubbed where practical; malformed-envelope diagnostics remain non-leaky.
+  - Verify: `:app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.sync.SealedBoxCryptoTest"`; manual review
+    that no network permission or native dependency was introduced.
+  - Complexity: M
+
+#### Regression coverage
+
+- [ ] 🤖 P2 — Backfill focused regression tests for the untested post-v1.8.225 hotfix surfaces (R3-4)
+  - Why: The newest local fixes cover fragile crash/privacy/i18n paths, but the
+    changed behavior is not fully pinned by tests. Without focused tests, the
+    same regressions can reappear while the release ledger says the fixes are
+    shipped.
+  - Evidence: `ArabicShaperTest.kt:24-58` lacks a combining-mark case even
+    though `5df1cfa` changed mark-skipping join context; `SnyggRuleTest.kt`
+    covers valid/invalid selectors but not unknown-selector fallback after
+    `8142536`; `rg "contentScale|SnyggContentScaleValue" lib/snygg/src/test`
+    finds no serializer-id test; `SwiftKeyTypingTraceRecorder.kt` gained
+    private-session gates in `1917583` without a focused recorder test.
+  - Touches: `ArabicShaperTest.kt`, `SnyggRuleTest.kt` / Snygg value tests,
+    `SwiftKeyTypingTraceRecorder` tests, and n-gram per-locale flush tests if
+    the stores already expose a tractable test seam.
+  - Acceptance: combining-mark Arabic shaping, unknown Snygg selector import,
+    `contentScale` serialization, private-session trace suppression, and
+    per-locale n-gram flush behavior each have focused regression coverage or a
+    documented reason they require an extraction seam first.
+  - Verify: focused test packages plus full Gradle gate.
+  - Complexity: M
 
 ### Researcher Queue (Cycle 2 - 2026-06-04)
 
