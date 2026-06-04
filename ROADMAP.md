@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.239 (versionCode 2039). **Local verification:** focused `EditorContentGenerationLifecycleTest` passed in 1m34s with one Gradle worker after an initial compile-only run exposed and fixed the coroutine-test dispatcher type; `git diff --check` and fastlane metadata gates passed; APK assembly and manual field-switch/composing smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.240 (versionCode 2040). **Local verification:** focused `StartupCrashRecoveryTest` passed in 45s with one Gradle worker after an initial run exposed and fixed JUnit4 expression-bodied `runBlocking` test methods; `git diff --check` and fastlane metadata gates passed; APK assembly and manual forced preference-init smoke were intentionally not run per operator request to avoid repeated heavy Android builds.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -172,7 +172,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Startup recovery
 
-- [ ] 🤖 P2 — Guard async preference-store init failures before the splash wait (R11-1)
+- [x] 🤖 P2 — Guard async preference-store init failures before the splash wait (R11-1)
   - Why: `FlorisApplication.onCreate()` now stages and surfaces synchronous
     startup exceptions, but `init()` still launches `FlorisPreferenceStore`
     initialization on a plain background scope and flips
@@ -210,6 +210,11 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
     a forced preference-init failure confirming Settings leaves the splash and
     shows the intended recovery path.
   - Complexity: M
+  - Shipped: v1.8.240 (2026-06-04) with a supervised application scope,
+    testable preference-init helper, guarded async init failure staging,
+    `preferenceStoreLoaded` finally-unblock behavior, loaded-time crash-dialog
+    redirect before normal Settings content, and focused startup recovery tests.
+    Manual forced-failure smoke remains pending.
 
 ### Researcher Queue (Cycle 10 - 2026-06-04)
 

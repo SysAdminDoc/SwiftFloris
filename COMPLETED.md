@@ -78,6 +78,7 @@ Consolidated from the archived open-work checklist (closed items). Full per-rele
 - [x] RA-9 (P2) — Settings search destination highlights now consume the process-wide target once into local screen state, expose a close action, and do not reappear on later visits without a new search. Shipped v1.8.237. — *Source: ROADMAP.md Researcher Queue Cycle 1.*
 - [x] R4-2 (P3) — Clipboard image/video history tiles now expose localized TalkBack labels with media type, history group, and copied-time context while keeping thumbnail/video overlay icons decorative. Shipped v1.8.238. — *Source: ROADMAP.md Researcher Queue Cycle 4.*
 - [x] R10-1 (P2) — Editor start-view and selection-update content generation is cancelled or superseded across reset, finishInput, and input-connection switches so delayed jobs cannot republish stale editor state or touch an old `InputConnection`. Shipped v1.8.239. — *Source: ROADMAP.md Researcher Queue Cycle 10.*
+- [x] R11-1 (P2) — Async preference-store initialization failures now stage a crash report, unblock the Settings splash wait, and redirect to the existing crash recovery surface before normal Settings content renders. Shipped v1.8.240. — *Source: ROADMAP.md Researcher Queue Cycle 11.*
 - [x] F1, F2, F15, F16, F17, F19, F20, F25, F26, F32, F34, F35, F36, F41, F42, EI8, EI11, EI4 (doc) — Closed across v1.8.174 -> v1.8.187. — *Source: TODO_2026-06-03.md*
 - [x] IMPROVEMENT_PLAN Workstreams 1, 3, 4, 5, 6 complete; Workstream 2 (lint) monotonically decreasing. — *Source: IMPROVEMENT_PLAN_2026-05-18.md*
 

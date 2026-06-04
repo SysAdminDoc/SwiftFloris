@@ -48,8 +48,10 @@ import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import dev.patrickgold.jetpref.datastore.runtime.initAndroid
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
@@ -79,7 +81,7 @@ class FlorisApplication : Application() {
     }
 
     private val mainHandler by lazy { Handler(mainLooper) }
-    private val scope = CoroutineScope(Dispatchers.Default)
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val preferenceStoreLoaded = MutableStateFlow(false)
 
     val cacheManager = lazy { CacheManager(this) }
@@ -161,12 +163,10 @@ class FlorisApplication : Application() {
     fun init() {
         cacheDir?.deleteContentsRecursively()
         scope.launch {
-            val result = FlorisPreferenceStore.initAndroid(
+            initializePreferenceStoreForStartup(
                 context = this@FlorisApplication,
-                datastoreName = FlorisPreferenceModel.NAME,
+                preferenceStoreLoaded = preferenceStoreLoaded,
             )
-            Log.i("PREFS", result.toString())
-            preferenceStoreLoaded.value = true
         }
         extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
@@ -185,6 +185,37 @@ class FlorisApplication : Application() {
                 }
                 mainHandler.post { init() }
             }
+        }
+    }
+}
+
+internal suspend fun initializePreferenceStoreForStartup(
+    context: Context,
+    preferenceStoreLoaded: MutableStateFlow<Boolean>,
+    datastoreName: String = FlorisPreferenceModel.NAME,
+    initializer: suspend (Context, String) -> Any? = { initContext, initDatastoreName ->
+        FlorisPreferenceStore.initAndroid(
+            context = initContext,
+            datastoreName = initDatastoreName,
+        )
+    },
+    logResult: (Any?) -> Unit = { result -> Log.i("PREFS", result.toString()) },
+) {
+    var markLoaded = true
+    try {
+        val result = initializer(context, datastoreName)
+        logResult(result)
+    } catch (e: CancellationException) {
+        markLoaded = false
+        throw e
+    } catch (e: Exception) {
+        CrashUtility.stageException(e)
+        flogError(LogTopic.CRASH_UTILITY) {
+            "Preference store initialization failed before Settings could render: $e"
+        }
+    } finally {
+        if (markLoaded) {
+            preferenceStoreLoaded.value = true
         }
     }
 }

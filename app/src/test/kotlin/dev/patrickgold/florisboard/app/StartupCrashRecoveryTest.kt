@@ -19,12 +19,15 @@ package dev.patrickgold.florisboard.app
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.patrickgold.florisboard.initializePreferenceStoreForStartup
 import dev.patrickgold.florisboard.lib.crashutility.CrashDialogActivity
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -75,6 +78,56 @@ class StartupCrashRecoveryTest {
     fun stagedStartupCrashIntentIsNullWithoutStagedException() {
         stagedStartupCrashIntent(context) shouldBe null
         CrashUtility.hasUnhandledStacktraceFiles(context) shouldBe false
+    }
+
+    @Test
+    fun preferenceStoreInitFailureStagesCrashAndUnblocksSplash() {
+        runBlocking {
+            val preferenceStoreLoaded = MutableStateFlow(false)
+
+            initializePreferenceStoreForStartup(
+                context = context,
+                preferenceStoreLoaded = preferenceStoreLoaded,
+                initializer = { _, _ -> error("prefs init failed") },
+                logResult = {},
+            )
+
+            preferenceStoreLoaded.value shouldBe true
+
+            val intent = stagedStartupCrashIntent(context).shouldNotBeNull()
+            intent.component?.className shouldBe CrashDialogActivity::class.java.name
+            CrashUtility.hasUnhandledStacktraceFiles(context) shouldBe true
+
+            val stacktraces = CrashUtility.getUnhandledStacktraces(context)
+            stacktraces shouldHaveSize 1
+            stacktraces.single().details shouldContain "prefs init failed"
+        }
+    }
+
+    @Test
+    fun preferenceStoreInitSuccessMarksLoadedWithoutStagingCrash() {
+        runBlocking {
+            val preferenceStoreLoaded = MutableStateFlow(false)
+            var receivedDatastoreName: String? = null
+            var loggedResult: Any? = null
+
+            initializePreferenceStoreForStartup(
+                context = context,
+                preferenceStoreLoaded = preferenceStoreLoaded,
+                datastoreName = "test-prefs",
+                initializer = { _, datastoreName ->
+                    receivedDatastoreName = datastoreName
+                    "loaded"
+                },
+                logResult = { result -> loggedResult = result },
+            )
+
+            preferenceStoreLoaded.value shouldBe true
+            receivedDatastoreName shouldBe "test-prefs"
+            loggedResult shouldBe "loaded"
+            stagedStartupCrashIntent(context) shouldBe null
+            CrashUtility.hasUnhandledStacktraceFiles(context) shouldBe false
+        }
     }
 
     private fun clearCrashState() {

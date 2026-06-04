@@ -156,6 +156,11 @@ class FlorisAppActivity : ComponentActivity() {
         val isModelLoaded = AtomicBoolean(false)
         appContext.preferenceStoreLoaded.collectIn(lifecycleScope) { loaded ->
             if (!loaded || isModelLoaded.getAndSet(true)) return@collectIn
+            stagedStartupCrashIntent(this)?.let { crashIntent ->
+                startActivity(crashIntent)
+                finish()
+                return@collectIn
+            }
             // Check if android 13+ is running and the NotificationPermission is not set
             if (AndroidVersion.ATLEAST_API33_T &&
                 prefs.internal.notificationPermissionState.get() == NotificationPermissionState.NOT_SET

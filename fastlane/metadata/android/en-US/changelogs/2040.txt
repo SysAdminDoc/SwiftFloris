@@ -1,0 +1,1 @@
+Async preference-store init failures now stage a crash report, unblock the Settings splash wait, and redirect to crash recovery instead of leaving Settings stuck before content renders.
