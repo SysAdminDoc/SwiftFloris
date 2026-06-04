@@ -154,11 +154,13 @@ private fun FlorisScreenScope.Content(
             )
         }
 
-        // Below block allows to return from the system IME enabler activity
-        // as soon as it gets selected.
-        LaunchedEffect(Unit) {
+        // Poll the system IME enabler state so we can auto-advance as soon
+        // as the user enables SwiftFloris in system settings. The key includes
+        // the state parameters so the effect restarts (with fresh captures)
+        // whenever they change, avoiding stale-closure reads.
+        LaunchedEffect(isFlorisBoardEnabled, isFlorisBoardSelected, hasNotificationPermission) {
             while (true) {
-                delay(200L)
+                delay(500L)
                 val isEnabled = InputMethodUtils.isFlorisboardEnabled(context)
                 if (stepState.getCurrentAuto().value == SetupStep.EnableIme.id &&
                     stepState.getCurrentManual().value == -1 &&

@@ -100,8 +100,9 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         context: SwiftKeyDecoderContext,
         scoredCandidates: List<SwiftKeyScoredCandidate>,
         rankedCandidates: List<SuggestionCandidate>,
+        isPrivateSession: Boolean = false,
     ) {
-        if (!isEnabled()) return
+        if (!isEnabled() || isPrivateSession) return
         append(
             JSONObject()
                 .put("type", "suggestion")
@@ -116,8 +117,8 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         )
     }
 
-    fun recordAutoCommitAccepted(content: EditorContent, candidate: SuggestionCandidate) {
-        if (!isEnabled()) return
+    fun recordAutoCommitAccepted(content: EditorContent, candidate: SuggestionCandidate, isPrivateSession: Boolean = false) {
+        if (!isEnabled() || isPrivateSession) return
         append(
             JSONObject()
                 .put("type", "autoCommitAccepted")
@@ -128,8 +129,8 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         )
     }
 
-    fun recordAutoCommitRejected(content: EditorContent) {
-        if (!isEnabled()) return
+    fun recordAutoCommitRejected(content: EditorContent, isPrivateSession: Boolean = false) {
+        if (!isEnabled() || isPrivateSession) return
         append(
             JSONObject()
                 .put("type", "autoCommitRejected")
