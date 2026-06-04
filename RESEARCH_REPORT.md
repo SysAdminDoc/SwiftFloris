@@ -1,6 +1,14 @@
 # SwiftFloris Research Report
 
-This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 9.
+This report summarizes current research conclusions. The full 2026-05-25 research plan is archived at `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`. Deep-research pass refreshed **2026-06-03** (post-v1.8.204), with 2026-06-04 freshness notes through Cycle 10.
+
+2026-06-04 Cycle 10 note: after the Cycle 9 docs push, `master` is clean at
+`99a8431` (`v1.8.234-1-g99a8431`). Cycle 10 rechecked the deferred editor
+content-generation lifecycle audit against live `AbstractEditorInstance` after
+v1.8.233 closed only the selected synchronous `InputConnection` batch critical
+sections. This cycle adds R10-1: cancel or supersede stale content-generation
+jobs on reset/finishInput so delayed jobs cannot republish editor state or touch
+an old `InputConnection`.
 
 2026-06-04 Cycle 9 note: after the Cycle 8 docs push, `master` is clean at
 `c566b73` (`v1.8.230-1-gc566b73`). Cycle 9 rechecked the suggestion privacy
@@ -104,7 +112,7 @@ F22/F10/F12/API 37 work.
 
 ## Executive Summary
 
-SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.237, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small accessibility/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
+SwiftFloris is a mature, heavily-audited privacy-first Android IME (FlorisBoard fork, `dev.patrickgold.florisboard`, `:app` permission-clean with no `INTERNET`). At v1.8.237, the post-v1.8.225 pushed fixes are covered by a release ledger and focused regression tests, the Japanese locale capability typo is fixed, clipboard history search is wired into the keyboard palette, non-co-signed addon enrollment now requires explicit Settings trust, the sync sealed-box v1 envelope is pinned by deterministic vector coverage, editor `InputConnection` batch edits now exclude expected-content queue work, dynamic incognito toggles re-apply the IME window screen-capture guard immediately, blocked user-dictionary system-back gestures now explain active save/delete/import/export work, Settings search now has TalkBack labels/live result-status/result-row context plus one-shot dismissible destination highlights, and async suggestion candidate generation now uses request-scoped privacy snapshots. The feature surface is broad (autocorrect/prediction, glide typing, clipboard, addons, voice handoff, sync, MCP bridge, hardware-keyboard import). The compatible dependency stack is current for the applied pins (Compose BOM 2026.05.01, Kotlin 2.3.21, AGP 9.2.1, targetSdk 36). Three deep engineering audits (2026-05-28/29 and 2026-06-02) plus the existing roadmap already cover correctness, crypto, resource, and device-gated visual work, so the **net-new** opportunity space is narrow and concentrated on small lifecycle/API-contract hardening. The **settings search** feature shipped in v1.8.204 (commit `1966c69`) now has drift/no-results/synonym/scroll/accessibility/highlight-lifecycle polish. [Verified]
 
 Top opportunities (one line each):
 
@@ -131,6 +139,7 @@ Top opportunities (one line each):
 21. **Incognito `FLAG_SECURE` toggle** — smartbar incognito changes now re-run the secure-window policy immediately for the active field (R7-1). [Closed]
 22. **User-dictionary blocked-back feedback** — active dictionary save/delete/import/export work now surfaces operation-specific feedback when system back is blocked (R8-1). [Closed]
 23. **Suggestion privacy request snapshot** — async candidate generation now freezes incognito/editor sensitivity and suggestion preference inputs before provider, trace, and ghost-text work runs (R9-1). [Closed]
+24. **Editor content-generation lifecycle** — delayed start/selection content jobs can still publish state and touch a captured `InputConnection` after reset/finishInput (R10-1, P2). [Verified]
 
 No Critical or Major reliability/security defects were found that are not already on the roadmap or in the deferred audit lists. The remaining heavy work (glide model training, Vosk addon, F-Droid submission, device-only visual verification) stays maintainer-gated as the existing roadmap records.
 
@@ -176,6 +185,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   closes R6-1 by moving expected-content generation/queue pushes before the
   selected `InputConnection` batches and by pinning `try/finally` batch-pairing
   tests. [Closed]
+- **Editor content-generation lifecycle (partial):** start-view and selection
+  updates still launch content generation against a captured `InputConnection`
+  without cancellation or generation gating on reset/finishInput. R10-1 scopes
+  those async updates to the active editor session. [Verified]
 - **Sensitive-window privacy:** password-field `FLAG_SECURE`, field-start
   incognito coverage, and dynamic-incognito toggle re-application now exist.
   v1.8.231 closes R7-1 by re-running the secure-window policy for the active
@@ -260,6 +273,9 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
   candidate generation now consumes a request-scoped snapshot for incognito,
   editor sensitivity, suggestion preference, offensive-content, and emoji-count
   inputs.
+- **[Medium] Editor content-generation lifecycle** → R10-1. Cancel or supersede
+  delayed start/selection content jobs on reset/finishInput so stale coroutines
+  cannot republish editor state or mutate an old `InputConnection`.
 
 ## Architecture & Technical Findings
 
@@ -284,6 +300,10 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 - **Editor hot path:** v1.8.233 keeps the existing expected-content model but
   removes blocking/queue work from the selected open editor batches and pins the
   synchronous `InputConnection` call order with tests.
+- **Editor async session boundary:** `AbstractEditorInstance` still treats
+  start-view and selection content generation as fire-and-forget work. R10-1
+  should add a pending-job/generation boundary that survives field switches and
+  finishInput without weakening the expected-content model.
 - **Suggestion request boundary:** v1.8.236 keeps `NlpManager.suggest` request-id
   ordering and adds immutable request inputs for provider calls, typing traces,
   and ghost-text gating, so delayed work does not re-read live incognito or
@@ -300,7 +320,7 @@ Privacy-first multilingual IME. `:app` is Apache-2.0-ceiling, no network permiss
 
 ## Security / Privacy / Data Safety
 
-No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
+No net-new permission or data-egress finding. The settings-search additions are display/navigation only; the no-results Browse all settings action (RA-2), synonym keyword coverage (RA-3), and query-change scroll reset (RA-10) do not weaken the no-network posture. R2-1 and R2-2 closed as local diagnostic-safety work without adding network, telemetry, or broad file export. R3-2 is also local-only clipboard filtering. R3-3 closed as sync-crypto contract hardening before transport activation, with no new permission or native dependency. R4-1/R4-2/R4-3/R4-4 are local correctness/a11y/API-contract work. R5-1 closed as trust-boundary hardening for optional addon APKs: it keeps the no-network addon screen but requires explicit trust before non-co-signed packages become active. R6-1 is local editor critical-section hardening and does not change storage, permissions, or outbound data. R7-1 closed as privacy posture hardening for the existing incognito mode and `FLAG_SECURE` contract, not a permission change. R9-1 is privacy-state hardening for existing local suggestion and smart-compose paths: it keeps the no-network posture and ensures `IME_FLAG_NO_PERSONALIZED_LEARNING` / incognito decisions are request-scoped across async work. R10-1 is local editor-session lifecycle hardening and does not change storage, permissions, or outbound data. R8-1 is UI feedback for an already-blocked dictionary operation path and does not change data retention, dictionary mutation, or export/import permissions. WS13 now explicitly includes the deferred `StickerMediaProvider.openFile` SAF allow-list validation so forged encoded sticker URIs are rejected without broadening file access. The deferred audit lists (`docs/AUDIT_2026-06-02.md`) remain the authority for crypto/parsing/lifecycle hardening; this pass does not duplicate them.
 
 ## UX & Accessibility
 
@@ -322,6 +342,8 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
    active dictionary import/export or save/delete operation.
 4. v1.8.236 still needs manual dynamic-incognito smoke during typing; the
    request-boundary contract is covered by focused JVM tests.
+5. R10-1 needs fake/delayed editor-session tests around reset/finishInput; no
+   maintainer product decision is required.
 
 ## Archived Evidence
 
@@ -353,3 +375,4 @@ The keyboard surface already has a strong a11y baseline (`ACCESSIBILITY.md`, `To
 - Cycle 9 companion: `.ai/research/2026-06-04/CYCLE_9_FINDINGS.md`.
 - Cycle 9 external source classes checked: Android `EditorInfo` /
   `IME_FLAG_NO_PERSONALIZED_LEARNING`.
+- Cycle 10 companion: `.ai/research/2026-06-04/CYCLE_10_FINDINGS.md`.
