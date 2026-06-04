@@ -1,0 +1,1 @@
+Added Settings search from the home screen, covering every Settings destination plus common controls. Results open the matching destination and show a target highlight card for the selected setting.

@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.203 (versionCode 2003). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.204 (versionCode 2004). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -12,11 +12,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Settings & UX surfaces
 
-- [ ] P1 — Settings search (F4)
-  - Why: Settings surface has grown; users cannot find a control without scrolling every screen.
-  - Touches: Settings index builder + scroll-and-highlight per screen.
-  - Acceptance: query indexes all screens; tapping a result scrolls to and highlights the matching control.
-  - Source: TODO.md A3 / research feature plan F4.
 - [ ] P1 — PhysicalKeyboardScreen build-out (F29)
   - Why: Shipped Mac `.keylayout` / Keyman `.kmp` / KLC parsers + `HardwareKeyboardRuntimeMapper` have no UI to reach them.
   - Touches: `PhysicalKeyboardScreen` (custom-layout picker + Import button).

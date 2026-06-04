@@ -2,6 +2,45 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.204"></a>
+## v1.8.204
+
+Released: 2026-06-04
+
+### Settings search
+
+F4 adds a Settings search surface reachable from the Settings home app bar. The search catalog covers every Settings destination plus high-value controls across dense screens such as Keyboard, Typing, Clipboard, Theme, Media, Backup/Restore, Voice, Addons, and About. Results are ranked by exact title, prefix/title, screen-title, keyword, then summary matches.
+
+Tapping a result stores a resolved target handoff and opens the destination route. `FlorisScreen` now renders a top-of-screen target card when the opened screen matches the search result, giving every Settings screen a consistent highlighted landing point without rewriting each JetPref row.
+
+### Changes
+
+- **`SettingsSearchIndex.kt`** (new) — static searchable catalog, normalization, ranking, destination IDs, and target-highlight handoff state.
+- **`SettingsSearchScreen.kt`** (new) — query field, lazy result list, and typed-route navigation for every search destination.
+- **`HomeScreen.kt` / `Routes.kt`** — Settings home search action plus `settings/search` route.
+- **`FlorisScreen.kt`** — shared search-target highlight card rendered above screen content when a search result opens that destination.
+- **`SettingsSearchIndexTest.kt`** (new) — JVM coverage for blank queries, destination coverage, ranking, multi-term matching, and highlight target resolution.
+- **`ROADMAP.md` / `COMPLETED.md`** — F4 moved out of active work and logged as shipped.
+
+### Verification
+
+- `./gradlew.bat :app:compileDebugKotlin :app:testDebugUnitTest --tests "dev.patrickgold.florisboard.app.settings.search.SettingsSearchIndexTest"` -> green.
+- `./gradlew.bat :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` -> green.
+
+### Files Touched
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/HomeScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndex.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt` (new)
+- `app/src/main/kotlin/dev/patrickgold/florisboard/lib/compose/FlorisScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchIndexTest.kt` (new)
+- `fastlane/metadata/android/en-US/changelogs/2004.txt` (new)
+- `gradle.properties` (versionCode 2003->2004, versionName 1.8.203->1.8.204)
+- `README.md` (version badge/current release)
+- `ROADMAP.md` / `COMPLETED.md` (F4 moved to shipped work)
+
 <a id="v1.8.203"></a>
 ## v1.8.203
 

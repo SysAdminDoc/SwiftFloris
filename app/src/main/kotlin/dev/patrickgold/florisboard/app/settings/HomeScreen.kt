@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.SettingsBackupRestore
 import androidx.compose.material.icons.filled.Shield
@@ -49,6 +50,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
@@ -61,6 +63,14 @@ fun HomeScreen() = FlorisScreen {
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+
+    actions {
+        FlorisIconButton(
+            onClick = { navController.navigate(Routes.Settings.Search) },
+            icon = Icons.Default.Search,
+            contentDescription = stringRes(R.string.settings__search__title),
+        )
+    }
 
     content {
         val isFlorisBoardEnabled by InputMethodUtils.observeIsFlorisboardEnabled(foregroundOnly = true)
