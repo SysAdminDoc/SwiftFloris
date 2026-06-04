@@ -176,6 +176,49 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 14 - 2026-06-04)
+
+- [x] 🔬 `personal-ngram-control-token-recheck-2026-06-04` - synced
+  `master` after the Cycle 13 docs push, rechecked the deferred TSV
+  control-character audit against live bigram/trigram normalization, load, and
+  flush paths. This cycle adds one focused row for rejecting personal n-gram
+  tokens that cannot be represented safely in the current TSV format.
+
+#### Personal n-gram TSV token safety
+
+- [ ] 🤖 P2 — Reject control separators before personal n-gram TSV persistence (R14-1)
+  - Why: Both personal n-gram stores normalize learned words by trimming edge
+    punctuation, rejecting digits, and requiring at least one letter, but they do
+    not reject interior tab, newline, carriage-return, NUL, or other ISO control
+    characters. Flush then writes tokens directly into tab-separated,
+    newline-delimited files. A pasted or imported token like `foo\tbar` or a
+    token containing `\u0000` can corrupt the next load by shifting TSV fields,
+    splitting rows, or colliding with the trigram context delimiter.
+  - Evidence: `PersonalBigramStore.kt:82-88` and
+    `PersonalTrigramStore.kt:86-92` return lowercased trimmed words without any
+    control-character rejection; `PersonalBigramStore.kt:101-111` and
+    `PersonalTrigramStore.kt:107-119` parse persisted rows with `split('\t')`;
+    `PersonalBigramStore.kt:303-315` and `PersonalTrigramStore.kt:305-319`
+    write raw token strings separated by tabs and newlines; `PersonalTrigramStore.kt:51`
+    reserves `\u0000` as the in-memory context delimiter; the current
+    dictionary source tests cover locale-scoped flush/reset contracts but not
+    write-time token safety; the deferred audit records the corruption path in
+    `docs/AUDIT_2026-05-28.md:66-68`.
+  - Touches: `PersonalBigramStore.kt`, `PersonalTrigramStore.kt`, and a focused
+    JVM/source contract test for normalization or learn/flush rejection. Keep the
+    current simple TSV format; this row is about rejecting unrepresentable tokens,
+    not introducing an escaping migration.
+  - Acceptance: after trimming and before lowercasing, both stores reject any
+    normalized token containing `'\t'`, `'\n'`, `'\r'`, `'\u0000'`, or
+    `Char.isISOControl()`; learned control-character tokens do not reach
+    in-memory maps or persisted TSV rows; existing apostrophe/hyphen real-word
+    cases continue to work; tests fail if either store can persist a token that
+    changes TSV field count or trigram context splitting on reload.
+  - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
+    "dev.patrickgold.florisboard.ime.dictionary.PersonalNgramFlushIsolationTest"`
+    or a new focused personal n-gram token-safety test class.
+  - Complexity: S
+
 ### Researcher Queue (Cycle 13 - 2026-06-04)
 
 - [x] 🔬 `personal-ngram-stats-reset-race-recheck-2026-06-04` - synced
