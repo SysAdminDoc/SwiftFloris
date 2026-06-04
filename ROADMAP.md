@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.206 (versionCode 2006). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
+**Current release:** v1.8.207 (versionCode 2007). **Baseline green:** `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug`.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -12,11 +12,6 @@ Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25
 
 ### Settings & UX surfaces
 
-- [ ] P1 — Voice route empty-state explainer (EI7)
-  - Why: Empty voice route gives no guidance; should explain "what is FUTO" with an Install link as a generic recommendation (drop migration-window framing).
-  - Touches: voice route empty state UI.
-  - Acceptance: empty state shows FUTO explanation + Install link.
-  - Source: TODO.md A3 / second-pass EI7.
 - [ ] P0 — First-run "import from any keyboard" hint (F3, reframed)
   - Why: Discovery value of importing existing keyboard data is permanent even though the SwiftKey cloud-export window closed 2026-05-31.
   - Touches: detect SwiftKey JSON + Gboard XML + FlorisBoard CSV/.flbackup/.fldic in a SAF picker, route to existing `DictionaryImporter`.

@@ -245,8 +245,8 @@
     <string name="settings__voice_input__status_permission_denied_summary" comment="Voice input status summary">SwiftFloris does not record audio itself. Re-grant microphone access to FUTO in Android app permissions.</string>
     <string name="settings__voice_input__status_futo_not_enabled" comment="Voice input status message">FUTO is installed but not enabled</string>
     <string name="settings__voice_input__status_futo_not_enabled_summary" comment="Voice input status summary">Enable FUTO Voice Input in Android keyboard settings before using offline dictation.</string>
-    <string name="settings__voice_input__status_futo_not_installed" comment="Voice input status message">FUTO Voice Input is not installed</string>
-    <string name="settings__voice_input__status_futo_not_installed_summary" comment="Voice input status summary">Install FUTO Voice Input to use offline voice typing with SwiftFloris.</string>
+    <string name="settings__voice_input__status_futo_not_installed" comment="Voice input status message">Install FUTO Voice Input</string>
+    <string name="settings__voice_input__status_futo_not_installed_summary" comment="Voice input status summary">FUTO Voice Input is a separate offline Android voice keyboard. Install it to add private dictation through SwiftFloris; SwiftFloris itself does not record audio.</string>
     <string name="settings__voice_input__status_other_provider" comment="Voice input status message">A voice keyboard is enabled</string>
     <string name="settings__voice_input__status_other_provider_summary" comment="Voice input status summary">SwiftFloris can use an enabled voice keyboard, but FUTO is recommended for offline dictation.</string>
     <string name="settings__voice_input__group_embedded_engine" comment="Voice input settings group title">Embedded engine</string>
@@ -284,7 +284,7 @@
     <string name="settings__voice_input__keyboard_settings_summary" comment="Voice input settings preference summary">Enable FUTO Voice Input as an Android keyboard so SwiftFloris can switch to it.</string>
     <string name="settings__voice_input__open_futo_permissions" comment="Voice input settings preference title">FUTO app permissions</string>
     <string name="settings__voice_input__open_futo_permissions_summary" comment="Voice input settings preference summary">Review microphone permission if dictation stops after denial, revocation, or device restore.</string>
-    <string name="settings__voice_input__install_summary" comment="Voice input settings preference summary">Install the external FUTO app used for offline voice input.</string>
+    <string name="settings__voice_input__install_summary" comment="Voice input settings preference summary">FUTO is the recommended external voice keyboard for offline dictation. After installing it, enable it in Android keyboard settings.</string>
     <string name="settings__voice_input__group_voice_commands" comment="Voice input settings group title">Voice commands</string>
     <string name="settings__voice_input__voice_commands_info_title" comment="Voice command settings information title">Custom commands stay on device</string>
     <string name="settings__voice_input__voice_commands_info_summary" comment="Voice command settings information summary">SwiftFloris can store and test command phrases locally. FUTO dictation is still an external keyboard, so live command execution needs a transcript handoff path.</string>
