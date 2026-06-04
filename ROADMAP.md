@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
 
-**Current release:** v1.8.234 (versionCode 2034). **Local verification:** focused app and Snygg regression-test filters passed in 1m29s with one Gradle worker; XML test results confirmed the Kotest Arabic and n-gram guards were selected; fastlane metadata and `git diff --check` gates passed; APK assembly, full Gradle gate, and device QA were intentionally not run for this test-coverage batch per operator request.
+**Current release:** v1.8.235 (versionCode 2035). **Local verification:** focused Settings search tests passed in 1m02s with one Gradle worker after correcting the source-guard lookup; XML test results confirmed the Kotest search index/state guards were selected; fastlane metadata and `git diff --check` gates passed; APK assembly and manual TalkBack device QA were intentionally not run for this accessibility batch per operator request.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -432,9 +432,10 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   post-v1.8.225 release-ledger evidence to the rewritten pushed hashes, checked
   current audit carry-forwards for duplicates, and widened into language-tag,
   Compose semantics, MIME-filter, and ByteBuffer platform contracts. Existing
-  RA-4/RA-9 and device-gated work remain valid; R3-1/R3-4 have since closed.
-  This cycle adds four small, implementation-ready correctness/a11y/contract
-  items and sharpens WS13 with the deferred sticker-provider SAF validation.
+  RA-9 and device-gated work remain valid; R3-1/R3-4 and RA-4 have since
+  closed. This cycle adds four small, implementation-ready
+  correctness/a11y/contract items and sharpens WS13 with the deferred
+  sticker-provider SAF validation.
 
 #### Locale correctness
 
@@ -548,7 +549,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 - [x] 🔬 `post-1.8.225-sync-and-futo-swipe-refresh-2026-06-04` - synced
   `master`, reconciled the post-v1.8.225 local fixes against the current
   roadmap, later confirmed the pushed docs state at `dc72e32`, and checked
-  current competitor/standards sources. Existing RA-4/RA-9, device-gated visual
+  current competitor/standards sources. Existing RA-9, device-gated visual
   work, and maintainer-gated release items remain valid; this cycle adds only
   net-new release-ledger, clipboard-search, and sync-crypto-contract work, plus
   sharper evidence on F21 from the FUTO Keyboard v0.1.29 swipe release.
@@ -774,7 +775,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 *Research conducted 2026-06-03. Items below are new — not duplicates of Existing Planned Work.*
 
-This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, v1.8.222 adds a no-results escape hatch, v1.8.223 adds high-traffic synonym coverage, and v1.8.224 resets result scrolling when the query changes, while the remaining work is accessibility and highlight-lifecycle polish.
+This pass focused on the v1.8.204 **settings search** drop (the newest feature, shipped this release) and a few cross-cutting gaps the three deep audits (`docs/AUDIT_2026-05-28/29` + `2026-06-02`) and the existing roadmap do not already cover. The search subsystem is a hand-maintained static catalog that mirrors the navigation graph; v1.8.221 adds a drift guard, v1.8.222 adds a no-results escape hatch, v1.8.223 adds high-traffic synonym coverage, v1.8.224 resets result scrolling when the query changes, and v1.8.235 adds the TalkBack/accessibility pass, while the remaining search work is highlight-lifecycle polish.
 
 ### Quick Wins
 
@@ -838,12 +839,17 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Acceptance: a documented set of capability synonyms each resolve to the right destination; test pins them.
   - Verify: focused search package tests plus full Gradle gate.
   - Complexity: M
-- [ ] P2 — Accessibility/TalkBack pass over the search screen + result list (RA-4)
+- [x] P2 — Accessibility/TalkBack pass over the search screen + result list (RA-4)
   - Why: `ACCESSIBILITY.md` does not yet cover the new search surface. The result `JetPrefListItem`s are `clickable` with no `role`/merged-semantics announcement of "result N of M", the leading icon is correctly `contentDescription = null` (decorative) but the field itself has no labelled state, and the empty/no-results text isn't a live region — a TalkBack user won't hear result-count changes as they type.
   - Evidence: `SettingsSearchScreen.kt:82-143` — no `Modifier.semantics{}`/`liveRegion`/`role` on the field, results, or the count-changing branches; `docs/ACCESSIBILITY.md` "Manual QA checklist" has no search entry.
   - Touches: `SettingsSearchScreen` semantics (field label, results `role = Role.Button`/merged, `liveRegion = Polite` on the result-count container); add a search row to the `docs/ACCESSIBILITY.md` manual-QA checklist.
   - Acceptance: TalkBack announces a labelled search field, reads each result's screen + title, and reports result-count changes; checklist documents the flow.
   - Verify: manual TalkBack on-device; `:app:assembleDebug`.
+  - Shipped: v1.8.235 (2026-06-04) with labelled/stateful search-field
+    semantics, polite live-region status updates, merged button-role result-row
+    labels with result position/screen/title/summary context, a focused
+    accessibility contract test, and manual checklist coverage. Manual TalkBack
+    smoke remains device-gated.
   - Complexity: M
 - [ ] P2 — Consume or dismiss Settings search highlight state after the target screen is reached (RA-9)
   - Why: the search-result highlight card is stored in a process-wide Compose

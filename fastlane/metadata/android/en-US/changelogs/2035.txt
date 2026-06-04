@@ -1,0 +1,1 @@
+Improves Settings search accessibility: the field now has TalkBack label/state semantics, result-count and empty/no-result changes use polite live regions, and each result row announces position, destination screen, setting title, and summary context. Focused search unit tests passed; APK assembly skipped per operator request.

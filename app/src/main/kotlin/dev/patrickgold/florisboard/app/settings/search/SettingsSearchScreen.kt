@@ -22,7 +22,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -50,6 +50,13 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -84,6 +91,18 @@ fun SettingsSearchScreen() = FlorisScreen {
             SettingsSearchIndex.search(searchQuery, resolveString)
         }
         val state = rememberLazyListState()
+        val searchStatusDescription = when {
+            searchQuery.isBlank() -> stringRes(R.string.settings__search__empty_query_a11y)
+            results.isEmpty() -> stringRes(
+                R.string.settings__search__no_results_a11y,
+                "search_term" to searchQuery,
+            )
+            else -> stringRes(
+                R.string.settings__search__results_count_a11y,
+                "result_count" to results.size,
+                "search_term" to searchQuery,
+            )
+        }
 
         LaunchedEffect(Unit) {
             if (!initialFocusRequested) {
@@ -102,7 +121,11 @@ fun SettingsSearchScreen() = FlorisScreen {
             TextField(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .focusRequester(focusRequester),
+                    .focusRequester(focusRequester)
+                    .semantics {
+                        contentDescription = resolveString(R.string.settings__search__field_content_description)
+                        stateDescription = searchStatusDescription
+                    },
                 value = searchQuery,
                 onValueChange = { searchQuery = it },
                 placeholder = { Text(stringRes(R.string.settings__search__placeholder)) },
@@ -138,7 +161,11 @@ fun SettingsSearchScreen() = FlorisScreen {
                     Text(
                         modifier = Modifier
                             .padding(16.dp)
-                            .align(Alignment.CenterHorizontally),
+                            .align(Alignment.CenterHorizontally)
+                            .semantics {
+                                liveRegion = LiveRegionMode.Polite
+                                contentDescription = searchStatusDescription
+                            },
                         text = stringRes(R.string.settings__search__empty_query),
                         color = LocalContentColor.current.copy(alpha = 0.54f),
                     )
@@ -147,7 +174,11 @@ fun SettingsSearchScreen() = FlorisScreen {
                     Column(
                         modifier = Modifier
                             .padding(16.dp)
-                            .align(Alignment.CenterHorizontally),
+                            .align(Alignment.CenterHorizontally)
+                            .semantics {
+                                liveRegion = LiveRegionMode.Polite
+                                contentDescription = searchStatusDescription
+                            },
                         horizontalAlignment = Alignment.CenterHorizontally,
                     ) {
                         Text(
@@ -166,19 +197,47 @@ fun SettingsSearchScreen() = FlorisScreen {
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
-                    .florisScrollbar(state, isVertical = true),
+                    .florisScrollbar(state, isVertical = true)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        contentDescription = searchStatusDescription
+                    },
                 state = state,
             ) {
-                items(results, key = { it.entry.id }) { result ->
+                itemsIndexed(results, key = { _, result -> result.entry.id }) { index, result ->
                     val entry = result.entry
+                    val title = resolveString(entry.titleResId)
                     val screenTitle = resolveString(entry.screenTitleResId)
                     val summary = entry.summaryResId?.let(resolveString)
+                    val resultA11yDescription = if (summary.isNullOrBlank()) {
+                        stringRes(
+                            R.string.settings__search__result_a11y_no_summary,
+                            "result_position" to index + 1,
+                            "result_count" to results.size,
+                            "setting_title" to title,
+                            "screen_title" to screenTitle,
+                        )
+                    } else {
+                        stringRes(
+                            R.string.settings__search__result_a11y,
+                            "result_position" to index + 1,
+                            "result_count" to results.size,
+                            "setting_title" to title,
+                            "screen_title" to screenTitle,
+                            "setting_summary" to summary,
+                        )
+                    }
                     JetPrefListItem(
-                        modifier = Modifier.clickable {
-                            SettingsSearchHighlightStore.mark(entry, searchQuery, resolveString)
-                            navController.navigateSearchDestination(entry.destination)
-                        },
-                        text = resolveString(entry.titleResId),
+                        modifier = Modifier
+                            .clickable(role = Role.Button) {
+                                SettingsSearchHighlightStore.mark(entry, searchQuery, resolveString)
+                                navController.navigateSearchDestination(entry.destination)
+                            }
+                            .semantics(mergeDescendants = true) {
+                                role = Role.Button
+                                contentDescription = resultA11yDescription
+                            },
+                        text = title,
                         secondaryText = if (summary.isNullOrBlank()) {
                             screenTitle
                         } else {

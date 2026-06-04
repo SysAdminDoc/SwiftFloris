@@ -180,6 +180,11 @@ candidate to be the first one TalkBack reaches.
 - **Candidate row:** type enough text to show predictions. TalkBack should read
   each candidate's type, position, and text, and eligible candidates should
   expose the remove-from-predictions custom action.
+- **Settings search:** open Settings -> Search, verify the field is announced as
+  a search field with changing result-count state, type a query with results,
+  swipe the result list, and confirm each row reads result position, setting
+  title, and destination screen. Type a no-results query and confirm the empty
+  state is announced without trapping focus away from Browse all settings.
 - **Font scale:** at high system font scale, inspect Settings metadata rows,
   hyperlinks, extension component headings, dialogs, and theme key previews for
   clipping or unreadable truncation.

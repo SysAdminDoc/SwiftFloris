@@ -2,6 +2,48 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.235"></a>
+## v1.8.235
+
+Released: 2026-06-04
+
+### Settings search accessibility
+
+RA-4 is closed. Settings search now exposes a labelled search field, polite result-status announcements, and result rows that present themselves as button-role search results with position, destination screen, setting title, and summary context for TalkBack users.
+
+### Changes
+
+- **`SettingsSearchScreen.kt`** - adds field `contentDescription`/`stateDescription`, `LiveRegionMode.Polite` status semantics for empty/no-results/result-count changes, and merged button-role semantics for each result row.
+- **`strings.xml`** - adds localized accessibility strings for the search field, empty/no-result/result-count statuses, and result-row labels with and without summaries.
+- **`SettingsSearchAccessibilityContractTest.kt`** - pins the new accessibility string resources and source-level TalkBack semantics wiring alongside the existing search index/state tests.
+- **`docs/ACCESSIBILITY.md`** - adds Settings search to the manual TalkBack QA checklist.
+- **`README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.235 / versionCode 2035 and closes RA-4.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.app.settings.search.SettingsSearchAccessibilityContractTest --tests dev.patrickgold.florisboard.app.settings.search.SettingsSearchScreenStateTest --tests dev.patrickgold.florisboard.app.settings.search.SettingsSearchIndexTest --tests dev.patrickgold.florisboard.app.settings.search.SettingsSearchIndexIntegrityTest"` - PASS in 1m02s after correcting the test source-file lookup.
+- `app/build/test-results/testDebugUnitTest/TEST-Gradle-Test-Run--app-testDebugUnitTest.xml` confirmed the Kotest `SettingsSearchIndexTest` and `SettingsSearchScreenStateTest` filters were selected.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS for versionCode 2035.
+- Manual TalkBack and APK assembly were intentionally skipped in this local batch per operator request to avoid repeated heavy Android builds.
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt`
+- `app/src/main/res/values/strings.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchAccessibilityContractTest.kt` (new)
+- `docs/ACCESSIBILITY.md`
+- `fastlane/metadata/android/en-US/changelogs/2035.txt` (new)
+- `gradle.properties` (versionCode 2034->2035, versionName 1.8.234->1.8.235)
+
 <a id="v1.8.234"></a>
 ## v1.8.234
 
