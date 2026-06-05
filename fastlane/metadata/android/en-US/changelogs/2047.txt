@@ -1,0 +1,1 @@
+Manual language switching now treats stale subtype chooser IDs as no-ops instead of risking a crash after subtype edits, restore flows, or localization refreshes. Adds focused JVM coverage for the single nullable lookup path.

@@ -136,6 +136,22 @@ class PersonalDictionaryEncryptionTest : FunSpec({
         source shouldNotContain "path=\"floris_user_dictionary\""
     }
 
+    test("pre Android 12 backup rules allowlist only non typing state") {
+        val source = locateProjectFile(
+            "app/src/main/res/xml/backup_rules.xml",
+            "src/main/res/xml/backup_rules.xml",
+        ).readText()
+
+        source shouldContain "<full-backup-content>"
+        source shouldContain "path=\"jetpref_datastore\""
+        source shouldContain "path=\"ime\""
+        source shouldNotContain "path=\"personal_bigrams"
+        source shouldNotContain "path=\"personal_trigrams"
+        source shouldNotContain "path=\"correction_outcome_priors"
+        source shouldNotContain "path=\"swiftkey_typing_traces"
+        source shouldNotContain "path=\"swiftkey_trace.enabled"
+    }
+
     test("plaintext SQLite header detection distinguishes migrated and encrypted files") {
         val sqliteHeader = "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
         val encryptedLikeHeader = ByteArray(sqliteHeader.size) { 0x42 }

@@ -2,7 +2,7 @@
 
 > Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03 and later cycles.
 
-**Current release:** v1.8.246 (versionCode 2046). **Local verification:** docs-only module build-cache hygiene note verified with `git diff --check`, `bash scripts/check-fastlane-metadata.sh`, and `bash scripts/check-repo-hygiene.sh`; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
+**Current release:** v1.8.247 (versionCode 2047). **Local verification:** subtype switch-by-id crash hardening verified with focused `:app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.core.SubtypeManagerSwitchByIdTest`; full local gate `:app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug` also passes with the documented JDK 21 override.
 
 Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Apache-2.0 ceiling on `:app`; no closed-source blobs; one logical change per commit; every shipped release bumps `gradle.properties` version, writes a `CHANGELOG.md` section, and adds a `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt` (draft <=480 chars for headroom).
 
@@ -356,7 +356,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Subtype switch-by-id crash hardening
 
-- [ ] 🤖 P2 — Collapse subtype switch-by-id to a single nullable lookup (R16-1)
+- [x] ✅ P2 — Collapse subtype switch-by-id to a single nullable lookup (R16-1)
   - Why: `switchToSubtypeById(id)` validates the id against one `subtypes`
     snapshot, then calls `getSubtypeById(id)!!`, which snapshots the list again
     and can throw if the subtype list changes between the two reads. Subtype
@@ -383,6 +383,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
   - Verify: `./gradlew.bat :app:testDebugUnitTest --tests
     "dev.patrickgold.florisboard.ime.core.*Subtype*"`
   - Complexity: XS
+  - Shipped: v1.8.247 (2026-06-05) with one nullable `getSubtypeById(id)` lookup before manual activation plus a focused source-level guard test for the stale-id no-op path.
 
 ### Researcher Queue (Cycle 15 - 2026-06-04)
 

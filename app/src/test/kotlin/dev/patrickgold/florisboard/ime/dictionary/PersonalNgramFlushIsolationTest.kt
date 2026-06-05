@@ -79,11 +79,12 @@ private fun assertLearnFlushesCurrentLocaleTag(source: String, fileName: String)
 }
 
 private fun locateSource(fileName: String): File {
-    val source = File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/$fileName")
-    check(source.exists() && source.canRead()) {
-        "$fileName not reachable from working directory ${File(".").absolutePath}"
-    }
-    return source
+    val candidates = listOf(
+        File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/$fileName"),
+        File("src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/$fileName"),
+    )
+    return candidates.firstOrNull { it.exists() && it.canRead() }
+        ?: error("$fileName not reachable from working directory ${File(".").absolutePath}")
 }
 
 private fun extractFunctionBody(source: String, startsWith: String): String {

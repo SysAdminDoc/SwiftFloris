@@ -7,9 +7,12 @@
     personal-learning pipeline has promoted from the user's typing, which
     may include names, addresses, codenames, slang, and other PII. Auto
     Backup on these old API levels uploads to the user's Google Drive
-    without granular cloud-vs-device-transfer control, so the dictionary
-    is deliberately excluded here. Layouts, prefs, and imported extensions
-    are safe to back up (they do not contain typed-text history).
+    without granular cloud-vs-device-transfer control. This pre-31 file is
+    therefore an allowlist: only JetPref state and files/ime are included.
+    Learned typing files such as personal n-grams, correction priors, and
+    SwiftKey trace logs remain outside those included paths. Android 12+
+    cloud and device-transfer rules keep explicit excludes in
+    data_extraction_rules.xml, where the schema accepts them.
 -->
 <full-backup-content>
     <include
@@ -18,19 +21,4 @@
     <include
         domain="file"
         path="ime"/>
-    <exclude
-        domain="file"
-        path="personal_bigrams"/>
-    <exclude
-        domain="file"
-        path="personal_trigrams"/>
-    <exclude
-        domain="file"
-        path="correction_outcome_priors"/>
-    <exclude
-        domain="file"
-        path="swiftkey_typing_traces.jsonl"/>
-    <exclude
-        domain="file"
-        path="swiftkey_trace.enabled"/>
 </full-backup-content>

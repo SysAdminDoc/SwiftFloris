@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.246-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.247-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,10 +37,10 @@
 
 ## Highlights
 
-| Area | What's in v1.8.246 | Privacy posture |
+| Area | What's in v1.8.247 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
-| **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, and opt-in remembered keyboard language per app | On-device |
+| **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
 | **Scripts** | Devanagari + Bengali + Tamil + Telugu + ... (63-script transliteration coverage); RTL Arabic shaper, Persian / Urdu / Hebrew normalisers, bundled Noto Nastaliq Urdu rendering for Urdu subtype key text | On-device |
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
 | **Voice input** | FUTO Voice Input handoff (live path), FUTO install guidance when no voice keyboard is available, plus preview-only local Whisper/Vosk route selector and model catalog until a recognizer runtime ships | SwiftFloris itself does not record audio |
@@ -288,6 +288,7 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.247** (2026-06-05) — Manual subtype switching by id now treats stale chooser ids as no-ops instead of risking a forced-null crash. ([notes](CHANGELOG.md#v1.8.247))
 - **v1.8.246** (2026-06-04) — Repo hygiene now explains that module `build/` caches can survive `git rm --cached` and should be treated as local ignored output. ([notes](CHANGELOG.md#v1.8.246))
 - **v1.8.245** (2026-06-04) — Fastlane changelog drafting now documents the 480-character draft budget, store-facing summary rules, and evidence-backed wording expectations. ([notes](CHANGELOG.md#v1.8.245))
 - **v1.8.244** (2026-06-04) — Visual-QA, manual-QA, and release-evidence checklists now live in `docs/QA_CHECKLISTS.md` and are linked from verification docs. ([notes](CHANGELOG.md#v1.8.244))
@@ -477,7 +478,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.246** (2026-06-04). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.8.247** (2026-06-05). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
