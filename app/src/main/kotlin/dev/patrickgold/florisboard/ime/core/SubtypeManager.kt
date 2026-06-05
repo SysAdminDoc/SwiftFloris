@@ -400,9 +400,8 @@ class SubtypeManager(context: Context) {
     }
 
     fun switchToSubtypeById(id: Long) = scope.launch {
-        if (subtypes.any { it.id == id }) {
-            activateSubtype(getSubtypeById(id)!!, source = SubtypeSwitchSource.Manual)
-        }
+        val subtype = getSubtypeById(id) ?: return@launch
+        activateSubtype(subtype, source = SubtypeSwitchSource.Manual)
     }
 
     private enum class SubtypeSwitchSource {

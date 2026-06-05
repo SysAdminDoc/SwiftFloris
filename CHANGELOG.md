@@ -2,6 +2,50 @@
 
 All SwiftFloris release history is consolidated here. This replaces the former root-level `RELEASE_NOTES_v*.md` file-per-release pattern.
 
+<a id="v1.8.247"></a>
+## v1.8.247
+
+Released: 2026-06-05
+
+### Subtype switch-by-id crash hardening
+
+R16-1 is closed. Manual subtype switching by id now resolves the requested subtype once and returns when the id is stale, so subtype edits, restore flows, or localization refreshes cannot turn a stale chooser id into a forced-null crash.
+
+The same verification pass repaired a pre-Android 12 backup-rule lint failure without broadening backup scope: `backup_rules.xml` is now a schema-valid allowlist, while Android 12+ `data_extraction_rules.xml` retains the explicit learned-typing excludes.
+
+### Changes
+
+- **`SubtypeManager.kt`** - replaces the separate `subtypes.any { ... }` check plus `getSubtypeById(id)!!` with one nullable lookup and a no-op return for missing ids.
+- **`SubtypeManagerSwitchByIdTest.kt`** - adds a focused source-level guard that pins the nullable lookup, manual activation path, and absence of the old double-read / non-null assertion pattern.
+- **`PersonalNgramFlushIsolationTest.kt`** - makes the source fixture locator work from either the repo root or Gradle's `app` working directory, keeping the full app unit suite runnable.
+- **`backup_rules.xml` / `PersonalDictionaryEncryptionTest.kt`** - converts pre-Android 12 Auto Backup rules to an allowlist-only schema that excludes learned typing files by omission and pins that contract with source-level coverage.
+- **`ROADMAP.md` / `COMPLETED.md` / `RESEARCH_REPORT.md` / `README.md` / `PROJECT_CONTEXT.md` / `AGENTS.md` / `ARCHITECTURE.md` / `gradle.properties` / fastlane metadata** - advances the release marker to v1.8.247 / versionCode 2047 and closes R16-1.
+
+### Verification
+
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:testDebugUnitTest --tests dev.patrickgold.florisboard.ime.core.SubtypeManagerSwitchByIdTest"` with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot` - PASS.
+- `cmd /c ".\gradlew.bat --no-daemon --no-parallel --max-workers=1 -Dorg.gradle.jvmargs=-Xmx1536m -Dkotlin.daemon.jvm.options=-Xmx1536m :app:verifyNoInternetPermission :app:testDebugUnitTest :app:lintDebug :app:assembleDebug"` with `JAVA_HOME=C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot` - PASS.
+- `git diff --check` - PASS.
+- `bash scripts/check-fastlane-metadata.sh` - PASS (versionCode 2047, changelog 225 chars).
+
+### Files Touched
+
+- `AGENTS.md`
+- `ARCHITECTURE.md`
+- `CHANGELOG.md`
+- `COMPLETED.md`
+- `PROJECT_CONTEXT.md`
+- `README.md`
+- `RESEARCH_REPORT.md`
+- `ROADMAP.md`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/core/SubtypeManager.kt`
+- `app/src/main/res/xml/backup_rules.xml`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/core/SubtypeManagerSwitchByIdTest.kt` (new)
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/dictionary/PersonalDictionaryEncryptionTest.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/dictionary/PersonalNgramFlushIsolationTest.kt`
+- `fastlane/metadata/android/en-US/changelogs/2047.txt` (new)
+- `gradle.properties` (versionCode 2046->2047, versionName 1.8.246->1.8.247)
+
 <a id="v1.8.246"></a>
 ## v1.8.246
 
