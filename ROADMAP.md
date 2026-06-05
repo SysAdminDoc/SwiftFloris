@@ -1,6 +1,6 @@
 # SwiftFloris Roadmap
 
-> Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03.
+> Single source of truth for all planned work. Items above the --- are existing plans; items below are research conducted 2026-06-03 and later cycles.
 
 **Current release:** v1.8.246 (versionCode 2046). **Local verification:** docs-only module build-cache hygiene note verified with `git diff --check`, `bash scripts/check-fastlane-metadata.sh`, and `bash scripts/check-repo-hygiene.sh`; APK assembly was intentionally not run per operator request to avoid repeated heavy Android builds.
 
@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 16 - 2026-06-04.
+> Last researched: Cycle 18 - 2026-06-05.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -66,7 +66,7 @@ items belong in `COMPLETED.md`.
 - [ ] P1 — Backup/restore + import path-safety device confirmation (WS13 device portions)
   - Why: Unit tests for these paths are Tier A and done; the on-device confirmation is still required.
   - Touches: backup/restore overwrite-vs-merge; clipboard media missing-file/path-safety; extension-import path-traversal; `StickerMediaProvider.openFile` SAF-grant allow-list validation for imported stickers.
-  - Acceptance: overwrite/merge, missing-media, traversal, and imported-sticker open-file behaviors are confirmed on-device; forged encoded sticker URIs are rejected without breaking legitimate user-picked sticker folders.
+  - Acceptance: overwrite/merge, missing-media, traversal, and imported-sticker open-file behaviors are confirmed on-device and by provider-level regression tests; forged encoded sticker URIs are rejected without breaking legitimate user-picked sticker folders.
   - Source: docs/archive/TODO_2026-06-03.md B / improvement-plan WS13; `docs/AUDIT_2026-06-02.md:159-164`.
 
 ### CI, build & release hardening
@@ -104,7 +104,7 @@ items belong in `COMPLETED.md`.
   - Acceptance: guide present with the character-budget rule.
   - Source: docs/archive/TODO_2026-06-03.md A5 / second-pass R5.
   - Shipped: v1.8.245 (2026-06-04) with Fastlane changelog drafting rules in
-    repo hygiene, local verification, contributor, and agent-facing release
+    repo hygiene, local verification, contributor, and operator-facing release
     docs.
 - [x] P3 — Document module build-cache survival (O1)
   - Why: `lib/<module>/build/` cache survives `git rm --cached`; this surprises contributors.
@@ -132,7 +132,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 - [ ] P1 — Apache-2.0 glide model trained on the MIT FUTO swipe dataset (F21)
   - Why: A licensed in-tree glide model needs off-device ML training infra (XL, out-of-tree). FUTO Keyboard v0.1.29 now publishes FUTO Swipe, a public 1M-swipe QWERTY English dataset, top-1/top-4 benchmark framing, and an open-source swipe system, sharpening this from "train a model" into "evaluate against a public test set before integrating."
   - Touches: external training pipeline + model integration; candidate-row top-4 display policy if the model exposes alternatives.
-  - Acceptance: Apache-2.0-clean model trained and integrated; before merge, report top-1 and top-4 error on the public FUTO filtered test-set framing and document whether SwiftFloris should expose accepted word + 3 alternatives after glide completion.
+  - Acceptance: Apache-2.0-clean model trained and integrated; before merge, report top-1 and top-4 error on the public FUTO filtered test-set framing and document whether SwiftFloris should expose accepted word + 3 alternatives after glide completion. The non-shipping public benchmark harness is tracked separately as R18-1.
   - Source: docs/archive/TODO_2026-06-03.md C / research feature plan F21; https://github.com/futo-org/android-keyboard/releases/tag/0.1.29.
 - [ ] P2 — Bundled Vosk small-en-us recognizer addon (F8)
   - Why: Needs a sibling addon repo + JNI; `RECORD_AUDIO` only in the addon, never `:app`.
@@ -176,6 +176,130 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 ## Research-Driven Additions
 
+### Researcher Queue (Cycle 18 - 2026-06-05)
+
+- [x] 🔬 `june-feature-plan-reconciliation-2026-06-05` - synced `master`
+  after the June research-feature-plan push, reviewed
+  `docs/research-feature-plan-2026-06-05.md`, and reconciled that companion
+  plan with the live roadmap. This cycle promotes existing n-gram data-safety
+  rows R12-1, R13-1, and R14-1 to P0, promotes MCP identity row R17-1 to P1,
+  sharpens the imported-sticker SAF acceptance already present in WS13, and adds
+  only the product/trust rows not already represented by existing F21, WS13,
+  F10/F11/F12, and API 37 / 16 KB lanes.
+
+#### Glide benchmark and local learning trust
+
+- [ ] 🤖 P1 — Build a public FUTO Swipe glide benchmark harness before model integration (R18-1)
+  - Why: SwiftFloris already has benchmark infrastructure and an older swipe
+    replay harness, while FUTO Keyboard v0.1.29 introduced a public FUTO Swipe
+    dataset and top-1/top-4 evaluation framing. The existing F21 model row should
+    not wait for model training to define how glide quality will be measured.
+  - Evidence: `README.md` records the active `:benchmark` module and the
+    v1.8.47 swipe-trace replay harness; `docs/research-feature-plan-2026-06-05.md`
+    identifies FUTO Swipe as the current external benchmark signal; F21 already
+    requires top-1/top-4 reporting before any Apache-2.0-clean glide model merge.
+    Source: https://github.com/futo-org/android-keyboard/releases/tag/0.1.29
+    and https://huggingface.co/datasets/futo-org/swipe.futo.org.
+  - Touches: benchmark harness code or a CLI/Gradle task, a pinned public dataset
+    subset fixture, `docs/benchmark-results/`, and glide/model planning docs.
+    Keep the harness non-shipping and keep any model training outside `:app`.
+  - Acceptance: the harness reports top-1 error, top-4 error when alternatives
+    are evaluated, runtime per swipe on at least one reference and one low-end
+    device class, language/layout scope, exact dataset filtering/exclusion rules,
+    and clearly labels benchmark-only results separately from shipping behavior.
+  - Verify: focused harness tests plus the relevant benchmark Gradle/CLI task;
+    publish only evidence files that identify app version, dataset slice, device
+    or emulator, and metric definitions.
+  - Complexity: M
+
+#### Post-retirement migration and trust UX
+
+- [ ] 🤖 P2 — Add a local-only migration recovery assistant for post-retirement import paths (R18-2)
+  - Why: The SwiftKey account export window has passed. SwiftFloris already
+    documents local import routes, but users who arrive after the date still need
+    an in-app path that explains what files they can use and what deleted cloud
+    data cannot be recovered.
+  - Evidence: `README.md` and `docs/MIGRATE_FROM_SWIFTKEY.md` document
+    SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV / `.flbackup` / `.fldic`, and
+    SwiftFloris encrypted imports; `docs/research-feature-plan-2026-06-05.md`
+    recommends shifting copy from deadline preparation to post-retirement local
+    recovery. Source:
+    https://support.microsoft.com/en-us/topic/account-a3c38581-903f-4d22-a388-cc13c7debf0e.
+  - Touches: first-run/import Settings surfaces, migration strings, migration
+    docs, and focused import-route navigation tests. Do not add network,
+    account, or Microsoft cloud sign-in flows.
+  - Acceptance: the assistant lists supported local file paths, includes a
+    small-word-list clipboard/manual fallback if implemented, routes each choice
+    to the existing importer, and states plainly that deleted SwiftKey cloud
+    account data cannot be recovered by the keyboard.
+  - Verify: focused Settings/import route tests plus manual setup and Settings
+    navigation smoke on a device or emulator.
+  - Complexity: M
+
+- [ ] 🤖 P2 — Add an addon developer trust kit with signed fixture lanes (R18-3)
+  - Why: The addon architecture is now a major differentiator, but reviewers and
+    future addon authors need compact fixtures that exercise trust enrollment,
+    catalog validation, MCP discovery, and failure modes before more runtime
+    features move outside `:app`.
+  - Evidence: `docs/addons/apk-validation.md` defines validation requirements;
+    `docs/addons/dictionary-pack-spec.md` documents dictionary packs; R17-1
+    hardens MCP tool identity before the MCP surface grows; the June companion
+    plan calls for minimal dictionary-pack and MCP daemon examples plus negative
+    fixtures.
+  - Touches: `docs/addons/`, sample/fixture APK or manifest assets, addon
+    verification scripts, MCP daemon fixture metadata, and trust/certificate
+    regression tests. Keep samples Apache-2.0-compatible and base-app
+    permission-clean.
+  - Acceptance: maintainers can run one documented verification command over a
+    sample addon pack; examples cover a valid dictionary pack and minimal MCP
+    daemon; negative fixtures cover changed certificate, missing/malformed
+    catalog, duplicate tool names, overlarge payloads, and network-permission
+    rejection.
+  - Verify: addon verification script, focused addon/MCP fixture tests, and
+    manual Settings -> Addons rescan smoke where device access is available.
+  - Complexity: M
+
+- [ ] 🤖 P3 — Add a local privacy evidence dashboard in Settings (R18-4)
+  - Why: SwiftFloris has strong no-network, local-learning, addon-isolation, and
+    release-verification evidence, but most of it lives in docs and CI logs. A
+    compact local screen can make the trust posture visible without telemetry or
+    outbound checks.
+  - Evidence: `docs/PRIVACY_AND_AI.md`, `docs/THREAT_MODEL.md`,
+    `docs/LOCAL_VERIFICATION.md`, and `docs/addons/apk-validation.md` already
+    describe the base-app and addon boundaries; the June companion plan
+    recommends surfacing those facts in Settings.
+  - Touches: Settings route/catalog, strings, privacy docs, addon permission
+    summary helpers if needed, and focused search/accessibility tests.
+  - Acceptance: the screen shows base-app network permissions as absent with the
+    relevant build-gate name, local learning controls and reset/export routes,
+    addon permissions separately from base-app permissions, backup/data
+    extraction policy summary, and release/source verification links or local
+    references. It must not fetch remote status or add telemetry.
+  - Verify: focused Settings search/route/accessibility tests plus manual
+    TalkBack and high-contrast smoke.
+  - Complexity: M
+
+#### Release-readiness checklist
+
+- [ ] 🤖 P3 — Add recurring 16 KB page-size dependency/addon review to local verification (R18-5)
+  - Why: Native dependencies and addon APKs can regress 16 KB page-size support
+    even when the base IME remains mostly Kotlin/Java. The repo already has
+    addon validation guidance, but the standard local verification checklist
+    should make dependency and addon review recurring.
+  - Evidence: `docs/addons/apk-validation.md` documents `zipalign -c -P 16 -v 4`
+    for addon APKs; `docs/SQLCIPHER_PROVIDER_MIGRATION.md` documents native
+    provider page-size migration triggers; the June companion plan calls for a
+    local verification checklist item. Source:
+    https://developer.android.com/guide/practices/page-sizes.
+  - Touches: `docs/LOCAL_VERIFICATION.md`, `docs/addons/apk-validation.md` only
+    if needed, and release-readiness docs.
+  - Acceptance: local verification tells maintainers when to re-run 16 KB
+    page-size checks for native dependency bumps, addon APKs, SQLCipher provider
+    swaps, and release-candidate packaging; it preserves the existing
+    no-network and data-extraction gates.
+  - Verify: docs-only `git diff --check` plus repo-hygiene script.
+  - Complexity: XS
+
 ### Researcher Queue (Cycle 17 - 2026-06-04)
 
 - [x] 🔬 `mcp-tool-name-scope-recheck-2026-06-04` - synced `master` after the
@@ -186,7 +310,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### MCP daemon tool identity
 
-- [ ] 🤖 P3 — Scope MCP daemon tool dispatch by daemon and constrain tool names (R17-1)
+- [ ] 🤖 P1 — Scope MCP daemon tool dispatch by daemon and constrain tool names (R17-1)
   - Why: MCP daemon discovery trims tool names and rejects only blank strings.
     The registry then resolves `findTool(toolName)` by returning the first daemon
     that advertises that name, and `McpDispatchRouter` dispatches by that global
@@ -306,7 +430,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Personal n-gram TSV token safety
 
-- [ ] 🤖 P2 — Reject control separators before personal n-gram TSV persistence (R14-1)
+- [ ] 🤖 P0 — Reject control separators before personal n-gram TSV persistence (R14-1)
   - Why: Both personal n-gram stores normalize learned words by trimming edge
     punctuation, rejecting digits, and requiring at least one letter, but they do
     not reject interior tab, newline, carriage-return, NUL, or other ISO control
@@ -349,7 +473,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Personal n-gram stats consistency
 
-- [ ] 🤖 P2 — Serialize personal n-gram stats counting with reset cleanup (R13-1)
+- [ ] 🤖 P0 — Serialize personal n-gram stats counting with reset cleanup (R13-1)
   - Why: Settings -> Typing stats refreshes personal bigram/trigram totals from
     `totalEntryCount()`, but each store builds its persisted-locale set outside
     `loadGuard` and then calls `ensureLoaded(localeTag)`. `resetAndAwait()`
@@ -394,7 +518,7 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 
 #### Personal n-gram persistence
 
-- [ ] 🤖 P2 — Replace personal n-gram files atomically without deleting live data first (R12-1)
+- [ ] 🤖 P0 — Replace personal n-gram files atomically without deleting live data first (R12-1)
   - Why: Both personal n-gram stores write a `.tmp` file, attempt
     `renameTo(dst)`, then delete the live destination before a second rename if
     the first rename fails. That fallback breaks the atomicity the temp-write
