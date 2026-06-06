@@ -8,7 +8,7 @@ Hard rules still apply (see `AGENTS.md`): no `INTERNET` permission in `:app`; Ap
 
 Item IDs trace to their origin research: `F#`/`EI#` from the archived 2026-05-25 research feature plan; `R#`/`O#` from the 2026-05-25 second-pass findings; `WS#` from the archived improvement-plan workstreams; `N#`/`Next-#`/`L#` from the archived roadmap tiers. Shipped items and reframed/rejected items live in `COMPLETED.md`; full release detail in `CHANGELOG.md`. Historical strategy (tiered NOW/NEXT/LATER, sourced appendix) is preserved at `docs/archive/ROADMAP_v5.67_2026-05-18.md`.
 
-> Last researched: Cycle 18 - 2026-06-05.
+> Last researched: Cycle 24 - 2026-06-06.
 
 ## ▶ Implementer Instructions (for the build machine)
 
@@ -175,6 +175,310 @@ These are genuine blockers — each needs an account, key, sibling repo, ML infr
 ---
 
 ## Research-Driven Additions
+
+### Researcher Queue (Cycle 24 - 2026-06-06)
+
+- [x] 🔬 `sync-paired-device-corruption-recovery-recheck-2026-06-06` -
+  rechecked paired-device JSON parsing, Settings -> Sync empty-device UI,
+  focused tests, existing reset/corruption copy patterns, and Android DataStore
+  corruption-handling guidance. This cycle does not duplicate R23-1's secret
+  key storage; it adds the user-visible recovery branch for corrupted paired
+  remote-device state.
+
+#### Sync paired-device recovery
+
+- [ ] 🤖 P1 — Surface corrupt paired-device state instead of treating it as "no devices" (R24-1)
+  - Why: Once Sync pairing becomes real state, corrupt `pairedDevicesJson` means
+    "we cannot trust/read the saved device list," not "the user has never paired
+    a device." The current helper collapses blank JSON, malformed JSON, and
+    validation failures into the same empty list. That hides data loss, makes
+    Settings -> Sync show the benign "No paired devices yet" copy, and lets a
+    later successful pairing overwrite the unreadable raw state without a clear
+    reset/re-pair decision.
+  - Evidence: `PairedSyncDevice.kt:60-64` returns `emptyList()` for both blank
+    input and `Json.decodeFromString` failure; `PairedSyncDevice.kt:71-76`
+    calls `parse(rawJson)` before `upsert`, so a valid new device written after
+    corruption discards the raw unreadable list; `SyncSettingsScreen.kt:99-101`
+    remembers only the parsed list, with no parse status; `SyncSettingsScreen.kt:283-290`
+    renders `settings__sync__no_paired_devices` when the parsed list is empty;
+    `SyncPairingUiModelTest.kt:83-84` explicitly pins corrupt JSON to
+    `emptyList()`; a string/code scan found no Sync-specific corrupt-state,
+    reset, or repair copy today. Android's DataStore docs treat on-disk
+    corruption as a rare but explicit state and provide corruption-handler APIs
+    for graceful recovery rather than silent equivalence with defaults:
+    https://developer.android.com/topic/libraries/architecture/datastore.
+  - Touches: `PairedSyncDevice.kt` parse API, `SyncSettingsScreen.kt`,
+    `strings.xml`, `SyncPairingUiModelTest.kt`, optional
+    `docs/THREAT_MODEL.md` recovery note, and any shared pairing UI helper from
+    R19-1/R22-1/R23-1.
+  - Acceptance: paired-device parsing exposes a typed result such as
+    `Empty`, `Valid(devices)`, and `Corrupt`; Settings -> Sync renders a
+    warning/error row for `Corrupt` instead of "No paired devices yet"; the row
+    offers reset/re-pair guidance and an explicit destructive reset action;
+    `upsert` does not silently discard corrupt raw JSON unless the user has
+    confirmed reset or the implementation documents an atomic repair path; bug
+    report/diagnostic copy does not include raw public keys by default; tests
+    cover blank empty, valid list, malformed JSON, schema-invalid device rows,
+    reset behavior, and upsert-after-corruption behavior.
+  - Verify: `:app:testDebugUnitTest --tests "*SyncPairingUiModelTest"` plus a
+    manual Settings -> Sync state injection smoke that shows the corrupt-state
+    row and confirms reset returns to the normal empty state.
+  - Complexity: M
+
+### Researcher Queue (Cycle 23 - 2026-06-06)
+
+- [x] 🔬 `sync-key-lifecycle-recheck-2026-06-06` - traced the pairing payload
+  generator, sealed-box open/seal APIs, Sync preferences, the existing
+  Tink/AndroidKeystore string wrapper, backup/data-extraction rules, and
+  official Android key-storage/backup guidance. This cycle does not duplicate
+  R22-1's trust confirmation UX; it adds the missing local identity-key
+  lifecycle needed before generated public keys can become usable future sync
+  recipients.
+
+#### Sync key lifecycle
+
+- [ ] 🤖 P0 — Persist and backup-scope the Sync long-term X25519 identity before transport activation (R23-1)
+  - Why: `generatePairingPayload()` currently emits a public key derived from a
+    newly generated `KeyPair`, but the private half is not persisted by the UI
+    or Sync prefs. A remote device that later encrypts CRDT deltas to that
+    advertised public key would produce envelopes this device cannot open after
+    the function returns, an app restart happens, or the process is killed.
+    Fixing this before transport code lands avoids a subtle "pairing succeeds,
+    sync can never decrypt" failure and prevents a rushed future implementation
+    from storing sync private-key material in plaintext/backed-up JetPref state.
+  - Evidence: `SyncSettingsScreen.kt:218-234` resolves/stores only cluster id
+    and device id, then calls `PairingPayloadGenerator.generate(...)` without a
+    caller-owned keypair; `PairingPayloadGenerator.kt:27-43` defaults
+    `keyPair` to `SealedBoxCrypto.generateKeyPair()` and serializes only
+    `keyPair.public` into `pubkeyHex`; `SealedBoxCrypto.kt:86-97` says the
+    caller owns the private half for long-lived recipient keys; `SealedBoxCrypto.kt:156-170`
+    requires a `recipientKeyPair` to decrypt envelopes; `SyncPrefs.kt:78-93`
+    has only `clusterId`, `deviceId`, `pairedDevicesJson`, and
+    `manualExportTargetUri`, with no private/public identity key field; a
+    production grep for `generateKeyPair`, `KeyPair`, `PrivateKey`, and
+    `pubkeyHex` finds no main-code storage owner beyond `PairingPayloadGenerator`
+    and `SealedBoxCrypto`; `FlorisUserDictionaryEncryption.kt:65-133` plus
+    `TinkStringPreferenceCrypto.kt` already provide the project's local pattern
+    for AndroidKeystore/Tink-wrapped app secrets; `AndroidManifest.xml:60-64`
+    enables backup with `@xml/backup_rules` and `@xml/data_extraction_rules`,
+    and those rules include `jetpref_datastore`, so any future plaintext sync
+    secret added to normal prefs would be backup-scoped. Android's Keystore docs
+    recommend keeping cryptographic key material non-exportable/device-bound:
+    https://developer.android.com/privacy-and-security/keystore. Android Auto
+    Backup docs call out include/exclude rules and list device-specific
+    generated identifiers as typical backup exclusions:
+    https://developer.android.com/identity/data/autobackup.
+  - Touches: add a small `SyncIdentityKeyStore`/codec under `ime/sync` or
+    `ime/security`, `SyncSettingsScreen.generatePairingPayload()`,
+    `PairingPayloadGenerator` API shape, `SyncPrefs` only for non-secret key
+    metadata if needed, `TinkStringPreferenceCrypto` reuse or an equivalent
+    AndroidKeystore-backed storage helper, backup/data-extraction XML, threat
+    model, and focused sync/security tests.
+  - Acceptance: the first generated pairing payload creates or loads one stable
+    local X25519 identity; repeated QR generations and process restarts produce
+    the same public key until the user explicitly resets Sync identity; the
+    private key is wrapped with a sync-specific AndroidKeystore/Tink alias (or a
+    documented AndroidKeystore-backed X25519 implementation if the min/target
+    API path supports it) and is never stored in plaintext JetPref; backup rules
+    exclude the sync secret file while allowing non-secret channel metadata to
+    remain portable; missing/tampered key material fails closed with a reset and
+    re-pair path; `SealedBoxCrypto.open(...)` integration tests prove envelopes
+    sealed to the QR public key decrypt after reload.
+  - Verify: new focused JVM tests for key-store round-trip/tamper/fingerprint
+    stability, existing `:app:testDebugUnitTest --tests "*SyncPairingUiModelTest"
+    --tests "*SealedBoxCryptoTest"`, backup-rule guard updates, and a manual
+    Settings -> Sync generate -> restart -> generate fingerprint-stability
+    smoke on emulator/device.
+  - Complexity: L
+
+### Researcher Queue (Cycle 22 - 2026-06-06)
+
+- [x] 🔬 `sync-pairing-trust-confirmation-recheck-2026-06-06` - rechecked
+  Settings -> Sync receive/generate pairing flows, paired-device persistence,
+  the payload/key model, focused sync tests, local threat-model notes, and
+  official Syncthing/libsodium pairing-identity patterns. This cycle does not
+  duplicate R19-1's QR accessibility fallback; it adds the trust-confirmation
+  step needed before scanned or pasted public-key payloads can become future
+  sync recipients.
+
+#### Sync pairing trust and key identity
+
+- [ ] 🤖 P1 — Confirm scanned/pasted Sync pairing payloads before saving remote devices (R22-1)
+  - Why: The receive path treats a syntactically valid pairing payload as a
+    completed trust decision. That is too early for an E2EE sync control plane:
+    display name, channel id, device id, and public key are all supplied by the
+    scanned/pasted payload, and the future sealed-box transport will encrypt
+    dictionary deltas to that saved public key. This is not a secret-exposure
+    issue today because transport is still local/neutral; it is a pre-transport
+    UX/security guardrail so users explicitly bind "this is my other device" to
+    a stable key fingerprint before the app persists it.
+  - Evidence: `SyncSettingsScreen.kt:120-132` parses raw input, constructs
+    `PairedSyncDevice.fromPayload(...)`, writes `prefs.sync.pairedDevicesJson`,
+    and switches `prefs.sync.channelId` immediately, with only invalid-payload
+    rejection; `PairingPayload.kt:52-59` defines the payload-controlled
+    `pubkeyHex`, `displayName`, and `syncChannelId`; `PairedSyncDevice.kt:41-47`
+    copies those values straight into persisted paired-device state; the paired
+    list UI at `SyncSettingsScreen.kt:408-432` displays only name + channel, not
+    a fingerprint or replacement warning; `SyncPairingUiModelTest.kt:55-84`
+    covers upsert/replacement/corrupt JSON but not confirmation/cancel/no-op
+    behavior; `docs/THREAT_MODEL.md:179-188` says pairing payloads carry raw
+    X25519 public keys and private keys stay local. Libsodium's sealed-box docs
+    frame sealed boxes as encryption to a recipient public key without sender
+    identity verification, so the public key accepted during pairing is the
+    load-bearing identity: https://doc.libsodium.org/public-key_cryptography/sealed_boxes.
+    Syncthing's device-ID docs similarly treat device identity as a property of
+    the public key and discuss full-ID confirmation for shorter UX entry:
+    https://docs.syncthing.net/v1.23.1/dev/device-ids.html.
+  - Touches: `SyncSettingsScreen.kt`, `PairedSyncDevice.kt` or a small sync UI
+    helper for short fingerprints, `strings.xml`, focused sync pairing tests,
+    and `docs/THREAT_MODEL.md` pairing UX notes.
+  - Acceptance: scanned and pasted payloads open a confirmation dialog/sheet
+    showing display name, channel, device id, and a grouped short fingerprint
+    derived from `pubkeyHex`; cancelling leaves `pairedDevicesJson` and
+    `channelId` unchanged; confirming persists the device and clearly labels a
+    same-device-id replacement; duplicate device replacement shows old vs new
+    fingerprint/channel before overwrite; invalid payloads keep the current
+    rejection path; paired-device rows expose the fingerprint after saving.
+  - Verify: `:app:testDebugUnitTest --tests "*SyncPairingUiModelTest"` plus a
+    manual Settings -> Sync scan/paste -> cancel -> confirm -> duplicate-replace
+    smoke on emulator/device.
+  - Complexity: M
+
+### Researcher Queue (Cycle 21 - 2026-06-06)
+
+- [x] 🔬 `first-run-import-recovery-recheck-2026-06-06` - resumed from the
+  Continuation State, rechecked the first-run setup import step, Settings ->
+  User dictionary import launcher, empty states, preview/summary dialogs, and
+  Android content-picker behavior. This cycle does not duplicate R18-2's broader
+  migration recovery assistant or R20-1's docs cleanup; it adds the smallest
+  implementation-ready UX reliability slice needed so a failed or cancelled
+  first-run import does not disappear.
+
+#### First-run migration recovery
+
+- [ ] 🤖 P1 — Keep first-run dictionary import recoverable after picker cancel or import failure (R21-1)
+  - Why: The setup flow treats tapping "Choose export file" as completing the
+    import hint before the Android picker returns. If the user cancels the
+    picker, selects the wrong file, or hits an unreadable provider, the setup
+    step is already suppressed and the dictionary screen falls back to an empty
+    "No words saved" state whose visible action is "Add", with import hidden in
+    the overflow menu. For post-retirement SwiftKey users, a recoverable local
+    import path is part of the activation funnel, not a one-shot preference.
+  - Evidence: `SetupScreen.kt:267-273` sets
+    `prefs.internal.firstRunImportHintSeen` before navigating to
+    `Routes.Settings.UserDictionary(... action = IMPORT)`; `UserDictionaryScreen.kt:523-529`
+    uses `ActivityResultContracts.GetContent()` and silently returns when
+    `uri == null`; `UserDictionaryScreen.kt:545-553` consumes the import action
+    once and launches `*/*`; `UserDictionaryScreen.kt:811-818` renders the global
+    empty dictionary state with an add-word action only; setup copy at
+    `strings.xml:1163-1167` correctly lists supported local exports but has no
+    cancel/retry state. Android's `GetContent` contract is a user file-pick
+    flow returning a picked content URI for `ContentResolver.openInputStream`,
+    so a null/no-result path is a normal UX branch, not an exceptional import
+    result: https://developer.android.com/reference/androidx/activity/result/contract/ActivityResultContracts.GetContent.
+  - Touches: `SetupScreen.kt`, `UserDictionaryScreen.kt`,
+    `UserDictionaryEntryPolicy.kt` if a small state helper is added,
+    `strings.xml`, setup/dictionary tests, and optional migration docs so the
+    same post-cutoff wording from R20-1 is reused.
+  - Acceptance: tapping "Choose export file" does not permanently mark the
+    setup import hint done until the user explicitly skips, successfully imports,
+    or dismisses a clear "continue without importing" choice; cancelling the
+    picker leaves a visible retry/continue path; dictionary empty states expose
+    an import CTA when entry actions are enabled; import failure keeps the retry
+    path visible without duplicating rows; focused tests pin setup-step
+    transitions and import-action consumption.
+  - Verify: `:app:testDebugUnitTest --tests "*SetupStepPolicyTest" --tests
+    "*UserDictionaryEntryPolicyTest"` plus a manual setup -> choose file ->
+    cancel -> retry smoke on emulator/device.
+  - Complexity: M
+
+### Researcher Queue (Cycle 20 - 2026-06-06)
+
+- [x] 🔬 `post-retirement-migration-doc-drift-2026-06-06` - synced `master`
+  after the Cycle 18 roadmap update, rechecked the README, migration guide,
+  hardware-keyboard shipped notes, and Microsoft's current SwiftKey account
+  support copy. This cycle avoids duplicating R18-2's in-app migration assistant
+  and adds one documentation/source-of-truth row for stale post-cutoff guidance
+  that can mislead users who arrive after 2026-05-31.
+
+#### Migration source-of-truth
+
+- [ ] 🤖 P2 — Refresh the migration guide and import docs for post-retirement reality (R20-1)
+  - Why: The README correctly says Microsoft retired standalone SwiftKey
+    accounts and shut down `data.swiftkey.com` on 2026-05-31, but
+    `docs/MIGRATE_FROM_SWIFTKEY.md` still opens with pre-cutoff instructions
+    and a "Path 0" export route framed as available before the deadline. The
+    same table also says Windows `.klc` / macOS `.keylayout` hardware-keyboard
+    migration is "Next-6.4 - pending", while README release notes record those
+    parser/runtime slices as shipped in v1.8.75 and v1.8.76.
+  - Evidence: `README.md:11-14` is already post-cutoff; `README.md:54` lists
+    Settings-based Keyman `.kmp`, Windows KLC, and macOS hardware-keyboard
+    imports; `README.md:379-380` records the shipped v1.8.75/v1.8.76 hardware
+    import/runtime work; `docs/MIGRATE_FROM_SWIFTKEY.md:4-5` and
+    `docs/MIGRATE_FROM_SWIFTKEY.md:31-36` still foreground the pre-cutoff
+    SwiftKey export path; `docs/MIGRATE_FROM_SWIFTKEY.md:146-150` repeats the
+    old cutoff wording and stale hardware-keyboard "pending" status. Microsoft
+    support now frames the old SwiftKey account retirement date as 31 May 2026
+    and points users to Microsoft-account backup/sync instead:
+    https://support.microsoft.com/en-us/topic/account-a3c38581-903f-4d22-a388-cc13c7debf0e.
+  - Touches: `docs/MIGRATE_FROM_SWIFTKEY.md`, README migration cross-links if
+    needed, import/setup strings only if they point to the old export window,
+    and a stale-reference grep in repo hygiene or a focused docs test if the
+    project wants to pin post-cutoff wording.
+  - Acceptance: the guide opens with the post-retirement state; supported paths
+    are sorted by what a user can still do today; pre-cutoff SwiftKey JSON is
+    described as "use this only if you already saved the file"; hardware-keyboard
+    import status matches v1.8.75/v1.8.76; Microsoft-account/OneDrive recovery
+    remains documented as an external vendor path SwiftFloris does not automate;
+    R18-2 can reuse the same source-of-truth copy for the in-app assistant.
+  - Verify: docs-only `git diff --check`; grep for stale "before 2026-05-31"
+    lead copy; optional screenshot/readability pass if Settings strings change.
+  - Complexity: S
+
+### Researcher Queue (Cycle 19 - 2026-06-06)
+
+- [x] 🔬 `sync-pairing-accessibility-recheck-2026-06-06` - synced `master`
+  after the Cycle 18 roadmap update, rechecked `SyncSettingsScreen`,
+  `docs/ACCESSIBILITY.md`, sync pairing tests, and current Android Compose
+  accessibility guidance. This cycle adds one focused accessibility/trust row
+  for the local sync pairing flow without reopening the already-closed CRDT
+  vector, persisted-grant, and radio-row fixes.
+
+#### Sync pairing accessibility
+
+- [ ] 🤖 P2 — Add accessible pairing-payload copy/share fallback to the Sync QR flow (R19-1)
+  - Why: Sync pairing currently generates a QR payload and shows it as a
+    `Canvas`, while the receiving side can paste a payload only when no scanner
+    app is found. A TalkBack user, a user with a broken camera path, or a
+    two-device setup where scanning is impractical needs an explicit copy/share
+    fallback from the generating device. This keeps the transport local and
+    user-chosen while making CRDT pairing reachable without visual QR scanning.
+  - Evidence: `SyncSettingsScreen.kt:229-233` generates the serialized
+    `PairingPayload`; `SyncSettingsScreen.kt:278-279` passes it only to
+    `SyncQrPayloadCard`; `SyncSettingsScreen.kt:358-383` renders "Pairing QR
+    ready" plus `SyncQrCodeCanvas(matrix)` and summary text, with no visible
+    copy/share action and no semantic description on the custom QR `Canvas`;
+    `SyncSettingsScreen.kt:207-214` and `SyncSettingsScreen.kt:318-327` expose
+    manual paste only after scanner failure on the receiving side;
+    `docs/ACCESSIBILITY.md:16-22` already requires semantics/live-region care
+    for dynamic Settings surfaces. Android's Compose accessibility docs state
+    that custom components should expose semantics when built-in components do
+    not carry enough meaning:
+    https://developer.android.com/develop/ui/compose/accessibility/semantics.
+  - Touches: `SyncSettingsScreen.kt`, `app/src/main/res/values/strings.xml`,
+    focused Sync Settings UI/state tests, and `docs/ACCESSIBILITY.md` manual QA.
+    Reuse the existing generated `rawPayload`; do not add any network transport
+    or background sync service.
+  - Acceptance: generated pairing state offers "Copy payload" and preferably
+    "Share payload" actions with localized strings; the QR card has a useful
+    TalkBack announcement that does not read raw JSON by default; copy/share
+    actions state that the payload contains no private key; receiving paste
+    remains available directly, not only after scanner failure; docs include a
+    TalkBack/manual no-camera pairing check.
+  - Verify: focused JVM/source test for generated-payload actions and strings;
+    manual Settings -> Sync -> Pair a new device flow with TalkBack and with no
+    scanner app; no changes to `:app` permissions.
+  - Complexity: S-M
 
 ### Researcher Queue (Cycle 18 - 2026-06-05)
 
@@ -1418,3 +1722,78 @@ All current quick wins shipped through v1.8.215. Remaining settings-search work 
   - Acceptance: search is reachable from the first screen of Settings without scrolling.
   - Verify: source inspection; optional manual on-device smoke.
   - Complexity: S
+
+## Continuation State
+
+### Last Completed Cycle
+
+Cycle 24 - paired-device corruption recovery (2026-06-06).
+
+### Current Focus
+
+Continue with Cycle 25 by consolidating the Sync pairing hardening cluster.
+R19-1, R22-1, R23-1, and R24-1 now touch the same Settings -> Sync workflow;
+the next pass should inspect whether they need one shared helper/phase plan for
+payload copy/share, confirmation, fingerprint formatting, stable local identity,
+and corrupt-state recovery.
+
+### Important Findings So Far
+
+- Cycle 19 added R19-1 for accessible Sync pairing payload copy/share fallback.
+- Cycle 20 added R20-1 for post-retirement migration guide/source-of-truth drift.
+- Cycle 21 added R21-1 for first-run dictionary import recovery after picker
+  cancel or import failure.
+- Cycle 22 added R22-1 for explicit Sync pairing confirmation/fingerprint review
+  before scanned or pasted public-key payloads are persisted.
+- Cycle 23 added R23-1 for stable, encrypted, backup-scoped local X25519 Sync
+  identity storage before transport activation.
+- Cycle 24 added R24-1 for corrupt paired-device JSON recovery instead of
+  silently rendering the benign empty-device state.
+- Cycle 18 remains the highest-value product/trust cluster: public FUTO Swipe
+  glide benchmark, migration recovery assistant, addon developer trust kit,
+  privacy evidence dashboard, and recurring 16 KB review.
+- Maintainer-gated items remain blocked on accounts, sibling repos, hardware,
+  keys, or product decisions; do not mark device-gated rows complete without
+  hardware proof.
+
+### Next Best Actions
+
+1. Re-read R19-1/R22-1/R23-1/R24-1 plus `SyncSettingsScreen.kt`,
+   `SyncQrCode.kt`, sync tests, and `strings.xml` to decide the minimal
+   implementation order and shared helper boundaries.
+2. Inspect `docs/ACCESSIBILITY.md` and `docs/THREAT_MODEL.md` for the doc/test
+   updates that should land with the Sync pairing hardening cluster.
+3. Run targeted external-source refresh for Android Compose accessibility,
+   clipboard/share affordances for payload fallback, and local pairing
+   fingerprint UX.
+4. After the Sync cluster is sequenced, return to non-Sync release-readiness
+   leads such as F-Droid/16 KB checks and post-retirement migration docs.
+
+### Unprocessed Leads
+
+- Settings -> Sync generated-payload card has QR-only output today.
+- `docs/MIGRATE_FROM_SWIFTKEY.md` still leads with pre-cutoff export copy.
+- README and migration guide disagree on hardware-keyboard import status.
+- `docs/ACCESSIBILITY.md` does not yet list a Sync pairing/no-camera check.
+- Sync pairing hardening is now split across four roadmap rows and may need an
+  implementation-order note to prevent duplicate UI helpers or conflicting
+  tests.
+
+### Files Still To Inspect
+
+- `app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/SyncQrCode.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/PairedSyncDevice.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/PairingPayloadGenerator.kt`
+- `app/src/main/kotlin/dev/patrickgold/florisboard/ime/sync/SealedBoxCrypto.kt`
+- `app/src/test/kotlin/dev/patrickgold/florisboard/ime/sync/`
+- `app/src/main/res/values/strings.xml`
+- `docs/ACCESSIBILITY.md`
+- `docs/THREAT_MODEL.md`
+
+### Searches Still To Run
+
+- `Android Compose accessibility QR code copy fallback official`
+- `Android share sheet copy payload accessibility official`
+- `local sync device fingerprint confirmation UX official docs`
+- `F-Droid reproducible builds Android 16 KB page size addon APK`
