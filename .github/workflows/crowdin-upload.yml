@@ -21,7 +21,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Upload
         # SHA pin: crowdin/github-action@v2 = 8868a33591d21088edfc398968173a3b98d51706
         # Verified 2026-05-17 via `GET /repos/crowdin/github-action/git/refs/tags/v2`.
