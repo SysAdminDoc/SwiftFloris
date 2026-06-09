@@ -12,6 +12,8 @@ package dev.patrickgold.florisboard.ime.dictionary
 
 import android.content.Context
 import dev.patrickgold.florisboard.lib.FlorisLocale
+import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -83,52 +85,50 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         val lastSeenMs: Long,
     )
 
-    private fun normalize(word: String): String {
-        if (word.isBlank()) return ""
-        val trimmed = word.trim().trim { ch -> !ch.isLetter() && ch != '\'' && ch != '-' }
-        if (trimmed.length < 2 || trimmed.length > 32) return ""
-        if (trimmed.any { it.isDigit() }) return ""
-        if (trimmed.none { it.isLetter() }) return ""
-        return trimmed.lowercase()
-    }
+    private fun normalize(word: String): String = PersonalNgramPersistence.normalizeToken(word)
 
     private fun contextKey(prev2: String, prev1: String): String = prev2 + CONTEXT_DELIMITER + prev1
 
     private suspend fun ensureLoaded(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
         tablesByLocale[localeTag]?.let { return it }
         loadGuard.withLock {
-            tablesByLocale[localeTag]?.let { return it }
-            val table: MutableMap<String, MutableMap<String, Int>> = HashMap()
-            val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
-            val f = fileFor(localeTag)
-            val loadTimestampMs = System.currentTimeMillis()
-            if (f.exists() && f.length() > 0L) {
-                runCatching {
-                    f.bufferedReader().useLines { lines ->
-                        for (line in lines) {
-                            val parts = line.split('\t')
-                            if (parts.size != 4 && parts.size != 5) continue
-                            val prev2 = parts[0]
-                            val prev1 = parts[1]
-                            val next = parts[2]
-                            val count = parts[3].toIntOrNull() ?: continue
-                            val lastSeenMs = parts.getOrNull(4)?.toLongOrNull()
-                                ?.takeIf { it > 0L }
-                                ?: loadTimestampMs
-                            if (prev2.isBlank() || prev1.isBlank() || next.isBlank() || count <= 0) continue
-                            val key = contextKey(prev2, prev1)
-                            val nextMap = table.getOrPut(key) { HashMap() }
-                            nextMap[next] = count.coerceAtMost(MAX_COUNT)
-                            val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
-                            recencyNextMap[next] = lastSeenMs
-                        }
+            return ensureLoadedLocked(localeTag)
+        }
+    }
+
+    /** Loads (or returns) the table for [localeTag]. Caller must hold [loadGuard]. */
+    private fun ensureLoadedLocked(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
+        tablesByLocale[localeTag]?.let { return it }
+        val table: MutableMap<String, MutableMap<String, Int>> = HashMap()
+        val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
+        val f = fileFor(localeTag)
+        val loadTimestampMs = System.currentTimeMillis()
+        if (f.exists() && f.length() > 0L) {
+            runCatching {
+                f.bufferedReader().useLines { lines ->
+                    for (line in lines) {
+                        val parts = line.split('\t')
+                        if (parts.size != 4 && parts.size != 5) continue
+                        val prev2 = parts[0]
+                        val prev1 = parts[1]
+                        val next = parts[2]
+                        val count = parts[3].toIntOrNull() ?: continue
+                        val lastSeenMs = parts.getOrNull(4)?.toLongOrNull()
+                            ?.takeIf { it > 0L }
+                            ?: loadTimestampMs
+                        if (prev2.isBlank() || prev1.isBlank() || next.isBlank() || count <= 0) continue
+                        val key = contextKey(prev2, prev1)
+                        val nextMap = table.getOrPut(key) { HashMap() }
+                        nextMap[next] = count.coerceAtMost(MAX_COUNT)
+                        val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
+                        recencyNextMap[next] = lastSeenMs
                     }
                 }
             }
-            tablesByLocale[localeTag] = table
-            lastSeenByLocale[localeTag] = recencyTable
-            return table
         }
+        tablesByLocale[localeTag] = table
+        lastSeenByLocale[localeTag] = recencyTable
+        return table
     }
 
     fun learn(prev2: String, prev1: String, currWord: String, locale: FlorisLocale) {
@@ -138,19 +138,24 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return
         val tag = locale.languageTag()
         ioScope.launch {
-            val table = ensureLoaded(tag)
-            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
-            val now = System.currentTimeMillis()
-            synchronized(table) {
-                val key = contextKey(a, b)
-                val nextMap = table.getOrPut(key) { HashMap() }
-                val newCount = (nextMap[c] ?: 0) + 1
-                nextMap[c] = newCount.coerceAtMost(MAX_COUNT)
-                val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
-                recencyNextMap[c] = now
+            // Mutate under loadGuard so a concurrent resetAndAwait() cannot detach
+            // the table mid-write — otherwise this learn would resurrect entries
+            // into a discarded map or write to a file reset is deleting.
+            val shouldFlush = loadGuard.withLock {
+                val table = ensureLoadedLocked(tag)
+                val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
+                val now = System.currentTimeMillis()
+                synchronized(table) {
+                    val key = contextKey(a, b)
+                    val nextMap = table.getOrPut(key) { HashMap() }
+                    val newCount = (nextMap[c] ?: 0) + 1
+                    nextMap[c] = newCount.coerceAtMost(MAX_COUNT)
+                    val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
+                    recencyNextMap[c] = now
+                }
+                pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet() >= FLUSH_EVERY_N_COMMITS
             }
-            val counter = pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }
-            if (counter.incrementAndGet() >= FLUSH_EVERY_N_COMMITS) {
+            if (shouldFlush) {
                 flush(tag)
             }
         }
@@ -237,10 +242,12 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                 addAll(tablesByLocale.keys)
             }
         }
-        return localeTags.sumOf { localeTag ->
-            val table = ensureLoaded(localeTag)
-            synchronized(table) {
-                table.values.sumOf { nextMap -> nextMap.size }
+        return loadGuard.withLock {
+            localeTags.sumOf { localeTag ->
+                val table = ensureLoadedLocked(localeTag)
+                synchronized(table) {
+                    table.values.sumOf { nextMap -> nextMap.size }
+                }
             }
         }
     }
@@ -302,25 +309,23 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                         }
                     }
                 }
-                runCatching {
-                    val tmp = File(fileFor(localeTag).parentFile, fileFor(localeTag).name + ".tmp")
-                    tmp.bufferedWriter().use { w ->
-                        for (row in snapshot) {
-                            w.write(row.prev2)
-                            w.write("\t")
-                            w.write(row.prev1)
-                            w.write("\t")
-                            w.write(row.next)
-                            w.write("\t")
-                            w.write(row.count.toString())
-                            w.write("\t")
-                            w.write(row.lastSeenMs.toString())
-                            w.newLine()
-                        }
+                val persisted = PersonalNgramPersistence.atomicReplace(fileFor(localeTag)) { w ->
+                    for (row in snapshot) {
+                        w.write(row.prev2)
+                        w.write("\t")
+                        w.write(row.prev1)
+                        w.write("\t")
+                        w.write(row.next)
+                        w.write("\t")
+                        w.write(row.count.toString())
+                        w.write("\t")
+                        w.write(row.lastSeenMs.toString())
+                        w.newLine()
                     }
-                    if (!tmp.renameTo(fileFor(localeTag))) {
-                        fileFor(localeTag).delete()
-                        tmp.renameTo(fileFor(localeTag))
+                }
+                if (!persisted) {
+                    flogWarning(LogTopic.DICTIONARY) {
+                        "Personal trigram flush for '$localeTag' failed; previous on-disk state preserved"
                     }
                 }
             }
@@ -335,21 +340,23 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         if (target.isEmpty()) return
         val tag = locale.languageTag()
         ioScope.launch {
-            val table = ensureLoaded(tag)
-            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
-            synchronized(table) {
-                val emptiedKeys = ArrayList<String>()
-                for ((ctxKey, nextMap) in table) {
-                    recencyTable[ctxKey]?.remove(target)
-                    if (nextMap.remove(target) != null && nextMap.isEmpty()) {
-                        emptiedKeys.add(ctxKey)
+            loadGuard.withLock {
+                val table = ensureLoadedLocked(tag)
+                val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
+                synchronized(table) {
+                    val emptiedKeys = ArrayList<String>()
+                    for ((ctxKey, nextMap) in table) {
+                        recencyTable[ctxKey]?.remove(target)
+                        if (nextMap.remove(target) != null && nextMap.isEmpty()) {
+                            emptiedKeys.add(ctxKey)
+                        }
                     }
+                    for (k in emptiedKeys) {
+                        table.remove(k)
+                        recencyTable.remove(k)
+                    }
+                    pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
                 }
-                for (k in emptiedKeys) {
-                    table.remove(k)
-                    recencyTable.remove(k)
-                }
-                pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
             }
             flush(tag)
         }
