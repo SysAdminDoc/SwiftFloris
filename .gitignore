@@ -98,3 +98,7 @@ result
 **/target/release/
 **/*.rs.bk
 *.pdb
+
+# Markdown files local-only (except README)
+*.md
+!README.md
