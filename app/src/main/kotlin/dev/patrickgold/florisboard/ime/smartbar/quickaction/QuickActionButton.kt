@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import dev.patrickgold.compose.tooltip.PlainTooltip
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.computeImageVector
@@ -46,6 +47,7 @@ import dev.patrickgold.florisboard.ime.keyboard.computeLabel
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarAccessibilityLabels
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggIcon
@@ -100,7 +102,11 @@ fun QuickActionButton(
     // them inside the composition rather than inside a remember{} body.
     val actionDisplayName = action.computeDisplayName(evaluator = evaluator)
     val actionTooltip = action.computeTooltip(evaluator)
-    val actionA11yLabel = SmartbarAccessibilityLabels.quickActionLabel(actionDisplayName, actionTooltip)
+    val actionA11yLabel = SmartbarAccessibilityLabels.quickActionLabel(
+        displayName = actionDisplayName,
+        tooltip = actionTooltip,
+        fallback = stringRes(R.string.a11y__smartbar_action__fallback),
+    )
     PlainTooltip(actionTooltip, enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
         SnyggBox(
             elementName = elementName,
