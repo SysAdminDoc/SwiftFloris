@@ -963,7 +963,12 @@ class NlpManager(context: Context) {
                         }
                         matches.forEachIndexed { i, match ->
                             val isUniqueMatch = matches.subList(0, i).all { prevMatch ->
-                                prevMatch.value != match.value && prevMatch.range.intersect(match.range).isEmpty()
+                                // Endpoint comparison instead of IntRange.intersect():
+                                // intersect() materializes both ranges into sets, which
+                                // is O(text length) garbage per match pair on every
+                                // suggestion request while a fresh clip is suggestible.
+                                prevMatch.value != match.value &&
+                                    (prevMatch.range.last < match.range.first || prevMatch.range.first > match.range.last)
                             }
                             if (match.value != text && isUniqueMatch) {
                                 add(ClipboardSuggestionCandidate(

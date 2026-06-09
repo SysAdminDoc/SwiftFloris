@@ -358,7 +358,10 @@ class ClipboardManager(
      */
     fun clearHistory() {
         ioScope.launch {
-            val snapshot = currentHistory.all.toList()
+            // Only close (and thereby delete backing media of) unpinned items:
+            // the DB keeps pinned rows, so closing them too would strand pinned
+            // image/video clips with their content provider files gone.
+            val snapshot = currentHistory.unpinned.toList()
             for (item in snapshot) {
                 item.close(appContext)
             }

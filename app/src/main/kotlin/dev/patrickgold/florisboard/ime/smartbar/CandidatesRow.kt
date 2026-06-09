@@ -63,6 +63,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.BuildConfig
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -73,6 +74,7 @@ import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import org.florisboard.lib.compose.conditional
 import org.florisboard.lib.compose.florisHorizontalScroll
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
@@ -169,16 +171,23 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                         count = list.size,
                         displayMode = displayMode,
                         onClick = {
-                            // Can't use candidate directly
-                            keyboardManager.commitCandidate(candidates[n])
+                            // Can't use candidate directly. The live list can
+                            // also shrink between the rendered frame and the
+                            // tap (suggestions reroll on every content change),
+                            // so a stale slot index must be a no-op, not an
+                            // IndexOutOfBoundsException inside a click handler.
+                            candidates.getOrNull(n)?.let { live ->
+                                keyboardManager.commitCandidate(live)
+                            }
                         },
                         onLongPress = {
                             // Can't use candidate directly — capture the live
                             // candidate at gesture time so the confirm prompt
                             // operates on what the user actually saw, even if
-                            // the strip rerolls before they confirm.
-                            val candidateItem = candidates[n]
-                            if (candidateItem.isEligibleForUserRemoval) {
+                            // the strip rerolls before they confirm. Guard the
+                            // index: the list may have shrunk since render.
+                            val candidateItem = candidates.getOrNull(n)
+                            if (candidateItem != null && candidateItem.isEligibleForUserRemoval) {
                                 pendingRemoval = candidateItem
                                 true
                             } else {
@@ -320,12 +329,18 @@ private fun CandidateItem(
     // can do what long-press does for sighted users.
     val candidateText = candidate.text.toString()
     val candidateSemanticLabel = SmartbarAccessibilityLabels.candidateLabel(
+        template = stringRes(
+            when {
+                candidate is ClipboardSuggestionCandidate -> R.string.a11y__candidate__clipboard
+                candidate.isEligibleForAutoCommit -> R.string.a11y__candidate__autocorrect
+                else -> R.string.a11y__candidate__suggestion
+            }
+        ),
         text = candidateText,
         index = index,
         count = count,
-        isClipboard = candidate is ClipboardSuggestionCandidate,
-        isAutoCommit = candidate.isEligibleForAutoCommit,
     )
+    val removeActionLabel = stringRes(R.string.a11y__candidate__remove_action)
     SnyggRow(
         elementName = elementName,
         attributes = attributes,
@@ -337,7 +352,7 @@ private fun CandidateItem(
                 if (candidate.isEligibleForUserRemoval) {
                     customActions = listOf(
                         CustomAccessibilityAction(
-                            label = SmartbarAccessibilityLabels.RemoveCandidateAction,
+                            label = removeActionLabel,
                             action = { onLongPress() },
                         ),
                     )
