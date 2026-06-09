@@ -546,7 +546,13 @@ class ImeWindowController(
 
         fun endMoveGesture(spec: ImeWindowSpec) {
             var keepEnabled = true
-            updateWindowConfig { config ->
+            // The state write must happen in afterUpdate (inside the async config
+            // update), not synchronously after this call: keepEnabled is assigned
+            // inside the update lambda, so reading it here would always see the
+            // initial value and a floating window docked past dockToFixedHeight
+            // would keep the editor active — swallowing all touches over the host
+            // app via the fullscreen touchable insets region.
+            updateWindowConfig(afterUpdate = { state.value = editorStateOf(keepEnabled) }) { config ->
                 when (spec) {
                      is ImeWindowSpec.Fixed -> {
                          keepEnabled = true
@@ -563,7 +569,6 @@ class ImeWindowController(
                     }
                 }
             }
-            state.value = editorStateOf(keepEnabled)
         }
 
         fun beginResizeGesture(): ImeWindowSpec {

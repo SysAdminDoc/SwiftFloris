@@ -113,9 +113,18 @@ class InputEventDispatcher private constructor(private val repeatableKeyCodes: I
                         val repeatData = determineRepeatData(data)
                         val repeatDelay = determineRepeatDelay(repeatData)
                         while (isActive) {
-                            val onRepeatResult = withContext(Dispatchers.Main) { onRepeat() }
+                            // The receiver dispatch must stay on Main alongside
+                            // onRepeat(): onInputKeyRepeat drives editor batch
+                            // edits and learn-state that all other key events
+                            // touch exclusively from the main thread.
+                            val onRepeatResult = withContext(Dispatchers.Main) {
+                                val proceed = onRepeat()
+                                if (proceed) {
+                                    keyEventReceiver?.onInputKeyRepeat(repeatData)
+                                }
+                                proceed
+                            }
                             if (onRepeatResult) {
-                                keyEventReceiver?.onInputKeyRepeat(repeatData)
                                 pressedKeyInfo.blockUp = true
                             }
                             delay(repeatDelay)

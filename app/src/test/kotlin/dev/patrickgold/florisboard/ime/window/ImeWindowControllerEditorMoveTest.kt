@@ -376,5 +376,44 @@ class ImeWindowControllerEditorMoveTest : FunSpec({
                 }
             }
         }
+
+        test("docking a floating window to fixed disables the editor") {
+            checkAll(
+                Arb.rootInsets(),
+                Arb.enum<ImeWindowMode.Floating>(),
+            ) { rootInsets, floatingMode ->
+                val prefs by jetprefDataStoreOf(FlorisPreferenceModel::class)
+                val windowController = ImeWindowController(prefs, backgroundScope)
+                windowController.updateRootInsets(rootInsets)
+                windowController.updateWindowConfig {
+                    ImeWindowConfig(ImeWindowMode.FLOATING, floatingMode = floatingMode)
+                }
+
+                windowController.editor.beginMoveGesture()
+                val specBefore = windowController.activeWindowSpec.first { it !== ImeWindowSpec.Fallback }
+                    .shouldBeInstanceOf<ImeWindowSpec.Floating>()
+                // Drag the window all the way down: at or below dockToFixedHeight
+                // the end of the move gesture must dock to FIXED mode.
+                val dockedSpec = specBefore.copy(
+                    props = specBefore.props.copy(offsetBottom = 0.dp),
+                )
+                windowController.editor.onSpecUpdated(dockedSpec)
+                windowController.editor.endMoveGesture(dockedSpec)
+
+                // endMoveGesture applies the config (and the editor state derived
+                // from it) asynchronously; await both outcomes instead of reading
+                // the state synchronously. A regression hangs these awaits and
+                // fails the test via timeout.
+                withClue("docking past dockToFixedHeight must switch the window mode to FIXED") {
+                    windowController.activeWindowConfig.first { it.mode == ImeWindowMode.FIXED }
+                }
+                withClue(
+                    "docking must disable the move/resize editor — a still-enabled editor keeps " +
+                        "reporting a fullscreen touchable region and swallows touches over the host app"
+                ) {
+                    windowController.editor.state.first { !it.isEnabled }
+                }
+            }
+        }
     }
 })
