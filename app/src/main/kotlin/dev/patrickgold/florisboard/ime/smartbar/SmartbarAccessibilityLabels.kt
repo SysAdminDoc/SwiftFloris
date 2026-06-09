@@ -16,29 +16,34 @@
 
 package dev.patrickgold.florisboard.ime.smartbar
 
-internal object SmartbarAccessibilityLabels {
-    const val RemoveCandidateAction = "Remove from predictions"
+import org.florisboard.lib.kotlin.curlyFormat
 
+/**
+ * Pure formatting helpers for smartbar TalkBack announcements. The actual
+ * announcement templates are string resources (`a11y__candidate__*`,
+ * `a11y__smartbar_action__fallback`) resolved at the composable call sites so
+ * announcements localize with the rest of the app; this object only clamps
+ * position values and fills the `{index}` / `{count}` / `{text}` placeholders.
+ */
+internal object SmartbarAccessibilityLabels {
     fun candidateLabel(
+        template: String,
         text: String,
         index: Int,
         count: Int,
-        isClipboard: Boolean,
-        isAutoCommit: Boolean,
     ): String {
         val safeIndex = index.coerceAtLeast(0) + 1
         val safeCount = count.coerceAtLeast(safeIndex)
-        val prefix = when {
-            isClipboard -> "Clipboard suggestion"
-            isAutoCommit -> "Autocorrect suggestion"
-            else -> "Suggestion"
-        }
-        return "$prefix $safeIndex of $safeCount: $text"
+        return template.curlyFormat(
+            "index" to safeIndex.toString(),
+            "count" to safeCount.toString(),
+            "text" to text,
+        )
     }
 
-    fun quickActionLabel(displayName: String, tooltip: String): String {
+    fun quickActionLabel(displayName: String, tooltip: String, fallback: String): String {
         return displayName.ifBlank {
-            tooltip.ifBlank { "Smartbar action" }
+            tooltip.ifBlank { fallback }
         }
     }
 }

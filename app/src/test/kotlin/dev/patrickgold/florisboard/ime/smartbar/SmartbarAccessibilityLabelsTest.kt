@@ -20,58 +20,62 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 class SmartbarAccessibilityLabelsTest : FunSpec({
+    // Mirrors the default (English) a11y__candidate__* resource templates.
+    val suggestionTemplate = "Suggestion {index} of {count}: {text}"
+    val autocorrectTemplate = "Autocorrect suggestion {index} of {count}: {text}"
+    val clipboardTemplate = "Clipboard suggestion {index} of {count}: {text}"
+
     test("candidate label includes type position and text") {
         SmartbarAccessibilityLabels.candidateLabel(
+            template = suggestionTemplate,
             text = "hello",
             index = 0,
             count = 3,
-            isClipboard = false,
-            isAutoCommit = false,
         ) shouldBe "Suggestion 1 of 3: hello"
     }
 
-    test("candidate label identifies autocorrect and clipboard suggestions") {
+    test("candidate label fills autocorrect and clipboard templates") {
         SmartbarAccessibilityLabels.candidateLabel(
+            template = autocorrectTemplate,
             text = "hello",
             index = 1,
             count = 3,
-            isClipboard = false,
-            isAutoCommit = true,
         ) shouldBe "Autocorrect suggestion 2 of 3: hello"
 
         SmartbarAccessibilityLabels.candidateLabel(
+            template = clipboardTemplate,
             text = "Copied address",
             index = 2,
             count = 3,
-            isClipboard = true,
-            isAutoCommit = true,
         ) shouldBe "Clipboard suggestion 3 of 3: Copied address"
     }
 
     test("candidate label clamps invalid position inputs") {
         SmartbarAccessibilityLabels.candidateLabel(
+            template = suggestionTemplate,
             text = "fallback",
             index = -4,
             count = 0,
-            isClipboard = false,
-            isAutoCommit = false,
         ) shouldBe "Suggestion 1 of 1: fallback"
     }
 
-    test("quick action label prefers visible display name then tooltip") {
+    test("quick action label prefers visible display name then tooltip then fallback") {
         SmartbarAccessibilityLabels.quickActionLabel(
             displayName = "Clipboard",
             tooltip = "Open clipboard",
+            fallback = "Smartbar action",
         ) shouldBe "Clipboard"
 
         SmartbarAccessibilityLabels.quickActionLabel(
             displayName = "",
             tooltip = "Open clipboard",
+            fallback = "Smartbar action",
         ) shouldBe "Open clipboard"
 
         SmartbarAccessibilityLabels.quickActionLabel(
             displayName = "",
             tooltip = "",
+            fallback = "Smartbar action",
         ) shouldBe "Smartbar action"
     }
 })
