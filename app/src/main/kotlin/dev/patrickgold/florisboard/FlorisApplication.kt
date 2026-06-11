@@ -66,20 +66,6 @@ private var FlorisApplicationReference = WeakReference<FlorisApplication?>(null)
 
 @Suppress("unused")
 class FlorisApplication : Application() {
-    companion object {
-        init {
-            try {
-                System.loadLibrary("fl_native")
-            } catch (e: UnsatisfiedLinkError) {
-                // Native library not available (disabled or not built)
-                android.util.Log.d("FlorisApplication", "Native library not found, continuing without it")
-            } catch (e: Exception) {
-                // Other exceptions - also safe to ignore
-                android.util.Log.d("FlorisApplication", "Failed to load native library: ${e.message}")
-            }
-        }
-    }
-
     private val mainHandler by lazy { Handler(mainLooper) }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val preferenceStoreLoaded = MutableStateFlow(false)
