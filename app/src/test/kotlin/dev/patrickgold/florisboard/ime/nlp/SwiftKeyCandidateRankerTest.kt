@@ -125,6 +125,33 @@ class SwiftKeyCandidateRankerTest : FunSpec({
         ) shouldBe null
     }
 
+    test("spacebar high confidence mode requires stronger provider and language confidence") {
+        val signals = mapOf(
+            "receive" to SwiftKeyCandidateSignals(languageConfidence = 0.74),
+            "received" to SwiftKeyCandidateSignals(languageConfidence = 0.86),
+        )
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "recieve",
+            candidates = listOf(
+                candidate("recieve"),
+                candidate("receive", confidence = 0.95, autoCommit = true),
+            ),
+            candidateSignals = signals,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+        ) shouldBe null
+
+        SwiftKeyCandidateRanker.selectSpacebarCandidate(
+            currentWord = "recieved",
+            candidates = listOf(
+                candidate("recieved"),
+                candidate("received", confidence = 0.92, autoCommit = true),
+            ),
+            candidateSignals = signals,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+        )?.text shouldBe "received"
+    }
+
     test("spacebar candidate suppresses plausible top-two language straddles") {
         val signals = mapOf(
             "the" to SwiftKeyCandidateSignals(

@@ -104,6 +104,57 @@ class CandidateAutoCommitPolicyTest : FunSpec({
         ) shouldBe null
     }
 
+    test("high confidence mode keeps weak active corrections as suggestions") {
+        val weakCorrection = candidate("received", confidence = 0.82, eligible = true)
+        val strongCorrection = candidate("receive", confidence = 0.94, eligible = true)
+
+        CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+            currentWord = "recieved",
+            currentWordStart = 0,
+            candidates = listOf(weakCorrection),
+            candidateSignals = mapOf("received" to SwiftKeyCandidateSignals(languageConfidence = 0.98)),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = null,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        ) shouldBe null
+
+        CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+            currentWord = "recieve",
+            currentWordStart = 0,
+            candidates = listOf(strongCorrection),
+            candidateSignals = mapOf("receive" to SwiftKeyCandidateSignals(languageConfidence = 0.82)),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = null,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        ) shouldBe strongCorrection
+    }
+
+    test("high confidence mode still honors explicit user dictionary shortcuts") {
+        val shortcut = candidate("on my way", confidence = 0.20, eligible = true)
+
+        CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+            currentWord = "omw",
+            currentWordStart = 0,
+            candidates = listOf(candidate("onward", confidence = 0.99, eligible = true)),
+            candidateSignals = mapOf("onward" to SwiftKeyCandidateSignals(languageConfidence = 1.0)),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = shortcut,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        ) shouldBe shortcut
+    }
+
     test("immediate fallback is used after active candidates fail eligibility") {
         val fallback = candidate("can't", eligible = true)
 
@@ -191,6 +242,46 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             immediatePhraseRepairCandidate = null,
             immediateAutoCommitCandidate = null,
         ) shouldBe shortcut
+    }
+
+    test("spacebar high confidence mode blocks weak replacement but keeps quick prediction insert") {
+        CandidateAutoCommitPolicy.selectSpacebarCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+            quickPredictionInsertEnabled = false,
+            currentWord = "recieve",
+            currentWordStart = 0,
+            textBeforeCursor = "recieve",
+            candidates = listOf(
+                candidate("recieve", confidence = 0.62),
+                candidate("receive", confidence = 0.84, eligible = true),
+            ),
+            candidateSignals = mapOf("receive" to SwiftKeyCandidateSignals(languageConfidence = 1.0)),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = null,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        ) shouldBe null
+
+        CandidateAutoCommitPolicy.selectSpacebarCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectCommitMode = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+            quickPredictionInsertEnabled = true,
+            currentWord = "",
+            currentWordStart = null,
+            textBeforeCursor = "Done. ",
+            candidates = listOf(
+                candidate("maybe", confidence = 0.20),
+                candidate("next", confidence = 0.60),
+            ),
+            candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = null,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        )?.text shouldBe "next"
     }
 
     test("password fields block auto-commit from every candidate source") {

@@ -21,6 +21,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 internal object CandidateAutoCommitPolicy {
     fun selectAutoCommitCandidate(
         autoCorrectEnabled: Boolean,
+        autoCorrectCommitMode: AutoCorrectCommitMode = AutoCorrectCommitMode.NORMAL,
         keyVariation: KeyVariation,
         currentWord: String,
         currentWordStart: Int?,
@@ -42,15 +43,25 @@ internal object CandidateAutoCommitPolicy {
             currentWord = currentWord,
             currentWordStart = currentWordStart,
             rejectionPolicy = rejectionPolicy,
-            candidates = listOfNotNull(
-                userDictionaryShortcutCandidate,
-                immediatePhraseRepairCandidate,
-            ),
+            candidates = listOfNotNull(userDictionaryShortcutCandidate),
+        )?.let { return it }
+
+        firstAllowedCandidate(
+            currentWord = currentWord,
+            currentWordStart = currentWordStart,
+            rejectionPolicy = rejectionPolicy,
+            candidates = listOfNotNull(immediatePhraseRepairCandidate),
+            autoCorrectCommitMode = autoCorrectCommitMode,
+            candidateSignals = candidateSignals,
         )?.let { return it }
 
         candidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
-                SwiftKeyCandidateRanker.languageConfidenceAllowsAutoCommit(candidate, candidateSignals) &&
+                SwiftKeyCandidateRanker.autoCommitConfidenceAllowsMode(
+                    candidate = candidate,
+                    candidateSignals = candidateSignals,
+                    mode = autoCorrectCommitMode,
+                ) &&
                 rejectionPolicy.allowsCandidate(currentWord, candidate, currentWordStart)
         }?.let { return it }
 
@@ -59,11 +70,14 @@ internal object CandidateAutoCommitPolicy {
             currentWordStart = currentWordStart,
             rejectionPolicy = rejectionPolicy,
             candidates = listOfNotNull(immediateAutoCommitCandidate),
+            autoCorrectCommitMode = autoCorrectCommitMode,
+            candidateSignals = candidateSignals,
         )
     }
 
     fun selectSpacebarCandidate(
         autoCorrectEnabled: Boolean,
+        autoCorrectCommitMode: AutoCorrectCommitMode = AutoCorrectCommitMode.NORMAL,
         quickPredictionInsertEnabled: Boolean,
         keyVariation: KeyVariation,
         currentWord: String,
@@ -87,10 +101,16 @@ internal object CandidateAutoCommitPolicy {
                 currentWord = currentWord,
                 currentWordStart = currentWordStart,
                 rejectionPolicy = rejectionPolicy,
-                candidates = listOfNotNull(
-                    userDictionaryShortcutCandidate,
-                    immediatePhraseRepairCandidate,
-                ),
+                candidates = listOfNotNull(userDictionaryShortcutCandidate),
+            )?.let { return it }
+
+            firstAllowedCandidate(
+                currentWord = currentWord,
+                currentWordStart = currentWordStart,
+                rejectionPolicy = rejectionPolicy,
+                candidates = listOfNotNull(immediatePhraseRepairCandidate),
+                autoCorrectCommitMode = autoCorrectCommitMode,
+                candidateSignals = candidateSignals,
             )?.let { return it }
         }
 
@@ -100,12 +120,15 @@ internal object CandidateAutoCommitPolicy {
             quickPredictionInsert = quickPredictionInsertEnabled,
             textBeforeCursor = textBeforeCursor,
             candidateSignals = candidateSignals,
+            autoCorrectCommitMode = autoCorrectCommitMode,
         ) ?: return if (autoCorrectEnabled) {
             firstAllowedCandidate(
                 currentWord = currentWord,
                 currentWordStart = currentWordStart,
                 rejectionPolicy = rejectionPolicy,
                 candidates = listOfNotNull(immediateAutoCommitCandidate),
+                autoCorrectCommitMode = autoCorrectCommitMode,
+                candidateSignals = candidateSignals,
             )
         } else {
             null
@@ -139,9 +162,19 @@ internal object CandidateAutoCommitPolicy {
         currentWordStart: Int?,
         rejectionPolicy: AutoCommitSuppression,
         candidates: List<SuggestionCandidate>,
+        autoCorrectCommitMode: AutoCorrectCommitMode? = null,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
     ): SuggestionCandidate? {
         return candidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
+                (
+                    autoCorrectCommitMode == null ||
+                        SwiftKeyCandidateRanker.autoCommitConfidenceAllowsMode(
+                            candidate = candidate,
+                            candidateSignals = candidateSignals,
+                            mode = autoCorrectCommitMode,
+                        )
+                ) &&
                 rejectionPolicy.allowsCandidate(currentWord, candidate, currentWordStart)
         }
     }

@@ -231,6 +231,7 @@ internal object SwiftKeyCandidateRanker {
         quickPredictionInsert: Boolean = false,
         textBeforeCursor: String = "",
         candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
+        autoCorrectCommitMode: AutoCorrectCommitMode = AutoCorrectCommitMode.NORMAL,
         quickPredictionInsertTuning: QuickPredictionInsertTuning = QuickPredictionInsertTuning.Default,
     ): SuggestionCandidate? {
         val typedWordKey = currentWord.trim().normalizedCandidateKey()
@@ -261,7 +262,7 @@ internal object SwiftKeyCandidateRanker {
             middleCandidateKey != null &&
             middleCandidateKey != typedWordKey &&
             !topCandidatesStraddleLanguages &&
-            languageConfidenceAllowsAutoCommit(middleCandidate, candidateSignals)
+            autoCommitConfidenceAllowsMode(middleCandidate, candidateSignals, autoCorrectCommitMode)
         ) {
             return middleCandidate
         }
@@ -270,7 +271,19 @@ internal object SwiftKeyCandidateRanker {
             candidate.isEligibleForAutoCommit &&
                 candidate.text.toString().normalizedCandidateKey() != typedWordKey &&
                 !topCandidatesStraddleLanguages &&
-                languageConfidenceAllowsAutoCommit(candidate, candidateSignals)
+                autoCommitConfidenceAllowsMode(candidate, candidateSignals, autoCorrectCommitMode)
+        }
+    }
+
+    fun autoCommitConfidenceAllowsMode(
+        candidate: SuggestionCandidate,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals>,
+        mode: AutoCorrectCommitMode,
+    ): Boolean {
+        if (!languageConfidenceAllowsAutoCommit(candidate, candidateSignals)) return false
+        return when (mode) {
+            AutoCorrectCommitMode.NORMAL -> true
+            AutoCorrectCommitMode.HIGH_CONFIDENCE -> highConfidenceAllowsAutoCommit(candidate, candidateSignals)
         }
     }
 
@@ -281,6 +294,17 @@ internal object SwiftKeyCandidateRanker {
         val key = candidate.text.toString().normalizedCandidateKey()
         if (key.isBlank()) return true
         return (candidateSignals[key]?.languageConfidence ?: 1.0) >= MinAutoCommitLanguageConfidence
+    }
+
+    fun highConfidenceAllowsAutoCommit(
+        candidate: SuggestionCandidate,
+        candidateSignals: Map<String, SwiftKeyCandidateSignals>,
+    ): Boolean {
+        val key = candidate.text.toString().normalizedCandidateKey()
+        if (key.isBlank()) return true
+        val signal = candidateSignals[key] ?: SwiftKeyCandidateSignals()
+        return candidate.confidence.coerceIn(0.0, 1.0) >= MinHighConfidenceAutoCommitCandidateConfidence &&
+            signal.languageConfidence >= MinHighConfidenceAutoCommitLanguageConfidence
     }
 
     private fun topCandidatesStraddleLanguages(
@@ -535,6 +559,8 @@ internal object SwiftKeyCandidateRanker {
 
     private const val TypedLiteralConfidence = 0.62
     private const val MinAutoCommitLanguageConfidence = 0.40
+    private const val MinHighConfidenceAutoCommitCandidateConfidence = 0.90
+    private const val MinHighConfidenceAutoCommitLanguageConfidence = 0.75
     private const val MinStraddleLanguageConfidence = 0.50
     private val SentenceTerminators = setOf('.', '!', '?')
 

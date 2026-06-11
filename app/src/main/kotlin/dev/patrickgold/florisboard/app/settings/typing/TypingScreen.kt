@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
+import dev.patrickgold.florisboard.ime.nlp.AutoCorrectCommitMode
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -100,6 +101,12 @@ fun TypingScreen() = FlorisScreen {
                 prefs.correction.autoCorrect,
                 title = stringRes(R.string.pref__correction__auto_correct__label),
                 summary = stringRes(R.string.pref__correction__auto_correct__summary),
+            )
+            ListPreference(
+                prefs.correction.autoCorrectCommitMode,
+                title = stringRes(R.string.pref__correction__auto_correct_commit_mode__label),
+                entries = enumDisplayEntriesOf(AutoCorrectCommitMode::class),
+                enabledIf = { prefs.correction.autoCorrect isEqualTo true },
             )
             SwitchPreference(
                 prefs.correction.quickPredictionInsert,

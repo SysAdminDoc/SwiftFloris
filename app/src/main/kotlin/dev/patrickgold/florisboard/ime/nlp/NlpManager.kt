@@ -413,6 +413,7 @@ class NlpManager(context: Context) {
         val currentWordStart = content.autoCommitWordStart()
         return CandidateAutoCommitPolicy.selectAutoCommitCandidate(
             autoCorrectEnabled = prefs.correction.autoCorrect.get(),
+            autoCorrectCommitMode = prefs.correction.autoCorrectCommitMode.get(),
             keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,
             currentWordStart = currentWordStart,
@@ -435,6 +436,7 @@ class NlpManager(context: Context) {
         val currentWordStart = content.autoCommitWordStart()
         return CandidateAutoCommitPolicy.selectSpacebarCandidate(
             autoCorrectEnabled = autoCorrectEnabled,
+            autoCorrectCommitMode = prefs.correction.autoCorrectCommitMode.get(),
             quickPredictionInsertEnabled = quickPredictionInsertEnabled,
             keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,

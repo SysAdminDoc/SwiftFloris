@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
+import dev.patrickgold.florisboard.ime.nlp.AutoCorrectCommitMode
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
@@ -77,6 +78,22 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
             entry(
                 key = AppTheme.AMOLED_DARK,
                 label = stringRes(R.string.pref__other__settings_theme__amoled_dark),
+            )
+        }
+    },
+    AutoCorrectCommitMode::class to DEFAULT to {
+        listPrefEntries {
+            entry(
+                key = AutoCorrectCommitMode.NORMAL,
+                label = stringRes(R.string.enum__auto_correct_commit_mode__normal),
+                description = stringRes(R.string.enum__auto_correct_commit_mode__normal__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = AutoCorrectCommitMode.HIGH_CONFIDENCE,
+                label = stringRes(R.string.enum__auto_correct_commit_mode__high_confidence),
+                description = stringRes(R.string.enum__auto_correct_commit_mode__high_confidence__description),
+                showDescriptionOnlyIfSelected = true,
             )
         }
     },
