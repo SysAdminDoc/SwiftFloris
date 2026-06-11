@@ -94,6 +94,7 @@ class NlpManager(context: Context) {
     private val wordsListCache = ConcurrentHashMap<String, List<String>>()
     private val frequencyCache = LruCache<String, Double>(5000)
     private val autoCommitSuppression = AutoCommitSuppression()
+    private val autoCommitUndoSession = AutoCommitUndoSession()
     private val correctionOutcomePriors = CorrectionOutcomePriors.get(appContext)
     private val touchDecoderEvidence = TouchDecoderEvidenceBuffer()
 
@@ -214,6 +215,7 @@ class NlpManager(context: Context) {
 
     fun suggest(subtype: Subtype, content: EditorContent) {
         autoCommitSuppression.onContentChanged(content.autoCommitWord(), content.autoCommitWordStart())
+        autoCommitUndoSession.onContentChanged(content)
         val requestId = suggestionsRequestCounter.incrementAndGet()
         val editorInfo = editorInstance.activeInfo
         val requestPrivacy = SuggestionPrivacyPolicy.snapshotSuggestionRequest(
@@ -482,6 +484,12 @@ class NlpManager(context: Context) {
             correctedText = candidate.text,
             wordStart = content.autoCommitWordStart(),
         )
+        autoCommitUndoSession.remember(
+            originalText = originalText,
+            correctedText = candidate.text,
+            wordStart = content.autoCommitWordStart(),
+            sourceProvider = candidate.sourceProvider,
+        )
         correctionOutcomePriors.recordAccepted(
             originalText = originalText,
             correctedText = candidate.text,
@@ -504,6 +512,25 @@ class NlpManager(context: Context) {
             }
             typingTraceRecorder.recordAutoCommitRejected(content, keyboardManager.activeState.isIncognitoMode)
         }
+        return rejected
+    }
+
+    fun rejectAcceptedAutoCommitFromUndo(candidate: AutoCommitUndoSuggestionCandidate): Boolean {
+        val correction = autoCommitUndoSession.consume(candidate) ?: return false
+        val rejected = autoCommitSuppression.rejectAccepted(
+            originalText = correction.original,
+            correctedText = correction.corrected,
+            wordStart = correction.range.start,
+        )
+        if (rejected) {
+            autoCommitSuppression.consumeLastRejectedPair()?.let { pair ->
+                correctionOutcomePriors.recordRejected(
+                    originalText = pair.original,
+                    correctedText = pair.corrected,
+                )
+            }
+        }
+        assembleCandidates()
         return rejected
     }
 
@@ -845,6 +872,7 @@ class NlpManager(context: Context) {
             val candidates = candidateAssembler.assemble(
                 isSuggestionOn = isSuggestionOn(),
                 internalSuggestions = suggestions,
+                autoCommitUndoCandidate = autoCommitUndoSession.activeUndoCandidate,
             )
             activeCandidates = candidates
             autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)

@@ -2069,6 +2069,7 @@
     <!-- TalkBack labels for the suggestion strip and smartbar quick actions. -->
     <string name="a11y__candidate__suggestion" comment="TalkBack announcement for a suggestion-strip slot">Suggestion {index} of {count}: {text}</string>
     <string name="a11y__candidate__autocorrect" comment="TalkBack announcement for an autocorrect suggestion slot">Autocorrect suggestion {index} of {count}: {text}</string>
+    <string name="a11y__candidate__autocorrect_undo" comment="TalkBack announcement for a suggestion-strip slot that restores the originally typed word after autocorrect">Undo autocorrect {index} of {count}: restore {text}</string>
     <string name="a11y__candidate__clipboard" comment="TalkBack announcement for a clipboard suggestion slot">Clipboard suggestion {index} of {count}: {text}</string>
     <string name="a11y__candidate__remove_action" comment="TalkBack custom action that removes a learned suggestion">Remove from predictions</string>
     <string name="a11y__smartbar_action__fallback" comment="TalkBack fallback label for a smartbar action without a display name or tooltip">Smartbar action</string>

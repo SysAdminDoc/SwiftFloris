@@ -47,14 +47,33 @@ internal class AutoCommitSuppression {
         if (!accepted.matchesCursor(textBeforeSelection, cursorPosition)) {
             return false
         }
-        rejectedAutoCommit = RejectedAutoCommit(
+        rememberRejected(
             original = accepted.original,
             corrected = accepted.corrected,
             wordStart = accepted.wordStart,
         )
-        lastRejectedPair = AutoCommitCorrectionPair(
-            original = accepted.original,
-            corrected = accepted.corrected,
+        acceptedAutoCommit = null
+        return true
+    }
+
+    fun rejectAccepted(
+        originalText: CharSequence,
+        correctedText: CharSequence,
+        wordStart: Int?,
+    ): Boolean {
+        val original = normalizeWord(originalText) ?: return false
+        val corrected = normalizeWord(correctedText) ?: return false
+        if (original == corrected) return false
+        val accepted = acceptedAutoCommit
+        if (accepted != null &&
+            (accepted.original != original || accepted.corrected != corrected || !accepted.isSameWordSlot(wordStart))
+        ) {
+            return false
+        }
+        rememberRejected(
+            original = original,
+            corrected = corrected,
+            wordStart = wordStart,
         )
         acceptedAutoCommit = null
         return true
@@ -132,6 +151,22 @@ internal class AutoCommitSuppression {
         }
     }
 
+    private fun rememberRejected(
+        original: String,
+        corrected: String,
+        wordStart: Int?,
+    ) {
+        rejectedAutoCommit = RejectedAutoCommit(
+            original = original,
+            corrected = corrected,
+            wordStart = wordStart,
+        )
+        lastRejectedPair = AutoCommitCorrectionPair(
+            original = original,
+            corrected = corrected,
+        )
+    }
+
     private fun AcceptedAutoCommit.matchesCursor(
         textBeforeSelection: CharSequence,
         cursorPosition: Int?,
@@ -150,7 +185,11 @@ internal class AutoCommitSuppression {
         val corrected: String,
         val correctedDisplayLength: Int,
         val wordStart: Int?,
-    )
+    ) {
+        fun isSameWordSlot(currentWordStart: Int?): Boolean {
+            return wordStart == null || currentWordStart == null || wordStart == currentWordStart
+        }
+    }
 
     private data class RejectedAutoCommit(
         val original: String,

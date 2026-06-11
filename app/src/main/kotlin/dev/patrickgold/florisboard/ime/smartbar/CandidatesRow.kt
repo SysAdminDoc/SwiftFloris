@@ -65,6 +65,7 @@ import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
@@ -342,6 +343,7 @@ private fun CandidateItem(
     val candidateSemanticLabel = SmartbarAccessibilityLabels.candidateLabel(
         template = stringRes(
             when {
+                candidate is AutoCommitUndoSuggestionCandidate -> R.string.a11y__candidate__autocorrect_undo
                 candidate is ClipboardSuggestionCandidate -> R.string.a11y__candidate__clipboard
                 candidate.isEligibleForAutoCommit -> R.string.a11y__candidate__autocorrect
                 else -> R.string.a11y__candidate__suggestion
