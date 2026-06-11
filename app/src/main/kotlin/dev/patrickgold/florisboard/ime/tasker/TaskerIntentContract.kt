@@ -86,18 +86,34 @@ object TaskerIntentContract {
     fun validate(action: String, extras: Map<String, Any?>): ValidationResult {
         return when (action) {
             InsertText.ACTION -> {
+                val unexpected = rejectUnexpectedExtras(
+                    extras,
+                    allowed = setOf(InsertText.EXTRA_TEXT, InsertText.EXTRA_APPEND_SPACE),
+                )
+                if (unexpected != null) return unexpected
                 val text = extras[InsertText.EXTRA_TEXT] as? String
+                val appendSpace = extras[InsertText.EXTRA_APPEND_SPACE]
                 when {
                     text == null -> ValidationResult.Reject("missing required EXTRA_TEXT")
                     text.isEmpty() -> ValidationResult.Reject("EXTRA_TEXT must not be empty")
                     text.length > MAX_INSERT_LENGTH -> ValidationResult.Reject(
                         "EXTRA_TEXT exceeds $MAX_INSERT_LENGTH chars",
                     )
+                    appendSpace != null && appendSpace !is Boolean -> ValidationResult.Reject(
+                        "EXTRA_APPEND_SPACE must be boolean when present",
+                    )
                     else -> ValidationResult.Accept
                 }
             }
-            InsertClipboard.ACTION -> ValidationResult.Accept
+            InsertClipboard.ACTION -> {
+                rejectUnexpectedExtras(extras, allowed = emptySet()) ?: ValidationResult.Accept
+            }
             SwitchLayout.ACTION -> {
+                val unexpected = rejectUnexpectedExtras(
+                    extras,
+                    allowed = setOf(SwitchLayout.EXTRA_LAYOUT_ID),
+                )
+                if (unexpected != null) return unexpected
                 val layoutId = extras[SwitchLayout.EXTRA_LAYOUT_ID] as? String
                 when {
                     layoutId == null -> ValidationResult.Reject("missing required EXTRA_LAYOUT_ID")
@@ -109,11 +125,19 @@ object TaskerIntentContract {
                 }
             }
             TriggerVoice.ACTION -> {
-                val mode = extras[TriggerVoice.EXTRA_MODE] as? String
-                if (mode != null && mode !in setOf("dictation", "command")) {
-                    ValidationResult.Reject("EXTRA_MODE must be 'dictation' or 'command'")
-                } else {
-                    ValidationResult.Accept
+                val unexpected = rejectUnexpectedExtras(
+                    extras,
+                    allowed = setOf(TriggerVoice.EXTRA_MODE),
+                )
+                if (unexpected != null) return unexpected
+                val rawMode = extras[TriggerVoice.EXTRA_MODE]
+                when {
+                    rawMode == null -> ValidationResult.Accept
+                    rawMode !is String -> ValidationResult.Reject("EXTRA_MODE must be a string")
+                    rawMode !in VOICE_MODES -> ValidationResult.Reject(
+                        "EXTRA_MODE must be 'dictation' or 'command'",
+                    )
+                    else -> ValidationResult.Accept
                 }
             }
             else -> ValidationResult.Reject("unknown SwiftFloris Tasker action: $action")
@@ -124,6 +148,18 @@ object TaskerIntentContract {
     const val MAX_INSERT_LENGTH: Int = 4096
 
     private val LAYOUT_ID_REGEX = Regex("^[a-z0-9_]{1,32}$")
+    private val VOICE_MODES = setOf("dictation", "command")
+
+    private fun rejectUnexpectedExtras(
+        extras: Map<String, Any?>,
+        allowed: Set<String>,
+    ): ValidationResult.Reject? {
+        val unexpected = extras.keys - allowed
+        if (unexpected.isEmpty()) return null
+        return ValidationResult.Reject(
+            "unexpected Tasker extras: ${unexpected.sorted().joinToString()}",
+        )
+    }
 }
 
 sealed class ValidationResult {
