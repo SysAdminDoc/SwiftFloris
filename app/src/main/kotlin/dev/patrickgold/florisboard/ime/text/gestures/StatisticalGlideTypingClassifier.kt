@@ -206,25 +206,46 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     )
 
     override fun getSuggestions(maxSuggestionCount: Int, gestureCompleted: Boolean): List<String> {
-        val subtype = currentSubtype ?: return emptyList()
         // Snapshot the gesture once under the lock; the lookup, the classification,
         // and the cache put all operate on this one consistent clone, so a
         // concurrent addGesturePoint() can't tear the read mid-classification.
         val snapshot = synchronized(gestureLock) { gesture.clone() }
+        return getSuggestionsForSnapshot(snapshot, maxSuggestionCount)
+    }
+
+    /**
+     * Classifies a pre-taken gesture snapshot (see [snapshotAndClear]).
+     * Word-boundary commits must use this with a snapshot taken at the
+     * boundary so the continuing trace cannot leak into the classification.
+     */
+    fun getSuggestionsForSnapshot(snapshot: Gesture, maxSuggestionCount: Int): List<String> {
+        val subtype = currentSubtype ?: return emptyList()
         val key = SuggestionCacheKey(snapshot, maxSuggestionCount, subtype)
         return when (val cached = lruSuggestionCache.get(key)) {
             null -> {
                 val suggestions = unCachedGetSuggestions(snapshot, maxSuggestionCount)
-                lruSuggestionCache.put(
-                    SuggestionCacheKey(snapshot, maxSuggestionCount, subtype),
-                    suggestions,
-                )
-
+                lruSuggestionCache.put(key, suggestions)
                 suggestions
             }
             else -> {
                 cached
             }
+        }
+    }
+
+    /**
+     * Atomically snapshots the current user gesture and resets it for the next
+     * trace. Flow-through-space and rapid consecutive glides require this to
+     * happen synchronously at the word boundary: deferring either the snapshot
+     * or the clear to the async classification job lets the next word's points
+     * leak into this word's classification and wipes the head of the next
+     * word's trace.
+     */
+    fun snapshotAndClear(): Gesture {
+        return synchronized(gestureLock) {
+            val snapshot = gesture.clone()
+            gesture.clear()
+            snapshot
         }
     }
 
