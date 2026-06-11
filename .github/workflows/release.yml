@@ -74,6 +74,9 @@ jobs:
             exit 1
           fi
 
+      - name: Verify baseline profile was refreshed
+        run: bash scripts/check-baseline-profile-freshness.sh
+
       - name: Verify NOTICE / LICENSES attributions present
         run: |
           test -f NOTICE || (echo "NOTICE missing"; exit 1)
