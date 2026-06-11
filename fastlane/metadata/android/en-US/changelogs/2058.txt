@@ -1,0 +1,1 @@
+First-run setup now summarizes SwiftFloris privacy posture in one place, including no Internet permission, local storage, explicit import/export, and build verification cues.
