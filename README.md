@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.1-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.0 | Privacy posture |
+| Area | What's in v1.9.1 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -52,7 +52,7 @@
 | **Addon packs** | Addon manifest/enumerator contracts, IME-startup registry reconciliation, Settings -> Addons status/rescan, explicit trust for non-co-signed addons, trust reset/changed-certificate controls, dictionary-pack catalog details, persisted signing-certificate pins, descriptor validation, provenance reports, typed dictionary-pack catalog, and addon APK dictionary asset mounting | No-network addon rejection |
 | **Settings UX** | Five-bucket Settings home (Typing experience, Personalization, Privacy & data, Advanced, About), global Settings search with accent-insensitive matching, first-open focus, clear action, Search IME action, no-results path back to all settings, synonym hits for dark theme, haptic, trace, punctuation, and privacy queries, result-list scroll reset, TalkBack labels/live result-status/result-row context, and one-shot dismissible destination highlights; clearer empty states for voice setup, selected user-dictionary languages, extension categories, language packs, filtered clipboard history, and theme-manager recovery; user-dictionary back feedback during active save/delete/import/export work; surfaced keyboard preview field with ready/active state feedback | Local UI only |
 | **Migration** | First-run local dictionary import hint; preview-before-save personal dictionary imports with row exclusion; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
-| **Sync scaffold** | Transport-neutral personal-dictionary sync model with QR pairing payloads, X25519/AES-GCM sealed-box v1 envelope constants, deterministic fixed-key vectors, and CRDT merge tests | No network; user-chosen local transport |
+| **Sync scaffold** | Transport-neutral personal-dictionary sync model with QR pairing payloads, X25519/AES-GCM sealed-box v1 envelopes, CRDT merge tests, persisted sync identity, and Settings export/import actions for manual JSON files or picked local SAF folders | No network; user-chosen local file channel |
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
@@ -286,6 +286,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.1** (2026-06-11) — Settings -> Sync now exports sealed personal-dictionary sync files to a picked SAF folder or manual JSON document, imports paired-device envelopes back into the local dictionary with insert/update/delete application, and surfaces progress, success, no-op, and failure states without adding network permissions.
 - **v1.9.0** (2026-06-11) — SwiftFloris now installs under its own application ID `io.github.sysadmindoc.swiftfloris`, ending the install collision with upstream FlorisBoard and unblocking F-Droid inclusion. One-time reinstall with backup/restore data carry-over (old-ID and upstream backups accepted as same-vendor); addon/MCP/Tasker action+permission namespaces moved with it; Obtainium link updated. See *Upgrading from v1.8.x* above.
 - **v1.8.248** (2026-06-11) — Password/PIN fields no longer run word suggestions or spacebar autocorrect (which could silently append a "correction" into masked input); precise delete/select swipes no longer crash mid mass-selection; personal next-word learning no longer pairs words across apps/fields; the suggestion-removal prompt and pinned emoji chips now follow the keyboard theme; missing TalkBack labels and translatable strings added across the IME and editors; MCP daemon discovery/binding manifest entries fixed; What's-new and GitHub Release notes now source from the tracked fastlane changelogs.
 - **v1.8.247** (2026-06-05) — Manual subtype switching by id now treats stale chooser ids as no-ops instead of risking a forced-null crash.
@@ -477,7 +478,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.8.247** (2026-06-05). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.1** (2026-06-11). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
