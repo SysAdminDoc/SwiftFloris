@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.media.emoji.Emoji
+import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 
 /**
@@ -127,6 +128,19 @@ data class AutoCommitUndoSuggestionCandidate(
     override val isEligibleForAutoCommit: Boolean = false
     override val isEligibleForUserRemoval: Boolean = false
     override val icon: ImageVector? = null
+}
+
+data class LearnedWordForgetSuggestionCandidate(
+    val word: String,
+    val locale: FlorisLocale,
+) : SuggestionCandidate {
+    override val text: CharSequence = word
+    override val secondaryText: CharSequence? = null
+    override val confidence: Double = 1.0
+    override val isEligibleForAutoCommit: Boolean = false
+    override val isEligibleForUserRemoval: Boolean = false
+    override val icon: ImageVector? = null
+    override val sourceProvider: SuggestionProvider? = null
 }
 
 /**
