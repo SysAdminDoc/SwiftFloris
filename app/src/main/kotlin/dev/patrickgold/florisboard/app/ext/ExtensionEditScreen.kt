@@ -151,11 +151,12 @@ fun ExtensionEditScreen(id: String, createSerialType: String?) {
         }
     }
 
+    val defaultThemeTitle = stringRes(R.string.ext__editor__default_theme_title)
     val ext = extensionManager.getExtensionById(id) ?: remember {
         val meta = ExtensionMeta(
             id = ExtensionDefaults.createLocalId("themes", System.currentTimeMillis().toString()),
             version = "0.0.0",
-            title = "My themes",
+            title = defaultThemeTitle,
             maintainers = listOf(ExtensionMaintainer(name = "Local")),
             license = "(none specified)",
         )
@@ -353,6 +354,7 @@ private fun EditScreen(
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringRes(R.string.action__back),
             enabled = ThemeExtensionTrustStatePolicy.canLeaveEditor(isSaveInProgress),
         )
     }
@@ -581,6 +583,7 @@ private fun ManageMetaDataScreen(
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.Default.Close,
+            contentDescription = stringRes(R.string.action__close),
         )
     }
 
@@ -683,6 +686,7 @@ private fun ManageDependenciesScreen(workspace: CacheManager.ExtEditorWorkspace<
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.Default.Close,
+            contentDescription = stringRes(R.string.action__close),
         )
     }
 
@@ -861,6 +865,7 @@ private fun <T : ExtensionComponent> CreateComponentScreen(
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.Default.Close,
+            contentDescription = stringRes(R.string.action__close),
         )
     }
 
