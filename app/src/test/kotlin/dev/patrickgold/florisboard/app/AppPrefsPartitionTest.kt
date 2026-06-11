@@ -221,7 +221,7 @@ spelling__use_contacts	b	true
 spelling__use_udm_entries	b	true
 sticker__user_folder_uri	s	<empty>
 suggestion__api30_inline_suggestions_enabled	b	true
-suggestion__block_possibly_offensive	b	true
+suggestion__block_possibly_offensive	b	false
 suggestion__display_mode	s	CLASSIC
 suggestion__enable_floris_user_dictionary	b	true
 suggestion__enable_system_user_dictionary	b	true
