@@ -1,0 +1,1 @@
+Leave "Block possibly offensive words" off by default for new installs.

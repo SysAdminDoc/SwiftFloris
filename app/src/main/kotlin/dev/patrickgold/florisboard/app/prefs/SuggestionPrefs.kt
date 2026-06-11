@@ -85,7 +85,7 @@ open class SuggestionPrefs : PreferenceModel() {
     )
     val blockPossiblyOffensive = boolean(
         key = "suggestion__block_possibly_offensive",
-        default = true,
+        default = false,
     )
     val incognitoMode = enum(
         key = "suggestion__incognito_mode",
