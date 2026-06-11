@@ -385,6 +385,32 @@
     <string name="settings__sync__pairing_invalid" comment="Sync toast">Could not read that pairing payload.</string>
     <string name="settings__sync__pairing_requires_android_13" comment="Sync toast">Pairing requires Android 13 or newer.</string>
     <string name="settings__sync__scanner_missing" comment="Sync toast">Scanner app not found. Paste the payload manually.</string>
+    <string name="settings__sync__group_actions" comment="Sync settings group title">Dictionary sync</string>
+    <string name="settings__sync__export_now" comment="Sync export action">Export sync file</string>
+    <string name="settings__sync__export_now_summary" comment="Sync export action summary">Seal this device\'s personal dictionary for paired devices and write it to the selected file channel.</string>
+    <string name="settings__sync__import_now" comment="Sync import action">Import sync file</string>
+    <string name="settings__sync__import_now_summary" comment="Sync import action summary">Open a peer sync envelope, merge changes, and apply inserts, updates, and tombstones to this device.</string>
+    <string name="settings__sync__choose_manual_export_target" comment="Sync manual export target action">Choose manual export target</string>
+    <string name="settings__sync__export_in_progress" comment="Sync export progress title">Exporting dictionary sync file</string>
+    <string name="settings__sync__export_in_progress_summary" comment="Sync export progress summary">Reading the local dictionary, sealing it for paired devices, and writing the selected file channel.</string>
+    <string name="settings__sync__import_in_progress" comment="Sync import progress title">Importing dictionary sync file</string>
+    <string name="settings__sync__import_in_progress_summary" comment="Sync import progress summary">Opening the envelope for this device, merging CRDT state, and applying dictionary changes locally.</string>
+    <string name="settings__sync__export_success" comment="Sync export success title">Sync file exported</string>
+    <string name="settings__sync__export_success_summary" comment="Sync export success summary">{count} personal dictionary entries were sealed for paired devices.</string>
+    <string name="settings__sync__export_success_summary_fallback" comment="Sync export success fallback summary">The selected sync file was updated.</string>
+    <string name="settings__sync__import_success" comment="Sync import success title">Sync file imported</string>
+    <string name="settings__sync__import_success_summary" comment="Sync import success summary">Applied {inserted} inserts, {updated} updates, and {deleted} deletes.</string>
+    <string name="settings__sync__import_success_summary_fallback" comment="Sync import success fallback summary">The selected sync file was merged into this device.</string>
+    <string name="settings__sync__transfer_failure" comment="Sync transfer failure title">Sync file could not be processed</string>
+    <string name="settings__sync__transfer_failure_summary" comment="Sync transfer failure summary">No dictionary data changed. {error_message}</string>
+    <string name="settings__sync__export_success_toast" comment="Sync export toast">Sync file exported.</string>
+    <string name="settings__sync__import_success_toast" comment="Sync import toast">Sync file imported.</string>
+    <string name="settings__sync__import_no_changes_toast" comment="Sync import no-op toast">Sync file already matches this device.</string>
+    <string name="settings__sync__missing_target_toast" comment="Sync missing file target toast">Choose a local folder or manual export file first.</string>
+    <string name="settings__sync__needs_pairing_toast" comment="Sync missing pairing toast">Pair another device before syncing dictionaries.</string>
+    <string name="settings__sync__open_failed_toast" comment="Sync failed open toast">Could not open a valid sync envelope for this device.</string>
+    <string name="settings__sync__unsupported_toast" comment="Sync unsupported platform toast">Dictionary sync requires Android 13 or newer.</string>
+    <string name="settings__sync__unknown_error" comment="Sync unknown error text">Unknown sync error.</string>
     <string name="enum__voice_recognition_engine_preference__auto" comment="Voice recognition engine preference option">Auto</string>
     <string name="enum__voice_recognition_engine_preference__auto__description" comment="Voice recognition engine preference description">Use the external voice keyboard until the preview local Whisper and Vosk runtime ships.</string>
     <string name="enum__voice_recognition_engine_preference__embedded_whisper" comment="Voice recognition engine preference option">Embedded Whisper</string>

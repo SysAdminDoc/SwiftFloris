@@ -21,6 +21,8 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.provider.DocumentsContract
+import android.provider.DocumentsContract.Document
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -42,8 +44,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.QrCode2
+import androidx.compose.material.icons.filled.Smartphone
+import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
@@ -68,10 +73,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDevice
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDeviceList
 import dev.patrickgold.florisboard.ime.sync.PairingPayload
 import dev.patrickgold.florisboard.ime.sync.PairingPayloadGenerator
+import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySync
+import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySyncDaoApplier
 import dev.patrickgold.florisboard.ime.sync.SyncChannel
 import dev.patrickgold.florisboard.ime.sync.SyncIdentityStore
 import dev.patrickgold.florisboard.ime.sync.SyncQrCode
@@ -81,8 +89,15 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
+import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
+import java.io.FileNotFoundException
 import java.util.UUID
 
 @Composable
@@ -93,6 +108,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val dictionaryManager = remember { DictionaryManager.default() }
 
     val channelId by prefs.sync.channelId.collectAsState()
     val clusterId by prefs.sync.clusterId.collectAsState()
@@ -105,6 +121,12 @@ fun SyncSettingsScreen() = FlorisScreen {
     var syncthingDialogVisible by rememberSaveable { mutableStateOf(false) }
     var scannedPayloadDialogVisible by rememberSaveable { mutableStateOf(false) }
     var generatedPayload by rememberSaveable { mutableStateOf<String?>(null) }
+    var syncTransferNotice by rememberSaveable { mutableStateOf(SyncTransferNotice.None) }
+    var syncTransferError by rememberSaveable { mutableStateOf<String?>(null) }
+    var syncExportedCount by rememberSaveable { mutableStateOf<Int?>(null) }
+    var syncImportedInsertCount by rememberSaveable { mutableStateOf<Int?>(null) }
+    var syncImportedUpdateCount by rememberSaveable { mutableStateOf<Int?>(null) }
+    var syncImportedDeleteCount by rememberSaveable { mutableStateOf<Int?>(null) }
 
     val folderPickedText = stringRes(R.string.settings__sync__folder_selected)
     val manualExportPickedText = stringRes(R.string.settings__sync__manual_export_target_selected)
@@ -113,9 +135,32 @@ fun SyncSettingsScreen() = FlorisScreen {
     val scannerMissingText = stringRes(R.string.settings__sync__scanner_missing)
     val pairingUnsupportedText = stringRes(R.string.settings__sync__pairing_requires_android_13)
     val manualExportDefaultSummary = stringRes(R.string.settings__sync__channel_manual_export_summary)
+    val syncExportedText = stringRes(R.string.settings__sync__export_success_toast)
+    val syncImportedText = stringRes(R.string.settings__sync__import_success_toast)
+    val syncNoChangesText = stringRes(R.string.settings__sync__import_no_changes_toast)
+    val syncMissingTargetText = stringRes(R.string.settings__sync__missing_target_toast)
+    val syncNeedsPairingText = stringRes(R.string.settings__sync__needs_pairing_toast)
+    val syncOpenFailedText = stringRes(R.string.settings__sync__open_failed_toast)
+    val syncUnsupportedText = stringRes(R.string.settings__sync__unsupported_toast)
+    val syncUnknownError = stringRes(R.string.settings__sync__unknown_error)
 
     fun setChannel(channel: SyncChannel) {
         scope.launch { prefs.sync.channelId.set(channel.channelId) }
+    }
+
+    fun clearTransferNotice() {
+        syncTransferNotice = SyncTransferNotice.None
+        syncTransferError = null
+        syncExportedCount = null
+        syncImportedInsertCount = null
+        syncImportedUpdateCount = null
+        syncImportedDeleteCount = null
+    }
+
+    fun failTransfer(message: String, error: Throwable? = null) {
+        syncTransferNotice = SyncTransferNotice.Failure
+        syncTransferError = error?.localizedMessage ?: error?.message ?: message
+        Toast.makeText(context, message, Toast.LENGTH_LONG).show()
     }
 
     fun receivePayload(rawPayload: String) {
@@ -130,6 +175,172 @@ fun SyncSettingsScreen() = FlorisScreen {
             prefs.sync.channelId.set(payload.syncChannelId)
         }
         Toast.makeText(context, pairingReceivedText, Toast.LENGTH_SHORT).show()
+    }
+
+    fun resolveLocalFolderSyncFileUri(channel: SyncChannel.LocalFolder, create: Boolean): Uri? {
+        val treeUri = Uri.parse(channel.absolutePath)
+        val treeDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
+        val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeDocumentId)
+        val projection = arrayOf(
+            Document.COLUMN_DOCUMENT_ID,
+            Document.COLUMN_DISPLAY_NAME,
+            Document.COLUMN_MIME_TYPE,
+        )
+        context.contentResolver.query(childrenUri, projection, null, null, null)?.use { cursor ->
+            val idCol = cursor.getColumnIndex(Document.COLUMN_DOCUMENT_ID)
+            val nameCol = cursor.getColumnIndex(Document.COLUMN_DISPLAY_NAME)
+            val mimeCol = cursor.getColumnIndex(Document.COLUMN_MIME_TYPE)
+            while (cursor.moveToNext()) {
+                val name = cursor.getStringOrNull(nameCol)
+                val mime = cursor.getStringOrNull(mimeCol)
+                if (name == SYNC_FILE_NAME && mime != Document.MIME_TYPE_DIR) {
+                    val documentId = cursor.getStringOrNull(idCol) ?: return null
+                    return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+                }
+            }
+        }
+        if (!create) return null
+        return DocumentsContract.createDocument(
+            context.contentResolver,
+            DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocumentId),
+            SYNC_FILE_MIME_TYPE,
+            SYNC_FILE_NAME,
+        )
+    }
+
+    fun writeSyncJsonToUri(uri: Uri, json: String) {
+        val stream = context.contentResolver.openOutputStream(uri, "wt")
+            ?: throw FileNotFoundException(uri.toString())
+        stream.use { it.write(json.toByteArray(Charsets.UTF_8)) }
+    }
+
+    fun readSyncJsonFromUri(uri: Uri): String {
+        val stream = context.contentResolver.openInputStream(uri)
+            ?: throw FileNotFoundException(uri.toString())
+        return stream.use { it.readBytes().toString(Charsets.UTF_8) }
+    }
+
+    suspend fun exportSyncSnapshot(targetUri: Uri) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            failTransfer(syncUnsupportedText)
+            return
+        }
+        if (pairedDevices.isEmpty()) {
+            failTransfer(syncNeedsPairingText)
+            return
+        }
+        val dao = dictionaryManager.florisUserDictionaryDao()
+        if (dao == null) {
+            failTransfer(syncOpenFailedText)
+            return
+        }
+        val resolvedClusterId = clusterId.ifBlank { UUID.randomUUID().toString() }
+        val resolvedDeviceId = deviceId.ifBlank { UUID.randomUUID().toString() }
+        val identity = SyncIdentityStore.getOrCreate(context, resolvedDeviceId)
+        if (identity == null) {
+            failTransfer(syncUnsupportedText)
+            return
+        }
+        syncTransferNotice = SyncTransferNotice.Exporting
+        syncTransferError = null
+        syncExportedCount = null
+        runCatching {
+            val exportedCount = withContext(Dispatchers.IO) {
+                val words = PersonalDictionarySyncDaoApplier.snapshot(dao)
+                val state = PersonalDictionarySync.reconcileLocalState(
+                    previous = SyncIdentityStore.loadLocalState(context),
+                    words = words,
+                    deviceId = resolvedDeviceId,
+                    nowMillis = System.currentTimeMillis(),
+                )
+                val file = PersonalDictionarySync.sealEnvelopes(
+                    state = state,
+                    clusterId = resolvedClusterId,
+                    recipients = pairedDevices.filterNot { it.deviceId == resolvedDeviceId },
+                    nowMillis = System.currentTimeMillis(),
+                )
+                if (file.envelopes.isEmpty()) {
+                    throw IllegalStateException(syncNeedsPairingText)
+                }
+                writeSyncJsonToUri(targetUri, file.serializeToString())
+                check(SyncIdentityStore.saveLocalState(context, state)) { syncOpenFailedText }
+                words.size
+            }
+            if (clusterId.isBlank()) prefs.sync.clusterId.set(resolvedClusterId)
+            if (deviceId.isBlank()) prefs.sync.deviceId.set(resolvedDeviceId)
+            syncTransferNotice = SyncTransferNotice.ExportSuccess
+            syncExportedCount = exportedCount
+            Toast.makeText(context, syncExportedText, Toast.LENGTH_SHORT).show()
+        }.onFailure { error ->
+            failTransfer(error.localizedMessage ?: syncOpenFailedText, error)
+        }
+    }
+
+    suspend fun importSyncSnapshot(sourceUri: Uri) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) {
+            failTransfer(syncUnsupportedText)
+            return
+        }
+        val resolvedClusterId = clusterId.ifBlank {
+            failTransfer(syncNeedsPairingText)
+            return
+        }
+        val resolvedDeviceId = deviceId.ifBlank {
+            failTransfer(syncNeedsPairingText)
+            return
+        }
+        val dao = dictionaryManager.florisUserDictionaryDao()
+        if (dao == null) {
+            failTransfer(syncOpenFailedText)
+            return
+        }
+        val identity = SyncIdentityStore.getOrCreate(context, resolvedDeviceId)
+        if (identity == null) {
+            failTransfer(syncUnsupportedText)
+            return
+        }
+        syncTransferNotice = SyncTransferNotice.Importing
+        syncTransferError = null
+        syncImportedInsertCount = null
+        syncImportedUpdateCount = null
+        syncImportedDeleteCount = null
+        runCatching {
+            val result = withContext(Dispatchers.IO) {
+                val rawJson = readSyncJsonFromUri(sourceUri)
+                val imported = PersonalDictionarySync.openEnvelopeFor(
+                    rawFileJson = rawJson,
+                    myDeviceId = resolvedDeviceId,
+                    expectedClusterId = resolvedClusterId,
+                    recipientKeyPair = identity.keyPair,
+                ) ?: throw IllegalArgumentException(syncOpenFailedText)
+                val words = PersonalDictionarySyncDaoApplier.snapshot(dao)
+                val localState = PersonalDictionarySync.reconcileLocalState(
+                    previous = SyncIdentityStore.loadLocalState(context),
+                    words = words,
+                    deviceId = resolvedDeviceId,
+                    nowMillis = System.currentTimeMillis(),
+                )
+                val plan = PersonalDictionarySync.planImport(
+                    localState = localState,
+                    imported = imported,
+                    currentWords = words,
+                )
+                val applyResult = PersonalDictionarySyncDaoApplier.apply(plan, dao)
+                check(SyncIdentityStore.saveLocalState(context, plan.newState)) { syncOpenFailedText }
+                applyResult
+            }
+            syncTransferNotice = SyncTransferNotice.ImportSuccess
+            syncImportedInsertCount = result.insertedCount
+            syncImportedUpdateCount = result.updatedCount
+            syncImportedDeleteCount = result.deletedCount
+            Toast.makeText(
+                context,
+                if (result.isNoOp) syncNoChangesText else syncImportedText,
+                Toast.LENGTH_SHORT,
+            ).show()
+        }.onFailure { error ->
+            failTransfer(error.localizedMessage ?: syncOpenFailedText, error)
+        }
     }
 
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
@@ -190,6 +401,14 @@ fun SyncSettingsScreen() = FlorisScreen {
         }
     }
 
+    val manualImportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        if (uri != null) {
+            scope.launch { importSyncSnapshot(uri) }
+        }
+    }
+
     val scanLauncher = rememberLauncherForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
             val raw = result.data?.getStringExtra(ZXING_SCAN_RESULT).orEmpty()
@@ -245,6 +464,66 @@ fun SyncSettingsScreen() = FlorisScreen {
     }
 
     content {
+        SyncTransferStatusCard(
+            notice = syncTransferNotice,
+            exportedCount = syncExportedCount,
+            importedInsertCount = syncImportedInsertCount,
+            importedUpdateCount = syncImportedUpdateCount,
+            importedDeleteCount = syncImportedDeleteCount,
+            errorMessage = syncTransferError ?: syncUnknownError,
+            onDismiss = { clearTransferNotice() },
+        )
+
+        PreferenceGroup(title = stringRes(R.string.settings__sync__group_actions)) {
+            Preference(
+                icon = Icons.Outlined.FileUpload,
+                title = stringRes(R.string.settings__sync__export_now),
+                summary = stringRes(R.string.settings__sync__export_now_summary),
+                onClick = {
+                    val target = when (val channel = activeChannel) {
+                        is SyncChannel.LocalFolder -> runCatching {
+                            resolveLocalFolderSyncFileUri(channel, create = true)
+                        }.getOrNull()
+                        SyncChannel.ManualExport -> manualExportTargetUri
+                            .takeIf { it.isNotBlank() }
+                            ?.let { Uri.parse(it) }
+                        else -> null
+                    }
+                    if (target == null) {
+                        failTransfer(syncMissingTargetText)
+                    } else {
+                        scope.launch { exportSyncSnapshot(target) }
+                    }
+                },
+            )
+            Preference(
+                icon = Icons.Outlined.FileDownload,
+                title = stringRes(R.string.settings__sync__import_now),
+                summary = stringRes(R.string.settings__sync__import_now_summary),
+                onClick = {
+                    when (val channel = activeChannel) {
+                        is SyncChannel.LocalFolder -> {
+                            val source = runCatching {
+                                resolveLocalFolderSyncFileUri(channel, create = false)
+                            }.getOrNull()
+                            if (source == null) {
+                                failTransfer(syncMissingTargetText)
+                            } else {
+                                scope.launch { importSyncSnapshot(source) }
+                            }
+                        }
+                        else -> manualImportLauncher.launch(arrayOf(SYNC_FILE_MIME_TYPE, "application/json", "text/json"))
+                    }
+                },
+            )
+            Preference(
+                icon = Icons.Default.Sync,
+                title = stringRes(R.string.settings__sync__choose_manual_export_target),
+                summary = manualExportTargetUri.ifBlank { manualExportDefaultSummary },
+                onClick = { manualExportLauncher.launch(SYNC_FILE_NAME) },
+            )
+        }
+
         PreferenceGroup(title = stringRes(R.string.settings__sync__group_channel)) {
             SyncChannelPreference(
                 selected = activeChannel is SyncChannel.Syncthing,
@@ -262,7 +541,7 @@ fun SyncSettingsScreen() = FlorisScreen {
                 selected = activeChannel is SyncChannel.ManualExport,
                 title = stringRes(R.string.settings__sync__channel_manual_export),
                 summary = manualExportTargetUri.ifBlank { manualExportDefaultSummary },
-                onClick = { manualExportLauncher.launch("swiftfloris-sync.json") },
+                onClick = { manualExportLauncher.launch(SYNC_FILE_NAME) },
             )
             SyncChannelPreference(
                 selected = activeChannel is SyncChannel.Disabled,
@@ -336,6 +615,70 @@ fun SyncSettingsScreen() = FlorisScreen {
                 scannedPayloadDialogVisible = false
                 receivePayload(raw)
             },
+        )
+    }
+}
+
+@Composable
+private fun SyncTransferStatusCard(
+    notice: SyncTransferNotice,
+    exportedCount: Int?,
+    importedInsertCount: Int?,
+    importedUpdateCount: Int?,
+    importedDeleteCount: Int?,
+    errorMessage: String,
+    onDismiss: () -> Unit,
+) {
+    when (notice) {
+        SyncTransferNotice.None -> Unit
+        SyncTransferNotice.Exporting -> FlorisProgressCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.settings__sync__export_in_progress),
+            secondaryText = stringRes(R.string.settings__sync__export_in_progress_summary),
+        )
+        SyncTransferNotice.Importing -> FlorisProgressCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.settings__sync__import_in_progress),
+            secondaryText = stringRes(R.string.settings__sync__import_in_progress_summary),
+        )
+        SyncTransferNotice.ExportSuccess -> FlorisSuccessCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.settings__sync__export_success),
+            secondaryText = exportedCount?.let { count ->
+                stringRes(R.string.settings__sync__export_success_summary, "count" to count)
+            } ?: stringRes(R.string.settings__sync__export_success_summary_fallback),
+            actionLabel = stringRes(R.string.action__ok),
+            onClick = onDismiss,
+        )
+        SyncTransferNotice.ImportSuccess -> FlorisSuccessCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.settings__sync__import_success),
+            secondaryText = if (
+                importedInsertCount != null &&
+                importedUpdateCount != null &&
+                importedDeleteCount != null
+            ) {
+                stringRes(
+                    R.string.settings__sync__import_success_summary,
+                    "inserted" to importedInsertCount,
+                    "updated" to importedUpdateCount,
+                    "deleted" to importedDeleteCount,
+                )
+            } else {
+                stringRes(R.string.settings__sync__import_success_summary_fallback)
+            },
+            actionLabel = stringRes(R.string.action__ok),
+            onClick = onDismiss,
+        )
+        SyncTransferNotice.Failure -> FlorisErrorCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.settings__sync__transfer_failure),
+            secondaryText = stringRes(
+                R.string.settings__sync__transfer_failure_summary,
+                "error_message" to errorMessage,
+            ),
+            actionLabel = stringRes(R.string.action__ok),
+            onClick = onDismiss,
         )
     }
 }
@@ -489,3 +832,18 @@ private const val ZXING_SCAN_ACTION = "com.google.zxing.client.android.SCAN"
 private const val ZXING_SCAN_MODE = "SCAN_MODE"
 private const val ZXING_QR_CODE_MODE = "QR_CODE_MODE"
 private const val ZXING_SCAN_RESULT = "SCAN_RESULT"
+private const val SYNC_FILE_NAME = "swiftfloris-dictionary-sync.json"
+private const val SYNC_FILE_MIME_TYPE = "application/json"
+
+private enum class SyncTransferNotice {
+    None,
+    Exporting,
+    Importing,
+    ExportSuccess,
+    ImportSuccess,
+    Failure,
+}
+
+private fun android.database.Cursor.getStringOrNull(index: Int): String? {
+    return if (index >= 0 && !isNull(index)) getString(index) else null
+}
