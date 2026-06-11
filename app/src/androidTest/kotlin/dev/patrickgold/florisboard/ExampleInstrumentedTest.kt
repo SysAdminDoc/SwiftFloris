@@ -31,8 +31,9 @@ import org.junit.runner.RunWith
 class ExampleInstrumentedTest {
     @Test
     fun useAppContext() {
-        // Context of the app under test.
+        // Context of the app under test. Compare against BuildConfig so the
+        // assertion holds across variant suffixes (.debug, .beta, .bench).
         val appContext = InstrumentationRegistry.getInstrumentation().targetContext
-        assertEquals("dev.patrickgold.florisboard", appContext.packageName)
+        assertEquals(BuildConfig.APPLICATION_ID, appContext.packageName)
     }
 }

@@ -97,7 +97,16 @@ configure<ApplicationExtension> {
     }
 
     defaultConfig {
-        applicationId = "dev.patrickgold.florisboard"
+        // ROADMAP P1 (2026-06-11) — SwiftFloris-owned application ID
+        // (io.github.* per F-Droid inclusion policy for GitHub-hosted
+        // projects without a controlled domain). The AGP `namespace` above
+        // intentionally stays dev.patrickgold.florisboard: it only scopes
+        // the R class and source packages, and keeping it preserves
+        // upstream cherry-pick ergonomics. Installed identity, provider
+        // authorities (${applicationId} placeholders), and the
+        // AppPackageContract action/permission namespaces all derive from
+        // this value.
+        applicationId = "io.github.sysadmindoc.swiftfloris"
         minSdk = projectMinSdk.toInt()
         targetSdk = projectTargetSdk.toInt()
         versionCode = projectVersionCode.toInt()

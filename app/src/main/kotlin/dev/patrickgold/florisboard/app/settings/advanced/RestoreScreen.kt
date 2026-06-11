@@ -38,6 +38,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.AppPackageContract
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
@@ -86,7 +87,13 @@ import org.florisboard.lib.kotlin.io.subFile
 
 object Restore {
     const val MIN_VERSION_CODE = 64
-    const val PACKAGE_NAME = "dev.patrickgold.florisboard"
+    // Both the SwiftFloris-owned ID and the pre-migration (upstream
+    // FlorisBoard) ID are accepted, so old-ID backups carry user data across
+    // the application-ID migration without a vendor warning.
+    val ACCEPTED_PACKAGE_PREFIXES = listOf(
+        AppPackageContract.BASE_APPLICATION_ID,
+        AppPackageContract.LEGACY_APPLICATION_ID,
+    )
     const val BACKUP_ARCHIVE_FILE_NAME = "backup.zip"
 }
 
@@ -143,7 +150,7 @@ fun RestoreScreen() = FlorisScreen {
                 metadata = workspace.metadata,
                 currentVersionCode = BuildConfig.VERSION_CODE,
                 minimumVersionCode = Restore.MIN_VERSION_CODE,
-                expectedPackagePrefix = Restore.PACKAGE_NAME,
+                expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
                 hasRestorableContent = BackupRestorePolicy.hasRestorableContent(
                     hasJetprefDatastore = workspace.outputDir
                         .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)

@@ -22,9 +22,22 @@ package dev.patrickgold.florisboard
  * This is intentionally the release/base ID, not [BuildConfig.APPLICATION_ID]:
  * debug, beta, and benchmark variants append suffixes but still interoperate
  * with addon and MCP fixtures that target the stable external contract.
+ *
+ * ROADMAP P1 (2026-06-11) — application-ID migration: SwiftFloris now owns
+ * `io.github.sysadmindoc.swiftfloris` (the F-Droid-recommended namespace for
+ * GitHub-hosted projects), ending the collision with upstream FlorisBoard
+ * installs. The Kotlin source packages and AGP `namespace` deliberately stay
+ * `dev.patrickgold.florisboard` — renaming 480+ files buys nothing and would
+ * destroy upstream cherry-pick ergonomics. [LEGACY_APPLICATION_ID] remains
+ * accepted on data-migration paths (backup restore).
  */
 object AppPackageContract {
-    const val BASE_APPLICATION_ID: String = "dev.patrickgold.florisboard"
+    const val BASE_APPLICATION_ID: String = "io.github.sysadmindoc.swiftfloris"
+
+    /** Pre-migration application ID (shared with upstream FlorisBoard).
+     *  Accepted for backup restore so existing users can carry their data
+     *  across the one-time reinstall. */
+    const val LEGACY_APPLICATION_ID: String = "dev.patrickgold.florisboard"
 
     const val ACTION_PREFIX: String = "$BASE_APPLICATION_ID.action."
     const val PERMISSION_PREFIX: String = "$BASE_APPLICATION_ID.permission."

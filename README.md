@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.248-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.0-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.248 | Privacy posture |
+| Area | What's in v1.9.0 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -69,7 +69,7 @@ SwiftFloris ships through GitHub Releases (canonical), and is targeted at F-Droi
 **One-tap subscribe:**
 
 ```
-obtainium://app/{"id":"dev.patrickgold.florisboard","url":"https://github.com/SysAdminDoc/SwiftFloris","author":"SysAdminDoc","name":"SwiftFloris","preferredApkIndex":0,"additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"app-release.*\\\\.apk\"}"}
+obtainium://app/{"id":"io.github.sysadmindoc.swiftfloris","url":"https://github.com/SysAdminDoc/SwiftFloris","author":"SysAdminDoc","name":"SwiftFloris","preferredApkIndex":0,"additionalSettings":"{\"includePrereleases\":false,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"app-release.*\\\\.apk\"}"}
 ```
 
 Open the link above on a device with Obtainium installed (or paste it into Obtainium's "Add app from URL" field). Obtainium will subscribe to this repository's GitHub Releases feed and auto-prompt for installs on each new tag.
@@ -94,6 +94,31 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 1. Open **Settings → System → Languages & input**.
 2. Tap **Virtual keyboard** (or **On-screen keyboard**).
 3. Select **SwiftFloris** and grant permissions as prompted.
+
+## Upgrading from v1.8.x (application-ID change)
+
+As of **v1.9.0**, SwiftFloris installs under its own application ID
+**`io.github.sysadmindoc.swiftfloris`** instead of the upstream
+`dev.patrickgold.florisboard` it inherited as a fork. This ends the install
+collision with upstream FlorisBoard and is a prerequisite for F-Droid
+inclusion. Android treats the new ID as a different app, so the upgrade is a
+**one-time reinstall with a data carry-over**:
+
+1. On your existing install, open **Settings → Advanced → Backup** and export
+   a backup archive (include the personal dictionary and any themes).
+2. Install the new APK (it can sit next to the old one — they no longer
+   conflict).
+3. In the new install, open **Settings → Advanced → Restore** and pick the
+   archive. Backups created under the old ID (and by upstream FlorisBoard)
+   are accepted as same-vendor — no warning, full personal-dictionary,
+   theme, and preference carry-over.
+4. Enable the new keyboard (see *Enable as Default Keyboard* above), then
+   uninstall the old app.
+5. **Obtainium users:** re-add the app with the subscribe link above — the
+   old subscription tracks the retired ID and will not see the new installs.
+
+Nothing leaves your device during any of this; the backup archive is a local
+file you can delete afterwards.
 
 ## Migrating from SwiftKey
 
@@ -261,6 +286,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.0** (2026-06-11) — SwiftFloris now installs under its own application ID `io.github.sysadmindoc.swiftfloris`, ending the install collision with upstream FlorisBoard and unblocking F-Droid inclusion. One-time reinstall with backup/restore data carry-over (old-ID and upstream backups accepted as same-vendor); addon/MCP/Tasker action+permission namespaces moved with it; Obtainium link updated. See *Upgrading from v1.8.x* above.
 - **v1.8.248** (2026-06-11) — Password/PIN fields no longer run word suggestions or spacebar autocorrect (which could silently append a "correction" into masked input); precise delete/select swipes no longer crash mid mass-selection; personal next-word learning no longer pairs words across apps/fields; the suggestion-removal prompt and pinned emoji chips now follow the keyboard theme; missing TalkBack labels and translatable strings added across the IME and editors; MCP daemon discovery/binding manifest entries fixed; What's-new and GitHub Release notes now source from the tracked fastlane changelogs.
 - **v1.8.247** (2026-06-05) — Manual subtype switching by id now treats stale chooser ids as no-ops instead of risking a forced-null crash.
 - **v1.8.246** (2026-06-04) — Repo hygiene now explains that module `build/` caches can survive `git rm --cached` and should be treated as local ignored output.
