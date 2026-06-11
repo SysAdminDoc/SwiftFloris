@@ -711,13 +711,17 @@ internal data class LatinDictionarySnapshot(
         }
         Trace.beginSection("swiftfloris.nlp.symspell.build")
         try {
-            SymSpellIndex.build(correctionWords).also {
+            SymSpellIndex.build(
+                words = correctionWords,
+                maxDeleteEntries = MaxCorrectionIndexDeleteEntries,
+            ).also {
                 if (shouldLogBenchmark) {
                     val durationMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
                     Log.i(
                         "SwiftFlorisPerf",
                         "swiftfloris.nlp.symspellBuildMs=$durationMs maxDistance=1 " +
-                            "wordCount=${correctionWords.size}",
+                            "wordCount=${it.indexedWordCount} complete=${it.isComplete} " +
+                            "entryCount=${it.entryCount()}",
                     )
                 }
             }
@@ -740,13 +744,18 @@ internal data class LatinDictionarySnapshot(
         }
         Trace.beginSection("swiftfloris.nlp.symspell.build")
         try {
-            SymSpellIndex.build(distanceTwoCorrectionWords, maxDistance = 2).also {
+            SymSpellIndex.build(
+                words = distanceTwoCorrectionWords,
+                maxDistance = 2,
+                maxDeleteEntries = MaxDistanceTwoCorrectionIndexDeleteEntries,
+            ).also {
                 if (shouldLogBenchmark) {
                     val durationMs = (SystemClock.elapsedRealtimeNanos() - startedAt) / 1_000_000.0
                     Log.i(
                         "SwiftFlorisPerf",
                         "swiftfloris.nlp.symspellBuildMs=$durationMs maxDistance=2 " +
-                            "wordCount=${distanceTwoCorrectionWords.size}",
+                            "wordCount=${it.indexedWordCount} complete=${it.isComplete} " +
+                            "entryCount=${it.entryCount()}",
                     )
                 }
             }
@@ -794,8 +803,10 @@ internal data class LatinDictionarySnapshot(
         private const val MaxGlideWordLength = 24
         private const val CorrectionIndexMinFrequency = 96
         private const val MaxCorrectionIndexWords = 96_000
+        private const val MaxCorrectionIndexDeleteEntries = 750_000
         private const val DistanceTwoCorrectionIndexMinFrequency = 192
         private const val MaxDistanceTwoCorrectionIndexWords = 24_000
+        private const val MaxDistanceTwoCorrectionIndexDeleteEntries = 320_000
         private const val MaxDistanceTwoCorrectionWordLength = 12
 
         val Empty = LatinDictionarySnapshot(emptyMap(), emptyList(), emptyList(), emptyList(), emptyList())

@@ -1,0 +1,1 @@
+SymSpell correction indexes now stop before crossing explicit delete-entry budgets, report partial builds in benchmark logs, and keep edit-distance-2 correction coverage bounded for IME heap safety.
