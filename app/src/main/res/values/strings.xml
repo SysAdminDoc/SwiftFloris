@@ -1208,7 +1208,7 @@
     <string name="setup__title" comment="Title of Setup">Set up {app_name}</string>
     <string name="setup__intro_message" comment="Short intro message welcoming new users">Complete these steps to enable {app_name}, choose it as your keyboard, and keep recovery options available.</string>
     <string name="setup__privacy_status_title" comment="Privacy note shown during setup">Private by default</string>
-    <string name="setup__privacy_status_summary" comment="Privacy note summary shown during setup">SwiftFloris has no Internet permission. Setup only enables the Android input method and optional recovery alerts.</string>
+    <string name="setup__privacy_status_summary" comment="Privacy note summary shown during setup">SwiftFloris has no Internet permission. Local learning, dictionaries, clipboard, and settings stay in app-private storage unless you export or import them. Use Source code below and About > Version/signing fingerprint after setup to verify the build.</string>
     <string name="setup__footer__privacy_policy" comment="Privacy policy label for URL">Privacy policy</string>
     <string name="setup__footer__repository" comment="Repository label for URL">Source code</string>
 
