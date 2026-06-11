@@ -64,6 +64,21 @@ class UserStickerRepositoryTest : FunSpec({
         pack.stickers shouldHaveSize UserStickerRepository.MaxStickers
         pack.stickers.map { it.sourceUri }.distinct() shouldHaveSize UserStickerRepository.MaxStickers
     }
+
+    test("search matches imported sticker filenames and gif documents") {
+        val pack = UserStickerRepository.packFromDocuments(
+            displayName = "Reaction GIFs",
+            documents = listOf(
+                document("content://stickers/tree/friday", "Friday_Dance-Loop.gif", "image/gif"),
+                document("content://stickers/tree/report", "quarterly-report.png", "image/png"),
+            ),
+        ).shouldNotBeNull()
+
+        StickerSearch.search(listOf(pack), "dance").map { it.displayName } shouldBe listOf("Friday_Dance-Loop.gif")
+        StickerSearch.search(listOf(pack), "loop").map { it.displayName } shouldBe listOf("Friday_Dance-Loop.gif")
+        StickerSearch.search(listOf(pack), "reaction").map { it.displayName } shouldBe
+            listOf("Friday_Dance-Loop.gif", "quarterly-report.png")
+    }
 })
 
 private fun document(

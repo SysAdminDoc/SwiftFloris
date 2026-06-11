@@ -1,0 +1,1 @@
+Sticker search now covers bundled and user-imported packs, matching local filename tokens, GIF names, generated keywords, and imported folder names without network access.
