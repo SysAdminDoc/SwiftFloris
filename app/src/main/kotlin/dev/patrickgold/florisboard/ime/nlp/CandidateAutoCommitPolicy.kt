@@ -16,9 +16,12 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
+
 internal object CandidateAutoCommitPolicy {
     fun selectAutoCommitCandidate(
         autoCorrectEnabled: Boolean,
+        keyVariation: KeyVariation,
         currentWord: String,
         currentWordStart: Int?,
         candidates: List<SuggestionCandidate>,
@@ -29,6 +32,10 @@ internal object CandidateAutoCommitPolicy {
         immediateAutoCommitCandidate: SuggestionCandidate?,
     ): SuggestionCandidate? {
         if (!autoCorrectEnabled) return null
+        // Never auto-commit into a password / PIN field. Composing is disabled
+        // there, so a commit would append after the typed text instead of
+        // replacing it — corrupting masked input the user cannot see.
+        if (keyVariation == KeyVariation.PASSWORD) return null
         if (rejectionPolicy.shouldKeepTypedLiteral(currentWord, currentWordStart)) return null
 
         firstAllowedCandidate(
@@ -58,6 +65,7 @@ internal object CandidateAutoCommitPolicy {
     fun selectSpacebarCandidate(
         autoCorrectEnabled: Boolean,
         quickPredictionInsertEnabled: Boolean,
+        keyVariation: KeyVariation,
         currentWord: String,
         currentWordStart: Int?,
         textBeforeCursor: String,
@@ -69,6 +77,9 @@ internal object CandidateAutoCommitPolicy {
         immediateAutoCommitCandidate: SuggestionCandidate?,
     ): SuggestionCandidate? {
         if (!autoCorrectEnabled && !quickPredictionInsertEnabled) return null
+        // Same password gate as selectAutoCommitCandidate: spacebar
+        // auto-commit must never rewrite masked input.
+        if (keyVariation == KeyVariation.PASSWORD) return null
         if (rejectionPolicy.shouldKeepTypedLiteral(currentWord, currentWordStart)) return null
 
         if (autoCorrectEnabled) {

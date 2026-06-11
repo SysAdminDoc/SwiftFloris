@@ -226,6 +226,7 @@ class NlpManager(context: Context) {
                 editorInfo.inputAttributes.raw,
                 editorInfo.imeOptions.raw,
             ),
+            keyVariation = keyboardManager.activeState.keyVariation,
         )
         scope.launch {
             val emojiSuggestions = when {
@@ -241,7 +242,8 @@ class NlpManager(context: Context) {
                 else -> emptyList()
             }
             val suggestionProvider = providerRegistry.suggestionProvider(subtype)
-            val suggestionsEnabled = requestPrivacy.wordSuggestionEnabled || suggestionProvider.forcesSuggestionOn
+            val suggestionsEnabled = (requestPrivacy.wordSuggestionEnabled || suggestionProvider.forcesSuggestionOn) &&
+                !requestPrivacy.isPasswordEditor
             val userDictionarySuggestions = if (suggestionsEnabled) {
                 userDictionarySuggestions(
                     subtype = subtype,
@@ -409,6 +411,7 @@ class NlpManager(context: Context) {
         val currentWordStart = content.autoCommitWordStart()
         return CandidateAutoCommitPolicy.selectAutoCommitCandidate(
             autoCorrectEnabled = prefs.correction.autoCorrect.get(),
+            keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,
             currentWordStart = currentWordStart,
             candidates = activeCandidates,
@@ -431,6 +434,7 @@ class NlpManager(context: Context) {
         return CandidateAutoCommitPolicy.selectSpacebarCandidate(
             autoCorrectEnabled = autoCorrectEnabled,
             quickPredictionInsertEnabled = quickPredictionInsertEnabled,
+            keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,
             currentWordStart = currentWordStart,
             textBeforeCursor = content.textBeforeSelection,

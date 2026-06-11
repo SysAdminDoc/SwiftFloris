@@ -27,14 +27,21 @@ internal object SuggestionPrivacyPolicy {
         blockPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
         isEditorSensitive: Boolean,
+        keyVariation: KeyVariation,
     ): SuggestionRequestPrivacySnapshot {
+        // Password / PIN fields suppress the entire candidate pipeline:
+        // composing is disabled there, so any candidate commit would append
+        // into masked input, and showing dictionary matches for a typed
+        // password prefix leaks it to shoulder surfers via the smartbar.
+        val isPasswordEditor = keyVariation == KeyVariation.PASSWORD
         return SuggestionRequestPrivacySnapshot(
-            emojiSuggestionEnabled = emojiSuggestionEnabled,
+            emojiSuggestionEnabled = emojiSuggestionEnabled && !isPasswordEditor,
             emojiMaxCandidateCount = emojiMaxCandidateCount,
-            wordSuggestionEnabled = wordSuggestionEnabled,
+            wordSuggestionEnabled = wordSuggestionEnabled && !isPasswordEditor,
             allowPossiblyOffensive = !blockPossiblyOffensive,
             isPrivateSession = isPrivateSession,
             isEditorSensitive = isEditorSensitive,
+            isPasswordEditor = isPasswordEditor,
         )
     }
 
@@ -86,4 +93,5 @@ internal data class SuggestionRequestPrivacySnapshot(
     val allowPossiblyOffensive: Boolean,
     val isPrivateSession: Boolean,
     val isEditorSensitive: Boolean,
+    val isPasswordEditor: Boolean,
 )
