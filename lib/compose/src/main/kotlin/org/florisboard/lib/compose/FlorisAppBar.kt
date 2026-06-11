@@ -16,8 +16,10 @@
 
 package org.florisboard.lib.compose
 
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -38,26 +40,28 @@ fun FlorisAppBar(
     modifier: Modifier = Modifier,
 ) {
     val colorScheme = MaterialTheme.colorScheme
-    TopAppBar(
-        modifier = modifier,
-        navigationIcon = navigationIcon ?: {},
-        title = {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.SemiBold,
-                overflow = TextOverflow.Ellipsis,
-                maxLines = 1,
-            )
-        },
-        actions = actions,
-        colors = TopAppBarDefaults.topAppBarColors(
-            containerColor = colorScheme.background,
-            scrolledContainerColor = colorScheme.surfaceContainerLow,
-            titleContentColor = colorScheme.onSurface,
-            navigationIconContentColor = colorScheme.onSurfaceVariant,
-            actionIconContentColor = colorScheme.onSurfaceVariant,
-        ),
-        scrollBehavior = scrollBehavior
-    )
+    Column(modifier = modifier) {
+        TopAppBar(
+            navigationIcon = navigationIcon ?: {},
+            title = {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.SemiBold,
+                    overflow = TextOverflow.Ellipsis,
+                    maxLines = 1,
+                )
+            },
+            actions = actions,
+            colors = TopAppBarDefaults.topAppBarColors(
+                containerColor = colorScheme.background,
+                scrolledContainerColor = colorScheme.surfaceContainer,
+                titleContentColor = colorScheme.onSurface,
+                navigationIconContentColor = colorScheme.onSurfaceVariant,
+                actionIconContentColor = colorScheme.onSurfaceVariant,
+            ),
+            scrollBehavior = scrollBehavior,
+        )
+        HorizontalDivider(color = colorScheme.outlineVariant.copy(alpha = 0.38f))
+    }
 }

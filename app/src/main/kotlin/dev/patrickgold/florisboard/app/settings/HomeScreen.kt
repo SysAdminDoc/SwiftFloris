@@ -53,6 +53,7 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
@@ -100,6 +101,13 @@ fun HomeScreen() = FlorisScreen {
                 secondaryText = stringRes(R.string.settings__home__ime_ready_summary),
             )
         }
+        FlorisInfoCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.settings__home__privacy_posture),
+            secondaryText = stringRes(R.string.settings__home__privacy_posture_summary),
+            actionLabel = stringRes(R.string.settings__home__privacy_posture_action),
+            onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
+        )
 
         PreferenceGroup(title = stringRes(R.string.settings__home__section_typing)) {
             Preference(

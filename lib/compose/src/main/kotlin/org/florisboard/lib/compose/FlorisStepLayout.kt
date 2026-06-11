@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -67,7 +68,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val StepHeaderPaddingVertical = 6.dp
-private val StepHeaderNumberBoxSize = 36.dp
+private val StepHeaderNumberBoxSize = 34.dp
 private val StepHeaderNumberBoxPaddingEnd = 14.dp
 private val StepHeaderTextInnerPaddingHorizontal = 14.dp
 
@@ -254,15 +255,16 @@ private fun ColumnScope.Step(
                     )
                 }
                 .clip(shape)
-                .background(colorScheme.surfaceContainerLow)
+                .background(colorScheme.surfaceContainer)
                 .border(
                     width = 1.dp,
-                    color = colorScheme.outlineVariant.copy(alpha = 0.56f),
+                    color = colorScheme.outlineVariant.copy(alpha = 0.42f),
                     shape = shape,
                 )
-                .padding(16.dp),
+                .padding(horizontal = 18.dp, vertical = 16.dp),
         ) {
-            Column(modifier = Modifier.fillMaxWidth(),
+            Column(
+                modifier = Modifier.fillMaxWidth(),
             ) {
                 content()
             }
@@ -282,12 +284,12 @@ private fun StepHeader(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val backgroundColor = when {
-        isCurrent -> colorScheme.primaryContainer
+        isCurrent -> colorScheme.surfaceContainerHigh
         isAvailable -> colorScheme.surfaceContainerHigh
         else -> colorScheme.surfaceContainerLow
     }
     val contentColor = when {
-        isCurrent -> colorScheme.onPrimaryContainer
+        isCurrent -> colorScheme.onSurface
         isAvailable -> colorScheme.onSurface
         else -> colorScheme.onSurfaceVariant
     }
@@ -307,6 +309,16 @@ private fun StepHeader(
             .padding(vertical = StepHeaderPaddingVertical)
             .clip(MaterialTheme.shapes.small)
             .background(backgroundColor)
+            .border(
+                width = 1.dp,
+                color = if (isCurrent) {
+                    primaryColor.copy(alpha = 0.36f)
+                } else {
+                    colorScheme.outlineVariant.copy(alpha = 0.32f)
+                },
+                shape = MaterialTheme.shapes.small,
+            )
+            .defaultMinSize(minHeight = 58.dp)
             .padding(horizontal = 12.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
