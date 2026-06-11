@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.8.247-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.8.248-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.8.247 | Privacy posture |
+| Area | What's in v1.8.248 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -261,6 +261,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.8.248** (2026-06-11) — Password/PIN fields no longer run word suggestions or spacebar autocorrect (which could silently append a "correction" into masked input); precise delete/select swipes no longer crash mid mass-selection; personal next-word learning no longer pairs words across apps/fields; the suggestion-removal prompt and pinned emoji chips now follow the keyboard theme; missing TalkBack labels and translatable strings added across the IME and editors; MCP daemon discovery/binding manifest entries fixed; What's-new and GitHub Release notes now source from the tracked fastlane changelogs.
 - **v1.8.247** (2026-06-05) — Manual subtype switching by id now treats stale chooser ids as no-ops instead of risking a forced-null crash.
 - **v1.8.246** (2026-06-04) — Repo hygiene now explains that module `build/` caches can survive `git rm --cached` and should be treated as local ignored output.
 - **v1.8.245** (2026-06-04) — Fastlane changelog drafting now documents the 480-character draft budget, store-facing summary rules, and evidence-backed wording expectations.
