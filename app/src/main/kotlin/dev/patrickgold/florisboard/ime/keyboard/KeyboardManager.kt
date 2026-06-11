@@ -187,6 +187,14 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             editorInstance.activeContentFlow.collectIn(scope) { content ->
                 resetSuggestions(content)
             }
+            // A field/app switch breaks word adjacency — without this reset the
+            // first word typed in the new field forms a phantom bigram/trigram
+            // with the last word learned in the previous field (e.g. Slack
+            // message ending "meeting" + URL bar "tomorrow" would persist the
+            // never-typed pair "meeting tomorrow" to the personal n-gram store).
+            editorInstance.activeInfoFlow.collectIn(scope) {
+                resetLearnChain()
+            }
             prefs.devtools.enabled.asFlow().collectLatestIn(scope) {
                 reevaluateDebugFlags()
             }
@@ -401,6 +409,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private var prevLearnedWord: String? = null
     private var lastLearnedLocaleTag: String? = null
 
+    /**
+     * Breaks the personal bigram/trigram learn chain. Called when word
+     * adjacency can no longer be assumed: the active editor changed, or the
+     * user is deleting back into / rewriting the previously learned word.
+     */
+    private fun resetLearnChain() {
+        lastLearnedWord = null
+        prevLearnedWord = null
+        lastLearnedLocaleTag = null
+    }
+
     private fun learnIfAllowed(rawWord: String) {
         if (!SuggestionPrivacyPolicy.shouldLearnCommittedWord(
             rawWord = rawWord,
@@ -554,6 +573,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     private fun revertPreviouslyAcceptedCandidate() {
+        // Deleting backwards rewrites the words the learn chain assumed were
+        // final; keep the chain from pairing the next commit with stale text.
+        resetLearnChain()
         nlpManager.rejectAcceptedAutoCommitOnBackspace(editorInstance.activeContent)
         editorInstance.phantomSpace.candidateForRevert?.let { candidateForRevert ->
             candidateForRevert.sourceProvider?.let { sourceProvider ->
