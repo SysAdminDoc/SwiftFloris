@@ -166,6 +166,8 @@ class ThemeAndAddonsScreenshotTest {
     private fun seedAddonRegistry() {
         val registry = AddonRegistry(
             initialPinnedSigningCertificates = mapOf(
+                "dev.swiftfloris.addons.polish" to fingerprint("AA"),
+                "dev.swiftfloris.addons.nord" to fingerprint("BB"),
                 "dev.swiftfloris.addons.rejected" to fingerprint("CD"),
             ),
         )
