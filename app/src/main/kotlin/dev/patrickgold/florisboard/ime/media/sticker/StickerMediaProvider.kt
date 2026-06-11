@@ -95,10 +95,17 @@ class StickerMediaProvider : ContentProvider() {
         if (!mode.startsWith("r")) {
             throw FileNotFoundException("Stickers are read-only")
         }
+        // stickerFor() only yields a user sticker whose sourceUri survived
+        // UserStickerRepository.isDocumentWithinPersistedGrant — forged or
+        // malformed encoded segments resolve to null and land here.
         val sticker = stickerFor(uri) ?: throw FileNotFoundException("Unknown sticker URI: $uri")
         sticker.sourceUri?.let { sourceUri ->
-            return context!!.contentResolver.openFileDescriptor(Uri.parse(sourceUri), "r")
-                ?: throw FileNotFoundException("Cannot open sticker URI: $sourceUri")
+            // Never let a SecurityException (grant revoked between validation
+            // and open) crash the binder call — reject as not-found instead.
+            val pfd = runCatching {
+                context!!.contentResolver.openFileDescriptor(Uri.parse(sourceUri), "r")
+            }.getOrElse { throw FileNotFoundException("Cannot open sticker URI: $sourceUri") }
+            return pfd ?: throw FileNotFoundException("Cannot open sticker URI: $sourceUri")
         }
         val file = ensureStickerFile(sticker)
         return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)

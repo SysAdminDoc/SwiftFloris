@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.media.sticker
 
+import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.DocumentsContract
@@ -100,12 +101,53 @@ object UserStickerRepository {
     fun stickerForEncodedDocument(context: Context, encodedDocumentUri: String): Sticker? {
         val rawUri = decodeDocumentUri(encodedDocumentUri) ?: return null
         val uri = runCatching { Uri.parse(rawUri) }.getOrNull() ?: return null
+        // Confused-deputy guard: the encoded segment arrives back from whatever
+        // app received the sticker grant, so it is attacker-controlled. A
+        // recipient could forge the Base64 segment to wrap any content:// URI
+        // and have StickerMediaProvider proxy-open it with the IME's own
+        // grants. Refuse anything that is not a document inside a folder the
+        // user actually picked for stickers (= a currently persisted SAF tree
+        // read grant).
+        if (!isDocumentWithinPersistedGrant(context, uri)) {
+            flogWarning {
+                "UserStickerRepository: rejected sticker document outside persisted SAF grants: $uri"
+            }
+            return null
+        }
         val document = queryDocument(context, uri) ?: UserStickerDocument(
             uri = rawUri,
             displayName = uri.lastPathSegment?.substringAfterLast('/') ?: "sticker",
             mimeType = context.contentResolver.getType(uri),
         )
         return stickerFromDocument(document)
+    }
+
+    /**
+     * Returns true when [documentUri] is a SAF tree-anchored document URI
+     * (`content://<authority>/tree/<treeId>/document/<docId>` — the only shape
+     * [queryStickerDocuments] ever mints via `buildDocumentUriUsingTree`) whose
+     * authority + tree document id match a currently persisted read grant. The
+     * backing `DocumentsProvider` enforces at open time that `<docId>` really
+     * is a child of the tree the URI is anchored to, so this check pins every
+     * proxied open inside a folder the user explicitly picked for stickers.
+     */
+    fun isDocumentWithinPersistedGrant(context: Context, documentUri: Uri): Boolean {
+        if (documentUri.scheme != ContentResolver.SCHEME_CONTENT) return false
+        val authority = documentUri.authority ?: return false
+        val segments = documentUri.pathSegments
+        if (segments.size != 4 || segments[0] != "tree" || segments[2] != "document") return false
+        val treeDocumentId = runCatching { DocumentsContract.getTreeDocumentId(documentUri) }
+            .getOrNull() ?: return false
+        val grants = runCatching { context.contentResolver.persistedUriPermissions }
+            .getOrDefault(emptyList())
+        return grants.any { grant ->
+            grant.isReadPermission &&
+                grant.uri.scheme == ContentResolver.SCHEME_CONTENT &&
+                grant.uri.authority == authority &&
+                grant.uri.pathSegments.size == 2 &&
+                grant.uri.pathSegments.firstOrNull() == "tree" &&
+                runCatching { DocumentsContract.getTreeDocumentId(grant.uri) }.getOrNull() == treeDocumentId
+        }
     }
 
     private fun queryStickerDocuments(context: Context, treeUri: Uri): List<UserStickerDocument> {
