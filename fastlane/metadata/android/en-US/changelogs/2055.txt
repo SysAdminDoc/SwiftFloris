@@ -1,0 +1,1 @@
+Removed the disabled native bootstrap so startup no longer attempts to load a missing fl_native library on every cold launch.
