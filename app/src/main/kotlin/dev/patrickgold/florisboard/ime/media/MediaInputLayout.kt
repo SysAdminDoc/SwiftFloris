@@ -47,7 +47,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.LocalInputFeedbackController
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
@@ -58,6 +65,7 @@ import dev.patrickgold.florisboard.ime.media.sticker.StickerPaletteView
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.SnyggSelector
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggColumn
@@ -112,6 +120,7 @@ fun MediaInputLayout(
                 inputEventDispatcher = keyboardManager.inputEventDispatcher,
                 keyData = TextKeyData.IME_UI_MODE_TEXT,
                 modifier = Modifier.fillMaxHeight(),
+                contentDescription = stringRes(R.string.clip__back_to_text_input),
             ) {
                 Text(
                     text = "ABC",
@@ -121,6 +130,7 @@ fun MediaInputLayout(
             Spacer(modifier = Modifier.weight(1f))
             MediaModeButton(
                 active = activeMode == MediaPanelMode.EMOJI,
+                description = stringRes(R.string.media__tab__emojis),
                 modifier = Modifier
                     .fillMaxHeight()
                     .aspectRatio(1f),
@@ -130,6 +140,7 @@ fun MediaInputLayout(
             }
             MediaModeButton(
                 active = activeMode == MediaPanelMode.STICKERS,
+                description = stringRes(R.string.media__tab__stickers),
                 modifier = Modifier
                     .fillMaxHeight()
                     .aspectRatio(1f),
@@ -143,6 +154,7 @@ fun MediaInputLayout(
                 inputEventDispatcher = keyboardManager.inputEventDispatcher,
                 keyData = TextKeyData.DELETE,
                 modifier = Modifier.fillMaxHeight(),
+                contentDescription = stringRes(R.string.key__backspace),
             ) {
                 Icon(imageVector = Icons.AutoMirrored.Outlined.Backspace, contentDescription = null)
             }
@@ -153,6 +165,7 @@ fun MediaInputLayout(
 @Composable
 private fun MediaModeButton(
     active: Boolean,
+    description: String,
     modifier: Modifier = Modifier,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
@@ -166,12 +179,23 @@ private fun MediaModeButton(
     SnyggBox(
         elementName = FlorisImeUi.MediaBottomRowButton.elementName,
         selector = selector,
-        clickAndSemanticsModifier = modifier.pointerInput(Unit) {
-            detectTapGestures {
-                inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
-                onClick()
+        clickAndSemanticsModifier = modifier
+            .semantics(mergeDescendants = true) {
+                role = Role.Tab
+                selected = active
+                contentDescription = description
+                onClick(label = null) {
+                    inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                    onClick()
+                    true
+                }
             }
-        },
+            .pointerInput(Unit) {
+                detectTapGestures {
+                    inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                    onClick()
+                }
+            },
         contentAlignment = Alignment.Center,
     ) {
         content()
@@ -184,6 +208,7 @@ internal fun KeyboardLikeButton(
     inputEventDispatcher: InputEventDispatcher,
     keyData: KeyData,
     elementName: String = FlorisImeUi.MediaEmojiKey.elementName,
+    contentDescription: String? = null,
     content: @Composable () -> Unit,
 ) {
     val inputFeedbackController = LocalInputFeedbackController.current
@@ -194,12 +219,24 @@ internal fun KeyboardLikeButton(
     } else {
         SnyggSelector.NONE
     }
+    val description = contentDescription
 
     SnyggBox(
         elementName = elementName,
         attributes = mapOf(FlorisImeUi.Attr.Code to keyData.code),
         selector = selector,
         clickAndSemanticsModifier = modifier
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                if (description != null) {
+                    this.contentDescription = description
+                }
+                onClick(label = null) {
+                    inputFeedbackController.keyPress(keyData)
+                    inputEventDispatcher.sendDownUp(keyData)
+                    true
+                }
+            }
             .indication(interactionSource, ripple())
             .pointerInput(Unit) {
                 awaitEachGesture {

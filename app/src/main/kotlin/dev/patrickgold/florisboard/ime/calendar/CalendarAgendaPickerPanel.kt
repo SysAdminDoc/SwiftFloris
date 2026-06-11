@@ -30,8 +30,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.SnyggButton
 import org.florisboard.lib.snygg.ui.SnyggText
@@ -65,23 +67,23 @@ fun CalendarAgendaPickerPanel(
             ) {
                 SnyggText(
                     modifier = Modifier.weight(1f),
-                    text = "Calendar",
+                    text = stringRes(R.string.calendar__panel__title),
                 )
                 SnyggButton(
                     elementName = FlorisImeUi.SmartbarActionsOverflowCustomizeButton.elementName,
                     onClick = manager::dismiss,
                 ) {
-                    SnyggText(text = "Close")
+                    SnyggText(text = stringRes(R.string.action__close))
                 }
             }
 
             when (state) {
                 CalendarAgendaPickerState.Hidden -> Unit
                 CalendarAgendaPickerState.Loading -> {
-                    SnyggText(text = "Loading calendar events...")
+                    SnyggText(text = stringRes(R.string.calendar__panel__loading))
                 }
                 CalendarAgendaPickerState.Empty -> {
-                    SnyggText(text = "No upcoming events found for today and the next 7 days.")
+                    SnyggText(text = stringRes(R.string.calendar__panel__empty))
                 }
                 is CalendarAgendaPickerState.Error -> {
                     SnyggText(text = state.message)

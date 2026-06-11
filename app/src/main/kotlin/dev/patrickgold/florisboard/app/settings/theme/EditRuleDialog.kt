@@ -90,6 +90,7 @@ import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
+import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
@@ -425,15 +426,22 @@ private fun EditCodeValueDialog(
     var isRecordingKey by remember { mutableStateOf(false) }
     var lastRecordingToast by remember { mutableStateOf<Toast?>(null) }
     val toastScope = rememberCoroutineScope()
+    val reducedMotion = rememberReducedMotion()
     val recordingKeyColor = if (isRecordingKey) {
-        rememberInfiniteTransition().animateColor(
-            initialValue = LocalContentColor.current,
-            targetValue = MaterialTheme.colorScheme.error,
-            animationSpec = infiniteRepeatable(
-                tween(750),
-                repeatMode = RepeatMode.Reverse,
-            ),
-        ).value
+        if (reducedMotion) {
+            // Static highlight instead of an infinite blink when the user has
+            // disabled system animations.
+            MaterialTheme.colorScheme.error
+        } else {
+            rememberInfiniteTransition().animateColor(
+                initialValue = LocalContentColor.current,
+                targetValue = MaterialTheme.colorScheme.error,
+                animationSpec = infiniteRepeatable(
+                    tween(750),
+                    repeatMode = RepeatMode.Reverse,
+                ),
+            ).value
+        }
     } else {
         LocalContentColor.current
     }

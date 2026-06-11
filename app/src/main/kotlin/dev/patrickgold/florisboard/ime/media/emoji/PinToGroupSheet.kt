@@ -39,6 +39,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -68,10 +72,13 @@ fun PinToGroupSheet(
 ) {
     if (!state.isVisible()) return
 
+    val windowStyle = rememberSnyggThemeQuery(FlorisImeUi.Window.elementName)
     val panelStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiKeyPopupBox.elementName)
     val tabStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
-    val foreground = tabStyle.foreground(default = Color.White)
-    val background = panelStyle.background(default = Color(0xFF171923))
+    val errorStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiPinSheetError.elementName)
+    val foreground = tabStyle.foreground(default = windowStyle.foreground(default = Color.White))
+    val background = panelStyle.background(default = windowStyle.background(default = Color(0xFF171923)))
+    val errorForeground = errorStyle.foreground(default = Color(0xFFFFB4AB))
     val fieldBackground = foreground.copy(alpha = 0.10f)
     val actionBackground = foreground.copy(alpha = 0.16f)
 
@@ -166,7 +173,7 @@ fun PinToGroupSheet(
                     state.error()?.let { error ->
                         Text(
                             text = pinErrorText(error),
-                            color = Color(0xFFFFB4AB),
+                            color = errorForeground,
                             fontSize = 12.sp,
                         )
                     }
@@ -214,6 +221,13 @@ private fun ExistingGroupRow(
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
             .background(background)
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                onClick(label = null) {
+                    onClick()
+                    true
+                }
+            }
             .pointerInput(groupName) {
                 detectTapGestures { onClick() }
             }
@@ -248,6 +262,13 @@ private fun SheetAction(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(background)
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                onClick(label = null) {
+                    onClick()
+                    true
+                }
+            }
             .pointerInput(label) {
                 detectTapGestures { onClick() }
             }

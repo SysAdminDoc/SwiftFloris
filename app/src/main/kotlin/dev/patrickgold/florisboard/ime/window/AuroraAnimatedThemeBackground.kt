@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.ime.window
 
-import android.provider.Settings
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -35,9 +34,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clipToBounds
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.ime.theme.LocalActiveThemeName
+import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import kotlin.math.PI
 import kotlin.math.sin
@@ -52,7 +50,7 @@ internal fun isAuroraAnimatedTheme(themeName: ExtensionComponentName): Boolean {
 @Composable
 internal fun BoxScope.AuroraAnimatedThemeBackground(
     activeThemeName: ExtensionComponentName = LocalActiveThemeName.current,
-    reducedMotion: Boolean = rememberImeReducedMotion(),
+    reducedMotion: Boolean = rememberReducedMotion(),
 ) {
     if (!isAuroraAnimatedTheme(activeThemeName)) return
 
@@ -160,19 +158,4 @@ private fun auroraBandShape(
     lineTo(1.08f * width, 1.10f * height)
     lineTo(-0.08f * width, 1.10f * height)
     close()
-}
-
-@Composable
-private fun rememberImeReducedMotion(): Boolean {
-    val context = LocalContext.current
-    val configuration = LocalConfiguration.current
-    return remember(configuration) {
-        runCatching {
-            Settings.Global.getFloat(
-                context.contentResolver,
-                Settings.Global.ANIMATOR_DURATION_SCALE,
-                1f,
-            )
-        }.getOrDefault(1f) == 0f
-    }
 }

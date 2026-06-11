@@ -247,6 +247,10 @@ enum class FlorisImeUi(val elementName: String, val resId: Int?) {
         elementName = "media-emoji-tab",
         resId = R.string.snygg__rule_element__media_emoji_tab,
     ),
+    MediaEmojiPinSheetError(
+        elementName = "media-emoji-pin-sheet-error",
+        resId = R.string.snygg__rule_element__media_emoji_pin_sheet_error,
+    ),
 
     MediaBottomRow(
         elementName = "media-bottom-row",
