@@ -32,6 +32,15 @@ import org.florisboard.lib.kotlin.io.FsDir
 import org.florisboard.lib.kotlin.io.subFile
 
 @Serializable
+enum class LanguagePackKind {
+    @SerialName("han-shape-based")
+    HAN_SHAPE_BASED,
+
+    @SerialName("generic")
+    GENERIC,
+}
+
+@Serializable
 class LanguagePackComponent(
     override val id: String,
     override val label: String,
@@ -49,10 +58,11 @@ class LanguagePackComponent(
 
 @SerialName(LanguagePackExtension.SERIAL_TYPE)
 @Serializable
-class LanguagePackExtension( // FIXME: how to make this support multiple types of language packs, and selectively load?
+class LanguagePackExtension(
     override val meta: ExtensionMeta,
     override val dependencies: List<String>? = null,
     val items: List<LanguagePackComponent> = listOf(),
+    val kind: LanguagePackKind = LanguagePackKind.HAN_SHAPE_BASED,
     val hanShapeBasedSQLite: String = "han.sqlite3",
 ) : Extension() {
 
@@ -62,6 +72,7 @@ class LanguagePackExtension( // FIXME: how to make this support multiple types o
         meta = meta,
         dependencies = dependencies?.toMutableList() ?: mutableListOf(),
         items = items.toMutableList(),
+        kind = kind,
         hanShapeBasedSQLite = hanShapeBasedSQLite,
     )
 
@@ -71,18 +82,27 @@ class LanguagePackExtension( // FIXME: how to make this support multiple types o
 
     override fun serialType() = SERIAL_TYPE
 
-    @Transient var hanShapeBasedSQLiteDatabase: SQLiteDatabase = SQLiteDatabase.create(null)
+    @Transient var hanShapeBasedSQLiteDatabase: SQLiteDatabase? = null
+
+    fun supportsHanShapeBased(): Boolean = kind == LanguagePackKind.HAN_SHAPE_BASED
+
+    fun hanShapeBasedComponents(): List<LanguagePackComponent> {
+        return if (supportsHanShapeBased()) items else emptyList()
+    }
 
     override fun onAfterLoad(context: Context, cacheDir: FsDir) {
-        // FIXME: this is loading language packs of all subtypes when they load.
         super.onAfterLoad(context, cacheDir)
+
+        if (!supportsHanShapeBased()) {
+            return
+        }
 
         val databasePath = workingDir?.subFile(hanShapeBasedSQLite)?.path
         if (databasePath == null) {
             flogError { "Han shape-based language pack not found or loaded" }
         } else try {
             // TODO: use lock on database?
-            hanShapeBasedSQLiteDatabase.takeIf { it.isOpen }?.close()
+            hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }?.close()
             hanShapeBasedSQLiteDatabase =
                 SQLiteDatabase.openDatabase(databasePath, null, SQLiteDatabase.OPEN_READONLY);
         } catch (e: SQLiteException) {
@@ -92,7 +112,8 @@ class LanguagePackExtension( // FIXME: how to make this support multiple types o
 
     override fun onBeforeUnload(context: Context, cacheDir: FsDir) {
         super.onBeforeUnload(context, cacheDir)
-        hanShapeBasedSQLiteDatabase.takeIf { it.isOpen }?.close()
+        hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }?.close()
+        hanShapeBasedSQLiteDatabase = null
     }
 }
 
@@ -100,6 +121,7 @@ class LanguagePackExtensionEditor(
     override var meta: ExtensionMeta,
     override val dependencies: MutableList<String>,
     val items: MutableList<LanguagePackComponent>,
+    val kind: LanguagePackKind,
     val hanShapeBasedSQLite: String,
 ) : ExtensionEditor {
 
@@ -107,6 +129,7 @@ class LanguagePackExtensionEditor(
         meta = meta,
         dependencies = dependencies.takeUnless { it.isEmpty() }?.toList(),
         items = items.toList(),
+        kind = kind,
         hanShapeBasedSQLite = hanShapeBasedSQLite,
     )
 }
