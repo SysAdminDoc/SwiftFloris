@@ -73,6 +73,7 @@ import dev.patrickgold.florisboard.ime.sync.PairedSyncDeviceList
 import dev.patrickgold.florisboard.ime.sync.PairingPayload
 import dev.patrickgold.florisboard.ime.sync.PairingPayloadGenerator
 import dev.patrickgold.florisboard.ime.sync.SyncChannel
+import dev.patrickgold.florisboard.ime.sync.SyncIdentityStore
 import dev.patrickgold.florisboard.ime.sync.SyncQrCode
 import dev.patrickgold.florisboard.ime.sync.SyncQrCodeMatrix
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -226,11 +227,20 @@ fun SyncSettingsScreen() = FlorisScreen {
             if (clusterId.isBlank()) prefs.sync.clusterId.set(resolvedClusterId)
             if (deviceId.isBlank()) prefs.sync.deviceId.set(resolvedDeviceId)
         }
+        // The advertised public key MUST be the persisted identity's — the
+        // generator's default argument mints a throwaway keypair whose
+        // private half nothing could ever use to open an envelope.
+        val identity = SyncIdentityStore.getOrCreate(context, resolvedDeviceId)
+        if (identity == null) {
+            Toast.makeText(context, pairingUnsupportedText, Toast.LENGTH_LONG).show()
+            return
+        }
         generatedPayload = PairingPayloadGenerator.generate(
             displayName = Build.MODEL ?: "Android device",
             syncChannelId = activeChannel.channelId,
             clusterId = resolvedClusterId,
             deviceId = resolvedDeviceId,
+            keyPair = identity.keyPair,
         ).serializeToString()
     }
 
