@@ -109,8 +109,9 @@ configure<ApplicationExtension> {
         buildConfigField("String", "FLADDONS_API_VERSION", "\"v~draft2\"")
         buildConfigField("String", "FLADDONS_STORE_URL", "\"beta.addons.florisboard.org\"")
         // RESEARCH_FEATURE_PLAN.md F14 — compile-time "What's new" excerpt sourced
-        // from the matching CHANGELOG.md section so Settings → About can show it
-        // offline (no INTERNET, no runtime file IO). Empty when no section matches.
+        // from the tracked fastlane changelog for this versionCode (local-only
+        // CHANGELOG.md as fallback) so Settings → About can show it offline
+        // (no INTERNET, no runtime file IO). Empty when no source matches.
         buildConfigField(
             "String",
             "WHATS_NEW",
@@ -556,12 +557,26 @@ fun getGitCommitHash(short: Boolean = false): Provider<String> {
     return execProvider.standardOutput.asText.map { it.trim() }
 }
 
-// RESEARCH_FEATURE_PLAN.md F14 — extract the body of the `## v<versionName>`
-// section from the repo-root CHANGELOG.md, lightly de-markdown it, and truncate
-// to [maxChars] so it can ship as a BuildConfig string for the offline
-// "What's new" surface. Returns "" when the section is absent (e.g. a dev build
-// between releases), in which case the Settings entry hides itself.
+// RESEARCH_FEATURE_PLAN.md F14 — compile-time release notes for the offline
+// "What's new" surface. Primary source is the tracked per-versionCode fastlane
+// changelog (CHANGELOG.md is local-only since 886c4aa and absent from CI
+// checkouts, so it can only ever be a local-build fallback). Returns "" when
+// no source matches (e.g. a dev build between releases), in which case the
+// Settings entry hides itself.
 fun whatsNewExcerpt(versionName: String, maxChars: Int = 900): String {
+    val fastlaneChangelog = rootProject.file(
+        "fastlane/metadata/android/en-US/changelogs/$projectVersionCode.txt"
+    )
+    if (fastlaneChangelog.exists()) {
+        val body = fastlaneChangelog.readText().trim()
+        if (body.isNotEmpty()) {
+            return if (body.length > maxChars) {
+                body.substring(0, maxChars).substringBeforeLast('\n').trimEnd() + "\n…"
+            } else {
+                body
+            }
+        }
+    }
     val changelog = rootProject.file("CHANGELOG.md")
     if (!changelog.exists()) return ""
     val text = changelog.readText()

@@ -162,10 +162,10 @@ jobs:
             elif [ "$vuln_count" = "0" ]; then
               echo "- **Result:** 0 known vulnerabilities in the \`releaseRuntimeClasspath\` of \`:app\`."
             else
-              echo "- **Result:** $vuln_count advisory match(es) — see \`osv-result.json\` in the workflow artifacts. A clean scan today does not imply forever-immunity; see [\`docs/SECURITY.md\`](https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/SECURITY.md)."
+              echo "- **Result:** $vuln_count advisory match(es) — see \`osv-result.json\` in the workflow artifacts. A clean scan today does not imply forever-immunity."
             fi
             echo ""
-            echo "Reproduce locally: \`./gradlew :app:dependencies --configuration releaseRuntimeClasspath > gradle-deps.txt && osv-scanner --recursive --skip-git ./\`. See [\`docs/SECURITY.md\`](https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/SECURITY.md) for what \"clean\" means and doesn't mean."
+            echo "Reproduce locally: \`./gradlew :app:dependencies --configuration releaseRuntimeClasspath > gradle-deps.txt && osv-scanner --recursive --skip-git ./\`."
           } > RELEASE_OSV_SUMMARY.md
 
       - name: Upload OSV scan artifacts
@@ -303,9 +303,12 @@ jobs:
         run: |
           set -euo pipefail
           tag="v${RELEASE_VERSION}"
-          # Compose the release body: extract the per-version section from CHANGELOG.md when present,
-          # fall back to autogen, then append the OSV scan appendix (matrix #9 + #44).
-          # The section runs from the version's <a id="vX.Y.Z"></a> anchor to the next <a id="v..."> anchor.
+          # Compose the release body: extract the per-version section from CHANGELOG.md when
+          # present (local dispatches only — CHANGELOG.md is gitignored since 886c4aa, so CI
+          # checkouts never have it), fall back to the tracked per-versionCode fastlane
+          # changelog, then append the OSV scan appendix (matrix #9 + #44).
+          # The CHANGELOG section runs from the version's <a id="vX.Y.Z"></a> anchor to the
+          # next <a id="v..."> anchor.
           body_file="$(mktemp)"
           if [ -f CHANGELOG.md ]; then
             awk -v ver="$RELEASE_VERSION" '
@@ -313,6 +316,13 @@ jobs:
               in_section && /^<a id="v[0-9]/ { exit }
               in_section { print }
             ' CHANGELOG.md > "$body_file"
+          fi
+          if [ ! -s "$body_file" ]; then
+            version_code=$(grep -E '^projectVersionCode=' gradle.properties | cut -d= -f2)
+            fastlane_changelog="fastlane/metadata/android/en-US/changelogs/${version_code}.txt"
+            if [ -f "$fastlane_changelog" ]; then
+              cat "$fastlane_changelog" > "$body_file"
+            fi
           fi
           if [ -f RELEASE_OSV_SUMMARY.md ]; then
             cat RELEASE_OSV_SUMMARY.md >> "$body_file"

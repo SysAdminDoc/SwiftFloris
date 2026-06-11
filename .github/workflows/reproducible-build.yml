@@ -19,7 +19,6 @@ on:
       - "gradlew.bat"
       - "settings.gradle.kts"
       - "build.gradle.kts"
-      - "docs/REPRODUCIBLE_BUILDS.md"
   pull_request:
     branches: [ main, master ]
     paths:
@@ -32,7 +31,6 @@ on:
       - "gradlew.bat"
       - "settings.gradle.kts"
       - "build.gradle.kts"
-      - "docs/REPRODUCIBLE_BUILDS.md"
 
 concurrency:
   group: reproducible-apk-${{ github.ref }}
