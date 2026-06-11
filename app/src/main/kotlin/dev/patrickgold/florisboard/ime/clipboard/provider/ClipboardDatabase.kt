@@ -117,6 +117,7 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                 creationTimestampMs = System.currentTimeMillis(),
                 isPinned = false,
                 mimeTypes = TEXT_PLAIN,
+                isSensitive = ClipboardSensitiveTextClassifier.isSensitive(text),
             )
         }
 
@@ -177,6 +178,11 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
             } else { null }
 
             val text = dataItem.text?.toString()
+            val isTextSensitive = if (type == ItemType.TEXT) {
+                ClipboardSensitiveTextClassifier.isSensitive(text)
+            } else {
+                false
+            }
             val mimeTypes = when (type) {
                 ItemType.TEXT -> TEXT_PLAIN
                 ItemType.IMAGE, ItemType.VIDEO -> {
@@ -184,7 +190,17 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                 }
             }
 
-            return ClipboardItem(0, type, text, uri, System.currentTimeMillis(), false, mimeTypes, isSensitive, isRemoteDevice)
+            return ClipboardItem(
+                0,
+                type,
+                text,
+                uri,
+                System.currentTimeMillis(),
+                false,
+                mimeTypes,
+                isSensitive || isTextSensitive,
+                isRemoteDevice,
+            )
         }
     }
 

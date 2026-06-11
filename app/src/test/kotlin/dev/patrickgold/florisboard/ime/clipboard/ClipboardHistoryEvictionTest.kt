@@ -87,6 +87,13 @@ class ClipboardHistoryEvictionTest : FunSpec({
         ) shouldBe listOf(oldUnpinned, oldPinnedSensitive)
     }
 
+    test("clipboard text factory marks one-time code shapes sensitive") {
+        ClipboardItem.text("123456").isSensitive shouldBe true
+        ClipboardItem.text("Your verification code is 123-456").isSensitive shouldBe true
+        ClipboardItem.text("invoice 123456 is ready").isSensitive shouldBe false
+        ClipboardItem.text("room 204").isSensitive shouldBe false
+    }
+
     test("closeThenDelete closes every selected item before deleting rows") {
         val first = clip(1, creationTimestampMs = 1_000L)
         val second = clip(2, creationTimestampMs = 2_000L)
