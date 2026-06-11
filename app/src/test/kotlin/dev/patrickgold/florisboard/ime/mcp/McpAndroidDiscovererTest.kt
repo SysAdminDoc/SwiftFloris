@@ -30,6 +30,8 @@ import io.kotest.matchers.shouldBe
 class McpAndroidDiscovererTest : FunSpec({
 
     val catalogJson = """{"tools":[{"name":"calendar.next_event","description":"d","parameterSchema":"{}"}]}"""
+    val signingCert = "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:" +
+        "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA"
 
     fun attrs(
         packageName: String = "com.daemon.a",
@@ -37,12 +39,14 @@ class McpAndroidDiscovererTest : FunSpec({
         permission: String? = McpBridgeContract.PERMISSION_BIND_MCP,
         protocolVersion: Int = 1,
         catalogResourceId: Int = 42,
+        signingCertSha256: String? = signingCert,
     ) = McpAndroidDiscoverer.ServiceAttrs(
         packageName = packageName,
         className = className,
         permission = permission,
         protocolVersion = protocolVersion,
         catalogResourceId = catalogResourceId,
+        signingCertSha256 = signingCertSha256,
     )
 
     test("returns a DiscoveryCandidate for a well-formed ServiceAttrs with non-blank catalog") {
@@ -56,6 +60,7 @@ class McpAndroidDiscovererTest : FunSpec({
             daemonClassName = "com.daemon.a.Svc",
             protocolVersion = 1,
             hasBindPermission = true,
+            signingCertSha256 = signingCert,
             toolCatalogJson = catalogJson,
         )
     }
@@ -87,6 +92,14 @@ class McpAndroidDiscovererTest : FunSpec({
 
     test("returns null when tool-catalog resource id is 0") {
         McpAndroidDiscoverer.shapeCandidate(attrs(catalogResourceId = 0)) { _, _ -> catalogJson } shouldBe null
+    }
+
+    test("keeps null signing certificate for trust-layer rejection") {
+        val cand = McpAndroidDiscoverer.shapeCandidate(
+            attrs(signingCertSha256 = null),
+        ) { _, _ -> catalogJson }
+
+        cand?.signingCertSha256 shouldBe null
     }
 
     test("returns null when catalogLookup returns null (resource not found)") {

@@ -142,6 +142,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             sync.pairedDevicesJson to "sync.pairedDevicesJson",
             sync.manualExportTargetUri to "sync.manualExportTargetUri",
             mcp.disabledDaemonPackages to "mcp.disabledDaemonPackages",
+            mcp.signingCertPins to "mcp.signingCertPins",
             mcp.disabledTools to "mcp.disabledTools",
             addon.signingCertPins to "addon.signingCertPins",
             keyboard.windowConfig to "keyboard.windowConfig",

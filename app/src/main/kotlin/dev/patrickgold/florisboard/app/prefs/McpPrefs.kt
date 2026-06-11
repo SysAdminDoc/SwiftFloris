@@ -98,4 +98,15 @@ open class McpPrefs : PreferenceModel() {
         key = "mcp__disabled_tools",
         default = "",
     )
+
+    /**
+     * Newline-separated `<daemonPackageName>=<SHA-256 fingerprint>` trust
+     * pins for MCP daemons that are not co-signed with the base IME.
+     * Discovery rejects unpinned external daemons before reading their tool
+     * catalogs or binding to their services.
+     */
+    val signingCertPins = string(
+        key = "mcp__signing_cert_pins",
+        default = "",
+    )
 }

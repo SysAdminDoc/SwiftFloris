@@ -42,12 +42,14 @@ import kotlinx.serialization.json.jsonPrimitive
  *     enforced by PackageManager before reaching the discoverer; the
  *     discoverer re-checks defensively in case the caller hand-fed
  *     a fixture list.
- *  3. Protocol version metadata must be in `1..SUPPORTED_PROTOCOL_VERSION`.
- *  4. Tool catalog JSON must parse + contain at least one entry with
+ *  3. Candidate must expose a signing-certificate fingerprint that is
+ *     either co-signed with the IME or explicitly pinned by the user.
+ *  4. Protocol version metadata must be in `1..SUPPORTED_PROTOCOL_VERSION`.
+ *  5. Tool catalog JSON must parse + contain at least one entry with
  *     a non-blank `name`. Tools missing `description` or
  *     `parameterSchema` default to safe placeholders so a partial
  *     catalog still lights up something.
- *  5. Catalog payload must not exceed
+ *  6. Catalog payload must not exceed
  *     [McpBridgeContract.MAX_PAYLOAD_BYTES] — runaway-tool guard.
  *
  * The full Android-side wrapper that converts `ResolveInfo` →
@@ -63,13 +65,59 @@ object McpDaemonDiscoverer {
      * [candidates] doesn't need to be sorted; the output preserves
      * insertion order.
      */
-    fun discover(candidates: List<DiscoveryCandidate>): Map<DaemonKey, DaemonEntry> {
+    fun discover(
+        candidates: List<DiscoveryCandidate>,
+        trustPolicy: McpDaemonTrustPolicy,
+    ): Map<DaemonKey, DaemonEntry> =
+        discoverSnapshot(candidates, trustPolicy).accepted
+
+    /**
+     * Full discovery result, including rejected daemons Settings can surface
+     * for explicit certificate trust. Rejections happen before catalog parsing
+     * whenever the daemon is not already trusted.
+     */
+    fun discoverSnapshot(
+        candidates: List<DiscoveryCandidate>,
+        trustPolicy: McpDaemonTrustPolicy,
+    ): McpDiscoverySnapshot {
         val out = LinkedHashMap<DaemonKey, DaemonEntry>(candidates.size)
+        val rejected = mutableListOf<RejectedMcpDaemon>()
         for (cand in candidates) {
+            val rejection = validateCandidateBeforeCatalog(cand, trustPolicy)
+            if (rejection != null) {
+                rejected += rejection
+                continue
+            }
             val entry = buildEntry(cand) ?: continue
             out[entry.key] = entry
         }
-        return out
+        return McpDiscoverySnapshot(
+            accepted = out,
+            rejected = rejected.sortedWith(
+                compareBy<RejectedMcpDaemon> { it.packageName }
+                    .thenBy { it.daemonClassName }
+                    .thenBy { it.reason },
+            ),
+        )
+    }
+
+    private fun validateCandidateBeforeCatalog(
+        cand: DiscoveryCandidate,
+        trustPolicy: McpDaemonTrustPolicy,
+    ): RejectedMcpDaemon? {
+        if (cand.packageName.isBlank() || cand.daemonClassName.isBlank()) return null
+        if (!cand.hasBindPermission) return null
+        val signingCert = cand.signingCertSha256
+        if (signingCert.isNullOrBlank()) {
+            return cand.rejected(McpDaemonTrustPolicy.ReasonMissingSigningCertificate)
+        }
+        return when (trustPolicy.verdict(cand.packageName, signingCert)) {
+            McpDaemonTrustVerdict.Accepted -> null
+            McpDaemonTrustVerdict.ExplicitTrustRequired ->
+                cand.rejected(McpDaemonTrustPolicy.ReasonExplicitTrustRequired)
+            McpDaemonTrustVerdict.SigningCertificateChanged ->
+                cand.rejected(McpDaemonTrustPolicy.ReasonSigningCertificateChanged)
+        }
     }
 
     private fun buildEntry(cand: DiscoveryCandidate): DaemonEntry? {
@@ -132,5 +180,71 @@ data class DiscoveryCandidate(
     val daemonClassName: String,
     val protocolVersion: Int,
     val hasBindPermission: Boolean,
+    val signingCertSha256: String?,
     val toolCatalogJson: String,
 )
+
+data class McpDiscoverySnapshot(
+    val accepted: Map<DaemonKey, DaemonEntry>,
+    val rejected: List<RejectedMcpDaemon>,
+) {
+    companion object {
+        val Empty = McpDiscoverySnapshot(
+            accepted = emptyMap(),
+            rejected = emptyList(),
+        )
+    }
+}
+
+data class RejectedMcpDaemon(
+    val packageName: String,
+    val daemonClassName: String,
+    val signingCertSha256: String?,
+    val reason: String,
+)
+
+data class McpDaemonTrustPolicy(
+    val pinnedSigningCertificates: Map<String, String> = emptyMap(),
+    val trustedRootSigningCertSha256: String? = null,
+) {
+    private val normalizedPinnedSigningCertificates = pinnedSigningCertificates
+        .mapValues { (_, fingerprint) -> fingerprint.trim().uppercase() }
+    private val normalizedTrustedRootSigningCertSha256 = trustedRootSigningCertSha256
+        ?.trim()
+        ?.uppercase()
+
+    fun verdict(packageName: String, signingCertSha256: String): McpDaemonTrustVerdict {
+        val fingerprint = signingCertSha256.trim().uppercase()
+        val pinnedFingerprint = normalizedPinnedSigningCertificates[packageName]
+        return when {
+            pinnedFingerprint == null && fingerprint == normalizedTrustedRootSigningCertSha256 ->
+                McpDaemonTrustVerdict.Accepted
+            pinnedFingerprint == fingerprint ->
+                McpDaemonTrustVerdict.Accepted
+            pinnedFingerprint == null ->
+                McpDaemonTrustVerdict.ExplicitTrustRequired
+            else ->
+                McpDaemonTrustVerdict.SigningCertificateChanged
+        }
+    }
+
+    companion object {
+        const val ReasonMissingSigningCertificate = "cannot read signing certificate"
+        const val ReasonExplicitTrustRequired = "explicit trust required"
+        const val ReasonSigningCertificateChanged = "signing certificate changed"
+    }
+}
+
+enum class McpDaemonTrustVerdict {
+    Accepted,
+    ExplicitTrustRequired,
+    SigningCertificateChanged,
+}
+
+private fun DiscoveryCandidate.rejected(reason: String): RejectedMcpDaemon =
+    RejectedMcpDaemon(
+        packageName = packageName,
+        daemonClassName = daemonClassName,
+        signingCertSha256 = signingCertSha256,
+        reason = reason,
+    )

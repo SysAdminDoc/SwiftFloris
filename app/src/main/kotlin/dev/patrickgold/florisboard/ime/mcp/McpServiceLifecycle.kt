@@ -83,7 +83,11 @@ class McpServiceLifecycle(
          * daemons via [McpAndroidDiscoverer.runDiscovery]. Returns the
          * started lifecycle for the caller to retain.
          */
-        fun start(appContext: Context): McpServiceLifecycle {
+        fun start(
+            appContext: Context,
+            persistedSigningPinsRaw: String = "",
+            trustedRootSigningCertSha256: String? = null,
+        ): McpServiceLifecycle {
             val manager = McpServiceConnectionManager(appContext)
             val lifecycle = McpServiceLifecycle(
                 bindCallback = manager::bind,
@@ -91,10 +95,15 @@ class McpServiceLifecycle(
                 shutdownCallback = manager::shutdown,
                 binderLookup = manager::binderFor,
             )
-            val daemons = runCatching {
-                McpAndroidDiscoverer.runDiscovery(appContext)
-            }.getOrDefault(emptyMap())
-            lifecycle.startWithDaemons(daemons)
+            val snapshot = runCatching {
+                McpAndroidDiscoverer.runDiscoverySnapshot(
+                    context = appContext,
+                    persistedSigningPinsRaw = persistedSigningPinsRaw,
+                    trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
+                )
+            }.getOrDefault(McpDiscoverySnapshot.Empty)
+            McpDaemonDiscoveryStore.setActive(snapshot)
+            lifecycle.startWithDaemons(snapshot.accepted)
             return lifecycle
         }
     }

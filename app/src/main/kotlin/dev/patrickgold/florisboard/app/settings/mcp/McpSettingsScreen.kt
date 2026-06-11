@@ -16,33 +16,41 @@
 
 package dev.patrickgold.florisboard.app.settings.mcp
 
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.PlayCircleOutline
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
 import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
 import dev.patrickgold.florisboard.ime.mcp.DisabledToolSet
+import dev.patrickgold.florisboard.ime.mcp.McpAndroidDiscoverer
+import dev.patrickgold.florisboard.ime.mcp.McpDaemonDiscoveryStore
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
+import dev.patrickgold.florisboard.ime.mcp.McpDaemonTrustPolicy
+import dev.patrickgold.florisboard.ime.mcp.McpSigningPinSet
+import dev.patrickgold.florisboard.ime.mcp.RejectedMcpDaemon
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.datastore.model.observeAsState
+import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -65,14 +73,55 @@ fun McpSettingsScreen() = FlorisScreen {
     previewFieldVisible = false
 
     val prefs by FlorisPreferenceStore
+    val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val trustedRootSigningCertSha256 = remember(context) {
+        SigningFingerprint.sha256(context.applicationContext)
+    }
 
     val activeDaemons = McpDaemonRegistry.active()
-    val disabledSerialized by prefs.mcp.disabledDaemonPackages.observeAsState()
+    val disabledSerialized by prefs.mcp.disabledDaemonPackages.collectAsState()
     val disabledSet = remember(disabledSerialized) {
         DisabledDaemonSet.parse(disabledSerialized)
     }
-    val disabledToolsSerialized by prefs.mcp.disabledTools.observeAsState()
+    val disabledToolsSerialized by prefs.mcp.disabledTools.collectAsState()
+    val signingPinsRaw by prefs.mcp.signingCertPins.collectAsState()
+    val signingPinSet = remember(signingPinsRaw) {
+        McpSigningPinSet.parse(signingPinsRaw)
+    }
+    var discoverySnapshot by remember {
+        mutableStateOf(McpDaemonDiscoveryStore.active())
+    }
+    var scanInProgress by remember { mutableStateOf(false) }
+    var scanError by remember { mutableStateOf<String?>(null) }
+    var pendingTrustAction by remember { mutableStateOf<McpTrustAction?>(null) }
+
+    fun rescanDaemonTrust(persistedPinsOverride: String? = null) {
+        if (scanInProgress) return
+        scanInProgress = true
+        scanError = null
+        scope.launch {
+            try {
+                val persistedPins = persistedPinsOverride ?: prefs.mcp.signingCertPins.get()
+                if (persistedPinsOverride != null) {
+                    prefs.mcp.signingCertPins.set(persistedPinsOverride)
+                }
+                val snapshot = withContext(Dispatchers.Default) {
+                    McpAndroidDiscoverer.runDiscoverySnapshot(
+                        context = context.applicationContext,
+                        persistedSigningPinsRaw = persistedPins,
+                        trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
+                    )
+                }
+                McpDaemonDiscoveryStore.setActive(snapshot)
+                discoverySnapshot = snapshot
+            } catch (e: Exception) {
+                scanError = e.message ?: e::class.simpleName
+            } finally {
+                scanInProgress = false
+            }
+        }
+    }
 
     content {
         PreferenceGroup(title = stringRes(R.string.settings__mcp__group_status)) {
@@ -89,6 +138,33 @@ fun McpSettingsScreen() = FlorisScreen {
                     title = stringRes(R.string.settings__mcp__status_bound_title),
                     summary = stringRes(R.string.settings__mcp__status_bound_summary)
                         .replace("{count}", "$activeCount/${activeDaemons.size}"),
+                )
+            }
+            Preference(
+                icon = Icons.Default.Refresh,
+                title = if (scanInProgress) {
+                    stringRes(R.string.settings__mcp__rescan_running)
+                } else {
+                    stringRes(R.string.settings__mcp__rescan)
+                },
+                summary = stringRes(R.string.settings__mcp__rescan_summary),
+                enabledIf = { !scanInProgress },
+                onClick = { rescanDaemonTrust() },
+            )
+            if (signingPinSet.asMap().isNotEmpty()) {
+                Preference(
+                    icon = Icons.Default.Delete,
+                    title = stringRes(R.string.settings__mcp__reset_trust),
+                    summary = stringRes(R.string.settings__mcp__reset_trust_summary),
+                    enabledIf = { !scanInProgress },
+                    onClick = { pendingTrustAction = McpTrustAction.ResetAll },
+                )
+            }
+            scanError?.let { error ->
+                Preference(
+                    icon = Icons.Default.Block,
+                    title = stringRes(R.string.settings__mcp__rescan_failed),
+                    summary = error,
                 )
             }
         }
@@ -148,7 +224,76 @@ fun McpSettingsScreen() = FlorisScreen {
                 }
             }
         }
+
+        if (discoverySnapshot.rejected.isNotEmpty()) {
+            PreferenceGroup(title = stringRes(R.string.settings__mcp__group_trust)) {
+                for (rejected in discoverySnapshot.rejected) {
+                    RejectedDaemonRow(rejected = rejected)
+                    if (rejected.signingCertSha256 != null &&
+                        (rejected.reason == McpDaemonTrustPolicy.ReasonExplicitTrustRequired ||
+                            rejected.reason == McpDaemonTrustPolicy.ReasonSigningCertificateChanged)
+                    ) {
+                        Preference(
+                            icon = Icons.Default.Refresh,
+                            title = if (rejected.reason == McpDaemonTrustPolicy.ReasonSigningCertificateChanged) {
+                                stringRes(R.string.settings__mcp__trust_changed_certificate)
+                            } else {
+                                stringRes(R.string.settings__mcp__trust_new_certificate)
+                            },
+                            summary = stringRes(R.string.settings__mcp__trust_certificate_summary)
+                                .replace("{package}", rejected.packageName),
+                            enabledIf = { !scanInProgress },
+                            onClick = {
+                                pendingTrustAction = McpTrustAction.TrustCertificate(
+                                    packageName = rejected.packageName,
+                                    daemonClassName = rejected.daemonClassName,
+                                    signingCertSha256 = rejected.signingCertSha256,
+                                    changedCertificate = rejected.reason ==
+                                        McpDaemonTrustPolicy.ReasonSigningCertificateChanged,
+                                )
+                            },
+                        )
+                    }
+                }
+            }
+        }
+
+        pendingTrustAction?.let { action ->
+            McpTrustActionDialog(
+                action = action,
+                onConfirm = {
+                    pendingTrustAction = null
+                    when (action) {
+                        McpTrustAction.ResetAll -> {
+                            scope.launch {
+                                prefs.mcp.signingCertPins.set("")
+                                rescanDaemonTrust(persistedPinsOverride = "")
+                            }
+                        }
+                        is McpTrustAction.TrustCertificate -> {
+                            val nextPins = McpSigningPinSet.parse(prefs.mcp.signingCertPins.get())
+                                .withPinnedCertificate(action.packageName, action.signingCertSha256)
+                                .encode()
+                            rescanDaemonTrust(persistedPinsOverride = nextPins)
+                        }
+                    }
+                },
+                onDismiss = { pendingTrustAction = null },
+            )
+        }
     }
+}
+
+@Composable
+private fun RejectedDaemonRow(rejected: RejectedMcpDaemon) {
+    Preference(
+        icon = Icons.Default.Block,
+        title = rejected.packageName,
+        summary = stringRes(R.string.settings__mcp__daemon_rejected_summary)
+            .replace("{class}", rejected.daemonClassName)
+            .replace("{reason}", rejected.reason)
+            .replace("{fingerprint}", rejected.signingCertSha256 ?: "unreadable"),
+    )
 }
 
 @Composable
@@ -201,4 +346,58 @@ private fun DaemonRow(
             Switch(checked = isEnabled, onCheckedChange = onEnabledChange)
         },
     )
+}
+
+private sealed interface McpTrustAction {
+    data object ResetAll : McpTrustAction
+
+    data class TrustCertificate(
+        val packageName: String,
+        val daemonClassName: String,
+        val signingCertSha256: String,
+        val changedCertificate: Boolean,
+    ) : McpTrustAction
+}
+
+@Composable
+private fun McpTrustActionDialog(
+    action: McpTrustAction,
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    when (action) {
+        McpTrustAction.ResetAll -> {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__mcp__reset_trust_confirm_title),
+                confirmLabel = stringRes(R.string.action__reset),
+                onConfirm = onConfirm,
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = onDismiss,
+            ) {
+                Text(text = stringRes(R.string.settings__mcp__reset_trust_confirm_message))
+            }
+        }
+        is McpTrustAction.TrustCertificate -> {
+            JetPrefAlertDialog(
+                title = if (action.changedCertificate) {
+                    stringRes(R.string.settings__mcp__trust_changed_certificate_confirm_title)
+                } else {
+                    stringRes(R.string.settings__mcp__trust_new_certificate_confirm_title)
+                },
+                confirmLabel = stringRes(R.string.settings__mcp__trust_certificate_confirm),
+                onConfirm = onConfirm,
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = onDismiss,
+            ) {
+                Text(
+                    text = stringRes(
+                        R.string.settings__mcp__trust_certificate_confirm_message,
+                        "package" to action.packageName,
+                        "class" to action.daemonClassName,
+                        "fingerprint" to action.signingCertSha256,
+                    ),
+                )
+            }
+        }
+    }
 }

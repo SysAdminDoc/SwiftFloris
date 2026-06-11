@@ -417,7 +417,11 @@ class FlorisImeService : LifecycleInputMethodService() {
         // discovery failures.
         try {
             mcpLifecycle = dev.patrickgold.florisboard.ime.mcp
-                .McpServiceLifecycle.start(applicationContext)
+                .McpServiceLifecycle.start(
+                    appContext = applicationContext,
+                    persistedSigningPinsRaw = prefs.mcp.signingCertPins.get(),
+                    trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
+                )
         } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "MCP bridge startup failed: $e" }
         }
