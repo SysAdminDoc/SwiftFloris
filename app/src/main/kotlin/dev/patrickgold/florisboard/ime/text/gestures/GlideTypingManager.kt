@@ -46,7 +46,10 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
 
-    private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    // Single-threaded so layout/word-data swaps never interleave with an
+    // in-flight classification: the classifier mutates keys/pruner in place.
+    @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+    private val scope = CoroutineScope(Dispatchers.Default.limitedParallelism(1) + SupervisorJob())
     private var glideTypingClassifier = StatisticalGlideTypingClassifier(context)
     private var lastTime = System.currentTimeMillis()
     private var previewJob: Job? = null
@@ -54,9 +57,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
         previewJob?.cancel()
-        launchSuggestions(MAX_SUGGESTION_COUNT, true) {
-            glideTypingClassifier.clear()
-        }
+        commitCurrentGesture()
     }
 
     override fun onGlideWordBoundary(data: GlideTypingGesture.Detector.PointerData) {
@@ -65,9 +66,16 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         // existing commitGesture path already activates phantom-space, so the next
         // committed word will be auto-prefixed with " ".
         previewJob?.cancel()
-        launchSuggestions(MAX_SUGGESTION_COUNT, true) {
-            glideTypingClassifier.clear()
-        }
+        commitCurrentGesture()
+    }
+
+    private fun commitCurrentGesture() {
+        // Snapshot-and-reset must happen synchronously at the boundary: the
+        // finger keeps moving, so deferring the snapshot (or the clear) to the
+        // async classification job would append the next word's points to this
+        // word's gesture and wipe the head of the next word's trace.
+        val snapshot = glideTypingClassifier.snapshotAndClear()
+        launchSuggestions(snapshot, MAX_SUGGESTION_COUNT, commit = true)
     }
 
     override fun onGlideCancelled() {
@@ -84,7 +92,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         if (prefs.glide.showPreview.get() && time - lastTime > prefs.glide.previewRefreshDelay.get()) {
             // Cancel any stale preview job so they don't pile up.
             previewJob?.cancel()
-            previewJob = launchSuggestions(1, false) {}
+            previewJob = launchSuggestions(gestureSnapshot = null, maxSuggestionsToShow = 1, commit = false)
             lastTime = time
         }
     }
@@ -93,8 +101,16 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
      * Change the layout of the internal gesture classifier
      */
     fun setLayout(keys: List<TextKey>) {
-        if (keys.isNotEmpty() && prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype)) {
-            glideTypingClassifier.setLayout(keys, subtypeManager.activeSubtype)
+        if (keys.isEmpty()) return
+        val subtype = subtypeManager.activeSubtype
+        if (!prefs.glide.isEnabledForSubtype(subtype)) return
+        // Word-list load + pruner construction are far too heavy for the
+        // composition path (the first glide-enabled layout per subtype used to
+        // stall the main thread for the whole dictionary normalization pass);
+        // run them on the serialized classifier scope instead. Queued commit
+        // jobs run after this completes, so they observe the new layout.
+        scope.launch {
+            glideTypingClassifier.setLayout(keys, subtype)
         }
     }
 
@@ -102,19 +118,26 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
      * Asks gesture classifier for suggestions and then passes that on to the smartbar.
      * Also commits the most confident suggestion if [commit] is set. All happens on an async executor.
      *
-     * @param callback Called when this function completes. Takes a boolean, which indicates if suggestions
-     * were successfully set.
+     * @param gestureSnapshot The gesture to classify, taken at the word boundary;
+     * null means "classify the live in-progress gesture" (preview path).
      */
-    private fun launchSuggestions(maxSuggestionsToShow: Int, commit: Boolean, callback: (Boolean) -> Unit): Job? {
-        if (!prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype) || !glideTypingClassifier.ready) {
-            callback.invoke(false)
+    private fun launchSuggestions(gestureSnapshot: StatisticalGlideTypingClassifier.Gesture?, maxSuggestionsToShow: Int, commit: Boolean): Job? {
+        if (!prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype)) {
             return null
         }
 
-        return scope.launch(Dispatchers.Default) {
+        return scope.launch {
+            // The ready check runs inside the serialized scope so a commit that
+            // raced a subtype/layout swap waits for the queued setLayout job
+            // instead of being dropped (or worse, classified on stale data).
+            if (!glideTypingClassifier.ready) return@launch
             // For preview, only compute the few we'll display; for commit, compute all.
             val classifierCount = if (commit) MAX_SUGGESTION_COUNT else maxSuggestionsToShow.coerceAtLeast(1)
-            val suggestions = glideTypingClassifier.getSuggestions(classifierCount, true)
+            val suggestions = if (gestureSnapshot != null) {
+                glideTypingClassifier.getSuggestionsForSnapshot(gestureSnapshot, classifierCount)
+            } else {
+                glideTypingClassifier.getSuggestions(classifierCount, true)
+            }
 
             withContext(Dispatchers.Main) {
                 val suggestionList = buildList {
@@ -132,7 +155,6 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
                     keyboardManager.commitGesture(suggestions.first())
                     rememberPendingGlideCommit(suggestions)
                 }
-                callback.invoke(true)
             }
         }
     }

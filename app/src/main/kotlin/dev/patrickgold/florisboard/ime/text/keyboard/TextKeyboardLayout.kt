@@ -210,6 +210,15 @@ fun TextKeyboardLayout(
             controller.glideTypingDetector.unregisterListener(controller)
             controller.glideTypingDetector.unregisterListener(glideTypingManager)
             resetAllKeys()
+            // The consuming LaunchedEffect is cancelled on disposal, so any
+            // events still queued mid-gesture (text -> media mode switch,
+            // theme reload) would otherwise never be recycled and deplete
+            // the MotionEvent pool over repeated mode switches.
+            touchEventChannel.close()
+            while (true) {
+                val event = touchEventChannel.tryReceive().getOrNull() ?: break
+                event.recycle()
+            }
         }
     }
 
