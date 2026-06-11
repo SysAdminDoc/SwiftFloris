@@ -97,14 +97,13 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         // Here we initialize our provider, set up all things which are not language dependent.
         // Refresh language pack parsing
 
-        // build index of available language packs
+        // Build an index of Han-capable language-pack components. Other
+        // language-pack kinds remain visible to Settings/import flows but do
+        // not participate in this provider's SQLite lifecycle.
         languagePackItems = buildMap {
             for (languagePack in allLanguagePacks) {
-                // FIXME: skip checking language pack type because it always is for now
-//                if (languagePack is HanShapeBasedLanguagePackExtensionImpl)
-                for (languagePackItem in languagePack.items) {
+                for (languagePackItem in languagePack.hanShapeBasedComponents()) {
                     put(languagePackItem.locale.localeTag(), languagePackItem)
-                    // FIXME: how to put this in deserialization?
                     languagePackItem.parent = languagePack
                 }
             }
@@ -176,7 +175,10 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList();
         val layout: String = languagePackItem.hanShapeBasedTable
         try {
-            val database = languagePackExtension.hanShapeBasedSQLiteDatabase
+            val database = languagePackExtension.hanShapeBasedSQLiteDatabase ?: run {
+                flogError { "Han shape-based database is not loaded for '${languagePackExtension.meta.id}'" }
+                return emptyList()
+            }
             val suggestions = database
                 .query(
                     layout,
@@ -247,7 +249,7 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
     private fun languagePacksFor(subtype: Subtype): Set<LanguagePackExtension> {
         val locales = subtype.locales().map { it.localeTag() }.toSet()
         return allLanguagePacks.filterTo(mutableSetOf()) { languagePack ->
-            languagePack.items.any { it.locale.localeTag() in locales }
+            languagePack.hanShapeBasedComponents().any { it.locale.localeTag() in locales }
         }
     }
 

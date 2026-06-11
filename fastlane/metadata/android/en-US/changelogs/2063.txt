@@ -1,0 +1,1 @@
+Validate language-pack kind before Han provider indexing so non-Han packs do not trigger Han SQLite work.
