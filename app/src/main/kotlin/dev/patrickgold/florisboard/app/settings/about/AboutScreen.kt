@@ -178,6 +178,42 @@ fun AboutScreen() = FlorisScreen {
                 )
             }
         }
+        val releaseHistory = BuildConfig.RELEASE_HISTORY
+        if (releaseHistory.isNotBlank()) {
+            var showReleaseHistory by remember { mutableStateOf(false) }
+            Preference(
+                icon = Icons.Default.History,
+                title = stringRes(R.string.about__release_history__title),
+                summary = stringRes(R.string.about__release_history__summary),
+                onClick = { showReleaseHistory = true },
+            )
+            if (showReleaseHistory) {
+                AlertDialog(
+                    onDismissRequest = { showReleaseHistory = false },
+                    title = {
+                        Text(stringRes(R.string.about__release_history__title))
+                    },
+                    text = {
+                        Column(modifier = Modifier.verticalScroll(rememberScrollState()).heightIn(max = 420.dp)) {
+                            Text(releaseHistory)
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showReleaseHistory = false
+                            context.launchUrl(R.string.florisboard__changelog_url, "version" to BuildConfig.VERSION_NAME)
+                        }) {
+                            Text(stringRes(R.string.about__whats_new__full_changelog))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showReleaseHistory = false }) {
+                            Text(stringRes(R.string.action__close))
+                        }
+                    },
+                )
+            }
+        }
         Preference(
             icon = Icons.Default.History,
             title = stringRes(R.string.about__changelog__title),
