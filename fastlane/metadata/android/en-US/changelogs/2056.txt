@@ -1,0 +1,1 @@
+Clipboard history now treats clear one-time-code text as sensitive so privacy cleanup can remove those clips sooner.
