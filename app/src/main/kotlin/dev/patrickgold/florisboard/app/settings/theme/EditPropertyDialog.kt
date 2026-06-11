@@ -724,6 +724,7 @@ private fun PropertyValueEditor(
                         FlorisIconButton(
                             onClick = { showSelectFileDialog = true },
                             icon = Icons.AutoMirrored.Filled.ManageSearch,
+                            contentDescription = stringRes(R.string.settings__theme_editor__select_file),
                         )
                     },
                 )
@@ -956,7 +957,7 @@ private fun PaddingValueEditor(
                         }
                     },
                     modifier = Modifier.align(Alignment.End),
-                    text = "Apply for all",
+                    text = stringRes(R.string.settings__theme_editor__apply_for_all),
                 )
             }
         }

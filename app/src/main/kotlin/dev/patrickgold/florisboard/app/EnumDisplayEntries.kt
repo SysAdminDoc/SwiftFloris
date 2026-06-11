@@ -628,7 +628,7 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
             )
             entry(
                 key = SwipeAction.SHOW_SUBTYPE_PICKER,
-                label = "Show subtype picker"
+                label = stringRes(R.string.enum__swipe_action__show_subtype_picker),
             )
             entry(
                 key = SwipeAction.SWITCH_TO_PREV_SUBTYPE,

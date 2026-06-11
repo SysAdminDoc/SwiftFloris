@@ -230,6 +230,7 @@ fun <T : ExtensionComponent> ExtensionComponentListView(
                     FlorisIconButton(
                         onClick = onCreateBtnClick,
                         icon = Icons.Default.Add,
+                        contentDescription = stringRes(R.string.action__add),
                         iconColor = MaterialTheme.colorScheme.secondary,
                         enabled = createEnabled,
                     )

@@ -228,6 +228,7 @@ fun ThemeEditorScreen(
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.Default.Close,
+            contentDescription = stringRes(R.string.action__close),
         )
     }
 
@@ -235,6 +236,7 @@ fun ThemeEditorScreen(
         FlorisIconButton(
             onClick = { showFineTuneDialog = true },
             icon = Icons.Default.Tune,
+            contentDescription = stringRes(R.string.settings__theme_editor__fine_tune__title),
         )
     }
 
@@ -400,10 +402,13 @@ fun ThemeEditorScreen(
                         ) {
                             for ((propertyName, propertySpec) in propertySetSpec?.properties.orEmpty()) {
                                 if (propertySpec.required && !propertySet.properties.containsKey(propertyName)) {
-                                    FlorisOutlinedBox(title = "Errors", modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
+                                    FlorisOutlinedBox(
+                                        title = stringRes(R.string.settings__theme_editor__errors__title),
+                                        modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
+                                    ) {
                                         Text(
                                             modifier = Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp),
-                                            text = "Required property '$propertyName' does not exist",
+                                            text = stringRes(R.string.settings__theme_editor__required_property_missing, "name" to propertyName),
                                             color = MaterialTheme.colorScheme.error,
                                         )
                                     }
@@ -435,7 +440,7 @@ fun ThemeEditorScreen(
                                     key(propertySet.uuid) {
                                         FlorisOutlinedBox(Modifier.padding(start = 8.dp, end = 8.dp, bottom = 8.dp)) {
                                             Row {
-                                                Text("Source set", Modifier
+                                                Text(stringRes(R.string.settings__theme_editor__source_set), Modifier
                                                     .padding(start = 16.dp)
                                                     .align(Alignment.CenterVertically))
                                                 Spacer(Modifier.weight(1f))
@@ -449,6 +454,7 @@ fun ThemeEditorScreen(
                                                         }
                                                     },
                                                     icon = Icons.Default.KeyboardArrowUp,
+                                                    contentDescription = stringRes(R.string.action__move_up),
                                                     iconColor = MaterialTheme.colorScheme.primary,
                                                     iconModifier = Modifier.size(ButtonDefaults.IconSize),
                                                     enabled = propertySetIndex > 0,
@@ -463,6 +469,7 @@ fun ThemeEditorScreen(
                                                         }
                                                     },
                                                     icon = Icons.Default.KeyboardArrowDown,
+                                                    contentDescription = stringRes(R.string.action__move_down),
                                                     iconColor = MaterialTheme.colorScheme.primary,
                                                     iconModifier = Modifier.size(ButtonDefaults.IconSize),
                                                     enabled = propertySetIndex + 1 < sets.size,
@@ -474,6 +481,7 @@ fun ThemeEditorScreen(
                                                         }
                                                     },
                                                     icon = Icons.Default.Delete,
+                                                    contentDescription = stringRes(R.string.settings__theme_editor__delete_source_set),
                                                     iconColor = MaterialTheme.colorScheme.primary,
                                                     iconModifier = Modifier.size(ButtonDefaults.IconSize),
                                                 )
@@ -485,6 +493,7 @@ fun ThemeEditorScreen(
                                                         )
                                                     },
                                                     icon = Icons.Default.Add,
+                                                    contentDescription = stringRes(R.string.settings__theme_editor__add_property),
                                                     iconColor = MaterialTheme.colorScheme.primary,
                                                     iconModifier = Modifier.size(ButtonDefaults.IconSize),
                                                 )
@@ -860,6 +869,7 @@ private fun SnyggRuleRow(
             FlorisIconButton(
                 onClick = onEditRuleBtnClick,
                 icon = Icons.Default.Edit,
+                contentDescription = stringRes(R.string.settings__theme_editor__edit_rule),
                 iconColor = MaterialTheme.colorScheme.primary,
                 iconModifier = Modifier.size(ButtonDefaults.IconSize),
             )
@@ -867,6 +877,7 @@ private fun SnyggRuleRow(
         FlorisIconButton(
             onClick = onAddPropertyBtnClick,
             icon = Icons.Default.Add,
+            contentDescription = stringRes(R.string.settings__theme_editor__add_property),
             iconColor = MaterialTheme.colorScheme.secondary,
             iconModifier = Modifier.size(ButtonDefaults.IconSize),
         )

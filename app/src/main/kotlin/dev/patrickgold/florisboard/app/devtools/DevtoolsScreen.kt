@@ -132,8 +132,8 @@ fun DevtoolsScreen() = FlorisScreen {
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
             )
             Preference(
-                title = "Debug log",
-                summary = "View and export the debug log",
+                title = stringRes(R.string.devtools__debug_log__label),
+                summary = stringRes(R.string.devtools__debug_log__summary),
                 onClick = { navController.navigate(Routes.Devtools.ExportDebugLog) },
                 enabledIf = { prefs.devtools.enabled isEqualTo true },
             )

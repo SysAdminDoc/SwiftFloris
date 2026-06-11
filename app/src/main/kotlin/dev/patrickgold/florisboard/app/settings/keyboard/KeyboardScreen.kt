@@ -109,7 +109,7 @@ fun KeyboardScreen() = FlorisScreen {
                             // main letter view (complements the Next-8.2 CODE smartbar
                             // profile that auto-activates on terminal/IDE packages).
                             key = BottomRowPreset.Programmer.toJson(),
-                            label = "Programmer",
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__programmer),
                         ),
                         entry(
                             // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — SwiftKey
@@ -118,7 +118,7 @@ fun KeyboardScreen() = FlorisScreen {
                             // space-bar trackpad gesture or a hardware-keyboard
                             // handoff. Space bar shrinks but stays present.
                             key = BottomRowPreset.Navigation.toJson(),
-                            label = "Arrow keys",
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__navigation),
                         ),
                     )
                 },
@@ -217,8 +217,8 @@ fun KeyboardScreen() = FlorisScreen {
             // until the recogniser (Next-4.2) lands.
             SwitchPreference(
                 pref = prefs.keyboard.stylusHandwritingEnabled,
-                title = "Stylus handwriting",
-                summary = "Android 14+ devices with a compatible stylus can write directly into text fields. Recogniser support is staged; this toggle reserves the system entry point.",
+                title = stringRes(R.string.pref__keyboard__stylus_handwriting__label),
+                summary = stringRes(R.string.pref__keyboard__stylus_handwriting__summary),
             )
         }
 

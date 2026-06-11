@@ -322,6 +322,7 @@ internal fun EditRuleDialog(
                             onClick = { editCodeDialogValue = KeyCode.UNSPECIFIED.toString() },
                             modifier = Modifier.offset(x = 12.dp),
                             icon = Icons.Default.Add,
+                            contentDescription = stringRes(R.string.settings__theme_editor__add_code),
                         )
                     },
                 ) {
@@ -362,7 +363,7 @@ internal fun EditRuleDialog(
                 )
 
                 EnumLikeAttributeBox(
-                    text = "Target ime window mode",
+                    text = stringRes(R.string.settings__theme_editor__rule_window_mode),
                     enumClass = ImeWindowMode::class,
                     attribute = FlorisImeUi.Attr.WindowMode,
                     attributes = attributes,
@@ -558,6 +559,7 @@ private fun EditCodeValueDialog(
                 onClick = { showKeyCodesHelp = !showKeyCodesHelp },
                 modifier = Modifier.offset(x = 12.dp),
                 icon = Icons.AutoMirrored.Filled.HelpOutline,
+                contentDescription = stringRes(R.string.settings__theme_editor__code_help_toggle),
             )
         },
     ) {
@@ -567,11 +569,11 @@ private fun EditCodeValueDialog(
                     Text(text = stringRes(R.string.settings__theme_editor__code_recording_help_text))
                     Text(text = stringRes(R.string.settings__theme_editor__code_help_text))
                     FlorisHyperlinkText(
-                        text = "Characters (unicode-table.com)",
+                        text = stringRes(R.string.settings__theme_editor__code_link_characters),
                         url = stringRes(R.string.florisboard__character_key_codes_url),
                     )
                     FlorisHyperlinkText(
-                        text = "Internal (github.com)",
+                        text = stringRes(R.string.settings__theme_editor__code_link_internal),
                         url = stringRes(R.string.florisboard__internal_key_codes_url),
                     )
                 }
@@ -626,6 +628,7 @@ private fun EditCodeValueDialog(
                             FlorisIconButton(
                                 onClick = { requestStartRecording() },
                                 icon = Icons.Default.Pageview,
+                                contentDescription = stringRes(R.string.settings__theme_editor__code_record_toggle),
                                 iconColor = recordingKeyColor,
                             )
                         }
@@ -745,6 +748,7 @@ private fun <V : Any> EnumLikeAttributeBox(
                 onClick = { showAddDialog = true },
                 modifier = Modifier.offset(x = 12.dp),
                 icon = Icons.Default.Add,
+                contentDescription = stringRes(R.string.action__add),
             )
         },
     ) {

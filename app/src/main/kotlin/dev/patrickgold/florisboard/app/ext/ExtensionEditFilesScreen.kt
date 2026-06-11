@@ -150,6 +150,7 @@ fun ExtensionEditFilesScreen(workspace: CacheManager.ExtEditorWorkspace<*>) = Fl
         FlorisIconButton(
             onClick = { handleBackPress() },
             icon = Icons.Default.Close,
+            contentDescription = stringRes(R.string.action__close),
             enabled = ExtensionEditorFilesPolicy.canLeave(isFileActionInProgress),
         )
     }
