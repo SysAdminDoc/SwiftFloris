@@ -38,6 +38,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
+import dev.patrickgold.florisboard.ime.nlp.AutoCorrectCommitMode
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
@@ -78,6 +79,10 @@ open class CorrectionPrefs : PreferenceModel() {
     val autoCorrect = boolean(
         key = "correction__auto_correct",
         default = true,
+    )
+    val autoCorrectCommitMode = enum(
+        key = "correction__auto_correct_commit_mode",
+        default = AutoCorrectCommitMode.NORMAL,
     )
     val quickPredictionInsert = boolean(
         key = "correction__quick_prediction_insert",

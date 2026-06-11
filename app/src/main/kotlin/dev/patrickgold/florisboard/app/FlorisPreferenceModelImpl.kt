@@ -46,6 +46,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             clipboard.historySearchEnabled to "clipboard.historySearchEnabled",
             correction.autoCapitalization to "correction.autoCapitalization",
             correction.autoCorrect to "correction.autoCorrect",
+            correction.autoCorrectCommitMode to "correction.autoCorrectCommitMode",
             correction.quickPredictionInsert to "correction.quickPredictionInsert",
             correction.autoSpacePunctuation to "correction.autoSpacePunctuation",
             correction.doubleSpacePeriod to "correction.doubleSpacePeriod",

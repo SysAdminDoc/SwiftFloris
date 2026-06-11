@@ -1,0 +1,1 @@
+Add an Autocorrect strength setting with a cautious mode that keeps lower-confidence corrections as suggestions.

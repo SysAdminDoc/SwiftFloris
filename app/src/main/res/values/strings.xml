@@ -878,6 +878,7 @@
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
     <string name="pref__correction__auto_correct__label" comment="Preference title">Autocorrect</string>
     <string name="pref__correction__auto_correct__summary" comment="Preference summary">Replace mistyped words with the top suggestion when you tap space or punctuation. Turn off to keep suggestions visible without silent replacement.</string>
+    <string name="pref__correction__auto_correct_commit_mode__label" comment="Preference title">Autocorrect strength</string>
     <string name="pref__correction__quick_prediction_insert__label" comment="Preference title">Quick prediction insert</string>
     <string name="pref__correction__quick_prediction_insert__summary" comment="Preference summary">Tapping space inserts the middle prediction, including next-word predictions when no word is active. Matches the faster SwiftKey spacebar mode.</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>
@@ -1920,6 +1921,11 @@
     <string name="enum__space_bar_mode__nothing" comment="Enum value label">No label</string>
     <string name="enum__space_bar_mode__current_language" comment="Enum value label">Current language</string>
     <string name="enum__space_bar_mode__space_bar_key" comment="Enum value label">␣</string>
+
+    <string name="enum__auto_correct_commit_mode__normal" comment="Enum value label">Normal</string>
+    <string name="enum__auto_correct_commit_mode__normal__description" comment="Enum value description">Replace eligible corrections using the standard SwiftFloris thresholds.</string>
+    <string name="enum__auto_correct_commit_mode__high_confidence" comment="Enum value label">Cautious</string>
+    <string name="enum__auto_correct_commit_mode__high_confidence__description" comment="Enum value description">Keep lower-confidence corrections as suggestions; auto-replace only when confidence is high.</string>
 
     <string name="enum__spelling_language_mode__use_system_languages" comment="Enum value label">Use system languages</string>
     <string name="enum__spelling_language_mode__use_keyboard_subtypes" comment="Enum value label">Use keyboard subtypes</string>
