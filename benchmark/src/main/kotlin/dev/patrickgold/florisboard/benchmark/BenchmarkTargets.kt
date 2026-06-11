@@ -16,7 +16,11 @@
 
 package dev.patrickgold.florisboard.benchmark
 
-internal const val TargetPackageName = "dev.patrickgold.florisboard.bench"
+// Installed package = applicationId + .bench variant suffix. The component
+// CLASS names below intentionally keep the dev.patrickgold.florisboard
+// source-package prefix — Kotlin packages did not move in the app-ID
+// migration, only the installed identity did.
+internal const val TargetPackageName = "io.github.sysadmindoc.swiftfloris.bench"
 internal const val TargetBenchmarkInputActivity =
     "dev.patrickgold.florisboard.benchmark.BenchmarkInputActivity"
 internal const val TargetBenchmarkInputComponent =

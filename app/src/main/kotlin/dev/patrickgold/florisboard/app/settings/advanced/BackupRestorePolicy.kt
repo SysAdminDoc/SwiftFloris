@@ -78,7 +78,7 @@ internal object BackupRestorePolicy {
         metadata: Backup.Metadata,
         currentVersionCode: Int,
         minimumVersionCode: Int,
-        expectedPackagePrefix: String,
+        expectedPackagePrefixes: List<String>,
         hasRestorableContent: Boolean,
     ): RestoreArchiveValidation {
         val errorId = when {
@@ -97,7 +97,12 @@ internal object BackupRestorePolicy {
                 metadata.versionCode != currentVersionCode -> {
                     R.string.backup_and_restore__restore__metadata_warn_different_version
                 }
-                !metadata.packageName.startsWith(expectedPackagePrefix) -> {
+                // Any accepted prefix counts as "same vendor" — the legacy
+                // application ID stays accepted so pre-migration backups
+                // (and upstream FlorisBoard backups) restore without a
+                // misleading vendor warning. This IS the documented
+                // old-ID -> new-ID data migration path.
+                expectedPackagePrefixes.none { metadata.packageName.startsWith(it) } -> {
                     R.string.backup_and_restore__restore__metadata_warn_different_vendor
                 }
                 else -> null

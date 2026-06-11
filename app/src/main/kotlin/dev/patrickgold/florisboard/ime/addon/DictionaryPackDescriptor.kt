@@ -24,7 +24,7 @@ import java.util.Locale
  * ROADMAP §7 Next-10.3 — first-class dictionary-pack addon descriptor.
  *
  * Every `DICTIONARY_PACK` addon (an external APK declaring
- * `<action android:name="dev.patrickgold.florisboard.action.REGISTER_DICTIONARY_PACK"/>`)
+ * `<action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_DICTIONARY_PACK"/>`)
  * ships a JSON resource pointed to by the addon's
  * `dev.patrickgold.florisboard.addon.descriptor` meta-data value. That JSON
  * carries this exact shape:

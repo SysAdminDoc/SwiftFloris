@@ -189,7 +189,7 @@ class BenchmarkBackupRestoreActivity : ComponentActivity() {
                 metadata = metadata,
                 currentVersionCode = BuildConfig.VERSION_CODE,
                 minimumVersionCode = Restore.MIN_VERSION_CODE,
-                expectedPackagePrefix = Restore.PACKAGE_NAME,
+                expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
                 hasRestorableContent = BackupRestorePolicy.hasRestorableContent(
                     hasJetprefDatastore = workspace.outputDir
                         .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)

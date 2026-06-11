@@ -98,7 +98,7 @@ class BackupRestorePolicyTest : FunSpec({
             metadata = validMetadata,
             currentVersionCode = 1933,
             minimumVersionCode = Restore.MIN_VERSION_CODE,
-            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
             hasRestorableContent = true,
         ) shouldBe RestoreArchiveValidation(warningId = null, errorId = null)
     }
@@ -108,23 +108,44 @@ class BackupRestorePolicyTest : FunSpec({
             metadata = validMetadata.copy(packageName = ""),
             currentVersionCode = 1933,
             minimumVersionCode = Restore.MIN_VERSION_CODE,
-            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
             hasRestorableContent = true,
         ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_invalid_metadata
         BackupRestorePolicy.validateRestoreArchive(
             metadata = validMetadata.copy(versionCode = Restore.MIN_VERSION_CODE - 1),
             currentVersionCode = 1933,
             minimumVersionCode = Restore.MIN_VERSION_CODE,
-            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
             hasRestorableContent = true,
         ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_invalid_metadata
         BackupRestorePolicy.validateRestoreArchive(
             metadata = validMetadata,
             currentVersionCode = 1933,
             minimumVersionCode = Restore.MIN_VERSION_CODE,
-            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
             hasRestorableContent = false,
         ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_nothing_to_restore
+    }
+
+    test("restore archive validation accepts both current and legacy application IDs") {
+        // The app-ID migration data path: a backup created by the
+        // pre-migration install (dev.patrickgold.florisboard[.debug]) must
+        // restore into the io.github.sysadmindoc.swiftfloris install without
+        // a vendor warning, and vice versa.
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(packageName = "io.github.sysadmindoc.swiftfloris"),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
+            hasRestorableContent = true,
+        ) shouldBe RestoreArchiveValidation(warningId = null, errorId = null)
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(packageName = "dev.patrickgold.florisboard.debug"),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
+            hasRestorableContent = true,
+        ) shouldBe RestoreArchiveValidation(warningId = null, errorId = null)
     }
 
     test("restore archive validation warns for version or vendor mismatches") {
@@ -132,14 +153,14 @@ class BackupRestorePolicyTest : FunSpec({
             metadata = validMetadata.copy(versionCode = 1932),
             currentVersionCode = 1933,
             minimumVersionCode = Restore.MIN_VERSION_CODE,
-            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
             hasRestorableContent = true,
         ).warningId shouldBe R.string.backup_and_restore__restore__metadata_warn_different_version
         BackupRestorePolicy.validateRestoreArchive(
             metadata = validMetadata.copy(packageName = "com.example.keyboard"),
             currentVersionCode = 1933,
             minimumVersionCode = Restore.MIN_VERSION_CODE,
-            expectedPackagePrefix = Restore.PACKAGE_NAME,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
             hasRestorableContent = true,
         ).warningId shouldBe R.string.backup_and_restore__restore__metadata_warn_different_vendor
     }

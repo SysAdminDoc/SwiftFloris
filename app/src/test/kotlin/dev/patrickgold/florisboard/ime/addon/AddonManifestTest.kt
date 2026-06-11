@@ -110,12 +110,12 @@ class AddonManifestTest : FunSpec({
 
     test("ADDON_SIGNATURE_PERMISSION namespace matches the manifest declaration") {
         AddonContract.ADDON_SIGNATURE_PERMISSION shouldBe
-            "dev.patrickgold.florisboard.permission.REGISTER_ADDON"
+            "io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON"
     }
 
     test("REGISTER_ADDON action namespace matches the manifest queries block") {
         AddonContract.Action.REGISTER shouldBe
-            "dev.patrickgold.florisboard.action.REGISTER_ADDON"
+            "io.github.sysadmindoc.swiftfloris.action.REGISTER_ADDON"
     }
 
     test("AddonEnumerator default banned permission set blocks all network surfaces") {
