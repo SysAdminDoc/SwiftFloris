@@ -21,15 +21,14 @@ import android.content.Intent
 import androidx.activity.compose.ManagedActivityResultLauncher
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -205,24 +204,27 @@ private fun FlorisScreenScope.Content(
 @Composable
 private fun Footer(context: Context) {
     Spacer(modifier = Modifier.height(16.dp))
-    Row(
+    Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState()),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center,
+            .fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        val privacyPolicyUrl = stringRes(R.string.florisboard__privacy_policy_url)
-        FlorisTextButton(
-            onClick = { context.launchUrl(privacyPolicyUrl) },
-            text = stringRes(R.string.setup__footer__privacy_policy),
-        )
-        FlorisBulletSpacer()
-        val repositoryUrl = stringRes(R.string.florisboard__repo_url)
-        FlorisTextButton(
-            onClick = { context.launchUrl(repositoryUrl) },
-            text = stringRes(R.string.setup__footer__repository),
-        )
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            val privacyPolicyUrl = stringRes(R.string.florisboard__privacy_policy_url)
+            FlorisTextButton(
+                onClick = { context.launchUrl(privacyPolicyUrl) },
+                text = stringRes(R.string.setup__footer__privacy_policy),
+            )
+            FlorisBulletSpacer()
+            val repositoryUrl = stringRes(R.string.florisboard__repo_url)
+            FlorisTextButton(
+                onClick = { context.launchUrl(repositoryUrl) },
+                text = stringRes(R.string.setup__footer__repository),
+            )
+        }
     }
 }
 

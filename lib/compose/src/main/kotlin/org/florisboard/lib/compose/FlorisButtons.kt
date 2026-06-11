@@ -21,6 +21,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -64,7 +65,7 @@ fun FlorisButton(
     colors: ButtonColors = ButtonDefaults.buttonColors(),
 ) {
     Button(
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(minHeight = 44.dp),
         enabled = enabled,
         shape = shape,
         colors = colors,
@@ -80,7 +81,7 @@ fun FlorisButton(
                 contentDescription = null,
             )
         }
-        Text(text = text)
+        Text(text = text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -96,7 +97,7 @@ fun FlorisOutlinedButton(
     colors: ButtonColors = ButtonDefaults.outlinedButtonColors(),
 ) {
     OutlinedButton(
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(minHeight = 44.dp),
         enabled = enabled,
         shape = shape,
         colors = colors,
@@ -112,7 +113,7 @@ fun FlorisOutlinedButton(
                 contentDescription = null,
             )
         }
-        Text(text = text)
+        Text(text = text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -128,7 +129,7 @@ fun FlorisTextButton(
     colors: ButtonColors = ButtonDefaults.textButtonColors(),
 ) {
     TextButton(
-        modifier = modifier,
+        modifier = modifier.defaultMinSize(minHeight = 40.dp),
         enabled = enabled,
         shape = shape,
         colors = colors,
@@ -144,7 +145,7 @@ fun FlorisTextButton(
                 contentDescription = null,
             )
         }
-        Text(text = text)
+        Text(text = text, style = MaterialTheme.typography.labelLarge)
     }
 }
 
@@ -159,11 +160,11 @@ fun FlorisIconButton(
     iconColor: Color = Color.Unspecified,
 ) {
     IconButton(
-        modifier = modifier,
+        modifier = modifier.minimumInteractiveComponentSize(),
         enabled = enabled,
         onClick = onClick,
     ) {
-        val contentAlpha = if (enabled) 1f else 0.14f
+        val contentAlpha = if (enabled) 1f else 0.38f
         val contentColor = iconColor.takeOrElse { LocalContentColor.current }.copy(alpha = contentAlpha)
         CompositionLocalProvider(
             LocalContentColor provides contentColor,
@@ -195,6 +196,7 @@ fun FlorisIconButton(
     Box(
         modifier =
             modifier
+                .minimumInteractiveComponentSize()
                 .size(size)
                 .clip(shape)
                 .background(
@@ -213,8 +215,8 @@ fun FlorisIconButton(
                     interactionSource = interactionSource,
                     indication = ripple(),
                 ),
-                //TODO: I don't know how we could emulate something like this
-                //.childSemantics(),
+        // TODO: I don't know how we could emulate something like this
+        // .childSemantics(),
         contentAlignment = Alignment.Center,
     ) {
         val contentColor = if (enabled) {

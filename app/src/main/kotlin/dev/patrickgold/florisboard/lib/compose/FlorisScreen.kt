@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.lib.compose
 
 import android.app.Activity
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -50,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.input.nestedscroll.nestedScroll
@@ -241,7 +243,7 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                         .align(Alignment.TopCenter)
                         .widthIn(max = 840.dp)
                         .fillMaxWidth()
-                        .padding(horizontal = 8.dp, vertical = if (scrollable) 8.dp else 0.dp)
+                        .padding(horizontal = 12.dp, vertical = if (scrollable) 12.dp else 0.dp)
                         .then(scrollModifier),
                     iconSpaceReserved = iconSpaceReserved,
                     content = {
@@ -288,10 +290,10 @@ private fun SettingsSearchHighlightCard(
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(
             width = 1.dp,
-            color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.28f),
         ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -305,7 +307,10 @@ private fun SettingsSearchHighlightCard(
             Icon(
                 modifier = Modifier
                     .padding(end = 16.dp)
-                    .size(24.dp),
+                    .size(40.dp)
+                    .clip(MaterialTheme.shapes.small)
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.72f))
+                    .padding(8.dp),
                 imageVector = Icons.Default.Info,
                 contentDescription = null,
                 tint = MaterialTheme.colorScheme.primary,
@@ -320,7 +325,7 @@ private fun SettingsSearchHighlightCard(
                     modifier = Modifier.fillMaxWidth(),
                     text = secondaryText,
                     style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.72f),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             IconButton(onClick = onDismiss) {

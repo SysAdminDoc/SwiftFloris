@@ -65,9 +65,9 @@ import androidx.compose.ui.unit.sp
 object FlorisCardDefaults {
     val IconRequiredSize = 24.dp
     val IconSpacing = 16.dp
-    const val SecondaryContentAlpha = 0.84f
+    const val SecondaryContentAlpha = 0.88f
 
-    val ContentPadding = PaddingValues(start = 0.dp, end = 16.dp, top = 14.dp, bottom = 14.dp)
+    val ContentPadding = PaddingValues(start = 0.dp, end = 18.dp, top = 16.dp, bottom = 16.dp)
 }
 
 object BoxDefaults {
@@ -84,7 +84,7 @@ fun FlorisSimpleCard(
     actionLabel: String? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainer,
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
-    borderColor: Color = Color.Transparent,
+    borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
     icon: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
@@ -103,13 +103,13 @@ fun FlorisSimpleCard(
         ),
         elevation = CardDefaults.cardElevation(
             defaultElevation = 0.dp,
-            pressedElevation = 1.dp,
+            pressedElevation = 2.dp,
             disabledElevation = 0.dp,
         ),
     ) {
         Row(
             modifier = Modifier
-                .defaultMinSize(minHeight = 64.dp)
+                .defaultMinSize(minHeight = 72.dp)
                 .padding(contentPadding),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -124,7 +124,7 @@ fun FlorisSimpleCard(
                 Text(
                     modifier = Modifier.fillMaxWidth(),
                     text = text,
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
                 )
                 if (secondaryText != null) {
                     Text(
@@ -185,7 +185,7 @@ fun FlorisErrorCard(
         modifier = modifier,
         backgroundColor = MaterialTheme.colorScheme.errorContainer,
         contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.24f),
+        borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.36f),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -212,9 +212,9 @@ fun FlorisWarningCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer,
+        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.92f),
         contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.24f),
+        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.36f),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -241,9 +241,9 @@ fun FlorisSuccessCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.primaryContainer,
+        backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
         contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.36f),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -270,9 +270,9 @@ fun FlorisProgressCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface,
-        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.24f),
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.32f),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -353,9 +353,9 @@ private fun FlorisStatusIcon(
     Box(
         modifier = Modifier
             .padding(horizontal = FlorisCardDefaults.IconSpacing)
-            .size(40.dp)
+            .size(44.dp)
             .clip(MaterialTheme.shapes.small)
-            .background(tint.copy(alpha = 0.10f)),
+            .background(tint.copy(alpha = 0.12f)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
@@ -384,7 +384,7 @@ fun FlorisEmptyState(
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
         ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
+            containerColor = MaterialTheme.colorScheme.surfaceContainer,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
@@ -400,7 +400,7 @@ fun FlorisEmptyState(
                 modifier = Modifier
                     .size(48.dp)
                     .clip(MaterialTheme.shapes.medium)
-                    .background(MaterialTheme.colorScheme.primaryContainer),
+                    .background(MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.88f)),
                 contentAlignment = Alignment.Center,
             ) {
                 Icon(
