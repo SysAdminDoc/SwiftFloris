@@ -229,6 +229,8 @@ ksp {
 }
 
 tasks.withType<Test> {
+    maxHeapSize = "2g"
+    forkEvery = 100L
     testLogging {
         events = setOf(TestLogEvent.FAILED, TestLogEvent.PASSED, TestLogEvent.SKIPPED)
     }
