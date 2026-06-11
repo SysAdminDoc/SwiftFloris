@@ -40,7 +40,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -49,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerEventTimeoutCancellationException
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
@@ -82,6 +82,7 @@ import org.florisboard.lib.snygg.ui.SnyggIcon
 import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggSpacer
 import org.florisboard.lib.snygg.ui.SnyggText
+import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 val CandidatesRowScrollbarHeight = 2.dp
 
@@ -261,6 +262,15 @@ private fun CandidateRemoveConfirmation(
     onDismiss: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Backdrop comes from the keyboard theme, not the (always-light) Material
+    // baseline scheme the IME window is wrapped in \u2014 a light surface under
+    // Snygg-cascaded light foreground text was illegible on dark themes.
+    // Window background underneath guarantees the confirmation occludes the
+    // candidate strip even when the theme's row background is transparent.
+    val rowStyle = rememberSnyggThemeQuery(FlorisImeUi.SmartbarCandidatesRow.elementName)
+    val windowStyle = rememberSnyggThemeQuery(FlorisImeUi.Window.elementName)
+    val baseBackground = windowStyle.background(default = Color(0xFF171923))
+    val rowBackground = rowStyle.background(default = baseBackground)
     Box(
         modifier = modifier.clickable(
             interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
@@ -272,31 +282,32 @@ private fun CandidateRemoveConfirmation(
         SnyggRow(
             elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
             modifier = Modifier
-                .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+                .background(baseBackground, RoundedCornerShape(8.dp))
+                .background(rowBackground, RoundedCornerShape(8.dp))
                 .padding(horizontal = 12.dp, vertical = 6.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
                 SnyggText(
-                    elementName = FlorisImeUi.SmartbarCandidateWord.elementName + "-text",
-                    text = "Remove \u2018${candidate.text}\u2019?",
+                    elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
+                    text = stringRes(R.string.smartbar__candidate_remove_confirm__message, "word" to candidate.text),
                 )
                 SnyggSpacer(
                     elementName = FlorisImeUi.SmartbarCandidateSpacer.elementName,
                     modifier = Modifier.width(12.dp),
                 )
                 SnyggText(
-                    elementName = FlorisImeUi.SmartbarCandidateWord.elementName + "-text",
+                    elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
                     modifier = Modifier
-                        .clickable(onClick = onDismiss)
+                        .clickable(role = Role.Button, onClick = onDismiss)
                         .padding(horizontal = 10.dp, vertical = 6.dp),
-                    text = "Cancel",
+                    text = stringRes(R.string.action__cancel),
                 )
                 SnyggText(
-                    elementName = FlorisImeUi.SmartbarCandidateWord.elementName + "-text",
+                    elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
                     modifier = Modifier
-                        .clickable(onClick = onConfirm)
+                        .clickable(role = Role.Button, onClick = onConfirm)
                         .padding(horizontal = 10.dp, vertical = 6.dp),
-                    text = "Remove",
+                    text = stringRes(R.string.action__remove),
                 )
         }
     }

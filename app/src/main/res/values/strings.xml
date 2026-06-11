@@ -493,6 +493,8 @@
     <string name="settings__theme_editor__fine_tune__color_representation">Color representation</string>
     <string name="settings__theme_editor__fine_tune__display_kbd_after_dialogs">Display keyboard after dialogs</string>
     <string name="settings__theme_editor__add_rule">Add rule</string>
+    <string name="settings__theme_editor__source_set" comment="Header label of one property source set in the multi-source rule editor">Source set</string>
+    <string name="settings__theme_editor__delete_source_set" comment="Icon-button description: deletes one property source set">Delete source set</string>
     <string name="settings__theme_editor__edit_rule">Edit rule</string>
     <string name="settings__theme_editor__rule_delete_confirm_title">Delete theme rule?</string>
     <string name="settings__theme_editor__rule_delete_confirm_message">Delete the "{rule_name}" rule from this theme draft? Save the theme to apply the stylesheet change, or leave without saving to keep the installed theme unchanged.</string>
@@ -511,6 +513,13 @@
     <string name="settings__theme_editor__code_already_exists">This key code is already defined.</string>
     <string name="settings__theme_editor__code_invalid">This key code is not valid. Ensure that the key code is within the range of {c_min} to {c_max} for characters or {i_min} to {i_max} for internal special keys.</string>
     <string name="settings__theme_editor__code_help_text">Alternatively the following links will help you to find the corresponding key code:</string>
+    <string name="settings__theme_editor__code_help_toggle" comment="Icon-button description: shows/hides the key-code help panel">Key code help</string>
+    <string name="settings__theme_editor__code_link_characters" comment="Hyperlink label to an external character code table">Characters (unicode-table.com)</string>
+    <string name="settings__theme_editor__code_link_internal" comment="Hyperlink label to the internal key code reference">Internal (github.com)</string>
+    <string name="settings__theme_editor__code_record_toggle" comment="Icon-button description: records the next key press as a key code">Record key code</string>
+    <string name="settings__theme_editor__rule_window_mode">Target IME window mode</string>
+    <string name="settings__theme_editor__select_file" comment="Icon-button description: opens the bundled file picker">Select file</string>
+    <string name="settings__theme_editor__apply_for_all" comment="Checkbox label: apply the chosen value to all shape corners">Apply for all</string>
     <string name="settings__theme_editor__code_placeholder">Code</string>
     <string name="settings__theme_editor__code_recording_help_text">To find the code of a key, use the button besides the code input field. Once activated, it will record the next key press and will insert the code into the input field.</string>
     <string name="settings__theme_editor__code_recording_started">Key code recording started</string>
@@ -519,6 +528,8 @@
     <string name="settings__theme_editor__code_recording_placeholder">Recording…</string>
     <string name="settings__theme_editor__add_property">Add property</string>
     <string name="settings__theme_editor__edit_property">Edit property</string>
+    <string name="settings__theme_editor__errors__title" comment="Box title above rule validation errors">Errors</string>
+    <string name="settings__theme_editor__required_property_missing" comment="Validation error; {name} is the Snygg property name">Required property \"{name}\" does not exist</string>
     <string name="settings__theme_editor__property_delete_confirm_title">Delete theme property?</string>
     <string name="settings__theme_editor__property_delete_confirm_message">Delete "{property_name}" from this theme rule? Save the theme to apply the property change, or leave without saving to keep the installed theme unchanged.</string>
     <string name="settings__theme_editor__property_already_exists">A property with this name already exists within the current rule.</string>
@@ -771,6 +782,10 @@
     <string name="pref__keyboard__bottom_row_preset__voice" comment="Bottom row preset label">Add voice key</string>
     <string name="pref__keyboard__bottom_row_preset__settings" comment="Bottom row preset label">Add settings shortcut</string>
     <string name="pref__keyboard__bottom_row_preset__minimal" comment="Bottom row preset label">Minimal</string>
+    <string name="pref__keyboard__bottom_row_preset__programmer" comment="Bottom row preset label">Programmer</string>
+    <string name="pref__keyboard__bottom_row_preset__navigation" comment="Bottom row preset label">Arrow keys</string>
+    <string name="pref__keyboard__stylus_handwriting__label" comment="Preference title">Stylus handwriting</string>
+    <string name="pref__keyboard__stylus_handwriting__summary" comment="Preference summary">Android 14+ devices with a compatible stylus can write directly into text fields. Recognizer support is staged; this toggle reserves the system entry point.</string>
     <string name="pref__keyboard__utility_key_enabled__label" comment="Preference title">Show utility key</string>
     <string name="pref__keyboard__utility_key_enabled__summary" comment="Preference summary">Shows a configurable utility key next to space bar</string>
     <string name="pref__keyboard__utility_key_action__label" comment="Preference title">Utility key action</string>
@@ -829,6 +844,7 @@
     <string name="pref__suggestion__api30_inline_suggestions_enabled__label" comment="Preference title">System autofill suggestions</string>
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
+    <string name="smartbar__candidate_remove_confirm__message" comment="Confirmation prompt shown in the suggestion strip after long-pressing a suggestion; {word} is the suggestion being removed">Remove \"{word}\" from suggestions?</string>
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
@@ -1441,6 +1457,8 @@
     <string name="devtools__title" comment="Title of Devtools screen. Translators: treat this string as 'Developer tools' for translation, except a similar short term is available for your language.">Devtools</string>
     <string name="devtools__enabled__label" comment="Label of Enable developer tools in Devtools">Enable developer tools</string>
     <string name="devtools__enabled__summary" comment="Summary of Enable developer tools in Devtools">Tools specifically designed for debugging and troubleshooting</string>
+    <string name="devtools__debug_log__label" comment="Label of Debug log in Devtools">Debug log</string>
+    <string name="devtools__debug_log__summary" comment="Summary of Debug log in Devtools">View and export the debug log</string>
     <string name="devtools__show_primary_clip__label" comment="Label of Show primary clip in Devtools">Show primary clip</string>
     <string name="devtools__show_primary_clip__summary" comment="Summary of Show primary clip in Devtools">Overlays the current primary clip of the clipboard</string>
     <string name="devtools__show_input_state_overlay__label" comment="Label of Show input cache overlay in Devtools">Show input state overlay</string>
@@ -1524,6 +1542,7 @@
     <string name="ext__component__not_configured">Not configured</string>
     <string name="ext__error__not_found_title">Extension not found</string>
     <string name="ext__error__not_found_description">No extension with ID "{id}" could be found.</string>
+    <string name="ext__editor__default_theme_title" comment="Default title of a newly created local theme extension; user-editable afterwards">My themes</string>
     <string name="ext__editor__title_create_any">Create extension</string>
     <string name="ext__editor__title_create_keyboard">Create keyboard extension</string>
     <string name="ext__editor__title_create_theme">Create theme extension</string>
@@ -1686,7 +1705,10 @@
     <string name="action__import_files">Import files</string>
     <string name="action__install">Install</string>
     <string name="action__more_options">More options</string>
+    <string name="action__move_up">Move up</string>
+    <string name="action__move_down">Move down</string>
     <string name="action__no">No</string>
+    <string name="action__remove">Remove</string>
     <string name="action__ok">OK</string>
     <string name="action__open_settings">Open settings</string>
     <string name="action__done">Done</string>
@@ -1897,6 +1919,7 @@
     <string name="enum__swipe_action__select_characters_precisely" comment="Enum value label">Select characters precisely</string>
     <string name="enum__swipe_action__select_words_precisely" comment="Enum value label">Select words precisely</string>
     <string name="enum__swipe_action__show_input_method_picker" comment="Enum value label">Show input method picker</string>
+    <string name="enum__swipe_action__show_subtype_picker" comment="Enum value label">Show subtype picker</string>
     <string name="enum__swipe_action__switch_to_prev_keyboard" comment="Enum value label">Switch to previous keyboard</string>
     <string name="enum__swipe_action__switch_to_prev_subtype" comment="Enum value label">Switch to previous subtype</string>
     <string name="enum__swipe_action__switch_to_next_subtype" comment="Enum value label">Switch to next subtype</string>

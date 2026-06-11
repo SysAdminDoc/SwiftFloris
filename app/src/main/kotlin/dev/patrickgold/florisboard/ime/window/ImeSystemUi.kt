@@ -172,7 +172,10 @@ fun ImeSystemUiFloating() {
                             FlorisImeService.hideUi()
                         }
                     ) {
-                        Icon(imageVector = Icons.Default.KeyboardArrowDown, null)
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowDown,
+                            contentDescription = stringRes(R.string.a11y__key__hide_ui),
+                        )
                     }
                 }
             } else {
@@ -199,7 +202,10 @@ fun ImeSystemUiFloating() {
                             FlorisImeService.showImePicker()
                         }
                     ) {
-                        Icon(imageVector = Icons.Default.Language, null)
+                        Icon(
+                            imageVector = Icons.Default.Language,
+                            contentDescription = stringRes(R.string.a11y__key__next_input_method),
+                        )
                     }
                 }
             } else {
