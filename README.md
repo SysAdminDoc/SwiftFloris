@@ -14,8 +14,8 @@
 > **No-cloud import paths:**
 >
 > 1. **During setup** — use the first-run **Import your dictionary** step and choose a SwiftKey JSON, Gboard XML/ZIP, FlorisBoard CSV, `.flbackup`, `.fldic`, or SwiftFloris dictionary export.
-> 2. **Any time later** — go to **Settings → Personal dictionary → Import** and pick the same local export files. SwiftFloris ingests SwiftKey JSON directly (see [v1.8.46 release notes](CHANGELOG.md#v1.8.46) and the [migration walk-through](docs/MIGRATE_FROM_SWIFTKEY.md)).
-> 3. **If you missed the SwiftKey cutoff** — your learned words are gone from the cloud, but everything still in the on-device SwiftKey personal dictionary can still be re-typed; SwiftFloris's [instant-remember overlay](CHANGELOG.md#v1.8.26) climbs the words back to the top of the prediction strip after a single use.
+> 2. **Any time later** — go to **Settings → Personal dictionary → Import** and pick the same local export files. SwiftFloris ingests SwiftKey JSON directly through the built-in import flow.
+> 3. **If you missed the SwiftKey cutoff** — your learned words are gone from the cloud, but everything still in the on-device SwiftKey personal dictionary can still be re-typed; SwiftFloris's instant-remember overlay climbs the words back to the top of the prediction strip after a single use.
 >
 > SwiftFloris **never** binds your data to a Microsoft (or any other vendor) account, so the next
 > account-retirement notice that lands in your inbox won't include this app.
@@ -54,7 +54,7 @@
 | **Migration** | First-run local dictionary import hint; preview-before-save personal dictionary imports with row exclusion; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
 | **Sync scaffold** | Transport-neutral personal-dictionary sync model with QR pairing payloads, X25519/AES-GCM sealed-box v1 envelope constants, deterministic fixed-key vectors, and CRDT merge tests | No network; user-chosen local transport |
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
-| **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026; see [docs/HONEYCOMB_LAYOUT.md](docs/HONEYCOMB_LAYOUT.md)) | On-device |
+| **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
 | **CI / build** | No-network gate, repo-hygiene gate with module build-cache cleanup guidance, Fastlane changelog drafting guide, OSV dep scan, Dependabot version review, lint baseline-drift wrapper with no committed app lint baseline, startup crash recovery via the local crash dialog, restore/crash diagnostics routed through project logging with safe fallback copy, settings-search resource/route drift guard, MIME helper aggregate-contract tests, NativeStr ByteBuffer slice tests, localization/copy contract tests, post-hotfix regression coverage for Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
 
@@ -97,38 +97,11 @@ adb install app/build/outputs/apk/debug/app-debug.apk
 
 ## Migrating from SwiftKey
 
-Full step-by-step paths are in [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md); the headline contract — `swiftkey-cloud.json` ingestion through **Settings → Personal dictionary → Import** — landed in [v1.8.46](CHANGELOG.md#v1.8.46), the cumulative-byte hardening of the JSON parser in [v1.8.48](CHANGELOG.md#v1.8.48), the post-import confirmation + rollback in [v1.8.53](CHANGELOG.md#v1.8.53), the encrypted-blob export codec primitive in [v1.8.54](CHANGELOG.md#v1.8.54), the Settings UI encrypted export/import round-trip in [v1.8.65](CHANGELOG.md#v1.8.65), and the parity-roadmap reference for the **2026-05-31** cutoff lives in [`docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md`](docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17.md).
+SwiftFloris imports `swiftkey-cloud.json` through **Settings → Personal dictionary → Import**. The parser has cumulative-byte limits, post-import confirmation with rollback, and an encrypted SwiftFloris export/import round-trip for users moving their local dictionary between installs.
 
 ## Documentation
 
-Project-internal docs all live in the repository:
-
-- [`COMPLETED.md`](COMPLETED.md) — shipped-state summary.
-- [`RESEARCH_REPORT.md`](RESEARCH_REPORT.md) — current research synthesis.
-- [`ARCHITECTURE.md`](ARCHITECTURE.md) — module, package, runtime, security-boundary, and CI architecture map.
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — contributor setup, verification, privacy, and release expectations.
-- [`docs/MIGRATE_FROM_SWIFTKEY.md`](docs/MIGRATE_FROM_SWIFTKEY.md) — SwiftKey account-retirement migration paths.
-- [`docs/PRIVACY_AND_AI.md`](docs/PRIVACY_AND_AI.md) — AI/ML feature transparency and local-processing disclosure.
-- [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md) — privacy / security threat model and mitigations.
-- [`docs/SQLCIPHER_PROVIDER_MIGRATION.md`](docs/SQLCIPHER_PROVIDER_MIGRATION.md) — SQLCipher crypto-provider migration triggers, OpenSSL proof-of-concept path, and 16 KB verification gates.
-- [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) — pinned toolchain and F-Droid rebuild plan.
-- [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md) — Macrobenchmark trace sections, workflow, and regression threshold contract.
-- [`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md) — maintainer local test/build/lint/device commands.
-- [`docs/QA_CHECKLISTS.md`](docs/QA_CHECKLISTS.md) — visual-QA, manual-QA, and release-evidence checklists.
-- [`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md) — generated-output, deleted-doc, commit-scope, localization-copy, and handoff rules.
-- [`docs/INLINE_AUTOFILL.md`](docs/INLINE_AUTOFILL.md) — inline-autofill matrix and password-manager verification.
-- [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md) — Tasker intent contract.
-- [`docs/FONTS.md`](docs/FONTS.md) — bundled fonts (Nastaliq + Naskh fallback).
-- [`docs/AUTOCORRECT_LIFECYCLE.md`](docs/AUTOCORRECT_LIFECYCLE.md) — autocorrect, spacebar, punctuation, backspace, provider-notification, and QA contract.
-- [`docs/GESTURE_TYPING_MULTILINGUAL.md`](docs/GESTURE_TYPING_MULTILINGUAL.md) — multilingual gesture-typing guide.
-- [`docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md`](docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md) — FUTO Voice Input setup + recovery actions.
-- [`docs/VOICE_COMMANDS.md`](docs/VOICE_COMMANDS.md) — built-in and custom voice-command grammar reference.
-- [`docs/addons/dictionary-pack-spec.md`](docs/addons/dictionary-pack-spec.md) — external dictionary-pack APK descriptor and validation contract.
-- [`ROADMAP.md`](ROADMAP.md) — single source of truth for all planned work.
-- [`docs/archive/ROADMAP_v5.67_2026-05-18.md`](docs/archive/ROADMAP_v5.67_2026-05-18.md) — archived historical tiered roadmap (v5.67).
-- [`docs/archive/IMPROVEMENT_PLAN_2026-05-18.md`](docs/archive/IMPROVEMENT_PLAN_2026-05-18.md) — archived execution-focused quality / UX / a11y / perf / test / delivery plan.
-- [`docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md`](docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md) — archived 2026-05-25 research plan.
-- [`CHANGELOG.md`](CHANGELOG.md) — full release history, one section per version (anchor: `#vX.Y.Z`).
+Public project information is available in this README, [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases), and [GitHub Issues](https://github.com/SysAdminDoc/SwiftFloris/issues). Maintainer-only planning, research, changelog, and verification notes are kept as local ignored markdown in the working checkout, so the public README links only to files that ship in the repository.
 
 ## Architecture & Stack
 
@@ -203,7 +176,7 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
   -Pandroid.injected.signing.key.password=$KEY_PASS
 ```
 
-See [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) for the toolchain pins that match the published APK fingerprints.
+Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, KSP, Compose, Roborazzi, and dependency-lock inputs so release fingerprints can be reproduced from the same toolchain set.
 
 ## Permissions
 
@@ -234,7 +207,7 @@ See [`docs/REPRODUCIBLE_BUILDS.md`](docs/REPRODUCIBLE_BUILDS.md) for the toolcha
 - **Opt-in addon surfaces (smart-compose, translation, MCP):** every invocation runs through `SensitiveFieldGuard` first; sensitive fields short-circuit to a safe no-result.
 - **Personal dictionary backup:** excluded from cloud-backup paths; device-transfer kept.
 
-Full posture: [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL.md).
+The public posture is simple: no network permission, no telemetry, no account binding, no cloud learning, and explicit user action before sensitive local data is exported or shared with another app.
 
 ### Open Source
 
@@ -257,7 +230,7 @@ The full bridge spans `IMcpDaemon.aidl` (Binder surface), `AndroidMcpClient` (JS
 
 ## Tasker integration
 
-SwiftFloris exposes a Tasker intent contract for INSERT_TEXT / INSERT_CLIP / SWITCH_LAYOUT / TRIGGER_VOICE actions. See [`docs/TASKER_INTEGRATION.md`](docs/TASKER_INTEGRATION.md).
+SwiftFloris exposes a Tasker intent contract for INSERT_TEXT / INSERT_CLIP / SWITCH_LAYOUT / TRIGGER_VOICE actions, guarded by the app's signature-level integration permission.
 
 ## Performance and benchmarks
 
@@ -270,7 +243,7 @@ Six Macrobenchmark trace sections are emitted from production code paths:
 - `swiftfloris.dict.load` (`loadSpecificDictionary`)
 - `swiftfloris.nlp.symspell.build` (lazy index init)
 
-Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMARKS.md). Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`, dictionary cold-load / preload medians of 757.353333 ms / 772.080625 ms with lazy SymSpell d1/d2 index medians of 500.230156 ms / 532.298281 ms, candidate-row warm-typing recomposition median body / max / total of 0.326563 ms / 0.770365 ms / 4.069529 ms, theme-switch median body / max / total of 18.541197 ms / 19.587708 ms / 57.505571 ms with 0.2808075 ms cached warm switches, and backup/restore default-archive medians of 12.653698 ms backup create / 9.874167 ms restore total with 3/3 sections restored. The manual Benchmark Regression workflow compares candidate JSON against those baselines and fails watched medians above the documented +8 % window. The repository deliberately does not publish hand-wavy latency tables; numbers go in the benchmark doc with the device, OS build, and trace section or log marker that produced them.
+Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`, dictionary cold-load / preload medians of 757.353333 ms / 772.080625 ms with lazy SymSpell d1/d2 index medians of 500.230156 ms / 532.298281 ms, candidate-row warm-typing recomposition median body / max / total of 0.326563 ms / 0.770365 ms / 4.069529 ms, theme-switch median body / max / total of 18.541197 ms / 19.587708 ms / 57.505571 ms with 0.2808075 ms cached warm switches, and backup/restore default-archive medians of 12.653698 ms backup create / 9.874167 ms restore total with 3/3 sections restored. The manual Benchmark Regression workflow compares candidate JSON against those baselines and fails watched medians above the documented +8 % window. The repository deliberately does not publish hand-wavy latency tables; numbers include the device, OS build, and trace section or log marker that produced them.
 
 ## Testing
 
@@ -286,133 +259,133 @@ Real device-number collection is tracked in [`docs/BENCHMARKS.md`](docs/BENCHMAR
 
 ## Recent releases
 
-The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
+The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-- **v1.8.247** (2026-06-05) — Manual subtype switching by id now treats stale chooser ids as no-ops instead of risking a forced-null crash. ([notes](CHANGELOG.md#v1.8.247))
-- **v1.8.246** (2026-06-04) — Repo hygiene now explains that module `build/` caches can survive `git rm --cached` and should be treated as local ignored output. ([notes](CHANGELOG.md#v1.8.246))
-- **v1.8.245** (2026-06-04) — Fastlane changelog drafting now documents the 480-character draft budget, store-facing summary rules, and evidence-backed wording expectations. ([notes](CHANGELOG.md#v1.8.245))
-- **v1.8.244** (2026-06-04) — Visual-QA, manual-QA, and release-evidence checklists now live in `docs/QA_CHECKLISTS.md` and are linked from verification docs. ([notes](CHANGELOG.md#v1.8.244))
-- **v1.8.243** (2026-06-04) — Localization copy now avoids Turkish repeated-word lint, uses clearer source labels, and standardizes trust-sensitive failure/destructive copy with focused resource tests. ([notes](CHANGELOG.md#v1.8.243))
-- **v1.8.242** (2026-06-04) — `NativeStr.toJavaString()` now decodes only ByteBuffer remaining bytes across heap, sliced, direct, and read-only buffers without consuming caller position. ([notes](CHANGELOG.md#v1.8.242))
-- **v1.8.241** (2026-06-04) — MIME helper aggregate semantics are now documented and covered, constructor stdout logging is removed, and legacy font wildcard matching is explicit. ([notes](CHANGELOG.md#v1.8.241))
-- **v1.8.240** (2026-06-04) — Async preference-store init failures now stage a crash report, unblock the Settings splash wait, and redirect to recovery instead of hanging. ([notes](CHANGELOG.md#v1.8.240))
-- **v1.8.239** (2026-06-04) — Editor start/selection content-generation jobs now cancel or supersede stale work before reset, finishInput, or field switches can republish old state. ([notes](CHANGELOG.md#v1.8.239))
-- **v1.8.238** (2026-06-04) — Clipboard image/video history tiles now expose localized TalkBack labels with media type, history group, and copied-time context while keeping decorative thumbnail overlays hidden. ([notes](CHANGELOG.md#v1.8.238))
-- **v1.8.237** (2026-06-04) — Settings search destination highlights are now one-shot and dismissible, so stale search-result cards do not reappear on later visits. ([notes](CHANGELOG.md#v1.8.237))
-- **v1.8.236** (2026-06-04) — Suggestion candidate generation now snapshots incognito, no-personalized-learning, preference, and ghost-text sensitivity inputs before async provider work begins. ([notes](CHANGELOG.md#v1.8.236))
-- **v1.8.235** (2026-06-04) — Settings search now exposes TalkBack field labels/state, polite result-status changes, and result rows with position, screen, title, and summary context. ([notes](CHANGELOG.md#v1.8.235))
-- **v1.8.234** (2026-06-04) — Focused regression tests now pin Arabic combining-mark shaping, Snygg unknown selectors and `contentScale`, private-session trace suppression, and locale-scoped n-gram flush behavior. ([notes](CHANGELOG.md#v1.8.234))
-- **v1.8.233** (2026-06-04) — Editor batch edits now wrap only synchronous `InputConnection` mutations while expected-content generation and queue pushes happen before the batch opens. ([notes](CHANGELOG.md#v1.8.233))
-- **v1.8.232** (2026-06-04) — Settings -> Personal dictionary now explains blocked system-back gestures during active save, delete, import, or export work with operation-specific feedback. ([notes](CHANGELOG.md#v1.8.232))
-- **v1.8.231** (2026-06-04) — Dynamic incognito toggles now immediately re-apply the IME window screen-capture guard for the active field. ([notes](CHANGELOG.md#v1.8.231))
-- **v1.8.230** (2026-06-04) — Sync sealed-box envelopes now have fixed v1 schema constants, deterministic X25519/AES-GCM vector coverage, and documented compatibility policy before transport activation. ([notes](CHANGELOG.md#v1.8.230))
-- **v1.8.229** (2026-06-04) — Non-co-signed addon APKs now require an explicit Settings trust action before enrollment; co-signed addons still load automatically. ([notes](CHANGELOG.md#v1.8.229))
-- **v1.8.228** (2026-06-04) — Clipboard history search is now wired into the keyboard palette with a settings toggle, clear/no-results states, and query plus type-filter composition coverage. ([notes](CHANGELOG.md#v1.8.228))
-- **v1.8.227** (2026-06-04) — Japanese locale capability gates now use the valid `ja` language subtag for no-capitalization and no-auto-space behavior, with focused JVM coverage. ([notes](CHANGELOG.md#v1.8.227))
-- **v1.8.226** (2026-06-04) — Post-audit release ledger for pushed n-gram, thread-safety, crypto, trace-privacy, Arabic-shaping, Snygg selector/contentScale, and clipboard media fallback fixes. ([notes](CHANGELOG.md#v1.8.226))
-- **v1.8.225** (2026-06-04) — Deep engineering audit hardening across IME core, clipboard, dictionary import, privacy backup rules, settings sliders, haptics, and CI release gates. ([notes](CHANGELOG.md#v1.8.225))
-- **v1.8.224** (2026-06-04) — Settings search now resets populated result lists to the top when the query changes so stale scroll offsets do not hide the highest-ranked result. ([notes](CHANGELOG.md#v1.8.224))
-- **v1.8.223** (2026-06-04) — Settings search now resolves high-traffic capability synonyms such as dark theme, haptic, trace, punctuation, and privacy to the intended settings destinations. ([notes](CHANGELOG.md#v1.8.223))
-- **v1.8.222** (2026-06-04) — Settings search no-results states now include a one-tap Browse all settings action back to Settings Home. ([notes](CHANGELOG.md#v1.8.222))
-- **v1.8.221** (2026-06-04) — Settings search now has a JVM/Robolectric drift guard for duplicate entry IDs, real string-resource resolution, and typed destination-route mapping. ([notes](CHANGELOG.md#v1.8.221))
-- **v1.8.220** (2026-06-04) — Root onboarding docs now agree that `ROADMAP.md` is the open-work source, `COMPLETED.md` summarizes shipped state, `CHANGELOG.md` is the release-note stream, and archived planning snapshots are historical context. ([notes](CHANGELOG.md#v1.8.220))
-- **v1.8.219** (2026-06-04) — Restore and crash diagnostic failures now use project logging, and restore toasts/cards use stable fallback copy when Android reports a null or blank throwable message. ([notes](CHANGELOG.md#v1.8.219))
-- **v1.8.218** (2026-06-04) — Staged startup exceptions now persist to the local crash report store and open the crash dialog before Settings can hang behind the splash screen. ([notes](CHANGELOG.md#v1.8.218))
-- **v1.8.170** (2026-05-18) — Keyboard preview field polish: settings preview fields now sit on a distinct bottom surface, expose ready/active feedback, preserve bottom-bar traversal, and use coroutine-safe feedback when Android cannot open the IME picker. ([notes](CHANGELOG.md#v1.8.170))
-- **v1.8.169** (2026-05-18) — Empty-state UX polish: selected dictionary-language views, extension categories, language packs, filtered clipboard history, and the theme manager now explain blank states and route users toward add/import/filter-clear/recovery actions. ([notes](CHANGELOG.md#v1.8.169))
-- **v1.8.168** (2026-05-18) — Addon scan progress: Addons Settings now shows a shared progress card while installed packages and dictionary-pack metadata are rescanned, and the touched preference state read uses the current `collectAsState` API. ([notes](CHANGELOG.md#v1.8.168))
-- **v1.8.167** (2026-05-18) — Theme and extension destructive confirmations: draft file deletes plus theme rule/property deletes now require explicit confirmation and explain that installed extensions/themes remain unchanged until save. ([notes](CHANGELOG.md#v1.8.167))
-- **v1.8.166** (2026-05-18) — Repo hygiene closure: CI now runs a repo-hygiene script, generated build/report output is guarded, legacy deleted markdown decisions are documented, and commit-scope/final-handoff rules are pinned. ([notes](CHANGELOG.md#v1.8.166))
-- **v1.8.165** (2026-05-18) — CI quality gates: Android CI lint now fails stale baseline drift, Dependabot reviews Gradle and Actions updates weekly, a manual emulator settings-launch smoke exists, and local verification commands are documented. ([notes](CHANGELOG.md#v1.8.165))
-- **v1.8.164** (2026-05-18) — Backup/restore baseline: benchmark-only representative archive generation measures preference plus keyboard/theme backup creation and merge restore timings under `docs/benchmark-results/`. ([notes](CHANGELOG.md#v1.8.164))
-- **v1.8.163** (2026-05-18) — Theme-switch baseline: benchmark-only direct switch markers and an adb harness measure SwiftKey Pure / M3E theme swaps while the benchmark IME is visible, including cold and cached timings under `docs/benchmark-results/`. ([notes](CHANGELOG.md#v1.8.163))
-- **v1.8.162** (2026-05-18) — Candidate row recomposition baseline: benchmark-only smartbar log markers and an adb harness measure warm typing recomposition counts/durations plus paired NLP suggestion timing under `docs/benchmark-results/`. ([notes](CHANGELOG.md#v1.8.162))
-- **v1.8.161** (2026-05-18) — Dictionary load/preload baseline: a benchmark-only activity preloads the Latin dictionary, forces lazy SymSpell d1/d2 index construction with an invalid probe token, and records SM-S938B / Android 16 numbers under `docs/benchmark-results/`. ([notes](CHANGELOG.md#v1.8.161))
-- **v1.8.160** (2026-05-18) — First suggestion latency baseline: a benchmark-only activity invokes the Latin suggestion provider against a real `EditorContent` snapshot and records cold provider-direct SM-S938B / Android 16 numbers under `docs/benchmark-results/`. ([notes](CHANGELOG.md#v1.8.160))
-- **v1.8.159** (2026-05-18) — IME first-render benchmark baseline: `:benchmark` is active again, a benchmark-only input activity drives cold IME view creation, and SM-S938B / Android 16 first-render numbers are committed under `docs/benchmark-results/`. ([notes](CHANGELOG.md#v1.8.159))
-- **v1.8.158** (2026-05-18) — Accessibility manual QA notes: contributor and accessibility docs now list TalkBack traversal, key-label, candidate-row, font-scale, non-color-state, and theme/layout checks. ([notes](CHANGELOG.md#v1.8.158))
-- **v1.8.157** (2026-05-18) — Non-color state indicators: shared success/progress/neutral cards and extension-import row icons make readiness, progress, cancellation, and completion visible without relying on color alone. ([notes](CHANGELOG.md#v1.8.157))
-- **v1.8.156** (2026-05-18) — Theme contrast audit: bundled keyboard/candidate/dialog styles and settings warning/error/dialog palettes now have selector-level AA coverage; low-contrast enter-key variants and card secondary text were tightened. ([notes](CHANGELOG.md#v1.8.156))
-- **v1.8.155** (2026-05-18) — Dynamic font scaling: compact settings metadata, links, extension component headings, and theme-rule key previews now expand wrapping room or preview size at high font scale. ([notes](CHANGELOG.md#v1.8.155))
-- **v1.8.154** (2026-05-18) — Keyboard key accessibility: semantic key targets now follow the real touch hitbox, expose an accessibility click action, and label common clipboard, voice, mode, layout, and smartbar-control keys explicitly. ([notes](CHANGELOG.md#v1.8.154))
-- **v1.8.153** (2026-05-18) — Candidate and smartbar TalkBack labels: prediction-strip candidates now announce suggestion type, position, and text, while quick actions use a stable display-name/tooltip fallback policy. ([notes](CHANGELOG.md#v1.8.153))
-- **v1.8.152** (2026-05-18) — Settings focus order: the shared settings scaffold now gives TalkBack and keyboard traversal a stable app bar -> content -> bottom actions -> floating action order. ([notes](CHANGELOG.md#v1.8.152))
-- **v1.8.151** (2026-05-18) — Dictionary transfer busy states: user dictionary import/export now shows explicit progress cards, runs transfer work off the main thread, and blocks duplicate transfer/navigation/menu/entry actions while busy. ([notes](CHANGELOG.md#v1.8.151))
-- **v1.8.150** (2026-05-18) — Trust-state recovery microcopy: backup, restore, extension, language-pack, archive-file, and manual dictionary failure cards now state what stayed unchanged and provide a retry/recovery path with the technical detail. ([notes](CHANGELOG.md#v1.8.150))
-- **v1.8.149** (2026-05-18) — Dictionary entry trust states: manual add/update/delete now show progress/result cards, run DAO writes off the main thread, refresh affected suggestion overlays, and block duplicate entry actions while work is running. ([notes](CHANGELOG.md#v1.8.149))
-- **v1.8.148** (2026-05-18) — Extension archive file trust states: archive file import/rename/delete now show progress/result cards, do file work off the main thread, and block duplicate actions while work is running. ([notes](CHANGELOG.md#v1.8.148))
-- **v1.8.147** (2026-05-18) — Theme extension trust states: theme editing now shows save progress/failure cards, confirms component removal with draft-state feedback, and installed extension deletion now shows progress/failure cards while blocking duplicate actions. ([notes](CHANGELOG.md#v1.8.147))
-- **v1.8.146** (2026-05-18) — Language pack trust states: extension import now shows file-reading/importing/cancel/failure states plus new/update/skipped counts, and language pack deletion now shows progress/success/failure cards while blocking duplicate actions. ([notes](CHANGELOG.md#v1.8.146))
-- **v1.8.145** (2026-05-18) — Restore flow trust states: erase restores now require confirmation and show recovery-copy guidance, restore progress/cancellation/failure/partial-failure states stay visible, and section-level restore summaries prevent missing archive sections from silently erasing local data. ([notes](CHANGELOG.md#v1.8.145))
-- **v1.8.144** (2026-05-18) — Backup flow trust states: backup progress, cancellation, share-sheet handoff, failure, and sensitive-clipboard exclusion now surface as explicit cards, with `BackupFlowNotice` policy coverage. ([notes](CHANGELOG.md#v1.8.144))
-- **v1.8.143** (2026-05-18) — Autocorrect lifecycle contract: `docs/AUTOCORRECT_LIFECYCLE.md` now defines spacebar, punctuation, backspace, hardware, glide-delete, provider-notification, manual QA, and regression-test contracts; accepted provider notifications now wait for successful editor commits. ([notes](CHANGELOG.md#v1.8.143))
-- **v1.8.142** (2026-05-18) — Theme rule edit policy extraction: `ThemeRuleEditPolicy` now owns add-rule selection validation, selector toggling, and key-code attribute parsing/replacement decisions for the theme editor. ([notes](CHANGELOG.md#v1.8.142))
-- **v1.8.141** (2026-05-18) — Punctuation flush policy extraction: `KeyboardAutoCommitFlushPolicy` now owns software non-letter autocorrect flush decisions for media mode, alphabetic keys, punctuation, numeric keys, and numeric/phone layouts. ([notes](CHANGELOG.md#v1.8.141))
-- **v1.8.140** (2026-05-18) — Candidate auto-commit policy extraction: `CandidateAutoCommitPolicy` now owns shortcut, phrase repair, active-strip, immediate fallback, quick-prediction, and rejected-correction gating decisions with focused JVM coverage. ([notes](CHANGELOG.md#v1.8.140))
-- **v1.8.139** (2026-05-18) — Dependency warning review: Gradle is checksum-pinned to 9.5.1, Navigation Compose is on 2.9.8, and JUnit Vintage is centralized at 6.0.3 after official-release review, clearing the dependency-version lint warnings. ([notes](CHANGELOG.md#v1.8.139))
-- **v1.8.138** (2026-05-18) — Conservative unused-resource cleanup: obsolete launcher/branding resources and dead legacy color tokens were removed after manifest/code/asset/test/dynamic lookup review, reducing lint from 289 warnings / 1 hint to 245 warnings / 1 hint. ([notes](CHANGELOG.md#v1.8.138))
-- **v1.8.137** (2026-05-18) — Theme editor validation tests: theme component metadata now validates through `ThemeComponentMetaValidationPolicy`, with JVM coverage for valid apply normalization, invalid fields, duplicate IDs, and blank stylesheet fallback. ([notes](CHANGELOG.md#v1.8.137))
-- **v1.8.136** (2026-05-18) — Subtype editor validation tests: editable subtype drafts now validate through `SubtypeEditorValidationPolicy`, with JVM coverage for default add-state missing fields, complete draft building, select-placeholder rejection, and edit-state preservation. ([notes](CHANGELOG.md#v1.8.136))
-- **v1.8.135** (2026-05-18) — Language pack import/update tests: extension import readiness now lives in `ExtensionImportPolicy`, with JVM coverage for new installs, user-installed updates, bundled-core rejection, corrupted metadata, wrong extension type, unsupported files, and import button enablement. ([notes](CHANGELOG.md#v1.8.135))
-- **v1.8.134** (2026-05-18) — Backup/restore policy tests: validation and operation-state decisions now live in `BackupRestorePolicy`, with JVM coverage for backup success/cancellation/failure, invalid archives, restore enablement, and partial-failure classification. ([notes](CHANGELOG.md#v1.8.134))
-- **v1.8.133** (2026-05-18) — Incognito suggestion privacy policy tests: app-declared no-learning override, dynamic toggle availability, committed-word learning, and touch-decoder evidence gates now have focused JVM coverage. ([notes](CHANGELOG.md#v1.8.133))
-- **v1.8.132** (2026-05-18) — Glide typing delete policy tests: immediate backspace word-delete escalation now lives in the editor input policy and is covered for enabled, disabled, inactive phantom-space, and explicit word-delete paths. ([notes](CHANGELOG.md#v1.8.132))
-- **v1.8.131** (2026-05-18) — Spacing lifecycle state tests: auto-space and phantom-space state transitions now have focused JVM coverage for one-update grace, composing-region visibility, and candidate-for-revert cleanup. ([notes](CHANGELOG.md#v1.8.131))
-- **v1.8.130** (2026-05-18) — Hardware keyboard input policy tests: hardware keydown/keyup routing now has focused JVM coverage for space, enter, delete pass-through, shift, mapped letters, mapped punctuation, and mapped punctuation flushing pending autocorrect before commit. ([notes](CHANGELOG.md#v1.8.130))
-- **v1.8.129** (2026-05-18) — Editor input behavior policy extraction: autocorrect spacebar commits, rejected-correction protection, punctuation auto-spacing, phantom spacing, double-space period, and sentence-capitalization gates now have focused JVM coverage through a pure policy class. ([notes](CHANGELOG.md#v1.8.129))
-- **v1.8.128** (2026-05-18) — Nastaliq Urdu font bundle: the official OFL-1.1 Noto Nastaliq Urdu TTF is now committed as an APK asset, Urdu subtype key labels and hints route Arabic-script text through it, and asset/license tests pin the bundle. ([notes](CHANGELOG.md#v1.8.128))
-- **v1.8.127** (2026-05-18) — Emoji pinned-group sheet: long-pressing emoji can now pin them to named groups, and pinned-group chips commit the saved emoji sequence from the palette. ([notes](CHANGELOG.md#v1.8.127))
-- **v1.8.126** (2026-05-18) — Addons dictionary catalog polish: Settings -> Addons now lists mounted dictionary packs with language, word count, dataset license, source, descriptor rejections, and updated install guidance. ([notes](CHANGELOG.md#v1.8.126))
-- **v1.8.125** (2026-05-18) — Addons dictionary asset mounting: enrolled dictionary-pack APK assets now feed the Latin dictionary store through `PackageManager#getResourcesForApplication(...)`, merge with bundled baselines, and reload when the live addon registry generation changes. ([notes](CHANGELOG.md#v1.8.125))
-- **v1.8.124** (2026-05-18) — Addons trust controls: Settings -> Addons can now reset all saved signing-certificate pins or trust a changed certificate after confirmation and rescan; the pin codec gained targeted package removal and the Addons Roborazzi baseline was refreshed. ([notes](CHANGELOG.md#v1.8.124))
-- **v1.8.123** (2026-05-18) — Roborazzi baseline hard gate: committed screenshot baselines for the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces; CI now fails on visual-regression drift instead of using `continue-on-error`. ([notes](CHANGELOG.md#v1.8.123))
-- **v1.8.104 – v1.8.122** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, exposes a durable Listening state, and now gates the in-app Whisper/Vosk route selector and model catalog behind a preview-only local-runtime flag; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, automatic clipboard history eviction now closes provider-backed media before deleting rows, sensitive clipboard text no longer feeds pin-popup description URL/email/phone classification, startup reconciliation removes missing-file history rows plus unreferenced provider files / metadata rows, media restore recreates provider metadata for restored image/video clips, failed foreign media URI clones no longer create phantom history entries, clipboard history maintenance no longer sorts or evicts on Main, the dead parallel Tink clipboard-history store has been removed so the Room-backed manager is the only live storage path, and the KenLM mmap reader now rejects header/pre-body offsets instead of aliasing them to trie-body bytes. ([latest notes](CHANGELOG.md#v1.8.122))
-- **v1.8.85 – v1.8.103** (2026-05-17) — cross-subsystem hardening pass + 18 single-feature follow-up releases. v1.8.85 was an explicit AGENTS.md §6 one-time deviation that closed eleven privacy / security / reliability gaps (merged-manifest `verifyNoInternetPermission`, Android 12+ `data_extraction_rules.xml`, atomic `ZipUtils.unzip`, thread-safe `HardwareKeyboardRuntimeMapper`, sticker decoder OOM, sticker MIME spoof, addon enumerator size category-error, `verify-reproducible-apk.sh` payload-manifest pass criterion, CI workflow permissions, `pull_request_target` injection, AltGr); v1.8.86 – v1.8.102 then returned to per-PR scope and closed eleven of twelve F-roster items (FLAG_SECURE on numeric PIN + passphrase dialog, legacy-passphrase recovery, ZipUtils abort policy, SAF lost-grant UX, addon spec docs alignment, LDML `shift=` semantics, fastlane script hardening, SHA-pinned floating action tags, `release.yml` keystore hygiene, `verifyDataExtractionRules` build gate, sticker LRU + folder cap, `HardwareKeyEntry.longPressAlternates`); v1.8.103 closes the documentation half (README + PROJECT_CONTEXT version refresh, master index of the session's commits). The remaining F11 Roborazzi baseline item closed in v1.8.123. ([master index](CHANGELOG.md#v1.8.103))
-- **v1.8.84** (2026-05-17) — Settings → Addons status surface: users can inspect accepted/rejected addon APKs, manually rescan through the startup reconciliation path, and review package/license/version/size/signing-fingerprint details. ([notes](CHANGELOG.md#v1.8.84))
-- **v1.8.83** (2026-05-17) — Addon registry startup wiring: the IME now scans installed addon manifests at startup, reconciles them through persisted signing pins, publishes a process-wide registry, and cleans malformed stored pin lines. ([notes](CHANGELOG.md#v1.8.83))
-- **v1.8.82** (2026-05-17) — Addon signing-pin persistence: `AddonSigningPinSet` safely parses/encodes addon package fingerprint pins and `prefs.addon.signingCertPins` gives the registry a durable trust store consumed by v1.8.83 startup wiring and v1.8.84 Settings status UI. ([notes](CHANGELOG.md#v1.8.82))
-- **v1.8.81** (2026-05-17) — Addon catalog foundation: `AddonRegistry` now reconciles live addon state with signing-certificate pins, and `DictionaryPackCatalog` validates dictionary-pack descriptors plus provenance before Settings/Addons UI and asset mounting land. ([notes](CHANGELOG.md#v1.8.81))
-- **v1.8.80** (2026-05-17) — SQLCipher provider migration plan: documented the current LibTomCrypt-based Android Community AAR state, OpenSSL proof-of-concept path, migration triggers, 16 KB page-size gates, and rollback rules without changing the runtime dependency. ([notes](CHANGELOG.md#v1.8.80))
-- **v1.8.79** (2026-05-17) — Honeycomb hex layout wire-up: the bundled honeycomb character layout is registered for subtype selection, routed through `TextKeyboardLayoutStyle.Honeycomb`, clipped to `HoneycombHexShape`, and hit-tested against the actual hex instead of rectangular bounding boxes. ([notes](CHANGELOG.md#v1.8.79))
-- **v1.8.78** (2026-05-17) — Keyman `.kmp` package import foundation: safe ZIP/package parser for `kmp.json`, keyboard/language/example metadata, LDML-in-package extraction, lexical-model classification, compiled-engine-required classification, and unsafe entry skipping. ([notes](CHANGELOG.md#v1.8.78))
-- **v1.8.77** (2026-05-17) — User-imported sticker folder: Settings → Emoji & stickers can persist a local SAF folder URI, enumerate supported image files into an Imported sticker pack, preview them in the sticker grid, and commit them through the existing rich-content provider path. ([notes](CHANGELOG.md#v1.8.77))
-- **v1.8.76** (2026-05-17) — Hardware-keyboard runtime mapping: imported layouts can bind to Android hardware `deviceId` values, resolve `KeyEvent` scan/key codes through KLC/macOS fallbacks, and commit mapped printable characters through `KeyboardManager`. ([notes](CHANGELOG.md#v1.8.76))
-- **v1.8.75** (2026-05-17) — Hardware-keyboard import: added an XXE-hardened macOS `.keylayout` XML parser that normalizes key maps, modifier maps, and action-backed dead keys into `HardwareKeyboardLayout`. ([notes](CHANGELOG.md#v1.8.75))
-- **v1.8.74** (2026-05-17) — Bump-batch C: Android Gradle Plugin `9.0.0` → `9.2.1` and Compose BOM `2026.03.01` → `2026.05.00`; R8 keepattributes audit required no rule changes. ([notes](CHANGELOG.md#v1.8.74))
-- **v1.8.73** (2026-05-17) — Repo hygiene: local root JVM crash/replay logs moved to `.ai/local-crash-logs/2026-05-16/`, and CI now rejects committed root `hs_err_pid*.log` / `replay_pid*.log` files. ([notes](CHANGELOG.md#v1.8.73))
-- **v1.8.72** (2026-05-17) — Roadmap correction: HeliBoard / NLnet open-glide integration is now treated as an additive future track, while SwiftFloris's shipped `StatisticalGlideTypingClassifier` remains the production glide path until a permissive open library and dataset are actually available. ([notes](CHANGELOG.md#v1.8.72))
-- **v1.8.71** (2026-05-17) — Bump-batch B: Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1`; no app code, permissions, or runtime behavior changed. ([notes](CHANGELOG.md#v1.8.71))
-- **v1.8.70** (2026-05-17) — README migration-window follow-up: Samsung / Grammarly keyboard-workflow callouts, Galaxy AI Writing Assist compatibility note for One UI 7+, Grammarly Keyboard replacement note, and release-front-door refresh. ([notes](CHANGELOG.md#v1.8.70))
-- **v1.8.69** (2026-05-17) — Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and AboutLibraries `14.2.0`; beta AboutLibraries `15.0.0-b01` intentionally skipped. ([notes](CHANGELOG.md#v1.8.69))
-- **v1.8.68** (2026-05-17) — N7.6 Tink / AndroidKeystore migration: removed AndroidX Security Crypto, added shared Tink encrypted-preference wrapper, migrated SQLCipher passphrase and legacy clipboard-history payloads one time when old keysets remain readable. ([notes](CHANGELOG.md#v1.8.68))
-- **v1.8.67** (2026-05-17) — N12.5 reproducible-build self-verification CI: new build-twice release APK workflow plus `scripts/verify-reproducible-apk.sh` clean-worktree byte comparison and drift manifests. ([notes](CHANGELOG.md#v1.8.67))
-- **v1.8.66** (2026-05-17) — N8.7 Article 50 transparency surface: first-run **Review local AI features** setup step, reopenable Settings → About → **AI features in this keyboard** screen, docs links, and catalog test coverage for next-word / glide / voice / translation / smart-compose disclosures. ([notes](CHANGELOG.md#v1.8.66))
-- **v1.8.65** (2026-05-17) — Phase A3 Settings wiring: **Export encrypted** passphrase dialog + `.sfexp` create-document flow, direct encrypt-then-write personal-dictionary export, `SFEXP1` import sniffing, passphrase decrypt, and `DictionaryImporter`/rollback-summary routing for decrypted SwiftFloris combined-list files. ([notes](CHANGELOG.md#v1.8.65))
-- **v1.8.64** (2026-05-17) — Phase D1: calendar quick-insert (`QuickAction.InsertCalendarEvent`) reads local `CalendarContract.Instances` entries for today + next 7 days, opens an IME-local agenda picker, and inserts the selected event title + date/time. `READ_CALENDAR` is requested only after explicit tap. ([notes](CHANGELOG.md#v1.8.64))
-- **v1.8.63** (2026-05-17) — Phase C3: bundled SwiftKey High Contrast (AAA) and Aurora Animated themes, with Snygg stylesheet tests and a reduced-motion-aware GenericShape aurora background. ([notes](CHANGELOG.md#v1.8.63))
-- **v1.8.62** (2026-05-17) — Phase C1: split-keyboard renderer wire-up with gutter-aware layout, viability gating, and touch-hit suppression inside the gutter. ([notes](CHANGELOG.md#v1.8.62))
-- **v1.8.61** (2026-05-17) — Phase B2: quick-prediction-insert threshold tuning with a configurable weighted-confidence floor and aligned plain-space suppression. ([notes](CHANGELOG.md#v1.8.61))
-- **v1.8.60** (2026-05-17) — Phase B1: multilingual cold-start sentence/phrase priors plus top-1,000 Zipf seed overlays for CS/DE/ES/FR/IT/PT. ([notes](CHANGELOG.md#v1.8.60))
-- **v1.8.59** (2026-05-17) — Phase D3: Typing Stats now shows current-week accepted corrections versus last week, backed by bounded weekly metadata in `CorrectionOutcomePriors`. ([notes](CHANGELOG.md#v1.8.59))
-- **v1.8.58** (2026-05-17) — Phase D2: generic task-creation quick action (`QuickAction.InsertTask`). On-device replacement for SwiftKey's Microsoft-To-Do tile via `Intent.ACTION_SEND` chooser; works with Tasks.org / OpenTasks / Google Tasks / Joplin / Notion / Markor. `SensitiveFieldGuard` gate. ([notes](CHANGELOG.md#v1.8.58))
-- **v1.8.57** (2026-05-17) — Phase C2: SwiftKey "Modes → Arrow keys" parity via new `BottomRowPreset.Navigation` (← ↑ space ↓ → enter). ([notes](CHANGELOG.md#v1.8.57))
-- **v1.8.56** (2026-05-17) — Phase B4: same-sentence language-switch hardening via geometric-decay weighted blend in `TrailingContextLanguageBlend`. ([notes](CHANGELOG.md#v1.8.56))
-- **v1.8.55** (2026-05-17) — Phase B3: shared-spelling bilingual handling — sub-floor `0.30` confidence on one-locale candidates overwriting shared typed words. ([notes](CHANGELOG.md#v1.8.55))
-- **v1.8.54** (2026-05-17) — Phase A3 codec primitive: encrypted-blob personal-dictionary export envelope (AES-256-GCM + PBKDF2-HMAC-SHA-256 at OWASP-2025's 600 000 iterations). ([notes](CHANGELOG.md#v1.8.54))
-- **v1.8.53** (2026-05-17) — Phase A2: post-import confirmation + rollback dialog + wired `DictionaryImporter` into Settings UI. ([notes](CHANGELOG.md#v1.8.53))
-- **v1.8.52** (2026-05-17) — SwiftKey migration outreach push: README banner + opening pitch lead with the 2026-05-31 cutoff, badge promoted, parity-roadmap permalink linked. ([notes](CHANGELOG.md#v1.8.52))
-- **v1.8.51** (2026-05-17) — N14.3 + N14.4 Compose BOM + Gradle wrapper dependency-pin audits. New audit-log table in `docs/DEPENDENCY_TRIAGE.md`. ([notes](CHANGELOG.md#v1.8.51))
-- **v1.8.50** (2026-05-17) — N17.1 emoji-picker crash triage; root-caused to `Paint.hasGlyph("")` and closed with three defensive filters. ([notes](CHANGELOG.md#v1.8.50))
-- **v1.8.49** (2026-05-17) — N15.3 Smart Edit voice REMOVE_ITEM_FROM_LIST: new parameterised voice-command type that excises a named item from the dictated buffer mid-stream. ([notes](CHANGELOG.md#v1.8.49))
-- **v1.8.48** (2026-05-17) — Adversarial-input + lifecycle hardening pass across the SwiftKey JSON importer, MCP daemon bridge, IME service teardown, voice-model install, ZIP extraction, and DB cursor handling. ([notes](CHANGELOG.md#v1.8.48))
-- **v1.8.47** (2026-05-16) — N1.4 FUTO swipe-trace replay and benchmark harness. ([notes](CHANGELOG.md#v1.8.47))
-- **v1.8.46** (2026-05-16) — SwiftKey `swiftkey-cloud.json` import parser ahead of the 2026-05-31 account retirement. New `DictionaryImportFormat.JSON` + tolerant `parseSwiftKeyJson`. ([notes](CHANGELOG.md#v1.8.46))
-- **v1.8.45** (2026-05-16) — Android 17 IME-visibility restore across configuration changes. ([notes](CHANGELOG.md#v1.8.45))
-- **v1.8.44** (2026-05-16) — Long-press popup guard on password fields (`KeyVariation.PASSWORD`). ([notes](CHANGELOG.md#v1.8.44))
-- **v1.8.43** (2026-05-16) — Roborazzi plugin unblocked at 1.55.0; visual-regression CI step added. ([notes](CHANGELOG.md#v1.8.43))
-- **v1.8.42** (2026-05-16) — Kotlin 2.3.20 → 2.3.21 bug-fix bump. ([notes](CHANGELOG.md#v1.8.42))
-- **v1.8.41** (2026-05-16) — Auto-return to letter keyboard after apostrophe in symbols panel. ([notes](CHANGELOG.md#v1.8.41))
-- **v1.8.40** (2026-05-16) — Per-daemon enable / disable for the MCP bridge in Settings. ([notes](CHANGELOG.md#v1.8.40))
+- **v1.8.247** (2026-06-05) — Manual subtype switching by id now treats stale chooser ids as no-ops instead of risking a forced-null crash.
+- **v1.8.246** (2026-06-04) — Repo hygiene now explains that module `build/` caches can survive `git rm --cached` and should be treated as local ignored output.
+- **v1.8.245** (2026-06-04) — Fastlane changelog drafting now documents the 480-character draft budget, store-facing summary rules, and evidence-backed wording expectations.
+- **v1.8.244** (2026-06-04) — Visual-QA, manual-QA, and release-evidence checklists are now linked from the verification docs.
+- **v1.8.243** (2026-06-04) — Localization copy now avoids Turkish repeated-word lint, uses clearer source labels, and standardizes trust-sensitive failure/destructive copy with focused resource tests.
+- **v1.8.242** (2026-06-04) — `NativeStr.toJavaString()` now decodes only ByteBuffer remaining bytes across heap, sliced, direct, and read-only buffers without consuming caller position.
+- **v1.8.241** (2026-06-04) — MIME helper aggregate semantics are now documented and covered, constructor stdout logging is removed, and legacy font wildcard matching is explicit.
+- **v1.8.240** (2026-06-04) — Async preference-store init failures now stage a crash report, unblock the Settings splash wait, and redirect to recovery instead of hanging.
+- **v1.8.239** (2026-06-04) — Editor start/selection content-generation jobs now cancel or supersede stale work before reset, finishInput, or field switches can republish old state.
+- **v1.8.238** (2026-06-04) — Clipboard image/video history tiles now expose localized TalkBack labels with media type, history group, and copied-time context while keeping decorative thumbnail overlays hidden.
+- **v1.8.237** (2026-06-04) — Settings search destination highlights are now one-shot and dismissible, so stale search-result cards do not reappear on later visits.
+- **v1.8.236** (2026-06-04) — Suggestion candidate generation now snapshots incognito, no-personalized-learning, preference, and ghost-text sensitivity inputs before async provider work begins.
+- **v1.8.235** (2026-06-04) — Settings search now exposes TalkBack field labels/state, polite result-status changes, and result rows with position, screen, title, and summary context.
+- **v1.8.234** (2026-06-04) — Focused regression tests now pin Arabic combining-mark shaping, Snygg unknown selectors and `contentScale`, private-session trace suppression, and locale-scoped n-gram flush behavior.
+- **v1.8.233** (2026-06-04) — Editor batch edits now wrap only synchronous `InputConnection` mutations while expected-content generation and queue pushes happen before the batch opens.
+- **v1.8.232** (2026-06-04) — Settings -> Personal dictionary now explains blocked system-back gestures during active save, delete, import, or export work with operation-specific feedback.
+- **v1.8.231** (2026-06-04) — Dynamic incognito toggles now immediately re-apply the IME window screen-capture guard for the active field.
+- **v1.8.230** (2026-06-04) — Sync sealed-box envelopes now have fixed v1 schema constants, deterministic X25519/AES-GCM vector coverage, and documented compatibility policy before transport activation.
+- **v1.8.229** (2026-06-04) — Non-co-signed addon APKs now require an explicit Settings trust action before enrollment; co-signed addons still load automatically.
+- **v1.8.228** (2026-06-04) — Clipboard history search is now wired into the keyboard palette with a settings toggle, clear/no-results states, and query plus type-filter composition coverage.
+- **v1.8.227** (2026-06-04) — Japanese locale capability gates now use the valid `ja` language subtag for no-capitalization and no-auto-space behavior, with focused JVM coverage.
+- **v1.8.226** (2026-06-04) — Post-audit release ledger for pushed n-gram, thread-safety, crypto, trace-privacy, Arabic-shaping, Snygg selector/contentScale, and clipboard media fallback fixes.
+- **v1.8.225** (2026-06-04) — Deep engineering audit hardening across IME core, clipboard, dictionary import, privacy backup rules, settings sliders, haptics, and CI release gates.
+- **v1.8.224** (2026-06-04) — Settings search now resets populated result lists to the top when the query changes so stale scroll offsets do not hide the highest-ranked result.
+- **v1.8.223** (2026-06-04) — Settings search now resolves high-traffic capability synonyms such as dark theme, haptic, trace, punctuation, and privacy to the intended settings destinations.
+- **v1.8.222** (2026-06-04) — Settings search no-results states now include a one-tap Browse all settings action back to Settings Home.
+- **v1.8.221** (2026-06-04) — Settings search now has a JVM/Robolectric drift guard for duplicate entry IDs, real string-resource resolution, and typed destination-route mapping.
+- **v1.8.220** (2026-06-04) — Root onboarding docs now agree on the local-only planning, shipped-state, release-note, and archived-planning split.
+- **v1.8.219** (2026-06-04) — Restore and crash diagnostic failures now use project logging, and restore toasts/cards use stable fallback copy when Android reports a null or blank throwable message.
+- **v1.8.218** (2026-06-04) — Staged startup exceptions now persist to the local crash report store and open the crash dialog before Settings can hang behind the splash screen.
+- **v1.8.170** (2026-05-18) — Keyboard preview field polish: settings preview fields now sit on a distinct bottom surface, expose ready/active feedback, preserve bottom-bar traversal, and use coroutine-safe feedback when Android cannot open the IME picker.
+- **v1.8.169** (2026-05-18) — Empty-state UX polish: selected dictionary-language views, extension categories, language packs, filtered clipboard history, and the theme manager now explain blank states and route users toward add/import/filter-clear/recovery actions.
+- **v1.8.168** (2026-05-18) — Addon scan progress: Addons Settings now shows a shared progress card while installed packages and dictionary-pack metadata are rescanned, and the touched preference state read uses the current `collectAsState` API.
+- **v1.8.167** (2026-05-18) — Theme and extension destructive confirmations: draft file deletes plus theme rule/property deletes now require explicit confirmation and explain that installed extensions/themes remain unchanged until save.
+- **v1.8.166** (2026-05-18) — Repo hygiene closure: CI now runs a repo-hygiene script, generated build/report output is guarded, legacy deleted markdown decisions are documented, and commit-scope/final-handoff rules are pinned.
+- **v1.8.165** (2026-05-18) — CI quality gates: Android CI lint now fails stale baseline drift, Dependabot reviews Gradle and Actions updates weekly, a manual emulator settings-launch smoke exists, and local verification commands are documented.
+- **v1.8.164** (2026-05-18) — Backup/restore baseline: benchmark-only representative archive generation measures preference plus keyboard/theme backup creation and merge restore timings under `docs/benchmark-results/`.
+- **v1.8.163** (2026-05-18) — Theme-switch baseline: benchmark-only direct switch markers and an adb harness measure SwiftKey Pure / M3E theme swaps while the benchmark IME is visible, including cold and cached timings under `docs/benchmark-results/`.
+- **v1.8.162** (2026-05-18) — Candidate row recomposition baseline: benchmark-only smartbar log markers and an adb harness measure warm typing recomposition counts/durations plus paired NLP suggestion timing under `docs/benchmark-results/`.
+- **v1.8.161** (2026-05-18) — Dictionary load/preload baseline: a benchmark-only activity preloads the Latin dictionary, forces lazy SymSpell d1/d2 index construction with an invalid probe token, and records SM-S938B / Android 16 numbers under `docs/benchmark-results/`.
+- **v1.8.160** (2026-05-18) — First suggestion latency baseline: a benchmark-only activity invokes the Latin suggestion provider against a real `EditorContent` snapshot and records cold provider-direct SM-S938B / Android 16 numbers under `docs/benchmark-results/`.
+- **v1.8.159** (2026-05-18) — IME first-render benchmark baseline: `:benchmark` is active again, a benchmark-only input activity drives cold IME view creation, and SM-S938B / Android 16 first-render numbers are committed under `docs/benchmark-results/`.
+- **v1.8.158** (2026-05-18) — Accessibility manual QA notes: contributor and accessibility docs now list TalkBack traversal, key-label, candidate-row, font-scale, non-color-state, and theme/layout checks.
+- **v1.8.157** (2026-05-18) — Non-color state indicators: shared success/progress/neutral cards and extension-import row icons make readiness, progress, cancellation, and completion visible without relying on color alone.
+- **v1.8.156** (2026-05-18) — Theme contrast audit: bundled keyboard/candidate/dialog styles and settings warning/error/dialog palettes now have selector-level AA coverage; low-contrast enter-key variants and card secondary text were tightened.
+- **v1.8.155** (2026-05-18) — Dynamic font scaling: compact settings metadata, links, extension component headings, and theme-rule key previews now expand wrapping room or preview size at high font scale.
+- **v1.8.154** (2026-05-18) — Keyboard key accessibility: semantic key targets now follow the real touch hitbox, expose an accessibility click action, and label common clipboard, voice, mode, layout, and smartbar-control keys explicitly.
+- **v1.8.153** (2026-05-18) — Candidate and smartbar TalkBack labels: prediction-strip candidates now announce suggestion type, position, and text, while quick actions use a stable display-name/tooltip fallback policy.
+- **v1.8.152** (2026-05-18) — Settings focus order: the shared settings scaffold now gives TalkBack and keyboard traversal a stable app bar -> content -> bottom actions -> floating action order.
+- **v1.8.151** (2026-05-18) — Dictionary transfer busy states: user dictionary import/export now shows explicit progress cards, runs transfer work off the main thread, and blocks duplicate transfer/navigation/menu/entry actions while busy.
+- **v1.8.150** (2026-05-18) — Trust-state recovery microcopy: backup, restore, extension, language-pack, archive-file, and manual dictionary failure cards now state what stayed unchanged and provide a retry/recovery path with the technical detail.
+- **v1.8.149** (2026-05-18) — Dictionary entry trust states: manual add/update/delete now show progress/result cards, run DAO writes off the main thread, refresh affected suggestion overlays, and block duplicate entry actions while work is running.
+- **v1.8.148** (2026-05-18) — Extension archive file trust states: archive file import/rename/delete now show progress/result cards, do file work off the main thread, and block duplicate actions while work is running.
+- **v1.8.147** (2026-05-18) — Theme extension trust states: theme editing now shows save progress/failure cards, confirms component removal with draft-state feedback, and installed extension deletion now shows progress/failure cards while blocking duplicate actions.
+- **v1.8.146** (2026-05-18) — Language pack trust states: extension import now shows file-reading/importing/cancel/failure states plus new/update/skipped counts, and language pack deletion now shows progress/success/failure cards while blocking duplicate actions.
+- **v1.8.145** (2026-05-18) — Restore flow trust states: erase restores now require confirmation and show recovery-copy guidance, restore progress/cancellation/failure/partial-failure states stay visible, and section-level restore summaries prevent missing archive sections from silently erasing local data.
+- **v1.8.144** (2026-05-18) — Backup flow trust states: backup progress, cancellation, share-sheet handoff, failure, and sensitive-clipboard exclusion now surface as explicit cards, with `BackupFlowNotice` policy coverage.
+- **v1.8.143** (2026-05-18) — Autocorrect lifecycle contract: spacebar, punctuation, backspace, hardware, glide-delete, provider-notification, manual QA, and regression-test contracts are now defined; accepted provider notifications now wait for successful editor commits.
+- **v1.8.142** (2026-05-18) — Theme rule edit policy extraction: `ThemeRuleEditPolicy` now owns add-rule selection validation, selector toggling, and key-code attribute parsing/replacement decisions for the theme editor.
+- **v1.8.141** (2026-05-18) — Punctuation flush policy extraction: `KeyboardAutoCommitFlushPolicy` now owns software non-letter autocorrect flush decisions for media mode, alphabetic keys, punctuation, numeric keys, and numeric/phone layouts.
+- **v1.8.140** (2026-05-18) — Candidate auto-commit policy extraction: `CandidateAutoCommitPolicy` now owns shortcut, phrase repair, active-strip, immediate fallback, quick-prediction, and rejected-correction gating decisions with focused JVM coverage.
+- **v1.8.139** (2026-05-18) — Dependency warning review: Gradle is checksum-pinned to 9.5.1, Navigation Compose is on 2.9.8, and JUnit Vintage is centralized at 6.0.3 after official-release review, clearing the dependency-version lint warnings.
+- **v1.8.138** (2026-05-18) — Conservative unused-resource cleanup: obsolete launcher/branding resources and dead legacy color tokens were removed after manifest/code/asset/test/dynamic lookup review, reducing lint from 289 warnings / 1 hint to 245 warnings / 1 hint.
+- **v1.8.137** (2026-05-18) — Theme editor validation tests: theme component metadata now validates through `ThemeComponentMetaValidationPolicy`, with JVM coverage for valid apply normalization, invalid fields, duplicate IDs, and blank stylesheet fallback.
+- **v1.8.136** (2026-05-18) — Subtype editor validation tests: editable subtype drafts now validate through `SubtypeEditorValidationPolicy`, with JVM coverage for default add-state missing fields, complete draft building, select-placeholder rejection, and edit-state preservation.
+- **v1.8.135** (2026-05-18) — Language pack import/update tests: extension import readiness now lives in `ExtensionImportPolicy`, with JVM coverage for new installs, user-installed updates, bundled-core rejection, corrupted metadata, wrong extension type, unsupported files, and import button enablement.
+- **v1.8.134** (2026-05-18) — Backup/restore policy tests: validation and operation-state decisions now live in `BackupRestorePolicy`, with JVM coverage for backup success/cancellation/failure, invalid archives, restore enablement, and partial-failure classification.
+- **v1.8.133** (2026-05-18) — Incognito suggestion privacy policy tests: app-declared no-learning override, dynamic toggle availability, committed-word learning, and touch-decoder evidence gates now have focused JVM coverage.
+- **v1.8.132** (2026-05-18) — Glide typing delete policy tests: immediate backspace word-delete escalation now lives in the editor input policy and is covered for enabled, disabled, inactive phantom-space, and explicit word-delete paths.
+- **v1.8.131** (2026-05-18) — Spacing lifecycle state tests: auto-space and phantom-space state transitions now have focused JVM coverage for one-update grace, composing-region visibility, and candidate-for-revert cleanup.
+- **v1.8.130** (2026-05-18) — Hardware keyboard input policy tests: hardware keydown/keyup routing now has focused JVM coverage for space, enter, delete pass-through, shift, mapped letters, mapped punctuation, and mapped punctuation flushing pending autocorrect before commit.
+- **v1.8.129** (2026-05-18) — Editor input behavior policy extraction: autocorrect spacebar commits, rejected-correction protection, punctuation auto-spacing, phantom spacing, double-space period, and sentence-capitalization gates now have focused JVM coverage through a pure policy class.
+- **v1.8.128** (2026-05-18) — Nastaliq Urdu font bundle: the official OFL-1.1 Noto Nastaliq Urdu TTF is now committed as an APK asset, Urdu subtype key labels and hints route Arabic-script text through it, and asset/license tests pin the bundle.
+- **v1.8.127** (2026-05-18) — Emoji pinned-group sheet: long-pressing emoji can now pin them to named groups, and pinned-group chips commit the saved emoji sequence from the palette.
+- **v1.8.126** (2026-05-18) — Addons dictionary catalog polish: Settings -> Addons now lists mounted dictionary packs with language, word count, dataset license, source, descriptor rejections, and updated install guidance.
+- **v1.8.125** (2026-05-18) — Addons dictionary asset mounting: enrolled dictionary-pack APK assets now feed the Latin dictionary store through `PackageManager#getResourcesForApplication(...)`, merge with bundled baselines, and reload when the live addon registry generation changes.
+- **v1.8.124** (2026-05-18) — Addons trust controls: Settings -> Addons can now reset all saved signing-certificate pins or trust a changed certificate after confirmation and rescan; the pin codec gained targeted package removal and the Addons Roborazzi baseline was refreshed.
+- **v1.8.123** (2026-05-18) — Roborazzi baseline hard gate: committed screenshot baselines for the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces; CI now fails on visual-regression drift instead of using `continue-on-error`.
+- **v1.8.104 – v1.8.122** (2026-05-17/18) — seventh-pass audit closure and follow-up slices: app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` and `EXTRA_IS_SENSITIVE` privacy flags are honoured, voice handoff refuses sensitive fields, checks every external voice IME's microphone grant, exposes a durable Listening state, and now gates the in-app Whisper/Vosk route selector and model catalog behind a preview-only local-runtime flag; dangerous voice remove commands were tightened, the voice setup activity is non-exported with a validated setup-intent contract, clipboard backup/clear-all leaks were closed, provider-backed clipboard media clones now cap image/video bytes, image preview decode rejects oversized dimensions before allocation, automatic clipboard history eviction now closes provider-backed media before deleting rows, sensitive clipboard text no longer feeds pin-popup description URL/email/phone classification, startup reconciliation removes missing-file history rows plus unreferenced provider files / metadata rows, media restore recreates provider metadata for restored image/video clips, failed foreign media URI clones no longer create phantom history entries, clipboard history maintenance no longer sorts or evicts on Main, the dead parallel Tink clipboard-history store has been removed so the Room-backed manager is the only live storage path, and the KenLM mmap reader now rejects header/pre-body offsets instead of aliasing them to trie-body bytes.
+- **v1.8.85 – v1.8.103** (2026-05-17) — cross-subsystem hardening pass + 18 single-feature follow-up releases. v1.8.85 closed eleven privacy / security / reliability gaps (merged-manifest `verifyNoInternetPermission`, Android 12+ `data_extraction_rules.xml`, atomic `ZipUtils.unzip`, thread-safe `HardwareKeyboardRuntimeMapper`, sticker decoder OOM, sticker MIME spoof, addon enumerator size category-error, `verify-reproducible-apk.sh` payload-manifest pass criterion, CI workflow permissions, `pull_request_target` injection, AltGr); v1.8.86 – v1.8.102 then returned to per-PR scope and closed eleven of twelve F-roster items (FLAG_SECURE on numeric PIN + passphrase dialog, legacy-passphrase recovery, ZipUtils abort policy, SAF lost-grant UX, addon spec docs alignment, LDML `shift=` semantics, fastlane script hardening, SHA-pinned floating action tags, `release.yml` keystore hygiene, `verifyDataExtractionRules` build gate, sticker LRU + folder cap, `HardwareKeyEntry.longPressAlternates`); v1.8.103 closes the documentation half. The remaining F11 Roborazzi baseline item closed in v1.8.123.
+- **v1.8.84** (2026-05-17) — Settings → Addons status surface: users can inspect accepted/rejected addon APKs, manually rescan through the startup reconciliation path, and review package/license/version/size/signing-fingerprint details.
+- **v1.8.83** (2026-05-17) — Addon registry startup wiring: the IME now scans installed addon manifests at startup, reconciles them through persisted signing pins, publishes a process-wide registry, and cleans malformed stored pin lines.
+- **v1.8.82** (2026-05-17) — Addon signing-pin persistence: `AddonSigningPinSet` safely parses/encodes addon package fingerprint pins and `prefs.addon.signingCertPins` gives the registry a durable trust store consumed by v1.8.83 startup wiring and v1.8.84 Settings status UI.
+- **v1.8.81** (2026-05-17) — Addon catalog foundation: `AddonRegistry` now reconciles live addon state with signing-certificate pins, and `DictionaryPackCatalog` validates dictionary-pack descriptors plus provenance before Settings/Addons UI and asset mounting land.
+- **v1.8.80** (2026-05-17) — SQLCipher provider migration plan: documented the current LibTomCrypt-based Android Community AAR state, OpenSSL proof-of-concept path, migration triggers, 16 KB page-size gates, and rollback rules without changing the runtime dependency.
+- **v1.8.79** (2026-05-17) — Honeycomb hex layout wire-up: the bundled honeycomb character layout is registered for subtype selection, routed through `TextKeyboardLayoutStyle.Honeycomb`, clipped to `HoneycombHexShape`, and hit-tested against the actual hex instead of rectangular bounding boxes.
+- **v1.8.78** (2026-05-17) — Keyman `.kmp` package import foundation: safe ZIP/package parser for `kmp.json`, keyboard/language/example metadata, LDML-in-package extraction, lexical-model classification, compiled-engine-required classification, and unsafe entry skipping.
+- **v1.8.77** (2026-05-17) — User-imported sticker folder: Settings → Emoji & stickers can persist a local SAF folder URI, enumerate supported image files into an Imported sticker pack, preview them in the sticker grid, and commit them through the existing rich-content provider path.
+- **v1.8.76** (2026-05-17) — Hardware-keyboard runtime mapping: imported layouts can bind to Android hardware `deviceId` values, resolve `KeyEvent` scan/key codes through KLC/macOS fallbacks, and commit mapped printable characters through `KeyboardManager`.
+- **v1.8.75** (2026-05-17) — Hardware-keyboard import: added an XXE-hardened macOS `.keylayout` XML parser that normalizes key maps, modifier maps, and action-backed dead keys into `HardwareKeyboardLayout`.
+- **v1.8.74** (2026-05-17) — Bump-batch C: Android Gradle Plugin `9.0.0` → `9.2.1` and Compose BOM `2026.03.01` → `2026.05.00`; R8 keepattributes audit required no rule changes.
+- **v1.8.73** (2026-05-17) — Repo hygiene: local root JVM crash/replay logs moved to `.ai/local-crash-logs/2026-05-16/`, and CI now rejects committed root `hs_err_pid*.log` / `replay_pid*.log` files.
+- **v1.8.72** (2026-05-17) — Roadmap correction: HeliBoard / NLnet open-glide integration is now treated as an additive future track, while SwiftFloris's shipped `StatisticalGlideTypingClassifier` remains the production glide path until a permissive open library and dataset are actually available.
+- **v1.8.71** (2026-05-17) — Bump-batch B: Roborazzi `1.55.0` → `1.60.0` and Robolectric `4.14.1` → `4.16.1`; no app code, permissions, or runtime behavior changed.
+- **v1.8.70** (2026-05-17) — README migration-window follow-up: Samsung / Grammarly keyboard-workflow callouts, Galaxy AI Writing Assist compatibility note for One UI 7+, Grammarly Keyboard replacement note, and release-front-door refresh.
+- **v1.8.69** (2026-05-17) — Bump-batch A: coroutines `1.11.0`, KSP `2.3.8`, ZXing `3.5.4`, and AboutLibraries `14.2.0`; beta AboutLibraries `15.0.0-b01` intentionally skipped.
+- **v1.8.68** (2026-05-17) — N7.6 Tink / AndroidKeystore migration: removed AndroidX Security Crypto, added shared Tink encrypted-preference wrapper, migrated SQLCipher passphrase and legacy clipboard-history payloads one time when old keysets remain readable.
+- **v1.8.67** (2026-05-17) — N12.5 reproducible-build self-verification CI: new build-twice release APK workflow plus `scripts/verify-reproducible-apk.sh` clean-worktree byte comparison and drift manifests.
+- **v1.8.66** (2026-05-17) — N8.7 Article 50 transparency surface: first-run **Review local AI features** setup step, reopenable Settings → About → **AI features in this keyboard** screen, docs links, and catalog test coverage for next-word / glide / voice / translation / smart-compose disclosures.
+- **v1.8.65** (2026-05-17) — Phase A3 Settings wiring: **Export encrypted** passphrase dialog + `.sfexp` create-document flow, direct encrypt-then-write personal-dictionary export, `SFEXP1` import sniffing, passphrase decrypt, and `DictionaryImporter`/rollback-summary routing for decrypted SwiftFloris combined-list files.
+- **v1.8.64** (2026-05-17) — Phase D1: calendar quick-insert (`QuickAction.InsertCalendarEvent`) reads local `CalendarContract.Instances` entries for today + next 7 days, opens an IME-local agenda picker, and inserts the selected event title + date/time. `READ_CALENDAR` is requested only after explicit tap.
+- **v1.8.63** (2026-05-17) — Phase C3: bundled SwiftKey High Contrast (AAA) and Aurora Animated themes, with Snygg stylesheet tests and a reduced-motion-aware GenericShape aurora background.
+- **v1.8.62** (2026-05-17) — Phase C1: split-keyboard renderer wire-up with gutter-aware layout, viability gating, and touch-hit suppression inside the gutter.
+- **v1.8.61** (2026-05-17) — Phase B2: quick-prediction-insert threshold tuning with a configurable weighted-confidence floor and aligned plain-space suppression.
+- **v1.8.60** (2026-05-17) — Phase B1: multilingual cold-start sentence/phrase priors plus top-1,000 Zipf seed overlays for CS/DE/ES/FR/IT/PT.
+- **v1.8.59** (2026-05-17) — Phase D3: Typing Stats now shows current-week accepted corrections versus last week, backed by bounded weekly metadata in `CorrectionOutcomePriors`.
+- **v1.8.58** (2026-05-17) — Phase D2: generic task-creation quick action (`QuickAction.InsertTask`). On-device replacement for SwiftKey's Microsoft-To-Do tile via `Intent.ACTION_SEND` chooser; works with Tasks.org / OpenTasks / Google Tasks / Joplin / Notion / Markor. `SensitiveFieldGuard` gate.
+- **v1.8.57** (2026-05-17) — Phase C2: SwiftKey "Modes → Arrow keys" parity via new `BottomRowPreset.Navigation` (← ↑ space ↓ → enter).
+- **v1.8.56** (2026-05-17) — Phase B4: same-sentence language-switch hardening via geometric-decay weighted blend in `TrailingContextLanguageBlend`.
+- **v1.8.55** (2026-05-17) — Phase B3: shared-spelling bilingual handling — sub-floor `0.30` confidence on one-locale candidates overwriting shared typed words.
+- **v1.8.54** (2026-05-17) — Phase A3 codec primitive: encrypted-blob personal-dictionary export envelope (AES-256-GCM + PBKDF2-HMAC-SHA-256 at OWASP-2025's 600 000 iterations).
+- **v1.8.53** (2026-05-17) — Phase A2: post-import confirmation + rollback dialog + wired `DictionaryImporter` into Settings UI.
+- **v1.8.52** (2026-05-17) — SwiftKey migration outreach push: README banner + opening pitch lead with the 2026-05-31 cutoff, badge promoted, parity-roadmap permalink linked.
+- **v1.8.51** (2026-05-17) — N14.3 + N14.4 Compose BOM + Gradle wrapper dependency-pin audits, with a new dependency-triage audit log.
+- **v1.8.50** (2026-05-17) — N17.1 emoji-picker crash triage; root-caused to `Paint.hasGlyph("")` and closed with three defensive filters.
+- **v1.8.49** (2026-05-17) — N15.3 Smart Edit voice REMOVE_ITEM_FROM_LIST: new parameterised voice-command type that excises a named item from the dictated buffer mid-stream.
+- **v1.8.48** (2026-05-17) — Adversarial-input + lifecycle hardening pass across the SwiftKey JSON importer, MCP daemon bridge, IME service teardown, voice-model install, ZIP extraction, and DB cursor handling.
+- **v1.8.47** (2026-05-16) — N1.4 FUTO swipe-trace replay and benchmark harness.
+- **v1.8.46** (2026-05-16) — SwiftKey `swiftkey-cloud.json` import parser ahead of the 2026-05-31 account retirement. New `DictionaryImportFormat.JSON` + tolerant `parseSwiftKeyJson`.
+- **v1.8.45** (2026-05-16) — Android 17 IME-visibility restore across configuration changes.
+- **v1.8.44** (2026-05-16) — Long-press popup guard on password fields (`KeyVariation.PASSWORD`).
+- **v1.8.43** (2026-05-16) — Roborazzi plugin unblocked at 1.55.0; visual-regression CI step added.
+- **v1.8.42** (2026-05-16) — Kotlin 2.3.20 → 2.3.21 bug-fix bump.
+- **v1.8.41** (2026-05-16) — Auto-return to letter keyboard after apostrophe in symbols panel.
+- **v1.8.40** (2026-05-16) — Per-daemon enable / disable for the MCP bridge in Settings.
 - **v1.8.35–v1.8.39** — Full MCP daemon bridge: AIDL surface, AndroidMcpClient, per-daemon bind lifecycle, discoverer, IME-startup wire-up, Settings UI.
 - **v1.8.34** — Macrobenchmark trace instrumentation across six production hot paths.
 - **v1.8.31–v1.8.33, v1.8.79** — Honeycomb hex renderer foundation (`HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader`) and production `TextKeyboardLayout` wire-up.
@@ -421,29 +394,28 @@ The full release stream lives in [`CHANGELOG.md`](CHANGELOG.md) and on [GitHub R
 - **v1.6.0** — Personal-learning dictionary + 117k SCOWL English + SwiftKey design tokens.
 - **v1.5.0** — FUTO Voice Input integration (replacing Google Speech Recognizer).
 
-See [`ROADMAP.md`](ROADMAP.md) §3 for the full reconciled version table back to v1.1.0.
+Older version details are summarized in the release bullets above and on GitHub Releases.
 
 ## Contributing
 
 SwiftFloris welcomes focused contributions in themes, dictionary packs,
 transliteration tables, performance work, bug fixes, accessibility, and docs.
-Before opening a PR, read [`CONTRIBUTING.md`](CONTRIBUTING.md) and keep the
-base-app invariants intact: no network permission, no telemetry, no account
+Before opening a PR, keep the base-app invariants intact: no network permission, no telemetry, no account
 binding, Apache-2.0-compatible `:app` code, and no closed-source blobs.
 
 ## Troubleshooting
 
 ### Gesture typing not working?
 
-See [Multilingual Gesture Typing](docs/GESTURE_TYPING_MULTILINGUAL.md). Gesture typing currently uses the bounded statistical engine for EN / DE / ES / FR / IT / PT; the neural / open-glide path is gated on the HeliBoard NLnet release.
+See Multilingual Gesture Typing. Gesture typing currently uses the bounded statistical engine for EN / DE / ES / FR / IT / PT; the neural / open-glide path is gated on the HeliBoard NLnet release.
 
 ### Voice input unavailable?
 
-See [FUTO Voice Input Troubleshooting](docs/FUTO_VOICE_INPUT_TROUBLESHOOTING.md). SwiftFloris does not record audio itself; live dictation hands off to the user-installed FUTO Voice Input app or another enabled external voice keyboard. The in-app Whisper/Vosk catalog is preview-only until the local recognizer runtime ships.
+See FUTO Voice Input Troubleshooting. SwiftFloris does not record audio itself; live dictation hands off to the user-installed FUTO Voice Input app or another enabled external voice keyboard. The in-app Whisper/Vosk catalog is preview-only until the local recognizer runtime ships.
 
 ### Keyboard crashes on emoji insertion?
 
-Root-caused in **v1.8.50** (ROADMAP §6 N17.1, [release notes](CHANGELOG.md#v1.8.50), [GitHub issue #1](https://github.com/SysAdminDoc/SwiftFloris/issues/1)). The trigger was `Paint.hasGlyph("")` aborting the palette render whenever an empty-value `Emoji` reached the initial filter pass. Three defensive filters landed at the palette, history-mapping, and asset-loader layers. If you still see this on v1.8.50+ please attach the device model, Android build, ROM, and a logcat capture to the issue.
+Root-caused in **v1.8.50** ([GitHub issue #1](https://github.com/SysAdminDoc/SwiftFloris/issues/1)). The trigger was `Paint.hasGlyph("")` aborting the palette render whenever an empty-value `Emoji` reached the initial filter pass. Three defensive filters landed at the palette, history-mapping, and asset-loader layers. If you still see this on v1.8.50+ please attach the device model, Android build, ROM, and a logcat capture to the issue.
 
 ### Theme changes not applying?
 
@@ -489,12 +461,6 @@ limitations under the License.
 | **GitHub** | https://github.com/SysAdminDoc/SwiftFloris |
 | **Issues** | https://github.com/SysAdminDoc/SwiftFloris/issues |
 | **Releases** | https://github.com/SysAdminDoc/SwiftFloris/releases |
-| **Roadmap** | [ROADMAP.md](ROADMAP.md) |
-| **Completed work** | [COMPLETED.md](COMPLETED.md) |
-| **Research report** | [RESEARCH_REPORT.md](RESEARCH_REPORT.md) |
-| **SwiftKey migration** | [docs/MIGRATE_FROM_SWIFTKEY.md](docs/MIGRATE_FROM_SWIFTKEY.md) |
-| **Privacy and AI** | [docs/PRIVACY_AND_AI.md](docs/PRIVACY_AND_AI.md) |
-| **Threat model** | [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md) |
 | **FUTO Voice** | https://voiceinput.futo.org/ |
 | **FlorisBoard upstream** | https://github.com/florisboard/florisboard |
 
