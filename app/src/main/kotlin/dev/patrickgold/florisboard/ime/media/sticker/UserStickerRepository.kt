@@ -225,7 +225,7 @@ object UserStickerRepository {
             id = encodeDocumentUri(sourceUri),
             label = label,
             emoji = "IMG",
-            keywords = keywordsFor(label),
+            keywords = keywordsFor(label, document.displayName),
             backgroundColor = 0xFF1F2937.toInt(),
             accentColor = 0xFF60A5FA.toInt(),
             mimeType = mimeType,
@@ -270,10 +270,11 @@ object UserStickerRepository {
             .ifBlank { "Sticker" }
     }
 
-    private fun keywordsFor(label: String): List<String> {
-        return label
-            .lowercase(Locale.ROOT)
-            .split(Regex("\\s+"))
+    private fun keywordsFor(label: String, displayName: String): List<String> {
+        return listOf(label, displayName.substringBeforeLast('.', displayName))
+            .joinToString(" ")
+            .normalizedStickerQuery()
+            .split(' ')
             .filter { it.isNotBlank() }
             .distinct()
     }

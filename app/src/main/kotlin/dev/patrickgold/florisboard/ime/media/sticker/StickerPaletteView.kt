@@ -21,6 +21,7 @@ import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
@@ -29,11 +30,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Close
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
@@ -57,6 +63,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -78,6 +85,9 @@ import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.SnyggSelector
+import org.florisboard.lib.snygg.ui.SnyggBox
+import org.florisboard.lib.snygg.ui.SnyggIcon
+import org.florisboard.lib.snygg.ui.SnyggRow
 import org.florisboard.lib.snygg.ui.SnyggText
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
@@ -158,6 +168,10 @@ fun StickerPaletteView(
         BundledStickerRepository.packs + listOfNotNull(userStickerPack)
     }
     var activePackIndex by remember { mutableIntStateOf(0) }
+    var searchQuery by remember { mutableStateOf("") }
+    val searchResults = remember(packs, searchQuery) {
+        StickerSearch.search(packs, searchQuery)
+    }
     val selectedPackIndex = activePackIndex.coerceIn(packs.indices)
     val activePack = packs[selectedPackIndex]
     val canInsertStickers = remember(activeEditorInfo.contentMimeTypes.toList(), packs) {
@@ -166,13 +180,9 @@ fun StickerPaletteView(
     val isImportedTabActive = activePack.id == UserStickerRepository.PackId
 
     Column(modifier = modifier) {
-        StickerPackTabRow(
-            packs = packs,
-            selectedIndex = selectedPackIndex,
-            onSelected = { index ->
-                inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
-                activePackIndex = index
-            },
+        StickerSearchRow(
+            query = searchQuery,
+            onQueryChange = { query -> searchQuery = query },
         )
         if (!canInsertStickers) {
             SnyggText(
@@ -183,6 +193,37 @@ fun StickerPaletteView(
                 text = stringRes(R.string.sticker__unsupported_message),
             )
         }
+        if (searchQuery.isNotBlank()) {
+            val gridState = rememberLazyGridState()
+            if (searchResults.isEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(all = 12.dp),
+                ) {
+                    Text(text = stringRes(R.string.sticker__search__empty))
+                }
+            } else {
+                StickerGrid(
+                    stickers = searchResults,
+                    gridState = gridState,
+                    editorInstance = editorInstance,
+                    onStickerTap = { sticker ->
+                        inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                        commitSticker(editorInstance, sticker, scope, context)
+                    },
+                )
+            }
+            return@Column
+        }
+        StickerPackTabRow(
+            packs = packs,
+            selectedIndex = selectedPackIndex,
+            onSelected = { index ->
+                inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                activePackIndex = index
+            },
+        )
         if (isImportedTabActive && userStickerGrantLost) {
             // Mirror of the v1.8.90 Settings-side preference-summary surface.
             // Android revoked the persistable SAF grant (e.g. the file
@@ -201,32 +242,121 @@ fun StickerPaletteView(
             )
         }
         val gridState = rememberLazyGridState()
-        LazyVerticalGrid(
+        StickerGrid(
+            stickers = activePack.stickers,
+            gridState = gridState,
+            editorInstance = editorInstance,
+            onStickerTap = { sticker ->
+                inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                commitSticker(editorInstance, sticker, scope, context)
+            },
+        )
+    }
+}
+
+@Composable
+private fun StickerSearchRow(
+    query: String,
+    onQueryChange: (String) -> Unit,
+) {
+    val inputFeedbackController = LocalInputFeedbackController.current
+    val style = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
+    SnyggRow(
+        elementName = FlorisImeUi.MediaEmojiTab.elementName,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(FlorisImeSizing.smartbarHeight)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SnyggIcon(
             modifier = Modifier
-                .fillMaxSize()
-                .florisScrollbar(gridState),
-            columns = GridCells.Adaptive(minSize = StickerBaseWidth),
-            state = gridState,
-        ) {
-            items(activePack.stickers, key = { sticker -> sticker.id }) { sticker ->
-                StickerTile(
-                    sticker = sticker,
-                    enabled = sticker.canCommitInEditor(editorInstance),
-                    onTap = {
-                        inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
-                        val committed = editorInstance.commitRichContent(
-                            uri = StickerMediaProvider.uriFor(sticker),
-                            mimeTypes = sticker.commitMimeTypes,
-                            descriptionLabel = sticker.label,
+                .padding(horizontal = 8.dp)
+                .size(ButtonDefaults.IconSize),
+            imageVector = Icons.Outlined.Search,
+        )
+        BasicTextField(
+            modifier = Modifier.weight(1f),
+            value = query,
+            onValueChange = { value -> onQueryChange(value.take(40)) },
+            singleLine = true,
+            textStyle = TextStyle(
+                color = style.foreground(),
+                fontSize = 16.sp,
+            ),
+            decorationBox = { innerTextField ->
+                Box(modifier = Modifier.fillMaxWidth()) {
+                    if (query.isBlank()) {
+                        Text(
+                            text = stringRes(R.string.sticker__search__placeholder),
+                            color = style.foreground().copy(alpha = 0.58f),
+                            fontSize = 16.sp,
                         )
-                        if (!committed) {
-                            scope.launch {
-                                context.showShortToast(R.string.sticker__commit_failed)
-                            }
+                    }
+                    innerTextField()
+                }
+            },
+        )
+        if (query.isNotBlank()) {
+            SnyggBox(
+                elementName = FlorisImeUi.MediaEmojiTab.elementName,
+                modifier = Modifier
+                    .size(FlorisImeSizing.smartbarHeight)
+                    .pointerInput(Unit) {
+                        detectTapGestures {
+                            inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                            onQueryChange("")
                         }
                     },
+                contentAlignment = Alignment.Center,
+            ) {
+                SnyggIcon(
+                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                    imageVector = Icons.Outlined.Close,
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun StickerGrid(
+    stickers: List<Sticker>,
+    gridState: androidx.compose.foundation.lazy.grid.LazyGridState,
+    editorInstance: EditorInstance,
+    onStickerTap: (Sticker) -> Unit,
+) {
+    LazyVerticalGrid(
+        modifier = Modifier
+            .fillMaxSize()
+            .florisScrollbar(gridState),
+        columns = GridCells.Adaptive(minSize = StickerBaseWidth),
+        state = gridState,
+    ) {
+        items(stickers, key = { sticker -> "${sticker.packId}:${sticker.id}" }) { sticker ->
+            StickerTile(
+                sticker = sticker,
+                enabled = sticker.canCommitInEditor(editorInstance),
+                onTap = { onStickerTap(sticker) },
+            )
+        }
+    }
+}
+
+private fun commitSticker(
+    editorInstance: EditorInstance,
+    sticker: Sticker,
+    scope: kotlinx.coroutines.CoroutineScope,
+    context: android.content.Context,
+) {
+    val committed = editorInstance.commitRichContent(
+        uri = StickerMediaProvider.uriFor(sticker),
+        mimeTypes = sticker.commitMimeTypes,
+        descriptionLabel = sticker.label,
+    )
+    if (!committed) {
+        scope.launch {
+            context.showShortToast(R.string.sticker__commit_failed)
         }
     }
 }

@@ -81,32 +81,7 @@ object BundledStickerRepository {
     }
 
     fun search(query: String): List<Sticker> {
-        val normalizedQuery = query.normalizedStickerQuery()
-        if (normalizedQuery.isBlank()) return emptyList()
-        return allStickers()
-            .mapNotNull { sticker ->
-                val label = sticker.label.normalizedStickerQuery()
-                val keywordScore = sticker.keywords
-                    .map { it.normalizedStickerQuery() }
-                    .mapNotNull { keyword ->
-                        when {
-                            keyword == normalizedQuery -> 0
-                            keyword.startsWith(normalizedQuery) -> 1
-                            keyword.contains(normalizedQuery) -> 2
-                            else -> null
-                        }
-                    }
-                    .minOrNull()
-                val score = when {
-                    label == normalizedQuery -> 0
-                    label.startsWith(normalizedQuery) -> 1
-                    label.contains(normalizedQuery) -> 2
-                    else -> keywordScore
-                } ?: return@mapNotNull null
-                ScoredSticker(sticker, score)
-            }
-            .sortedWith(compareBy<ScoredSticker> { it.score }.thenBy { it.sticker.label })
-            .map { it.sticker }
+        return StickerSearch.search(packs, query)
     }
 
     private fun sticker(
@@ -129,13 +104,54 @@ object BundledStickerRepository {
         )
     }
 
+}
+
+object StickerSearch {
+    fun search(packs: List<StickerPack>, query: String): List<Sticker> {
+        val normalizedQuery = query.normalizedStickerQuery()
+        if (normalizedQuery.isBlank()) return emptyList()
+        return packs
+            .asSequence()
+            .flatMap { pack -> pack.stickers.asSequence().map { sticker -> pack to sticker } }
+            .mapNotNull { (pack, sticker) ->
+                val score = score(pack, sticker, normalizedQuery) ?: return@mapNotNull null
+                ScoredSticker(sticker, score)
+            }
+            .sortedWith(compareBy<ScoredSticker> { it.score }.thenBy { it.sticker.label })
+            .map { it.sticker }
+            .toList()
+    }
+
+    private fun score(pack: StickerPack, sticker: Sticker, normalizedQuery: String): Int? {
+        val candidates = buildList {
+            add(sticker.label to 0)
+            sticker.keywords.forEach { add(it to 0) }
+            add(sticker.displayName.substringBeforeLast('.', sticker.displayName) to 1)
+            add(pack.name to 3)
+        }
+        return candidates
+            .mapNotNull { (value, offset) ->
+                value.normalizedStickerQuery().matchScore(normalizedQuery)?.plus(offset)
+            }
+            .minOrNull()
+    }
+
+    private fun String.matchScore(normalizedQuery: String): Int? {
+        return when {
+            this == normalizedQuery -> 0
+            startsWith(normalizedQuery) -> 1
+            contains(normalizedQuery) -> 2
+            else -> null
+        }
+    }
+
     private data class ScoredSticker(
         val sticker: Sticker,
         val score: Int,
     )
 }
 
-private fun String.normalizedStickerQuery(): String {
+internal fun String.normalizedStickerQuery(): String {
     return lowercase(Locale.ROOT)
         .replace('_', ' ')
         .replace('-', ' ')
