@@ -39,8 +39,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 /**
  * ROADMAP §10.5 Next-9.4a — Compose row that renders the user's
@@ -96,13 +103,31 @@ private fun PinnedGroupChip(
 ) {
     // Subtle rectangular backdrop, 8 dp radius — adheres to the
     // global "no pill / oval / fully-rounded backdrop" rule.
+    // Colors derive from the active Snygg keyboard theme (tab foreground at
+    // low alpha for the backdrop) so the chips work on light themes too,
+    // mirroring the PinToGroupSheet treatment.
     var pressed by remember { mutableStateOf(false) }
-    val baseColor = Color(0xFF26283A)
-    val pressedColor = Color(0xFF34374D)
+    val tabStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
+    val windowStyle = rememberSnyggThemeQuery(FlorisImeUi.Window.elementName)
+    val foreground = tabStyle.foreground(default = windowStyle.foreground(default = Color(0xFFE6E6F0)))
+    val baseColor = foreground.copy(alpha = 0.10f)
+    val pressedColor = foreground.copy(alpha = 0.20f)
+    val badgeColor = foreground.copy(alpha = 0.16f)
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(if (pressed) pressedColor else baseColor)
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                onClick(label = null) {
+                    onTap()
+                    true
+                }
+                onLongClick(label = null) {
+                    onLongPress()
+                    true
+                }
+            }
             .padding(horizontal = 12.dp, vertical = 6.dp)
             .pointerInput(chip.name) {
                 detectTapGestures(
@@ -123,7 +148,7 @@ private fun PinnedGroupChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(text = chip.name, fontSize = 13.sp, color = Color(0xFFE6E6F0))
+            Text(text = chip.name, fontSize = 13.sp, color = foreground)
             if (chip.previewEmojis.isNotEmpty()) {
                 Text(
                     text = chip.previewEmojis.joinToString(separator = ""),
@@ -134,13 +159,13 @@ private fun PinnedGroupChip(
                 modifier = Modifier
                     .size(18.dp)
                     .clip(RoundedCornerShape(4.dp))
-                    .background(Color(0xFF3F4259)),
+                    .background(badgeColor),
                 contentAlignment = Alignment.Center,
             ) {
                 Text(
                     text = chip.totalEmojiCount.toString(),
                     fontSize = 10.sp,
-                    color = Color(0xFFD0D2E3),
+                    color = foreground.copy(alpha = 0.84f),
                 )
             }
         }
