@@ -737,7 +737,16 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onUpdateExtractingVisibility(info: EditorInfo?) {
         if (info != null) {
-            editorInstance.handleStartInputView(FlorisEditorInfo.wrap(info), isRestart = true)
+            val editorInfo = FlorisEditorInfo.wrap(info)
+            // The framework re-invokes this on every fullscreen re-evaluation,
+            // in addition to onStartInputView. Replaying the start-input
+            // pipeline for the same editor resets phantom/auto-space state,
+            // bounces the keyboard mode back to the field default, and
+            // launches a duplicate content-generation pass mid-session — so
+            // only resync when the editor actually changed.
+            if (editorInfo != editorInstance.activeInfo) {
+                editorInstance.handleStartInputView(editorInfo, isRestart = true)
+            }
         }
         when (prefs.keyboard.landscapeInputUiMode.get()) {
             LandscapeInputUiMode.DYNAMICALLY_SHOW -> super.onUpdateExtractingVisibility(info)
