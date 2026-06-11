@@ -1,0 +1,1 @@
+Add a local typing-quality scorecard covering tap correction, prediction, glide replay, and suggestion latency guardrails.
