@@ -34,10 +34,13 @@ package dev.patrickgold.florisboard.ime.nlp.latin
 internal class SymSpellIndex private constructor(
     private val deleteToOriginals: Map<String, Array<String>>,
     private val maxDistance: Int,
+    val indexedWordCount: Int,
+    val isComplete: Boolean,
 ) {
     companion object {
         private const val DefaultMaxDistance: Int = 1
         private const val MaxSupportedDistance: Int = 2
+        const val UnlimitedDeleteEntryBudget: Int = Int.MAX_VALUE
 
         /**
          * Builds an index over [words]. Skips empty / single-char strings (single-char
@@ -48,26 +51,45 @@ internal class SymSpellIndex private constructor(
         fun build(
             words: Iterable<String>,
             maxDistance: Int = DefaultMaxDistance,
+            maxDeleteEntries: Int = UnlimitedDeleteEntryBudget,
         ): SymSpellIndex {
             val boundedDistance = maxDistance.coerceIn(DefaultMaxDistance, MaxSupportedDistance)
             val wordList = if (words is Collection) words else words.toList()
             val expectedDeleteCount = wordList.sumOf { word ->
                 ((word.length + 1) * boundedDistance).coerceAtMost(32)
             }
-            val initialCapacity = expectedDeleteCount.coerceIn(1024, 1_048_576)
+            val entryBudget = maxDeleteEntries.coerceAtLeast(0)
+            val initialCapacity = expectedDeleteCount
+                .coerceAtMost(entryBudget)
+                .coerceIn(16, 1_048_576)
             val builder = HashMap<String, MutableSet<String>>(initialCapacity)
+            var indexedWordCount = 0
+            var isComplete = true
             for (word in wordList) {
                 if (word.length < 2) continue
+                val deleteForms = generateDeletes(word, boundedDistance)
+                val newEntryCount = (if (builder.containsKey(word)) 0 else 1) +
+                    deleteForms.count { !builder.containsKey(it) }
+                if (builder.size + newEntryCount > entryBudget) {
+                    isComplete = false
+                    break
+                }
                 builder.getOrPut(word) { HashSet(2) }.add(word)
-                generateDeletes(word, boundedDistance).forEach { delForm ->
+                for (delForm in deleteForms) {
                     builder.getOrPut(delForm) { HashSet(2) }.add(word)
                 }
+                indexedWordCount++
             }
             val frozen = HashMap<String, Array<String>>(builder.size)
             for ((k, v) in builder) {
                 frozen[k] = v.toTypedArray()
             }
-            return SymSpellIndex(frozen, boundedDistance)
+            return SymSpellIndex(
+                deleteToOriginals = frozen,
+                maxDistance = boundedDistance,
+                indexedWordCount = indexedWordCount,
+                isComplete = isComplete,
+            )
         }
 
         /**
