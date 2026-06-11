@@ -297,6 +297,12 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     fun commitCompletion(candidate: SuggestionCandidate): Boolean {
         val text = candidate.text.toString()
         if (text.isEmpty() || activeInfo.isRawInputEditor) return false
+        // Composing is force-disabled in password fields, so the commitText
+        // fallback below would APPEND the candidate after the typed text
+        // instead of replacing it — silently corrupting masked input.
+        // NlpManager suppresses candidates for password fields upstream;
+        // this gate keeps a stray commit from ever reaching the editor.
+        if (activeState.keyVariation == KeyVariation.PASSWORD) return false
         val content = activeContent
         return if (content.composing.isValid) {
             phantomSpace.setActive(showComposingRegion = false, candidate = candidate)

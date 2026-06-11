@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import io.kotest.matchers.string.shouldContain
 import org.junit.Test
 import java.io.File
@@ -34,6 +35,7 @@ class NlpManagerSuggestionPrivacySnapshotTest {
                 allowPossiblyOffensive = false,
                 isPrivateSession = true,
                 isEditorSensitive = true,
+                isPasswordEditor = false,
             ),
             SuggestionPrivacyPolicy.snapshotSuggestionRequest(
                 emojiSuggestionEnabled = true,
@@ -42,6 +44,31 @@ class NlpManagerSuggestionPrivacySnapshotTest {
                 blockPossiblyOffensive = true,
                 isPrivateSession = true,
                 isEditorSensitive = true,
+                keyVariation = KeyVariation.NORMAL,
+            ),
+        )
+    }
+
+    @Test
+    fun suggestionRequestSnapshotSuppressesWordAndEmojiCandidatesForPasswordFields() {
+        assertEquals(
+            SuggestionRequestPrivacySnapshot(
+                emojiSuggestionEnabled = false,
+                emojiMaxCandidateCount = 5,
+                wordSuggestionEnabled = false,
+                allowPossiblyOffensive = false,
+                isPrivateSession = false,
+                isEditorSensitive = true,
+                isPasswordEditor = true,
+            ),
+            SuggestionPrivacyPolicy.snapshotSuggestionRequest(
+                emojiSuggestionEnabled = true,
+                emojiMaxCandidateCount = 5,
+                wordSuggestionEnabled = true,
+                blockPossiblyOffensive = true,
+                isPrivateSession = false,
+                isEditorSensitive = true,
+                keyVariation = KeyVariation.PASSWORD,
             ),
         )
     }

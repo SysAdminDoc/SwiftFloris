@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -27,6 +28,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             currentWordStart = 0,
             candidates = listOf(candidate("home", eligible = true)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = candidate("on my way", eligible = true),
             immediatePhraseRepairCandidate = candidate("a lot", eligible = true),
@@ -43,6 +45,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             currentWordStart = 0,
             candidates = listOf(candidate("onward", eligible = true)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = shortcut,
             immediatePhraseRepairCandidate = candidate("on my", eligible = true),
@@ -59,6 +62,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             currentWordStart = 0,
             candidates = listOf(candidate("slot", eligible = true)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = null,
             immediatePhraseRepairCandidate = phraseRepair,
@@ -79,6 +83,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
                 "receiver" to SwiftKeyCandidateSignals(languageConfidence = 1.0),
                 "received" to SwiftKeyCandidateSignals(languageConfidence = 1.0),
             ),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = null,
             immediatePhraseRepairCandidate = null,
@@ -91,6 +96,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             currentWordStart = 0,
             candidates = listOf(safe),
             candidateSignals = mapOf("received" to SwiftKeyCandidateSignals(languageConfidence = 0.0)),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = null,
             immediatePhraseRepairCandidate = null,
@@ -107,6 +113,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             currentWordStart = 0,
             candidates = listOf(candidate("canto", eligible = false)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = null,
             immediatePhraseRepairCandidate = null,
@@ -123,6 +130,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             currentWordStart = 0,
             candidates = listOf(candidate("the", eligible = true)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = rejectionPolicy,
             userDictionaryShortcutCandidate = candidate("the", eligible = true),
             immediatePhraseRepairCandidate = null,
@@ -139,6 +147,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             textBeforeCursor = "",
             candidates = listOf(candidate("hello", confidence = 1.0)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = null,
             immediatePhraseRepairCandidate = null,
@@ -157,6 +166,7 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             textBeforeCursor = "Hello. ",
             candidates = listOf(candidate("hello", confidence = 0.2), prediction),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = null,
             immediatePhraseRepairCandidate = null,
@@ -175,11 +185,47 @@ class CandidateAutoCommitPolicyTest : FunSpec({
             textBeforeCursor = "omw",
             candidates = listOf(candidate("tomorrow", confidence = 1.0)),
             candidateSignals = emptyMap(),
+            keyVariation = KeyVariation.NORMAL,
             rejectionPolicy = AutoCommitSuppression(),
             userDictionaryShortcutCandidate = shortcut,
             immediatePhraseRepairCandidate = null,
             immediateAutoCommitCandidate = null,
         ) shouldBe shortcut
+    }
+
+    test("password fields block auto-commit from every candidate source") {
+        // Composing is disabled in password fields, so a commit would append
+        // after the typed text instead of replacing it — even an eligible
+        // immediate contraction candidate (don't) must never fire there.
+        CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = true,
+            keyVariation = KeyVariation.PASSWORD,
+            currentWord = "dont",
+            currentWordStart = 0,
+            candidates = listOf(candidate("don't", eligible = true)),
+            candidateSignals = mapOf("don't" to SwiftKeyCandidateSignals(languageConfidence = 1.0)),
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = candidate("on my way", eligible = true),
+            immediatePhraseRepairCandidate = candidate("a lot", eligible = true),
+            immediateAutoCommitCandidate = candidate("don't", eligible = true),
+        ) shouldBe null
+    }
+
+    test("password fields block spacebar auto-commit and quick prediction insert") {
+        CandidateAutoCommitPolicy.selectSpacebarCandidate(
+            autoCorrectEnabled = true,
+            quickPredictionInsertEnabled = true,
+            keyVariation = KeyVariation.PASSWORD,
+            currentWord = "dont",
+            currentWordStart = 0,
+            textBeforeCursor = "dont",
+            candidates = listOf(candidate("don't", eligible = true, confidence = 1.0)),
+            candidateSignals = mapOf("don't" to SwiftKeyCandidateSignals(languageConfidence = 1.0)),
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = candidate("on my way", eligible = true),
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = candidate("don't", eligible = true),
+        ) shouldBe null
     }
 
     test("plain-space prediction suppression mirrors quick prediction availability") {
