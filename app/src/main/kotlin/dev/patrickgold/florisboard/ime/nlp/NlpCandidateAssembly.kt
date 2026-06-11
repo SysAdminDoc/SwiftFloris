@@ -33,11 +33,15 @@ internal class NlpCandidateAssembler(
     suspend fun assemble(
         isSuggestionOn: Boolean,
         internalSuggestions: List<SuggestionCandidate>,
+        autoCommitUndoCandidate: AutoCommitUndoSuggestionCandidate?,
     ): List<SuggestionCandidate> {
         if (!isSuggestionOn) {
             return emptyList()
         }
         return buildList {
+            if (autoCommitUndoCandidate != null) {
+                add(autoCommitUndoCandidate)
+            }
             addAll(
                 clipboardSuggestionProvider.suggest(
                     subtype = Subtype.DEFAULT,

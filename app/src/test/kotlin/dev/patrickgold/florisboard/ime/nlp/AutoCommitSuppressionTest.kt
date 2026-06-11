@@ -76,6 +76,25 @@ class AutoCommitSuppressionTest : FunSpec({
         suppression.consumeLastRejectedPair() shouldBe null
     }
 
+    test("tap undo rejects the accepted correction without cursor text") {
+        val suppression = AutoCommitSuppression()
+
+        suppression.rememberAccepted(originalText = "teh", correctedText = "the", wordStart = 0)
+        suppression.rejectAccepted(originalText = "teh", correctedText = "the", wordStart = 0) shouldBe true
+
+        suppression.shouldSuppress(currentWord = "teh", candidateText = "the", currentWordStart = 0) shouldBe true
+        suppression.consumeLastRejectedPair() shouldBe AutoCommitCorrectionPair("teh", "the")
+    }
+
+    test("tap undo ignores a different accepted correction") {
+        val suppression = AutoCommitSuppression()
+
+        suppression.rememberAccepted(originalText = "teh", correctedText = "the", wordStart = 0)
+
+        suppression.rejectAccepted(originalText = "adn", correctedText = "and", wordStart = 0) shouldBe false
+        suppression.shouldSuppress(currentWord = "teh", candidateText = "the", currentWordStart = 0) shouldBe false
+    }
+
     test("keeps rejection active while user edits back to the original word") {
         val suppression = AutoCommitSuppression()
 

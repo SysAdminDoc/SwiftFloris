@@ -1,0 +1,1 @@
+Autocorrect now offers a temporary smartbar undo candidate for recent corrections, including cursor re-entry support and matching rejection learning so restored words are not immediately corrected again.

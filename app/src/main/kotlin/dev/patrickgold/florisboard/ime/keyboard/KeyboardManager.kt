@@ -51,6 +51,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.input.InputEventDispatcher
 import dev.patrickgold.florisboard.ime.input.InputKeyEventReceiver
 import dev.patrickgold.florisboard.ime.input.InputShiftState
+import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.CandidateCommitSideEffectPolicy
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
@@ -357,6 +358,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun commitCandidate(candidate: SuggestionCandidate): Boolean {
+        if (candidate is AutoCommitUndoSuggestionCandidate) {
+            return commitAutoCommitUndoCandidate(candidate)
+        }
         val committed = when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
             else -> editorInstance.commitCompletion(candidate)
@@ -382,6 +386,22 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // behalf). Reinforce its weight in the personal dictionary so it ranks higher
             // next time. Skipped in incognito.
             learnIfAllowed(candidate.text.toString())
+        }
+        return committed
+    }
+
+    private fun commitAutoCommitUndoCandidate(candidate: AutoCommitUndoSuggestionCandidate): Boolean {
+        val committed = editorInstance.commitCompletion(candidate)
+        if (committed) {
+            nlpManager.rejectAcceptedAutoCommitFromUndo(candidate)
+            candidate.sourceProvider?.let { sourceProvider ->
+                scope.launch {
+                    sourceProvider.notifySuggestionReverted(
+                        subtype = subtypeManager.activeSubtype,
+                        candidate = candidate,
+                    )
+                }
+            }
         }
         return committed
     }

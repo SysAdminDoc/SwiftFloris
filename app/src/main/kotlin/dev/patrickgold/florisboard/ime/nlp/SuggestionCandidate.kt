@@ -115,6 +115,20 @@ data class WordSuggestionCandidate(
     override val icon: ImageVector? = null
 }
 
+data class AutoCommitUndoSuggestionCandidate(
+    val original: String,
+    val corrected: String,
+    val range: dev.patrickgold.florisboard.ime.editor.EditorRange,
+    override val sourceProvider: SuggestionProvider?,
+) : SuggestionCandidate {
+    override val text: CharSequence = original
+    override val secondaryText: CharSequence = corrected
+    override val confidence: Double = 1.0
+    override val isEligibleForAutoCommit: Boolean = false
+    override val isEligibleForUserRemoval: Boolean = false
+    override val icon: ImageVector? = null
+}
+
 /**
  * Default implementation for a clipboard candidate. Should generally not be used by a suggestion provider, except by
  * the clipboard suggestion provider.
