@@ -73,6 +73,11 @@
         <exclude
             domain="file"
             path="swiftkey_trace.enabled"/>
+        <!-- Sync identity (X25519 private key) + local CRDT state. Devices
+             pair via QR; identities must never clone through a backup. -->
+        <exclude
+            domain="file"
+            path="sync"/>
     </cloud-backup>
     <device-transfer>
         <include
@@ -121,5 +126,10 @@
         <exclude
             domain="file"
             path="swiftkey_trace.enabled"/>
+        <!-- Sync identity (X25519 private key) + local CRDT state. Devices
+             pair via QR; identities must never clone through a backup. -->
+        <exclude
+            domain="file"
+            path="sync"/>
     </device-transfer>
 </data-extraction-rules>
