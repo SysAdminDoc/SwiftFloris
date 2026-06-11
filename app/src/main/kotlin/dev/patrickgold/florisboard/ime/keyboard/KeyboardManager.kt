@@ -54,6 +54,7 @@ import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.CandidateCommitSideEffectPolicy
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.LearnedWordForgetSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
 import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -358,6 +359,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     fun commitCandidate(candidate: SuggestionCandidate): Boolean {
+        if (candidate is LearnedWordForgetSuggestionCandidate) {
+            forgetLearnedWord(candidate)
+            return true
+        }
         if (candidate is AutoCommitUndoSuggestionCandidate) {
             return commitAutoCommitUndoCandidate(candidate)
         }
@@ -413,6 +418,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
+    private fun forgetLearnedWord(candidate: LearnedWordForgetSuggestionCandidate) {
+        scope.launch {
+            withContext(Dispatchers.IO) {
+                DictionaryManager.default().forgetWord(candidate.word, candidate.locale)
+            }
+            dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore.get(appContext)
+                .forget(candidate.word, candidate.locale)
+            dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore.get(appContext)
+                .forget(candidate.word, candidate.locale)
+            resetLearnChain()
+            nlpManager.clearSuggestions()
+        }
+    }
+
     /**
      * Auto-learn a freshly-committed word into the personal dictionary so frequently
      * typed words bubble up in suggestions over time. Skipped in incognito mode and
@@ -447,7 +466,21 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             keyVariation = activeState.keyVariation,
         )) return
         val locale = subtypeManager.activeSubtype.primaryLocale
+        val wasKnown = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+            .contains(rawWord, locale)
         DictionaryManager.default().learnWord(rawWord, locale)
+        val wasLearned = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay.get()
+            .contains(rawWord, locale)
+        if (!wasKnown && wasLearned) {
+            nlpManager.suggestDirectly(
+                listOf(
+                    LearnedWordForgetSuggestionCandidate(
+                        word = rawWord,
+                        locale = locale,
+                    ),
+                ),
+            )
+        }
         if (prefs.suggestion.nextWordPrediction.get()) {
             val tag = locale.languageTag()
             val prev1 = lastLearnedWord

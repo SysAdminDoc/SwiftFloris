@@ -1,0 +1,1 @@
+Show a one-tap smartbar action to forget a newly learned word immediately after auto-learning it.

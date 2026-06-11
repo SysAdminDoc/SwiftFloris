@@ -67,6 +67,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.LearnedWordForgetSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
@@ -343,6 +344,7 @@ private fun CandidateItem(
     val candidateSemanticLabel = SmartbarAccessibilityLabels.candidateLabel(
         template = stringRes(
             when {
+                candidate is LearnedWordForgetSuggestionCandidate -> R.string.a11y__candidate__forget_learned
                 candidate is AutoCommitUndoSuggestionCandidate -> R.string.a11y__candidate__autocorrect_undo
                 candidate is ClipboardSuggestionCandidate -> R.string.a11y__candidate__clipboard
                 candidate.isEligibleForAutoCommit -> R.string.a11y__candidate__autocorrect
@@ -417,7 +419,11 @@ private fun CandidateItem(
                 elementName = "$elementName-text",
                 attributes = attributes,
                 selector = selector,
-                text = candidate.text.toString(),
+                text = if (candidate is LearnedWordForgetSuggestionCandidate) {
+                    stringRes(R.string.smartbar__learned_word_forget_candidate, "word" to candidate.word)
+                } else {
+                    candidate.text.toString()
+                },
             )
             if (candidate.secondaryText != null) {
                 SnyggText(

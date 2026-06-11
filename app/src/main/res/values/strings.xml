@@ -873,6 +873,7 @@
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
     <string name="smartbar__candidate_remove_confirm__message" comment="Confirmation prompt shown in the suggestion strip after long-pressing a suggestion; {word} is the suggestion being removed">Remove \"{word}\" from suggestions?</string>
+    <string name="smartbar__learned_word_forget_candidate" comment="Suggestion-strip action shown immediately after learning a word; {word} is the learned word">Don\'t learn \"{word}\"</string>
     <string name="pref__correction__title" comment="Preference group title">Corrections</string>
     <string name="pref__correction__auto_capitalization__label" comment="Preference title">Auto-capitalization</string>
     <string name="pref__correction__auto_capitalization__summary" comment="Preference summary">Capitalize words based on the current input context</string>
@@ -2078,6 +2079,7 @@
     <string name="a11y__candidate__suggestion" comment="TalkBack announcement for a suggestion-strip slot">Suggestion {index} of {count}: {text}</string>
     <string name="a11y__candidate__autocorrect" comment="TalkBack announcement for an autocorrect suggestion slot">Autocorrect suggestion {index} of {count}: {text}</string>
     <string name="a11y__candidate__autocorrect_undo" comment="TalkBack announcement for a suggestion-strip slot that restores the originally typed word after autocorrect">Undo autocorrect {index} of {count}: restore {text}</string>
+    <string name="a11y__candidate__forget_learned" comment="TalkBack announcement for a suggestion-strip slot that forgets a just-learned word">Forget learned word {index} of {count}: {text}</string>
     <string name="a11y__candidate__clipboard" comment="TalkBack announcement for a clipboard suggestion slot">Clipboard suggestion {index} of {count}: {text}</string>
     <string name="a11y__candidate__remove_action" comment="TalkBack custom action that removes a learned suggestion">Remove from predictions</string>
     <string name="a11y__smartbar_action__fallback" comment="TalkBack fallback label for a smartbar action without a display name or tooltip">Smartbar action</string>
