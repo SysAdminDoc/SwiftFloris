@@ -1162,6 +1162,8 @@
     <string name="about__whats_new__summary" comment="Preference summary, {version} is the app version like 1.8.198">v{version} — see what changed in this release</string>
     <string name="about__whats_new__dialog_title" comment="Dialog title, {version} is the app version like 1.8.198">What\'s new in v{version}</string>
     <string name="about__whats_new__full_changelog" comment="Dialog button that opens the full online changelog">Full changelog</string>
+    <string name="about__release_history__title" comment="Preference title and dialog title for offline release history">Release history</string>
+    <string name="about__release_history__summary" comment="Preference summary">Recent changes included with this app</string>
     <string name="about__changelog__title" comment="Preference title">Changelog</string>
     <string name="about__changelog__summary" comment="Preference summary">What\'s new</string>
     <string name="about__repository__title" comment="Preference title">Repository (GitHub)</string>

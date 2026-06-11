@@ -126,6 +126,11 @@ configure<ApplicationExtension> {
             "WHATS_NEW",
             "\"${whatsNewExcerpt(projectVersionName.substringBefore("-")).escapeForBuildConfig()}\"",
         )
+        buildConfigField(
+            "String",
+            "RELEASE_HISTORY",
+            "\"${releaseHistoryExcerpt().escapeForBuildConfig()}\"",
+        )
 
         sourceSets {
             maybeCreate("main").apply {
@@ -606,6 +611,31 @@ fun whatsNewExcerpt(versionName: String, maxChars: Int = 900): String {
         body = body.substring(0, maxChars).substringBeforeLast('\n').trimEnd() + "\n…"
     }
     return body
+}
+
+fun releaseHistoryExcerpt(maxEntries: Int = 12, maxCharsPerEntry: Int = 700): String {
+    val changelogDir = rootProject.file("fastlane/metadata/android/en-US/changelogs")
+    if (!changelogDir.exists()) return ""
+    return changelogDir.listFiles { file ->
+        file.isFile && file.extension == "txt" && file.nameWithoutExtension.toIntOrNull() != null
+    }
+        .orEmpty()
+        .sortedByDescending { it.nameWithoutExtension.toInt() }
+        .take(maxEntries)
+        .mapNotNull { file ->
+            val body = file.readText().trim()
+            if (body.isEmpty()) {
+                null
+            } else {
+                val clipped = if (body.length > maxCharsPerEntry) {
+                    body.substring(0, maxCharsPerEntry).substringBeforeLast('\n').trimEnd() + "\n..."
+                } else {
+                    body
+                }
+                "Build ${file.nameWithoutExtension}\n$clipped"
+            }
+        }
+        .joinToString("\n\n")
 }
 
 fun String.escapeForBuildConfig(): String =
