@@ -53,6 +53,10 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     private var glideTypingClassifier = StatisticalGlideTypingClassifier(context)
     private var lastTime = System.currentTimeMillis()
     private var previewJob: Job? = null
+
+    // Written from the main thread (gesture callbacks / post-commit remember),
+    // read and cleared from the serialized classifier scope (context rescore).
+    @Volatile
     private var pendingContextRescore: PendingGlideCommit? = null
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
@@ -139,6 +143,16 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
                 glideTypingClassifier.getSuggestions(classifierCount, true)
             }
 
+            // Score the previous-glide context rescore here, still on the
+            // serialized classifier dispatcher: the first
+            // nextWordContextScore per locale loads the persisted n-gram
+            // tables from disk and must not run inside the Main block below.
+            val rescore = if (commit && suggestions.isNotEmpty()) {
+                computeGlideRescore(suggestions.first())
+            } else {
+                null
+            }
+
             withContext(Dispatchers.Main) {
                 val suggestionList = buildList {
                     suggestions.subList(
@@ -151,7 +165,12 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
 
                 nlpManager.suggestDirectly(suggestionList)
                 if (commit && suggestions.isNotEmpty()) {
-                    maybeRescorePreviousGlide(suggestions.first())
+                    rescore?.let { (expectedWord, replacementWord) ->
+                        keyboardManager.replaceLastGestureWordForContext(
+                            expectedWord = expectedWord,
+                            replacementWord = replacementWord,
+                        )
+                    }
                     keyboardManager.commitGesture(suggestions.first())
                     rememberPendingGlideCommit(suggestions)
                 }
@@ -159,13 +178,23 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         }
     }
 
-    private suspend fun maybeRescorePreviousGlide(nextWord: String) {
-        val pending = pendingContextRescore ?: return
+    /**
+     * Computes the context-driven replacement for the previously committed
+     * glide word, given the [nextWord] that is about to be committed. Pure
+     * scoring — the editor mutation happens on the main thread afterwards
+     * (replaceLastGestureWordForContext re-verifies the expected word against
+     * the live editor content, so a stale result degrades to a no-op).
+     *
+     * @return (expectedWord, replacementWord) or null when no rescore applies.
+     */
+    private suspend fun computeGlideRescore(nextWord: CharSequence): Pair<String, String>? {
+        val pending = pendingContextRescore ?: return null
         if (System.currentTimeMillis() - pending.timestampMs > CONTEXT_RESCORE_WINDOW_MS) {
             pendingContextRescore = null
-            return
+            return null
         }
-        val normalizedNext = GlideContextRescorer.normalizeGlideWordForContext(nextWord) ?: return
+        val nextWordStr = nextWord.toString()
+        val normalizedNext = GlideContextRescorer.normalizeGlideWordForContext(nextWordStr) ?: return null
         val contextScores = pending.candidates
             .mapNotNull { candidate ->
                 val normalizedCandidate = GlideContextRescorer.normalizeGlideWordForContext(candidate)
@@ -179,13 +208,10 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         val replacement = GlideContextRescorer.chooseReplacement(
             committedWord = pending.committedWord,
             candidateWords = pending.candidates,
-            nextWord = nextWord,
+            nextWord = nextWordStr,
             contextScores = contextScores,
-        ) ?: return
-        keyboardManager.replaceLastGestureWordForContext(
-            expectedWord = pending.committedWord,
-            replacementWord = replacement,
-        )
+        ) ?: return null
+        return pending.committedWord to replacement
     }
 
     private fun rememberPendingGlideCommit(suggestions: List<CharSequence>) {
