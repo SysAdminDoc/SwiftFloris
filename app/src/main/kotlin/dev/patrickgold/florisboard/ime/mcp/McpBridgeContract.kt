@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.mcp
 
+import dev.patrickgold.florisboard.AppPackageContract
 import kotlinx.serialization.Serializable
 
 /**
@@ -46,23 +47,23 @@ object McpBridgeContract {
     /** Intent action a local MCP daemon must declare in its
      *  AndroidManifest `<intent-filter>` to be discoverable. */
     const val ACTION_BIND_MCP_DAEMON: String =
-        "dev.patrickgold.florisboard.action.BIND_MCP_DAEMON"
+        AppPackageContract.ACTION_PREFIX + "BIND_MCP_DAEMON"
 
     /** Permission the IME holds; daemons should require it so random
      *  apps can't bind. Signature-protected like the existing
      *  REGISTER_ADDON permission. */
     const val PERMISSION_BIND_MCP: String =
-        "dev.patrickgold.florisboard.permission.BIND_MCP"
+        AppPackageContract.PERMISSION_PREFIX + "BIND_MCP"
 
     /** AndroidManifest `<meta-data>` key carrying the JSON descriptor
      *  resource id (an `R.raw.<name>` pointing to the tool catalog). */
     const val METADATA_TOOL_CATALOG: String =
-        "dev.patrickgold.florisboard.mcp.tool_catalog"
+        AppPackageContract.MCP_METADATA_PREFIX + "tool_catalog"
 
     /** AndroidManifest `<meta-data>` key carrying the daemon's MCP
      *  protocol version (currently fixed at "1"). */
     const val METADATA_PROTOCOL_VERSION: String =
-        "dev.patrickgold.florisboard.mcp.protocol_version"
+        AppPackageContract.MCP_METADATA_PREFIX + "protocol_version"
 
     /** Highest protocol version this IME understands. */
     const val SUPPORTED_PROTOCOL_VERSION: Int = 1

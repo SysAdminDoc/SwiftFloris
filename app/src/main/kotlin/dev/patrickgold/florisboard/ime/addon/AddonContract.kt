@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.addon
 
+import dev.patrickgold.florisboard.AppPackageContract
+
 /**
  * ROADMAP §7 Next-10.1 — addon-package manifest schema and intent-action
  * constants for SwiftFloris's plugin / addon ecosystem.
@@ -75,20 +77,20 @@ object AddonContract {
          * gate; the broadcast is best-effort — addons must also rely on the
          * IME's startup-time enumeration for the initial enrolment.
          */
-        const val REGISTER = "dev.patrickgold.florisboard.action.REGISTER_ADDON"
+        const val REGISTER = AppPackageContract.ACTION_PREFIX + "REGISTER_ADDON"
 
         /** Convenience aliases scoped per addon-type. Implementations may dispatch
          *  on the addon-type metadata key declared in the addon's manifest. */
-        const val REGISTER_LANGUAGE_PACK = "dev.patrickgold.florisboard.action.REGISTER_LANGUAGE_PACK"
-        const val REGISTER_THEME_PACK = "dev.patrickgold.florisboard.action.REGISTER_THEME_PACK"
-        const val REGISTER_DICTIONARY_PACK = "dev.patrickgold.florisboard.action.REGISTER_DICTIONARY_PACK"
-        const val REGISTER_LAYOUT_PACK = "dev.patrickgold.florisboard.action.REGISTER_LAYOUT_PACK"
-        const val REGISTER_POPUP_MAPPING_PACK = "dev.patrickgold.florisboard.action.REGISTER_POPUP_MAPPING_PACK"
+        const val REGISTER_LANGUAGE_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_LANGUAGE_PACK"
+        const val REGISTER_THEME_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_THEME_PACK"
+        const val REGISTER_DICTIONARY_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_DICTIONARY_PACK"
+        const val REGISTER_LAYOUT_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_LAYOUT_PACK"
+        const val REGISTER_POPUP_MAPPING_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_POPUP_MAPPING_PACK"
 
         /** Reverse direction: the IME pushes this broadcast to a single addon
          *  package to ask it to surface its current state (e.g. after an
          *  in-IME configuration screen prompts "rescan installed addons"). */
-        const val INVALIDATE = "dev.patrickgold.florisboard.action.INVALIDATE_ADDON"
+        const val INVALIDATE = AppPackageContract.ACTION_PREFIX + "INVALIDATE_ADDON"
     }
 
     /** `<meta-data android:name="…">` keys the IME scans for on every
@@ -96,10 +98,10 @@ object AddonContract {
      *  addon with multiple addon-type meta-data entries is rejected because
      *  the enrolment is intentionally per-type. */
     object MetadataKey {
-        const val ADDON_DESCRIPTOR = "dev.patrickgold.florisboard.addon.descriptor"
-        const val ADDON_TYPE = "dev.patrickgold.florisboard.addon.type"
-        const val ADDON_VERSION = "dev.patrickgold.florisboard.addon.version"
-        const val ADDON_LICENSE = "dev.patrickgold.florisboard.addon.license"
+        const val ADDON_DESCRIPTOR = AppPackageContract.ADDON_METADATA_PREFIX + "descriptor"
+        const val ADDON_TYPE = AppPackageContract.ADDON_METADATA_PREFIX + "type"
+        const val ADDON_VERSION = AppPackageContract.ADDON_METADATA_PREFIX + "version"
+        const val ADDON_LICENSE = AppPackageContract.ADDON_METADATA_PREFIX + "license"
     }
 
     /** Signature-permission name every addon-aware broadcast receiver must
@@ -108,7 +110,7 @@ object AddonContract {
      *  `android:protectionLevel="signature"`; addons must be co-signed (Play /
      *  F-Droid) by the same key to register, OR the user must explicitly opt
      *  in to an unsigned addon via Settings → Addons. */
-    const val ADDON_SIGNATURE_PERMISSION = "dev.patrickgold.florisboard.permission.REGISTER_ADDON"
+    const val ADDON_SIGNATURE_PERMISSION = AppPackageContract.PERMISSION_PREFIX + "REGISTER_ADDON"
 
     /** The directory inside an enrolled addon's assets where the IME looks
      *  for the addon's resource bundle. Convention; not enforced at the

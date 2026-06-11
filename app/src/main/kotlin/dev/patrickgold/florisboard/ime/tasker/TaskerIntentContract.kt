@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.tasker
 
+import dev.patrickgold.florisboard.AppPackageContract
+
 /**
  * ROADMAP §7 L11.1 — Tasker intent endpoint contract.
  *
@@ -44,7 +46,7 @@ object TaskerIntentContract {
      * the addon framework uses (Next-10.1).
      */
     const val PERMISSION_TRIGGER: String =
-        "dev.patrickgold.florisboard.permission.REGISTER_ADDON"
+        AppPackageContract.PERMISSION_PREFIX + "REGISTER_ADDON"
 
     /** Insert literal text at the cursor of the focused editor. */
     object InsertText {
