@@ -26,3 +26,10 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.mikepenz.aboutlibraries) apply false
 }
+
+tasks.register<Exec>("typingQualityScorecard") {
+    group = "verification"
+    description = "Runs the typing-quality replay scorecard and emits JSON/Markdown reports."
+    dependsOn(":app:testDebugUnitTest")
+    commandLine("python", "scripts/typing-quality-scorecard.py")
+}
