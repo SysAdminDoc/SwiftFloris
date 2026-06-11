@@ -1,0 +1,1 @@
+Benchmark regression CI now self-tests the trend checker and requires the selected benchmark slice to produce the matching candidate JSON before passing.
