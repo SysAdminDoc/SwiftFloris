@@ -139,8 +139,9 @@ fun AboutScreen() = FlorisScreen {
             },
         )
         // RESEARCH_FEATURE_PLAN.md F14 — inline, offline "What's new" excerpt sourced
-        // at compile time from the matching CHANGELOG.md section (BuildConfig.WHATS_NEW).
-        // Hidden when no section matched at build time (e.g. a dev build between releases).
+        // at compile time from the tracked fastlane changelog for this versionCode
+        // (BuildConfig.WHATS_NEW). Hidden when no source matched at build time
+        // (e.g. a dev build between releases).
         val whatsNew = BuildConfig.WHATS_NEW
         if (whatsNew.isNotBlank()) {
             var showWhatsNew by remember { mutableStateOf(false) }
