@@ -473,6 +473,13 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val selection = content.selection
         val safeEditorBounds = content.safeEditorBounds
         if (selection.isNotValid) return false
+        // Selection-only content (mass-selection updates) and Unspecified
+        // content carry offset = -1 with an EMPTY text window but an absolute
+        // localSelection — the raw substring below would throw and
+        // safeEditorBounds collapses to (0,0), so a precise select/delete
+        // swipe arriving mid mass-selection must no-op instead of crashing
+        // the IME or teleporting the cursor to 0.
+        if (content.offset < 0) return false
         when (scope) {
             OperationScope.BEFORE_CURSOR -> {
                 if (n <= 0) {
