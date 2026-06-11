@@ -112,6 +112,12 @@ def parse_args() -> argparse.Namespace:
         action="store_true",
         help="Fail when a committed baseline has no candidate benchmark result.",
     )
+    parser.add_argument(
+        "--require-benchmark",
+        action="append",
+        default=[],
+        help="Fail when the named benchmark has no candidate result. Can be passed more than once.",
+    )
     return parser.parse_args()
 
 
@@ -348,8 +354,20 @@ def main() -> int:
             continue
         rows.extend(compare_benchmark(baselines[benchmark], candidate))
 
+    required_missing = sorted(
+        benchmark for benchmark in set(args.require_benchmark)
+        if benchmark in baselines and benchmark not in candidates
+    )
+    unknown_required = sorted(
+        benchmark for benchmark in set(args.require_benchmark)
+        if benchmark not in baselines
+    )
+
     if not args.require_all_baselines:
         missing = []
+    missing = sorted(set(missing).union(required_missing))
+    for benchmark in unknown_required:
+        rows.append(Row(benchmark, "(candidate)", None, None, None, "ERROR", "required benchmark has no baseline"))
 
     report = markdown_report(rows, baselines, candidates, missing)
     report_path.parent.mkdir(parents=True, exist_ok=True)

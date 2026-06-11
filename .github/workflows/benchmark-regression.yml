@@ -63,6 +63,9 @@ jobs:
       - name: Build benchmark APKs
         run: ./gradlew :app:assembleBenchmark :benchmark:assembleBenchmark
 
+      - name: Self-test benchmark trend gate
+        run: python scripts/test-check-benchmark-trends.py
+
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -130,9 +133,33 @@ jobs:
         run: |
           set -euo pipefail
           require_args=()
-          if [ "$BENCHMARK" = "all" ]; then
-            require_args=(--require-all-baselines)
-          fi
+          case "$BENCHMARK" in
+            all)
+              require_args=(--require-all-baselines)
+              ;;
+            ime-first-render)
+              require_args=(--require-benchmark imeFirstRender)
+              ;;
+            first-suggestion-latency)
+              require_args=(--require-benchmark firstSuggestionLatency)
+              ;;
+            dictionary-load)
+              require_args=(--require-benchmark dictionaryLoadAndPreload)
+              ;;
+            candidate-row)
+              require_args=(--require-benchmark candidateRowRecomposition)
+              ;;
+            theme-switch)
+              require_args=(--require-benchmark themeSwitch)
+              ;;
+            backup-restore)
+              require_args=(--require-benchmark backupRestore)
+              ;;
+            *)
+              echo "::error::Unknown benchmark '$BENCHMARK'"
+              exit 2
+              ;;
+          esac
           python scripts/check-benchmark-trends.py \
             --baseline-dir docs/benchmark-results \
             --candidate-dir build/benchmark-results \
