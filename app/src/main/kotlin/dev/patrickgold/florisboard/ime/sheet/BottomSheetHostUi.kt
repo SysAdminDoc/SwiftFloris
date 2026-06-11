@@ -30,7 +30,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.semantics
+import dev.patrickgold.florisboard.R
 import org.florisboard.lib.compose.conditional
+import org.florisboard.lib.compose.stringRes
 
 private val SheetOutOfBoundsBgColorInactive = Color(0x00000000)
 private val SheetOutOfBoundsBgColorActive = Color(0x52000000)
@@ -47,13 +52,20 @@ fun BottomSheetHostUi(
     val bgColorOutOfBounds by animateColorAsState(
         if (isShowing) SheetOutOfBoundsBgColorActive else SheetOutOfBoundsBgColorInactive
     )
+    val dismissDescription = stringRes(R.string.sheet__dismiss)
     Column(Modifier.background(bgColorOutOfBounds)) {
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .weight(1f)
                 .conditional(isShowing) {
-                    pointerInput(Unit) {
+                    semantics {
+                        contentDescription = dismissDescription
+                        onClick(label = null) {
+                            onHide()
+                            true
+                        }
+                    }.pointerInput(Unit) {
                         detectTapGestures {
                             onHide()
                         }

@@ -375,8 +375,9 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                             modifier = Modifier
                                 .florisHorizontalScroll()
                                 .padding(horizontal = 16.dp, vertical = 12.dp),
-                            text = result.exceptionOrNull()?.stackTraceToString()
-                                ?: stringRes(R.string.ext__import__error_details_unavailable),
+                            text = result.exceptionOrNull()?.localizedMessage?.let { errorMessage ->
+                                stringRes(R.string.ext__import__failure, "error_message" to errorMessage)
+                            } ?: stringRes(R.string.ext__import__error_details_unavailable),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             fontFamily = FontFamily.Monospace,

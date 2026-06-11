@@ -75,6 +75,12 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.onLongClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.unit.IntOffset
@@ -605,10 +611,31 @@ private fun EmojiKey(
     val base = emojiSet.base(withSkinTone = preferredSkinTone)
     val variations = emojiSet.variations(withoutSkinTone = preferredSkinTone)
     var showVariantsBox by remember { mutableStateOf(false) }
+    val keyStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiKey.elementName)
+    val hasLongPressOptions = variations.isNotEmpty() || isPinned || isRecent
+    val longPressLabel = stringRes(
+        if (hasLongPressOptions) R.string.action__more_options else R.string.emoji__pin_group__open,
+    )
 
     SnyggBox(FlorisImeUi.MediaEmojiKey.elementName,
         modifier = Modifier
             .aspectRatio(1f)
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                contentDescription = base.name
+                onClick(label = null) {
+                    onEmojiInput(base)
+                    true
+                }
+                onLongClick(label = longPressLabel) {
+                    if (hasLongPressOptions) {
+                        showVariantsBox = true
+                    } else {
+                        onPinToGroup(base)
+                    }
+                    true
+                }
+            }
             .pointerInput(Unit) {
                 detectTapGestures(
                     onPress = {
@@ -632,6 +659,7 @@ private fun EmojiKey(
             modifier = Modifier.align(Alignment.Center),
             text = base.value,
             emojiCompatInstance = emojiCompatInstance,
+            color = keyStyle.foreground(default = Color.Black),
         )
         if (variations.isNotEmpty() || isPinned || isRecent) {
             val style = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiKeyPopupExtendedIndicator.elementName)
@@ -697,6 +725,7 @@ private fun EmojiVariationsPopup(
     onDismiss: () -> Unit,
 ) {
     val emojiKeyHeight = FlorisImeSizing.smartbarHeight
+    val popupElementStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiKeyPopupElement.elementName)
 
     if (visible) {
         Popup(
@@ -740,6 +769,7 @@ private fun EmojiVariationsPopup(
                             modifier = Modifier.align(Alignment.Center),
                             text = emoji.value,
                             emojiCompatInstance = emojiCompatInstance,
+                            color = popupElementStyle.foreground(default = Color.Black),
                         )
                     }
                 }
@@ -768,10 +798,21 @@ private fun EmojiHistoryPopup(
     val showMoveRight = isCurrentlyPinned && !pinnedUS.isAutomatic || !recentUS.isAutomatic
 
     @Composable
-    fun Action(icon: ImageVector, action: suspend () -> Unit) {
+    fun Action(icon: ImageVector, label: String, action: suspend () -> Unit) {
         SnyggBox(
             elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
             modifier = Modifier
+                .semantics(mergeDescendants = true) {
+                    role = Role.Button
+                    contentDescription = label
+                    onClick(label = null) {
+                        scope.launch {
+                            action()
+                            onHistoryAction()
+                        }
+                        true
+                    }
+                }
                 .pointerInput(Unit) {
                     detectTapGestures {
                         scope.launch {
@@ -808,6 +849,7 @@ private fun EmojiHistoryPopup(
                 if (isCurrentlyPinned) {
                     Action(
                         icon = Icons.Outlined.PushPin,
+                        label = stringRes(R.string.emoji__history__action_unpin),
                         action = {
                             EmojiHistoryHelper.unpinEmoji(prefs, emoji)
                         },
@@ -815,6 +857,7 @@ private fun EmojiHistoryPopup(
                 } else {
                     Action(
                         icon = Icons.Outlined.PushPin,
+                        label = stringRes(R.string.emoji__history__action_pin),
                         action = {
                             EmojiHistoryHelper.pinEmoji(prefs, emoji)
                         },
@@ -823,6 +866,7 @@ private fun EmojiHistoryPopup(
                 if (showMoveLeft) {
                     Action(
                         icon = Icons.AutoMirrored.Default.KeyboardArrowLeft,
+                        label = stringRes(R.string.emoji__history__action_move_left),
                         action = {
                             EmojiHistoryHelper.moveEmoji(prefs, emoji, -1)
                         },
@@ -831,6 +875,7 @@ private fun EmojiHistoryPopup(
                 if (showMoveRight) {
                     Action(
                         icon = Icons.AutoMirrored.Default.KeyboardArrowRight,
+                        label = stringRes(R.string.emoji__history__action_move_right),
                         action = {
                             EmojiHistoryHelper.moveEmoji(prefs, emoji, 1)
                         },
@@ -838,12 +883,14 @@ private fun EmojiHistoryPopup(
                 }
                 Action(
                     icon = Icons.Outlined.Add,
+                    label = stringRes(R.string.emoji__pin_group__open),
                     action = {
                         onPinToGroup()
                     },
                 )
                 Action(
                     icon = Icons.Outlined.Delete,
+                    label = stringRes(R.string.emoji__history__action_remove),
                     action = {
                         EmojiHistoryHelper.removeEmoji(prefs, emoji)
                         context.showShortToast(

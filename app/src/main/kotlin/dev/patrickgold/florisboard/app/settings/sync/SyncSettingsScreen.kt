@@ -42,7 +42,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ContentPaste
-import androidx.compose.material.icons.filled.Folder
+import androidx.compose.material.icons.filled.Smartphone
 import androidx.compose.material.icons.filled.QrCode2
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -414,7 +414,7 @@ private fun PairedDeviceRow(device: PairedSyncDevice) {
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = Icons.Default.Folder,
+            imageVector = Icons.Default.Smartphone,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onSurfaceVariant,
         )

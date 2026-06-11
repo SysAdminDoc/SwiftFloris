@@ -3,6 +3,7 @@
 
     <string name="key__phone_pause" comment="Label for the Pause key in the telephone keyboard layout">Pause</string>
     <string name="key__phone_wait" comment="Label for the Wait key in the telephone keyboard layout">Wait</string>
+    <string name="key__backspace" comment="Accessibility label for the backspace key">Backspace</string>
     <string name="key_popup__threedots_alt" comment="Content description for the three-dots icon in a key popup">Three-dot icon. If visible, indicates that more letters can be used if longer pressed.</string>
 
     <!-- One-handed strings -->
@@ -15,6 +16,7 @@
     <string name="media__tab__emojis" comment="Tab description for emojis in the media UI">Emojis</string>
     <string name="media__tab__emoticons" comment="Tab description for emoticons in the media UI">Emoticons</string>
     <string name="media__tab__kaomoji" comment="Tab description for kaomoji in the media UI">Kaomoji</string>
+    <string name="media__tab__stickers" comment="Tab description for stickers in the media UI">Stickers</string>
     <string name="prefs__media__emoji_preferred_skin_tone">Preferred emoji skin tone</string>
     <string name="prefs__media__emoji_preferred_hair_style">Preferred emoji hair style</string>
     <string name="prefs__media__emoji_defaults__title" comment="Preference group title">Emoji defaults</string>
@@ -51,10 +53,15 @@
     <string name="emoji__category__flags" comment="Emoji category name">Flags</string>
     <string name="emoji__history__empty_message" comment="Message if the emoji history is empty">No recently used emojis found. Once you start typing emojis they will automatically appear here.</string>
     <string name="emoji__history__phone_locked_message" comment="Message to show if phone is locked">To access your emoji history, please first unlock your device.</string>
-    <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Pro tip: Long press emojis in the emoji history to pin or remove them!</string>
+    <string name="emoji__history__usage_tip" comment="Feature discoverability for actions of emoji history">Long press an emoji in the emoji history to pin or remove it.</string>
     <string name="emoji__history__removal_success_message" comment="Toast message if user has used the delete action on an emoji in the emoji history">Removed {emoji} from emoji history</string>
     <string name="emoji__history__pinned">Pinned</string>
     <string name="emoji__history__recent">Recent</string>
+    <string name="emoji__history__action_pin" comment="Accessibility label for the pin action in the emoji history long-press popup">Pin emoji</string>
+    <string name="emoji__history__action_unpin" comment="Accessibility label for the unpin action in the emoji history long-press popup">Unpin emoji</string>
+    <string name="emoji__history__action_move_left" comment="Accessibility label for the move-left action in the emoji history long-press popup">Move emoji left</string>
+    <string name="emoji__history__action_move_right" comment="Accessibility label for the move-right action in the emoji history long-press popup">Move emoji right</string>
+    <string name="emoji__history__action_remove" comment="Accessibility label for the remove action in the emoji history long-press popup">Remove emoji from history</string>
     <string name="emoji__search__placeholder" comment="Placeholder in the emoji panel search field">Search emoji</string>
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
     <string name="emoji__pin_group__title" comment="In-keyboard sheet title for pinning an emoji to a named group. {emoji} is the selected emoji.">Pin {emoji} to group</string>
@@ -68,6 +75,7 @@
     <string name="emoji__pin_group__error_already_pinned" comment="Pin-to-group sheet error when the emoji is already pinned to the selected group">Already pinned to this group.</string>
     <string name="emoji__pin_group__pinned_toast" comment="Toast after pinning an emoji to a group. {group} is the group name.">Pinned to {group}.</string>
     <string name="emoji__pin_group__chip_hint" comment="Toast after long-pressing a pinned emoji group chip. {group} is the group name.">Tap {group} to insert the group.</string>
+    <string name="emoji__pin_group__open" comment="Accessibility label for the action that opens the pin-to-group sheet">Pin to group</string>
     <string name="sticker__unsupported_message" comment="State shown when the active app does not accept image insertion from the keyboard">This app does not accept sticker images.</string>
     <string name="sticker__commit_failed" comment="Toast shown when sticker insertion fails">Sticker could not be inserted here.</string>
     <string name="sticker__user_folder_grant_lost" comment="In-keyboard banner shown on the Imported sticker tab when Android revoked the persistable SAF read permission for the user's imported folder. Mirrors the Settings preference summary; instructs the user to re-pick the folder from Settings.">Imported folder access lost. Open Settings → Emoji &amp; stickers to re-pick.</string>
@@ -438,8 +446,8 @@
     <string name="settings__localization__subtype_presets" comment="Subtype presets dialog title">Subtype presets</string>
     <string name="settings__localization__subtype_presets_view_all" comment="View all presets button">Show all</string>
     <string name="settings__localization__subtype_no_subtypes_configured_warning" comment="Warning message that no subtype has been defined">No language subtypes are configured. SwiftFloris will use English/QWERTY until you add one.</string>
-    <string name="settings__localization__subtype_error_already_exists" comment="Error message shown in subtype dialog when a subtype to add already exists">This subtype already exists!</string>
-    <string name="settings__localization__subtype_error_fields_no_value" comment="Error message shown in subtype editor if at least one field is set to '- select -' (means no value specified)">At least one field does not have a value selected. Please choose a value for the field(s).</string>
+    <string name="settings__localization__subtype_error_already_exists" comment="Error message shown in subtype dialog when a subtype to add already exists">This subtype is already defined.</string>
+    <string name="settings__localization__subtype_error_fields_no_value" comment="Error message shown in subtype editor if at least one field is set to '- select -' (means no value specified)">At least one field does not have a value selected. Please choose a value for each field.</string>
     <string name="settings__localization__subtype_error_layout_not_installed" comment="Error message shown in subtype list when a layout is not installed, where %s will be replaced by the layout ID">{layout_id} (not installed)</string>
     <string name="settings__localization__subtype_component_not_installed" comment="Fallback label shown in the subtype list when a referenced component is not installed">{component_id} (not installed)</string>
     <string name="settings__localization__group_layouts__label" comment="Label of layouts group">Layouts</string>
@@ -597,6 +605,7 @@
     <string name="snygg__rule_element__media_emoji_key_popup_element">Media emoji key popup element</string>
     <string name="snygg__rule_element__media_emoji_key_popup_extended_indicator">Media emoji key popup extended indicator</string>
     <string name="snygg__rule_element__media_emoji_tab">Media emoji tab</string>
+    <string name="snygg__rule_element__media_emoji_pin_sheet_error">Media emoji pin sheet error</string>
 
     <string name="snygg__rule_element__media_bottom_row">Media bottom row</string>
     <string name="snygg__rule_element__media_bottom_row_button">Media bottom row button</string>
@@ -1357,12 +1366,21 @@
     <string name="clipboard__item_description_video" comment="Clipboard media item type for accessibility labels">Clipboard video</string>
     <string name="clipboard__media_item_a11y" comment="Accessibility label for a clipboard image or video tile with its history group and copied time">{media_type}, {group}, copied {copied_time}.</string>
     <string name="clipboard__media_item_a11y_no_group" comment="Accessibility label for a clipboard image or video tile when no history group is shown">{media_type}, copied {copied_time}.</string>
+    <string name="clipboard__filter_chip__text" comment="Filter chip label for text clips in the clipboard history panel">Text</string>
+    <string name="clipboard__filter_chip__images" comment="Filter chip label for image clips in the clipboard history panel">Images</string>
+    <string name="clipboard__filter_chip__videos" comment="Filter chip label for video clips in the clipboard history panel">Videos</string>
+    <string name="clipboard__media_image_unavailable" comment="Shown in place of a clipboard image that can no longer be loaded">Image unavailable</string>
+    <string name="clipboard__media_video_unavailable" comment="Shown in place of a clipboard video thumbnail that can no longer be loaded">Video unavailable</string>
+    <string name="clipboard__media_load_error" comment="Shown in place of a clipboard media preview when loading fails unexpectedly">Something went wrong</string>
     <string name="clip__clear_history">Clear history</string>
     <string name="clip__unpin_item">Unpin item</string>
     <string name="clip__pin_item">Pin item</string>
     <string name="clip__delete_item">Delete</string>
     <string name="clip__paste_item">Paste</string>
     <string name="clip__back_to_text_input">Back to text input</string>
+    <string name="clip__toggle_history" comment="Accessibility label for the clipboard history on/off toggle button">Clipboard history</string>
+    <string name="clip__show_filters" comment="Accessibility label for the button that shows the clipboard filter row">Show filters</string>
+    <string name="clip__hide_filters" comment="Accessibility label for the button that hides the clipboard filter row">Hide filters</string>
     <string name="clip__cant_paste">This app doesn\'t allow pasting this content.</string>
     <string name="clipboard__cleared_primary_clip">Cleared primary clip</string>
     <string name="clipboard__cleared_history">Cleared history</string>
@@ -1401,9 +1419,19 @@
     <string name="pref__clipboard__history_hide_on_next_text_field__summary">Return to the keyboard when focus moves to another text field</string>
     <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__label">Clear primary clip affects history</string>
     <string name="pref__clipboard__clear_primary_clip_affects_history_if_unpinned__summary">Clearing the primary clip also removes it from the history, if not pinned</string>
-    <string name="send_to_clipboard__unknown_error">An unknown error occurred. Please try again!</string>
+    <string name="send_to_clipboard__unknown_error">An unknown error occurred. Please try again.</string>
     <string name="send_to_clipboard__type_not_supported_error">This media type is not supported.</string>
     <string name="send_to_clipboard__description__copied_image_to_clipboard">Copied below image to clipboard.</string>
+
+
+    <!-- Calendar strings -->
+    <string name="calendar__panel__title" comment="Title of the in-keyboard calendar agenda picker panel">Calendar</string>
+    <string name="calendar__panel__loading" comment="Loading state of the in-keyboard calendar agenda picker panel">Loading calendar events…</string>
+    <string name="calendar__panel__empty" comment="Empty state of the in-keyboard calendar agenda picker panel">No upcoming events found for today and the next 7 days.</string>
+
+
+    <!-- Bottom sheet strings -->
+    <string name="sheet__dismiss" comment="Accessibility label for the scrim area above an in-keyboard bottom sheet; tapping it closes the sheet">Close sheet</string>
 
 
     <!-- Devtools strings -->

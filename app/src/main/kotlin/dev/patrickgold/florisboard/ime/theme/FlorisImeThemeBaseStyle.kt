@@ -338,6 +338,9 @@ val FlorisImeThemeBaseStyle = SnyggStylesheet.v2 {
         background = `var`("--surface")
         foreground = `var`("--on-surface")
     }
+    FlorisImeUi.MediaEmojiPinSheetError.elementName {
+        foreground = rgbaColor(255, 180, 171)
+    }
 
     FlorisImeUi.GlideTrail.elementName {
         foreground = `var`("--primary")

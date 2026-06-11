@@ -48,7 +48,7 @@ import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
 import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridItemSpan
 import androidx.compose.foundation.lazy.staggeredgrid.items
 import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
-import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -94,6 +94,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -218,6 +219,7 @@ fun ClipboardInputLayout(
             ) {
                 SnyggIcon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = stringRes(R.string.clip__back_to_text_input),
                 )
             }
             SnyggText(
@@ -225,10 +227,15 @@ fun ClipboardInputLayout(
                 modifier = Modifier.weight(1f),
                 text = stringRes(R.string.clipboard__header_title),
             )
+            val historyToggleState = stringRes(
+                if (historyEnabled) R.string.state__enabled else R.string.state__disabled,
+            )
             SnyggIconButton(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
                 onClick = { scope.launch { prefs.clipboard.historyEnabled.set(!historyEnabled) } },
-                modifier = sizeModifier.autoMirrorForRtl(),
+                modifier = sizeModifier
+                    .autoMirrorForRtl()
+                    .semantics { stateDescription = historyToggleState },
                 enabled = !deviceLocked && !isPopupSurfaceActive(),
             ) {
                 SnyggIcon(
@@ -237,6 +244,7 @@ fun ClipboardInputLayout(
                     } else {
                         Icons.Default.ToggleOff
                     },
+                    contentDescription = stringRes(R.string.clip__toggle_history),
                 )
             }
             SnyggIconButton(
@@ -247,6 +255,7 @@ fun ClipboardInputLayout(
             ) {
                 SnyggIcon(
                     imageVector = Icons.Default.DeleteSweep,
+                    contentDescription = stringRes(R.string.clip__clear_history),
                 )
             }
             SnyggIconButton(
@@ -261,6 +270,9 @@ fun ClipboardInputLayout(
                     } else {
                         Icons.Default.FilterListOff
                     },
+                    contentDescription = stringRes(
+                        if (!isFilterRowShown) R.string.clip__show_filters else R.string.clip__hide_filters,
+                    ),
                 )
             }
             KeyboardLikeButton(
@@ -268,6 +280,7 @@ fun ClipboardInputLayout(
                 inputEventDispatcher = keyboardManager.inputEventDispatcher,
                 keyData = TextKeyData.DELETE,
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
+                contentDescription = stringRes(R.string.key__backspace),
             ) {
                 SnyggIcon(imageVector = Icons.AutoMirrored.Outlined.Backspace)
             }
@@ -394,7 +407,10 @@ fun ClipboardInputLayout(
             if (item.type == ItemType.IMAGE) {
                 val uri = item.uri
                 if (uri == null) {
-                    SnyggText(modifier = Modifier.fillMaxWidth(), text = "Missing image URI")
+                    SnyggText(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringRes(R.string.clipboard__media_image_unavailable),
+                    )
                     return@SnyggBox
                 }
                 val id = ContentUris.parseId(uri)
@@ -417,13 +433,16 @@ fun ClipboardInputLayout(
                 } else {
                     SnyggText(
                         modifier = Modifier.fillMaxWidth(),
-                        text = bitmap.exceptionOrNull()?.message ?: "Unknown error",
+                        text = stringRes(R.string.clipboard__media_load_error),
                     )
                 }
             } else if (item.type == ItemType.VIDEO) {
                 val uri = item.uri
                 if (uri == null) {
-                    SnyggText(modifier = Modifier.fillMaxWidth(), text = "Missing video URI")
+                    SnyggText(
+                        modifier = Modifier.fillMaxWidth(),
+                        text = stringRes(R.string.clipboard__media_video_unavailable),
+                    )
                     return@SnyggBox
                 }
                 val id = ContentUris.parseId(uri)
@@ -464,15 +483,16 @@ fun ClipboardInputLayout(
                         modifier = Modifier
                             .align(Alignment.BottomStart)
                             .padding(start = 4.dp, bottom = 4.dp)
-                            .background(Color.White, CircleShape),
+                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                            .padding(2.dp),
                         imageVector = Icons.Default.Videocam,
                         contentDescription = null,
-                        tint = Color.Black,
+                        tint = Color.White,
                     )
                 } else {
                     SnyggText(
                         modifier = Modifier.fillMaxWidth(),
-                        text = bitmap.exceptionOrNull()?.message ?: "Unknown error",
+                        text = stringRes(R.string.clipboard__media_load_error),
                     )
                 }
             } else {
@@ -582,17 +602,17 @@ fun ClipboardInputLayout(
 
                         FilterChip(
                             imageVector = Icons.Default.TextFields,
-                            text = "Text",
+                            text = stringRes(R.string.clipboard__filter_chip__text),
                             itemType = ItemType.TEXT,
                         )
                         FilterChip(
                             imageVector = Icons.Default.Image,
-                            text = "Images",
+                            text = stringRes(R.string.clipboard__filter_chip__images),
                             itemType = ItemType.IMAGE,
                         )
                         FilterChip(
                             imageVector = Icons.Default.Movie,
-                            text = "Videos",
+                            text = stringRes(R.string.clipboard__filter_chip__videos),
                             itemType = ItemType.VIDEO,
                         )
                     }
