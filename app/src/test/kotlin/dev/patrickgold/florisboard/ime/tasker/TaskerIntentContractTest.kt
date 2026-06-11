@@ -56,6 +56,24 @@ class TaskerIntentContractTest : FunSpec({
             ),
         ).shouldBeInstanceOf<ValidationResult.Reject>()
         tooLong.reason shouldContain "exceeds"
+
+        val wrongAppendType = TaskerIntentContract.validate(
+            TaskerIntentContract.InsertText.ACTION,
+            mapOf(
+                TaskerIntentContract.InsertText.EXTRA_TEXT to "hello",
+                TaskerIntentContract.InsertText.EXTRA_APPEND_SPACE to "yes",
+            ),
+        ).shouldBeInstanceOf<ValidationResult.Reject>()
+        wrongAppendType.reason shouldContain "EXTRA_APPEND_SPACE"
+
+        val unexpected = TaskerIntentContract.validate(
+            TaskerIntentContract.InsertText.ACTION,
+            mapOf(
+                TaskerIntentContract.InsertText.EXTRA_TEXT to "hello",
+                "shadow" to true,
+            ),
+        ).shouldBeInstanceOf<ValidationResult.Reject>()
+        unexpected.reason shouldContain "unexpected"
     }
 
     test("InsertClipboard requires no extras") {
@@ -63,6 +81,11 @@ class TaskerIntentContractTest : FunSpec({
             TaskerIntentContract.InsertClipboard.ACTION,
             emptyMap(),
         ) shouldBe ValidationResult.Accept
+
+        TaskerIntentContract.validate(
+            TaskerIntentContract.InsertClipboard.ACTION,
+            mapOf("ignored" to "payload"),
+        ).shouldBeInstanceOf<ValidationResult.Reject>()
     }
 
     test("SwitchLayout enforces lowercase + underscore + digit layout-id format") {
@@ -90,6 +113,13 @@ class TaskerIntentContractTest : FunSpec({
             TaskerIntentContract.SwitchLayout.ACTION,
             emptyMap(),
         ).shouldBeInstanceOf<ValidationResult.Reject>()
+        TaskerIntentContract.validate(
+            TaskerIntentContract.SwitchLayout.ACTION,
+            mapOf(
+                TaskerIntentContract.SwitchLayout.EXTRA_LAYOUT_ID to "dvorak",
+                "unused" to true,
+            ),
+        ).shouldBeInstanceOf<ValidationResult.Reject>()
     }
 
     test("TriggerVoice allows missing mode or 'dictation'/'command'") {
@@ -102,7 +132,15 @@ class TaskerIntentContractTest : FunSpec({
         ) shouldBe ValidationResult.Accept
         TaskerIntentContract.validate(
             TaskerIntentContract.TriggerVoice.ACTION,
+            mapOf(TaskerIntentContract.TriggerVoice.EXTRA_MODE to 1),
+        ).shouldBeInstanceOf<ValidationResult.Reject>()
+        TaskerIntentContract.validate(
+            TaskerIntentContract.TriggerVoice.ACTION,
             mapOf(TaskerIntentContract.TriggerVoice.EXTRA_MODE to "humming"),
+        ).shouldBeInstanceOf<ValidationResult.Reject>()
+        TaskerIntentContract.validate(
+            TaskerIntentContract.TriggerVoice.ACTION,
+            mapOf("mode" to "command", "extra" to "ignored"),
         ).shouldBeInstanceOf<ValidationResult.Reject>()
     }
 

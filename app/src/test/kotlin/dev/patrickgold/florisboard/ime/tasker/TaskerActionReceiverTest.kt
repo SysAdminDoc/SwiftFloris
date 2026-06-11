@@ -98,6 +98,29 @@ class TaskerActionReceiverTest {
     }
 
     @Test
+    fun receiverRejectsUnexpectedExtrasBeforeDispatch() {
+        receiver.onReceive(
+            context,
+            Intent(TaskerIntentContract.InsertClipboard.ACTION)
+                .putExtra("unexpected", "payload"),
+        )
+
+        sink.calls shouldBe emptyList()
+    }
+
+    @Test
+    fun receiverRejectsWrongOptionalExtraTypeBeforeDispatch() {
+        receiver.onReceive(
+            context,
+            Intent(TaskerIntentContract.InsertText.ACTION)
+                .putExtra(TaskerIntentContract.InsertText.EXTRA_TEXT, "Hello")
+                .putExtra(TaskerIntentContract.InsertText.EXTRA_APPEND_SPACE, "yes"),
+        )
+
+        sink.calls shouldBe emptyList()
+    }
+
+    @Test
     fun receiverIsExportedAndSignatureProtectedInManifest() {
         @Suppress("DEPRECATION")
         val info = context.packageManager.getReceiverInfo(

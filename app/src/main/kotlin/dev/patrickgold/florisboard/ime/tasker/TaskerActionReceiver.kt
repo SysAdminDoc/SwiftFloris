@@ -26,13 +26,40 @@ class TaskerActionReceiver : BroadcastReceiver() {
         TaskerActionDispatcher.dispatch(
             context = context,
             action = intent?.action,
-            extras = intent?.extras.toTaskerExtrasMap(),
+            extras = intent.toTaskerExtrasMap(),
         )
     }
 }
 
 @Suppress("DEPRECATION")
-private fun Bundle?.toTaskerExtrasMap(): Map<String, Any?> {
-    val bundle = this ?: return emptyMap()
-    return bundle.keySet().associateWith { key -> bundle.get(key) }
+private fun Intent?.toTaskerExtrasMap(): Map<String, Any?> {
+    val intent = this ?: return emptyMap()
+    val bundle: Bundle = intent.extras ?: return emptyMap()
+    val allowedKeys = when (intent.action) {
+        TaskerIntentContract.InsertText.ACTION -> setOf(
+            TaskerIntentContract.InsertText.EXTRA_TEXT,
+            TaskerIntentContract.InsertText.EXTRA_APPEND_SPACE,
+        )
+        TaskerIntentContract.InsertClipboard.ACTION -> emptySet()
+        TaskerIntentContract.SwitchLayout.ACTION -> setOf(
+            TaskerIntentContract.SwitchLayout.EXTRA_LAYOUT_ID,
+        )
+        TaskerIntentContract.TriggerVoice.ACTION -> setOf(
+            TaskerIntentContract.TriggerVoice.EXTRA_MODE,
+        )
+        else -> return emptyMap()
+    }
+    val values = linkedMapOf<String, Any?>()
+    for (key in bundle.keySet()) {
+        values[key] = if (key in allowedKeys) {
+            runCatching { bundle.get(key) }.getOrDefault(UnreadableTaskerExtra)
+        } else {
+            UnexpectedTaskerExtra
+        }
+    }
+    return values
 }
+
+private data object UnreadableTaskerExtra
+
+private data object UnexpectedTaskerExtra
