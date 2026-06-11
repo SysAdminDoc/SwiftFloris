@@ -82,14 +82,42 @@ object McpDaemonRegistry {
         return out
     }
 
-    /** Find a tool by name across every active daemon. Null on miss. */
-    fun findTool(toolName: String): ResolvedTool? {
+    /**
+     * Exact `(daemonKey, toolName)` lookup. The dispatch path must use this
+     * form: a flat name lookup lets one daemon shadow another's tool and
+     * receive dispatch payloads meant for it. Null when [daemonKey] is not
+     * registered or does not advertise [toolName].
+     */
+    fun findTool(daemonKey: DaemonKey, toolName: String): ResolvedTool? {
         require(toolName.isNotBlank()) { "toolName must not be blank" }
+        val entry = snapshot.get()[daemonKey] ?: return null
+        val tool = entry.tools.firstOrNull { it.name == toolName } ?: return null
+        return ResolvedTool(daemon = daemonKey, tool = tool)
+    }
+
+    /**
+     * Every `(daemon, tool)` pair advertising [toolName], in `setActive`
+     * insertion order. More than one element means the name is shadowed
+     * across daemons and a flat-name dispatch would be ambiguous — callers
+     * must then disambiguate via the exact [findTool] overload.
+     */
+    fun findToolMatches(toolName: String): List<ResolvedTool> {
+        require(toolName.isNotBlank()) { "toolName must not be blank" }
+        val out = ArrayList<ResolvedTool>(1)
         for ((key, entry) in snapshot.get()) {
             val tool = entry.tools.firstOrNull { it.name == toolName }
-            if (tool != null) return ResolvedTool(daemon = key, tool = tool)
+            if (tool != null) out.add(ResolvedTool(daemon = key, tool = tool))
         }
-        return null
+        return out
+    }
+
+    /**
+     * Legacy flat-name lookup. Null on miss **and** when two or more daemons
+     * advertise the same [toolName] — iteration order must never silently
+     * pick which daemon receives a dispatch payload.
+     */
+    fun findTool(toolName: String): ResolvedTool? {
+        return findToolMatches(toolName).singleOrNull()
     }
 
     /** Test-only — wipe the registry. */

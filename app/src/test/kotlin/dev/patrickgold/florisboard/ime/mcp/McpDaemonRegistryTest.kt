@@ -70,6 +70,68 @@ class McpDaemonRegistryTest : FunSpec({
         McpDaemonRegistry.findTool("nope") shouldBe null
     }
 
+    test("flat findTool fails on a tool name shadowed across daemons instead of picking the first") {
+        val keyA = DaemonKey("com.example.a", "com.example.a.Daemon")
+        val keyB = DaemonKey("com.example.b", "com.example.b.Daemon")
+        McpDaemonRegistry.setActive(
+            linkedMapOf(
+                keyA to DaemonEntry(
+                    key = keyA, protocolVersion = 1,
+                    tools = listOf(dummyTool("shared.tool")),
+                ),
+                keyB to DaemonEntry(
+                    key = keyB, protocolVersion = 1,
+                    tools = listOf(dummyTool("shared.tool")),
+                ),
+            ),
+        )
+        McpDaemonRegistry.findTool("shared.tool") shouldBe null
+    }
+
+    test("findToolMatches surfaces every (daemon, tool) entry for a shadowed name") {
+        val keyA = DaemonKey("com.example.a", "com.example.a.Daemon")
+        val keyB = DaemonKey("com.example.b", "com.example.b.Daemon")
+        McpDaemonRegistry.setActive(
+            linkedMapOf(
+                keyA to DaemonEntry(
+                    key = keyA, protocolVersion = 1,
+                    tools = listOf(dummyTool("shared.tool")),
+                ),
+                keyB to DaemonEntry(
+                    key = keyB, protocolVersion = 1,
+                    tools = listOf(dummyTool("shared.tool"), dummyTool("b.only")),
+                ),
+            ),
+        )
+        val matches = McpDaemonRegistry.findToolMatches("shared.tool")
+        matches.size shouldBe 2
+        matches.map { it.daemon } shouldBe listOf(keyA, keyB)
+        McpDaemonRegistry.findToolMatches("b.only").map { it.daemon } shouldBe listOf(keyB)
+        McpDaemonRegistry.findToolMatches("nope") shouldBe emptyList()
+    }
+
+    test("exact (daemonKey, toolName) lookup resolves each daemon even when names collide") {
+        val keyA = DaemonKey("com.example.a", "com.example.a.Daemon")
+        val keyB = DaemonKey("com.example.b", "com.example.b.Daemon")
+        McpDaemonRegistry.setActive(
+            linkedMapOf(
+                keyA to DaemonEntry(
+                    key = keyA, protocolVersion = 1,
+                    tools = listOf(dummyTool("shared.tool")),
+                ),
+                keyB to DaemonEntry(
+                    key = keyB, protocolVersion = 1,
+                    tools = listOf(dummyTool("shared.tool")),
+                ),
+            ),
+        )
+        McpDaemonRegistry.findTool(keyA, "shared.tool")?.daemon shouldBe keyA
+        McpDaemonRegistry.findTool(keyB, "shared.tool")?.daemon shouldBe keyB
+        val keyC = DaemonKey("com.example.c", "com.example.c.Daemon")
+        McpDaemonRegistry.findTool(keyC, "shared.tool") shouldBe null
+        McpDaemonRegistry.findTool(keyA, "not.advertised") shouldBe null
+    }
+
     test("listAllTools flattens tools across every daemon") {
         val keyA = DaemonKey("com.example.a", "com.example.a.Daemon")
         val keyB = DaemonKey("com.example.b", "com.example.b.Daemon")

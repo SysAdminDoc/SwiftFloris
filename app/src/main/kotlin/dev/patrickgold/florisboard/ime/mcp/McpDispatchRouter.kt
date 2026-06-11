@@ -27,8 +27,11 @@ import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
  * name:
  *
  *   1. [SensitiveFieldGuard] — short-circuit on sensitive fields.
- *   2. [McpDaemonRegistry.findTool] — resolve the tool name to
- *      `(daemon, tool)` across every active daemon.
+ *   2. [McpDaemonRegistry.findTool] — resolve `(daemonKey, toolName)`
+ *      exactly when the request names a daemon; legacy flat-name
+ *      requests resolve only when exactly one daemon advertises the
+ *      name (a shadowed name suppresses instead of silently picking
+ *      a winner).
  *   3. Underlying [McpClient] — usually
  *      [McpClientRegistry.active], which itself may be wrapped by
  *      [McpTimeoutClient] in production.
@@ -65,8 +68,27 @@ class McpDispatchRouter(
         if (request.parameterJson.length.toLong() > McpBridgeContract.MAX_PAYLOAD_BYTES) {
             return Response.Suppressed(reason = "parameterJson exceeds MAX_PAYLOAD_BYTES")
         }
-        val resolved = registryView.findTool(request.toolName)
-            ?: return Response.Suppressed(reason = "tool ${request.toolName} not registered")
+        val requestedDaemon = request.daemonKey
+        val resolved = if (requestedDaemon != null) {
+            // Identity-scoped dispatch — the surface that picked the tool knows
+            // which daemon advertised it, so resolve exactly. A daemon shadowing
+            // another daemon's tool name can never receive its payloads.
+            registryView.findTool(requestedDaemon, request.toolName)
+                ?: return Response.Suppressed(
+                    reason = "tool ${request.toolName} not registered on daemon ${requestedDaemon.packageName}",
+                )
+        } else {
+            val matches = registryView.findToolMatches(request.toolName)
+            when {
+                matches.isEmpty() -> return Response.Suppressed(
+                    reason = "tool ${request.toolName} not registered",
+                )
+                matches.size > 1 -> return Response.Suppressed(
+                    reason = "tool ${request.toolName} is ambiguous across ${matches.size} daemons — request must name a daemon",
+                )
+                else -> matches.first()
+            }
+        }
         if (isDaemonDisabled(resolved.daemon)) {
             return Response.Suppressed(
                 reason = "daemon ${resolved.daemon.packageName} disabled by user",
@@ -90,10 +112,18 @@ class McpDispatchRouter(
         }
     }
 
-    /** Caller-facing input. */
+    /**
+     * Caller-facing input. [daemonKey] carries the identity of the daemon
+     * the tool was chosen from (the settings / quick-action surface that
+     * lists tools knows it via [ResolvedTool.daemon]); when set, dispatch
+     * resolves the exact `(daemonKey, toolName)` pair. The null form is
+     * legacy flat-name dispatch and is suppressed when the name is
+     * advertised by more than one daemon.
+     */
     data class Request(
         val toolName: String,
         val parameterJson: String,
+        val daemonKey: DaemonKey? = null,
         val inputType: Int = 0x01,
         val imeOptions: Int = 0,
         val timeoutMillis: Long = McpClient.DEFAULT_TIMEOUT_MILLIS,
@@ -112,11 +142,14 @@ class McpDispatchRouter(
 
     /** View over [McpDaemonRegistry] for test injection. */
     interface RegistryView {
-        fun findTool(toolName: String): ResolvedTool?
+        fun findTool(daemonKey: DaemonKey, toolName: String): ResolvedTool?
+        fun findToolMatches(toolName: String): List<ResolvedTool>
         companion object {
             fun from(): RegistryView = object : RegistryView {
-                override fun findTool(toolName: String): ResolvedTool? =
-                    McpDaemonRegistry.findTool(toolName)
+                override fun findTool(daemonKey: DaemonKey, toolName: String): ResolvedTool? =
+                    McpDaemonRegistry.findTool(daemonKey, toolName)
+                override fun findToolMatches(toolName: String): List<ResolvedTool> =
+                    McpDaemonRegistry.findToolMatches(toolName)
             }
         }
     }
