@@ -35,4 +35,36 @@ class ExternalVoiceInputProvidersTest : FunSpec({
         ExternalVoiceInputProviders.byPackageName("com.alexvt.whisperinput")?.label shouldBe "WhisperInput"
         ExternalVoiceInputProviders.byPackageName("org.unknown.voice") shouldBe null
     }
+
+    test("provider statuses classify ready, permission, installed, and missing states") {
+        val statuses = ExternalVoiceInputProviders.statuses(
+            installedPackageNames = setOf(
+                "org.futo.voiceinput",
+                "com.alexvt.whisperinput",
+            ),
+            enabledVoiceInputMethodPackages = setOf(
+                "org.futo.voiceinput",
+                "com.alexvt.whisperinput",
+            ),
+            hasMicrophonePermission = { packageName -> packageName == "org.futo.voiceinput" },
+        )
+
+        statuses.first { it.provider.packageName == "org.futo.voiceinput" }.state shouldBe
+            ExternalVoiceInputProviderState.Ready
+        statuses.first { it.provider.packageName == "com.alexvt.whisperinput" }.state shouldBe
+            ExternalVoiceInputProviderState.EnabledNeedsMicrophone
+        statuses.first { it.provider.packageName == "org.woheller69.whisper" }.state shouldBe
+            ExternalVoiceInputProviderState.NotInstalled
+    }
+
+    test("installed providers that are not enabled are visible as setup candidates") {
+        val whisper = ExternalVoiceInputProviders.statuses(
+            installedPackageNames = setOf("org.woheller69.whisper"),
+            enabledVoiceInputMethodPackages = emptySet(),
+            hasMicrophonePermission = { false },
+        ).first { it.provider.packageName == "org.woheller69.whisper" }
+
+        whisper.state shouldBe ExternalVoiceInputProviderState.InstalledNotEnabled
+        whisper.isReady shouldBe false
+    }
 })

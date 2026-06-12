@@ -61,6 +61,8 @@ import dev.patrickgold.florisboard.ime.voice.VoiceCommandAction
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommand
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
 import dev.patrickgold.florisboard.ime.voice.VoiceDeviceRamProfile
+import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviderState
+import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviderStatus
 import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviders
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceLocalRecognizerRuntime
@@ -102,6 +104,7 @@ private data class VoiceInputStatus(
     val isFutoMicrophonePermissionGranted: Boolean,
     val isAnyVoiceProviderEnabled: Boolean,
     val readyProviderLabel: String?,
+    val knownProviderStatuses: List<ExternalVoiceInputProviderStatus>,
 )
 
 private data class VoiceCommandDialogState(
@@ -202,6 +205,8 @@ fun VoiceInputScreen() = FlorisScreen {
     val openFutoFailedText = stringRes(R.string.settings__voice_input__open_futo_failed)
     val openFutoPermissionsFailedText =
         stringRes(R.string.settings__voice_input__open_futo_permissions_failed)
+    val openProviderSettingsFailedText =
+        stringRes(R.string.settings__voice_input__open_provider_settings_failed)
     val modelImportedText = stringRes(R.string.settings__voice_input__model_imported)
     val modelImportFailedText = stringRes(R.string.settings__voice_input__model_import_failed)
     val modelRemovedText = stringRes(R.string.settings__voice_input__model_removed)
@@ -260,6 +265,12 @@ fun VoiceInputScreen() = FlorisScreen {
     fun openFutoAppSettings() {
         if (!voiceInputManager.launchFutoAppInfoSettings()) {
             Toast.makeText(context, openFutoPermissionsFailedText, Toast.LENGTH_LONG).show()
+        }
+    }
+
+    fun openProviderAppSettings(packageName: String) {
+        if (!voiceInputManager.launchAppInfoSettings(packageName)) {
+            Toast.makeText(context, openProviderSettingsFailedText, Toast.LENGTH_LONG).show()
         }
     }
 
@@ -432,12 +443,19 @@ fun VoiceInputScreen() = FlorisScreen {
                     onClick = { context.launchUrl(VoiceInputManager.FUTO_FDROID_URL) },
                 )
             }
-            for (provider in ExternalVoiceInputProviders.SupportedOfflineImeProviders) {
+            for (providerStatus in status.knownProviderStatuses) {
                 Preference(
                     icon = Icons.Default.Mic,
-                    title = provider.label,
-                    summary = stringRes(R.string.settings__voice_input__supported_provider_summary),
-                    onClick = { context.launchUrl(provider.installUrl) },
+                    title = providerStatus.provider.label,
+                    summary = externalVoiceProviderStatusSummary(providerStatus),
+                    onClick = when (providerStatus.state) {
+                        ExternalVoiceInputProviderState.Ready -> ::openKeyboardSettings
+                        ExternalVoiceInputProviderState.EnabledNeedsMicrophone ->
+                            { { openProviderAppSettings(providerStatus.provider.packageName) } }
+                        ExternalVoiceInputProviderState.InstalledNotEnabled -> ::openKeyboardSettings
+                        ExternalVoiceInputProviderState.NotInstalled ->
+                            { { context.launchUrl(providerStatus.provider.installUrl) } }
+                    },
                 )
             }
         }
@@ -785,6 +803,26 @@ private fun VoiceInputStatusCard(
 }
 
 @Composable
+private fun externalVoiceProviderStatusSummary(status: ExternalVoiceInputProviderStatus): String {
+    return when (status.state) {
+        ExternalVoiceInputProviderState.Ready -> stringRes(
+            R.string.settings__voice_input__provider_ready_summary,
+            "provider" to status.provider.label,
+        )
+        ExternalVoiceInputProviderState.EnabledNeedsMicrophone -> stringRes(
+            R.string.settings__voice_input__provider_needs_mic_summary,
+            "provider" to status.provider.label,
+        )
+        ExternalVoiceInputProviderState.InstalledNotEnabled -> stringRes(
+            R.string.settings__voice_input__provider_installed_not_enabled_summary,
+            "provider" to status.provider.label,
+        )
+        ExternalVoiceInputProviderState.NotInstalled ->
+            stringRes(R.string.settings__voice_input__supported_provider_summary)
+    }
+}
+
+@Composable
 private fun voiceRecognitionEngineRouteLabel(route: VoiceRecognitionEngineRoute): String {
     return when (route) {
         VoiceRecognitionEngineRoute.EMBEDDED_WHISPER ->
@@ -839,6 +877,7 @@ private fun VoiceInputManager.readStatus(): VoiceInputStatus {
         isFutoMicrophonePermissionGranted = isFutoMicrophonePermissionGranted(),
         isAnyVoiceProviderEnabled = isExternalVoiceInputMethodEnabled(),
         readyProviderLabel = readyKnownExternalVoiceInputProvider()?.label,
+        knownProviderStatuses = knownExternalVoiceInputProviderStatuses(),
     )
 }
 

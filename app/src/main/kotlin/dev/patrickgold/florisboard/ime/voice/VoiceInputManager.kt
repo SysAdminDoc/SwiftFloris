@@ -257,16 +257,20 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun isFutoVoiceInputInstalled(): Boolean {
+        return isPackageInstalled(FUTO_PACKAGE_NAME)
+    }
+
+    private fun isPackageInstalled(packageName: String): Boolean {
         val packageManager = context.packageManager
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 packageManager.getPackageInfo(
-                    FUTO_PACKAGE_NAME,
+                    packageName,
                     PackageManager.PackageInfoFlags.of(0),
                 )
             } else {
                 @Suppress("DEPRECATION")
-                packageManager.getPackageInfo(FUTO_PACKAGE_NAME, 0)
+                packageManager.getPackageInfo(packageName, 0)
             }
             true
         } catch (_: PackageManager.NameNotFoundException) {
@@ -287,11 +291,18 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun readyKnownExternalVoiceInputProvider(): ExternalVoiceInputProvider? {
-        val enabledExternalPackages = enabledExternalVoiceInputMethodPackages()
-        return ExternalVoiceInputProviders.SupportedOfflineImeProviders.firstOrNull { provider ->
-            provider.packageName in enabledExternalPackages &&
-                isMicrophonePermissionGranted(provider.packageName)
-        }
+        return knownExternalVoiceInputProviderStatuses().firstOrNull { it.isReady }?.provider
+    }
+
+    fun knownExternalVoiceInputProviderStatuses(): List<ExternalVoiceInputProviderStatus> {
+        return ExternalVoiceInputProviders.statuses(
+            installedPackageNames = ExternalVoiceInputProviders.SupportedOfflineImeProviders
+                .mapNotNullTo(mutableSetOf()) { provider ->
+                    provider.packageName.takeIf(::isPackageInstalled)
+                },
+            enabledVoiceInputMethodPackages = enabledExternalVoiceInputMethodPackages(),
+            hasMicrophonePermission = ::isMicrophonePermissionGranted,
+        )
     }
 
     fun isFutoVoiceInputEnabled(): Boolean {
@@ -362,8 +373,12 @@ class VoiceInputManager(private val context: Context) {
     }
 
     fun launchFutoAppInfoSettings(): Boolean {
+        return launchAppInfoSettings(FUTO_PACKAGE_NAME)
+    }
+
+    fun launchAppInfoSettings(packageName: String): Boolean {
         val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS)
-            .setData("package:$FUTO_PACKAGE_NAME".toUri())
+            .setData("package:$packageName".toUri())
             .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         return launchActivity(intent)
     }

@@ -316,6 +316,9 @@
     <string name="settings__voice_input__open_futo_permissions_summary" comment="Voice input settings preference summary">Review microphone permission if dictation stops after denial, revocation, or device restore.</string>
     <string name="settings__voice_input__install_summary" comment="Voice input settings preference summary">After installing an offline voice keyboard, enable it in Android keyboard settings.</string>
     <string name="settings__voice_input__supported_provider_summary" comment="Voice input supported provider row summary">Supported offline voice keyboard; install it, enable it as an Android keyboard, and grant Microphone permission.</string>
+    <string name="settings__voice_input__provider_ready_summary" comment="Voice input supported provider row summary">{provider} is enabled and has Microphone permission.</string>
+    <string name="settings__voice_input__provider_needs_mic_summary" comment="Voice input supported provider row summary">{provider} is enabled but Android has not granted Microphone permission.</string>
+    <string name="settings__voice_input__provider_installed_not_enabled_summary" comment="Voice input supported provider row summary">{provider} is installed but is not enabled as an Android keyboard.</string>
     <string name="settings__voice_input__group_voice_commands" comment="Voice input settings group title">Voice commands</string>
     <string name="settings__voice_input__voice_commands_info_title" comment="Voice command settings information title">Custom commands stay on device</string>
     <string name="settings__voice_input__voice_commands_info_summary" comment="Voice command settings information summary">SwiftFloris can store and test command phrases locally. FUTO dictation is still an external keyboard, so live command execution needs a transcript handoff path.</string>
@@ -350,6 +353,7 @@
     <string name="settings__voice_input__supported_language_summary" comment="Voice input supported language row summary">Available in FUTO Voice Input</string>
     <string name="settings__voice_input__open_futo_failed" comment="Voice input error toast">Could not open FUTO Voice Input.</string>
     <string name="settings__voice_input__open_futo_permissions_failed" comment="Voice input error toast">Could not open FUTO app permissions.</string>
+    <string name="settings__voice_input__open_provider_settings_failed" comment="Voice input error toast">Could not open provider app settings.</string>
     <string name="settings__voice_input__language_english">English</string>
     <string name="settings__voice_input__language_chinese">Chinese</string>
     <string name="settings__voice_input__language_german">German</string>
