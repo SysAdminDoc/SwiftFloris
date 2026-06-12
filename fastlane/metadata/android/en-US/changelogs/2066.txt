@@ -1,0 +1,1 @@
+Show installed language packs as active, standby, or generic in Settings so disabled packs remain visible without loading at startup.

@@ -16,11 +16,39 @@
 
 package dev.patrickgold.florisboard.app.settings.localization
 
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackKind
+
 internal enum class LanguagePackManagerNotice {
     None,
     DeleteInProgress,
     DeleteSuccess,
     DeleteFailure,
+}
+
+internal enum class LanguagePackRuntimeState {
+    ActiveForSubtype,
+    InstalledStandby,
+    MetadataOnly,
+}
+
+internal data class LanguagePackCatalogComponent(
+    val id: String,
+    val label: String,
+    val localeTag: String,
+    val isActive: Boolean,
+)
+
+internal data class LanguagePackCatalogEntry(
+    val extensionId: String,
+    val title: String,
+    val kind: LanguagePackKind,
+    val state: LanguagePackRuntimeState,
+    val components: List<LanguagePackCatalogComponent>,
+) {
+    val componentCount: Int = components.size
+    val activeComponentCount: Int = components.count { it.isActive }
 }
 
 internal object LanguagePackManagerPolicy {
@@ -44,5 +72,36 @@ internal object LanguagePackManagerPolicy {
             lastTerminalNotice != null -> lastTerminalNotice
             else -> LanguagePackManagerNotice.None
         }
+    }
+
+    fun catalogEntries(
+        extensions: List<LanguagePackExtension>,
+        activeLocaleTags: Set<String>,
+    ): List<LanguagePackCatalogEntry> {
+        return extensions.map { extension ->
+            val components = extension.items
+                .sortedWith(compareBy<LanguagePackComponent> { it.label }.thenBy { it.id })
+                .map { component ->
+                    val localeTag = component.locale.localeTag()
+                    LanguagePackCatalogComponent(
+                        id = component.id,
+                        label = component.label,
+                        localeTag = localeTag,
+                        isActive = localeTag in activeLocaleTags,
+                    )
+                }
+            val state = when {
+                !extension.supportsHanShapeBased() -> LanguagePackRuntimeState.MetadataOnly
+                components.any { it.isActive } -> LanguagePackRuntimeState.ActiveForSubtype
+                else -> LanguagePackRuntimeState.InstalledStandby
+            }
+            LanguagePackCatalogEntry(
+                extensionId = extension.meta.id,
+                title = extension.meta.title,
+                kind = extension.kind,
+                state = state,
+                components = components,
+            )
+        }.sortedWith(compareBy<LanguagePackCatalogEntry> { it.title }.thenBy { it.extensionId })
     }
 }

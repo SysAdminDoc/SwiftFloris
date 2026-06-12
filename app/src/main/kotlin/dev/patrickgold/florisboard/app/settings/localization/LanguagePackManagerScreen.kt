@@ -47,9 +47,11 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.ext.ExtensionImportScreenType
 import dev.patrickgold.florisboard.extensionManager
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackKind
 import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.Extension
+import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
@@ -84,14 +86,20 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val extensionManager by context.extensionManager()
+    val subtypeManager by context.subtypeManager()
 
     val indexedLanguagePackExtensions by extensionManager.languagePacks.collectAsState()
-    val extGroupedLanguagePacks = remember(indexedLanguagePackExtensions) {
-        buildMap {
-            for (ext in indexedLanguagePackExtensions) {
-                put(ext.meta.id, ext.items)
-            }
-        }.mapValues { (_, configs) -> configs.sortedBy { it.label } }
+    val subtypes by subtypeManager.subtypesFlow.collectAsState()
+    val activeLocaleTags = remember(subtypes) {
+        subtypes.flatMap { subtype ->
+            subtype.locales().map { it.localeTag() }
+        }.toSet()
+    }
+    val languagePackCatalog = remember(indexedLanguagePackExtensions, activeLocaleTags) {
+        LanguagePackManagerPolicy.catalogEntries(
+            extensions = indexedLanguagePackExtensions,
+            activeLocaleTags = activeLocaleTags,
+        )
     }
 
     var languagePackExtToDelete by remember { mutableStateOf<Extension?>(null) }
@@ -139,7 +147,7 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 )
             }
         }
-        if (extGroupedLanguagePacks.isEmpty()) {
+        if (languagePackCatalog.isEmpty()) {
             FlorisEmptyState(
                 modifier = Modifier.padding(16.dp),
                 icon = Icons.Default.Language,
@@ -155,14 +163,14 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 },
             )
         }
-        for ((extensionId, configs) in extGroupedLanguagePacks) key(extensionId) {
-            val ext = extensionManager.getExtensionById(extensionId)!!
+        for (entry in languagePackCatalog) key(entry.extensionId) {
+            val ext = extensionManager.getExtensionById(entry.extensionId)!!
             FlorisOutlinedBox(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
-                title = ext.meta.title,
-                onTitleClick = { navController.navigate(Routes.Ext.View(extensionId)) },
-                subtitle = extensionId,
-                onSubtitleClick = { navController.navigate(Routes.Ext.View(extensionId)) },
+                title = entry.title,
+                onTitleClick = { navController.navigate(Routes.Ext.View(entry.extensionId)) },
+                subtitle = languagePackEntrySummary(entry),
+                onSubtitleClick = { navController.navigate(Routes.Ext.View(entry.extensionId)) },
             ) {
                 Column(
                     // Allowing horizontal scroll to fit translations in descriptions.
@@ -170,12 +178,13 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                         .horizontalScroll(rememberScrollState())
                         .width(intrinsicSize = IntrinsicSize.Max),
                 ) {
-                    for (config in configs) key(extensionId, config.id) {
+                    for (component in entry.components) key(entry.extensionId, component.id) {
                         JetPrefListItem(
                             modifier = Modifier.rippleClickable {
-                                navController.navigate(Routes.Ext.View(extensionId))
+                                navController.navigate(Routes.Ext.View(entry.extensionId))
                             },
-                            text = config.label,
+                            text = component.label,
+                            secondaryText = languagePackComponentSummary(component),
                         )
                     }
                 }
@@ -246,5 +255,45 @@ fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = Floris
                 what = languagePackExtToDelete!!.meta.title,
             )
         }
+    }
+}
+
+@Composable
+private fun languagePackEntrySummary(entry: LanguagePackCatalogEntry): String {
+    val kind = when (entry.kind) {
+        LanguagePackKind.HAN_SHAPE_BASED -> stringRes(R.string.settings__localization__language_pack_kind_han)
+        LanguagePackKind.GENERIC -> stringRes(R.string.settings__localization__language_pack_kind_generic)
+    }
+    return when (entry.state) {
+        LanguagePackRuntimeState.ActiveForSubtype -> stringRes(
+            R.string.settings__localization__language_pack_extension_active_summary,
+            "active" to entry.activeComponentCount.toString(),
+            "total" to entry.componentCount.toString(),
+            "kind" to kind,
+        )
+        LanguagePackRuntimeState.InstalledStandby -> stringRes(
+            R.string.settings__localization__language_pack_extension_standby_summary,
+            "total" to entry.componentCount.toString(),
+            "kind" to kind,
+        )
+        LanguagePackRuntimeState.MetadataOnly -> stringRes(
+            R.string.settings__localization__language_pack_extension_metadata_summary,
+            "total" to entry.componentCount.toString(),
+        )
+    }
+}
+
+@Composable
+private fun languagePackComponentSummary(component: LanguagePackCatalogComponent): String {
+    return if (component.isActive) {
+        stringRes(
+            R.string.settings__localization__language_pack_component_active_summary,
+            "locale" to component.localeTag,
+        )
+    } else {
+        stringRes(
+            R.string.settings__localization__language_pack_component_standby_summary,
+            "locale" to component.localeTag,
+        )
     }
 }
