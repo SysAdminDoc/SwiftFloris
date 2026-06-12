@@ -1,0 +1,1 @@
+Added an off-by-default CJK bridge prototype with a table-backed Pinyin provider for future Chinese input integration work.
