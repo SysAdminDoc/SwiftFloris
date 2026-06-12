@@ -16,6 +16,7 @@
 
 package org.florisboard.lib.compose
 
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -24,6 +25,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
@@ -53,13 +55,18 @@ fun FlorisButtonBar(content: @Composable FlorisButtonBarScope.() -> Unit) {
                     .height(1.dp),
                 color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
             ) {}
-            Row(
-                modifier = Modifier
-                    .padding(top = 8.dp, bottom = 8.dp, start = 0.dp, end = 16.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                val scope = FlorisButtonBarScope(this)
-                content(scope)
+            Box(modifier = Modifier.fillMaxWidth()) {
+                Row(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .widthIn(max = 840.dp)
+                        .fillMaxWidth()
+                        .padding(top = 8.dp, bottom = 8.dp, start = 0.dp, end = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    val scope = FlorisButtonBarScope(this)
+                    content(scope)
+                }
             }
         }
     }

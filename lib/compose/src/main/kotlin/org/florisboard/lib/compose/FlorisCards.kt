@@ -89,24 +89,19 @@ fun FlorisSimpleCard(
     icon: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    Card(
-        onClick = onClick ?: { },
-        enabled = onClick != null,
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        border = BorderStroke(width = 1.dp, color = borderColor),
-        colors = CardDefaults.cardColors(
-            contentColor = contentColor,
-            containerColor = backgroundColor,
-            disabledContainerColor = backgroundColor,
-            disabledContentColor = contentColor,
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = 0.dp,
-            pressedElevation = 2.dp,
-            disabledElevation = 0.dp,
-        ),
-    ) {
+    val cardModifier = modifier.fillMaxWidth()
+    val cardColors = CardDefaults.cardColors(
+        contentColor = contentColor,
+        containerColor = backgroundColor,
+        disabledContainerColor = backgroundColor,
+        disabledContentColor = contentColor,
+    )
+    val cardElevation = CardDefaults.cardElevation(
+        defaultElevation = 0.dp,
+        pressedElevation = 2.dp,
+        disabledElevation = 0.dp,
+    )
+    val cardContent: @Composable ColumnScope.() -> Unit = {
         Row(
             modifier = Modifier
                 .defaultMinSize(minHeight = 72.dp)
@@ -168,6 +163,26 @@ fun FlorisSimpleCard(
                 )
             }
         }
+    }
+    if (onClick != null) {
+        Card(
+            onClick = onClick,
+            modifier = cardModifier,
+            shape = MaterialTheme.shapes.medium,
+            border = BorderStroke(width = 1.dp, color = borderColor),
+            colors = cardColors,
+            elevation = cardElevation,
+            content = cardContent,
+        )
+    } else {
+        Card(
+            modifier = cardModifier,
+            shape = MaterialTheme.shapes.medium,
+            border = BorderStroke(width = 1.dp, color = borderColor),
+            colors = cardColors,
+            elevation = cardElevation,
+            content = cardContent,
+        )
     }
 }
 
