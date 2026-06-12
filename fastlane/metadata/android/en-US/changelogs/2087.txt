@@ -1,0 +1,2 @@
+Han shape-based language packs now drive real table-backed suggestions, word-list, and word-frequency lookups.
+Placeholder spell results were removed, and broken active Han tables now show fail-closed language-pack status instead of silently promoting stub behavior.
