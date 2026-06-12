@@ -1,0 +1,1 @@
+Clarify install trust across GitHub, Obtainium, and F-Droid channels with release-note no-network, signature, reproducibility, and security-reporting guidance.
