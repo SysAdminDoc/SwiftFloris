@@ -66,6 +66,37 @@ class PerAppKeyboardProfilesTest : FunSpec({
         PerAppKeyboardProfiles.resolve("not-json", "com.example.notes") shouldBe null
     }
 
+    test("upsert over malformed json writes recoverable profile map") {
+        val raw = PerAppKeyboardProfiles.upsert(
+            rawJson = "not-json",
+            profile = PerAppKeyboardProfile(
+                packageName = "com.example.notes",
+                label = "Notes",
+                suggestions = PerAppSuggestionAggressiveness.OFF,
+            ),
+        )
+
+        PerAppKeyboardProfiles.count(raw) shouldBe 1
+        PerAppKeyboardProfiles.resolve(raw, "com.example.notes")?.label shouldBe "Notes"
+        PerAppKeyboardProfiles.resolve(raw, "com.example.notes")?.suggestions shouldBe
+            PerAppSuggestionAggressiveness.OFF
+    }
+
+    test("remove deletes only the requested normalized package") {
+        val raw = PerAppKeyboardProfiles.serialize(
+            mapOf(
+                "com.example.notes" to PerAppKeyboardProfile(packageName = "com.example.notes"),
+                "com.example.chat" to PerAppKeyboardProfile(packageName = "com.example.chat"),
+            ),
+        )
+
+        val updated = PerAppKeyboardProfiles.remove(raw, " com.example.notes ")
+
+        PerAppKeyboardProfiles.count(updated) shouldBe 1
+        PerAppKeyboardProfiles.resolve(updated, "com.example.notes") shouldBe null
+        PerAppKeyboardProfiles.resolve(updated, "com.example.chat")?.packageName shouldBe "com.example.chat"
+    }
+
     test("invalid package names are ignored") {
         val raw = PerAppKeyboardProfiles.upsert(
             rawJson = PerAppKeyboardProfiles.EmptyJson,

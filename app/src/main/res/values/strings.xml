@@ -995,6 +995,53 @@
     <string name="settings__privacy_posture__export_policy_summary" comment="Preference summary">Backups, dictionaries, raw typing traces, and audit logs leave app-private storage only when you explicitly copy, share, or save them. Raw trace files are typed-content artifacts.</string>
     <string name="settings__privacy_posture__per_app_profiles_title" comment="Preference title">Per-app keyboard profiles</string>
     <string name="settings__privacy_posture__per_app_profiles_summary" comment="Preference summary; {count} is the number of saved app-specific profiles">Configured apps: {count}. Profiles can override adaptive accent, incognito, clipboard history, suggestions, and smartbar gesture sets for the focused app.</string>
+    <string name="settings__per_app_keyboard_profiles__title" comment="Screen title">Per-app keyboard profiles</string>
+    <string name="settings__per_app_keyboard_profiles__smartbar_summary" comment="Smartbar screen shortcut summary">Add, edit, and remove package-specific profile overrides used when that app owns the focused text field.</string>
+    <string name="settings__per_app_keyboard_profiles__intro_title" comment="Info card title">App-specific typing behavior</string>
+    <string name="settings__per_app_keyboard_profiles__intro_summary" comment="Info card summary">Profiles are stored locally by package name. They can override accent behavior, incognito mode, clipboard-history retention, suggestion strength, and Smartbar gesture sets for the focused app.</string>
+    <string name="settings__per_app_keyboard_profiles__malformed_title" comment="Warning card title">Saved profile data needs repair</string>
+    <string name="settings__per_app_keyboard_profiles__malformed_summary" comment="Warning card summary">The stored profile map could not be read. Saving any profile from this screen replaces it with a valid local map.</string>
+    <string name="settings__per_app_keyboard_profiles__group_add" comment="Preference group title">Add profile</string>
+    <string name="settings__per_app_keyboard_profiles__add_current_app" comment="Preference title">Add current focused app</string>
+    <string name="settings__per_app_keyboard_profiles__add_current_app_summary" comment="Preference summary; {app} is app label, {package} is package name">Use {app} ({package}).</string>
+    <string name="settings__per_app_keyboard_profiles__add_current_app_unavailable" comment="Preference summary">No non-SwiftFloris focused app is available. Open a text field in the target app first, or enter its package name manually.</string>
+    <string name="settings__per_app_keyboard_profiles__add_package" comment="Preference title">Add by package name</string>
+    <string name="settings__per_app_keyboard_profiles__add_package_summary" comment="Preference summary">Type an Android package name, for example com.example.notes.</string>
+    <string name="settings__per_app_keyboard_profiles__group_profiles" comment="Preference group title">Saved profiles</string>
+    <string name="settings__per_app_keyboard_profiles__empty_title" comment="Empty state title">No app profiles</string>
+    <string name="settings__per_app_keyboard_profiles__empty_summary" comment="Empty state summary">Add a package to customize how SwiftFloris behaves only inside that app.</string>
+    <string name="settings__per_app_keyboard_profiles__profile_summary" comment="Profile row summary; placeholders describe stored profile choices">Package: {package}\nAccent: {theme}; Incognito: {incognito}; Clipboard: {clipboard}; Suggestions: {suggestions}; Gestures: {gestures}</string>
+    <string name="settings__per_app_keyboard_profiles__dialog_add_title" comment="Dialog title">Add app profile</string>
+    <string name="settings__per_app_keyboard_profiles__dialog_edit_title" comment="Dialog title">Edit app profile</string>
+    <string name="settings__per_app_keyboard_profiles__package_label" comment="Text field label">Package name</string>
+    <string name="settings__per_app_keyboard_profiles__package_supporting" comment="Text field supporting text">Use the exact Android package name. Slashes and blank names are rejected.</string>
+    <string name="settings__per_app_keyboard_profiles__package_invalid" comment="Text field error">Enter a valid package name without slashes.</string>
+    <string name="settings__per_app_keyboard_profiles__label_label" comment="Text field label">Display label</string>
+    <string name="settings__per_app_keyboard_profiles__label_supporting" comment="Text field supporting text">Optional. Installed packages use their app label when SwiftFloris can read it.</string>
+    <string name="settings__per_app_keyboard_profiles__theme_label" comment="Dropdown label">Accent behavior</string>
+    <string name="settings__per_app_keyboard_profiles__theme_follow_global" comment="Dropdown value">Follow global accent setting</string>
+    <string name="settings__per_app_keyboard_profiles__theme_adaptive" comment="Dropdown value">Use this app icon accent</string>
+    <string name="settings__per_app_keyboard_profiles__theme_global" comment="Dropdown value">Use global accent</string>
+    <string name="settings__per_app_keyboard_profiles__incognito_label" comment="Dropdown label">Incognito mode</string>
+    <string name="settings__per_app_keyboard_profiles__override_follow_global" comment="Dropdown value">Follow global setting</string>
+    <string name="settings__per_app_keyboard_profiles__override_force_off" comment="Dropdown value">Force off</string>
+    <string name="settings__per_app_keyboard_profiles__override_force_on" comment="Dropdown value">Force on</string>
+    <string name="settings__per_app_keyboard_profiles__clipboard_label" comment="Dropdown label">Clipboard history</string>
+    <string name="settings__per_app_keyboard_profiles__clipboard_follow_global" comment="Dropdown value">Follow global history setting</string>
+    <string name="settings__per_app_keyboard_profiles__clipboard_force_off" comment="Dropdown value">Never save copied text for this app</string>
+    <string name="settings__per_app_keyboard_profiles__clipboard_force_on" comment="Dropdown value">Allow history when globally enabled</string>
+    <string name="settings__per_app_keyboard_profiles__suggestions_label" comment="Dropdown label">Suggestions</string>
+    <string name="settings__per_app_keyboard_profiles__suggestions_follow_global" comment="Dropdown value">Follow global suggestion setting</string>
+    <string name="settings__per_app_keyboard_profiles__suggestions_off" comment="Dropdown value">Off for this app</string>
+    <string name="settings__per_app_keyboard_profiles__suggestions_conservative" comment="Dropdown value">Conservative</string>
+    <string name="settings__per_app_keyboard_profiles__suggestions_balanced" comment="Dropdown value">Balanced</string>
+    <string name="settings__per_app_keyboard_profiles__suggestions_aggressive" comment="Dropdown value">Aggressive</string>
+    <string name="settings__per_app_keyboard_profiles__gesture_label" comment="Dropdown label">Smartbar gesture set</string>
+    <string name="settings__per_app_keyboard_profiles__gesture_follow_global" comment="Dropdown value">Follow automatic Smartbar profile</string>
+    <string name="settings__per_app_keyboard_profiles__gesture_default" comment="Dropdown value">Default</string>
+    <string name="settings__per_app_keyboard_profiles__gesture_chat" comment="Dropdown value">Chat</string>
+    <string name="settings__per_app_keyboard_profiles__gesture_code" comment="Dropdown value">Code</string>
+    <string name="settings__per_app_keyboard_profiles__gesture_reading" comment="Dropdown value">Reading</string>
     <string name="settings__privacy_posture__simple_mode_title" comment="Preference title">Enable Simple Mode</string>
     <string name="settings__privacy_posture__simple_mode_summary" comment="Preference summary">Turns off suggestions, next-word prediction, clipboard history, clipboard suggestions, emoji history, emoji suggestions, and addon consent surfaces.</string>
     <string name="settings__privacy_posture__simple_mode_active" comment="Preference summary when Simple Mode is already active">Simple Mode is active.</string>
