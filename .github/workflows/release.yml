@@ -330,6 +330,18 @@ jobs:
           if [ -f RELEASE_OSV_SUMMARY.md ]; then
             cat RELEASE_OSV_SUMMARY.md >> "$body_file"
           fi
+          cat >> "$body_file" <<'EOF'
+
+          ## Install trust
+
+          - **Canonical source:** https://github.com/SysAdminDoc/SwiftFloris
+          - **Package ID:** `io.github.sysadmindoc.swiftfloris`
+          - **GitHub / Obtainium channel:** this APK was built by the release workflow, signed with the SwiftFloris release key, and published with the attached `SHA256SUMS` manifest.
+          - **F-Droid channel:** prepared for fdroiddata submission with reproducible-build and no-network gates in CI. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
+          - **No-network proof:** CI fails if the merged app manifest declares `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`.
+          - **Reproducibility proof:** this release job depends on the build-twice APK verifier before signing and publication.
+          - **Security reports:** use GitHub Security Advisories when available, or open a minimal GitHub issue asking for private follow-up before sharing exploit details or private data.
+          EOF
           draft_arg=()
           if [ "$RELEASE_DRAFT" = "true" ]; then
             draft_arg+=(--draft)

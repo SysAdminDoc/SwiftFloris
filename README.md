@@ -60,7 +60,16 @@
 
 ## Distribution
 
-SwiftFloris ships through GitHub Releases (canonical), and is targeted at F-Droid (reproducible-build verification in progress) and Obtainium for auto-updates. It is **not** on Google Play by design — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture.
+SwiftFloris ships through GitHub Releases (canonical), Obtainium for GitHub-backed auto-updates, and a prepared F-Droid metadata track. It is **not** on Google Play by design — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture.
+
+### Install trust
+
+- **Canonical source:** https://github.com/SysAdminDoc/SwiftFloris
+- **Package ID:** `io.github.sysadmindoc.swiftfloris`
+- **GitHub / Obtainium channel:** APKs are built by the release workflow, signed with the SwiftFloris release key, and published with a `SHA256SUMS` manifest.
+- **F-Droid channel:** prepared for fdroiddata submission with reproducible-build and no-network gates already in CI. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
+- **No-network proof:** CI fails if the merged app manifest declares `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`.
+- **Reproducibility proof:** the release workflow runs the build-twice APK verifier before signing and publishing, then attaches the APK hash manifest to the GitHub Release.
 
 ### Option A — Obtainium (recommended for auto-updates)
 
@@ -77,10 +86,15 @@ Open the link above on a device with Obtainium installed (or paste it into Obtai
 ### Option B — GitHub Releases (manual)
 
 1. Download the latest APK from [Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
-2. Install on your Android device (Android 8.0+).
-3. (Optional) Install [FUTO Voice Input](https://voiceinput.futo.org/) for offline dictation. SwiftFloris's in-app Whisper/Vosk catalog is preview-only until the local recognizer runtime ships.
+2. Download `SHA256SUMS` from the same release and verify the APK hash before installing when you want an audit trail.
+3. Install on your Android device (Android 8.0+).
+4. (Optional) Install [FUTO Voice Input](https://voiceinput.futo.org/) for offline dictation. SwiftFloris's in-app Whisper/Vosk catalog is preview-only until the local recognizer runtime ships.
 
-### Option C — Manual Build
+### Option C — F-Droid
+
+SwiftFloris is readying the fdroiddata submission under `io.github.sysadmindoc.swiftfloris`. Until the package appears in the official F-Droid client, use GitHub Releases or Obtainium. After F-Droid acceptance, do not install a GitHub-signed APK over an F-Droid-signed APK, or the reverse; Android intentionally rejects cross-signed upgrades.
+
+### Option D — Manual Build
 
 ```bash
 git clone https://github.com/SysAdminDoc/SwiftFloris.git
@@ -233,6 +247,10 @@ Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, 
 - **Personal dictionary backup:** excluded from cloud-backup paths; device-transfer kept.
 
 The public posture is simple: no network permission, no telemetry, no account binding, no cloud learning, and explicit user action before sensitive local data is exported or shared with another app.
+
+### Security reports
+
+Report suspected vulnerabilities through [GitHub Security Advisories](https://github.com/SysAdminDoc/SwiftFloris/security/advisories/new) when available. If the advisory form is unavailable, open a GitHub issue with a minimal description and ask for private follow-up before sharing exploit details, device logs, personal dictionary content, clipboard content, or private APKs. Coordinated disclosure is preferred: include affected versions, Android version, reproduction scope, and whether the issue requires a malicious app, local file, physical access, or normal keyboard use.
 
 ### Open Source
 
@@ -481,7 +499,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.4** (2026-06-11). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.16** (2026-06-11). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

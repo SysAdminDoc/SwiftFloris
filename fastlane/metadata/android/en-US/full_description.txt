@@ -22,7 +22,7 @@
     <li>Sensitive-clip and incognito-field guards across cut/copy/paste, voice handoff, and learning</li>
     <li><tt>FLAG_SECURE</tt> on password and incognito fields blocks screenshots / screen recording during private typing</li>
     <li>First-run AI/ML transparency screen + reopenable Settings → About → AI features explainer</li>
-    <li>Reproducible-build verification in CI; 16 KB native page alignment for Android 15+; weekly OSV CVE scan; signature-protected addon enrolment</li>
+    <li>Reproducible-build verification in CI; no-network manifest gate; attached release SHA-256 manifest; 16 KB native page alignment for Android 15+; weekly OSV CVE scan; signature-protected addon enrolment</li>
 </ul>
 
 <p><b>21 bundled themes</b> — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier/Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha, plus selectable honeycomb hex layout. Per-app accent (opt-in, no extra permissions).</p>
@@ -31,4 +31,4 @@
 
 <p><b>Form factors:</b> floating mode, split mode (tablets ≥ 600dp), one-handed mode, dynamic font scaling, hardware keyboard layout import (Windows KLC, macOS .keylayout, Keyman LDML / .kmp).</p>
 
-<p><b>Distribution:</b> GitHub Releases (canonical), Obtainium one-tap subscribe URL, F-Droid (reproducible-build verification in progress). Not on Google Play by design — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture.</p>
+<p><b>Distribution:</b> GitHub Releases (canonical), Obtainium one-tap subscribe URL, and prepared F-Droid metadata under <tt>io.github.sysadmindoc.swiftfloris</tt>. GitHub/Obtainium APKs are signed by the SwiftFloris release key and published with SHA-256 manifests; F-Droid, once accepted, is a separate Android signing channel. Not on Google Play by design — Play forces target-SDK churn and Integrity-API tradeoffs that conflict with the no-telemetry posture.</p>
