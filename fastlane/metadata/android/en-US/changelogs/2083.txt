@@ -1,0 +1,2 @@
+Reduced input-path blocking by removing coroutine `runBlocking` wrappers from key press state tracking, expected editor content lookups, and selection measurement helpers.
+Added regression coverage for synchronous key dispatcher state transitions.

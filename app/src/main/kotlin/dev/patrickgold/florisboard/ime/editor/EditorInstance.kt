@@ -496,11 +496,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                     return setSelection(selection.end, selection.end)
                 }
                 val textToAnalyze = content.text.substring(0, content.localSelection.end)
-                val length = runBlocking {
-                    when (unit) {
-                        OperationUnit.CHARACTERS -> breakIterators.measureLastUChars(textToAnalyze, n)
-                        OperationUnit.WORDS -> breakIterators.measureLastUWords(textToAnalyze, n)
-                    }
+                val length = when (unit) {
+                    OperationUnit.CHARACTERS -> breakIterators.measureLastUCharsSync(textToAnalyze, n)
+                    OperationUnit.WORDS -> breakIterators.measureLastUWordsSync(textToAnalyze, n)
                 }
                 return setSelection((selection.end - length).coerceAtLeast(safeEditorBounds.start), selection.end)
             }
@@ -509,11 +507,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                     return setSelection(selection.start, selection.start)
                 }
                 val textToAnalyze = content.text.substring(content.localSelection.start)
-                val length = runBlocking {
-                    when (unit) {
-                        OperationUnit.CHARACTERS -> breakIterators.measureUChars(textToAnalyze, n)
-                        OperationUnit.WORDS -> breakIterators.measureUWords(textToAnalyze, n)
-                    }
+                val length = when (unit) {
+                    OperationUnit.CHARACTERS -> breakIterators.measureUCharsSync(textToAnalyze, n)
+                    OperationUnit.WORDS -> breakIterators.measureUWordsSync(textToAnalyze, n)
                 }
                 return setSelection(selection.start, (selection.start + length).coerceAtMost(safeEditorBounds.end))
             }

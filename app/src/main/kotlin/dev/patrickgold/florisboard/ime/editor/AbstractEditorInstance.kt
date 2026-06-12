@@ -39,7 +39,6 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import org.florisboard.lib.kotlin.guardedByLock
 import kotlin.math.max
 import kotlin.math.min
 
@@ -105,7 +104,7 @@ abstract class AbstractEditorInstance(context: Context) {
     val commitAdjacencyBrokenFlow = _commitAdjacencyBrokenFlow.asSharedFlow()
 
     fun expectedContent(): EditorContent? {
-        return runBlocking { expectedContentQueue.peekNewestOrNull() }
+        return expectedContentQueue.peekNewestOrNull()
     }
 
     protected open fun currentInputConnection() = FlorisImeService.currentInputConnection()
@@ -183,11 +182,9 @@ abstract class AbstractEditorInstance(context: Context) {
         }
 
         notifyCommitAdjacencyBrokenIfNeeded(_lastCommitPosition.handleUpdateSelection(newSelection))
-        val expected = runBlocking {
-            expectedContentQueue.popUntilOrNull {
-                it.selection == newSelection && it.composing == composing &&
-                    it.textBeforeSelection.length >= NumCharsSafeMarginBeforeCursor.coerceAtMost(it.selection.start)
-            }
+        val expected = expectedContentQueue.popUntilOrNull {
+            it.selection == newSelection && it.composing == composing &&
+                it.textBeforeSelection.length >= NumCharsSafeMarginBeforeCursor.coerceAtMost(it.selection.start)
         }
         if (expected != null) {
             activeCursorCapsMode = expected.cursorCapsMode()
@@ -232,7 +229,7 @@ abstract class AbstractEditorInstance(context: Context) {
         activeInfo = FlorisEditorInfo.Unspecified
         activeCursorCapsMode = InputAttributes.CapsMode.NONE
         activeContent = EditorContent.Unspecified
-        runBlocking { expectedContentQueue.clear() }
+        expectedContentQueue.clear()
         _lastCommitPosition.reset()
     }
 
@@ -401,9 +398,11 @@ abstract class AbstractEditorInstance(context: Context) {
     ): Boolean {
         val content = activeContent
         val selection = content.selection
-        val isSingleChar = runBlocking {
-            breakIterators.measureUChars(char, 1, subtypeManager.activeSubtype.primaryLocale)
-        } == char.length
+        val isSingleChar = breakIterators.measureUCharsSync(
+            char,
+            1,
+            subtypeManager.activeSubtype.primaryLocale,
+        ) == char.length
         if (!isSingleChar || selection.isNotValid || selection.isSelectionMode || activeInfo.isRawInputEditor) {
             return commitTextInternal(char)
         }
@@ -605,11 +604,9 @@ abstract class AbstractEditorInstance(context: Context) {
      */
     fun EditorContent.getTextBeforeCursor(n: Int): String {
         if (n < 1 || text.isEmpty()) return ""
-        return runBlocking {
-            val text = textBeforeSelection
-            val length = breakIterators.measureLastUChars(text, n, subtypeManager.activeSubtype.primaryLocale)
-            text.takeLast(length)
-        }
+        val text = textBeforeSelection
+        val length = breakIterators.measureLastUCharsSync(text, n, subtypeManager.activeSubtype.primaryLocale)
+        return text.takeLast(length)
     }
 
     /**
@@ -624,11 +621,9 @@ abstract class AbstractEditorInstance(context: Context) {
      */
     fun EditorContent.getTextAfterCursor(n: Int): String {
         if (n < 1 || text.isEmpty()) return ""
-        return runBlocking {
-            val text = textAfterSelection
-            val length = breakIterators.measureUChars(text, n, subtypeManager.activeSubtype.primaryLocale)
-            text.take(length)
-        }
+        val text = textAfterSelection
+        val length = breakIterators.measureUCharsSync(text, n, subtypeManager.activeSubtype.primaryLocale)
+        return text.take(length)
     }
 
     /**
@@ -736,32 +731,33 @@ abstract class AbstractEditorInstance(context: Context) {
     }
 
     private class ExpectedContentQueue {
-        private val list = guardedByLock { mutableListOf<EditorContent>() }
+        private val lock = Any()
+        private val list = mutableListOf<EditorContent>()
 
-        suspend fun popUntilOrNull(predicate: (EditorContent) -> Boolean): EditorContent? {
-            return list.withLock { list ->
+        fun popUntilOrNull(predicate: (EditorContent) -> Boolean): EditorContent? {
+            return synchronized(lock) {
                 while (list.isNotEmpty()) {
                     val item = list.removeAt(0)
-                    if (predicate(item)) return@withLock item
+                    if (predicate(item)) return@synchronized item
                 }
-                return@withLock null
+                return@synchronized null
             }
         }
 
-        suspend fun push(item: EditorContent) {
-            list.withLock { list ->
+        fun push(item: EditorContent) {
+            synchronized(lock) {
                 list.add(item)
             }
         }
 
-        suspend fun peekNewestOrNull(): EditorContent? {
-            return list.withLock { list ->
+        fun peekNewestOrNull(): EditorContent? {
+            return synchronized(lock) {
                 list.lastOrNull()
             }
         }
 
-        suspend fun clear() {
-            list.withLock { list ->
+        fun clear() {
+            synchronized(lock) {
                 list.clear()
             }
         }

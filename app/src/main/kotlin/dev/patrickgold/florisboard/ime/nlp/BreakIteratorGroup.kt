@@ -18,44 +18,56 @@ package dev.patrickgold.florisboard.ime.nlp
 
 import android.icu.text.BreakIterator
 import dev.patrickgold.florisboard.lib.FlorisLocale
-import io.github.reactivecircus.cache4k.Cache
-import org.florisboard.lib.kotlin.GuardedByLock
-import org.florisboard.lib.kotlin.guardedByLock
 
 open class BreakIteratorGroup {
-    private val charInstances = Cache.Builder<FlorisLocale, GuardedByLock<BreakIterator>>().build()
+    private val charInstancesLock = Any()
+    private val charInstances = mutableMapOf<FlorisLocale, LockedBreakIterator>()
 
-    private val wordInstances = Cache.Builder<FlorisLocale, GuardedByLock<BreakIterator>>().build()
+    private val wordInstancesLock = Any()
+    private val wordInstances = mutableMapOf<FlorisLocale, LockedBreakIterator>()
 
-    private val sentenceInstances = Cache.Builder<FlorisLocale, GuardedByLock<BreakIterator>>().build()
+    private val sentenceInstancesLock = Any()
+    private val sentenceInstances = mutableMapOf<FlorisLocale, LockedBreakIterator>()
 
-    suspend fun <R> character(locale: FlorisLocale, action: (BreakIterator) -> R): R {
-        val instance = charInstances.get(locale) {
-            guardedByLock { BreakIterator.getCharacterInstance(locale.base) }
+    fun <R> characterSync(locale: FlorisLocale, action: (BreakIterator) -> R): R {
+        val instance = synchronized(charInstancesLock) {
+            charInstances.getOrPut(locale) {
+                LockedBreakIterator(BreakIterator.getCharacterInstance(locale.base))
+            }
         }
-        return instance.withLock(null, action)
+        return instance.withLock(action)
     }
 
-    suspend fun <R> word(locale: FlorisLocale, action: (BreakIterator) -> R): R {
-        val instance = wordInstances.get(locale) {
-            guardedByLock { BreakIterator.getWordInstance(locale.base) }
+    suspend fun <R> character(locale: FlorisLocale, action: (BreakIterator) -> R): R = characterSync(locale, action)
+
+    fun <R> wordSync(locale: FlorisLocale, action: (BreakIterator) -> R): R {
+        val instance = synchronized(wordInstancesLock) {
+            wordInstances.getOrPut(locale) {
+                LockedBreakIterator(BreakIterator.getWordInstance(locale.base))
+            }
         }
-        return instance.withLock(null, action)
+        return instance.withLock(action)
     }
 
-    suspend fun <R> sentence(locale: FlorisLocale, action: (BreakIterator) -> R): R {
-        val instance = sentenceInstances.get(locale) {
-            guardedByLock { BreakIterator.getSentenceInstance(locale.base) }
+    suspend fun <R> word(locale: FlorisLocale, action: (BreakIterator) -> R): R = wordSync(locale, action)
+
+    fun <R> sentenceSync(locale: FlorisLocale, action: (BreakIterator) -> R): R {
+        val instance = synchronized(sentenceInstancesLock) {
+            sentenceInstances.getOrPut(locale) {
+                LockedBreakIterator(BreakIterator.getSentenceInstance(locale.base))
+            }
         }
-        return instance.withLock(null, action)
+        return instance.withLock(action)
     }
 
-    suspend fun measureUChars(
+    suspend fun <R> sentence(locale: FlorisLocale, action: (BreakIterator) -> R): R = sentenceSync(locale, action)
+
+    fun measureUCharsSync(
         text: String,
         numUnicodeChars: Int,
         locale: FlorisLocale = FlorisLocale.default(),
     ): Int {
-        return character(locale) {
+        return characterSync(locale) {
             it.setText(text)
             val start = it.first()
             var end: Int
@@ -67,12 +79,18 @@ open class BreakIteratorGroup {
         }.coerceIn(0, text.length)
     }
 
-    suspend fun measureLastUChars(
+    suspend fun measureUChars(
+        text: String,
+        numUnicodeChars: Int,
+        locale: FlorisLocale = FlorisLocale.default(),
+    ): Int = measureUCharsSync(text, numUnicodeChars, locale)
+
+    fun measureLastUCharsSync(
         text: String,
         numUnicodeChars: Int,
         locale: FlorisLocale = FlorisLocale.default(),
     ): Int {
-        return character(locale) {
+        return characterSync(locale) {
             it.setText(text)
             val end = it.last()
             var start: Int
@@ -84,12 +102,18 @@ open class BreakIteratorGroup {
         }.coerceIn(0, text.length)
     }
 
-    suspend fun measureUWords(
+    suspend fun measureLastUChars(
+        text: String,
+        numUnicodeChars: Int,
+        locale: FlorisLocale = FlorisLocale.default(),
+    ): Int = measureLastUCharsSync(text, numUnicodeChars, locale)
+
+    fun measureUWordsSync(
         text: String,
         numUnicodeWords: Int,
         locale: FlorisLocale = FlorisLocale.default(),
     ): Int {
-        return word(locale) {
+        return wordSync(locale) {
             it.setText(text)
             val start = it.first()
             var end: Int
@@ -102,12 +126,18 @@ open class BreakIteratorGroup {
         }.coerceIn(0, text.length)
     }
 
-    suspend fun measureLastUWords(
+    suspend fun measureUWords(
+        text: String,
+        numUnicodeWords: Int,
+        locale: FlorisLocale = FlorisLocale.default(),
+    ): Int = measureUWordsSync(text, numUnicodeWords, locale)
+
+    fun measureLastUWordsSync(
         text: String,
         numUnicodeWords: Int,
         locale: FlorisLocale = FlorisLocale.default(),
     ): Int {
-        return word(locale) {
+        return wordSync(locale) {
             it.setText(text)
             val end = it.last()
             var start: Int
@@ -118,5 +148,19 @@ open class BreakIteratorGroup {
             } while (start != BreakIterator.DONE && n < numUnicodeWords)
             end - (if (start == BreakIterator.DONE) 0 else start)
         }.coerceIn(0, text.length)
+    }
+
+    suspend fun measureLastUWords(
+        text: String,
+        numUnicodeWords: Int,
+        locale: FlorisLocale = FlorisLocale.default(),
+    ): Int = measureLastUWordsSync(text, numUnicodeWords, locale)
+
+    private class LockedBreakIterator(private val iterator: BreakIterator) {
+        private val lock = Any()
+
+        fun <R> withLock(action: (BreakIterator) -> R): R {
+            return synchronized(lock) { action(iterator) }
+        }
     }
 }
