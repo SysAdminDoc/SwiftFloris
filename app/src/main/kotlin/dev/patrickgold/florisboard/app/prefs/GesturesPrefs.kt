@@ -110,6 +110,10 @@ open class GesturesPrefs : PreferenceModel() {
         key = "gestures__space_bar_long_press",
         default = SwipeAction.SHOW_INPUT_METHOD_PICKER,
     )
+    val symbolFlickEnabled = boolean(
+        key = "gestures__symbol_flick_enabled",
+        default = false,
+    )
     // ROADMAP §6 N5.1 — match SwiftKey/Gboard convention: hold-backspace and
     // horizontal-swipe-on-backspace both delete by word. Existing users who set
     // a custom value via the gesture settings keep their override; only the
