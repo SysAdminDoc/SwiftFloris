@@ -113,6 +113,17 @@ class ThemeAndAddonsScreenshotTest {
     }
 
     @Test
+    fun swiftkeyHighContrastNestedImeSurfaces() {
+        composeRule.setContent {
+            NestedImeThemeSurface(stylesheetFileName = "swiftkey_high_contrast.json")
+        }
+        composeRule.onRoot().captureRoboImage(
+            filePath = "$BASELINE_DIR/swiftkey_high_contrast_nested_ime_surfaces.png",
+            roborazziOptions = ROBORAZZI_OPTIONS,
+        )
+    }
+
+    @Test
     fun auroraAnimatedKeyboardSurface() {
         composeRule.setContent {
             KeyboardThemeSurface(stylesheetFileName = "aurora_animated.json")
@@ -426,4 +437,293 @@ private fun loadBundledStylesheet(fileName: String): SnyggStylesheet {
     val file = candidates.firstOrNull { it.exists() }
         ?: error("$fileName not reachable from working directory ${File(".").absolutePath}")
     return SnyggStylesheet.fromJson(file.readText()).getOrThrow()
+}
+
+@Composable
+private fun NestedImeThemeSurface(stylesheetFileName: String) {
+    val stylesheet = remember(stylesheetFileName) {
+        loadBundledStylesheet(stylesheetFileName)
+    }
+    val theme = rememberSnyggTheme(stylesheet)
+
+    MaterialTheme {
+        ProvideSnyggTheme(theme) {
+            SnyggBox(
+                elementName = FlorisImeUi.Window.elementName,
+                attributes = mapOf(FlorisImeUi.Attr.WindowMode to "fixed"),
+                modifier = Modifier.size(width = 360.dp, height = 470.dp),
+            ) {
+                SnyggColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    CandidateRemovalPreview()
+                    ClipboardPopupPreview()
+                    EmojiPopupAndPinPreview()
+                    SmartbarActionsEditorPreview()
+                    ResizeOverlayPreview()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CandidateRemovalPreview() {
+    SnyggRow(
+        elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(42.dp),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        NestedCandidate("remove", "swipe up", SnyggSelector.PRESSED, weight = 1.2f)
+        NestedCandidate("privacy", "tap", null, weight = 1.0f)
+        SnyggBox(
+            elementName = FlorisImeUi.SmartbarCandidateClip.elementName,
+            modifier = Modifier
+                .weight(1.1f)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center,
+        ) {
+            SnyggText(
+                elementName = FlorisImeUi.SmartbarCandidateClipText.elementName,
+                text = "clipboard",
+            )
+        }
+    }
+}
+
+@Composable
+private fun RowScope.NestedCandidate(
+    text: String,
+    secondary: String,
+    selector: SnyggSelector?,
+    weight: Float,
+) {
+    SnyggBox(
+        elementName = FlorisImeUi.SmartbarCandidateWord.elementName,
+        selector = selector,
+        modifier = Modifier
+            .weight(weight)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+    ) {
+        SnyggColumn(horizontalAlignment = Alignment.CenterHorizontally) {
+            SnyggText(
+                elementName = FlorisImeUi.SmartbarCandidateWordText.elementName,
+                text = text,
+            )
+            SnyggText(
+                elementName = FlorisImeUi.SmartbarCandidateWordSecondaryText.elementName,
+                text = secondary,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ClipboardPopupPreview() {
+    SnyggBox(
+        elementName = FlorisImeUi.ClipboardItemPopup.elementName,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(122.dp),
+    ) {
+        SnyggColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            SnyggBox(
+                elementName = FlorisImeUi.ClipboardItem.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(40.dp),
+                contentAlignment = Alignment.CenterStart,
+            ) {
+                SnyggText(
+                    elementName = FlorisImeUi.ClipboardItemDescription.elementName,
+                    text = "Saved local snippet",
+                    modifier = Modifier.padding(start = 8.dp),
+                )
+            }
+            SnyggRow(
+                elementName = FlorisImeUi.ClipboardItemActions.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                ClipboardAction("Pin")
+                ClipboardAction("Paste")
+                ClipboardAction("Delete")
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ClipboardAction(label: String) {
+    SnyggBox(
+        elementName = FlorisImeUi.ClipboardItemAction.elementName,
+        modifier = Modifier
+            .weight(1.0f)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+    ) {
+        SnyggText(
+            elementName = FlorisImeUi.ClipboardItemActionText.elementName,
+            text = label,
+        )
+    }
+}
+
+@Composable
+private fun EmojiPopupAndPinPreview() {
+    SnyggRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(76.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SnyggBox(
+            elementName = FlorisImeUi.MediaEmojiKeyPopupBox.elementName,
+            modifier = Modifier
+                .weight(1.0f)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center,
+        ) {
+            SnyggRow(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(42.dp)
+                    .padding(horizontal = 8.dp),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
+                EmojiPopupElement(":)")
+                EmojiPopupElement("<3", SnyggSelector.FOCUS)
+                EmojiPopupElement("...")
+            }
+        }
+        SnyggBox(
+            elementName = FlorisImeUi.MediaEmojiPinSheetError.elementName,
+            modifier = Modifier
+                .weight(1.0f)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center,
+        ) {
+            SnyggText(text = "Duplicate pin")
+        }
+    }
+}
+
+@Composable
+private fun RowScope.EmojiPopupElement(label: String, selector: SnyggSelector? = null) {
+    SnyggBox(
+        elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
+        selector = selector,
+        modifier = Modifier
+            .weight(1.0f)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+    ) {
+        SnyggText(text = label)
+    }
+}
+
+@Composable
+private fun SmartbarActionsEditorPreview() {
+    SnyggBox(
+        elementName = FlorisImeUi.SmartbarActionsEditor.elementName,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(104.dp),
+    ) {
+        SnyggColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(8.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp),
+        ) {
+            SnyggRow(
+                elementName = FlorisImeUi.SmartbarActionsEditorHeader.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(30.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                SnyggText(text = "Customize actions", modifier = Modifier.weight(1.0f))
+                SnyggBox(
+                    elementName = FlorisImeUi.SmartbarActionsEditorHeaderButton.elementName,
+                    modifier = Modifier
+                        .width(72.dp)
+                        .fillMaxHeight(),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    SnyggText(text = "Done")
+                }
+            }
+            SnyggRow(
+                elementName = FlorisImeUi.SmartbarActionsEditorTileGrid.elementName,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(52.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            ) {
+                ActionTile("Undo")
+                ActionTile("Voice")
+                ActionTile("Clip", SnyggSelector.DISABLED)
+                ActionTile("Drag")
+            }
+        }
+    }
+}
+
+@Composable
+private fun RowScope.ActionTile(label: String, selector: SnyggSelector? = null) {
+    SnyggBox(
+        elementName = FlorisImeUi.SmartbarActionsEditorTile.elementName,
+        selector = selector,
+        modifier = Modifier
+            .weight(1.0f)
+            .fillMaxHeight(),
+        contentAlignment = Alignment.Center,
+    ) {
+        SnyggText(text = label)
+    }
+}
+
+@Composable
+private fun ResizeOverlayPreview() {
+    SnyggRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(52.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        SnyggBox(
+            elementName = FlorisImeUi.WindowResizeOverlayFixed.elementName,
+            modifier = Modifier
+                .weight(1.0f)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center,
+        ) {
+            SnyggText(text = "Fixed resize overlay")
+        }
+        SnyggBox(
+            elementName = FlorisImeUi.WindowResizeAction.elementName,
+            modifier = Modifier
+                .width(96.dp)
+                .fillMaxHeight(),
+            contentAlignment = Alignment.Center,
+        ) {
+            SnyggText(text = "Reset")
+        }
+    }
 }
