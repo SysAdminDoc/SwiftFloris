@@ -28,8 +28,11 @@ import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import java.lang.reflect.InvocationHandler
 import java.lang.reflect.Method
 import java.lang.reflect.Proxy
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import kotlinx.coroutines.test.TestDispatcher
@@ -137,6 +140,33 @@ class EditorContentGenerationLifecycleTest {
         assertEquals(EditorContent.Unspecified, editor.activeContent)
         assertTrue(staleConnection.composingCalls.isEmpty())
         assertTrue(currentConnection.composingCalls.isEmpty())
+    }
+
+    @Test
+    fun selectionJumpAfterCommitPublishesAdjacencyBreakSignal() {
+        val editor = TestEditorInstance(context)
+        val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")
+        val adjacencyBreaks = mutableListOf<Unit>()
+        val collectJob = CoroutineScope(dispatcher).launch {
+            editor.commitAdjacencyBrokenFlow.collect {
+                adjacencyBreaks += Unit
+            }
+        }
+
+        scheduler.runCurrent()
+        editor.inputConnection = connection.connection
+        editor.handleStartInputView(editorInfo(selection = 5), isRestart = false)
+        scheduler.runCurrent()
+        editor.updateLastCommitPosition()
+        editor.handleSelectionUpdate(
+            oldSelection = EditorRange.cursor(5),
+            newSelection = EditorRange.cursor(2),
+            composing = EditorRange.Unspecified,
+        )
+        scheduler.runCurrent()
+
+        assertEquals(1, adjacencyBreaks.size)
+        collectJob.cancel()
     }
 }
 
