@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 import dev.patrickgold.florisboard.app.AppTheme
@@ -34,19 +35,24 @@ import org.florisboard.lib.color.systemAccentOrDefault
 
 private const val RefinedContrastLevel = 0.18
 
-private val LightBackground = Color(0xFFFAFCF8)
-private val LightSurfaceBase = Color(0xFFFFFFFF)
-private val LightSurfaceLow = Color(0xFFF4F7F2)
-private val LightSurfaceContainer = Color(0xFFEEF3EC)
-private val LightSurfaceHigh = Color(0xFFE8EEE5)
-private val LightOutlineVariant = Color(0xFFC7D1C2)
+private const val LightBackgroundTint = 0.018f
+private const val LightSurfaceTint = 0.012f
+private const val LightContainerLowTint = 0.024f
+private const val LightContainerTint = 0.032f
+private const val LightContainerHighTint = 0.040f
+private const val LightOutlineTint = 0.060f
 
-private val DarkBackground = Color(0xFF0B0F0D)
-private val DarkSurface = Color(0xFF111612)
-private val DarkSurfaceLow = Color(0xFF161D18)
-private val DarkSurfaceContainer = Color(0xFF1B231E)
-private val DarkSurfaceHigh = Color(0xFF222B25)
-private val DarkOutlineVariant = Color(0xFF334239)
+private const val DarkBackgroundTint = 0.060f
+private const val DarkSurfaceTint = 0.050f
+private const val DarkContainerLowTint = 0.070f
+private const val DarkContainerTint = 0.085f
+private const val DarkContainerHighTint = 0.100f
+private const val DarkOutlineTint = 0.130f
+
+private const val AmoledContainerLowTint = 0.030f
+private const val AmoledContainerTint = 0.045f
+private const val AmoledContainerHighTint = 0.060f
+private const val AmoledOutlineTint = 0.100f
 
 @Composable
 fun getColorScheme(
@@ -67,6 +73,7 @@ fun getColorScheme(
                 contrastLevel = RefinedContrastLevel,
                 modifyColorScheme = {
                     it.refinedSurfaces(
+                        tint = seedColor,
                         isDark = systemDark,
                         isAmoled = theme == AppTheme.AUTO_AMOLED,
                     )
@@ -80,7 +87,7 @@ fun getColorScheme(
                 isDark = theme == AppTheme.DARK,
                 contrastLevel = RefinedContrastLevel,
                 modifyColorScheme = {
-                    it.refinedSurfaces(isDark = theme == AppTheme.DARK, isAmoled = false)
+                    it.refinedSurfaces(tint = seedColor, isDark = theme == AppTheme.DARK, isAmoled = false)
                 },
             )
         }
@@ -92,7 +99,7 @@ fun getColorScheme(
                 isAmoled = true,
                 contrastLevel = RefinedContrastLevel,
                 modifyColorScheme = {
-                    it.refinedSurfaces(isDark = true, isAmoled = true)
+                    it.refinedSurfaces(tint = seedColor, isDark = true, isAmoled = true)
                 },
             )
         }
@@ -103,33 +110,49 @@ fun ColorScheme.amoled(): ColorScheme {
     return this.copy(background = Color.Black, surface = Color.Black)
 }
 
-private fun ColorScheme.refinedSurfaces(isDark: Boolean, isAmoled: Boolean): ColorScheme {
-    return if (isDark) {
+internal fun ColorScheme.refinedSurfaces(tint: Color, isDark: Boolean, isAmoled: Boolean): ColorScheme {
+    return if (isAmoled) {
         copy(
-            background = if (isAmoled) Color.Black else DarkBackground,
-            surface = if (isAmoled) Color.Black else DarkSurface,
-            surfaceDim = if (isAmoled) Color.Black else DarkBackground,
-            surfaceContainerLowest = if (isAmoled) Color.Black else DarkBackground,
-            surfaceContainerLow = if (isAmoled) Color(0xFF080B09) else DarkSurfaceLow,
-            surfaceContainer = if (isAmoled) Color(0xFF0D120F) else DarkSurfaceContainer,
-            surfaceContainerHigh = if (isAmoled) Color(0xFF141A16) else DarkSurfaceHigh,
-            surfaceContainerHighest = if (isAmoled) Color(0xFF1A211C) else Color(0xFF2A342D),
-            outlineVariant = DarkOutlineVariant,
+            background = Color.Black,
+            surface = Color.Black,
+            surfaceDim = Color.Black,
+            surfaceContainerLowest = Color.Black,
+            surfaceContainerLow = Color.Black.accentTint(tint, AmoledContainerLowTint),
+            surfaceContainer = Color.Black.accentTint(tint, AmoledContainerTint),
+            surfaceContainerHigh = Color.Black.accentTint(tint, AmoledContainerHighTint),
+            surfaceContainerHighest = Color.Black.accentTint(tint, DarkContainerHighTint),
+            outlineVariant = outlineVariant.accentTint(tint, AmoledOutlineTint),
+        )
+    } else if (isDark) {
+        copy(
+            background = background.accentTint(tint, DarkBackgroundTint),
+            surface = surface.accentTint(tint, DarkSurfaceTint),
+            surfaceDim = surfaceDim.accentTint(tint, DarkBackgroundTint),
+            surfaceContainerLowest = surfaceContainerLowest.accentTint(tint, DarkBackgroundTint),
+            surfaceContainerLow = surfaceContainerLow.accentTint(tint, DarkContainerLowTint),
+            surfaceContainer = surfaceContainer.accentTint(tint, DarkContainerTint),
+            surfaceContainerHigh = surfaceContainerHigh.accentTint(tint, DarkContainerHighTint),
+            surfaceContainerHighest = surfaceContainerHighest.accentTint(tint, DarkContainerHighTint),
+            outlineVariant = outlineVariant.accentTint(tint, DarkOutlineTint),
         )
     } else {
         copy(
-            background = LightBackground,
-            surface = LightSurfaceBase,
-            surfaceDim = Color(0xFFE1E8DD),
-            surfaceBright = LightSurfaceBase,
-            surfaceContainerLowest = LightSurfaceBase,
-            surfaceContainerLow = LightSurfaceLow,
-            surfaceContainer = LightSurfaceContainer,
-            surfaceContainerHigh = LightSurfaceHigh,
-            surfaceContainerHighest = Color(0xFFE1E8DD),
-            outlineVariant = LightOutlineVariant,
+            background = background.accentTint(tint, LightBackgroundTint),
+            surface = surface.accentTint(tint, LightSurfaceTint),
+            surfaceDim = surfaceDim.accentTint(tint, LightBackgroundTint),
+            surfaceBright = surfaceBright.accentTint(tint, LightSurfaceTint),
+            surfaceContainerLowest = surfaceContainerLowest.accentTint(tint, LightSurfaceTint),
+            surfaceContainerLow = surfaceContainerLow.accentTint(tint, LightContainerLowTint),
+            surfaceContainer = surfaceContainer.accentTint(tint, LightContainerTint),
+            surfaceContainerHigh = surfaceContainerHigh.accentTint(tint, LightContainerHighTint),
+            surfaceContainerHighest = surfaceContainerHighest.accentTint(tint, LightContainerHighTint),
+            outlineVariant = outlineVariant.accentTint(tint, LightOutlineTint),
         )
     }
+}
+
+private fun Color.accentTint(tint: Color, fraction: Float): Color {
+    return lerp(this, tint, fraction)
 }
 
 @Composable
