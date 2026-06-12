@@ -36,7 +36,7 @@ import org.florisboard.lib.android.systemServiceOrNull
 class VoiceInputManager(private val context: Context) {
     companion object {
         const val FUTO_PACKAGE_NAME = "org.futo.voiceinput"
-        const val FUTO_FDROID_URL = "https://f-droid.org/packages/org.futo.voiceinput/"
+        val FUTO_FDROID_URL = ExternalVoiceInputProviders.Futo.installUrl
         const val FUTO_RELEASES_URL = "https://github.com/FUTO-org/android-voice-input/releases"
     }
 
@@ -284,6 +284,14 @@ class VoiceInputManager(private val context: Context) {
             selfPackageName = BuildConfig.APPLICATION_ID,
             hasMicrophonePermission = ::isMicrophonePermissionGranted,
         )
+    }
+
+    fun readyKnownExternalVoiceInputProvider(): ExternalVoiceInputProvider? {
+        val enabledExternalPackages = enabledExternalVoiceInputMethodPackages()
+        return ExternalVoiceInputProviders.SupportedOfflineImeProviders.firstOrNull { provider ->
+            provider.packageName in enabledExternalPackages &&
+                isMicrophonePermissionGranted(provider.packageName)
+        }
     }
 
     fun isFutoVoiceInputEnabled(): Boolean {

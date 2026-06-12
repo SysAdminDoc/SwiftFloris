@@ -22,15 +22,18 @@ import io.kotest.matchers.string.shouldContain
 import java.io.File
 
 class VoiceInputEmptyStateCopyTest : FunSpec({
-    test("no-provider empty state explains FUTO and keeps the install action") {
+    test("no-provider empty state explains supported offline providers and keeps install actions") {
         val stringsXml = locateStringsXml().readText()
         val summary = stringsXml.stringValue("settings__voice_input__status_futo_not_installed_summary")
 
         stringsXml.stringValue("settings__voice_input__status_futo_not_installed") shouldBe
             "Install FUTO Voice Input"
-        summary shouldContain "separate offline Android voice keyboard"
+        summary shouldContain "FUTO Voice Input"
+        summary shouldContain "WhisperInput"
+        summary shouldContain "Whisper"
         summary shouldContain "SwiftFloris itself does not record audio"
         stringsXml.stringValue("voice_input_setup__install_fdroid") shouldBe "Install from F-Droid"
+        stringsXml.stringValue("voice_input_setup__install_whisper") shouldBe "Install Whisper from F-Droid"
     }
 })
 

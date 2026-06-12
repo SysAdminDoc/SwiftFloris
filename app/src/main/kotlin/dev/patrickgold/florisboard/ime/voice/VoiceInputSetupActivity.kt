@@ -180,6 +180,13 @@ class VoiceInputSetupActivity : ComponentActivity() {
                             ) {
                                 Text(text = stringRes(R.string.voice_input_setup__github_releases))
                             }
+                            OutlinedButton(
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = MaterialTheme.shapes.small,
+                                onClick = { openUrl(ExternalVoiceInputProviders.Whisper.installUrl) },
+                            ) {
+                                Text(text = stringRes(R.string.voice_input_setup__install_whisper))
+                            }
                         }
                     }
                 }
