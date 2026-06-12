@@ -70,6 +70,7 @@ import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.android.writeFromFile
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisNeutralCard
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisProgressCard
@@ -418,6 +419,11 @@ fun BackupScreen() = FlorisScreen {
             BackupFlowNotice.None,
             -> Unit
         }
+        FlorisInfoCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.backup_and_restore__back_up__privacy_title),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__privacy_summary),
+        )
         FlorisOutlinedBox(
             modifier = Modifier.defaultFlorisOutlinedBox(),
             title = stringRes(R.string.backup_and_restore__back_up__destination),

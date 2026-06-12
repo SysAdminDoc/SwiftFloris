@@ -48,7 +48,8 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.launch
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -120,11 +121,19 @@ fun PrivacyPostureScreen() = FlorisScreen {
     val fullModeRestoredToast = stringRes(R.string.settings__privacy_posture__full_mode_restored)
 
     content {
-        FlorisInfoCard(
-            modifier = Modifier.padding(8.dp),
-            text = stringRes(R.string.settings__privacy_posture__intro_title),
-            secondaryText = stringRes(R.string.settings__privacy_posture__intro_summary),
-        )
+        if (declaredInternetPermission) {
+            FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__privacy_posture__network_title),
+                secondaryText = stringRes(R.string.settings__privacy_posture__network_declared),
+            )
+        } else {
+            FlorisSuccessCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__privacy_posture__intro_title),
+                secondaryText = stringRes(R.string.settings__privacy_posture__intro_summary),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.settings__privacy_posture__group_status)) {
             Preference(

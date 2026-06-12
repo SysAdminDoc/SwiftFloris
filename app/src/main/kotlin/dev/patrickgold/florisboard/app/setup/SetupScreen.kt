@@ -59,7 +59,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisBulletSpacer
-import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisStep
 import org.florisboard.lib.compose.FlorisStepLayout
 import org.florisboard.lib.compose.FlorisStepState
@@ -184,11 +184,10 @@ private fun FlorisScreenScope.Content(
             header = {
                 StepText(stringRes(R.string.setup__intro_message))
                 Spacer(modifier = Modifier.height(16.dp))
-                FlorisInfoCard(
+                FlorisSuccessCard(
                     modifier = Modifier.padding(bottom = 16.dp),
                     text = stringRes(R.string.setup__privacy_status_title),
                     secondaryText = stringRes(R.string.setup__privacy_status_summary),
-                    showIcon = false,
                 )
             },
             steps = steps(

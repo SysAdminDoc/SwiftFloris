@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.settings.addons
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
@@ -32,6 +33,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
@@ -51,7 +53,11 @@ import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisProgressCard
+import org.florisboard.lib.compose.FlorisSuccessCard
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.stringRes
 import java.text.NumberFormat
@@ -162,6 +168,11 @@ fun AddonsSettingsScreen() = FlorisScreen {
     }
 
     content {
+        val addonStatusSummary = stringRes(R.string.settings__addons__status_summary)
+            .replace("{accepted}", snapshot.accepted.size.toString())
+            .replace("{rejected}", snapshot.rejected.size.toString())
+            .replace("{pinned}", pinnedCount.toString())
+
         if (scanInProgress) {
             FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
@@ -171,25 +182,31 @@ fun AddonsSettingsScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__addons__group_status)) {
-            Preference(
-                icon = Icons.Default.Extension,
-                title = stringRes(R.string.settings__addons__status_title),
-                summary = stringRes(R.string.settings__addons__status_summary)
-                    .replace("{accepted}", snapshot.accepted.size.toString())
-                    .replace("{rejected}", snapshot.rejected.size.toString())
-                    .replace("{pinned}", pinnedCount.toString()),
-            )
-            Preference(
-                icon = Icons.Default.Extension,
-                title = if (scanInProgress) {
-                    stringRes(R.string.settings__addons__rescan_running)
-                } else {
-                    stringRes(R.string.settings__addons__rescan)
-                },
-                summary = stringRes(R.string.settings__addons__rescan_summary),
-                enabledIf = { !scanInProgress },
-                onClick = { rescanInstalledAddons() },
-            )
+            if (scanError != null) {
+                FlorisErrorCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__addons__rescan_failed),
+                    secondaryText = scanError,
+                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                    onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                )
+            } else if (snapshot.rejected.isNotEmpty() || dictionaryCatalog.rejected.isNotEmpty()) {
+                FlorisWarningCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__addons__status_title),
+                    secondaryText = addonStatusSummary,
+                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                    onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                )
+            } else {
+                FlorisSuccessCard(
+                    modifier = Modifier.padding(8.dp),
+                    text = stringRes(R.string.settings__addons__status_title),
+                    secondaryText = addonStatusSummary,
+                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                    onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                )
+            }
             if (pinnedCount > 0) {
                 Preference(
                     icon = Icons.Default.Delete,
@@ -199,21 +216,17 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     onClick = { pendingPinAction = SigningPinAction.ResetAll },
                 )
             }
-            scanError?.let { error ->
-                Preference(
-                    icon = Icons.Default.Block,
-                    title = stringRes(R.string.settings__addons__rescan_failed),
-                    summary = error,
-                )
-            }
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__addons__group_installed)) {
             if (snapshot.accepted.isEmpty()) {
-                Preference(
+                FlorisEmptyState(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     icon = Icons.Default.Extension,
                     title = stringRes(R.string.settings__addons__none_installed),
-                    summary = stringRes(R.string.settings__addons__none_installed_summary),
+                    message = stringRes(R.string.settings__addons__none_installed_summary),
+                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                    onAction = if (scanInProgress) null else ({ rescanInstalledAddons() }),
                 )
             } else {
                 for (manifest in snapshot.accepted) {
@@ -224,10 +237,13 @@ fun AddonsSettingsScreen() = FlorisScreen {
 
         PreferenceGroup(title = stringRes(R.string.settings__addons__group_dictionary_packs)) {
             if (dictionaryCatalog.entries.isEmpty()) {
-                Preference(
+                FlorisEmptyState(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     icon = Icons.Default.Extension,
                     title = stringRes(R.string.settings__addons__none_dictionary_packs),
-                    summary = stringRes(R.string.settings__addons__none_dictionary_packs_summary),
+                    message = stringRes(R.string.settings__addons__none_dictionary_packs_summary),
+                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                    onAction = if (scanInProgress) null else ({ rescanInstalledAddons() }),
                 )
             } else {
                 for (entry in dictionaryCatalog.entries) {

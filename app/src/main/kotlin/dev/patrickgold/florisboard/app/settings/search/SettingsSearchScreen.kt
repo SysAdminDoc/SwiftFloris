@@ -30,9 +30,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -67,6 +65,7 @@ import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManagerScreenAction
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
 
@@ -158,7 +157,7 @@ fun SettingsSearchScreen() = FlorisScreen {
             )
             when {
                 searchQuery.isBlank() -> {
-                    Text(
+                    FlorisEmptyState(
                         modifier = Modifier
                             .padding(16.dp)
                             .align(Alignment.CenterHorizontally)
@@ -166,12 +165,13 @@ fun SettingsSearchScreen() = FlorisScreen {
                                 liveRegion = LiveRegionMode.Polite
                                 contentDescription = searchStatusDescription
                             },
-                        text = stringRes(R.string.settings__search__empty_query),
-                        color = LocalContentColor.current.copy(alpha = 0.54f),
+                        icon = Icons.Default.Search,
+                        title = stringRes(R.string.settings__search__title),
+                        message = stringRes(R.string.settings__search__empty_query),
                     )
                 }
                 results.isEmpty() -> {
-                    Column(
+                    FlorisEmptyState(
                         modifier = Modifier
                             .padding(16.dp)
                             .align(Alignment.CenterHorizontally)
@@ -179,19 +179,12 @@ fun SettingsSearchScreen() = FlorisScreen {
                                 liveRegion = LiveRegionMode.Polite
                                 contentDescription = searchStatusDescription
                             },
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                    ) {
-                        Text(
-                            text = stringRes(R.string.settings__search__no_results, "search_term" to searchQuery),
-                            color = LocalContentColor.current.copy(alpha = 0.54f),
-                        )
-                        TextButton(
-                            modifier = Modifier.padding(top = 8.dp),
-                            onClick = { navController.navigate(Routes.Settings.Home) },
-                        ) {
-                            Text(text = stringRes(R.string.settings__search__browse_all))
-                        }
-                    }
+                        icon = Icons.Default.Search,
+                        title = stringRes(R.string.settings__search__no_results, "search_term" to searchQuery),
+                        message = stringRes(R.string.settings__search__no_results_hint),
+                        actionLabel = stringRes(R.string.settings__search__browse_all),
+                        onAction = { navController.navigate(Routes.Settings.Home) },
+                    )
                 }
             }
             LazyColumn(

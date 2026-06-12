@@ -17,13 +17,11 @@
 package dev.patrickgold.florisboard.app.settings.privacy
 
 import android.widget.Toast
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
@@ -39,6 +37,8 @@ import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -74,14 +74,10 @@ fun PrivacyAuditScreen() = FlorisScreen {
         val summaryLine = remember(refreshTick) { AddonAuditExport.summaryLine(records) }
 
         PreferenceGroup(title = stringRes(R.string.settings__privacy_audit__group_summary)) {
-            Text(
-                text = stringRes(R.string.settings__privacy_audit__intro),
+            FlorisInfoCard(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-            )
-            Preference(
-                icon = Icons.Default.Shield,
-                title = stringRes(R.string.settings__privacy_audit__summary_title),
-                summary = summaryLine,
+                text = summaryLine,
+                secondaryText = stringRes(R.string.settings__privacy_audit__intro),
             )
         }
 
@@ -113,22 +109,22 @@ fun PrivacyAuditScreen() = FlorisScreen {
 
         PreferenceGroup(title = stringRes(R.string.settings__privacy_audit__group_records)) {
             if (records.isEmpty()) {
-                Text(
-                    text = stringRes(R.string.settings__privacy_audit__empty),
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                FlorisEmptyState(
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                    icon = Icons.Default.Shield,
+                    title = stringRes(R.string.settings__privacy_audit__empty),
+                    message = stringRes(R.string.settings__privacy_audit__home_summary),
                 )
             } else {
-                Column(modifier = Modifier.padding(bottom = 8.dp)) {
-                    for (record in records.asReversed().take(MAX_DISPLAYED_RECORDS)) {
-                        Preference(
-                            title = "${prettyEnum(record.surface.name)} · ${prettyEnum(record.outcome.name)}",
-                            summary = buildString {
-                                append(formatTimestamp(record.timestampMillis))
-                                record.subject?.let { append("  ·  ").append(it) }
-                                record.reason?.let { append("\n").append(it) }
-                            },
-                        )
-                    }
+                for (record in records.asReversed().take(MAX_DISPLAYED_RECORDS)) {
+                    Preference(
+                        title = "${prettyEnum(record.surface.name)} · ${prettyEnum(record.outcome.name)}",
+                        summary = buildString {
+                            append(formatTimestamp(record.timestampMillis))
+                            record.subject?.let { append("  ·  ").append(it) }
+                            record.reason?.let { append("\n").append(it) }
+                        },
+                    )
                 }
             }
         }

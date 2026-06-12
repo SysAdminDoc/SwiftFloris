@@ -228,6 +228,7 @@
     <string name="settings__search__no_results_a11y" comment="Settings search no results accessibility status">No settings results for \"{search_term}\".</string>
     <string name="settings__search__results_count_a11y" comment="Settings search results count accessibility status">Showing {result_count} matching settings for \"{search_term}\".</string>
     <string name="settings__search__browse_all" comment="Settings search no results action">Browse all settings</string>
+    <string name="settings__search__no_results_hint" comment="Settings search no results helper text">Try another term or browse the full settings list.</string>
     <string name="settings__search__result_summary" comment="Settings search result summary with destination screen and setting summary">{screen_title} — {summary}</string>
     <string name="settings__search__result_a11y" comment="Settings search result accessibility label with setting title, destination screen, result position, and summary">Result {result_position} of {result_count}: {setting_title}, in {screen_title}. {setting_summary}</string>
     <string name="settings__search__result_a11y_no_summary" comment="Settings search result accessibility label with setting title, destination screen, and result position">Result {result_position} of {result_count}: {setting_title}, in {screen_title}.</string>
@@ -1457,6 +1458,8 @@
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_text_items">Text items</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_image_items">Images</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Videos</string>
+    <string name="backup_and_restore__back_up__privacy_title">Local archive under your control</string>
+    <string name="backup_and_restore__back_up__privacy_summary">SwiftFloris prepares the ZIP on-device. Sensitive clipboard items are skipped, and nothing leaves app-private storage until you save or share the archive.</string>
     <string name="backup_and_restore__back_up__success">Backup archive exported.</string>
     <string name="backup_and_restore__back_up__share_sheet_opened">Backup archive ready to share</string>
     <string name="backup_and_restore__back_up__share_sheet_opened_summary">Complete the share sheet to copy the archive into another app or storage provider.</string>
