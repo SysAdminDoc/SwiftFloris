@@ -106,7 +106,6 @@ internal object SwiftKeyTraceFixtureExporter {
             put("currentWord", JsonPrimitive(currentWord))
             put("typedWordKnown", JsonPrimitive(boolean("typedWordKnown")))
             put("quickPredictionInsert", JsonPrimitive(currentWord.isBlank() && expectedSpacebarText != null))
-            put("touchEvidence", array("touchEvidence"))
             put("scored", sanitizedScoredCandidates())
             put("expectedRanked", array("ranked"))
             put("expectedSpacebarText", expectedSpacebarText?.let { JsonPrimitive(it) } ?: JsonNull)

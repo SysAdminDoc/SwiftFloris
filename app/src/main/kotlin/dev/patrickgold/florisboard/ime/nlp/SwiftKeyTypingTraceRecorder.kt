@@ -32,6 +32,8 @@ import java.io.File
  * It is disabled unless `<filesDir>/swiftkey_trace.enabled` exists. When enabled,
  * it writes JSONL to `<filesDir>/swiftkey_typing_traces.jsonl`. No network path is
  * involved; this is a developer/user opt-in artifact for replay tuning.
+ * Raw traces can contain typed words, previous-word context, ranked candidates,
+ * and touch evidence. Prefer replay fixtures when sharing a debugging artifact.
  */
 internal class SwiftKeyTypingTraceRecorder(context: Context) {
     private val appContext = context.applicationContext

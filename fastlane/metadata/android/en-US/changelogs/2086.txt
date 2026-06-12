@@ -1,0 +1,2 @@
+Raw local typing-trace sharing now requires a sensitive-content confirmation before opening the share sheet.
+Replay fixture export is now the recommended debugging path, and sanitized fixtures drop touch evidence alongside cursor context.
