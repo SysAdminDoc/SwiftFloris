@@ -22,6 +22,20 @@ data class ExternalVoiceInputProvider(
     val installUrl: String,
 )
 
+enum class ExternalVoiceInputProviderState {
+    Ready,
+    EnabledNeedsMicrophone,
+    InstalledNotEnabled,
+    NotInstalled,
+}
+
+data class ExternalVoiceInputProviderStatus(
+    val provider: ExternalVoiceInputProvider,
+    val state: ExternalVoiceInputProviderState,
+) {
+    val isReady: Boolean = state == ExternalVoiceInputProviderState.Ready
+}
+
 object ExternalVoiceInputProviders {
     val Futo = ExternalVoiceInputProvider(
         packageName = "org.futo.voiceinput",
@@ -45,5 +59,23 @@ object ExternalVoiceInputProviders {
 
     fun byPackageName(packageName: String): ExternalVoiceInputProvider? {
         return SupportedOfflineImeProviders.firstOrNull { it.packageName == packageName }
+    }
+
+    fun statuses(
+        installedPackageNames: Set<String>,
+        enabledVoiceInputMethodPackages: Set<String>,
+        hasMicrophonePermission: (String) -> Boolean,
+    ): List<ExternalVoiceInputProviderStatus> {
+        return SupportedOfflineImeProviders.map { provider ->
+            val state = when {
+                provider.packageName in enabledVoiceInputMethodPackages &&
+                    hasMicrophonePermission(provider.packageName) -> ExternalVoiceInputProviderState.Ready
+                provider.packageName in enabledVoiceInputMethodPackages ->
+                    ExternalVoiceInputProviderState.EnabledNeedsMicrophone
+                provider.packageName in installedPackageNames -> ExternalVoiceInputProviderState.InstalledNotEnabled
+                else -> ExternalVoiceInputProviderState.NotInstalled
+            }
+            ExternalVoiceInputProviderStatus(provider = provider, state = state)
+        }
     }
 }
