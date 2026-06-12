@@ -61,6 +61,7 @@ import dev.patrickgold.florisboard.ime.voice.VoiceCommandAction
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommand
 import dev.patrickgold.florisboard.ime.voice.VoiceCommandCustomCommands
 import dev.patrickgold.florisboard.ime.voice.VoiceDeviceRamProfile
+import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviders
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceLocalRecognizerRuntime
 import dev.patrickgold.florisboard.ime.voice.VoiceModelCatalog
@@ -100,6 +101,7 @@ private data class VoiceInputStatus(
     val isFutoEnabled: Boolean,
     val isFutoMicrophonePermissionGranted: Boolean,
     val isAnyVoiceProviderEnabled: Boolean,
+    val readyProviderLabel: String?,
 )
 
 private data class VoiceCommandDialogState(
@@ -295,6 +297,7 @@ fun VoiceInputScreen() = FlorisScreen {
             status = status,
             onClick = when {
                 status.isFutoEnabled && !status.isFutoMicrophonePermissionGranted -> ::openFutoAppSettings
+                status.readyProviderLabel != null && !status.isFutoEnabled -> ::openKeyboardSettings
                 status.isFutoInstalled && !status.isFutoEnabled -> ::openKeyboardSettings
                 status.isFutoInstalled -> ::openFuto
                 else -> {
@@ -427,6 +430,14 @@ fun VoiceInputScreen() = FlorisScreen {
                     title = stringRes(R.string.voice_input_setup__install_fdroid),
                     summary = stringRes(R.string.settings__voice_input__install_summary),
                     onClick = { context.launchUrl(VoiceInputManager.FUTO_FDROID_URL) },
+                )
+            }
+            for (provider in ExternalVoiceInputProviders.SupportedOfflineImeProviders) {
+                Preference(
+                    icon = Icons.Default.Mic,
+                    title = provider.label,
+                    summary = stringRes(R.string.settings__voice_input__supported_provider_summary),
+                    onClick = { context.launchUrl(provider.installUrl) },
                 )
             }
         }
@@ -736,11 +747,17 @@ private fun VoiceInputStatusCard(
             actionLabel = stringRes(R.string.voice_input_setup__open_futo_permissions),
             onClick = onClick,
         )
-        status.isFutoEnabled -> FlorisSuccessCard(
+        status.readyProviderLabel != null -> FlorisSuccessCard(
             modifier = modifier,
-            text = stringRes(R.string.settings__voice_input__status_ready),
-            secondaryText = stringRes(R.string.settings__voice_input__status_ready_summary),
-            actionLabel = stringRes(R.string.settings__voice_input__open_futo_language_settings),
+            text = stringRes(
+                R.string.settings__voice_input__status_ready,
+                "provider" to status.readyProviderLabel,
+            ),
+            secondaryText = stringRes(
+                R.string.settings__voice_input__status_ready_summary,
+                "provider" to status.readyProviderLabel,
+            ),
+            actionLabel = stringRes(R.string.voice_input_setup__open_keyboard_settings),
             onClick = onClick,
         )
         status.isFutoInstalled -> FlorisWarningCard(
@@ -821,6 +838,7 @@ private fun VoiceInputManager.readStatus(): VoiceInputStatus {
         isFutoEnabled = isFutoVoiceInputEnabled(),
         isFutoMicrophonePermissionGranted = isFutoMicrophonePermissionGranted(),
         isAnyVoiceProviderEnabled = isExternalVoiceInputMethodEnabled(),
+        readyProviderLabel = readyKnownExternalVoiceInputProvider()?.label,
     )
 }
 

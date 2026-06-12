@@ -1,0 +1,1 @@
+Broaden external voice keyboard guidance to include WhisperInput and F-Droid Whisper alongside FUTO Voice Input.
