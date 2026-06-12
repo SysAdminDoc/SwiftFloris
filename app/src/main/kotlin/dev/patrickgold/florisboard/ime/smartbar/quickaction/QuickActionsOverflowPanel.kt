@@ -33,6 +33,8 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
+import dev.patrickgold.florisboard.ime.profile.PerAppGestureSet
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -49,12 +51,25 @@ fun QuickActionsOverflowPanel() {
 
     val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
     val perAppProfilesEnabled by prefs.smartbar.perAppProfilesEnabled.collectAsState()
+    val perAppKeyboardProfiles by prefs.privacy.perAppKeyboardProfiles.collectAsState()
     val evaluator by keyboardManager.activeSmartbarEvaluator.collectAsState()
-    val profiledActionArrangement = remember(actionArrangement, evaluator.editorInfo, perAppProfilesEnabled) {
+    val forcedGestureSet = remember(perAppKeyboardProfiles, evaluator.editorInfo.packageName) {
+        PerAppKeyboardProfiles.resolve(
+            rawJson = perAppKeyboardProfiles,
+            packageName = evaluator.editorInfo.packageName,
+        )?.gestureSet ?: PerAppGestureSet.FOLLOW_GLOBAL
+    }
+    val profiledActionArrangement = remember(
+        actionArrangement,
+        evaluator.editorInfo,
+        perAppProfilesEnabled,
+        forcedGestureSet,
+    ) {
         SmartbarActionProfiles.apply(
             base = actionArrangement,
             editorInfo = evaluator.editorInfo,
             enabled = perAppProfilesEnabled,
+            forcedGestureSet = forcedGestureSet,
         )
     }
 

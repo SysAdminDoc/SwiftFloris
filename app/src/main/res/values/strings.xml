@@ -985,6 +985,8 @@
     <string name="settings__privacy_posture__voice_missing" comment="Preference summary when no known provider is installed">No supported external voice provider is ready.</string>
     <string name="settings__privacy_posture__export_policy_title" comment="Preference title">Export policy</string>
     <string name="settings__privacy_posture__export_policy_summary" comment="Preference summary">Backups, dictionaries, traces, and audit logs leave app-private storage only when you explicitly copy, share, or save them.</string>
+    <string name="settings__privacy_posture__per_app_profiles_title" comment="Preference title">Per-app keyboard profiles</string>
+    <string name="settings__privacy_posture__per_app_profiles_summary" comment="Preference summary; {count} is the number of saved app-specific profiles">Configured apps: {count}. Profiles can override adaptive accent, incognito, clipboard history, suggestions, and smartbar gesture sets for the focused app.</string>
     <string name="settings__privacy_posture__simple_mode_title" comment="Preference title">Enable Simple Mode</string>
     <string name="settings__privacy_posture__simple_mode_summary" comment="Preference summary">Turns off suggestions, next-word prediction, clipboard history, clipboard suggestions, emoji history, emoji suggestions, and addon consent surfaces.</string>
     <string name="settings__privacy_posture__simple_mode_active" comment="Preference summary when Simple Mode is already active">Simple Mode is active.</string>

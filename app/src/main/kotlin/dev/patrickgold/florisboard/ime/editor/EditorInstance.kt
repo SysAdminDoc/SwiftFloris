@@ -33,8 +33,12 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
-import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
+import dev.patrickgold.florisboard.ime.profile.PerAppBooleanOverride
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfilePolicy
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
+import dev.patrickgold.florisboard.ime.profile.PerAppSuggestionAggressiveness
+import dev.patrickgold.florisboard.ime.profile.ResolvedPerAppKeyboardProfile
 import dev.patrickgold.florisboard.ime.text.composing.Appender
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -125,7 +129,8 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             }
         }
         activeState.keyboardMode = keyboardMode
-        activeState.isComposingEnabled = when (keyboardMode) {
+        val profile = activePerAppProfile(editorInfo.packageName)
+        val baseComposingEnabled = when (keyboardMode) {
             KeyboardMode.NUMERIC,
             KeyboardMode.PHONE,
             KeyboardMode.PHONE2,
@@ -135,6 +140,10 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             //!instance.inputAttributes.flagTextAutoComplete &&
             //!instance.inputAttributes.flagTextNoSuggestions
         }
+        activeState.isComposingEnabled = PerAppKeyboardProfilePolicy.shouldEnableComposing(
+            baseEnabled = baseComposingEnabled,
+            suggestions = profile?.suggestions ?: PerAppSuggestionAggressiveness.FOLLOW_GLOBAL,
+        )
         // App-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` is a privacy
         // contract from the host app (Signal, ProtonMail, banking,
         // end-to-end encrypted chat), not a user preference. It must be
@@ -148,10 +157,11 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // requested* incognito (the toggle on the smartbar, the
         // FORCE_ON power-user setting). It just cannot turn the
         // app-declared flag *off*.
-        activeState.isIncognitoMode = SuggestionPrivacyPolicy.resolveIncognitoMode(
+        activeState.isIncognitoMode = PerAppKeyboardProfilePolicy.resolveIncognitoMode(
             appDeclaredNoPersonalizedLearning = editorInfo.imeOptions.flagNoPersonalizedLearning,
-            preference = prefs.suggestion.incognitoMode.get(),
+            globalPreference = prefs.suggestion.incognitoMode.get(),
             isDynamicIncognitoForced = prefs.suggestion.forceIncognitoModeFromDynamic.get(),
+            override = profile?.incognito ?: PerAppBooleanOverride.FOLLOW_GLOBAL,
         )
     }
 
@@ -587,7 +597,19 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      */
     private fun shouldSuppressClipboardHistory(): Boolean {
         val state = keyboardManager.activeState
-        return state.keyVariation == KeyVariation.PASSWORD || state.isIncognitoMode
+        val profile = activePerAppProfile(activeInfo.packageName)
+        return state.keyVariation == KeyVariation.PASSWORD ||
+            state.isIncognitoMode ||
+            PerAppKeyboardProfilePolicy.shouldSuppressClipboardHistory(
+                profile?.clipboardHistory ?: PerAppBooleanOverride.FOLLOW_GLOBAL,
+            )
+    }
+
+    private fun activePerAppProfile(packageName: String?): ResolvedPerAppKeyboardProfile? {
+        return PerAppKeyboardProfiles.resolve(
+            rawJson = prefs.privacy.perAppKeyboardProfiles.get(),
+            packageName = packageName,
+        )
     }
 
     /**

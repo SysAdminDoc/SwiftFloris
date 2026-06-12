@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.smartbar.quickaction
 
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
+import dev.patrickgold.florisboard.ime.profile.PerAppGestureSet
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import java.util.Locale
 
@@ -26,10 +27,19 @@ object SmartbarActionProfiles {
         base: QuickActionArrangement,
         editorInfo: FlorisEditorInfo,
         enabled: Boolean,
+        forcedGestureSet: PerAppGestureSet = PerAppGestureSet.FOLLOW_GLOBAL,
     ): QuickActionArrangement {
         if (!enabled) return base
-        val profile = detect(editorInfo) ?: return base
+        val profile = forcedGestureSet.toSmartbarProfile() ?: detect(editorInfo) ?: return base
         return base.prioritize(profile.priorityActions)
+    }
+
+    private fun PerAppGestureSet.toSmartbarProfile(): SmartbarActionProfile? {
+        return when (this) {
+            PerAppGestureSet.CHAT -> SmartbarActionProfile.CHAT
+            PerAppGestureSet.CODE -> SmartbarActionProfile.CODE
+            else -> null
+        }
     }
 
     internal fun detect(editorInfo: FlorisEditorInfo): SmartbarActionProfile? {

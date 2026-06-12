@@ -20,6 +20,8 @@ import android.content.Context
 import androidx.compose.runtime.compositionLocalOf
 import androidx.compose.ui.graphics.Color
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
+import dev.patrickgold.florisboard.ime.profile.PerAppThemeOverride
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -76,10 +78,19 @@ class PerAppAccentController(context: Context) {
     fun setActiveEditorPackage(packageName: String?) {
         val perAppAccentEnabled = prefs.theme.perAppAccentEnabled.get()
         updateDiscoveryHint(packageName, perAppAccentEnabled)
+        val profileTheme = PerAppKeyboardProfiles.resolve(
+            rawJson = prefs.privacy.perAppKeyboardProfiles.get(),
+            packageName = packageName,
+        )?.theme
+        val accentEnabledForPackage = when (profileTheme) {
+            PerAppThemeOverride.ADAPTIVE_ACCENT -> true
+            PerAppThemeOverride.GLOBAL_ACCENT -> false
+            else -> perAppAccentEnabled
+        }
 
         // Skip when the user has the feature off entirely. Cheap guard
         // against doing the icon-load work for nothing.
-        if (!perAppAccentEnabled) {
+        if (!accentEnabledForPackage) {
             if (_activeAccent.value != null) _activeAccent.value = null
             lastPackageName = packageName
             return

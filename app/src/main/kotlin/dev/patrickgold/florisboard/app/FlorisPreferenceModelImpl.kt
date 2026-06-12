@@ -185,6 +185,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             privacy.smartComposeConsent to "privacy.smartComposeConsent",
             privacy.translationConsent to "privacy.translationConsent",
             privacy.mcpConsent to "privacy.mcpConsent",
+            privacy.perAppKeyboardProfiles to "privacy.perAppKeyboardProfiles",
             other.settingsTheme to "other.settingsTheme",
             other.accentColor to "other.accentColor",
             other.settingsLanguage to "other.settingsLanguage",
