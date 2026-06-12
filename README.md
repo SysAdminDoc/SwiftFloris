@@ -140,7 +140,7 @@ SwiftFloris imports `swiftkey-cloud.json` through **Settings → Personal dictio
 
 ## Documentation
 
-Public project information is available in this README, [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases), and [GitHub Issues](https://github.com/SysAdminDoc/SwiftFloris/issues). Maintainer-only planning, research, changelog, and verification notes are kept as local ignored markdown in the working checkout, so the public README links only to files that ship in the repository.
+Public project information is available in this README, [Security](docs/SECURITY.md), [Reproducible builds](docs/REPRODUCIBLE_BUILDS.md), [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases), and [GitHub Issues](https://github.com/SysAdminDoc/SwiftFloris/issues). Contributor-facing architecture and stack notes live in [Architecture & Stack](#architecture--stack). Maintainer-only planning, research, changelog, and verification notes stay local.
 
 ## Architecture & Stack
 
