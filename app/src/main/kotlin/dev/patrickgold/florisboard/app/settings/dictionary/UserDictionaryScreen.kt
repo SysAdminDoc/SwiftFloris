@@ -129,7 +129,8 @@ enum class UserDictionaryType(val id: String) {
 }
 
 enum class UserDictionaryScreenAction(val id: String) {
-    IMPORT("import");
+    IMPORT("import"),
+    EXPORT_ENCRYPTED("export-encrypted");
 }
 
 @Composable
@@ -543,13 +544,17 @@ fun UserDictionaryScreen(
 
     var importActionConsumed by rememberSaveable(action?.id) { mutableStateOf(false) }
     LaunchedEffect(action, entryActionsEnabled) {
-        if (
-            action == UserDictionaryScreenAction.IMPORT &&
-            entryActionsEnabled &&
-            !importActionConsumed
-        ) {
-            importActionConsumed = true
-            importDictionary.launch("*/*")
+        if (!entryActionsEnabled || importActionConsumed) return@LaunchedEffect
+        when (action) {
+            UserDictionaryScreenAction.IMPORT -> {
+                importActionConsumed = true
+                importDictionary.launch("*/*")
+            }
+            UserDictionaryScreenAction.EXPORT_ENCRYPTED -> {
+                importActionConsumed = true
+                encryptedExportDialogVisible = true
+            }
+            null -> Unit
         }
     }
 
