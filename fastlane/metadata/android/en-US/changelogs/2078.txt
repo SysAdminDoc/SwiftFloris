@@ -1,0 +1,1 @@
+Stopped automatic previews for content provider images shared into the clipboard activity.

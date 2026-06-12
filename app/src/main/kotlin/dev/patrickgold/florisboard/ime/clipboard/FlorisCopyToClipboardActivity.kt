@@ -127,7 +127,11 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
             copyUriToClipboard(uri)
         }.onSuccess {
             copiedToClipboard = true
-            bitmap = runCatching { uriToPreviewBitmap(uri) }.getOrNull()
+            bitmap = if (CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUri(uri)) {
+                runCatching { uriToPreviewBitmap(uri) }.getOrNull()
+            } else {
+                null
+            }
         }.onFailure {
             error = CopyToClipboardError.UNKNOWN_ERROR
         }

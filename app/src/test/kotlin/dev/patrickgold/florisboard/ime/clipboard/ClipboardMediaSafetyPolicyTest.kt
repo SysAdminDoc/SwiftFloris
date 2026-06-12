@@ -64,4 +64,14 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
             )
         }
     }
+
+    test("copy-to-clipboard activity does not auto-preview content provider URIs") {
+        CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme("content") shouldBe false
+        CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme("CONTENT") shouldBe false
+    }
+
+    test("copy-to-clipboard activity keeps non-provider image URI previews eligible") {
+        CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme("file") shouldBe true
+        CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme(null) shouldBe false
+    }
 })
