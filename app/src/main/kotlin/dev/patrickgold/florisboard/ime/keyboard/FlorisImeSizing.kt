@@ -37,6 +37,7 @@ import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsChipMargin
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboard
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
+import dev.patrickgold.florisboard.ime.window.ImeWindowConstraints
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 
@@ -44,6 +45,8 @@ private val LocalKeyboardRowBaseHeight = compositionLocalOf { 65.dp }
 private val LocalSmartbarHeight = compositionLocalOf { 40.dp }
 
 object FlorisImeSizing {
+    val minInteractiveTouchSize: Dp = ImeWindowConstraints.MinInteractiveTouchSize
+
     val keyboardRowBaseHeight: Dp
         @Composable
         @ReadOnlyComposable

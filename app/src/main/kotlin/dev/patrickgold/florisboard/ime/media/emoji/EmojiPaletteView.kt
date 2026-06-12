@@ -118,7 +118,7 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 import kotlin.math.ceil
 
 private val EmojiCategoryValues = EmojiCategory.entries
-private val EmojiBaseWidth = 42.dp
+internal val EmojiBaseWidth = FlorisImeSizing.minInteractiveTouchSize
 private val EmojiDefaultFontSize = 22.sp
 
 private val VariantsTriangleShapeLtr = GenericShape { size, _ ->

@@ -91,6 +91,11 @@ sealed class ImeWindowSpec {
      * Calculates the Smartbar row height for given baseline [keyboardHeight].
      */
     fun calcSmartbarRowHeight(keyboardHeight: Dp): Dp {
+        return calcRawSmartbarRowHeight(keyboardHeight)
+            .coerceAtLeast(constraints.minInteractiveTouchSize)
+    }
+
+    private fun calcRawSmartbarRowHeight(keyboardHeight: Dp): Dp {
         val defRowHeight = calcRowHeight(constraints.defKeyboardHeight)
         val rowHeight = calcRowHeight(keyboardHeight)
         return defRowHeight * constraints.smartbarStaticScalingFactor +
@@ -109,9 +114,15 @@ sealed class ImeWindowSpec {
         require(rowCount in 4..6)
         require(smartbarRowCount in 0..2)
         val staticSmartbarHeight = calcRowHeight(constraints.defKeyboardHeight * constraints.smartbarStaticScalingFactor * smartbarRowCount)
-        val keyboardHeight = ((effKeyboardHeight - staticSmartbarHeight) * constraints.baselineRowCount) /
+        val rawSmartbarCandidate = ((effKeyboardHeight - staticSmartbarHeight) * constraints.baselineRowCount) /
             (rowCount + constraints.smartbarDynamicScalingFactor * smartbarRowCount)
-        return keyboardHeight
+        if (smartbarRowCount > 0 &&
+            calcRawSmartbarRowHeight(rawSmartbarCandidate) < constraints.minInteractiveTouchSize
+        ) {
+            return ((effKeyboardHeight - constraints.minInteractiveTouchSize * smartbarRowCount) *
+                constraints.baselineRowCount) / rowCount
+        }
+        return rawSmartbarCandidate
     }
 
     /**
