@@ -47,7 +47,6 @@ import com.github.takahirom.roborazzi.RoborazziRule
 import com.github.takahirom.roborazzi.captureRoboImage
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.keyboard.HoneycombKeyboardRow
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -55,13 +54,9 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * ROADMAP TODO F40 test-class phase.
- *
- * Disabled until the Tier B capture phase records baseline PNGs. The active
- * compile target protects the future visual surfaces from API drift while
- * keeping `verifyRoborazziDebug` green until those baselines are committed.
+ * F40 Roborazzi targets for representative keyboard-only surfaces that do not
+ * need a full IME service or emulator to catch visual regressions.
  */
-@Ignore("F40 baseline capture is tracked separately in TODO Tier B.")
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

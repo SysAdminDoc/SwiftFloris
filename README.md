@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.39-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.40-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.39 | Privacy posture |
+| Area | What's in v1.9.40 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -304,6 +304,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.40** (2026-06-12) — Pending F40 Roborazzi settings and keyboard-surface screenshots are now active visual gates, with committed baselines for AI features, voice input, MCP settings, typing stats, honeycomb, and glide trail surfaces.
 - **v1.9.39** (2026-06-12) — Settings now includes a per-app keyboard profile editor with add/edit/delete flows, package-label fallback, malformed profile recovery, and direct Privacy/Smartbar/Search entry points.
 - **v1.9.38** (2026-06-12) — Han shape-based language packs now drive real table-backed suggestions, word-list, and word-frequency lookups; placeholder spell results are gone and broken active Han tables surface as fail-closed language-pack status.
 - **v1.9.37** (2026-06-12) — Raw local typing-trace sharing now requires a sensitive-content confirmation, replay fixture export is the recommended debugging path, and sanitized fixtures drop touch evidence alongside cursor context.
@@ -505,7 +506,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.39** (2026-06-12). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.40** (2026-06-12). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

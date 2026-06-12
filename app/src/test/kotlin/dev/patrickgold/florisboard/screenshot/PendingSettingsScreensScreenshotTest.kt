@@ -50,7 +50,6 @@ import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 import org.junit.After
 import org.junit.Before
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,18 +57,11 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
 /**
- * ROADMAP TODO F40 test-class phase.
- *
- * These screen-level Roborazzi targets are intentionally disabled until the
- * Tier B capture phase records and commits their baseline PNGs. Removing the
- * class-level [Ignore] and running `./gradlew :app:recordRoborazziDebug` is the
- * next step for turning these compile-checked targets into active visual gates.
- *
- * `AddonsSettingsScreen` already has an active registry snapshot in
- * [ThemeAndAddonsScreenshotTest]; this class fills the remaining settings
- * screens listed in TODO F40.
+ * F40 screen-level Roborazzi targets for settings surfaces that are otherwise
+ * easy to regress without touching policy-level JVM tests. `AddonsSettingsScreen`
+ * already has an active registry snapshot in [ThemeAndAddonsScreenshotTest];
+ * this class covers the remaining high-value settings screens.
  */
-@Ignore("F40 baseline capture is tracked separately in TODO Tier B.")
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)

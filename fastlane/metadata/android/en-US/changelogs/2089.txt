@@ -1,0 +1,3 @@
+Promotes pending visual regression coverage into active Roborazzi gates.
+
+Includes committed baselines for AI features, voice input, MCP settings, typing stats, honeycomb, and glide trail keyboard surfaces.
