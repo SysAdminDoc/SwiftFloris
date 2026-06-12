@@ -1,0 +1,1 @@
+Adds Power Saving and Focus Mode presets to the privacy posture screen so typing can be quickly tuned for lower distraction or lower device feedback.

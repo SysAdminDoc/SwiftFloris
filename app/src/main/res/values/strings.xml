@@ -961,7 +961,7 @@
     <string name="settings__typing_stats__erase_everything__confirm_button" comment="Confirmation dialog destructive button">Erase</string>
     <string name="settings__typing_stats__erase_everything__toast" comment="Toast shown after erasing everything">All on-device learning and your personal dictionary were erased.</string>
     <string name="settings__privacy_posture__title" comment="Screen + preference title">Privacy posture</string>
-    <string name="settings__privacy_posture__home_summary" comment="Home preference summary">Network, learning, clipboard, addon, voice, and Simple Mode status</string>
+    <string name="settings__privacy_posture__home_summary" comment="Home preference summary">Network, learning, clipboard, addon, voice, and typing profile status</string>
     <string name="settings__privacy_posture__intro_title" comment="Info card title">Private by default</string>
     <string name="settings__privacy_posture__intro_summary" comment="Info card summary">SwiftFloris has no Internet permission. This screen shows the optional local surfaces that can retain data or hand off to user-installed providers.</string>
     <string name="settings__privacy_posture__group_status" comment="Preference group title">Current posture</string>
@@ -988,9 +988,17 @@
     <string name="settings__privacy_posture__simple_mode_title" comment="Preference title">Enable Simple Mode</string>
     <string name="settings__privacy_posture__simple_mode_summary" comment="Preference summary">Turns off suggestions, next-word prediction, clipboard history, clipboard suggestions, emoji history, emoji suggestions, and addon consent surfaces.</string>
     <string name="settings__privacy_posture__simple_mode_active" comment="Preference summary when Simple Mode is already active">Simple Mode is active.</string>
+    <string name="settings__privacy_posture__power_saving_title" comment="Preference title">Enable Power Saving</string>
+    <string name="settings__privacy_posture__power_saving_summary" comment="Preference summary">Turns off sound, haptics, gesture trail and preview, smartbar expansion animation, next-word prediction, clipboard suggestions, and emoji suggestions.</string>
+    <string name="settings__privacy_posture__power_saving_active" comment="Preference summary when Power Saving is already active">Power Saving is active.</string>
+    <string name="settings__privacy_posture__focus_mode_title" comment="Preference title">Enable Focus Mode</string>
+    <string name="settings__privacy_posture__focus_mode_summary" comment="Preference summary">Keeps typing feedback on while turning off next-word prediction, clipboard retention, clipboard suggestions, emoji history, emoji suggestions, and expanded smartbar rows.</string>
+    <string name="settings__privacy_posture__focus_mode_active" comment="Preference summary when Focus Mode is already active">Focus Mode is active.</string>
     <string name="settings__privacy_posture__restore_full_title" comment="Preference title">Restore Full Mode</string>
     <string name="settings__privacy_posture__restore_full_summary" comment="Preference summary">Restores the standard local typing profile without granting addon consent.</string>
     <string name="settings__privacy_posture__simple_mode_applied" comment="Toast after applying Simple Mode">Simple Mode applied.</string>
+    <string name="settings__privacy_posture__power_saving_applied" comment="Toast after applying Power Saving">Power Saving applied.</string>
+    <string name="settings__privacy_posture__focus_mode_applied" comment="Toast after applying Focus Mode">Focus Mode applied.</string>
     <string name="settings__privacy_posture__full_mode_restored" comment="Toast after restoring Full Mode">Full Mode restored.</string>
     <string name="settings__privacy_posture__on" comment="Short enabled label">on</string>
     <string name="settings__privacy_posture__off" comment="Short disabled label">off</string>

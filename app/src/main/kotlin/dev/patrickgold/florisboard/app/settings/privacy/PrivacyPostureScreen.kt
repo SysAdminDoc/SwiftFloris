@@ -67,6 +67,13 @@ fun PrivacyPostureScreen() = FlorisScreen {
     val clipboardHistoryLimitEnabled by prefs.clipboard.historySizeLimitEnabled.collectAsState()
     val emojiSuggestionEnabled by prefs.emoji.suggestionEnabled.collectAsState()
     val emojiHistoryEnabled by prefs.emoji.historyEnabled.collectAsState()
+    val inputFeedbackAudioEnabled by prefs.inputFeedback.audioEnabled.collectAsState()
+    val inputFeedbackHapticEnabled by prefs.inputFeedback.hapticEnabled.collectAsState()
+    val glideShowTrail by prefs.glide.showTrail.collectAsState()
+    val glideShowPreview by prefs.glide.showPreview.collectAsState()
+    val smartbarSharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.collectAsState()
+    val smartbarExtendedActionsExpanded by prefs.smartbar.extendedActionsExpanded.collectAsState()
+    val smartbarSharedActionsExpandWithAnimation by prefs.smartbar.sharedActionsExpandWithAnimation.collectAsState()
     val systemDictionaryEnabled by prefs.dictionary.enableSystemUserDictionary.collectAsState()
     val florisDictionaryEnabled by prefs.dictionary.enableFlorisUserDictionary.collectAsState()
     val addonSigningPins by prefs.addon.signingCertPins.collectAsState()
@@ -82,19 +89,31 @@ fun PrivacyPostureScreen() = FlorisScreen {
     val voiceProviderStatuses = remember(context) {
         VoiceInputManager(context).knownExternalVoiceInputProviderStatuses()
     }
-    val simpleModeValues = SimpleModePreferenceValues(
+    val currentProfileValues = ProfilePreferenceValues(
         suggestionsEnabled = suggestionsEnabled,
         nextWordPredictionEnabled = nextWordPredictionEnabled,
         clipboardSuggestionEnabled = clipboardSuggestionEnabled,
         clipboardHistoryEnabled = clipboardHistoryEnabled,
         emojiSuggestionEnabled = emojiSuggestionEnabled,
         emojiHistoryEnabled = emojiHistoryEnabled,
+        inputFeedbackAudioEnabled = inputFeedbackAudioEnabled,
+        inputFeedbackHapticEnabled = inputFeedbackHapticEnabled,
+        glideShowTrail = glideShowTrail,
+        glideShowPreview = glideShowPreview,
+        smartbarSharedActionsExpanded = smartbarSharedActionsExpanded,
+        smartbarExtendedActionsExpanded = smartbarExtendedActionsExpanded,
+        smartbarSharedActionsExpandWithAnimation = smartbarSharedActionsExpandWithAnimation,
         smartComposeConsent = smartComposeConsent,
         translationConsent = translationConsent,
         mcpConsent = mcpConsent,
     )
-    val simpleModeActive = PrivacyPosturePolicy.isSimpleModeActive(simpleModeValues)
+    val simpleModeActive = PrivacyPosturePolicy.isSimpleModeActive(currentProfileValues)
+    val powerSavingActive = PrivacyPosturePolicy.isPowerSavingActive(currentProfileValues)
+    val focusModeActive = PrivacyPosturePolicy.isFocusModeActive(currentProfileValues)
+    val fullModeActive = currentProfileValues == PrivacyPosturePolicy.fullModeValues
     val simpleModeAppliedToast = stringRes(R.string.settings__privacy_posture__simple_mode_applied)
+    val powerSavingAppliedToast = stringRes(R.string.settings__privacy_posture__power_saving_applied)
+    val focusModeAppliedToast = stringRes(R.string.settings__privacy_posture__focus_mode_applied)
     val fullModeRestoredToast = stringRes(R.string.settings__privacy_posture__full_mode_restored)
 
     content {
@@ -195,8 +214,40 @@ fun PrivacyPostureScreen() = FlorisScreen {
                 enabledIf = { !simpleModeActive },
                 onClick = {
                     scope.launch {
-                        applySimpleModeValues(prefs, PrivacyPosturePolicy.simpleModeValues)
+                        applyProfileValues(prefs, PrivacyPosturePolicy.simpleModeValues)
                         Toast.makeText(context, simpleModeAppliedToast, Toast.LENGTH_SHORT).show()
+                    }
+                },
+            )
+            Preference(
+                icon = Icons.Default.WifiOff,
+                title = stringRes(R.string.settings__privacy_posture__power_saving_title),
+                summary = if (powerSavingActive) {
+                    stringRes(R.string.settings__privacy_posture__power_saving_active)
+                } else {
+                    stringRes(R.string.settings__privacy_posture__power_saving_summary)
+                },
+                enabledIf = { !powerSavingActive },
+                onClick = {
+                    scope.launch {
+                        applyProfileValues(prefs, PrivacyPosturePolicy.powerSavingValues)
+                        Toast.makeText(context, powerSavingAppliedToast, Toast.LENGTH_SHORT).show()
+                    }
+                },
+            )
+            Preference(
+                icon = Icons.Default.TextFields,
+                title = stringRes(R.string.settings__privacy_posture__focus_mode_title),
+                summary = if (focusModeActive) {
+                    stringRes(R.string.settings__privacy_posture__focus_mode_active)
+                } else {
+                    stringRes(R.string.settings__privacy_posture__focus_mode_summary)
+                },
+                enabledIf = { !focusModeActive },
+                onClick = {
+                    scope.launch {
+                        applyProfileValues(prefs, PrivacyPosturePolicy.focusModeValues)
+                        Toast.makeText(context, focusModeAppliedToast, Toast.LENGTH_SHORT).show()
                     }
                 },
             )
@@ -204,10 +255,10 @@ fun PrivacyPostureScreen() = FlorisScreen {
                 icon = Icons.Default.Restore,
                 title = stringRes(R.string.settings__privacy_posture__restore_full_title),
                 summary = stringRes(R.string.settings__privacy_posture__restore_full_summary),
-                enabledIf = { simpleModeActive },
+                enabledIf = { !fullModeActive },
                 onClick = {
                     scope.launch {
-                        applySimpleModeValues(prefs, PrivacyPosturePolicy.fullModeValues)
+                        applyProfileValues(prefs, PrivacyPosturePolicy.fullModeValues)
                         Toast.makeText(context, fullModeRestoredToast, Toast.LENGTH_SHORT).show()
                     }
                 },
@@ -216,9 +267,9 @@ fun PrivacyPostureScreen() = FlorisScreen {
     }
 }
 
-private suspend fun applySimpleModeValues(
+private suspend fun applyProfileValues(
     prefs: dev.patrickgold.florisboard.app.FlorisPreferenceModel,
-    values: SimpleModePreferenceValues,
+    values: ProfilePreferenceValues,
 ) {
     prefs.suggestion.enabled.set(values.suggestionsEnabled)
     prefs.suggestion.nextWordPrediction.set(values.nextWordPredictionEnabled)
@@ -226,6 +277,13 @@ private suspend fun applySimpleModeValues(
     prefs.clipboard.historyEnabled.set(values.clipboardHistoryEnabled)
     prefs.emoji.suggestionEnabled.set(values.emojiSuggestionEnabled)
     prefs.emoji.historyEnabled.set(values.emojiHistoryEnabled)
+    prefs.inputFeedback.audioEnabled.set(values.inputFeedbackAudioEnabled)
+    prefs.inputFeedback.hapticEnabled.set(values.inputFeedbackHapticEnabled)
+    prefs.glide.showTrail.set(values.glideShowTrail)
+    prefs.glide.showPreview.set(values.glideShowPreview)
+    prefs.smartbar.sharedActionsExpanded.set(values.smartbarSharedActionsExpanded)
+    prefs.smartbar.extendedActionsExpanded.set(values.smartbarExtendedActionsExpanded)
+    prefs.smartbar.sharedActionsExpandWithAnimation.set(values.smartbarSharedActionsExpandWithAnimation)
     prefs.privacy.smartComposeConsent.set(values.smartComposeConsent)
     prefs.privacy.translationConsent.set(values.translationConsent)
     prefs.privacy.mcpConsent.set(values.mcpConsent)
