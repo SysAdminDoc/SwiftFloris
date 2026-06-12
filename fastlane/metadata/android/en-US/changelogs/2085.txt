@@ -1,0 +1,2 @@
+Settings -> Sync now routes Android 8-12 users to passphrase-encrypted dictionary export/import instead of exposing unsupported sealed device sync controls.
+Android 13+ sealed sync behavior is unchanged, and API 26-32 plus API 33+ policy tests cover the split.

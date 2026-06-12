@@ -73,6 +73,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreenAction
+import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDevice
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDeviceList
@@ -93,6 +97,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -107,8 +112,10 @@ fun SyncSettingsScreen() = FlorisScreen {
 
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
+    val navController = LocalNavController.current
     val scope = rememberCoroutineScope()
     val dictionaryManager = remember { DictionaryManager.default() }
+    val compatibility = SyncCompatibilityPolicy.stateForSdk(Build.VERSION.SDK_INT)
 
     val channelId by prefs.sync.channelId.collectAsState()
     val clusterId by prefs.sync.clusterId.collectAsState()
@@ -474,117 +481,155 @@ fun SyncSettingsScreen() = FlorisScreen {
             onDismiss = { clearTransferNotice() },
         )
 
-        PreferenceGroup(title = stringRes(R.string.settings__sync__group_actions)) {
-            Preference(
-                icon = Icons.Outlined.FileUpload,
-                title = stringRes(R.string.settings__sync__export_now),
-                summary = stringRes(R.string.settings__sync__export_now_summary),
-                onClick = {
-                    val target = when (val channel = activeChannel) {
-                        is SyncChannel.LocalFolder -> runCatching {
-                            resolveLocalFolderSyncFileUri(channel, create = true)
-                        }.getOrNull()
-                        SyncChannel.ManualExport -> manualExportTargetUri
-                            .takeIf { it.isNotBlank() }
-                            ?.let { Uri.parse(it) }
-                        else -> null
-                    }
-                    if (target == null) {
-                        failTransfer(syncMissingTargetText)
-                    } else {
-                        scope.launch { exportSyncSnapshot(target) }
-                    }
-                },
+        if (compatibility.usesPassphraseDictionaryMigration) {
+            FlorisInfoCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__sync__legacy_fallback_title),
+                secondaryText = stringRes(R.string.settings__sync__legacy_fallback_summary),
             )
-            Preference(
-                icon = Icons.Outlined.FileDownload,
-                title = stringRes(R.string.settings__sync__import_now),
-                summary = stringRes(R.string.settings__sync__import_now_summary),
-                onClick = {
-                    when (val channel = activeChannel) {
-                        is SyncChannel.LocalFolder -> {
-                            val source = runCatching {
-                                resolveLocalFolderSyncFileUri(channel, create = false)
-                            }.getOrNull()
-                            if (source == null) {
-                                failTransfer(syncMissingTargetText)
-                            } else {
-                                scope.launch { importSyncSnapshot(source) }
-                            }
-                        }
-                        else -> manualImportLauncher.launch(arrayOf(SYNC_FILE_MIME_TYPE, "application/json", "text/json"))
-                    }
-                },
-            )
-            Preference(
-                icon = Icons.Default.Sync,
-                title = stringRes(R.string.settings__sync__choose_manual_export_target),
-                summary = manualExportTargetUri.ifBlank { manualExportDefaultSummary },
-                onClick = { manualExportLauncher.launch(SYNC_FILE_NAME) },
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__sync__group_channel)) {
-            SyncChannelPreference(
-                selected = activeChannel is SyncChannel.Syncthing,
-                title = stringRes(R.string.settings__sync__channel_syncthing),
-                summary = stringRes(R.string.settings__sync__channel_syncthing_summary),
-                onClick = { syncthingDialogVisible = true },
-            )
-            SyncChannelPreference(
-                selected = activeChannel is SyncChannel.LocalFolder,
-                title = stringRes(R.string.settings__sync__channel_local_folder),
-                summary = stringRes(R.string.settings__sync__channel_local_folder_summary),
-                onClick = { folderLauncher.launch(null) },
-            )
-            SyncChannelPreference(
-                selected = activeChannel is SyncChannel.ManualExport,
-                title = stringRes(R.string.settings__sync__channel_manual_export),
-                summary = manualExportTargetUri.ifBlank { manualExportDefaultSummary },
-                onClick = { manualExportLauncher.launch(SYNC_FILE_NAME) },
-            )
-            SyncChannelPreference(
-                selected = activeChannel is SyncChannel.Disabled,
-                title = stringRes(R.string.settings__sync__channel_disabled),
-                summary = stringRes(R.string.settings__sync__channel_disabled_summary),
-                onClick = { setChannel(SyncChannel.Disabled) },
-            )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__sync__group_pairing)) {
-            Preference(
-                icon = Icons.Default.QrCode2,
-                title = stringRes(R.string.settings__sync__pair_new_device),
-                summary = stringRes(R.string.settings__sync__pair_new_device_summary),
-                onClick = { generatePairingPayload() },
-            )
-            Preference(
-                icon = Icons.Default.ContentPaste,
-                title = stringRes(R.string.settings__sync__receive_pairing),
-                summary = stringRes(R.string.settings__sync__receive_pairing_summary),
-                onClick = { startReceivePairing() },
-            )
-            generatedPayload?.let { raw ->
-                SyncQrPayloadCard(raw)
-            }
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__sync__group_devices)) {
-            if (pairedDevices.isEmpty()) {
-                Text(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                    text = stringRes(R.string.settings__sync__no_paired_devices),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+            PreferenceGroup(title = stringRes(R.string.settings__sync__legacy_group)) {
+                Preference(
+                    icon = Icons.Outlined.FileUpload,
+                    title = stringRes(R.string.settings__sync__legacy_export_encrypted),
+                    summary = stringRes(R.string.settings__sync__legacy_export_encrypted_summary),
+                    onClick = {
+                        navController.navigate(
+                            Routes.Settings.UserDictionary(
+                                type = UserDictionaryType.FLORIS,
+                                action = UserDictionaryScreenAction.EXPORT_ENCRYPTED,
+                            ),
+                        )
+                    },
                 )
-            } else {
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .heightIn(max = 280.dp),
-                ) {
-                    items(pairedDevices, key = { it.deviceId }) { device ->
-                        PairedDeviceRow(device)
+                Preference(
+                    icon = Icons.Outlined.FileDownload,
+                    title = stringRes(R.string.settings__sync__legacy_import_encrypted),
+                    summary = stringRes(R.string.settings__sync__legacy_import_encrypted_summary),
+                    onClick = {
+                        navController.navigate(
+                            Routes.Settings.UserDictionary(
+                                type = UserDictionaryType.FLORIS,
+                                action = UserDictionaryScreenAction.IMPORT,
+                            ),
+                        )
+                    },
+                )
+            }
+        } else {
+            PreferenceGroup(title = stringRes(R.string.settings__sync__group_actions)) {
+                Preference(
+                    icon = Icons.Outlined.FileUpload,
+                    title = stringRes(R.string.settings__sync__export_now),
+                    summary = stringRes(R.string.settings__sync__export_now_summary),
+                    onClick = {
+                        val target = when (val channel = activeChannel) {
+                            is SyncChannel.LocalFolder -> runCatching {
+                                resolveLocalFolderSyncFileUri(channel, create = true)
+                            }.getOrNull()
+                            SyncChannel.ManualExport -> manualExportTargetUri
+                                .takeIf { it.isNotBlank() }
+                                ?.let { Uri.parse(it) }
+                            else -> null
+                        }
+                        if (target == null) {
+                            failTransfer(syncMissingTargetText)
+                        } else {
+                            scope.launch { exportSyncSnapshot(target) }
+                        }
+                    },
+                )
+                Preference(
+                    icon = Icons.Outlined.FileDownload,
+                    title = stringRes(R.string.settings__sync__import_now),
+                    summary = stringRes(R.string.settings__sync__import_now_summary),
+                    onClick = {
+                        when (val channel = activeChannel) {
+                            is SyncChannel.LocalFolder -> {
+                                val source = runCatching {
+                                    resolveLocalFolderSyncFileUri(channel, create = false)
+                                }.getOrNull()
+                                if (source == null) {
+                                    failTransfer(syncMissingTargetText)
+                                } else {
+                                    scope.launch { importSyncSnapshot(source) }
+                                }
+                            }
+                            else -> manualImportLauncher.launch(
+                                arrayOf(SYNC_FILE_MIME_TYPE, "application/json", "text/json"),
+                            )
+                        }
+                    },
+                )
+                Preference(
+                    icon = Icons.Default.Sync,
+                    title = stringRes(R.string.settings__sync__choose_manual_export_target),
+                    summary = manualExportTargetUri.ifBlank { manualExportDefaultSummary },
+                    onClick = { manualExportLauncher.launch(SYNC_FILE_NAME) },
+                )
+            }
+
+            PreferenceGroup(title = stringRes(R.string.settings__sync__group_channel)) {
+                SyncChannelPreference(
+                    selected = activeChannel is SyncChannel.Syncthing,
+                    title = stringRes(R.string.settings__sync__channel_syncthing),
+                    summary = stringRes(R.string.settings__sync__channel_syncthing_summary),
+                    onClick = { syncthingDialogVisible = true },
+                )
+                SyncChannelPreference(
+                    selected = activeChannel is SyncChannel.LocalFolder,
+                    title = stringRes(R.string.settings__sync__channel_local_folder),
+                    summary = stringRes(R.string.settings__sync__channel_local_folder_summary),
+                    onClick = { folderLauncher.launch(null) },
+                )
+                SyncChannelPreference(
+                    selected = activeChannel is SyncChannel.ManualExport,
+                    title = stringRes(R.string.settings__sync__channel_manual_export),
+                    summary = manualExportTargetUri.ifBlank { manualExportDefaultSummary },
+                    onClick = { manualExportLauncher.launch(SYNC_FILE_NAME) },
+                )
+                SyncChannelPreference(
+                    selected = activeChannel is SyncChannel.Disabled,
+                    title = stringRes(R.string.settings__sync__channel_disabled),
+                    summary = stringRes(R.string.settings__sync__channel_disabled_summary),
+                    onClick = { setChannel(SyncChannel.Disabled) },
+                )
+            }
+
+            PreferenceGroup(title = stringRes(R.string.settings__sync__group_pairing)) {
+                Preference(
+                    icon = Icons.Default.QrCode2,
+                    title = stringRes(R.string.settings__sync__pair_new_device),
+                    summary = stringRes(R.string.settings__sync__pair_new_device_summary),
+                    onClick = { generatePairingPayload() },
+                )
+                Preference(
+                    icon = Icons.Default.ContentPaste,
+                    title = stringRes(R.string.settings__sync__receive_pairing),
+                    summary = stringRes(R.string.settings__sync__receive_pairing_summary),
+                    onClick = { startReceivePairing() },
+                )
+                generatedPayload?.let { raw ->
+                    SyncQrPayloadCard(raw)
+                }
+            }
+
+            PreferenceGroup(title = stringRes(R.string.settings__sync__group_devices)) {
+                if (pairedDevices.isEmpty()) {
+                    Text(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+                        text = stringRes(R.string.settings__sync__no_paired_devices),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 280.dp),
+                    ) {
+                        items(pairedDevices, key = { it.deviceId }) { device ->
+                            PairedDeviceRow(device)
+                        }
                     }
                 }
             }
