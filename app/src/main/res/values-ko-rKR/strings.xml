@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">FlorisBoard</string>
+    <string name="app_name">SwiftFloris</string>
     <string name="key__phone_pause" comment="Label for the Pause key in the telephone keyboard layout">일시정지</string>
     <string name="key__phone_wait" comment="Label for the Wait key in the telephone keyboard layout">대기</string>
     <string name="key_popup__threedots_alt" comment="Content description for the three-dots icon in a key popup">삼점 아이콘입니다. 이 아이콘이 보인다면 길게 눌러서 더 많은 글자를 사용할 수 있습니다.</string>

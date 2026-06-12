@@ -1,0 +1,2 @@
+Public release metadata now matches the shipped version.
+GitHub issue templates point to SwiftFloris instead of upstream FlorisBoard, and localized app-name overrides no longer display FlorisBoard.

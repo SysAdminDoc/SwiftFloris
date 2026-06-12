@@ -6,7 +6,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thank you for your help in making FlorisBoard better!
+        Thank you for your help in making SwiftFloris better!
 
         Guide to a good feature-request:
         • Please search existing proposals to avoid creating duplicates.
@@ -25,11 +25,11 @@ body:
     attributes:
       label: "Checklist"
       options:
-        - label: "I made sure that there are *no existing issues* - [open](https://github.com/florisboard/florisboard/issues) or [closed](https://github.com/florisboard/florisboard/issues?q=is%3Aissue+is%3Aclosed) - which I could contribute my information to."
+        - label: "I made sure that there are *no existing issues* - [open](https://github.com/SysAdminDoc/SwiftFloris/issues) or [closed](https://github.com/SysAdminDoc/SwiftFloris/issues?q=is%3Aissue+is%3Aclosed) - which I could contribute my information to."
           required: true
-        - label: "I have read and understood the [contribution guidelines](https://github.com/florisboard/florisboard/blob/main/CONTRIBUTING.md)."
+        - label: "I have read and understood the [SwiftFloris contribution notes](https://github.com/SysAdminDoc/SwiftFloris#contributing)."
           required: true
-        - label: "I have read and understood the [AI policy](https://github.com/florisboard/florisboard/blob/main/AI_POLICY.md)."
+        - label: "I understand SwiftFloris will not add network permission, telemetry, account binding, GPL-linked base-app code, or closed-source blobs for this feature."
           required: true
         - label: "I have taken the time to fill in all the required details. I understand that the feature request will be dismissed otherwise."
           required: true
