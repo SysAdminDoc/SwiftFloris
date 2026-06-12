@@ -43,6 +43,7 @@ class SwiftKeyTraceFixtureExporterTest : FunSpec({
         fixture.containsKey("timestampMs") shouldBe false
         fixture.containsKey("textBeforeCursorLength") shouldBe false
         fixture.containsKey("previousWords") shouldBe false
+        fixture.containsKey("touchEvidence") shouldBe false
         fixture.array("tags").toStringList() shouldContain "local-trace"
         fixture.array("expectedRanked").toStringList() shouldBe listOf("gello", "hello", "fello")
         fixture.getObject("expectedRoles").string("hello") shouldBe "SpatialCorrection"

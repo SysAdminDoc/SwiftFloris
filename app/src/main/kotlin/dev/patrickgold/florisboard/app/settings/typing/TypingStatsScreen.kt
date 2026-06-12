@@ -82,8 +82,9 @@ fun TypingStatsScreen() = FlorisScreen {
         }
     }
 
-    fun shareTraceFile(asReplayFixtures: Boolean = false) {
+    fun shareTraceFile(action: TypingTraceAction) {
         scope.launch {
+            val asReplayFixtures = action == TypingTraceAction.ShareReplayFixtures
             val exportFile = withContext(Dispatchers.IO) {
                 val recorder = SwiftKeyTypingTraceRecorder(context)
                 if (asReplayFixtures) {
@@ -125,6 +126,7 @@ fun TypingStatsScreen() = FlorisScreen {
     content {
         var showEraseEverythingConfirm by remember { mutableStateOf(false) }
         var showResetAllConfirm by remember { mutableStateOf(false) }
+        var showRawTraceShareConfirm by remember { mutableStateOf(false) }
 
         PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_corpus)) {
             Preference(
@@ -270,7 +272,35 @@ fun TypingStatsScreen() = FlorisScreen {
             }
         }
 
+        if (showRawTraceShareConfirm) {
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__typing_stats__trace_share__confirm_title),
+                confirmLabel = stringRes(R.string.settings__typing_stats__trace_share__confirm_button),
+                onConfirm = {
+                    showRawTraceShareConfirm = false
+                    shareTraceFile(TypingTraceAction.ShareRawTrace)
+                },
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = { showRawTraceShareConfirm = false },
+            ) {
+                Text(stringRes(R.string.settings__typing_stats__trace_share__confirm_message))
+            }
+        }
+
         PreferenceGroup(title = stringRes(R.string.settings__typing_stats__group_diagnostics)) {
+            val traceFileBytes = stats?.traceFileBytes ?: 0L
+            val rawTraceShareState = TypingTraceExportPolicy.stateFor(
+                TypingTraceAction.ShareRawTrace,
+                traceFileBytes,
+            )
+            val replayFixtureShareState = TypingTraceExportPolicy.stateFor(
+                TypingTraceAction.ShareReplayFixtures,
+                traceFileBytes,
+            )
+            val clearTraceState = TypingTraceExportPolicy.stateFor(
+                TypingTraceAction.ClearTrace,
+                traceFileBytes,
+            )
             Preference(
                 title = stringRes(R.string.settings__typing_stats__trace_capture),
                 summary = stats?.let { current ->
@@ -302,19 +332,25 @@ fun TypingStatsScreen() = FlorisScreen {
             Preference(
                 title = stringRes(R.string.settings__typing_stats__trace_share),
                 summary = stringRes(R.string.settings__typing_stats__trace_share__summary),
-                enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
-                onClick = { shareTraceFile() },
+                enabledIf = { rawTraceShareState.enabled },
+                onClick = {
+                    if (rawTraceShareState.requiresSensitiveContentConfirmation) {
+                        showRawTraceShareConfirm = true
+                    } else {
+                        shareTraceFile(TypingTraceAction.ShareRawTrace)
+                    }
+                },
             )
             Preference(
                 title = stringRes(R.string.settings__typing_stats__trace_fixture_share),
                 summary = stringRes(R.string.settings__typing_stats__trace_fixture_share__summary),
-                enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
-                onClick = { shareTraceFile(asReplayFixtures = true) },
+                enabledIf = { replayFixtureShareState.enabled },
+                onClick = { shareTraceFile(TypingTraceAction.ShareReplayFixtures) },
             )
             Preference(
                 title = stringRes(R.string.settings__typing_stats__trace_clear),
                 summary = stringRes(R.string.settings__typing_stats__trace_clear__summary),
-                enabledIf = { (stats?.traceFileBytes ?: 0L) > 0L },
+                enabledIf = { clearTraceState.enabled },
                 onClick = {
                     resetAndRefresh(R.string.settings__typing_stats__trace_clear__toast) {
                         SwiftKeyTypingTraceRecorder(context).clearTraceFile()
