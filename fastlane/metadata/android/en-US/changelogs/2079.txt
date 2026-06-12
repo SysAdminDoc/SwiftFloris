@@ -1,0 +1,1 @@
+Derived Settings surface tints from the selected accent instead of a fixed green palette.
