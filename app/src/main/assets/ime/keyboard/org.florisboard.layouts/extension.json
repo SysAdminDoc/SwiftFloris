@@ -225,6 +225,12 @@
         "direction": "ltr"
       },
       {
+        "id": "thumb_experimental",
+        "label": "Thumb Experimental",
+        "authors": [ "SwiftFloris Contributors" ],
+        "direction": "ltr"
+      },
+      {
         "id": "hebrew",
         "label": "עברית",
         "authors": [ "Antony" ],
