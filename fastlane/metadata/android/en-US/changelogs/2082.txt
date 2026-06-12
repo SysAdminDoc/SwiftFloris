@@ -1,0 +1,2 @@
+Added per-app keyboard profile plumbing for app-specific adaptive accent, incognito, clipboard history, suggestions, and smartbar gesture sets.
+Surfaced configured per-app profile count in Privacy posture settings and Settings search.

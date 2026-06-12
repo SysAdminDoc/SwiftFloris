@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 195
+        rows shouldHaveSize 196
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -207,6 +207,7 @@ physical_keyboard__show_on_screen_keyboard	b	false
 privacy__addon_consent_mcp	s	NEEDS_PROMPT
 privacy__addon_consent_smart_compose	s	NEEDS_PROMPT
 privacy__addon_consent_translation	s	NEEDS_PROMPT
+privacy__per_app_keyboard_profiles	s	{}
 smartbar__action_arrangement	s	{"stickyAction":null,"dynamicActions":[{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-131,"label":"undo"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-132,"label":"redo"}},{"$":"insert_key","data":{"$":"text_key","code":-301,"label":"settings"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-109,"label":"toggle_floating_window"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-115,"label":"toggle_resize_mode"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-213,"label":"ime_ui_mode_clipboard"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-212,"label":"ime_ui_mode_media"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-110,"label":"toggle_compact_layout"}},{"$":"insert_key","data":{"$":"text_key","type":"function","code":-245,"label":"toggle_autocorrect"}},{"$":"insert_key","data":{"$":"text_key","type":"function","code":-244,"label":"toggle_incognito_mode"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-23,"label":"arrow_up"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-24,"label":"arrow_down"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-21,"label":"arrow_left"}},{"$":"insert_key","data":{"$":"text_key","type":"navigation","code":-22,"label":"arrow_right"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-38,"label":"clipboard_clear_primary_clip"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-31,"label":"clipboard_copy"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-32,"label":"clipboard_cut"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-33,"label":"clipboard_paste"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-35,"label":"clipboard_select_all"}},{"$":"insert_key","data":{"$":"text_key","type":"system_gui","code":-227,"label":"language_switch"}},{"$":"insert_key","data":{"$":"text_key","type":"enter_editing","code":-9,"label":"forward_delete"}},{"$":"insert_key","data":{"$":"text_key","type":"function","code":-232,"label":"ime_hide_ui"}}],"hiddenActions":[{"$":"insert_task"},{"$":"insert_calendar_event"}]}
 smartbar__enabled	b	true
 smartbar__extended_actions_expanded	b	false

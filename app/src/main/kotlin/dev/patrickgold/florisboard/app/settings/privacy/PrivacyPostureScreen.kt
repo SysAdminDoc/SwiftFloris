@@ -22,6 +22,7 @@ import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
@@ -38,6 +39,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviderState
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
@@ -79,6 +81,7 @@ fun PrivacyPostureScreen() = FlorisScreen {
     val addonSigningPins by prefs.addon.signingCertPins.collectAsState()
     val mcpSigningPins by prefs.mcp.signingCertPins.collectAsState()
     val mcpDisabledDaemons by prefs.mcp.disabledDaemonPackages.collectAsState()
+    val perAppKeyboardProfiles by prefs.privacy.perAppKeyboardProfiles.collectAsState()
     val smartComposeConsent by prefs.privacy.smartComposeConsent.collectAsState()
     val translationConsent by prefs.privacy.translationConsent.collectAsState()
     val mcpConsent by prefs.privacy.mcpConsent.collectAsState()
@@ -199,6 +202,15 @@ fun PrivacyPostureScreen() = FlorisScreen {
                 title = stringRes(R.string.settings__privacy_audit__title),
                 summary = stringRes(R.string.settings__privacy_audit__home_summary),
                 onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
+            )
+            Preference(
+                icon = Icons.Default.Apps,
+                title = stringRes(R.string.settings__privacy_posture__per_app_profiles_title),
+                summary = stringRes(
+                    R.string.settings__privacy_posture__per_app_profiles_summary,
+                    "count" to PerAppKeyboardProfiles.count(perAppKeyboardProfiles),
+                ),
+                onClick = { navController.navigate(Routes.Settings.Smartbar) },
             )
         }
 

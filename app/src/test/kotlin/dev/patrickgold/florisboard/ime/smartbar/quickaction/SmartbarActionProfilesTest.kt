@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.smartbar.quickaction
 import android.text.InputType
 import android.view.inputmethod.EditorInfo
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
+import dev.patrickgold.florisboard.ime.profile.PerAppGestureSet
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -161,6 +162,29 @@ class SmartbarActionProfilesTest : FunSpec({
 
         SmartbarActionProfiles.detect(editorInfo) shouldBe null
         SmartbarActionProfiles.apply(base, editorInfo, enabled = true) shouldBe base
+    }
+
+    test("forced per-app code gesture set wins for otherwise unmatched apps") {
+        val base = arrangement(
+            dynamicActions = listOf(action(TextKeyData.SETTINGS), action(TextKeyData.CLIPBOARD_PASTE)),
+            hiddenActions = listOf(action(TextKeyData.TAB), action(TextKeyData.ESCAPE)),
+        )
+        val editorInfo = editorInfo(
+            packageName = "com.example.notes",
+            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_NORMAL,
+        )
+
+        val result = SmartbarActionProfiles.apply(
+            base = base,
+            editorInfo = editorInfo,
+            enabled = true,
+            forcedGestureSet = PerAppGestureSet.CODE,
+        )
+
+        result.dynamicActions.take(2) shouldBe listOf(
+            action(TextKeyData.TAB),
+            action(TextKeyData.ESCAPE),
+        )
     }
 })
 

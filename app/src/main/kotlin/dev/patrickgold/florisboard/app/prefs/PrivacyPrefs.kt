@@ -31,6 +31,7 @@ import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
 import dev.patrickgold.florisboard.ime.input.HapticVibrationMode
 import dev.patrickgold.florisboard.ime.input.InputFeedbackActivationMode
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
 import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHairStyle
@@ -88,5 +89,9 @@ open class PrivacyPrefs : PreferenceModel() {
     val mcpConsent = enum(
         key = "privacy__addon_consent_mcp",
         default = AddonConsentState.NEEDS_PROMPT,
+    )
+    val perAppKeyboardProfiles = string(
+        key = "privacy__per_app_keyboard_profiles",
+        default = PerAppKeyboardProfiles.EmptyJson,
     )
 }

@@ -207,6 +207,7 @@ object SettingsSearchIndex {
         entry("addons", R.string.settings__addons__title, R.string.settings__addons__title, R.string.settings__home__addons_summary, SettingsSearchDestination.ADDONS, "apk dictionary packs rejected install"),
         entry("extensions", R.string.ext__home__title, R.string.ext__home__title, R.string.settings__home__extensions_summary, SettingsSearchDestination.EXTENSIONS, "keyboard theme language extension"),
         entry("privacy-posture", R.string.settings__privacy_posture__title, R.string.settings__privacy_posture__title, R.string.settings__privacy_posture__home_summary, SettingsSearchDestination.PRIVACY_POSTURE, "privacy posture simple mode power saving focus mode low distraction no internet clipboard learning addons voice"),
+        entry("privacy-posture.per-app-profiles", R.string.settings__privacy_posture__title, R.string.settings__privacy_posture__per_app_profiles_title, R.string.settings__privacy_posture__per_app_profiles_summary, SettingsSearchDestination.PRIVACY_POSTURE, "per app package profile adaptive accent incognito clipboard suggestions gestures"),
         entry("privacy-audit", R.string.settings__privacy_audit__title, R.string.settings__privacy_audit__title, R.string.settings__privacy_audit__home_summary, SettingsSearchDestination.PRIVACY_AUDIT, "local audit log addon privacy data safety"),
 
         entry("other", R.string.settings__other__title, R.string.settings__other__title, R.string.settings__home__other_summary, SettingsSearchDestination.OTHER, "system advanced"),

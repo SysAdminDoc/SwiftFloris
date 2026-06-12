@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
+import dev.patrickgold.florisboard.ime.profile.PerAppGestureSet
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.keyboardManager
@@ -53,12 +55,25 @@ fun QuickActionsRow(
     val smartbarLayout by prefs.smartbar.layout.collectAsState()
     val actionArrangement by prefs.smartbar.actionArrangement.collectAsState()
     val perAppProfilesEnabled by prefs.smartbar.perAppProfilesEnabled.collectAsState()
+    val perAppKeyboardProfiles by prefs.privacy.perAppKeyboardProfiles.collectAsState()
     val sharedActionsExpanded by prefs.smartbar.sharedActionsExpanded.collectAsState()
-    val profiledActionArrangement = remember(actionArrangement, evaluator.editorInfo, perAppProfilesEnabled) {
+    val forcedGestureSet = remember(perAppKeyboardProfiles, evaluator.editorInfo.packageName) {
+        PerAppKeyboardProfiles.resolve(
+            rawJson = perAppKeyboardProfiles,
+            packageName = evaluator.editorInfo.packageName,
+        )?.gestureSet ?: PerAppGestureSet.FOLLOW_GLOBAL
+    }
+    val profiledActionArrangement = remember(
+        actionArrangement,
+        evaluator.editorInfo,
+        perAppProfilesEnabled,
+        forcedGestureSet,
+    ) {
         SmartbarActionProfiles.apply(
             base = actionArrangement,
             editorInfo = evaluator.editorInfo,
             enabled = perAppProfilesEnabled,
+            forcedGestureSet = forcedGestureSet,
         )
     }
 
