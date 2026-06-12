@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
@@ -51,6 +52,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.SnyggBox
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
@@ -216,6 +218,11 @@ private fun ExistingGroupRow(
     background: Color,
     onClick: () -> Unit,
 ) {
+    val groupNameMaxLines = DynamicFontScale.maxLines(
+        compact = 1,
+        expanded = 2,
+        fontScale = LocalDensity.current.fontScale,
+    )
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -239,7 +246,7 @@ private fun ExistingGroupRow(
             text = groupName,
             color = foreground,
             fontSize = 13.sp,
-            maxLines = 1,
+            maxLines = groupNameMaxLines,
             overflow = TextOverflow.Ellipsis,
         )
         if (preview.isNotBlank()) {

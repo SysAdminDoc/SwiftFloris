@@ -65,4 +65,26 @@ class DynamicFontScaleTest : FunSpec({
             fontScale = 1.30f,
         ) shouldBe 48f
     }
+
+    test("fixedGeometrySp keeps normal font scale unmodified") {
+        DynamicFontScale.fixedGeometrySp(
+            baseSp = 16f,
+            fontScale = 1.20f,
+        ).value shouldBe 16f
+    }
+
+    test("fixedGeometrySp caps rendered size for fixed IME rows") {
+        DynamicFontScale.fixedGeometrySp(
+            baseSp = 16f,
+            fontScale = 2.00f,
+        ).value shouldBe 10.8f
+    }
+
+    test("fixedGeometrySp normalizes invalid inputs") {
+        DynamicFontScale.fixedGeometrySp(
+            baseSp = -1f,
+            fontScale = 0f,
+            maxRenderedScale = 0f,
+        ).value shouldBe 1f
+    }
 })

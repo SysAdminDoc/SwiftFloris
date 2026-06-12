@@ -113,6 +113,7 @@ import dev.patrickgold.florisboard.ime.smartbar.VerticalExitTransition
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -294,6 +295,7 @@ fun ClipboardInputLayout(
     ) {
         val style = rememberSnyggThemeQuery(FlorisImeUi.ClipboardSearchRow.elementName)
         val searchDescription = stringRes(R.string.clipboard__search__label)
+        val searchFontSize = DynamicFontScale.fixedGeometrySp(16f, LocalDensity.current.fontScale)
         SnyggRow(
             elementName = FlorisImeUi.ClipboardSearchRow.elementName,
             modifier = Modifier
@@ -318,7 +320,7 @@ fun ClipboardInputLayout(
                 singleLine = true,
                 textStyle = TextStyle(
                     color = style.foreground(),
-                    fontSize = 16.sp,
+                    fontSize = searchFontSize,
                 ),
                 decorationBox = { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -326,7 +328,7 @@ fun ClipboardInputLayout(
                             Text(
                                 text = stringRes(R.string.clipboard__search__placeholder),
                                 color = style.foreground().copy(alpha = 0.58f),
-                                fontSize = 16.sp,
+                                fontSize = searchFontSize,
                             )
                         }
                         innerTextField()

@@ -100,6 +100,7 @@ import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidKeyguardManager
@@ -284,6 +285,7 @@ fun EmojiPaletteView(
     ) {
         val inputFeedbackController = LocalInputFeedbackController.current
         val style = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
+        val searchFontSize = DynamicFontScale.fixedGeometrySp(16f, LocalDensity.current.fontScale)
         SnyggRow(
             elementName = FlorisImeUi.MediaEmojiTab.elementName,
             modifier = Modifier
@@ -305,7 +307,7 @@ fun EmojiPaletteView(
                 singleLine = true,
                 textStyle = TextStyle(
                     color = style.foreground(),
-                    fontSize = 16.sp,
+                    fontSize = searchFontSize,
                 ),
                 decorationBox = { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -313,7 +315,7 @@ fun EmojiPaletteView(
                             Text(
                                 text = stringRes(R.string.emoji__search__placeholder),
                                 color = style.foreground().copy(alpha = 0.58f),
-                                fontSize = 16.sp,
+                                fontSize = searchFontSize,
                             )
                         }
                         innerTextField()

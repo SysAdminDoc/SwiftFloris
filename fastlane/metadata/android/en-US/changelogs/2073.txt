@@ -1,0 +1,1 @@
+Fixed-height keyboard chrome now applies a tested font-scale policy for clipboard search, emoji search, pinned emoji groups, and honeycomb preview labels.

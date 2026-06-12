@@ -39,13 +39,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
@@ -113,6 +114,9 @@ private fun PinnedGroupChip(
     val baseColor = foreground.copy(alpha = 0.10f)
     val pressedColor = foreground.copy(alpha = 0.20f)
     val badgeColor = foreground.copy(alpha = 0.16f)
+    val fontScale = LocalDensity.current.fontScale
+    val chipFontSize = DynamicFontScale.fixedGeometrySp(13f, fontScale)
+    val countFontSize = DynamicFontScale.fixedGeometrySp(10f, fontScale)
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
@@ -148,11 +152,11 @@ private fun PinnedGroupChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp),
         ) {
-            Text(text = chip.name, fontSize = 13.sp, color = foreground)
+            Text(text = chip.name, fontSize = chipFontSize, color = foreground)
             if (chip.previewEmojis.isNotEmpty()) {
                 Text(
                     text = chip.previewEmojis.joinToString(separator = ""),
-                    fontSize = 13.sp,
+                    fontSize = chipFontSize,
                 )
             }
             Box(
@@ -164,7 +168,7 @@ private fun PinnedGroupChip(
             ) {
                 Text(
                     text = chip.totalEmojiCount.toString(),
-                    fontSize = 10.sp,
+                    fontSize = countFontSize,
                     color = foreground.copy(alpha = 0.84f),
                 )
             }
