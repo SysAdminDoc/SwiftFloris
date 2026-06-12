@@ -1,0 +1,1 @@
+Settings now includes a privacy posture dashboard with network, learning, clipboard, addon, voice, export, and reversible Simple Mode controls.

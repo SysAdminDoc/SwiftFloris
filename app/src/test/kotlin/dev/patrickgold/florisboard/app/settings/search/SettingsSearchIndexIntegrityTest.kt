@@ -124,6 +124,7 @@ private val expectedRoutes = mapOf<SettingsSearchDestination, Any>(
     SettingsSearchDestination.PHYSICAL_KEYBOARD to Routes.Settings.PhysicalKeyboard,
     SettingsSearchDestination.BACKUP to Routes.Settings.Backup,
     SettingsSearchDestination.RESTORE to Routes.Settings.Restore,
+    SettingsSearchDestination.PRIVACY_POSTURE to Routes.Settings.PrivacyPosture,
     SettingsSearchDestination.PRIVACY_AUDIT to Routes.Settings.PrivacyAuditLog,
     SettingsSearchDestination.ABOUT to Routes.Settings.About,
     SettingsSearchDestination.AI_FEATURES to Routes.Settings.AiFeatures,

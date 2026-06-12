@@ -106,7 +106,7 @@ fun HomeScreen() = FlorisScreen {
             text = stringRes(R.string.settings__home__privacy_posture),
             secondaryText = stringRes(R.string.settings__home__privacy_posture_summary),
             actionLabel = stringRes(R.string.settings__home__privacy_posture_action),
-            onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
+            onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
         )
 
         PreferenceGroup(title = stringRes(R.string.settings__home__section_typing)) {
@@ -190,9 +190,9 @@ fun HomeScreen() = FlorisScreen {
             )
             Preference(
                 icon = Icons.Default.Shield,
-                title = stringRes(R.string.settings__privacy_audit__title),
-                summary = stringRes(R.string.settings__privacy_audit__home_summary),
-                onClick = { navController.navigate(Routes.Settings.PrivacyAuditLog) },
+                title = stringRes(R.string.settings__privacy_posture__title),
+                summary = stringRes(R.string.settings__privacy_posture__home_summary),
+                onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
             )
             Preference(
                 icon = Icons.Default.Archive,
