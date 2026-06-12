@@ -1,0 +1,1 @@
+Public docs now track the security policy, reproducible-build guide, and README architecture links for reviewers and contributors.
