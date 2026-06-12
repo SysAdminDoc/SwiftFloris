@@ -192,6 +192,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
                 resetSuggestions(content)
             }
+            editorInstance.commitAdjacencyBrokenFlow.collectIn(scope) {
+                resetLearnChain()
+            }
             // A field/app switch breaks word adjacency — without this reset the
             // first word typed in the new field forms a phantom bigram/trigram
             // with the last word learned in the previous field (e.g. Slack

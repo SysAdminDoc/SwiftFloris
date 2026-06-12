@@ -33,7 +33,9 @@ import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -99,6 +101,8 @@ abstract class AbstractEditorInstance(context: Context) {
     private val _lastCommitPosition = LastCommitPosition()
     val lastCommitPosition
         get() = LastCommitPosition(_lastCommitPosition)
+    private val _commitAdjacencyBrokenFlow = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    val commitAdjacencyBrokenFlow = _commitAdjacencyBrokenFlow.asSharedFlow()
 
     fun expectedContent(): EditorContent? {
         return runBlocking { expectedContentQueue.peekNewestOrNull() }
@@ -164,7 +168,7 @@ abstract class AbstractEditorInstance(context: Context) {
         if (composing.isValid) {
             currentInputConnection()?.setComposingRegion(EditorRange.Unspecified)
         }
-        _lastCommitPosition.handleUpdateSelection(newSelection)
+        notifyCommitAdjacencyBrokenIfNeeded(_lastCommitPosition.handleUpdateSelection(newSelection))
     }
 
     open fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {
@@ -178,7 +182,7 @@ abstract class AbstractEditorInstance(context: Context) {
             return
         }
 
-        _lastCommitPosition.handleUpdateSelection(newSelection)
+        notifyCommitAdjacencyBrokenIfNeeded(_lastCommitPosition.handleUpdateSelection(newSelection))
         val expected = runBlocking {
             expectedContentQueue.popUntilOrNull {
                 it.selection == newSelection && it.composing == composing &&
@@ -270,6 +274,12 @@ abstract class AbstractEditorInstance(context: Context) {
         pendingContentGenerationJob?.cancel()
         pendingContentGenerationJob = null
         contentGenerationSerial += 1
+    }
+
+    private fun notifyCommitAdjacencyBrokenIfNeeded(broken: Boolean) {
+        if (broken) {
+            _commitAdjacencyBrokenFlow.tryEmit(Unit)
+        }
     }
 
     private fun isCurrentContentGeneration(serial: Long, inputConnection: InputConnection): Boolean {
@@ -779,11 +789,14 @@ abstract class AbstractEditorInstance(context: Context) {
             }
         }
 
-        fun handleUpdateSelection(selection: EditorRange) {
+        fun handleUpdateSelection(selection: EditorRange): Boolean {
             val start = min(selection.start, selection.end)
             if (selection.isNotValid || start != pos) {
+                val wasTrackingCommit = pos >= 0
                 reset()
+                return wasTrackingCommit
             }
+            return false
         }
 
         fun handleDelete(selection: EditorRange) {

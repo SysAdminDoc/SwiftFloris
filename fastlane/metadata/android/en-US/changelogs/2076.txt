@@ -1,0 +1,1 @@
+Fixes personal next-word learning so cursor jumps within the same field break stale bigram and trigram chains before the next committed word.
