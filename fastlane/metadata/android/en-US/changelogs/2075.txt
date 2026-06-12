@@ -1,0 +1,1 @@
+Adds high-contrast visual coverage for nested IME surfaces and improves clipboard popup action text contrast in the bundled high-contrast theme.

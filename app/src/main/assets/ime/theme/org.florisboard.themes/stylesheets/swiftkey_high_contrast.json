@@ -350,10 +350,12 @@
     "shadow-elevation": "2dp"
   },
   "clipboard-item-action": {
+    "foreground": "var(--on-surface)",
     "font-size": "16sp",
     "padding": "12dp"
   },
   "clipboard-item-action-text": {
+    "foreground": "var(--on-surface)",
     "margin": "4dp 0dp 0dp 0dp"
   },
   "clipboard-clear-all-dialog": {
