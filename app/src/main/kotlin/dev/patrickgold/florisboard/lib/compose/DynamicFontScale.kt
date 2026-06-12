@@ -16,8 +16,12 @@
 
 package dev.patrickgold.florisboard.lib.compose
 
+import androidx.compose.ui.unit.TextUnit
+import androidx.compose.ui.unit.sp
+
 internal object DynamicFontScale {
     private const val ExpandedLayoutThreshold = 1.30f
+    private const val FixedGeometryMaxRenderedScale = 1.35f
 
     fun maxLines(
         compact: Int,
@@ -37,5 +41,21 @@ internal object DynamicFontScale {
         val compactHeight = compact.coerceAtLeast(0f)
         val expandedHeight = expanded.coerceAtLeast(compactHeight)
         return if (fontScale >= ExpandedLayoutThreshold) expandedHeight else compactHeight
+    }
+
+    fun fixedGeometrySp(
+        baseSp: Float,
+        fontScale: Float,
+        maxRenderedScale: Float = FixedGeometryMaxRenderedScale,
+    ): TextUnit {
+        val safeBaseSp = baseSp.coerceAtLeast(1f)
+        val safeFontScale = fontScale.takeIf { it > 0f } ?: 1f
+        val safeMaxRenderedScale = maxRenderedScale.coerceAtLeast(1f)
+        val compensatedSp = if (safeFontScale > safeMaxRenderedScale) {
+            safeBaseSp * safeMaxRenderedScale / safeFontScale
+        } else {
+            safeBaseSp
+        }
+        return compensatedSp.sp
     }
 }

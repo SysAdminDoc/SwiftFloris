@@ -31,7 +31,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.platform.LocalDensity
+import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 
 /**
  * ROADMAP §8 L9.2 — single-cell composable for honeycomb-tiled
@@ -72,6 +73,7 @@ fun HoneycombHexButton(
     textColor: Color = Color(0xFFE6E6F0),
 ) {
     var pressed by remember { mutableStateOf(false) }
+    val labelFontSize = DynamicFontScale.fixedGeometrySp(16f, LocalDensity.current.fontScale)
     Box(
         modifier = modifier
             .clip(HoneycombHexShape)
@@ -93,6 +95,6 @@ fun HoneycombHexButton(
             .fillMaxSize(),
         contentAlignment = Alignment.Center,
     ) {
-        Text(text = label, fontSize = 16.sp, color = textColor)
+        Text(text = label, fontSize = labelFontSize, color = textColor)
     }
 }
