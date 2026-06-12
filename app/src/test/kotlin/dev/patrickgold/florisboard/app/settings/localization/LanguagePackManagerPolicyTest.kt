@@ -16,7 +16,13 @@
 
 package dev.patrickgold.florisboard.app.settings.localization
 
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
+import dev.patrickgold.florisboard.ime.nlp.LanguagePackKind
+import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
+import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 
 class LanguagePackManagerPolicyTest : FunSpec({
@@ -54,4 +60,84 @@ class LanguagePackManagerPolicyTest : FunSpec({
             lastTerminalNotice = null,
         ) shouldBe LanguagePackManagerNotice.None
     }
+
+    test("catalog marks Han packs active only when a component matches an active subtype") {
+        val entries = LanguagePackManagerPolicy.catalogEntries(
+            extensions = listOf(
+                languagePackExtension(
+                    id = "org.example.zh",
+                    title = "Chinese Tables",
+                    components = listOf(languagePackComponent("zh-Hans"), languagePackComponent("zh-Hant")),
+                ),
+            ),
+            activeLocaleTags = setOf("zh_HANS", "en"),
+        )
+
+        entries.shouldHaveSize(1)
+        entries.single().state shouldBe LanguagePackRuntimeState.ActiveForSubtype
+        entries.single().activeComponentCount shouldBe 1
+        entries.single().components.first { it.localeTag == "zh_HANS" }.isActive shouldBe true
+        entries.single().components.first { it.localeTag == "zh_HANT" }.isActive shouldBe false
+    }
+
+    test("catalog keeps installed Han packs in standby when no active subtype matches") {
+        val entries = LanguagePackManagerPolicy.catalogEntries(
+            extensions = listOf(
+                languagePackExtension(
+                    id = "org.example.wubi",
+                    title = "Wubi Tables",
+                    components = listOf(languagePackComponent("zh-Hans")),
+                ),
+            ),
+            activeLocaleTags = setOf("en"),
+        )
+
+        entries.single().state shouldBe LanguagePackRuntimeState.InstalledStandby
+        entries.single().activeComponentCount shouldBe 0
+    }
+
+    test("catalog shows generic language packs without making them Han startup inputs") {
+        val entries = LanguagePackManagerPolicy.catalogEntries(
+            extensions = listOf(
+                languagePackExtension(
+                    id = "org.example.generic",
+                    title = "Generic Pack",
+                    kind = LanguagePackKind.GENERIC,
+                    components = listOf(languagePackComponent("ja")),
+                ),
+            ),
+            activeLocaleTags = setOf("ja"),
+        )
+
+        entries.single().kind shouldBe LanguagePackKind.GENERIC
+        entries.single().state shouldBe LanguagePackRuntimeState.MetadataOnly
+        entries.single().activeComponentCount shouldBe 1
+    }
 })
+
+private fun languagePackExtension(
+    id: String,
+    title: String,
+    kind: LanguagePackKind = LanguagePackKind.HAN_SHAPE_BASED,
+    components: List<LanguagePackComponent>,
+): LanguagePackExtension {
+    return LanguagePackExtension(
+        meta = ExtensionMeta(
+            id = id,
+            version = "1.0",
+            title = title,
+            maintainers = listOf(ExtensionMaintainer("SwiftFloris")),
+            license = "Apache-2.0",
+        ),
+        kind = kind,
+        items = components,
+    )
+}
+
+private fun languagePackComponent(localeTag: String): LanguagePackComponent {
+    return LanguagePackComponent(
+        id = localeTag,
+        label = localeTag,
+        authors = listOf("SwiftFloris"),
+    )
+}

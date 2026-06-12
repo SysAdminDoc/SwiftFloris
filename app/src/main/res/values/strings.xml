@@ -255,6 +255,13 @@
     <string name="settings__localization__language_pack_summary" comment="Summary of preference item for adding a new language pack">Install and manage language extensions for layouts, dictionaries, and language-specific input</string>
     <string name="settings__localization__language_pack_empty_title">No language packs installed</string>
     <string name="settings__localization__language_pack_empty_message">Import a trusted language-pack extension to add dictionaries, layouts, or language-specific input data. Built-in language resources remain available.</string>
+    <string name="settings__localization__language_pack_kind_han">Han shape-based</string>
+    <string name="settings__localization__language_pack_kind_generic">Generic</string>
+    <string name="settings__localization__language_pack_extension_active_summary">{active}/{total} matching current keyboard languages; {kind} pack loads only for active matching subtypes.</string>
+    <string name="settings__localization__language_pack_extension_standby_summary">0/{total} matching current keyboard languages; {kind} pack stays unloaded until you add or switch to a matching subtype.</string>
+    <string name="settings__localization__language_pack_extension_metadata_summary">{total} component(s); generic pack is visible in Settings and ignored by Han shape-based startup loading.</string>
+    <string name="settings__localization__language_pack_component_active_summary">{locale} — active for a current keyboard language</string>
+    <string name="settings__localization__language_pack_component_standby_summary">{locale} — installed, not active for current keyboard languages</string>
     <string name="settings__localization__language_pack_delete_in_progress">Deleting language pack</string>
     <string name="settings__localization__language_pack_delete_in_progress_summary">Keep this screen open while SwiftFloris removes the selected language pack and refreshes the installed list.</string>
     <string name="settings__localization__language_pack_delete_success">Language pack deleted</string>
