@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
-    <string name="app_name">FlorisBoard</string>
+    <string name="app_name">SwiftFloris</string>
     <string name="key__phone_pause" comment="Label for the Pause key in the telephone keyboard layout">Pausar</string>
     <string name="key__phone_wait" comment="Label for the Wait key in the telephone keyboard layout">Esperar</string>
     <string name="key_popup__threedots_alt" comment="Content description for the three-dots icon in a key popup">Ícone de três pontos. Se mostrado, indica que mais letras podem ser usadas ao pressionar e segurar a tecla.</string>
