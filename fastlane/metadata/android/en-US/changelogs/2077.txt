@@ -1,0 +1,1 @@
+Raised fixed IME chrome touch targets to the 48dp accessibility baseline.

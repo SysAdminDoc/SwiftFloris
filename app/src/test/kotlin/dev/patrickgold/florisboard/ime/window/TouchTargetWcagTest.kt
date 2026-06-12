@@ -113,4 +113,24 @@ class TouchTargetWcagTest : FunSpec({
         val constraints = ImeWindowConstraints.of(rootInsets, ImeWindowMode.Fixed.NORMAL)
         constraints.resizeHandleTouchSize shouldBeGreaterThanOrEqualTo 48.dp
     }
+
+    test("PHONE_PORTRAIT smartbar chrome rows meet the 48dp touch target") {
+        val density = Density(density = 1f, fontScale = 1f)
+        val rootInsets = with(density) {
+            ImeInsets.Root.of(IntRect(0, 0, typicalPhoneWidthDp, typicalPhoneHeightDp))
+        }
+        val constraints = ImeWindowConstraints.of(rootInsets, ImeWindowMode.Fixed.NORMAL)
+        val spec = ImeWindowSpec.Fixed(
+            fixedMode = ImeWindowMode.Fixed.NORMAL,
+            props = constraints.defaultProps,
+            constraints = constraints,
+            userPreferredOptions = ImeWindowSpec.UserPreferredOptions(
+                keySpacingFactorH = 1f,
+                keySpacingFactorV = 1f,
+                fontScale = 1f,
+            ),
+        )
+
+        spec.calcSmartbarRowHeight(spec.props.keyboardHeight) shouldBeGreaterThanOrEqualTo 48.dp
+    }
 })

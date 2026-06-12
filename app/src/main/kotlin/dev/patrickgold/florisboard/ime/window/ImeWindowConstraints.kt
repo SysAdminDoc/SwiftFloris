@@ -64,7 +64,8 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
     open val smartbarDynamicScalingFactor = 0.20f
     open val smartbarStaticScalingFactor by calculation { 0.753f - smartbarDynamicScalingFactor }
 
-    open val resizeHandleTouchSize: Dp = 48.dp
+    open val minInteractiveTouchSize: Dp = MinInteractiveTouchSize
+    open val resizeHandleTouchSize: Dp = minInteractiveTouchSize
     open val resizeHandleTouchOffsetFloating: Dp by calculation { resizeHandleTouchSize / 2 }
     open val resizeHandleDrawSize: Dp = 32.dp
     open val resizeHandleDrawPadding: Dp by calculation { (resizeHandleTouchSize - resizeHandleDrawSize) / 2 }
@@ -371,6 +372,8 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
     }
 
     companion object {
+        val MinInteractiveTouchSize: Dp = 48.dp
+
         val BaselineScreens = mapOf(
             ImeFormFactor.Type.PHONE_PORTRAIT to DpSize(width = 395.dp, height = 875.dp),
             ImeFormFactor.Type.PHONE_LANDSCAPE to DpSize(width = 835.dp, height = 365.dp),
