@@ -210,7 +210,7 @@ fun PrivacyPostureScreen() = FlorisScreen {
                     R.string.settings__privacy_posture__per_app_profiles_summary,
                     "count" to PerAppKeyboardProfiles.count(perAppKeyboardProfiles),
                 ),
-                onClick = { navController.navigate(Routes.Settings.Smartbar) },
+                onClick = { navController.navigate(Routes.Settings.PerAppKeyboardProfiles) },
             )
         }
 

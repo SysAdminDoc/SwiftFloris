@@ -290,6 +290,7 @@ internal fun SettingsSearchDestination.toSearchRoute(): Any {
         SettingsSearchDestination.BACKUP -> Routes.Settings.Backup
         SettingsSearchDestination.RESTORE -> Routes.Settings.Restore
         SettingsSearchDestination.PRIVACY_POSTURE -> Routes.Settings.PrivacyPosture
+        SettingsSearchDestination.PER_APP_KEYBOARD_PROFILES -> Routes.Settings.PerAppKeyboardProfiles
         SettingsSearchDestination.PRIVACY_AUDIT -> Routes.Settings.PrivacyAuditLog
         SettingsSearchDestination.ABOUT -> Routes.Settings.About
         SettingsSearchDestination.AI_FEATURES -> Routes.Settings.AiFeatures

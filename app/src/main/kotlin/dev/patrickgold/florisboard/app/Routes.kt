@@ -61,6 +61,7 @@ import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardScreen
 import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
+import dev.patrickgold.florisboard.app.settings.privacy.PerAppKeyboardProfileScreen
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyPostureScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.LearnedEntriesScreen
@@ -240,6 +241,10 @@ object Routes {
         object PrivacyPosture
 
         @Serializable
+        @Deeplink("settings/privacy/per-app-profiles")
+        object PerAppKeyboardProfiles
+
+        @Serializable
         @Deeplink("settings/privacy/audit-log")
         object PrivacyAuditLog
 
@@ -364,6 +369,7 @@ object Routes {
             composableWithDeepLink(Settings.Typing::class) { TypingScreen() }
             composableWithDeepLink(Settings.TypingStats::class) { TypingStatsScreen() }
             composableWithDeepLink(Settings.PrivacyPosture::class) { PrivacyPostureScreen() }
+            composableWithDeepLink(Settings.PerAppKeyboardProfiles::class) { PerAppKeyboardProfileScreen() }
             composableWithDeepLink(Settings.PrivacyAuditLog::class) { PrivacyAuditScreen() }
             composableWithDeepLink(Settings.VoiceInput::class) { VoiceInputScreen() }
 

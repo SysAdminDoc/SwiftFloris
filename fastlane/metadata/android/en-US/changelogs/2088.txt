@@ -1,0 +1,2 @@
+Settings now includes a per-app keyboard profile editor for package-specific accent, incognito, clipboard-history, suggestion, and Smartbar gesture overrides.
+Profiles can be added from the current focused app or by package name, edited or deleted later, and malformed saved profile JSON is recoverable by saving a valid profile.

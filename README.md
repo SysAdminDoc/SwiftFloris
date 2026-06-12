@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.38-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.39-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.38 | Privacy posture |
+| Area | What's in v1.9.39 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -50,7 +50,7 @@
 | **Themes** | 21 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent with Settings preview and one-time opt-in hint | No telemetry |
 | **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
 | **Addon packs** | Addon manifest/enumerator contracts, IME-startup registry reconciliation, Settings -> Addons status/rescan, explicit trust for non-co-signed addons, trust reset/changed-certificate controls, dictionary-pack catalog details, persisted signing-certificate pins, descriptor validation, provenance reports, typed dictionary-pack catalog, and addon APK dictionary asset mounting | No-network addon rejection |
-| **Settings UX** | Five-bucket Settings home (Typing experience, Personalization, Privacy & data, Advanced, About), global Settings search with accent-insensitive matching, first-open focus, clear action, Search IME action, no-results path back to all settings, synonym hits for dark theme, haptic, trace, punctuation, and privacy queries, result-list scroll reset, TalkBack labels/live result-status/result-row context, and one-shot dismissible destination highlights; clearer empty states for voice setup, selected user-dictionary languages, extension categories, language packs, filtered clipboard history, and theme-manager recovery; user-dictionary back feedback during active save/delete/import/export work; surfaced keyboard preview field with ready/active state feedback | Local UI only |
+| **Settings UX** | Five-bucket Settings home (Typing experience, Personalization, Privacy & data, Advanced, About), global Settings search with accent-insensitive matching, first-open focus, clear action, Search IME action, no-results path back to all settings, synonym hits for dark theme, haptic, trace, punctuation, and privacy queries, result-list scroll reset, TalkBack labels/live result-status/result-row context, and one-shot dismissible destination highlights; per-app keyboard profile editor for package-specific accent, incognito, clipboard, suggestion, and Smartbar gesture overrides; clearer empty states for voice setup, selected user-dictionary languages, extension categories, language packs, filtered clipboard history, and theme-manager recovery; user-dictionary back feedback during active save/delete/import/export work; surfaced keyboard preview field with ready/active state feedback | Local UI only |
 | **Migration** | First-run local dictionary import hint; preview-before-save personal dictionary imports with row exclusion; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
 | **Sync scaffold** | Transport-neutral personal-dictionary sync model with QR pairing payloads, X25519/AES-GCM sealed-box v1 envelopes, CRDT merge tests, persisted sync identity, and Settings export/import actions for manual JSON files or picked local SAF folders | No network; user-chosen local file channel |
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
@@ -304,6 +304,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.39** (2026-06-12) — Settings now includes a per-app keyboard profile editor with add/edit/delete flows, package-label fallback, malformed profile recovery, and direct Privacy/Smartbar/Search entry points.
 - **v1.9.38** (2026-06-12) — Han shape-based language packs now drive real table-backed suggestions, word-list, and word-frequency lookups; placeholder spell results are gone and broken active Han tables surface as fail-closed language-pack status.
 - **v1.9.37** (2026-06-12) — Raw local typing-trace sharing now requires a sensitive-content confirmation, replay fixture export is the recommended debugging path, and sanitized fixtures drop touch evidence alongside cursor context.
 - **v1.9.36** (2026-06-12) — Settings -> Sync now routes Android 8-12 users to passphrase-encrypted dictionary export/import instead of exposing unsupported sealed device sync controls; Android 13+ sealed sync behavior is unchanged and covered by policy tests.
@@ -504,7 +505,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.38** (2026-06-12). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.39** (2026-06-12). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

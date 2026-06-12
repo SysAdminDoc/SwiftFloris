@@ -18,12 +18,15 @@ package dev.patrickgold.florisboard.app.settings.smartbar
 
 import androidx.compose.runtime.Composable
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.compose.stringRes
@@ -32,6 +35,8 @@ import org.florisboard.lib.compose.stringRes
 fun SmartbarScreen() = FlorisScreen {
     title = stringRes(R.string.settings__smartbar__title)
     previewFieldVisible = true
+
+    val navController = LocalNavController.current
 
     content {
         PreferenceGroup(title = stringRes(R.string.pref__smartbar__group_basics__label)) {
@@ -51,6 +56,11 @@ fun SmartbarScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__smartbar__per_app_profiles__label),
                 summary = stringRes(R.string.pref__smartbar__per_app_profiles__summary),
                 enabledIf = { prefs.smartbar.enabled isEqualTo true },
+            )
+            Preference(
+                title = stringRes(R.string.settings__per_app_keyboard_profiles__title),
+                summary = stringRes(R.string.settings__per_app_keyboard_profiles__smartbar_summary),
+                onClick = { navController.navigate(Routes.Settings.PerAppKeyboardProfiles) },
             )
         }
 
