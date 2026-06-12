@@ -115,5 +115,6 @@ object CjkInputProviderRegistry {
     private var current: CjkInputProvider = CjkInputProvider.Default
     val active: CjkInputProvider get() = current
     fun setActive(provider: CjkInputProvider) { current = provider }
+    fun configureBridge(config: CjkBridgeConfig) { current = CjkBridgeProviderFactory.create(config) }
     fun reset() { current = CjkInputProvider.Default }
 }
