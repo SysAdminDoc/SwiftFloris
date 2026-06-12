@@ -173,7 +173,9 @@ object SettingsSearchIndex {
 
         entry("gestures", R.string.settings__gestures__title, R.string.settings__gestures__title, R.string.settings__home__gestures_summary, SettingsSearchDestination.GESTURES, "glide swipe trail"),
         entry("gestures.glide", R.string.settings__gestures__title, R.string.pref__glide__enabled__label, destination = SettingsSearchDestination.GESTURES, keywords = "swipe trace shape writing gesture typing"),
+        entry("gestures.glide-sensitivity", R.string.settings__gestures__title, R.string.pref__glide__sensitivity__label, destination = SettingsSearchDestination.GESTURES, keywords = "swipe trace shape writing threshold"),
         entry("gestures.trail", R.string.settings__gestures__title, R.string.pref__glide__show_trail__label, destination = SettingsSearchDestination.GESTURES, keywords = "trace shape writing path"),
+        entry("gestures.symbol-flick", R.string.settings__gestures__title, R.string.pref__gestures__symbol_flick_enabled__label, destination = SettingsSearchDestination.GESTURES, keywords = "punctuation programmer hinted symbols"),
 
         entry("voice", R.string.settings__voice_input__title, R.string.settings__voice_input__title, R.string.settings__home__voice_input_summary, SettingsSearchDestination.VOICE_INPUT, "futo microphone whisper vosk dictation"),
         entry("voice.engine", R.string.settings__voice_input__title, R.string.settings__voice_input__recognition_engine_preference, destination = SettingsSearchDestination.VOICE_INPUT),

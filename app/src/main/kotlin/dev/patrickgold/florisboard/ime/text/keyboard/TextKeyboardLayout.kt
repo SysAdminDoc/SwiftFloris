@@ -425,6 +425,15 @@ fun TextKeyboardLayout(
     }
 }
 
+private val SwipeGesture.Direction.isCardinal: Boolean
+    get() = when (this) {
+        SwipeGesture.Direction.UP,
+        SwipeGesture.Direction.DOWN,
+        SwipeGesture.Direction.LEFT,
+        SwipeGesture.Direction.RIGHT -> true
+        else -> false
+    }
+
 @Composable
 private fun TextKeyButton(
     key: TextKey,
@@ -1144,6 +1153,9 @@ private class TextKeyboardLayoutController(
                     true
                 }
                 initialKey.computedData.code > KeyCode.SPACE && !popupUiController.isShowingExtendedPopup -> when {
+                    shouldHandleSymbolFlick(event, pointer, initialKey) -> {
+                        handleSymbolFlick(initialKey)
+                    }
                     !isGlideEnabled && !pointer.hasTriggeredGestureMove -> when (event.type) {
                         SwipeGesture.Type.TOUCH_UP -> {
                             val swipeAction = when (event.direction) {
@@ -1167,6 +1179,28 @@ private class TextKeyboardLayoutController(
                 else -> false
             }
         }
+    }
+
+    private fun shouldHandleSymbolFlick(
+        event: SwipeGesture.Event,
+        pointer: TouchPointer,
+        initialKey: TextKey,
+    ): Boolean {
+        return event.type == SwipeGesture.Type.TOUCH_UP &&
+            event.direction.isCardinal &&
+            !isGlideEnabled &&
+            !pointer.hasTriggeredGestureMove &&
+            keyboard.mode == KeyboardMode.CHARACTERS &&
+            prefs.gestures.symbolFlickEnabled.get() &&
+            prefs.keyboard.hintedSymbolsEnabled.get() &&
+            initialKey.computedPopups.symbolHint != null
+    }
+
+    private fun handleSymbolFlick(initialKey: TextKey): Boolean {
+        val symbolHint = initialKey.computedPopups.symbolHint ?: return false
+        inputFeedbackController?.gestureSwipe(symbolHint)
+        inputEventDispatcher.sendDownUp(symbolHint)
+        return true
     }
 
     private fun handleDeleteSwipe(event: SwipeGesture.Event): Boolean {

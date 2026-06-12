@@ -50,15 +50,58 @@ fun GesturesScreen() = FlorisScreen {
 
     content {
         val isGlideEnabled by prefs.glide.enabled.collectAsState()
+        val symbolFlickEnabled by prefs.gestures.symbolFlickEnabled.collectAsState()
+        val hintedSymbolsEnabled by prefs.keyboard.hintedSymbolsEnabled.collectAsState()
+        val spaceBarSwipeUp by prefs.gestures.spaceBarSwipeUp.collectAsState()
+        val spaceBarSwipeDown by prefs.gestures.spaceBarSwipeDown.collectAsState()
+        val spaceBarSwipeLeft by prefs.gestures.spaceBarSwipeLeft.collectAsState()
+        val spaceBarSwipeRight by prefs.gestures.spaceBarSwipeRight.collectAsState()
+        val deleteKeySwipeLeft by prefs.gestures.deleteKeySwipeLeft.collectAsState()
+        val autoReturnAfterApostrophe by prefs.keyboard.autoReturnAfterApostrophe.collectAsState()
+        val conflictSummary = GestureConflictPolicy.evaluate(
+            GesturePreferenceSnapshot(
+                glideEnabled = isGlideEnabled,
+                symbolFlickEnabled = symbolFlickEnabled,
+                hintedSymbolsEnabled = hintedSymbolsEnabled,
+                spaceBarSwipeUp = spaceBarSwipeUp,
+                spaceBarSwipeDown = spaceBarSwipeDown,
+                spaceBarSwipeLeft = spaceBarSwipeLeft,
+                spaceBarSwipeRight = spaceBarSwipeRight,
+                deleteKeySwipeLeft = deleteKeySwipeLeft,
+                autoReturnAfterApostrophe = autoReturnAfterApostrophe,
+            ),
+        )
 
         FlorisInfoCard(
             modifier = Modifier.padding(8.dp),
             text = stringRes(R.string.settings__gestures__intro),
         )
-        if (isGlideEnabled) {
+        if (conflictSummary.glidePausesGeneralKeySwipes) {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__gestures__glide_conflict_notice),
+            )
+        }
+        when {
+            conflictSummary.symbolFlickReady -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__symbol_flick_ready),
+            )
+            conflictSummary.symbolFlickNeedsHintedSymbols -> FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__symbol_flick_needs_hints),
+            )
+        }
+        if (conflictSummary.spaceBarCursorMovementEnabled) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__spacebar_cursor_ready),
+            )
+        }
+        if (conflictSummary.deleteSwipeEnabled) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__delete_swipe_ready),
             )
         }
 
@@ -103,6 +146,15 @@ fun GesturesScreen() = FlorisScreen {
                 max = 500,
                 stepIncrement = 25,
                 enabledIf = { prefs.glide.enabled isEqualTo true && prefs.glide.showPreview isEqualTo true },
+            )
+            DialogSliderPreference(
+                prefs.glide.sensitivity,
+                title = stringRes(R.string.pref__glide__sensitivity__label),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 0,
+                max = 100,
+                stepIncrement = 5,
+                enabledIf = { prefs.glide.enabled isEqualTo true },
             )
             SwitchPreference(
                 prefs.glide.immediateBackspaceDeletesWord,
@@ -169,6 +221,12 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.gestures.swipeRight,
                 title = stringRes(R.string.pref__gestures__swipe_right__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.glide.enabled isEqualTo false },
+            )
+            SwitchPreference(
+                prefs.gestures.symbolFlickEnabled,
+                title = stringRes(R.string.pref__gestures__symbol_flick_enabled__label),
+                summary = stringRes(R.string.pref__gestures__symbol_flick_enabled__summary),
                 enabledIf = { prefs.glide.enabled isEqualTo false },
             )
         }

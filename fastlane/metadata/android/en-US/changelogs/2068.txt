@@ -1,0 +1,1 @@
+Gesture settings now expose glide sensitivity, symbol flicks for hinted keys, and clearer conflict state for glide, spacebar cursor movement, delete swipe, and apostrophe auto-return controls.

@@ -1108,6 +1108,7 @@
     <string name="pref__glide_preview_refresh_delay">Preview refresh delay</string>
     <string name="pref__glide__show_preview">Show preview while glide typing</string>
     <string name="pref__glide__show_preview__summary">Requires word suggestions to be enabled</string>
+    <string name="pref__glide__sensitivity__label" comment="Preference title">Glide sensitivity</string>
     <string name="pref__glide__immediate_backspace_deletes_word__label">Always delete word</string>
     <string name="pref__glide__immediate_backspace_deletes_word__summary">Pressing delete right after a glide deletes the whole word</string>
     <string name="pref__glide__flow_through_space__label">Flow through space</string>
@@ -1122,8 +1123,14 @@
     <string name="pref__glide__engine__statistical" comment="Glide typing engine label">Statistical</string>
     <string name="pref__glide__engine__unsupported" comment="Glide typing engine label">Unavailable</string>
     <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Space bar and delete key gestures stay available even when glide typing is on.</string>
-    <string name="settings__gestures__glide_conflict_notice">General key swipes are paused for languages where glide typing is enabled so swipe-to-type remains predictable.</string>
+    <string name="settings__gestures__glide_conflict_notice">General key swipes and symbol flicks are paused for languages where glide typing is enabled so swipe-to-type remains predictable.</string>
+    <string name="settings__gestures__symbol_flick_ready">Symbol flicks are active for keys with hinted symbols. Flick a hinted key in any cardinal direction to enter its symbol.</string>
+    <string name="settings__gestures__symbol_flick_needs_hints">Symbol flicks need hinted symbols. Enable Keyboard > Hinted symbols to use them.</string>
+    <string name="settings__gestures__spacebar_cursor_ready">Space bar cursor movement is active. Set each space bar swipe to No action to disable it.</string>
+    <string name="settings__gestures__delete_swipe_ready">Delete-key swipe is active. Set Delete key swipe left to No action to disable it.</string>
     <string name="pref__gestures__general_title" comment="Preference group title">General gestures</string>
+    <string name="pref__gestures__symbol_flick_enabled__label" comment="Preference title">Symbol flicks from hinted keys</string>
+    <string name="pref__gestures__symbol_flick_enabled__summary" comment="Preference summary">When hinted symbols are shown and glide typing is off, flick a key to enter its hinted symbol</string>
     <string name="pref__gestures__space_bar_title" comment="Preference group title">Space bar gestures</string>
     <string name="pref__gestures__other_title" comment="Preference group title">Delete key &amp; thresholds</string>
     <string name="pref__gestures__swipe_up__label" comment="Preference title">Swipe up</string>
