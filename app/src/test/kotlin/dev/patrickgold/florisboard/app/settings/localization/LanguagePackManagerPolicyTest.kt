@@ -96,6 +96,22 @@ class LanguagePackManagerPolicyTest : FunSpec({
         entries.single().activeComponentCount shouldBe 0
     }
 
+    test("catalog marks active Han packs unavailable when loaded table data failed") {
+        val extension = languagePackExtension(
+            id = "org.example.broken",
+            title = "Broken Tables",
+            components = listOf(languagePackComponent("zh-Hans")),
+        )
+        val entries = LanguagePackManagerPolicy.catalogEntries(
+            extensions = listOf(extension),
+            activeLocaleTags = setOf("zh_HANS"),
+            hasUsableHanRuntime = { false },
+        )
+
+        entries.single().state shouldBe LanguagePackRuntimeState.DataUnavailable
+        entries.single().activeComponentCount shouldBe 1
+    }
+
     test("catalog shows generic language packs without making them Han startup inputs") {
         val entries = LanguagePackManagerPolicy.catalogEntries(
             extensions = listOf(

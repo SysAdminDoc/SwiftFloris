@@ -31,6 +31,7 @@ internal enum class LanguagePackRuntimeState {
     ActiveForSubtype,
     InstalledStandby,
     MetadataOnly,
+    DataUnavailable,
 }
 
 internal data class LanguagePackCatalogComponent(
@@ -77,6 +78,9 @@ internal object LanguagePackManagerPolicy {
     fun catalogEntries(
         extensions: List<LanguagePackExtension>,
         activeLocaleTags: Set<String>,
+        hasUsableHanRuntime: (LanguagePackExtension) -> Boolean = { extension ->
+            !extension.isLoaded() || extension.hanShapeBasedSQLiteDatabase?.isOpen == true
+        },
     ): List<LanguagePackCatalogEntry> {
         return extensions.map { extension ->
             val components = extension.items
@@ -92,6 +96,8 @@ internal object LanguagePackManagerPolicy {
                 }
             val state = when {
                 !extension.supportsHanShapeBased() -> LanguagePackRuntimeState.MetadataOnly
+                components.any { it.isActive } && !hasUsableHanRuntime(extension) ->
+                    LanguagePackRuntimeState.DataUnavailable
                 components.any { it.isActive } -> LanguagePackRuntimeState.ActiveForSubtype
                 else -> LanguagePackRuntimeState.InstalledStandby
             }

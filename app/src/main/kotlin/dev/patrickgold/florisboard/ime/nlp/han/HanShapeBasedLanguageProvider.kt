@@ -17,7 +17,7 @@
 package dev.patrickgold.florisboard.ime.nlp.han
 
 import android.content.Context
-import android.database.sqlite.SQLiteException
+import android.database.sqlite.SQLiteDatabase
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
@@ -29,7 +29,6 @@ import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
-import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.Dispatchers
@@ -73,7 +72,6 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
     }
 
 
-    private val maxFreqBySubType = mutableMapOf<String, Int>();
     private val extensionManager by context.extensionManager()
     private val allLanguagePacks: List<LanguagePackExtension>
         // Assume other types of extensions do not extend LanguagePackExtension
@@ -145,14 +143,22 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         allowPossiblyOffensive: Boolean,
         isPrivateSession: Boolean,
     ): SpellingResult {
-        return when (word.lowercase()) {
-            // Use typo for typing errors
-            "typo" -> SpellingResult.typo(arrayOf("typo1", "typo2", "typo3"))
-            // Use grammar error if the algorithm can detect this. On Android 11 and lower grammar errors are visually
-            // marked as typos due to a lack of support
-            "gerror" -> SpellingResult.grammarError(arrayOf("grammar1", "grammar2", "grammar3"))
-            // Use valid word for valid input
-            else -> SpellingResult.validWord()
+        if (word.isBlank()) return SpellingResult.unspecified()
+        val requiredLanguagePacks = languagePacksFor(subtype)
+        if (!connectedLanguagePacks.containsAll(requiredLanguagePacks)) {
+            withContext(Dispatchers.IO) {
+                loadLanguagePacksFor(subtype)
+            }
+        }
+        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return SpellingResult.unspecified()
+        val layout = languagePackItem.hanShapeBasedTable
+        val database = databaseFor(languagePackExtension) ?: return SpellingResult.unspecified()
+        return withContext(Dispatchers.IO) {
+            if (HanShapeLanguagePackQuery.containsWord(database, layout, word)) {
+                SpellingResult.validWord()
+            } else {
+                SpellingResult.unspecified()
+            }
         }
     }
 
@@ -170,55 +176,20 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             }
         }
         if (content.composingText.isEmpty()) {
-            return emptyList();
+            return emptyList()
         }
-        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList();
+        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList()
         val layout: String = languagePackItem.hanShapeBasedTable
-        try {
-            val database = languagePackExtension.hanShapeBasedSQLiteDatabase ?: run {
-                flogError { "Han shape-based database is not loaded for '${languagePackExtension.meta.id}'" }
-                return emptyList()
-            }
-            val suggestions = database
-                .query(
-                    layout,
-                    arrayOf("code", "text"),
-                    "code LIKE ? || '%'",
-                    arrayOf(content.composingText),
-                    "",
-                    "",
-                    "code ASC, weight DESC",
-                    "$maxCandidateCount",
-                )
-                .use { cur ->
-                    cur.moveToFirst()
-                    val rowCount = cur.count
-                    flogDebug { "Query was '${content.composingText}'" }
-                    buildList {
-                        for (n in 0 until rowCount) {
-                            val code = cur.getString(0)
-                            val word = cur.getString(1)
-                            cur.moveToNext()
-                            add(
-                                WordSuggestionCandidate(
-                                    text = word,
-                                    secondaryText = code,
-                                    confidence = 0.5,
-                                    isEligibleForAutoCommit = n == 0,
-                                    // We set ourselves as the source provider so we can get notify events for our candidate
-                                    sourceProvider = this@HanShapeBasedLanguageProvider,
-                                )
-                            )
-                        }
-                    }
-                }
-            return suggestions
-        } catch (e: IllegalStateException) {
-            flogError { "Invalid layout '${layout}' not found" }
-            return emptyList();
-        } catch (e: SQLiteException) {
-            flogError { "SQLiteException: layout=$layout, composing=${content.composingText}, error='${e}'" }
-            return emptyList();
+        val database = databaseFor(languagePackExtension) ?: return emptyList()
+        return withContext(Dispatchers.IO) {
+            flogDebug { "Query was '${content.composingText}'" }
+            HanShapeLanguagePackQuery.suggestions(
+                database = database,
+                table = layout,
+                composingText = content.composingText,
+                maxCandidateCount = maxCandidateCount,
+                sourceProvider = this@HanShapeBasedLanguageProvider,
+            )
         }
     }
 
@@ -268,42 +239,43 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         }
     }
 
+    private fun databaseFor(languagePackExtension: LanguagePackExtension): SQLiteDatabase? {
+        val database = languagePackExtension.hanShapeBasedSQLiteDatabase
+        if (database == null || !database.isOpen) {
+            flogError { "Han shape-based database is not loaded for '${languagePackExtension.meta.id}'" }
+            return null
+        }
+        return database
+    }
+
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
-        return emptyList()
-//        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList();
-//        val layout: String = languagePackItem.hanShapeBasedTable
-//        try {
-//            val database = languagePackExtension.hanShapeBasedSQLiteDatabase
-//            val cur = database.query(layout, arrayOf ( "text" ), "", arrayOf(), "", "", "weight DESC, code ASC", "");
-//            cur.moveToFirst();
-//            val rowCount = cur.getCount();
-//            val suggestions = buildList {
-//                for (n in 0 until rowCount) {
-//                    val word = cur.getString(0);
-//                    cur.moveToNext();
-//                    add(word)
-//                }
-//            }
-//            flogDebug { "Read ${suggestions.size} words for ${subtype.primaryLocale.localeTag()}" }
-//            return suggestions;
-//        } catch (e: SQLiteException) {
-//            flogError { "Encountered an SQL error: ${e}" }
-//            return emptyList();
-//        }
+        val requiredLanguagePacks = languagePacksFor(subtype)
+        if (!connectedLanguagePacks.containsAll(requiredLanguagePacks)) {
+            withContext(Dispatchers.IO) {
+                loadLanguagePacksFor(subtype)
+            }
+        }
+        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList()
+        val database = databaseFor(languagePackExtension) ?: return emptyList()
+        val words = withContext(Dispatchers.IO) {
+            HanShapeLanguagePackQuery.words(database, languagePackItem.hanShapeBasedTable)
+        }
+        flogDebug { "Read ${words.size} words for ${subtype.primaryLocale.localeTag()}" }
+        return words
     }
 
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double {
-        return 0.0
-//        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return 0.0;
-//        val layout: String = languagePackItem.hanShapeBasedTable
-//        try {
-//            val database = languagePackExtension.hanShapeBasedSQLiteDatabase
-//            val cur = database.query(layout, arrayOf ( "weight" ), "code = ?", arrayOf(word), "", "", "", "");
-//            cur.moveToFirst();
-//            return try { cur.getDouble(0) } catch (e: Exception) { 0.0 };
-//        } catch (e: SQLiteException) {
-//            return 0.0;
-//        }
+        val requiredLanguagePacks = languagePacksFor(subtype)
+        if (!connectedLanguagePacks.containsAll(requiredLanguagePacks)) {
+            withContext(Dispatchers.IO) {
+                loadLanguagePacksFor(subtype)
+            }
+        }
+        val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return 0.0
+        val database = databaseFor(languagePackExtension) ?: return 0.0
+        return withContext(Dispatchers.IO) {
+            HanShapeLanguagePackQuery.frequencyForWord(database, languagePackItem.hanShapeBasedTable, word)
+        }
     }
 
     override suspend fun destroy() {

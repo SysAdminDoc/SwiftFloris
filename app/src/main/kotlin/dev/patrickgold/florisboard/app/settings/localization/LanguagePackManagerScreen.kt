@@ -280,6 +280,12 @@ private fun languagePackEntrySummary(entry: LanguagePackCatalogEntry): String {
             R.string.settings__localization__language_pack_extension_metadata_summary,
             "total" to entry.componentCount.toString(),
         )
+        LanguagePackRuntimeState.DataUnavailable -> stringRes(
+            R.string.settings__localization__language_pack_extension_unavailable_summary,
+            "active" to entry.activeComponentCount.toString(),
+            "total" to entry.componentCount.toString(),
+            "kind" to kind,
+        )
     }
 }
 

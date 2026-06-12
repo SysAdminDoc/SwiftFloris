@@ -259,6 +259,7 @@
     <string name="settings__localization__language_pack_kind_generic">Generic</string>
     <string name="settings__localization__language_pack_extension_active_summary">{active}/{total} matching current keyboard languages; {kind} pack loads only for active matching subtypes.</string>
     <string name="settings__localization__language_pack_extension_standby_summary">0/{total} matching current keyboard languages; {kind} pack stays unloaded until you add or switch to a matching subtype.</string>
+    <string name="settings__localization__language_pack_extension_unavailable_summary">{active}/{total} matching current keyboard languages, but the {kind} table data is unavailable. Candidates fail closed until you reinstall or replace this pack.</string>
     <string name="settings__localization__language_pack_extension_metadata_summary">{total} component(s); generic pack is visible in Settings and ignored by Han shape-based startup loading.</string>
     <string name="settings__localization__language_pack_component_active_summary">{locale} — active for a current keyboard language</string>
     <string name="settings__localization__language_pack_component_standby_summary">{locale} — installed, not active for current keyboard languages</string>
