@@ -51,7 +51,7 @@ class PersonalNgramFlushIsolationTest : FunSpec({
 })
 
 private fun assertFlushIsLocaleScoped(source: String, fileName: String, filePrefix: String) {
-    val flushBody = extractFunctionBody(source, "fun flush(localeTag: String)")
+    val flushBody = extractFunctionBody(source, "suspend fun flushAndAwait(localeTag: String)")
     flushBody shouldContain "tablesByLocale[localeTag]"
     flushBody shouldContain "lastSeenByLocale[localeTag]"
     flushBody shouldContain "pendingCommitsByLocale[localeTag]?.set(0)"
@@ -72,7 +72,7 @@ private fun assertLearnFlushesCurrentLocaleTag(source: String, fileName: String)
     val learnBody = extractFunctionBody(source, "fun learn(")
     learnBody shouldContain "val tag = locale.languageTag()"
     learnBody shouldContain "pendingCommitsByLocale.getOrPut(tag)"
-    learnBody shouldContain "flush(tag)"
+    learnBody shouldContain "flushAndAwait(tag)"
     check(!learnBody.contains("flush(localeTag)")) {
         "$fileName learn() must flush the current locale tag, not an outer or stale localeTag symbol."
     }

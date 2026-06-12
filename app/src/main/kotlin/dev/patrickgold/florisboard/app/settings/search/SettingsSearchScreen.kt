@@ -277,6 +277,7 @@ internal fun SettingsSearchDestination.toSearchRoute(): Any {
             Routes.Settings.UserDictionary(UserDictionaryType.SYSTEM)
         SettingsSearchDestination.USER_DICTIONARY_FLORIS ->
             Routes.Settings.UserDictionary(UserDictionaryType.FLORIS)
+        SettingsSearchDestination.LEARNED_ENTRIES -> Routes.Settings.LearnedEntries
         SettingsSearchDestination.SYNC -> Routes.Settings.Sync
         SettingsSearchDestination.MCP -> Routes.Settings.Mcp
         SettingsSearchDestination.ADDONS -> Routes.Settings.Addons

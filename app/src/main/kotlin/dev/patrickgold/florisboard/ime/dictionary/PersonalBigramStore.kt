@@ -81,6 +81,14 @@ class PersonalBigramStore private constructor(private val context: Context) {
         val lastSeenMs: Long,
     )
 
+    data class LearnedBigram(
+        val localeTag: String,
+        val prev: String,
+        val next: String,
+        val count: Int,
+        val lastSeenMs: Long,
+    )
+
     private fun normalize(word: String): String = PersonalNgramPersistence.normalizeToken(word)
 
     private suspend fun ensureLoaded(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
@@ -151,7 +159,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
                 pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet() >= FLUSH_EVERY_N_COMMITS
             }
             if (shouldFlush) {
-                flush(tag)
+                flushAndAwait(tag)
             }
         }
     }
@@ -227,20 +235,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
      * and persisted locales. Used by the local-only typing stats screen.
      */
     suspend fun totalEntryCount(): Int {
-        val localeTags = buildSet {
-            context.filesDir.listFiles { _, name ->
-                // Strict `.tsv` suffix so we don't pick up a leftover
-                // `personal_bigrams_<tag>.tsv.tmp` from a crashed flush and
-                // then later try to ensureLoaded("<tag>.tsv") with a
-                // mismatched tag.
-                name.startsWith("personal_bigrams_") && name.endsWith(".tsv") && !name.endsWith(".tsv.tmp")
-            }?.forEach { file ->
-                add(file.name.removePrefix("personal_bigrams_").removeSuffix(".tsv"))
-            }
-            synchronized(tablesByLocale) {
-                addAll(tablesByLocale.keys)
-            }
-        }
+        val localeTags = knownLocaleTags()
         return loadGuard.withLock {
             localeTags.sumOf { localeTag ->
                 val table = ensureLoadedLocked(localeTag)
@@ -251,78 +246,132 @@ class PersonalBigramStore private constructor(private val context: Context) {
         }
     }
 
-    /**
-     * Forces an immediate flush of [localeTag]'s table to disk. Called by the
-     * commit-count threshold and from the IME service shutdown path.
-     */
-    fun flush(localeTag: String) {
-        ioScope.launch {
-            loadGuard.withLock {
-                val table = tablesByLocale[localeTag] ?: return@withLock
-                val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
-                val snapshot: List<BigramSnapshot>
-                synchronized(table) {
-                    pendingCommitsByLocale[localeTag]?.set(0)
-                    if (table.size > MAX_PREV_WORDS) {
-                        val keepKeys = table.entries
-                            .sortedByDescending { e -> e.value.values.sum() }
-                            .take(MAX_PREV_WORDS)
-                            .map { it.key }
-                            .toSet()
-                        val removeKeys = table.keys.filter { it !in keepKeys }
-                        for (k in removeKeys) {
-                            table.remove(k)
-                            recencyTable.remove(k)
-                        }
-                    }
-                    for ((prev, nextMap) in table) {
-                        if (nextMap.size > MAX_NEXT_PER_PREV) {
-                            val keepKeys = nextMap.entries
-                                .sortedByDescending { it.value }
-                                .take(MAX_NEXT_PER_PREV)
-                                .map { it.key }
-                                .toSet()
-                            val removeKeys = nextMap.keys.filter { it !in keepKeys }
-                            val recencyNextMap = recencyTable[prev]
-                            for (k in removeKeys) {
-                                nextMap.remove(k)
-                                recencyNextMap?.remove(k)
-                            }
-                        }
-                    }
-                    snapshot = buildList {
-                        val now = System.currentTimeMillis()
+    suspend fun snapshot(maxEntries: Int = 500): List<LearnedBigram> {
+        if (maxEntries <= 0) return emptyList()
+        val localeTags = knownLocaleTags()
+        val rows = loadGuard.withLock {
+            buildList {
+                for (localeTag in localeTags) {
+                    val table = ensureLoadedLocked(localeTag)
+                    val recencyTable = lastSeenByLocale[localeTag].orEmpty()
+                    synchronized(table) {
                         for ((prev, nextMap) in table) {
                             val recencyNextMap = recencyTable[prev].orEmpty()
                             for ((next, count) in nextMap) {
                                 add(
-                                    BigramSnapshot(
+                                    LearnedBigram(
+                                        localeTag = localeTag,
                                         prev = prev,
                                         next = next,
                                         count = count,
-                                        lastSeenMs = recencyNextMap[next] ?: now,
+                                        lastSeenMs = recencyNextMap[next] ?: 0L,
                                     )
                                 )
                             }
                         }
                     }
                 }
-                val persisted = PersonalNgramPersistence.atomicReplace(fileFor(localeTag)) { w ->
-                    for (row in snapshot) {
-                        w.write(row.prev)
-                        w.write("\t")
-                        w.write(row.next)
-                        w.write("\t")
-                        w.write(row.count.toString())
-                        w.write("\t")
-                        w.write(row.lastSeenMs.toString())
-                        w.newLine()
+            }
+        }
+        return rows.sortedWith(
+            compareByDescending<LearnedBigram> { it.count }
+                .thenByDescending { it.lastSeenMs }
+                .thenBy { it.prev }
+                .thenBy { it.next }
+        ).take(maxEntries)
+    }
+
+    private fun knownLocaleTags(): Set<String> = buildSet {
+        context.filesDir.listFiles { _, name ->
+            // Strict `.tsv` suffix so we don't pick up a leftover
+            // `personal_bigrams_<tag>.tsv.tmp` from a crashed flush and
+            // then later try to ensureLoaded("<tag>.tsv") with a
+            // mismatched tag.
+            name.startsWith("personal_bigrams_") && name.endsWith(".tsv") && !name.endsWith(".tsv.tmp")
+        }?.forEach { file ->
+            add(file.name.removePrefix("personal_bigrams_").removeSuffix(".tsv"))
+        }
+        synchronized(tablesByLocale) {
+            addAll(tablesByLocale.keys)
+        }
+    }
+
+    /**
+     * Forces an immediate flush of [localeTag]'s table to disk. Called by the
+     * commit-count threshold and from the IME service shutdown path.
+     */
+    fun flush(localeTag: String) {
+        ioScope.launch {
+            flushAndAwait(localeTag)
+        }
+    }
+
+    suspend fun flushAndAwait(localeTag: String) {
+        loadGuard.withLock {
+            val table = tablesByLocale[localeTag] ?: return@withLock
+            val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
+            val snapshot: List<BigramSnapshot>
+            synchronized(table) {
+                pendingCommitsByLocale[localeTag]?.set(0)
+                if (table.size > MAX_PREV_WORDS) {
+                    val keepKeys = table.entries
+                        .sortedByDescending { e -> e.value.values.sum() }
+                        .take(MAX_PREV_WORDS)
+                        .map { it.key }
+                        .toSet()
+                    val removeKeys = table.keys.filter { it !in keepKeys }
+                    for (k in removeKeys) {
+                        table.remove(k)
+                        recencyTable.remove(k)
                     }
                 }
-                if (!persisted) {
-                    flogWarning(LogTopic.DICTIONARY) {
-                        "Personal bigram flush for '$localeTag' failed; previous on-disk state preserved"
+                for ((prev, nextMap) in table) {
+                    if (nextMap.size > MAX_NEXT_PER_PREV) {
+                        val keepKeys = nextMap.entries
+                            .sortedByDescending { it.value }
+                            .take(MAX_NEXT_PER_PREV)
+                            .map { it.key }
+                            .toSet()
+                        val removeKeys = nextMap.keys.filter { it !in keepKeys }
+                        val recencyNextMap = recencyTable[prev]
+                        for (k in removeKeys) {
+                            nextMap.remove(k)
+                            recencyNextMap?.remove(k)
+                        }
                     }
+                }
+                snapshot = buildList {
+                    val now = System.currentTimeMillis()
+                    for ((prev, nextMap) in table) {
+                        val recencyNextMap = recencyTable[prev].orEmpty()
+                        for ((next, count) in nextMap) {
+                            add(
+                                BigramSnapshot(
+                                    prev = prev,
+                                    next = next,
+                                    count = count,
+                                    lastSeenMs = recencyNextMap[next] ?: now,
+                                )
+                            )
+                        }
+                    }
+                }
+            }
+            val persisted = PersonalNgramPersistence.atomicReplace(fileFor(localeTag)) { w ->
+                for (row in snapshot) {
+                    w.write(row.prev)
+                    w.write("\t")
+                    w.write(row.next)
+                    w.write("\t")
+                    w.write(row.count.toString())
+                    w.write("\t")
+                    w.write(row.lastSeenMs.toString())
+                    w.newLine()
+                }
+            }
+            if (!persisted) {
+                flogWarning(LogTopic.DICTIONARY) {
+                    "Personal bigram flush for '$localeTag' failed; previous on-disk state preserved"
                 }
             }
         }
@@ -334,29 +383,60 @@ class PersonalBigramStore private constructor(private val context: Context) {
      * flush.
      */
     fun forget(rawWord: String, locale: FlorisLocale) {
+        ioScope.launch {
+            forgetAndAwait(rawWord, locale)
+        }
+    }
+
+    suspend fun forgetAndAwait(rawWord: String, locale: FlorisLocale) {
         val target = normalize(rawWord)
         if (target.isEmpty()) return
         val tag = locale.languageTag()
-        ioScope.launch {
-            loadGuard.withLock {
-                val table = ensureLoadedLocked(tag)
-                val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
-                synchronized(table) {
-                    val emptiedKeys = ArrayList<String>()
-                    for ((prev, nextMap) in table) {
-                        recencyTable[prev]?.remove(target)
-                        if (nextMap.remove(target) != null && nextMap.isEmpty()) {
-                            emptiedKeys.add(prev)
-                        }
+        loadGuard.withLock {
+            val table = ensureLoadedLocked(tag)
+            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
+            synchronized(table) {
+                val emptiedKeys = ArrayList<String>()
+                for ((prev, nextMap) in table) {
+                    recencyTable[prev]?.remove(target)
+                    if (nextMap.remove(target) != null && nextMap.isEmpty()) {
+                        emptiedKeys.add(prev)
                     }
-                    for (k in emptiedKeys) {
-                        table.remove(k)
-                        recencyTable.remove(k)
+                }
+                for (k in emptiedKeys) {
+                    table.remove(k)
+                    recencyTable.remove(k)
+                }
+                pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
+            }
+        }
+        flushAndAwait(tag)
+    }
+
+    suspend fun forgetExactAndAwait(prevWord: String, currWord: String, locale: FlorisLocale) {
+        val prev = normalize(prevWord)
+        val curr = normalize(currWord)
+        if (prev.isEmpty() || curr.isEmpty()) return
+        val tag = locale.languageTag()
+        var changed = false
+        loadGuard.withLock {
+            val table = ensureLoadedLocked(tag)
+            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
+            synchronized(table) {
+                val nextMap = table[prev]
+                if (nextMap?.remove(curr) != null) {
+                    changed = true
+                    recencyTable[prev]?.remove(curr)
+                    if (nextMap.isEmpty()) {
+                        table.remove(prev)
+                        recencyTable.remove(prev)
                     }
                     pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
                 }
             }
-            flush(tag)
+        }
+        if (changed) {
+            flushAndAwait(tag)
         }
     }
 
