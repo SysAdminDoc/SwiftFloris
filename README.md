@@ -250,7 +250,7 @@ The public posture is simple: no network permission, no telemetry, no account bi
 
 ### Security reports
 
-Report suspected vulnerabilities through [GitHub Security Advisories](https://github.com/SysAdminDoc/SwiftFloris/security/advisories/new) when available. If the advisory form is unavailable, open a GitHub issue with a minimal description and ask for private follow-up before sharing exploit details, device logs, personal dictionary content, clipboard content, or private APKs. Coordinated disclosure is preferred: include affected versions, Android version, reproduction scope, and whether the issue requires a malicious app, local file, physical access, or normal keyboard use.
+Report suspected vulnerabilities through [GitHub Security Advisories](https://github.com/SysAdminDoc/SwiftFloris/security/advisories/new) when available. If the advisory form is unavailable, open a GitHub issue with a minimal description and ask for private follow-up before sharing exploit details, device logs, personal dictionary content, clipboard content, or private APKs. Coordinated disclosure is preferred; see [Security](docs/SECURITY.md) for supported scope and response expectations.
 
 ### Open Source
 

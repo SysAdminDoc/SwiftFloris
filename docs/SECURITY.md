@@ -18,6 +18,33 @@ A clean OSV scan does **not** imply forever-immunity. CVEs are published continu
 day will not catch a vulnerability disclosed the day after. The dated stamp lets users reason about how stale the
 security check is for the version they have installed.
 
+## Supported scope
+
+Security reports are in scope when they affect the SwiftFloris app, release artifacts, update channel, build
+pipeline, bundled data, addon trust path, local storage, backup/restore flow, clipboard handling, IME field-sensitivity
+handling, or any other path that can expose typed text, personal dictionaries, clipboard content, local files, signing
+trust, or device-local settings.
+
+Reports about upstream dependencies are still useful, but the primary fix usually belongs upstream. File those with
+the affected Android, AndroidX, Compose, Kotlin, Room, SQLCipher, Tink, Gradle, or GitHub Actions project first, then
+link the advisory in a SwiftFloris issue if SwiftFloris needs an emergency pin, workaround, or release note.
+
+## Reporting channel
+
+Use [GitHub Security Advisories](https://github.com/SysAdminDoc/SwiftFloris/security/advisories/new) for private
+reports. If that form is unavailable, open a public GitHub issue with only a minimal summary and ask for private
+follow-up before sharing exploit details, crash logs, personal dictionary data, clipboard content, private APKs, or
+proof-of-concept files.
+
+Include the affected SwiftFloris version, Android version, install channel, reproduction steps, impact, and whether
+the issue requires a malicious app, a crafted local file, physical access, debug tooling, or normal keyboard use.
+
+## Response expectations
+
+Maintainers aim to acknowledge valid reports within seven days, confirm scope and severity before public disclosure,
+and keep the reporter updated when a fix needs a release train or upstream dependency change. Confirmed vulnerabilities
+receive release-note credit unless the reporter asks to stay anonymous.
+
 ## Threat model
 
 SwiftFloris is designed as a no-network keyboard: typed text, suggestions, clipboard history, dictionaries, settings,
@@ -117,12 +144,8 @@ osv-scanner --recursive --skip-git ./
 
 The recursive scan covers the lockfiles, the Gradle files, the dependency-tree dump, and any vendored manifests.
 
-## Reporting a vulnerability
+## Public disclosure
 
-If you find a vulnerability in SwiftFloris itself (not in an upstream dependency), please open a private security
-advisory through GitHub's "Security" tab on the repository, or email the maintainers directly. Do not file a public
-issue for unpatched vulnerabilities. The maintainers will respond within a week and publish a fix and credit you in
-the release notes unless you ask to stay anonymous.
-
-For vulnerabilities in upstream dependencies (Android SDK, AndroidX, Compose, Kotlin, Room, SQLCipher, etc.), please
-file with the upstream project. The dependency-scan workflow will surface their fix automatically on the next run.
+Do not publish unpatched exploit details, private user data, or weaponized proof-of-concept files before maintainers
+have had a chance to triage and patch. After a fix ships, SwiftFloris documents the affected version range, fix
+version, and security-scan context in the GitHub Release notes.
