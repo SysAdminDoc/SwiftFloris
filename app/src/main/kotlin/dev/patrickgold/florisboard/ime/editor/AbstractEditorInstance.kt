@@ -781,7 +781,7 @@ abstract class AbstractEditorInstance(context: Context) {
 
         fun handleUpdateSelection(selection: EditorRange) {
             val start = min(selection.start, selection.end)
-            if (start < pos) {
+            if (selection.isNotValid || start != pos) {
                 reset()
             }
         }

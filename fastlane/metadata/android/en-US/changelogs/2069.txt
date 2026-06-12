@@ -1,0 +1,1 @@
+Learned words and phrase predictions can now be reviewed and removed from Settings, with cursor-jump learning guarded by new regression tests.

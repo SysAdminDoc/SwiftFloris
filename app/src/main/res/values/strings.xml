@@ -1000,6 +1000,8 @@
     <string name="pref__dictionary__enable_internal_user_dictionary__summary" comment="Preference summary">Suggest words stored in the internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__label" comment="Preference title">Manage internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__summary" comment="Preference summary">Add, view, and remove entries for the internal user dictionary</string>
+    <string name="pref__dictionary__manage_learned_entries__label" comment="Preference title">Review learned entries</string>
+    <string name="pref__dictionary__manage_learned_entries__summary" comment="Preference summary">View and remove learned words, phrase pairs, and phrase triples stored on this device</string>
     <string name="pref__dictionary__preview_imports__label" comment="Preference title">Preview imports before saving</string>
     <string name="pref__dictionary__preview_imports__summary" comment="Preference summary">Review parsed dictionary rows and exclude mistakes before they are added.</string>
     <string name="settings__udm__title_floris" comment="Title of the User Dictionary Manager activity for internal">Internal User Dictionary</string>
@@ -1088,6 +1090,17 @@
     <string name="settings__udm__entry_delete_success_summary" comment="Card summary shown after a user dictionary word was deleted">The word was removed from this dictionary and the suggestion overlay is being refreshed.</string>
     <string name="settings__udm__entry_delete_failure" comment="Card title shown when a user dictionary word could not be deleted">Could not remove dictionary word</string>
     <string name="settings__udm__entry_delete_failure_summary" comment="Card summary shown when a user dictionary word could not be deleted">The dictionary entry is still present. Review the error, then retry or reopen the dictionary screen. Details: {error_message}</string>
+    <string name="settings__learned_entries__title" comment="Settings screen title">Learned entries</string>
+    <string name="settings__learned_entries__loading" comment="Progress text while learned entries load">Loading learned entries</string>
+    <string name="settings__learned_entries__empty_title" comment="Empty state title">No learned entries</string>
+    <string name="settings__learned_entries__empty_message" comment="Empty state message">SwiftFloris has no saved words or phrase predictions for suggestions yet.</string>
+    <string name="settings__learned_entries__words_title" comment="Preference group title">Learned words</string>
+    <string name="settings__learned_entries__bigrams_title" comment="Preference group title">Learned phrase pairs</string>
+    <string name="settings__learned_entries__trigrams_title" comment="Preference group title">Learned phrase triples</string>
+    <string name="settings__learned_entries__word_summary" comment="Learned word row summary">Language: {language} · Frequency: {count}</string>
+    <string name="settings__learned_entries__ngram_summary" comment="Learned n-gram row summary">Language: {language} · Count: {count}</string>
+    <string name="settings__learned_entries__remove_title" comment="Confirmation dialog title">Remove learned entry?</string>
+    <string name="settings__learned_entries__remove_message" comment="Confirmation dialog message">Remove "{entry}" from on-device learning?</string>
 
     <string name="settings__gestures__title" comment="Title of Gestures screen">Gestures &amp; Glide typing</string>
     <string name="pref__glide__title" comment="Preference group title">Glide typing</string>

@@ -40,6 +40,7 @@ enum class SettingsSearchDestination {
     DICTIONARY,
     USER_DICTIONARY_SYSTEM,
     USER_DICTIONARY_FLORIS,
+    LEARNED_ENTRIES,
     SYNC,
     MCP,
     ADDONS,
@@ -185,6 +186,7 @@ object SettingsSearchIndex {
         entry("dictionary", R.string.settings__dictionary__title, R.string.settings__dictionary__title, R.string.settings__home__dictionary_summary, SettingsSearchDestination.DICTIONARY, "personal words"),
         entry("dictionary.system", R.string.settings__udm__title_system, R.string.pref__dictionary__manage_system_user_dictionary__label, destination = SettingsSearchDestination.USER_DICTIONARY_SYSTEM),
         entry("dictionary.floris", R.string.settings__udm__title_floris, R.string.pref__dictionary__manage_floris_user_dictionary__label, destination = SettingsSearchDestination.USER_DICTIONARY_FLORIS),
+        entry("dictionary.learned", R.string.settings__learned_entries__title, R.string.pref__dictionary__manage_learned_entries__label, R.string.pref__dictionary__manage_learned_entries__summary, SettingsSearchDestination.LEARNED_ENTRIES, "learned words bigrams trigrams forget remove phrases predictions"),
 
         entry("clipboard", R.string.settings__clipboard__title, R.string.settings__clipboard__title, R.string.settings__home__clipboard_summary, SettingsSearchDestination.CLIPBOARD),
         entry("clipboard.internal", R.string.settings__clipboard__title, R.string.pref__clipboard__use_internal_clipboard__label, R.string.pref__clipboard__use_internal_clipboard__summary, SettingsSearchDestination.CLIPBOARD),

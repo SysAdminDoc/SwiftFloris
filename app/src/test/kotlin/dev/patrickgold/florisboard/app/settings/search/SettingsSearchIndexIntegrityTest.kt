@@ -112,6 +112,7 @@ private val expectedRoutes = mapOf<SettingsSearchDestination, Any>(
         Routes.Settings.UserDictionary(UserDictionaryType.SYSTEM),
     SettingsSearchDestination.USER_DICTIONARY_FLORIS to
         Routes.Settings.UserDictionary(UserDictionaryType.FLORIS),
+    SettingsSearchDestination.LEARNED_ENTRIES to Routes.Settings.LearnedEntries,
     SettingsSearchDestination.SYNC to Routes.Settings.Sync,
     SettingsSearchDestination.MCP to Routes.Settings.Mcp,
     SettingsSearchDestination.ADDONS to Routes.Settings.Addons,

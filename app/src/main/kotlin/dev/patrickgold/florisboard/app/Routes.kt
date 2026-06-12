@@ -62,6 +62,7 @@ import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.clipboard.ClipboardScreen
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
+import dev.patrickgold.florisboard.app.settings.dictionary.LearnedEntriesScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreenAction
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
@@ -196,6 +197,10 @@ object Routes {
             val type: UserDictionaryType,
             val action: UserDictionaryScreenAction? = null,
         )
+
+        @Serializable
+        @Deeplink("settings/dictionary/learned-entries")
+        object LearnedEntries
 
         @Serializable
         @Deeplink("settings/gestures")
@@ -364,6 +369,7 @@ object Routes {
                 val payload = navBackStack.toRoute<Settings.UserDictionary>()
                 UserDictionaryScreen(payload.type, payload.action)
             }
+            composableWithDeepLink(Settings.LearnedEntries::class) { LearnedEntriesScreen() }
 
             composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }
 

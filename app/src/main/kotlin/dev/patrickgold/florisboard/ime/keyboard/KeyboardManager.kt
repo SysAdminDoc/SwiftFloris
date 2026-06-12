@@ -187,6 +187,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 updateActiveEvaluators()
             }
             editorInstance.activeContentFlow.collectIn(scope) { content ->
+                if (editorInstance.lastCommitPosition.pos < 0) {
+                    resetLearnChain()
+                }
                 resetSuggestions(content)
             }
             // A field/app switch breaks word adjacency — without this reset the
