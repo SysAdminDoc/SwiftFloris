@@ -453,16 +453,14 @@ fun ClipboardInputLayout(
                     runCatching {
                         check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
                         val rawBitmap = if (AndroidVersion.ATLEAST_API29_Q) {
-                            // MediaMetadataRetriever holds a native extractor + an open
-                            // file descriptor; it must be released on every path or the
-                            // IME steadily leaks FDs as videos scroll into the grid
-                            // (the width!!.toInt() below can also throw).
                             val dataRetriever = MediaMetadataRetriever()
                             try {
                                 dataRetriever.setDataSource(file.absolutePath)
-                                val width = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                                val height = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                                ThumbnailUtils.createVideoThumbnail(file, Size(width!!.toInt(), height!!.toInt()), null)
+                                val w = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+                                    ?.toIntOrNull() ?: 320
+                                val h = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+                                    ?.toIntOrNull() ?: 240
+                                ThumbnailUtils.createVideoThumbnail(file, Size(w, h), null)
                             } finally {
                                 dataRetriever.release()
                             }
@@ -672,7 +670,8 @@ fun ClipboardInputLayout(
                 }
             }
 
-            if (popupItem != null) {
+            val activePopupItem = popupItem
+            if (activePopupItem != null) {
                 SnyggRow(
                     modifier = Modifier
                         .fillMaxSize()
@@ -688,9 +687,9 @@ fun ClipboardInputLayout(
                             modifier = Modifier
                                 .widthIn(max = ItemWidth)
                                 .weight(1f, fill = false),
-                            item = popupItem!!,
+                            item = activePopupItem,
                             contentScrollInsteadOfClip = true,
-                            mediaGroup = if (popupItem!!.isPinned) {
+                            mediaGroup = if (activePopupItem.isPinned) {
                                 ClipboardMediaItemGroup.PINNED
                             } else {
                                 null
@@ -700,7 +699,7 @@ fun ClipboardInputLayout(
                             val formatter = LocalLocalizedDateTimeFormatter.current
                             SnyggText(
                                 modifier = Modifier.fillMaxWidth(),
-                                text = formatter.format(Instant.ofEpochMilli(popupItem!!.creationTimestampMs)),
+                                text = formatter.format(Instant.ofEpochMilli(activePopupItem.creationTimestampMs)),
                             )
                         }
                     }
@@ -708,16 +707,16 @@ fun ClipboardInputLayout(
                         SnyggColumn(FlorisImeUi.ClipboardItemActions.elementName) {
                             PopupAction(
                                 icon = Icons.Outlined.PushPin,
-                                text = stringRes(if (popupItem!!.isPinned) {
+                                text = stringRes(if (activePopupItem.isPinned) {
                                     R.string.clip__unpin_item
                                 } else {
                                     R.string.clip__pin_item
                                 }),
                             ) {
-                                if (popupItem!!.isPinned) {
-                                    clipboardManager.unpinClip(popupItem!!)
+                                if (activePopupItem.isPinned) {
+                                    clipboardManager.unpinClip(activePopupItem)
                                 } else {
-                                    clipboardManager.pinClip(popupItem!!)
+                                    clipboardManager.pinClip(activePopupItem)
                                 }
                                 popupItem = null
                             }
@@ -725,14 +724,14 @@ fun ClipboardInputLayout(
                                 icon = Icons.Default.Delete,
                                 text = stringRes(R.string.clip__delete_item),
                             ) {
-                                clipboardManager.deleteClip(popupItem!!, onlyIfUnpinned = false)
+                                clipboardManager.deleteClip(activePopupItem, onlyIfUnpinned = false)
                                 popupItem = null
                             }
                             PopupAction(
                                 icon = Icons.Outlined.ContentPasteGo,
                                 text = stringRes(R.string.clip__paste_item),
                             ) {
-                                clipboardManager.pasteItem(popupItem!!)
+                                clipboardManager.pasteItem(activePopupItem)
                                 popupItem = null
                             }
                         }
