@@ -322,7 +322,7 @@ fun RestoreScreen() = FlorisScreen {
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
                     val restoredItems = clipboardItemsList.filter { it.type == ItemType.IMAGE }
                     for (item in restoredItems) {
-                        val restoredFileId = item.uri!!.path!!.split('/').last()
+                        val restoredFileId = item.uri?.path?.split('/')?.lastOrNull() ?: continue
                         val restoredFile = ClipboardFileStorage.insertFileFromBackupIfNotExisting(
                             context,
                             clipboardFilesDir.subFile(
@@ -346,7 +346,7 @@ fun RestoreScreen() = FlorisScreen {
                     val clipboardItemsList = clipboardItems.readJson<List<ClipboardItem>>()
                     val restoredItems = clipboardItemsList.filter { it.type == ItemType.VIDEO }
                     for (item in restoredItems) {
-                        val restoredFileId = item.uri!!.path!!.split('/').last()
+                        val restoredFileId = item.uri?.path?.split('/')?.lastOrNull() ?: continue
                         val restoredFile = ClipboardFileStorage.insertFileFromBackupIfNotExisting(
                             context,
                             clipboardFilesDir.subFile(

@@ -1,0 +1,3 @@
+Deep audit pass 2: correctness and reliability fixes.
+
+Sticker downsampling now keys on the longest edge, preventing OOM on non-square stickers. Space-bar swipe-up NO_ACTION no longer consumes the gesture. Clipboard restore no longer crashes on media items with null URIs. Numeric/phone mode keys no longer reset manual shift state.
