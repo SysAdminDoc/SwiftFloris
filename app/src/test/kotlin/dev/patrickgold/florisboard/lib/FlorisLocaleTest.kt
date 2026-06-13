@@ -37,6 +37,14 @@ class FlorisLocaleTest : FunSpec({
             CapabilityCase("bn", supportsCapitalization = false, supportsAutoSpace = true),
             CapabilityCase("hi", supportsCapitalization = false, supportsAutoSpace = true),
             CapabilityCase("en", supportsCapitalization = true, supportsAutoSpace = true),
+            CapabilityCase("de", supportsCapitalization = true, supportsAutoSpace = true),
+            CapabilityCase("ru", supportsCapitalization = true, supportsAutoSpace = true),
+            CapabilityCase("el", supportsCapitalization = true, supportsAutoSpace = true),
+            CapabilityCase("ar", supportsCapitalization = false, supportsAutoSpace = true),
+            CapabilityCase("he", supportsCapitalization = false, supportsAutoSpace = true),
+            CapabilityCase("ta", supportsCapitalization = false, supportsAutoSpace = true),
+            CapabilityCase("fr", supportsCapitalization = true, supportsAutoSpace = true),
+            CapabilityCase("uk", supportsCapitalization = true, supportsAutoSpace = true),
         )
 
         for (case in cases) {
