@@ -1398,12 +1398,7 @@ private class TextKeyboardLayoutController(
                 SwipeGesture.Direction.UP -> {
                     val action = prefs.gestures.spaceBarSwipeUp.get()
                     when {
-                        action == SwipeAction.NO_ACTION -> {
-                            if (event.absUnitCountY < -6) {
-                                keyboardManager.executeSwipeAction(action)
-                                true
-                            } else false
-                        }
+                        action == SwipeAction.NO_ACTION -> false
                         action != SwipeAction.MOVE_CURSOR_UP -> {
                             keyboardManager.executeSwipeAction(action)
                             true

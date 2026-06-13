@@ -1052,19 +1052,22 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     KeyboardMode.NUMERIC,
                     KeyboardMode.NUMERIC_ADVANCED,
                     KeyboardMode.PHONE,
-                    KeyboardMode.PHONE2 -> when (data.type) {
-                        KeyType.CHARACTER,
-                        KeyType.NUMERIC -> {
-                            val text = data.asString(isForDisplay = false)
-                            editorInstance.commitText(text)
-                        }
-                        else -> when (data.code) {
-                            KeyCode.PHONE_PAUSE,
-                            KeyCode.PHONE_WAIT -> {
+                    KeyboardMode.PHONE2 -> {
+                        when (data.type) {
+                            KeyType.CHARACTER,
+                            KeyType.NUMERIC -> {
                                 val text = data.asString(isForDisplay = false)
                                 editorInstance.commitText(text)
                             }
+                            else -> when (data.code) {
+                                KeyCode.PHONE_PAUSE,
+                                KeyCode.PHONE_WAIT -> {
+                                    val text = data.asString(isForDisplay = false)
+                                    editorInstance.commitText(text)
+                                }
+                            }
                         }
+                        return@batchEdit
                     }
                     else -> when (data.type) {
                         KeyType.CHARACTER, KeyType.NUMERIC ->{

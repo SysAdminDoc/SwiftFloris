@@ -118,11 +118,10 @@ private const val TARGET_STICKER_EDGE_PX = 512
 // After this cache: the first composition for a sourceUri pays the SAF
 // open + decode cost; every subsequent composition is a cache hit.
 //
-// Size budget: 64 entries × ~512 px longest edge × 4 bytes/px ≈ 32 MB
-// worst case, ≈ 13 MB at typical sticker sizes. Object-count-based
-// eviction is simpler than byte-counting and good enough — actual heap
-// pressure is dominated by other parts of the IME (the keyboard atlas,
-// the Compose tree, the active dictionary).
+// Size budget: 64 entries × ≤512 px longest edge × 4 bytes/px ≈ 64 MB
+// absolute worst case (all square 512×512), ≈ 13 MB at typical sizes.
+// Downsampling keys on the longest edge, so non-square images are
+// aggressively shrunk and never blow the per-tile budget.
 private const val STICKER_BITMAP_CACHE_SIZE = 64
 private val stickerBitmapCache: androidx.collection.LruCache<String, ImageBitmap> =
     androidx.collection.LruCache(STICKER_BITMAP_CACHE_SIZE)
@@ -486,11 +485,9 @@ private fun BoxScope.StickerPreview(sticker: Sticker) {
                 if (srcWidth > MAX_STICKER_DIMENSION || srcHeight > MAX_STICKER_DIMENSION) {
                     return@runCatching null
                 }
-                val targetEdge = TARGET_STICKER_EDGE_PX
+                val longestEdge = maxOf(srcWidth, srcHeight)
                 var sampleSize = 1
-                while (srcWidth / (sampleSize * 2) >= targetEdge &&
-                    srcHeight / (sampleSize * 2) >= targetEdge
-                ) {
+                while (longestEdge / (sampleSize * 2) >= TARGET_STICKER_EDGE_PX) {
                     sampleSize *= 2
                 }
                 val decodeOptions = BitmapFactory.Options().apply {
