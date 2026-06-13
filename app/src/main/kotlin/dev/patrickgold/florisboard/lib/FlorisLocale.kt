@@ -51,6 +51,20 @@ class FlorisLocale private constructor(val base: Locale) {
         /** Delimiter regex to split language/locale tags. */
         private val DELIMITER_SPLITTER = """[${DELIMITER_LANGUAGE_TAG}${DELIMITER_LOCALE_TAG}]""".toRegex()
 
+        private val SCRIPTS_WITHOUT_WORD_SPACES = setOf(
+            Character.UnicodeScript.HAN,
+            Character.UnicodeScript.HIRAGANA,
+            Character.UnicodeScript.KATAKANA,
+            Character.UnicodeScript.HANGUL,
+            Character.UnicodeScript.THAI,
+            Character.UnicodeScript.LAO,
+            Character.UnicodeScript.KHMER,
+            Character.UnicodeScript.MYANMAR,
+            Character.UnicodeScript.TIBETAN,
+            Character.UnicodeScript.JAVANESE,
+            Character.UnicodeScript.BALINESE,
+        )
+
         /** Constant locale for ROOT */
         val ROOT = from("", "", "")
 
@@ -212,24 +226,22 @@ class FlorisLocale private constructor(val base: Locale) {
      */
     val iso3Country: String get() = base.isO3Country
 
-    /**
-     * Returns true if this language has a capitalization concept, false otherwise.
-     * TODO: this is absolutely not exhaustive and hard-coded, find solution based on ICU or system
-     */
     val supportsCapitalization: Boolean
-        get() = when (language) {
-            "zh", "ja", "ko", "th", "bn", "hi" -> false
-            else -> true
+        get() {
+            val nativeName = base.getDisplayLanguage(base)
+            if (nativeName.isEmpty()) return true
+            val cp = nativeName.codePointAt(0)
+            if (!Character.isLetter(cp)) return true
+            return Character.toUpperCase(cp) != Character.toLowerCase(cp)
         }
 
-    /**
-     * Returns true if suggestions in this language should have spaces added after, false otherwise.
-     * TODO: this is absolutely not exhaustive and hard-coded, find solution based on ICU or system
-     */
     val supportsAutoSpace: Boolean
-        get() = when (language) {
-            "zh", "ja", "ko", "th" -> false
-            else -> true
+        get() {
+            val nativeName = base.getDisplayLanguage(base)
+            if (nativeName.isEmpty()) return true
+            val cp = nativeName.codePointAt(0)
+            if (!Character.isLetter(cp)) return true
+            return Character.UnicodeScript.of(cp) !in SCRIPTS_WITHOUT_WORD_SPACES
         }
 
     /**
