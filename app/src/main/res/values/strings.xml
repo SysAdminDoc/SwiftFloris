@@ -19,6 +19,8 @@
     <string name="media__tab__stickers" comment="Tab description for stickers in the media UI">Stickers</string>
     <string name="prefs__media__emoji_preferred_skin_tone">Preferred emoji skin tone</string>
     <string name="prefs__media__emoji_preferred_hair_style">Preferred emoji hair style</string>
+    <string name="settings__media__local_media_title" comment="Media settings intro card title">Emoji and stickers stay local</string>
+    <string name="settings__media__local_media_summary" comment="Media settings intro card summary">Emoji history is stored on this device, and imported sticker folders use Android folder grants. Clear controls below stop retention without deleting your own files.</string>
     <string name="prefs__media__emoji_defaults__title" comment="Preference group title">Emoji defaults</string>
     <string name="prefs__media__emoji_history__title" comment="Preference group title">Emoji history</string>
     <string name="prefs__media__emoji_history_enabled" comment="Preference title">Enable emoji history</string>
@@ -374,6 +376,8 @@
     <string name="settings__voice_input__language_finnish">Finnish</string>
     <string name="settings__voice_input__language_indonesian">Indonesian</string>
     <string name="settings__sync__title" comment="Title of Sync settings screen">Sync</string>
+    <string name="settings__sync__intro_title" comment="Sync settings intro card title">Local sync, sealed before sharing</string>
+    <string name="settings__sync__intro_summary" comment="Sync settings intro card summary">SwiftFloris creates encrypted dictionary envelopes for paired devices, then writes them to a folder or file channel you choose. The base keyboard still declares no network permission.</string>
     <string name="settings__sync__group_channel" comment="Sync settings group title">Sync channel</string>
     <string name="settings__sync__channel_syncthing" comment="Sync channel option">Syncthing folder</string>
     <string name="settings__sync__channel_syncthing_summary" comment="Sync channel option summary">Use a shared Syncthing folder name. SwiftFloris never opens a network connection.</string>
@@ -930,6 +934,8 @@
     <string name="pref__spelling__use_udm_entries__summary" comment="Summary of Use user dictionary entries pref">Look up entries from the user dictionaries</string>
 
     <string name="settings__dictionary__title" comment="Title of the User dictionaries screen">User dictionaries</string>
+    <string name="settings__dictionary__local_import_title" comment="Dictionary settings intro card title">Bring words in before you type</string>
+    <string name="settings__dictionary__local_import_summary" comment="Dictionary settings intro card summary">Import SwiftKey JSON, Gboard XML or ZIP, FlorisBoard CSV, .flbackup, .fldic, or an encrypted SwiftFloris export. Files are parsed on this device.</string>
     <string name="settings__typing__dictionary_summary" comment="Typing screen shortcut summary">Manage personal words used by suggestions, corrections, and spell checking</string>
     <string name="settings__typing_stats__title" comment="Title of the Typing stats screen">Typing stats</string>
     <string name="settings__typing_stats__summary" comment="Summary of the Typing stats entry on the Typing screen">See how much SwiftFloris has learned from your typing — local, never uploaded</string>
@@ -1577,6 +1583,8 @@
     <string name="clipboard__confirm_clear_unfiltered_history__message">Are you sure you want to clear your full clipboard history? This will affect all items, except pinned ones.</string>
     <string name="clipboard__confirm_clear_filtered_history__message">Are you sure you want to clear your clipboard history? This will affect all currently filtered items, except pinned ones.</string>
     <string name="settings__clipboard__title">Clipboard</string>
+    <string name="settings__clipboard__local_retention_title" comment="Clipboard settings intro card title">Clipboard history stays under your control</string>
+    <string name="settings__clipboard__local_retention_summary" comment="Clipboard settings intro card summary">History, suggestions, size limits, and sensitive-item cleanup are local settings. Use the controls below to decide what SwiftFloris remembers and when it forgets.</string>
     <string name="pref__clipboard__group_system_clipboard__label">System clipboard sync</string>
     <string name="pref__clipboard__use_internal_clipboard__label">Use internal clipboard</string>
     <string name="pref__clipboard__use_internal_clipboard__summary">Use an internal clipboard instead of the system clipboard</string>

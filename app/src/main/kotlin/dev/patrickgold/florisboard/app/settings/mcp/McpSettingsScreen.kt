@@ -16,10 +16,10 @@
 
 package dev.patrickgold.florisboard.app.settings.mcp
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.PlayCircleOutline
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Switch
@@ -30,7 +30,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
@@ -51,6 +53,8 @@ import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -124,22 +128,23 @@ fun McpSettingsScreen() = FlorisScreen {
     }
 
     content {
+        val activeCount = activeDaemons.keys.count { it.packageName !in disabledSet }
+        if (activeDaemons.isEmpty()) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__mcp__status_no_daemons),
+                secondaryText = stringRes(R.string.settings__mcp__status_no_daemons_summary),
+            )
+        } else {
+            FlorisSuccessCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__mcp__status_bound_title),
+                secondaryText = stringRes(R.string.settings__mcp__status_bound_summary)
+                    .replace("{count}", "$activeCount/${activeDaemons.size}"),
+            )
+        }
+
         PreferenceGroup(title = stringRes(R.string.settings__mcp__group_status)) {
-            if (activeDaemons.isEmpty()) {
-                Preference(
-                    icon = Icons.Default.Extension,
-                    title = stringRes(R.string.settings__mcp__status_no_daemons),
-                    summary = stringRes(R.string.settings__mcp__status_no_daemons_summary),
-                )
-            } else {
-                val activeCount = activeDaemons.keys.count { it.packageName !in disabledSet }
-                Preference(
-                    icon = Icons.Default.Extension,
-                    title = stringRes(R.string.settings__mcp__status_bound_title),
-                    summary = stringRes(R.string.settings__mcp__status_bound_summary)
-                        .replace("{count}", "$activeCount/${activeDaemons.size}"),
-                )
-            }
             Preference(
                 icon = Icons.Default.Refresh,
                 title = if (scanInProgress) {
@@ -306,8 +311,12 @@ private fun ToolRow(
     onEnabledChange: (Boolean) -> Unit,
 ) {
     Preference(
-        title = "$daemonPackage / $toolName",
-        summary = if (toolDescription.isBlank()) null else toolDescription,
+        title = toolName,
+        summary = if (toolDescription.isBlank()) {
+            daemonPackage
+        } else {
+            "$toolDescription\n$daemonPackage"
+        },
         trailing = {
             Switch(
                 checked = isEnabled,
