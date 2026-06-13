@@ -15,9 +15,10 @@
 #      projectVersionName, or the release workflow has not run yet (first
 #      release is allowed to be missing)
 #
-# Modes:
-#   --strict   All checks must pass (use in release.yml)
-#   (default)  README + fastlane checks; GitHub Release check is advisory
+# The GitHub Release check is always advisory (warning) because the
+# release workflow calls this script before creating the release.
+# Local surfaces (gradle.properties, fastlane, README.md) are hard
+# failures.
 #
 # Exits 0 on pass, 1 on any rule violation.
 
@@ -25,11 +26,6 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
-
-STRICT=false
-if [ "${1:-}" = "--strict" ]; then
-  STRICT=true
-fi
 
 errors=0
 warnings=0
@@ -116,19 +112,9 @@ if command -v gh >/dev/null 2>&1; then
   expected_tag="v${version_name}"
 
   if [ -z "$latest_release" ]; then
-    msg="no GitHub Releases found — expected ${expected_tag}"
-    if [ "$STRICT" = true ]; then
-      fail "$msg"
-    else
-      warn "$msg (advisory — run with --strict in release.yml)"
-    fi
+    warn "no GitHub Releases found — expected ${expected_tag} (advisory — the release workflow will create it)"
   elif [ "$latest_release" != "$expected_tag" ]; then
-    msg="latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag}"
-    if [ "$STRICT" = true ]; then
-      fail "$msg"
-    else
-      warn "$msg (advisory — the release workflow will create it)"
-    fi
+    warn "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag} (advisory — the release workflow will create it)"
   else
     echo "GitHub Release: OK (${latest_release})"
   fi
