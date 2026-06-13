@@ -48,7 +48,7 @@ The drafts deliberately avoid:
 - **Unverified feature claims.** Every claim maps to a documented
   release-notes file or roadmap section. Counts (1000+ tests,
   117 k base dictionary, 7-language priors) come straight from
-  `PROJECT_CONTEXT.md`.
+  `README.md`.
 - **Comparisons that say "X is bad".** Reddit / BGR comment moderators
   routinely remove negative-comparison posts. The drafts position
   SwiftFloris on its specific load-bearing invariants
@@ -60,8 +60,8 @@ The drafts deliberately avoid:
 
 ## After-posting maintenance
 
-Once posted, add the live URLs to
-[`PROJECT_CONTEXT.md` §5 Distribution](../../../PROJECT_CONTEXT.md) so
-future research runs don't re-flag the discovery gap. The seventh
+Once posted, add the live URLs to the Distribution section of
+[`README.md`](../../../README.md) so future research runs don't re-flag
+the discovery gap. The seventh
 research pass should re-check the four surfaces for SwiftFloris's
 presence as part of its source-register update.
