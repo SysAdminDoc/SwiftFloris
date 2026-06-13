@@ -73,7 +73,6 @@ enum class LanguagePackManagerScreenAction(val id: String) {
     MANAGE("manage-installed-language-packs");
 }
 
-// TODO: this file is based on ThemeManagerScreen.kt and can arguably be merged.
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
 @Composable
 fun LanguagePackManagerScreen(action: LanguagePackManagerScreenAction?) = FlorisScreen {
