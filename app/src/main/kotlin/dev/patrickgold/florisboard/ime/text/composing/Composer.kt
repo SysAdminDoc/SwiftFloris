@@ -79,7 +79,12 @@ class WithRules(
             if (str.lowercase().endsWith(key)) {
                 val value = rules.getValue(key)
                 val firstOfKey = str.takeLast(key.length).take(1)
-                return (key.length - 1) to (if (firstOfKey.uppercase() == firstOfKey) value.uppercase() else value)
+                val cased = if (firstOfKey.uppercase() == firstOfKey) {
+                    String(CharArray(value.length) { value[it].uppercaseChar() })
+                } else {
+                    value
+                }
+                return (key.length - 1) to cased
             }
         }
         return 0 to toInsert
