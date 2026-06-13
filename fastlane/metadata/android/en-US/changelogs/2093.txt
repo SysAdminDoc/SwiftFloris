@@ -1,0 +1,1 @@
+Locale script capability detection (capitalization and auto-space) now uses runtime Unicode character properties instead of hardcoded language lists — covers all scripts automatically without manual maintenance. Release workflow now generates SLSA Build Level 2 provenance attestations and SPDX SBOM for every release.
