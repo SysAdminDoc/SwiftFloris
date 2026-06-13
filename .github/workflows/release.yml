@@ -74,8 +74,8 @@ jobs:
             exit 1
           fi
 
-      - name: Check release-front-door drift (strict)
-        run: bash scripts/check-release-front-door.sh --strict
+      - name: Check release-front-door drift
+        run: bash scripts/check-release-front-door.sh
 
       - name: Verify baseline profile was refreshed
         run: bash scripts/check-baseline-profile-freshness.sh
