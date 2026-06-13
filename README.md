@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.40-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.41-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.40 | Privacy posture |
+| Area | What's in v1.9.41 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **CI / build** | No-network gate, repo-hygiene gate with module build-cache cleanup guidance, Fastlane changelog drafting guide, OSV dep scan, Dependabot version review, lint baseline-drift wrapper with no committed app lint baseline, startup crash recovery via the local crash dialog, restore/crash diagnostics routed through project logging with safe fallback copy, settings-search resource/route drift guard, MIME helper aggregate-contract tests, NativeStr ByteBuffer slice tests, localization/copy contract tests, post-hotfix regression coverage for Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes, manual emulator settings smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
+| **CI / build** | No-network gate, repo-hygiene gate with module build-cache cleanup guidance, Fastlane changelog drafting guide, OSV dep scan, Dependabot version review, lint baseline-drift wrapper with no committed app lint baseline, startup crash recovery via the local crash dialog, restore/crash diagnostics routed through project logging with safe fallback copy, settings-search resource/route drift guard, MIME helper aggregate-contract tests, NativeStr ByteBuffer slice tests, localization/copy contract tests, post-hotfix regression coverage for Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes, phone/tablet/foldable emulator IME smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
 
 ## Distribution
 
@@ -146,7 +146,7 @@ Public project information is available in this README, [Security](docs/SECURITY
 
 **Language and build**
 
-- Kotlin 2.3.21, Compose BOM 2026.05.01, Material 3 + material-kolor.
+- Kotlin 2.4.0, Compose BOM 2026.05.01, Material 3 + material-kolor.
 - AGP 9.2.1, Gradle 9.5.1, JDK 21.
 - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0.
 - Kotest 6.1.11 unit-test runner; Roborazzi 1.63.0 and Robolectric 4.16.1
@@ -295,7 +295,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 - **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines. The manual Benchmark Regression workflow runs the adb suite, uploads candidate JSON, and compares watched medians against the committed baseline set.
 - **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
 - **Lint drift:** CI lint runs through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
-- **Emulator smoke:** The manual `Android Emulator Smoke` workflow builds the debug APK, launches the Settings app on an emulator, and uploads logcat for crash triage.
+- **Emulator smoke:** The manual `Android Emulator Smoke` workflow runs the IME enable -> type -> commit -> glide smoke test on phone, tablet-sized API 36, and foldable-sized API 36 emulator lanes. The tablet/foldable lanes force the documented `UNIVERSAL_RESIZABLE_BY_DEFAULT` compat behavior that becomes mandatory for API 37 targets.
 - **Repo hygiene gate:** CI runs `scripts/check-no-root-crash-logs.sh` so root
   `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed, and
   `scripts/check-repo-hygiene.sh` rejects tracked generated build/report output.
@@ -304,6 +304,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.41** (2026-06-12) — Android 17 adaptive IME validation now covers sw600 foldable/tablet sizing, split/floating window clipping, no large-screen manifest opt-out, and phone/tablet/foldable emulator smoke lanes.
 - **v1.9.40** (2026-06-12) — Pending F40 Roborazzi settings and keyboard-surface screenshots are now active visual gates, with committed baselines for AI features, voice input, MCP settings, typing stats, honeycomb, and glide trail surfaces.
 - **v1.9.39** (2026-06-12) — Settings now includes a per-app keyboard profile editor with add/edit/delete flows, package-label fallback, malformed profile recovery, and direct Privacy/Smartbar/Search entry points.
 - **v1.9.38** (2026-06-12) — Han shape-based language packs now drive real table-backed suggestions, word-list, and word-frequency lookups; placeholder spell results are gone and broken active Han tables surface as fail-closed language-pack status.
@@ -506,7 +507,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.40** (2026-06-12). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.41** (2026-06-12). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
