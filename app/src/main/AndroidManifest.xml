@@ -180,7 +180,9 @@
             android:exported="false"
             android:theme="@style/FlorisAppTheme.Transparent"/>
 
-        <!-- Copy to Clipboard Activity -->
+        <!-- Share-sheet target for image-to-clipboard. Exported without a custom
+             permission so any app can share images via ACTION_SEND; input is
+             validated at runtime by CopyToClipboardUriPolicy (scheme + MIME). -->
         <activity
             android:name="dev.patrickgold.florisboard.ime.clipboard.FlorisCopyToClipboardActivity"
             android:theme="@style/FlorisAppTheme.Transparent"
