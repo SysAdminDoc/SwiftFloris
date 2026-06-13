@@ -71,6 +71,16 @@ data class ImeFormFactor(
                 sizeClass.isWidthAtLeastBreakpoint(BP.WIDTH_DP_LARGE_LOWER_BOUND) -> {
                     Type.LARGE_TABLET
                 }
+                boundsDp.width >= 600.dp && boundsDp.height >= 600.dp -> {
+                    // Android 16/17 large-screen adaptive behavior keys off sw600dp,
+                    // which includes book-style foldable inner displays that do not
+                    // always cross WindowSizeClass V2's expanded width breakpoint.
+                    if (boundsDp.width >= boundsDp.height) {
+                        Type.TABLET_LANDSCAPE
+                    } else {
+                        Type.TABLET_PORTRAIT
+                    }
+                }
                 sizeClass.isAtLeastBreakpoint(BP.WIDTH_DP_MEDIUM_LOWER_BOUND, BP.HEIGHT_DP_EXPANDED_LOWER_BOUND) -> {
                     Type.TABLET_PORTRAIT
                 }

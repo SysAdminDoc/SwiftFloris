@@ -471,6 +471,12 @@ fun SyncSettingsScreen() = FlorisScreen {
     }
 
     content {
+        FlorisInfoCard(
+            modifier = Modifier.defaultFlorisOutlinedBox(),
+            text = stringRes(R.string.settings__sync__intro_title),
+            secondaryText = stringRes(R.string.settings__sync__intro_summary),
+        )
+
         SyncTransferStatusCard(
             notice = syncTransferNotice,
             exportedCount = syncExportedCount,

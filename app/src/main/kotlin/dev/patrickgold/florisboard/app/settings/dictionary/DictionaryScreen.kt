@@ -16,7 +16,10 @@
 
 package dev.patrickgold.florisboard.app.settings.dictionary
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
@@ -24,6 +27,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -34,6 +38,21 @@ fun DictionaryScreen() = FlorisScreen {
     val navController = LocalNavController.current
 
     content {
+        FlorisInfoCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.settings__dictionary__local_import_title),
+            secondaryText = stringRes(R.string.settings__dictionary__local_import_summary),
+            actionLabel = stringRes(R.string.action__import_file),
+            onClick = {
+                navController.navigate(
+                    Routes.Settings.UserDictionary(
+                        type = UserDictionaryType.FLORIS,
+                        action = UserDictionaryScreenAction.IMPORT,
+                    ),
+                )
+            },
+        )
+
         PreferenceGroup(title = stringRes(R.string.pref__dictionary__group_system__label)) {
             SwitchPreference(
                 prefs.dictionary.enableSystemUserDictionary,

@@ -63,9 +63,10 @@ import androidx.compose.ui.unit.sp
 
 
 object FlorisCardDefaults {
-    val IconRequiredSize = 24.dp
     val IconSpacing = 16.dp
     const val SecondaryContentAlpha = 0.88f
+    const val StatusBorderAlpha = 0.34f
+    const val StatusIconBackgroundAlpha = 0.11f
 
     val ContentPadding = PaddingValues(start = 0.dp, end = 18.dp, top = 16.dp, bottom = 16.dp)
 }
@@ -198,14 +199,14 @@ fun FlorisErrorCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.errorContainer,
-        contentColor = MaterialTheme.colorScheme.onErrorContainer,
-        borderColor = MaterialTheme.colorScheme.error.copy(alpha = 0.36f),
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        borderColor = MaterialTheme.colorScheme.error.copy(alpha = FlorisCardDefaults.StatusBorderAlpha),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
                 imageVector = Icons.Default.ErrorOutline,
-                tint = MaterialTheme.colorScheme.onErrorContainer,
+                tint = MaterialTheme.colorScheme.error,
             )
         }) else null,
         text = text,
@@ -227,14 +228,14 @@ fun FlorisWarningCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.92f),
-        contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
-        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = 0.36f),
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = FlorisCardDefaults.StatusBorderAlpha),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
                 imageVector = Icons.Outlined.Warning,
-                tint = MaterialTheme.colorScheme.onTertiaryContainer,
+                tint = MaterialTheme.colorScheme.tertiary,
             )
         }) else null,
         text = text,
@@ -256,14 +257,14 @@ fun FlorisSuccessCard(
 ) {
     FlorisSimpleCard(
         modifier = modifier,
-        backgroundColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f),
-        contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
-        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.36f),
+        backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+        contentColor = MaterialTheme.colorScheme.onSurface,
+        borderColor = MaterialTheme.colorScheme.primary.copy(alpha = FlorisCardDefaults.StatusBorderAlpha),
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
                 imageVector = Icons.Default.CheckCircle,
-                tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                tint = MaterialTheme.colorScheme.primary,
             )
         }) else null,
         text = text,
@@ -368,13 +369,13 @@ private fun FlorisStatusIcon(
     Box(
         modifier = Modifier
             .padding(horizontal = FlorisCardDefaults.IconSpacing)
-            .size(44.dp)
+            .size(42.dp)
             .clip(MaterialTheme.shapes.small)
-            .background(tint.copy(alpha = 0.12f)),
+            .background(tint.copy(alpha = FlorisCardDefaults.StatusIconBackgroundAlpha)),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
-            modifier = Modifier.size(FlorisCardDefaults.IconRequiredSize),
+            modifier = Modifier.size(22.dp),
             imageVector = imageVector,
             contentDescription = null,
             tint = tint,
@@ -399,7 +400,7 @@ fun FlorisEmptyState(
             color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
         ),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceContainer,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLow,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),

@@ -21,6 +21,7 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.Delete
@@ -33,7 +34,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
@@ -52,6 +55,7 @@ import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import kotlinx.coroutines.launch
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -98,6 +102,12 @@ fun MediaScreen() = FlorisScreen {
     }
 
     content {
+        FlorisInfoCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.settings__media__local_media_title),
+            secondaryText = stringRes(R.string.settings__media__local_media_summary),
+        )
+
         PreferenceGroup(title = stringRes(R.string.prefs__media__emoji_defaults__title)) {
             ListPreference(
                 prefs.emoji.preferredSkinTone,

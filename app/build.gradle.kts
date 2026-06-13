@@ -54,6 +54,9 @@ val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { 
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
+        // Kotlin 2.4.0 defaults moduleName to "{group}:{project}" which contains colons;
+        // KSP 2.3.9 chokes on colons in generated identifiers (ksp#2964). Remove when KSP 2.4.x ships.
+        moduleName.set("swiftfloris_app")
         freeCompilerArgs.set(listOf(
             "-opt-in=kotlin.contracts.ExperimentalContracts",
             "-jvm-default=enable",
@@ -113,8 +116,6 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
-        buildConfigField("String", "FLADDONS_API_VERSION", "\"v~draft2\"")
-        buildConfigField("String", "FLADDONS_STORE_URL", "\"beta.addons.florisboard.org\"")
         // RESEARCH_FEATURE_PLAN.md F14 — compile-time "What's new" excerpt sourced
         // from the tracked fastlane changelog for this versionCode (local-only
         // CHANGELOG.md as fallback) so Settings → About can show it offline

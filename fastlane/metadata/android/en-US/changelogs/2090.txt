@@ -1,0 +1,3 @@
+Adds Android 17 adaptive validation for keyboard window sizing.
+
+Foldable/tablet sizing, split/floating clipping, large-screen manifest opt-outs, and phone/tablet/foldable emulator smoke lanes are now covered.

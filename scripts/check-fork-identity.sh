@@ -11,7 +11,7 @@
 #   3. Fastlane title.txt does not contain "FlorisBoard"
 #   4. Fastlane short_description.txt exists and is non-empty
 #   5. No localized Fastlane title contains "FlorisBoard"
-#   6. FLADDONS_STORE_URL is flagged as upstream-facing (advisory)
+#   6. FLADDONS_STORE_URL is confirmed removed (was upstream dead code)
 #   7. rootProject.name is flagged as cosmetic FlorisBoard reference
 #
 # Intentional upstream references (not flagged):
@@ -98,14 +98,11 @@ if [ -d "fastlane/metadata" ]; then
   done < <(find fastlane/metadata -name "title.txt" -print0 2>/dev/null)
 fi
 
-# --- 6. Addon store URL (advisory) ---
-addon_url="$(grep 'FLADDONS_STORE_URL' app/build.gradle.kts | sed 's/.*"\\"\(.*\)\\"".*/\1/')" || true
-if [ -n "$addon_url" ]; then
-  if echo "$addon_url" | grep -qi "florisboard"; then
-    warn "FLADDONS_STORE_URL points at upstream ($addon_url) — intentional for upstream addon compatibility, but F-Droid reviewers may ask about it"
-  else
-    ok "FLADDONS_STORE_URL = $addon_url"
-  fi
+# --- 6. Addon store URL (removed) ---
+if grep -q 'FLADDONS_STORE_URL' app/build.gradle.kts 2>/dev/null; then
+  warn "FLADDONS_STORE_URL build config field still present — it was removed as dead code"
+else
+  ok "FLADDONS_STORE_URL removed (no upstream addon store reference)"
 fi
 
 # --- 7. rootProject.name (advisory) ---

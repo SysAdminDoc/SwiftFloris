@@ -16,8 +16,13 @@
 
 package dev.patrickgold.florisboard.app.settings.clipboard
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
@@ -28,6 +33,7 @@ import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -37,7 +43,17 @@ fun ClipboardScreen() = FlorisScreen {
     title = stringRes(R.string.settings__clipboard__title)
     previewFieldVisible = true
 
+    val navController = LocalNavController.current
+
     content {
+        FlorisInfoCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.settings__clipboard__local_retention_title),
+            secondaryText = stringRes(R.string.settings__clipboard__local_retention_summary),
+            actionLabel = stringRes(R.string.settings__home__privacy_posture_action),
+            onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
+        )
+
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_system_clipboard__label)) {
             SwitchPreference(
                 prefs.clipboard.useInternalClipboard,

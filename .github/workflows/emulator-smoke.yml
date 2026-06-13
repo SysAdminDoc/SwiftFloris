@@ -8,7 +8,9 @@ on:
       - ".github/workflows/emulator-smoke.yml"
       - "app/build.gradle.kts"
       - "app/src/main/AndroidManifest.xml"
+      - "app/src/androidTest/**"
       - "app/src/main/kotlin/dev/patrickgold/florisboard/app/**"
+      - "app/src/main/kotlin/dev/patrickgold/florisboard/ime/**"
       - "app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt"
       - "gradle/**"
       - "gradle.properties"
@@ -23,9 +25,29 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  settings-launch:
+  ime-smoke:
+    name: ${{ matrix.name }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: phone-api35-ime-smoke
+            api-level: 35
+            wm-size: ""
+            wm-density: ""
+            universal-resizable: false
+          - name: tablet-api36-adaptive-ime-smoke
+            api-level: 36
+            wm-size: "2560x1600"
+            wm-density: "320"
+            universal-resizable: true
+          - name: foldable-api36-adaptive-ime-smoke
+            api-level: 36
+            wm-size: "2208x1840"
+            wm-density: "320"
+            universal-resizable: true
 
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
@@ -55,20 +77,33 @@ jobs:
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
 
-      - name: Launch settings on emulator
+      - name: Run IME smoke on emulator
         uses: reactivecircus/android-emulator-runner@e89f39f1abbbd05b1113a29cf4db69e7540cae5a # v2
         with:
-          api-level: 35
+          api-level: ${{ matrix.api-level }}
           arch: x86_64
           profile: pixel_6
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           script: |
             set -euo pipefail
-            adb install -r app/build/outputs/apk/debug/app-debug.apk
-            adb shell monkey -p dev.patrickgold.florisboard.debug -c android.intent.category.LAUNCHER 1
+            APP_ID=io.github.sysadmindoc.swiftfloris.debug
+            if [ -n "${{ matrix.wm-size }}" ]; then
+              adb shell wm size "${{ matrix.wm-size }}"
+              adb shell wm density "${{ matrix.wm-density }}"
+            fi
+            ./gradlew :app:installDebug
+            # Android 17/API 37 removes the large-screen opt-out. API 36 with
+            # UNIVERSAL_RESIZABLE_BY_DEFAULT exercises the same adaptive window
+            # path while stable API 37 emulator images are not required in CI.
+            if [ "${{ matrix.universal-resizable }}" = "true" ]; then
+              adb shell am compat enable 357141415 "$APP_ID" || true
+            fi
+            ./gradlew :app:connectedDebugAndroidTest \
+              -Pandroid.testInstrumentationRunnerArguments.class=dev.patrickgold.florisboard.ime.smoke.ImeEndToEndSmokeTest
+            adb shell monkey -p "$APP_ID" -c android.intent.category.LAUNCHER 1
             sleep 8
-            adb shell pidof dev.patrickgold.florisboard.debug
-            adb shell dumpsys activity activities | grep -E "dev\.patrickgold\.florisboard\.debug|FlorisAppActivity|SettingsLauncherAlias"
+            adb shell pidof "$APP_ID"
+            adb shell dumpsys activity activities | grep -E "io\.github\.sysadmindoc\.swiftfloris\.debug|FlorisAppActivity|SettingsLauncherAlias"
             adb logcat -d -t 2000 > emulator-smoke-logcat.txt
             if grep -E "FATAL EXCEPTION|AndroidRuntime" emulator-smoke-logcat.txt; then
               echo "::error::Crash detected during settings-launch smoke."
