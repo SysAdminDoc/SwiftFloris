@@ -126,6 +126,10 @@ private const val STICKER_BITMAP_CACHE_SIZE = 64
 private val stickerBitmapCache: androidx.collection.LruCache<String, ImageBitmap> =
     androidx.collection.LruCache(STICKER_BITMAP_CACHE_SIZE)
 
+fun evictStickerBitmapCache() {
+    stickerBitmapCache.evictAll()
+}
+
 @Composable
 fun StickerPaletteView(
     modifier: Modifier = Modifier,

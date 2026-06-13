@@ -57,9 +57,7 @@ import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
  * @param modifier outer modifier — the caller supplies width/height
  *        + position; the hex inscribes into whatever box it gets.
  * @param backgroundColor backdrop fill when idle.
- * @param pressedBackgroundColor backdrop fill while the pointer is
- *        down. Snygg-themed values flow through this once the
- *        TextKeyboardLayout integration lands.
+ * @param pressedBackgroundColor backdrop fill while the pointer is down.
  * @param textColor label foreground.
  */
 @Composable

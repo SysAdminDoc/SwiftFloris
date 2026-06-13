@@ -82,9 +82,8 @@ sealed class QuickAction {
      * When the addon IS installed, the translated text is committed
      * back to the editor in place of the selection.
      *
-     * The source/target locale pair is read from
-     * `prefs.translate.sourceLocale` + `prefs.translate.targetLocale`
-     * (defaults `auto` + `en`).
+     * The target locale is read from the user's preferred target in
+     * [TranslationLanguagePackManager], falling back to `"en"`.
      */
     @Serializable
     @SerialName("translate_selection")
@@ -96,7 +95,8 @@ sealed class QuickAction {
             val translator = dev.patrickgold.florisboard.ime.translate
                 .InlineTranslatorRegistry.active
             val sourceLocale = "auto"
-            val targetLocale = "en"
+            val targetLocale = dev.patrickgold.florisboard.ime.translate
+                .TranslationLanguagePackManager.preferredTargetLocale() ?: "en"
             when (val result = translator.translate(raw, sourceLocale, targetLocale)) {
                 is dev.patrickgold.florisboard.ime.translate.TranslationResult.Translated -> {
                     editorInstance.commitText(result.translatedText)

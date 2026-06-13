@@ -1,0 +1,1 @@
+Translate quick-action reads user's preferred target locale instead of hardcoding English. Sticker bitmap LRU cache trims on system memory pressure. Composer case conversion preserves character count under CAPS_LOCK (e.g. ß → ẞ instead of SS).
