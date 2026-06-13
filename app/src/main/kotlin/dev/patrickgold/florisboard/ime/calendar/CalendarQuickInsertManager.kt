@@ -36,7 +36,9 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.ZoneOffset
+import java.time.chrono.Chronology
 import java.time.format.DateTimeFormatter
+import java.time.format.FormatStyle
 import java.util.Locale
 
 private const val DefaultDaysAhead = 7L
@@ -75,6 +77,24 @@ data class CalendarAgendaWindow(
 object CalendarAgendaFormatter {
     private const val UntitledEvent = "Untitled event"
 
+    private fun dateFormatter(locale: Locale): DateTimeFormatter {
+        val chronology = Chronology.ofLocale(locale)
+        return DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)
+            .withLocale(locale)
+            .withChronology(chronology)
+    }
+
+    private fun timeFormatter(locale: Locale): DateTimeFormatter {
+        return DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)
+            .withLocale(locale)
+    }
+
+    // CLDR 42+ uses U+202F (narrow no-break space) before AM/PM in many
+    // locales.  Committed keyboard text should use plain ASCII spaces so
+    // every text field renders it consistently.
+    private fun String.normalizeSpaces(): String =
+        replace('\u202F', ' ').replace('\u00A0', ' ')
+
     fun formatForInsert(
         event: CalendarAgendaEvent,
         zoneId: ZoneId = ZoneId.systemDefault(),
@@ -88,7 +108,7 @@ object CalendarAgendaFormatter {
         zoneId: ZoneId = ZoneId.systemDefault(),
         locale: Locale = Locale.getDefault(),
     ): String {
-        val dateFormatter = DateTimeFormatter.ofPattern("MMM d, yyyy", locale)
+        val dateFmt = dateFormatter(locale)
         if (event.allDay) {
             val startDate = event.startMillis.toUtcLocalDate()
             val endDate = event.endMillis
@@ -96,9 +116,9 @@ object CalendarAgendaFormatter {
                 ?.let { (it - 1L).toUtcLocalDate() }
                 ?: startDate
             return if (startDate == endDate) {
-                dateFormatter.format(startDate)
+                dateFmt.format(startDate)
             } else {
-                "${dateFormatter.format(startDate)} - ${dateFormatter.format(endDate)}"
+                "${dateFmt.format(startDate)} - ${dateFmt.format(endDate)}"
             }
         }
 
@@ -107,15 +127,17 @@ object CalendarAgendaFormatter {
         val end = event.endMillis
             .takeIf { it > event.startMillis }
             ?.let { Instant.ofEpochMilli(it).atZone(zone) }
-        val timeFormatter = DateTimeFormatter.ofPattern("h:mm a", locale)
-        val startText = "${dateFormatter.format(start)} ${timeFormatter.format(start)}"
+        val timeFmt = timeFormatter(locale)
+        val startTime = timeFmt.format(start).normalizeSpaces()
+        val endTime = end?.let { timeFmt.format(it).normalizeSpaces() }
+        val startText = "${dateFmt.format(start)} $startTime"
         return when {
             end == null -> startText
             start.toLocalDate() == end.toLocalDate() -> {
-                "${dateFormatter.format(start)}, ${timeFormatter.format(start)}-${timeFormatter.format(end)}"
+                "${dateFmt.format(start)}, $startTime-$endTime"
             }
             else -> {
-                "$startText - ${dateFormatter.format(end)} ${timeFormatter.format(end)}"
+                "$startText - ${dateFmt.format(end)} $endTime"
             }
         }
     }
