@@ -21,6 +21,7 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
+import android.content.ContentResolver
 import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -122,6 +123,17 @@ class FlorisCopyToClipboardActivity : ComponentActivity() {
         if (uri == null) {
             error = CopyToClipboardError.TYPE_NOT_SUPPORTED_ERROR
             return
+        }
+        if (!CopyToClipboardUriPolicy.isAllowedScheme(uri.scheme)) {
+            error = CopyToClipboardError.TYPE_NOT_SUPPORTED_ERROR
+            return
+        }
+        if (uri.scheme.equals(ContentResolver.SCHEME_CONTENT, ignoreCase = true)) {
+            val resolvedType = runCatching { contentResolver.getType(uri) }.getOrNull()
+            if (!CopyToClipboardUriPolicy.isContentTypeCompatible(resolvedType, filter)) {
+                error = CopyToClipboardError.TYPE_NOT_SUPPORTED_ERROR
+                return
+            }
         }
         runCatching {
             copyUriToClipboard(uri)
