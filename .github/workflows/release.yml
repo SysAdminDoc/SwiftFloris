@@ -7,6 +7,8 @@ name: Release
 #   4. Signs with the keystore stored as an encrypted secret.
 #   5. Uploads the signed APK + SHA-256 manifest to a GitHub Release.
 #   6. NOTICE / LICENSES attribution check (Apache-2.0 + SCOWL + LDNOOBW + FlorisBoard upstream).
+#   7. SLSA Build L2 provenance attestation via actions/attest-build-provenance.
+#   8. SPDX SBOM generation via anchore/sbom-action, attached to the release.
 #
 # Required repo secrets (set up under Settings → Secrets and variables → Actions):
 #   SIGNING_KEYSTORE_BASE64   — base64-encoded contents of the .jks file
@@ -44,6 +46,10 @@ jobs:
   build:
     needs: reproducible
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     env:
       SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
     steps:
@@ -274,6 +280,18 @@ jobs:
           }
           echo "Release APK: all shipped native libraries (if any) are 16 KB aligned."
 
+      - name: Generate SBOM (SPDX)
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          path: .
+          output-file: swiftfloris-sbom.spdx.json
+          format: spdx-json
+
+      - name: Attest APK provenance (SLSA Build L2)
+        uses: actions/attest-build-provenance@a2bbfa25375fe432b6a289bc6b6cd05ecd0c4c32 # v4.1.0
+        with:
+          subject-path: ${{ steps.locate-apk.outputs.apk-path }}
+
       - name: Compute SHA-256 manifest
         id: sha
         run: |
@@ -292,6 +310,7 @@ jobs:
           path: |
             ${{ steps.locate-apk.outputs.apk-path }}
             ${{ steps.sha.outputs.manifest-path }}
+            swiftfloris-sbom.spdx.json
 
       - name: Create GitHub Release
         if: ${{ env.SIGNING_KEYSTORE_BASE64 != '' }}
@@ -306,6 +325,7 @@ jobs:
           RELEASE_TARGET: ${{ github.ref_name }}
           APK_PATH: ${{ steps.locate-apk.outputs.apk-path }}
           MANIFEST_PATH: ${{ steps.sha.outputs.manifest-path }}
+          SBOM_PATH: swiftfloris-sbom.spdx.json
         run: |
           set -euo pipefail
           tag="v${RELEASE_VERSION}"
@@ -340,6 +360,8 @@ jobs:
           - **Canonical source:** https://github.com/SysAdminDoc/SwiftFloris
           - **Package ID:** `io.github.sysadmindoc.swiftfloris`
           - **GitHub / Obtainium channel:** this APK was built by the release workflow, signed with the SwiftFloris release key, and published with the attached `SHA256SUMS` manifest.
+          - **Provenance attestation:** SLSA Build Level 2 — verify with `gh attestation verify <apk-file> --repo SysAdminDoc/SwiftFloris`.
+          - **SBOM:** SPDX JSON attached (`swiftfloris-sbom.spdx.json`).
           - **F-Droid channel:** prepared for fdroiddata submission with reproducible-build and no-network gates in CI. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
           - **No-network proof:** CI fails if the merged app manifest declares `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`.
           - **Reproducibility proof:** this release job depends on the build-twice APK verifier before signing and publication.
@@ -353,6 +375,7 @@ jobs:
             gh release create "$tag" \
               "$APK_PATH" \
               "$MANIFEST_PATH" \
+              "$SBOM_PATH" \
               --title "SwiftFloris v${RELEASE_VERSION}" \
               --notes-file "$body_file" \
               "${draft_arg[@]}" \
@@ -361,6 +384,7 @@ jobs:
             gh release create "$tag" \
               "$APK_PATH" \
               "$MANIFEST_PATH" \
+              "$SBOM_PATH" \
               --title "SwiftFloris v${RELEASE_VERSION}" \
               --generate-notes \
               "${draft_arg[@]}" \

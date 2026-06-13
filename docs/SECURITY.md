@@ -118,6 +118,28 @@ If the release-time scan finds a HIGH or CRITICAL vulnerability the workflow doe
 step is `continue-on-error: true` so the release proceeds, but the failure is recorded in the release body and
 visible at a glance.
 
+### Provenance attestation (`.github/workflows/release.yml`)
+
+Every release APK receives a SLSA Build Level 2 provenance attestation via
+`actions/attest-build-provenance`. The attestation is stored in the GitHub
+attestation store and can be verified by anyone:
+
+```bash
+gh attestation verify SwiftFloris-*.apk --repo SysAdminDoc/SwiftFloris
+```
+
+This proves the APK was built by the release workflow from a specific commit on
+the `SysAdminDoc/SwiftFloris` repository, not uploaded manually or built on an
+uncontrolled machine. The OIDC identity token binds the attestation to the GitHub
+Actions runner that produced the artifact.
+
+### SBOM (`.github/workflows/release.yml`)
+
+Each release includes an SPDX JSON SBOM (`swiftfloris-sbom.spdx.json`) generated
+by `anchore/sbom-action`. The SBOM catalogues every first-party and third-party
+component in the source tree at build time. It is attached to the GitHub Release
+alongside the APK and SHA256SUMS manifest.
+
 ## What "clean" means
 
 A "0 known vulnerabilities" line in a release body means:
