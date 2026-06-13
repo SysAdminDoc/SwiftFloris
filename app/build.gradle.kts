@@ -57,8 +57,6 @@ kotlin {
         freeCompilerArgs.set(listOf(
             "-opt-in=kotlin.contracts.ExperimentalContracts",
             "-jvm-default=enable",
-            "-Xexplicit-backing-fields",
-            "-Xcontext-parameters",
             "-XXLanguage:+LocalTypeAliases",
         ))
     }
@@ -554,6 +552,7 @@ dependencies {
     testRuntimeOnly(libs.junit.vintage.engine)
     androidTestImplementation(libs.androidx.test.ext)
     androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.androidx.test.uiautomator)
 }
 
 fun getGitCommitHash(short: Boolean = false): Provider<String> {
