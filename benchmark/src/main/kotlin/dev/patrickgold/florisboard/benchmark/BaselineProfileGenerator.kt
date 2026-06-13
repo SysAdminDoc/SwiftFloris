@@ -31,10 +31,20 @@ class BaselineProfileGenerator {
     fun startup() =
         baselineProfileRule.collect(packageName = TargetPackageName) {
             pressHome()
-            // This block defines the app's critical user journey. Here we are interested in
-            // optimizing for app startup. But you can also navigate and scroll
-            // through your most important UI.
             startSettingsActivityAndWait()
             device.waitForIdle()
+        }
+
+    @Test
+    fun keyboardTypingJourney() =
+        baselineProfileRule.collect(packageName = TargetPackageName) {
+            pressHome()
+            selectTargetIme()
+            startBenchmarkInputActivityAndWait()
+            device.waitForIdle(2_000)
+            device.executeShellCommand("input text 'hello world this is a test'")
+            device.waitForIdle(2_000)
+            device.executeShellCommand("input text ' the quick brown fox'")
+            device.waitForIdle(1_000)
         }
 }
