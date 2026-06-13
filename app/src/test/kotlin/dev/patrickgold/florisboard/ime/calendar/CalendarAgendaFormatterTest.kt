@@ -104,4 +104,43 @@ class CalendarAgendaFormatterTest : FunSpec({
         CalendarAgendaFormatter.formatForInsert(event, zone, locale) shouldBe
             "Untitled event - May 17, 2026, 9:00 AM-10:00 AM"
     }
+
+    test("German locale formats date in locale-appropriate order") {
+        val deLocale = Locale.GERMAN
+        val event = CalendarAgendaEvent(
+            eventId = 50L,
+            title = "Besprechung",
+            startMillis = Instant.parse("2026-05-17T00:00:00Z").toEpochMilli(),
+            endMillis = Instant.parse("2026-05-18T00:00:00Z").toEpochMilli(),
+            allDay = true,
+        )
+        val result = CalendarAgendaFormatter.formatForInsert(event, zone, deLocale)
+        result shouldBe "Besprechung - 17.05.2026"
+    }
+
+    test("Japanese locale formats date with locale-appropriate characters") {
+        val jaLocale = Locale.JAPANESE
+        val event = CalendarAgendaEvent(
+            eventId = 51L,
+            title = "Meeting",
+            startMillis = Instant.parse("2026-05-17T00:00:00Z").toEpochMilli(),
+            endMillis = Instant.parse("2026-05-18T00:00:00Z").toEpochMilli(),
+            allDay = true,
+        )
+        val result = CalendarAgendaFormatter.formatForInsert(event, zone, jaLocale)
+        result shouldBe "Meeting - 2026/05/17"
+    }
+
+    test("narrow no-break spaces in AM/PM are normalized to ASCII space") {
+        val event = CalendarAgendaEvent(
+            eventId = 52L,
+            title = "Test",
+            startMillis = Instant.parse("2026-05-17T13:00:00Z").toEpochMilli(),
+            endMillis = Instant.parse("2026-05-17T14:00:00Z").toEpochMilli(),
+            allDay = false,
+            timeZoneId = "America/New_York",
+        )
+        val result = CalendarAgendaFormatter.formatTimeRange(event, zone, locale)
+        result.any { it == '\u202F' || it == '\u00A0' } shouldBe false
+    }
 })
