@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.46-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.47-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.46 | Privacy posture |
+| Area | What's in v1.9.47 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -324,6 +324,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.47** (2026-06-14) — New one-tap "Full backup" action on the Backup screen ticks every section (preferences, layouts, themes, and all local clipboard items) and writes a dated archive in a single tap — no manual checkbox juggling before a reinstall or migration. Reuses the existing local, no-network backup flow.
 - **v1.9.46** (2026-06-14) — New "Touch calibration" setting (Settings → Typing) exposes Conservative / Normal / Rescue-heavy profiles that tune gap-rescue dead zones and adaptive-touch neighbour correction. Normal reproduces the previously-hardcoded behaviour exactly, so the default is unchanged.
 - **v1.9.45** (2026-06-14) — New optional "CJK mixed-script spacing" setting inserts a boundary space between Han characters and adjacent Latin words or digits (安装 App, 第 3 章). Preference-gated, off by default; the Han boundary requirement keeps Latin/digit-only typing untouched and existing whitespace is respected.
 - **v1.9.44** (2026-06-13) — Locale script heuristics now use runtime Unicode character-property detection instead of hardcoded language lists, covering all scripts automatically. Release workflow gains SLSA Build Level 2 provenance attestation and SPDX SBOM generation.
@@ -532,7 +533,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.46** (2026-06-14). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.47** (2026-06-14). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

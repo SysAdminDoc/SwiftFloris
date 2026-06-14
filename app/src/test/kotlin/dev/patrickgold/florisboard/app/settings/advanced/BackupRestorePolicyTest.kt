@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.settings.advanced
 
+import androidx.compose.ui.state.ToggleableState
 import dev.patrickgold.florisboard.R
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -302,5 +303,41 @@ class BackupRestorePolicyTest : FunSpec({
             error = IllegalArgumentException(" "),
             fallbackMessage = "Unknown error",
         ) shouldBe "Unknown error"
+    }
+
+    test("fresh files selector ticks the three core sections, clipboard off") {
+        val selector = Backup.FilesSelector()
+        selector.jetprefDatastore shouldBe true
+        selector.imeKeyboard shouldBe true
+        selector.imeTheme shouldBe true
+        selector.clipboardTextItems shouldBe false
+        selector.clipboardImageItems shouldBe false
+        selector.clipboardVideoItems shouldBe false
+        selector.provideClipboardItems() shouldBe false
+        selector.atLeastOneSelected() shouldBe true
+    }
+
+    test("selectAll ticks every section including clipboard") {
+        val selector = Backup.FilesSelector()
+        selector.selectAll()
+        selector.jetprefDatastore shouldBe true
+        selector.imeKeyboard shouldBe true
+        selector.imeTheme shouldBe true
+        selector.clipboardTextItems shouldBe true
+        selector.clipboardImageItems shouldBe true
+        selector.clipboardVideoItems shouldBe true
+        selector.provideClipboardItems() shouldBe true
+        selector.atLeastOneSelected() shouldBe true
+        selector.clipboardData.value shouldBe ToggleableState.On
+    }
+
+    test("selectAll recovers a fully-deselected selector") {
+        val selector = Backup.FilesSelector()
+        selector.jetprefDatastore = false
+        selector.imeKeyboard = false
+        selector.imeTheme = false
+        selector.atLeastOneSelected() shouldBe false
+        selector.selectAll()
+        selector.atLeastOneSelected() shouldBe true
     }
 })

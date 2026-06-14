@@ -1480,6 +1480,7 @@
     <string name="backup_and_restore__back_up__unknown_error">Unknown error</string>
     <string name="backup_and_restore__back_up__clipboard_privacy_warning_title">Sensitive clipboard items stay private</string>
     <string name="backup_and_restore__back_up__clipboard_privacy_warning_summary">Clipboard entries marked sensitive by apps are skipped even when clipboard history is selected.</string>
+    <string name="backup_and_restore__back_up__full_backup" comment="Button label for a one-tap complete backup">Full backup</string>
     <string name="backup_and_restore__back_up__in_progress">Preparing backup</string>
     <string name="backup_and_restore__back_up__in_progress_summary">Keep this screen open until the save or share sheet appears.</string>
     <string name="backup_and_restore__restore__title">Restore data</string>

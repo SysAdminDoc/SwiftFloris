@@ -131,6 +131,24 @@ object Backup {
         fun atLeastOneSelected(): Boolean {
             return jetprefDatastore || imeKeyboard || imeTheme || clipboardTextItems || clipboardImageItems || clipboardVideoItems
         }
+
+        /**
+         * Selects every backup section — preferences, keyboard layouts, themes,
+         * and all local clipboard items — so a single "Full backup" action
+         * produces a complete archive without the user ticking each box. The
+         * clipboard sections (off by default for privacy) are deliberately
+         * included; the screen still surfaces the clipboard-privacy warning
+         * once they are on.
+         */
+        fun selectAll() {
+            jetprefDatastore = true
+            imeKeyboard = true
+            imeTheme = true
+            clipboardTextItems = true
+            clipboardImageItems = true
+            clipboardVideoItems = true
+            updateCheckboxState()
+        }
     }
 
     @Serializable
@@ -361,6 +379,21 @@ fun BackupScreen() = FlorisScreen {
                     navController.popBackStack()
                 },
                 text = stringRes(R.string.action__cancel),
+            )
+            ButtonBarTextButton(
+                // One-tap full backup: tick every section then run the standard
+                // file-system backup. Discard any partially-prepared workspace
+                // first so prepareAndPerformBackup() rebuilds it against the
+                // now-complete selection (it only rebuilds when null/closed).
+                enabled = !isBackupInProgress,
+                onClick = {
+                    backupWorkspace?.close()
+                    backupWorkspace = null
+                    backupFilesSelector.selectAll()
+                    backupDestination = Backup.Destination.FILE_SYS
+                    scope.launch { prepareAndPerformBackup() }
+                },
+                text = stringRes(R.string.backup_and_restore__back_up__full_backup),
             )
             ButtonBarButton(
                 onClick = {
