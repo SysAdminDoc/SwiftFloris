@@ -20,12 +20,20 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 class GeezSeraTransliteratorTest : FunSpec({
-    test("default forms map to the 1st-order Ge'ez character") {
-        GeezSeraTransliterator.transliterate("h") shouldBe "ሀ"
-        GeezSeraTransliterator.transliterate("l") shouldBe "ለ"
-        GeezSeraTransliterator.transliterate("s") shouldBe "ሰ"
-        GeezSeraTransliterator.transliterate("m") shouldBe "መ"
-        GeezSeraTransliterator.transliterate("r") shouldBe "ረ"
+    test("bare consonants map to the 6th-order Ge'ez character (schwa)") {
+        // SERA: a bare consonant is the 6th order (sädis / ə), not the 1st.
+        GeezSeraTransliterator.transliterate("h") shouldBe "ህ"
+        GeezSeraTransliterator.transliterate("l") shouldBe "ል"
+        GeezSeraTransliterator.transliterate("s") shouldBe "ስ"
+        GeezSeraTransliterator.transliterate("m") shouldBe "ም"
+        GeezSeraTransliterator.transliterate("r") shouldBe "ር"
+    }
+
+    test("the 'e' suffix marks the 1st order (ä)") {
+        // 'he' = ሀ, 'se' = ሰ, 'me' = መ (the gəʿəz / 1st forms).
+        GeezSeraTransliterator.transliterate("he") shouldBe "ሀ"
+        GeezSeraTransliterator.transliterate("se") shouldBe "ሰ"
+        GeezSeraTransliterator.transliterate("me") shouldBe "መ"
     }
 
     test("vowel suffixes shift to subsequent orders") {
@@ -35,12 +43,11 @@ class GeezSeraTransliteratorTest : FunSpec({
         GeezSeraTransliterator.transliterate("sa") shouldBe "ሳ"
     }
 
-    test("'selam' is greedy-matched as se + la + m") {
-        // SERA 'e' is a suffix marking the 6th form (schwa). Greedy
-        // longest match picks "se" → ስ (s + schwa, 6th form of ሰ),
-        // then "la" → ላ (4th form of ለ), then "m" → መ (1st form).
-        // Result: ስ + ላ + መ = ስላመ.
-        GeezSeraTransliterator.transliterate("selam") shouldBe "ስላመ"
+    test("'selam' round-trips to ሰላም (the canonical SERA anchor)") {
+        // Greedy longest match: "se" → ሰ (1st form of ሰ), "la" → ላ (4th
+        // form of ለ), bare "m" → ም (6th form, schwa). Result: ሰላም — the
+        // correct Ge'ez spelling of "peace".
+        GeezSeraTransliterator.transliterate("selam") shouldBe "ሰላም"
     }
 
     test("ASCII characters not in the radical set fall through unchanged") {
