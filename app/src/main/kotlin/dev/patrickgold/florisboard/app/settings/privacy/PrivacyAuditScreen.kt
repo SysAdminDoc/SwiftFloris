@@ -113,7 +113,7 @@ fun PrivacyAuditScreen() = FlorisScreen {
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                     icon = Icons.Default.Shield,
                     title = stringRes(R.string.settings__privacy_audit__empty),
-                    message = stringRes(R.string.settings__privacy_audit__home_summary),
+                    message = stringRes(R.string.settings__privacy_audit__empty_message),
                 )
             } else {
                 for (record in records.asReversed().take(MAX_DISPLAYED_RECORDS)) {

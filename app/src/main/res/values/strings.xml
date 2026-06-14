@@ -422,7 +422,7 @@
     <string name="settings__sync__export_success_summary" comment="Sync export success summary">{count} personal dictionary entries were sealed for paired devices.</string>
     <string name="settings__sync__export_success_summary_fallback" comment="Sync export success fallback summary">The selected sync file was updated.</string>
     <string name="settings__sync__import_success" comment="Sync import success title">Sync file imported</string>
-    <string name="settings__sync__import_success_summary" comment="Sync import success summary">Applied {inserted} inserts, {updated} updates, and {deleted} deletes.</string>
+    <string name="settings__sync__import_success_summary" comment="Sync import success summary">Applied {inserted} inserted, {updated} updated, and {deleted} removed.</string>
     <string name="settings__sync__import_success_summary_fallback" comment="Sync import success fallback summary">The selected sync file was merged into this device.</string>
     <string name="settings__sync__transfer_failure" comment="Sync transfer failure title">Sync file could not be processed</string>
     <string name="settings__sync__transfer_failure_summary" comment="Sync transfer failure summary">No dictionary data changed. {error_message}</string>
@@ -537,6 +537,8 @@
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
     <string name="settings__theme_manager__empty_title">No themes available</string>
     <string name="settings__theme_manager__empty_message">Bundled themes should appear here. If this stays empty, reinstall SwiftFloris or import a trusted theme extension.</string>
+    <string name="settings__theme_manager__variant_dark" comment="Accessibility label for the dark-theme indicator icon">Dark theme</string>
+    <string name="settings__theme_manager__variant_light" comment="Accessibility label for the light-theme indicator icon">Light theme</string>
     <string name="pref__theme__source_assets" comment="Label for the theme source field">Bundled SwiftFloris assets</string>
     <string name="pref__theme__source_internal" comment="Label for the theme source field">App-private storage</string>
     <string name="pref__theme__source_external" comment="Label for the theme source field">External document provider</string>
@@ -1077,6 +1079,7 @@
     <string name="settings__privacy_audit__group_records" comment="Preference group title">Recent activity</string>
     <string name="settings__privacy_audit__summary_title" comment="Preference title showing the audit summary line">Audit log</string>
     <string name="settings__privacy_audit__empty" comment="Shown when no records exist">No recorded activity yet.</string>
+    <string name="settings__privacy_audit__empty_message" comment="Empty-state body shown when no audit records exist">SwiftFloris hasn\'t made any cross-process calls on this device yet. Addon, MCP, and translation activity will appear here as it happens.</string>
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
     <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere — it never leaves the device on its own.</string>
     <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
@@ -1858,7 +1861,7 @@
     <string name="ext__view__delete_in_progress_summary">Keep this screen open while SwiftFloris removes the extension and refreshes installed themes.</string>
     <string name="ext__view__delete_failure">Could not delete extension</string>
     <string name="ext__view__delete_failure_summary">The extension is still installed. Review the error, then retry after leaving screens that use this extension. Details: {error_message}</string>
-    <string name="ext__check_updates__title">Check for Updates</string>
+    <string name="ext__check_updates__title">Check for updates</string>
 
     <!-- Action strings -->
     <string name="action__add">Add</string>
