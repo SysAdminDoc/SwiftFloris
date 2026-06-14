@@ -191,9 +191,31 @@ object McpAndroidDiscoverer {
         return runCatching {
             val pkgContext = context.createPackageContext(packageName, /* flags = */ 0)
             pkgContext.resources.openRawResource(resourceId).use { stream ->
-                stream.readBytes().toString(Charsets.UTF_8)
+                readBounded(stream, McpBridgeContract.MAX_PAYLOAD_BYTES)
             }
         }.getOrNull()
+    }
+
+    /**
+     * Reads at most [limitBytes] from [stream], returning null if the source
+     * exceeds the cap. Discovery runs for any sibling package that merely
+     * declares the bind service — trust and the [McpBridgeContract.MAX_PAYLOAD_BYTES]
+     * catalog-size check are only applied later, so the raw read must be bounded
+     * here to stop an untrusted package from OOM-ing the IME with a giant
+     * `res/raw` blob before it is ever rejected.
+     */
+    private fun readBounded(stream: java.io.InputStream, limitBytes: Long): String? {
+        val out = java.io.ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        while (true) {
+            val read = stream.read(buffer)
+            if (read < 0) break
+            total += read
+            if (total > limitBytes) return null
+            out.write(buffer, 0, read)
+        }
+        return String(out.toByteArray(), Charsets.UTF_8)
     }
 
     private fun readSigningFingerprint(context: Context, packageName: String): String? =
