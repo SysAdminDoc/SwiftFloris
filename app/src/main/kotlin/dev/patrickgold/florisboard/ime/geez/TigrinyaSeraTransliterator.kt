@@ -51,16 +51,20 @@ object TigrinyaSeraTransliterator {
      * shared Ge'ez transliterator. Capital `Q` is the SERA convention
      * for the qhe series; capital `X` for the xa series; capital `W`
      * suffix marks the labio-velar variant of the preceding consonant.
+     *
+     * As in [GeezSeraTransliterator.table], the bare consonant maps to the
+     * 6th order (sädis / schwa) and the `e` suffix marks the 1st order (ä),
+     * matching the SERA scheme — not the reverse.
      */
     private val tigrinyaExtras: Map<String, String> = mapOf(
-        // qhe series — U+1250..U+1256 (ä u i a e ə o).
-        "Q" to "\u1250", "Qu" to "\u1251", "Qi" to "\u1252",
-        "Qa" to "\u1253", "QE" to "\u1254", "Qe" to "\u1255", "Qo" to "\u1256",
-        // xa series — U+1280..U+1286.
-        "X" to "\u1280", "Xu" to "\u1281", "Xi" to "\u1282",
-        "Xa" to "\u1283", "XE" to "\u1284", "Xe" to "\u1285", "Xo" to "\u1286",
+        // qhe series — Unicode U+1250..U+1256 in order ä u i a ē ə o.
+        "Q" to "ቕ", "Qe" to "ቐ", "Qu" to "ቑ", "Qi" to "ቒ",
+        "Qa" to "ቓ", "QE" to "ቔ", "Qo" to "ቖ",
+        // xa series — Unicode U+1280..U+1286 in order ä u i a ē ə o.
+        "X" to "ኅ", "Xe" to "ኀ", "Xu" to "ኁ", "Xi" to "ኂ",
+        "Xa" to "ኃ", "XE" to "ኄ", "Xo" to "ኆ",
         // Distinctive labio-velars.
-        "kWa" to "\u12B3", "gWa" to "\u1313",
+        "kWa" to "ኳ", "gWa" to "ጓ",
     )
 
     private val combinedTable: Map<String, String> =

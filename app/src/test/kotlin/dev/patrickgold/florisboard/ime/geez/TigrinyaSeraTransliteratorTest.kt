@@ -21,34 +21,39 @@ import io.kotest.matchers.shouldBe
 
 class TigrinyaSeraTransliteratorTest : FunSpec({
 
-    test("qhe series — bare 'Q' maps to ቐ (Tigrinya-only)") {
-        TigrinyaSeraTransliterator.transliterate("Q") shouldBe "\u1250"  // ቐ
+    test("qhe series — bare 'Q' maps to the 6th-order ቕ (schwa)") {
+        TigrinyaSeraTransliterator.transliterate("Q") shouldBe "ቕ"  // ቕ
+    }
+
+    test("qhe series — 'Qe' suffix marks the 1st-order ቐ") {
+        TigrinyaSeraTransliterator.transliterate("Qe") shouldBe "ቐ"  // ቐ
     }
 
     test("qhe series — 'Qa' maps to ቓ (4th-form labio-velar precursor)") {
-        TigrinyaSeraTransliterator.transliterate("Qa") shouldBe "\u1253"  // ቓ
+        TigrinyaSeraTransliterator.transliterate("Qa") shouldBe "ቓ"  // ቓ
     }
 
-    test("xa series — bare 'X' maps to ኀ (Tigrinya-only)") {
-        TigrinyaSeraTransliterator.transliterate("X") shouldBe "\u1280"  // ኀ
+    test("xa series — bare 'X' maps to the 6th-order ኅ (schwa)") {
+        TigrinyaSeraTransliterator.transliterate("X") shouldBe "ኅ"  // ኅ
     }
 
     test("labio-velar 'kWa' maps to ኳ") {
-        TigrinyaSeraTransliterator.transliterate("kWa") shouldBe "\u12B3"
+        TigrinyaSeraTransliterator.transliterate("kWa") shouldBe "ኳ"
     }
 
     test("shared Amharic mappings still work for 'slam' (Amharic SERA for 'peace')") {
-        // 'slam' parses as 's' + 'lam' = sä (ሰ, U+1230) + lam (la=ላ U+120B + m=መ U+1218).
-        TigrinyaSeraTransliterator.transliterate("slam") shouldBe "\u1230\u120B\u1218"
+        // 'slam' parses as bare 's' + 'la' + bare 'm' = sə (ስ, U+1235) +
+        // la (ላ, U+120B) + mə (ም, U+121D) = ስላም.
+        TigrinyaSeraTransliterator.transliterate("slam") shouldBe "ስላም"
     }
 
     test("Tigrinya longest-match beats Amharic on collisions ('Qa' over 'Q' alone)") {
         // 'Qa' should match the 2-char Tigrinya extra, not 'Q' then 'a'.
-        TigrinyaSeraTransliterator.transliterate("Qa") shouldBe "\u1253"
+        TigrinyaSeraTransliterator.transliterate("Qa") shouldBe "ቓ"
     }
 
     test("unmapped punctuation passes through unchanged while digit '1' maps") {
         // '@' isn't in either table; '1' maps to Ethiopic digit ፩ (U+1369).
-        TigrinyaSeraTransliterator.transliterate("@1") shouldBe "@\u1369"
+        TigrinyaSeraTransliterator.transliterate("@1") shouldBe "@፩"
     }
 })

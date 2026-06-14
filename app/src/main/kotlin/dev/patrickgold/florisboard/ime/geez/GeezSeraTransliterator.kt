@@ -112,15 +112,20 @@ object GeezSeraTransliterator {
             "v" to 0x1350, // ፐ (shared in older SERA)
         )
         for ((rad, baseCp) in radicals) {
-            // Order: ä u i a e ə o → offsets 0, 1, 2, 3, 4, 5, 6.
-            // SERA romanisation per vowel form.
-            put(rad, String(Character.toChars(baseCp)))               // ä (default 1st form)
+            // Unicode order is ä(0) u(1) i(2) a(3) ē(4) ə(5) o(6). In SERA the
+            // BARE consonant is the 6th order (sädis / schwa) and the `e` suffix
+            // marks the 1st order (gəʿəz / ä) — this is what makes the canonical
+            // anchor "selam" → ሰላም (se→ሰ 1st, la→ላ 4th, m→ም 6th). Mapping the
+            // bare radical to the 1st order instead silently produced ስላመ, the
+            // wrong fidel sequence, for every word ending in or clustering a
+            // consonant.
+            put(rad, String(Character.toChars(baseCp + 5)))          // bare = 6th form (schwa, ə)
+            put(rad + "e", String(Character.toChars(baseCp)))        // e = 1st form (ä)
             put(rad + "u", String(Character.toChars(baseCp + 1)))    // 2nd form
             put(rad + "i", String(Character.toChars(baseCp + 2)))    // 3rd form
             put(rad + "a", String(Character.toChars(baseCp + 3)))    // 4th form
-            put(rad + "E", String(Character.toChars(baseCp + 4)))    // 5th form (ie)
+            put(rad + "E", String(Character.toChars(baseCp + 4)))    // 5th form (ē / ie)
             put(rad + "I", String(Character.toChars(baseCp + 4)))    // alt for 5th
-            put(rad + "e", String(Character.toChars(baseCp + 5)))    // 6th form (schwa)
             put(rad + "o", String(Character.toChars(baseCp + 6)))    // 7th form
         }
 
