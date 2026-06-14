@@ -48,6 +48,7 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangement
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
+import dev.patrickgold.florisboard.ime.text.keyboard.TouchCalibrationProfile
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyHintConfiguration
@@ -103,6 +104,10 @@ open class CorrectionPrefs : PreferenceModel() {
     val adaptiveTouchModel = boolean(
         key = "correction__adaptive_touch_model",
         default = true,
+    )
+    val touchCalibrationProfile = enum(
+        key = "correction__touch_calibration_profile",
+        default = TouchCalibrationProfile.Default,
     )
     val multilingualSuggestions = boolean(
         key = "correction__multilingual_suggestions",

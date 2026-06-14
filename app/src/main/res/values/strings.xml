@@ -920,6 +920,7 @@
     <string name="pref__correction__double_space_period__summary" comment="Preference summary">Tapping twice on spacebar inserts a period followed by a space</string>
     <string name="pref__correction__adaptive_touch_model__label" comment="Preference title">Adaptive touch model</string>
     <string name="pref__correction__adaptive_touch_model__summary" comment="Preference summary">Learn how you actually tap each key and bias hit-tests toward your tap pattern. All on-device.</string>
+    <string name="pref__correction__touch_calibration_profile__label" comment="Preference title">Touch calibration</string>
     <string name="pref__suggestion__next_word_prediction__label" comment="Preference title">Predict the next word</string>
     <string name="pref__suggestion__next_word_prediction__summary" comment="Preference summary">Show predicted next words in the suggestion strip after a space. Learns from your typing history, all on-device.</string>
     <string name="pref__correction__multilingual_suggestions__label" comment="Preference title">Multilingual suggestions</string>
@@ -2075,6 +2076,13 @@
     <string name="enum__auto_correct_commit_mode__normal__description" comment="Enum value description">Replace eligible corrections using the standard SwiftFloris thresholds.</string>
     <string name="enum__auto_correct_commit_mode__high_confidence" comment="Enum value label">Cautious</string>
     <string name="enum__auto_correct_commit_mode__high_confidence__description" comment="Enum value description">Keep lower-confidence corrections as suggestions; auto-replace only when confidence is high.</string>
+
+    <string name="enum__touch_calibration_profile__conservative" comment="Enum value label">Conservative</string>
+    <string name="enum__touch_calibration_profile__conservative__description" comment="Enum value description">Prefer the key you actually touched. Narrow dead zones and rarely re-attribute a tap to a neighbour.</string>
+    <string name="enum__touch_calibration_profile__normal" comment="Enum value label">Normal</string>
+    <string name="enum__touch_calibration_profile__normal__description" comment="Enum value description">Balanced gap rescue and neighbour correction. The default.</string>
+    <string name="enum__touch_calibration_profile__rescue_heavy" comment="Enum value label">Rescue-heavy</string>
+    <string name="enum__touch_calibration_profile__rescue_heavy__description" comment="Enum value description">Wide dead zones and eager neighbour correction for heavier thumbs and more frequent adjacent-key misses.</string>
 
     <string name="enum__spelling_language_mode__use_system_languages" comment="Enum value label">Use system languages</string>
     <string name="enum__spelling_language_mode__use_keyboard_subtypes" comment="Enum value label">Use keyboard subtypes</string>

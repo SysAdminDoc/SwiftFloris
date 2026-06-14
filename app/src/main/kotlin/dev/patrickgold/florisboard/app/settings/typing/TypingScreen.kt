@@ -38,6 +38,7 @@ import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.nlp.AutoCorrectCommitMode
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
+import dev.patrickgold.florisboard.ime.text.keyboard.TouchCalibrationProfile
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -147,6 +148,12 @@ fun TypingScreen() = FlorisScreen {
                 prefs.correction.adaptiveTouchModel,
                 title = stringRes(R.string.pref__correction__adaptive_touch_model__label),
                 summary = stringRes(R.string.pref__correction__adaptive_touch_model__summary),
+            )
+            ListPreference(
+                prefs.correction.touchCalibrationProfile,
+                title = stringRes(R.string.pref__correction__touch_calibration_profile__label),
+                entries = enumDisplayEntriesOf(TouchCalibrationProfile::class),
+                enabledIf = { prefs.correction.adaptiveTouchModel isEqualTo true },
             )
             SwitchPreference(
                 prefs.suggestion.nextWordPrediction,
