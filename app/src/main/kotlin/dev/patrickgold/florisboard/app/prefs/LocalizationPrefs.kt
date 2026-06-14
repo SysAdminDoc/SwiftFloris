@@ -79,6 +79,10 @@ open class LocalizationPrefs : PreferenceModel() {
         key = "localization__display_keyboard_labels_in_subtype_language",
         default = false,
     )
+    val cjkMixedScriptSpacing = boolean(
+        key = "localization__cjk_mixed_script_spacing",
+        default = false,
+    )
     val rememberSubtypePerAppEnabled = boolean(
         key = "localization__remember_subtype_per_app_enabled",
         default = false,

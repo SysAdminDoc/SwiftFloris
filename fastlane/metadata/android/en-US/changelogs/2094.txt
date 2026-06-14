@@ -1,0 +1,1 @@
+New optional "CJK mixed-script spacing" setting (Settings → Languages & Layouts). When enabled, a single boundary space is inserted between Han characters and adjacent Latin words or digits — 安装App becomes 安装 App, 第3章 becomes 第 3 章. The Han boundary requirement keeps Latin-only and digit-only typing untouched, and the policy honours existing whitespace so no double spaces appear.

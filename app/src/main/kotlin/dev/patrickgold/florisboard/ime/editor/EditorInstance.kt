@@ -31,6 +31,7 @@ import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.cjk.MixedScriptSpacing
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -252,11 +253,15 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
         val isPhantomSpaceActive = phantomSpace.determine(char)
         phantomSpace.setInactive()
+        // Han→Latin/Digit boundary (e.g. typing "A" right after a committed "你"):
+        // the typed char arrives via commitChar, so the mixed-script boundary
+        // space has to be requested here rather than in commitText.
+        val isMixedScriptSpaceBeforeChar = shouldInsertMixedScriptSpaceBefore(char)
 
         val result = super.commitChar(
             char = char,
             deletePreviousSpace = isDeletePreviousSpace,
-            insertSpaceBeforeChar = isInsertAutoSpaceBeforeChar || isPhantomSpaceActive,
+            insertSpaceBeforeChar = isInsertAutoSpaceBeforeChar || isPhantomSpaceActive || isMixedScriptSpaceBeforeChar,
             insertSpaceAfterChar = isInsertAutoSpaceAfterChar,
         )
 
@@ -286,11 +291,25 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val isPhantomSpaceActive = phantomSpace.determine(text)
         autoSpace.setInactive()
         phantomSpace.setInactive()
-        return if (isPhantomSpaceActive) {
+        return if (isPhantomSpaceActive || shouldInsertMixedScriptSpaceBefore(text)) {
             super.commitText("$SPACE$text")
         } else {
             super.commitText(text)
         }
+    }
+
+    /**
+     * ROADMAP §CJK — pangu-style mixed-script spacing. When the user enables
+     * "CJK mixed-script spacing", inserts a single boundary space whenever a
+     * commit crosses a Han↔Latin/Digit boundary (`安装App` → `安装 App`). The
+     * Han boundary requirement scopes this strictly to CJK usage: Latin-only
+     * and digit-only typing never crosses the boundary, so default behavior
+     * is untouched. See [MixedScriptSpacing] for the full matrix.
+     */
+    private fun shouldInsertMixedScriptSpaceBefore(committing: CharSequence): Boolean {
+        if (!prefs.localization.cjkMixedScriptSpacing.get()) return false
+        if (activeInfo.isRawInputEditor) return false
+        return MixedScriptSpacing.shouldInsertLeadingSpace(activeContent.textBeforeSelection, committing)
     }
 
     /**
