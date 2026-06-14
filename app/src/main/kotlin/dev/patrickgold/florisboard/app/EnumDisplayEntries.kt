@@ -43,6 +43,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyHintMode
 import dev.patrickgold.florisboard.ime.text.key.UtilityKeyAction
+import dev.patrickgold.florisboard.ime.text.keyboard.TouchCalibrationProfile
 import dev.patrickgold.florisboard.ime.theme.ThemeMode
 import dev.patrickgold.florisboard.ime.voice.VoiceModelPreference
 import dev.patrickgold.florisboard.ime.voice.VoiceRecognitionEnginePreference
@@ -93,6 +94,28 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
                 key = AutoCorrectCommitMode.HIGH_CONFIDENCE,
                 label = stringRes(R.string.enum__auto_correct_commit_mode__high_confidence),
                 description = stringRes(R.string.enum__auto_correct_commit_mode__high_confidence__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+        }
+    },
+    TouchCalibrationProfile::class to DEFAULT to {
+        listPrefEntries {
+            entry(
+                key = TouchCalibrationProfile.CONSERVATIVE,
+                label = stringRes(R.string.enum__touch_calibration_profile__conservative),
+                description = stringRes(R.string.enum__touch_calibration_profile__conservative__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = TouchCalibrationProfile.NORMAL,
+                label = stringRes(R.string.enum__touch_calibration_profile__normal),
+                description = stringRes(R.string.enum__touch_calibration_profile__normal__description),
+                showDescriptionOnlyIfSelected = true,
+            )
+            entry(
+                key = TouchCalibrationProfile.RESCUE_HEAVY,
+                label = stringRes(R.string.enum__touch_calibration_profile__rescue_heavy),
+                description = stringRes(R.string.enum__touch_calibration_profile__rescue_heavy__description),
                 showDescriptionOnlyIfSelected = true,
             )
         }

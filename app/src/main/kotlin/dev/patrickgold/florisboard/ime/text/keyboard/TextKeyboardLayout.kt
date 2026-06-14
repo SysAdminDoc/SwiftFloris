@@ -916,16 +916,25 @@ private class TextKeyboardLayoutController(
         val canCaptureTextTap = keyboard.mode == KeyboardMode.CHARACTERS &&
             keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD
         val adaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get() && canCaptureTextTap
+        val calibration = prefs.correction.touchCalibrationProfile.get()
         val touchDecoderEnabled = prefs.correction.autoCorrect.get() &&
             canCaptureTextTap &&
             !keyboardManager.activeState.isIncognitoMode
         val initialKey = keyboard.getKeyForPos(touchX, touchY) ?: if (adaptiveTouchEnabled) {
-            keyboard.getNearestKeyForPos(touchX, touchY)
+            keyboard.getNearestKeyForPos(touchX, touchY, calibration.gapRescueDistanceFactor)
         } else {
             null
         }
         val key = if (initialKey != null && adaptiveTouchEnabled) {
-            AdaptiveTouchModel.refine(keyboard, initialKey, touchX, touchY)
+            AdaptiveTouchModel.refine(
+                keyboard = keyboard,
+                primary = initialKey,
+                touchX = touchX,
+                touchY = touchY,
+                minSamples = calibration.minSamplesPerKey,
+                horizontalTolerance = calibration.neighbourHorizontalTolerance,
+                verticalTolerance = calibration.neighbourVerticalTolerance,
+            )
         } else {
             initialKey
         }

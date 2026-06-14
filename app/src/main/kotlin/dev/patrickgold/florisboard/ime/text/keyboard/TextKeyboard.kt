@@ -57,7 +57,11 @@ class TextKeyboard(
         return null
     }
 
-    fun getNearestKeyForPos(pointerX: Float, pointerY: Float): TextKey? {
+    fun getNearestKeyForPos(
+        pointerX: Float,
+        pointerY: Float,
+        gapRescueDistanceFactor: Float = GapRescueDistanceFactor,
+    ): TextKey? {
         if (layoutStyle == TextKeyboardLayoutStyle.Honeycomb) {
             return honeycombKeyForPos(pointerX, pointerY)
         }
@@ -69,7 +73,7 @@ class TextKeyboard(
                 continue
             }
             val bounds = key.visibleBounds
-            val maxRescueDistance = min(bounds.width, bounds.height) * GapRescueDistanceFactor
+            val maxRescueDistance = min(bounds.width, bounds.height) * gapRescueDistanceFactor
             val dx = when {
                 pointerX < bounds.left -> bounds.left - pointerX
                 pointerX >= bounds.right -> pointerX - bounds.right

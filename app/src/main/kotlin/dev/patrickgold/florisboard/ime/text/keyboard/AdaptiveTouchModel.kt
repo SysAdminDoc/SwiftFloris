@@ -166,7 +166,15 @@ internal object AdaptiveTouchModel {
      * distribution. Returns [primary] when there is not enough learned data.
      */
     @Synchronized
-    fun refine(keyboard: TextKeyboard, primary: TextKey, touchX: Float, touchY: Float): TextKey {
+    fun refine(
+        keyboard: TextKeyboard,
+        primary: TextKey,
+        touchX: Float,
+        touchY: Float,
+        minSamples: Int = MIN_SAMPLES_PER_KEY,
+        horizontalTolerance: Float = NEIGHBOUR_HORIZONTAL_TOLERANCE,
+        verticalTolerance: Float = NEIGHBOUR_VERTICAL_TOLERANCE,
+    ): TextKey {
         if (!isLearnableKey(primary)) return primary
         val bucketStats = statsBySubtype[activeBucket] ?: return primary
         // Key by touchModelCode() to match recordTap() and the candidate branch
@@ -174,7 +182,7 @@ internal object AdaptiveTouchModel {
         // lives on `data`; using it here meant the lookup missed and refinement
         // silently no-op'd for exactly those keys.
         val primaryStats = bucketStats[primary.touchModelCode()] ?: return primary
-        if (primaryStats.count < MIN_SAMPLES_PER_KEY) return primary
+        if (primaryStats.count < minSamples) return primary
 
         val pBounds = primary.visibleBounds
         if (pBounds.isEmpty()) return primary
@@ -202,10 +210,10 @@ internal object AdaptiveTouchModel {
             // Restrict the candidate set to actual neighbours of the primary
             // hit (same row + immediately adjacent column, give or take key
             // size). Keys far away can never legitimately win.
-            if (kotlin.math.abs(rawDx) > pHalfW + cHalfW + NEIGHBOUR_HORIZONTAL_TOLERANCE * pHalfW) continue
-            if (kotlin.math.abs(rawDy) > pHalfH + cHalfH + NEIGHBOUR_VERTICAL_TOLERANCE * pHalfH) continue
+            if (kotlin.math.abs(rawDx) > pHalfW + cHalfW + horizontalTolerance * pHalfW) continue
+            if (kotlin.math.abs(rawDy) > pHalfH + cHalfH + verticalTolerance * pHalfH) continue
             val candStats = bucketStats[candidate.touchModelCode()] ?: continue
-            if (candStats.count < MIN_SAMPLES_PER_KEY) continue
+            if (candStats.count < minSamples) continue
             val cNx = (rawDx / cHalfW).coerceIn(-2f, 2f)
             val cNy = (rawDy / cHalfH).coerceIn(-2f, 2f)
             val score = candStats.logLikelihood(cNx, cNy)
