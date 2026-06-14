@@ -103,6 +103,26 @@ cd SwiftFloris
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
+### Google developer verification (Sept 2026)
+
+Google's [developer verification policy](https://keepandroidopen.org/) begins
+enforcement in **September 2026** for Brazil, Indonesia, Thailand, and
+Singapore, with global rollout expected in 2027. It requires registered
+developers to provide a government ID, a one-time fee, and registration of
+signing keys before apps can be installed on certified Android devices —
+including, in the rolled-out form, sideloaded APKs. F-Droid has published an
+[open letter opposing it](https://f-droid.org/2026/02/24/open-letter-opposing-developer-verification.html).
+
+**Current posture (reassess Q3 2026):** SwiftFloris does **not** plan to
+pre-register under this scheme. The F-Droid track remains the primary
+privacy-first distribution channel and F-Droid's own response will shape what,
+if anything, packagers must do. GitHub/Obtainium sideloading is unaffected in
+regions and on devices where enforcement has not yet landed. This is a
+reversible default: if enforcement begins blocking installs for users in the
+pilot regions ahead of a viable F-Droid path, registration will be
+reconsidered then. Maintainers can override this stance at any time — it is a
+recommendation, not a binding commitment.
+
 ### Enable as Default Keyboard
 
 1. Open **Settings → System → Languages & input**.
