@@ -253,8 +253,16 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         incognitoModeChangedListener = listener
     }
 
-    fun clearIncognitoModeChangedListener() {
-        incognitoModeChangedListener = null
+    fun clearIncognitoModeChangedListener(listener: ((Boolean) -> Unit)? = null) {
+        // Identity-checked clear: KeyboardManager is a process singleton, so a
+        // torn-down IME service must not wipe a listener that a newer service
+        // instance already registered during an overlapping teardown/recreate
+        // (config change, theme switch, OOM rebind). A null argument keeps the
+        // legacy unconditional behaviour for any caller that does not track its
+        // own listener reference.
+        if (listener == null || incognitoModeChangedListener === listener) {
+            incognitoModeChangedListener = null
+        }
     }
 
     fun reevaluateInputShiftState() {

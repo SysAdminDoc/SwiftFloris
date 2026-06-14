@@ -546,7 +546,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         try { NlpInlineAutofill.clearInlineSuggestions() } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "NlpInlineAutofill.clearInlineSuggestions() failed: $e" }
         }
-        keyboardManager.clearIncognitoModeChangedListener()
+        keyboardManager.clearIncognitoModeChangedListener(flagSecureIncognitoModeChangedListener)
         FlorisImeServiceReference = WeakReference(null)
         super.onDestroy()
     }
