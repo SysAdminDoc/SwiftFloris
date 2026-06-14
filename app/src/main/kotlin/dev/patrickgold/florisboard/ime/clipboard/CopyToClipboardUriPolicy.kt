@@ -19,7 +19,16 @@ package dev.patrickgold.florisboard.ime.clipboard
 import org.florisboard.lib.kotlin.MimeTypeFilter
 
 internal object CopyToClipboardUriPolicy {
-    private val ALLOWED_SCHEMES = setOf("content", "file")
+    // Only `content://` is accepted. A legitimate share-sheet ACTION_SEND of an
+    // image always delivers a FileProvider-backed `content://` URI, which the
+    // sender must hold (and grant) read permission on. `file://` was previously
+    // allowed but has no legitimate sender and is a confused-deputy risk: this
+    // activity is exported, so any app could point a `file://` EXTRA_STREAM at
+    // one of SwiftFloris' own private files and have the IME (running as its
+    // own UID) read and preview-decode it, bypassing the per-scheme content-type
+    // recheck that only ran for `content://`. Dropping `file://` closes that
+    // hole and guarantees the MIME recheck always applies.
+    private val ALLOWED_SCHEMES = setOf("content")
 
     fun isAllowedScheme(scheme: String?): Boolean {
         scheme ?: return false

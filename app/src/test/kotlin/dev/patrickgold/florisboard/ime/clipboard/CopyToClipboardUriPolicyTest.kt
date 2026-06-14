@@ -27,8 +27,9 @@ class CopyToClipboardUriPolicyTest : FunSpec({
         CopyToClipboardUriPolicy.isAllowedScheme("content") shouldBe true
     }
 
-    test("allows file scheme") {
-        CopyToClipboardUriPolicy.isAllowedScheme("file") shouldBe true
+    test("rejects file scheme (confused-deputy guard for the exported activity)") {
+        CopyToClipboardUriPolicy.isAllowedScheme("file") shouldBe false
+        CopyToClipboardUriPolicy.isAllowedScheme("FILE") shouldBe false
     }
 
     test("allows content scheme case-insensitive") {
