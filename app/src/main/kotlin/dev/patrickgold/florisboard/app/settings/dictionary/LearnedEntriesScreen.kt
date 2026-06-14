@@ -99,7 +99,7 @@ fun LearnedEntriesScreen() = FlorisScreen {
                     )
                 } else {
                     LazyColumn(contentPadding = PaddingValues(bottom = 32.dp)) {
-                        item {
+                        if (current.words.isNotEmpty()) item {
                             PreferenceGroup(title = stringRes(R.string.settings__learned_entries__words_title)) {
                                 current.words.forEach { entry ->
                                     JetPrefListItem(
@@ -118,7 +118,7 @@ fun LearnedEntriesScreen() = FlorisScreen {
                                 }
                             }
                         }
-                        item {
+                        if (current.bigrams.isNotEmpty()) item {
                             PreferenceGroup(title = stringRes(R.string.settings__learned_entries__bigrams_title)) {
                                 current.bigrams.forEach { entry ->
                                     JetPrefListItem(
@@ -135,7 +135,7 @@ fun LearnedEntriesScreen() = FlorisScreen {
                                 }
                             }
                         }
-                        item {
+                        if (current.trigrams.isNotEmpty()) item {
                             PreferenceGroup(title = stringRes(R.string.settings__learned_entries__trigrams_title)) {
                                 current.trigrams.forEach { entry ->
                                     JetPrefListItem(

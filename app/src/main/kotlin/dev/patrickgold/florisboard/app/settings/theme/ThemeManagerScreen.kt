@@ -145,7 +145,13 @@ fun ThemeManagerScreen(action: ThemeManagerScreenAction?) = FlorisScreen {
                                 } else {
                                     Icons.Default.LightMode
                                 },
-                                contentDescription = null,
+                                contentDescription = stringRes(
+                                    if (config.isNightTheme) {
+                                        R.string.settings__theme_manager__variant_dark
+                                    } else {
+                                        R.string.settings__theme_manager__variant_light
+                                    },
+                                ),
                                 tint = grayColor,
                             )
                         },
