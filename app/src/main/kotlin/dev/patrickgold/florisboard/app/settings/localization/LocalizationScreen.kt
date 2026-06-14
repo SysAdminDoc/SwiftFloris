@@ -111,6 +111,11 @@ fun LocalizationScreen() = FlorisScreen {
                 prefs.localization.displayKeyboardLabelsInSubtypeLanguage,
                 title = stringRes(R.string.settings__localization__display_keyboard_labels_in_subtype_language),
             )
+            SwitchPreference(
+                prefs.localization.cjkMixedScriptSpacing,
+                title = stringRes(R.string.settings__localization__cjk_mixed_script_spacing__label),
+                summary = stringRes(R.string.settings__localization__cjk_mixed_script_spacing__summary),
+            )
             Preference(
                 title = stringRes(R.string.settings__per_app_language__title),
                 summary = stringRes(R.string.settings__per_app_language__summary),

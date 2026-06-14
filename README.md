@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.44-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.45-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.44 | Privacy posture |
+| Area | What's in v1.9.45 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -304,6 +304,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.45** (2026-06-14) — New optional "CJK mixed-script spacing" setting inserts a boundary space between Han characters and adjacent Latin words or digits (安装 App, 第 3 章). Preference-gated, off by default; the Han boundary requirement keeps Latin/digit-only typing untouched and existing whitespace is respected.
 - **v1.9.44** (2026-06-13) — Locale script heuristics now use runtime Unicode character-property detection instead of hardcoded language lists, covering all scripts automatically. Release workflow gains SLSA Build Level 2 provenance attestation and SPDX SBOM generation.
 - **v1.9.43** (2026-06-13) — Translate quick-action now reads the user's preferred target locale instead of hardcoding English. Sticker bitmap LRU cache now trims on system memory pressure. Composer WithRules case conversion now preserves character count under CAPS_LOCK.
 - **v1.9.42** (2026-06-13) — Deep audit pass 2: sticker bitmap downsampling now keys on longest edge (prevents OOM on wide/tall stickers), space-bar swipe-up NO_ACTION no longer swallows the gesture, clipboard restore no longer crashes on image/video items with null URIs, numeric/phone mode keys no longer consume manual shift state.
@@ -510,7 +511,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.44** (2026-06-13). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.45** (2026-06-14). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

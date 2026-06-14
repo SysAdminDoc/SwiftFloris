@@ -242,6 +242,8 @@
     <string name="settings__localization__group_language_packs__label" comment="Preference group title">Language packs</string>
     <string name="settings__localization__display_language_names_in__label" comment="Label of Display language names in preference">Display language names in</string>
     <string name="settings__localization__display_keyboard_labels_in_subtype_language" comment="Label of Display keyboard labels in subtype language preference">Display keyboard labels in subtype language</string>
+    <string name="settings__localization__cjk_mixed_script_spacing__label" comment="Label of CJK mixed-script spacing preference">CJK mixed-script spacing</string>
+    <string name="settings__localization__cjk_mixed_script_spacing__summary" comment="Summary of CJK mixed-script spacing preference">Insert a boundary space between Han characters and adjacent Latin words or digits (安装 App, 第 3 章)</string>
     <string name="settings__per_app_language__title">Remember language per app</string>
     <string name="settings__per_app_language__summary">Restore the last manually selected keyboard language for each app</string>
     <string name="settings__per_app_language__group_memory">Memory</string>
