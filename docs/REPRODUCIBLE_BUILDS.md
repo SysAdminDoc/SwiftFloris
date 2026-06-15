@@ -16,8 +16,8 @@ verify it matches the official Release artifact.
 |---|---|---|---|
 | Gradle distribution | `gradle/wrapper/gradle-wrapper.properties` | 9.5.1 | `distributionSha256Sum=bafc141b...` |
 | Android Gradle Plugin | `gradle/libs.versions.toml` `[versions] android-gradle-plugin` | 9.2.1 | resolves to a fixed Maven artifact |
-| Kotlin | `gradle/libs.versions.toml` `[versions] kotlin` | 2.3.21 | fixed Maven artifact |
-| KSP | `gradle/libs.versions.toml` `[versions] ksp` | matches Kotlin compiler | fixed Maven artifact |
+| Kotlin | `gradle/libs.versions.toml` `[versions] kotlin` | 2.4.0 | fixed Maven artifact |
+| KSP | `gradle/libs.versions.toml` `[versions] ksp` | 2.3.9 | fixed Maven artifact (KSP 2.x has its own release cadence; version no longer tracks Kotlin 1:1) |
 | Build Tools | `gradle/tools.versions.toml` `buildTools` | 36.0.0 | fixed Android SDK component |
 | NDK | `gradle/tools.versions.toml` `ndk` | 29.0.14206865 | fixed Android SDK component |
 | JDK | `gradle/tools.versions.toml` `jdk` | 17 | enforced by `compileOptions { sourceCompatibility = JavaVersion.VERSION_11 }` and `kotlin { compilerOptions { jvmTarget = JVM_11 } }`; build container uses `setup-java@v4 java-version: 17 distribution: temurin` |
@@ -67,7 +67,7 @@ reproducibility check has passed for the same commit.
 
 ```bash
 # 1. Clone at the exact tag you want to reproduce
-git clone --branch v1.7.3 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+git clone --branch v1.9.48 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 
 # 2. Build the release APK (debug-signed fallback fine for byte comparison)
@@ -75,7 +75,7 @@ cd SwiftFloris
 
 # 3. Compare against the published APK (after stripping signatures)
 APK_LOCAL=app/build/outputs/apk/release/app-release.apk
-APK_PUBLISHED=app-release-v1.7.3.apk
+APK_PUBLISHED=app-release-v1.9.48.apk
 
 apkdiff() {
   unzip -p "$1" classes.dex | sha256sum
@@ -101,9 +101,9 @@ To complete N6.3, submit the following `Builds:` stanza to
 
 ```yaml
 Builds:
-  - versionName: "1.7.3"
-    versionCode: 173
-    commit: v1.7.3
+  - versionName: "1.9.48"
+    versionCode: 2097
+    commit: v1.9.48
     sudo:
       - apt-get update
       - apt-get install -y openjdk-17-jdk-headless
@@ -118,8 +118,8 @@ Builds:
 ArchivePolicy: 6 versions
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.7.3"
-CurrentVersionCode: 173
+CurrentVersion: "1.9.48"
+CurrentVersionCode: 2097
 ```
 
 The F-Droid build server will then attempt a deterministic rebuild and compare
