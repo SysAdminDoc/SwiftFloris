@@ -265,7 +265,10 @@
     <string name="settings__localization__language_pack_extension_active_summary">{active}/{total} matching current keyboard languages; {kind} pack loads only for active matching subtypes.</string>
     <string name="settings__localization__language_pack_extension_standby_summary">0/{total} matching current keyboard languages; {kind} pack stays unloaded until you add or switch to a matching subtype.</string>
     <string name="settings__localization__language_pack_extension_unavailable_summary">{active}/{total} matching current keyboard languages, but the {kind} table data is unavailable. Candidates fail closed until you reinstall or replace this pack.</string>
-    <string name="settings__localization__language_pack_extension_metadata_summary">{total} component(s); generic pack is visible in Settings and ignored by Han shape-based startup loading.</string>
+    <plurals name="settings__localization__language_pack_extension_metadata_summary">
+        <item quantity="one">{total} component; generic pack is visible in Settings and ignored by Han shape-based startup loading.</item>
+        <item quantity="other">{total} components; generic pack is visible in Settings and ignored by Han shape-based startup loading.</item>
+    </plurals>
     <string name="settings__localization__language_pack_component_active_summary">{locale} — active for a current keyboard language</string>
     <string name="settings__localization__language_pack_component_standby_summary">{locale} — installed, not active for current keyboard languages</string>
     <string name="settings__localization__language_pack_delete_in_progress">Deleting language pack</string>
@@ -1001,7 +1004,10 @@
     <string name="settings__privacy_posture__addons_summary" comment="Preference summary. Placeholders show granted consent surfaces, total surfaces, pinned cert count, and disabled daemon count.">Granted: {granted}/{surfaces}. Signing pins: {pins}. Disabled MCP daemons: {disabled}.</string>
     <string name="settings__privacy_posture__voice_title" comment="Preference title">Voice provider</string>
     <string name="settings__privacy_posture__voice_ready" comment="Preference summary. Placeholder shows provider label.">Ready: {provider}. SwiftFloris only hands off when you tap voice input.</string>
-    <string name="settings__privacy_posture__voice_installed" comment="Preference summary. Placeholder shows installed provider count.">{count} external voice provider(s) installed, but setup is incomplete.</string>
+    <plurals name="settings__privacy_posture__voice_installed" comment="Preference summary. Placeholder shows installed provider count.">
+        <item quantity="one">{count} external voice provider installed, but setup is incomplete.</item>
+        <item quantity="other">{count} external voice providers installed, but setup is incomplete.</item>
+    </plurals>
     <string name="settings__privacy_posture__voice_missing" comment="Preference summary when no known provider is installed">No supported external voice provider is ready.</string>
     <string name="settings__privacy_posture__export_policy_title" comment="Preference title">Export policy</string>
     <string name="settings__privacy_posture__export_policy_summary" comment="Preference summary">Backups, dictionaries, raw typing traces, and audit logs leave app-private storage only when you explicitly copy, share, or save them. Raw trace files are typed-content artifacts.</string>
@@ -1515,7 +1521,15 @@
     <string name="backup_and_restore__restore__failure_recovery">Restore stopped before all selected data could be imported. Review the archive, select only the needed sections, or retry from a newer backup. Details: {error_message}</string>
     <string name="backup_and_restore__restore__unknown_error">Unknown error</string>
     <string name="backup_and_restore__restore__partial_failure_title">Restore finished with warnings</string>
-    <string name="backup_and_restore__restore__partial_failure_summary">Restored {restored_count} section(s). {problem_count} selected section(s) were missing from the archive or could not be restored. Your recovery path is to review the selected archive and retry, or restore from a newer backup.</string>
+    <plurals name="backup_and_restore__restore__partial_restored_count">
+        <item quantity="one">Restored 1 section</item>
+        <item quantity="other">Restored {restored_count} sections</item>
+    </plurals>
+    <plurals name="backup_and_restore__restore__partial_problem_count">
+        <item quantity="one">1 selected section was missing from the archive or could not be restored</item>
+        <item quantity="other">{problem_count} selected sections were missing from the archive or could not be restored</item>
+    </plurals>
+    <string name="backup_and_restore__restore__partial_failure_recovery">Your recovery path is to review the selected archive and retry, or restore from a newer backup.</string>
     <string name="backup_and_restore__restore__partial_failure_toast">Restore finished with warnings.</string>
     <string name="backup_and_restore__restore__empty_title">Select a backup archive</string>
     <string name="backup_and_restore__restore__empty_message">Choose a SwiftFloris backup ZIP to inspect its metadata and select what to restore.</string>
@@ -1801,7 +1815,19 @@
     <string name="ext__import__review_title">Review before importing</string>
     <string name="ext__import__review_message_all_ready">All selected files look ready. Review the details, then import when you are comfortable.</string>
     <string name="ext__import__review_message_with_skips">Compatible files can be imported. Skipped files remain unchanged, so review them before continuing.</string>
-    <string name="ext__import__review_message_with_actions">{new_count} new file(s), {update_count} update(s), and {skipped_count} skipped file(s) were found. Review the details, then import when you are comfortable.</string>
+    <plurals name="ext__import__review_new_files">
+        <item quantity="one">1 new file</item>
+        <item quantity="other">{new_count} new files</item>
+    </plurals>
+    <plurals name="ext__import__review_updates">
+        <item quantity="one">1 update</item>
+        <item quantity="other">{update_count} updates</item>
+    </plurals>
+    <plurals name="ext__import__review_skipped_files">
+        <item quantity="one">1 skipped file</item>
+        <item quantity="other">{skipped_count} skipped files</item>
+    </plurals>
+    <string name="ext__import__review_message_with_actions_suffix">were found. Review the details, then import when you are comfortable.</string>
     <string name="ext__import__none_ready_title">No importable files</string>
     <string name="ext__import__none_ready_message">Choose a supported SwiftFloris extension archive and try again.</string>
     <string name="ext__import__error_title">Could not prepare import</string>
@@ -2252,9 +2278,15 @@
     <string name="settings__mcp__status_no_daemons" comment="MCP status row title when no daemons are installed">No MCP daemons installed</string>
     <string name="settings__mcp__status_no_daemons_summary" comment="MCP status row summary when no daemons are installed">Install a sibling app that advertises an MCP service; SwiftFloris binds only co-signed or explicitly trusted daemons. The bridge is local-only and never opens a network connection.</string>
     <string name="settings__mcp__status_bound_title" comment="MCP status row title when daemons are bound">MCP bridge active</string>
-    <string name="settings__mcp__status_bound_summary" comment="MCP status row summary when daemons are bound; {count} = number">Currently bound to {count} daemon(s). The bridge is local-only and never opens a network connection.</string>
+    <plurals name="settings__mcp__status_bound_summary" comment="MCP status row summary when daemons are bound; {count} = active/total ratio">
+        <item quantity="one">Currently bound to {count} daemon. The bridge is local-only and never opens a network connection.</item>
+        <item quantity="other">Currently bound to {count} daemons. The bridge is local-only and never opens a network connection.</item>
+    </plurals>
     <string name="settings__mcp__daemon_protocol" comment="MCP daemon row protocol-version fragment; {version} = integer">Protocol v{version}</string>
-    <string name="settings__mcp__daemon_tools_count" comment="MCP daemon row tools-count fragment; {count} = integer">{count} tool(s)</string>
+    <plurals name="settings__mcp__daemon_tools_count" comment="MCP daemon row tools-count fragment; {count} = integer">
+        <item quantity="one">{count} tool</item>
+        <item quantity="other">{count} tools</item>
+    </plurals>
     <string name="settings__mcp__rescan" comment="MCP settings action title">Scan MCP daemons</string>
     <string name="settings__mcp__rescan_running" comment="MCP settings action title while scan is running">Scanning MCP daemons…</string>
     <string name="settings__mcp__rescan_summary" comment="MCP settings action summary">Refresh installed daemon trust state. Newly trusted daemons bind the next time the keyboard service starts.</string>

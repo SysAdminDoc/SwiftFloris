@@ -50,6 +50,7 @@ import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisSuccessCard
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -388,7 +389,7 @@ private fun voiceProviderSummary(
             it.state == ExternalVoiceInputProviderState.InstalledNotEnabled
     }
     return if (installed > 0) {
-        stringRes(R.string.settings__privacy_posture__voice_installed, "count" to installed)
+        pluralsRes(R.plurals.settings__privacy_posture__voice_installed, installed, "count" to installed)
     } else {
         stringRes(R.string.settings__privacy_posture__voice_missing)
     }

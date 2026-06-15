@@ -73,6 +73,7 @@ import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.florisHorizontalScroll
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.resultOk
 
@@ -324,12 +325,27 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     FlorisSuccessCard(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
                         text = stringRes(R.string.ext__import__review_title),
-                        secondaryText = stringRes(
-                            R.string.ext__import__review_message_with_actions,
-                            "new_count" to importSummary.newInstallCount,
-                            "update_count" to importSummary.updateCount,
-                            "skipped_count" to skippedFileCount,
-                        ),
+                        secondaryText = buildString {
+                            append(pluralsRes(
+                                R.plurals.ext__import__review_new_files,
+                                importSummary.newInstallCount,
+                                "new_count" to importSummary.newInstallCount,
+                            ))
+                            append(", ")
+                            append(pluralsRes(
+                                R.plurals.ext__import__review_updates,
+                                importSummary.updateCount,
+                                "update_count" to importSummary.updateCount,
+                            ))
+                            append(", and ")
+                            append(pluralsRes(
+                                R.plurals.ext__import__review_skipped_files,
+                                skippedFileCount,
+                                "skipped_count" to skippedFileCount,
+                            ))
+                            append(" ")
+                            append(stringRes(R.string.ext__import__review_message_with_actions_suffix))
+                        },
                         actionLabel = stringRes(R.string.action__select_files).takeIf {
                             initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
                         },

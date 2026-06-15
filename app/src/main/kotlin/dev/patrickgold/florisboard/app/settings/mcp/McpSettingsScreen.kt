@@ -55,6 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisSuccessCard
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
 /**
@@ -139,8 +140,11 @@ fun McpSettingsScreen() = FlorisScreen {
             FlorisSuccessCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__mcp__status_bound_title),
-                secondaryText = stringRes(R.string.settings__mcp__status_bound_summary)
-                    .replace("{count}", "$activeCount/${activeDaemons.size}"),
+                secondaryText = pluralsRes(
+                    R.plurals.settings__mcp__status_bound_summary,
+                    activeDaemons.size,
+                    "count" to "$activeCount/${activeDaemons.size}",
+                ),
             )
         }
 
@@ -337,14 +341,15 @@ private fun DaemonRow(
         icon = if (isEnabled) Icons.Default.PlayCircleOutline else Icons.Default.Block,
         title = entry.key.packageName,
         summary = buildString {
-            append(stringRes(R.string.settings__mcp__daemon_protocol).replace(
-                "{version}",
-                entry.protocolVersion.toString(),
+            append(stringRes(
+                R.string.settings__mcp__daemon_protocol,
+                "version" to entry.protocolVersion,
             ))
             append(" · ")
-            append(stringRes(R.string.settings__mcp__daemon_tools_count).replace(
-                "{count}",
-                entry.tools.size.toString(),
+            append(pluralsRes(
+                R.plurals.settings__mcp__daemon_tools_count,
+                entry.tools.size,
+                "count" to entry.tools.size,
             ))
             if (entry.tools.isNotEmpty()) {
                 append("\n")
