@@ -105,10 +105,12 @@ else
   ok "FLADDONS_STORE_URL removed (no upstream addon store reference)"
 fi
 
-# --- 7. rootProject.name (advisory) ---
+# --- 7. rootProject.name (hard check for F-Droid reviewer clarity) ---
 root_name="$(grep -oP 'rootProject\.name\s*=\s*"\K[^"]*' settings.gradle.kts | head -1)" || true
-if [ -n "$root_name" ] && [ "$root_name" != "SwiftFloris" ]; then
-  warn "rootProject.name = '$root_name' (cosmetic — does not affect installed identity, but could confuse F-Droid reviewers)"
+if [ -n "$root_name" ] && [ "$root_name" = "SwiftFloris" ]; then
+  ok "rootProject.name = $root_name"
+elif [ -n "$root_name" ]; then
+  fail "rootProject.name = '$root_name' — expected 'SwiftFloris' (F-Droid reviewers and reproducibility logs reference this)"
 fi
 
 # --- 8. Localized app_name overrides must not say "FlorisBoard" ---

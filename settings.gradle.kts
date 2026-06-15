@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-rootProject.name = "FlorisBoard"
+rootProject.name = "SwiftFloris"
 
 pluginManagement {
     repositories {
