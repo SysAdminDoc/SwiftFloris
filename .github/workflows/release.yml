@@ -117,9 +117,8 @@ jobs:
         run: ./gradlew :app:lintDebug
 
       # ROADMAP matrix #9 + #44 — capture OSV scan status into the release body so each
-      # tag carries a dated "OSV scan: ..." appendix. `continue-on-error: true` ensures
-      # the release still ships if OSV reports something — the result is recorded either
-      # way so users can reason about how stale / clean the dep tree was on release day.
+      # tag carries a dated "OSV scan: ..." appendix. HIGH/CRITICAL advisories block
+      # the release unless explicitly overridden in .github/osv-overrides.json.
       # See `docs/SECURITY.md` for the policy.
       - name: Generate Gradle dependency tree for OSV scan
         run: ./gradlew :app:dependencies --configuration releaseRuntimeClasspath > gradle-deps.txt
@@ -149,6 +148,9 @@ jobs:
           osv_exit=$?
           echo "osv-exit=$osv_exit" >> "$GITHUB_OUTPUT"
           set -e
+
+      - name: Gate on HIGH/CRITICAL advisories
+        run: python3 scripts/osv-release-gate.py
 
       - name: Summarise OSV result into release appendix
         run: |

@@ -114,9 +114,13 @@ and appended to the GitHub Release body. The result is reproducible — anyone c
 locally against the source tree at the matching tag and expect the same advisory set, modulo CVEs disclosed after the
 release date.
 
-If the release-time scan finds a HIGH or CRITICAL vulnerability the workflow does **not** silently swallow it; the
-step is `continue-on-error: true` so the release proceeds, but the failure is recorded in the release body and
-visible at a glance.
+If the release-time scan finds a HIGH or CRITICAL advisory, `scripts/osv-release-gate.py` blocks the release. The
+gate parses `osv-result.json`, classifies each finding by CVSS score or database severity, and exits non-zero for any
+unoverridden HIGH/CRITICAL match. LOW and MEDIUM findings are summarized but non-blocking.
+
+To override a blocking advisory (e.g. not reachable, awaiting upstream fix), add an entry to `.github/osv-overrides.json`
+with the advisory `id`, `severity`, `rationale`, `owner`, and `expiry` (YYYY-MM-DD). Expired overrides are ignored and
+produce a CI warning. The override file is committed and auditable.
 
 ### Provenance attestation (`.github/workflows/release.yml`)
 

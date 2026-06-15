@@ -1,0 +1,5 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_comment": "Explicit overrides for OSV advisories that should not block the release. Each entry must document why the advisory does not apply or is accepted.",
+  "overrides": []
+}
