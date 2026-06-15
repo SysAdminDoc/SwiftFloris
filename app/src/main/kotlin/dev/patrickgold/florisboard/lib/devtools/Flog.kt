@@ -23,7 +23,11 @@ import dev.patrickgold.florisboard.lib.devtools.Flog.OUTPUT_CONSOLE
 import dev.patrickgold.florisboard.lib.devtools.Flog.createTag
 import dev.patrickgold.florisboard.lib.devtools.Flog.getStacktraceElement
 import dev.patrickgold.florisboard.lib.devtools.Flog.log
+import java.io.File
 import java.lang.ref.WeakReference
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
@@ -323,6 +327,75 @@ object Flog {
 
     private fun fileLog(level: FlogLevel, msg: String) {
         val context = applicationContext.get() ?: return
-        // TODO: introduce file logging here for runtime debug logging
+        val ste = getStacktraceElement()
+        val tag = createTag(ste)
+        val message = createMessage(ste, msg)
+        val levelChar = when {
+            level isSet LEVEL_ERROR -> 'E'
+            level isSet LEVEL_WARNING -> 'W'
+            level isSet LEVEL_INFO -> 'I'
+            level isSet LEVEL_DEBUG -> 'D'
+            else -> '?'
+        }
+        val timestamp = FILE_LOG_TIMESTAMP.format(Instant.now())
+        val line = "$timestamp $levelChar $tag $message\n"
+        try {
+            val dir = diagnosticsDir(context)
+            val file = File(dir, "flog-0.log")
+            if (file.length() > MAX_FILE_SIZE) {
+                rotateFiles(dir)
+            }
+            file.appendText(line)
+        } catch (_: Exception) {
+            // Logging must never crash the IME.
+        }
     }
+
+    private fun diagnosticsDir(context: Context): File {
+        val dir = File(context.filesDir, DIAGNOSTICS_DIR)
+        if (!dir.exists()) dir.mkdirs()
+        return dir
+    }
+
+    private fun rotateFiles(dir: File) {
+        val oldest = File(dir, "flog-${MAX_FILE_COUNT - 1}.log")
+        if (oldest.exists()) oldest.delete()
+        for (i in MAX_FILE_COUNT - 2 downTo 0) {
+            val src = File(dir, "flog-$i.log")
+            if (src.exists()) src.renameTo(File(dir, "flog-${i + 1}.log"))
+        }
+    }
+
+    fun exportDiagnostics(context: Context): File? {
+        val dir = diagnosticsDir(context)
+        val files = dir.listFiles { f -> f.name.startsWith("flog-") && f.extension == "log" }
+            ?.sortedBy { it.name }
+            ?: return null
+        if (files.isEmpty()) return null
+        val export = File(context.cacheDir, "swiftfloris-diagnostics.log")
+        export.outputStream().buffered().use { out ->
+            for (f in files) {
+                f.inputStream().buffered().use { it.copyTo(out) }
+            }
+        }
+        return export
+    }
+
+    fun clearDiagnostics(context: Context) {
+        val dir = File(context.filesDir, DIAGNOSTICS_DIR)
+        dir.listFiles()?.forEach { it.delete() }
+    }
+
+    fun diagnosticsSize(context: Context): Long {
+        val dir = File(context.filesDir, DIAGNOSTICS_DIR)
+        return dir.listFiles()?.sumOf { it.length() } ?: 0L
+    }
+
+    const val DIAGNOSTICS_DIR = "diagnostics"
+    private const val MAX_FILE_SIZE = 512 * 1024L // 512 KB per file
+    private const val MAX_FILE_COUNT = 3
+
+    private val FILE_LOG_TIMESTAMP: DateTimeFormatter = DateTimeFormatter
+        .ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+        .withZone(ZoneId.of("UTC"))
 }
