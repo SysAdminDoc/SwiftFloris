@@ -203,6 +203,10 @@ interface SuggestionProvider : NlpProvider {
     /**
      * When initializing composing text given a new context, the suggestion engine determines the composing range.
      * The default behavior gets the last word according to the current subtype's primaryLocale.
+     *
+     * **CONSTRAINT:** implementations MUST be CPU-only — no disk I/O, no network, no suspend
+     * delay. This is called inside `runBlocking` on the IME main thread on every keystroke.
+     *
      * @param subtype The current subtype used to determine word or character boundary.
      * @param textBeforeSelection The text whose end we want to compose.
      * @param breakIterators cache of BreakIterator(s) to determine boundary.

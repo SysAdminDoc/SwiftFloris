@@ -351,6 +351,8 @@ abstract class AbstractEditorInstance(context: Context) {
         return editorInfo.isRichInputEditor && !editorInfo.inputAttributes.flagTextNoSuggestions
     }
 
+    // INVARIANT: must remain CPU-only (no I/O, no suspend delay). Called inside
+    // runBlocking on the IME main thread from every commit/delete/selection path.
     private suspend fun determineLocalComposing(
         textBeforeSelection: CharSequence, localLastCommitPosition: Int
     ): EditorRange {
