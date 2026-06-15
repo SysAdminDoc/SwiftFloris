@@ -122,6 +122,20 @@ else
   echo "GitHub Release: SKIPPED (gh CLI not available)"
 fi
 
+# --- 5. Developer verification guidance freshness ---
+# After Q3 2026, the developer-verification README section must have been
+# reviewed. The "(reassess Q3 2026)" tag triggers a warning if the current
+# date is past 2026-09-01 and the tag is still present — it means the
+# guidance was not updated for the enforcement window.
+if grep -q "reassess Q3 2026" README.md 2>/dev/null; then
+  current_date="$(date -u +%Y%m%d 2>/dev/null || echo 20260101)"
+  if [ "$current_date" -ge "20260901" ]; then
+    fail "README.md developer-verification section still says 'reassess Q3 2026' but we are past that date — update the guidance"
+  else
+    echo "developer-verification: OK (reassessment date not yet reached)"
+  fi
+fi
+
 # --- Summary ---
 if [ "$errors" -gt 0 ]; then
   echo "release-front-door: FAIL ($errors error(s), $warnings warning(s))"

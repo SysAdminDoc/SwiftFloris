@@ -116,12 +116,18 @@ including, in the rolled-out form, sideloaded APKs. F-Droid has published an
 **Current posture (reassess Q3 2026):** SwiftFloris does **not** plan to
 pre-register under this scheme. The F-Droid track remains the primary
 privacy-first distribution channel and F-Droid's own response will shape what,
-if anything, packagers must do. GitHub/Obtainium sideloading is unaffected in
-regions and on devices where enforcement has not yet landed. This is a
-reversible default: if enforcement begins blocking installs for users in the
-pilot regions ahead of a viable F-Droid path, registration will be
-reconsidered then. Maintainers can override this stance at any time — it is a
-recommendation, not a binding commitment.
+if anything, packagers must do.
+
+**If you are in a pilot region** (Brazil, Indonesia, Thailand, Singapore): after
+September 2026, certified Android devices in your region may begin warning or
+blocking sideloaded APKs from unregistered developers. Until then, GitHub and
+Obtainium installs work normally. If blocking begins and no F-Droid workaround
+exists, the project will reassess registration. Watch the release notes for
+updates.
+
+This is a reversible default: maintainers can override this stance at any time.
+The release-front-door script checks that this section has been reviewed within
+the current quarter; stale guidance blocks the release.
 
 ### Enable as Default Keyboard
 
