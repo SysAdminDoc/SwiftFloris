@@ -29,6 +29,7 @@ import android.os.Trace
 import android.util.Log
 import android.util.Size
 import android.view.KeyEvent
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
@@ -569,39 +570,91 @@ class FlorisImeService : LifecycleInputMethodService() {
         voiceInputManager.refreshAvailability()
     }
 
-    /**
-     * ROADMAP §7 Next-4.1 — stylus handwriting entry point. Android 14+
-     * routes a stylus motion-event landing on an editor with
-     * `setAutoHandwritingEnabled(true)` (the default on Android 14+) into
-     * this callback. The IME has the choice of:
-     *
-     *  - returning without action (default — the stylus event falls through
-     *    to the standard input path, which is exactly the current SwiftFloris
-     *    behaviour while a real on-device recognizer is being scoped under
-     *    Next-4.2);
-     *  - invoking a real stroke recogniser (Google ML Kit Digital Ink,
-     *    custom ICU-LM model, etc.) and `currentInputConnection.commitText`
-     *    the recognised result; or
-     *  - showing a handwriting overlay UI via `setInkWindow`.
-     *
-     * Logging-only for v1.7.x; the recogniser slot lands as Next-4.2.
-     * Wiring this override now reserves the surface so language-pack /
-     * preference plumbing can ship ahead of the recogniser bring-up.
-     */
+    private val pendingStrokes = mutableListOf<dev.patrickgold.florisboard.ime.handwriting.Stroke>()
+    private val pendingPoints = mutableListOf<dev.patrickgold.florisboard.ime.handwriting.StrokePoint>()
+    private var handwritingSessionActive = false
+
+    @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    override fun onPrepareStylusHandwriting(): Unit {
+        if (!prefs.keyboard.stylusHandwritingEnabled.get()) return
+        pendingStrokes.clear()
+        pendingPoints.clear()
+    }
+
     @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     override fun onStartStylusHandwriting(): Boolean {
-        // ROADMAP §7 Next-4.3 — gate on the user's stylus-handwriting toggle.
-        // When the toggle is off (default), short-circuit so the system
-        // falls back to standard touch input without ever calling into our
-        // recogniser stub.
         if (!prefs.keyboard.stylusHandwritingEnabled.get()) return false
-        flogInfo { "Stylus handwriting session started (Next-4.1 stub; recogniser pending Next-4.2)" }
-        // Return false: we acknowledge the stylus event but don't yet have a
-        // recogniser running, so the system falls back to the standard
-        // touch-input path. Once Next-4.2 (Google ML Kit Digital Ink) lands,
-        // flip to `super.onStartStylusHandwriting()` and start a real
-        // recognition session.
-        return false
+        val locale = subtypeManager.activeSubtype.primaryLocale.localeTag()
+        val recognizer = dev.patrickgold.florisboard.ime.handwriting.StrokeRecognizerRegistry.active
+        if (!recognizer.isReady(locale)) {
+            flogInfo { "Stylus handwriting: no recognizer addon installed for $locale" }
+            android.widget.Toast.makeText(
+                this, getString(R.string.handwriting__no_recognizer), android.widget.Toast.LENGTH_SHORT
+            ).show()
+            return false
+        }
+        handwritingSessionActive = true
+        pendingStrokes.clear()
+        pendingPoints.clear()
+        flogInfo { "Stylus handwriting session started for locale=$locale" }
+        return true
+    }
+
+    @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    override fun onStylusHandwritingMotionEvent(event: MotionEvent) {
+        if (!handwritingSessionActive) return
+        when (event.actionMasked) {
+            MotionEvent.ACTION_DOWN -> {
+                pendingPoints.clear()
+                pendingPoints.add(dev.patrickgold.florisboard.ime.handwriting.StrokePoint(
+                    event.x, event.y, event.eventTime,
+                ))
+            }
+            MotionEvent.ACTION_MOVE -> {
+                for (i in 0 until event.historySize) {
+                    pendingPoints.add(dev.patrickgold.florisboard.ime.handwriting.StrokePoint(
+                        event.getHistoricalX(i), event.getHistoricalY(i), event.getHistoricalEventTime(i),
+                    ))
+                }
+                pendingPoints.add(dev.patrickgold.florisboard.ime.handwriting.StrokePoint(
+                    event.x, event.y, event.eventTime,
+                ))
+            }
+            MotionEvent.ACTION_UP -> {
+                pendingPoints.add(dev.patrickgold.florisboard.ime.handwriting.StrokePoint(
+                    event.x, event.y, event.eventTime,
+                ))
+                if (pendingPoints.size >= 2) {
+                    pendingStrokes.add(dev.patrickgold.florisboard.ime.handwriting.Stroke(
+                        pendingPoints.toList(),
+                    ))
+                }
+                pendingPoints.clear()
+            }
+        }
+    }
+
+    @androidx.annotation.RequiresApi(android.os.Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    override fun onFinishStylusHandwriting() {
+        if (!handwritingSessionActive) return
+        handwritingSessionActive = false
+        if (pendingStrokes.isEmpty()) return
+        val locale = subtypeManager.activeSubtype.primaryLocale.localeTag()
+        val recognizer = dev.patrickgold.florisboard.ime.handwriting.StrokeRecognizerRegistry.active
+        val result = recognizer.recognize(pendingStrokes.toList(), locale)
+        pendingStrokes.clear()
+        when (result) {
+            is dev.patrickgold.florisboard.ime.handwriting.StrokeRecognitionResult.Candidates -> {
+                val best = result.candidates.firstOrNull()
+                if (best != null) {
+                    currentInputConnection?.commitText(best.text, 1)
+                    flogInfo { "Stylus handwriting committed: '${best.text}' (confidence=${best.confidence})" }
+                }
+            }
+            is dev.patrickgold.florisboard.ime.handwriting.StrokeRecognitionResult.NoRecognition -> {
+                flogInfo { "Stylus handwriting: recognizer returned NoRecognition" }
+            }
+        }
     }
 
     override fun onStartInputView(info: EditorInfo?, restarting: Boolean) {
