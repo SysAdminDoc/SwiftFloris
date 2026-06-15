@@ -106,4 +106,26 @@ class BottomRowPresetTest : FunSpec({
         // forgets to register a new preset there gets caught here.
         (BottomRowPreset.Navigation in BottomRowPreset.Presets) shouldBe true
     }
+
+    test("Terminal preset surfaces Esc / Ctrl / Alt / Home / End / Tab around spacebar") {
+        BottomRowPreset.Terminal.toTextKeyDataRow().map { it.code }.shouldContainExactly(
+            KeyCode.ESCAPE,
+            KeyCode.CTRL,
+            KeyCode.ALT,
+            KeyCode.SPACE,
+            KeyCode.MOVE_START_OF_LINE,
+            KeyCode.MOVE_END_OF_LINE,
+            KeyCode.TAB,
+            KeyCode.ENTER,
+        )
+    }
+
+    test("Terminal preset round-trips through the JSON override codec") {
+        val encoded = BottomRowPreset.Terminal.toJson()
+        BottomRowPreset.fromJsonOverride(encoded) shouldBe BottomRowPreset.Terminal
+    }
+
+    test("Terminal preset is registered in the public Presets list") {
+        (BottomRowPreset.Terminal in BottomRowPreset.Presets) shouldBe true
+    }
 })
