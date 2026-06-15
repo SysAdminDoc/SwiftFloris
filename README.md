@@ -264,7 +264,7 @@ Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, 
 - **Long-press popups:** suppressed on every `KeyVariation.PASSWORD` (Android 17 password-visibility behavior closed on the IME side as of v1.8.44).
 - **Personalized learning:** clipboard write / dictionary learn paths skip password and `IME_FLAG_NO_PERSONALIZED_LEARNING` fields.
 - **Opt-in addon surfaces (smart-compose, translation, MCP):** every invocation runs through `SensitiveFieldGuard` first; sensitive fields short-circuit to a safe no-result.
-- **Personal dictionary backup:** excluded from cloud-backup paths; device-transfer kept.
+- **Personal dictionary backup:** excluded from both Android cloud backup and device-to-device transfer. The SQLCipher passphrase is wrapped by an Android Keystore key that is non-exportable, so the ciphertext is undecryptable on a new device. Use Settings → Personal dictionary → Export/Import for explicit local migration.
 
 The public posture is simple: no network permission, no telemetry, no account binding, no cloud learning, and explicit user action before sensitive local data is exported or shared with another app.
 

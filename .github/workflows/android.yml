@@ -66,6 +66,9 @@ jobs:
       - name: Check release-front-door drift
         run: bash scripts/check-release-front-door.sh
 
+      - name: Check backup/transfer privacy copy
+        run: bash scripts/check-backup-privacy-copy.sh
+
       - name: Check fork-identity for F-Droid readiness
         run: bash scripts/check-fork-identity.sh
 
