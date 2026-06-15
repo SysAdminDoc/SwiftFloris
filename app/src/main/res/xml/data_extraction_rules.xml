@@ -78,6 +78,10 @@
         <exclude
             domain="file"
             path="sync"/>
+        <!-- Runtime diagnostic logs — PII-safe but transient; no value in backup. -->
+        <exclude
+            domain="file"
+            path="diagnostics"/>
     </cloud-backup>
     <device-transfer>
         <include
@@ -131,5 +135,8 @@
         <exclude
             domain="file"
             path="sync"/>
+        <exclude
+            domain="file"
+            path="diagnostics"/>
     </device-transfer>
 </data-extraction-rules>
