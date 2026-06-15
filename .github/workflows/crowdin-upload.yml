@@ -21,14 +21,14 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       - name: Upload
         # SHA pin: crowdin/github-action@v2 = 8868a33591d21088edfc398968173a3b98d51706
         # Verified 2026-05-17 via `GET /repos/crowdin/github-action/git/refs/tags/v2`.
         # When the maintainer wants to ride a newer v2 patch, look up the tag's
         # SHA again and substitute. Never re-introduce the floating `@v2` tag —
         # this action receives the Crowdin personal token + GITHUB_TOKEN.
-        uses: crowdin/github-action@8868a33591d21088edfc398968173a3b98d51706 # v2
+        uses: crowdin/github-action@52aa776766211d83d975df51f3b9c53c2f8ba35f # v2
         with:
           config: "crowdin.yml"
           upload_sources: true
