@@ -845,6 +845,7 @@
     <string name="pref__keyboard__bottom_row_preset__minimal" comment="Bottom row preset label">Minimal</string>
     <string name="pref__keyboard__bottom_row_preset__programmer" comment="Bottom row preset label">Programmer</string>
     <string name="pref__keyboard__bottom_row_preset__navigation" comment="Bottom row preset label">Arrow keys</string>
+    <string name="pref__keyboard__bottom_row_preset__terminal" comment="Bottom row preset label">Terminal</string>
     <string name="pref__keyboard__stylus_handwriting__label" comment="Preference title">Stylus handwriting</string>
     <string name="pref__keyboard__stylus_handwriting__summary" comment="Preference summary">Android 14+ devices with a compatible stylus can write directly into text fields. Install a handwriting recognizer addon for recognition support.</string>
     <string name="handwriting__no_recognizer" comment="Toast shown when stylus handwriting starts but no recognizer addon is installed">No handwriting recognizer installed. Install a recognizer addon from Settings → Addons.</string>

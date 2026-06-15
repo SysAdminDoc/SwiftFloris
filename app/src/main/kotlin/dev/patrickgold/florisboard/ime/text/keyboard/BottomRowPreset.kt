@@ -153,7 +153,20 @@ data class BottomRowPreset(
             )
         )
 
-        val Presets = listOf(SwiftKey, Language, Voice, Settings, Minimal, Programmer, Navigation)
+        val Terminal = BottomRowPreset(
+            listOf(
+                BottomRowKey.ESCAPE,
+                BottomRowKey.CTRL,
+                BottomRowKey.ALT,
+                BottomRowKey.SPACE,
+                BottomRowKey.HOME,
+                BottomRowKey.END,
+                BottomRowKey.TAB,
+                BottomRowKey.ENTER,
+            )
+        )
+
+        val Presets = listOf(SwiftKey, Language, Voice, Settings, Minimal, Programmer, Navigation, Terminal)
 
         fun fromJsonOverride(rawValue: String): BottomRowPreset? {
             return when {
@@ -199,7 +212,12 @@ enum class BottomRowKey {
     ARROW_LEFT,
     ARROW_UP,
     ARROW_DOWN,
-    ARROW_RIGHT;
+    ARROW_RIGHT,
+
+    CTRL,
+    ALT,
+    HOME,
+    END;
 
     internal fun toTextKeyData(hasDedicatedVoice: Boolean): TextKeyData {
         return when (this) {
@@ -256,6 +274,10 @@ enum class BottomRowKey {
             ARROW_RIGHT -> TextKeyData.ARROW_RIGHT
             ARROW_UP -> TextKeyData.ARROW_UP
             ARROW_DOWN -> TextKeyData.ARROW_DOWN
+            CTRL -> TextKeyData.CTRL
+            ALT -> TextKeyData.ALT
+            HOME -> TextKeyData.MOVE_START_OF_LINE
+            END -> TextKeyData.MOVE_END_OF_LINE
         }
     }
 }

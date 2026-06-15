@@ -120,6 +120,10 @@ fun KeyboardScreen() = FlorisScreen {
                             key = BottomRowPreset.Navigation.toJson(),
                             label = stringRes(R.string.pref__keyboard__bottom_row_preset__navigation),
                         ),
+                        entry(
+                            key = BottomRowPreset.Terminal.toJson(),
+                            label = stringRes(R.string.pref__keyboard__bottom_row_preset__terminal),
+                        ),
                     )
                 },
             )
