@@ -79,6 +79,7 @@ import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.io.readJson
@@ -506,11 +507,23 @@ fun RestoreScreen() = FlorisScreen {
                 FlorisWarningCard(
                     modifier = Modifier.padding(8.dp),
                     text = stringRes(R.string.backup_and_restore__restore__partial_failure_title),
-                    secondaryText = stringRes(
-                        R.string.backup_and_restore__restore__partial_failure_summary,
-                        "restored_count" to (summary?.restoredSections ?: 0),
-                        "problem_count" to (summary?.problemSections ?: 0),
-                    ),
+                    secondaryText = buildString {
+                        val restored = summary?.restoredSections ?: 0
+                        val problems = summary?.problemSections ?: 0
+                        append(pluralsRes(
+                            R.plurals.backup_and_restore__restore__partial_restored_count,
+                            restored,
+                            "restored_count" to restored,
+                        ))
+                        append(". ")
+                        append(pluralsRes(
+                            R.plurals.backup_and_restore__restore__partial_problem_count,
+                            problems,
+                            "problem_count" to problems,
+                        ))
+                        append(". ")
+                        append(stringRes(R.string.backup_and_restore__restore__partial_failure_recovery))
+                    },
                 )
             }
             RestoreFlowNotice.Success,

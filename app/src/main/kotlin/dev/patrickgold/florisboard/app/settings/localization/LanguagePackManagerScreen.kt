@@ -67,6 +67,7 @@ import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
 enum class LanguagePackManagerScreenAction(val id: String) {
@@ -275,8 +276,9 @@ private fun languagePackEntrySummary(entry: LanguagePackCatalogEntry): String {
             "total" to entry.componentCount.toString(),
             "kind" to kind,
         )
-        LanguagePackRuntimeState.MetadataOnly -> stringRes(
-            R.string.settings__localization__language_pack_extension_metadata_summary,
+        LanguagePackRuntimeState.MetadataOnly -> pluralsRes(
+            R.plurals.settings__localization__language_pack_extension_metadata_summary,
+            entry.componentCount,
             "total" to entry.componentCount.toString(),
         )
         LanguagePackRuntimeState.DataUnavailable -> stringRes(
