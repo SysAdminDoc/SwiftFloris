@@ -1,0 +1,10 @@
+• Fixed stale backup/transfer privacy copy — README and PRIVACY_AND_AI.md now correctly state that personal dictionary is excluded from both cloud backup and device-to-device transfer, with a new CI guard to prevent wording drift.
+• Releases now block on HIGH/CRITICAL OSV advisories — the release workflow gates on severity with a documented override mechanism (.github/osv-overrides.json).
+• Converted six "(s)" plural strings to proper Android quantity resources.
+• Renamed rootProject.name from "FlorisBoard" to "SwiftFloris" for F-Droid reviewer clarity.
+• Wired Android 14+ stylus handwriting through the recognizer facade — ink capture, stroke forwarding, and candidate commit now work when a recognizer addon is installed.
+• Implemented bounded file-backed diagnostic logging (3-file rotation, 512 KB each, PII-safe).
+• Added developer verification readiness gate to the release checklist.
+• Refreshed reproducible-build docs to match v1.9.49 toolchain pins.
+• Aligned addon spec and Tasker docs with current SwiftFloris contract namespaces.
+• Submitted to awesome-privacy, android-foss, and foss-apps catalogs.
