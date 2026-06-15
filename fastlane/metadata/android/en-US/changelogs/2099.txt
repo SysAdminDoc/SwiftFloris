@@ -1,0 +1,2 @@
+• New "Terminal" bottom row preset — Esc, Ctrl, Alt, Home, End, Tab keys directly accessible for terminal/SSH users (Termux, JuiceSSH, Acode) without flipping to the symbol layer.
+• Verified keyboard magnification accessibility on API 36 — text keyboard, emoji picker, and touch input all work correctly under system magnification with no clipping or crashes.
