@@ -987,6 +987,26 @@
     <string name="settings__typing_stats__erase_everything__toast" comment="Toast shown after erasing everything">All on-device learning and your personal dictionary were erased.</string>
     <string name="settings__privacy_posture__title" comment="Screen + preference title">Privacy posture</string>
     <string name="settings__privacy_posture__home_summary" comment="Home preference summary">Network, learning, clipboard, addon, voice, and typing profile status</string>
+
+    <string name="settings__migration_assistant__title" comment="Screen title">Migration assistant</string>
+    <string name="settings__migration_assistant__home_summary" comment="Home preference summary">Import words from SwiftKey, Gboard, FlorisBoard, or a backup</string>
+    <string name="settings__migration_assistant__retired_warning_title" comment="Warning card title">SwiftKey cloud accounts were retired on 2026-05-31</string>
+    <string name="settings__migration_assistant__retired_warning_summary" comment="Warning card body">Microsoft deleted non-Microsoft-account SwiftKey learning data permanently. If you did not export your swiftkey-cloud.json before the cutoff, that data cannot be recovered.</string>
+    <string name="settings__migration_assistant__intro" comment="Info card text">Choose an import path below. All imports go through the personal dictionary, where you can review and undo individual entries.</string>
+    <string name="settings__migration_assistant__group_import_paths" comment="Preference group title">Import paths</string>
+    <string name="settings__migration_assistant__swiftkey_title" comment="Preference title">SwiftKey (swiftkey-cloud.json)</string>
+    <string name="settings__migration_assistant__swiftkey_summary" comment="Preference summary">Import your SwiftKey cloud export. Choose the JSON file you downloaded from data.swiftkey.com before the shutdown.</string>
+    <string name="settings__migration_assistant__gboard_title" comment="Preference title">Gboard (Google Takeout)</string>
+    <string name="settings__migration_assistant__gboard_summary" comment="Preference summary">Import from a Google Takeout Keyboard export. Supports the PersonalDictionary.zip or individual XML files.</string>
+    <string name="settings__migration_assistant__florisboard_title" comment="Preference title">FlorisBoard / HeliBoard (.flbackup or CSV)</string>
+    <string name="settings__migration_assistant__florisboard_summary" comment="Preference summary">Import from a FlorisBoard or HeliBoard backup file or a plain CSV word list.</string>
+    <string name="settings__migration_assistant__encrypted_title" comment="Preference title">SwiftFloris encrypted backup (.sfexp)</string>
+    <string name="settings__migration_assistant__encrypted_summary" comment="Preference summary">Restore a passphrase-protected SwiftFloris export created on another device.</string>
+    <string name="settings__migration_assistant__manual_title" comment="Preference title">Add words manually</string>
+    <string name="settings__migration_assistant__manual_summary" comment="Preference summary">Open the personal dictionary to type or paste words one at a time.</string>
+    <string name="settings__migration_assistant__group_learn_more" comment="Preference group title">Learn more</string>
+    <string name="settings__migration_assistant__guide_title" comment="Preference title">Migration guide</string>
+    <string name="settings__migration_assistant__guide_summary" comment="Preference summary">Full walkthrough with screenshots and troubleshooting on GitHub.</string>
     <string name="settings__privacy_posture__intro_title" comment="Info card title">Private by default</string>
     <string name="settings__privacy_posture__intro_summary" comment="Info card summary">SwiftFloris has no Internet permission. This screen shows the optional local surfaces that can retain data or hand off to user-installed providers.</string>
     <string name="settings__privacy_posture__group_status" comment="Preference group title">Current posture</string>

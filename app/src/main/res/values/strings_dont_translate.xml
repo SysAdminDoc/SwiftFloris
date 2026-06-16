@@ -15,6 +15,7 @@
     <string name="florisboard__character_key_codes_url" translatable="false">https://unicode-table.com/en</string>
     <string name="florisboard__reproducible_builds_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/REPRODUCIBLE_BUILDS.md</string>
     <string name="florisboard__security_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/SECURITY.md</string>
+    <string name="florisboard__migration_guide_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/MIGRATE_FROM_SWIFTKEY.md</string>
 
     <string name="general__system_string_placeholder" translatable="false">%s</string>
     <string name="general__empty_string" translatable="false"/>
