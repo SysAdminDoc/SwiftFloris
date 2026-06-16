@@ -1281,6 +1281,9 @@
     <string name="pref__gestures__space_bar_swipe_down__label" comment="Preference title">Space bar swipe down</string>
     <string name="pref__gestures__space_bar_swipe_left__label" comment="Preference title">Space bar swipe left</string>
     <string name="pref__gestures__space_bar_swipe_right__label" comment="Preference title">Space bar swipe right</string>
+    <string name="pref__gestures__space_bar_touchpad_mode__label" comment="Preference title">Touchpad cursor mode</string>
+    <string name="pref__gestures__space_bar_touchpad_mode__summary" comment="Preference summary">Slide on the spacebar to move the cursor. Vertical slides select text.</string>
+    <string name="settings__gestures__touchpad_cursor_ready" comment="Info card shown when touchpad cursor mode is on">Touchpad cursor mode is active. Slide horizontally on the spacebar to move the cursor, or vertically to select text.</string>
     <string name="pref__gestures__space_bar_long_press__label" comment="Preference title">Space bar long press</string>
     <string name="pref__gestures__delete_key_swipe_left__label" comment="Preference title">Delete key swipe left</string>
     <string name="pref__gestures__delete_key_long_press__label" comment="Preference title">Delete key long press</string>

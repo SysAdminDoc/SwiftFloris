@@ -110,6 +110,10 @@ open class GesturesPrefs : PreferenceModel() {
         key = "gestures__space_bar_long_press",
         default = SwipeAction.SHOW_INPUT_METHOD_PICKER,
     )
+    val spaceBarTouchpadMode = boolean(
+        key = "gestures__space_bar_touchpad_mode",
+        default = false,
+    )
     val symbolFlickEnabled = boolean(
         key = "gestures__symbol_flick_enabled",
         default = false,
