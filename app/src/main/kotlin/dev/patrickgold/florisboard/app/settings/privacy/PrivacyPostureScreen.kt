@@ -18,6 +18,7 @@ import android.widget.Toast
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Extension
 import androidx.compose.material.icons.filled.History
@@ -27,6 +28,7 @@ import androidx.compose.material.icons.filled.Restore
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.TextFields
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.WifiOff
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -44,6 +46,7 @@ import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviderState
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
@@ -221,6 +224,18 @@ fun PrivacyPostureScreen() = FlorisScreen {
                     "count" to PerAppKeyboardProfiles.count(perAppKeyboardProfiles),
                 ),
                 onClick = { navController.navigate(Routes.Settings.PerAppKeyboardProfiles) },
+            )
+            Preference(
+                icon = Icons.Default.Code,
+                title = stringRes(R.string.settings__privacy_posture__source_code_title),
+                summary = stringRes(R.string.settings__privacy_posture__source_code_summary),
+                onClick = { context.launchUrl(R.string.florisboard__repo_url) },
+            )
+            Preference(
+                icon = Icons.Default.VerifiedUser,
+                title = stringRes(R.string.settings__privacy_posture__verification_title),
+                summary = stringRes(R.string.settings__privacy_posture__verification_summary),
+                onClick = { context.launchUrl(R.string.florisboard__reproducible_builds_url) },
             )
         }
 

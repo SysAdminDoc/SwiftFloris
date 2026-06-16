@@ -1013,6 +1013,10 @@
     <string name="settings__privacy_posture__voice_missing" comment="Preference summary when no known provider is installed">No supported external voice provider is ready.</string>
     <string name="settings__privacy_posture__export_policy_title" comment="Preference title">Export policy</string>
     <string name="settings__privacy_posture__export_policy_summary" comment="Preference summary">Backups, dictionaries, raw typing traces, and audit logs leave app-private storage only when you explicitly copy, share, or save them. Raw trace files are typed-content artifacts.</string>
+    <string name="settings__privacy_posture__source_code_title" comment="Preference title">Source code</string>
+    <string name="settings__privacy_posture__source_code_summary" comment="Preference summary">View the full source on GitHub. SwiftFloris is open-source under the Apache 2.0 license.</string>
+    <string name="settings__privacy_posture__verification_title" comment="Preference title">Release verification</string>
+    <string name="settings__privacy_posture__verification_summary" comment="Preference summary">Reproducible build instructions and signing fingerprints for verifying that your installed APK matches the published source.</string>
     <string name="settings__privacy_posture__per_app_profiles_title" comment="Preference title">Per-app keyboard profiles</string>
     <string name="settings__privacy_posture__per_app_profiles_summary" comment="Preference summary; {count} is the number of saved app-specific profiles">Configured apps: {count}. Profiles can override adaptive accent, incognito, clipboard history, suggestions, and smartbar gesture sets for the focused app.</string>
     <string name="settings__per_app_keyboard_profiles__title" comment="Screen title">Per-app keyboard profiles</string>
