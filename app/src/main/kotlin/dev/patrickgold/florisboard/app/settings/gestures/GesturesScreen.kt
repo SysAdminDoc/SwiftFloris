@@ -92,7 +92,13 @@ fun GesturesScreen() = FlorisScreen {
                 text = stringRes(R.string.settings__gestures__symbol_flick_needs_hints),
             )
         }
-        if (conflictSummary.spaceBarCursorMovementEnabled) {
+        val spaceBarTouchpadMode by prefs.gestures.spaceBarTouchpadMode.collectAsState()
+        if (spaceBarTouchpadMode) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__touchpad_cursor_ready),
+            )
+        } else if (conflictSummary.spaceBarCursorMovementEnabled) {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__gestures__spacebar_cursor_ready),
@@ -232,25 +238,34 @@ fun GesturesScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__gestures__space_bar_title)) {
+            SwitchPreference(
+                prefs.gestures.spaceBarTouchpadMode,
+                title = stringRes(R.string.pref__gestures__space_bar_touchpad_mode__label),
+                summary = stringRes(R.string.pref__gestures__space_bar_touchpad_mode__summary),
+            )
             ListPreference(
                 prefs.gestures.spaceBarSwipeUp,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_up__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.gestures.spaceBarTouchpadMode isEqualTo false },
             )
             ListPreference(
                 prefs.gestures.spaceBarSwipeDown,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_down__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.gestures.spaceBarTouchpadMode isEqualTo false },
             )
             ListPreference(
                 prefs.gestures.spaceBarSwipeLeft,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_left__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.gestures.spaceBarTouchpadMode isEqualTo false },
             )
             ListPreference(
                 prefs.gestures.spaceBarSwipeRight,
                 title = stringRes(R.string.pref__gestures__space_bar_swipe_right__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
+                enabledIf = { prefs.gestures.spaceBarTouchpadMode isEqualTo false },
             )
             ListPreference(
                 prefs.gestures.spaceBarLongPress,

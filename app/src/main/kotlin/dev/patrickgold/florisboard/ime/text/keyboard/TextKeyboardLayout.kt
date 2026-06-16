@@ -1283,6 +1283,10 @@ private class TextKeyboardLayoutController(
     private fun handleSpaceSwipe(event: SwipeGesture.Event): Boolean {
         val pointer = pointerMap.findById(event.pointerId) ?: return false
 
+        if (prefs.gestures.spaceBarTouchpadMode.get()) {
+            return handleSpaceTouchpad(event, pointer)
+        }
+
         return when (event.type) {
             SwipeGesture.Type.TOUCH_MOVE -> when (event.direction) {
                 SwipeGesture.Direction.LEFT -> {
@@ -1436,6 +1440,44 @@ private class TextKeyboardLayoutController(
                 }
             }
         }
+    }
+
+    private fun handleSpaceTouchpad(event: SwipeGesture.Event, pointer: TouchPointer): Boolean {
+        if (event.type != SwipeGesture.Type.TOUCH_MOVE) return false
+        val isVertical = event.direction == SwipeGesture.Direction.UP ||
+            event.direction == SwipeGesture.Direction.DOWN
+        val isHorizontal = event.direction == SwipeGesture.Direction.LEFT ||
+            event.direction == SwipeGesture.Direction.RIGHT
+
+        if (!isVertical && !isHorizontal) return false
+
+        val unitCount = if (isHorizontal) abs(event.relUnitCountX) else abs(event.relUnitCountY)
+        val count = if (!pointer.hasTriggeredGestureMove) unitCount - 1 else unitCount
+        if (count <= 0) return true
+
+        inputFeedbackController?.gestureMovingSwipe(TextKeyData.SPACE)
+        if (!pointer.hasTriggeredMassSelection) {
+            pointer.hasTriggeredMassSelection = true
+            editorInstance.massSelection.begin()
+        }
+
+        if (isVertical) {
+            keyboardManager.activeState.isManualSelectionMode = true
+            val code = if (event.direction == SwipeGesture.Direction.UP) {
+                KeyCode.ARROW_UP
+            } else {
+                KeyCode.ARROW_DOWN
+            }
+            keyboardManager.handleArrow(code, count)
+        } else {
+            val code = if (event.direction == SwipeGesture.Direction.LEFT) {
+                KeyCode.ARROW_LEFT
+            } else {
+                KeyCode.ARROW_RIGHT
+            }
+            keyboardManager.handleArrow(code, count)
+        }
+        return true
     }
 
     private var glideHasLeftSpaceBar: Boolean = false
