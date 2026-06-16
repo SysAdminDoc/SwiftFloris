@@ -27,9 +27,15 @@ private typealias EmojiDataBySkinToneImpl = EnumMap<EmojiSkinTone, MutableList<E
 typealias EmojiDataByCategory = Map<EmojiCategory, List<EmojiSet>>
 typealias EmojiDataBySkinTone = Map<EmojiSkinTone, List<Emoji>>
 
+data class EmojiDataVersion(
+    val cldr: String = "unknown",
+    val emoji: String = "unknown",
+)
+
 data class EmojiData(
     val byCategory: EmojiDataByCategory,
     val bySkinTone: EmojiDataBySkinTone,
+    val version: EmojiDataVersion = EmojiDataVersion(),
 ) {
     companion object {
         private val cache = Cache.Builder<String, EmojiData>().build()
@@ -52,7 +58,7 @@ data class EmojiData(
         }
 
         fun empty(): EmojiData {
-            return EmojiData(newByCategory(), newBySkinTone())
+            return EmojiData(newByCategory(), newBySkinTone(), EmojiDataVersion())
         }
 
         suspend fun get(context: Context, path: String): EmojiData {
@@ -66,10 +72,15 @@ data class EmojiData(
             return get(context, path)
         }
 
+        private const val CLDR_VERSION_PREFIX = "# CLDR-VERSION: "
+        private const val EMOJI_VERSION_PREFIX = "# EMOJI-VERSION: "
+
         private fun loadEmojiDataMap(context: Context, path: String): EmojiData {
             val byCategory = newByCategory()
             val bySkinTone = newBySkinTone()
 
+            var cldrVersion = "unknown"
+            var emojiVersion = "unknown"
             var ec: EmojiCategory? = null
             var emojiEditorList: MutableList<Emoji>? = null
             // True while skipping the tab-indented variation lines of a base emoji whose
@@ -85,7 +96,12 @@ data class EmojiData(
             context.assets.bufferedReader(path).useLines { lines ->
                 for (line in lines) {
                     if (line.startsWith("#")) {
-                        // Comment line
+                        when {
+                            line.startsWith(CLDR_VERSION_PREFIX) ->
+                                cldrVersion = line.removePrefix(CLDR_VERSION_PREFIX).trim()
+                            line.startsWith(EMOJI_VERSION_PREFIX) ->
+                                emojiVersion = line.removePrefix(EMOJI_VERSION_PREFIX).trim()
+                        }
                     } else if (line.startsWith("[")) {
                         commitEmojiEditorList()
                         skipVariations = false
@@ -153,7 +169,7 @@ data class EmojiData(
                 }
             }
 
-            return EmojiData(byCategory, bySkinTone)
+            return EmojiData(byCategory, bySkinTone, EmojiDataVersion(cldrVersion, emojiVersion))
         }
 
         /**
