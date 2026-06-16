@@ -1,0 +1,3 @@
+{"word":"hello","layout":"qwerty-en","samples":[{"x":0.267,"y":0.333,"t":0},{"x":0.3,"y":0.167,"t":30},{"x":0.367,"y":0.167,"t":60},{"x":0.433,"y":0.333,"t":90},{"x":0.533,"y":0.5,"t":120}],"language_tag":"en","source":"hand-crafted-example"}
+{"word":"the","layout":"qwerty-en","samples":[{"x":0.467,"y":0.167,"t":0},{"x":0.267,"y":0.333,"t":40},{"x":0.367,"y":0.167,"t":80}],"language_tag":"en","source":"hand-crafted-example"}
+{"word":"world","layout":"qwerty-en","samples":[{"x":0.167,"y":0.5,"t":0},{"x":0.533,"y":0.167,"t":40},{"x":0.4,"y":0.333,"t":80},{"x":0.433,"y":0.333,"t":120},{"x":0.6,"y":0.5,"t":160}],"language_tag":"en","source":"hand-crafted-example"}
