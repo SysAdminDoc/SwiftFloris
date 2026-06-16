@@ -1,0 +1,5 @@
+- Added spacebar touchpad cursor mode: slide horizontally to move cursor, vertically to select text (Settings > Gestures)
+- Added migration assistant screen guiding imports from SwiftKey, Gboard, FlorisBoard, and encrypted backups
+- Added source code and release verification links to privacy posture screen
+- Added CLDR/Emoji version metadata gates to emoji data assets
+- Prepared F-Droid fdroiddata YAML build recipe for submission
