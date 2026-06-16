@@ -1,0 +1,47 @@
+# F-Droid build metadata for SwiftFloris
+# Submit this file to https://gitlab.com/fdroid/fdroiddata via merge request.
+# See: https://f-droid.org/docs/Build_Metadata_Reference/
+
+Categories:
+  - System
+  - Writing
+
+License: Apache-2.0
+
+AuthorName: SysAdminDoc
+AuthorWebSite: https://github.com/SysAdminDoc
+
+SourceCode: https://github.com/SysAdminDoc/SwiftFloris
+IssueTracker: https://github.com/SysAdminDoc/SwiftFloris/issues
+Changelog: https://github.com/SysAdminDoc/SwiftFloris/releases
+
+AutoName: SwiftFloris
+
+RepoType: git
+Repo: https://github.com/SysAdminDoc/SwiftFloris.git
+
+Builds:
+  - versionName: "1.9.50"
+    versionCode: 2099
+    commit: v1.9.50
+    submodules: true
+    sudo:
+      - apt-get update
+      - apt-get install -y openjdk-17-jdk-headless
+      - update-alternatives --auto java
+    gradle:
+      - yes
+    output: app/build/outputs/apk/release/app-release-unsigned.apk
+    binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/app-release.apk
+
+AntiFeatures:
+  KnownVuln:
+    en-US: None known.
+
+AllowedAPKSigningKeys: []
+
+ArchivePolicy: 6
+AutoUpdateMode: Version
+UpdateCheckMode: Tags
+CurrentVersion: "1.9.50"
+CurrentVersionCode: 2099

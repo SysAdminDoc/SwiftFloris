@@ -96,30 +96,33 @@ bash scripts/verify-reproducible-apk.sh
 
 ## F-Droid submission
 
-To complete N6.3, submit the following `Builds:` stanza to
-[fdroiddata](https://gitlab.com/fdroid/fdroiddata):
+To complete N6.3, submit the prepared recipe at
+[`fdroid/io.github.sysadmindoc.swiftfloris.yml`](../fdroid/io.github.sysadmindoc.swiftfloris.yml)
+to [fdroiddata](https://gitlab.com/fdroid/fdroiddata) via merge request.
+
+The recipe is kept in the repo and updated alongside version bumps so it stays
+in sync with the build. Current stanza:
 
 ```yaml
 Builds:
-  - versionName: "1.9.48"
-    versionCode: 2097
-    commit: v1.9.48
+  - versionName: "1.9.50"
+    versionCode: 2099
+    commit: v1.9.50
+    submodules: true
     sudo:
       - apt-get update
       - apt-get install -y openjdk-17-jdk-headless
       - update-alternatives --auto java
     gradle:
       - yes
-    androidupdate:
-      - no
-    output: app/build/outputs/apk/release/app-release.apk
+    output: app/build/outputs/apk/release/app-release-unsigned.apk
     binary: https://github.com/SysAdminDoc/SwiftFloris/releases/download/v%v/app-release.apk
 
-ArchivePolicy: 6 versions
+ArchivePolicy: 6
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.9.48"
-CurrentVersionCode: 2097
+CurrentVersion: "1.9.50"
+CurrentVersionCode: 2099
 ```
 
 The F-Droid build server will then attempt a deterministic rebuild and compare
