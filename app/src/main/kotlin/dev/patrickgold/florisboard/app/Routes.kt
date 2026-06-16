@@ -65,6 +65,7 @@ import dev.patrickgold.florisboard.app.settings.privacy.PerAppKeyboardProfileScr
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyPostureScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.DictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.LearnedEntriesScreen
+import dev.patrickgold.florisboard.app.settings.dictionary.MigrationAssistantScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreenAction
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreen
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
@@ -203,6 +204,10 @@ object Routes {
         @Serializable
         @Deeplink("settings/dictionary/learned-entries")
         object LearnedEntries
+
+        @Serializable
+        @Deeplink("settings/dictionary/migration-assistant")
+        object MigrationAssistant
 
         @Serializable
         @Deeplink("settings/gestures")
@@ -382,6 +387,7 @@ object Routes {
                 UserDictionaryScreen(payload.type, payload.action)
             }
             composableWithDeepLink(Settings.LearnedEntries::class) { LearnedEntriesScreen() }
+            composableWithDeepLink(Settings.MigrationAssistant::class) { MigrationAssistantScreen() }
 
             composableWithDeepLink(Settings.Gestures::class) { GesturesScreen() }
 
