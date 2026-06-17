@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.51-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.52-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.51 | Privacy posture |
+| Area | What's in v1.9.52 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -330,6 +330,10 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.52** (2026-06-16) — Premium Settings polish: the Settings home now opens with one status-aware overview card, compact Search / Import / Privacy quick actions, and local-trust checks for no-network releases, local imports, and verifiable builds. Settings search now uses a calmer Material 3 field treatment and shows result counts before the list.
+- **v1.9.51** (2026-06-16) — Added spacebar touchpad cursor mode, migration assistant import guidance, source-code and release-verification links in Privacy posture, CLDR/Emoji version metadata gates, and the prepared F-Droid fdroiddata YAML recipe.
+- **v1.9.50** (2026-06-14) — Added a Terminal bottom-row preset with Esc / Ctrl / Alt / Home / End / Tab keys and verified keyboard magnification accessibility on API 36 across text, emoji, and touch input surfaces.
+- **v1.9.49** (2026-06-14) — Fixed stale backup/transfer privacy copy, added OSV severity release blocking, converted lazy plural strings to Android quantity resources, renamed the Gradle root project for reviewer clarity, wired Android 14+ stylus handwriting through the recognizer facade, and added bounded file-backed diagnostics.
 - **v1.9.48** (2026-06-14) — Audit hardening pass: the exported share-to-clipboard handler now rejects `file://` URIs (closing a confused-deputy read of the app's own private files); MCP daemon discovery bounds untrusted catalog reads to prevent an out-of-memory denial; incognito `FLAG_SECURE` now reapplies reliably across keyboard restarts; corrected an inverted SERA vowel order in the Ge'ez/Tigrinya transliterators; and several settings polish fixes — a real empty-state message for the privacy audit log, dark/light theme accessibility labels, no more dangling empty headers in Learned entries, and clearer sync-import and update-check wording.
 - **v1.9.47** (2026-06-14) — New one-tap "Full backup" action on the Backup screen ticks every section (preferences, layouts, themes, and all local clipboard items) and writes a dated archive in a single tap — no manual checkbox juggling before a reinstall or migration. Reuses the existing local, no-network backup flow.
 - **v1.9.46** (2026-06-14) — New "Touch calibration" setting (Settings → Typing) exposes Conservative / Normal / Rescue-heavy profiles that tune gap-rescue dead zones and adaptive-touch neighbour correction. Normal reproduces the previously-hardcoded behaviour exactly, so the default is unchanged.
@@ -540,7 +544,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.48** (2026-06-14). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.52** (2026-06-16). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 

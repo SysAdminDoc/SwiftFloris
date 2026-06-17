@@ -65,6 +65,8 @@ class SettingsSearchAccessibilityContractTest {
         source shouldContain ".semantics(mergeDescendants = true)"
         source shouldContain "settings__search__result_a11y"
         source shouldContain "settings__search__result_a11y_no_summary"
+        source shouldContain "settings__search__results_count_label"
+        source shouldContain "MaterialTheme.shapes.medium"
     }
 }
 

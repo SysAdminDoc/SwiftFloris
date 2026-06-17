@@ -16,13 +16,27 @@
 
 package dev.patrickgold.florisboard.app.settings
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.LibraryBooks
 import androidx.compose.material.icons.automirrored.outlined.Assignment
 import androidx.compose.material.icons.filled.Archive
 import androidx.compose.material.icons.automirrored.filled.AssistantDirection
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.CloudOff
+import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Extension
+import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.filled.Gesture
 import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
@@ -33,17 +47,32 @@ import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SmartButton
 import androidx.compose.material.icons.filled.Spellcheck
 import androidx.compose.material.icons.filled.Sync
+import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.outlined.Build
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Keyboard
 import androidx.compose.material.icons.outlined.Palette
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
@@ -52,11 +81,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
-import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
-import org.florisboard.lib.compose.FlorisInfoCard
-import org.florisboard.lib.compose.FlorisSuccessCard
-import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -79,35 +104,51 @@ fun HomeScreen() = FlorisScreen {
     content {
         val isFlorisBoardEnabled by InputMethodUtils.observeIsFlorisboardEnabled(foregroundOnly = true)
         val isFlorisBoardSelected by InputMethodUtils.observeIsFlorisboardSelected(foregroundOnly = true)
-        if (!isFlorisBoardEnabled) {
-            FlorisErrorCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.settings__home__ime_not_enabled),
-                secondaryText = stringRes(R.string.settings__home__ime_not_enabled_summary),
-                actionLabel = stringRes(R.string.settings__home__open_keyboard_settings),
-                onClick = { InputMethodUtils.showImeEnablerActivity(context) },
-            )
-        } else if (!isFlorisBoardSelected) {
-            FlorisWarningCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.settings__home__ime_not_selected),
-                secondaryText = stringRes(R.string.settings__home__ime_not_selected_summary),
-                actionLabel = stringRes(R.string.settings__home__choose_keyboard),
-                onClick = { InputMethodUtils.showImePicker(context) },
-            )
-        } else {
-            FlorisSuccessCard(
-                modifier = Modifier.padding(8.dp),
-                text = stringRes(R.string.settings__home__ime_ready),
-                secondaryText = stringRes(R.string.settings__home__ime_ready_summary),
-            )
+
+        val statusTone: SettingsHomeStatusTone
+        val statusIcon: ImageVector
+        val statusTitle: String
+        val statusSummary: String
+        val statusActionLabel: String?
+        val statusAction: (() -> Unit)?
+        when {
+            !isFlorisBoardEnabled -> {
+                statusTone = SettingsHomeStatusTone.Error
+                statusIcon = Icons.Default.ErrorOutline
+                statusTitle = stringRes(R.string.settings__home__ime_not_enabled)
+                statusSummary = stringRes(R.string.settings__home__ime_not_enabled_summary)
+                statusActionLabel = stringRes(R.string.settings__home__open_keyboard_settings)
+                statusAction = { InputMethodUtils.showImeEnablerActivity(context) }
+            }
+            !isFlorisBoardSelected -> {
+                statusTone = SettingsHomeStatusTone.Warning
+                statusIcon = Icons.Outlined.Warning
+                statusTitle = stringRes(R.string.settings__home__ime_not_selected)
+                statusSummary = stringRes(R.string.settings__home__ime_not_selected_summary)
+                statusActionLabel = stringRes(R.string.settings__home__choose_keyboard)
+                statusAction = { InputMethodUtils.showImePicker(context) }
+            }
+            else -> {
+                statusTone = SettingsHomeStatusTone.Success
+                statusIcon = Icons.Default.CheckCircle
+                statusTitle = stringRes(R.string.settings__home__ime_ready)
+                statusSummary = stringRes(R.string.settings__home__ime_ready_summary)
+                statusActionLabel = null
+                statusAction = null
+            }
         }
-        FlorisInfoCard(
+
+        SettingsHomeOverviewCard(
             modifier = Modifier.padding(8.dp),
-            text = stringRes(R.string.settings__home__privacy_posture),
-            secondaryText = stringRes(R.string.settings__home__privacy_posture_summary),
-            actionLabel = stringRes(R.string.settings__home__privacy_posture_action),
-            onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
+            statusTone = statusTone,
+            statusIcon = statusIcon,
+            statusTitle = statusTitle,
+            statusSummary = statusSummary,
+            statusActionLabel = statusActionLabel,
+            onStatusAction = statusAction,
+            onSearch = { navController.navigate(Routes.Settings.Search) },
+            onImport = { navController.navigate(Routes.Settings.MigrationAssistant) },
+            onPrivacy = { navController.navigate(Routes.Settings.PrivacyPosture) },
         )
 
         PreferenceGroup(title = stringRes(R.string.settings__home__section_typing)) {
@@ -256,5 +297,259 @@ fun HomeScreen() = FlorisScreen {
                 onClick = { navController.navigate(Routes.Settings.About) },
             )
         }
+    }
+}
+
+private enum class SettingsHomeStatusTone {
+    Success,
+    Warning,
+    Error,
+}
+
+@Composable
+private fun SettingsHomeOverviewCard(
+    statusTone: SettingsHomeStatusTone,
+    statusIcon: ImageVector,
+    statusTitle: String,
+    statusSummary: String,
+    statusActionLabel: String?,
+    modifier: Modifier = Modifier,
+    onStatusAction: (() -> Unit)?,
+    onSearch: () -> Unit,
+    onImport: () -> Unit,
+    onPrivacy: () -> Unit,
+) {
+    val toneColor = statusTone.toColor()
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = MaterialTheme.shapes.medium,
+        border = BorderStroke(
+            width = 1.dp,
+            color = toneColor.copy(alpha = 0.32f),
+        ),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface,
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            SettingsHomeStatusRow(
+                toneColor = toneColor,
+                icon = statusIcon,
+                title = statusTitle,
+                summary = statusSummary,
+                actionLabel = statusActionLabel,
+                onAction = onStatusAction,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.44f))
+            SettingsHomeQuickActions(
+                onSearch = onSearch,
+                onImport = onImport,
+                onPrivacy = onPrivacy,
+            )
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.32f))
+            SettingsHomeTrustChecks()
+        }
+    }
+}
+
+@Composable
+private fun SettingsHomeStatusRow(
+    toneColor: Color,
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    actionLabel: String?,
+    onAction: (() -> Unit)?,
+) {
+    val statusA11y = stringRes(
+        R.string.settings__home__overview_status_a11y,
+        "status_title" to title,
+        "status_summary" to summary,
+    )
+    Column(
+        modifier = Modifier.semantics {
+            contentDescription = statusA11y
+        },
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Box(
+                modifier = Modifier
+                    .padding(end = 16.dp)
+                    .size(44.dp)
+                    .clip(MaterialTheme.shapes.medium)
+                    .background(toneColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    modifier = Modifier.size(24.dp),
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = toneColor,
+                )
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                )
+                Text(
+                    modifier = Modifier.fillMaxWidth(),
+                    text = summary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+        }
+        if (actionLabel != null && onAction != null) {
+            OutlinedButton(
+                modifier = Modifier.fillMaxWidth(),
+                shape = MaterialTheme.shapes.small,
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                onClick = onAction,
+            ) {
+                Text(text = actionLabel)
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingsHomeQuickActions(
+    onSearch: () -> Unit,
+    onImport: () -> Unit,
+    onPrivacy: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Text(
+            text = stringRes(R.string.settings__home__quick_actions_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SettingsHomeActionButton(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Search,
+                label = stringRes(R.string.settings__home__quick_action_search),
+                onClick = onSearch,
+            )
+            SettingsHomeActionButton(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.FileOpen,
+                label = stringRes(R.string.settings__home__quick_action_import),
+                onClick = onImport,
+            )
+            SettingsHomeActionButton(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Shield,
+                label = stringRes(R.string.settings__home__quick_action_privacy),
+                onClick = onPrivacy,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsHomeActionButton(
+    modifier: Modifier = Modifier,
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+) {
+    OutlinedButton(
+        modifier = modifier.defaultMinSize(minHeight = 44.dp),
+        shape = MaterialTheme.shapes.small,
+        contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
+        onClick = onClick,
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(end = 6.dp)
+                .size(18.dp),
+            imageVector = icon,
+            contentDescription = null,
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
+@Composable
+private fun SettingsHomeTrustChecks() {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = stringRes(R.string.settings__home__trust_checks_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        SettingsHomeTrustRow(
+            icon = Icons.Default.CloudOff,
+            title = stringRes(R.string.settings__home__trust_no_network_title),
+            summary = stringRes(R.string.settings__home__trust_no_network_summary),
+        )
+        SettingsHomeTrustRow(
+            icon = Icons.Default.FileOpen,
+            title = stringRes(R.string.settings__home__trust_local_import_title),
+            summary = stringRes(R.string.settings__home__trust_local_import_summary),
+        )
+        SettingsHomeTrustRow(
+            icon = Icons.Default.VerifiedUser,
+            title = stringRes(R.string.settings__home__trust_verification_title),
+            summary = stringRes(R.string.settings__home__trust_verification_summary),
+        )
+    }
+}
+
+@Composable
+private fun SettingsHomeTrustRow(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+) {
+    Row(
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(top = 2.dp, end = 14.dp)
+                .size(20.dp),
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+                color = MaterialTheme.colorScheme.onSurface,
+            )
+            Text(
+                text = summary,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsHomeStatusTone.toColor(): Color {
+    return when (this) {
+        SettingsHomeStatusTone.Success -> MaterialTheme.colorScheme.primary
+        SettingsHomeStatusTone.Warning -> MaterialTheme.colorScheme.tertiary
+        SettingsHomeStatusTone.Error -> MaterialTheme.colorScheme.error
     }
 }

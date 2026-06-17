@@ -1,0 +1,4 @@
+- Polished the Settings home with a status-aware overview card, first-run action, and compact Search / Import / Privacy shortcuts.
+- Added trust checks that surface SwiftFloris's no-network, local-import, and verifiable-release posture directly on the main Settings screen.
+- Refined Settings search with a calmer Material 3 field treatment and visible result-count feedback.
+- Added Roborazzi coverage for the Settings home overview so the premium layout stays visually stable.
