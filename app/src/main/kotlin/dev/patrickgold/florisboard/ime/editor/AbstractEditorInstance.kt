@@ -477,6 +477,24 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
+    fun cycleSelectedTextCase(locale: java.util.Locale): Boolean {
+        val content = activeContent
+        val selection = content.selection
+        if (!selection.isSelectionMode) return false
+        val selected = content.selectedText
+        if (selected.isEmpty()) return false
+        val ic = currentInputConnection() ?: return false
+        val currentCase = SelectedTextCasePolicy.detectCase(selected, locale)
+        val nextCase = SelectedTextCasePolicy.nextCase(currentCase)
+        val replacement = SelectedTextCasePolicy.applyCase(selected, nextCase, locale)
+        if (replacement == selected) return false
+        EditorInputConnectionBatch.runWithBatchEdit(ic) {
+            commitText(replacement, 1)
+            setSelection(selection.start, selection.start + replacement.length)
+        }
+        return true
+    }
+
     open fun finalizeComposingText(text: String): Boolean {
         val ic = currentInputConnection() ?: return false
         val content = activeContent
