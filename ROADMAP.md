@@ -56,6 +56,20 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
+- [ ] P1 — **Make public trust docs trackable before refreshing them**
+  Why: `.gitignore` ignores all Markdown except README, `docs/SECURITY.md`, and
+  `docs/REPRODUCIBLE_BUILDS.md`; current threat/privacy/outreach docs are
+  ignored, so trust-doc updates can remain local-only unless force-added.
+  Evidence: `.gitignore`; `git check-ignore` for `docs/THREAT_MODEL.md`,
+  `docs/PRIVACY_AND_AI.md`, `docs/outreach/2026-05-17-swiftkey-migration/alternativeto-entry.md`,
+  `CLAUDE.md`, `AGENTS.md`, and `Roadmap_Blocked.md`.
+  Touches: `.gitignore`; trust docs; README/CI links; trust-doc link/version
+  check.
+  Acceptance: every public trust doc referenced by README, CI, or release scripts
+  is explicitly tracked or no longer referenced as public evidence, and future
+  edits to those docs appear in normal `git status` without `git add -f`.
+  Complexity: S
+
 - [ ] P1 — **Refresh stale trust docs and add a link/version drift gate**
   Why: public trust docs still reference `v1.8.231`, deleted
   `PROJECT_CONTEXT.md`, and old F-Droid/reproducible-build status; stale trust
@@ -69,6 +83,35 @@ gated on external deliverables or hardware testing live in
   points to missing `PROJECT_CONTEXT.md`, and CI fails on future stale trust-doc
   version/link drift.
   Complexity: M
+
+- [ ] P1 — **Replace destructive clipboard Room migrations**
+  Why: production clipboard history and media metadata builders call
+  `fallbackToDestructiveMigration()`, which can silently erase pinned clipboard
+  text, sensitivity flags, and provider media rows on a schema gap.
+  Evidence: `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardDatabase.kt`;
+  Android Room migration docs.
+  Touches: `ClipboardDatabase.kt`; exported Room schemas; migration tests;
+  clipboard backup/restore and restored-file-info fixtures.
+  Acceptance: no production clipboard database builder uses
+  `fallbackToDestructiveMigration`; v1/v2/v3/v4 history and v1/v2 files schemas
+  migrate with row-preserving tests; corrupt DB recovery is explicit rather than
+  a silent destructive fallback.
+  Complexity: M
+
+- [ ] P1 — **Parse data-extraction rules by section and domain**
+  Why: the current Gradle gate substring-checks the whole XML file while its
+  error text claims every sensitive path is present under both cloud backup and
+  device transfer; it also omits several excluded local stores.
+  Evidence: `app/build.gradle.kts`; `app/src/main/res/xml/data_extraction_rules.xml`;
+  Android backup best-practices docs.
+  Touches: `app/build.gradle.kts` or a dedicated verification script;
+  `data_extraction_rules.xml`; verifier fixture tests.
+  Acceptance: CI parses XML and verifies the expected domain/path pairs under
+  both `<cloud-backup>` and `<device-transfer>` for dictionary DB/key prefs,
+  clipboard history, learned n-grams, SwiftKey trace logs, sync identity, and
+  diagnostics; fixtures fail when an entry is missing, in the wrong domain, or
+  present in only one section.
+  Complexity: S
 
 - [ ] P1 — **Expose addon provenance export in Settings → Addons**
   Why: `AddonProvenanceReport` already renders stable text/JSON, but Settings
