@@ -520,6 +520,19 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val cased = fixCase(word)
         editorInstance.commitGesture(cased)
         learnIfAllowed(cased)
+        announceForAccessibility(cased)
+    }
+
+    private fun announceForAccessibility(text: String) {
+        val am = appContext.getSystemService(Context.ACCESSIBILITY_SERVICE)
+            as? android.view.accessibility.AccessibilityManager ?: return
+        if (!am.isEnabled) return
+        val event = android.view.accessibility.AccessibilityEvent.obtain(
+            android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT,
+        )
+        event.text.add(text)
+        event.packageName = appContext.packageName
+        am.sendAccessibilityEvent(event)
     }
 
     fun replaceLastGestureWordForContext(expectedWord: String, replacementWord: String): Boolean {
