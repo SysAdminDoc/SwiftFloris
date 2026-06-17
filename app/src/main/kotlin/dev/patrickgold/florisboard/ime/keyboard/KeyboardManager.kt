@@ -735,9 +735,19 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     /**
-     * Handles a [KeyCode.SHIFT] up event.
+     * Handles a [KeyCode.SHIFT] up event. When text is selected and the shift
+     * press was not part of a chord (no other key pressed), cycles the selected
+     * text through lowercase → Title Case → UPPERCASE instead of changing the
+     * shift state.
      */
     private fun handleShiftUp(data: KeyData) {
+        if (!inputEventDispatcher.isAnyPressed()
+            && inputEventDispatcher.isUninterruptedEventSequence(data)
+            && editorInstance.activeContent.selection.isSelectionMode
+        ) {
+            val locale = subtypeManager.activeSubtype.primaryLocale
+            if (editorInstance.cycleSelectedTextCase(locale)) return
+        }
         activeState.inputShiftState = ShiftStateMachine.onShiftUp(
             current = activeState.inputShiftState,
             isAnyKeyPressed = inputEventDispatcher.isAnyPressed(),
