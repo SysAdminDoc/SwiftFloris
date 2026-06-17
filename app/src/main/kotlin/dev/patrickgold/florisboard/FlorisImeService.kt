@@ -20,6 +20,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.res.Configuration
+import android.hardware.input.InputManager
 import android.inputmethodservice.ExtractEditText
 import android.os.Build
 import android.os.Bundle
@@ -28,6 +29,7 @@ import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
 import android.util.Size
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
 import android.view.View
@@ -49,6 +51,8 @@ import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.app.FlorisAppActivity
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
+import dev.patrickgold.florisboard.app.settings.advanced.HardwareKeyboardDeviceOption
+import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardPolicy
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
@@ -355,6 +359,7 @@ class FlorisImeService : LifecycleInputMethodService() {
     private val wallpaperChangeReceiver = WallpaperChangeReceiver()
     private var wallpaperReceiverRegistered = false
     private var flagSecureEditorInfo: FlorisEditorInfo? = null
+    private var lastPhysicalKeyboardVisibilitySummary: String? = null
     private val flagSecureIncognitoModeChangedListener: (Boolean) -> Unit = {
         reapplyFlagSecureForCurrentField()
     }
@@ -724,9 +729,44 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onEvaluateInputViewShown(): Boolean {
         val config = resources.configuration
-        return super.onEvaluateInputViewShown()
-            || config.keyboard == Configuration.KEYBOARD_NOKEYS
-            || prefs.physicalKeyboard.showOnScreenKeyboard.get()
+        val diagnostics = PhysicalKeyboardPolicy.inputViewVisibilityDiagnostics(
+            formFactorType = windowController.activeRootInsets.value.formFactor.typeGuess,
+            configurationKeyboard = config.keyboard,
+            hardKeyboardHidden = config.hardKeyboardHidden,
+            frameworkWouldShowInputView = super.onEvaluateInputViewShown(),
+            showOnScreenKeyboardPref = prefs.physicalKeyboard.showOnScreenKeyboard.get(),
+            detectedHardwareKeyboards = detectedHardwareKeyboardOptions(),
+        )
+        logPhysicalKeyboardVisibilityDecision(diagnostics.summary())
+        return diagnostics.decision.shouldShow
+    }
+
+    private fun logPhysicalKeyboardVisibilityDecision(summary: String) {
+        if (summary == lastPhysicalKeyboardVisibilitySummary) return
+        lastPhysicalKeyboardVisibilitySummary = summary
+        flogInfo(LogTopic.IMS_EVENTS) { "Physical keyboard input-view visibility: $summary" }
+    }
+
+    private fun detectedHardwareKeyboardOptions(): List<HardwareKeyboardDeviceOption> {
+        val inputManager = systemServiceOrNull(InputManager::class) ?: return emptyList()
+        return inputManager.inputDeviceIds
+            .asSequence()
+            .mapNotNull { deviceId -> InputDevice.getDevice(deviceId) }
+            .filter { device ->
+                device.id >= 0 &&
+                    !device.isVirtual &&
+                    device.keyboardType != InputDevice.KEYBOARD_TYPE_NONE &&
+                    device.sources and InputDevice.SOURCE_KEYBOARD == InputDevice.SOURCE_KEYBOARD
+            }
+            .map { device ->
+                HardwareKeyboardDeviceOption(
+                    id = device.id,
+                    displayName = device.name.ifBlank {
+                        "Hardware keyboard ${device.id}"
+                    },
+                )
+            }
+            .toList()
     }
 
     override fun onUpdateSelection(

@@ -16,7 +16,9 @@
 
 package dev.patrickgold.florisboard.app.settings.advanced
 
+import android.content.res.Configuration
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayoutImportStatus
+import dev.patrickgold.florisboard.ime.window.ImeFormFactor
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -85,5 +87,54 @@ class PhysicalKeyboardPolicyTest : FunSpec({
             currentSelectedLayoutId = "missing",
         ) shouldBe "a"
         PhysicalKeyboardPolicy.defaultSelectedLayoutId(emptyList(), currentSelectedLayoutId = "missing") shouldBe null
+    }
+    test("input view stays hidden when a physical keyboard is available on phone tablet and foldable layouts") {
+        listOf(
+            ImeFormFactor.Type.PHONE_PORTRAIT,
+            ImeFormFactor.Type.TABLET_LANDSCAPE,
+            ImeFormFactor.Type.TABLET_PORTRAIT,
+        ).forEach { formFactorType ->
+            val diagnostics = PhysicalKeyboardPolicy.inputViewVisibilityDiagnostics(
+                formFactorType = formFactorType,
+                configurationKeyboard = Configuration.KEYBOARD_QWERTY,
+                hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+                frameworkWouldShowInputView = true,
+                showOnScreenKeyboardPref = false,
+                detectedHardwareKeyboards = listOf(HardwareKeyboardDeviceOption(id = 7, displayName = "Bluetooth")),
+            )
+
+            diagnostics.decision.shouldShow shouldBe false
+            diagnostics.decision.reason shouldBe PhysicalKeyboardInputViewReason.HardwareKeyboardSuppressed
+            diagnostics.summary().contains("showOnScreenKeyboardPref=false") shouldBe true
+            diagnostics.summary().contains("7:Bluetooth") shouldBe true
+        }
+    }
+
+    test("show-on-screen preference opts in even when a physical keyboard is available") {
+        val decision = PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = false,
+            configurationKeyboard = Configuration.KEYBOARD_QWERTY,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+            showOnScreenKeyboardPref = true,
+        )
+
+        decision.shouldShow shouldBe true
+        decision.reason shouldBe PhysicalKeyboardInputViewReason.UserPreference
+    }
+
+    test("soft-keyboard devices and hidden hard keyboards keep the framework show path") {
+        PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = false,
+            configurationKeyboard = Configuration.KEYBOARD_NOKEYS,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+            showOnScreenKeyboardPref = false,
+        ).shouldShow shouldBe true
+
+        PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = true,
+            configurationKeyboard = Configuration.KEYBOARD_QWERTY,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_YES,
+            showOnScreenKeyboardPref = false,
+        ).shouldShow shouldBe true
     }
 })

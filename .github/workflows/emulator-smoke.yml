@@ -104,6 +104,8 @@ jobs:
             sleep 8
             adb shell pidof "$APP_ID"
             adb shell dumpsys activity activities | grep -E "io\.github\.sysadmindoc\.swiftfloris\.debug|FlorisAppActivity|SettingsLauncherAlias"
+            adb shell dumpsys input > emulator-input-devices.txt
+            adb shell settings get secure show_ime_with_hard_keyboard > emulator-physical-keyboard-settings.txt
             adb logcat -d -t 2000 > emulator-smoke-logcat.txt
             if grep -E "FATAL EXCEPTION|AndroidRuntime" emulator-smoke-logcat.txt; then
               echo "::error::Crash detected during settings-launch smoke."
@@ -114,5 +116,8 @@ jobs:
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: emulator-smoke-logcat
-          path: emulator-smoke-logcat.txt
+          name: ${{ matrix.name }}-emulator-smoke-diagnostics
+          path: |
+            emulator-smoke-logcat.txt
+            emulator-input-devices.txt
+            emulator-physical-keyboard-settings.txt
