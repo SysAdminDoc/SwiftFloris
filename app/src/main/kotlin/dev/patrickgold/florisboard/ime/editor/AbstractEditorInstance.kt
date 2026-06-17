@@ -477,6 +477,16 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
+    fun expandSnippet(triggerLength: Int, replacement: String): Boolean {
+        if (triggerLength <= 0 || replacement.isEmpty()) return false
+        val ic = currentInputConnection() ?: return false
+        EditorInputConnectionBatch.runWithBatchEdit(ic) {
+            deleteSurroundingText(triggerLength, 0)
+            commitText(replacement, 1)
+        }
+        return true
+    }
+
     fun cycleSelectedTextCase(locale: java.util.Locale): Boolean {
         val content = activeContent
         val selection = content.selection

@@ -78,6 +78,7 @@ class FlorisApplication : Application() {
     val glideTypingManager = lazy { GlideTypingManager(this) }
     val keyboardManager = lazy { KeyboardManager(this) }
     val nlpManager = lazy { NlpManager(this) }
+    val snippetManager = lazy { dev.patrickgold.florisboard.ime.snippet.SnippetManager(this) }
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
     val perAppAccentController = lazy { PerAppAccentController(this) }
@@ -239,6 +240,8 @@ fun Context.keyboardManager() = this.florisApplication().keyboardManager
 fun Context.nlpManager() = this.florisApplication().nlpManager
 
 fun Context.perAppAccentController() = this.florisApplication().perAppAccentController
+
+fun Context.snippetManager() = this.florisApplication().snippetManager
 
 fun Context.subtypeManager() = this.florisApplication().subtypeManager
 
