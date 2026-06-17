@@ -31,6 +31,8 @@ import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.extensionManager
+import dev.patrickgold.florisboard.ime.snippet.SnippetExpansionPolicy
+import dev.patrickgold.florisboard.snippetManager
 import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.core.DisplayLanguageNamesIn
 import dev.patrickgold.florisboard.ime.core.Subtype
@@ -102,6 +104,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val editorInstance by context.editorInstance()
     private val extensionManager by context.extensionManager()
     private val nlpManager by context.nlpManager()
+    private val snippetManager by context.snippetManager()
     private val subtypeManager by context.subtypeManager()
     private val hardwareKeyboardRuntimeMapper = HardwareKeyboardRuntimeMapper {
         appContext.systemService(InputManager::class).inputDeviceIds
@@ -769,6 +772,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         activeState.inputShiftState = InputShiftState.UNSHIFTED
     }
 
+    private fun tryExpandSnippet() {
+        val content = editorInstance.activeContent
+        val textBefore = content.textBeforeSelection
+        if (textBefore.isEmpty()) return
+        val isSensitive = activeState.isIncognitoMode ||
+            editorInstance.activeInfo.isPasswordInputType
+        val match = SnippetExpansionPolicy.findMatch(
+            textBeforeCursor = textBefore,
+            snippets = snippetManager.snippets.value,
+            isSensitiveField = isSensitive,
+        ) ?: return
+        editorInstance.expandSnippet(match.triggerLength, match.replacement)
+    }
+
     /**
      * Handles a hardware [KeyEvent.KEYCODE_SPACE] event. Same as [handleSpace],
      * but skips handling changing to characters keyboard and double space periods.
@@ -1126,6 +1143,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                                 )) {
                                 activeState.keyboardMode = KeyboardMode.CHARACTERS
                             }
+
+                            tryExpandSnippet()
 
                             // Reset SHIFTED_AUTOMATIC after it's been applied to a character
                             if (activeState.inputShiftState == InputShiftState.SHIFTED_AUTOMATIC &&
