@@ -293,7 +293,6 @@ fun TextKeyboardLayout(
                 }
             },
     ) {
-        // FIXME (when rewriting TextKeyboardLayout): constrains.maxWidth is not stable!
         val keyboardWidth = constraints.maxWidth.toFloat()
         val keyboardHeight = constraints.maxHeight.toFloat()
         val keyboardRowBaseHeight = FlorisImeSizing.keyboardRowBaseHeight
@@ -339,31 +338,21 @@ fun TextKeyboardLayout(
             }
         }
 
-        val desiredKeyHack = rememberUpdatedState(desiredKey) // TODO quick'n'dirty hack
-        // ROADMAP §6 N13.3 — suppress every long-press popup (basic + extended)
-        // when the active editor variation is PASSWORD / VISIBLE_PASSWORD /
-        // WEB_PASSWORD (all three collapse to `KeyVariation.PASSWORD` in
-        // `EditorInstance.handleStartInputView`). The Android 17 (API 37)
-        // `show_passwords_physical` setting deliberately separates external-keyboard
-        // and on-screen password rendering [STD-A17-BEHAVIOR], so the IME-side gate
-        // here has to fire regardless of input source (touch *or* hardware key
-        // event). `rememberUpdatedState(evaluator)` keeps the predicate reading the
-        // live evaluator instead of the one captured at the first recomposition.
-        val evaluatorHack = rememberUpdatedState(evaluator)
+        val latestEvaluator = rememberUpdatedState(evaluator)
         val popupUiController = rememberPopupUiController(
             key1 = keyboard,
-            key2 = Unit, // TODO quick'n'dirty hack
+            key2 = desiredKey,
             boundsProvider = { key ->
                 val keyPopupWidth: Float
                 val keyPopupHeight: Float
                 when {
                     configuration.isOrientationLandscape() -> {
-                        keyPopupWidth = desiredKeyHack.value.visibleBounds.width * 1.0f
-                        keyPopupHeight = desiredKeyHack.value.visibleBounds.height * 3.0f
+                        keyPopupWidth = desiredKey.visibleBounds.width * 1.0f
+                        keyPopupHeight = desiredKey.visibleBounds.height * 3.0f
                     }
                     else -> {
-                        keyPopupWidth = desiredKeyHack.value.visibleBounds.width * 1.1f
-                        keyPopupHeight = desiredKeyHack.value.visibleBounds.height * 2.5f
+                        keyPopupWidth = desiredKey.visibleBounds.width * 1.1f
+                        keyPopupHeight = desiredKey.visibleBounds.height * 2.5f
                     }
                 }
                 val keyPopupDiffX = (key.visibleBounds.width - keyPopupWidth) / 2.0f
@@ -375,7 +364,7 @@ fun TextKeyboardLayout(
                 }
             },
             isSuitableForBasicPopup = { key ->
-                if (PasswordFieldPopupGate.shouldSuppressPopups(evaluatorHack.value.state.keyVariation)) {
+                if (PasswordFieldPopupGate.shouldSuppressPopups(latestEvaluator.value.state.keyVariation)) {
                     false
                 } else if (key is TextKey) {
                     val keyCode = key.computedData.code
@@ -389,7 +378,7 @@ fun TextKeyboardLayout(
                 }
             },
             isSuitableForExtendedPopup = { key ->
-                if (PasswordFieldPopupGate.shouldSuppressPopups(evaluatorHack.value.state.keyVariation)) {
+                if (PasswordFieldPopupGate.shouldSuppressPopups(latestEvaluator.value.state.keyVariation)) {
                     false
                 } else if (key is TextKey) {
                     val keyCode = key.computedData.code
