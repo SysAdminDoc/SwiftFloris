@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.app.settings.search
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -30,6 +31,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
@@ -42,10 +44,9 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.LiveRegionMode
@@ -67,6 +68,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.florisScrollbar
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -120,6 +122,7 @@ fun SettingsSearchScreen() = FlorisScreen {
             TextField(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 8.dp)
                     .focusRequester(focusRequester)
                     .semantics {
                         contentDescription = resolveString(R.string.settings__search__field_content_description)
@@ -148,8 +151,10 @@ fun SettingsSearchScreen() = FlorisScreen {
                 },
                 singleLine = true,
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                shape = RectangleShape,
+                shape = MaterialTheme.shapes.medium,
                 colors = TextFieldDefaults.colors(
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
                     focusedIndicatorColor = Color.Transparent,
                     unfocusedIndicatorColor = Color.Transparent,
                     disabledIndicatorColor = Color.Transparent,
@@ -187,6 +192,20 @@ fun SettingsSearchScreen() = FlorisScreen {
                     )
                 }
             }
+            if (searchQuery.isNotBlank() && results.isNotEmpty()) {
+                Text(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    text = pluralsRes(
+                        R.plurals.settings__search__results_count_label,
+                        results.size,
+                        "result_count" to results.size,
+                    ),
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             LazyColumn(
                 modifier = Modifier
                     .weight(1f)
@@ -194,8 +213,9 @@ fun SettingsSearchScreen() = FlorisScreen {
                     .semantics {
                         liveRegion = LiveRegionMode.Polite
                         contentDescription = searchStatusDescription
-                    },
+                },
                 state = state,
+                contentPadding = PaddingValues(bottom = 8.dp),
             ) {
                 itemsIndexed(results, key = { _, result -> result.entry.id }) { index, result ->
                     val entry = result.entry

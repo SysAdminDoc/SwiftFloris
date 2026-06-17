@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
+import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.about.AiFeaturesScreen
 import dev.patrickgold.florisboard.app.settings.mcp.McpSettingsScreen
 import dev.patrickgold.florisboard.app.settings.typing.TypingStatsScreen
@@ -84,6 +85,13 @@ class PendingSettingsScreensScreenshotTest {
     @After
     fun tearDown() {
         McpDaemonRegistry.setActive(emptyMap())
+    }
+
+    @Test
+    fun homeScreenOverview() {
+        captureSettingsScreen("home_screen_overview.png") {
+            HomeScreen()
+        }
     }
 
     @Test

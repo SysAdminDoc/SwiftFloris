@@ -196,6 +196,18 @@
     <string name="settings__home__privacy_posture" comment="Home screen privacy posture card title">Private keyboard, local control</string>
     <string name="settings__home__privacy_posture_summary" comment="Home screen privacy posture card summary">SwiftFloris ships without Internet permission. Addons, translation, sync, and tool calls are opt-in and auditable on this device.</string>
     <string name="settings__home__privacy_posture_action" comment="Home screen privacy posture card action">Review privacy posture</string>
+    <string name="settings__home__overview_status_a11y" comment="Home overview status accessibility label">Status: {status_title}. {status_summary}</string>
+    <string name="settings__home__quick_actions_title" comment="Home overview quick action section title">Start here</string>
+    <string name="settings__home__quick_action_search" comment="Home overview quick action">Search</string>
+    <string name="settings__home__quick_action_import" comment="Home overview quick action">Import</string>
+    <string name="settings__home__quick_action_privacy" comment="Home overview quick action">Privacy</string>
+    <string name="settings__home__trust_checks_title" comment="Home overview trust-check section title">Trust checks</string>
+    <string name="settings__home__trust_no_network_title" comment="Home overview trust-check title">No Internet permission</string>
+    <string name="settings__home__trust_no_network_summary" comment="Home overview trust-check summary">Release checks fail if network permissions appear.</string>
+    <string name="settings__home__trust_local_import_title" comment="Home overview trust-check title">Local imports only</string>
+    <string name="settings__home__trust_local_import_summary" comment="Home overview trust-check summary">Dictionary migration reads files you choose on this device and lets you review entries before keeping them.</string>
+    <string name="settings__home__trust_verification_title" comment="Home overview trust-check title">Verifiable releases</string>
+    <string name="settings__home__trust_verification_summary" comment="Home overview trust-check summary">Source, signing fingerprints, and reproducible-build notes are available from About and Privacy posture.</string>
     <string name="settings__home__section_typing" comment="Home screen section title">Typing experience</string>
     <string name="settings__home__section_personalization" comment="Home screen section title">Personalization</string>
     <string name="settings__home__section_privacy_data" comment="Home screen section title">Privacy &amp; data</string>
@@ -229,6 +241,10 @@
     <string name="settings__search__no_results" comment="Settings search no results message">No settings match \"{search_term}\".</string>
     <string name="settings__search__no_results_a11y" comment="Settings search no results accessibility status">No settings results for \"{search_term}\".</string>
     <string name="settings__search__results_count_a11y" comment="Settings search results count accessibility status">Showing {result_count} matching settings for \"{search_term}\".</string>
+    <plurals name="settings__search__results_count_label" comment="Visible Settings search result count label">
+        <item quantity="one">{result_count} setting found</item>
+        <item quantity="other">{result_count} settings found</item>
+    </plurals>
     <string name="settings__search__browse_all" comment="Settings search no results action">Browse all settings</string>
     <string name="settings__search__no_results_hint" comment="Settings search no results helper text">Try another term or browse the full settings list.</string>
     <string name="settings__search__result_summary" comment="Settings search result summary with destination screen and setting summary">{screen_title} — {summary}</string>
