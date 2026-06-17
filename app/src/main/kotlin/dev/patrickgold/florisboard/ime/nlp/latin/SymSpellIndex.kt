@@ -42,11 +42,34 @@ internal class SymSpellIndex private constructor(
         private const val MaxSupportedDistance: Int = 2
         const val UnlimitedDeleteEntryBudget: Int = Int.MAX_VALUE
 
+        private const val MaxWordLengthForDistance1: Int = 30
+        private const val MaxWordLengthForDistance2: Int = 16
+
+        /**
+         * Returns a delete-entry budget scaled to the available heap. On devices with
+         * small heaps (256 MB) where the keyboard shares the process, the default 750k
+         * d1 / 320k d2 budgets can push the HashMap + HashSet allocations past the OOM
+         * threshold. This scales the caller-provided budget down proportionally when the
+         * heap ceiling is low, keeping the index buildable on constrained devices at the
+         * cost of fewer correction candidates (the index reports [isComplete] = false).
+         */
+        fun heapScaledBudget(requestedBudget: Int): Int {
+            if (requestedBudget == UnlimitedDeleteEntryBudget) return requestedBudget
+            val rt = Runtime.getRuntime()
+            val maxHeapMb = rt.maxMemory() / (1024 * 1024)
+            if (maxHeapMb >= 384) return requestedBudget
+            val scale = (maxHeapMb.toDouble() / 384.0).coerceIn(0.15, 1.0)
+            return (requestedBudget * scale).toInt().coerceAtLeast(1_000)
+        }
+
         /**
          * Builds an index over [words]. Skips empty / single-char strings (single-char
          * words are rare and trivially handled by direct dictionary contains-checks).
          * The map values are stored as deduplicated arrays so the index is read-only
          * and the per-entry overhead is one Java object header instead of a HashSet.
+         *
+         * If an [OutOfMemoryError] occurs during the build, the method catches it and
+         * returns a partial index rather than crashing the keyboard.
          */
         fun build(
             words: Iterable<String>,
@@ -54,31 +77,37 @@ internal class SymSpellIndex private constructor(
             maxDeleteEntries: Int = UnlimitedDeleteEntryBudget,
         ): SymSpellIndex {
             val boundedDistance = maxDistance.coerceIn(DefaultMaxDistance, MaxSupportedDistance)
+            val maxWordLen = if (boundedDistance >= 2) MaxWordLengthForDistance2 else MaxWordLengthForDistance1
             val wordList = if (words is Collection) words else words.toList()
+            val entryBudget = heapScaledBudget(maxDeleteEntries).coerceAtLeast(0)
             val expectedDeleteCount = wordList.sumOf { word ->
-                ((word.length + 1) * boundedDistance).coerceAtMost(32)
+                if (word.length > maxWordLen) 0
+                else ((word.length + 1) * boundedDistance).coerceAtMost(32)
             }
-            val entryBudget = maxDeleteEntries.coerceAtLeast(0)
             val initialCapacity = expectedDeleteCount
                 .coerceAtMost(entryBudget)
                 .coerceIn(16, 1_048_576)
             val builder = HashMap<String, MutableSet<String>>(initialCapacity)
             var indexedWordCount = 0
             var isComplete = true
-            for (word in wordList) {
-                if (word.length < 2) continue
-                val deleteForms = generateDeletes(word, boundedDistance)
-                val newEntryCount = (if (builder.containsKey(word)) 0 else 1) +
-                    deleteForms.count { !builder.containsKey(it) }
-                if (builder.size + newEntryCount > entryBudget) {
-                    isComplete = false
-                    break
+            try {
+                for (word in wordList) {
+                    if (word.length < 2 || word.length > maxWordLen) continue
+                    val deleteForms = generateDeletes(word, boundedDistance)
+                    val newEntryCount = (if (builder.containsKey(word)) 0 else 1) +
+                        deleteForms.count { !builder.containsKey(it) }
+                    if (builder.size + newEntryCount > entryBudget) {
+                        isComplete = false
+                        break
+                    }
+                    builder.getOrPut(word) { HashSet(2) }.add(word)
+                    for (delForm in deleteForms) {
+                        builder.getOrPut(delForm) { HashSet(2) }.add(word)
+                    }
+                    indexedWordCount++
                 }
-                builder.getOrPut(word) { HashSet(2) }.add(word)
-                for (delForm in deleteForms) {
-                    builder.getOrPut(delForm) { HashSet(2) }.add(word)
-                }
-                indexedWordCount++
+            } catch (_: OutOfMemoryError) {
+                isComplete = false
             }
             val frozen = HashMap<String, Array<String>>(builder.size)
             for ((k, v) in builder) {

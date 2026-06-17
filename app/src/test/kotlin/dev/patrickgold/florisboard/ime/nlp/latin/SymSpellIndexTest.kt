@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.nlp.latin
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
+import io.kotest.matchers.comparables.shouldBeGreaterThan
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqual
 import io.kotest.matchers.shouldBe
 
 class SymSpellIndexTest : FunSpec({
@@ -46,5 +48,66 @@ class SymSpellIndexTest : FunSpec({
         index.indexedWordCount shouldBe 4
         index.candidates("recved") shouldContain "received"
         index.candidates("tomorow") shouldContain "tomorrow"
+    }
+
+    test("words longer than distance-2 cap are skipped") {
+        val longWord = "internationalization"
+        longWord.length shouldBeGreaterThan 16
+
+        val index = SymSpellIndex.build(
+            words = listOf(longWord, "hello", "world"),
+            maxDistance = 2,
+        )
+
+        index.indexedWordCount shouldBe 2
+        index.candidates("helo") shouldContain "hello"
+        index.candidates("wrld") shouldContain "world"
+    }
+
+    test("distance-1 accepts words up to 30 chars") {
+        val word = "abcdefghijklmnopqrstuvwxyz1234"
+        word.length shouldBe 30
+
+        val index = SymSpellIndex.build(
+            words = listOf(word),
+            maxDistance = 1,
+        )
+
+        index.indexedWordCount shouldBe 1
+    }
+
+    test("distance-1 skips words over 30 chars") {
+        val word = "a".repeat(31)
+
+        val index = SymSpellIndex.build(
+            words = listOf(word, "hello"),
+            maxDistance = 1,
+        )
+
+        index.indexedWordCount shouldBe 1
+    }
+
+    test("heapScaledBudget returns full budget on large heaps") {
+        val budget = SymSpellIndex.heapScaledBudget(750_000)
+        budget shouldBeGreaterThanOrEqual 1_000
+    }
+
+    test("heapScaledBudget preserves unlimited sentinel") {
+        val budget = SymSpellIndex.heapScaledBudget(SymSpellIndex.UnlimitedDeleteEntryBudget)
+        budget shouldBe SymSpellIndex.UnlimitedDeleteEntryBudget
+    }
+
+    test("large vocabulary with tight budget produces partial index without crash") {
+        val words = (1..50_000).map { "word${it}abcdefgh" }
+
+        val index = SymSpellIndex.build(
+            words = words,
+            maxDistance = 1,
+            maxDeleteEntries = 5_000,
+        )
+
+        index.isComplete shouldBe false
+        (index.entryCount() <= 5_000) shouldBe true
+        index.indexedWordCount shouldBeGreaterThan 0
     }
 })
