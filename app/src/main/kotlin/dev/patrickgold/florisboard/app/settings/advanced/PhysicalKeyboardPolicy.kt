@@ -16,12 +16,51 @@
 
 package dev.patrickgold.florisboard.app.settings.advanced
 
+import android.content.res.Configuration
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayoutImportStatus
+import dev.patrickgold.florisboard.ime.window.ImeFormFactor
 
 internal data class HardwareKeyboardDeviceOption(
     val id: Int,
     val displayName: String,
 )
+
+internal enum class PhysicalKeyboardInputViewReason {
+    UserPreference,
+    HardwareKeyboardSuppressed,
+    FrameworkOrSoftKeyboard,
+}
+
+internal data class PhysicalKeyboardInputViewDecision(
+    val shouldShow: Boolean,
+    val reason: PhysicalKeyboardInputViewReason,
+)
+
+internal data class PhysicalKeyboardVisibilityDiagnostics(
+    val formFactorType: ImeFormFactor.Type,
+    val configurationKeyboard: Int,
+    val hardKeyboardHidden: Int,
+    val frameworkWouldShowInputView: Boolean,
+    val showOnScreenKeyboardPref: Boolean,
+    val detectedHardwareKeyboards: List<HardwareKeyboardDeviceOption>,
+    val decision: PhysicalKeyboardInputViewDecision,
+) {
+    fun summary(): String {
+        val devices = detectedHardwareKeyboards.joinToString(
+            separator = ",",
+            prefix = "[",
+            postfix = "]",
+        ) { device ->
+            "${device.id}:${device.displayName}"
+        }
+        return "formFactor=$formFactorType " +
+            "configKeyboard=$configurationKeyboard hardKeyboardHidden=$hardKeyboardHidden " +
+            "frameworkWouldShow=$frameworkWouldShowInputView " +
+            "showOnScreenKeyboardPref=$showOnScreenKeyboardPref " +
+            "detectedHardwareKeyboards=$devices " +
+            "shouldShow=${decision.shouldShow} reason=${decision.reason}"
+    }
+}
 
 internal enum class PhysicalKeyboardOperation {
     Importing,
@@ -102,5 +141,62 @@ internal object PhysicalKeyboardPolicy {
             return currentSelectedLayoutId
         }
         return layoutIds.firstOrNull()
+    }
+
+    fun inputViewVisibilityDecision(
+        frameworkWouldShowInputView: Boolean,
+        configurationKeyboard: Int,
+        hardKeyboardHidden: Int,
+        showOnScreenKeyboardPref: Boolean,
+    ): PhysicalKeyboardInputViewDecision {
+        if (showOnScreenKeyboardPref) {
+            return PhysicalKeyboardInputViewDecision(
+                shouldShow = true,
+                reason = PhysicalKeyboardInputViewReason.UserPreference,
+            )
+        }
+        if (isHardwareKeyboardAvailable(configurationKeyboard, hardKeyboardHidden)) {
+            return PhysicalKeyboardInputViewDecision(
+                shouldShow = false,
+                reason = PhysicalKeyboardInputViewReason.HardwareKeyboardSuppressed,
+            )
+        }
+        return PhysicalKeyboardInputViewDecision(
+            shouldShow = frameworkWouldShowInputView || configurationKeyboard == Configuration.KEYBOARD_NOKEYS,
+            reason = PhysicalKeyboardInputViewReason.FrameworkOrSoftKeyboard,
+        )
+    }
+
+    fun inputViewVisibilityDiagnostics(
+        formFactorType: ImeFormFactor.Type,
+        configurationKeyboard: Int,
+        hardKeyboardHidden: Int,
+        frameworkWouldShowInputView: Boolean,
+        showOnScreenKeyboardPref: Boolean,
+        detectedHardwareKeyboards: List<HardwareKeyboardDeviceOption>,
+    ): PhysicalKeyboardVisibilityDiagnostics {
+        val decision = inputViewVisibilityDecision(
+            frameworkWouldShowInputView = frameworkWouldShowInputView,
+            configurationKeyboard = configurationKeyboard,
+            hardKeyboardHidden = hardKeyboardHidden,
+            showOnScreenKeyboardPref = showOnScreenKeyboardPref,
+        )
+        return PhysicalKeyboardVisibilityDiagnostics(
+            formFactorType = formFactorType,
+            configurationKeyboard = configurationKeyboard,
+            hardKeyboardHidden = hardKeyboardHidden,
+            frameworkWouldShowInputView = frameworkWouldShowInputView,
+            showOnScreenKeyboardPref = showOnScreenKeyboardPref,
+            detectedHardwareKeyboards = detectedHardwareKeyboards,
+            decision = decision,
+        )
+    }
+
+    private fun isHardwareKeyboardAvailable(
+        configurationKeyboard: Int,
+        hardKeyboardHidden: Int,
+    ): Boolean {
+        return configurationKeyboard != Configuration.KEYBOARD_NOKEYS &&
+            hardKeyboardHidden != Configuration.HARDKEYBOARDHIDDEN_YES
     }
 }

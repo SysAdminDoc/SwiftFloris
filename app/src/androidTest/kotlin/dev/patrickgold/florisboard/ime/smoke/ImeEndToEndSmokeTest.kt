@@ -18,14 +18,20 @@ package dev.patrickgold.florisboard.ime.smoke
 
 import android.app.Activity
 import android.content.Intent
+import android.os.Build
 import android.os.SystemClock
+import android.util.Log
+import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
+import androidx.compose.ui.unit.DpRect
+import androidx.compose.ui.unit.dp
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.UiDevice
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
+import dev.patrickgold.florisboard.ime.window.ImeFormFactor
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -56,6 +62,7 @@ class ImeEndToEndSmokeTest {
 
     @Test
     fun enableShowTypeCommitAndGlideSmoke() {
+        logPhysicalKeyboardDiagnostics(stage = "before-show")
         val host = launchHostActivity()
         instrumentation.runOnMainSync { host.focusAndShowIme() }
 
@@ -66,6 +73,7 @@ class ImeEndToEndSmokeTest {
             val state = shell("dumpsys input_method")
             imeId in state && ("mInputShown=true" in state || "mIsInputViewShown=true" in state)
         }
+        logPhysicalKeyboardDiagnostics(stage = "after-show")
 
         shell("input text helo")
         waitUntil("typed text committed into host editor") {
@@ -130,6 +138,39 @@ class ImeEndToEndSmokeTest {
         } finally {
             event.recycle()
         }
+    }
+
+    private fun logPhysicalKeyboardDiagnostics(stage: String) {
+        val resources = instrumentation.targetContext.resources
+        val config = resources.configuration
+        val metrics = resources.displayMetrics
+        val formFactor = ImeFormFactor.of(
+            DpRect(
+                left = 0.dp,
+                top = 0.dp,
+                right = (metrics.widthPixels / metrics.density).dp,
+                bottom = (metrics.heightPixels / metrics.density).dp,
+            ),
+        )
+        val keyboardDevices = InputDevice.getDeviceIds()
+            .mapNotNull { deviceId -> InputDevice.getDevice(deviceId) }
+            .filter { device ->
+                device.keyboardType != InputDevice.KEYBOARD_TYPE_NONE &&
+                    device.sources and InputDevice.SOURCE_KEYBOARD == InputDevice.SOURCE_KEYBOARD
+            }
+            .joinToString(separator = ";", prefix = "[", postfix = "]") { device ->
+                "id=${device.id},name=${device.name},type=${device.keyboardType}," +
+                    "virtual=${device.isVirtual},sources=0x${device.sources.toString(16)}"
+            }
+        val systemShowImeWithHardKeyboard = shell("settings get secure show_ime_with_hard_keyboard").trim()
+        Log.i(
+            "SwiftFlorisImeSmoke",
+            "physicalKeyboardDiagnostics stage=$stage api=${Build.VERSION.SDK_INT} " +
+                "formFactor=${formFactor.typeGuess} configKeyboard=${config.keyboard} " +
+                "hardKeyboardHidden=${config.hardKeyboardHidden} " +
+                "systemShowImeWithHardKeyboard=$systemShowImeWithHardKeyboard " +
+                "keyboardDevices=$keyboardDevices",
+        )
     }
 
     private fun waitUntil(label: String, timeoutMillis: Long = 7_500L, predicate: () -> Boolean) {
