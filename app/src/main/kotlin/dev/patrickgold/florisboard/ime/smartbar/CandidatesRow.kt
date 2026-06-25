@@ -41,6 +41,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -56,11 +57,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import dev.patrickgold.florisboard.FlorisImeService
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
@@ -237,6 +241,22 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
                         .fillMaxSize()
                         .padding(horizontal = 8.dp, vertical = 4.dp),
                 )
+            }
+        }
+
+        val announcement by keyboardManager.accessibilityAnnouncement.collectAsState()
+        if (announcement != null) {
+            Box(
+                modifier = Modifier
+                    .width(0.dp)
+                    .semantics {
+                        liveRegion = LiveRegionMode.Polite
+                        contentDescription = announcement ?: ""
+                    },
+            )
+            LaunchedEffect(announcement) {
+                delay(300)
+                keyboardManager.accessibilityAnnouncement.value = null
             }
         }
     }
