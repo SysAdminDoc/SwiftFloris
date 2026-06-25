@@ -106,6 +106,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val nlpManager by context.nlpManager()
     private val snippetManager by context.snippetManager()
     private val subtypeManager by context.subtypeManager()
+    val accessibilityAnnouncement = MutableStateFlow<String?>(null)
+
     private val hardwareKeyboardRuntimeMapper = HardwareKeyboardRuntimeMapper {
         appContext.systemService(InputManager::class).inputDeviceIds
     }
@@ -524,15 +526,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     }
 
     private fun announceForAccessibility(text: String) {
-        val am = appContext.getSystemService(Context.ACCESSIBILITY_SERVICE)
-            as? android.view.accessibility.AccessibilityManager ?: return
-        if (!am.isEnabled) return
-        val event = android.view.accessibility.AccessibilityEvent.obtain(
-            android.view.accessibility.AccessibilityEvent.TYPE_ANNOUNCEMENT,
-        )
-        event.text.add(text)
-        event.packageName = appContext.packageName
-        am.sendAccessibilityEvent(event)
+        accessibilityAnnouncement.value = text
     }
 
     fun replaceLastGestureWordForContext(expectedWord: String, replacementWord: String): Boolean {
