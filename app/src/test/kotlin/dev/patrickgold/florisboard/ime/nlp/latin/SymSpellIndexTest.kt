@@ -20,7 +20,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldNotContain
 import io.kotest.matchers.comparables.shouldBeGreaterThan
-import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqual
+import io.kotest.matchers.comparables.shouldBeGreaterThanOrEqualTo
 import io.kotest.matchers.shouldBe
 
 class SymSpellIndexTest : FunSpec({
@@ -89,7 +89,7 @@ class SymSpellIndexTest : FunSpec({
 
     test("heapScaledBudget returns full budget on large heaps") {
         val budget = SymSpellIndex.heapScaledBudget(750_000)
-        budget shouldBeGreaterThanOrEqual 1_000
+        budget shouldBeGreaterThanOrEqualTo 1_000
     }
 
     test("heapScaledBudget preserves unlimited sentinel") {

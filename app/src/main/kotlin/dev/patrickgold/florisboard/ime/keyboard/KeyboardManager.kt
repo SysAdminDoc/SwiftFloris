@@ -762,7 +762,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             && editorInstance.activeContent.selection.isSelectionMode
         ) {
             val locale = subtypeManager.activeSubtype.primaryLocale
-            if (editorInstance.cycleSelectedTextCase(locale)) return
+            if (editorInstance.cycleSelectedTextCase(locale.base)) return
         }
         activeState.inputShiftState = ShiftStateMachine.onShiftUp(
             current = activeState.inputShiftState,
@@ -790,7 +790,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         val textBefore = content.textBeforeSelection
         if (textBefore.isEmpty()) return
         val isSensitive = activeState.isIncognitoMode ||
-            editorInstance.activeInfo.isPasswordInputType
+            activeState.keyVariation == KeyVariation.PASSWORD
         val match = SnippetExpansionPolicy.findMatch(
             textBeforeCursor = textBefore,
             snippets = snippetManager.snippets.value,

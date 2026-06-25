@@ -119,7 +119,7 @@ class PersonalDictionaryEncryptionTest : FunSpec({
 
         source shouldContain "sqlcipher-android = \"4.16.0\""
         source shouldContain "androidx-sqlite = \"2.6.2\""
-        source shouldContain "tink-android = \"1.21.0\""
+        source shouldContain "tink-android = \"1.22.0\""
         source shouldContain "net.zetetic:sqlcipher-android"
         source shouldContain "androidx.sqlite:sqlite"
         source shouldContain "com.google.crypto.tink:tink-android"
