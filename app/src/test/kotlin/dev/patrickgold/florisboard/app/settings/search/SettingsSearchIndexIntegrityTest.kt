@@ -132,4 +132,5 @@ private val expectedRoutes = mapOf<SettingsSearchDestination, Any>(
     SettingsSearchDestination.PROJECT_LICENSE to Routes.Settings.ProjectLicense,
     SettingsSearchDestination.THIRD_PARTY_LICENSES to Routes.Settings.ThirdPartyLicenses,
     SettingsSearchDestination.DEVTOOLS to Routes.Devtools.Home,
+    SettingsSearchDestination.SNIPPET_SETTINGS to Routes.Settings.SnippetSettings,
 )
