@@ -46,3 +46,30 @@ if [ -n "$root_pngs" ]; then
     fi
   done <<<"$root_pngs"
 fi
+
+# Trust-doc link drift: tracked trust docs must not link to deleted project docs.
+# Only checks links that resolve to root-level or docs/ markdown files; .ai/ and
+# other local directories are intentionally excluded.
+trust_docs="docs/THREAT_MODEL.md docs/PRIVACY_AND_AI.md docs/SECURITY.md docs/REPRODUCIBLE_BUILDS.md CONTRIBUTING.md"
+link_errors=0
+for doc in $trust_docs; do
+  [ -f "$doc" ] || continue
+  # Match markdown links like [text](../FOO.md) or [text](BAR.md) — only
+  # capture simple one-level relative paths pointing to project root or sibling docs.
+  while IFS= read -r target; do
+    [ -z "$target" ] && continue
+    docdir="$(dirname "$doc")"
+    resolved="$(cd "$docdir" && realpath --relative-to="$ROOT_DIR" "$target" 2>/dev/null)" || continue
+    case "$resolved" in
+      docs/*.md|*.md) ;;  # only check standard project doc paths
+      *) continue ;;
+    esac
+    if [ ! -f "$resolved" ]; then
+      echo "::error::$doc links to $resolved which does not exist"
+      link_errors=$((link_errors + 1))
+    fi
+  done < <(grep -oP '\]\(\K[^)]+\.md(?=\))' "$doc" | grep -v '^http')
+done
+if [ "$link_errors" -gt 0 ]; then
+  exit 1
+fi
