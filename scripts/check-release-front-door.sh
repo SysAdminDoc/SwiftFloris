@@ -15,14 +15,25 @@
 #      projectVersionName, or the release workflow has not run yet (first
 #      release is allowed to be missing)
 #
-# The GitHub Release check is always advisory (warning) because the
-# release workflow calls this script before creating the release.
-# Local surfaces (gradle.properties, fastlane, README.md) are hard
-# failures.
+# The GitHub Release check is advisory by default because the release
+# workflow calls this script before creating the release.  Pass --strict
+# to promote the GitHub Release mismatch to a hard failure — normal CI
+# should use this flag so merged code that claims a version not yet
+# published is caught immediately.
+#
+# Local surfaces (gradle.properties, fastlane, README.md) are always
+# hard failures regardless of --strict.
 #
 # Exits 0 on pass, 1 on any rule violation.
 
 set -euo pipefail
+
+strict=false
+for arg in "$@"; do
+  case "$arg" in
+    --strict) strict=true ;;
+  esac
+done
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$ROOT_DIR"
@@ -106,15 +117,23 @@ else
   fail "README.md not found"
 fi
 
-# --- 4. GitHub Release tag (advisory in default mode, required in --strict) ---
+# --- 4. GitHub Release tag (advisory by default, hard failure with --strict) ---
 if command -v gh >/dev/null 2>&1; then
   latest_release="$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null)" || true
   expected_tag="v${version_name}"
 
   if [ -z "$latest_release" ]; then
-    warn "no GitHub Releases found — expected ${expected_tag} (advisory — the release workflow will create it)"
+    if $strict; then
+      fail "no GitHub Releases found — expected ${expected_tag}; run the release workflow or revert the version bump"
+    else
+      warn "no GitHub Releases found — expected ${expected_tag} (advisory — the release workflow will create it)"
+    fi
   elif [ "$latest_release" != "$expected_tag" ]; then
-    warn "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag} (advisory — the release workflow will create it)"
+    if $strict; then
+      fail "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag}; run the release workflow or revert the version bump"
+    else
+      warn "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag} (advisory — the release workflow will create it)"
+    fi
   else
     echo "GitHub Release: OK (${latest_release})"
   fi

@@ -64,7 +64,7 @@ jobs:
         run: bash scripts/check-fastlane-metadata.sh
 
       - name: Check release-front-door drift
-        run: bash scripts/check-release-front-door.sh
+        run: bash scripts/check-release-front-door.sh --strict
 
       - name: Check backup/transfer privacy copy
         run: bash scripts/check-backup-privacy-copy.sh
