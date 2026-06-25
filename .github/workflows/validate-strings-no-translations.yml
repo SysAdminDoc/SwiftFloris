@@ -67,7 +67,7 @@ jobs:
         # while running on `pull_request_target` (base-repo context). A
         # floating tag would let an attacker who rotates the v4 ref exfiltrate
         # the token. Re-pin when bumping; never re-introduce `@v4`.
-        uses: peter-evans/create-or-update-comment@71345be0265236311c031f5c7866368bd1eff043 # v4
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         if: steps.precheck.outputs.require_validation == 'true' && steps.fetch_changed_files.outputs.illegal_changes_list != ''
         with:
           issue-number: ${{ github.event.pull_request.number }}
