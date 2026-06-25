@@ -99,9 +99,14 @@ result
 **/*.rs.bk
 *.pdb
 
-# Markdown files local-only (except README)
+# Markdown files local-only (except README and public trust/contributor docs)
 *.md
 !README.md
+!CONTRIBUTING.md
 !docs/
 !docs/SECURITY.md
 !docs/REPRODUCIBLE_BUILDS.md
+!docs/THREAT_MODEL.md
+!docs/PRIVACY_AND_AI.md
+!docs/addons/
+!docs/addons/*.md
