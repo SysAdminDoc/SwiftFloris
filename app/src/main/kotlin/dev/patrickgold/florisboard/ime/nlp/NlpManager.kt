@@ -43,6 +43,7 @@ import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.systemServiceOrNull
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -99,6 +100,7 @@ class NlpManager(context: Context) {
     private val touchDecoderEvidence = TouchDecoderEvidenceBuffer()
 
     private val suggestionsRequestCounter = AtomicLong(0L)
+    @Volatile private var activeSuggestionJob: Job? = null
     private val internalSuggestionsGuard = Mutex()
     private var internalSuggestions by Delegates.observable(0L to listOf<SuggestionCandidate>()) { _, _, _ ->
         scope.launch { assembleCandidates() }
@@ -230,7 +232,8 @@ class NlpManager(context: Context) {
             ),
             keyVariation = keyboardManager.activeState.keyVariation,
         )
-        scope.launch {
+        activeSuggestionJob?.cancel()
+        activeSuggestionJob = scope.launch {
             val emojiSuggestions = when {
                 requestPrivacy.emojiSuggestionEnabled -> {
                     emojiSuggestionProvider.suggest(

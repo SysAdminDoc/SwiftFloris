@@ -146,6 +146,14 @@ class UserDictionaryOverlay private constructor() {
     fun snapshotFor(locale: FlorisLocale): Map<String, Int> =
         perLocale[locale.languageTag()]?.toMap() ?: emptyMap()
 
+    /**
+     * Zero-copy read-only view for the suggestion hot path. Returns the live
+     * [ConcurrentHashMap] directly — safe for concurrent reads without the
+     * allocation overhead of [snapshotFor]'s defensive copy on every keystroke.
+     */
+    fun viewFor(locale: FlorisLocale): Map<String, Int> =
+        perLocale[locale.languageTag()] ?: emptyMap()
+
     /** Drop every entry for [locale]. */
     fun clearLocale(locale: FlorisLocale) {
         perLocale[locale.languageTag()]?.clear()

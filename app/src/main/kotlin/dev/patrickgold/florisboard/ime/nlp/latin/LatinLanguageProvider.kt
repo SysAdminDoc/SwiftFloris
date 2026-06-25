@@ -35,7 +35,9 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
@@ -111,7 +113,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             .hydrateOverlay(subtype.primaryLocale)
         val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
             .get()
-            .snapshotFor(subtype.primaryLocale)
+            .viewFor(subtype.primaryLocale)
         val corrections = LatinDictionarySuggester.corrections(
             word = normalizedWord,
             dictionary = dictionary,
@@ -180,7 +182,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 .hydrateOverlay(subtype.primaryLocale)
             val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
                 .get()
-                .snapshotFor(subtype.primaryLocale)
+                .viewFor(subtype.primaryLocale)
             LatinDictionarySuggester.suggest(
                 rawWord = currentWord,
                 dictionary = dictionary(subtype),
@@ -216,7 +218,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                 .hydrateOverlay(locale)
             val overlay = dev.patrickgold.florisboard.ime.dictionary.UserDictionaryOverlay
                 .get()
-                .snapshotFor(locale)
+                .viewFor(locale)
             val cands = LatinDictionarySuggester.suggest(
                 rawWord = rawWord,
                 dictionary = dict,
@@ -454,6 +456,7 @@ internal class LatinDictionaryStore(
     private val wordDataSerializer = MapSerializer(String.serializer(), Int.serializer())
     private val dictionaryLoadGuard = Mutex()
     private val dictionaries = ConcurrentHashMap<String, LatinDictionarySnapshot>()
+    private val preWarmScope = CoroutineScope(Dispatchers.Default)
     @Volatile
     private var cachedGeneration: Long = Long.MIN_VALUE
 
@@ -482,7 +485,16 @@ internal class LatinDictionaryStore(
                         ?: LatinDictionarySnapshot.Empty
                 }
             dictionaries[languageCode] = dictionary
+            preWarmSymSpellIndices(dictionary)
             dictionary
+        }
+    }
+
+    private fun preWarmSymSpellIndices(dictionary: LatinDictionarySnapshot) {
+        if (!dictionary.isLoaded) return
+        preWarmScope.launch {
+            dictionary.symSpellIndex
+            dictionary.symSpellDistance2Index
         }
     }
 
