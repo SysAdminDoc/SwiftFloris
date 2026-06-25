@@ -48,6 +48,8 @@ import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
 import androidx.room.migration.AutoMigrationSpec
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.patrickgold.florisboard.R
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.EncodeDefault
@@ -369,12 +371,28 @@ abstract class ClipboardHistoryDatabase : RoomDatabase() {
     class MIGRATE_3_TO_4 : AutoMigrationSpec
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL("DROP TABLE IF EXISTS `$CLIPBOARD_HISTORY_TABLE`")
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `$CLIPBOARD_HISTORY_TABLE` (" +
+                        "`_id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, " +
+                        "`type` INTEGER NOT NULL, " +
+                        "`text` TEXT, " +
+                        "`uri` TEXT, " +
+                        "`creationTimestampMs` INTEGER NOT NULL, " +
+                        "`isPinned` INTEGER NOT NULL, " +
+                        "`mimeTypes` TEXT NOT NULL)"
+                )
+            }
+        }
+
         fun new(context: Context): ClipboardHistoryDatabase {
             return Room
                 .databaseBuilder(
                     context, ClipboardHistoryDatabase::class.java, CLIPBOARD_HISTORY_TABLE,
                 )
-                .fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2)
                 .build()
         }
     }
@@ -429,12 +447,21 @@ abstract class ClipboardFilesDatabase : RoomDatabase() {
     abstract fun clipboardFilesDao() : ClipboardFilesDao
 
     companion object {
+        private val MIGRATION_1_2 = object : Migration(1, 2) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "ALTER TABLE `$CLIPBOARD_FILES_TABLE` " +
+                        "ADD COLUMN `orientation` INTEGER NOT NULL DEFAULT 0"
+                )
+            }
+        }
+
         fun new(context: Context): ClipboardFilesDatabase {
             return Room
                 .databaseBuilder(
                     context, ClipboardFilesDatabase::class.java, CLIPBOARD_FILES_TABLE,
                 )
-                .fallbackToDestructiveMigration()
+                .addMigrations(MIGRATION_1_2)
                 .build()
         }
     }
