@@ -37,8 +37,12 @@ import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
+import android.content.ClipData
+import android.content.Context
+import android.widget.Toast
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonManifest
+import dev.patrickgold.florisboard.ime.addon.AddonProvenanceReport
 import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
@@ -356,6 +360,7 @@ private fun DictionaryPackRow(entry: DictionaryPackCatalog.Entry) {
 
 @Composable
 private fun InstalledAddonRow(manifest: AddonManifest) {
+    val context = LocalContext.current
     Preference(
         icon = Icons.Default.CheckCircle,
         title = manifest.displayName,
@@ -374,6 +379,13 @@ private fun InstalledAddonRow(manifest: AddonManifest) {
                 stringRes(R.string.settings__addons__fingerprint_summary)
                     .replace("{fingerprint}", manifest.signingCertSha256),
             )
+        },
+        onClick = {
+            val report = AddonProvenanceReport.from(manifest)
+            val clip = ClipData.newPlainText("SwiftFloris addon provenance", report.toJson())
+            val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+            cm.setPrimaryClip(clip)
+            Toast.makeText(context, R.string.settings__addons__provenance_copied, Toast.LENGTH_SHORT).show()
         },
     )
 }

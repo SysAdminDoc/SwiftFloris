@@ -2369,6 +2369,7 @@
     <string name="settings__addons__none_installed_summary" comment="Addons settings empty-state summary">Install a sibling addon APK that declares the SwiftFloris addon metadata, then rescan or restart the IME service.</string>
     <string name="settings__addons__installed_summary" comment="Installed addon row summary; {type}, {version}, {license}, {size} = values">Type: {type} · Version: {version} · License: {license} · Size: {size}</string>
     <string name="settings__addons__fingerprint_summary" comment="Installed addon row fingerprint fragment; {fingerprint} = SHA-256 certificate fingerprint">Signing SHA-256: {fingerprint}</string>
+    <string name="settings__addons__provenance_copied" comment="Toast shown after tapping an installed addon to copy its provenance report">Provenance report copied to clipboard</string>
     <string name="settings__addons__none_dictionary_packs" comment="Addons settings empty-state title">No dictionary packs mounted</string>
     <string name="settings__addons__none_dictionary_packs_summary" comment="Addons settings empty-state summary">Accepted dictionary-pack addons appear here after their descriptor JSON is read successfully.</string>
     <string name="settings__addons__dictionary_pack_summary" comment="Dictionary-pack addon row summary; {language}, {words}, {license}, {source} = descriptor fields">Language: {language} · Words: {words} · Dataset license: {license}\nSource: {source}</string>
