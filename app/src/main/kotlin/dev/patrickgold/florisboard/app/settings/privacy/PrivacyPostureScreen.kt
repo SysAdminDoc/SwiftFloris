@@ -39,6 +39,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
@@ -237,6 +238,24 @@ fun PrivacyPostureScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__privacy_posture__verification_summary),
                 onClick = { context.launchUrl(R.string.florisboard__reproducible_builds_url) },
             )
+            val proofCopiedToast = stringRes(R.string.settings__privacy_posture__proof_copied)
+            Preference(
+                icon = Icons.Default.ContentCopy,
+                title = stringRes(R.string.settings__privacy_posture__copy_proof_title),
+                summary = stringRes(R.string.settings__privacy_posture__copy_proof_summary),
+                onClick = {
+                    val proof = buildPrivacyProofBundle(
+                        context = context,
+                        hasInternet = declaredInternetPermission,
+                        addonPinCount = countNonBlankLines(addonSigningPins),
+                        mcpPinCount = countNonBlankLines(mcpSigningPins),
+                    )
+                    val clip = android.content.ClipData.newPlainText("SwiftFloris privacy proof", proof)
+                    val cm = context.getSystemService(Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                    cm.setPrimaryClip(clip)
+                    Toast.makeText(context, proofCopiedToast, Toast.LENGTH_SHORT).show()
+                },
+            )
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__privacy_posture__group_profiles)) {
@@ -415,3 +434,30 @@ private fun onOffLabel(value: Boolean): String =
     stringRes(if (value) R.string.settings__privacy_posture__on else R.string.settings__privacy_posture__off)
 
 private fun countNonBlankLines(value: String): Int = value.lineSequence().count { it.isNotBlank() }
+
+private fun buildPrivacyProofBundle(
+    context: Context,
+    hasInternet: Boolean,
+    addonPinCount: Int,
+    mcpPinCount: Int,
+): String {
+    val pm = context.packageManager
+    val packageName = context.packageName
+    val info = pm.getPackageInfo(packageName, 0)
+    val versionName = info.versionName ?: "unknown"
+    val versionCode = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else @Suppress("DEPRECATION") info.versionCode.toLong()
+    val fingerprint = SigningFingerprint.sha256(context) ?: "unavailable"
+    return buildString {
+        appendLine("{")
+        appendLine("  \"packageId\": \"$packageName\",")
+        appendLine("  \"versionName\": \"$versionName\",")
+        appendLine("  \"versionCode\": $versionCode,")
+        appendLine("  \"signerSha256\": \"$fingerprint\",")
+        appendLine("  \"internetPermission\": ${hasInternet},")
+        appendLine("  \"addonPinCount\": $addonPinCount,")
+        appendLine("  \"mcpPinCount\": $mcpPinCount,")
+        appendLine("  \"sourceUrl\": \"https://github.com/SysAdminDoc/SwiftFloris\",")
+        appendLine("  \"reproducibleBuildUrl\": \"https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/REPRODUCIBLE_BUILDS.md\"")
+        appendLine("}")
+    }
+}
