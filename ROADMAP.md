@@ -186,3 +186,90 @@ gated on external deliverables or hardware testing live in
   version/code, package id, signer fingerprint, `INTERNET` permission absence,
   release/source URLs, enabled privacy toggles, and addon count/status.
   Complexity: S
+
+## Research-Driven Additions (2026-06-25)
+
+### P1
+
+- [ ] P1 — **Migrate `announceForAccessibility` to accessibility live region**
+  Why: `KeyboardManager.kt:523` uses `announceForAccessibility()` for glide-word
+  TalkBack announcements. This API is deprecated in Android 16 (the current
+  compileSdk 36 target). The replacement pattern —
+  `setAccessibilityLiveRegion(POLITE)` — is already used in
+  `SettingsSearchScreen.kt`.
+  Evidence: Android 16 deprecation changelog; `KeyboardManager.kt:526`;
+  `SettingsSearchScreen.kt` live-region usage.
+  Touches: `KeyboardManager.kt` (announceForAccessibility method); any View
+  used for TalkBack candidate/glide announcements.
+  Acceptance: no `announceForAccessibility` calls remain in production code;
+  glide-word and candidate announcements reach TalkBack via live-region or
+  `AccessibilityEvent` dispatch; `:app:testDebugUnitTest` green.
+  Complexity: S
+
+- [ ] P1 — **Bump Tink Android 1.21.0 → 1.22.0**
+  Why: Tink wraps the AndroidKeystore key that protects the SQLCipher
+  dictionary passphrase — a security-critical dependency path. 1.22.0 is the
+  latest stable release on Maven Central.
+  Evidence: `gradle/libs.versions.toml` `tink-android = "1.21.0"`; Maven
+  Central `com.google.crypto.tink:tink-android:1.22.0`.
+  Touches: `gradle/libs.versions.toml`; verify `SupportFactory` and
+  encrypted-preference initialization still work.
+  Acceptance: `libs.versions.toml` shows `tink-android = "1.22.0"`;
+  `:app:testDebugUnitTest` green; dictionary open + export/import round-trip
+  unchanged.
+  Complexity: S
+
+### P2
+
+- [ ] P2 — **Bump AGP 9.2.1 → 9.3.0 to unlock compileSdk 37**
+  Why: AGP 9.3.0 is released and supports compileSdk 37 (Android 17). This is
+  a prerequisite for Android 17 CJKV `TextAttribute` accessibility APIs,
+  physical keyboard password behavior, and IME visibility behavioral changes.
+  It also unlocks built-in Kotlin compilation (no separate plugin needed) and
+  R8 improvements.
+  Evidence: AGP 9.3.0 release notes; `libs.versions.toml` shows AGP 9.2.1;
+  `Roadmap_Blocked.md` has three items gated on compileSdk 37.
+  Touches: `gradle/libs.versions.toml`; `app/build.gradle.kts` (compileSdk
+  bump from 36 to 37); behavior-change audit for API 37 targeting; Robolectric
+  4.17 may be needed for MessageQueue test compat.
+  Acceptance: build green with AGP 9.3.0 / compileSdk 37; no new lint errors
+  from API 37 targeting; `:app:testDebugUnitTest` green; blocked items in
+  `Roadmap_Blocked.md` that depend on compileSdk 37 can be unblocked.
+  Complexity: M
+
+- [ ] P2 — **Add snippet management Settings screen**
+  Why: `SnippetManager` handles Espanso YAML import/removal/listing and
+  `SnippetExpansionPolicy` powers trigger expansion from the keyboard, but no
+  Settings UI exists. Users cannot discover, add, preview, or remove snippet
+  files without direct filesystem access.
+  Evidence: `app/src/main/kotlin/.../ime/snippet/SnippetManager.kt` (full
+  API); `app/src/main/kotlin/.../ime/snippet/EspansoMatchParser.kt`; no
+  files referencing "snippet" found in `app/settings/`.
+  Touches: new Settings screen under Typing or Personalization; SAF file
+  picker for YAML import; snippet list with trigger/replacement preview and
+  per-file delete; simple add-trigger inline UI for non-YAML users;
+  `SettingsSearchIndex` entries for snippet/expansion.
+  Acceptance: Settings exposes a snippet management screen where users can
+  import Espanso YAML files via SAF, see loaded triggers and replacements,
+  delete individual files, add simple trigger→replacement pairs without
+  editing YAML, and clear all; settings search finds "snippet," "expansion,"
+  and "Espanso."
+  Complexity: M
+
+- [ ] P2 — **Add TalkBack key echo mode (character/word/both)**
+  Why: commercial keyboards (Gboard, SwiftKey) offer per-keystroke spoken
+  feedback modes — character echo (spell letter names on press), word echo
+  (speak completed word on space), or both. No key-echo mode was found in
+  SwiftFloris. This serves blind and low-vision users who rely on audio
+  feedback beyond the basic TalkBack key label announcements.
+  Evidence: no `keyEcho`/`spokenFeedback`/`spokenKey` pattern found in
+  source; Gboard and SwiftKey key echo documentation; Android accessibility
+  principles guide.
+  Touches: `InputFeedbackController` or new accessibility feedback layer;
+  Settings → Typing or a dedicated Accessibility section; preference store;
+  `SensitiveFieldGuard` integration (suppress echo on password fields).
+  Acceptance: Settings exposes a key echo mode (off / character / word /
+  both); TalkBack users hear letter names on key press and/or completed words
+  on space; echo respects incognito and sensitive-field guards; preference
+  persists across restarts.
+  Complexity: M
