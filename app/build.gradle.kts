@@ -421,24 +421,24 @@ val verifyDataExtractionRules = tasks.register("verifyDataExtractionRules") {
     inputs.file(rulesFile).withPathSensitivity(PathSensitivity.RELATIVE)
     outputs.upToDateWhen { true }
 
-    // Each entry is a *substring* search on the rules file. The substrings
-    // are stable identifiers (file names / pref names / directory names)
-    // that any future edit must preserve. We deliberately don't parse the
-    // XML — the substring check is cheaper and catches both schema-valid
-    // rewrites that drop an exclude AND accidental typos in the file name.
+    // domain to path — each pair must be an <exclude> inside BOTH sections.
     val requiredExcludes = listOf(
-        // SQLCipher personal-dictionary DB + sidecars
-        "floris_user_dictionary",
-        "floris_user_dictionary.db",
-        "floris_user_dictionary.db-journal",
-        "floris_user_dictionary.db-wal",
-        "floris_user_dictionary.db-shm",
-        // Tink-wrapped passphrase prefs
-        "floris_user_dictionary_key.xml",
-        // Clipboard history dir
-        "clipboard_history",
+        "database" to "floris_user_dictionary",
+        "database" to "floris_user_dictionary.db",
+        "database" to "floris_user_dictionary.db-journal",
+        "database" to "floris_user_dictionary.db-wal",
+        "database" to "floris_user_dictionary.db-shm",
+        "sharedpref" to "floris_user_dictionary_key.xml",
+        "file" to "clipboard_history",
+        "file" to "personal_bigrams",
+        "file" to "personal_trigrams",
+        "file" to "correction_outcome_priors",
+        "file" to "swiftkey_typing_traces.jsonl",
+        "file" to "swiftkey_trace.enabled",
+        "file" to "sync",
+        "file" to "diagnostics",
     )
-    val requiredSections = listOf("<cloud-backup>", "<device-transfer>")
+    val requiredSections = listOf("cloud-backup", "device-transfer")
 
     doLast {
         if (!rulesFile.exists()) {
@@ -447,28 +447,48 @@ val verifyDataExtractionRules = tasks.register("verifyDataExtractionRules") {
                     "load-bearing for the Android 12+ no-leak-via-D2D contract (ROADMAP §6 N7.4)."
             )
         }
-        val text = rulesFile.readText()
-        val missingSections = requiredSections.filterNot { it in text }
-        val missingExcludes = requiredExcludes.filterNot { it in text }
-        if (missingSections.isNotEmpty() || missingExcludes.isNotEmpty()) {
+
+        val doc = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+            .newDocumentBuilder()
+            .parse(rulesFile)
+
+        val errors = mutableListOf<String>()
+
+        for (section in requiredSections) {
+            val sectionNodes = doc.getElementsByTagName(section)
+            if (sectionNodes.length == 0) {
+                errors.add("missing <$section> section entirely")
+                continue
+            }
+            val sectionNode = sectionNodes.item(0)
+            val excludes = mutableSetOf<Pair<String, String>>()
+            val children = sectionNode.childNodes
+            for (i in 0 until children.length) {
+                val child = children.item(i)
+                if (child.nodeName == "exclude") {
+                    val attrs = child.attributes
+                    val domain = attrs?.getNamedItem("domain")?.nodeValue ?: continue
+                    val path = attrs.getNamedItem("path")?.nodeValue ?: continue
+                    excludes.add(domain to path)
+                }
+            }
+            for (required in requiredExcludes) {
+                if (required !in excludes) {
+                    errors.add("<$section> missing: <exclude domain=\"${required.first}\" path=\"${required.second}\"/>")
+                }
+            }
+        }
+
+        if (errors.isNotEmpty()) {
             throw GradleException(
                 buildString {
-                    appendLine("data_extraction_rules.xml is missing required content (ROADMAP §6 N7.4):")
-                    if (missingSections.isNotEmpty()) {
-                        appendLine("  missing rule sections:")
-                        missingSections.forEach { appendLine("    - $it") }
-                    }
-                    if (missingExcludes.isNotEmpty()) {
-                        appendLine("  missing exclude identifiers:")
-                        missingExcludes.forEach { appendLine("    - $it") }
-                    }
+                    appendLine("data_extraction_rules.xml verification failed (ROADMAP §6 N7.4):")
+                    errors.forEach { appendLine("  - $it") }
                     appendLine()
-                    append("Each identifier above MUST appear inside both <cloud-backup> and ")
-                    append("<device-transfer> as the `path=` attribute of an <exclude> element. ")
-                    append("Without these excludes, Android 12+ D2D transfer carries the SQLCipher ")
-                    append("personal-dictionary DB and its undecryptable Tink-wrapped passphrase ")
-                    append("to a new device, leaking PII ciphertext and bricking the dictionary on ")
-                    append("the new install.")
+                    append("Each exclude must appear inside BOTH <cloud-backup> and <device-transfer> ")
+                    append("with the exact domain/path pair. Without these excludes, Android 12+ backup ")
+                    append("or D2D transfer can leak PII (dictionary, clipboard, typing patterns, ")
+                    append("sync identity, or diagnostics).")
                 }
             )
         }
