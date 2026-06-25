@@ -1053,6 +1053,9 @@
     <string name="settings__privacy_posture__source_code_summary" comment="Preference summary">View the full source on GitHub. SwiftFloris is open-source under the Apache 2.0 license.</string>
     <string name="settings__privacy_posture__verification_title" comment="Preference title">Release verification</string>
     <string name="settings__privacy_posture__verification_summary" comment="Preference summary">Reproducible build instructions and signing fingerprints for verifying that your installed APK matches the published source.</string>
+    <string name="settings__privacy_posture__copy_proof_title" comment="Preference title">Copy privacy proof</string>
+    <string name="settings__privacy_posture__copy_proof_summary" comment="Preference summary">Copy a JSON bundle containing version, signer fingerprint, no-network status, and addon counts to the clipboard for auditors and reviewers.</string>
+    <string name="settings__privacy_posture__proof_copied" comment="Toast shown after copying privacy proof">Privacy proof copied to clipboard</string>
     <string name="settings__privacy_posture__per_app_profiles_title" comment="Preference title">Per-app keyboard profiles</string>
     <string name="settings__privacy_posture__per_app_profiles_summary" comment="Preference summary; {count} is the number of saved app-specific profiles">Configured apps: {count}. Profiles can override adaptive accent, incognito, clipboard history, suggestions, and smartbar gesture sets for the focused app.</string>
     <string name="settings__per_app_keyboard_profiles__title" comment="Screen title">Per-app keyboard profiles</string>
