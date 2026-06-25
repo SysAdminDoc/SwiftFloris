@@ -701,6 +701,11 @@ internal data class LatinDictionarySnapshot(
      * words for recognition, but indexing all of them multiplies memory during typing.
      * Rare supplemental words should prevent false autocorrect, not become aggressive
      * correction candidates.
+     *
+     * Wrapped in an OOM guard: if the build exhausts the heap despite all internal
+     * budgets and scaling, the keyboard falls back to an empty index (no spell-
+     * correction) rather than crashing. This is the last line of defense after the
+     * per-word heap checks and budget scaling inside [SymSpellIndex.build].
      */
     val symSpellIndex: SymSpellIndex by lazy {
         val shouldLogBenchmark = BuildConfig.BUILD_TYPE == "benchmark"
@@ -725,6 +730,9 @@ internal data class LatinDictionarySnapshot(
                     )
                 }
             }
+        } catch (_: OutOfMemoryError) {
+            Log.w("SwiftFlorisNLP", "OOM building d1 SymSpell index; falling back to empty index")
+            SymSpellIndex.empty()
         } finally {
             Trace.endSection()
         }
@@ -759,6 +767,9 @@ internal data class LatinDictionarySnapshot(
                     )
                 }
             }
+        } catch (_: OutOfMemoryError) {
+            Log.w("SwiftFlorisNLP", "OOM building d2 SymSpell index; falling back to empty index")
+            SymSpellIndex.empty()
         } finally {
             Trace.endSection()
         }

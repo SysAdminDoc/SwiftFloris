@@ -42,6 +42,14 @@ internal class SymSpellIndex private constructor(
         private const val MaxSupportedDistance: Int = 2
         const val UnlimitedDeleteEntryBudget: Int = Int.MAX_VALUE
 
+        /** Returns an empty index that produces no candidates. Used as OOM fallback. */
+        fun empty(): SymSpellIndex = SymSpellIndex(
+            deleteToOriginals = emptyMap(),
+            maxDistance = DefaultMaxDistance,
+            indexedWordCount = 0,
+            isComplete = false,
+        )
+
         private const val MaxWordLengthForDistance1: Int = 30
         private const val MaxWordLengthForDistance2: Int = 16
 
@@ -49,16 +57,19 @@ internal class SymSpellIndex private constructor(
          * Returns a delete-entry budget scaled to the available heap. On devices with
          * small heaps (256 MB) where the keyboard shares the process, the default 750k
          * d1 / 320k d2 budgets can push the HashMap + HashSet allocations past the OOM
-         * threshold. This scales the caller-provided budget down proportionally when the
-         * heap ceiling is low, keeping the index buildable on constrained devices at the
-         * cost of fewer correction candidates (the index reports [isComplete] = false).
+         * threshold. This uses a quadratic scale so that 256 MB devices get ~44% of the
+         * full budget (not 67%), keeping the index buildable on constrained devices at
+         * the cost of fewer correction candidates (the index reports [isComplete] = false).
          */
         fun heapScaledBudget(requestedBudget: Int): Int {
             if (requestedBudget == UnlimitedDeleteEntryBudget) return requestedBudget
             val rt = Runtime.getRuntime()
             val maxHeapMb = rt.maxMemory() / (1024 * 1024)
             if (maxHeapMb >= 384) return requestedBudget
-            val scale = (maxHeapMb.toDouble() / 384.0).coerceIn(0.15, 1.0)
+            // Quadratic scaling: 256 MB → (256/384)^2 ≈ 0.44, 192 MB → 0.25, 128 MB → 0.11.
+            // Linear scaling was too generous and still OOMed on 256 MB TECNO devices.
+            val ratio = (maxHeapMb.toDouble() / 384.0).coerceIn(0.10, 1.0)
+            val scale = ratio * ratio
             return (requestedBudget * scale).toInt().coerceAtLeast(1_000)
         }
 
@@ -90,6 +101,9 @@ internal class SymSpellIndex private constructor(
             val builder = HashMap<String, MutableSet<String>>(initialCapacity)
             var indexedWordCount = 0
             var isComplete = true
+            val rt = Runtime.getRuntime()
+            // Reserve 20 MB for the rest of the IME; stop building when free heap drops below.
+            val heapFloorBytes = 20L * 1024 * 1024
             try {
                 for (word in wordList) {
                     if (word.length < 2 || word.length > maxWordLen) continue
@@ -100,6 +114,16 @@ internal class SymSpellIndex private constructor(
                         isComplete = false
                         break
                     }
+                    // Periodic free-memory check: every 500 words, verify we still have
+                    // enough heap headroom. GC pressure from the HashSet churn can push us
+                    // past the OOM cliff between budget-count checks.
+                    if (indexedWordCount % 500 == 0 && indexedWordCount > 0) {
+                        val freeHeap = rt.maxMemory() - (rt.totalMemory() - rt.freeMemory())
+                        if (freeHeap < heapFloorBytes) {
+                            isComplete = false
+                            break
+                        }
+                    }
                     builder.getOrPut(word) { HashSet(2) }.add(word)
                     for (delForm in deleteForms) {
                         builder.getOrPut(delForm) { HashSet(2) }.add(word)
@@ -109,9 +133,20 @@ internal class SymSpellIndex private constructor(
             } catch (_: OutOfMemoryError) {
                 isComplete = false
             }
+            // Freeze builder → read-only Array<String> values in-place to avoid holding
+            // two full copies of the map simultaneously (the old code allocated a second
+            // HashMap while the builder was still alive, doubling peak memory).
             val frozen = HashMap<String, Array<String>>(builder.size)
-            for ((k, v) in builder) {
-                frozen[k] = v.toTypedArray()
+            try {
+                val iter = builder.iterator()
+                while (iter.hasNext()) {
+                    val (k, v) = iter.next()
+                    frozen[k] = v.toTypedArray()
+                    iter.remove() // release the MutableSet immediately
+                }
+            } catch (_: OutOfMemoryError) {
+                // Partial freeze is still usable — the candidates already frozen are valid.
+                isComplete = false
             }
             return SymSpellIndex(
                 deleteToOriginals = frozen,
