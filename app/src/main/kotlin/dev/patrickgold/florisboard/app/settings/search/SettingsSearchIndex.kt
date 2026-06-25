@@ -55,6 +55,7 @@ enum class SettingsSearchDestination {
     PRIVACY_POSTURE,
     PER_APP_KEYBOARD_PROFILES,
     PRIVACY_AUDIT,
+    SNIPPET_SETTINGS,
     ABOUT,
     AI_FEATURES,
     PROJECT_LICENSE,
@@ -162,6 +163,7 @@ object SettingsSearchIndex {
         entry("typing.smart-compose", R.string.settings__typing__title, R.string.pref__correction__heuristic_smart_compose__label, R.string.pref__correction__heuristic_smart_compose__summary, SettingsSearchDestination.TYPING),
         entry("typing.spell-checker", R.string.settings__typing__title, R.string.pref__spelling__title, destination = SettingsSearchDestination.TYPING),
         entry("typing.stats", R.string.settings__typing_stats__title, R.string.settings__typing_stats__title, R.string.settings__typing_stats__summary, SettingsSearchDestination.TYPING_STATS, "erase dictionary learned words trace"),
+        entry("typing.snippets", R.string.settings__snippet__title, R.string.settings__snippet__title, R.string.settings__snippet__summary, SettingsSearchDestination.SNIPPET_SETTINGS, "snippet expansion espanso yaml trigger replace text shortcut"),
 
         entry("theme", R.string.settings__theme__title, R.string.settings__theme__title, R.string.settings__home__theme_summary, SettingsSearchDestination.THEME),
         entry("theme.mode", R.string.settings__theme__title, R.string.pref__theme__mode__label, destination = SettingsSearchDestination.THEME, keywords = "dark light system appearance mode"),

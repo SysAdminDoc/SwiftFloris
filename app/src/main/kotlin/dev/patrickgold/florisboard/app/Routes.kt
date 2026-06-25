@@ -86,6 +86,7 @@ import dev.patrickgold.florisboard.app.settings.sync.SyncSettingsScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreen
 import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerScreenAction
 import dev.patrickgold.florisboard.app.settings.theme.ThemeScreen
+import dev.patrickgold.florisboard.app.settings.typing.SnippetSettingsScreen
 import dev.patrickgold.florisboard.app.settings.typing.TypingScreen
 import dev.patrickgold.florisboard.app.settings.typing.TypingStatsScreen
 import dev.patrickgold.florisboard.app.settings.voice.VoiceInputScreen
@@ -242,6 +243,10 @@ object Routes {
         object TypingStats
 
         @Serializable
+        @Deeplink("settings/typing/snippets")
+        object SnippetSettings
+
+        @Serializable
         @Deeplink("settings/privacy/posture")
         object PrivacyPosture
 
@@ -373,6 +378,7 @@ object Routes {
 
             composableWithDeepLink(Settings.Typing::class) { TypingScreen() }
             composableWithDeepLink(Settings.TypingStats::class) { TypingStatsScreen() }
+            composableWithDeepLink(Settings.SnippetSettings::class) { SnippetSettingsScreen() }
             composableWithDeepLink(Settings.PrivacyPosture::class) { PrivacyPostureScreen() }
             composableWithDeepLink(Settings.PerAppKeyboardProfiles::class) { PerAppKeyboardProfileScreen() }
             composableWithDeepLink(Settings.PrivacyAuditLog::class) { PrivacyAuditScreen() }

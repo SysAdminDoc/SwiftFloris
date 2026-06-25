@@ -214,6 +214,12 @@ fun TypingScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__typing_stats__summary),
                 onClick = { navController.navigate(Routes.Settings.TypingStats) },
             )
+            Preference(
+                icon = Icons.AutoMirrored.Filled.LibraryBooks,
+                title = stringRes(R.string.settings__snippet__title),
+                summary = stringRes(R.string.settings__snippet__summary),
+                onClick = { navController.navigate(Routes.Settings.SnippetSettings) },
+            )
         }
     }
 }
