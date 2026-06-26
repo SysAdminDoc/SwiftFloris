@@ -1,0 +1,10 @@
+{
+  "schema": 1,
+  "language": "eo",
+  "displayName": "Esperanto Sample Dictionary",
+  "wordCount": 5,
+  "fldicAssetPath": "ime/dict/eo_sample.fldic",
+  "source": "SwiftFloris addon fixture",
+  "license": "Apache-2.0",
+  "minSchemaCompat": 1
+}

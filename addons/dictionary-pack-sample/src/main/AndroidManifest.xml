@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON" />
+
+    <application
+        android:allowBackup="false"
+        android:hasCode="true"
+        android:label="@string/app_name"
+        android:supportsRtl="true">
+
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.type"
+            android:value="dictionary-pack" />
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.version"
+            android:value="1" />
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.license"
+            android:value="Apache-2.0" />
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.descriptor"
+            android:resource="@raw/dict_descriptor" />
+
+        <receiver
+            android:name=".DictionaryPackReceiver"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON">
+            <intent-filter>
+                <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_ADDON" />
+                <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_DICTIONARY_PACK" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

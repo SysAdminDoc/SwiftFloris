@@ -52,6 +52,10 @@ Every addon APK is required to pass:
 ```bash
 # Standard layout: addon repo's release APK at ./build/outputs/apk/release/addon-release.apk
 ./scripts/verify-addon-apk.sh path/to/your-addon.apk
+
+# In-tree reference fixture:
+./gradlew :addons:dictionary-pack-sample:assembleRelease
+./scripts/verify-addon-apk.sh addons/dictionary-pack-sample/build/outputs/apk/release/dictionary-pack-sample-release.apk
 ```
 
 The script exits non-zero on any failed check, with a human-readable line indicating which check failed and how to
@@ -68,7 +72,7 @@ The script requires Android SDK build-tools `r33+` (for `zipalign -P` flag) and 
 
 ## What this contract does not cover
 
-- **Code quality / linting.** Out of scope; addon authors choose their own lint stack.
+- **Code quality / linting.** Not covered by this packaging contract; addon authors choose their own lint stack.
 - **Functional correctness.** The contract validates the packaging, not the runtime behavior. A theme addon that
   passes every validation step can still ship a broken `Snygg` stylesheet that crashes at apply time. Functional
   tests are the addon author's responsibility.

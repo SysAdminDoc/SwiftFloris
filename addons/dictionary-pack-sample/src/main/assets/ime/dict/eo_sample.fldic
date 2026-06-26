@@ -1,0 +1,9 @@
+#~schema: https://schemas.florisboard.org/nlp/v0~draft1/fldic.txt
+#~encoding: utf-8
+
+[words]
+saluton	1000
+dankon	900
+bonvolu	800
+lingvo	700
+klavaro	600

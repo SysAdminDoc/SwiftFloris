@@ -345,7 +345,7 @@ local processing only; nothing leaves the device.
 ## 7. Pointers
 
 - [README](../README.md) — front door
-- [PROJECT_CONTEXT.md](../PROJECT_CONTEXT.md) — fast onboarding
+- [Architecture & Stack](../README.md#architecture--stack) — stack and module map
 - [ROADMAP.md](../ROADMAP.md) — full project plan
 - [docs/THREAT_MODEL.md](THREAT_MODEL.md) — attacker scenarios + defenses
 - [docs/SECURITY.md](SECURITY.md) — release-time security + dep scanning

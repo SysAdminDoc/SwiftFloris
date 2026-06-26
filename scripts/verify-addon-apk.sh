@@ -44,13 +44,14 @@ readonly BANNED_PERMISSIONS=(
     "android.permission.CHANGE_NETWORK_STATE"
     "android.permission.CHANGE_WIFI_STATE"
 )
+readonly CONTRACT_BASE="io.github.sysadmindoc.swiftfloris"
 readonly REQUIRED_META_KEYS=(
-    "dev.patrickgold.florisboard.addon.type"
-    "dev.patrickgold.florisboard.addon.version"
-    "dev.patrickgold.florisboard.addon.license"
-    "dev.patrickgold.florisboard.addon.descriptor"
+    "${CONTRACT_BASE}.addon.type"
+    "${CONTRACT_BASE}.addon.version"
+    "${CONTRACT_BASE}.addon.license"
+    "${CONTRACT_BASE}.addon.descriptor"
 )
-readonly REGISTER_ACTION_PREFIX="dev.patrickgold.florisboard.action.REGISTER_"
+readonly REGISTER_ACTION_PREFIX="${CONTRACT_BASE}.action.REGISTER_"
 
 usage() {
     echo "usage: $(basename "$0") path/to/addon.apk" >&2
@@ -78,10 +79,13 @@ resolve_build_tools_bin() {
     if [ -n "$sdk_home" ] && [ -d "$sdk_home/build-tools" ]; then
         local latest
         latest=$(ls -1 "$sdk_home/build-tools" 2>/dev/null | sort -V | tail -1)
-        if [ -n "$latest" ] && [ -x "$sdk_home/build-tools/$latest/$tool" ]; then
-            echo "$sdk_home/build-tools/$latest/$tool"
-            return 0
-        fi
+        local candidate
+        for candidate in "$sdk_home/build-tools/$latest/$tool" "$sdk_home/build-tools/$latest/$tool.exe"; do
+            if [ -x "$candidate" ]; then
+                echo "$candidate"
+                return 0
+            fi
+        done
     fi
     command -v "$tool" 2>/dev/null
 }
@@ -175,7 +179,7 @@ check_register_receiver_and_metadata() {
         echo "FAIL  AndroidManifest.xml produced no output from aapt2 — APK is malformed or aapt2 is broken"
         return 1
     fi
-    if ! echo "$manifest" | grep -qE "action.*${REGISTER_ACTION_PREFIX}"; then
+    if ! echo "$manifest" | grep -Fq "$REGISTER_ACTION_PREFIX"; then
         echo "FAIL  no REGISTER_ADDON intent action found on any receiver"
         return 1
     fi
@@ -183,7 +187,7 @@ check_register_receiver_and_metadata() {
 
     local missing=0
     for key in "${REQUIRED_META_KEYS[@]}"; do
-        if ! echo "$manifest" | grep -qE "name=\"${key}\"|name=\"$key\""; then
+        if ! echo "$manifest" | grep -Fq "$key"; then
             echo "FAIL  required meta-data key missing: $key"
             missing=1
         fi

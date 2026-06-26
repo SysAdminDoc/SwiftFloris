@@ -122,6 +122,12 @@ jobs:
       - name: Build debug APK
         run: ./gradlew :app:assembleDebug
 
+      - name: Build sample dictionary-pack addon APK
+        run: ./gradlew :addons:dictionary-pack-sample:assembleRelease
+
+      - name: Validate sample dictionary-pack addon APK
+        run: bash scripts/verify-addon-apk.sh addons/dictionary-pack-sample/build/outputs/apk/release/dictionary-pack-sample-release.apk
+
       # ROADMAP §7 Next-12.4 — 16 KB memory-page alignment guard. Per Google
       # Play's Nov 1 2025 cutoff [STD-A15-16KB], every native .so shipped on
       # a target-Android-15+ APK must be 16 KB ELF-segment aligned. SwiftFloris

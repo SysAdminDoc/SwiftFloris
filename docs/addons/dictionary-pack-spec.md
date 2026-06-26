@@ -20,39 +20,38 @@ filter + a descriptor JSON resource.
     <uses-permission android:name="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON" />
 
     <application
-        android:hasCode="false"
+        android:hasCode="true"
         android:label="Polish Dictionary for SwiftFloris">
 
-        <!-- Static enrolment receiver: the IME's AddonEnumerator scans for
-             this intent filter via PackageManager#queryBroadcastReceivers
-             and reads the meta-data values below to decide whether to mount
-             this addon. The receiver is exported because the IME (a
-             different package) must be able to see it; the
-             signature-protected permission keeps random apps from sending
-             unsolicited REGISTER_* broadcasts. -->
+        <!-- Required application meta-data, all read by AddonEnumerator.snapshot(). -->
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.type"
+            android:value="dictionary-pack" />
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.version"
+            android:value="1" />
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.license"
+            android:value="Apache-2.0" />
+        <!-- @raw/dict_descriptor must point to the JSON spec below. -->
+        <meta-data
+            android:name="io.github.sysadmindoc.swiftfloris.addon.descriptor"
+            android:resource="@raw/dict_descriptor" />
+
+        <!-- Static enrolment receiver: the IME's PackageManager visibility
+             queries scan for this intent filter. The receiver is exported
+             because the IME is a different package; the signature-protected
+             permission keeps random apps from sending unsolicited REGISTER_*
+             broadcasts. -->
         <receiver
             android:name=".DictionaryPackReceiver"
             android:enabled="true"
             android:exported="true"
             android:permission="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON">
             <intent-filter>
+                <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_ADDON" />
                 <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_DICTIONARY_PACK" />
             </intent-filter>
-
-            <!-- Required meta-data, all read by AddonEnumerator.snapshot(). -->
-            <meta-data
-                android:name="io.github.sysadmindoc.swiftfloris.addon.type"
-                android:value="dictionary-pack" />
-            <meta-data
-                android:name="io.github.sysadmindoc.swiftfloris.addon.version"
-                android:value="1" />
-            <meta-data
-                android:name="io.github.sysadmindoc.swiftfloris.addon.license"
-                android:value="Apache-2.0" />
-            <!-- @raw/dict_descriptor must point to the JSON spec below. -->
-            <meta-data
-                android:name="io.github.sysadmindoc.swiftfloris.addon.descriptor"
-                android:resource="@raw/dict_descriptor" />
         </receiver>
     </application>
 </manifest>
@@ -181,10 +180,12 @@ startup and Settings rescans can expose newly mounted packs to the loader.
 
 ## 6. Reference implementation
 
-A minimal reference dictionary-pack project will live at
-`addons/dictionary-pack-polish/` in a sibling repo once the Polish
-dataset extraction lands. Until then, the descriptor + manifest layout
-documented here is fully sufficient to build a working pack against the
-current IME (`v1.8.126+`). Validation can be exercised in unit tests via
+A host-verifiable reference dictionary-pack fixture lives at
+`addons/dictionary-pack-sample/`. It intentionally ships a tiny Esperanto
+fixture dictionary rather than a production dataset, so CI can build a signed
+APK and run `scripts/verify-addon-apk.sh` without device enrollment or external
+data. Production language packs should keep their larger datasets in separate
+addon repositories and copy the same manifest, descriptor, signing, and
+verification shape. Validation can also be exercised in unit tests via
 `DictionaryPackDescriptor.parse(rawJson)` and `DictionaryPackCatalog.build(...)`
 — see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.

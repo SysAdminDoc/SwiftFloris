@@ -27,20 +27,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — **Triage active dependency PRs with release-gate evidence**
-  Why: Dependabot has active updates for Gradle, test tooling, runtime AndroidX, AboutLibraries, GitHub Actions, and OSV; several are safe maintenance wins, while compileSdk 37-related updates need explicit hold decisions.
-  Evidence: GitHub PRs #13-#18; `gradle/libs.versions.toml`; `.github/workflows/android.yml`; `.github/workflows/release.yml`.
-  Touches: `gradle/libs.versions.toml`; `gradle/wrapper/gradle-wrapper.properties`; `.github/workflows/*.yml`; dependency/release validation scripts.
-  Acceptance: each active dependency PR is merged, closed, or routed to `Roadmap_Blocked.md` with a concrete reason; unit tests, Roborazzi, lint, assemble, release-front-door, and dependency/security scans pass after accepted updates.
-  Complexity: M
-
-- [ ] P1 — **Add a host-verifiable addon fixture APK project**
-  Why: Addon specs and verifier scripts exist, but addon authors still lack a buildable reference APK that proves descriptor shape, signing metadata, and verifier output without requiring a device.
-  Evidence: `docs/addons/apk-validation.md`; `docs/addons/dictionary-pack-spec.md`; `scripts/verify-addon-apk.sh`; AnySoftKeyboard language packs; fcitx5-android plugin model.
-  Touches: new sample addon Gradle module or fixture project; `settings.gradle.kts`; `scripts/verify-addon-apk.sh`; CI addon-validation job.
-  Acceptance: a minimal dictionary-pack addon APK builds from source, passes `scripts/verify-addon-apk.sh` in CI, includes descriptor/assets fixtures, and documents no device-enrollment claims beyond host verification.
-  Complexity: M
-
 - [ ] P1 — **Add a production `runBlocking` allowlist and no-growth gate**
   Why: Production `runBlocking` appears across editor, NLP, spellchecker, cache, and UI-support code paths; a no-growth gate prevents new IME-thread blocking while allowing careful targeted migrations.
   Evidence: `AbstractEditorInstance.kt`; `EditorInstance.kt`; `FlorisSpellCheckerService.kt`; `NlpProviderRegistry.kt`; `NlpManager.kt`; `CacheManager.kt`; `QuickActionsEditorPanel.kt`; `HeuristicSmartComposeProvider.kt`; `TextKeyboardCache.kt`.
