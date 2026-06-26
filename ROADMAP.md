@@ -25,15 +25,6 @@ gated on external deliverables or hardware testing live in
 
 ## Research-Driven Additions
 
-### P1
-
-- [ ] P1 — **Add a production `runBlocking` allowlist and no-growth gate**
-  Why: Production `runBlocking` appears across editor, NLP, spellchecker, cache, and UI-support code paths; a no-growth gate prevents new IME-thread blocking while allowing careful targeted migrations.
-  Evidence: `AbstractEditorInstance.kt`; `EditorInstance.kt`; `FlorisSpellCheckerService.kt`; `NlpProviderRegistry.kt`; `NlpManager.kt`; `CacheManager.kt`; `QuickActionsEditorPanel.kt`; `HeuristicSmartComposeProvider.kt`; `TextKeyboardCache.kt`.
-  Touches: repo hygiene script or static check; CI workflow; targeted coroutine call sites; allowlist file or test fixture.
-  Acceptance: CI fails on new unallowlisted production `runBlocking` sites, current sites have owner/rationale comments or allowlist entries, and at least one non-editor/background site is migrated or proven bounded by a focused test.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 — **Use Roborazzi preview filtering to broaden visual baselines**

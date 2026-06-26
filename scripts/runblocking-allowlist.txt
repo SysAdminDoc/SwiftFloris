@@ -1,0 +1,21 @@
+# Production runBlocking allowlist.
+# Format: relative/path.kt | normalized source line | rationale/owner
+app/src/main/kotlin/dev/patrickgold/florisboard/FlorisSpellCheckerService.kt | ): Array<SpellingResult> = runBlocking { | Android SpellCheckerSession API is synchronous; bounded local spelling query.
+app/src/main/kotlin/dev/patrickgold/florisboard/FlorisSpellCheckerService.kt | return runBlocking { | Android spellchecker suggestion callback is synchronous; provider call stays local.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt | val newContent = runBlocking { | Editor expected-content replay bridge; CPU-only snapshot before InputConnection mutation.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt | val newContent = runBlocking { | Editor expected-content replay bridge; CPU-only snapshot before InputConnection mutation.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt | val newContent = runBlocking { | Editor expected-content replay bridge; CPU-only snapshot before InputConnection mutation.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt | val newContent = runBlocking { | Editor expected-content replay bridge; CPU-only snapshot before InputConnection mutation.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt | runBlocking { | Editor composing/batch bridge; bounded by existing editor replay coverage.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt | } else runBlocking { | Selection read fallback for synchronous InputConnection cut/copy path.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt | } else runBlocking { | Selection read fallback for synchronous InputConnection cut/copy path.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt | runBlocking { providerRegistry.suggestionProvider(subtype).getListOfWords(subtype) } | Synchronous dictionary-provider compatibility path for local provider data.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt | val value = runBlocking { providerRegistry.suggestionProvider(subtype).getFrequencyForWord(subtype, word) } | Synchronous frequency lookup compatibility path for local provider data.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpProviderRegistry.kt | runBlocking { | Provider initialization bridge; provider calls are local and covered by NLP tests.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/quickaction/QuickActionsEditorPanel.kt | runBlocking { | Quick-action panel bridges existing synchronous UI event to local editor operation.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/HeuristicSmartComposeProvider.kt | return runBlocking { | Heuristic smart-compose provider exposes sync interface over local suggestion code.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardCache.kt | val keyboard = runBlocking { block() } | Keyboard cache fill is synchronized to avoid duplicate layout construction.
+app/src/main/kotlin/dev/patrickgold/florisboard/lib/cache/CacheManager.kt | internal fun add(workspace: T) = runBlocking { | Legacy sync cache API delegates to actor-backed workspace queue.
+app/src/main/kotlin/dev/patrickgold/florisboard/lib/cache/CacheManager.kt | internal fun remove(workspace: T) = runBlocking { | Legacy sync cache API delegates to actor-backed workspace queue.
+app/src/main/kotlin/dev/patrickgold/florisboard/lib/cache/CacheManager.kt | fun getWorkspaceByUuid(uuid: String) = runBlocking { getWorkspaceByUuidAsync(uuid).await() } | Legacy sync cache lookup delegates to actor-backed workspace queue.
+lib/snygg/src/main/kotlin/org/florisboard/lib/snygg/ui/SnyggUi.kt | runBlocking { | Compose theme setup preloads local font families during remembered theme provision.

@@ -54,6 +54,9 @@ jobs:
       - name: Check repo hygiene
         run: bash scripts/check-repo-hygiene.sh
 
+      - name: Check production runBlocking allowlist
+        run: python3 scripts/check-runblocking-allowlist.py
+
       - name: Check fastlane / F-Droid metadata
         # F-Droid build server reads fastlane/metadata/android/en-US/ for the
         # listing title, descriptions, and per-versionCode changelog. If those

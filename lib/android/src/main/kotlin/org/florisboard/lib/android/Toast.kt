@@ -17,12 +17,16 @@
 package org.florisboard.lib.android
 
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.widget.Toast
 import androidx.annotation.StringRes
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.kotlin.CurlyArg
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Shows a short toast with specified text.
@@ -89,55 +93,55 @@ suspend fun Context.showLongToast(@StringRes id: Int, vararg args: CurlyArg): To
 
 
 
-// These wrappers are temporary, but needed.
-// Gradually in the future all event logic will be suspendable, then these wrappers will not be needed anymore.
-// DO NOT USE THESE IN SUSPENDABLE CONTEXTS, THIS CAUSES ISSUES
+private fun Context.showToastSync(text: String, duration: Int): Toast {
+    val appContext = applicationContext
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+        return Toast.makeText(appContext, text, duration).also { it.show() }
+    }
+    val toastRef = AtomicReference<Toast>()
+    val latch = CountDownLatch(1)
+    Handler(Looper.getMainLooper()).post {
+        toastRef.set(Toast.makeText(appContext, text, duration).also { it.show() })
+        latch.countDown()
+    }
+    latch.await(2, TimeUnit.SECONDS)
+    return toastRef.get() ?: Toast.makeText(appContext, text, duration)
+}
 
 @Deprecated(
     "Use suspend showShortToast instead",
     ReplaceWith("showShortToast(text)")
 )
-fun Context.showShortToastSync(text: String): Toast = runBlocking {
-    showShortToast(text)
-}
+fun Context.showShortToastSync(text: String): Toast = showToastSync(text, Toast.LENGTH_SHORT)
 
 @Deprecated(
     "Use suspend showShortToast instead",
     ReplaceWith("showShortToast(id)")
 )
-fun Context.showShortToastSync(@StringRes id: Int): Toast = runBlocking {
-    showShortToast(id)
-}
+fun Context.showShortToastSync(@StringRes id: Int): Toast = showToastSync(stringRes(id), Toast.LENGTH_SHORT)
 
 @Deprecated(
     "Use suspend showShortToast instead",
     ReplaceWith("showShortToast(id, *args)")
 )
-fun Context.showShortToastSync(@StringRes id: Int, vararg args: CurlyArg): Toast = runBlocking {
-    showShortToast(id, *args)
-}
+fun Context.showShortToastSync(@StringRes id: Int, vararg args: CurlyArg): Toast =
+    showToastSync(stringRes(id, *args), Toast.LENGTH_SHORT)
 
 @Deprecated(
     "Use suspend showLongToast instead",
     ReplaceWith("showLongToast(text)")
 )
-fun Context.showLongToastSync(text: String): Toast = runBlocking {
-    showLongToast(text)
-}
+fun Context.showLongToastSync(text: String): Toast = showToastSync(text, Toast.LENGTH_LONG)
 
 @Deprecated(
     "Use suspend showLongToast instead",
     ReplaceWith("showLongToast(id)")
 )
-fun Context.showLongToastSync(@StringRes id: Int): Toast = runBlocking {
-    showLongToast(id)
-}
+fun Context.showLongToastSync(@StringRes id: Int): Toast = showToastSync(stringRes(id), Toast.LENGTH_LONG)
 
 @Deprecated(
     "Use suspend showLongToast instead",
     ReplaceWith("showLongToast(id, *args)")
 )
-fun Context.showLongToastSync(@StringRes id: Int, vararg args: CurlyArg): Toast = runBlocking {
-    showLongToast(id, *args)
-}
-
+fun Context.showLongToastSync(@StringRes id: Int, vararg args: CurlyArg): Toast =
+    showToastSync(stringRes(id, *args), Toast.LENGTH_LONG)
