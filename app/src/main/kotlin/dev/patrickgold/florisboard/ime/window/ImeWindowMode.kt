@@ -53,11 +53,6 @@ enum class ImeWindowMode {
         COMPACT,
 
         /**
-         * TODO Placeholder, to be implemented in the future.
-         */
-        THUMBS,
-
-        /**
          * ROADMAP §7 Next-7.2 — split-keyboard mode for tablet landscape.
          *
          * The layout is divided into a left half and a right half, each

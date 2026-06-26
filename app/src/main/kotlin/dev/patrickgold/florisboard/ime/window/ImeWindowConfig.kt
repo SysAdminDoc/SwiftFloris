@@ -57,11 +57,15 @@ data class ImeWindowConfig(
 
         override fun deserialize(value: String): ImeWindowConfigByType {
             return try {
-                Json.decodeFromString(value)
+                Json.decodeFromString(normalizeLegacyFixedModes(value))
             } catch (e: Throwable) {
                 flogError { "Failed to deserialize ImeWindowConfig.ByType: ${e.message}" }
                 emptyMap()
             }
+        }
+
+        private fun normalizeLegacyFixedModes(value: String): String {
+            return value.replace("\"THUMBS\"", "\"NORMAL\"")
         }
     }
 

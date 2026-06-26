@@ -223,17 +223,6 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
             }
         }
 
-        class Thumbs(rootInsets: ImeInsets.Root) : Fixed(rootInsets) {
-            override val defaultProps by calculation {
-                ImeWindowProps.Fixed(
-                    keyboardHeight = defKeyboardHeight,
-                    paddingLeft = 0.dp,
-                    paddingRight = 0.dp,
-                    paddingBottom = 0.dp,
-                )
-            }
-        }
-
         /**
          * ROADMAP §7 Next-7.2 — split-keyboard constraints (foundation).
          *
@@ -390,7 +379,6 @@ sealed class ImeWindowConstraints(rootInsets: ImeInsets.Root) {
             return when (fixedMode) {
                 ImeWindowMode.Fixed.NORMAL -> Fixed.Normal(rootInsets)
                 ImeWindowMode.Fixed.COMPACT -> Fixed.Compact(rootInsets)
-                ImeWindowMode.Fixed.THUMBS -> Fixed.Thumbs(rootInsets)
                 ImeWindowMode.Fixed.SPLIT -> Fixed.Split(rootInsets)
             }
         }
