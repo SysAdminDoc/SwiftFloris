@@ -30,6 +30,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.github.takahirom.roborazzi.annotations.RoboPreviewInclude
+import dev.patrickgold.florisboard.app.preview.SwiftFlorisPreviewFrame
 import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
@@ -87,6 +89,7 @@ fun ExtensionMaintainerChip(
     }
 }
 
+@RoboPreviewInclude
 @Preview(showBackground = true)
 @Composable
 private fun PreviewChipNameOnly() {
@@ -95,9 +98,12 @@ private fun PreviewChipNameOnly() {
         email = null,
         url = null,
     )
-    ExtensionMaintainerChip(maintainer)
+    SwiftFlorisPreviewFrame {
+        ExtensionMaintainerChip(maintainer)
+    }
 }
 
+@RoboPreviewInclude
 @Preview(showBackground = true)
 @Composable
 private fun PreviewChipNameAndEmail() {
@@ -106,9 +112,12 @@ private fun PreviewChipNameAndEmail() {
         email = "jane.doe@example.com",
         url = null,
     )
-    ExtensionMaintainerChip(maintainer)
+    SwiftFlorisPreviewFrame {
+        ExtensionMaintainerChip(maintainer)
+    }
 }
 
+@RoboPreviewInclude
 @Preview(showBackground = true)
 @Composable
 private fun PreviewChipNameAndUrl() {
@@ -117,5 +126,7 @@ private fun PreviewChipNameAndUrl() {
         email = null,
         url = "jane-doe.example.com",
     )
-    ExtensionMaintainerChip(maintainer)
+    SwiftFlorisPreviewFrame {
+        ExtensionMaintainerChip(maintainer)
+    }
 }

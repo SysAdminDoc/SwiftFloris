@@ -15,6 +15,8 @@
  */
 
 import com.android.build.api.dsl.ApplicationExtension
+import com.github.takahirom.roborazzi.AnnotationFilter
+import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -26,13 +28,13 @@ plugins {
     alias(libs.plugins.mikepenz.aboutlibraries)
     alias(libs.plugins.kotest)
     alias(libs.plugins.kotlinx.kover)
-    // Roborazzi 1.55.0 (Jan 2026 line) ships AGP-9 support via PR #782,
-    // so the Gradle plugin is now applied. This lights up the
+    // Roborazzi 1.64.0 keeps the AGP-9-compatible plugin line and adds
+    // annotation-filtered Compose preview test generation. This lights up the
     // `:app:recordRoborazziDebug` (baseline capture),
     // `:app:verifyRoborazziDebug` (PR/push regression verify), and the
     // `:app:verifyRoborazziRelease` alias backed by the non-shipping
-    // releaseRoborazzi variant so the release workflow can run the same
-    // baselines against release resources/build flags before publishing.
+    // releaseRoborazzi variant so CI covers both hand-written screenshots and
+    // opt-in @RoboPreviewInclude previews before publishing.
     // Baseline images live under
     // `app/src/test/snapshots/images/` per Roborazzi convention.
     alias(libs.plugins.roborazzi)
@@ -225,6 +227,7 @@ configure<ApplicationExtension> {
             isReturnDefaultValues = true
         }
         unitTests.all {
+            it.systemProperties["robolectric.pixelCopyRenderMode"] = "hardware"
             it.useJUnitPlatform()
         }
     }
@@ -233,6 +236,24 @@ configure<ApplicationExtension> {
 aboutLibraries {
     collect {
         configPath = file("src/main/config")
+    }
+}
+
+roborazzi {
+    outputDir.set(file("src/test/snapshots/preview_filtered"))
+    @OptIn(ExperimentalRoborazziApi::class)
+    generateComposePreviewRobolectricTests {
+        enable.set(true)
+        packages.set(listOf("dev.patrickgold.florisboard.app"))
+        includePrivatePreviews.set(true)
+        annotationFilter.set(AnnotationFilter.Filter.RoboPreviewInclude)
+        robolectricConfig.set(
+            mapOf(
+                "sdk" to "[35]",
+                "qualifiers" to "\"w360dp-h640dp-xxhdpi\"",
+            ),
+        )
+        generatedTestClassCount.set(1)
     }
 }
 
@@ -541,6 +562,7 @@ dependencies {
     implementation(libs.sqlcipher.android)
     implementation(libs.tink.android)
     implementation(libs.zxing.core)
+    compileOnly(libs.roborazzi.annotations)
 
     implementation(projects.lib.android)
     implementation(projects.lib.color)
@@ -562,8 +584,11 @@ dependencies {
     // junit-vintage-engine lets the JUnit-4-style Robolectric tests run
     // under the project-wide `useJUnitPlatform()` runner alongside the
     // Kotest 5 suites.
+    testImplementation(libs.composable.preview.scanner)
     testImplementation(libs.roborazzi)
+    testImplementation(libs.roborazzi.annotations)
     testImplementation(libs.roborazzi.compose)
+    testImplementation(libs.roborazzi.compose.preview.scanner.support)
     testImplementation(libs.roborazzi.junit.rule)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.test.ext)

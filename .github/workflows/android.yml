@@ -108,14 +108,12 @@ jobs:
       - name: Typing quality scorecard
         run: ./gradlew typingQualityScorecard
 
-      # ROADMAP §6 N14.1 — Roborazzi visual-regression verify (1.55.0 line ships
-      # the AGP-9 plugin, so the plugin alias is now applied in app/build.gradle.kts).
-      # `verifyRoborazziDebug` re-runs every Roborazzi-annotated JUnit test and
-      # diff-compares the captured PNG against the baseline under
-      # `app/src/test/snapshots/`. If a snapshot drifts beyond the default
-      # change threshold (0.01), the task fails the PR. Baseline captures land
-      # separately via `recordRoborazziDebug` on a maintainer push (run locally
-      # and commit the resulting PNGs).
+      # ROADMAP §6 N14.1 / research P2 — Roborazzi visual-regression verify.
+      # `verifyRoborazziDebug` re-runs hand-written screenshot tests and the
+      # generated @RoboPreviewInclude preview suite, then diff-compares PNGs
+      # against `app/src/test/snapshots/`. Baseline captures land separately via
+      # `recordRoborazziDebug` on a maintainer push (run locally and commit the
+      # resulting PNGs).
       - name: Roborazzi visual-regression verify (N14.1)
         run: ./gradlew :app:verifyRoborazziDebug
 

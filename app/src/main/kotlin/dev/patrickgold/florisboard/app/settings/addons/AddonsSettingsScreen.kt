@@ -33,9 +33,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.github.takahirom.roborazzi.annotations.RoboPreviewInclude
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.preview.SwiftFlorisPreviewFrame
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import android.content.ClipData
 import android.content.Context
@@ -47,8 +50,10 @@ import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonSigningPinSet
+import dev.patrickgold.florisboard.ime.addon.AddonType
 import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalog
 import dev.patrickgold.florisboard.ime.addon.DictionaryPackCatalogReader
+import dev.patrickgold.florisboard.ime.addon.DictionaryPackDescriptor
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
@@ -402,6 +407,69 @@ private fun formatBundleSize(bytes: Long): String {
         else -> "$bytes B"
     }
 }
+
+@RoboPreviewInclude
+@Preview(showBackground = true)
+@Composable
+private fun PreviewInstalledAddonRow() {
+    SwiftFlorisPreviewFrame {
+        InstalledAddonRow(
+            manifest = previewAddonManifest(
+                type = AddonType.THEME_PACK,
+                displayName = "Midnight Contrast Theme Pack",
+                packageName = "io.github.sysadmindoc.swiftfloris.addons.theme.midnight",
+            ),
+        )
+    }
+}
+
+@RoboPreviewInclude
+@Preview(showBackground = true)
+@Composable
+private fun PreviewDictionaryPackRow() {
+    val manifest = previewAddonManifest(
+        type = AddonType.DICTIONARY_PACK,
+        displayName = "Esperanto Sample Dictionary",
+        packageName = "io.github.sysadmindoc.swiftfloris.addons.dictionary.eo",
+    )
+    val descriptor = DictionaryPackDescriptor(
+        schema = DictionaryPackDescriptor.SUPPORTED_SCHEMA,
+        language = "eo",
+        displayName = "Esperanto Sample Dictionary",
+        wordCount = 12500,
+        fldicAssetPath = "ime/dict/eo.fldic",
+        zipfAssetPath = "freq/eo.tsv",
+        source = "Sample fixture corpus",
+        license = "CC0-1.0",
+    )
+    SwiftFlorisPreviewFrame {
+        DictionaryPackRow(
+            entry = DictionaryPackCatalog.Entry(
+                manifest = manifest,
+                descriptor = descriptor,
+                provenanceReport = AddonProvenanceReport.fromDictionaryPack(manifest, descriptor),
+            ),
+        )
+    }
+}
+
+private fun previewAddonManifest(
+    type: AddonType,
+    displayName: String,
+    packageName: String,
+): AddonManifest = AddonManifest(
+    packageName = packageName,
+    type = type,
+    version = 3L,
+    displayName = displayName,
+    descriptorResourceId = 1,
+    licenseSpdxId = "Apache-2.0",
+    signingCertSha256 = PREVIEW_SIGNING_CERT_SHA256,
+    bundleSizeBytes = 1_048_576L,
+)
+
+private const val PREVIEW_SIGNING_CERT_SHA256 =
+    "AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99:AA:BB:CC:DD:EE:FF:00:11:22:33:44:55:66:77:88:99"
 
 private sealed interface SigningPinAction {
     data object ResetAll : SigningPinAction

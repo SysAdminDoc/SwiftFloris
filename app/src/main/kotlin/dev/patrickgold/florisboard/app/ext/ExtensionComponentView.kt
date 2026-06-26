@@ -40,10 +40,14 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.github.takahirom.roborazzi.annotations.RoboPreviewInclude
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.preview.SwiftFlorisPreviewFrame
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponent
+import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponentImpl
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
@@ -244,5 +248,33 @@ fun <T : ExtensionComponent> ExtensionComponentListView(
                 componentGenerator(component)
             }
         }
+    }
+}
+
+@RoboPreviewInclude
+@Preview(showBackground = true)
+@Composable
+private fun PreviewThemeExtensionComponentView() {
+    SwiftFlorisPreviewFrame {
+        ExtensionComponentView(
+            modifier = Modifier.padding(8.dp),
+            meta = ExtensionMeta(
+                id = "com.example.theme_pack",
+                version = "1.2.0",
+                title = "Example Theme Pack",
+                maintainers = emptyList(),
+                license = "Apache-2.0",
+            ),
+            component = ThemeExtensionComponentImpl(
+                id = "midnight",
+                label = "Midnight High Contrast",
+                authors = listOf("SwiftFloris Maintainers"),
+                isNightTheme = true,
+                stylesheetPath = "stylesheets/midnight.json",
+            ),
+            actionsEnabled = true,
+            onDeleteBtnClick = {},
+            onEditBtnClick = {},
+        )
     }
 }
