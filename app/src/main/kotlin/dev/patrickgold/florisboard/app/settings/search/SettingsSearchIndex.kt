@@ -134,6 +134,7 @@ object SettingsSearchIndex {
         entry("keyboard.spacebar-mode", R.string.settings__keyboard__title, R.string.pref__keyboard__space_bar_mode__label, destination = SettingsSearchDestination.KEYBOARD),
         entry("keyboard.capitalization", R.string.settings__keyboard__title, R.string.pref__keyboard__capitalization_behavior__label, destination = SettingsSearchDestination.KEYBOARD),
         entry("keyboard.incognito", R.string.settings__keyboard__title, R.string.pref__keyboard__incognito_indicator__label, destination = SettingsSearchDestination.KEYBOARD),
+        entry("keyboard.custom-layout-editor", R.string.settings__keyboard__title, R.string.settings__keyboard__custom_layout_editor__title, R.string.settings__keyboard__custom_layout_editor__summary, SettingsSearchDestination.KEYBOARD, "custom layout editor clone local character row key"),
         entry("keyboard.landscape", R.string.settings__keyboard__title, R.string.pref__keyboard__landscape_input_ui_mode__label, destination = SettingsSearchDestination.KEYBOARD),
         entry("keyboard.font-size", R.string.settings__keyboard__title, R.string.pref__keyboard__font_size_multiplier__label, destination = SettingsSearchDestination.KEYBOARD),
         entry("keyboard.height", R.string.settings__keyboard__title, R.string.pref__keyboard__keyboard_height_multiplier__label, destination = SettingsSearchDestination.KEYBOARD),

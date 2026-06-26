@@ -52,6 +52,13 @@ class SettingsSearchIndexTest : FunSpec({
         results.first().entry.destination shouldBe SettingsSearchDestination.KEYBOARD
     }
 
+    test("custom layout editor is searchable from keyboard settings") {
+        val results = SettingsSearchIndex.search("custom layout", ::resolve)
+
+        results.first().entry.id shouldBe "keyboard.custom-layout-editor"
+        results.first().entry.destination shouldBe SettingsSearchDestination.KEYBOARD
+    }
+
     test("query normalization folds diacritics") {
         SettingsSearchIndex.search("theme", ::resolve).first().entry.id shouldBe "theme"
         SettingsSearchIndex.search("themé", ::resolve).first().entry.id shouldBe "theme"
@@ -115,6 +122,8 @@ class SettingsSearchIndexTest : FunSpec({
 private val testStrings = mapOf(
     R.string.settings__keyboard__title to "Keyboard",
     R.string.pref__keyboard__key_spacing__label to "Key spacing",
+    R.string.settings__keyboard__custom_layout_editor__title to "Custom layout editor",
+    R.string.settings__keyboard__custom_layout_editor__summary to "Clone a character layout, edit rows and keys, then save it as a local layout.",
     R.string.settings__typing__title to "Typing",
     R.string.settings__home__typing_summary to "Word suggestions, autocorrect, spelling, and dictionaries",
     R.string.pref__correction__auto_correct__label to "Autocorrect",

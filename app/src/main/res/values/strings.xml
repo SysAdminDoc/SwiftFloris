@@ -872,6 +872,33 @@
     <string name="pref__keyboard__capitalization_behavior__label" comment="Preference title">Capitalization behavior</string>
     <string name="pref__keyboard__font_size_multiplier__label" comment="Preference title">Font size multiplier</string>
     <string name="pref__keyboard__group_layout__label" comment="Preference group title">Layout &amp; size</string>
+    <string name="settings__keyboard__custom_layout_editor__title" comment="Keyboard settings screen title">Custom layout editor</string>
+    <string name="settings__keyboard__custom_layout_editor__summary" comment="Keyboard settings preference summary">Clone a character layout, edit rows and keys, then save it as a local layout.</string>
+    <string name="settings__keyboard__custom_layout_editor__saving" comment="Custom layout editor save button state">Saving…</string>
+    <string name="settings__keyboard__custom_layout_editor__source" comment="Custom layout editor field label">Source layout</string>
+    <string name="settings__keyboard__custom_layout_editor__no_sources" comment="Custom layout editor empty state">No character layouts are indexed.</string>
+    <string name="settings__keyboard__custom_layout_editor__load_error" comment="Custom layout editor load failure">Cannot load source layout: {error}</string>
+    <string name="settings__keyboard__custom_layout_editor__name" comment="Custom layout editor field label">Layout name</string>
+    <string name="settings__keyboard__custom_layout_editor__id" comment="Custom layout editor generated ID label">Saved ID: {id}</string>
+    <string name="settings__keyboard__custom_layout_editor__preview" comment="Custom layout editor preview heading">Preview</string>
+    <string name="settings__keyboard__custom_layout_editor__selected_key" comment="Custom layout editor selected key label">Selected key: row {row}, key {key}</string>
+    <string name="settings__keyboard__custom_layout_editor__key_label" comment="Custom layout editor text field label">Key label</string>
+    <string name="settings__keyboard__custom_layout_editor__move_left" comment="Custom layout editor button content description">Move key left</string>
+    <string name="settings__keyboard__custom_layout_editor__move_right" comment="Custom layout editor button content description">Move key right</string>
+    <string name="settings__keyboard__custom_layout_editor__add_key" comment="Custom layout editor button label">Add key</string>
+    <string name="settings__keyboard__custom_layout_editor__add_row" comment="Custom layout editor button label">Add row</string>
+    <string name="settings__keyboard__custom_layout_editor__delete_row" comment="Custom layout editor button label">Delete row</string>
+    <string name="settings__keyboard__custom_layout_editor__saved" comment="Custom layout editor saved message">Saved as %1$s. Select it in a subtype\'s character layout list.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_blank_label" comment="Custom layout editor validation error">Enter a layout name.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_invalid_id" comment="Custom layout editor validation error">The generated layout ID is invalid.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_duplicate_id" comment="Custom layout editor validation error">A layout with this generated ID already exists.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_empty_layout" comment="Custom layout editor validation error">Add at least one row.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_too_many_rows" comment="Custom layout editor validation error">Use six rows or fewer.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_empty_row" comment="Custom layout editor validation error">Every row needs at least one key.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_too_many_keys" comment="Custom layout editor validation error">Use sixteen keys or fewer per row.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_blank_key" comment="Custom layout editor validation error">Every key needs a label.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_multi_key" comment="Custom layout editor validation error">Each key label must be exactly one character.</string>
+    <string name="settings__keyboard__custom_layout_editor__error_control_key" comment="Custom layout editor validation error">Whitespace and control characters are not valid key labels.</string>
     <string name="pref__keyboard__landscape_input_ui_mode__label" comment="Preference value">Landscape fullscreen input</string>
     <string name="pref__keyboard__key_spacing__label" comment="Preference title">Key spacing factor</string>
     <string name="pref__keyboard__keyboard_height_multiplier__label" comment="Preference title">Keyboard height</string>

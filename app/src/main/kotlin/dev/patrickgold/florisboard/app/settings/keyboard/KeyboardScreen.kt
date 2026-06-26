@@ -159,6 +159,11 @@ fun KeyboardScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.pref__keyboard__group_layout__label)) {
+            Preference(
+                title = stringRes(R.string.settings__keyboard__custom_layout_editor__title),
+                summary = stringRes(R.string.settings__keyboard__custom_layout_editor__summary),
+                onClick = { navController.navigate(Routes.Settings.CustomLayoutEditor) },
+            )
             ListPreference(
                 prefs.keyboard.landscapeInputUiMode,
                 title = stringRes(R.string.pref__keyboard__landscape_input_ui_mode__label),
