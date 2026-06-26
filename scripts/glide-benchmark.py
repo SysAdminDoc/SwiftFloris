@@ -3,10 +3,11 @@
 
 Reads a JSONL file where each line is a benchmark case:
   {"word": "hello", "candidates": ["hello", "jello", "help"], "topK": 4, "runtimeMs": 12.3}
+  {"word": "world", "failed": true, "runtimeMs": 20.0, "error": "classifier timeout"}
 
 The 'candidates' array is ordered by classifier rank. The evaluation reports
 top-1 accuracy (first candidate matches), top-K accuracy (expected word in
-first K candidates), and runtime statistics.
+first K candidates), explicit classifier failures, and runtime statistics.
 
 Usage:
   python scripts/glide-benchmark.py results.jsonl
@@ -28,6 +29,7 @@ class BenchmarkCase:
     word: str
     candidates: list[str]
     runtime_ms: float = 0.0
+    failed: bool = False
 
 
 @dataclass
@@ -35,8 +37,13 @@ class BenchmarkReport:
     total_cases: int = 0
     top1_hits: int = 0
     topk_hits: int = 0
+    failed_cases: int = 0
     top_k: int = 4
     runtimes_ms: list[float] = field(default_factory=list)
+
+    @property
+    def evaluated_cases(self) -> int:
+        return max(0, self.total_cases - self.failed_cases)
 
     @property
     def top1_accuracy(self) -> float:
@@ -87,6 +94,7 @@ def load_results(path: Path) -> list[BenchmarkCase]:
                 word=str(obj.get("word", "")),
                 candidates=[str(c) for c in obj.get("candidates", [])],
                 runtime_ms=float(obj.get("runtimeMs", 0.0)),
+                failed=bool(obj.get("failed", False) or obj.get("error") or obj.get("failure")),
             ))
     return cases
 
@@ -95,6 +103,11 @@ def evaluate(cases: list[BenchmarkCase], top_k: int = 4) -> BenchmarkReport:
     report = BenchmarkReport(top_k=top_k)
     for case in cases:
         report.total_cases += 1
+        if case.failed:
+            report.failed_cases += 1
+            if case.runtime_ms > 0:
+                report.runtimes_ms.append(case.runtime_ms)
+            continue
         normalized = case.word.lower()
         candidate_lower = [c.lower() for c in case.candidates]
         if candidate_lower and candidate_lower[0] == normalized:
@@ -113,6 +126,8 @@ def format_markdown(report: BenchmarkReport) -> str:
         f"| Metric | Value |",
         f"| --- | ---: |",
         f"| Total cases | {report.total_cases} |",
+        f"| Evaluated cases | {report.evaluated_cases} |",
+        f"| Failed cases | {report.failed_cases} |",
         f"| Top-1 accuracy | {report.top1_accuracy:.3f} |",
         f"| Top-1 error | {report.top1_error:.3f} |",
         f"| Top-{report.top_k} accuracy | {report.topk_accuracy:.3f} |",
@@ -128,6 +143,8 @@ def format_markdown(report: BenchmarkReport) -> str:
 def format_json(report: BenchmarkReport) -> dict:
     result: dict = {
         "totalCases": report.total_cases,
+        "evaluatedCases": report.evaluated_cases,
+        "failedCases": report.failed_cases,
         "topK": report.top_k,
         "top1Accuracy": round(report.top1_accuracy, 4),
         "top1Error": round(report.top1_error, 4),

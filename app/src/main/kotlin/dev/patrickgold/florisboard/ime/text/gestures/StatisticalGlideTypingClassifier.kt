@@ -502,8 +502,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         private var size: Int = 0,
     ) {
         companion object {
-            // TODO: Find out optimal max size
-            private const val MAX_SIZE = 500
+            internal const val MAX_SIZE = 500
 
             fun generateIdealGestures(word: String, keysByCharacter: SparseArrayCompat<TextKey>): List<Gesture> {
                 val idealGesture = Gesture()
@@ -587,6 +586,8 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
 
         val isEmpty: Boolean
             get() = size == 0
+        val pointCount: Int
+            get() = size
 
         fun addPoint(x: Float, y: Float) {
             if (size >= MAX_SIZE) {

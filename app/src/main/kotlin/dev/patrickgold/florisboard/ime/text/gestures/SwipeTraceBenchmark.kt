@@ -38,6 +38,7 @@ data class SwipeTraceBenchmarkReport(
     val topNHits: Int,
     val maxSuggestions: Int,
     val totalLatencyNanos: Long,
+    val p95LatencyNanos: Long,
     val misses: List<SwipeTraceMiss>,
 ) {
     val top1Accuracy: Double get() = ratio(top1Hits)
@@ -46,6 +47,8 @@ data class SwipeTraceBenchmarkReport(
     val attemptedRecords: Int get() = evaluatedRecords + failedRecords
     val averageLatencyMillis: Double
         get() = if (attemptedRecords == 0) 0.0 else totalLatencyNanos / attemptedRecords / 1_000_000.0
+    val p95LatencyMillis: Double
+        get() = p95LatencyNanos / 1_000_000.0
 
     fun toMarkdown(title: String = "Swipe Trace Benchmark"): String {
         return buildString {
@@ -60,6 +63,7 @@ data class SwipeTraceBenchmarkReport(
             appendLine("| Top-3 accuracy | ${formatPercent(top3Accuracy)} |")
             appendLine("| Top-$maxSuggestions accuracy | ${formatPercent(topNAccuracy)} |")
             appendLine("| Avg predictor latency | ${String.format(Locale.ROOT, "%.3f", averageLatencyMillis)} ms |")
+            appendLine("| p95 predictor latency | ${String.format(Locale.ROOT, "%.3f", p95LatencyMillis)} ms |")
             if (misses.isNotEmpty()) {
                 appendLine()
                 appendLine("| Miss | Layout | Language | Suggestions |")
@@ -95,6 +99,7 @@ object SwipeTraceBenchmark {
         var top3 = 0
         var topN = 0
         var totalLatency = 0L
+        val latencySamples = mutableListOf<Long>()
         val misses = mutableListOf<SwipeTraceMiss>()
         val top3Window = minOf(3, maxSuggestions)
 
@@ -103,6 +108,7 @@ object SwipeTraceBenchmark {
             val rawSuggestions = runCatching { predictor.suggest(record, maxSuggestions) }
             val elapsed = (clockNanos() - start).coerceAtLeast(0L)
             totalLatency += elapsed
+            latencySamples.add(elapsed)
 
             val suggestions = if (rawSuggestions.isSuccess) {
                 rawSuggestions.getOrThrow().take(maxSuggestions).map { it.toString() }
@@ -135,8 +141,16 @@ object SwipeTraceBenchmark {
             topNHits = topN,
             maxSuggestions = maxSuggestions,
             totalLatencyNanos = totalLatency,
+            p95LatencyNanos = percentile95(latencySamples),
             misses = misses,
         )
+    }
+
+    private fun percentile95(values: List<Long>): Long {
+        if (values.isEmpty()) return 0L
+        val sorted = values.sorted()
+        val index = (kotlin.math.ceil(0.95 * sorted.size).toInt() - 1).coerceIn(sorted.indices)
+        return sorted[index]
     }
 
     private fun SwipeTraceRecord.toMiss(suggestions: List<String>): SwipeTraceMiss {
