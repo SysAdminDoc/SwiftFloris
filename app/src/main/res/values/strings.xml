@@ -888,7 +888,7 @@
     <string name="settings__keyboard__custom_layout_editor__add_key" comment="Custom layout editor button label">Add key</string>
     <string name="settings__keyboard__custom_layout_editor__add_row" comment="Custom layout editor button label">Add row</string>
     <string name="settings__keyboard__custom_layout_editor__delete_row" comment="Custom layout editor button label">Delete row</string>
-    <string name="settings__keyboard__custom_layout_editor__saved" comment="Custom layout editor saved message">Saved as %1$s. Select it in a subtype\'s character layout list.</string>
+    <string name="settings__keyboard__custom_layout_editor__saved" comment="Custom layout editor saved message">Saved as {component_id}. Select it in a subtype\'s character layout list.</string>
     <string name="settings__keyboard__custom_layout_editor__error_blank_label" comment="Custom layout editor validation error">Enter a layout name.</string>
     <string name="settings__keyboard__custom_layout_editor__error_invalid_id" comment="Custom layout editor validation error">The generated layout ID is invalid.</string>
     <string name="settings__keyboard__custom_layout_editor__error_duplicate_id" comment="Custom layout editor validation error">A layout with this generated ID already exists.</string>

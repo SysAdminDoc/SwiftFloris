@@ -70,6 +70,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.stringRes
+import org.florisboard.lib.kotlin.curlyFormat
 
 private data class SelectedLayoutKey(
     val rowIndex: Int = 0,
@@ -144,6 +145,8 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
     val validation = activeDraft?.let {
         CustomLayoutEditorPolicy.validate(it, existingComponentIds)
     }
+    val savedMessageTemplate = stringRes(R.string.settings__keyboard__custom_layout_editor__saved)
+    val fallbackErrorTitle = stringRes(R.string.error__title)
 
     bottomBar {
         FlorisButtonBar {
@@ -172,14 +175,13 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
                 scope.launch {
                     repository.saveLocalLayout(draftToSave, existingComponentIds)
                         .onSuccess { componentName ->
-                            statusMessage = context.getString(
-                                R.string.settings__keyboard__custom_layout_editor__saved,
-                                componentName.componentId,
+                            statusMessage = savedMessageTemplate.curlyFormat(
+                                "component_id" to componentName.componentId,
                             )
                         }
                         .onFailure { error ->
                             statusMessage = error.localizedMessage ?: error.message
-                                ?: context.getString(R.string.error__title)
+                                ?: fallbackErrorTitle
                         }
                     isSaving = false
                 }
