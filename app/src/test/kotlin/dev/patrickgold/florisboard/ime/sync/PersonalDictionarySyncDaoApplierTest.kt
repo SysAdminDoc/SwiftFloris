@@ -133,6 +133,7 @@ private class FakeUserDictionaryDao : UserDictionaryDao {
     override fun query(word: String, locale: FlorisLocale?): List<UserDictionaryEntry> = fail("query(word, locale)")
     override fun queryShortcut(shortcut: String): List<UserDictionaryEntry> = fail("queryShortcut")
     override fun queryShortcut(shortcut: String, locale: FlorisLocale?): List<UserDictionaryEntry> = fail("queryShortcut")
+    override fun queryAllReadOnlyTransaction(): List<UserDictionaryEntry> = fail("queryAllReadOnlyTransaction")
     override fun queryAll(locale: FlorisLocale?): List<UserDictionaryEntry> = fail("queryAll(locale)")
     override fun queryExact(word: String): List<UserDictionaryEntry> = fail("queryExact(word)")
     override fun queryExactFuzzyLocale(word: String, locale: FlorisLocale?): List<UserDictionaryEntry> =

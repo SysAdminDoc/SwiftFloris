@@ -153,10 +153,11 @@ class ImeEndToEndSmokeTest {
             ),
         )
         val keyboardDevices = InputDevice.getDeviceIds()
+            .asSequence()
             .mapNotNull { deviceId -> InputDevice.getDevice(deviceId) }
             .filter { device ->
                 device.keyboardType != InputDevice.KEYBOARD_TYPE_NONE &&
-                    device.sources and InputDevice.SOURCE_KEYBOARD == InputDevice.SOURCE_KEYBOARD
+                    (device.sources and InputDevice.SOURCE_KEYBOARD) == InputDevice.SOURCE_KEYBOARD
             }
             .joinToString(separator = ";", prefix = "[", postfix = "]") { device ->
                 "id=${device.id},name=${device.name},type=${device.keyboardType}," +

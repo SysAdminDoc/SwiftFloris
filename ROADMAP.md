@@ -11,13 +11,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Add SQLCipher and Room runtime compatibility sentinel
-  Why: SwiftFloris uses Room 2.8.4 plus SQLCipher 4.16.0 for the encrypted personal dictionary, and SQLCipher issue #81 reports a Room 2.8.4 runtime compatibility gap around read-only transactions.
-  Evidence: `gradle/libs.versions.toml`; `DictionaryManager.kt`; `PersonalDictionaryEncryptionTest.kt`; https://github.com/sqlcipher/sqlcipher-android/issues/81.
-  Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/ime/dictionary/`, `DictionaryManager.kt`, `gradle/libs.versions.toml` if a pin/rollback is required.
-  Acceptance: a JVM/Robolectric or instrumented sentinel opens the encrypted dictionary through Room + SQLCipher, performs read/write and read-only DAO transactions, covers migration/open-helper setup, and fails with a clear remediation if the current pair is incompatible.
-  Complexity: M
-
 - [ ] P1 — Move personal dictionary Room access off the main thread
   Why: `allowMainThreadQueries()` remains on the personal dictionary path, and typing/dictionary work should not risk UI stalls during IME use.
   Evidence: `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt:397`; `DictionaryManager.kt:410`; `docs/THREAT_MODEL.md` known-gap table.

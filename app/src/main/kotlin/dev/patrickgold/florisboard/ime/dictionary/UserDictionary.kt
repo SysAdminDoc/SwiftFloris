@@ -30,6 +30,7 @@ import androidx.room.Insert
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.TypeConverter
 import androidx.room.TypeConverters
 import androidx.room.Update
@@ -102,6 +103,10 @@ interface UserDictionaryDao {
 
     @Query(SELECT_ALL_FROM_WORDS)
     fun queryAll(): List<UserDictionaryEntry>
+
+    @Transaction
+    @Query(SELECT_ALL_FROM_WORDS)
+    fun queryAllReadOnlyTransaction(): List<UserDictionaryEntry>
 
     @Query("$SELECT_ALL_FROM_WORDS WHERE (${UserDictionary.Words.LOCALE} = :locale AND :locale IS NOT NULL) OR (${UserDictionary.Words.LOCALE} IS NULL AND :locale IS NULL)")
     fun queryAll(locale: FlorisLocale?): List<UserDictionaryEntry>
@@ -395,6 +400,10 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
                 selectionArgs = null,
                 sortOrder = SORT_BY_FREQ_DESC,
             )
+        }
+
+        override fun queryAllReadOnlyTransaction(): List<UserDictionaryEntry> {
+            return queryAll()
         }
 
         override fun queryAll(locale: FlorisLocale?): List<UserDictionaryEntry> {
