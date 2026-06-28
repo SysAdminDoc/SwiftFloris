@@ -84,3 +84,44 @@ gated on external deliverables or hardware testing live in
   Touches: `CLAUDE.md`, `CONTRIBUTING.md`, `README.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/`.
   Acceptance: a local checker scans live non-archive Markdown for missing local-file links and forbidden canonical-source references; docs route contributors to the actual canonical sources (`README.md`, `ROADMAP.md`, `RESEARCH.md`, fastlane changelogs, and `Roadmap_Blocked.md`); README current-release/highlight labels are verified against `gradle.properties` and fastlane changelog files; archive/historical docs are excluded intentionally.
   Complexity: S
+
+### P1
+
+- [ ] P1 - Cap clipboard text preview rendering without truncating stored content
+  Why: unbounded clipboard text rendering can freeze or crash the IME surface when a user stores a very large text clip.
+  Evidence: FlorisBoard PR #3303; `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt` renders `item.displayText()` directly in `ClipItemView`.
+  Touches: `ime/clipboard/ClipboardInputLayout.kt`, clipboard UI tests, Roborazzi clipboard surfaces, string resources if the clipped state needs copy.
+  Acceptance: text clipboard tiles and popups render a bounded preview with ellipsis/copy-safe accessibility text; paste/export still uses the full stored value; a regression test covers an oversized text clip and proves composition/render policy does not allocate or measure the full string repeatedly.
+  Complexity: S
+
+### P2
+
+- [ ] P2 - Add physical-keyboard Smartbar-only mode
+  Why: desktop and USB/Bluetooth keyboard users still need suggestions, clipboard, undo/redo, language switching, and touch-keyboard toggle actions even when the touch keyboard itself is hidden.
+  Evidence: FUTO Keyboard PR #2138 and issue #2137; `FlorisImeService.onEvaluateInputViewShown()` and `PhysicalKeyboardPolicy.inputViewVisibilityDecision()` currently suppress the whole input view when hardware keyboard is available.
+  Touches: `FlorisImeService.kt`, `PhysicalKeyboardPolicy.kt`, Smartbar/action layout components, physical-keyboard settings, policy tests, IME window tests.
+  Acceptance: with a hardware keyboard and show-on-screen-keyboard disabled, SwiftFloris can show a compact Smartbar/action surface without the touch keyboard; a visible toggle restores the full touch keyboard; pure policy tests cover preference on/off, no hardware keyboard, hardware keyboard, and desktop/tablet form-factor cases.
+  Complexity: M
+
+- [ ] P2 - Make custom layouts row-count-aware with stable popup anchoring
+  Why: 4-row custom layouts are common for minority-language and number-row workflows, and competitor issue traffic shows fixed-height shrinkage plus shifted long-press popups break muscle memory.
+  Evidence: HeliBoard issues #2542 and #2543; `CustomLayoutEditorPolicy.kt` supports adding rows, while `TextKeyboard.kt` lays runtime rows into the current keyboard height without an explicit row-count sizing contract.
+  Touches: `app/settings/keyboard/CustomLayoutEditorPolicy.kt`, `ime/text/keyboard/TextKeyboard.kt`, `TextKeyboardLayout.kt`, popup mapping/layout tests, custom-layout editor UI tests.
+  Acceptance: 3-row layouts preserve current sizing; 4-row custom layouts gain proportional height or an explicit per-layout height policy; popup mappings remain anchored to their intended base keys; tests cover 3-row, 4-row, number-row, and popup-origin behavior.
+  Complexity: M
+
+- [ ] P2 - Upgrade AboutLibraries to the stable 15.x line
+  Why: the repo intentionally skipped the 15.0 beta, but Maven Central now publishes stable AboutLibraries 15.0.2 while SwiftFloris remains on 14.2.0.
+  Evidence: `gradle/libs.versions.toml`; Maven metadata for `com.mikepenz:aboutlibraries-core` latest `15.0.2`; README v1.8.69 release note says only the beta was skipped.
+  Touches: `gradle/libs.versions.toml`, `app/build.gradle.kts`, `app/src/main/config/libraries/`, third-party license screen/tests, public dependency docs.
+  Acceptance: AboutLibraries core/compose/plugin bump to 15.0.2 or the latest stable 15.x available at implementation time; generated license metadata and third-party license UI still build; unit/lint/assemble pass; docs and dependency drift checker reflect the new pin.
+  Complexity: S
+
+### P3
+
+- [ ] P3 - Add offline sticker-pack import and share-to-sticker creation
+  Why: SwiftFloris already supports SAF sticker folders, but users coming from proprietary keyboards expect quick sticker creation and portable local sticker packs without GIF/network dependencies.
+  Evidence: HeliBoard issue #2587; `ime/media/sticker/` user-imported folder support; README sticker posture.
+  Touches: `ime/media/sticker/`, media settings, SAF import/export helpers, MIME validation, backup/restore inclusion, sticker tests and docs.
+  Acceptance: users can share a local image into SwiftFloris as a sticker and import/export a local sticker-pack archive with a small manifest; unsupported/oversized files fail with diagnostics; no network permission or remote catalog is introduced.
+  Complexity: M
