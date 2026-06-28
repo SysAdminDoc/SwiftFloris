@@ -77,3 +77,10 @@ gated on external deliverables or hardware testing live in
   Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/`, `app/src/test/snapshots/`, new `@RoboPreviewInclude` previews where appropriate.
   Acceptance: Roborazzi baselines cover custom layout editor, snippets, privacy audit, sync, backup, and restore in dark and high-contrast-relevant states; `:app:verifyRoborazziDebug` passes.
   Complexity: M
+
+- [ ] P2 — Add live-doc canonical-source and release-state integrity check
+  Why: contributor-facing docs still reference missing canonical files and stale release-state labels, which is separate from dependency-version drift and can mislead autonomous agents, contributors, and release reviewers.
+  Evidence: `AGENTS.md`, `CHANGELOG.md`, `PROJECT_CONTEXT.md`, and `.github/workflows` are absent; `CLAUDE.md`, `CONTRIBUTING.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, `.github/PULL_REQUEST_TEMPLATE.md`, and `README.md` still reference those paths or stale v1.9.52 release-state text.
+  Touches: `CLAUDE.md`, `CONTRIBUTING.md`, `README.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/`.
+  Acceptance: a local checker scans live non-archive Markdown for missing local-file links and forbidden canonical-source references; docs route contributors to the actual canonical sources (`README.md`, `ROADMAP.md`, `RESEARCH.md`, fastlane changelogs, and `Roadmap_Blocked.md`); README current-release/highlight labels are verified against `gradle.properties` and fastlane changelog files; archive/historical docs are excluded intentionally.
+  Complexity: S
