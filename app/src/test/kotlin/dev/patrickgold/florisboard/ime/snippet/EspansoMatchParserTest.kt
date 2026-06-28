@@ -100,4 +100,33 @@ class EspansoMatchParserTest : FunSpec({
         match.trigger shouldBe ":abc"
         match.replace shouldBe "hello world"
     }
+
+    test("diagnostics report skipped entries with blank triggers") {
+        val yaml = """
+            matches:
+              - trigger: ""
+                replace: "should be skipped"
+              - trigger: ":ok"
+                replace: "kept"
+        """.trimIndent()
+        val result = EspansoMatchParser.parseWithDiagnostics(yaml)
+        result.matches.size shouldBe 1
+        result.diagnostics.skippedCount shouldBe 1
+        result.diagnostics.hasSkipped shouldBe true
+        result.diagnostics.details.size shouldBe 1
+    }
+
+    test("diagnostics report zero skipped for clean input") {
+        val yaml = """
+            matches:
+              - trigger: ":a"
+                replace: "alpha"
+              - trigger: ":b"
+                replace: "beta"
+        """.trimIndent()
+        val result = EspansoMatchParser.parseWithDiagnostics(yaml)
+        result.matches.size shouldBe 2
+        result.diagnostics.skippedCount shouldBe 0
+        result.diagnostics.hasSkipped shouldBe false
+    }
 })

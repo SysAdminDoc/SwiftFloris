@@ -11,13 +11,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 — Bump Gradle wrapper to 9.6.1 with checksum verification
-  Why: Gradle 9.6.1 is current and provides the latest build-tool fixes while the repo remains on 9.5.1.
-  Evidence: `gradle/wrapper/gradle-wrapper.properties`; `https://services.gradle.org/versions/current`.
-  Touches: `gradle/wrapper/gradle-wrapper.properties`, `docs/REPRODUCIBLE_BUILDS.md`, local verification docs.
-  Acceptance: wrapper distribution URL and SHA-256 update together; wrapper validation/build/test/lint/assemble pass with JDK 21; reproducible-build documentation reflects the new pin.
-  Complexity: S
-
 - [ ] P2 — Surface skipped-record diagnostics for snippet and layout imports
   Why: competitor/community issue traffic shows import/migration/layout quality matters, and SwiftFloris dictionary import already reports skipped counts while Espanso snippets and hardware layout parsers can silently tolerate malformed lines.
   Evidence: `EspansoMatchParser.kt`; `KlcLayoutParser.kt`; `SwipeTraceImporter.kt`; `PersonalDictionaryImportSummaryDialog.kt`; HeliBoard issue traffic around imports/customization.

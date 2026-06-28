@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.hardware
 
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
+
 /**
  * ROADMAP §7 Next-6.4 — Windows `.klc` (Microsoft Keyboard Layout Creator)
  * import parser, scaffold pass.
@@ -48,11 +50,21 @@ object KlcLayoutParser {
      * Returns [HardwareKeyboardLayout.Empty] when the input has no resolvable
      * LAYOUT rows.
      */
-    fun parse(klcText: String): HardwareKeyboardLayout {
+    data class ParseResult(
+        val layout: HardwareKeyboardLayout,
+        val diagnostics: ImportDiagnostics,
+    )
+
+    fun parse(klcText: String): HardwareKeyboardLayout = parseWithDiagnostics(klcText).layout
+
+    fun parseWithDiagnostics(klcText: String): ParseResult {
         var name = ""
         var locale = ""
         val scancodeMap = LinkedHashMap<Int, HardwareKeyEntry>()
         var section: Section = Section.UNKNOWN
+        var skippedCount = 0
+        val skippedDetails = mutableListOf<String>()
+        var layoutLineIndex = 0
 
         for (rawLine in klcText.lineSequence()) {
             val line = rawLine.trim().trimStart('\uFEFF')
@@ -91,16 +103,30 @@ object KlcLayoutParser {
                 "ENDKBD" -> break
                 else -> {
                     if (section == Section.LAYOUT) {
-                        parseLayoutRow(line)?.let { (sc, entry) -> scancodeMap[sc] = entry }
+                        layoutLineIndex++
+                        val row = parseLayoutRow(line)
+                        if (row != null) {
+                            scancodeMap[row.first] = row.second
+                        } else {
+                            skippedCount++
+                            skippedDetails += "LAYOUT row $layoutLineIndex: malformed"
+                        }
                     }
                 }
             }
         }
-        if (scancodeMap.isEmpty()) return HardwareKeyboardLayout.Empty
-        return HardwareKeyboardLayout(
-            name = name,
-            locale = locale,
-            scancodeMap = scancodeMap.toMap(),
+        val layout = if (scancodeMap.isEmpty()) {
+            HardwareKeyboardLayout.Empty
+        } else {
+            HardwareKeyboardLayout(
+                name = name,
+                locale = locale,
+                scancodeMap = scancodeMap.toMap(),
+            )
+        }
+        return ParseResult(
+            layout = layout,
+            diagnostics = ImportDiagnostics(skippedCount, skippedDetails),
         )
     }
 

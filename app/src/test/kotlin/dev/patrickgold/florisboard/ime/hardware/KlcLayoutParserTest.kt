@@ -137,4 +137,26 @@ class KlcLayoutParserTest : FunSpec({
         val layout = KlcLayoutParser.parse(klc)
         layout shouldBe HardwareKeyboardLayout.Empty
     }
+
+    test("diagnostics report malformed LAYOUT rows") {
+        val klc = """
+            KBD	"MIX"	"Mixed-rows"
+            LOCALENAME	"en-US"
+            LAYOUT
+            1E	A	1	0061	0041
+            not-valid
+            ENDKBD
+        """.trimIndent()
+        val result = KlcLayoutParser.parseWithDiagnostics(klc)
+        result.layout.scancodeMap.size shouldBe 1
+        result.diagnostics.skippedCount shouldBe 1
+        result.diagnostics.hasSkipped shouldBe true
+    }
+
+    test("diagnostics report zero skipped for clean layouts") {
+        val result = KlcLayoutParser.parseWithDiagnostics(SAMPLE_KLC)
+        result.layout.scancodeMap.size shouldBe 9
+        result.diagnostics.skippedCount shouldBe 0
+        result.diagnostics.hasSkipped shouldBe false
+    }
 })

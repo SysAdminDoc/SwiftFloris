@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.snippet
 
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
+
 /**
  * ROADMAP §7 L11 — Espanso (https://espanso.org) snippet config importer.
  *
@@ -52,10 +54,20 @@ object EspansoMatchParser {
      * malformed. Never throws — invalid lines are silently skipped so a
      * mistyped trigger doesn't blow up the whole import.
      */
-    fun parse(yaml: String): List<EspansoMatch> {
+    data class ParseResult(
+        val matches: List<EspansoMatch>,
+        val diagnostics: ImportDiagnostics,
+    )
+
+    fun parse(yaml: String): List<EspansoMatch> = parseWithDiagnostics(yaml).matches
+
+    fun parseWithDiagnostics(yaml: String): ParseResult {
         val lines = yaml.lines()
         var inMatchesBlock = false
         val results = mutableListOf<EspansoMatch>()
+        var skippedCount = 0
+        val skippedDetails = mutableListOf<String>()
+        var entryIndex = 0
 
         // Mutable state for the current match in progress.
         var trigger: String? = null
@@ -74,6 +86,9 @@ object EspansoMatchParser {
             val tg = trigger
             if (tg != null && tg.isNotBlank()) {
                 results += EspansoMatch(tg, finalReplace)
+            } else if (tg != null || finalReplace.isNotEmpty()) {
+                skippedCount++
+                skippedDetails += "Entry $entryIndex: missing or blank trigger"
             }
             trigger = null
             replace = ""
@@ -119,6 +134,7 @@ object EspansoMatchParser {
             if (trimmed.startsWith("- ")) {
                 // New list item. Commit whatever the previous match held.
                 emit()
+                entryIndex++
                 val first = trimmed.removePrefix("- ").trim()
                 applyKv(first) { key, value ->
                     when (key) {
@@ -156,7 +172,10 @@ object EspansoMatchParser {
             }
         }
         emit()
-        return results
+        return ParseResult(
+            matches = results,
+            diagnostics = ImportDiagnostics(skippedCount, skippedDetails),
+        )
     }
 
     private inline fun applyKv(line: String, sink: (key: String, value: String) -> Unit) {
