@@ -1,6 +1,6 @@
 # SwiftFloris Threat Model
 
-**Last updated:** 2026-06-25 (v1.9.52)
+**Last updated:** 2026-06-28 (v1.9.53)
 **Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules — none ship today, none are planned).
 **Audience:** maintainers, reviewers, and security-conscious users evaluating SwiftFloris vs proprietary keyboards.
 

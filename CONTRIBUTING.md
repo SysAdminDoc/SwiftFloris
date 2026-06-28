@@ -146,17 +146,15 @@ alone.
 Versioned releases use:
 
 - `gradle.properties` version code/name bump.
-- A new `## vX.Y.Z` section in root `CHANGELOG.md` with an
-  `<a id="vX.Y.Z"></a>` anchor.
 - A matching `fastlane/metadata/android/en-US/changelogs/<versionCode>.txt`
-  file.
+  file (the tracked release-notes source).
 - Updates to `README.md` and `ROADMAP.md` when user-facing state changes.
 - A local annotated tag for the release commit.
 
 Draft the Fastlane changelog as the short store-facing summary: keep it at or
 below 480 characters for headroom, summarize the verified outcome, and avoid
-test commands, file paths, internal-only IDs, or claims not backed by the full
-`CHANGELOG.md` section. The detailed rule lives in
+test commands, file paths, internal-only IDs, or claims not backed by the
+`README.md` release section. The detailed rule lives in
 [`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md).
 
 Docs-only housekeeping commits do not need a version bump unless they are being
