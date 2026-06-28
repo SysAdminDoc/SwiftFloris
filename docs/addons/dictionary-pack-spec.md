@@ -71,7 +71,7 @@ list, every addon APK must also satisfy the 16 KB native-library
 alignment requirement and the bundle-size / signing-certificate / receiver
 checks documented in [`apk-validation.md`](apk-validation.md). Addon repos
 should adopt [`scripts/verify-addon-apk.sh`](../../scripts/verify-addon-apk.sh)
-as a CI gate so failures surface before publication rather than at user
+as a local release gate so failures surface before publication rather than at user
 enrolment time.
 
 ## 2. Descriptor JSON (`res/raw/dict_descriptor.json`)
@@ -182,8 +182,8 @@ startup and Settings rescans can expose newly mounted packs to the loader.
 
 A host-verifiable reference dictionary-pack fixture lives at
 `addons/dictionary-pack-sample/`. It intentionally ships a tiny Esperanto
-fixture dictionary rather than a production dataset, so CI can build a signed
-APK and run `scripts/verify-addon-apk.sh` without device enrollment or external
+fixture dictionary rather than a production dataset, so maintainers can build a
+signed APK and run `scripts/verify-addon-apk.sh` without device enrollment or external
 data. Production language packs should keep their larger datasets in separate
 addon repositories and copy the same manifest, descriptor, signing, and
 verification shape. Validation can also be exercised in unit tests via

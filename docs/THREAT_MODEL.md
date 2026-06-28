@@ -197,8 +197,9 @@ Out of scope:
   (N7.5). Users can compare the SHA-256 against the value pinned in the README
   to detect a swap.
 - First-party build-twice APK self-verification exists in
-  `.github/workflows/reproducible-build.yml`; F-Droid verified rebuild remains
-  the public distribution target.
+  `scripts/verify-reproducible-apk.sh` and is composed by
+  `scripts/release-evidence.ps1`; F-Droid verified rebuild remains the public
+  distribution target.
 
 ### 3.8 CAKI (cross-app KeyEvent injection)
 - IME does not expose AIDL services beyond the platform `InputMethodService`.
@@ -236,9 +237,9 @@ Out of scope:
 ## 5. Verification checklist (run on every release)
 
 - [ ] `aapt dump permissions app-release.apk` shows only `VIBRATE`, `POST_NOTIFICATIONS` (and any new ones must be justified in the release notes + threat model).
-- [ ] `:app:verifyNoInternetPermission` passes during CI.
-- [ ] `PersonalDictionaryIsolationTest` passes during CI.
-- [ ] `PersonalDictionaryEncryptionTest` passes during CI.
+- [ ] `:app:verifyNoInternetPermission` passes locally.
+- [ ] `PersonalDictionaryIsolationTest` passes locally.
+- [ ] `PersonalDictionaryEncryptionTest` passes locally.
 - [ ] APK signing fingerprint matches the value pinned in README (release-build only; debug builds use a per-developer keystore).
 - [ ] No new `TODO()` runtime stubs introduced (lint check or grep).
 

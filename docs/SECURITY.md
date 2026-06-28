@@ -5,14 +5,13 @@ This document explains SwiftFloris's release-time security posture, the dependen
 
 ## At a glance
 
-- SwiftFloris does not request the `INTERNET` permission. CI verifies this on every build via
+- SwiftFloris does not request the `INTERNET` permission. The local release evidence command verifies this via
   `:app:verifyNoInternetPermission`.
 - Local sensitive stores use Android platform keys: the SQLCipher personal-dictionary passphrase is wrapped with
   Tink `Aead` and AndroidKeystore-held AES-256-GCM keys.
-- The Gradle dependency tree is scanned for known CVEs on a weekly cron, on every change to a version-bearing build
-  file, and again at release time.
-- Every GitHub Release body carries an "OSV scan" appendix that records the scanner version, the date the scan ran,
-  and either "0 known vulnerabilities" or the count + identifiers.
+- The Gradle dependency tree is scanned for known CVEs during local release evidence collection.
+- Every GitHub Release body should carry an "OSV scan" appendix from `build/release-evidence/<timestamp>/` that
+  records the scanner version, the date the scan ran, and either "0 known vulnerabilities" or the count + identifiers.
 
 A clean OSV scan does **not** imply forever-immunity. CVEs are published continuously, and a clean check on release
 day will not catch a vulnerability disclosed the day after. The dated stamp lets users reason about how stale the
@@ -26,7 +25,7 @@ handling, or any other path that can expose typed text, personal dictionaries, c
 trust, or device-local settings.
 
 Reports about upstream dependencies are still useful, but the primary fix usually belongs upstream. File those with
-the affected Android, AndroidX, Compose, Kotlin, Room, SQLCipher, Tink, Gradle, or GitHub Actions project first, then
+the affected Android, AndroidX, Compose, Kotlin, Room, SQLCipher, Tink, or Gradle project first, then
 link the advisory in a SwiftFloris issue if SwiftFloris needs an emergency pin, workaround, or release note.
 
 ## Reporting channel
@@ -55,7 +54,7 @@ handoff. This document focuses on the dependency and supply-chain side of that p
 ## Local key storage
 
 As of v1.8.68, SwiftFloris no longer depends on AndroidX Security Crypto's deprecated
-`EncryptedSharedPreferences` APIs. `TinkStringPreferenceCrypto` uses Tink Android `1.21.0`, creates
+`EncryptedSharedPreferences` APIs. `TinkStringPreferenceCrypto` uses Tink Android `1.22.0`, creates
 AndroidKeystore-held AES-256-GCM wrapping keys, and binds ciphertext to the `prefsFile:key` associated-data tuple.
 Reads of existing ciphertext do not generate replacement Keystore keys; missing keys fail closed and writes are the
 only path that create a new wrapper key.
@@ -81,38 +80,12 @@ planning docs until they are ready for public review.
 
 ## Dependency scanning
 
-### Weekly + on-change scan (`.github/workflows/dependency-scan.yml`)
+### Local release scan
 
-The dependency-scan workflow runs three independent checks:
-
-1. **GitHub Dependency Review** — runs on pull requests. Fails the workflow on `severity = high`.
-2. **OSV-Scanner** — runs on push to `main` / `master`, on weekly cron (Sundays 06:00 UTC), and on every change to a
-   version-bearing build file. Reads `gradle/libs.versions.toml`, `gradle/tools.versions.toml`, every `build.gradle.kts`,
-   `settings.gradle.kts`, and the `:app:releaseRuntimeClasspath` dependency tree.
-3. **Gradle dependency tree upload** — uploads the full `:app:dependencies` output as a workflow artifact so any
-   reviewer can re-run the scan offline against the exact transitive closure that shipped.
-
-The scan job's failure threshold is **any HIGH or CRITICAL CVE in a runtime-classpath dependency**. MEDIUM and below
-are reported but non-blocking, so we can publish releases with known-low-severity issues if the upstream fix is not
-yet available.
-
-### Weekly version-review PRs (`.github/dependabot.yml`)
-
-Dependabot version updates run weekly for Gradle and GitHub Actions manifests.
-The Gradle update scope includes `gradle/libs.versions.toml`, custom catalog
-imports from `settings.gradle.kts`, and module build files; GitHub Actions
-updates cover workflow action references under `.github/workflows/`. These PRs
-are review prompts, not auto-merge rules: maintainers review runtime impact,
-license compatibility, changelogs, and security advisories before accepting
-any bump.
-
-### Release-time scan (`.github/workflows/release.yml`)
-
-The release workflow runs an additional OSV scan as part of the release pipeline. The scan summary (count, scanner
-version, scan date, and any flagged advisory IDs) is captured into `RELEASE_OSV_SUMMARY.md` in the workflow runner
-and appended to the GitHub Release body. The result is reproducible — anyone can re-run `osv-scanner --recursive ./`
-locally against the source tree at the matching tag and expect the same advisory set, modulo CVEs disclosed after the
-release date.
+`scripts/release-evidence.ps1` runs OSV-Scanner locally while collecting release evidence. The scan reads
+`gradle/libs.versions.toml`, `gradle/tools.versions.toml`, every `build.gradle.kts`, `settings.gradle.kts`, and the
+resolved Gradle metadata available in the checkout. It writes `osv-result.json`, command logs, and a plain-text
+summary under `build/release-evidence/<timestamp>/`.
 
 If the release-time scan finds a HIGH or CRITICAL advisory, `scripts/osv-release-gate.py` blocks the release. The
 gate parses `osv-result.json`, classifies each finding by CVSS score or database severity, and exits non-zero for any
@@ -120,29 +93,10 @@ unoverridden HIGH/CRITICAL match. LOW and MEDIUM findings are summarized but non
 
 To override a blocking advisory (e.g. not reachable, awaiting upstream fix), add an entry to `.github/osv-overrides.json`
 with the advisory `id`, `severity`, `rationale`, `owner`, and `expiry` (YYYY-MM-DD). Expired overrides are ignored and
-produce a CI warning. The override file is committed and auditable.
+produce a local warning. The override file is committed and auditable.
 
-### Provenance attestation (`.github/workflows/release.yml`)
-
-Every release APK receives a SLSA Build Level 2 provenance attestation via
-`actions/attest-build-provenance`. The attestation is stored in the GitHub
-attestation store and can be verified by anyone:
-
-```bash
-gh attestation verify SwiftFloris-*.apk --repo SysAdminDoc/SwiftFloris
-```
-
-This proves the APK was built by the release workflow from a specific commit on
-the `SysAdminDoc/SwiftFloris` repository, not uploaded manually or built on an
-uncontrolled machine. The OIDC identity token binds the attestation to the GitHub
-Actions runner that produced the artifact.
-
-### SBOM (`.github/workflows/release.yml`)
-
-Each release includes an SPDX JSON SBOM (`swiftfloris-sbom.spdx.json`) generated
-by `anchore/sbom-action`. The SBOM catalogues every first-party and third-party
-component in the source tree at build time. It is attached to the GitHub Release
-alongside the APK and SHA256SUMS manifest.
+SwiftFloris currently publishes local release evidence, APK hashes, and OSV summaries. It does not claim automated
+remote attestation or component-inventory generation for current releases.
 
 ## What "clean" means
 
@@ -161,11 +115,12 @@ so readers can check severity, exploit vector, and patch availability without re
 
 ```bash
 # Install osv-scanner (see https://google.github.io/osv-scanner/)
-go install github.com/google/osv-scanner/cmd/osv-scanner@v2.0.2
+go install github.com/google/osv-scanner/v2/cmd/osv-scanner@latest
 
 # From the repository root
 ./gradlew :app:dependencies --configuration releaseRuntimeClasspath > gradle-deps.txt
-osv-scanner --recursive --skip-git ./
+osv-scanner scan source -r --format json --output-file build/release-evidence/manual-osv-result.json ./
+python scripts/osv-release-gate.py build/release-evidence/manual-osv-result.json
 ```
 
 The recursive scan covers the lockfiles, the Gradle files, the dependency-tree dump, and any vendored manifests.

@@ -9,15 +9,6 @@ gated on external deliverables or hardware testing live in
 
 ## Research-Driven Additions
 
-### P0
-
-- [ ] P0 — Replace workflow-era release proof with local release evidence
-  Why: live public docs still promise GitHub Actions, Dependabot, workflow-backed scans, release attestations, SBOMs, and CI smoke gates even though `.github/workflows` is absent after local-build-only cleanup.
-  Evidence: `.github/` contains no workflows; `README.md:59`, `README.md:69`, `README.md:320`, `docs/SECURITY.md:84`, `docs/REPRODUCIBLE_BUILDS.md:32`, `docs/PRIVACY_AND_AI.md:305`, `docs/BENCHMARKS.md:51`, `.github/PULL_REQUEST_TEMPLATE.md:7`, recent commit `73dc7d15`.
-  Touches: `README.md`, `docs/SECURITY.md`, `docs/REPRODUCIBLE_BUILDS.md`, `docs/PRIVACY_AND_AI.md`, `docs/BENCHMARKS.md`, `docs/addons/apk-validation.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/`.
-  Acceptance: one local command produces release evidence for no-network, backup/data-extraction, Fastlane/release freshness, OSV severity gate, repo hygiene, lint/test/build inputs, and reproducible APK verification; live docs no longer claim GitHub Actions/Dependabot/SLSA/SBOM automation except archived historical notes; `rg "GitHub Actions|workflow|Dependabot|SLSA|SBOM|CI" README.md docs .github -g "*.md" -g "*.yml"` has only current local-build wording or archive/history hits.
-  Complexity: L
-
 ### P1
 
 - [ ] P1 — Add SQLCipher and Room runtime compatibility sentinel

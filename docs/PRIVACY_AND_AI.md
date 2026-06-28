@@ -302,12 +302,11 @@ Three independent ways to audit the no-network promise:
    only `VIBRATE` + `POST_NOTIFICATIONS` (and optionally
    `BIND_NOTIFICATION_LISTENER` if you've enabled the app-aware smartbar).
    Crucially: no `INTERNET`, no `ACCESS_NETWORK_STATE`, no `WiFi`.
-2. **The CI build log** — every push runs `:app:verifyNoInternetPermission`
-   and fails if any `AndroidManifest.xml` declares a network permission.
-   GitHub Actions log is public.
-3. **OSV-Scanner weekly cron** — runs against the full transitive
-   dependency tree. If any dependency would silently bring in a network
-   capability, the scan picks it up.
+2. **The local release evidence log** — `scripts/release-evidence.ps1` runs
+   `:app:verifyNoInternetPermission` and fails if any `AndroidManifest.xml`
+   declares a network permission.
+3. **The merged manifest** — build `:app:assembleRelease` and inspect
+   `app/build/intermediates/merged_manifest/release/AndroidManifest.xml`.
 
 ---
 

@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **CI / build** | No-network gate, repo-hygiene gate with module build-cache cleanup guidance, Fastlane changelog drafting guide, OSV dep scan, Dependabot version review, lint baseline-drift wrapper with no committed app lint baseline, startup crash recovery via the local crash dialog, restore/crash diagnostics routed through project logging with safe fallback copy, settings-search resource/route drift guard, MIME helper aggregate-contract tests, NativeStr ByteBuffer slice tests, localization/copy contract tests, post-hotfix regression coverage for Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes, phone/tablet/foldable emulator IME smoke, reproducible-build toolchain pins + build-twice APK self-check chained into release publication, Roborazzi visual-regression hard gate with committed theme/Addons baselines, Macrobenchmark trace sections in 6 hot paths, manual benchmark trend-regression report, and compatible dependency freshness through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.63.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, repo-hygiene, root-crash-log, no-network, data-extraction, unit-test, lint, release-assemble, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed theme/Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.64.0 | Audit-friendly |
 
 ## Distribution
 
@@ -66,10 +66,10 @@ SwiftFloris ships through GitHub Releases (canonical), Obtainium for GitHub-back
 
 - **Canonical source:** https://github.com/SysAdminDoc/SwiftFloris
 - **Package ID:** `io.github.sysadmindoc.swiftfloris`
-- **GitHub / Obtainium channel:** APKs are built by the release workflow, signed with the SwiftFloris release key, and published with a `SHA256SUMS` manifest.
-- **F-Droid channel:** prepared for fdroiddata submission with reproducible-build and no-network gates already in CI. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
-- **No-network proof:** CI fails if the merged app manifest declares `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`.
-- **Reproducibility proof:** the release workflow runs the build-twice APK verifier before signing and publishing, then attaches the APK hash manifest to the GitHub Release.
+- **GitHub / Obtainium channel:** APKs are built locally by the maintainer from the tagged source, signed with the SwiftFloris release key, and published with a `SHA256SUMS` manifest.
+- **F-Droid channel:** prepared for fdroiddata submission with local reproducible-build and no-network gates. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
+- **No-network proof:** the local release evidence command fails if the merged app manifest declares `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`.
+- **Reproducibility proof:** `scripts/release-evidence.ps1` runs the build-twice APK verifier and records APK hash evidence before publication.
 
 ### Option A — Obtainium (recommended for auto-updates)
 
@@ -174,12 +174,12 @@ Public project information is available in this README, [Security](docs/SECURITY
 
 - Kotlin 2.4.0, Compose BOM 2026.05.01, Material 3 + material-kolor.
 - AGP 9.2.1, Gradle 9.5.1, JDK 21.
-- KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.21.0.
-- Kotest 6.1.11 unit-test runner; Roborazzi 1.63.0 and Robolectric 4.16.1
+- KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
+- Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16, with Android 17 / API 37 behavior gates wired).
 - Crowdin pipeline for translations.
-- No `INTERNET` permission in the manifest (CI-enforced).
+- No `INTERNET` permission in the manifest (local release gate enforced).
 
 **Module layout**
 
@@ -224,7 +224,7 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
 # Unit tests (Kotest)
 ./gradlew test
 
-# Roborazzi screenshot verify (visual-regression CI)
+# Roborazzi screenshot verify (visual-regression gate)
 ./gradlew :app:verifyRoborazziDebug
 
 # Release-variant Roborazzi gate (run before publishing)
@@ -252,7 +252,7 @@ Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, 
 | `RECORD_AUDIO` | Not requested by SwiftFloris; the external voice keyboard owns microphone access | No |
 | `BIND_NOTIFICATION_LISTENER` | App-aware smartbar features | Optional |
 
-> **Privacy note:** SwiftFloris does not request `INTERNET`. CI validates this on every build.
+> **Privacy note:** SwiftFloris does not request `INTERNET`. The local release gate validates this before publication.
 
 ## Privacy & Security
 
@@ -312,17 +312,17 @@ Six Macrobenchmark trace sections are emitted from production code paths:
 - `swiftfloris.dict.load` (`loadSpecificDictionary`)
 - `swiftfloris.nlp.symspell.build` (lazy index init)
 
-Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`, dictionary cold-load / preload medians of 757.353333 ms / 772.080625 ms with lazy SymSpell d1/d2 index medians of 500.230156 ms / 532.298281 ms, candidate-row warm-typing recomposition median body / max / total of 0.326563 ms / 0.770365 ms / 4.069529 ms, theme-switch median body / max / total of 18.541197 ms / 19.587708 ms / 57.505571 ms with 0.2808075 ms cached warm switches, and backup/restore default-archive medians of 12.653698 ms backup create / 9.874167 ms restore total with 3/3 sections restored. The manual Benchmark Regression workflow compares candidate JSON against those baselines and fails watched medians above the documented +8 % window. The repository deliberately does not publish hand-wavy latency tables; numbers include the device, OS build, and trace section or log marker that produced them.
+Current SM-S938B / Android 16 baselines record `am start -W` first-render medians of `TotalTime` 31.0 ms and `WaitTime` 34.0 ms, benchmark-only `swiftfloris.ime.firstRenderMs` median 18.335469 ms, cold provider-direct `swiftfloris.nlp.firstSuggestionMs` median 1878.616249 ms for `teh`, dictionary cold-load / preload medians of 757.353333 ms / 772.080625 ms with lazy SymSpell d1/d2 index medians of 500.230156 ms / 532.298281 ms, candidate-row warm-typing recomposition median body / max / total of 0.326563 ms / 0.770365 ms / 4.069529 ms, theme-switch median body / max / total of 18.541197 ms / 19.587708 ms / 57.505571 ms with 0.2808075 ms cached warm switches, and backup/restore default-archive medians of 12.653698 ms backup create / 9.874167 ms restore total with 3/3 sections restored. The local benchmark trend checker compares candidate JSON against those baselines and fails watched medians above the documented +8 % window. The repository deliberately does not publish hand-wavy latency tables; numbers include the device, OS build, and trace section or log marker that produced them.
 
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
-- **Visual regression:** Roborazzi 1.63.0, plugin alias active. CI runs `:app:verifyRoborazziDebug` on every push / PR as a hard gate, and the release workflow runs `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
-- **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines. The manual Benchmark Regression workflow runs the adb suite, uploads candidate JSON, and compares watched medians against the committed baseline set.
-- **No-network gate:** CI verifies the absence of `INTERNET` permission on every build.
-- **Lint drift:** CI lint runs through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
-- **Emulator smoke:** The manual `Android Emulator Smoke` workflow runs the IME enable -> type -> commit -> glide smoke test on phone, tablet-sized API 36, and foldable-sized API 36 emulator lanes. The tablet/foldable lanes force the documented `UNIVERSAL_RESIZABLE_BY_DEFAULT` compat behavior that becomes mandatory for API 37 targets.
-- **Repo hygiene gate:** CI runs `scripts/check-no-root-crash-logs.sh` so root
+- **Visual regression:** Roborazzi 1.64.0, plugin alias active. Run `:app:verifyRoborazziDebug` for committed baselines and `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
+- **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines. `scripts/check-benchmark-trends.py` compares candidate JSON against the committed baseline set.
+- **No-network gate:** the local Gradle gate verifies the absence of `INTERNET` permission on every release build.
+- **Lint drift:** local lint can run through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
+- **Device smoke:** run the IME enable -> type -> commit -> glide smoke on phone, tablet-sized API 36, and foldable-sized API 36 emulator/device lanes when that behavior changes. The tablet/foldable lanes force the documented `UNIVERSAL_RESIZABLE_BY_DEFAULT` compat behavior that becomes mandatory for API 37 targets.
+- **Repo hygiene gate:** `scripts/release-evidence.ps1` runs `scripts/check-no-root-crash-logs.sh` so root
   `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed, and
   `scripts/check-repo-hygiene.sh` rejects tracked generated build/report output.
 
@@ -330,7 +330,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
-- **v1.9.53** (2026-06-25) — Roadmap drain: release-channel freshness is now a blocking CI gate, Tink 1.22.0 (security), deprecated `announceForAccessibility` migrated to Compose live-region, data-extraction rules verified by XML-parsed domain/path pairs, public trust docs tracked in git, destructive clipboard Room migrations replaced with row-preserving, addon provenance tap-to-copy JSON, one-tap privacy proof export, EditorInfo sensitive-field replay tests, keyboard layout JSON CI validation, and a new Snippet management Settings screen with Espanso YAML import.
+- **v1.9.53** (2026-06-25) — Roadmap drain: release-channel freshness is now a blocking local gate, Tink 1.22.0 (security), deprecated `announceForAccessibility` migrated to Compose live-region, data-extraction rules verified by XML-parsed domain/path pairs, public trust docs tracked in git, destructive clipboard Room migrations replaced with row-preserving, addon provenance tap-to-copy JSON, one-tap privacy proof export, EditorInfo sensitive-field replay tests, keyboard layout JSON validation, and a new Snippet management Settings screen with Espanso YAML import.
 - **v1.9.52** (2026-06-16) — Premium Settings polish: the Settings home now opens with one status-aware overview card, compact Search / Import / Privacy quick actions, and local-trust checks for no-network releases, local imports, and verifiable builds. Settings search now uses a calmer Material 3 field treatment and shows result counts before the list.
 - **v1.9.51** (2026-06-16) — Added spacebar touchpad cursor mode, migration assistant import guidance, source-code and release-verification links in Privacy posture, CLDR/Emoji version metadata gates, and the prepared F-Droid fdroiddata YAML recipe.
 - **v1.9.50** (2026-06-14) — Added a Terminal bottom-row preset with Esc / Ctrl / Alt / Home / End / Tab keys and verified keyboard magnification accessibility on API 36 across text, emoji, and touch input surfaces.

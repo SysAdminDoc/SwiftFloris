@@ -30,7 +30,7 @@ import sys
 from datetime import date
 from pathlib import Path
 
-OSV_RESULT = Path("osv-result.json")
+OSV_RESULT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("osv-result.json")
 OVERRIDES_FILE = Path(".github/osv-overrides.json")
 
 BLOCKING_SEVERITIES = {"HIGH", "CRITICAL"}

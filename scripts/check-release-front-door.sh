@@ -11,15 +11,14 @@
 #   1. gradle.properties declares projectVersionName and projectVersionCode
 #   2. Fastlane changelog for projectVersionCode exists and is non-empty
 #   3. README.md "Current release" line matches projectVersionName
-#   4. (CI-only, with gh available) latest GitHub Release tag matches
-#      projectVersionName, or the release workflow has not run yet (first
+#   4. (optional, with gh available) latest GitHub Release tag matches
+#      projectVersionName, or the publication step has not run yet (first
 #      release is allowed to be missing)
 #
 # The GitHub Release check is advisory by default because the release
-# workflow calls this script before creating the release.  Pass --strict
-# to promote the GitHub Release mismatch to a hard failure — normal CI
-# should use this flag so merged code that claims a version not yet
-# published is caught immediately.
+# evidence command can run before creating the release. Pass --strict
+# to promote the GitHub Release mismatch to a hard failure when checking
+# that a claimed version is already published.
 #
 # Local surfaces (gradle.properties, fastlane, README.md) are always
 # hard failures regardless of --strict.
@@ -124,15 +123,15 @@ if command -v gh >/dev/null 2>&1; then
 
   if [ -z "$latest_release" ]; then
     if $strict; then
-      fail "no GitHub Releases found — expected ${expected_tag}; run the release workflow or revert the version bump"
+      fail "no GitHub Releases found — expected ${expected_tag}; publish the release or revert the version bump"
     else
-      warn "no GitHub Releases found — expected ${expected_tag} (advisory — the release workflow will create it)"
+      warn "no GitHub Releases found — expected ${expected_tag} (advisory — publish the release after local evidence passes)"
     fi
   elif [ "$latest_release" != "$expected_tag" ]; then
     if $strict; then
-      fail "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag}; run the release workflow or revert the version bump"
+      fail "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag}; publish the release or revert the version bump"
     else
-      warn "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag} (advisory — the release workflow will create it)"
+      warn "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag} (advisory — publish the release after local evidence passes)"
     fi
   else
     echo "GitHub Release: OK (${latest_release})"

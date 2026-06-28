@@ -1,6 +1,6 @@
 # SwiftFloris Reproducible Builds
 
-**Status:** Toolchain pinned, self-verification CI added, awaiting F-Droid
+**Status:** Toolchain pinned, local self-verification added, awaiting F-Droid
 submission for verified ✔ badge.
 **Roadmap §:** 6 N6.3 + addendum N12.5.
 
@@ -29,12 +29,12 @@ All Compose / library dependencies live behind `gradle/libs.versions.toml` versi
 
 ## Build environment
 
-The release CI pipeline runs in `ubuntu-latest` (`.github/workflows/release.yml`)
-with `actions/setup-java@v4` pinning `java-version: 17 distribution: temurin`.
-Gradle caching is wired but doesn't affect output bytes (cache hits restore
-identical artifacts).
+Release APKs are built locally from the tagged source with the pinned wrapper,
+Android SDK, build tools, and dependency catalog. `scripts/release-evidence.ps1`
+sets the maintainer host JDK path explicitly and records the exact command logs
+under `build/release-evidence/<timestamp>/`.
 
-## Self-verification CI
+## Local self-verification
 
 `scripts/verify-reproducible-apk.sh` is the repository-local "build twice,
 compare APK bytes" guard. It creates two detached Git worktrees at the same
@@ -42,15 +42,11 @@ commit, updates submodules, runs release assembly in both clean trees with
 Gradle build cache disabled and tasks re-run, then compares the two APKs
 byte-for-byte.
 
-`.github/workflows/reproducible-build.yml` runs this verifier on
-`workflow_dispatch`, as a reusable `workflow_call` from the release workflow,
-and on pushes / pull requests that touch app, Gradle, workflow, or
-reproducible-build documentation surfaces. On mismatch, the script writes
-per-entry SHA-256 manifests excluding `META-INF/` so maintainers can tell
-whether the drift is payload content or signing / ZIP metadata. The release
-workflow's signing and GitHub Release publication job depends on this reusable
-verifier, so a release dispatch cannot publish a tag unless the build-twice
-reproducibility check has passed for the same commit.
+`scripts/release-evidence.ps1` runs this verifier before publication unless the
+maintainer is doing a focused smoke run with `-SkipReproducibleApk`. On mismatch,
+the script writes per-entry SHA-256 manifests excluding `META-INF/` so
+maintainers can tell whether the drift is payload content or signing / ZIP
+metadata.
 
 ## What can still drift?
 
@@ -67,7 +63,7 @@ reproducibility check has passed for the same commit.
 
 ```bash
 # 1. Clone at the exact tag you want to reproduce
-git clone --branch v1.9.52 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+git clone --branch v1.9.53 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 
 # 2. Build the release APK (debug-signed fallback fine for byte comparison)
@@ -75,7 +71,7 @@ cd SwiftFloris
 
 # 3. Compare against the published APK (after stripping signatures)
 APK_LOCAL=app/build/outputs/apk/release/app-release.apk
-APK_PUBLISHED=app-release-v1.9.52.apk
+APK_PUBLISHED=app-release-v1.9.53.apk
 
 apkdiff() {
   unzip -p "$1" classes.dex | sha256sum
@@ -105,9 +101,9 @@ in sync with the build. Current stanza:
 
 ```yaml
 Builds:
-  - versionName: "1.9.52"
-    versionCode: 2101
-    commit: v1.9.52
+  - versionName: "1.9.53"
+    versionCode: 2102
+    commit: v1.9.53
     submodules: true
     sudo:
       - apt-get update
@@ -121,8 +117,8 @@ Builds:
 ArchivePolicy: 6
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.9.52"
-CurrentVersionCode: 2101
+CurrentVersion: "1.9.53"
+CurrentVersionCode: 2102
 ```
 
 The F-Droid build server will then attempt a deterministic rebuild and compare
