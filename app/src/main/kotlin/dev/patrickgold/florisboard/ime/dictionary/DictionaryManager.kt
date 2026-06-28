@@ -30,6 +30,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.io.File
 
 private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
@@ -110,25 +111,27 @@ class DictionaryManager private constructor(context: Context) {
         val query = word.trim()
         if (query.isBlank()) return null
 
-        val florisDao = florisUserDictionaryDao()
-        val systemDao = systemUserDictionaryDao()
-        if (florisDao == null && systemDao == null) return null
+        return runRoomBlocking {
+            val florisDao = florisUserDictionaryDao()
+            val systemDao = systemUserDictionaryDao()
+            if (florisDao == null && systemDao == null) return@runRoomBlocking null
 
-        val matches = buildList {
-            if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
-                addAll(florisDao.queryShortcut(query, locale))
+            val matches = buildList {
+                if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
+                    addAll(florisDao.queryShortcut(query, locale))
+                }
+                if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
+                    addAll(systemDao.queryShortcut(query, locale))
+                }
             }
-            if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
-                addAll(systemDao.queryShortcut(query, locale))
-            }
+
+            matches.asSequence()
+                .filter { it.shortcut.equals(query, ignoreCase = true) }
+                .filter { it.word.isNotBlank() && !it.word.equals(query, ignoreCase = true) }
+                .sortedByDescending { it.freq }
+                .firstOrNull()
+                ?.word
         }
-
-        return matches.asSequence()
-            .filter { it.shortcut.equals(query, ignoreCase = true) }
-            .filter { it.word.isNotBlank() && !it.word.equals(query, ignoreCase = true) }
-            .sortedByDescending { it.freq }
-            .firstOrNull()
-            ?.word
     }
 
     fun queryUserDictionary(word: String, locale: FlorisLocale): List<SuggestionCandidate> {
@@ -137,27 +140,29 @@ class DictionaryManager private constructor(context: Context) {
             return emptyList()
         }
 
-        val florisDao = florisUserDictionaryDao()
-        val systemDao = systemUserDictionaryDao()
-        if (florisDao == null && systemDao == null) {
-            return emptyList()
-        }
-
-        val candidates = buildList {
-            if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
-                addAll(florisDao.queryCandidates(query, locale, sourcePriority = FLORIS_USER_DICTIONARY_SOURCE_PRIORITY))
+        return runRoomBlocking {
+            val florisDao = florisUserDictionaryDao()
+            val systemDao = systemUserDictionaryDao()
+            if (florisDao == null && systemDao == null) {
+                return@runRoomBlocking emptyList()
             }
-            if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
-                addAll(systemDao.queryCandidates(query, locale, sourcePriority = SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY))
-            }
-        }
 
-        return rankUserDictionaryCandidates(query, candidates).map { entry ->
-            WordSuggestionCandidate(
-                text = entry.word,
-                confidence = (entry.freq.coerceIn(0, 255) / 255.0).coerceIn(0.0, 1.0),
-                isEligibleForUserRemoval = true,
-            )
+            val candidates = buildList {
+                if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
+                    addAll(florisDao.queryCandidates(query, locale, sourcePriority = FLORIS_USER_DICTIONARY_SOURCE_PRIORITY))
+                }
+                if (prefs.dictionary.enableSystemUserDictionary.get() && systemDao != null) {
+                    addAll(systemDao.queryCandidates(query, locale, sourcePriority = SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY))
+                }
+            }
+
+            rankUserDictionaryCandidates(query, candidates).map { entry ->
+                WordSuggestionCandidate(
+                    text = entry.word,
+                    confidence = (entry.freq.coerceIn(0, 255) / 255.0).coerceIn(0.0, 1.0),
+                    isEligibleForUserRemoval = true,
+                )
+            }
         }
     }
 
@@ -174,14 +179,16 @@ class DictionaryManager private constructor(context: Context) {
         // Drop the in-memory overlay entry immediately so the next suggest
         // can't surface the forgotten word from the ranker.
         UserDictionaryOverlay.get().forget(normalized, locale)
-        val dao = florisUserDictionaryDao() ?: return false
         // Synchronous-on-IO inside a runBlocking is acceptable here because the long-press
         // removal path expects an immediate boolean acknowledgement before re-running suggest.
         return runCatching {
-            val matches = dao.queryExactFuzzyLocale(normalized, locale)
-                .filter { it.word.equals(normalized, ignoreCase = true) }
-            for (entry in matches) dao.delete(entry)
-            matches.isNotEmpty()
+            runRoomBlocking {
+                val dao = florisUserDictionaryDao() ?: return@runRoomBlocking false
+                val matches = dao.queryExactFuzzyLocale(normalized, locale)
+                    .filter { it.word.equals(normalized, ignoreCase = true) }
+                for (entry in matches) dao.delete(entry)
+                matches.isNotEmpty()
+            }
         }.onFailure { e ->
             flogError(LogTopic.DICTIONARY) { "forgetWord($normalized) failed: ${e.message}" }
         }.getOrDefault(false)
@@ -279,24 +286,26 @@ class DictionaryManager private constructor(context: Context) {
             return false
         }
 
-        val florisDao = florisUserDictionaryDao()
-        val systemDao = systemUserDictionaryDao()
-        if (florisDao == null && systemDao == null) {
-            return false
-        }
-
-        if (prefs.dictionary.enableFlorisUserDictionary.get()) {
-            if (florisDao?.containsWordOrShortcut(query, locale) == true) {
-                return true
+        return runRoomBlocking {
+            val florisDao = florisUserDictionaryDao()
+            val systemDao = systemUserDictionaryDao()
+            if (florisDao == null && systemDao == null) {
+                return@runRoomBlocking false
             }
-        }
-        if (prefs.dictionary.enableSystemUserDictionary.get()) {
-            if (systemDao?.containsWordOrShortcut(query, locale) == true) {
-                return true
-            }
-        }
 
-        return false
+            if (prefs.dictionary.enableFlorisUserDictionary.get()) {
+                if (florisDao?.containsWordOrShortcut(query, locale) == true) {
+                    return@runRoomBlocking true
+                }
+            }
+            if (prefs.dictionary.enableSystemUserDictionary.get()) {
+                if (systemDao?.containsWordOrShortcut(query, locale) == true) {
+                    return@runRoomBlocking true
+                }
+            }
+
+            false
+        }
     }
 
     @Synchronized
@@ -356,7 +365,9 @@ class DictionaryManager private constructor(context: Context) {
     private fun loadFlorisUserDictionaryIfNecessary() {
         val context = applicationContext
         if (florisUserDictionaryDatabase == null && prefs.dictionary.enableFlorisUserDictionary.get()) {
-            florisUserDictionaryDatabase = openEncryptedFlorisUserDictionary(context)
+            florisUserDictionaryDatabase = runRoomBlocking {
+                openEncryptedFlorisUserDictionary(context)
+            }
         }
     }
 
@@ -394,7 +405,7 @@ class DictionaryManager private constructor(context: Context) {
             context,
             FlorisUserDictionaryDatabase::class.java,
             FlorisUserDictionaryDatabase.DB_FILE_NAME,
-        ).openHelperFactory(factory).allowMainThreadQueries().build()
+        ).openHelperFactory(factory).build()
     }
 
     private fun migratePlaintextFlorisUserDictionaryIfNecessary(context: Context): Boolean {
@@ -407,7 +418,7 @@ class DictionaryManager private constructor(context: Context) {
                 context,
                 FlorisUserDictionaryDatabase::class.java,
                 FlorisUserDictionaryDatabase.DB_FILE_NAME,
-            ).allowMainThreadQueries().build()
+            ).build()
             try {
                 plaintextDatabase.userDictionaryDao().queryAll()
             } finally {
@@ -529,6 +540,12 @@ class DictionaryManager private constructor(context: Context) {
             File("${databaseFile.path}-shm"),
             File("${databaseFile.path}-journal"),
         )
+    }
+
+    private fun <T> runRoomBlocking(block: () -> T): T {
+        return runBlocking(Dispatchers.IO) {
+            block()
+        }
     }
 
     private fun UserDictionaryDao.queryCandidates(

@@ -11,13 +11,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Move personal dictionary Room access off the main thread
-  Why: `allowMainThreadQueries()` remains on the personal dictionary path, and typing/dictionary work should not risk UI stalls during IME use.
-  Evidence: `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt:397`; `DictionaryManager.kt:410`; `docs/THREAT_MODEL.md` known-gap table.
-  Touches: `DictionaryManager.kt`, dictionary DAOs/repositories, dictionary tests, typing latency benchmarks.
-  Acceptance: no production `allowMainThreadQueries()` remains; dictionary reads/writes use an IO-safe boundary; existing dictionary/import/suggestion tests pass; cold dictionary and first-suggestion benchmarks stay inside documented regression windows.
-  Complexity: L
-
 - [ ] P1 — Add public-doc dependency truth drift check
   Why: public docs cite stale dependency versions, which weakens SwiftFloris's auditability claim.
   Evidence: `README.md` cites Roborazzi 1.63.0 and Tink Android 1.21.0; `docs/SECURITY.md` cites Tink Android 1.21.0; `gradle/libs.versions.toml` has Roborazzi 1.64.0 and Tink Android 1.22.0.

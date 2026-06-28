@@ -242,22 +242,45 @@ fun UserDictionaryScreen(
         }
     }
 
-    fun buildUi() {
-        if (currentLocale != null) {
-            //subtitle = getDisplayNameForLocale(currentLocale)
-            val locale = if (currentLocale == AllLanguagesLocale) null else currentLocale
-            wordList = userDictionaryDao()?.queryAll(locale) ?: emptyList()
-            if (wordList.isEmpty()) {
-                currentLocale = null
+    data class UserDictionaryUiSnapshot(
+        val currentLocale: FlorisLocale?,
+        val languageList: List<FlorisLocale>,
+        val wordList: List<UserDictionaryEntry>,
+    )
+
+    fun loadUiSnapshot(selectedLocale: FlorisLocale?): UserDictionaryUiSnapshot {
+        val dao = userDictionaryDao()
+        if (selectedLocale != null) {
+            val locale = if (selectedLocale == AllLanguagesLocale) null else selectedLocale
+            val words = dao?.queryAll(locale).orEmpty()
+            if (words.isNotEmpty()) {
+                return UserDictionaryUiSnapshot(
+                    currentLocale = selectedLocale,
+                    languageList = emptyList(),
+                    wordList = words,
+                )
             }
         }
-        if (currentLocale == null) {
-            //subtitle = null
-            languageList = userDictionaryDao()
+        return UserDictionaryUiSnapshot(
+            currentLocale = null,
+            languageList = dao
                 ?.queryLanguageList()
                 ?.sortedBy { it?.displayLanguage() }
                 ?.map { it ?: AllLanguagesLocale }
-                ?: emptyList()
+                ?: emptyList(),
+            wordList = emptyList(),
+        )
+    }
+
+    fun buildUi() {
+        val selectedLocale = currentLocale
+        scope.launch {
+            val snapshot = withContext(Dispatchers.IO) {
+                loadUiSnapshot(selectedLocale)
+            }
+            currentLocale = snapshot.currentLocale
+            languageList = snapshot.languageList
+            wordList = snapshot.wordList
         }
     }
 

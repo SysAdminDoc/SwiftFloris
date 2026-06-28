@@ -45,6 +45,8 @@ class PersonalDictionaryEncryptionTest : FunSpec({
         source shouldContain ".openHelperFactory(factory)"
         source shouldContain "migratePlaintextFlorisUserDictionaryIfNecessary"
         source shouldContain "openVerifiedEncryptedFlorisUserDictionary"
+        source shouldContain "runBlocking(Dispatchers.IO)"
+        source shouldNotContain "allowMainThreadQueries"
     }
 
     test("SQLCipher passphrase is generated locally and wrapped by Tink AndroidKeystore") {

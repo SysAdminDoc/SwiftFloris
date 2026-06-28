@@ -52,6 +52,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.kotlin.collectLatestIn
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.ConcurrentHashMap
@@ -589,7 +590,7 @@ class NlpManager(context: Context) {
         return maxOf(personalScore, coldStartScore).coerceIn(0.0, 1.0)
     }
 
-    private fun userDictionarySuggestions(
+    private suspend fun userDictionarySuggestions(
         subtype: Subtype,
         content: EditorContent,
         maxCandidateCount: Int,
@@ -598,7 +599,9 @@ class NlpManager(context: Context) {
         if (maxCandidateCount <= 0 || currentWord.isBlank()) {
             return emptyList()
         }
-        return dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
+        return withContext(Dispatchers.IO) {
+            dictionaryManager.queryUserDictionary(currentWord, subtype.primaryLocale).take(maxCandidateCount)
+        }
     }
 
     private suspend fun isKnownTypedWord(
