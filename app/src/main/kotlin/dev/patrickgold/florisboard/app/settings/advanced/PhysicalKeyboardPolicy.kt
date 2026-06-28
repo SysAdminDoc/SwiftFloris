@@ -27,12 +27,14 @@ internal data class HardwareKeyboardDeviceOption(
 
 internal enum class PhysicalKeyboardInputViewReason {
     UserPreference,
+    SmartbarOnly,
     HardwareKeyboardSuppressed,
     FrameworkOrSoftKeyboard,
 }
 
 internal data class PhysicalKeyboardInputViewDecision(
     val shouldShow: Boolean,
+    val smartbarOnly: Boolean = false,
     val reason: PhysicalKeyboardInputViewReason,
 )
 
@@ -148,6 +150,7 @@ internal object PhysicalKeyboardPolicy {
         configurationKeyboard: Int,
         hardKeyboardHidden: Int,
         showOnScreenKeyboardPref: Boolean,
+        showSmartbarOnlyPref: Boolean = false,
     ): PhysicalKeyboardInputViewDecision {
         if (showOnScreenKeyboardPref) {
             return PhysicalKeyboardInputViewDecision(
@@ -156,6 +159,13 @@ internal object PhysicalKeyboardPolicy {
             )
         }
         if (isHardwareKeyboardAvailable(configurationKeyboard, hardKeyboardHidden)) {
+            if (showSmartbarOnlyPref) {
+                return PhysicalKeyboardInputViewDecision(
+                    shouldShow = true,
+                    smartbarOnly = true,
+                    reason = PhysicalKeyboardInputViewReason.SmartbarOnly,
+                )
+            }
             return PhysicalKeyboardInputViewDecision(
                 shouldShow = false,
                 reason = PhysicalKeyboardInputViewReason.HardwareKeyboardSuppressed,
@@ -173,6 +183,7 @@ internal object PhysicalKeyboardPolicy {
         hardKeyboardHidden: Int,
         frameworkWouldShowInputView: Boolean,
         showOnScreenKeyboardPref: Boolean,
+        showSmartbarOnlyPref: Boolean = false,
         detectedHardwareKeyboards: List<HardwareKeyboardDeviceOption>,
     ): PhysicalKeyboardVisibilityDiagnostics {
         val decision = inputViewVisibilityDecision(
@@ -180,6 +191,7 @@ internal object PhysicalKeyboardPolicy {
             configurationKeyboard = configurationKeyboard,
             hardKeyboardHidden = hardKeyboardHidden,
             showOnScreenKeyboardPref = showOnScreenKeyboardPref,
+            showSmartbarOnlyPref = showSmartbarOnlyPref,
         )
         return PhysicalKeyboardVisibilityDiagnostics(
             formFactorType = formFactorType,

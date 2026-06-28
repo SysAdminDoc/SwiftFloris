@@ -75,4 +75,9 @@ open class PhysicalKeyboardPrefs : PreferenceModel() {
         key = "physical_keyboard__show_on_screen_keyboard",
         default = false,
     )
+
+    val showSmartbarOnly = boolean(
+        key = "physical_keyboard__show_smartbar_only",
+        default = true,
+    )
 }

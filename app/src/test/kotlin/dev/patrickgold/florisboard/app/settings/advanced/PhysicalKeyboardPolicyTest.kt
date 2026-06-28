@@ -137,4 +137,55 @@ class PhysicalKeyboardPolicyTest : FunSpec({
             showOnScreenKeyboardPref = false,
         ).shouldShow shouldBe true
     }
+
+    test("smartbar-only mode shows the input view but sets smartbarOnly flag") {
+        val decision = PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = true,
+            configurationKeyboard = Configuration.KEYBOARD_QWERTY,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+            showOnScreenKeyboardPref = false,
+            showSmartbarOnlyPref = true,
+        )
+        decision.shouldShow shouldBe true
+        decision.smartbarOnly shouldBe true
+        decision.reason shouldBe PhysicalKeyboardInputViewReason.SmartbarOnly
+    }
+
+    test("smartbar-only mode is inactive when no hardware keyboard is available") {
+        val decision = PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = true,
+            configurationKeyboard = Configuration.KEYBOARD_NOKEYS,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+            showOnScreenKeyboardPref = false,
+            showSmartbarOnlyPref = true,
+        )
+        decision.smartbarOnly shouldBe false
+        decision.reason shouldBe PhysicalKeyboardInputViewReason.FrameworkOrSoftKeyboard
+    }
+
+    test("show-on-screen-keyboard preference overrides smartbar-only mode") {
+        val decision = PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = true,
+            configurationKeyboard = Configuration.KEYBOARD_QWERTY,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+            showOnScreenKeyboardPref = true,
+            showSmartbarOnlyPref = true,
+        )
+        decision.shouldShow shouldBe true
+        decision.smartbarOnly shouldBe false
+        decision.reason shouldBe PhysicalKeyboardInputViewReason.UserPreference
+    }
+
+    test("smartbar-only disabled falls back to full hardware suppression") {
+        val decision = PhysicalKeyboardPolicy.inputViewVisibilityDecision(
+            frameworkWouldShowInputView = true,
+            configurationKeyboard = Configuration.KEYBOARD_QWERTY,
+            hardKeyboardHidden = Configuration.HARDKEYBOARDHIDDEN_NO,
+            showOnScreenKeyboardPref = false,
+            showSmartbarOnlyPref = false,
+        )
+        decision.shouldShow shouldBe false
+        decision.smartbarOnly shouldBe false
+        decision.reason shouldBe PhysicalKeyboardInputViewReason.HardwareKeyboardSuppressed
+    }
 })

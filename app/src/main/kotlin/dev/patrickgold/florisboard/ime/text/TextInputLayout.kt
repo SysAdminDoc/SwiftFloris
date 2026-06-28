@@ -65,28 +65,30 @@ fun TextInputLayout(
             .wrapContentHeight(),
     ) {
         Smartbar()
-        if (calendarPickerState != CalendarAgendaPickerState.Hidden) {
-            CalendarAgendaPickerPanel(
-                state = calendarPickerState,
-                manager = calendarQuickInsertManager,
-            )
-        } else if (state.isActionsOverflowVisible) {
-            QuickActionsOverflowPanel()
-        } else {
-            Box {
-                val incognitoDisplayMode by prefs.keyboard.incognitoDisplayMode.collectAsState()
-                val showIncognitoIcon = evaluator.state.isIncognitoMode &&
-                    incognitoDisplayMode == IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD
-                if (showIncognitoIcon) {
-                    SnyggIcon(
-                        FlorisImeUi.IncognitoModeIndicator.elementName,
-                        modifier = Modifier
-                            .matchParentSize()
-                            .align(Alignment.Center),
-                        painter = painterResource(R.drawable.ic_incognito),
-                    )
+        if (!state.isSmartbarOnlyMode) {
+            if (calendarPickerState != CalendarAgendaPickerState.Hidden) {
+                CalendarAgendaPickerPanel(
+                    state = calendarPickerState,
+                    manager = calendarQuickInsertManager,
+                )
+            } else if (state.isActionsOverflowVisible) {
+                QuickActionsOverflowPanel()
+            } else {
+                Box {
+                    val incognitoDisplayMode by prefs.keyboard.incognitoDisplayMode.collectAsState()
+                    val showIncognitoIcon = evaluator.state.isIncognitoMode &&
+                        incognitoDisplayMode == IncognitoDisplayMode.DISPLAY_BEHIND_KEYBOARD
+                    if (showIncognitoIcon) {
+                        SnyggIcon(
+                            FlorisImeUi.IncognitoModeIndicator.elementName,
+                            modifier = Modifier
+                                .matchParentSize()
+                                .align(Alignment.Center),
+                            painter = painterResource(R.drawable.ic_incognito),
+                        )
+                    }
+                    TextKeyboardLayout(evaluator = evaluator)
                 }
-                TextKeyboardLayout(evaluator = evaluator)
             }
         }
     }

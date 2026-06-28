@@ -407,6 +407,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         prefs.physicalKeyboard.showOnScreenKeyboard.asFlow().collectIn(lifecycleScope) {
             updateInputViewShown()
         }
+        prefs.physicalKeyboard.showSmartbarOnly.asFlow().collectIn(lifecycleScope) {
+            updateInputViewShown()
+        }
 
         @Suppress("DEPRECATION") // We do not retrieve the wallpaper but only listen to changes
         try {
@@ -735,9 +738,11 @@ class FlorisImeService : LifecycleInputMethodService() {
             hardKeyboardHidden = config.hardKeyboardHidden,
             frameworkWouldShowInputView = super.onEvaluateInputViewShown(),
             showOnScreenKeyboardPref = prefs.physicalKeyboard.showOnScreenKeyboard.get(),
+            showSmartbarOnlyPref = prefs.physicalKeyboard.showSmartbarOnly.get(),
             detectedHardwareKeyboards = detectedHardwareKeyboardOptions(),
         )
         logPhysicalKeyboardVisibilityDecision(diagnostics.summary())
+        keyboardManager.activeState.isSmartbarOnlyMode = diagnostics.decision.smartbarOnly
         return diagnostics.decision.shouldShow
     }
 
