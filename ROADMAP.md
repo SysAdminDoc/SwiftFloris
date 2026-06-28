@@ -25,26 +25,12 @@ gated on external deliverables or hardware testing live in
   Acceptance: snippet/layout imports return parsed entries plus skipped/malformed diagnostics; UI shows a calm summary with a copy/exportable diagnostic detail; malformed fixtures prove partial imports remain safe and transparent.
   Complexity: M
 
-- [ ] P2 — Replace Snygg URI resolver stub with typed failure handling
-  Why: theme asset resolution should fail predictably; returning `NotImplementedError` from the default resolver is a user-facing reliability footgun if a theme path reaches it.
-  Evidence: `lib/snygg/src/main/kotlin/org/florisboard/lib/snygg/value/SnyggUriValue.kt:97`.
-  Touches: `lib/snygg/`, theme import/rendering tests, theme editor error copy.
-  Acceptance: no `NotImplementedError` is used for normal resolver failure; default resolver returns a typed unsupported-path result with tests; theme import/rendering surfaces actionable copy instead of an implementation-stub error.
-  Complexity: S
-
 - [ ] P2 — Expand Roborazzi baselines for new settings surfaces
   Why: recent user-facing screens landed without matching committed visual baselines, while existing baselines cover only selected pending settings and addon/theme surfaces.
   Evidence: `Routes.kt` includes CustomLayoutEditor, SnippetSettings, PrivacyAuditLog, Sync, Backup, Restore; `app/src/test/snapshots/` lacks those screen baselines.
   Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/`, `app/src/test/snapshots/`, new `@RoboPreviewInclude` previews where appropriate.
   Acceptance: Roborazzi baselines cover custom layout editor, snippets, privacy audit, sync, backup, and restore in dark and high-contrast-relevant states; `:app:verifyRoborazziDebug` passes.
   Complexity: M
-
-- [ ] P2 — Add live-doc canonical-source and release-state integrity check
-  Why: contributor-facing docs still reference missing canonical files and stale release-state labels, which is separate from dependency-version drift and can mislead autonomous agents, contributors, and release reviewers.
-  Evidence: `CHANGELOG.md`, `PROJECT_CONTEXT.md`, and `.github/workflows` are absent; `CONTRIBUTING.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, `.github/PULL_REQUEST_TEMPLATE.md`, and `README.md` still reference those paths or stale v1.9.52 release-state text.
-  Touches: `CONTRIBUTING.md`, `README.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, `.github/PULL_REQUEST_TEMPLATE.md`, `scripts/`.
-  Acceptance: a local checker scans live non-archive Markdown for missing local-file links and forbidden canonical-source references; docs route contributors to the actual canonical sources (`README.md`, `ROADMAP.md`, `RESEARCH.md`, fastlane changelogs, and `Roadmap_Blocked.md`); README current-release/highlight labels are verified against `gradle.properties` and fastlane changelog files; archive/historical docs are excluded intentionally.
-  Complexity: S
 
 ### P2
 

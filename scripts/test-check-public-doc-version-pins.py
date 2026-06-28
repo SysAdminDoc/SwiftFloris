@@ -52,8 +52,8 @@ def write_fixture(root: Path) -> None:
     (root / "gradle" / "wrapper" / "gradle-wrapper.properties").write_text(
         dedent(
             """
-            distributionSha256Sum=bafc141b619ad6350fd975fc903156dd5c151998cc8b058e8c1044ab5f7b031f
-            distributionUrl=https\\://services.gradle.org/distributions/gradle-9.5.1-bin.zip
+            distributionSha256Sum=9c0f7faeeb306cb14e4279a3e084ca6b596894089a0638e68a07c945a32c9e14
+            distributionUrl=https\\://services.gradle.org/distributions/gradle-9.6.1-bin.zip
             """
         ).strip()
         + "\n",
@@ -67,11 +67,11 @@ def write_fixture(root: Path) -> None:
             |------|-------------------|-----------------|
             dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / Roborazzi 1.64.0
             - Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3.
-            - AGP 9.2.1, Gradle 9.5.1, JDK 21.
+            - AGP 9.2.1, Gradle 9.6.1, JDK 21.
             - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
             - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1 for regressions.
             - minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16).
-            # Gradle 9.5.1 (use the bundled wrapper)
+            # Gradle 9.6.1 (use the bundled wrapper)
             - **Visual regression:** Roborazzi 1.64.0, plugin alias active.
             Current release: **v1.9.53**
             """
@@ -92,7 +92,7 @@ def write_fixture(root: Path) -> None:
     (root / "docs" / "REPRODUCIBLE_BUILDS.md").write_text(
         dedent(
             """
-            | Gradle distribution | `gradle/wrapper/gradle-wrapper.properties` | 9.5.1 | `distributionSha256Sum=bafc141b...` |
+            | Gradle distribution | `gradle/wrapper/gradle-wrapper.properties` | 9.6.1 | `distributionSha256Sum=9c0f7fae...` |
             | Android Gradle Plugin | `gradle/libs.versions.toml` `[versions] android-gradle-plugin` | 9.2.1 | resolves |
             | Kotlin | `gradle/libs.versions.toml` `[versions] kotlin` | 2.4.0 | fixed |
             | KSP | `gradle/libs.versions.toml` `[versions] ksp` | 2.3.9 | fixed |
