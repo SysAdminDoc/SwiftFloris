@@ -144,6 +144,12 @@ import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 private val ItemWidth = 200.dp
 private val DialogWidth = 240.dp
+internal const val GRID_PREVIEW_CHAR_LIMIT = 500
+internal const val POPUP_PREVIEW_CHAR_LIMIT = 2000
+
+internal fun capPreviewText(text: String, charLimit: Int): String {
+    return if (text.length > charLimit) text.take(charLimit) + "…" else text
+}
 
 const val CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO: Int = 0
 
@@ -496,6 +502,8 @@ fun ClipboardInputLayout(
                     )
                 }
             } else {
+                val charLimit = if (contentScrollInsteadOfClip) POPUP_PREVIEW_CHAR_LIMIT else GRID_PREVIEW_CHAR_LIMIT
+                val previewText = capPreviewText(item.displayText(), charLimit)
                 Column {
                     ClipTextItemDescription(
                         elementName = FlorisImeUi.ClipboardItemDescription.elementName,
@@ -506,7 +514,7 @@ fun ClipboardInputLayout(
                         modifier = Modifier
                             .fillMaxWidth()
                             .run { if (contentScrollInsteadOfClip) this.florisVerticalScroll() else this },
-                        text = item.displayText(),
+                        text = previewText,
                     )
                 }
             }
