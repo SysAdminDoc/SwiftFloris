@@ -92,8 +92,10 @@ interface SnyggAssetResolver {
     fun resolveAbsolutePath(uri: String): Result<String>
 }
 
-internal object SnyggDefaultAssetResolver : SnyggAssetResolver {
+class SnyggAssetResolveException(message: String) : Exception(message)
+
+object SnyggDefaultAssetResolver : SnyggAssetResolver {
     override fun resolveAbsolutePath(uri: String): Result<String> {
-        return Result.failure(NotImplementedError("Default asset resolver does not implement path resolve ability"))
+        return Result.failure(SnyggAssetResolveException("No asset resolver configured for URI: $uri"))
     }
 }
