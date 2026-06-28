@@ -9,15 +9,6 @@ gated on external deliverables or hardware testing live in
 
 ## Research-Driven Additions
 
-### P1
-
-- [ ] P1 — Unblock Compose BOM 2026.06.00 upgrade
-  Why: the blocked roadmap still says Compose BOM 2026.06.x is unpublished, but Google Maven now publishes `androidx.compose:compose-bom:2026.06.00`.
-  Evidence: Google Maven metadata `https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml`; `gradle/libs.versions.toml`; `Roadmap_Blocked.md` Compose BOM item.
-  Touches: `gradle/libs.versions.toml`, Compose UI tests, Roborazzi baselines, relevant docs/blocked-roadmap cleanup.
-  Acceptance: Compose BOM bumps from 2026.05.01 to 2026.06.00; unit/lint/assemble and relevant Roborazzi checks pass; any visual/accessibility diffs are accepted with updated baselines; the stale blocked entry is resolved during implementation cleanup.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 — Bump Gradle wrapper to 9.6.1 with checksum verification
@@ -55,15 +46,6 @@ gated on external deliverables or hardware testing live in
   Acceptance: a local checker scans live non-archive Markdown for missing local-file links and forbidden canonical-source references; docs route contributors to the actual canonical sources (`README.md`, `ROADMAP.md`, `RESEARCH.md`, fastlane changelogs, and `Roadmap_Blocked.md`); README current-release/highlight labels are verified against `gradle.properties` and fastlane changelog files; archive/historical docs are excluded intentionally.
   Complexity: S
 
-### P1
-
-- [ ] P1 - Cap clipboard text preview rendering without truncating stored content
-  Why: unbounded clipboard text rendering can freeze or crash the IME surface when a user stores a very large text clip.
-  Evidence: FlorisBoard PR #3303; `app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt` renders `item.displayText()` directly in `ClipItemView`.
-  Touches: `ime/clipboard/ClipboardInputLayout.kt`, clipboard UI tests, Roborazzi clipboard surfaces, string resources if the clipped state needs copy.
-  Acceptance: text clipboard tiles and popups render a bounded preview with ellipsis/copy-safe accessibility text; paste/export still uses the full stored value; a regression test covers an oversized text clip and proves composition/render policy does not allocate or measure the full string repeatedly.
-  Complexity: S
-
 ### P2
 
 - [ ] P2 - Add physical-keyboard Smartbar-only mode
@@ -79,13 +61,6 @@ gated on external deliverables or hardware testing live in
   Touches: `app/settings/keyboard/CustomLayoutEditorPolicy.kt`, `ime/text/keyboard/TextKeyboard.kt`, `TextKeyboardLayout.kt`, popup mapping/layout tests, custom-layout editor UI tests.
   Acceptance: 3-row layouts preserve current sizing; 4-row custom layouts gain proportional height or an explicit per-layout height policy; popup mappings remain anchored to their intended base keys; tests cover 3-row, 4-row, number-row, and popup-origin behavior.
   Complexity: M
-
-- [ ] P2 - Upgrade AboutLibraries to the stable 15.x line
-  Why: the repo intentionally skipped the 15.0 beta, but Maven Central now publishes stable AboutLibraries 15.0.2 while SwiftFloris remains on 14.2.0.
-  Evidence: `gradle/libs.versions.toml`; Maven metadata for `com.mikepenz:aboutlibraries-core` latest `15.0.2`; README v1.8.69 release note says only the beta was skipped.
-  Touches: `gradle/libs.versions.toml`, `app/build.gradle.kts`, `app/src/main/config/libraries/`, third-party license screen/tests, public dependency docs.
-  Acceptance: AboutLibraries core/compose/plugin bump to 15.0.2 or the latest stable 15.x available at implementation time; generated license metadata and third-party license UI still build; unit/lint/assemble pass; docs and dependency drift checker reflect the new pin.
-  Complexity: S
 
 ### P3
 

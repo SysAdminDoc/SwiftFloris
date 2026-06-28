@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc version-pin, repo-hygiene, root-crash-log, no-network, data-extraction, unit-test, lint, release-assemble, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed theme/Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.64.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc version-pin, repo-hygiene, root-crash-log, no-network, data-extraction, unit-test, lint, release-assemble, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed theme/Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / Roborazzi 1.64.0 | Audit-friendly |
 
 ## Distribution
 
@@ -172,7 +172,7 @@ Public project information is available in this README, [Security](docs/SECURITY
 
 **Language and build**
 
-- Kotlin 2.4.0, Compose BOM 2026.05.01, Material 3 + material-kolor.
+- Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3 + material-kolor.
 - AGP 9.2.1, Gradle 9.5.1, JDK 21.
 - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
 - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1

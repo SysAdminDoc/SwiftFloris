@@ -22,7 +22,7 @@ def write_fixture(root: Path) -> None:
             """
             [versions]
             android-gradle-plugin = "9.2.1"
-            androidx-compose-bom = "2026.05.01"
+            androidx-compose-bom = "2026.06.00"
             androidx-room = "2.8.4"
             kotlin = "2.4.0"
             ksp = "2.3.9"
@@ -65,8 +65,8 @@ def write_fixture(root: Path) -> None:
             ![Version](https://img.shields.io/badge/version-v1.9.53-blue)
             | Area | What's in v1.9.53 | Privacy posture |
             |------|-------------------|-----------------|
-            dependency freshness is pinned through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.64.0
-            - Kotlin 2.4.0, Compose BOM 2026.05.01, Material 3.
+            dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / Roborazzi 1.64.0
+            - Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3.
             - AGP 9.2.1, Gradle 9.5.1, JDK 21.
             - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
             - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1 for regressions.
