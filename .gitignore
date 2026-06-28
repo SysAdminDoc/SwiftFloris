@@ -110,3 +110,13 @@ result
 !docs/PRIVACY_AND_AI.md
 !docs/addons/
 !docs/addons/*.md
+
+# AI config
+CLAUDE.md
+CODEX_CHANGELOG.md
+AGENTS.md
+.claude/
+.codex/
+.ai/
+PROJECT_CONTEXT.md
+CONTINUATION_PROMPT.md
