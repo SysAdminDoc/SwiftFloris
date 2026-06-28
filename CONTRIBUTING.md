@@ -179,7 +179,6 @@ it.
 
 AI tools are allowed, but the contributor remains responsible for the result.
 
-- Read the project `CLAUDE.md` before running an AI agent in this repo.
 - Verify generated code against source, tests, and project invariants.
 - Do not paste private user data, crash dumps with secrets, or proprietary model
   assets into external services.
