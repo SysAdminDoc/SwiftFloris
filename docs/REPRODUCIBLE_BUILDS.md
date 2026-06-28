@@ -26,6 +26,8 @@ verify it matches the official Release artifact.
 | Rust toolchain | `gradle/tools.versions.toml` `rustToolchain` | 1.93.0 | dormant pin retained for future out-of-tree native addons; `:app` ships no Rust today (the `:lib:native` placeholder was dropped in v1.8.185) |
 
 All Compose / library dependencies live behind `gradle/libs.versions.toml` version refs — no transitive `+` or `latest.release` selectors.
+`scripts/check-public-doc-version-pins.py` verifies this table plus the README and security version claims against
+the Gradle catalog, wrapper, and project properties.
 
 ## Build environment
 

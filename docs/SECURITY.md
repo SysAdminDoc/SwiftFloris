@@ -82,7 +82,9 @@ planning docs until they are ready for public review.
 
 ### Local release scan
 
-`scripts/release-evidence.ps1` runs OSV-Scanner locally while collecting release evidence. The scan reads
+`scripts/release-evidence.ps1` first verifies public README/security/reproducible-build version pins against
+`gradle/libs.versions.toml`, `gradle-wrapper.properties`, and `gradle.properties`, then runs OSV-Scanner locally.
+The scan reads
 `gradle/libs.versions.toml`, `gradle/tools.versions.toml`, every `build.gradle.kts`, `settings.gradle.kts`, and the
 resolved Gradle metadata available in the checkout. It writes `osv-result.json`, command logs, and a plain-text
 summary under `build/release-evidence/<timestamp>/`.

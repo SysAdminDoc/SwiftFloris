@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.52 | Privacy posture |
+| Area | What's in v1.9.53 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, repo-hygiene, root-crash-log, no-network, data-extraction, unit-test, lint, release-assemble, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed theme/Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.64.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc version-pin, repo-hygiene, root-crash-log, no-network, data-extraction, unit-test, lint, release-assemble, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed theme/Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.05.01 / KSP 2.3.9 / Roborazzi 1.64.0 | Audit-friendly |
 
 ## Distribution
 

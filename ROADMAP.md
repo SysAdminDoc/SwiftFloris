@@ -11,13 +11,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Add public-doc dependency truth drift check
-  Why: public docs cite stale dependency versions, which weakens SwiftFloris's auditability claim.
-  Evidence: `README.md` cites Roborazzi 1.63.0 and Tink Android 1.21.0; `docs/SECURITY.md` cites Tink Android 1.21.0; `gradle/libs.versions.toml` has Roborazzi 1.64.0 and Tink Android 1.22.0.
-  Touches: `README.md`, `docs/SECURITY.md`, `docs/REPRODUCIBLE_BUILDS.md`, `scripts/`.
-  Acceptance: a local checker extracts public-facing versions from `gradle/libs.versions.toml`, `gradle-wrapper.properties`, and `gradle.properties` and fails when README/security/reproducibility docs drift; stale version text is corrected.
-  Complexity: S
-
 - [ ] P1 — Unblock Compose BOM 2026.06.00 upgrade
   Why: the blocked roadmap still says Compose BOM 2026.06.x is unpublished, but Google Maven now publishes `androidx.compose:compose-bom:2026.06.00`.
   Evidence: Google Maven metadata `https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml`; `gradle/libs.versions.toml`; `Roadmap_Blocked.md` Compose BOM item.
