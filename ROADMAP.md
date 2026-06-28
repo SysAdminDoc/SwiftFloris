@@ -27,13 +27,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 - Add physical-keyboard Smartbar-only mode
-  Why: desktop and USB/Bluetooth keyboard users still need suggestions, clipboard, undo/redo, language switching, and touch-keyboard toggle actions even when the touch keyboard itself is hidden.
-  Evidence: FUTO Keyboard PR #2138 and issue #2137; `FlorisImeService.onEvaluateInputViewShown()` and `PhysicalKeyboardPolicy.inputViewVisibilityDecision()` currently suppress the whole input view when hardware keyboard is available.
-  Touches: `FlorisImeService.kt`, `PhysicalKeyboardPolicy.kt`, Smartbar/action layout components, physical-keyboard settings, policy tests, IME window tests.
-  Acceptance: with a hardware keyboard and show-on-screen-keyboard disabled, SwiftFloris can show a compact Smartbar/action surface without the touch keyboard; a visible toggle restores the full touch keyboard; pure policy tests cover preference on/off, no hardware keyboard, hardware keyboard, and desktop/tablet form-factor cases.
-  Complexity: M
-
 - [ ] P2 - Make custom layouts row-count-aware with stable popup anchoring
   Why: 4-row custom layouts are common for minority-language and number-row workflows, and competitor issue traffic shows fixed-height shrinkage plus shifted long-press popups break muscle memory.
   Evidence: HeliBoard issues #2542 and #2543; `CustomLayoutEditorPolicy.kt` supports adding rows, while `TextKeyboard.kt` lays runtime rows into the current keyboard height without an explicit row-count sizing contract.
