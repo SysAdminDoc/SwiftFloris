@@ -1,94 +1,84 @@
-# Research — SwiftFloris
+# Research - SwiftFloris
 
 ## Executive Summary
-SwiftFloris is a privacy-first Android IME fork with a strong trust posture: no `INTERNET` permission, signed release flow, backup/data-extraction exclusions, encrypted local dictionaries, addon enrollment, Espanso snippets, Tasker/MCP integrations, Compose settings, and CI checks that already cover release metadata, no-network drift, layout JSON, Roborazzi, lint, unit tests, OSV, SBOM, SLSA, reproducibility, and 16 KB native alignment. The highest-value direction is to keep tightening release trust, addon developer ergonomics, coroutine safety, and visual/regression proof instead of adding cloud or heavyweight ML features to the base app. Top opportunities, in priority order: release `v1.9.53`/issue #9 fixes through the human-gated release process; triage active dependency PRs with CI evidence; add a host-verifiable addon fixture APK; put production `runBlocking` behind a no-growth allowlist; use Roborazzi 1.64 preview filtering to widen visual baselines; add synthetic glide cap/latency regression tests before the external FUTO corpus; reconcile cleared blocked items such as Compose BOM 2026.06.00 and Emoji 17/CLDR 49; resolve the `ImeWindowMode.Fixed.THUMBS` placeholder.
+SwiftFloris is a privacy-first Android IME fork that is strongest where it turns trust into verifiable local behavior: no `INTERNET` permission, encrypted local dictionaries/clipboard data, rich migration tooling, addon trust pins, search/settings surfaces, Roborazzi baselines, and local benchmark scripts. The highest-value direction is not another cloud-style feature; it is restoring public truth after workflow removal, then hardening the local release/dependency/database paths that now carry the trust burden. Top opportunities: 1) replace stale GitHub Actions/Dependabot/SLSA/SBOM claims with a local release-evidence command and doc rewrite; 2) add a SQLCipher + Room 2.8.4 runtime sentinel for the exact encrypted dictionary stack; 3) remove personal-dictionary `allowMainThreadQueries()`; 4) add a public-doc version drift checker; 5) unblock Compose BOM 2026.06.00; 6) update Gradle 9.6.1 with checksum; 7) surface skipped/malformed import diagnostics; 8) replace the Snygg URI `NotImplementedError` failure path; 9) expand visual baselines for newly added settings screens.
 
 ## Product Map
-- Core workflows: enable the IME; type with tap/glide/hardware/voice handoff; manage dictionaries, clipboard, snippets, profiles, themes, layouts, and local privacy posture; import/export local data; enroll and audit addons.
-- User personas: privacy-conscious Gboard/SwiftKey refugees, multilingual offline typists, power users using terminal keys/snippets/hardware keyboards, accessibility users, addon authors, and maintainers who need release provenance.
-- Platforms and distribution: Android app/IME, minSdk 26, targetSdk 36, GitHub Releases and Obtainium as canonical distribution, F-Droid metadata prepared, no Google Play dependency by design.
-- Key integrations and data flows: local Room/SQLCipher stores, Jetpack DataStore, Android backup/data-transfer excludes, Tasker intents, MCP daemon bridge, addon APK descriptors, FUTO Voice Input handoff, Espanso YAML import, SwiftKey/Gboard/FlorisBoard dictionary migration, GitHub release provenance.
+- Core workflows: enable/setup IME, configure keyboard/theme/localization/typing, type with suggestions/glide/snippets/voice handoff, import/export dictionaries/extensions/backups, review privacy/trust evidence.
+- User personas: privacy-conscious Android keyboard users, SwiftKey/Gboard migrators, power users with snippets/layouts/themes, contributors validating release/security claims, addon authors.
+- Platforms and distribution: Android 8+ base APK, GitHub/Obtainium/F-Droid-prepared channels, Gradle/AGP/Kotlin/Compose build, no Google Play channel by design.
+- Key integrations and data flows: local Room/SQLCipher personal dictionary, Tink AndroidKeystore wrapping, local backup/restore archives, FUTO/WhisperInput/Bibi external voice IME handoff, addon APK discovery/signing pins, Tasker-class signature-protected broadcasts, MCP daemon bridge.
 
 ## Competitive Landscape
-- FUTO Keyboard / FUTO Swipe: strong offline voice and public swipe-data work, including a 1M-row swipe dataset and benchmark framing. SwiftFloris should learn from its public evaluation discipline and keep glide quality measurable; it should avoid bundling large voice/RIME/neural engines into the base app.
-- HeliBoard: strongest FOSS Gboard-style peer with active user-request pressure around floating keyboards, image clipboard, split/landscape modes, CJK, and toolbar customization. SwiftFloris should keep prioritizing compatibility polish and user-visible controls; it should avoid inheriting closed gesture-library dependency risk.
-- FlorisBoard upstream: remains the architectural source for Compose/Snygg theming and custom layouts, while long-running NLP and layout-editor requests show the cost of promises without shipping loops. SwiftFloris should keep delivering narrow, test-backed slices and avoid broad "coming soon" NLP commitments.
-- AnySoftKeyboard, fcitx5-android, and Trime: show mature language-pack/plugin separation and CJK schema ecosystems. SwiftFloris should strengthen addon fixtures and verification; it should avoid absorbing CJK/Rime complexity into the base keyboard until data licensing, native runtime, and test-device issues are solved.
-- Unexpected Keyboard, Thumb-Key, and 8VIM: prove persistent demand for terminal modifiers, compact/one-hand layouts, and power-user key surfaces. SwiftFloris already covers terminal presets; it should either finish or remove unused thumb-mode placeholders instead of accumulating dead modes.
-- Keyman and CLDR/LDML keyboards: provide the strongest standards-oriented model for layout authoring and portable keyboard definitions. SwiftFloris should keep layout JSON and LDML import/export round-trippable; it should avoid inventing incompatible layout semantics where standards cover the case.
-- Gboard, Samsung Keyboard, and Grammarly: commercial leaders are moving writing assistance and dictation into AI layers, often cloud/account backed or OS-overlay based. SwiftFloris should interoperate with OS/vendor writing overlays where they work with any IME; it should not add networked grammar, GIF, or cloud-sync features that weaken the no-network proof.
+- FlorisBoard / HeliBoard: broad Android IME customization, themes, clipboard, language/layout asks, and active user pressure around backup, CJK, suggestion controls, contrast, and layout ergonomics. Learn from active issue demand; avoid GPL code intake into `:app` and avoid reopening closed privacy gaps.
+- FUTO Keyboard / FUTO Swipe: strongest current open benchmark signal for swipe typing and local-model positioning; open issues show real demand around glide correctness, action-bar ergonomics, RTL, CJK, and prediction controls. Learn from public benchmark framing; keep FUTO Swipe itself blocked until dataset/license review clears.
+- AnySoftKeyboard: long-running no-internet, language-pack ecosystem model with Apache-2.0 base; issue history validates clipboard, voice provider, language-pack, and settings-search demand. Learn from modular language packs; avoid stale compatibility debt and old unmaintained request queues.
+- fcitx5-android / Trime / Keyman: strongest analogous systems for CJK, Rime/Fcitx/LDML package ecosystems, input-method engines, and script-specific behavior. Learn from engine/package architecture and diagnostics; avoid linking incompatible GPL/LGPL/native engines directly into the base APK.
+- Gboard / SwiftKey / Samsung Keyboard / Grammarly: commercial table stakes are strong prediction, rewrite/tone, translation, voice, stickers, sync, backup, and polished recovery states. Learn which features users expect; avoid account/cloud/telemetry implementation in the base APK.
+- Espanso and text-expansion tools: validate snippet import and variable expansion as a power-user feature. Learn from explicit import diagnostics and predictable parse failures; avoid silent partial imports.
 
 ## Security, Privacy, and Reliability
-- [Verified] Public release freshness is the largest trust gap, but it is human-gated: GitHub Releases latest observed release is `v1.9.48` while source metadata and README claim `v1.9.53` in the current worktree; issue #9 crash reporters do not benefit until a release is cut. Evidence: `gradle.properties`, `README.md`, GitHub Releases, GitHub issue #9, `Roadmap_Blocked.md`.
-- [Verified] The merged manifest keeps the no-network promise; `app/src/main/AndroidManifest.xml` declares IME, spellchecker, file import, Tasker, addon, and MCP surfaces but no `INTERNET` permission.
-- [Verified] Backup and transfer excludes are materially stronger than many keyboard peers: `app/src/main/res/xml/data_extraction_rules.xml` excludes dictionary DBs, key prefs, clipboard history/files, personal n-grams/trigrams, trace logs, sync, and diagnostics; `backup_rules.xml` is narrow allowlist-style.
-- [Verified] Destructive clipboard Room migrations are fixed: no `fallbackToDestructiveMigration` usage remains, and `ClipboardDatabase.kt` contains explicit migrations. This should not be re-added as roadmap work.
-- [Verified] Current security-critical local crypto dependencies are fresh: `gradle/libs.versions.toml` pins Tink Android 1.22.0 and SQLCipher Android 4.16.0, both current by Maven metadata checked on 2026-06-25.
-- [Verified] Active dependency PRs still need evidence-based triage rather than blanket merging: PRs cover Gradle wrapper 9.6.0, Kotest/Roborazzi, Compose/Core/Coil/Tink grouping, AboutLibraries 15.0.0, and GitHub Actions/OSV updates. Some are likely safe; compileSdk 37-related updates need holding or explicit blocker routing.
-- [Verified] Production `runBlocking` remains broad across editor, NLP, spellchecker, cache, and UI-support code paths, including `AbstractEditorInstance.kt`, `EditorInstance.kt`, `FlorisSpellCheckerService.kt`, `NlpProviderRegistry.kt`, `NlpManager.kt`, `CacheManager.kt`, `QuickActionsEditorPanel.kt`, `HeuristicSmartComposeProvider.kt`, and `TextKeyboardCache.kt`. The right next step is an allowlist/no-growth gate, not a risky mass rewrite.
-- [Verified] Addon trust docs and validation scripts exist, but there is no host-verifiable sample addon APK project in-tree. Evidence: `docs/addons/apk-validation.md`, `docs/addons/dictionary-pack-spec.md`, `scripts/verify-addon-apk.sh`.
-- [Verified] Glide quality has a bounded local gap independent of the blocked public corpus: `StatisticalGlideTypingClassifier.kt` hard-codes `Gesture.MAX_SIZE = 500` with a TODO, and `docs/BENCHMARKS.md` says the public glide trace benchmark is pending first corpus run.
-- [Likely] Compose BOM 2026.06.00 and Emoji 17/CLDR 49 blockers have changed since older blocked notes; both should be rechecked in `Roadmap_Blocked.md` during the next maintenance pass before creating duplicate active work.
+- Verified: `.github/workflows` is absent, but live docs still promise CI/workflow-backed no-network scans, dependency scans, release workflows, SLSA attestations, SBOMs, emulator smoke, benchmark workflows, and Dependabot (`README.md`, `docs/SECURITY.md`, `docs/REPRODUCIBLE_BUILDS.md`, `docs/PRIVACY_AND_AI.md`, `docs/BENCHMARKS.md`, `docs/addons/apk-validation.md`, `.github/PULL_REQUEST_TEMPLATE.md`). This is the top trust bug.
+- Verified: public dependency/version copy drifted. `gradle/libs.versions.toml` has Tink Android 1.22.0 and Roborazzi 1.64.0, while `README.md` and `docs/SECURITY.md` still cite Tink 1.21.0 / Roborazzi 1.63.0 in live sections.
+- Verified: `app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt` opens personal dictionary Room databases with `allowMainThreadQueries()`. `docs/THREAT_MODEL.md` already calls this a known low UI-lag risk; the exact dependency stack now also intersects SQLCipher issue #81 for Room 2.8.4 compatibility.
+- Verified: OSV queries for `net.zetetic:sqlcipher-android@4.16.0`, `androidx.room:room-runtime@2.8.4`, `com.google.crypto.tink:tink-android@1.22.0`, `io.coil-kt.coil3:coil-compose@3.4.0`, `org.jetbrains.kotlinx:kotlinx-coroutines-android@1.11.0`, and `androidx.compose:compose-bom@2026.05.01` returned no current advisories. Treat SQLCipher issue #81 as reliability, not CVE.
+- Verified: `lib/snygg/src/main/kotlin/org/florisboard/lib/snygg/value/SnyggUriValue.kt` still returns `Result.failure(NotImplementedError(...))` for default asset path resolution. Theme import/rendering should fail with typed user-actionable errors, not an implementation stub.
+- Verified: snippet, hardware-layout, and benchmark import paths deliberately tolerate malformed lines, but some parsers silently skip records (`EspansoMatchParser`, `KlcLayoutParser`, `SwipeTraceImporter`). Dictionary import has better skipped-count UI; snippets/layouts need similar diagnostics.
 
 ## Architecture Assessment
-- Module/boundary improvements needed: keep base-app features local and deterministic; move ecosystem growth through verifiable addon fixtures; make dependency updates pass through release/security gates; keep cloud AI, CJK engines, and voice runtimes out of the base app unless they ship as isolated addons.
-- Refactor candidates: `ImeWindowMode.kt` has `Fixed.THUMBS` as a TODO placeholder; `FlorisImeSizing.kt` still notes a provider move into `ImeWindow`; `StatisticalGlideTypingClassifier.kt` needs trace-size cap proof; `SnyggUriValue.kt` has a default path resolver that throws `NotImplementedError`.
-- Testing gaps: visual coverage exists but is hand-curated; Roborazzi 1.64 preview annotation filtering can broaden Settings/theme/addon coverage without capturing every preview. Glide has harness pieces but needs synthetic cap tests before external corpus work.
-- Documentation gaps: addon docs are present, but addon authors need a buildable reference APK plus CI verifier output. Release/version truth is split between source metadata, README, release workflow, and GitHub Releases.
-- Distribution gaps: F-Droid submission and Android developer verification remain human/operator-gated; they belong in blocked planning, not active coding roadmap, until account, identity, and store decisions are made.
-- Accessibility and device-validation gaps: host-side accessibility patterns are represented in tests, while TalkBack, Switch Access, Credential Manager, and hardware-device verification stay in blocked planning until real-device coverage exists.
-- Observability and multi-user scope: crash/diagnostic evidence should remain local/exportable because network telemetry conflicts with the product posture; multi-account/team features are not a fit for a single-user Android IME.
-- Upgrade strategy gaps: active dependency PRs need a written merge/hold decision trail in code, workflow, or blocked-roadmap state so the next coding agent does not re-research the same version constraints.
+- Boundary improvement: after workflow removal, release/security proof must be local-first: a single script or Gradle task should compose existing checks (`verifyNoInternetPermission`, data extraction rules, fastlane/release-front-door, repo hygiene, OSV gate, reproducible verifier, lint/test/build inputs) and emit a human-readable evidence bundle.
+- Refactor candidate: move personal dictionary Room operations behind an IO-bound repository boundary and remove `allowMainThreadQueries()` in `DictionaryManager.kt`.
+- Refactor candidate: make public docs derive or verify dependency/tool versions from `gradle/libs.versions.toml`, `gradle-wrapper.properties`, and `gradle.properties`.
+- Refactor candidate: replace `SnyggUriValue` default resolver stub with a deterministic asset-resolution contract and tests.
+- Test gap: current `PersonalDictionaryEncryptionTest` statically checks SQLCipher wiring; it does not prove the Room + SQLCipher runtime path survives read-only transactions after Room 2.8.4.
+- Test gap: Roborazzi baselines cover Addons, maintainer chips, selected pending settings, and keyboard themes, but not the new custom layout editor, snippets screen, privacy audit log, sync settings, backup, or restore surfaces.
+- Documentation gap: docs are strong but stale around CI, release provenance, and dependency versions. This now directly undermines the project's trust proposition.
 
 ## Rejected Ideas
-- Cloud sync, GIF search, networked grammar, and account-backed AI: rejected because the no-`INTERNET` proof is a core differentiator and Citizen Lab's keyboard research makes local-only input handling strategically important.
-- Bundling FUTO Swipe, Whisper, RIME, or transformer prediction in the base app: rejected for runtime size, native complexity, licensing/test burden, and conflict with the addon-first architecture; use isolated addons or blocked evaluations.
-- Full CJK/fcitx/Rime engine parity now: rejected because source data, native runtime, and device validation are already blocked outside active roadmap scope.
-- Mass migration away from every `runBlocking`: rejected because it is high churn and high regression risk; an allowlist plus targeted migrations gives safer root-cause control.
-- Duplicating active blocked items for F-Droid submission, developer verification, TalkBack/device coverage, Credential Manager inline autofill, public FUTO glide corpus, local voice runtime, or Emoji 17 refresh: rejected because `Roadmap_Blocked.md` already owns externally gated work.
-- AboutLibraries 15.0.0 as an automatic merge: rejected until its compileSdk/targetSdk expectations are verified against SwiftFloris's current targetSdk 36 ceiling.
-- In-app self-updater: rejected because Obtainium/GitHub Releases/F-Droid cover update distribution with less supply-chain surface.
-- Formal third-party security audit as code roadmap: valuable but rejected for this active roadmap because it is procurement/operator work, not an implementable repository task.
+- Base-APK cloud AI rewrite/translation/sync: rejected because Gboard/SwiftKey/Samsung/Grammarly parity would require network/account paths that contradict `CONTRIBUTING.md`, `README.md`, and `docs/PRIVACY_AND_AI.md`.
+- Re-adding GitHub Actions, Dependabot, or Renovate: rejected because repo/global rules explicitly removed workflows and automated dependency bots; solve with local commands and manual checks instead.
+- Moving FUTO Swipe integration to active roadmap now: rejected for this pass because `Roadmap_Blocked.md` already tracks dataset download/license review as the blocker.
+- Android 17 CJK `TextAttribute` / physical-keyboard password behavior: rejected for active roadmap because `Roadmap_Blocked.md` already gates it on compileSdk 37 and device/emulator validation.
+- TalkBack key echo, Switch Access, Credential Manager inline autofill, foldable/tablet physical keyboard validation: rejected for active roadmap because `Roadmap_Blocked.md` already parks them behind device/hardware validation.
+- Production CJK engine/data import from fcitx5/Rime/Trime: rejected for base APK because licensing/data-source review and native/runtime packaging are unresolved; keep addon or blocked research lane.
+- Multi-user/cloud collaboration: rejected because SwiftFloris is a local Android IME with transport-neutral CRDT scaffolding; server-backed multi-user sync would violate the no-network base posture.
 
 ## Sources
-
-### Project and OSS Competitors
-- https://github.com/SysAdminDoc/SwiftFloris/releases
-- https://github.com/SysAdminDoc/SwiftFloris/issues/9
-- https://github.com/SysAdminDoc/SwiftFloris/pulls
+OSS competitors and analogous projects:
 - https://github.com/florisboard/florisboard
 - https://github.com/HeliBorg/HeliBoard
 - https://github.com/futo-org/android-keyboard
-- https://keyboard.futo.org/
-- https://huggingface.co/datasets/futo-org/swipe.futo.org
 - https://github.com/AnySoftKeyboard/AnySoftKeyboard
 - https://github.com/fcitx5-android/fcitx5-android
 - https://github.com/osfans/trime
-- https://github.com/Julow/Unexpected-Keyboard
-- https://github.com/dessalines/thumb-key
-- https://github.com/8VIM/8VIM
-- https://github.com/tribixbite/CleverKeys
 - https://github.com/keymanapp/keyman
-- https://github.com/espanso/espanso
+- https://github.com/8VIM/8VIM
+- https://github.com/SimpleMobileTools/Simple-Keyboard
+- https://github.com/topics/android-ime
 
-### Commercial, Community, and Privacy
-- https://techcrunch.com/2026/05/12/google-adds-gemini-powered-dictation-to-gboard-which-could-be-bad-news-for-dictation-startups/
-- https://support.grammarly.com/hc/en-us/articles/15606282682637-Grammarly-for-Android-user-guide
-- https://www.sammobile.com/news/one-ui-7-0-galaxy-ai-writing-tools-any-keyboard/
-- https://citizenlab.ca/research/vulnerabilities-across-keyboard-apps-reveal-keystrokes-to-network-eavesdroppers/chinese-keyboard-app-vulnerabilities-explained/
+Commercial, community, and research signals:
+- https://keyboard.futo.org/
+- https://swipe.futo.tech/
+- https://arxiv.org/abs/2606.25247
+- https://github.com/HeliBorg/HeliBoard/issues?q=is%3Aissue%20is%3Aopen%20label%3Aenhancement
+- https://github.com/futo-org/android-keyboard/issues?q=is%3Aissue%20is%3Aopen
+- https://github.com/fcitx5-android/fcitx5-android/issues
+- https://support.google.com/gboard/
+- https://www.microsoft.com/en-us/swiftkey
+- https://www.grammarly.com/android
 
-### Platform, Standards, and Dependencies
-- https://developer.android.com/about/versions/17/behavior-changes-17
-- https://android-developers.googleblog.com/2026/02/prepare-your-app-for-resizability-and.html
+Platform, dependency, and security:
 - https://developer.android.com/developer-verification
-- https://f-droid.org/en/2026/02/24/open-letter-opposing-developer-verification.html
-- https://developer.android.com/develop/ui/compose/bom
-- https://github.com/takahirom/roborazzi/releases
-- https://github.com/google/osv-scanner-action/releases
-- https://www.unicode.org/emoji/charts-17.0/emoji-released.html
-- https://cldr.unicode.org/downloads/cldr-49
+- https://developer.android.com/identity/autofill/ime-autofill
+- https://developer.android.com/build/releases/gradle-plugin
+- https://dl.google.com/dl/android/maven2/androidx/compose/compose-bom/maven-metadata.xml
+- https://services.gradle.org/versions/current
+- https://repo1.maven.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml
+- https://repo1.maven.org/maven2/io/github/takahirom/roborazzi/io.github.takahirom.roborazzi.gradle.plugin/maven-metadata.xml
+- https://repo1.maven.org/maven2/net/zetetic/sqlcipher-android/maven-metadata.xml
+- https://dl.google.com/dl/android/maven2/androidx/room/room-runtime/maven-metadata.xml
+- https://github.com/sqlcipher/sqlcipher-android/issues/81
+- https://osv.dev/docs/
 
 ## Open Questions
-- Was the `v1.9.53` source-versus-release gap intentional, or should the release workflow be re-run for issue #9 users before additional feature work?
-- Should the next maintenance pass move cleared blocked items, especially Compose BOM 2026.06.00 and Emoji 17/CLDR 49, out of `Roadmap_Blocked.md` before implementation starts?
-- Should the first canonical addon fixture be a dictionary-pack APK, an MCP daemon bridge addon, or both with one shared verifier harness?
+- None block active prioritization. Human/device/signing/data-license questions are already parked in `Roadmap_Blocked.md`.
