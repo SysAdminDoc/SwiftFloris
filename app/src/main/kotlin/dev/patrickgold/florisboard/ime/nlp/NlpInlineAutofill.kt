@@ -19,7 +19,6 @@ package dev.patrickgold.florisboard.ime.nlp
 import android.content.Context
 import android.os.Build
 import android.util.Size
-import android.view.ViewGroup
 import android.view.inputmethod.InlineSuggestion
 import android.view.inputmethod.InlineSuggestionInfo
 import android.widget.inline.InlineContentView
@@ -43,6 +42,15 @@ data class NlpInlineAutofillSuggestion(
     val view: InlineContentView?,
 )
 
+data class InlineSuggestionDimensions(
+    val widthPx: Int,
+    val heightPx: Int,
+) {
+    fun toAndroidSize(): Size {
+        return Size(widthPx, heightPx)
+    }
+}
+
 object NlpInlineAutofill {
     private val currentSequenceId = AtomicInteger(0)
 
@@ -65,14 +73,23 @@ object NlpInlineAutofill {
         }
 
         scope.launch {
-            val size = Size(ViewGroup.LayoutParams.WRAP_CONTENT, suggestionsChipHeightPx)
+            val size = InlineSuggestionSizePolicy.inflateSize(
+                displayWidthPx = context.resources.displayMetrics.widthPixels,
+                chipHeightPx = suggestionsChipHeightPx,
+            ).toAndroidSize()
             val latch = CountDownLatch(rawSuggestions.size)
             val suggestionsArray = Array<NlpInlineAutofillSuggestion?>(rawSuggestions.size) { null }
 
             flogInfo { "showInlineSuggestions: [${sequenceId}] start inflating suggestions" }
             for ((index, rawSuggestion) in rawSuggestions.withIndex()) {
-                rawSuggestion.inflate(context, size, context.mainExecutor) { view ->
-                    suggestionsArray[index] = NlpInlineAutofillSuggestion(rawSuggestion.info, view)
+                try {
+                    rawSuggestion.inflate(context, size, context.mainExecutor) { view ->
+                        suggestionsArray[index] = NlpInlineAutofillSuggestion(rawSuggestion.info, view)
+                        latch.countDown()
+                    }
+                } catch (e: RuntimeException) {
+                    flogWarning { "showInlineSuggestions: [${sequenceId}] dropping invalid inline suggestion " +
+                        "at index=$index size=$size: ${e.javaClass.simpleName}" }
                     latch.countDown()
                 }
             }
@@ -119,5 +136,45 @@ object NlpInlineAutofill {
 
     private fun generateSequenceId(): Int {
         return currentSequenceId.incrementAndGet()
+    }
+}
+
+object InlineSuggestionSizePolicy {
+    private const val MinDimensionPx = 1
+    private const val FallbackWidthPx = 320
+    private const val FallbackHeightPx = 48
+    private const val MaxWidthPx = 4096
+    private const val MaxHeightPx = 512
+
+    val presentationMinDimensions = InlineSuggestionDimensions(MinDimensionPx, MinDimensionPx)
+    val presentationMinSize: Size
+        get() = presentationMinDimensions.toAndroidSize()
+
+    fun presentationMaxDimensions(displayWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
+        return InlineSuggestionDimensions(
+            sanitizeDimension(displayWidthPx, fallback = FallbackWidthPx, max = MaxWidthPx),
+            sanitizeDimension(chipHeightPx, fallback = FallbackHeightPx, max = MaxHeightPx),
+        )
+    }
+
+    fun presentationMaxSize(displayWidthPx: Int, chipHeightPx: Int): Size {
+        return presentationMaxDimensions(displayWidthPx, chipHeightPx).toAndroidSize()
+    }
+
+    fun inflateSize(displayWidthPx: Int, chipHeightPx: Int): InlineSuggestionDimensions {
+        return presentationMaxDimensions(displayWidthPx, chipHeightPx)
+    }
+
+    internal fun isValidInlineDimensions(size: InlineSuggestionDimensions): Boolean {
+        return size.widthPx in MinDimensionPx..MaxWidthPx &&
+            size.heightPx in MinDimensionPx..MaxHeightPx
+    }
+
+    private fun sanitizeDimension(value: Int, fallback: Int, max: Int): Int {
+        return when {
+            value in MinDimensionPx..max -> value
+            value < MinDimensionPx -> fallback
+            else -> max
+        }
     }
 }

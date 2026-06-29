@@ -91,13 +91,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 - Harden inline suggestion inflation against invalid host sizes
-  Why: upstream FlorisBoard issue #3294 shows `InlineSuggestion.inflate` can crash on invalid size constraints, and SwiftFloris currently requests an unconstrained max size and forwards inline suggestions through the same platform path.
-  Evidence: FlorisBoard issue #3294; `FlorisImeService.kt` `InlineSuggestionUiSmallestSize`/`InlineSuggestionUiBiggestSize`; `NlpInlineAutofill.showInlineSuggestions`; `InlineSuggestionsUi.kt`.
-  Touches: `FlorisImeService.kt`, inline-autofill handling, `InlineSuggestionsUi.kt`, tests for malformed/oversized inline presentations.
-  Acceptance: invalid inline suggestions are dropped with a warning/log signal rather than crashing the IME; tests cover invalid bounds and normal inline suggestions still render.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 - Add glide endpoint-plausibility regression fixtures

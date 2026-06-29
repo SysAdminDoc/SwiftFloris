@@ -28,7 +28,6 @@ import android.os.LocaleList
 import android.os.SystemClock
 import android.os.Trace
 import android.util.Log
-import android.util.Size
 import android.view.InputDevice
 import android.view.KeyEvent
 import android.view.MotionEvent
@@ -65,6 +64,7 @@ import dev.patrickgold.florisboard.ime.keyboard.isFullscreenInputRequired
 import dev.patrickgold.florisboard.ime.landscapeinput.ExtractedInputRootView
 import dev.patrickgold.florisboard.ime.landscapeinput.LandscapeInputUiMode
 import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
+import dev.patrickgold.florisboard.ime.nlp.InlineSuggestionSizePolicy
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.security.FlagSecurePolicy
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -109,9 +109,6 @@ private var FlorisImeServiceReference = WeakReference<FlorisImeService?>(null)
  */
 class FlorisImeService : LifecycleInputMethodService() {
     companion object {
-        private val InlineSuggestionUiSmallestSize = Size(0, 0)
-        private val InlineSuggestionUiBiggestSize = Size(Int.MAX_VALUE, Int.MAX_VALUE)
-
         fun currentInputConnection(): InputConnection? {
             return FlorisImeServiceReference.get()?.currentInputConnection
         }
@@ -879,9 +876,13 @@ class FlorisImeService : LifecycleInputMethodService() {
             flogWarning(LogTopic.IMS_EVENTS) { "Failed to retrieve inline suggestions style bundle" }
             return null
         }
+        val maxSize = InlineSuggestionSizePolicy.presentationMaxSize(
+            displayWidthPx = resources.displayMetrics.widthPixels,
+            chipHeightPx = NlpInlineAutofill.suggestionsChipHeightPx,
+        )
         val spec = InlinePresentationSpec.Builder(
-            InlineSuggestionUiSmallestSize,
-            InlineSuggestionUiBiggestSize,
+            InlineSuggestionSizePolicy.presentationMinSize,
+            maxSize,
         ).run {
             setStyle(stylesBundle)
             build()
