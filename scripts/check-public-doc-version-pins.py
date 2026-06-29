@@ -193,9 +193,9 @@ def build_expectations(root: Path) -> tuple[list[Expectation], list[str]]:
         ),
         Expectation(
             "README.md",
-            "SDK floor and target line",
-            r"minSdk \*\*([0-9]+)\*\* .*?targetSdk / compileSdk \*\*([0-9]+)\*\*",
-            (gradle["projectMinSdk"], gradle["projectTargetSdk"]),
+            "SDK floor target and compile line",
+            r"minSdk \*\*([0-9]+)\*\* .*?targetSdk \*\*([0-9]+)\*\* .*?compileSdk \*\*([0-9]+)\*\*",
+            (gradle["projectMinSdk"], gradle["projectTargetSdk"], gradle["projectCompileSdk"]),
         ),
         Expectation(
             "docs/SECURITY.md",

@@ -50,13 +50,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 — Bump compileSdk from 36 to 37
-  Why: compileSdk 37 unlocks Android 17 `TextAttribute` for CJK IME accessibility, `show_passwords_physical` behavior verification, and the AboutLibraries 15.x upgrade path (`core-ktx:1.19.0` requires compileSdk 37).
-  Evidence: AGP 9.2.0 release notes; Android 17 features page; `gradle.properties` `projectCompileSdk=36`.
-  Touches: `gradle.properties` `projectCompileSdk`, verify `platforms/android-37` installed locally, run full test/lint/assemble.
-  Acceptance: compileSdk 37 set; unit/lint/assemble pass; no new lint errors from API 37 exposure; public-doc version-pin checker updated if compileSdk is referenced in docs.
-  Complexity: S
-
 - [ ] P2 — Add scrollable/expanded suggestion strip mode
   Why: the current strip shows 3 fixed candidates; HeliBoard #2584, Reddit/Lemmy threads, and community feedback consistently request the ability to see more suggestions, either by scrolling or expanding the strip.
   Evidence: HeliBoard issue #2584; community posts on r/androidapps and Lemmy; FUTO Keyboard's multi-candidate row.

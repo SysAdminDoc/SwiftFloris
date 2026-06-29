@@ -3,3 +3,5 @@ Roadmap drain: release freshness CI, Tink 1.22.0, a11y/live-region and XML backu
 Premium polish pass: Settings/setup navigation now respects Android reduced-motion, shared status/empty cards read more cleanly in TalkBack, snippet deletion requires confirmation, clipboard text tiles get privacy-aware accessibility labels, and the custom layout editor warns before unsaved drafts are discarded.
 
 Reliability: inline autofill now clamps host suggestion sizes and drops malformed suggestions instead of crashing the keyboard.
+
+Build platform: compileSdk is now 37 while targetSdk stays 36, unlocking Android 17 API work without target behavior changes.

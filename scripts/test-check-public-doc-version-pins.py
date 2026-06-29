@@ -41,7 +41,7 @@ def write_fixture(root: Path) -> None:
             """
             projectMinSdk=26
             projectTargetSdk=36
-            projectCompileSdk=36
+            projectCompileSdk=37
             projectVersionCode=2102
             projectVersionName=1.9.53
             """
@@ -70,7 +70,7 @@ def write_fixture(root: Path) -> None:
             - AGP 9.2.1, Gradle 9.6.1, JDK 21.
             - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
             - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1 for regressions.
-            - minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16).
+            - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available).
             # Gradle 9.6.1 (use the bundled wrapper)
             - **Visual regression:** Roborazzi 1.64.0, plugin alias active.
             Current release: **v1.9.53**

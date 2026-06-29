@@ -177,7 +177,7 @@ Public project information is available in this README, [Security](docs/SECURITY
 - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
 - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
-- minSdk **26** (Android 8.0); targetSdk / compileSdk **36** (Android 16, with Android 17 / API 37 behavior gates wired).
+- minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available behind behavior gates).
 - Crowdin pipeline for translations.
 - No `INTERNET` permission in the manifest (local release gate enforced).
 
@@ -204,7 +204,7 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
 ### Prerequisites
 
 ```bash
-# Android SDK 36 (compile/target)
+# Android SDK 36 target plus Android SDK 37 compile platform
 # JDK 21+
 # Gradle 9.6.1 (use the bundled wrapper)
 ```
