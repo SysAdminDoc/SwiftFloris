@@ -1653,10 +1653,17 @@
     <string name="clipboard__item_description_email">Email</string>
     <string name="clipboard__item_description_url">URL</string>
     <string name="clipboard__item_description_phone">Phone</string>
+    <string name="clipboard__item_description_text" comment="Clipboard text item type for accessibility labels">Clipboard text</string>
+    <string name="clipboard__item_description_sensitive_text" comment="Clipboard sensitive text item type for accessibility labels">Sensitive clipboard text</string>
     <string name="clipboard__item_description_image" comment="Clipboard media item type for accessibility labels">Clipboard image</string>
     <string name="clipboard__item_description_video" comment="Clipboard media item type for accessibility labels">Clipboard video</string>
+    <string name="clipboard__text_item_a11y" comment="Accessibility label for a clipboard text tile with its history group, copied time, and preview">{text_type}, {group}, copied {copied_time}: {preview_text}.</string>
+    <string name="clipboard__text_item_a11y_no_group" comment="Accessibility label for a clipboard text tile when no history group is shown">{text_type}, copied {copied_time}: {preview_text}.</string>
+    <string name="clipboard__text_item_sensitive_a11y" comment="Accessibility label for a sensitive clipboard text tile with its history group and copied time; intentionally excludes the sensitive text itself">{text_type}, {group}, copied {copied_time}. Text hidden for privacy.</string>
+    <string name="clipboard__text_item_sensitive_a11y_no_group" comment="Accessibility label for a sensitive clipboard text tile when no history group is shown; intentionally excludes the sensitive text itself">{text_type}, copied {copied_time}. Text hidden for privacy.</string>
     <string name="clipboard__media_item_a11y" comment="Accessibility label for a clipboard image or video tile with its history group and copied time">{media_type}, {group}, copied {copied_time}.</string>
     <string name="clipboard__media_item_a11y_no_group" comment="Accessibility label for a clipboard image or video tile when no history group is shown">{media_type}, copied {copied_time}.</string>
+    <string name="clipboard__item_actions_a11y" comment="Accessibility label for opening clipboard item actions from a history tile">Show clipboard item actions</string>
     <string name="clipboard__filter_chip__text" comment="Filter chip label for text clips in the clipboard history panel">Text</string>
     <string name="clipboard__filter_chip__images" comment="Filter chip label for image clips in the clipboard history panel">Images</string>
     <string name="clipboard__filter_chip__videos" comment="Filter chip label for video clips in the clipboard history panel">Videos</string>

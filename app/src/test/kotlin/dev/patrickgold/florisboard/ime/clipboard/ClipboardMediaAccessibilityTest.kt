@@ -51,10 +51,17 @@ class ClipboardMediaAccessibilityTest {
     @Test
     fun mediaAccessibilityStringsResolveToRealNonBlankLabels() {
         listOf(
+            R.string.clipboard__item_description_text,
+            R.string.clipboard__item_description_sensitive_text,
             R.string.clipboard__item_description_image,
             R.string.clipboard__item_description_video,
+            R.string.clipboard__text_item_a11y,
+            R.string.clipboard__text_item_a11y_no_group,
+            R.string.clipboard__text_item_sensitive_a11y,
+            R.string.clipboard__text_item_sensitive_a11y_no_group,
             R.string.clipboard__media_item_a11y,
             R.string.clipboard__media_item_a11y_no_group,
+            R.string.clipboard__item_actions_a11y,
         ).forEach { resId ->
             val value = context.getString(resId)
             assertTrue(value.isNotBlank(), "Clipboard media accessibility string $resId must be non-blank")
@@ -72,11 +79,27 @@ class ClipboardMediaAccessibilityTest {
         val source = locateClipboardInputLayoutSource().readText()
 
         source shouldContain "clipboardMediaDescriptionKind(item)"
-        source shouldContain "semantics { contentDescription = mediaA11yDescription }"
+        source shouldContain "clipboardTextAccessibilityPreview(item.stringRepresentation())"
+        source shouldContain "semantics(mergeDescendants = true) { contentDescription = itemA11yDescription }"
+        source shouldContain "role = Role.Button"
+        source shouldContain "onLongClickLabel = stringRes(R.string.clipboard__item_actions_a11y)"
+        source shouldContain "R.string.clipboard__text_item_a11y"
+        source shouldContain "R.string.clipboard__text_item_sensitive_a11y"
         source shouldContain "R.string.clipboard__media_item_a11y"
         source shouldContain "R.string.clipboard__media_item_a11y_no_group"
         source shouldContain "contentDescription = null"
         source shouldContain "Icons.Default.Videocam"
+    }
+
+    @Test
+    fun textAccessibilityPreviewCollapsesWhitespaceAndCapsLongContent() {
+        val longText = "alpha\n\nbeta\t" + "x".repeat(TEXT_A11Y_PREVIEW_CHAR_LIMIT + 20)
+
+        val preview = clipboardTextAccessibilityPreview(longText)
+
+        assertTrue("\n" !in preview)
+        assertTrue("\t" !in preview)
+        assertTrue(preview.length <= TEXT_A11Y_PREVIEW_CHAR_LIMIT + 1)
     }
 }
 

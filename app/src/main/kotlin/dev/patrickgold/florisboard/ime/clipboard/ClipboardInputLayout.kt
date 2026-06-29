@@ -93,6 +93,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -146,9 +147,14 @@ private val ItemWidth = 200.dp
 private val DialogWidth = 240.dp
 internal const val GRID_PREVIEW_CHAR_LIMIT = 500
 internal const val POPUP_PREVIEW_CHAR_LIMIT = 2000
+internal const val TEXT_A11Y_PREVIEW_CHAR_LIMIT = 140
 
 internal fun capPreviewText(text: String, charLimit: Int): String {
     return if (text.length > charLimit) text.take(charLimit) + "…" else text
+}
+
+internal fun clipboardTextAccessibilityPreview(text: String): String {
+    return capPreviewText(text.replace(Regex("\\s+"), " ").trim(), TEXT_A11Y_PREVIEW_CHAR_LIMIT)
 }
 
 const val CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO: Int = 0
@@ -371,10 +377,10 @@ fun ClipboardInputLayout(
             mapOf("type" to item.type.toString().lowercase())
         }
         val formatter = LocalLocalizedDateTimeFormatter.current
+        val copiedTime = formatter.format(Instant.ofEpochMilli(item.creationTimestampMs))
         val mediaDescriptionKind = clipboardMediaDescriptionKind(item)
         val mediaA11yDescription = mediaDescriptionKind?.let { kind ->
             val mediaType = stringRes(kind.labelResId)
-            val copiedTime = formatter.format(Instant.ofEpochMilli(item.creationTimestampMs))
             mediaGroup?.let { group ->
                 stringRes(
                     R.string.clipboard__media_item_a11y,
@@ -388,14 +394,56 @@ fun ClipboardInputLayout(
                 "copied_time" to copiedTime,
             )
         }
+        val textA11yDescription = if (item.type == ItemType.TEXT) {
+            val label = stringRes(
+                if (item.isSensitive) {
+                    R.string.clipboard__item_description_sensitive_text
+                } else {
+                    R.string.clipboard__item_description_text
+                },
+            )
+            if (item.isSensitive) {
+                mediaGroup?.let { group ->
+                    stringRes(
+                        R.string.clipboard__text_item_sensitive_a11y,
+                        "text_type" to label,
+                        "group" to stringRes(group.labelResId),
+                        "copied_time" to copiedTime,
+                    )
+                } ?: stringRes(
+                    R.string.clipboard__text_item_sensitive_a11y_no_group,
+                    "text_type" to label,
+                    "copied_time" to copiedTime,
+                )
+            } else {
+                val previewText = clipboardTextAccessibilityPreview(item.stringRepresentation())
+                mediaGroup?.let { group ->
+                    stringRes(
+                        R.string.clipboard__text_item_a11y,
+                        "text_type" to label,
+                        "group" to stringRes(group.labelResId),
+                        "copied_time" to copiedTime,
+                        "preview_text" to previewText,
+                    )
+                } ?: stringRes(
+                    R.string.clipboard__text_item_a11y_no_group,
+                    "text_type" to label,
+                    "copied_time" to copiedTime,
+                    "preview_text" to previewText,
+                )
+            }
+        } else {
+            null
+        }
+        val itemA11yDescription = mediaA11yDescription ?: textA11yDescription
         SnyggBox(
             elementName = elementName,
             attributes = attributes,
             modifier = modifier.fillMaxWidth(),
             clickAndSemanticsModifier = Modifier
                 .run {
-                    if (mediaA11yDescription != null) {
-                        semantics { contentDescription = mediaA11yDescription }
+                    if (itemA11yDescription != null) {
+                        semantics(mergeDescendants = true) { contentDescription = itemA11yDescription }
                     } else {
                         this
                     }
@@ -404,6 +452,8 @@ fun ClipboardInputLayout(
                     interactionSource = remember { MutableInteractionSource() },
                     indication = ripple(),
                     enabled = popupItem == null,
+                    role = Role.Button,
+                    onLongClickLabel = stringRes(R.string.clipboard__item_actions_a11y),
                     onLongClick = {
                         popupItem = item
                     },
