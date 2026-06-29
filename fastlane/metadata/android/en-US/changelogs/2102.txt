@@ -7,3 +7,5 @@ Reliability: inline autofill now clamps host suggestion sizes and drops malforme
 Build platform: compileSdk is now 37 while targetSdk stays 36, unlocking Android 17 API work without target behavior changes.
 
 Build gates: the production runBlocking allowlist now includes DictionaryManager's reviewed IO-dispatched Room bridge, so future drift remains visible.
+
+Android 17 readiness: IME configuration changes now explicitly re-request the keyboard only for API 37-targeted builds that had the input window shown before rotation.

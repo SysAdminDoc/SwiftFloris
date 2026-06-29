@@ -93,4 +93,9 @@ object AndroidVersion {
     inline val ATLEAST_API36_BAKLAVA
         @ChecksSdkIntAtLeast(api = 36)
         get() = Build.VERSION.SDK_INT >= 36
+
+    /** Android 17. */
+    inline val ATLEAST_API37
+        @ChecksSdkIntAtLeast(api = 37)
+        get() = Build.VERSION.SDK_INT >= 37
 }

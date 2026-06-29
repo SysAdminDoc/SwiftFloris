@@ -57,13 +57,6 @@ gated on external deliverables or hardware testing live in
   Acceptance: a preference-gated mode allows horizontal scrolling through more than 3 candidates; default behavior unchanged; TalkBack announces additional candidates; Roborazzi baseline covers the expanded state.
   Complexity: M
 
-- [ ] P2 — Handle Android 17 IME visibility non-restoration after config changes
-  Why: Android 17 no longer restores IME visibility after unhandled configuration changes (rotation). `FlorisImeService.onConfigurationChanged` may need to re-request the keyboard or explicitly handle the new default.
-  Evidence: Android 17 behavior changes page ("The system no longer restores IME visibility after unhandled configuration changes"); `FlorisImeService.kt` `onConfigurationChanged`.
-  Touches: `FlorisImeService.kt`, physical keyboard visibility tests.
-  Acceptance: after rotation with API 37 target, the keyboard reappears correctly if it was previously shown; verified by policy test or manual check; no regression on API 36.
-  Complexity: S
-
 ### P3
 
 - [ ] P3 — Add Smartbar-only Roborazzi visual baseline

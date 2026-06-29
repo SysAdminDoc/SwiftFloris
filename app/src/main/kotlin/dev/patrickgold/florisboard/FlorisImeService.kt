@@ -72,6 +72,7 @@ import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.ime.voice.VoiceInputSetupReason
 import dev.patrickgold.florisboard.ime.window.ImeRootView
+import dev.patrickgold.florisboard.ime.window.ImeVisibilityConfigurationPolicy
 import dev.patrickgold.florisboard.ime.window.ImeWindowController
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -502,9 +503,21 @@ class FlorisImeService : LifecycleInputMethodService() {
 
     override fun onConfigurationChanged(newConfig: Configuration) {
         super.onConfigurationChanged(newConfig)
+        val shouldRestoreIme = ImeVisibilityConfigurationPolicy.shouldRestoreImeAfterConfigurationChange(
+            wasWindowShown = windowController.isWindowShown.value,
+            runtimeSdk = Build.VERSION.SDK_INT,
+            targetSdk = applicationInfo.targetSdkVersion,
+        )
         systemLocalesFlow.value = newConfig.locales
         windowController.onConfigurationChanged(newConfig)
         themeManager.configurationChangeCounter.update { it + 1 }
+        if (shouldRestoreIme) {
+            window?.window?.decorView?.post {
+                if (windowController.isWindowShown.value) {
+                    showUi()
+                }
+            }
+        }
     }
 
     override fun onTrimMemory(level: Int) {
