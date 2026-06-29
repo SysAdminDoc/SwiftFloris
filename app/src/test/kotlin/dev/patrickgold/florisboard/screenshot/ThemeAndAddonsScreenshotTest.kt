@@ -46,6 +46,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.addons.AddonsSettingsScreen
@@ -53,9 +54,17 @@ import dev.patrickgold.florisboard.ime.addon.AddonManifest
 import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonType
+import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
+import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
+import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.ime.smartbar.ScrollableCandidatesPreviewSurface
+import dev.patrickgold.florisboard.ime.text.TextInputLayout
+import dev.patrickgold.florisboard.ime.theme.PerAppAccentDiscoveryHintState
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
@@ -101,6 +110,7 @@ class ThemeAndAddonsScreenshotTest {
     @After
     fun tearDown() {
         AddonRegistryStore.reset()
+        resetSmartbarOnlyState()
     }
 
     @Test
@@ -132,6 +142,23 @@ class ThemeAndAddonsScreenshotTest {
         }
         composeRule.onRoot().captureRoboImage(
             filePath = "$BASELINE_DIR/scrollable_candidates_row_surface.png",
+            roborazziOptions = ROBORAZZI_OPTIONS,
+        )
+    }
+
+    @Test
+    fun smartbarOnlyTextInputSurface() {
+        seedSmartbarOnlyState()
+        composeRule.setContent {
+            SmartbarOnlyTextInputThemeSurface(stylesheetFileName = "swiftkey_high_contrast.json")
+        }
+        val nlpManager by composeRule.activity.nlpManager()
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            nlpManager.activeCandidatesFlow.value.isNotEmpty()
+        }
+        composeRule.waitForIdle()
+        composeRule.onRoot().captureRoboImage(
+            filePath = "$BASELINE_DIR/smartbar_only_text_input_surface.png",
             roborazziOptions = ROBORAZZI_OPTIONS,
         )
     }
@@ -226,6 +253,56 @@ class ThemeAndAddonsScreenshotTest {
         AddonRegistryStore.setActive(registry)
     }
 
+    private fun seedSmartbarOnlyState() {
+        val keyboardManager by composeRule.activity.keyboardManager()
+        val nlpManager by composeRule.activity.nlpManager()
+        val prefs by FlorisPreferenceStore
+        runBlocking {
+            prefs.smartbar.enabled.set(true)
+            prefs.smartbar.layout.set(SmartbarLayout.SUGGESTIONS_ONLY)
+            prefs.smartbar.sharedActionsExpanded.set(false)
+            prefs.smartbar.extendedActionsExpanded.set(false)
+            prefs.suggestion.enabled.set(true)
+            prefs.suggestion.displayMode.set(CandidatesDisplayMode.CLASSIC)
+            prefs.theme.perAppAccentEnabled.set(false)
+            prefs.theme.perAppAccentDiscoveryHintState.set(PerAppAccentDiscoveryHintState.DISMISSED)
+        }
+        keyboardManager.activeState.isSmartbarOnlyMode = true
+        nlpManager.suggestDirectly(
+            listOf(
+                WordSuggestionCandidate(
+                    text = "hardware",
+                    secondaryText = "mode",
+                    confidence = 0.98,
+                    isEligibleForAutoCommit = true,
+                ),
+                WordSuggestionCandidate(
+                    text = "privacy",
+                    secondaryText = "local",
+                    confidence = 0.91,
+                ),
+                WordSuggestionCandidate(
+                    text = "SwiftFloris",
+                    confidence = 0.86,
+                ),
+            ),
+        )
+    }
+
+    private fun resetSmartbarOnlyState() {
+        val keyboardManager by composeRule.activity.keyboardManager()
+        val nlpManager by composeRule.activity.nlpManager()
+        val prefs by FlorisPreferenceStore
+        keyboardManager.activeState.isSmartbarOnlyMode = false
+        nlpManager.clearSuggestions()
+        runBlocking {
+            prefs.smartbar.layout.set(SmartbarLayout.SUGGESTIONS_ACTIONS_SHARED)
+            prefs.suggestion.displayMode.set(CandidatesDisplayMode.CLASSIC)
+            prefs.theme.perAppAccentEnabled.set(false)
+            prefs.theme.perAppAccentDiscoveryHintState.set(PerAppAccentDiscoveryHintState.COLLECTING)
+        }
+    }
+
     private fun addonManifest(
         packageName: String,
         type: AddonType,
@@ -253,6 +330,37 @@ class ThemeAndAddonsScreenshotTest {
 
         fun fingerprint(byte: String): String =
             List(32) { byte }.joinToString(separator = ":")
+    }
+}
+
+@Composable
+private fun SmartbarOnlyTextInputThemeSurface(stylesheetFileName: String) {
+    val stylesheet = remember(stylesheetFileName) {
+        loadBundledStylesheet(stylesheetFileName)
+    }
+    val theme = rememberSnyggTheme(stylesheet)
+
+    ProvideLocalizedResources(
+        resourcesContext = LocalContext.current,
+        appName = R.string.app_name,
+    ) {
+        MaterialTheme {
+            ProvideSnyggTheme(theme) {
+                SnyggBox(
+                    elementName = FlorisImeUi.Window.elementName,
+                    attributes = mapOf(FlorisImeUi.Attr.WindowMode to "fixed"),
+                    modifier = Modifier.size(width = 360.dp, height = 82.dp),
+                ) {
+                    SnyggColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                    ) {
+                        TextInputLayout()
+                    }
+                }
+            }
+        }
     }
 }
 

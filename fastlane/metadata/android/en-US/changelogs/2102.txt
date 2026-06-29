@@ -23,3 +23,5 @@ Testing: Roborazzi now covers custom layout, snippets, privacy audit, sync, back
 Smartbar: the dynamic scrollable suggestion-strip mode now has picker descriptions, a shared display policy, TalkBack coverage beyond three candidates, and a Roborazzi baseline.
 
 Prediction control: long-press removal on next-word candidates now rejects only the preceding context, preserving the word in other predictions while demoting the unwanted continuation.
+
+Testing: Roborazzi now has a Smartbar-only text-input baseline for the compact physical-keyboard surface.
