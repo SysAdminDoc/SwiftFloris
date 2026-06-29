@@ -64,13 +64,6 @@ gated on external deliverables or hardware testing live in
   Acceptance: after rotation with API 37 target, the keyboard reappears correctly if it was previously shown; verified by policy test or manual check; no regression on API 36.
   Complexity: S
 
-- [ ] P2 — Allowlist or migrate DictionaryManager.kt runBlocking
-  Why: `DictionaryManager.kt:546` uses `runBlocking(Dispatchers.IO)` which is not in the CI allowlist at `scripts/runblocking-allowlist.txt`. The gate should either allowlist it with rationale or the code should migrate to a suspend path.
-  Evidence: `DictionaryManager.kt:546`; `scripts/runblocking-allowlist.txt` (21 entries, none for DictionaryManager).
-  Touches: `DictionaryManager.kt`, `scripts/runblocking-allowlist.txt`, or conversion to suspend function + caller updates.
-  Acceptance: the `runBlocking` is either allowlisted with a documented rationale or replaced with a suspend call; the CI gate passes cleanly.
-  Complexity: S
-
 ### P3
 
 - [ ] P3 — Add Smartbar-only Roborazzi visual baseline

@@ -5,3 +5,5 @@ Premium polish pass: Settings/setup navigation now respects Android reduced-moti
 Reliability: inline autofill now clamps host suggestion sizes and drops malformed suggestions instead of crashing the keyboard.
 
 Build platform: compileSdk is now 37 while targetSdk stays 36, unlocking Android 17 API work without target behavior changes.
+
+Build gates: the production runBlocking allowlist now includes DictionaryManager's reviewed IO-dispatched Room bridge, so future drift remains visible.

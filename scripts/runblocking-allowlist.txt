@@ -9,6 +9,7 @@ app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstanc
 app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/AbstractEditorInstance.kt | runBlocking { | Editor composing/batch bridge; bounded by existing editor replay coverage.
 app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt | } else runBlocking { | Selection read fallback for synchronous InputConnection cut/copy path.
 app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/EditorInstance.kt | } else runBlocking { | Selection read fallback for synchronous InputConnection cut/copy path.
+app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt | return runBlocking(Dispatchers.IO) { | User-dictionary suggestion/forget APIs are synchronous IME call sites; bounded Room work is dispatched to IO.
 app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt | runBlocking { providerRegistry.suggestionProvider(subtype).getListOfWords(subtype) } | Synchronous dictionary-provider compatibility path for local provider data.
 app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpManager.kt | val value = runBlocking { providerRegistry.suggestionProvider(subtype).getFrequencyForWord(subtype, word) } | Synchronous frequency lookup compatibility path for local provider data.
 app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpProviderRegistry.kt | runBlocking { | Provider initialization bridge; provider calls are local and covered by NLP tests.
