@@ -125,14 +125,20 @@ private val ENUM_DISPLAY_ENTRIES = mapOf<Pair<KClass<*>, String>, @Composable ()
             entry(
                 key = CandidatesDisplayMode.CLASSIC,
                 label = stringRes(R.string.enum__candidates_display_mode__classic),
+                description = stringRes(R.string.enum__candidates_display_mode__classic__description),
+                showDescriptionOnlyIfSelected = true,
             )
             entry(
                 key = CandidatesDisplayMode.DYNAMIC,
                 label = stringRes(R.string.enum__candidates_display_mode__dynamic),
+                description = stringRes(R.string.enum__candidates_display_mode__dynamic__description),
+                showDescriptionOnlyIfSelected = true,
             )
             entry(
                 key = CandidatesDisplayMode.DYNAMIC_SCROLLABLE,
                 label = stringRes(R.string.enum__candidates_display_mode__dynamic_scrollable),
+                description = stringRes(R.string.enum__candidates_display_mode__dynamic_scrollable__description),
+                showDescriptionOnlyIfSelected = true,
             )
         }
     },

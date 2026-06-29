@@ -34,6 +34,7 @@ import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
@@ -52,6 +53,7 @@ import dev.patrickgold.florisboard.ime.addon.AddonManifest
 import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonType
+import dev.patrickgold.florisboard.ime.smartbar.ScrollableCandidatesPreviewSurface
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import java.io.File
@@ -119,6 +121,17 @@ class ThemeAndAddonsScreenshotTest {
         }
         composeRule.onRoot().captureRoboImage(
             filePath = "$BASELINE_DIR/swiftkey_high_contrast_nested_ime_surfaces.png",
+            roborazziOptions = ROBORAZZI_OPTIONS,
+        )
+    }
+
+    @Test
+    fun scrollableCandidatesRowSurface() {
+        composeRule.setContent {
+            ScrollableCandidatesThemeSurface(stylesheetFileName = "swiftkey_high_contrast.json")
+        }
+        composeRule.onRoot().captureRoboImage(
+            filePath = "$BASELINE_DIR/scrollable_candidates_row_surface.png",
             roborazziOptions = ROBORAZZI_OPTIONS,
         )
     }
@@ -240,6 +253,44 @@ class ThemeAndAddonsScreenshotTest {
 
         fun fingerprint(byte: String): String =
             List(32) { byte }.joinToString(separator = ":")
+    }
+}
+
+@Composable
+private fun ScrollableCandidatesThemeSurface(stylesheetFileName: String) {
+    val stylesheet = remember(stylesheetFileName) {
+        loadBundledStylesheet(stylesheetFileName)
+    }
+    val theme = rememberSnyggTheme(stylesheet)
+
+    ProvideLocalizedResources(
+        resourcesContext = LocalContext.current,
+        appName = R.string.app_name,
+    ) {
+        MaterialTheme {
+            ProvideSnyggTheme(theme) {
+                SnyggBox(
+                    elementName = FlorisImeUi.Window.elementName,
+                    attributes = mapOf(FlorisImeUi.Attr.WindowMode to "fixed"),
+                    modifier = Modifier.size(width = 360.dp, height = 74.dp),
+                ) {
+                    SnyggColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(8.dp),
+                    ) {
+                        SnyggBox(
+                            elementName = FlorisImeUi.Smartbar.elementName,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(42.dp),
+                        ) {
+                            ScrollableCandidatesPreviewSurface(Modifier.fillMaxSize())
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 

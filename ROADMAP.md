@@ -22,15 +22,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-### P2
-
-- [ ] P2 — Add scrollable/expanded suggestion strip mode
-  Why: the current strip shows 3 fixed candidates; HeliBoard #2584, Reddit/Lemmy threads, and community feedback consistently request the ability to see more suggestions, either by scrolling or expanding the strip.
-  Evidence: HeliBoard issue #2584; community posts on r/androidapps and Lemmy; FUTO Keyboard's multi-candidate row.
-  Touches: `ime/smartbar/CandidatesRow.kt`, `ime/smartbar/Smartbar.kt`, Smartbar layout preferences, Roborazzi baselines.
-  Acceptance: a preference-gated mode allows horizontal scrolling through more than 3 candidates; default behavior unchanged; TalkBack announces additional candidates; Roborazzi baseline covers the expanded state.
-  Complexity: M
-
 ### P3
 
 - [ ] P3 — Add Smartbar-only Roborazzi visual baseline

@@ -24,3 +24,27 @@ enum class CandidatesDisplayMode {
     DYNAMIC,
     DYNAMIC_SCROLLABLE;
 }
+
+internal object CandidatesDisplayPolicy {
+    private const val CLASSIC_MAX_VISIBLE_CANDIDATES = 3
+
+    fun visibleCandidateCount(displayMode: CandidatesDisplayMode, candidateCount: Int): Int {
+        val safeCandidateCount = candidateCount.coerceAtLeast(0)
+        return when (displayMode) {
+            CandidatesDisplayMode.CLASSIC -> {
+                safeCandidateCount.coerceAtMost(CLASSIC_MAX_VISIBLE_CANDIDATES)
+            }
+            CandidatesDisplayMode.DYNAMIC,
+            CandidatesDisplayMode.DYNAMIC_SCROLLABLE,
+            -> safeCandidateCount
+        }
+    }
+
+    fun <T> visibleCandidates(displayMode: CandidatesDisplayMode, candidates: List<T>): List<T> {
+        return candidates.take(visibleCandidateCount(displayMode, candidates.size))
+    }
+
+    fun isHorizontallyScrollable(displayMode: CandidatesDisplayMode, candidateCount: Int): Boolean {
+        return displayMode == CandidatesDisplayMode.DYNAMIC_SCROLLABLE && candidateCount > 1
+    }
+}

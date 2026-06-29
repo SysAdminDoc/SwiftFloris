@@ -59,6 +59,15 @@ class SmartbarAccessibilityLabelsTest : FunSpec({
         ) shouldBe "Suggestion 1 of 1: fallback"
     }
 
+    test("candidate label supports scrollable rows with more than three visible suggestions") {
+        SmartbarAccessibilityLabels.candidateLabel(
+            template = suggestionTemplate,
+            text = "clipboard",
+            index = 4,
+            count = 6,
+        ) shouldBe "Suggestion 5 of 6: clipboard"
+    }
+
     test("quick action label prefers visible display name then tooltip then fallback") {
         SmartbarAccessibilityLabels.quickActionLabel(
             displayName = "Clipboard",

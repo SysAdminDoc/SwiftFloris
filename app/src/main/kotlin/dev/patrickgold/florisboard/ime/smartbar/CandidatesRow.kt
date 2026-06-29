@@ -73,6 +73,7 @@ import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.LearnedWordForgetSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.nlpManager
@@ -129,83 +130,33 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
     }
 
     Box(modifier = modifier.fillMaxSize()) {
-        SnyggRow(
-            elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
-            modifier = Modifier
-                .fillMaxSize()
-                .conditional(displayMode == CandidatesDisplayMode.DYNAMIC_SCROLLABLE && candidates.size > 1) {
-                    florisHorizontalScroll(scrollbarHeight = CandidatesRowScrollbarHeight)
-                },
-            horizontalArrangement = if (candidates.size > 1) {
-                Arrangement.Start
-            } else {
-                Arrangement.Center
+        CandidateStripContent(
+            candidates = candidates,
+            displayMode = displayMode,
+            longPressDelay = prefs.keyboard.longPressDelay.get().toLong(),
+            onCandidateClick = { n ->
+                // Can't use candidate directly. The live list can also shrink
+                // between the rendered frame and the tap (suggestions reroll on
+                // every content change), so a stale slot index must be a no-op,
+                // not an IndexOutOfBoundsException inside a click handler.
+                candidates.getOrNull(n)?.let { live ->
+                    keyboardManager.commitCandidate(live)
+                }
             },
-        ) {
-            if (candidates.isNotEmpty()) {
-                val candidateModifier = if (candidates.size == 1) {
-                    Modifier
-                        .fillMaxHeight()
-                        .weight(1f, fill = false)
+            onCandidateLongPress = { n ->
+                // Can't use candidate directly — capture the live candidate at
+                // gesture time so the confirm prompt operates on what the user
+                // actually saw, even if the strip rerolls before they confirm.
+                // Guard the index: the list may have shrunk since render.
+                val candidateItem = candidates.getOrNull(n)
+                if (candidateItem != null && candidateItem.isEligibleForUserRemoval) {
+                    pendingRemoval = candidateItem
+                    true
                 } else {
-                    Modifier
-                        .fillMaxHeight()
-                        .conditional(displayMode == CandidatesDisplayMode.CLASSIC) {
-                            weight(1f)
-                        }
-                        .conditional(displayMode != CandidatesDisplayMode.CLASSIC) {
-                            wrapContentWidth().widthIn(max = 160.dp)
-                        }
+                    false
                 }
-                val list = when (displayMode) {
-                    CandidatesDisplayMode.CLASSIC -> candidates.subList(0, 3.coerceAtMost(candidates.size))
-                    else -> candidates
-                }
-                for ((n, candidate) in list.withIndex()) {
-                    if (n > 0) {
-                        SnyggSpacer(
-                            elementName = FlorisImeUi.SmartbarCandidateSpacer.elementName,
-                            modifier = Modifier
-                                .width(1.dp)
-                                .fillMaxHeight(0.6f)
-                                .align(Alignment.CenterVertically),
-                        )
-                    }
-                    CandidateItem(
-                        modifier = candidateModifier,
-                        candidate = candidate,
-                        index = n,
-                        count = list.size,
-                        displayMode = displayMode,
-                        onClick = {
-                            // Can't use candidate directly. The live list can
-                            // also shrink between the rendered frame and the
-                            // tap (suggestions reroll on every content change),
-                            // so a stale slot index must be a no-op, not an
-                            // IndexOutOfBoundsException inside a click handler.
-                            candidates.getOrNull(n)?.let { live ->
-                                keyboardManager.commitCandidate(live)
-                            }
-                        },
-                        onLongPress = {
-                            // Can't use candidate directly — capture the live
-                            // candidate at gesture time so the confirm prompt
-                            // operates on what the user actually saw, even if
-                            // the strip rerolls before they confirm. Guard the
-                            // index: the list may have shrunk since render.
-                            val candidateItem = candidates.getOrNull(n)
-                            if (candidateItem != null && candidateItem.isEligibleForUserRemoval) {
-                                pendingRemoval = candidateItem
-                                true
-                            } else {
-                                false
-                            }
-                        },
-                        longPressDelay = prefs.keyboard.longPressDelay.get().toLong(),
-                    )
-                }
-            }
-        }
+            },
+        )
         // ROADMAP §7 Next-11.2 — springy entry/exit for the confirm overlay.
         // Critically-damped spring (Spring.DampingRatioMediumBouncy) gives a
         // tiny rebound on appear so the prompt reads as a deliberate action
@@ -269,6 +220,96 @@ fun CandidatesRow(modifier: Modifier = Modifier) {
         )
     }
     Trace.endSection()
+}
+
+@Composable
+internal fun ScrollableCandidatesPreviewSurface(modifier: Modifier = Modifier) {
+    val candidates = remember {
+        listOf(
+            WordSuggestionCandidate(
+                "privacy",
+                secondaryText = "local",
+                confidence = 0.98,
+                isEligibleForAutoCommit = true,
+            ),
+            WordSuggestionCandidate("keyboard", secondaryText = "noun", confidence = 0.88),
+            WordSuggestionCandidate("offline", confidence = 0.82),
+            WordSuggestionCandidate("SwiftFloris", confidence = 0.78),
+            WordSuggestionCandidate("clipboard", confidence = 0.74),
+            WordSuggestionCandidate("settings", confidence = 0.69),
+        )
+    }
+    CandidateStripContent(
+        candidates = candidates,
+        displayMode = CandidatesDisplayMode.DYNAMIC_SCROLLABLE,
+        longPressDelay = 500L,
+        onCandidateClick = { },
+        onCandidateLongPress = { false },
+        modifier = modifier,
+    )
+}
+
+@Composable
+private fun CandidateStripContent(
+    candidates: List<SuggestionCandidate>,
+    displayMode: CandidatesDisplayMode,
+    longPressDelay: Long,
+    onCandidateClick: (Int) -> Unit,
+    onCandidateLongPress: (Int) -> Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val visibleCandidates = CandidatesDisplayPolicy.visibleCandidates(displayMode, candidates)
+    SnyggRow(
+        elementName = FlorisImeUi.SmartbarCandidatesRow.elementName,
+        modifier = modifier
+            .fillMaxSize()
+            .conditional(CandidatesDisplayPolicy.isHorizontallyScrollable(displayMode, candidates.size)) {
+                florisHorizontalScroll(scrollbarHeight = CandidatesRowScrollbarHeight)
+            },
+        horizontalArrangement = if (visibleCandidates.size > 1) {
+            Arrangement.Start
+        } else {
+            Arrangement.Center
+        },
+    ) {
+        if (visibleCandidates.isNotEmpty()) {
+            val candidateModifier = if (visibleCandidates.size == 1) {
+                Modifier
+                    .fillMaxHeight()
+                    .weight(1f, fill = false)
+            } else {
+                Modifier
+                    .fillMaxHeight()
+                    .conditional(displayMode == CandidatesDisplayMode.CLASSIC) {
+                        weight(1f)
+                    }
+                    .conditional(displayMode != CandidatesDisplayMode.CLASSIC) {
+                        wrapContentWidth().widthIn(max = 160.dp)
+                    }
+            }
+            for ((n, candidate) in visibleCandidates.withIndex()) {
+                if (n > 0) {
+                    SnyggSpacer(
+                        elementName = FlorisImeUi.SmartbarCandidateSpacer.elementName,
+                        modifier = Modifier
+                            .width(1.dp)
+                            .fillMaxHeight(0.6f)
+                            .align(Alignment.CenterVertically),
+                    )
+                }
+                CandidateItem(
+                    modifier = candidateModifier,
+                    candidate = candidate,
+                    index = n,
+                    count = visibleCandidates.size,
+                    displayMode = displayMode,
+                    onClick = { onCandidateClick(n) },
+                    onLongPress = { onCandidateLongPress(n) },
+                    longPressDelay = longPressDelay,
+                )
+            }
+        }
+    }
 }
 
 /**
