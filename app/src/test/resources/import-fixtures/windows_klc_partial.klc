@@ -1,0 +1,10 @@
+KBD "PARTIAL" "Partial Layout"
+LOCALENAME "en-US"
+SHIFTSTATE
+0
+1
+LAYOUT
+1E A 1 0061 0041
+not-a-valid-layout-row
+30 B 1 0062 0042
+ENDKBD

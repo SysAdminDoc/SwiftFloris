@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.automirrored.filled.TextSnippet
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -41,6 +40,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.settings.copyImportDiagnosticsToClipboard
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.snippet.EspansoMatchParser
 import dev.patrickgold.florisboard.ime.snippet.SnippetManager
 import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
@@ -55,6 +56,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisSuccessCard
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -85,6 +89,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
     }
     var deleteCandidate by remember { mutableStateOf<String?>(null) }
     var showClearAllConfirmation by remember { mutableStateOf(false) }
+    var importNotice by remember { mutableStateOf<SnippetImportNotice?>(null) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -100,17 +105,23 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 val filename = uri.lastPathSegment.orEmpty().ifBlank { "import.yml" }
                 snippetManager.importYaml(yamlContent, filename)
             }
-            result.onSuccess { count ->
-                if (count > 0) {
+            result.onSuccess { importResult ->
+                if (importResult.importedCount > 0) {
+                    importNotice = SnippetImportNotice.Imported(
+                        importedCount = importResult.importedCount,
+                        diagnostics = importResult.diagnostics,
+                    )
                     Toast.makeText(
                         context,
-                        importSuccessTemplate.replace("{count}", count.toString()),
+                        importSuccessTemplate.replace("{count}", importResult.importedCount.toString()),
                         Toast.LENGTH_SHORT,
                     ).show()
                 } else {
+                    importNotice = SnippetImportNotice.NoValidTriggers(importResult.diagnostics)
                     Toast.makeText(context, importFailedText, Toast.LENGTH_LONG).show()
                 }
             }.onFailure {
+                importNotice = SnippetImportNotice.ReadFailure
                 Toast.makeText(context, importReadErrorText, Toast.LENGTH_LONG).show()
             }
         }
@@ -143,11 +154,17 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 summary = stringRes(R.string.settings__snippet__import_yaml__summary),
                 onClick = { launchImportPicker() },
             )
+            importNotice?.let { notice ->
+                SnippetImportNoticeCard(
+                    notice = notice,
+                    modifier = Modifier.padding(8.dp),
+                )
+            }
             for (filename in files) {
                 val triggerCount = remember(filename, snippets) {
                     runCatching {
                         val file = java.io.File(context.filesDir, "snippets/$filename")
-                        if (file.exists()) EspansoMatchParser.parse(file.readText()).size else 0
+                        if (file.exists()) EspansoMatchParser.parseWithDiagnostics(file.readText()).matches.size else 0
                     }.getOrDefault(0)
                 }
                 JetPrefListItem(
@@ -202,6 +219,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
             onConfirm = {
                 snippetManager.removeFile(filename)
                 deleteCandidate = null
+                importNotice = null
                 Toast.makeText(context, fileRemovedText, Toast.LENGTH_SHORT).show()
             },
             onDismiss = { deleteCandidate = null },
@@ -215,6 +233,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
             onConfirm = {
                 snippetManager.clearAll()
                 showClearAllConfirmation = false
+                importNotice = null
                 Toast.makeText(context, clearedText, Toast.LENGTH_SHORT).show()
             },
             dismissLabel = stringRes(R.string.action__cancel),
@@ -222,5 +241,81 @@ fun SnippetSettingsScreen() = FlorisScreen {
         ) {
             Text(text = stringRes(R.string.settings__snippet__clear_all_confirm_message))
         }
+    }
+}
+
+private sealed interface SnippetImportNotice {
+    data class Imported(
+        val importedCount: Int,
+        val diagnostics: ImportDiagnostics,
+    ) : SnippetImportNotice
+
+    data class NoValidTriggers(val diagnostics: ImportDiagnostics) : SnippetImportNotice
+
+    data object ReadFailure : SnippetImportNotice
+}
+
+@Composable
+private fun SnippetImportNoticeCard(
+    notice: SnippetImportNotice,
+    modifier: Modifier = Modifier,
+) {
+    val context = LocalContext.current
+    when (notice) {
+        is SnippetImportNotice.Imported -> {
+            val diagnosticSummary = notice.diagnostics.summary()
+            if (notice.diagnostics.hasSkipped && diagnosticSummary.isNotBlank()) {
+                FlorisWarningCard(
+                    modifier = modifier,
+                    text = stringRes(R.string.settings__snippet__import_warning_title),
+                    secondaryText = stringRes(
+                        R.string.settings__snippet__import_warning_summary,
+                        "count" to notice.importedCount,
+                        "details" to diagnosticSummary,
+                    ),
+                    actionLabel = stringRes(R.string.import_diagnostics__copy_details),
+                    onClick = { copyImportDiagnosticsToClipboard(context, diagnosticSummary) },
+                )
+            } else {
+                FlorisSuccessCard(
+                    modifier = modifier,
+                    text = stringRes(R.string.settings__snippet__import_success_title),
+                    secondaryText = stringRes(
+                        R.string.settings__snippet__import_success_summary,
+                        "count" to notice.importedCount,
+                    ),
+                )
+            }
+        }
+        is SnippetImportNotice.NoValidTriggers -> {
+            val diagnosticSummary = notice.diagnostics.summary()
+            FlorisErrorCard(
+                modifier = modifier,
+                text = stringRes(R.string.settings__snippet__import_failed_title),
+                secondaryText = if (diagnosticSummary.isNotBlank()) {
+                    stringRes(
+                        R.string.settings__snippet__import_failed_with_details,
+                        "details" to diagnosticSummary,
+                    )
+                } else {
+                    stringRes(R.string.settings__snippet__import_failed_summary)
+                },
+                actionLabel = if (diagnosticSummary.isNotBlank()) {
+                    stringRes(R.string.import_diagnostics__copy_details)
+                } else {
+                    null
+                },
+                onClick = if (diagnosticSummary.isNotBlank()) {
+                    { copyImportDiagnosticsToClipboard(context, diagnosticSummary) }
+                } else {
+                    null
+                },
+            )
+        }
+        SnippetImportNotice.ReadFailure -> FlorisErrorCard(
+            modifier = modifier,
+            text = stringRes(R.string.settings__snippet__import_read_error_title),
+            secondaryText = stringRes(R.string.settings__snippet__import_read_error_summary),
+        )
     }
 }

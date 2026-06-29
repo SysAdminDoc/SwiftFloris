@@ -1499,6 +1499,7 @@
     <string name="physical_keyboard__import_layout__in_progress_summary">Reading and validating the selected hardware layout file.</string>
     <string name="physical_keyboard__import_layout__success">Layout imported</string>
     <string name="physical_keyboard__import_layout__success_summary">Select an attached hardware keyboard below, then apply the layout.</string>
+    <string name="physical_keyboard__import_layout__success_with_warnings">Layout imported with warnings</string>
     <string name="physical_keyboard__import_layout__unsupported">Unsupported file type</string>
     <string name="physical_keyboard__import_layout__unsupported_summary">Supported formats are Windows KLC, macOS .keylayout, and Keyman KMP packages with LDML XML layouts.</string>
     <string name="physical_keyboard__import_layout__no_layout">No importable layout found</string>
@@ -1528,6 +1529,10 @@
     <string name="physical_keyboard__apply_layout__success_summary" comment="Summary after applying a hardware keyboard layout. layout is the imported layout name, device is the hardware keyboard display name.">{layout} is now active for {device}.</string>
     <string name="physical_keyboard__apply_layout__failure">Layout was not applied</string>
     <string name="physical_keyboard__apply_layout__failure_summary">Select an imported layout and an attached hardware keyboard before applying.</string>
+
+    <string name="import_diagnostics__copy_details" comment="Action label for copying parser/import diagnostics">Copy details</string>
+    <string name="import_diagnostics__copied" comment="Toast after copying parser/import diagnostics">Import details copied.</string>
+    <string name="import_diagnostics__clipboard_label" comment="Clipboard label for copied parser/import diagnostics">SwiftFloris import diagnostics</string>
 
     <!-- Back up & Restore -->
     <string name="backup_and_restore__title">Back up &amp; Restore</string>
@@ -2443,6 +2448,15 @@
     <string name="settings__snippet__import_success__toast" comment="Toast after successful import; {count} = triggers imported">{count} triggers imported.</string>
     <string name="settings__snippet__import_failed__toast" comment="Toast when import yields zero triggers or fails">Import failed — no valid triggers found in file.</string>
     <string name="settings__snippet__import_read_error__toast" comment="Toast when the file cannot be read">Could not read the selected file.</string>
+    <string name="settings__snippet__import_success_title" comment="Title of successful snippet import notice">Snippet file imported</string>
+    <string name="settings__snippet__import_success_summary" comment="Summary of successful snippet import notice; {count} = triggers imported">{count} triggers loaded.</string>
+    <string name="settings__snippet__import_warning_title" comment="Title of partial snippet import notice">Snippet file imported with warnings</string>
+    <string name="settings__snippet__import_warning_summary" comment="Summary of partial snippet import notice; {count} = triggers imported, {details} = skipped-entry diagnostics">{count} triggers loaded. Skipped entries:\n{details}</string>
+    <string name="settings__snippet__import_failed_title" comment="Title when snippet import found no usable triggers">No valid snippets found</string>
+    <string name="settings__snippet__import_failed_summary" comment="Summary when snippet import found no usable triggers">Review the YAML file and try again. Nothing was imported.</string>
+    <string name="settings__snippet__import_failed_with_details" comment="Summary when snippet import found no usable triggers but parser diagnostics are available; {details} = skipped-entry diagnostics">Nothing was imported. Details:\n{details}</string>
+    <string name="settings__snippet__import_read_error_title" comment="Title when the selected snippet file cannot be read">Snippet import failed</string>
+    <string name="settings__snippet__import_read_error_summary" comment="Summary when the selected snippet file cannot be read">SwiftFloris could not read the selected file. Choose another YAML file and try again.</string>
     <string name="settings__snippet__empty_title" comment="Empty state title">No snippets loaded</string>
     <string name="settings__snippet__empty_message" comment="Empty state message">Import an Espanso YAML file to start expanding triggers into text as you type.</string>
     <string name="settings__snippet__trigger_arrow" comment="Arrow separator between trigger and replacement">→</string>

@@ -129,4 +129,22 @@ class EspansoMatchParserTest : FunSpec({
         result.diagnostics.skippedCount shouldBe 0
         result.diagnostics.hasSkipped shouldBe false
     }
+
+    test("fixture import keeps valid snippets and reports skipped entries") {
+        val result = EspansoMatchParser.parseWithDiagnostics(resourceText("import-fixtures/espanso_partial.yml"))
+
+        result.matches shouldBe listOf(
+            EspansoMatch(":addr", "123 Privacy Lane"),
+            EspansoMatch(":sig", "Regards"),
+        )
+        result.diagnostics.skippedCount shouldBe 1
+        result.diagnostics.summary().contains("Entry 2") shouldBe true
+    }
 })
+
+private fun resourceText(path: String): String {
+    val classLoader = requireNotNull(EspansoMatchParserTest::class.java.classLoader)
+    return requireNotNull(classLoader.getResource(path)) {
+        "Missing test resource: $path"
+    }.readText()
+}

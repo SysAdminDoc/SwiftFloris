@@ -159,4 +159,21 @@ class KlcLayoutParserTest : FunSpec({
         result.diagnostics.skippedCount shouldBe 0
         result.diagnostics.hasSkipped shouldBe false
     }
+
+    test("fixture import keeps valid KLC rows and reports skipped malformed rows") {
+        val result = KlcLayoutParser.parseWithDiagnostics(resourceText("import-fixtures/windows_klc_partial.klc"))
+
+        result.layout.name shouldBe "Partial Layout"
+        result.layout.scancodeMap shouldContainKey 0x1E
+        result.layout.scancodeMap shouldContainKey 0x30
+        result.diagnostics.skippedCount shouldBe 1
+        result.diagnostics.summary().contains("LAYOUT row 2") shouldBe true
+    }
 })
+
+private fun resourceText(path: String): String {
+    val classLoader = requireNotNull(KlcLayoutParserTest::class.java.classLoader)
+    return requireNotNull(classLoader.getResource(path)) {
+        "Missing test resource: $path"
+    }.readText()
+}

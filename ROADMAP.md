@@ -11,14 +11,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 — Surface skipped-record diagnostics for snippet and layout imports
-  Why: competitor/community issue traffic shows import/migration/layout quality matters, and SwiftFloris dictionary import already reports skipped counts while Espanso snippets and hardware layout parsers can silently tolerate malformed lines.
-  Evidence: `EspansoMatchParser.kt`; `KlcLayoutParser.kt`; `SwipeTraceImporter.kt`; `PersonalDictionaryImportSummaryDialog.kt`; HeliBoard issue traffic around imports/customization.
-  Touches: `ime/snippet/`, `app/settings/typing/SnippetSettingsScreen.kt`, `ime/hardware/`, relevant parser tests and string resources.
-  Acceptance: snippet/layout imports return parsed entries plus skipped/malformed diagnostics; UI shows a calm summary with a copy/exportable diagnostic detail; malformed fixtures prove partial imports remain safe and transparent.
-  Complexity: M
-  Note (2026-06-29 research): parser-side `parseWithDiagnostics()` shipped in `8986df14` for both `EspansoMatchParser` and `KlcLayoutParser` with `ImportDiagnostics` return type. Remaining: wire diagnostics into SnippetSettingsScreen and HardwareKeyboardLayoutImport UI surfaces, add malformed-fixture test files.
-
 - [ ] P2 — Expand Roborazzi baselines for new settings surfaces
   Why: recent user-facing screens landed without matching committed visual baselines, while existing baselines cover only selected pending settings and addon/theme surfaces.
   Evidence: `Routes.kt` includes CustomLayoutEditor, SnippetSettings, PrivacyAuditLog, Sync, Backup, Restore; `app/src/test/snapshots/` lacks those screen baselines.

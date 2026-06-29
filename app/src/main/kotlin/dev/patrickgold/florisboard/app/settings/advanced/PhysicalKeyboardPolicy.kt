@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.app.settings.advanced
 
 import android.content.res.Configuration
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayoutImportStatus
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.window.ImeFormFactor
 
 internal data class HardwareKeyboardDeviceOption(
@@ -74,6 +75,7 @@ internal enum class PhysicalKeyboardNotice {
     Importing,
     DeleteInProgress,
     ImportSuccess,
+    ImportSuccessWithWarnings,
     ImportUnsupported,
     ImportNoLayout,
     ImportTooLarge,
@@ -104,9 +106,16 @@ internal object PhysicalKeyboardPolicy {
         return selectedLayoutId != null && activeOperation == null
     }
 
-    fun importNotice(status: HardwareKeyboardLayoutImportStatus): PhysicalKeyboardNotice {
+    fun importNotice(
+        status: HardwareKeyboardLayoutImportStatus,
+        diagnostics: ImportDiagnostics = ImportDiagnostics.NONE,
+    ): PhysicalKeyboardNotice {
         return when (status) {
-            HardwareKeyboardLayoutImportStatus.Imported -> PhysicalKeyboardNotice.ImportSuccess
+            HardwareKeyboardLayoutImportStatus.Imported -> if (diagnostics.hasSkipped) {
+                PhysicalKeyboardNotice.ImportSuccessWithWarnings
+            } else {
+                PhysicalKeyboardNotice.ImportSuccess
+            }
             HardwareKeyboardLayoutImportStatus.UnsupportedFileType -> PhysicalKeyboardNotice.ImportUnsupported
             HardwareKeyboardLayoutImportStatus.NoImportableLayout -> PhysicalKeyboardNotice.ImportNoLayout
             HardwareKeyboardLayoutImportStatus.TooLarge -> PhysicalKeyboardNotice.ImportTooLarge

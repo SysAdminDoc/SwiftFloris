@@ -44,6 +44,7 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.settings.copyImportDiagnosticsToClipboard
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayoutRepository
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayoutSourceFormat
 import dev.patrickgold.florisboard.ime.hardware.ImportedHardwareKeyboardLayout
@@ -121,8 +122,8 @@ fun PhysicalKeyboardScreen() = FlorisScreen {
             val updatedLayouts = repository.layouts()
             refreshLayoutsAfterMutation(updatedLayouts)
             result.importedLayout?.let { selectedLayoutId = it.id }
-            lastNotice = PhysicalKeyboardPolicy.importNotice(result.status)
-            lastNoticeDetail = result.detail
+            lastNotice = PhysicalKeyboardPolicy.importNotice(result.status, result.diagnostics)
+            lastNoticeDetail = result.detail ?: result.diagnostics.summary().takeIf { it.isNotBlank() }
             activeOperation = null
         }
     }
@@ -319,6 +320,7 @@ private fun PhysicalKeyboardNoticeCard(
     appliedLayoutName: String?,
     appliedDeviceName: String?,
 ) {
+    val context = LocalContext.current
     when (notice) {
         PhysicalKeyboardNotice.Importing -> FlorisProgressCard(
             modifier = Modifier.padding(8.dp),
@@ -335,6 +337,13 @@ private fun PhysicalKeyboardNoticeCard(
             text = stringRes(R.string.physical_keyboard__import_layout__success),
             secondaryText = stringRes(R.string.physical_keyboard__import_layout__success_summary),
         )
+        PhysicalKeyboardNotice.ImportSuccessWithWarnings -> FlorisWarningCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.physical_keyboard__import_layout__success_with_warnings),
+            secondaryText = detail ?: stringRes(R.string.physical_keyboard__import_layout__success_summary),
+            actionLabel = detail?.let { stringRes(R.string.import_diagnostics__copy_details) },
+            onClick = detail?.let { { copyImportDiagnosticsToClipboard(context, it) } },
+        )
         PhysicalKeyboardNotice.ImportUnsupported -> FlorisWarningCard(
             modifier = Modifier.padding(8.dp),
             text = stringRes(R.string.physical_keyboard__import_layout__unsupported),
@@ -344,6 +353,8 @@ private fun PhysicalKeyboardNoticeCard(
             modifier = Modifier.padding(8.dp),
             text = stringRes(R.string.physical_keyboard__import_layout__no_layout),
             secondaryText = detail ?: stringRes(R.string.physical_keyboard__import_layout__no_layout_summary),
+            actionLabel = detail?.let { stringRes(R.string.import_diagnostics__copy_details) },
+            onClick = detail?.let { { copyImportDiagnosticsToClipboard(context, it) } },
         )
         PhysicalKeyboardNotice.ImportTooLarge -> FlorisErrorCard(
             modifier = Modifier.padding(8.dp),

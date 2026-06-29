@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.app.settings.advanced
 
 import android.content.res.Configuration
 import dev.patrickgold.florisboard.ime.hardware.HardwareKeyboardLayoutImportStatus
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.window.ImeFormFactor
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -58,6 +59,10 @@ class PhysicalKeyboardPolicyTest : FunSpec({
     test("import result statuses map to user-visible notices") {
         PhysicalKeyboardPolicy.importNotice(HardwareKeyboardLayoutImportStatus.Imported) shouldBe
             PhysicalKeyboardNotice.ImportSuccess
+        PhysicalKeyboardPolicy.importNotice(
+            HardwareKeyboardLayoutImportStatus.Imported,
+            ImportDiagnostics(skippedCount = 1, details = listOf("LAYOUT row 2: malformed")),
+        ) shouldBe PhysicalKeyboardNotice.ImportSuccessWithWarnings
         PhysicalKeyboardPolicy.importNotice(HardwareKeyboardLayoutImportStatus.UnsupportedFileType) shouldBe
             PhysicalKeyboardNotice.ImportUnsupported
         PhysicalKeyboardPolicy.importNotice(HardwareKeyboardLayoutImportStatus.NoImportableLayout) shouldBe

@@ -20,6 +20,7 @@ import android.content.Context
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.coroutines.Dispatchers
@@ -67,6 +68,7 @@ data class HardwareKeyboardLayoutImportResult(
     val status: HardwareKeyboardLayoutImportStatus,
     val importedLayout: ImportedHardwareKeyboardLayout? = null,
     val detail: String? = null,
+    val diagnostics: ImportDiagnostics = ImportDiagnostics.NONE,
 )
 
 object HardwareKeyboardLayoutImporter {
@@ -89,11 +91,12 @@ object HardwareKeyboardLayoutImporter {
                 status = HardwareKeyboardLayoutImportStatus.UnsupportedFileType,
                 detail = "Supported formats are .klc, .keylayout, and Keyman .kmp packages containing LDML XML.",
             )
-        val (format, layout, detail) = parsed
+        val (format, layout, detail, diagnostics) = parsed
         if (!layout.isLoaded) {
             return HardwareKeyboardLayoutImportResult(
                 status = HardwareKeyboardLayoutImportStatus.NoImportableLayout,
                 detail = detail ?: "The selected file did not contain an importable hardware keyboard layout.",
+                diagnostics = diagnostics,
             )
         }
         val displayName = layout.name.ifBlank { normalizedSourceName.substringBeforeLast('.', normalizedSourceName) }
@@ -108,6 +111,7 @@ object HardwareKeyboardLayoutImporter {
         return HardwareKeyboardLayoutImportResult(
             status = HardwareKeyboardLayoutImportStatus.Imported,
             importedLayout = imported,
+            diagnostics = diagnostics,
         )
     }
 
@@ -127,23 +131,22 @@ object HardwareKeyboardLayoutImporter {
         return out.toByteArray()
     }
 
-    private fun parseLayout(
-        sourceName: String,
-        bytes: ByteArray,
-    ): Triple<HardwareKeyboardLayoutSourceFormat, HardwareKeyboardLayout, String?>? {
+    private data class ParsedLayout(
+        val format: HardwareKeyboardLayoutSourceFormat,
+        val layout: HardwareKeyboardLayout,
+        val detail: String? = null,
+        val diagnostics: ImportDiagnostics = ImportDiagnostics.NONE,
+    )
+
+    private fun parseLayout(sourceName: String, bytes: ByteArray): ParsedLayout? {
         val lowerName = sourceName.lowercase()
         return when {
             lowerName.endsWith(".kmp") -> parseKeymanPackage(bytes)
-            lowerName.endsWith(".keylayout") -> Triple(
-                HardwareKeyboardLayoutSourceFormat.MAC_KEYLAYOUT,
-                MacKeylayoutParser.parse(bytes.decodeLayoutText()),
-                null,
+            lowerName.endsWith(".keylayout") -> ParsedLayout(
+                format = HardwareKeyboardLayoutSourceFormat.MAC_KEYLAYOUT,
+                layout = MacKeylayoutParser.parse(bytes.decodeLayoutText()),
             )
-            lowerName.endsWith(".klc") -> Triple(
-                HardwareKeyboardLayoutSourceFormat.KLC,
-                KlcLayoutParser.parse(bytes.decodeLayoutText()),
-                null,
-            )
+            lowerName.endsWith(".klc") -> parseKlc(bytes.decodeLayoutText())
             bytes.isZipLike() -> parseKeymanPackage(bytes)
             else -> parseTextByContent(bytes.decodeLayoutText())
         }
@@ -151,26 +154,30 @@ object HardwareKeyboardLayoutImporter {
 
     private fun parseTextByContent(
         text: String,
-    ): Triple<HardwareKeyboardLayoutSourceFormat, HardwareKeyboardLayout, String?>? {
+    ): ParsedLayout? {
         val trimmed = text.trimStart('\uFEFF', ' ', '\n', '\r', '\t')
         return when {
-            trimmed.startsWith("<") && "<keyboard" in trimmed.take(512).lowercase() -> Triple(
-                HardwareKeyboardLayoutSourceFormat.MAC_KEYLAYOUT,
-                MacKeylayoutParser.parse(text),
-                null,
+            trimmed.startsWith("<") && "<keyboard" in trimmed.take(512).lowercase() -> ParsedLayout(
+                format = HardwareKeyboardLayoutSourceFormat.MAC_KEYLAYOUT,
+                layout = MacKeylayoutParser.parse(text),
             )
-            KbdHeaderRegex.containsMatchIn(text) || LayoutHeaderRegex.containsMatchIn(text) -> Triple(
-                HardwareKeyboardLayoutSourceFormat.KLC,
-                KlcLayoutParser.parse(text),
-                null,
-            )
+            KbdHeaderRegex.containsMatchIn(text) || LayoutHeaderRegex.containsMatchIn(text) -> parseKlc(text)
             else -> null
         }
     }
 
+    private fun parseKlc(text: String): ParsedLayout {
+        val result = KlcLayoutParser.parseWithDiagnostics(text)
+        return ParsedLayout(
+            format = HardwareKeyboardLayoutSourceFormat.KLC,
+            layout = result.layout,
+            diagnostics = result.diagnostics,
+        )
+    }
+
     private fun parseKeymanPackage(
         bytes: ByteArray,
-    ): Triple<HardwareKeyboardLayoutSourceFormat, HardwareKeyboardLayout, String?> {
+    ): ParsedLayout {
         val pkg = KeymanPackageParser.parse(bytes)
         val ldmlLayout = pkg.ldmlLayouts.firstOrNull { it.layout.isLoaded }
         if (ldmlLayout != null) {
@@ -179,7 +186,10 @@ object HardwareKeyboardLayoutImporter {
             val layout = ldmlLayout.layout.copy(
                 name = ldmlLayout.layout.name.ifBlank { fallbackName },
             )
-            return Triple(HardwareKeyboardLayoutSourceFormat.KEYMAN_LDML_PACKAGE, layout, null)
+            return ParsedLayout(
+                format = HardwareKeyboardLayoutSourceFormat.KEYMAN_LDML_PACKAGE,
+                layout = layout,
+            )
         }
         val detail = when (pkg.status) {
             KeymanPackageImportStatus.CompiledEngineRequired ->
@@ -193,10 +203,10 @@ object HardwareKeyboardLayoutImporter {
             KeymanPackageImportStatus.LdmlReady,
             -> "The Keyman package did not contain an importable LDML layout."
         }
-        return Triple(
-            HardwareKeyboardLayoutSourceFormat.KEYMAN_LDML_PACKAGE,
-            HardwareKeyboardLayout.Empty,
-            detail,
+        return ParsedLayout(
+            format = HardwareKeyboardLayoutSourceFormat.KEYMAN_LDML_PACKAGE,
+            layout = HardwareKeyboardLayout.Empty,
+            detail = detail,
         )
     }
 

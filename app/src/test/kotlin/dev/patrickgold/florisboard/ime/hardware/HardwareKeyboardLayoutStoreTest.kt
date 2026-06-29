@@ -96,6 +96,39 @@ class HardwareKeyboardLayoutStoreTest : FunSpec({
         result.importedLayout shouldBe null
     }
 
+    test("KLC import carries malformed-row diagnostics through the import result") {
+        val result = HardwareKeyboardLayoutImporter.importBytes(
+            sourceName = "partial.klc",
+            bytes = resourceText("import-fixtures/windows_klc_partial.klc").toByteArray(Charsets.UTF_8),
+            importedAtEpochMillis = 987L,
+        )
+
+        result.status shouldBe HardwareKeyboardLayoutImportStatus.Imported
+        result.importedLayout.shouldNotBeNull().layout.scancodeMap shouldContainKey 0x1E
+        result.diagnostics.skippedCount shouldBe 1
+        result.diagnostics.summary().contains("LAYOUT row 2") shouldBe true
+    }
+
+    test("stored KLC import preserves diagnostics for a partial layout") {
+        val root = Files.createTempDirectory("hardware-layouts").toFile()
+        val file = root.resolve("hardware_keyboard_layouts.json")
+        try {
+            val store = HardwareKeyboardLayoutStore.forStorageFile(file, clock = { 654L })
+            val result = store.importLayout(
+                sourceName = "partial.klc",
+                inputStream = ByteArrayInputStream(
+                    resourceText("import-fixtures/windows_klc_partial.klc").toByteArray(Charsets.UTF_8),
+                ),
+            )
+
+            result.status shouldBe HardwareKeyboardLayoutImportStatus.Imported
+            result.diagnostics.skippedCount shouldBe 1
+            store.layouts().single().keyCount shouldBe 2
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
     test("delete removes one imported layout from the persisted catalog") {
         val root = Files.createTempDirectory("hardware-layouts").toFile()
         val file = root.resolve("hardware_keyboard_layouts.json")
@@ -136,4 +169,11 @@ private fun kmpBytes(vararg entries: Pair<String, String>): ByteArray {
         }
     }
     return out.toByteArray()
+}
+
+private fun resourceText(path: String): String {
+    val classLoader = requireNotNull(HardwareKeyboardLayoutStoreTest::class.java.classLoader)
+    return requireNotNull(classLoader.getResource(path)) {
+        "Missing test resource: $path"
+    }.readText()
 }

@@ -12,6 +12,7 @@ package dev.patrickgold.florisboard.ime.snippet
 
 import android.content.Context
 import dev.patrickgold.florisboard.ime.editor.EditorContent
+import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -42,14 +43,22 @@ class SnippetManager(private val context: Context) {
         _snippets.value = all
     }
 
-    fun importYaml(yamlContent: String, filename: String): Int {
-        val parsed = EspansoMatchParser.parse(yamlContent)
-        if (parsed.isEmpty()) return 0
+    fun importYaml(yamlContent: String, filename: String): SnippetImportResult {
+        val result = EspansoMatchParser.parseWithDiagnostics(yamlContent)
+        if (result.matches.isEmpty()) {
+            return SnippetImportResult(
+                importedCount = 0,
+                diagnostics = result.diagnostics,
+            )
+        }
         val safeName = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
         val target = File(snippetsDir, safeName)
         target.writeText(yamlContent)
         loadAll()
-        return parsed.size
+        return SnippetImportResult(
+            importedCount = result.matches.size,
+            diagnostics = result.diagnostics,
+        )
     }
 
     fun removeFile(filename: String) {
@@ -68,6 +77,11 @@ class SnippetManager(private val context: Context) {
         _snippets.value = emptyList()
     }
 }
+
+data class SnippetImportResult(
+    val importedCount: Int,
+    val diagnostics: ImportDiagnostics = ImportDiagnostics.NONE,
+)
 
 internal object SnippetExpansionPolicy {
 

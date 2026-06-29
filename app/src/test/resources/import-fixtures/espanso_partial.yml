@@ -1,0 +1,7 @@
+matches:
+  - trigger: ":addr"
+    replace: "123 Privacy Lane"
+  - trigger: ""
+    replace: "missing trigger should be skipped"
+  - trigger: ":sig"
+    replace: "Regards"
