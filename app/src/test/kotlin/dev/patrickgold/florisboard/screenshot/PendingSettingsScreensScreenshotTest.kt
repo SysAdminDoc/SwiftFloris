@@ -24,6 +24,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.rememberNavController
@@ -38,9 +39,16 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.about.AiFeaturesScreen
+import dev.patrickgold.florisboard.app.settings.advanced.BackupScreen
+import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
+import dev.patrickgold.florisboard.app.settings.keyboard.CustomLayoutEditorPreviewSurface
 import dev.patrickgold.florisboard.app.settings.mcp.McpSettingsScreen
+import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
+import dev.patrickgold.florisboard.app.settings.sync.SyncSettingsScreen
+import dev.patrickgold.florisboard.app.settings.typing.SnippetSettingsScreen
 import dev.patrickgold.florisboard.app.settings.typing.TypingStatsScreen
 import dev.patrickgold.florisboard.app.settings.voice.VoiceInputScreen
+import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
 import dev.patrickgold.florisboard.ime.mcp.DaemonKey
 import dev.patrickgold.florisboard.ime.mcp.McpBridgeContract
@@ -85,6 +93,7 @@ class PendingSettingsScreensScreenshotTest {
     @After
     fun tearDown() {
         McpDaemonRegistry.setActive(emptyMap())
+        AddonInvocationAudit.clear()
     }
 
     @Test
@@ -123,14 +132,88 @@ class PendingSettingsScreensScreenshotTest {
         }
     }
 
-    private fun captureSettingsScreen(fileName: String, content: @Composable () -> Unit) {
+    @Test
+    fun customLayoutEditorScreen() {
+        captureSettingsScreen("custom_layout_editor_screen.png", theme = AppTheme.DARK) {
+            CustomLayoutEditorPreviewSurface()
+        }
+    }
+
+    @Test
+    fun snippetSettingsScreen() {
+        captureSettingsScreen("snippet_settings_screen.png") {
+            SnippetSettingsScreen()
+        }
+    }
+
+    @Test
+    fun privacyAuditLogScreen() {
+        seedPrivacyAudit()
+        captureSettingsScreen("privacy_audit_log_screen.png", theme = AppTheme.AMOLED_DARK) {
+            PrivacyAuditScreen()
+        }
+    }
+
+    @Test
+    fun syncSettingsScreen() {
+        captureSettingsScreen("sync_settings_screen.png", theme = AppTheme.DARK) {
+            SyncSettingsScreen()
+        }
+    }
+
+    @Test
+    fun backupScreen() {
+        captureSettingsScreen("backup_screen.png") {
+            BackupScreen()
+        }
+    }
+
+    @Test
+    fun restoreScreen() {
+        captureSettingsScreen("restore_screen.png") {
+            RestoreScreen()
+        }
+    }
+
+    private fun captureSettingsScreen(
+        fileName: String,
+        theme: AppTheme = AppTheme.LIGHT,
+        content: @Composable () -> Unit,
+    ) {
         composeRule.setContent {
-            SettingsScreenshotFrame(content = content)
+            SettingsScreenshotFrame(theme = theme, content = content)
         }
         composeRule.waitForIdle()
+        if (fileName == "typing_stats_screen.png") {
+            waitForTypingStats()
+        }
         composeRule.onRoot().captureRoboImage(
             filePath = "$BASELINE_DIR/$fileName",
             roborazziOptions = ROBORAZZI_OPTIONS,
+        )
+    }
+
+    private fun seedPrivacyAudit() {
+        AddonInvocationAudit.clear()
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.MCP,
+            outcome = AddonInvocationAudit.Outcome.ACCEPTED,
+            subject = "dev.swiftfloris.mcp.calendar::calendar.next_event",
+            timestampMillis = 1_720_000_000_000L,
+        )
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.TRANSLATION,
+            outcome = AddonInvocationAudit.Outcome.SUPPRESSED,
+            reason = "sensitive field",
+            subject = "en->de",
+            timestampMillis = 1_720_000_060_000L,
+        )
+        AddonInvocationAudit.record(
+            surface = AddonInvocationAudit.Surface.SMART_COMPOSE,
+            outcome = AddonInvocationAudit.Outcome.FAILED,
+            reason = "no installed provider",
+            subject = "com.example.notes",
+            timestampMillis = 1_720_000_120_000L,
         )
     }
 
@@ -138,6 +221,15 @@ class PendingSettingsScreensScreenshotTest {
         val app = composeRule.activity.application as FlorisApplication
         composeRule.waitUntil(timeoutMillis = 10_000) {
             app.preferenceStoreLoaded.value
+        }
+    }
+
+    private fun waitForTypingStats() {
+        val loadingText = composeRule.activity.getString(R.string.settings__typing_stats__loading)
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText(loadingText))
+                .fetchSemanticsNodes()
+                .isEmpty()
         }
     }
 
@@ -193,12 +285,15 @@ class PendingSettingsScreensScreenshotTest {
 }
 
 @Composable
-private fun SettingsScreenshotFrame(content: @Composable () -> Unit) {
+private fun SettingsScreenshotFrame(
+    theme: AppTheme,
+    content: @Composable () -> Unit,
+) {
     ProvideLocalizedResources(
         resourcesContext = androidx.compose.ui.platform.LocalContext.current,
         appName = R.string.app_name,
     ) {
-        FlorisAppTheme(theme = AppTheme.LIGHT) {
+        FlorisAppTheme(theme = theme) {
             val navController = rememberNavController()
             CompositionLocalProvider(LocalNavController provides navController) {
                 ProvideDefaultDialogPrefStrings(

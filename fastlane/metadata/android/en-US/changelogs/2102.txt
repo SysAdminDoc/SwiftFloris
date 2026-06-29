@@ -17,3 +17,5 @@ Glide reliability: context rescoring now rejects far-endpoint replacements and t
 Editor compatibility: hostile-editor replay tests now cover rich editors, game engines, Flutter fields, and desktop/physical-keyboard flows for commit, enter, delete, undo/redo, and selection stability.
 
 Custom layouts: text keyboard sizing now has an explicit 4-6 row policy, preserving legacy 3-row geometry while keeping 4-row number layouts and long-press popup anchors stable.
+
+Testing: Roborazzi now covers custom layout, snippets, privacy audit, sync, backup, and restore settings surfaces, including dark trust-state snapshots.

@@ -342,6 +342,84 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
 }
 
 @Composable
+internal fun CustomLayoutEditorPreviewSurface() {
+    val sourceName = remember {
+        ExtensionComponentName("org.florisboard.layouts", "qwerty")
+    }
+    val sourceComponent = remember {
+        LayoutArrangementComponent(
+            id = "qwerty",
+            label = "QWERTY",
+            authors = listOf("SwiftFloris Contributors"),
+            direction = "ltr",
+        )
+    }
+    val existingComponentIds = remember { setOf(sourceName.componentId) }
+    var selectedKey by remember { mutableStateOf(SelectedLayoutKey(rowIndex = 1, keyIndex = 4)) }
+    var draft by remember {
+        mutableStateOf(
+            CustomLayoutEditorDraft(
+                layoutId = "qwerty_number_row",
+                label = "QWERTY Number Row",
+                sourceLabel = sourceComponent.label,
+                rows = listOf(
+                    "1234567890".map { CustomLayoutEditorKey(it.toString()) },
+                    "qwertyuiop".map { CustomLayoutEditorKey(it.toString()) },
+                    "asdfghjkl".map { CustomLayoutEditorKey(it.toString()) },
+                    "zxcvbnm".map { CustomLayoutEditorKey(it.toString()) },
+                ),
+            ),
+        )
+    }
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        SourceLayoutSelector(
+            sourceLayoutNames = listOf(sourceName),
+            characterLayouts = mapOf(sourceName to sourceComponent),
+            selectedSource = sourceName,
+            isLoading = false,
+            onSelectedSourceChanged = { },
+        )
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = draft.label,
+            onValueChange = { label ->
+                draft = CustomLayoutEditorPolicy.updateLabel(draft, label, existingComponentIds)
+            },
+            singleLine = true,
+            label = {
+                Text(text = stringRes(R.string.settings__keyboard__custom_layout_editor__name))
+            },
+            supportingText = {
+                Text(text = stringRes(
+                    R.string.settings__keyboard__custom_layout_editor__id,
+                    "id" to draft.layoutId,
+                ))
+            },
+        )
+        LayoutPreview(
+            draft = draft,
+            selectedKey = selectedKey.coerceInto(draft),
+            onSelectedKeyChanged = { selectedKey = it },
+        )
+        KeyEditor(
+            draft = draft,
+            selectedKey = selectedKey.coerceInto(draft),
+            onDraftChanged = { nextDraft ->
+                draft = nextDraft
+                selectedKey = selectedKey.coerceInto(nextDraft)
+            },
+            onSelectedKeyChanged = { selectedKey = it.coerceInto(draft) },
+        )
+    }
+}
+
+@Composable
 private fun SourceLayoutSelector(
     sourceLayoutNames: List<ExtensionComponentName>,
     characterLayouts: Map<ExtensionComponentName, LayoutArrangementComponent>,

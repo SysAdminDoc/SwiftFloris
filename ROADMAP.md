@@ -9,15 +9,6 @@ gated on external deliverables or hardware testing live in
 
 ## Research-Driven Additions
 
-### P2
-
-- [ ] P2 — Expand Roborazzi baselines for new settings surfaces
-  Why: recent user-facing screens landed without matching committed visual baselines, while existing baselines cover only selected pending settings and addon/theme surfaces.
-  Evidence: `Routes.kt` includes CustomLayoutEditor, SnippetSettings, PrivacyAuditLog, Sync, Backup, Restore; `app/src/test/snapshots/` lacks those screen baselines.
-  Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/`, `app/src/test/snapshots/`, new `@RoboPreviewInclude` previews where appropriate.
-  Acceptance: Roborazzi baselines cover custom layout editor, snippets, privacy audit, sync, backup, and restore in dark and high-contrast-relevant states; `:app:verifyRoborazziDebug` passes.
-  Complexity: M
-
 ### P3
 
 - [ ] P3 - Add offline sticker-pack import and share-to-sticker creation
