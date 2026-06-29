@@ -319,16 +319,12 @@ fun TextKeyboardLayout(
             TextKey(data = TextKeyData.UNSPECIFIED).also { desiredKey ->
                 desiredKey.touchBounds.apply {
                     width = layoutKeyboardWidth / 10f
-                    height = when (keyboard.mode) {
-                        KeyboardMode.CHARACTERS,
-                        KeyboardMode.NUMERIC_ADVANCED,
-                        KeyboardMode.SYMBOLS,
-                        KeyboardMode.SYMBOLS2 -> {
-                            (keyboardHeight / keyboard.rowCount)
-                                .coerceAtMost(keyboardRowBaseHeight.toPx() * 1.12f)
-                        }
-                        else -> keyboardRowBaseHeight.toPx()
-                    }
+                    height = TextKeyboardLayoutPolicy.desiredTouchHeightPx(
+                        mode = keyboard.mode,
+                        rowCount = keyboard.rowCount,
+                        keyboardHeightPx = keyboardHeight,
+                        rowBaseHeightPx = keyboardRowBaseHeight.toPx(),
+                    )
                 }
                 desiredKey.visibleBounds.applyFrom(desiredKey.touchBounds).deflateBy(keyMarginH, keyMarginV)
                 keyboard.layout(layoutKeyboardWidth, keyboardHeight, desiredKey, true)
@@ -343,25 +339,11 @@ fun TextKeyboardLayout(
             key1 = keyboard,
             key2 = desiredKey,
             boundsProvider = { key ->
-                val keyPopupWidth: Float
-                val keyPopupHeight: Float
-                when {
-                    configuration.isOrientationLandscape() -> {
-                        keyPopupWidth = desiredKey.visibleBounds.width * 1.0f
-                        keyPopupHeight = desiredKey.visibleBounds.height * 3.0f
-                    }
-                    else -> {
-                        keyPopupWidth = desiredKey.visibleBounds.width * 1.1f
-                        keyPopupHeight = desiredKey.visibleBounds.height * 2.5f
-                    }
-                }
-                val keyPopupDiffX = (key.visibleBounds.width - keyPopupWidth) / 2.0f
-                FlorisRect.new().apply {
-                    left = key.visibleBounds.left + keyPopupDiffX
-                    top = key.visibleBounds.bottom - keyPopupHeight
-                    right = left + keyPopupWidth
-                    bottom = top + keyPopupHeight
-                }
+                TextKeyboardLayoutPolicy.popupBounds(
+                    keyVisibleBounds = key.visibleBounds,
+                    desiredVisibleBounds = desiredKey.visibleBounds,
+                    isLandscape = configuration.isOrientationLandscape(),
+                )
             },
             isSuitableForBasicPopup = { key ->
                 if (PasswordFieldPopupGate.shouldSuppressPopups(latestEvaluator.value.state.keyVariation)) {

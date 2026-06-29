@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.ime.smartbar.ExtendedActionsPlacement
 import dev.patrickgold.florisboard.ime.smartbar.InlineSuggestionsChipMargin
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboard
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardLayoutPolicy
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
 import dev.patrickgold.florisboard.ime.window.ImeWindowConstraints
 import dev.patrickgold.florisboard.keyboardManager
@@ -69,7 +70,7 @@ object FlorisImeSizing {
             KeyboardMode.SYMBOLS,
             KeyboardMode.SYMBOLS2 -> lastCharactersEvaluator.keyboard as TextKeyboard
             else -> evaluator.keyboard as TextKeyboard
-        }.rowCount.coerceAtLeast(4)
+        }.rowCount.let(TextKeyboardLayoutPolicy::effectiveRowCount)
         return (keyboardRowBaseHeight * rowCount)
     }
 
@@ -78,7 +79,12 @@ object FlorisImeSizing {
         val context = LocalContext.current
         val keyboardManager by context.keyboardManager()
         val lastCharactersEvaluator by keyboardManager.lastCharactersEvaluator.collectAsState()
-        return remember { derivedStateOf { (lastCharactersEvaluator.keyboard as TextKeyboard).rowCount } }
+        return remember {
+            derivedStateOf {
+                val keyboard = lastCharactersEvaluator.keyboard as TextKeyboard
+                TextKeyboardLayoutPolicy.effectiveRowCount(keyboard.rowCount)
+            }
+        }
     }
 
     @Composable

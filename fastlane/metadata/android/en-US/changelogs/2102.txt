@@ -15,3 +15,5 @@ Import diagnostics: snippet YAML and KLC hardware-layout imports now show partia
 Glide reliability: context rescoring now rejects far-endpoint replacements and the typing-quality scorecard reports endpoint-plausibility regressions.
 
 Editor compatibility: hostile-editor replay tests now cover rich editors, game engines, Flutter fields, and desktop/physical-keyboard flows for commit, enter, delete, undo/redo, and selection stability.
+
+Custom layouts: text keyboard sizing now has an explicit 4-6 row policy, preserving legacy 3-row geometry while keeping 4-row number layouts and long-press popup anchors stable.
