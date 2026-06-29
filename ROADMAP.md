@@ -114,3 +114,51 @@ gated on external deliverables or hardware testing live in
   Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/screenshot/`, `app/src/test/snapshots/`, a `@RoboPreviewInclude` preview for the smartbar-only state.
   Acceptance: `:app:verifyRoborazziDebug` passes with a committed smartbar-only baseline; the baseline covers at least one theme.
   Complexity: S
+
+## Research-Driven Additions
+
+### P1
+
+- [ ] P1 - Fix live-doc integrity self-failure on the workflow-reference ban
+  Why: the current local release/documentation gate fails before implementation work because `ROADMAP.md` contains the forbidden `.github/workflows/` literal while `scripts/check-live-doc-integrity.py` bans deleted workflow references.
+  Evidence: `python scripts/check-live-doc-integrity.py` reports `ROADMAP.md:60`; `scripts/check-live-doc-integrity.py`; existing P1 stale SLSA/SBOM roadmap item.
+  Touches: `ROADMAP.md` evidence wording for the stale SLSA/SBOM item and, only if needed, `scripts/check-live-doc-integrity.py` to keep the workflow ban precise.
+  Acceptance: `python scripts/check-live-doc-integrity.py` passes without weakening the deleted-workflow guard; the stale SLSA/SBOM item still points to local-only release evidence.
+  Complexity: S
+
+- [ ] P1 - Make public markdown link integrity use tracked-file truth
+  Why: `CONTRIBUTING.md` links to four docs that exist only as ignored local markdown, so a clean public clone has broken contributor onboarding while the current filesystem-based check can miss it.
+  Evidence: `CONTRIBUTING.md`; `docs/LOCAL_VERIFICATION.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, and `docs/AUTOCORRECT_LIFECYCLE.md` are `tracked=False exists=True`; `scripts/check-live-doc-integrity.py`.
+  Touches: `scripts/check-live-doc-integrity.py`, `CONTRIBUTING.md`, and either tracked replacements in already-allowed docs or removal/rewording of links to ignored docs.
+  Acceptance: the integrity checker fails when README/CONTRIBUTING/tracked docs link to untracked local markdown; all current public markdown links resolve in a clean checkout.
+  Complexity: S
+
+- [ ] P1 - Harden inline suggestion inflation against invalid host sizes
+  Why: upstream FlorisBoard issue #3294 shows `InlineSuggestion.inflate` can crash on invalid size constraints, and SwiftFloris currently requests an unconstrained max size and forwards inline suggestions through the same platform path.
+  Evidence: FlorisBoard issue #3294; `FlorisImeService.kt` `InlineSuggestionUiSmallestSize`/`InlineSuggestionUiBiggestSize`; `NlpInlineAutofill.showInlineSuggestions`; `InlineSuggestionsUi.kt`.
+  Touches: `FlorisImeService.kt`, inline-autofill handling, `InlineSuggestionsUi.kt`, tests for malformed/oversized inline presentations.
+  Acceptance: invalid inline suggestions are dropped with a warning/log signal rather than crashing the IME; tests cover invalid bounds and normal inline suggestions still render.
+  Complexity: M
+
+### P2
+
+- [ ] P2 - Add glide endpoint-plausibility regression fixtures
+  Why: FUTO issue #2120 shows real-world glide failures where language probability can surface words far outside the gesture endpoints; SwiftFloris has a scorecard and replay harness that can catch this without changing model architecture first.
+  Evidence: FUTO Keyboard issue #2120; `scripts/glide-benchmark.py`; `scripts/typing-quality-scorecard.py`; `app/src/test/resources/swiftkey/replay/glide_context_cases.jsonl`; `SwiftKeyCandidateRankerTest.kt`.
+  Touches: glide replay fixtures, `SwiftKeyCandidateRanker.kt`, `SwiftKeyCandidateRankerTest.kt`, `typing-quality-scorecard.py` thresholds if a new metric is added.
+  Acceptance: fixtures cover endpoint-mismatch examples such as `mkv` not promoting `move` and `the` not losing to a far-endpoint candidate; the scorecard exposes endpoint-plausibility pass/fail without reducing existing top-4 rescue coverage.
+  Complexity: M
+
+- [ ] P2 - Add context-scoped next-word rejection
+  Why: users need to reject a displayed next-word prediction for a specific preceding context without removing the word globally, matching FUTO issue #2117 and avoiding dictionary blacklisting side effects.
+  Evidence: FUTO Keyboard issue #2117; `LearnedWordForgetSuggestionCandidate`; `CorrectionOutcomePriors.kt`; `PersonalBigramStore.kt`; `PersonalTrigramStore.kt`; `CandidatesRow.kt`.
+  Touches: candidate long-press/removal UI, correction/rejection priors, personal n-gram stores, strings, candidate-ranker tests.
+  Acceptance: a user can reject "word B after word A"; the word remains available elsewhere, but the rejected context is demoted in next-word ranking; tests prove rejection is context-scoped and reversible/clearable through existing learning-data controls.
+  Complexity: M
+
+- [ ] P2 - Add hostile-editor compatibility replay matrix
+  Why: current competitor issue traffic clusters around host-editor failures (Teams no keyboard, Flutter undo/redo, Ren'Py enter/delete, Typst/OnlyOffice random replacement, cursor jumps), and SwiftFloris already has editor policy tests that can be extended before device-specific bugs escape.
+  Evidence: FlorisBoard issues #3292, #3262, #3242, #3241; FUTO issues #2139, #2106; `HostileEditorCandidateReplayTest.kt`; `EditorInfoSensitiveFieldReplayTest.kt`.
+  Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/ime/editor/`, editor action/selection helpers, inline suggestion and hardware shortcut policies where needed.
+  Acceptance: replay/policy tests model at least four hostile editor classes (rich editor, game engine, Flutter, desktop/physical keyboard) and prove commit, enter, delete, undo/redo, and selection behavior stay stable.
+  Complexity: M

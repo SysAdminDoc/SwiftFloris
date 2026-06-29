@@ -1,85 +1,96 @@
-# Research — SwiftFloris
+# Research - SwiftFloris
 
 ## Executive Summary
 
-SwiftFloris is a privacy-first Android IME fork whose strongest current shape is local verifiability: no `INTERNET` permission, encrypted local learning, offline migration/imports, addon signing pins, privacy proof surfaces, and an active local verification toolchain. The project has recently shipped public-doc drift checkers, Compose BOM 2026.06.00, Gradle 9.6.1, clipboard preview capping, Snygg typed-failure resolution, physical-keyboard Smartbar-only mode, and import diagnostics at the parser tier.
-
-The highest-value direction is now: (1) unblock compileSdk 37 — AGP 9.2.1 already supports it, correcting a false blocker that held back Android 17 APIs and AboutLibraries 15.x; (2) clean up stale trust claims in release notes and THREAT_MODEL.md left by workflow removal and the `allowMainThreadQueries()` fix; (3) wire the already-shipped parser-side import diagnostics into the snippet/layout import UI; (4) complete custom-layout row-count-aware sizing; (5) expand Roborazzi baselines for the six new settings surfaces; (6) evaluate FUTO Swipe as a GPL-licensed addon (cannot enter `:app`); (7) add a scrollable/expanded suggestion strip mode, which is the single most-requested UX feature across HeliBoard/community issue traffic.
+SwiftFloris is a privacy-first Android IME fork focused on SwiftKey-class local typing without accounts, telemetry, cloud learning, or an `INTERNET` permission. Its strongest current shape is trust plus local capability: SQLCipher-backed learning, offline import/export/sync, addon signing pins, first-run privacy disclosure, local release gates, benchmark/scorecard scripts, and a broad settings surface. Highest-value direction, in order: fix the live-doc integrity self-failure; make public docs reproducible from tracked files only; clear Kotlin/compileSdk 37 stale blockers already on the roadmap; harden inline suggestion inflation before it copies upstream crashes; wire parser diagnostics into import UI; treat the existing scrollable candidate renderer as an enablement/test gap, not a renderer rewrite; add glide out-of-bounds regression fixtures; add context-scoped next-word rejection; expand Roborazzi coverage for new settings surfaces; finish row-count-aware custom layout sizing.
 
 ## Product Map
 
-- Core workflows: enable/setup IME, configure themes/layouts/languages/typing, type with suggestions/glide/snippets/voice handoff, import/export dictionaries/layouts/backups/stickers, review local privacy/release evidence.
-- User personas: privacy-conscious Android keyboard users, SwiftKey/proprietary-keyboard migrators, multilingual and RTL users, physical-keyboard/tablet/foldable users, power users building snippets/layouts/themes, addon authors, release/security reviewers.
-- Platforms and distribution: Android 8+ base APK, GitHub/Obtainium/F-Droid-prepared channels, Gradle/AGP/Kotlin/Compose build, no Play dependency and no network permission by design.
-- Key integrations and data flows: Room + SQLCipher personal dictionary, Tink-wrapped local secrets, local backup/restore archives, FUTO/external voice IME handoff, addon APK discovery/signing pins, signature-protected automation broadcasts, local MCP daemon bridge, SAF sticker folders.
+- Core workflows: enable/setup IME; configure typing, languages, layouts, themes, Smartbar, privacy posture, backup/restore, sync, snippets, voice handoff, stickers, addons; type with candidates, autocorrect, glide, snippets, clipboard, and rich content.
+- User personas: privacy-conscious Android keyboard users, SwiftKey/Gboard migrators, multilingual/RTL/CJK users, physical-keyboard/tablet/foldable users, power users creating snippets/layouts/themes, addon authors, release/security reviewers.
+- Platforms and distribution: Android 8+ APK, Gradle/AGP/Kotlin/Compose build, GitHub/Obtainium/F-Droid-prepared distribution, local builds only, no Play-services dependency required by core IME.
+- Key integrations and data flows: Room + SQLCipher personal dictionary, Tink-wrapped local secrets, local backup/sync archives, SAF sticker folders, signature-protected addon and Tasker/MCP contracts, FUTO/external voice IME handoff, local release evidence and doc-integrity gates.
 
 ## Competitive Landscape
 
-- **FUTO Keyboard** (v0.1.29.1, Jun 2026): Strongest competitor. Shipped FUTO Swipe (7.38% top-1 error vs Gboard 11.05%), but the library is **GPLv3** with a proprietary model-weights license — incompatible with Apache-2.0 `:app`. Integration is only possible as an isolated addon APK. FUTO also ships a custom 1MB emoji compat font (vs emoji2's 9MB), swipe memory for past-12-word context, and local transformer prediction. SwiftFloris should evaluate the addon-APK integration path and learn from the lightweight emoji approach; avoid taking GPL code into the base APK.
-- **HeliBoard** (v4.0-beta1, Jun 2026): Active with internal refactoring, key hint font size, Korean fixes. Top user requests: scrollable suggestion strip (#2584), translation support (#2518), emoji sort by usage (#2506). Still depends on Google's proprietary gesture library for glide. SwiftFloris should learn from the scrollable-suggestion demand signal; avoid the Google-library dependency.
-- **FlorisBoard** (v0.6.0-alpha02, Jan 2026): Stalled — 5+ months since last release. Clipboard, suggestions, and glide remain alpha-quality. The perpetual-rewrite pattern is a cautionary example. SwiftFloris already diverged successfully.
-- **FOSS keyboard community consensus** (Reddit/Lemmy/Techlore/F-Droid): The #1 complaint is glide typing quality. #2 is autocorrect confidence and multi-language awareness. #3 is CJK input as a single-keyboard solution. #4 is reproducible-build trust signals. #5 is TalkBack accessibility — zero FOSS keyboards advertise it.
-- **Android platform** (API 36-37): AGP 9.2.0+ supports compileSdk 37, correcting the blocked-roadmap claim that AGP 9.3.0 is required. Android 17 brings `TextAttribute` for CJK accessibility, physical keyboard password visibility settings, and IME visibility non-restoration after config changes. Compose BOM 2026.06.00 adds `InputTextSuggestionState` and `TextCompositionRange` for transliteration composition tracking. Google developer verification enforcement begins September 2026 for pilot regions.
+- FUTO Keyboard and FUTO Swipe: FUTO is the most active proprietary-adjacent comparator and publishes a strong swipe research/demo stack. Learn from its measured glide focus, context-aware prediction, and suggestion-bar teaching requests. Avoid importing GPLv3/proprietary-model assets into the Apache-2.0 base APK; any experiment belongs in an isolated addon.
+- HeliBoard: Strong privacy/open-source keyboard with active beta releases and high-signal issue traffic. Learn from demand for scrollable candidates, image clipboard support, Unicode 17 emoji, touchpad mode, folded-state scaling, and zip-slip hardening. Avoid proprietary Google glide dependencies.
+- FlorisBoard upstream: Useful cautionary baseline because the alpha branch still sees crashes around inline suggestions, UI-thread work, clipboard masking, rich-editor detection, Teams/desktop/physical-keyboard edge cases, and stale docs. SwiftFloris should continue shipping bounded fixes rather than following rewrite churn.
+- AnySoftKeyboard/OpenBoard/Unexpected Keyboard: Strong "no internet" lineage and broad language support, but issue traffic shows dictionary crashes, settings loss, foldable split requests, emoji bugs, and lower modernization velocity. Learn from language/plugin breadth; avoid accumulating unowned native/dictionary crash paths.
+- Fcitx5 Android, Trime/Rime, and Keyman: Best references for serious CJK/input-method frameworks, plugin engines, LDML-style keyboard data, and cross-platform keyboard infrastructure. Learn addon boundaries and data-format discipline; avoid pulling large CJK engines into the base APK without license/data decisions.
+- Gboard, Microsoft SwiftKey, Samsung Keyboard, Grammarly: Commercial table stakes are multilingual setup, glide quality, clipboard/sticker affordances, prediction teachability, writing assistance, and polished onboarding. SwiftFloris should match local UX affordances where possible; avoid cloud sync, account coupling, telemetry, and remote model dependencies.
+- F-Droid/Obtainium distribution trust: Reproducible build evidence and clear source-to-artifact traceability matter for keyboard adoption. SwiftFloris already has local gates; the next step is making docs and release claims impossible to drift.
 
 ## Security, Privacy, and Reliability
 
-- **Stale trust claim (README)**: The v1.9.44 release note says "Release workflow gains SLSA Build Level 2 provenance attestation and SPDX SBOM generation" but workflows were deleted in commit `73dc7d15`. `docs/SECURITY.md` correctly disclaimed remote attestation, but the README release bullet is misleading. Should append a correction note.
-- **Stale gap claim (THREAT_MODEL.md)**: Line 232 still lists `allowMainThreadQueries()` as a known gap, but commit `765295b9` moved personal dictionary Room access to IO. The threat-model verification checklist should reflect the fix.
-- **DictionaryManager.kt runBlocking**: Line 546 uses `runBlocking(Dispatchers.IO)` which is not on the CI allowlist (`scripts/runblocking-allowlist.txt`). The gate should either allowlist it with rationale or the code should migrate to a suspend path.
-- **Kotlin CVE-2026-53914** (MEDIUM, CVSS 6.7): Kotlin 2.4.0 has an unsafe-deserialization vulnerability in build cache metadata. Code execution possible if an attacker can inject malicious cache entries. Fixed in 2.4.20 with no API changes. Low risk for solo/small-team builds; real risk for CI with shared Gradle caches. Drop-in upgrade.
-- **Dependency posture**: SQLCipher 4.16.0, Tink 1.22.0, Room 2.8.4, Compose BOM 2026.06.00 are current with no known public advisories. SQLCipher 4.14.0's WAL-mode corruption fix is already in the 4.16.0 pin. Tink has a documented (no CVE) envelope AEAD malleability limitation — practical risk is low for the SQLCipher passphrase wrapping use case.
-- **compileSdk 37 blocker is false**: `Roadmap_Blocked.md` says "AGP 9.3.0 is not yet available" as the blocker for compileSdk 37. AGP 9.2.0+ supports API 37. This false blocker holds back Android 17 TextAttribute APIs, physical keyboard password behavior verification, and AboutLibraries 15.x.
+- Verified: `python scripts/check-live-doc-integrity.py` currently fails on `ROADMAP.md:60` because the active roadmap contains the forbidden `.github/workflows/` literal while the checker bans deleted workflow references. This is a release-evidence blocker, not a cosmetic doc issue.
+- Verified: `CONTRIBUTING.md` links to `docs/LOCAL_VERIFICATION.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, and `docs/AUTOCORRECT_LIFECYCLE.md`; these files exist locally but are not tracked, so public/fresh-clone onboarding silently depends on ignored files.
+- Verified: `FlorisImeService.kt` builds inline suggestion specs with `Size(0, 0)` and `Size(Int.MAX_VALUE, Int.MAX_VALUE)` and passes responses into `NlpInlineAutofill.showInlineSuggestions`; FlorisBoard issue #3294 shows the same platform path can crash with `InlineSuggestion.inflate` size validation. SwiftFloris should clamp/catch and test malformed inline presentations.
+- Verified: Kotlin is pinned to `2.4.0`; CVE-2026-53914 is fixed in the 2.4.20 line. This is already in ROADMAP and remains a high-priority supply-chain hygiene item.
+- Verified: `Roadmap_Blocked.md` still treats AGP 9.3.0 as required for compileSdk 37, but AGP 9.2.0+ supports API 37. Existing roadmap items cover moving the false blocker and bumping compileSdk.
+- Verified: `docs/THREAT_MODEL.md` still lists `allowMainThreadQueries()` as a gap even though commit `765295b9` moved personal dictionary Room access to IO; existing roadmap covers this correction.
+- Verified: `scripts/osv-release-gate.py` is a parser/gate only and exits 2 when `osv-result.json` is missing. Release verification must continue to include the scan producer, not just the parser.
+- Likely: The no-network invariant is strong because the manifest has no `INTERNET`, README documents the invariant, and local release gates check merged permissions.
 
 ## Architecture Assessment
 
-- **Unblocked upgrade path**: compileSdk 36 → 37 is now possible on AGP 9.2.1. This unlocks `TextAttribute` for CJK accessibility, `show_passwords_physical` behavior testing, and the AboutLibraries 15.x upgrade (which requires `androidx.core:core-ktx:1.19.0`, which requires compileSdk 37).
-- **Compose transliteration APIs**: BOM 2026.06.00 ships `InputTextSuggestionState` and `TextCompositionRange`. These map directly to SwiftFloris's CJK composition path and could improve the Han shape-based provider's feedback to Compose text fields.
-- **Sizing dead space**: `FlorisImeSizing.keyboardUiHeight()` uses `rowCount.coerceAtLeast(4)`, so 3-row layouts get 4 rows of total height. Combined with the per-row cap at `keyboardRowBaseHeight * 1.12f` in `TextKeyboardLayout.kt`, this leaves ~40dp dead space on 3-row layouts. The existing roadmap item covers this.
-- **Suggestion strip UX**: The current strip shows 3 fixed candidates. HeliBoard #2584 and community posts show demand for a scrollable/expanded strip showing more candidates.
-- **Android 17 config change behavior**: `CONFIG_KEYBOARD` and `CONFIG_KEYBOARD_HIDDEN` no longer trigger activity recreation by default. `FlorisImeService.onConfigurationChanged` should be verified to still handle keyboard attach/detach correctly.
-- **Test gaps**: Roborazzi baselines still missing for CustomLayoutEditor, SnippetSettings, PrivacyAuditLog, Sync, Backup, Restore (existing roadmap item). Smartbar-only mode has policy tests but no visual baseline. Import diagnostics have parser tests but no UI-side test.
+- `CandidatesDisplayMode.DYNAMIC_SCROLLABLE` and a horizontal-scroll code path already exist in `CandidatesRow.kt`; the existing scrollable-suggestion roadmap item should focus on unblocking the preference migration in `AppPrefs.kt`, user-facing copy, accessibility/Roborazzi coverage, and QA rather than building a renderer from scratch.
+- `scripts/typing-quality-scorecard.py`, `scripts/glide-benchmark.py`, SwiftKey replay fixtures, and `SwiftKeyCandidateRankerTest` make FUTO issue #2120 actionable as local glide endpoint-plausibility fixtures instead of speculative model work.
+- `CorrectionOutcomePriors`, `LearnedWordForgetSuggestionCandidate`, candidate-removal UI, and personal n-gram stores make FUTO issue #2117 actionable as context-scoped next-word rejection without globally blacklisting a word.
+- `ImportDiagnostics` and parser-side `parseWithDiagnostics()` already landed for Espanso and KLC imports; remaining work is UI surfacing and malformed fixture coverage.
+- Roborazzi coverage still trails new settings surfaces: custom layout editor, snippets, privacy audit, sync, backup, restore, and Smartbar-only mode.
+- Row-count-aware custom layouts remain architecture work in `FlorisImeSizing`, `TextKeyboardLayout`, and popup anchoring; this is supported by HeliBoard 4-row layout issue traffic and current sizing comments.
+- CompileSdk 37 unlocks Android 17 IME visibility, `TextAttribute`, physical-keyboard password behavior verification, and AboutLibraries/core 15.x/1.19.x upgrades.
+- The untracked-doc problem shows `scripts/check-live-doc-integrity.py` should validate tracked-source truth, not just filesystem existence, for public markdown links.
 
 ## Rejected Ideas
 
-- **FUTO Swipe in `:app`**: Rejected — GPLv3 + proprietary model license is incompatible with Apache-2.0. Can only ship as an isolated addon APK under its own license. Source: `gitlab.futo.org/keyboard/swipe-library` license review.
-- **Re-adding GitHub Actions/SLSA/SBOM**: Rejected — repo rules explicitly removed workflows; solve with local commands. Source: commit `73dc7d15`, global CLAUDE.md rules.
-- **emoji2-to-custom-font migration**: Rejected for now — the FUTO approach (custom 1MB font) saves 8MB APK but requires maintaining the font asset pipeline. Low priority against reliability work. Source: FUTO v0.1.29 release notes.
-- **Full CJK Pinyin/Wubi engine in base APK**: Rejected — production CJK data sourcing/licensing not resolved; addon architecture is the correct path. Already in Roadmap_Blocked.md.
-- **Scrollable suggestion strip as P1**: Rejected at P1 tier because it's a UX enhancement, not a trust/reliability fix. Placed at P2 behind the compileSdk unblock and doc corrections.
+- Put FUTO Swipe directly in `:app`: rejected because GPLv3/proprietary-model licensing conflicts with the Apache-2.0 base APK; only an isolated addon is viable.
+- Re-add GitHub Actions/SLSA/SBOM workflows: rejected because project rules require local builds and existing docs already disclaim remote attestation.
+- Add shell-command quick actions from FUTO issue #2129: rejected because an IME invoking arbitrary shell/stdin actions conflicts with SwiftFloris' security posture.
+- Build a full CJK engine in the base APK: rejected because Fcitx5/Trime/Keyman show the correct model is an engine/addon boundary with explicit data licensing.
+- Treat awesome-list discovery as a roadmap driver: rejected because current awesome-list hits were tiny/low-signal and did not outperform direct repo/issue/release research.
+- Replace emoji2 with a maintained custom emoji font now: rejected because FUTO's size savings are attractive but the asset pipeline would distract from current reliability blockers.
+- Duplicate the existing scrollable-suggestion roadmap item: rejected because the code already has `DYNAMIC_SCROLLABLE`; the active item should be narrowed during implementation.
 
 ## Sources
 
 OSS keyboards:
-- https://github.com/Helium314/HeliBoard (v4.0-beta1, Jun 2026)
-- https://github.com/Helium314/HeliBoard/issues/2584
-- https://github.com/Helium314/HeliBoard/issues/2518
-- https://github.com/Helium314/HeliBoard/issues/2506
-- https://github.com/futo-org/android-keyboard (v0.1.29.1, Jun 2026)
-- https://gitlab.futo.org/keyboard/swipe-library (GPLv3 license)
+- https://github.com/HeliBorg/HeliBoard
+- https://github.com/HeliBorg/HeliBoard/issues/2584
+- https://github.com/HeliBorg/HeliBoard/pull/2472
+- https://github.com/futo-org/android-keyboard
+- https://github.com/futo-org/android-keyboard/issues/2120
+- https://github.com/futo-org/android-keyboard/issues/2117
 - https://swipe.futo.tech/
-- https://github.com/florisboard/florisboard (v0.6.0-alpha02, Jan 2026)
-- https://github.com/nicknisi/Unexpected-Keyboard (v2.0.4, May 2026)
+- https://gitlab.futo.org/keyboard/swipe-library
+- https://github.com/florisboard/florisboard/issues/3294
+- https://github.com/florisboard/florisboard/issues/3300
+- https://github.com/AnySoftKeyboard/AnySoftKeyboard/issues/4771
+- https://github.com/fcitx5-android/fcitx5-android
+- https://github.com/osfans/trime
+- https://github.com/keymanapp/keyman
 
-Platform and dependencies:
+Platform, standards, dependencies, security:
+- https://developer.android.com/build/releases/agp-9-2-0-release-notes
 - https://developer.android.com/about/versions/17/behavior-changes-17
 - https://developer.android.com/about/versions/17/features
-- https://developer.android.com/build/releases/agp-9-2-0-release-notes
-- https://developer.android.com/build/releases/about-agp
 - https://developer.android.com/jetpack/androidx/releases/compose
-- https://developer.android.com/jetpack/androidx/releases/room
-- https://kotlinlang.org/docs/whatsnew24.html
-- https://github.com/sqlcipher/sqlcipher-android/releases
-
-Community demand:
-- https://discuss.techlore.tech/t/what-keyboard-are-you-using-on-android/6588
-- https://lemmy.world/post/12769494
-- https://f-droid.org/en/2025/03/04/even-my-keyboard-is-built-reproducibly.html
-- https://www.androidpolice.com/spent-years-switching-android-keyboards-this-one-changed-everything/
-
-Distribution and verification:
+- https://www.cve.org/CVERecord?id=CVE-2026-53914
+- https://cvefeed.io/vuln/detail/CVE-2026-53914
+- https://plugins.gradle.org/m2/com/mikepenz/aboutlibraries/plugin/com.mikepenz.aboutlibraries.plugin.gradle.plugin/maven-metadata.xml
+- https://www.unicode.org/reports/tr35/tr35-keyboards.html
+- https://unicode.org/reports/tr51/
+- https://cldr.unicode.org/index/downloads/cldr-49
 - https://developer.android.com/developer-verification
 - https://support.google.com/android-developer-console/answer/16561738
+- https://f-droid.org/en/2025/03/04/even-my-keyboard-is-built-reproducibly.html
+
+Commercial and community:
+- https://support.google.com/gboard/answer/7068494
+- https://www.microsoft.com/en-us/swiftkey
+- https://discuss.techlore.tech/t/what-keyboard-are-you-using-on-android/6588
 
 ## Open Questions
 
-1. **compileSdk 37 naming mismatch**: GitHub Actions runner-images issue #13859 reports `android-37.0` vs `android-37` naming inconsistency. For local builds this may not matter, but verify that the local Android SDK installs `platforms/android-37` correctly before bumping compileSdk.
+- None for prioritization. FUTO Swipe addon distribution remains blocked by license/model-weight and dataset policy decisions already tracked outside the active roadmap.
