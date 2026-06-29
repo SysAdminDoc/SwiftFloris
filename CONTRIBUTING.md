@@ -42,11 +42,10 @@ Common commands:
 .\gradlew.bat :app:installDebug
 ```
 
-Linux/macOS shells can use `./gradlew` with the same tasks. The complete local
-gate, lint baseline-drift wrapper, adb smoke, and benchmark commands are in
-[`docs/LOCAL_VERIFICATION.md`](docs/LOCAL_VERIFICATION.md).
-Repo hygiene rules for generated outputs and deleted docs are in
-[`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md).
+Linux/macOS shells can use `./gradlew` with the same tasks. For release-level
+verification, run `scripts/release-evidence.ps1`; it composes the local gates,
+lint, release assembly, no-network proof, reproducible-APK check, and public-doc
+integrity checks into `build/release-evidence/<timestamp>/`.
 
 ## Picking Work
 
@@ -98,10 +97,7 @@ Also run when relevant:
 .\gradlew.bat :app:installDebug
 ```
 
-Manual QA is required for IME behavior. Use
-[`docs/QA_CHECKLISTS.md`](docs/QA_CHECKLISTS.md) for the visual matrix,
-manual-flow rows, and release-evidence format. For keyboard changes, test at
-least:
+Manual QA is required for IME behavior. For keyboard changes, test at least:
 
 - A normal text field.
 - A password field.
@@ -111,8 +107,8 @@ least:
   or media.
 
 For autocorrect, spacebar, punctuation, backspace, glide-delete, or hardware
-keyboard changes, also follow the contract and scenario matrix in
-[`docs/AUTOCORRECT_LIFECYCLE.md`](docs/AUTOCORRECT_LIFECYCLE.md).
+keyboard changes, extend the existing editor/candidate replay tests before
+manual smoke testing the same behavior in a normal field and a multiline field.
 
 Accessibility notes for manual QA:
 
@@ -154,8 +150,7 @@ Versioned releases use:
 Draft the Fastlane changelog as the short store-facing summary: keep it at or
 below 480 characters for headroom, summarize the verified outcome, and avoid
 test commands, file paths, internal-only IDs, or claims not backed by the
-`README.md` release section. The detailed rule lives in
-[`docs/REPO_HYGIENE.md`](docs/REPO_HYGIENE.md).
+`README.md` release section.
 
 Docs-only housekeeping commits do not need a version bump unless they are being
 published as a release.

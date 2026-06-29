@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path, PurePosixPath
 
@@ -16,6 +17,7 @@ ARCHIVE_DIRS = {"docs/archive", ".ai", "docs/outreach"}
 EXCLUDED_FILES = {
     "CLAUDE.md",
     "AGENTS.md",
+    "ROADMAP.md",
     "RESEARCH.md",
     "Roadmap_Blocked.md",
 }
@@ -39,6 +41,18 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def collect_tracked_paths(root: Path) -> set[str] | None:
+    result = subprocess.run(
+        ["git", "-C", str(root), "ls-files", "-z"],
+        check=False,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.DEVNULL,
+    )
+    if result.returncode != 0:
+        return None
+    return {part.decode("utf-8").replace("\\", "/") for part in result.stdout.split(b"\0") if part}
+
+
 def is_excluded(path: Path, root: Path) -> bool:
     rel = path.relative_to(root).as_posix()
     if rel in EXCLUDED_FILES:
@@ -50,12 +64,20 @@ def is_excluded(path: Path, root: Path) -> bool:
     return False
 
 
-def collect_live_markdown(root: Path) -> list[Path]:
+def collect_live_markdown(root: Path, tracked_paths: set[str] | None) -> list[Path]:
     files: list[Path] = []
-    for md in root.rglob("*.md"):
-        if md.name.startswith("."):
+    candidates = (
+        [root / rel for rel in sorted(tracked_paths) if rel.endswith(".md")]
+        if tracked_paths is not None
+        else sorted(root.rglob("*.md"))
+    )
+    for md in candidates:
+        if not md.exists() or md.name.startswith("."):
             continue
-        rel = md.relative_to(root).as_posix()
+        try:
+            rel = md.relative_to(root).as_posix()
+        except ValueError:
+            continue
         if any(part.startswith(".") for part in PurePosixPath(rel).parts):
             continue
         if is_excluded(md, root):
@@ -66,7 +88,12 @@ def collect_live_markdown(root: Path) -> list[Path]:
     return sorted(files)
 
 
-def check_file(path: Path, root: Path) -> list[str]:
+def has_tracked_directory(rel: str, tracked_paths: set[str]) -> bool:
+    prefix = rel.rstrip("/") + "/"
+    return any(path.startswith(prefix) for path in tracked_paths)
+
+
+def check_file(path: Path, root: Path, tracked_paths: set[str] | None) -> list[str]:
     errors: list[str] = []
     rel_path = path.relative_to(root).as_posix()
     try:
@@ -91,18 +118,32 @@ def check_file(path: Path, root: Path) -> list[str]:
             if not local_path:
                 continue
             resolved = (path.parent / local_path).resolve()
+            try:
+                resolved_rel = resolved.relative_to(root).as_posix()
+            except ValueError:
+                errors.append(f"{rel_path}:{line_no}: local link points outside repo [{match.group(1)}]({target})")
+                continue
             if not resolved.exists():
                 errors.append(f"{rel_path}:{line_no}: broken link [{match.group(1)}]({target})")
+                continue
+            if tracked_paths is None:
+                continue
+            if resolved.is_dir():
+                if not has_tracked_directory(resolved_rel, tracked_paths):
+                    errors.append(f"{rel_path}:{line_no}: untracked linked directory [{match.group(1)}]({target})")
+            elif resolved_rel not in tracked_paths:
+                errors.append(f"{rel_path}:{line_no}: untracked linked file [{match.group(1)}]({target})")
 
     return errors
 
 
 def main() -> int:
     root = Path(parse_args().root).resolve()
-    files = collect_live_markdown(root)
+    tracked_paths = collect_tracked_paths(root)
+    files = collect_live_markdown(root, tracked_paths)
     all_errors: list[str] = []
     for md in files:
-        all_errors.extend(check_file(md, root))
+        all_errors.extend(check_file(md, root, tracked_paths))
 
     if all_errors:
         for error in all_errors:

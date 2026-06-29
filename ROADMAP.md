@@ -48,27 +48,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Bump Kotlin 2.4.0 → 2.4.20 to fix CVE-2026-53914
-  Why: CVE-2026-53914 (MEDIUM, CVSS 6.7) is an unsafe-deserialization vulnerability in Kotlin compiler build cache metadata. Fixed in 2.4.20 with no API changes.
-  Evidence: CVE-2026-53914 on OpenCVE/cvefeed.io; JetBrains Kotlin security support policy; `gradle/libs.versions.toml` `kotlin = "2.4.0"`.
-  Touches: `gradle/libs.versions.toml` `kotlin` version, `ksp` version (verify KSP 2.3.9 compatibility with Kotlin 2.4.20), Compose compiler plugin version (derived from Kotlin).
-  Acceptance: `kotlin = "2.4.20"` in version catalog; KSP version updated if needed; full unit/lint/assemble passes; public-doc version-pin checker passes; no regressions.
-  Complexity: S
-
-- [ ] P1 — Correct stale SLSA/SBOM claim in README v1.9.44 release note
-  Why: README line 342 says v1.9.44 shipped SLSA/SBOM generation, but those workflows were deleted in commit `73dc7d15`. Readers parsing release notes for trust evidence will find a false claim.
-  Evidence: `README.md:342`; absence of `.github/workflows/`; `docs/SECURITY.md:101` correctly disclaimed remote attestation.
-  Touches: `README.md` v1.9.44 release bullet.
-  Acceptance: the release note appends a correction (e.g. "later replaced by local-only release evidence") and does not claim active SLSA/SBOM capability.
-  Complexity: S
-
-- [ ] P1 — Update THREAT_MODEL.md to remove fixed allowMainThreadQueries() gap
-  Why: THREAT_MODEL.md line 232 lists `allowMainThreadQueries()` as a known gap, but commit `765295b9` moved Room access to IO. Stale gap claims weaken the threat model's reliability.
-  Evidence: `docs/THREAT_MODEL.md:232`; commit `765295b9`; test guard at `PersonalDictionaryEncryptionTest.kt:49`.
-  Touches: `docs/THREAT_MODEL.md` §4 known-gaps table.
-  Acceptance: the gap row is removed or replaced with a "fixed in v1.9.53+" note; the verification checklist at §5 reflects the current state.
-  Complexity: S
-
 - [ ] P1 — Unblock compileSdk 37: correct false AGP 9.3.0 prerequisite
   Why: `Roadmap_Blocked.md` says "AGP 9.3.0 is not yet available" as the blocker for compileSdk 37. AGP 9.2.0+ supports API 37 per the official compatibility table and release notes. This false blocker holds back Android 17 TextAttribute APIs, physical keyboard password behavior, and AboutLibraries 15.x.
   Evidence: AGP 9.2.0 release notes ("maximum API level that Android Gradle plugin 9.2 supports is API level 37.0"); `Roadmap_Blocked.md` lines 205-210, 65-69, 71-79.
@@ -118,20 +97,6 @@ gated on external deliverables or hardware testing live in
 ## Research-Driven Additions
 
 ### P1
-
-- [ ] P1 - Fix live-doc integrity self-failure on the workflow-reference ban
-  Why: the current local release/documentation gate fails before implementation work because `ROADMAP.md` contains the forbidden `.github/workflows/` literal while `scripts/check-live-doc-integrity.py` bans deleted workflow references.
-  Evidence: `python scripts/check-live-doc-integrity.py` reports `ROADMAP.md:60`; `scripts/check-live-doc-integrity.py`; existing P1 stale SLSA/SBOM roadmap item.
-  Touches: `ROADMAP.md` evidence wording for the stale SLSA/SBOM item and, only if needed, `scripts/check-live-doc-integrity.py` to keep the workflow ban precise.
-  Acceptance: `python scripts/check-live-doc-integrity.py` passes without weakening the deleted-workflow guard; the stale SLSA/SBOM item still points to local-only release evidence.
-  Complexity: S
-
-- [ ] P1 - Make public markdown link integrity use tracked-file truth
-  Why: `CONTRIBUTING.md` links to four docs that exist only as ignored local markdown, so a clean public clone has broken contributor onboarding while the current filesystem-based check can miss it.
-  Evidence: `CONTRIBUTING.md`; `docs/LOCAL_VERIFICATION.md`, `docs/REPO_HYGIENE.md`, `docs/QA_CHECKLISTS.md`, and `docs/AUTOCORRECT_LIFECYCLE.md` are `tracked=False exists=True`; `scripts/check-live-doc-integrity.py`.
-  Touches: `scripts/check-live-doc-integrity.py`, `CONTRIBUTING.md`, and either tracked replacements in already-allowed docs or removal/rewording of links to ignored docs.
-  Acceptance: the integrity checker fails when README/CONTRIBUTING/tracked docs link to untracked local markdown; all current public markdown links resolve in a clean checkout.
-  Complexity: S
 
 - [ ] P1 - Harden inline suggestion inflation against invalid host sizes
   Why: upstream FlorisBoard issue #3294 shows `InlineSuggestion.inflate` can crash on invalid size constraints, and SwiftFloris currently requests an unconstrained max size and forwards inline suggestions through the same platform path.

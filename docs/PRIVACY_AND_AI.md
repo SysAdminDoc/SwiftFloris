@@ -349,4 +349,4 @@ local processing only; nothing leaves the device.
 - [docs/THREAT_MODEL.md](THREAT_MODEL.md) — attacker scenarios + defenses
 - [docs/SECURITY.md](SECURITY.md) — release-time security + dep scanning
 - [docs/REPRODUCIBLE_BUILDS.md](REPRODUCIBLE_BUILDS.md) — toolchain pin matrix
-- [docs/MIGRATE_FROM_SWIFTKEY.md](MIGRATE_FROM_SWIFTKEY.md) — 2026-05-31 migration paths
+- [README keyboard migration](../README.md#keyboard-migration) — 2026-05-31 migration paths

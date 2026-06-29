@@ -7,9 +7,9 @@
 ### What changed since the v1.8.68 baseline
 
 The v1.8.85 → v1.8.122 sixth- and seventh-pass audits closed the following live attack-surface
-items. They are referenced by their original finding IDs so the audit trail is traceable; the
-gory detail lives in [.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SIXTH_PASS_FINDINGS.md)
-and [SEVENTH_PASS_FINDINGS.md](../.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md):
+items. They are referenced by their original finding IDs so the audit trail is traceable through
+the local audit archive and the README release log; the public trust state below is the canonical
+clean-clone summary:
 
 - **v1.8.85** — `verifyNoInternetPermission` now scans **merged** manifests in addition to source
   manifests, and honours `tools:node="remove"`. Source-only scanning could miss a transitively-
@@ -229,7 +229,6 @@ Out of scope:
 | Gap | Severity | Tracker |
 |---|---|---|
 | Reproducible-build verification not yet active on F-Droid | Medium | N6.3 |
-| `allowMainThreadQueries()` on the personal dictionary Room DB — small UI lag risk on cold reads | Low | Risk-register entry, see ROADMAP §14 |
 | Voice-command parser uses external FUTO Voice Input — that app has its own threat model and permissions | Low (FUTO is offline; user makes the trust decision when installing it) | Documented under "External components" in README |
 
 ---
@@ -239,7 +238,7 @@ Out of scope:
 - [ ] `aapt dump permissions app-release.apk` shows only `VIBRATE`, `POST_NOTIFICATIONS` (and any new ones must be justified in the release notes + threat model).
 - [ ] `:app:verifyNoInternetPermission` passes locally.
 - [ ] `PersonalDictionaryIsolationTest` passes locally.
-- [ ] `PersonalDictionaryEncryptionTest` passes locally.
+- [ ] `PersonalDictionaryEncryptionTest` passes locally; this includes the SQLCipher/Tink guard and confirms the personal dictionary Room source no longer contains `allowMainThreadQueries`.
 - [ ] APK signing fingerprint matches the value pinned in README (release-build only; debug builds use a per-developer keystore).
 - [ ] No new `TODO()` runtime stubs introduced (lint check or grep).
 
