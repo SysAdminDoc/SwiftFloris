@@ -2427,8 +2427,11 @@
     <string name="settings__snippet__import_yaml__summary" comment="Summary for the import action">Add an Espanso-compatible YAML file from your device</string>
     <string name="settings__snippet__clear_all" comment="Action to remove all snippet files">Clear all snippets</string>
     <string name="settings__snippet__clear_all__summary" comment="Summary for the clear-all action">Remove every imported snippet file and all loaded triggers</string>
+    <string name="settings__snippet__clear_all_confirm_title" comment="Title for confirming removal of every snippet file">Clear all snippets?</string>
+    <string name="settings__snippet__clear_all_confirm_message" comment="Message for confirming removal of every snippet file">Delete every imported snippet file and loaded trigger? This cannot be undone.</string>
     <string name="settings__snippet__clear_all__toast" comment="Toast after clearing all snippets">All snippets cleared.</string>
     <string name="settings__snippet__file_triggers" comment="Summary for a snippet file row; {count} = number of triggers">{count} triggers</string>
+    <string name="settings__snippet__delete_file_a11y" comment="Accessibility label for deleting an imported snippet file">Delete {filename}</string>
     <string name="settings__snippet__file_removed__toast" comment="Toast after removing a snippet file">Snippet file removed.</string>
     <string name="settings__snippet__import_success__toast" comment="Toast after successful import; {count} = triggers imported">{count} triggers imported.</string>
     <string name="settings__snippet__import_failed__toast" comment="Toast when import yields zero triggers or fails">Import failed — no valid triggers found in file.</string>

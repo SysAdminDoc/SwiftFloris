@@ -33,19 +33,23 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.snippet.EspansoMatchParser
 import dev.patrickgold.florisboard.ime.snippet.SnippetManager
+import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.snippetManager
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -70,6 +74,17 @@ fun SnippetSettingsScreen() = FlorisScreen {
     val importReadErrorText = stringRes(R.string.settings__snippet__import_read_error__toast)
     val fileRemovedText = stringRes(R.string.settings__snippet__file_removed__toast)
     val clearedText = stringRes(R.string.settings__snippet__clear_all__toast)
+    val acceptedSnippetMimeTypes = remember {
+        arrayOf(
+            "application/x-yaml",
+            "text/yaml",
+            "text/x-yaml",
+            "text/plain",
+            "*/*",
+        )
+    }
+    var deleteCandidate by remember { mutableStateOf<String?>(null) }
+    var showClearAllConfirmation by remember { mutableStateOf(false) }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -101,6 +116,10 @@ fun SnippetSettingsScreen() = FlorisScreen {
         }
     }
 
+    fun launchImportPicker() {
+        filePickerLauncher.launch(acceptedSnippetMimeTypes)
+    }
+
     LaunchedEffect(Unit) {
         snippetManager.loadAll()
     }
@@ -112,6 +131,8 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 icon = Icons.AutoMirrored.Filled.TextSnippet,
                 title = stringRes(R.string.settings__snippet__empty_title),
                 message = stringRes(R.string.settings__snippet__empty_message),
+                actionLabel = stringRes(R.string.settings__snippet__import_yaml),
+                onAction = { launchImportPicker() },
             )
         }
 
@@ -120,17 +141,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 icon = Icons.Default.FileOpen,
                 title = stringRes(R.string.settings__snippet__import_yaml),
                 summary = stringRes(R.string.settings__snippet__import_yaml__summary),
-                onClick = {
-                    filePickerLauncher.launch(
-                        arrayOf(
-                            "application/x-yaml",
-                            "text/yaml",
-                            "text/x-yaml",
-                            "text/plain",
-                            "*/*",
-                        ),
-                    )
-                },
+                onClick = { launchImportPicker() },
             )
             for (filename in files) {
                 val triggerCount = remember(filename, snippets) {
@@ -146,13 +157,13 @@ fun SnippetSettingsScreen() = FlorisScreen {
                         "count" to triggerCount,
                     ),
                     trailing = {
-                        IconButton(onClick = {
-                            snippetManager.removeFile(filename)
-                            Toast.makeText(context, fileRemovedText, Toast.LENGTH_SHORT).show()
-                        }) {
+                        IconButton(onClick = { deleteCandidate = filename }) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = stringRes(R.string.settings__snippet__file_removed__toast),
+                                contentDescription = stringRes(
+                                    R.string.settings__snippet__delete_file_a11y,
+                                    "filename" to filename,
+                                ),
                             )
                         }
                     },
@@ -163,10 +174,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
                     icon = Icons.Default.DeleteSweep,
                     title = stringRes(R.string.settings__snippet__clear_all),
                     summary = stringRes(R.string.settings__snippet__clear_all__summary),
-                    onClick = {
-                        snippetManager.clearAll()
-                        Toast.makeText(context, clearedText, Toast.LENGTH_SHORT).show()
-                    },
+                    onClick = { showClearAllConfirmation = true },
                 )
             }
         }
@@ -185,6 +193,34 @@ fun SnippetSettingsScreen() = FlorisScreen {
                     )
                 }
             }
+        }
+    }
+
+    deleteCandidate?.let { filename ->
+        FlorisConfirmDeleteDialog(
+            what = filename,
+            onConfirm = {
+                snippetManager.removeFile(filename)
+                deleteCandidate = null
+                Toast.makeText(context, fileRemovedText, Toast.LENGTH_SHORT).show()
+            },
+            onDismiss = { deleteCandidate = null },
+        )
+    }
+
+    if (showClearAllConfirmation) {
+        JetPrefAlertDialog(
+            title = stringRes(R.string.settings__snippet__clear_all_confirm_title),
+            confirmLabel = stringRes(R.string.settings__snippet__clear_all),
+            onConfirm = {
+                snippetManager.clearAll()
+                showClearAllConfirmation = false
+                Toast.makeText(context, clearedText, Toast.LENGTH_SHORT).show()
+            },
+            dismissLabel = stringRes(R.string.action__cancel),
+            onDismiss = { showClearAllConfirmation = false },
+        ) {
+            Text(text = stringRes(R.string.settings__snippet__clear_all_confirm_message))
         }
     }
 }
