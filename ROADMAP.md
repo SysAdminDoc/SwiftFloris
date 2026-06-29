@@ -48,13 +48,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Unblock compileSdk 37: correct false AGP 9.3.0 prerequisite
-  Why: `Roadmap_Blocked.md` says "AGP 9.3.0 is not yet available" as the blocker for compileSdk 37. AGP 9.2.0+ supports API 37 per the official compatibility table and release notes. This false blocker holds back Android 17 TextAttribute APIs, physical keyboard password behavior, and AboutLibraries 15.x.
-  Evidence: AGP 9.2.0 release notes ("maximum API level that Android Gradle plugin 9.2 supports is API level 37.0"); `Roadmap_Blocked.md` lines 205-210, 65-69, 71-79.
-  Touches: `Roadmap_Blocked.md` entries for AGP 9.3.0 bump, AboutLibraries 15.x, and CJKV TextAttribute APIs — all should have their blockers corrected or items moved back to `ROADMAP.md`.
-  Acceptance: false blocker removed; unblocked items moved to active roadmap or executed directly.
-  Complexity: S
-
 ### P2
 
 - [ ] P2 — Bump compileSdk from 36 to 37
