@@ -577,7 +577,9 @@ class NlpManager(context: Context) {
 
     suspend fun nextWordContextScore(previousWord: String, nextWord: String): Double {
         val locale = subtypeManager.activeSubtype.primaryLocale
-        val personalScore = PersonalBigramStore.get(appContext).score(previousWord, nextWord, locale)
+        val bigramStore = PersonalBigramStore.get(appContext)
+        val personalScore = bigramStore.score(previousWord, nextWord, locale)
+        val rejectionDiscount = 1.0 - bigramStore.rejectionPenalty(previousWord, nextWord, locale)
         val coldStartScore = ColdStartNextWordPriors
             .suggest(
                 textBeforeCursor = "${previousWord.trim()} ",
@@ -587,7 +589,7 @@ class NlpManager(context: Context) {
             .firstOrNull { prior -> prior.word.equals(nextWord, ignoreCase = true) }
             ?.confidence
             ?: 0.0
-        return maxOf(personalScore, coldStartScore).coerceIn(0.0, 1.0)
+        return maxOf(personalScore, coldStartScore * rejectionDiscount).coerceIn(0.0, 1.0)
     }
 
     private suspend fun userDictionarySuggestions(

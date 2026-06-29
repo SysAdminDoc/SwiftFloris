@@ -36,10 +36,3 @@ gated on external deliverables or hardware testing live in
 ### P1
 
 ### P2
-
-- [ ] P2 - Add context-scoped next-word rejection
-  Why: users need to reject a displayed next-word prediction for a specific preceding context without removing the word globally, matching FUTO issue #2117 and avoiding dictionary blacklisting side effects.
-  Evidence: FUTO Keyboard issue #2117; `LearnedWordForgetSuggestionCandidate`; `CorrectionOutcomePriors.kt`; `PersonalBigramStore.kt`; `PersonalTrigramStore.kt`; `CandidatesRow.kt`.
-  Touches: candidate long-press/removal UI, correction/rejection priors, personal n-gram stores, strings, candidate-ranker tests.
-  Acceptance: a user can reject "word B after word A"; the word remains available elsewhere, but the rejected context is demoted in next-word ranking; tests prove rejection is context-scoped and reversible/clearable through existing learning-data controls.
-  Complexity: M

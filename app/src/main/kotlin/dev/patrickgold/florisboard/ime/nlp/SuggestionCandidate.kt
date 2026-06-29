@@ -112,9 +112,15 @@ data class WordSuggestionCandidate(
     override val isEligibleForAutoCommit: Boolean = false,
     override val isEligibleForUserRemoval: Boolean = true,
     override val sourceProvider: SuggestionProvider? = null,
+    val nextWordContext: NextWordSuggestionContext? = null,
 ) : SuggestionCandidate {
     override val icon: ImageVector? = null
 }
+
+data class NextWordSuggestionContext(
+    val previousWord: String,
+    val secondPreviousWord: String? = null,
+)
 
 data class AutoCommitUndoSuggestionCandidate(
     val original: String,

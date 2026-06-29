@@ -29,6 +29,7 @@ import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrect
 import dev.patrickgold.florisboard.ime.nlp.ImmediateAutocorrectCorrection
+import dev.patrickgold.florisboard.ime.nlp.NextWordSuggestionContext
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
@@ -274,6 +275,12 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val prev2Word = previousWordOf(before, depth = 2)
         val bigramStore = PersonalBigramStore.get(appContext)
         val trigramStore = PersonalTrigramStore.get(appContext)
+        val nextWordContext = prevWord?.let { word ->
+            NextWordSuggestionContext(
+                previousWord = word,
+                secondPreviousWord = prev2Word,
+            )
+        }
         // Tier 0: trained trigrams for the (prev2, prev1) context — sharpest predictions.
         val trigramHits = if (prevWord != null && prev2Word != null) {
             trigramStore.predict(prev2Word, prevWord, subtype.primaryLocale, maxCandidateCount)
@@ -288,14 +295,29 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         }
         val seen = HashSet<String>(maxCandidateCount * 3)
         val merged = ArrayList<Pair<String, Double>>(maxCandidateCount)
+        suspend fun adjustedConfidence(word: String, confidence: Double): Double {
+            if (prevWord == null) return confidence
+            val bigramPenalty = bigramStore.rejectionPenalty(prevWord, word, subtype.primaryLocale)
+            val trigramPenalty = prev2Word?.let { prev2 ->
+                trigramStore.rejectionPenalty(prev2, prevWord, word, subtype.primaryLocale)
+            } ?: 0.0
+            val penalty = maxOf(bigramPenalty, trigramPenalty).coerceIn(0.0, 1.0)
+            return (confidence * (1.0 - penalty)).coerceIn(0.0, confidence)
+        }
+        suspend fun addMerged(word: String, confidence: Double) {
+            val adjusted = adjustedConfidence(word, confidence)
+            if (adjusted > 0.01) {
+                merged.add(word to adjusted)
+            }
+        }
         trigramHits.forEachIndexed { index, word ->
             if (seen.add(word.lowercase())) {
-                merged.add(word to (0.80 - 0.05 * index))
+                addMerged(word, 0.80 - 0.05 * index)
             }
         }
         bigramHits.forEachIndexed { index, word ->
             if (seen.add(word.lowercase())) {
-                merged.add(word to (0.55 - 0.05 * index))
+                addMerged(word, 0.55 - 0.05 * index)
             }
         }
         // Tier 2: curated cold-start priors supply SwiftKey-like sentence starts
@@ -306,7 +328,7 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
             maxCandidateCount = maxCandidateCount,
         ).forEach { prior ->
             if (merged.size < maxCandidateCount && seen.add(prior.word.lowercase())) {
-                merged.add(prior.word to prior.confidence)
+                addMerged(prior.word, prior.confidence)
             }
         }
         if (merged.size < maxCandidateCount) {
@@ -320,17 +342,18 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
                     // was mis-ported). Spread the frequency over a real 0..0.06 band
                     // starting at 0.18 — kept below trained bigram/trigram (0.55+) and
                     // the cold-start prior floor so cross-provider ranking stays correct.
-                    merged.add(word to (0.18 + 0.06 * dict.frequencyFor(word)))
+                    addMerged(word, 0.18 + 0.06 * dict.frequencyFor(word))
                 }
             }
         }
-        return merged.map { (word, confidence) ->
+        return merged.sortedByDescending { (_, confidence) -> confidence }.map { (word, confidence) ->
             WordSuggestionCandidate(
                 text = applySentenceCase(word, before),
                 confidence = confidence,
                 isEligibleForAutoCommit = false,
-                isEligibleForUserRemoval = true,
+                isEligibleForUserRemoval = nextWordContext != null,
                 sourceProvider = this@LatinLanguageProvider,
+                nextWordContext = nextWordContext,
             )
         }
     }
@@ -390,6 +413,25 @@ class LatinLanguageProvider(context: Context) : SpellingProvider, SuggestionProv
         val word = candidate.text.toString()
         if (word.isBlank()) return false
         val locale = subtype.primaryLocale
+        val nextWordContext = (candidate as? WordSuggestionCandidate)?.nextWordContext
+        if (nextWordContext != null) {
+            return withContext(Dispatchers.IO) {
+                val rejectedBigram = PersonalBigramStore.get(appContext).rejectContinuationAndAwait(
+                    prevWord = nextWordContext.previousWord,
+                    currWord = word,
+                    locale = locale,
+                )
+                val rejectedTrigram = nextWordContext.secondPreviousWord?.let { prev2 ->
+                    PersonalTrigramStore.get(appContext).rejectContinuationAndAwait(
+                        prev2 = prev2,
+                        prev1 = nextWordContext.previousWord,
+                        currWord = word,
+                        locale = locale,
+                    )
+                } ?: false
+                rejectedBigram || rejectedTrigram
+            }
+        }
         // Forget the word from every learned source on this device. Each forget call is
         // idempotent — if the word never lived in that store, nothing happens.
         val removedFromUserDict = withContext(Dispatchers.IO) {

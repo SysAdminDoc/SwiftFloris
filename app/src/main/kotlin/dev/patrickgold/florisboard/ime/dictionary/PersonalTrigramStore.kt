@@ -47,8 +47,12 @@ class PersonalTrigramStore private constructor(private val context: Context) {
     companion object {
         private const val MAX_CONTEXTS = 4000
         private const val MAX_NEXT_PER_CONTEXT = 12
+        private const val MAX_REJECTED_CONTEXTS = 4000
+        private const val MAX_REJECTIONS_PER_CONTEXT = 24
         private const val MAX_COUNT = 1000
+        private const val MAX_REJECTION_COUNT = 8
         private const val MIN_COUNT_FOR_SUGGEST = 2
+        private const val MIN_REJECTION_ADJUSTED_SCORE_FOR_SUGGEST = 1.0
         private const val FLUSH_EVERY_N_COMMITS = 20
         private const val CONTEXT_DELIMITER = "\u0000"
 
@@ -71,13 +75,26 @@ class PersonalTrigramStore private constructor(private val context: Context) {
     // throw CME. Inner per-context maps stay guarded by synchronized(table).
     private val tablesByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Int>>> = ConcurrentHashMap()
     private val lastSeenByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Long>>> = ConcurrentHashMap()
+    private val rejectionCountsByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Int>>> = ConcurrentHashMap()
+    private val rejectionLastSeenByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Long>>> = ConcurrentHashMap()
     private val loadGuard = Mutex()
     private val pendingCommitsByLocale = java.util.concurrent.ConcurrentHashMap<String, AtomicInteger>()
 
     private fun fileFor(localeTag: String): File =
         File(context.filesDir, "personal_trigrams_${localeTag.ifBlank { "default" }}.tsv")
 
+    private fun rejectionFileFor(localeTag: String): File =
+        File(context.filesDir, "personal_trigram_rejections_${localeTag.ifBlank { "default" }}.tsv")
+
     private data class TrigramSnapshot(
+        val prev2: String,
+        val prev1: String,
+        val next: String,
+        val count: Int,
+        val lastSeenMs: Long,
+    )
+
+    private data class TrigramRejectionSnapshot(
         val prev2: String,
         val prev1: String,
         val next: String,
@@ -107,10 +124,47 @@ class PersonalTrigramStore private constructor(private val context: Context) {
 
     /** Loads (or returns) the table for [localeTag]. Caller must hold [loadGuard]. */
     private fun ensureLoadedLocked(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
-        tablesByLocale[localeTag]?.let { return it }
+        val table = tablesByLocale[localeTag] ?: run {
+            val loadedTable: MutableMap<String, MutableMap<String, Int>> = HashMap()
+            val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
+            val f = fileFor(localeTag)
+            val loadTimestampMs = System.currentTimeMillis()
+            if (f.exists() && f.length() > 0L) {
+                runCatching {
+                    f.bufferedReader().useLines { lines ->
+                        for (line in lines) {
+                            val parts = line.split('\t')
+                            if (parts.size != 4 && parts.size != 5) continue
+                            val prev2 = parts[0]
+                            val prev1 = parts[1]
+                            val next = parts[2]
+                            val count = parts[3].toIntOrNull() ?: continue
+                            val lastSeenMs = parts.getOrNull(4)?.toLongOrNull()
+                                ?.takeIf { it > 0L }
+                                ?: loadTimestampMs
+                            if (prev2.isBlank() || prev1.isBlank() || next.isBlank() || count <= 0) continue
+                            val key = contextKey(prev2, prev1)
+                            val nextMap = loadedTable.getOrPut(key) { HashMap() }
+                            nextMap[next] = count.coerceAtMost(MAX_COUNT)
+                            val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
+                            recencyNextMap[next] = lastSeenMs
+                        }
+                    }
+                }
+            }
+            tablesByLocale[localeTag] = loadedTable
+            lastSeenByLocale[localeTag] = recencyTable
+            loadedTable
+        }
+        ensureRejectionsLoadedLocked(localeTag)
+        return table
+    }
+
+    private fun ensureRejectionsLoadedLocked(localeTag: String) {
+        if (rejectionCountsByLocale.containsKey(localeTag)) return
         val table: MutableMap<String, MutableMap<String, Int>> = HashMap()
         val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
-        val f = fileFor(localeTag)
+        val f = rejectionFileFor(localeTag)
         val loadTimestampMs = System.currentTimeMillis()
         if (f.exists() && f.length() > 0L) {
             runCatching {
@@ -128,16 +182,15 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                         if (prev2.isBlank() || prev1.isBlank() || next.isBlank() || count <= 0) continue
                         val key = contextKey(prev2, prev1)
                         val nextMap = table.getOrPut(key) { HashMap() }
-                        nextMap[next] = count.coerceAtMost(MAX_COUNT)
+                        nextMap[next] = count.coerceAtMost(MAX_REJECTION_COUNT)
                         val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
                         recencyNextMap[next] = lastSeenMs
                     }
                 }
             }
         }
-        tablesByLocale[localeTag] = table
-        lastSeenByLocale[localeTag] = recencyTable
-        return table
+        rejectionCountsByLocale[localeTag] = table
+        rejectionLastSeenByLocale[localeTag] = recencyTable
     }
 
     fun learn(prev2: String, prev1: String, currWord: String, locale: FlorisLocale) {
@@ -162,12 +215,64 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                     val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
                     recencyNextMap[c] = now
                 }
+                clearRejectionLocked(tag, a, b, c)
                 pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet() >= FLUSH_EVERY_N_COMMITS
             }
             if (shouldFlush) {
                 flushAndAwait(tag)
             }
         }
+    }
+
+    suspend fun learnAndAwait(prev2: String, prev1: String, currWord: String, locale: FlorisLocale) {
+        val a = normalize(prev2)
+        val b = normalize(prev1)
+        val c = normalize(currWord)
+        if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return
+        val tag = locale.languageTag()
+        val shouldFlush = loadGuard.withLock {
+            val table = ensureLoadedLocked(tag)
+            val recencyTable = lastSeenByLocale.getOrPut(tag) { HashMap() }
+            val now = System.currentTimeMillis()
+            synchronized(table) {
+                val key = contextKey(a, b)
+                val nextMap = table.getOrPut(key) { HashMap() }
+                val newCount = (nextMap[c] ?: 0) + 1
+                nextMap[c] = newCount.coerceAtMost(MAX_COUNT)
+                val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
+                recencyNextMap[c] = now
+            }
+            clearRejectionLocked(tag, a, b, c)
+            pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.incrementAndGet() >= FLUSH_EVERY_N_COMMITS
+        }
+        if (shouldFlush) {
+            flushAndAwait(tag)
+        }
+    }
+
+    private fun rejectionDiscount(rejectionCount: Int): Double {
+        if (rejectionCount <= 0) return 1.0
+        return (1.0 / (1.0 + rejectionCount.coerceAtMost(MAX_REJECTION_COUNT) * 4.0))
+            .coerceIn(0.05, 1.0)
+    }
+
+    private fun clearRejectionLocked(localeTag: String, prev2: String, prev1: String, next: String): Boolean {
+        val table = rejectionCountsByLocale[localeTag] ?: return false
+        val recencyTable = rejectionLastSeenByLocale[localeTag]
+        val key = contextKey(prev2, prev1)
+        var changed = false
+        synchronized(table) {
+            val nextMap = table[key]
+            if (nextMap?.remove(next) != null) {
+                changed = true
+                recencyTable?.get(key)?.remove(next)
+                if (nextMap.isEmpty()) {
+                    table.remove(key)
+                    recencyTable?.remove(key)
+                }
+            }
+        }
+        return changed
     }
 
     suspend fun predict(prev2: String, prev1: String, locale: FlorisLocale, max: Int): List<String> {
@@ -183,20 +288,29 @@ class PersonalTrigramStore private constructor(private val context: Context) {
             val recencyMap = lastSeenByLocale[localeTag]?.get(key)?.toMap().orEmpty()
             nextMap to recencyMap
         }
+        val rejectionCounts = rejectionCountsByLocale[localeTag]?.let { rejections ->
+            synchronized(rejections) {
+                rejections[key]?.toMap().orEmpty()
+            }
+        }.orEmpty()
         val now = System.currentTimeMillis()
         return snapshot.first.entries
             .asSequence()
             .filter { it.value >= MIN_COUNT_FOR_SUGGEST }
+            .map { entry ->
+                val decayedScore = PersonalNgramRecency.decayedScore(
+                    count = entry.value,
+                    lastSeenMs = snapshot.second[entry.key] ?: now,
+                    nowMs = now,
+                )
+                entry to decayedScore * rejectionDiscount(rejectionCounts[entry.key] ?: 0)
+            }
+            .filter { (_, adjustedScore) -> adjustedScore >= MIN_REJECTION_ADJUSTED_SCORE_FOR_SUGGEST }
             .sortedWith(
-                compareByDescending<Map.Entry<String, Int>> { entry ->
-                    PersonalNgramRecency.decayedScore(
-                        count = entry.value,
-                        lastSeenMs = snapshot.second[entry.key] ?: now,
-                        nowMs = now,
-                    )
-                }.thenByDescending { it.value }
+                compareByDescending<Pair<Map.Entry<String, Int>, Double>> { it.second }
+                    .thenByDescending { it.first.value }
             )
-            .map { it.key }
+            .map { it.first.key }
             .take(max)
             .toList()
     }
@@ -220,6 +334,11 @@ class PersonalTrigramStore private constructor(private val context: Context) {
             nextMap to recencyMap
         }
         val count = snapshot.first[c] ?: return 0.0
+        val rejectionCount = rejectionCountsByLocale[localeTag]?.let { rejections ->
+            synchronized(rejections) {
+                rejections[key]?.get(c)
+            }
+        } ?: 0
         val now = System.currentTimeMillis()
         val maxScore = snapshot.first.entries.maxOfOrNull { entry ->
             PersonalNgramRecency.decayedScore(
@@ -233,7 +352,23 @@ class PersonalTrigramStore private constructor(private val context: Context) {
             lastSeenMs = snapshot.second[c] ?: now,
             maxScore = maxScore,
             nowMs = now,
-        )
+        ) * rejectionDiscount(rejectionCount)
+    }
+
+    suspend fun rejectionPenalty(prev2: String, prev1: String, currWord: String, locale: FlorisLocale): Double {
+        val a = normalize(prev2)
+        val b = normalize(prev1)
+        val c = normalize(currWord)
+        if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return 0.0
+        val localeTag = locale.languageTag()
+        val key = contextKey(a, b)
+        ensureLoaded(localeTag)
+        val rejectionCount = rejectionCountsByLocale[localeTag]?.let { rejections ->
+            synchronized(rejections) {
+                rejections[key]?.get(c)
+            }
+        } ?: 0
+        return (1.0 - rejectionDiscount(rejectionCount)).coerceIn(0.0, 1.0)
     }
 
     /**
@@ -314,7 +449,10 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         loadGuard.withLock {
             val table = tablesByLocale[localeTag] ?: return@withLock
             val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
+            val rejectionTable = rejectionCountsByLocale[localeTag] ?: HashMap()
+            val rejectionRecencyTable = rejectionLastSeenByLocale[localeTag] ?: HashMap()
             val snapshot: List<TrigramSnapshot>
+            val rejectionSnapshot: List<TrigramRejectionSnapshot>
             synchronized(table) {
                 pendingCommitsByLocale[localeTag]?.set(0)
                 if (table.size > MAX_CONTEXTS) {
@@ -344,6 +482,35 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                         }
                     }
                 }
+                synchronized(rejectionTable) {
+                    if (rejectionTable.size > MAX_REJECTED_CONTEXTS) {
+                        val keepKeys = rejectionTable.entries
+                            .sortedByDescending { e -> e.value.values.sum() }
+                            .take(MAX_REJECTED_CONTEXTS)
+                            .map { it.key }
+                            .toSet()
+                        val removeKeys = rejectionTable.keys.filter { it !in keepKeys }
+                        for (k in removeKeys) {
+                            rejectionTable.remove(k)
+                            rejectionRecencyTable.remove(k)
+                        }
+                    }
+                    for ((ctxKey, nextMap) in rejectionTable) {
+                        if (nextMap.size > MAX_REJECTIONS_PER_CONTEXT) {
+                            val keepKeys = nextMap.entries
+                                .sortedByDescending { it.value }
+                                .take(MAX_REJECTIONS_PER_CONTEXT)
+                                .map { it.key }
+                                .toSet()
+                            val removeKeys = nextMap.keys.filter { it !in keepKeys }
+                            val recencyNextMap = rejectionRecencyTable[ctxKey]
+                            for (k in removeKeys) {
+                                nextMap.remove(k)
+                                recencyNextMap?.remove(k)
+                            }
+                        }
+                    }
+                }
                 snapshot = buildList {
                     val now = System.currentTimeMillis()
                     for ((ctxKey, nextMap) in table) {
@@ -365,6 +532,29 @@ class PersonalTrigramStore private constructor(private val context: Context) {
                         }
                     }
                 }
+                rejectionSnapshot = buildList {
+                    val now = System.currentTimeMillis()
+                    synchronized(rejectionTable) {
+                        for ((ctxKey, nextMap) in rejectionTable) {
+                            val parts = ctxKey.split(CONTEXT_DELIMITER, limit = 2)
+                            if (parts.size != 2) continue
+                            val prev2 = parts[0]
+                            val prev1 = parts[1]
+                            val recencyNextMap = rejectionRecencyTable[ctxKey].orEmpty()
+                            for ((next, count) in nextMap) {
+                                add(
+                                    TrigramRejectionSnapshot(
+                                        prev2 = prev2,
+                                        prev1 = prev1,
+                                        next = next,
+                                        count = count,
+                                        lastSeenMs = recencyNextMap[next] ?: now,
+                                    )
+                                )
+                            }
+                        }
+                    }
+                }
             }
             val persisted = PersonalNgramPersistence.atomicReplace(fileFor(localeTag)) { w ->
                 for (row in snapshot) {
@@ -383,6 +573,25 @@ class PersonalTrigramStore private constructor(private val context: Context) {
             if (!persisted) {
                 flogWarning(LogTopic.DICTIONARY) {
                     "Personal trigram flush for '$localeTag' failed; previous on-disk state preserved"
+                }
+            }
+            val rejectionsPersisted = PersonalNgramPersistence.atomicReplace(rejectionFileFor(localeTag)) { w ->
+                for (row in rejectionSnapshot) {
+                    w.write(row.prev2)
+                    w.write("\t")
+                    w.write(row.prev1)
+                    w.write("\t")
+                    w.write(row.next)
+                    w.write("\t")
+                    w.write(row.count.toString())
+                    w.write("\t")
+                    w.write(row.lastSeenMs.toString())
+                    w.newLine()
+                }
+            }
+            if (!rejectionsPersisted) {
+                flogWarning(LogTopic.DICTIONARY) {
+                    "Personal trigram rejection flush for '$localeTag' failed; previous on-disk state preserved"
                 }
             }
         }
@@ -451,6 +660,46 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         }
     }
 
+    fun rejectContinuation(prev2: String, prev1: String, currWord: String, locale: FlorisLocale) {
+        ioScope.launch {
+            rejectContinuationAndAwait(prev2, prev1, currWord, locale)
+        }
+    }
+
+    suspend fun rejectContinuationAndAwait(
+        prev2: String,
+        prev1: String,
+        currWord: String,
+        locale: FlorisLocale,
+    ): Boolean {
+        val a = normalize(prev2)
+        val b = normalize(prev1)
+        val c = normalize(currWord)
+        if (a.isEmpty() || b.isEmpty() || c.isEmpty()) return false
+        val tag = locale.languageTag()
+        val key = contextKey(a, b)
+        var changed = false
+        loadGuard.withLock {
+            ensureLoadedLocked(tag)
+            val table = rejectionCountsByLocale.getOrPut(tag) { HashMap() }
+            val recencyTable = rejectionLastSeenByLocale.getOrPut(tag) { HashMap() }
+            val now = System.currentTimeMillis()
+            synchronized(table) {
+                val nextMap = table.getOrPut(key) { HashMap() }
+                val newCount = (nextMap[c] ?: 0) + 1
+                nextMap[c] = newCount.coerceAtMost(MAX_REJECTION_COUNT)
+                val recencyNextMap = recencyTable.getOrPut(key) { HashMap() }
+                recencyNextMap[c] = now
+                pendingCommitsByLocale.getOrPut(tag) { AtomicInteger(0) }.set(FLUSH_EVERY_N_COMMITS)
+                changed = true
+            }
+        }
+        if (changed) {
+            flushAndAwait(tag)
+        }
+        return changed
+    }
+
     fun reset() {
         ioScope.launch {
             resetAndAwait()
@@ -465,9 +714,13 @@ class PersonalTrigramStore private constructor(private val context: Context) {
         loadGuard.withLock {
             synchronized(tablesByLocale) { tablesByLocale.clear() }
             synchronized(lastSeenByLocale) { lastSeenByLocale.clear() }
+            synchronized(rejectionCountsByLocale) { rejectionCountsByLocale.clear() }
+            synchronized(rejectionLastSeenByLocale) { rejectionLastSeenByLocale.clear() }
             pendingCommitsByLocale.clear()
             runCatching {
                 context.filesDir.listFiles { _, name -> name.startsWith("personal_trigrams_") }
+                    ?.forEach { it.delete() }
+                context.filesDir.listFiles { _, name -> name.startsWith("personal_trigram_rejections_") }
                     ?.forEach { it.delete() }
             }
         }
