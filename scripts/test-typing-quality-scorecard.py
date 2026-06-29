@@ -88,11 +88,21 @@ def main() -> int:
             [
                 {
                     "name": "glide context",
+                    "tags": ["glide-context-rescue"],
                     "committedWord": "in",
                     "candidateWords": ["in", "I'm", "on"],
                     "nextWord": "going",
                     "contextScores": {"i'm": 0.5, "in": 0.0},
                     "expectedReplacement": "I'm",
+                },
+                {
+                    "name": "endpoint mismatch",
+                    "tags": ["glide-no-op", "glide-endpoint-plausibility"],
+                    "committedWord": "mkv",
+                    "candidateWords": ["mkv", "move", "make"],
+                    "nextWord": "now",
+                    "contextScores": {"move": 1.0, "make": 0.75, "mkv": 0.0},
+                    "expectedReplacement": None,
                 }
             ],
         )
@@ -103,11 +113,34 @@ def main() -> int:
             print(passing.stdout)
             print("expected valid scorecard fixtures to pass")
             return 1
+        scorecard = json.loads((root / "out" / "scorecard.json").read_text(encoding="utf-8"))
+        glide = scorecard["glideReplay"]
+        if glide["replacementCaseCount"] != 1 or glide["top4ReplacementRate"] != 1.0:
+            print(json.dumps(glide, indent=2))
+            print("expected no-op glide fixtures to leave replacement coverage unchanged")
+            return 1
+        endpoint = glide["endpointPlausibility"]
+        if endpoint["caseCount"] != 1 or endpoint["replayHitRate"] != 1.0:
+            print(json.dumps(endpoint, indent=2))
+            print("expected endpoint-plausibility fixtures to pass")
+            return 1
 
         failing = run_scorecard(root, "--max-p95-suggestion-latency-ms", "15")
         if failing.returncode != 1:
             print(failing.stdout)
             print("expected p95 latency threshold failure")
+            return 1
+
+        endpoint_failing = run_scorecard(
+            root,
+            "--max-p95-suggestion-latency-ms",
+            "20",
+            "--min-glide-endpoint-plausibility-rate",
+            "1.01",
+        )
+        if endpoint_failing.returncode != 1:
+            print(endpoint_failing.stdout)
+            print("expected endpoint-plausibility threshold failure")
             return 1
 
     print("typing quality scorecard self-test: PASS")

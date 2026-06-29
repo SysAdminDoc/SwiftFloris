@@ -64,13 +64,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 - Add glide endpoint-plausibility regression fixtures
-  Why: FUTO issue #2120 shows real-world glide failures where language probability can surface words far outside the gesture endpoints; SwiftFloris has a scorecard and replay harness that can catch this without changing model architecture first.
-  Evidence: FUTO Keyboard issue #2120; `scripts/glide-benchmark.py`; `scripts/typing-quality-scorecard.py`; `app/src/test/resources/swiftkey/replay/glide_context_cases.jsonl`; `SwiftKeyCandidateRankerTest.kt`.
-  Touches: glide replay fixtures, `SwiftKeyCandidateRanker.kt`, `SwiftKeyCandidateRankerTest.kt`, `typing-quality-scorecard.py` thresholds if a new metric is added.
-  Acceptance: fixtures cover endpoint-mismatch examples such as `mkv` not promoting `move` and `the` not losing to a far-endpoint candidate; the scorecard exposes endpoint-plausibility pass/fail without reducing existing top-4 rescue coverage.
-  Complexity: M
-
 - [ ] P2 - Add context-scoped next-word rejection
   Why: users need to reject a displayed next-word prediction for a specific preceding context without removing the word globally, matching FUTO issue #2117 and avoiding dictionary blacklisting side effects.
   Evidence: FUTO Keyboard issue #2117; `LearnedWordForgetSuggestionCandidate`; `CorrectionOutcomePriors.kt`; `PersonalBigramStore.kt`; `PersonalTrigramStore.kt`; `CandidatesRow.kt`.

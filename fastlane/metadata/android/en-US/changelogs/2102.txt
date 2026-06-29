@@ -11,3 +11,5 @@ Build gates: the production runBlocking allowlist now includes DictionaryManager
 Android 17 readiness: IME configuration changes now explicitly re-request the keyboard only for API 37-targeted builds that had the input window shown before rotation.
 
 Import diagnostics: snippet YAML and KLC hardware-layout imports now show partial-import warnings with copyable skipped-record details.
+
+Glide reliability: context rescoring now rejects far-endpoint replacements and the typing-quality scorecard reports endpoint-plausibility regressions.

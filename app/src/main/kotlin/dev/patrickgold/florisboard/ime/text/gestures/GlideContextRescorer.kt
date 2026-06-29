@@ -53,7 +53,7 @@ internal object GlideContextRescorer {
         val currentScore = gestureRankPrior(candidates.indexOf(current), tuning) +
             contextScore(current.first, contextScores) * tuning.contextWeight
         val best = candidates
-            .filter { it.first != committed }
+            .filter { it.first != committed && endpointsPlausible(committed, it.first) }
             .map { candidate ->
                 val score = gestureRankPrior(candidates.indexOf(candidate), tuning) +
                     contextScore(candidate.first, contextScores) * tuning.contextWeight
@@ -78,6 +78,19 @@ internal object GlideContextRescorer {
         return normalized
     }
 
+    private fun endpointsPlausible(committed: String, candidate: String): Boolean {
+        val committedLetters = committed.filter { it.isLetter() }
+        val candidateLetters = candidate.filter { it.isLetter() }
+        if (committedLetters.isBlank() || candidateLetters.isBlank()) return false
+        return endpointPlausible(committedLetters.first(), candidateLetters.first()) &&
+            endpointPlausible(committedLetters.last(), candidateLetters.last())
+    }
+
+    private fun endpointPlausible(left: Char, right: Char): Boolean {
+        if (left == right) return true
+        return EndpointNeighbors[left]?.contains(right) == true
+    }
+
     private fun gestureRankPrior(index: Int, tuning: GlideContextTuning): Double {
         return (1.0 - index.coerceAtLeast(0) * tuning.rankStepPenalty).coerceAtLeast(0.0)
     }
@@ -85,4 +98,33 @@ internal object GlideContextRescorer {
     private fun contextScore(word: String, contextScores: Map<String, Double>): Double {
         return contextScores[word]?.coerceIn(0.0, 1.0) ?: 0.0
     }
+
+    private val EndpointNeighbors = mapOf(
+        'q' to setOf('w'),
+        'w' to setOf('q', 'e'),
+        'e' to setOf('w', 'r'),
+        'r' to setOf('e', 't'),
+        't' to setOf('r', 'y'),
+        'y' to setOf('t', 'u'),
+        'u' to setOf('y', 'i'),
+        'i' to setOf('u', 'o'),
+        'o' to setOf('i', 'p'),
+        'p' to setOf('o'),
+        'a' to setOf('s'),
+        's' to setOf('a', 'd'),
+        'd' to setOf('s', 'f'),
+        'f' to setOf('d', 'g'),
+        'g' to setOf('f', 'h'),
+        'h' to setOf('g', 'j'),
+        'j' to setOf('h', 'k'),
+        'k' to setOf('j', 'l'),
+        'l' to setOf('k'),
+        'z' to setOf('x'),
+        'x' to setOf('z', 'c'),
+        'c' to setOf('x', 'v'),
+        'v' to setOf('c', 'b'),
+        'b' to setOf('v', 'n'),
+        'n' to setOf('b', 'm'),
+        'm' to setOf('n'),
+    )
 }

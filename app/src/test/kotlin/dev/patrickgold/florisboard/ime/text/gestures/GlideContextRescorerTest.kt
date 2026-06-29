@@ -71,6 +71,21 @@ class GlideContextRescorerTest : FunSpec({
         replacement shouldBe null
     }
 
+    test("endpoint mismatch does not override glide geometry") {
+        val replacement = GlideContextRescorer.chooseReplacement(
+            committedWord = "mkv",
+            candidateWords = listOf("mkv", "move", "make"),
+            nextWord = "now",
+            contextScores = mapOf(
+                "move" to 1.0,
+                "make" to 0.75,
+                "mkv" to 0.0,
+            ),
+        )
+
+        replacement shouldBe null
+    }
+
     test("checked-in glide context fixtures cover SwiftKey-like rescoring gaps") {
         fixtureCases.map { it.name } shouldContainAll listOf(
             "contraction before going",
@@ -81,6 +96,8 @@ class GlideContextRescorerTest : FunSpec({
             "weak context no override",
             "long word no override",
             "punctuated next word no override",
+            "endpoint mismatch keeps mkv from move",
+            "endpoint mismatch keeps the from far candidate",
         )
     }
 
@@ -99,9 +116,12 @@ class GlideContextRescorerTest : FunSpec({
         metrics.caseCountByTag.getValue(GlideContextRescueTag) shouldBe 5
         metrics.replacementHitCountByTag.getValue(GlideContextRescueTag) shouldBe
             metrics.caseCountByTag.getValue(GlideContextRescueTag)
-        metrics.caseCountByTag.getValue(GlideNoOpTag) shouldBe 3
+        metrics.caseCountByTag.getValue(GlideNoOpTag) shouldBe 5
         metrics.replacementHitCountByTag.getValue(GlideNoOpTag) shouldBe
             metrics.caseCountByTag.getValue(GlideNoOpTag)
+        metrics.caseCountByTag.getValue(GlideEndpointPlausibilityTag) shouldBe 2
+        metrics.replacementHitCountByTag.getValue(GlideEndpointPlausibilityTag) shouldBe
+            metrics.caseCountByTag.getValue(GlideEndpointPlausibilityTag)
 
         val strictMetrics = GlideContextReplayMetrics.from(
             fixtureCases.map {
@@ -244,3 +264,4 @@ private fun MutableMap<String, Int>.increment(key: String) {
 
 private const val GlideContextRescueTag = "glide-context-rescue"
 private const val GlideNoOpTag = "glide-no-op"
+private const val GlideEndpointPlausibilityTag = "glide-endpoint-plausibility"

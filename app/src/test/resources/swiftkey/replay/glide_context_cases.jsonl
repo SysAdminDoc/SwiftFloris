@@ -6,3 +6,5 @@
 {"name":"weak context no override","tags":["glide-no-op"],"committedWord":"to","candidateWords":["to","go","too"],"nextWord":"the","contextScores":{"go":0.30,"to":0.22},"expectedReplacement":null}
 {"name":"long word no override","tags":["glide-no-op"],"committedWord":"through","candidateWords":["through","though"],"nextWord":"the","contextScores":{"though":1.0},"expectedReplacement":null}
 {"name":"punctuated next word no override","tags":["glide-no-op"],"committedWord":"in","candidateWords":["in","I'm"],"nextWord":".","contextScores":{"i'm":1.0},"expectedReplacement":null}
+{"name":"endpoint mismatch keeps mkv from move","tags":["glide-no-op","glide-endpoint-plausibility"],"committedWord":"mkv","candidateWords":["mkv","move","make"],"nextWord":"now","contextScores":{"move":1.0,"make":0.75,"mkv":0.0},"expectedReplacement":null}
+{"name":"endpoint mismatch keeps the from far candidate","tags":["glide-no-op","glide-endpoint-plausibility"],"committedWord":"the","candidateWords":["the","you","there"],"nextWord":"are","contextScores":{"you":1.0,"there":0.20,"the":0.0},"expectedReplacement":null}
