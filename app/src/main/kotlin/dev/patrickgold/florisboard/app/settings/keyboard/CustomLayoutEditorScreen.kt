@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
@@ -64,11 +65,13 @@ import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangementComponent
 import dev.patrickgold.florisboard.ime.keyboard.LayoutType
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.compose.FlorisUnsavedChangesDialog
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdown
 import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisButtonBar
+import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.curlyFormat
 
@@ -103,12 +106,16 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
 
     var selectedSource by remember { mutableStateOf<ExtensionComponentName?>(null) }
     var draft by remember { mutableStateOf<CustomLayoutEditorDraft?>(null) }
+    var baselineDraft by remember { mutableStateOf<CustomLayoutEditorDraft?>(null) }
     var selectedKey by remember { mutableStateOf(SelectedLayoutKey()) }
     var isLoading by remember { mutableStateOf(false) }
     var isSaving by remember { mutableStateOf(false) }
     var showValidation by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var loadError by remember { mutableStateOf<String?>(null) }
+    var pendingSourceSelection by remember { mutableStateOf<ExtensionComponentName?>(null) }
+    var pendingBackNavigation by remember { mutableStateOf(false) }
+    var showUnsavedChangesDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(sourceLayoutNames) {
         if (selectedSource == null && sourceLayoutNames.isNotEmpty()) {
@@ -132,10 +139,12 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
             }
         loaded.onSuccess { newDraft ->
             draft = newDraft
+            baselineDraft = newDraft
             selectedKey = SelectedLayoutKey()
             showValidation = false
         }.onFailure { error ->
             draft = null
+            baselineDraft = null
             loadError = error.localizedMessage ?: error.message
         }
         isLoading = false
@@ -147,13 +156,93 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
     }
     val savedMessageTemplate = stringRes(R.string.settings__keyboard__custom_layout_editor__saved)
     val fallbackErrorTitle = stringRes(R.string.error__title)
+    val hasUnsavedChanges = activeDraft != null && activeDraft != baselineDraft
+
+    fun clearPendingNavigation() {
+        pendingSourceSelection = null
+        pendingBackNavigation = false
+    }
+
+    fun completePendingNavigation() {
+        val nextSource = pendingSourceSelection
+        val shouldPopBack = pendingBackNavigation
+        clearPendingNavigation()
+        if (nextSource != null) {
+            selectedSource = nextSource
+        } else if (shouldPopBack) {
+            navController.popBackStack()
+        }
+    }
+
+    fun requestLeaveEditor() {
+        if (hasUnsavedChanges && !isSaving) {
+            pendingBackNavigation = true
+            pendingSourceSelection = null
+            showUnsavedChangesDialog = true
+        } else {
+            navController.popBackStack()
+        }
+    }
+
+    fun requestSourceSelection(source: ExtensionComponentName) {
+        if (source == selectedSource || isLoading) return
+        if (hasUnsavedChanges && !isSaving) {
+            pendingSourceSelection = source
+            pendingBackNavigation = false
+            showUnsavedChangesDialog = true
+        } else {
+            selectedSource = source
+        }
+    }
+
+    fun saveDraft(navigateAfterSave: Boolean = false) {
+        val draftToSave = draft ?: return
+        val currentValidation = CustomLayoutEditorPolicy.validate(draftToSave, existingComponentIds)
+        if (!currentValidation.isValid) {
+            showValidation = true
+            statusMessage = null
+            showUnsavedChangesDialog = false
+            return
+        }
+        isSaving = true
+        showValidation = false
+        statusMessage = null
+        scope.launch {
+            repository.saveLocalLayout(draftToSave, existingComponentIds)
+                .onSuccess { componentName ->
+                    baselineDraft = draftToSave
+                    statusMessage = savedMessageTemplate.curlyFormat(
+                        "component_id" to componentName.componentId,
+                    )
+                    if (navigateAfterSave) {
+                        completePendingNavigation()
+                    }
+                }
+                .onFailure { error ->
+                    statusMessage = error.localizedMessage ?: error.message
+                        ?: fallbackErrorTitle
+                }
+            isSaving = false
+        }
+    }
+
+    navigationIcon {
+        FlorisIconButton(
+            onClick = { requestLeaveEditor() },
+            icon = Icons.AutoMirrored.Filled.ArrowBack,
+            contentDescription = stringRes(R.string.action__back),
+            enabled = !isSaving,
+        )
+    }
 
     bottomBar {
         FlorisButtonBar {
             ButtonBarSpacer()
-            ButtonBarTextButton(text = stringRes(R.string.action__cancel), enabled = !isSaving) {
-                navController.popBackStack()
-            }
+            ButtonBarTextButton(
+                text = stringRes(R.string.action__cancel),
+                enabled = !isSaving,
+                onClick = { requestLeaveEditor() },
+            )
             ButtonBarButton(
                 text = if (isSaving) {
                     stringRes(R.string.settings__keyboard__custom_layout_editor__saving)
@@ -162,29 +251,7 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
                 },
                 enabled = activeDraft != null && !isLoading && !isSaving,
             ) {
-                val draftToSave = draft ?: return@ButtonBarButton
-                val currentValidation = CustomLayoutEditorPolicy.validate(draftToSave, existingComponentIds)
-                if (!currentValidation.isValid) {
-                    showValidation = true
-                    statusMessage = null
-                    return@ButtonBarButton
-                }
-                isSaving = true
-                showValidation = false
-                statusMessage = null
-                scope.launch {
-                    repository.saveLocalLayout(draftToSave, existingComponentIds)
-                        .onSuccess { componentName ->
-                            statusMessage = savedMessageTemplate.curlyFormat(
-                                "component_id" to componentName.componentId,
-                            )
-                        }
-                        .onFailure { error ->
-                            statusMessage = error.localizedMessage ?: error.message
-                                ?: fallbackErrorTitle
-                        }
-                    isSaving = false
-                }
+                saveDraft()
             }
         }
     }
@@ -201,7 +268,7 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
                 characterLayouts = characterLayouts,
                 selectedSource = selectedSource,
                 isLoading = isLoading,
-                onSelectedSourceChanged = { selectedSource = it },
+                onSelectedSourceChanged = { requestSourceSelection(it) },
             )
 
             loadError?.let { error ->
@@ -254,6 +321,23 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
                 StatusCard(text = message)
             }
         }
+    }
+
+    if (showUnsavedChangesDialog) {
+        FlorisUnsavedChangesDialog(
+            onSave = {
+                showUnsavedChangesDialog = false
+                saveDraft(navigateAfterSave = true)
+            },
+            onDiscard = {
+                showUnsavedChangesDialog = false
+                completePendingNavigation()
+            },
+            onDismiss = {
+                showUnsavedChangesDialog = false
+                clearPendingNavigation()
+            },
+        )
     }
 }
 
