@@ -70,10 +70,3 @@ gated on external deliverables or hardware testing live in
   Touches: candidate long-press/removal UI, correction/rejection priors, personal n-gram stores, strings, candidate-ranker tests.
   Acceptance: a user can reject "word B after word A"; the word remains available elsewhere, but the rejected context is demoted in next-word ranking; tests prove rejection is context-scoped and reversible/clearable through existing learning-data controls.
   Complexity: M
-
-- [ ] P2 - Add hostile-editor compatibility replay matrix
-  Why: current competitor issue traffic clusters around host-editor failures (Teams no keyboard, Flutter undo/redo, Ren'Py enter/delete, Typst/OnlyOffice random replacement, cursor jumps), and SwiftFloris already has editor policy tests that can be extended before device-specific bugs escape.
-  Evidence: FlorisBoard issues #3292, #3262, #3242, #3241; FUTO issues #2139, #2106; `HostileEditorCandidateReplayTest.kt`; `EditorInfoSensitiveFieldReplayTest.kt`.
-  Touches: `app/src/test/kotlin/dev/patrickgold/florisboard/ime/editor/`, editor action/selection helpers, inline suggestion and hardware shortcut policies where needed.
-  Acceptance: replay/policy tests model at least four hostile editor classes (rich editor, game engine, Flutter, desktop/physical keyboard) and prove commit, enter, delete, undo/redo, and selection behavior stay stable.
-  Complexity: M
