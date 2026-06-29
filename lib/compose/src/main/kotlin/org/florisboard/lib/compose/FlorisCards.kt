@@ -53,6 +53,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -90,7 +92,9 @@ fun FlorisSimpleCard(
     icon: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
-    val cardModifier = modifier.fillMaxWidth()
+    val cardModifier = modifier
+        .fillMaxWidth()
+        .semantics(mergeDescendants = true) { }
     val cardColors = CardDefaults.cardColors(
         contentColor = contentColor,
         containerColor = backgroundColor,
@@ -393,7 +397,9 @@ fun FlorisEmptyState(
     onAction: (() -> Unit)? = null,
 ) {
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) { },
         shape = MaterialTheme.shapes.medium,
         border = BorderStroke(
             width = 1.dp,
@@ -427,6 +433,7 @@ fun FlorisEmptyState(
                 )
             }
             Text(
+                modifier = Modifier.semantics { heading() },
                 text = title,
                 style = MaterialTheme.typography.titleMedium,
                 textAlign = TextAlign.Center,
@@ -441,7 +448,9 @@ fun FlorisEmptyState(
             }
             if (actionLabel != null && onAction != null) {
                 FlorisTextButton(
-                    modifier = Modifier.padding(top = 8.dp),
+                    modifier = Modifier
+                        .padding(top = 8.dp)
+                        .defaultMinSize(minHeight = 44.dp),
                     onClick = onAction,
                     text = actionLabel,
                 )

@@ -211,6 +211,7 @@ private fun ColumnScope.Step(
     val contentVisible = ownStepId == currentStepId
     val isAvailable = ownStepId <= autoStepId
     val isCompleted = ownStepId < autoStepId && !contentVisible
+    val reducedMotion = rememberReducedMotion()
     StepHeader(
         modifier = when {
             ownStepId <= autoStepId -> Modifier
@@ -231,10 +232,18 @@ private fun ColumnScope.Step(
         modifier = Modifier
             .fillMaxWidth(),
         visible = contentVisible,
-        enter = fadeIn(animationSpec = tween(durationMillis = 120)) +
-            expandVertically(animationSpec = tween(durationMillis = 180), expandFrom = Alignment.Top),
-        exit = fadeOut(animationSpec = tween(durationMillis = 90)) +
-            shrinkVertically(animationSpec = tween(durationMillis = 140), shrinkTowards = Alignment.Top),
+        enter = if (reducedMotion) {
+            fadeIn(animationSpec = tween(durationMillis = 0))
+        } else {
+            fadeIn(animationSpec = tween(durationMillis = 120)) +
+                expandVertically(animationSpec = tween(durationMillis = 180), expandFrom = Alignment.Top)
+        },
+        exit = if (reducedMotion) {
+            fadeOut(animationSpec = tween(durationMillis = 0))
+        } else {
+            fadeOut(animationSpec = tween(durationMillis = 90)) +
+                shrinkVertically(animationSpec = tween(durationMillis = 140), shrinkTowards = Alignment.Top)
+        },
     ) {
         val colorScheme = MaterialTheme.colorScheme
         val shape = MaterialTheme.shapes.small

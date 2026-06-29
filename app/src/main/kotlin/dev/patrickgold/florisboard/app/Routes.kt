@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.app
 
 import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
@@ -36,6 +37,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navDeepLink
 import androidx.navigation.toRoute
+import dev.patrickgold.florisboard.lib.compose.rememberReducedMotion
 import dev.patrickgold.florisboard.app.devtools.AndroidLocalesScreen
 import dev.patrickgold.florisboard.app.devtools.AndroidSettingsScreen
 import dev.patrickgold.florisboard.app.devtools.DevtoolsScreen
@@ -334,23 +336,34 @@ object Routes {
         navController: NavHostController,
         startDestination: KClass<*>,
     ) {
+        val reducedMotion = rememberReducedMotion()
+        val forwardEnterTransition = if (reducedMotion) {
+            EnterTransition.None
+        } else {
+            slideIn { IntOffset(it.width, 0) } + fadeIn()
+        }
+        val forwardExitTransition = if (reducedMotion) {
+            ExitTransition.None
+        } else {
+            slideOut { IntOffset(-it.width, 0) } + fadeOut()
+        }
+        val backExitTransition = if (reducedMotion) {
+            ExitTransition.None
+        } else {
+            scaleOut(
+                targetScale = 0.85F,
+                transformOrigin = TransformOrigin(pivotFractionX = 0.8f, pivotFractionY = 0.5f)
+            ) + fadeOut(spring(stiffness = Spring.StiffnessMedium))
+        }
+
         NavHost(
             modifier = modifier,
             navController = navController,
             startDestination = startDestination,
-            enterTransition = {
-                slideIn { IntOffset(it.width, 0) } + fadeIn()
-            },
-            exitTransition = {
-                slideOut { IntOffset(-it.width, 0) } + fadeOut()
-            },
+            enterTransition = { forwardEnterTransition },
+            exitTransition = { forwardExitTransition },
             popEnterTransition = { EnterTransition.None },
-            popExitTransition = {
-                scaleOut(
-                    targetScale = 0.85F,
-                    transformOrigin = TransformOrigin(pivotFractionX = 0.8f, pivotFractionY = 0.5f)
-                ) + fadeOut(spring(stiffness = Spring.StiffnessMedium))
-            },
+            popExitTransition = { backExitTransition },
         ) {
             composable<Setup.Screen> { SetupScreen() }
 
