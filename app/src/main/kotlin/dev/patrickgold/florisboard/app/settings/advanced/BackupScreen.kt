@@ -54,6 +54,7 @@ import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -102,6 +103,7 @@ object Backup {
         var jetprefDatastore by mutableStateOf(true)
         var imeKeyboard by mutableStateOf(true)
         var imeTheme by mutableStateOf(true)
+        var localStickerPacks by mutableStateOf(true)
         var clipboardTextItems by mutableStateOf(false)
         var clipboardImageItems by mutableStateOf(false)
         var clipboardVideoItems by mutableStateOf(false)
@@ -129,7 +131,13 @@ object Backup {
         }
 
         fun atLeastOneSelected(): Boolean {
-            return jetprefDatastore || imeKeyboard || imeTheme || clipboardTextItems || clipboardImageItems || clipboardVideoItems
+            return jetprefDatastore ||
+                imeKeyboard ||
+                imeTheme ||
+                localStickerPacks ||
+                clipboardTextItems ||
+                clipboardImageItems ||
+                clipboardVideoItems
         }
 
         /**
@@ -144,6 +152,7 @@ object Backup {
             jetprefDatastore = true
             imeKeyboard = true
             imeTheme = true
+            localStickerPacks = true
             clipboardTextItems = true
             clipboardImageItems = true
             clipboardVideoItems = true
@@ -256,6 +265,15 @@ fun BackupScreen() = FlorisScreen {
             if (backupFilesSelector.imeTheme) {
                 context.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
                     dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))
+                }
+            }
+            if (backupFilesSelector.localStickerPacks) {
+                val stickerDir = LocalStickerPackRepository.storageDir(context)
+                if (stickerDir.exists()) {
+                    stickerDir.copyRecursively(
+                        workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName),
+                        overwrite = true,
+                    )
                 }
             }
 
@@ -518,6 +536,13 @@ internal fun BackupFilesSelector(
             checked = filesSelector.imeTheme,
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_theme),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_ime_theme_summary),
+            enabled = enabled,
+        )
+        CheckboxListItem(
+            onClick = { filesSelector.localStickerPacks = !filesSelector.localStickerPacks },
+            checked = filesSelector.localStickerPacks,
+            text = stringRes(R.string.backup_and_restore__back_up__files_local_stickers),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_local_stickers_summary),
             enabled = enabled,
         )
 

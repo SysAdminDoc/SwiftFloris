@@ -25,3 +25,5 @@ Smartbar: the dynamic scrollable suggestion-strip mode now has picker descriptio
 Prediction control: long-press removal on next-word candidates now rejects only the preceding context, preserving the word in other predictions while demoting the unwanted continuation.
 
 Testing: Roborazzi now has a Smartbar-only text-input baseline for the compact physical-keyboard surface.
+
+Stickers: local images can now be shared into SwiftFloris as app-private stickers, exported/imported as portable sticker-pack ZIPs, and included in backup/restore without adding network access.

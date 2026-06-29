@@ -234,7 +234,7 @@ object UserStickerRepository {
         )
     }
 
-    private fun resolveMimeType(displayName: String, declaredMimeType: String?): String? {
+    fun resolveMimeType(displayName: String, declaredMimeType: String?): String? {
         val declaredLower = declaredMimeType?.lowercase(Locale.ROOT)?.trim()
         // If SAF declares a concrete MIME and it's in the supported image set,
         // honour it.
@@ -261,7 +261,7 @@ object UserStickerRepository {
         }
     }
 
-    private fun labelFromDisplayName(displayName: String): String {
+    fun labelFromDisplayName(displayName: String): String {
         return displayName
             .substringBeforeLast('.', displayName)
             .replace('_', ' ')
@@ -270,7 +270,7 @@ object UserStickerRepository {
             .ifBlank { "Sticker" }
     }
 
-    private fun keywordsFor(label: String, displayName: String): List<String> {
+    fun keywordsFor(label: String, displayName: String): List<String> {
         return listOf(label, displayName.substringBeforeLast('.', displayName))
             .joinToString(" ")
             .normalizedStickerQuery()

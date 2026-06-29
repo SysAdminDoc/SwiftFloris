@@ -204,6 +204,8 @@ object SettingsSearchIndex {
         entry("media", R.string.settings__media__title, R.string.settings__media__title, R.string.settings__home__media_summary, SettingsSearchDestination.MEDIA, "emoji stickers gif"),
         entry("media.emoji-history", R.string.settings__media__title, R.string.prefs__media__emoji_history_enabled, R.string.prefs__media__emoji_history_enabled__summary, SettingsSearchDestination.MEDIA),
         entry("media.emoji-suggestions", R.string.settings__media__title, R.string.prefs__media__emoji_suggestion_enabled, R.string.prefs__media__emoji_suggestion_enabled__summary, SettingsSearchDestination.MEDIA),
+        entry("media.sticker-pack-import", R.string.settings__media__title, R.string.prefs__media__stickers_pack_import, R.string.prefs__media__stickers_pack_import__summary, SettingsSearchDestination.MEDIA, "local stickers pack zip share image import export"),
+        entry("media.sticker-pack-export", R.string.settings__media__title, R.string.prefs__media__stickers_pack_export, R.string.prefs__media__stickers_pack_export__summary, SettingsSearchDestination.MEDIA, "local stickers pack zip portable backup"),
         entry("media.stickers", R.string.settings__media__title, R.string.prefs__media__stickers_folder, R.string.prefs__media__stickers_folder__summary_empty, SettingsSearchDestination.MEDIA),
 
         entry("sync", R.string.settings__sync__title, R.string.settings__sync__title, R.string.settings__home__sync_summary, SettingsSearchDestination.SYNC, "pair devices local folder manual export syncthing"),

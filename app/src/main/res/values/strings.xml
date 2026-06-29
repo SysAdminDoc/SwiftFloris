@@ -81,10 +81,27 @@
     <string name="sticker__unsupported_message" comment="State shown when the active app does not accept image insertion from the keyboard">This app does not accept sticker images.</string>
     <string name="sticker__commit_failed" comment="Toast shown when sticker insertion fails">Sticker could not be inserted here.</string>
     <string name="sticker__user_folder_grant_lost" comment="In-keyboard banner shown on the Imported sticker tab when Android revoked the persistable SAF read permission for the user's imported folder. Mirrors the Settings preference summary; instructs the user to re-pick the folder from Settings.">Imported folder access lost. Open Settings → Emoji &amp; stickers to re-pick.</string>
+    <string name="sticker__share_import__label" comment="Android share-sheet label for saving a shared image as a local sticker">Save as SwiftFloris sticker</string>
+    <string name="sticker__share_import__success" comment="Toast after an image shared from another app is copied into SwiftFloris' local sticker pack">Sticker saved to local stickers.</string>
     <string name="sticker__search__placeholder" comment="Placeholder in the sticker panel search field">Search stickers</string>
     <string name="sticker__search__empty" comment="Empty state shown when sticker search has no results; filenames and folder names are the local source for imported sticker indexing">No stickers match this filename, folder, or keyword search.</string>
     <string name="voice_input__suppressed_on_sensitive_field" comment="Toast shown when the user taps the voice key while focus is on a password / PIN / web-password field or while the IME is in incognito mode. Voice handoff is refused to keep credentials from being routed through an external recogniser process whose privacy boundary the IME's no-INTERNET contract does not cover.">Voice input is disabled for this field for your privacy.</string>
     <string name="prefs__media__stickers__title" comment="Preference group title">Stickers</string>
+    <string name="prefs__media__stickers_pack_import" comment="Preference title">Import sticker pack</string>
+    <string name="prefs__media__stickers_pack_import__summary" comment="Preference summary">Add a local SwiftFloris sticker-pack ZIP from this device.</string>
+    <string name="prefs__media__stickers_pack_export" comment="Preference title">Export local sticker pack</string>
+    <string name="prefs__media__stickers_pack_export__summary" comment="Preference summary">Save copied stickers as a portable local ZIP with a small manifest.</string>
+    <string name="prefs__media__stickers_pack_clear" comment="Preference title">Clear local sticker pack</string>
+    <string name="prefs__media__stickers_pack_clear__summary" comment="Preference summary">Remove stickers copied into SwiftFloris. Imported folder files are not touched.</string>
+    <string name="prefs__media__stickers_pack_import_success" comment="Toast after importing a local sticker pack; {count} is the number of stickers imported">Sticker pack imported: {count} stickers.</string>
+    <string name="prefs__media__stickers_pack_export_success" comment="Toast after exporting a local sticker pack; {count} is the number of stickers exported">Sticker pack exported: {count} stickers.</string>
+    <string name="prefs__media__stickers_pack_cleared" comment="Toast after clearing the app-private local sticker pack">Local sticker pack cleared.</string>
+    <string name="prefs__media__stickers_pack_failure_unsupported" comment="Sticker import failure for unsupported MIME types">Sticker file type is not supported. Use PNG, WebP, JPEG, or GIF.</string>
+    <string name="prefs__media__stickers_pack_failure_oversized" comment="Sticker import failure for files exceeding the per-sticker cap">Sticker file is too large. Use images under 8 MB.</string>
+    <string name="prefs__media__stickers_pack_failure_empty" comment="Sticker import/export failure when no usable sticker files are present">No stickers were found in that file.</string>
+    <string name="prefs__media__stickers_pack_failure_invalid" comment="Sticker import failure for malformed archives">Sticker pack is invalid. Choose a SwiftFloris sticker-pack ZIP and try again.</string>
+    <string name="prefs__media__stickers_pack_failure_too_many" comment="Sticker import failure when the local sticker cap is reached">Local sticker pack is full. Clear old stickers before importing more.</string>
+    <string name="prefs__media__stickers_pack_failure_io" comment="Sticker import/export failure for read/write problems">Could not read or write the sticker pack. Check storage access and try again.</string>
     <string name="prefs__media__stickers_folder" comment="Preference title">Imported sticker folder</string>
     <string name="prefs__media__stickers_folder__summary_empty" comment="Preference summary">Choose a local folder of PNG, WebP, JPEG, or GIF files to show as a sticker pack.</string>
     <string name="prefs__media__stickers_folder__summary_selected" comment="Preference summary">Using {folder}</string>
@@ -1551,6 +1568,8 @@
     <string name="backup_and_restore__back_up__files_ime_spelling">Spelling extensions / dictionaries</string>
     <string name="backup_and_restore__back_up__files_ime_theme">Theme extensions</string>
     <string name="backup_and_restore__back_up__files_ime_theme_summary">Installed themes and custom theme extension files</string>
+    <string name="backup_and_restore__back_up__files_local_stickers">Local sticker packs</string>
+    <string name="backup_and_restore__back_up__files_local_stickers_summary">Stickers copied into SwiftFloris through share or sticker-pack import</string>
     <string name="backup_and_restore__back_up__files_clipboard_history">Clipboard history</string>
     <string name="backup_and_restore__back_up__files_clipboard_history_summary">Optional clipboard items, including text and saved media clips</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_text_items">Text items</string>

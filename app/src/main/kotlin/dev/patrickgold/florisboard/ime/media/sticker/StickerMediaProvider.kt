@@ -73,10 +73,11 @@ class StickerMediaProvider : ContentProvider() {
         // would be a bogus placeholder and the render is wasted I/O. Only bundled stickers
         // (sourceUri == null) use the rendered file.
         val sourceUri = sticker.sourceUri
-        val size = if (sourceUri != null) {
-            sizeOfSourceUri(sourceUri) ?: 0L
-        } else {
-            ensureStickerFile(sticker).length()
+        val size = when {
+            sticker.packId == LocalStickerPackRepository.PackId ->
+                LocalStickerPackRepository.fileForSticker(context!!, sticker.id)?.length() ?: 0L
+            sourceUri != null -> sizeOfSourceUri(sourceUri) ?: 0L
+            else -> ensureStickerFile(sticker).length()
         }
         val columns = projection ?: arrayOf(OpenableColumns.DISPLAY_NAME, OpenableColumns.SIZE)
         return MatrixCursor(columns).apply {
@@ -99,6 +100,11 @@ class StickerMediaProvider : ContentProvider() {
         // UserStickerRepository.isDocumentWithinPersistedGrant — forged or
         // malformed encoded segments resolve to null and land here.
         val sticker = stickerFor(uri) ?: throw FileNotFoundException("Unknown sticker URI: $uri")
+        if (sticker.packId == LocalStickerPackRepository.PackId) {
+            val file = LocalStickerPackRepository.fileForSticker(context!!, sticker.id)
+                ?: throw FileNotFoundException("Cannot open local sticker URI: $uri")
+            return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        }
         sticker.sourceUri?.let { sourceUri ->
             // Never let a SecurityException (grant revoked between validation
             // and open) crash the binder call — reject as not-found instead.
@@ -126,6 +132,9 @@ class StickerMediaProvider : ContentProvider() {
     private fun stickerFor(uri: Uri): Sticker? {
         val segments = uri.pathSegments
         if (segments.size != 3 || segments[0] != "stickers") return null
+        if (segments[1] == LocalStickerPackRepository.PackId) {
+            return LocalStickerPackRepository.find(context!!, segments[2])
+        }
         if (segments[1] == UserStickerRepository.PackId) {
             return UserStickerRepository.stickerForEncodedDocument(context!!, segments[2])
         }

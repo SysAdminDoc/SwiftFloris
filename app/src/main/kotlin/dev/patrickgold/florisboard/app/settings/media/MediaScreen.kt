@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.settings.media
 
+import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
@@ -26,10 +27,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.EmojiSymbols
+import androidx.compose.material.icons.outlined.FileDownload
+import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -44,7 +48,11 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistoryHelper
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
+import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackFailure
+import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
+import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackResult
 import dev.patrickgold.florisboard.ime.media.sticker.UserStickerRepository
+import dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
@@ -54,7 +62,10 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
@@ -71,9 +82,14 @@ fun MediaScreen() = FlorisScreen {
     val userStickerFolderUri by prefs.sticker.userFolderUri.collectAsState()
 
     var shouldDelete by remember { mutableStateOf<ShouldDelete?>(null) }
+    var localStickerPackRevision by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
+    val hasLocalStickerPack = remember(localStickerPackRevision) {
+        LocalStickerPackRepository.hasLocalPack(context)
+    }
     val folderSelectedText = stringRes(R.string.prefs__media__stickers_folder_selected)
     val folderClearedText = stringRes(R.string.prefs__media__stickers_folder_cleared)
+    val localPackClearedText = stringRes(R.string.prefs__media__stickers_pack_cleared)
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
             // Release the previous folder grant before taking the new one — otherwise
@@ -98,6 +114,36 @@ fun MediaScreen() = FlorisScreen {
                 prefs.sticker.userFolderUri.set(uri.toString())
             }
             Toast.makeText(context, folderSelectedText, Toast.LENGTH_SHORT).show()
+        }
+    }
+    val stickerPackImportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                LocalStickerPackRepository.importArchive(context, uri)
+            }
+            if (result is LocalStickerPackResult.Success) {
+                localStickerPackRevision++
+                evictStickerBitmapCache()
+            }
+            context.showStickerPackResult(
+                result = result,
+                successStringId = R.string.prefs__media__stickers_pack_import_success,
+            )
+        }
+    }
+    val stickerPackExportLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.CreateDocument(LocalStickerPackRepository.ArchiveMimeType),
+    ) { uri ->
+        if (uri == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            val result = withContext(Dispatchers.IO) {
+                LocalStickerPackRepository.exportArchive(context, uri)
+            }
+            context.showStickerPackResult(
+                result = result,
+                successStringId = R.string.prefs__media__stickers_pack_export_success,
+            )
         }
     }
 
@@ -223,6 +269,39 @@ fun MediaScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.prefs__media__stickers__title)) {
+            Preference(
+                icon = Icons.Outlined.FileUpload,
+                title = stringRes(R.string.prefs__media__stickers_pack_import),
+                summary = stringRes(R.string.prefs__media__stickers_pack_import__summary),
+                onClick = {
+                    stickerPackImportLauncher.launch("*/*")
+                },
+            )
+            Preference(
+                icon = Icons.Outlined.FileDownload,
+                title = stringRes(R.string.prefs__media__stickers_pack_export),
+                summary = stringRes(R.string.prefs__media__stickers_pack_export__summary),
+                enabledIf = { hasLocalStickerPack },
+                onClick = {
+                    stickerPackExportLauncher.launch(LocalStickerPackRepository.DefaultArchiveFileName)
+                },
+            )
+            Preference(
+                icon = Icons.Outlined.Delete,
+                title = stringRes(R.string.prefs__media__stickers_pack_clear),
+                summary = stringRes(R.string.prefs__media__stickers_pack_clear__summary),
+                enabledIf = { hasLocalStickerPack },
+                onClick = {
+                    LocalStickerPackRepository.clear(context)
+                    evictStickerBitmapCache()
+                    localStickerPackRevision++
+                    Toast.makeText(
+                        context,
+                        localPackClearedText,
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                },
+            )
             // Recompute on every recomposition so a system-level grant
             // revocation (e.g. user uninstalled the file-manager that
             // issued the persistable grant) is reflected when the user
@@ -326,3 +405,30 @@ fun DeleteEmojiHistoryConfirmDialog(
 }
 
 data class ShouldDelete(val pinned: Boolean)
+
+private suspend fun Context.showStickerPackResult(
+    result: LocalStickerPackResult,
+    successStringId: Int,
+) {
+    when (result) {
+        is LocalStickerPackResult.Success -> showLongToast(successStringId, "count" to result.stickerCount)
+        is LocalStickerPackResult.Failure -> showLongToast(result.reason.messageStringId())
+    }
+}
+
+private fun LocalStickerPackFailure.messageStringId(): Int {
+    return when (this) {
+        LocalStickerPackFailure.UNSUPPORTED_MIME_TYPE ->
+            R.string.prefs__media__stickers_pack_failure_unsupported
+        LocalStickerPackFailure.OVERSIZED ->
+            R.string.prefs__media__stickers_pack_failure_oversized
+        LocalStickerPackFailure.EMPTY ->
+            R.string.prefs__media__stickers_pack_failure_empty
+        LocalStickerPackFailure.INVALID_ARCHIVE ->
+            R.string.prefs__media__stickers_pack_failure_invalid
+        LocalStickerPackFailure.TOO_MANY_STICKERS ->
+            R.string.prefs__media__stickers_pack_failure_too_many
+        LocalStickerPackFailure.IO_ERROR ->
+            R.string.prefs__media__stickers_pack_failure_io
+    }
+}

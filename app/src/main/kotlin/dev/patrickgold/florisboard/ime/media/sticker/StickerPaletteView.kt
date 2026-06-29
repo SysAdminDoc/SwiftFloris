@@ -141,6 +141,7 @@ fun StickerPaletteView(
     val inputFeedbackController = LocalInputFeedbackController.current
     val scope = rememberCoroutineScope()
     val userStickerFolderUri by prefs.sticker.userFolderUri.collectAsState()
+    var localStickerPack by remember { mutableStateOf<StickerPack?>(null) }
     var userStickerPack by remember { mutableStateOf<StickerPack?>(null) }
     var userStickerGrantLost by remember { mutableStateOf(false) }
     LaunchedEffect(context, userStickerFolderUri) {
@@ -150,25 +151,32 @@ fun StickerPaletteView(
         //   - URI set, grant lost → empty placeholder pack so the tab stays
         //     visible and the user gets a clear "open Settings to re-pick"
         //     message in the grid instead of a silently-vanishing tab.
-        val grantValid = userStickerFolderUri.isNotBlank() &&
-            UserStickerRepository.hasPersistableReadPermission(context, userStickerFolderUri)
-        userStickerGrantLost = userStickerFolderUri.isNotBlank() && !grantValid
-        userStickerPack = if (grantValid) {
-            withContext(Dispatchers.IO) {
+        val (loadedLocalPack, loadedUserPack, grantLost) = withContext(Dispatchers.IO) {
+            val grantValid = userStickerFolderUri.isNotBlank() &&
+                UserStickerRepository.hasPersistableReadPermission(context, userStickerFolderUri)
+            val importedPack = if (grantValid) {
                 UserStickerRepository.loadPack(context, userStickerFolderUri)
+            } else if (userStickerFolderUri.isNotBlank()) {
+                StickerPack(
+                    id = UserStickerRepository.PackId,
+                    name = UserStickerRepository.PackName,
+                    stickers = emptyList(),
+                )
+            } else {
+                null
             }
-        } else if (userStickerGrantLost) {
-            StickerPack(
-                id = UserStickerRepository.PackId,
-                name = UserStickerRepository.PackName,
-                stickers = emptyList(),
+            Triple(
+                LocalStickerPackRepository.loadPack(context),
+                importedPack,
+                userStickerFolderUri.isNotBlank() && !grantValid,
             )
-        } else {
-            null
         }
+        localStickerPack = loadedLocalPack
+        userStickerGrantLost = grantLost
+        userStickerPack = loadedUserPack
     }
-    val packs = remember(userStickerPack) {
-        BundledStickerRepository.packs + listOfNotNull(userStickerPack)
+    val packs = remember(localStickerPack, userStickerPack) {
+        BundledStickerRepository.packs + listOfNotNull(localStickerPack, userStickerPack)
     }
     var activePackIndex by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }

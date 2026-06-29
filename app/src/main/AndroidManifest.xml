@@ -194,6 +194,21 @@
             </intent-filter>
         </activity>
 
+        <!-- Share-sheet target for copying one local image into the app-private
+             sticker pack. The provider later serves only the copied file, not
+             the sender's transient content URI. -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.media.sticker.StickerShareImportActivity"
+            android:label="@string/sticker__share_import__label"
+            android:theme="@style/FlorisAppTheme.Transparent"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.SEND"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:mimeType="image/*"/>
+            </intent-filter>
+        </activity>
+
         <!-- Signature-protected automation endpoint for Tasker-class senders. -->
         <receiver
             android:name="dev.patrickgold.florisboard.ime.tasker.TaskerActionReceiver"

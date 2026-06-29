@@ -32,6 +32,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import java.io.File
 import java.io.FileNotFoundException
+import java.io.FileInputStream
 import java.util.Base64
 import org.junit.Before
 import org.junit.Test
@@ -144,6 +145,35 @@ class StickerMediaProviderTest {
         UserStickerRepository.stickerForEncodedDocument(context, encoded).shouldBeNull()
         val thrown = runCatching { provider.openFile(stickerUri(encoded), "r") }.exceptionOrNull()
         (thrown is FileNotFoundException) shouldBe true
+    }
+
+    @Test
+    fun localStickerPackFilesAreServedFromAppPrivateStorage() {
+        val storageDir = LocalStickerPackRepository.storageDir(context)
+        storageDir.deleteRecursively()
+        val source = File.createTempFile("local-sticker", ".png", context.cacheDir).apply {
+            writeBytes(byteArrayOf(0x21, 0x22, 0x23))
+        }
+        LocalStickerPackRepository.importStickerFile(
+            storageDir = storageDir,
+            sourceFile = source,
+            displayName = "local-sticker.png",
+            declaredMimeType = "image/png",
+        ) shouldBe LocalStickerPackResult.Success(1)
+        val sticker = LocalStickerPackRepository.loadPack(context).shouldNotBeNull().stickers.single()
+        val uri = StickerMediaProvider.uriFor(sticker)
+
+        provider.getType(uri) shouldBe "image/png"
+        provider.query(uri, arrayOf(android.provider.OpenableColumns.SIZE), null, null, null)
+            .shouldNotBeNull()
+            .use { cursor ->
+                cursor.moveToFirst() shouldBe true
+                cursor.getLong(0) shouldBe 3L
+            }
+        val bytes = provider.openFile(uri, "r").use { pfd ->
+            FileInputStream(pfd.fileDescriptor).use { input -> input.readBytes() }
+        }
+        bytes.toList() shouldBe listOf(0x21.toByte(), 0x22.toByte(), 0x23.toByte())
     }
 
     private fun grantStickerFolder(): Uri {

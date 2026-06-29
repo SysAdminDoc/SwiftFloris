@@ -305,11 +305,12 @@ class BackupRestorePolicyTest : FunSpec({
         ) shouldBe "Unknown error"
     }
 
-    test("fresh files selector ticks the three core sections, clipboard off") {
+    test("fresh files selector ticks core sections, clipboard off") {
         val selector = Backup.FilesSelector()
         selector.jetprefDatastore shouldBe true
         selector.imeKeyboard shouldBe true
         selector.imeTheme shouldBe true
+        selector.localStickerPacks shouldBe true
         selector.clipboardTextItems shouldBe false
         selector.clipboardImageItems shouldBe false
         selector.clipboardVideoItems shouldBe false
@@ -323,6 +324,7 @@ class BackupRestorePolicyTest : FunSpec({
         selector.jetprefDatastore shouldBe true
         selector.imeKeyboard shouldBe true
         selector.imeTheme shouldBe true
+        selector.localStickerPacks shouldBe true
         selector.clipboardTextItems shouldBe true
         selector.clipboardImageItems shouldBe true
         selector.clipboardVideoItems shouldBe true
@@ -336,6 +338,7 @@ class BackupRestorePolicyTest : FunSpec({
         selector.jetprefDatastore = false
         selector.imeKeyboard = false
         selector.imeTheme = false
+        selector.localStickerPacks = false
         selector.atLeastOneSelected() shouldBe false
         selector.selectAll()
         selector.atLeastOneSelected() shouldBe true

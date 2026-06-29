@@ -52,6 +52,8 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFilesDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
+import dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -159,6 +161,9 @@ fun RestoreScreen() = FlorisScreen {
                         .exists(),
                     hasImeKeyboard = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).exists(),
                     hasImeTheme = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH).exists(),
+                    hasLocalStickerPacks = workspaceFilesDir
+                        .subDir(LocalStickerPackRepository.StorageDirName)
+                        .exists(),
                     hasClipboardTextItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME).exists(),
                     hasClipboardImageItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME).exists(),
                     hasClipboardVideoItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME).exists(),
@@ -291,6 +296,17 @@ fun RestoreScreen() = FlorisScreen {
                     dstDir.deleteContentsRecursively()
                 }
                 srcDir.copyRecursively(dstDir, overwrite = true)
+            }
+        }
+        if (restoreFilesSelector.localStickerPacks) {
+            val srcDir = workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName)
+            val dstDir = LocalStickerPackRepository.storageDir(context)
+            restoreSelectedSection(sourceExists = srcDir.exists()) {
+                if (shouldReset) {
+                    dstDir.deleteRecursively()
+                }
+                srcDir.copyRecursively(dstDir, overwrite = true)
+                evictStickerBitmapCache()
             }
         }
         val clipboardManager = context.clipboardManager().value

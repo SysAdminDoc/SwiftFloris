@@ -62,6 +62,7 @@ internal object BackupRestorePolicy {
         hasJetprefDatastore: Boolean,
         hasImeKeyboard: Boolean,
         hasImeTheme: Boolean,
+        hasLocalStickerPacks: Boolean,
         hasClipboardTextItems: Boolean,
         hasClipboardImageItems: Boolean,
         hasClipboardVideoItems: Boolean,
@@ -69,6 +70,7 @@ internal object BackupRestorePolicy {
         return hasJetprefDatastore ||
             hasImeKeyboard ||
             hasImeTheme ||
+            hasLocalStickerPacks ||
             hasClipboardTextItems ||
             hasClipboardImageItems ||
             hasClipboardVideoItems
