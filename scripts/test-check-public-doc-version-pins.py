@@ -26,6 +26,7 @@ def write_fixture(root: Path) -> None:
             androidx-room = "2.8.4"
             kotlin = "2.4.0"
             ksp = "2.3.9"
+            mikepenz-aboutlibraries = "15.0.3"
             kotest = "6.1.11"
             robolectric = "4.16.1"
             roborazzi = "1.64.0"
@@ -65,7 +66,7 @@ def write_fixture(root: Path) -> None:
             ![Version](https://img.shields.io/badge/version-v1.9.53-blue)
             | Area | What's in v1.9.53 | Privacy posture |
             |------|-------------------|-----------------|
-            dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / Roborazzi 1.64.0
+            dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0
             - Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3.
             - AGP 9.2.1, Gradle 9.6.1, JDK 21.
             - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
@@ -140,6 +141,18 @@ def main() -> int:
         if failing.returncode != 1 or "Roborazzi" not in failing.stdout:
             print(failing.stdout)
             print("expected stale Roborazzi docs to fail")
+            return 1
+
+        write_fixture(fixture)
+        readme = fixture / "README.md"
+        readme.write_text(
+            readme.read_text(encoding="utf-8").replace("AboutLibraries 15.0.3", "AboutLibraries 15.0.2"),
+            encoding="utf-8",
+        )
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "AboutLibraries" not in failing.stdout:
+            print(failing.stdout)
+            print("expected stale AboutLibraries docs to fail")
             return 1
 
         write_fixture(fixture)

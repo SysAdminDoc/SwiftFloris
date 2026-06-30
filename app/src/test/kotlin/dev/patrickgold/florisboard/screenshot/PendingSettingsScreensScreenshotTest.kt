@@ -39,6 +39,7 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
 import dev.patrickgold.florisboard.app.settings.about.AiFeaturesScreen
+import dev.patrickgold.florisboard.app.settings.about.ThirdPartyLicensesScreen
 import dev.patrickgold.florisboard.app.settings.advanced.BackupScreen
 import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.keyboard.CustomLayoutEditorPreviewSurface
@@ -129,6 +130,21 @@ class PendingSettingsScreensScreenshotTest {
     fun aiFeaturesScreen() {
         captureSettingsScreen("ai_features_screen.png") {
             AiFeaturesScreen()
+        }
+    }
+
+    @Test
+    fun thirdPartyLicensesScreenRenders() {
+        val title = composeRule.activity.getString(R.string.about__third_party_licenses__title)
+        composeRule.setContent {
+            SettingsScreenshotFrame(theme = AppTheme.LIGHT) {
+                ThirdPartyLicensesScreen()
+            }
+        }
+        composeRule.waitUntil(timeoutMillis = 10_000) {
+            composeRule.onAllNodes(hasText(title))
+                .fetchSemanticsNodes()
+                .isNotEmpty()
         }
     }
 

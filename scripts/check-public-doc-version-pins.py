@@ -175,9 +175,14 @@ def build_expectations(root: Path) -> tuple[list[Expectation], list[str]]:
         ),
         Expectation(
             "README.md",
-            "local release evidence dependency freshness line",
-            r"dependency freshness is pinned through Compose BOM ([0-9][0-9.]*[0-9]) / KSP ([0-9][0-9.]*[0-9]) / Roborazzi ([0-9][0-9.]*[0-9])",
-            (catalog["androidx-compose-bom"], catalog["ksp"], catalog["roborazzi"]),
+            "local release evidence dependency freshness line including AboutLibraries",
+            r"dependency freshness is pinned through Compose BOM ([0-9][0-9.]*[0-9]) / KSP ([0-9][0-9.]*[0-9]) / AboutLibraries ([0-9][0-9.]*[0-9]) / Roborazzi ([0-9][0-9.]*[0-9])",
+            (
+                catalog["androidx-compose-bom"],
+                catalog["ksp"],
+                catalog["mikepenz-aboutlibraries"],
+                catalog["roborazzi"],
+            ),
         ),
         Expectation(
             "README.md",
