@@ -36,6 +36,13 @@ Android SDK, build tools, and dependency catalog. `scripts/release-evidence.ps1`
 sets the maintainer host JDK path explicitly and records the exact command logs
 under `build/release-evidence/<timestamp>/`.
 
+The release-evidence Gradle gates run with
+`--no-build-cache --rerun-tasks -Dorg.gradle.caching=false` while SwiftFloris is
+on Kotlin `2.4.0`. This is intentionally scoped to release evidence so normal
+developer builds keep their existing `gradle.properties` cache behavior. Remove
+the mitigation only after the repo adopts a final Kotlin `2.4.20+` compiler with
+the build-cache CVE fix and a compatible KSP release.
+
 ## Local self-verification
 
 `scripts/verify-reproducible-apk.sh` is the repository-local "build twice,

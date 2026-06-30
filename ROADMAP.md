@@ -27,13 +27,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Harden release builds against Kotlin build-cache CVE exposure
-  Why: Kotlin is pinned to 2.4.0 and the fixed production line is not available yet, so release evidence should avoid potentially tainted local/shared compiler cache inputs.
-  Evidence: `gradle/libs.versions.toml`; CVE-2026-53914; Kotlin/KSP Maven metadata; `scripts/verify-reproducible-apk.sh` already uses `--no-build-cache`.
-  Touches: `scripts/release-evidence.ps1`, `gradle.properties`, `README.md`, release verification docs.
-  Acceptance: Release evidence invokes Gradle release/test gates with build cache disabled or isolated, records the mitigation in its summary, keeps normal developer builds unchanged, and documents removal criteria once final Kotlin 2.4.20 plus compatible KSP ship.
-  Complexity: M
-
 - [ ] P1 — Upgrade AboutLibraries to 15.0.3 on compileSdk 37
   Why: OSS license disclosure is a trust surface, compileSdk 37 is now active, and the current dependency remains on 14.2.0 while 15.0.3 is published.
   Evidence: `gradle.properties`; `gradle/libs.versions.toml`; Gradle Plugin Portal AboutLibraries metadata; stale blocked entry in `Roadmap_Blocked.md`.

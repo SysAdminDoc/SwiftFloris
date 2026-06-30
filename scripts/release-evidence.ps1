@@ -175,6 +175,15 @@ if (Test-Path $AndroidSdk) {
 $bash = Get-GitBash
 $python = Get-Python
 
+$gradleReleaseEvidenceArgs = @(
+    "--no-daemon",
+    "--no-build-cache",
+    "--rerun-tasks",
+    "-Dorg.gradle.caching=false"
+)
+$gradleMitigation = $gradleReleaseEvidenceArgs -join " "
+Add-Summary "Kotlin build-cache mitigation: gradle-local-gates use $gradleMitigation; remove after final Kotlin 2.4.20+ and compatible KSP ship."
+
 $releaseArgs = @((Convert-ToGitBashPath "scripts\check-release-front-door.sh"))
 if ($StrictRelease) {
     $releaseArgs += "--strict"
@@ -188,13 +197,13 @@ Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-in
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))
 
-Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") @(
+Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") ($gradleReleaseEvidenceArgs + @(
     ":app:verifyNoInternetPermission",
     ":app:verifyDataExtractionRules",
     ":app:testDebugUnitTest",
     ":app:lintDebug",
     ":app:assembleRelease"
-)
+))
 
 if ($SkipOsvScan) {
     Add-Summary "osv-scan: SKIPPED by parameter"

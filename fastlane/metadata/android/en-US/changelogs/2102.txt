@@ -1,29 +1,3 @@
-Roadmap drain: release freshness CI, Tink 1.22.0, a11y/live-region and XML backup guards, trust/provenance exports, replay/layout JSON CI, snippets with Espanso import, sample dictionary-pack APK, production runBlocking gate, Roborazzi 1.64 baselines, glide benchmark coverage, thumb-window cleanup, and a local character layout editor.
+Release evidence now disables reusable Gradle build-cache state for release/test gates until a final Kotlin 2.4.20+ compiler and compatible KSP land.
 
-Premium polish pass: Settings/setup navigation now respects Android reduced-motion, shared status/empty cards read more cleanly in TalkBack, snippet deletion requires confirmation, clipboard text tiles get privacy-aware accessibility labels, and the custom layout editor warns before unsaved drafts are discarded.
-
-Reliability: inline autofill now clamps host suggestion sizes and drops malformed suggestions instead of crashing the keyboard.
-
-Build platform: compileSdk is now 37 while targetSdk stays 36, unlocking Android 17 API work without target behavior changes.
-
-Build gates: the production runBlocking allowlist now includes DictionaryManager's reviewed IO-dispatched Room bridge, so future drift remains visible.
-
-Android 17 readiness: IME configuration changes now explicitly re-request the keyboard only for API 37-targeted builds that had the input window shown before rotation.
-
-Import diagnostics: snippet YAML and KLC hardware-layout imports now show partial-import warnings with copyable skipped-record details.
-
-Glide reliability: context rescoring now rejects far-endpoint replacements and the typing-quality scorecard reports endpoint-plausibility regressions.
-
-Editor compatibility: hostile-editor replay tests now cover rich editors, game engines, Flutter fields, and desktop/physical-keyboard flows for commit, enter, delete, undo/redo, and selection stability.
-
-Custom layouts: text keyboard sizing now has an explicit 4-6 row policy, preserving legacy 3-row geometry while keeping 4-row number layouts and long-press popup anchors stable.
-
-Testing: Roborazzi now covers custom layout, snippets, privacy audit, sync, backup, and restore settings surfaces, including dark trust-state snapshots.
-
-Smartbar: the dynamic scrollable suggestion-strip mode now has picker descriptions, a shared display policy, TalkBack coverage beyond three candidates, and a Roborazzi baseline.
-
-Prediction control: long-press removal on next-word candidates now rejects only the preceding context, preserving the word in other predictions while demoting the unwanted continuation.
-
-Testing: Roborazzi now has a Smartbar-only text-input baseline for the compact physical-keyboard surface.
-
-Stickers: local images can now be shared into SwiftFloris as app-private stickers, exported/imported as portable sticker-pack ZIPs, and included in backup/restore without adding network access.
+Also includes v1.9.53 roadmap-drain highlights: compileSdk 37, Tink 1.22.0, trust/provenance exports, snippets/Espanso import, sample dictionary-pack APK, Roborazzi 1.64 baselines, glide benchmark coverage, sticker pack import/export, and inline-autofill reliability fixes.
