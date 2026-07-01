@@ -2,59 +2,59 @@
 
 ## Executive Summary
 
-SwiftFloris is a privacy-first Android input method that aims for SwiftKey/Gboard-class typing while keeping the base app offline, auditable, account-free, telemetry-free, and without `INTERNET`. Its strongest current shape is the trust stack around no-network manifests, encrypted local stores, release evidence, addon validation, local typing features, and broad settings/QA coverage. The highest-value direction is now root-cause reliability and provability: keep the active Android 17 CJK accessibility, addon validation, targetSdk 37 preflight, privacy-audit export, and Emoji 17 dry-run roadmap items, then add five net-new gaps in priority order: fail release evidence on ignored root crash/replay logs; make candidate trailing-space policy provider-owned; add explicit latency budgets to main-thread `runBlocking` bridges; improve crash reports with environment and redaction fields; remove stale `RESEARCH_FEATURE_PLAN.md` source references.
+SwiftFloris is a privacy-first Android keyboard fork that tries to preserve the familiar Gboard/SwiftKey typing surface while keeping the base APK offline, account-free, telemetry-free, and locally auditable. Its strongest current shape is not a single feature but the release-trust system: no `INTERNET`, encrypted local stores, addon validation, reproducible-build preparation, privacy/AI disclosure, Roborazzi and replay tests, and a broad settings surface. Highest-value opportunities, in order: gate the checked-in F-Droid YAML against Gradle metadata; enforce the documented addon bundle-size cap at runtime; add a Kotlin build-cache CVE guard until a stable Kotlin/KSP upgrade lands; keep the existing ignored root crash-log, candidate-spacing, runBlocking-budget, privacy-audit export, targetSdk 37, crash-template, and Emoji 17 roadmap work; correct the in-app crash dialog identity/redaction flow; and fix contributor docs that still name the pre-migration debug package ID.
 
 ## Product Map
 
-- Core workflows: enable the keyboard, configure typing/languages/layouts/themes/privacy/addons/backup, type with candidates/autocorrect/glide/snippets/emoji/clipboard/voice handoff, export local evidence, and verify releases.
-- User personas: privacy-focused Android users, SwiftKey/Gboard migrators, multilingual and CJK users, TalkBack/physical-keyboard/tablet users, addon authors, release/security reviewers, and maintainers triaging device-only IME failures.
-- Platforms and distribution: Android 8+ APK, Kotlin/Compose/Gradle Android app, GitHub Releases/Obtainium/F-Droid-prep distribution, no Play-services dependency as a product requirement.
-- Key integrations and data flows: Room/SQLCipher personal data, Tink-protected secrets, local audit JSON, SAF imports/exports, signature-pinned addons, FUTO/external voice handoff, no-network manifest gates, local release-evidence bundles.
+- Core workflows: first-run IME enable/select/import; settings for languages, typing, themes, privacy, backup/restore, addons, MCP/Tasker, voice handoff, clipboard, media, and diagnostics; daily typing with candidates/autocorrect/glide/CJK/emoji/stickers; local evidence export and release verification.
+- User personas: privacy-focused Android users, SwiftKey/Gboard migrators, multilingual and CJK users, accessibility/physical-keyboard/tablet users, addon authors, F-Droid/Obtainium reviewers, and maintainers triaging device-only IME failures.
+- Platforms and distribution: Android 8+ APK, minSdk 26, targetSdk 36, compileSdk 37, GitHub Releases/Obtainium canonical channel, prepared F-Droid metadata, no Google Play dependency by design.
+- Key integrations and data flows: Room/SQLCipher local stores, Tink-protected secrets, SAF import/export, local audit JSON, signature-permission addons, external FUTO/voice IME handoff, no-network manifest gates, local release-evidence bundle, no cloud transport in the base app.
 
 ## Competitive Landscape
 
-- HeliBoard and OpenBoard: strong no-network trust and customization; SwiftFloris should keep learning from their theme/layout/dictionary sharing, but avoid HeliBoard's closed-source glide dependency path by keeping glide evidence local and open-compatible.
-- FUTO Keyboard and FUTO Swipe: strongest modern OSS typing-quality comparator; SwiftFloris should keep benchmark/replay gates and transparent local AI affordances, while avoiding direct model/library import until licensing is cleared.
-- AnySoftKeyboard: mature addon/language-pack ecosystem and physical-keyboard support; SwiftFloris should continue moving extension packaging into automated release evidence instead of relying on documentation alone.
-- Fcitx5 Android, Trime/Rime, and Keyman: best analogues for CJK engines, custom schemas, and language-package ecosystems; SwiftFloris should keep heavy language runtimes behind provider/addon contracts and prioritize candidate semantics before data breadth.
-- Unexpected Keyboard and Thumb-Key: show that narrow, privacy-conscious keyboards can win with focused ergonomics, Weblate/i18n discipline, and F-Droid presence; SwiftFloris should copy their clarity, not their reduced feature surface.
-- Gboard, Microsoft SwiftKey, Samsung Keyboard, and Grammarly: set expectations for glide quality, multilingual UX, clipboard/media, voice, and writing assistance; SwiftFloris should copy only local, inspectable interactions and reject cloud/account/telemetry parity.
-- F-Droid and Obtainium: distribution trust is part of keyboard UX because users type secrets; SwiftFloris should make source-to-artifact and addon evidence harder to skip.
+- HeliBoard/OpenBoard: strong offline trust and customization; SwiftFloris should learn from their simple privacy positioning and broad layout/dictionary expectations, while avoiding closed glide dependencies in the base app.
+- FUTO Keyboard/FUTO Swipe: closest modern typing-quality comparator for offline prediction, gesture typing, and voice adjacency; SwiftFloris should keep local replay/benchmark evidence and licensing review before importing any model or engine.
+- AnySoftKeyboard: mature language/addon ecosystem and physical-keyboard history; SwiftFloris should copy automated addon release checks and avoid relying on README-only package rules.
+- Fcitx5 Android, Trime/Rime, and Keyman: best CJK/schema/keyboard-package analogues; SwiftFloris should keep complex engines behind provider/addon contracts and make candidate commit semantics provider-owned before adding more data.
+- Unexpected Keyboard, Thumb-Key, Fossify Keyboard, and FOSS app lists: prove privacy keyboards can win through focused ergonomics, F-Droid availability, and clear constraints; SwiftFloris should keep its richer surface but make trust claims mechanically verifiable.
+- Gboard, Microsoft SwiftKey, Samsung Keyboard, and Grammarly: set user expectations for glide, multilingual UX, clipboard/media, voice, writing assistance, and migration; SwiftFloris should copy only local, inspectable interactions and reject cloud/account/telemetry parity.
+- F-Droid and Obtainium: distribution trust is a product feature for a keyboard; SwiftFloris should treat source metadata, signing expectations, and reproducible-build notes as release gates, not side docs.
 
 ## Security, Privacy, and Reliability
 
-- Verified: the repo root currently contains ignored local `hs_err_pid24404.log`, `hs_err_pid24424.log`, and `replay_pid24404.log`; `.gitignore` ignores `*.log`, while `scripts/check-no-root-crash-logs.sh` checks only `git ls-files`, so release evidence can pass with noisy local crash/replay artifacts still present.
-- Verified: `scripts/release-evidence.ps1` runs the root-crash-log and repo-hygiene checks, but those checks are committed-file focused; local artifact contamination is a release-trust blind spot rather than a shipped-source bug.
-- Verified: `KeyboardManager.kt` has duplicated soft/hardware spacebar TODOs saying candidate spacing should be determined by `SuggestionProvider`; `CjkInputProvider.kt` already models non-Latin candidates, making a provider-owned commit policy the right root-cause fix.
-- Verified: `scripts/check-runblocking-allowlist.py` gates production `runBlocking` drift, and `NlpProviders.kt` documents a per-keystroke main-thread path; the current allowlist records rationales but not hot-path category, budget, or measurable CPU-only assertions.
-- Verified: `.github/ISSUE_TEMPLATE/bug_report.yml` asks for SwiftFloris version, install source, device, and Android version, but `.github/ISSUE_TEMPLATE/crash_report.yml` does not; crash reports also need explicit redaction prompts because keyboard logs can contain private text.
-- Verified: multiple source/test comments still reference `RESEARCH_FEATURE_PLAN.md`, while live research now belongs in `RESEARCH.md` and historical feature plans are under `docs/research-feature-plan-*`; this is maintainability drift, not a product feature.
-- Verified: existing active roadmap items remain valid and should not be duplicated: Android 17 `TextAttribute` selected-candidate signaling, addon sample APK validation in release evidence, targetSdk 37 shadow preflight, local privacy audit save/share, and Emoji 17 parser dry-run.
-- Verified: dependency metadata does not justify a broad upgrade item today: KSP is current at `2.3.9`, Tink Android is current at `1.22.0`, and Kotlin's latest Maven metadata is `2.4.20-Beta1`, which is not a safe production bump.
+- Verified: `fdroid/io.github.sysadmindoc.swiftfloris.yml` is still pinned to `1.9.52` / `2101` / `v1.9.52`, while `gradle.properties` and `docs/REPRODUCIBLE_BUILDS.md` are `1.9.53` / `2102`; `scripts/check-public-doc-version-pins.py` checks the docs stanza but not the checked-in F-Droid YAML.
+- Verified: F-Droid build metadata uses build `commit`, `versionName`, `versionCode`, `CurrentVersion`, and `CurrentVersionCode`, so stale YAML can mislead fdroiddata review even when the README/docs are current.
+- Verified: `docs/addons/apk-validation.md`, `scripts/verify-addon-apk.sh`, and `AddonContract.ADDON_MAX_BUNDLE_BYTES` promise a 64 MiB addon cap, but `AddonEnumerator.evaluate()` reports `bundleSizeBytes = 0L`, so installed third-party addons can bypass the runtime cap if they do not run the release script.
+- Verified: Kotlin `2.4.0` is in `gradle/libs.versions.toml`; NVD `CVE-2026-53914` affects Kotlin before `2.4.20` via build-cache metadata deserialization. The repo mitigates release/repro builds with `--no-build-cache --rerun-tasks -Dorg.gradle.caching=false`, but no local gate fails if someone re-enables Gradle caching before the stable Kotlin/KSP path exists.
+- Verified: existing active roadmap items remain valid and should not be duplicated: ignored root crash/replay logs; targetSdk 37 shadow preflight; privacy-audit save/share; Emoji 17 parser dry-run; provider-owned trailing-space policy; `runBlocking` hot-path budgets; crash-template environment/redaction fields; stale `RESEARCH_FEATURE_PLAN.md` references.
+- Verified: `CrashDialogActivity.kt` still generates `- FlorisBoard ...` in the copied crash report even though public docs and templates now say SwiftFloris; this is user-visible observability drift separate from the existing GitHub crash-template item.
+- Verified: `.github/PULL_REQUEST_TEMPLATE.md` tells contributors debug APKs install as `dev.patrickgold.florisboard.debug`, while `app/build.gradle.kts` sets release `applicationId = "io.github.sysadmindoc.swiftfloris"` plus `.debug`; the contributor instruction is stale.
 
 ## Architecture Assessment
 
-- `EditorInputConnectionBatch` is the right boundary for API-gated `TextAttribute` work because it centralizes commit/composition calls and already has hostile editor replay tests.
-- `SuggestionProvider`/`SuggestionCandidate` should own candidate commit semantics such as trailing spaces; keeping that logic in `KeyboardManager` couples Latin autocorrect behavior to CJK, emoji, media, and snippet candidates.
-- `scripts/release-evidence.ps1` should remain the release-trust aggregator; local ignored crash/replay logs, addon sample validation, OSV, no-network, and repo hygiene belong in one evidence bundle.
-- `scripts/check-runblocking-allowlist.py` is a good ratchet but needs risk classification; a counted allowlist alone cannot tell maintainers which main-thread IME bridges are safe under per-keystroke latency constraints.
-- `.github/ISSUE_TEMPLATE/crash_report.yml` is a maintainer-facing observability surface; adding environment and redaction fields is cheaper than post-hoc triage across install channels.
-- `docs/REPO_HYGIENE.md`, `docs/LOCAL_VERIFICATION.md`, and `scripts/check-live-doc-integrity.py` already establish doc hygiene expectations; replacing stale research-plan references should be a small code-comment cleanup, not a new documentation system.
-- Category coverage: security, accessibility, i18n/l10n, observability, testing, docs, distribution/packaging, plugin ecosystem, mobile, offline/resilience, migration, and upgrade strategy were all reviewed. Multi-user collaboration remains intentionally excluded because it conflicts with a local single-user keyboard trust model.
+- Release evidence should remain the central trust aggregator; add F-Droid YAML and Kotlin build-cache checks there rather than creating a parallel verification path.
+- Addon safety should be enforced in the runtime enumerator as well as the release script, because third-party addon authors may not run SwiftFloris validation before installation.
+- `SuggestionProvider`/`SuggestionCandidate` should own candidate side effects such as trailing spaces; `KeyboardManager` should not infer Latin autocorrect behavior for CJK, emoji, media, snippet, or addon candidates.
+- The existing `runBlocking` allowlist is a useful ratchet but needs risk classification and latency budgets for IME hot paths, where per-keystroke stalls are user-visible.
+- Crash reporting is both observability and privacy UI; align app-generated crash text, issue-template fields, and redaction guidance so maintainers get actionable logs without typed content.
+- Dependency posture is stable except Kotlin build-cache risk: AGP, Gradle, Room, SQLCipher, Tink, Compose BOM, and Roborazzi are already on current/recent lines found in the repo and dependency docs.
+- Category coverage: security, accessibility, i18n/l10n, observability, testing, docs, distribution/packaging, plugin/addon ecosystem, mobile/large-screen, offline/resilience, migration, and upgrade strategy were reviewed. Multi-user/cloud collaboration remains intentionally excluded because it contradicts the local single-user keyboard trust model.
 
 ## Rejected Ideas
 
-- Promote Kotlin `2.4.20-Beta1`: rejected because Maven shows a beta compiler and the project needs release-stable Android/KSP alignment.
-- Add broad commercial keyboard parity: rejected because account/cloud writing assistance, telemetry-backed prediction, and online GIF/search flows conflict with the no-network base app.
-- Embed full Fcitx5/Rime/Keyman runtimes in `:app`: rejected because heavy runtime/data licensing and APK-size risk belong behind explicit addons.
-- Add a new Weblate/i18n program as a roadmap item now: rejected because current evidence found privacy keyboard comparators using it, but no local translation pipeline gap was verified in this pass.
-- Add a new GitHub Actions/SLSA release workflow: rejected because this repo's policy and current architecture require local builds and local evidence instead.
-- Add a full Emoji 17/CLDR 49 asset refresh now: rejected as a duplicate/misfit; the existing roadmap correctly limits active work to a parser dry-run while full CLDR artifacts remain blocked.
-- Add a dependency-upgrade sweep: rejected because current KSP/Tink are already latest and Kotlin's only newer artifact checked is beta.
+- Cloud AI, online GIF/search, account sync, or telemetry-backed prediction: rejected from Gboard/SwiftKey/Samsung/Grammarly research because it violates SwiftFloris's no-network base-app invariant.
+- Immediate Kotlin `2.4.20-Beta1` upgrade: rejected because the security fix target is clear but the available newer compiler/KSP path is not yet stable enough for a production keyboard release.
+- Embed Fcitx5/Rime/Keyman runtimes in `:app`: rejected because heavy schemas, native/runtime size, and licensing complexity belong behind audited addon/provider contracts.
+- Add GitHub Actions or remote SLSA release automation: rejected because the project policy and current release design rely on local builds, local evidence, and direct artifact publication.
+- Full Emoji 17/CLDR asset refresh now: rejected as a duplicate of existing Emoji 17 parser dry-run work until the project verifies which CLDR release contains the exact production search/order data it wants to ship.
+- Broad dependency-upgrade sweep: rejected because current evidence points to one actionable Kotlin build-cache guard, not a general stale-dependency problem.
+- Weblate/localization program: rejected for this roadmap pass because competitors use translation infrastructure, but no concrete SwiftFloris localization pipeline failure was found.
 
 ## Sources
 
 OSS keyboards and adjacent projects:
+- https://github.com/florisboard/florisboard
 - https://github.com/HeliBorg/HeliBoard
 - https://github.com/openboard-team/openboard
 - https://github.com/futo-org/android-keyboard
@@ -65,30 +65,30 @@ OSS keyboards and adjacent projects:
 - https://github.com/keymanapp/keyman
 - https://github.com/Julow/Unexpected-Keyboard
 - https://github.com/dessalines/thumb-key
+- https://albertomosconi.github.io/foss-apps/categories/keyboards.html
 
 Commercial and community:
-- https://support.google.com/gboard/answer/7068494
-- https://www.microsoft.com/en-us/swiftkey
+- https://support.google.com/gboard/answer/9058584
+- https://security.googleblog.com/2020/10/privacy-preserving-smart-input-with.html
+- https://support.microsoft.com/en-us/swiftkey-keyboard/account
+- https://support.microsoft.com/en-us/swiftkey-keyboard/swiftkey-backup-and-sync-with-onedrive
 - https://www.samsung.com/us/support/answer/ANS10000943/
-- https://support.grammarly.com/hc/en-us/articles/25028519116429-Error-Grammarly-Assistant-is-not-enabled-right-now
-- https://discuss.techlore.tech/t/what-keyboard-are-you-using-on-android/6588
+- https://support.grammarly.com/hc/en-us/articles/15606282682637-Grammarly-for-Android-user-guide
+- https://discuss.privacyguides.net/t/recommend-open-source-android-keyboards/17808
 
-Platform, standards, dependencies, and distribution:
+Platform, standards, security, dependencies, and distribution:
 - https://developer.android.com/reference/android/view/inputmethod/TextAttribute.Builder#setTextSuggestionSelected(boolean)
 - https://developer.android.com/about/versions/17/behavior-changes-17
-- https://developer.android.com/developer-verification
+- https://android-developers.googleblog.com/2026/02/prepare-your-app-for-resizability-and.html
 - https://developer.android.com/guide/practices/page-sizes
+- https://developer.android.com/identity/data/autobackup
 - https://www.unicode.org/Public/17.0.0/emoji/emoji-test.txt
-- https://cldr.unicode.org/index/downloads/cldr-49
 - https://www.unicode.org/reports/tr35/tr35-keyboards.html
-- https://developer.android.com/jetpack/androidx/releases/room
-- https://developer.android.com/jetpack/androidx/releases/emoji2
-- https://repo1.maven.org/maven2/org/jetbrains/kotlin/kotlin-gradle-plugin/maven-metadata.xml
-- https://repo1.maven.org/maven2/com/google/devtools/ksp/com.google.devtools.ksp.gradle.plugin/maven-metadata.xml
-- https://repo1.maven.org/maven2/com/google/crypto/tink/tink-android/maven-metadata.xml
-- https://f-droid.org/en/2025/03/04/even-my-keyboard-is-built-reproducibly.html
-- https://github.com/ImranR98/Obtainium
+- https://nvd.nist.gov/vuln/detail/CVE-2026-53914
+- https://kotlinlang.org/docs/whatsnew-eap.html
+- https://f-droid.org/en/docs/Build_Metadata_Reference/
+- https://f-droid.org/en/docs/Submitting_to_F-Droid_Quick_Start_Guide/
 
 ## Open Questions
 
-- None for active prioritization. Human identity/payment decisions, hardware-only validation, FUTO Swipe licensing/model review, production CJK data sourcing, final Kotlin/KSP compatibility, and full CLDR 49 asset availability remain blocked external inputs rather than active roadmap work.
+- No public-research question blocks prioritization. Stable Kotlin/KSP compatibility, final F-Droid reviewer preferences, release-key disclosure policy, hardware-only validation, FUTO engine licensing/model decisions, and production CJK data sourcing are implementation-time constraints rather than research gaps.

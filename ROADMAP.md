@@ -94,3 +94,46 @@ gated on external deliverables or hardware testing live in
   Touches: Source/test comments only, `scripts/check-live-doc-integrity.py` if adding a stale-reference guard.
   Acceptance: `rg "RESEARCH_FEATURE_PLAN\\.md" app lib scripts docs README.md ROADMAP.md` returns no stale source references, comments either name the current feature contract or are removed, behavior and tests are unchanged, and no new markdown files are created.
   Complexity: S
+
+## Research-Driven Additions
+
+### P1
+
+- [ ] P1 — Gate checked-in F-Droid YAML against Gradle release metadata
+  Why: The checked-in F-Droid recipe is stale at `1.9.52` / `2101` while Gradle and reproducible-build docs are `1.9.53` / `2102`; release evidence currently checks the docs stanza but not the actual YAML destined for fdroiddata.
+  Evidence: `fdroid/io.github.sysadmindoc.swiftfloris.yml`; `gradle.properties`; `docs/REPRODUCIBLE_BUILDS.md`; `scripts/check-public-doc-version-pins.py`; F-Droid Build Metadata Reference.
+  Touches: `scripts/check-public-doc-version-pins.py` or a dedicated metadata checker, `scripts/release-evidence.ps1`, checker tests, `fdroid/io.github.sysadmindoc.swiftfloris.yml`, `docs/REPRODUCIBLE_BUILDS.md`.
+  Acceptance: Release evidence fails when F-Droid `versionName`, `versionCode`, `commit`, `CurrentVersion`, or `CurrentVersionCode` drift from Gradle metadata; tests prove the stale YAML fails; the checked-in YAML is updated to the current release values.
+  Complexity: S
+
+- [ ] P1 — Restore runtime addon bundle-size enforcement
+  Why: The docs and addon contract promise a 64 MiB cap, but runtime enrollment currently reports `bundleSizeBytes = 0L`, allowing oversized third-party addons if they bypass `scripts/verify-addon-apk.sh`.
+  Evidence: `AddonEnumerator.kt`; `AddonContract.kt`; `docs/addons/apk-validation.md`; `scripts/verify-addon-apk.sh`; AnySoftKeyboard/Fcitx5 addon ecosystems.
+  Touches: `AddonEnumerator`, `AddonManifest`, `AddonProvenanceReport`, addon settings UI, enumerator tests, addon validation docs if semantics change.
+  Acceptance: Installed addon packages or declared addon assets report a real bounded size, over-cap packages reject with a visible provenance reason, at-cap packages pass, sample addon validation remains green, and tests cover over-cap/at-cap/no-source cases.
+  Complexity: M
+
+- [ ] P1 — Add a Kotlin build-cache CVE guard until stable 2.4.20+ KSP upgrade
+  Why: Kotlin `2.4.0` is affected by CVE-2026-53914; release builds disable Gradle caching today, but a future property or command change could re-enable the vulnerable cache path before a stable Kotlin/KSP upgrade exists.
+  Evidence: NVD CVE-2026-53914; `gradle/libs.versions.toml`; `scripts/release-evidence.ps1`; `scripts/verify-reproducible-apk.sh`; `docs/REPRODUCIBLE_BUILDS.md`.
+  Touches: release-evidence scripts, reproducible-build verifier, Gradle/version-catalog metadata, security/reproducible-build docs, script tests.
+  Acceptance: A local gate fails when Kotlin is `< 2.4.20` and Gradle build cache is enabled for release/reproducible builds, records the mitigation in release evidence, and documents removal criteria after stable Kotlin `2.4.20+` plus compatible KSP pass the full local suite.
+  Complexity: M
+
+### P2
+
+- [ ] P2 — Correct in-app crash dialog report identity and redaction copy
+  Why: The generated crash report still starts with `FlorisBoard` even though public issue templates and docs use SwiftFloris; crash copy should also remind users to redact typed text before clipboard/GitHub handoff.
+  Evidence: `CrashDialogActivity.kt`; `strings.xml`; `.github/ISSUE_TEMPLATE/crash_report.yml`; `README.md`.
+  Touches: `CrashDialogActivity.kt`, crash dialog strings/layout if needed, crash utility tests or snapshot coverage.
+  Acceptance: Generated crash reports use `SwiftFloris` plus version code, include install/build context where locally available, link/open the crash-report template directly, show a redaction reminder before copy, and have regression coverage preventing a `FlorisBoard` product-name relapse in generated report text.
+  Complexity: S
+
+### P3
+
+- [ ] P3 — Fix PR template debug package ID drift
+  Why: Contributor docs say debug APKs install as `dev.patrickgold.florisboard.debug`, but the current app ID is `io.github.sysadmindoc.swiftfloris.debug`.
+  Evidence: `.github/PULL_REQUEST_TEMPLATE.md`; `app/build.gradle.kts`; `README.md`.
+  Touches: `.github/PULL_REQUEST_TEMPLATE.md`, optional doc-integrity guard if package-ID checks are expanded.
+  Acceptance: The PR template names the actual debug package ID, keeps the upstream namespace explanation separate from install identity, and any existing package-ID doc check continues to pass.
+  Complexity: S
