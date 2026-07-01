@@ -95,7 +95,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
         SigningFingerprint.sha256(context.applicationContext)
     }
     val persistedPinsRaw by prefs.addon.signingCertPins.collectAsState()
-    var snapshot by remember { mutableStateOf(AddonRegistryStore.active().lastRefresh()) }
+    var snapshot by remember { mutableStateOf(AddonRegistryStore.snapshot()) }
     var registryGeneration by remember { mutableStateOf(AddonRegistryStore.generation()) }
     var dictionaryCatalog by remember {
         mutableStateOf(DictionaryPackCatalog(entries = emptyList(), rejected = emptyList()))
@@ -115,7 +115,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
     val pinnedCount = pinnedPackageNames.size
 
     fun publishReconcileResult(result: AddonRegistryStartup.Result) {
-        AddonRegistryStore.setActive(result.registry)
+        AddonRegistryStore.setActive(result.registry, result.snapshot)
         snapshot = result.snapshot
         activePinnedPackageNames = result.registry.pinnedSigningCertificates().keys
         registryGeneration = AddonRegistryStore.generation()
@@ -132,11 +132,12 @@ fun AddonsSettingsScreen() = FlorisScreen {
                     prefs.addon.signingCertPins.set(persistedPinsOverride)
                 }
                 val result = withContext(Dispatchers.Default) {
-                    val discovered = AddonEnumerator(context.applicationContext).snapshot()
+                    val enumeration = AddonEnumerator(context.applicationContext).scan()
                     AddonRegistryStartup.reconcile(
-                        discovered = discovered,
+                        discovered = enumeration.accepted,
                         persistedSigningPinsRaw = persistedPins,
                         trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
+                        packageRejections = enumeration.rejected,
                     )
                 }
                 publishReconcileResult(result)
@@ -159,7 +160,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
             try {
                 prefs.addon.signingCertPins.set("")
                 AddonRegistryStore.reset()
-                snapshot = AddonRegistryStore.active().lastRefresh()
+                snapshot = AddonRegistryStore.snapshot()
                 activePinnedPackageNames = emptySet()
                 registryGeneration = AddonRegistryStore.generation()
             } catch (e: Exception) {
@@ -280,7 +281,11 @@ fun AddonsSettingsScreen() = FlorisScreen {
                             .replace("{package}", rejected.packageName)
                             .replace("{reason}", rejected.reason),
                     )
-                    if (rejected.reason == AddonRegistry.ReasonExplicitTrustRequired) {
+                    val signingCertSha256 = rejected.signingCertSha256
+                    if (
+                        rejected.reason == AddonRegistry.ReasonExplicitTrustRequired &&
+                        signingCertSha256 != null
+                    ) {
                         Preference(
                             icon = Icons.Default.Refresh,
                             title = stringRes(R.string.settings__addons__trust_new_certificate),
@@ -291,11 +296,11 @@ fun AddonsSettingsScreen() = FlorisScreen {
                                 pendingPinAction = SigningPinAction.TrustNewCertificate(
                                     packageName = rejected.packageName,
                                     displayName = rejected.displayName,
-                                    signingCertSha256 = rejected.signingCertSha256,
+                                    signingCertSha256 = signingCertSha256,
                                 )
                             },
                         )
-                    } else if (rejected.packageName in pinnedPackageNames) {
+                    } else if (rejected.packageName in pinnedPackageNames && signingCertSha256 != null) {
                         Preference(
                             icon = Icons.Default.Refresh,
                             title = stringRes(R.string.settings__addons__trust_changed_certificate),
@@ -306,7 +311,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                                 pendingPinAction = SigningPinAction.TrustChangedCertificate(
                                     packageName = rejected.packageName,
                                     displayName = rejected.displayName,
-                                    signingCertSha256 = rejected.signingCertSha256,
+                                    signingCertSha256 = signingCertSha256,
                                 )
                             },
                         )

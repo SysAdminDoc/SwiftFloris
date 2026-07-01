@@ -17,12 +17,14 @@
 package dev.patrickgold.florisboard.ime.addon
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
 import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
+import java.io.File
 
 /**
  * ROADMAP §7 Next-10.2 — enumerator that discovers installed addon packages
@@ -70,35 +72,78 @@ class AddonEnumerator(
         ): String? {
             return requestedPermissions.orEmpty().firstOrNull { it in networkPermissionsRejected }
         }
+
+        internal fun packageBundleSizeBytes(app: ApplicationInfo): Long? {
+            val paths = buildList {
+                app.sourceDir?.takeIf { it.isNotBlank() }?.let(::add)
+                app.splitSourceDirs.orEmpty()
+                    .filter { it.isNotBlank() }
+                    .forEach(::add)
+            }
+            if (paths.isEmpty()) return null
+
+            var total = 0L
+            for (path in paths) {
+                val size = try {
+                    val file = File(path)
+                    if (!file.isFile) return null
+                    file.length()
+                } catch (_: SecurityException) {
+                    return null
+                }
+                if (size < 0 || total > Long.MAX_VALUE - size) return null
+                total += size
+            }
+            return total
+        }
+
+        internal fun bundleSizeRejectionReason(bundleSizeBytes: Long?): String? {
+            if (bundleSizeBytes == null) return "cannot determine addon bundle size"
+            return if (bundleSizeBytes > AddonContract.ADDON_MAX_BUNDLE_BYTES) {
+                "bundle size $bundleSizeBytes exceeds ${AddonContract.ADDON_MAX_BUNDLE_BYTES} bytes"
+            } else {
+                null
+            }
+        }
     }
 
     /**
      * Snapshot all currently-installed addons. Order is unspecified — callers
      * that want a deterministic order should sort by [AddonManifest.stableId].
      */
-    fun snapshot(): List<AddonManifest> {
+    fun snapshot(): List<AddonManifest> = scan().accepted
+
+    fun scan(): Snapshot {
         val pm = context.packageManager
         val self = context.packageName
         val allPackages: List<PackageInfo> = try {
             queryInstalledPackages(pm)
         } catch (t: Throwable) {
             flogError { "AddonEnumerator: packageManager scan threw: ${t.message}" }
-            return emptyList()
+            return Snapshot(emptyList(), emptyList())
         }
         val accepted = ArrayList<AddonManifest>(8)
+        val rejected = ArrayList<RejectedPackage>(4)
         for (info in allPackages) {
             if (info.packageName == self) continue
             val verdict = evaluate(info, pm)
             when (verdict) {
                 is AddonVerdict.Accepted -> accepted += verdict.manifest
-                is AddonVerdict.Rejected -> flogInfo {
-                    "AddonEnumerator: rejected ${info.packageName} (${verdict.reason})"
+                is AddonVerdict.Rejected -> {
+                    rejected += RejectedPackage(
+                        packageName = info.packageName,
+                        displayName = displayNameFor(info.applicationInfo, info, pm),
+                        reason = verdict.reason,
+                    )
+                    flogInfo {
+                        "AddonEnumerator: rejected ${info.packageName} (${verdict.reason})"
+                    }
                 }
                 AddonVerdict.NotAnAddon -> { /* common case — ignore */ }
             }
         }
-        flogInfo { "AddonEnumerator: scan complete, ${accepted.size} accepted" }
-        return accepted
+        flogInfo { "AddonEnumerator: scan complete, ${accepted.size} accepted, ${rejected.size} rejected" }
+        return Snapshot(accepted = accepted, rejected = rejected)
     }
 
     @Suppress("DEPRECATION")
@@ -152,22 +197,12 @@ class AddonEnumerator(
         }
         val signingCert = readSigningFingerprint(info.packageName)
             ?: return AddonVerdict.Rejected("cannot read signing certificate")
-        // The bundle-size gate in AddonManifest exists to prevent a malicious
-        // addon from claiming a 500 MB asset bundle that would OOM the IME on
-        // enrolment. Historically this code measured `File(sourceDir).length()`
-        // — the APK file size on disk — which (a) the IME never loads into
-        // RAM (PackageManager + mmap handle that) and (b) rejected legitimate
-        // 64MB+ theme / dictionary packs that contain large asset bundles.
-        // Clamp the reported value to the cap so first-pass enrolment never
-        // throws; the real bundle-size enforcement happens when the addon's
-        // assets are actually mounted (future Next-10.4 work). Until then a
-        // 0L sentinel is safer than a false reject.
-        val bundleSize = 0L
-        val displayName = try {
-            app.loadLabel(pm).toString()
-        } catch (_: Throwable) {
-            info.packageName
+        val measuredBundleSize = packageBundleSizeBytes(app)
+        bundleSizeRejectionReason(measuredBundleSize)?.let { reason ->
+            return AddonVerdict.Rejected(reason)
         }
+        val bundleSize = measuredBundleSize ?: return AddonVerdict.Rejected("cannot determine addon bundle size")
+        val displayName = displayNameFor(app, info, pm) ?: info.packageName
         return try {
             AddonVerdict.Accepted(
                 AddonManifest(
@@ -199,9 +234,28 @@ class AddonEnumerator(
         }
     }
 
+    private fun displayNameFor(app: ApplicationInfo?, info: PackageInfo, pm: PackageManager): String? {
+        return try {
+            app?.loadLabel(pm)?.toString()
+        } catch (_: Throwable) {
+            null
+        } ?: info.packageName
+    }
+
     internal fun firstRejectedNetworkPermission(requestedPermissions: Array<String>?): String? {
         return AddonEnumerator.firstRejectedNetworkPermission(requestedPermissions, networkPermissionsRejected)
     }
+
+    data class Snapshot(
+        val accepted: List<AddonManifest>,
+        val rejected: List<RejectedPackage>,
+    )
+
+    data class RejectedPackage(
+        val packageName: String,
+        val displayName: String?,
+        val reason: String,
+    )
 }
 
 /** Result of [AddonEnumerator.evaluate] for a single installed package. */

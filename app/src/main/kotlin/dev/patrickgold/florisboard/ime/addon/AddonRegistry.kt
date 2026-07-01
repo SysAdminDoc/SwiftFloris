@@ -89,7 +89,7 @@ class AddonRegistry(
         sortedAccepted.associateByTo(liveManifests) { it.packageName }
         lastSnapshot = Snapshot(
             accepted = sortedAccepted,
-            rejected = rejected.sortedWith(compareBy<RejectedAddon> { it.packageName }.thenBy { it.reason }),
+            rejected = rejected.sortedWith(RejectedDisplayOrder),
         )
         return lastSnapshot
     }
@@ -139,7 +139,7 @@ class AddonRegistry(
     data class RejectedAddon(
         val packageName: String,
         val displayName: String?,
-        val signingCertSha256: String,
+        val signingCertSha256: String?,
         val reason: String,
     )
 
@@ -160,6 +160,9 @@ class AddonRegistry(
             compareBy<AddonManifest> { it.type.metadataValue }
                 .thenBy { it.displayName.lowercase(Locale.ROOT) }
                 .thenBy { it.packageName }
+
+        val RejectedDisplayOrder: Comparator<RejectedAddon> =
+            compareBy<RejectedAddon> { it.packageName }.thenBy { it.reason }
 
         private val DisplayOrderWithNewestVersion: Comparator<AddonManifest> =
             compareBy<AddonManifest> { it.version }

@@ -73,6 +73,29 @@ class AddonRegistryStartupTest : FunSpec({
         result.signingPinsChanged shouldBe false
     }
 
+    test("reconcile surfaces package-level enumerator rejections without certificate trust actions") {
+        val result = AddonRegistryStartup.reconcile(
+            discovered = emptyList(),
+            persistedSigningPinsRaw = "",
+            packageRejections = listOf(
+                AddonEnumerator.RejectedPackage(
+                    packageName = "org.swiftfloris.dict.huge",
+                    displayName = "Huge Dictionary",
+                    reason = "bundle size 67108865 exceeds 67108864 bytes",
+                ),
+            ),
+        )
+
+        result.snapshot.accepted shouldBe emptyList()
+        result.snapshot.rejected.single().packageName shouldBe "org.swiftfloris.dict.huge"
+        result.snapshot.rejected.single().displayName shouldBe "Huge Dictionary"
+        result.snapshot.rejected.single().signingCertSha256 shouldBe null
+        result.snapshot.rejected.single().reason shouldBe "bundle size 67108865 exceeds 67108864 bytes"
+
+        AddonRegistryStore.setActive(result.registry, result.snapshot)
+        AddonRegistryStore.snapshot().rejected.single().packageName shouldBe "org.swiftfloris.dict.huge"
+    }
+
     test("reconcile accepts explicitly pinned external addons") {
         val result = AddonRegistryStartup.reconcile(
             discovered = listOf(startupManifest("org.swiftfloris.dict.pl", STARTUP_SHA_B)),

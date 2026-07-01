@@ -439,13 +439,14 @@ class FlorisImeService : LifecycleInputMethodService() {
     private fun startAddonRegistry() {
         lifecycleScope.launch(Dispatchers.Default) {
             try {
-                val discovered = AddonEnumerator(applicationContext).snapshot()
+                val enumeration = AddonEnumerator(applicationContext).scan()
                 val result = AddonRegistryStartup.reconcile(
-                    discovered = discovered,
+                    discovered = enumeration.accepted,
                     persistedSigningPinsRaw = prefs.addon.signingCertPins.get(),
                     trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
+                    packageRejections = enumeration.rejected,
                 )
-                AddonRegistryStore.setActive(result.registry)
+                AddonRegistryStore.setActive(result.registry, result.snapshot)
                 if (result.signingPinsChanged) {
                     prefs.addon.signingCertPins.set(result.encodedSigningPins)
                 }

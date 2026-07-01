@@ -92,13 +92,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Restore runtime addon bundle-size enforcement
-  Why: The docs and addon contract promise a 64 MiB cap, but runtime enrollment currently reports `bundleSizeBytes = 0L`, allowing oversized third-party addons if they bypass `scripts/verify-addon-apk.sh`.
-  Evidence: `AddonEnumerator.kt`; `AddonContract.kt`; `docs/addons/apk-validation.md`; `scripts/verify-addon-apk.sh`; AnySoftKeyboard/Fcitx5 addon ecosystems.
-  Touches: `AddonEnumerator`, `AddonManifest`, `AddonProvenanceReport`, addon settings UI, enumerator tests, addon validation docs if semantics change.
-  Acceptance: Installed addon packages or declared addon assets report a real bounded size, over-cap packages reject with a visible provenance reason, at-cap packages pass, sample addon validation remains green, and tests cover over-cap/at-cap/no-source cases.
-  Complexity: M
-
 - [ ] P1 — Add a Kotlin build-cache CVE guard until stable 2.4.20+ KSP upgrade
   Why: Kotlin `2.4.0` is affected by CVE-2026-53914; release builds disable Gradle caching today, but a future property or command change could re-enable the vulnerable cache path before a stable Kotlin/KSP upgrade exists.
   Evidence: NVD CVE-2026-53914; `gradle/libs.versions.toml`; `scripts/release-evidence.ps1`; `scripts/verify-reproducible-apk.sh`; `docs/REPRODUCIBLE_BUILDS.md`.

@@ -16,14 +16,24 @@
 
 package dev.patrickgold.florisboard.ime.addon
 
+import android.content.pm.ApplicationInfo
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldStartWith
+import java.io.RandomAccessFile
+import java.nio.file.Files
 
 private const val EXAMPLE_FINGERPRINT =
     "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89:" +
         "AB:CD:EF:01:23:45:67:89:AB:CD:EF:01:23:45:67:89"
+
+private fun temporaryApkPath(sizeBytes: Long): String {
+    val file = Files.createTempFile("swiftfloris-addon-size-", ".apk").toFile()
+    RandomAccessFile(file, "rw").use { it.setLength(sizeBytes) }
+    file.deleteOnExit()
+    return file.absolutePath
+}
 
 class AddonManifestTest : FunSpec({
 
@@ -88,6 +98,31 @@ class AddonManifestTest : FunSpec({
                 bundleSizeBytes = AddonContract.ADDON_MAX_BUNDLE_BYTES + 1,
             )
         }
+    }
+
+    test("AddonEnumerator package size sums base and split APK sources") {
+        val base = temporaryApkPath(1024L)
+        val split = temporaryApkPath(2048L)
+        val app = ApplicationInfo().apply {
+            sourceDir = base
+            splitSourceDirs = arrayOf(split)
+        }
+
+        AddonEnumerator.packageBundleSizeBytes(app) shouldBe 3072L
+    }
+
+    test("AddonEnumerator bundle size gate accepts at-cap packages and rejects over-cap packages") {
+        AddonEnumerator.bundleSizeRejectionReason(AddonContract.ADDON_MAX_BUNDLE_BYTES) shouldBe null
+
+        AddonEnumerator.bundleSizeRejectionReason(AddonContract.ADDON_MAX_BUNDLE_BYTES + 1) shouldBe
+            "bundle size 67108865 exceeds 67108864 bytes"
+    }
+
+    test("AddonEnumerator bundle size gate rejects packages with no readable source APK") {
+        val app = ApplicationInfo()
+
+        AddonEnumerator.packageBundleSizeBytes(app) shouldBe null
+        AddonEnumerator.bundleSizeRejectionReason(null) shouldBe "cannot determine addon bundle size"
     }
 
     test("AddonManifest rejects malformed signing fingerprint") {

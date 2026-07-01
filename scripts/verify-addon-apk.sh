@@ -83,6 +83,9 @@ resolve_build_tools_bin() {
         default_home="${HOME}/Library/Android/sdk"
     elif [ -d "${HOME}/Android/Sdk" ]; then
         default_home="${HOME}/Android/Sdk"
+    elif [[ "$(pwd -P)" =~ ^/mnt/([A-Za-z])/Users/([^/]+)/ ]] &&
+        [ -d "/mnt/${BASH_REMATCH[1]}/Users/${BASH_REMATCH[2]}/AppData/Local/Android/Sdk" ]; then
+        default_home="/mnt/${BASH_REMATCH[1]}/Users/${BASH_REMATCH[2]}/AppData/Local/Android/Sdk"
     fi
     local sdk_home
     sdk_home="$(normalize_sdk_home "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$default_home}}")"
@@ -90,12 +93,19 @@ resolve_build_tools_bin() {
         local latest
         latest=$(ls -1 "$sdk_home/build-tools" 2>/dev/null | sort -V | tail -1)
         local candidate
-        for candidate in "$sdk_home/build-tools/$latest/$tool" "$sdk_home/build-tools/$latest/$tool.exe" "$sdk_home/build-tools/$latest/$tool.bat"; do
+        for candidate in "$sdk_home/build-tools/$latest/$tool" "$sdk_home/build-tools/$latest/$tool.exe"; do
             if [ -x "$candidate" ] || [ -f "$candidate" ]; then
                 echo "$candidate"
                 return 0
             fi
         done
+        if [[ "$sdk_home" != /mnt/* ]]; then
+            candidate="$sdk_home/build-tools/$latest/$tool.bat"
+            if [ -x "$candidate" ] || [ -f "$candidate" ]; then
+                echo "$candidate"
+                return 0
+            fi
+        fi
     fi
     command -v "$tool" 2>/dev/null
 }

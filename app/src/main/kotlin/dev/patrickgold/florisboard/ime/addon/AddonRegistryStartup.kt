@@ -29,13 +29,26 @@ object AddonRegistryStartup {
         discovered: List<AddonManifest>,
         persistedSigningPinsRaw: String,
         trustedRootSigningCertSha256: String? = null,
+        packageRejections: List<AddonEnumerator.RejectedPackage> = emptyList(),
     ): Result {
         val persistedPins = AddonSigningPinSet.parse(persistedSigningPinsRaw)
         val registry = AddonRegistry.fromPinnedSigningPinSet(
             pinSet = persistedPins,
             trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
         )
-        val snapshot = registry.refresh(discovered)
+        val registrySnapshot = registry.refresh(discovered)
+        val packageRejectedAddons = packageRejections.map { rejected ->
+            AddonRegistry.RejectedAddon(
+                packageName = rejected.packageName,
+                displayName = rejected.displayName,
+                signingCertSha256 = null,
+                reason = rejected.reason,
+            )
+        }
+        val snapshot = registrySnapshot.copy(
+            rejected = (registrySnapshot.rejected + packageRejectedAddons)
+                .sortedWith(AddonRegistry.RejectedDisplayOrder),
+        )
         val encodedPins = registry.pinnedSigningPinSet().encode()
         val normalizedExistingPins = persistedSigningPinsRaw.trim()
         return Result(
@@ -63,19 +76,28 @@ object AddonRegistryStore {
     @Volatile
     private var activeRegistry: AddonRegistry = AddonRegistry()
     @Volatile
+    private var activeSnapshot: AddonRegistry.Snapshot = activeRegistry.lastRefresh()
+    @Volatile
     private var activeGeneration: Long = 0L
 
     fun active(): AddonRegistry = activeRegistry
 
+    fun snapshot(): AddonRegistry.Snapshot = activeSnapshot
+
     fun generation(): Long = activeGeneration
 
-    fun setActive(registry: AddonRegistry) {
+    fun setActive(
+        registry: AddonRegistry,
+        snapshot: AddonRegistry.Snapshot = registry.lastRefresh(),
+    ) {
         activeRegistry = registry
+        activeSnapshot = snapshot
         activeGeneration += 1L
     }
 
     fun reset() {
         activeRegistry = AddonRegistry()
+        activeSnapshot = activeRegistry.lastRefresh()
         activeGeneration += 1L
     }
 }
