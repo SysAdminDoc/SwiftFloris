@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Self-test the public-doc version pin checker with small fixtures."""
+"""Self-test the public-doc and F-Droid metadata version pin checker with small fixtures."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ CHECKER = ROOT / "scripts" / "check-public-doc-version-pins.py"
 def write_fixture(root: Path) -> None:
     (root / "gradle" / "wrapper").mkdir(parents=True, exist_ok=True)
     (root / "docs").mkdir(exist_ok=True)
+    (root / "fdroid").mkdir(exist_ok=True)
     (root / "gradle" / "libs.versions.toml").write_text(
         dedent(
             """
@@ -109,6 +110,20 @@ def write_fixture(root: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
+    (root / "fdroid" / "io.github.sysadmindoc.swiftfloris.yml").write_text(
+        dedent(
+            """
+            Builds:
+              - versionName: "1.9.53"
+                versionCode: 2102
+                commit: v1.9.53
+            CurrentVersion: "1.9.53"
+            CurrentVersionCode: 2102
+            """
+        ).strip()
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def run_checker(root: Path) -> subprocess.CompletedProcess[str]:
@@ -177,6 +192,18 @@ def main() -> int:
         if failing.returncode != 1 or "CurrentVersionCode" not in failing.stdout:
             print(failing.stdout)
             print("expected stale reproducible-build version code to fail")
+            return 1
+
+        write_fixture(fixture)
+        fdroid = fixture / "fdroid" / "io.github.sysadmindoc.swiftfloris.yml"
+        fdroid.write_text(
+            fdroid.read_text(encoding="utf-8").replace("commit: v1.9.53", "commit: v1.9.52"),
+            encoding="utf-8",
+        )
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "F-Droid YAML build commit tag" not in failing.stdout:
+            print(failing.stdout)
+            print("expected stale checked-in F-Droid YAML to fail")
             return 1
 
     print("public doc version pin checker self-test: PASS")

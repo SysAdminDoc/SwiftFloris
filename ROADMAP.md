@@ -92,13 +92,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Gate checked-in F-Droid YAML against Gradle release metadata
-  Why: The checked-in F-Droid recipe is stale at `1.9.52` / `2101` while Gradle and reproducible-build docs are `1.9.53` / `2102`; release evidence currently checks the docs stanza but not the actual YAML destined for fdroiddata.
-  Evidence: `fdroid/io.github.sysadmindoc.swiftfloris.yml`; `gradle.properties`; `docs/REPRODUCIBLE_BUILDS.md`; `scripts/check-public-doc-version-pins.py`; F-Droid Build Metadata Reference.
-  Touches: `scripts/check-public-doc-version-pins.py` or a dedicated metadata checker, `scripts/release-evidence.ps1`, checker tests, `fdroid/io.github.sysadmindoc.swiftfloris.yml`, `docs/REPRODUCIBLE_BUILDS.md`.
-  Acceptance: Release evidence fails when F-Droid `versionName`, `versionCode`, `commit`, `CurrentVersion`, or `CurrentVersionCode` drift from Gradle metadata; tests prove the stale YAML fails; the checked-in YAML is updated to the current release values.
-  Complexity: S
-
 - [ ] P1 — Restore runtime addon bundle-size enforcement
   Why: The docs and addon contract promise a 64 MiB cap, but runtime enrollment currently reports `bundleSizeBytes = 0L`, allowing oversized third-party addons if they bypass `scripts/verify-addon-apk.sh`.
   Evidence: `AddonEnumerator.kt`; `AddonContract.kt`; `docs/addons/apk-validation.md`; `scripts/verify-addon-apk.sh`; AnySoftKeyboard/Fcitx5 addon ecosystems.

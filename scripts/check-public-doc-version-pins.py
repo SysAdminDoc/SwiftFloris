@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Verify public documentation version pins against Gradle metadata."""
+"""Verify public documentation and F-Droid metadata pins against Gradle metadata."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ class Expectation:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Check public README/security/reproducible-build version pins against Gradle metadata.",
+        description="Check public README/security/reproducible-build and F-Droid metadata pins against Gradle metadata.",
     )
     parser.add_argument(
         "--root",
@@ -277,6 +277,36 @@ def build_expectations(root: Path) -> tuple[list[Expectation], list[str]]:
         Expectation(
             "docs/REPRODUCIBLE_BUILDS.md",
             "F-Droid CurrentVersionCode",
+            r"CurrentVersionCode: ([0-9]+)",
+            (version_code,),
+        ),
+        Expectation(
+            "fdroid/io.github.sysadmindoc.swiftfloris.yml",
+            "F-Droid YAML build versionName",
+            r"versionName: \"([0-9]+\.[0-9]+\.[0-9]+)\"",
+            (version_name,),
+        ),
+        Expectation(
+            "fdroid/io.github.sysadmindoc.swiftfloris.yml",
+            "F-Droid YAML build versionCode",
+            r"versionCode: ([0-9]+)",
+            (version_code,),
+        ),
+        Expectation(
+            "fdroid/io.github.sysadmindoc.swiftfloris.yml",
+            "F-Droid YAML build commit tag",
+            r"commit: v([0-9]+\.[0-9]+\.[0-9]+)",
+            (version_name,),
+        ),
+        Expectation(
+            "fdroid/io.github.sysadmindoc.swiftfloris.yml",
+            "F-Droid YAML CurrentVersion",
+            r"CurrentVersion: \"([0-9]+\.[0-9]+\.[0-9]+)\"",
+            (version_name,),
+        ),
+        Expectation(
+            "fdroid/io.github.sysadmindoc.swiftfloris.yml",
+            "F-Droid YAML CurrentVersionCode",
             r"CurrentVersionCode: ([0-9]+)",
             (version_code,),
         ),
