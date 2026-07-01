@@ -56,13 +56,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Fail release evidence on ignored root JVM crash/replay logs
-  Why: Ignored root `hs_err_pid*.log` and `replay_pid*.log` files can exist while the current gate only checks committed files, leaving local release evidence less trustworthy.
-  Evidence: `hs_err_pid24404.log`, `hs_err_pid24424.log`, `replay_pid24404.log`; `.gitignore:38`; `scripts/check-no-root-crash-logs.sh`; `scripts/release-evidence.ps1`.
-  Touches: `scripts/check-no-root-crash-logs.sh`, `scripts/check-repo-hygiene.sh`, `scripts/release-evidence.ps1`, `docs/LOCAL_VERIFICATION.md`, `docs/REPO_HYGIENE.md`, shell-script tests or fixture harness.
-  Acceptance: The release evidence path fails before build when root `hs_err_pid*.log` or `replay_pid*.log` files exist even if ignored, reports exact paths plus a cleanup destination, preserves the committed-file guard, and has a local test/fixture proving ignored files are caught.
-  Complexity: S
-
 ### P2
 
 - [ ] P2 — Make candidate trailing-space policy provider-owned

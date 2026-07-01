@@ -323,7 +323,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 - **Lint drift:** local lint can run through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.
 - **Device smoke:** run the IME enable -> type -> commit -> glide smoke on phone, tablet-sized API 36, and foldable-sized API 36 emulator/device lanes when that behavior changes. The tablet/foldable lanes force the documented `UNIVERSAL_RESIZABLE_BY_DEFAULT` compat behavior that becomes mandatory for API 37 targets.
 - **Repo hygiene gate:** `scripts/release-evidence.ps1` runs `scripts/check-no-root-crash-logs.sh` so root
-  `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed, and
+  `hs_err_pid*.log` / `replay_pid*.log` files cannot be committed or left ignored in the root, and
   `scripts/check-repo-hygiene.sh` rejects tracked generated build/report output.
 
 ## Recent releases
