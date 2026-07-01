@@ -27,13 +27,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Add addon sample APK validation to release evidence
-  Why: The repo documents a buildable dictionary-pack sample and validator, but the release evidence bundle does not prove addon packaging still passes the contract.
-  Evidence: `settings.gradle.kts`; `docs/addons/apk-validation.md`; `scripts/verify-addon-apk.sh`; `scripts/release-evidence.ps1`.
-  Touches: `scripts/release-evidence.ps1`, `scripts/verify-addon-apk.sh`, `addons/dictionary-pack-sample/`, README/release verification docs.
-  Acceptance: Release evidence builds `:addons:dictionary-pack-sample:assembleRelease`, runs `scripts/verify-addon-apk.sh` on the produced APK, stores the output in the evidence directory, and fails if the sample violates banned-permission, receiver, size, signing, or alignment checks.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 — Add a targetSdk 37 shadow build/replay preflight

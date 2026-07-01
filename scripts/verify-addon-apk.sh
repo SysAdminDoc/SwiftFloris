@@ -25,10 +25,11 @@
 #   - stat, grep, awk (POSIX)
 #
 # Environment:
-#   ANDROID_HOME — Android SDK root. Optional; defaults to
+#   ANDROID_HOME / ANDROID_SDK_ROOT — Android SDK root. Optional; defaults to
 #                  $HOME/Library/Android/sdk (macOS) or
-#                  $HOME/Android/Sdk (Linux). If neither exists the
-#                  script falls back to PATH-resolved binaries.
+#                  $HOME/Android/Sdk (Linux). Windows-style C:\... paths are
+#                  accepted when the script runs under Git Bash. If neither
+#                  exists the script falls back to PATH-resolved binaries.
 
 set -eo pipefail
 
@@ -67,6 +68,14 @@ require_tool() {
     return 0
 }
 
+normalize_sdk_home() {
+    local sdk_home="$1"
+    if [ -n "$sdk_home" ] && [ ! -d "$sdk_home" ] && [[ "$sdk_home" =~ ^[A-Za-z]:\\ ]]; then
+        sdk_home="${sdk_home//\\//}"
+    fi
+    printf '%s\n' "$sdk_home"
+}
+
 resolve_build_tools_bin() {
     local tool="$1"
     local default_home=""
@@ -75,13 +84,14 @@ resolve_build_tools_bin() {
     elif [ -d "${HOME}/Android/Sdk" ]; then
         default_home="${HOME}/Android/Sdk"
     fi
-    local sdk_home="${ANDROID_HOME:-$default_home}"
+    local sdk_home
+    sdk_home="$(normalize_sdk_home "${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$default_home}}")"
     if [ -n "$sdk_home" ] && [ -d "$sdk_home/build-tools" ]; then
         local latest
         latest=$(ls -1 "$sdk_home/build-tools" 2>/dev/null | sort -V | tail -1)
         local candidate
-        for candidate in "$sdk_home/build-tools/$latest/$tool" "$sdk_home/build-tools/$latest/$tool.exe"; do
-            if [ -x "$candidate" ]; then
+        for candidate in "$sdk_home/build-tools/$latest/$tool" "$sdk_home/build-tools/$latest/$tool.exe" "$sdk_home/build-tools/$latest/$tool.bat"; do
+            if [ -x "$candidate" ] || [ -f "$candidate" ]; then
                 echo "$candidate"
                 return 0
             fi
@@ -213,7 +223,7 @@ check_signing_certificate() {
         echo "FAIL  apksigner verify exited $apksigner_status — tool error rather than verification failure"
         return 1
     fi
-    if echo "$signer_output" | grep -qE "Signer #1 certificate SHA-256 digest"; then
+    if echo "$signer_output" | grep -qE "(Signer #[0-9]+|V[0-9]+ Signer):? certificate SHA-256 digest"; then
         echo "PASS  signing certificate present (apksigner --print-certs)"
         return 0
     fi

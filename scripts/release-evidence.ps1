@@ -202,8 +202,19 @@ Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") 
     ":app:verifyDataExtractionRules",
     ":app:testDebugUnitTest",
     ":app:lintDebug",
-    ":app:assembleRelease"
+    ":app:assembleRelease",
+    ":addons:dictionary-pack-sample:assembleRelease"
 ))
+
+$sampleAddonApk = Join-Path $RepoRoot "addons\dictionary-pack-sample\build\outputs\apk\release\dictionary-pack-sample-release.apk"
+if (-not (Test-Path $sampleAddonApk)) {
+    throw "Sample dictionary-pack APK was not produced: $sampleAddonApk"
+}
+Add-Summary "Sample addon APK: $sampleAddonApk"
+Invoke-EvidenceCommand "addon-sample-apk-validation" $bash @(
+    (Convert-ToGitBashPath "scripts\verify-addon-apk.sh"),
+    ((Resolve-Path $sampleAddonApk).Path -replace "\\", "/")
+)
 
 if ($SkipOsvScan) {
     Add-Summary "osv-scan: SKIPPED by parameter"

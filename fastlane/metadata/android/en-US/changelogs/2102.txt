@@ -1,3 +1,3 @@
 Release evidence now disables reusable Gradle build-cache state for release/test gates until a final Kotlin 2.4.20+ compiler and compatible KSP land.
 
-Also includes v1.9.53 highlights: compileSdk 37, Android 17 CJK selected-candidate accessibility metadata, Tink 1.22.0, AboutLibraries 15.0.3, trust/provenance exports, snippets/Espanso import, sample dictionary-pack APK, Roborazzi 1.64 baselines, glide benchmark coverage, sticker pack import/export, and inline-autofill reliability fixes.
+Also includes v1.9.53 highlights: compileSdk 37, Android 17 CJK selected-candidate metadata, Tink 1.22.0, AboutLibraries 15.0.3, trust/provenance exports, snippets/Espanso import, sample addon APK validation in release evidence, Roborazzi 1.64 baselines, glide benchmark coverage, sticker pack import/export, and inline-autofill reliability fixes.
