@@ -44,6 +44,22 @@ class CjkInputProviderTest : FunSpec({
         shouldThrow<IllegalArgumentException> { CjkCandidate("好", confidence = 1.5f) }
     }
 
+    test("CjkCandidate suggestion adapter marks selected conversion suggestions") {
+        val candidate = CjkCandidate(
+            text = "\u4f60",
+            annotation = "ni",
+            confidence = 0.95f,
+            isPreferred = true,
+        ).toSuggestionCandidate()
+
+        candidate.text shouldBe "\u4f60"
+        candidate.secondaryText shouldBe "ni"
+        candidate.confidence shouldBe 0.95f.toDouble()
+        candidate.isEligibleForAutoCommit shouldBe true
+        candidate.isEligibleForUserRemoval shouldBe false
+        candidate.isTextSuggestionSelected shouldBe true
+    }
+
     test("Registry default + replace + reset works") {
         val fake = object : CjkInputProvider {
             override fun convert(input: String, schema: CjkSchema, maxCandidates: Int) =

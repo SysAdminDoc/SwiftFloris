@@ -16,6 +16,9 @@
 
 package dev.patrickgold.florisboard.ime.cjk
 
+import androidx.compose.ui.graphics.vector.ImageVector
+import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import kotlinx.serialization.Serializable
 
 /**
@@ -108,6 +111,25 @@ data class CjkCandidate(
         // confusing one.
         require(!confidence.isNaN() && confidence in 0f..1f) { "confidence must be a number in [0, 1]; was $confidence" }
     }
+}
+
+data class CjkSuggestionCandidate(
+    val candidate: CjkCandidate,
+    override val sourceProvider: SuggestionProvider? = null,
+) : SuggestionCandidate {
+    override val text: CharSequence = candidate.text
+    override val secondaryText: CharSequence? = candidate.annotation
+    override val confidence: Double = candidate.confidence.toDouble()
+    override val isEligibleForAutoCommit: Boolean = candidate.isPreferred
+    override val isEligibleForUserRemoval: Boolean = false
+    override val icon: ImageVector? = null
+    override val isTextSuggestionSelected: Boolean = true
+}
+
+fun CjkCandidate.toSuggestionCandidate(
+    sourceProvider: SuggestionProvider? = null,
+): CjkSuggestionCandidate {
+    return CjkSuggestionCandidate(this, sourceProvider)
 }
 
 object CjkInputProviderRegistry {

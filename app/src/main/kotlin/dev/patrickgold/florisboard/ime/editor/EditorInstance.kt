@@ -333,16 +333,26 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // this gate keeps a stray commit from ever reaching the editor.
         if (activeState.keyVariation == KeyVariation.PASSWORD) return false
         val content = activeContent
+        val selectedTextSuggestion = candidate.isTextSuggestionSelected
         return if (content.composing.isValid) {
             phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
-            super.finalizeComposingText(text)
+            super.finalizeComposingText(
+                text = text,
+                selectedTextSuggestion = selectedTextSuggestion,
+            )
         } else {
             val isPhantomSpaceActive = phantomSpace.determine(text)
             phantomSpace.setActive(showComposingRegion = false, candidate = candidate)
             return if (isPhantomSpaceActive) {
-                super.commitText("$SPACE$text")
+                commitTextInternal(
+                    text = "$SPACE$text",
+                    selectedTextSuggestion = selectedTextSuggestion,
+                )
             } else {
-                super.commitText(text)
+                commitTextInternal(
+                    text = text,
+                    selectedTextSuggestion = selectedTextSuggestion,
+                )
             }.also {
                 // handled in finalizeComposingText if content.composing.isValid
                 updateLastCommitPosition()
@@ -379,7 +389,10 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val activeWord = content.composingText.ifBlank { content.currentWordText }
         if (!activeWord.sameGestureWordAs(expectedText)) return false
         return if (content.composing.isValid) {
-            super.finalizeComposingText(replacementText)
+            super.finalizeComposingText(
+                text = replacementText,
+                selectedTextSuggestion = false,
+            )
         } else {
             false
         }

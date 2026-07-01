@@ -27,20 +27,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Upgrade AboutLibraries to 15.0.3 on compileSdk 37
-  Why: OSS license disclosure is a trust surface, compileSdk 37 is now active, and the current dependency remains on 14.2.0 while 15.0.3 is published.
-  Evidence: `gradle.properties`; `gradle/libs.versions.toml`; Gradle Plugin Portal AboutLibraries metadata; stale blocked entry in `Roadmap_Blocked.md`.
-  Touches: `gradle/libs.versions.toml`, About/third-party license settings screens, license-generation outputs/tests, `Roadmap_Blocked.md`.
-  Acceptance: AboutLibraries plugin/runtime resolve at 15.0.3, third-party license UI still renders, relevant unit/Roborazzi/license checks pass, and the stale blocked duplicate is removed or marked moved during implementation.
-  Complexity: M
-
-- [ ] P1 — Add Android 17 CJKV selected-candidate accessibility signaling
-  Why: API 37 exposes `TextAttribute.Builder.setTextSuggestionSelected`, and SwiftFloris now compiles against 37 but does not mark selected CJK conversion candidates for accessibility-aware editors.
-  Evidence: Android `TextAttribute.Builder` API docs; `CjkInputProvider.kt`; `CjkBridgePrototype.kt`; `EditorInputConnectionBatch.kt`; `HostileEditorCandidateReplayTest.kt`.
-  Touches: `app/src/main/kotlin/dev/patrickgold/florisboard/ime/editor/`, `app/src/main/kotlin/dev/patrickgold/florisboard/ime/cjk/`, candidate commit paths, editor replay tests, `Roadmap_Blocked.md`.
-  Acceptance: On API 37+ CJK candidate commit/composition paths attach `TextAttribute` with selected-candidate metadata, older APIs keep identical calls, JVM replay tests cover both paths, and the stale blocked duplicate is removed or moved during implementation.
-  Complexity: M
-
 - [ ] P1 — Add addon sample APK validation to release evidence
   Why: The repo documents a buildable dictionary-pack sample and validator, but the release evidence bundle does not prove addon packaging still passes the contract.
   Evidence: `settings.gradle.kts`; `docs/addons/apk-validation.md`; `scripts/verify-addon-apk.sh`; `scripts/release-evidence.ps1`.
@@ -71,4 +57,47 @@ gated on external deliverables or hardware testing live in
   Evidence: Unicode Emoji 17.0 `emoji-test.txt`; `EmojiData.kt`; `EmojiDataVersionTest.kt`; blocked CLDR 49 emoji refresh item.
   Touches: Emoji asset-generation/parsing tests, `EmojiDataVersionTest`, minimal test fixtures, `Roadmap_Blocked.md` note when implemented.
   Acceptance: A small fixture containing at least one E17.0 sequence parses through the existing emoji data path, records `emoji=17.0` metadata in tests, keeps shipped assets unchanged, and leaves the full CLDR 49 refresh blocked until CLDR artifacts are available.
+  Complexity: S
+
+## Research-Driven Additions
+
+### P1
+
+- [ ] P1 — Fail release evidence on ignored root JVM crash/replay logs
+  Why: Ignored root `hs_err_pid*.log` and `replay_pid*.log` files can exist while the current gate only checks committed files, leaving local release evidence less trustworthy.
+  Evidence: `hs_err_pid24404.log`, `hs_err_pid24424.log`, `replay_pid24404.log`; `.gitignore:38`; `scripts/check-no-root-crash-logs.sh`; `scripts/release-evidence.ps1`.
+  Touches: `scripts/check-no-root-crash-logs.sh`, `scripts/check-repo-hygiene.sh`, `scripts/release-evidence.ps1`, `docs/LOCAL_VERIFICATION.md`, `docs/REPO_HYGIENE.md`, shell-script tests or fixture harness.
+  Acceptance: The release evidence path fails before build when root `hs_err_pid*.log` or `replay_pid*.log` files exist even if ignored, reports exact paths plus a cleanup destination, preserves the committed-file guard, and has a local test/fixture proving ignored files are caught.
+  Complexity: S
+
+### P2
+
+- [ ] P2 — Make candidate trailing-space policy provider-owned
+  Why: Soft and hardware spacebar paths duplicate a TODO that candidate spacing should come from `SuggestionProvider`, and non-Latin/CJK/media candidates should not inherit Latin autocorrect spacing by accident.
+  Evidence: `KeyboardManager.kt:808`; `KeyboardManager.kt:858`; `NlpProviders.kt`; `CjkInputProvider.kt`; Fcitx5 Android and Trime candidate-engine separation.
+  Touches: `SuggestionCandidate`, `SuggestionProvider`, `EditorInputBehaviorPolicy`, `KeyboardManager`, CJK candidate tests, hostile editor replay tests, hardware-keyboard space tests.
+  Acceptance: Candidate/provider metadata defines whether accepting a candidate commits a trailing space, soft and hardware spacebar paths share the same policy, current Latin autocorrect behavior is preserved, and tests cover Latin, CJK, emoji/media, and snippet candidates.
+  Complexity: M
+
+- [ ] P2 — Add hot-path latency budgets to the production `runBlocking` allowlist
+  Why: The allowlist catches drift by count/string, but it does not classify main-thread per-keystroke bridges or prove their CPU-only latency budget.
+  Evidence: `scripts/check-runblocking-allowlist.py`; `scripts/runblocking-allowlist.txt`; `NlpProviders.kt:208`; `docs/BENCHMARKS.md`.
+  Touches: `scripts/check-runblocking-allowlist.py`, `scripts/runblocking-allowlist.txt`, `scripts/test-check-runblocking-allowlist.py` or equivalent, `docs/BENCHMARKS.md`, focused JVM/perf tests for `determineLocalComposing`.
+  Acceptance: Every production `runBlocking` entry declares a category such as `main-thread-keystroke`, `sync-api`, or `cache-fill`, the gate rejects new hot-path entries without a budget/rationale, and a local test or benchmark fixture proves the per-keystroke composing bridge stays CPU-only within the documented threshold.
+  Complexity: M
+
+- [ ] P2 — Add environment and privacy-redaction fields to crash reports
+  Why: Crash reports need the same version/install/device context as bug reports, plus explicit redaction prompts because keyboard logs can contain private typed content.
+  Evidence: `.github/ISSUE_TEMPLATE/bug_report.yml`; `.github/ISSUE_TEMPLATE/crash_report.yml`; `docs/SECURITY.md`; `docs/PRIVACY_AND_AI.md`.
+  Touches: `.github/ISSUE_TEMPLATE/crash_report.yml`, `docs/SECURITY.md` only if reporting guidance changes.
+  Acceptance: Crash reports require SwiftFloris version, install source, Android version, device model, reproducibility, crash-log source, and a checkbox confirming typed text, clipboard content, personal dictionaries, private APK paths, and unrelated device logs were removed.
+  Complexity: S
+
+### P3
+
+- [ ] P3 — Replace stale `RESEARCH_FEATURE_PLAN.md` source references
+  Why: Source comments still point at a retired root research-plan filename even though current research lives in `RESEARCH.md` and historical plans live under `docs/research-feature-plan-*`.
+  Evidence: `FlorisApplication.kt`; `PrivacyAuditScreen.kt`; `TypingStatsScreen.kt`; `AboutScreen.kt`; `ShiftStateMachine.kt`; `HeuristicSmartComposeProvider.kt`; `FlorisEmojiCompatReflectionGuardTest.kt`; `scripts/check-live-doc-integrity.py`.
+  Touches: Source/test comments only, `scripts/check-live-doc-integrity.py` if adding a stale-reference guard.
+  Acceptance: `rg "RESEARCH_FEATURE_PLAN\\.md" app lib scripts docs README.md ROADMAP.md` returns no stale source references, comments either name the current feature contract or are removed, behavior and tests are unchanged, and no new markdown files are created.
   Complexity: S

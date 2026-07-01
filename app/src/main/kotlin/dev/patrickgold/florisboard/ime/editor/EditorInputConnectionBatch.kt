@@ -16,9 +16,35 @@
 
 package dev.patrickgold.florisboard.ime.editor
 
+import android.os.Build
 import android.view.inputmethod.InputConnection
+import android.view.inputmethod.TextAttribute
+import androidx.annotation.RequiresApi
 
 internal object EditorInputConnectionBatch {
+    private const val Android17Api = 37
+
+    internal interface TextSuggestionAttributeWriter {
+        fun commitText(
+            ic: InputConnection,
+            text: CharSequence,
+            newCursorPosition: Int,
+        ): Boolean
+
+        fun setComposingText(
+            ic: InputConnection,
+            text: CharSequence,
+            newCursorPosition: Int,
+        ): Boolean
+    }
+
+    internal fun shouldUseSelectedTextSuggestionAttribute(
+        selectedTextSuggestion: Boolean,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+    ): Boolean {
+        return selectedTextSuggestion && sdkInt >= Android17Api
+    }
+
     inline fun runWithBatchEdit(ic: InputConnection, block: InputConnection.() -> Unit) {
         ic.beginBatchEdit()
         try {
@@ -49,19 +75,32 @@ internal object EditorInputConnectionBatch {
         }
     }
 
-    fun commitText(ic: InputConnection, text: String, composing: EditorRange?) {
+    fun commitText(
+        ic: InputConnection,
+        text: String,
+        composing: EditorRange?,
+        selectedTextSuggestion: Boolean = false,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+        textSuggestionAttributeWriter: TextSuggestionAttributeWriter = Api37TextAttributes,
+    ) {
         runWithBatchEdit(ic) {
             finishComposingText()
-            commitText(text, 1)
+            commitTextWithAttributes(text, 1, selectedTextSuggestion, sdkInt, textSuggestionAttributeWriter)
             if (composing != null) {
                 setComposingRegion(composing)
             }
         }
     }
 
-    fun finalizeComposingText(ic: InputConnection, text: String) {
+    fun finalizeComposingText(
+        ic: InputConnection,
+        text: String,
+        selectedTextSuggestion: Boolean = false,
+        sdkInt: Int = Build.VERSION.SDK_INT,
+        textSuggestionAttributeWriter: TextSuggestionAttributeWriter = Api37TextAttributes,
+    ) {
         runWithBatchEdit(ic) {
-            setComposingText(text, 1)
+            setComposingTextWithAttributes(text, 1, selectedTextSuggestion, sdkInt, textSuggestionAttributeWriter)
             finishComposingText()
         }
     }
@@ -71,6 +110,61 @@ internal object EditorInputConnectionBatch {
             setComposingRegion(composing.start, composing.end)
         } else {
             finishComposingText()
+        }
+    }
+
+    private fun InputConnection.commitTextWithAttributes(
+        text: CharSequence,
+        newCursorPosition: Int,
+        selectedTextSuggestion: Boolean,
+        sdkInt: Int,
+        textSuggestionAttributeWriter: TextSuggestionAttributeWriter,
+    ): Boolean {
+        return if (shouldUseSelectedTextSuggestionAttribute(selectedTextSuggestion, sdkInt)) {
+            textSuggestionAttributeWriter.commitText(this, text, newCursorPosition)
+        } else {
+            commitText(text, newCursorPosition)
+        }
+    }
+
+    private fun InputConnection.setComposingTextWithAttributes(
+        text: CharSequence,
+        newCursorPosition: Int,
+        selectedTextSuggestion: Boolean,
+        sdkInt: Int,
+        textSuggestionAttributeWriter: TextSuggestionAttributeWriter,
+    ): Boolean {
+        return if (shouldUseSelectedTextSuggestionAttribute(selectedTextSuggestion, sdkInt)) {
+            textSuggestionAttributeWriter.setComposingText(this, text, newCursorPosition)
+        } else {
+            setComposingText(text, newCursorPosition)
+        }
+    }
+
+    private object Api37TextAttributes : TextSuggestionAttributeWriter {
+        @RequiresApi(Android17Api)
+        override fun commitText(
+            ic: InputConnection,
+            text: CharSequence,
+            newCursorPosition: Int,
+        ): Boolean {
+            return ic.commitText(text, newCursorPosition, selectedTextSuggestionAttribute())
+        }
+
+        @RequiresApi(Android17Api)
+        override fun setComposingText(
+            ic: InputConnection,
+            text: CharSequence,
+            newCursorPosition: Int,
+        ): Boolean {
+            return ic.setComposingText(text, newCursorPosition, selectedTextSuggestionAttribute())
+        }
+
+        @RequiresApi(Android17Api)
+        private fun selectedTextSuggestionAttribute(): TextAttribute {
+            return TextAttribute.Builder()
+                .setTextSuggestionSelected(true)
+                .build()
         }
     }
 }

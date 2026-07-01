@@ -98,6 +98,14 @@ interface SuggestionCandidate {
      * callbacks.
      */
     val sourceProvider: SuggestionProvider?
+
+    /**
+     * True when accepting this candidate should tell API 37+ editors that the
+     * user selected a conversion/suggestion candidate, not raw typed text.
+     * Kept false for ordinary Latin autocorrect and clipboard/media commits.
+     */
+    val isTextSuggestionSelected: Boolean
+        get() = false
 }
 
 /**

@@ -448,12 +448,20 @@ abstract class AbstractEditorInstance(context: Context) {
 
     open fun commitText(text: String): Boolean = commitTextInternal(text)
 
-    private fun commitTextInternal(text: String): Boolean {
+    protected fun commitTextInternal(
+        text: String,
+        selectedTextSuggestion: Boolean = false,
+    ): Boolean {
         val ic = currentInputConnection() ?: return false
         val content = activeContent
         val selection = content.selection
         if (activeInfo.isRawInputEditor) {
-            EditorInputConnectionBatch.commitText(ic, text, composing = null)
+            EditorInputConnectionBatch.commitText(
+                ic = ic,
+                text = text,
+                composing = null,
+                selectedTextSuggestion = selectedTextSuggestion,
+            )
         } else {
             val newContent = runBlocking {
                 val newSelection = EditorRange.cursor(selection.start + text.length)
@@ -472,6 +480,7 @@ abstract class AbstractEditorInstance(context: Context) {
                 ic = ic,
                 text = text,
                 composing = newContent.composing,
+                selectedTextSuggestion = selectedTextSuggestion,
             )
         }
         return true
@@ -505,7 +514,10 @@ abstract class AbstractEditorInstance(context: Context) {
         return true
     }
 
-    open fun finalizeComposingText(text: String): Boolean {
+    open fun finalizeComposingText(
+        text: String,
+        selectedTextSuggestion: Boolean = false,
+    ): Boolean {
         val ic = currentInputConnection() ?: return false
         val content = activeContent
         val composing = content.composing
@@ -529,7 +541,11 @@ abstract class AbstractEditorInstance(context: Context) {
             expectedContentQueue.push(newContent)
             newContent
         }
-        EditorInputConnectionBatch.finalizeComposingText(ic, text)
+        EditorInputConnectionBatch.finalizeComposingText(
+            ic = ic,
+            text = text,
+            selectedTextSuggestion = selectedTextSuggestion,
+        )
         _lastCommitPosition.handleCommit(newContent.selection)
         return true
     }
