@@ -30,7 +30,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
@@ -67,6 +66,7 @@ import dev.patrickgold.florisboard.app.settings.localization.LanguagePackManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
@@ -139,12 +139,11 @@ fun SettingsSearchScreen() = FlorisScreen {
                 },
                 trailingIcon = if (searchQuery.isNotEmpty()) {
                     {
-                        IconButton(onClick = { searchQuery = "" }) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = stringRes(R.string.settings__search__clear),
-                            )
-                        }
+                        FlorisIconButton(
+                            onClick = { searchQuery = "" },
+                            icon = Icons.Default.Close,
+                            contentDescription = stringRes(R.string.settings__search__clear),
+                        )
                     }
                 } else {
                     null

@@ -37,7 +37,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -64,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
@@ -105,18 +105,16 @@ class FlorisStepLayoutScope(
         modifier: Modifier = Modifier,
         onClick: () -> Unit,
     ) {
-        Button(
+        FlorisButton(
             modifier = modifier
                 .fillMaxWidth()
                 .padding(top = 16.dp),
             colors = ButtonDefaults.buttonColors(
                 containerColor = primaryColor,
             ),
-            shape = MaterialTheme.shapes.small,
+            text = label,
             onClick = onClick,
-        ) {
-            Text(text = label)
-        }
+        )
     }
 }
 
@@ -314,7 +312,15 @@ private fun StepHeader(
     }
     Row(
         modifier = modifier
-            .semantics { selected = isCurrent }
+            .semantics {
+                selected = isCurrent
+                stateDescription = when {
+                    isCurrent -> "Current step"
+                    isCompleted -> "Completed step"
+                    isAvailable -> "Available step"
+                    else -> "Locked step"
+                }
+            }
             .padding(vertical = StepHeaderPaddingVertical)
             .clip(MaterialTheme.shapes.small)
             .background(backgroundColor)

@@ -23,7 +23,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -59,7 +58,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -82,6 +80,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.stringRes
 
 @Composable
@@ -410,14 +409,12 @@ private fun SettingsHomeStatusRow(
             }
         }
         if (actionLabel != null && onAction != null) {
-            OutlinedButton(
+            FlorisOutlinedButton(
                 modifier = Modifier.fillMaxWidth(),
-                shape = MaterialTheme.shapes.small,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
+                text = actionLabel,
                 onClick = onAction,
-            ) {
-                Text(text = actionLabel)
-            }
+            )
         }
     }
 }
@@ -467,24 +464,13 @@ private fun SettingsHomeActionButton(
     label: String,
     onClick: () -> Unit,
 ) {
-    OutlinedButton(
-        modifier = modifier.defaultMinSize(minHeight = 44.dp),
-        shape = MaterialTheme.shapes.small,
+    FlorisOutlinedButton(
+        modifier = modifier,
         contentPadding = PaddingValues(horizontal = 8.dp, vertical = 10.dp),
+        icon = icon,
+        text = label,
         onClick = onClick,
-    ) {
-        Icon(
-            modifier = Modifier
-                .padding(end = 6.dp)
-                .size(18.dp),
-            imageVector = icon,
-            contentDescription = null,
-        )
-        Text(
-            text = label,
-            style = MaterialTheme.typography.labelMedium,
-        )
-    }
+    )
 }
 
 @Composable

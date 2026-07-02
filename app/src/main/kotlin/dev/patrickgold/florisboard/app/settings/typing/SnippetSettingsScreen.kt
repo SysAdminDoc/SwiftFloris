@@ -25,8 +25,6 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.FileOpen
 import androidx.compose.material.icons.automirrored.filled.TextSnippet
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -57,6 +55,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
@@ -174,15 +173,14 @@ fun SnippetSettingsScreen() = FlorisScreen {
                         "count" to triggerCount,
                     ),
                     trailing = {
-                        IconButton(onClick = { deleteCandidate = filename }) {
-                            Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = stringRes(
-                                    R.string.settings__snippet__delete_file_a11y,
-                                    "filename" to filename,
-                                ),
-                            )
-                        }
+                        FlorisIconButton(
+                            onClick = { deleteCandidate = filename },
+                            icon = Icons.Default.Delete,
+                            contentDescription = stringRes(
+                                R.string.settings__snippet__delete_file_a11y,
+                                "filename" to filename,
+                            ),
+                        )
                     },
                 )
             }
@@ -200,7 +198,7 @@ fun SnippetSettingsScreen() = FlorisScreen {
             PreferenceGroup(title = stringRes(R.string.settings__snippet__group_preview)) {
                 for (match in snippets) {
                     val preview = if (match.replace.length > 80) {
-                        match.replace.take(80) + "…"
+                        match.replace.take(80) + "..."
                     } else {
                         match.replace
                     }

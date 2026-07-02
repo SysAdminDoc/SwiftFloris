@@ -45,10 +45,12 @@ import dev.patrickgold.florisboard.app.settings.advanced.RestoreScreen
 import dev.patrickgold.florisboard.app.settings.keyboard.CustomLayoutEditorPreviewSurface
 import dev.patrickgold.florisboard.app.settings.mcp.McpSettingsScreen
 import dev.patrickgold.florisboard.app.settings.privacy.PrivacyAuditScreen
+import dev.patrickgold.florisboard.app.settings.search.SettingsSearchScreen
 import dev.patrickgold.florisboard.app.settings.sync.SyncSettingsScreen
 import dev.patrickgold.florisboard.app.settings.typing.SnippetSettingsScreen
 import dev.patrickgold.florisboard.app.settings.typing.TypingStatsScreen
 import dev.patrickgold.florisboard.app.settings.voice.VoiceInputScreen
+import dev.patrickgold.florisboard.app.setup.SetupScreen
 import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
 import dev.patrickgold.florisboard.ime.mcp.DaemonKey
@@ -101,6 +103,20 @@ class PendingSettingsScreensScreenshotTest {
     fun homeScreenOverview() {
         captureSettingsScreen("home_screen_overview.png") {
             HomeScreen()
+        }
+    }
+
+    @Test
+    fun setupScreen() {
+        captureSettingsScreen("setup_screen.png", theme = AppTheme.DARK) {
+            SetupScreen()
+        }
+    }
+
+    @Test
+    fun settingsSearchScreen() {
+        captureSettingsScreen("settings_search_screen.png") {
+            SettingsSearchScreen()
         }
     }
 

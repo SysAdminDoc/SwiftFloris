@@ -23,7 +23,8 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -58,7 +59,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidVersion
-import org.florisboard.lib.compose.FlorisBulletSpacer
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisStep
 import org.florisboard.lib.compose.FlorisStepLayout
@@ -200,6 +200,7 @@ private fun FlorisScreenScope.Content(
     }
 }
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 private fun Footer(context: Context) {
     Spacer(modifier = Modifier.height(16.dp))
@@ -208,16 +209,16 @@ private fun Footer(context: Context) {
             .fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
+        FlowRow(
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             val privacyPolicyUrl = stringRes(R.string.florisboard__privacy_policy_url)
             FlorisTextButton(
                 onClick = { context.launchUrl(privacyPolicyUrl) },
                 text = stringRes(R.string.setup__footer__privacy_policy),
             )
-            FlorisBulletSpacer()
             val repositoryUrl = stringRes(R.string.florisboard__repo_url)
             FlorisTextButton(
                 onClick = { context.launchUrl(repositoryUrl) },

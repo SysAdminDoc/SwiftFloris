@@ -33,7 +33,6 @@ import androidx.compose.material.icons.filled.Language
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
@@ -90,6 +89,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisErrorCard
+import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.FlorisWarningCard
@@ -687,31 +687,24 @@ private fun VoiceModelRow(
         ).joinToString(" - "),
         trailing = {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                IconButton(
+                FlorisIconButton(
                     onClick = onDownload,
                     enabled = localRecognizerRuntimeAvailable,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Download,
-                        contentDescription = stringRes(R.string.settings__voice_input__local_model_download),
-                    )
-                }
-                IconButton(
+                    icon = Icons.Default.Download,
+                    contentDescription = stringRes(R.string.settings__voice_input__local_model_download),
+                )
+                FlorisIconButton(
                     onClick = onImport,
                     enabled = localRecognizerRuntimeAvailable,
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Add,
-                        contentDescription = stringRes(R.string.settings__voice_input__local_model_import),
-                    )
-                }
+                    icon = Icons.Default.Add,
+                    contentDescription = stringRes(R.string.settings__voice_input__local_model_import),
+                )
                 if (installed) {
-                    IconButton(onClick = onDelete) {
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = stringRes(R.string.settings__voice_input__local_model_delete),
-                        )
-                    }
+                    FlorisIconButton(
+                        onClick = onDelete,
+                        icon = Icons.Default.Delete,
+                        contentDescription = stringRes(R.string.settings__voice_input__local_model_delete),
+                    )
                 }
             }
         },
