@@ -20,8 +20,8 @@ import dev.patrickgold.florisboard.ime.input.CapitalizationBehavior
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 
 /**
- * Pure shift-key state machine extracted from `KeyboardManager` (RESEARCH_FEATURE_PLAN.md
- * F27). `KeyboardManager` itself is a heavily Android-coupled dispatch
+ * Pure shift-key state machine extracted from `KeyboardManager` (keyboard-state
+ * feature contract F27). `KeyboardManager` itself is a heavily Android-coupled dispatch
  * orchestrator with no direct tests; this follows the project's Workstream-3
  * pattern (cf. [KeyboardAutoCommitFlushPolicy], `ApostropheReturnGate`,
  * `QuoteAutoCloseGate`) of lifting the deterministic decision out so it can be

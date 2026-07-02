@@ -47,7 +47,7 @@ private fun fileInfoFor(id: Long): ClipboardFileInfo = ClipboardFileInfo(
 )
 
 /**
- * RESEARCH_FEATURE_PLAN.md EI6 — property-based coverage of
+ * Clipboard reconciliation evidence item EI6 — property-based coverage of
  * [ClipboardStorageReconciliation.plan] complementing the scenario-based
  * `ClipboardStorageReconciliationTest`. Across randomised combinations of
  * history rows, file-info rows, stored-file ids, and provider-backing

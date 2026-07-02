@@ -46,13 +46,6 @@ gated on external deliverables or hardware testing live in
 
 ### P3
 
-- [ ] P3 — Replace stale `RESEARCH_FEATURE_PLAN.md` source references
-  Why: Source comments still point at a retired root research-plan filename even though current research lives in `RESEARCH.md` and historical plans live under `docs/research-feature-plan-*`.
-  Evidence: `FlorisApplication.kt`; `PrivacyAuditScreen.kt`; `TypingStatsScreen.kt`; `AboutScreen.kt`; `ShiftStateMachine.kt`; `HeuristicSmartComposeProvider.kt`; `FlorisEmojiCompatReflectionGuardTest.kt`; `scripts/check-live-doc-integrity.py`.
-  Touches: Source/test comments only, `scripts/check-live-doc-integrity.py` if adding a stale-reference guard.
-  Acceptance: `rg "RESEARCH_FEATURE_PLAN\\.md" app lib scripts docs README.md ROADMAP.md` returns no stale source references, comments either name the current feature contract or are removed, behavior and tests are unchanged, and no new markdown files are created.
-  Complexity: S
-
 ## Research-Driven Additions
 
 ### P1

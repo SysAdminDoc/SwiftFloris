@@ -22,7 +22,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * RESEARCH_FEATURE_PLAN.md F27 — direct coverage of the SHIFT-key state machine
+ * Keyboard-state feature contract F27 — direct coverage of the SHIFT-key state machine
  * lifted out of `KeyboardManager` into [ShiftStateMachine]. `KeyboardManager`
  * itself had zero direct tests; these pin the transitions that previously lived
  * inside its private `handleShiftDown` / `handleShiftUp`.

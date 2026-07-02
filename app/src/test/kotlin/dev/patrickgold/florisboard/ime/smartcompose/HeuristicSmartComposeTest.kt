@@ -23,7 +23,7 @@ import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 
 /**
- * RESEARCH_FEATURE_PLAN.md F18 — pure-core coverage for the heuristic
+ * SmartCompose feature contract F18 — pure-core coverage for the heuristic
  * ghost-text ranking + confidence model, with no Android / coroutine
  * dependency.
  */

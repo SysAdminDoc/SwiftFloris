@@ -29,7 +29,7 @@ import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 
 /**
- * RESEARCH_FEATURE_PLAN.md O6 — privacy invariants for the calendar permission flow.
+ * Calendar permission privacy invariant O6 — manifest coverage for the permission flow.
  *
  * `CalendarPermissionActivity` is the only surface that requests `READ_CALENDAR`,
  * and it requests it on launch — by design, because it is launched *only* after

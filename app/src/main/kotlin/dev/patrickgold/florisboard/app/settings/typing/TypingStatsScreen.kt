@@ -218,7 +218,7 @@ fun TypingStatsScreen() = FlorisScreen {
                 // unguarded because each only drops one regenerable model.
                 onClick = { showResetAllConfirm = true },
             )
-            // RESEARCH_FEATURE_PLAN.md EI12 — single confirmed action that also wipes
+            // Learning-reset evidence item EI12 — single confirmed action that also wipes
             // the personal dictionary (the "Reset all learning" row above deliberately
             // keeps it). Destructive + no recovery, so it is gated behind a confirm
             // dialog, unlike the per-category resets.

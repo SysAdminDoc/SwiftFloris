@@ -138,7 +138,7 @@ fun AboutScreen() = FlorisScreen {
                 }
             },
         )
-        // RESEARCH_FEATURE_PLAN.md F14 — inline, offline "What's new" excerpt sourced
+        // What's-new feature contract F14 — inline, offline excerpt sourced
         // at compile time from the tracked fastlane changelog for this versionCode
         // (BuildConfig.WHATS_NEW). Hidden when no source matched at build time
         // (e.g. a dev build between releases).

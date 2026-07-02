@@ -21,7 +21,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 /**
- * RESEARCH_FEATURE_PLAN.md EI5 — pins the androidx-emoji2 reflection target the
+ * EmojiCompat evidence item EI5 — pins the androidx-emoji2 reflection target the
  * v1.8.173 `FlorisEmojiCompat` race fix depends on.
  *
  * The fix constructs `EmojiCompat` via its package-private `(Config)`

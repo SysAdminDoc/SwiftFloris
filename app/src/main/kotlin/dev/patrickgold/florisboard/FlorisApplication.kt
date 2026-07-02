@@ -102,7 +102,7 @@ class FlorisApplication : Application() {
             // installed. Out-of-tree addon variants can still override
             // via WordStylesRendererRegistry.setActive(...).
             WordStylesRendererRegistry.setActive(WordStylesCanvasRenderer(this))
-            // RESEARCH_FEATURE_PLAN.md F18 — bind the on-device n-gram
+            // SmartCompose feature contract F18 — bind the on-device n-gram
             // heuristic SmartComposeProvider as the baseline so inline
             // ghost-text works without any LLM addon. Gated at call time by
             // prefs.correction.heuristicSmartCompose (default off). The debug

@@ -118,7 +118,7 @@ configure<ApplicationExtension> {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "BUILD_COMMIT_HASH", "\"${getGitCommitHash().get()}\"")
-        // RESEARCH_FEATURE_PLAN.md F14 — compile-time "What's new" excerpt sourced
+        // What's-new feature contract F14 — compile-time excerpt sourced
         // from the tracked fastlane changelog for this versionCode (local-only
         // CHANGELOG.md as fallback) so Settings → About can show it offline
         // (no INTERNET, no runtime file IO). Empty when no source matches.
@@ -616,7 +616,7 @@ fun getGitCommitHash(short: Boolean = false): Provider<String> {
     return execProvider.standardOutput.asText.map { it.trim() }
 }
 
-// RESEARCH_FEATURE_PLAN.md F14 — compile-time release notes for the offline
+// What's-new feature contract F14 — compile-time release notes for the offline
 // "What's new" surface. Primary source is the tracked per-versionCode fastlane
 // changelog (CHANGELOG.md is local-only since 886c4aa and absent from CI
 // checkouts, so it can only ever be a local-build fallback). Returns "" when

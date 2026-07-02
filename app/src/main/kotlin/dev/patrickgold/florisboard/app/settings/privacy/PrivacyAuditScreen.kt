@@ -59,7 +59,7 @@ import java.util.Locale
 private const val MAX_DISPLAYED_RECORDS = 100
 
 /**
- * RESEARCH_FEATURE_PLAN.md F7 — Settings → Privacy → "Local audit log".
+ * Privacy audit feature contract F7 — Settings → Privacy → "Local audit log".
  *
  * Surfaces the existing [AddonInvocationAudit] ring (smart-compose / translation /
  * MCP cross-process calls SwiftFloris made on the user's behalf). This is a

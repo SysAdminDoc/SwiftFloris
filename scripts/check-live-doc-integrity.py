@@ -33,6 +33,15 @@ FORBIDDEN_CANONICAL_REFS = [
 ]
 
 LINK_PATTERN = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
+STALE_RESEARCH_PLAN_REF = "RESEARCH_FEATURE" + "_PLAN.md"
+STALE_RESEARCH_PLAN_SCAN_ROOTS = (
+    "app/",
+    "lib/",
+    "scripts/",
+    "docs/",
+    "README.md",
+    "ROADMAP.md",
+)
 
 CRASH_REPORT_TEMPLATE = ".github/ISSUE_TEMPLATE/crash_report.yml"
 REQUIRED_CRASH_TEMPLATE_IDS = [
@@ -186,6 +195,37 @@ def check_crash_report_template(root: Path) -> list[str]:
     return errors
 
 
+def check_stale_research_plan_refs(root: Path, tracked_paths: set[str] | None) -> list[str]:
+    candidates = (
+        sorted(tracked_paths)
+        if tracked_paths is not None
+        else [
+            path.relative_to(root).as_posix()
+            for path in root.rglob("*")
+            if path.is_file() and ".git" not in path.parts
+        ]
+    )
+    errors: list[str] = []
+    for rel in candidates:
+        if not (
+            rel in STALE_RESEARCH_PLAN_SCAN_ROOTS
+            or any(rel.startswith(prefix) for prefix in STALE_RESEARCH_PLAN_SCAN_ROOTS if prefix.endswith("/"))
+        ):
+            continue
+        path = root / rel
+        try:
+            text = path.read_text(encoding="utf-8-sig")
+        except UnicodeDecodeError:
+            continue
+        except Exception as exc:
+            errors.append(f"{rel}: cannot read ({exc})")
+            continue
+        for line_no, line in enumerate(text.splitlines(), start=1):
+            if STALE_RESEARCH_PLAN_REF in line:
+                errors.append(f"{rel}:{line_no}: references retired {STALE_RESEARCH_PLAN_REF}; use RESEARCH.md or feature-contract wording")
+    return errors
+
+
 def main() -> int:
     root = Path(parse_args().root).resolve()
     tracked_paths = collect_tracked_paths(root)
@@ -194,6 +234,7 @@ def main() -> int:
     for md in files:
         all_errors.extend(check_file(md, root, tracked_paths))
     all_errors.extend(check_crash_report_template(root))
+    all_errors.extend(check_stale_research_plan_refs(root, tracked_paths))
 
     if all_errors:
         for error in all_errors:

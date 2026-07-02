@@ -30,7 +30,7 @@ import java.security.GeneralSecurityException
 import java.util.Base64
 
 /**
- * RESEARCH_FEATURE_PLAN.md F28 / second-pass O7 — round-trip + tamper coverage
+ * Local crypto feature contract F28 / second-pass O7 — round-trip + tamper coverage
  * for the [TinkStringPreferenceCrypto] AEAD wire format.
  *
  * Production binds the AEAD to an AndroidKeystore master key, which Robolectric

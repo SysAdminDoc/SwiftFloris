@@ -25,7 +25,7 @@ import dev.patrickgold.florisboard.lib.FlorisLocale
 import kotlinx.coroutines.runBlocking
 
 /**
- * RESEARCH_FEATURE_PLAN.md F18 (refines F5) — an on-device, no-LLM
+ * SmartCompose feature contract F18 (refines F5) — an on-device, no-LLM
  * [SmartComposeProvider] that lights up inline ghost-text from the
  * infrastructure that already ships in `:app`: the per-locale
  * [PersonalTrigramStore] + [PersonalBigramStore] learned as the user types,

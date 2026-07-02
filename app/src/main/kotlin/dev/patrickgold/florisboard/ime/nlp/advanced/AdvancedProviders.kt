@@ -30,7 +30,7 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 
 /*
- * Advanced NLP providers (RESEARCH_FEATURE_PLAN.md F37 — audited 2026-05-28).
+ * Advanced NLP providers (feature contract F37 — audited 2026-05-28).
  *
  * This single file intentionally holds two layers:
  *
