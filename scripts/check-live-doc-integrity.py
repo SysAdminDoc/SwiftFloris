@@ -44,6 +44,8 @@ STALE_RESEARCH_PLAN_SCAN_ROOTS = (
 )
 
 CRASH_REPORT_TEMPLATE = ".github/ISSUE_TEMPLATE/crash_report.yml"
+PULL_REQUEST_TEMPLATE = ".github/PULL_REQUEST_TEMPLATE.md"
+APP_BUILD_GRADLE = "app/build.gradle.kts"
 REQUIRED_CRASH_TEMPLATE_IDS = [
     "description",
     "reproduce",
@@ -226,6 +228,60 @@ def check_stale_research_plan_refs(root: Path, tracked_paths: set[str] | None) -
     return errors
 
 
+def first_gradle_string(text: str, key: str) -> str | None:
+    match = re.search(rf"\b{re.escape(key)}\s*=\s*\"([^\"]+)\"", text)
+    return match.group(1) if match else None
+
+
+def debug_application_id_suffix(text: str) -> str | None:
+    match = re.search(r'\bnamed\("debug"\)\s*\{(?P<body>.*?)\n\s*\}', text, flags=re.DOTALL)
+    if match is None:
+        match = re.search(r"\bdebug\s*\{(?P<body>.*?)\n\s*\}", text, flags=re.DOTALL)
+    if match is None:
+        return None
+    return first_gradle_string(match.group("body"), "applicationIdSuffix")
+
+
+def check_pr_template_debug_package(root: Path) -> list[str]:
+    template_path = root / PULL_REQUEST_TEMPLATE
+    build_path = root / APP_BUILD_GRADLE
+    if not template_path.exists():
+        return []
+    if not build_path.exists():
+        return [f"{APP_BUILD_GRADLE}: missing app Gradle file"]
+
+    try:
+        template_text = template_path.read_text(encoding="utf-8-sig")
+        build_text = build_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        return [f"{PULL_REQUEST_TEMPLATE}: cannot check debug package id ({exc})"]
+
+    application_id = first_gradle_string(build_text, "applicationId")
+    debug_suffix = debug_application_id_suffix(build_text)
+    namespace = first_gradle_string(build_text, "namespace")
+    errors: list[str] = []
+    if application_id is None:
+        errors.append(f"{APP_BUILD_GRADLE}: could not parse applicationId")
+    if debug_suffix is None:
+        errors.append(f"{APP_BUILD_GRADLE}: could not parse debug applicationIdSuffix")
+    if namespace is None:
+        errors.append(f"{APP_BUILD_GRADLE}: could not parse namespace")
+    if errors:
+        return errors
+
+    debug_application_id = f"{application_id}{debug_suffix}"
+    if debug_application_id not in template_text:
+        errors.append(f"{PULL_REQUEST_TEMPLATE}: missing actual debug package id {debug_application_id}")
+    stale_debug_id = "dev.patrickgold.florisboard.debug"
+    if stale_debug_id in template_text and stale_debug_id != debug_application_id:
+        errors.append(f"{PULL_REQUEST_TEMPLATE}: still references stale debug package id {stale_debug_id}")
+    if namespace not in template_text:
+        errors.append(f"{PULL_REQUEST_TEMPLATE}: should explain upstream namespace {namespace} separately")
+    if "not the install package ID" not in template_text:
+        errors.append(f"{PULL_REQUEST_TEMPLATE}: should separate Gradle namespace from install identity")
+    return errors
+
+
 def main() -> int:
     root = Path(parse_args().root).resolve()
     tracked_paths = collect_tracked_paths(root)
@@ -235,6 +291,7 @@ def main() -> int:
         all_errors.extend(check_file(md, root, tracked_paths))
     all_errors.extend(check_crash_report_template(root))
     all_errors.extend(check_stale_research_plan_refs(root, tracked_paths))
+    all_errors.extend(check_pr_template_debug_package(root))
 
     if all_errors:
         for error in all_errors:
