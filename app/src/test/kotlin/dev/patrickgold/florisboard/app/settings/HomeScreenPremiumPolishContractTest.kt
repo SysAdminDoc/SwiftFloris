@@ -33,7 +33,11 @@ class HomeScreenPremiumPolishContractTest {
         source shouldContain "settings__home__quick_action_search"
         source shouldContain "settings__home__quick_action_import"
         source shouldContain "settings__home__quick_action_privacy"
-        source shouldContain "shape = MaterialTheme.shapes.small"
+        source shouldContain "FlorisOutlinedButton("
+
+        val buttonSource = locateSharedButtonSource().readText()
+        buttonSource shouldContain "shape: Shape = MaterialTheme.shapes.small"
+        buttonSource shouldContain "defaultMinSize(minHeight = 44.dp)"
     }
 
     @Test
@@ -62,4 +66,13 @@ private fun locateStringsSource(): File {
     )
     return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
         ?: error("strings.xml not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateSharedButtonSource(): File {
+    val candidates = listOf(
+        "lib/compose/src/main/kotlin/org/florisboard/lib/compose/FlorisButtons.kt",
+        "../lib/compose/src/main/kotlin/org/florisboard/lib/compose/FlorisButtons.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("FlorisButtons.kt not reachable from working directory ${File(".").absolutePath}")
 }
