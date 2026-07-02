@@ -23,6 +23,7 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.nlp.BreakIteratorGroup
+import dev.patrickgold.florisboard.ime.nlp.CandidateTrailingSpacePolicy
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackComponent
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.nlp.SpellingProvider
@@ -90,6 +91,7 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
     private val loadLock = Any()
 
     override val providerId = ProviderId
+    override val candidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
 
     override suspend fun create() {
         // Here we initialize our provider, set up all things which are not language dependent.

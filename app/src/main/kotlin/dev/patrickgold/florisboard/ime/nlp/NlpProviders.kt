@@ -112,6 +112,13 @@ interface SpellingProvider : NlpProvider {
  */
 interface SuggestionProvider : NlpProvider {
     /**
+     * Default trailing-space behavior for candidates produced by this provider. Latin-style providers should keep the
+     * default, while conversion/media providers should override to [CandidateTrailingSpacePolicy.NEVER].
+     */
+    val candidateTrailingSpacePolicy: CandidateTrailingSpacePolicy
+        get() = CandidateTrailingSpacePolicy.AUTO_SPACE_LOCALE
+
+    /**
      * Callback from the editor logic that the editor content has changed and that new suggestions should be generated
      * for the new user input. There is no guarantee that candidates returned are actually used, as there may be sudden
      * context changes or clipboard/emoji suggestions overriding the results (if the user has those enabled).

@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.cjk
 
 import androidx.compose.ui.graphics.vector.ImageVector
+import dev.patrickgold.florisboard.ime.nlp.CandidateTrailingSpacePolicy
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import kotlinx.serialization.Serializable
@@ -124,6 +125,7 @@ data class CjkSuggestionCandidate(
     override val isEligibleForUserRemoval: Boolean = false
     override val icon: ImageVector? = null
     override val isTextSuggestionSelected: Boolean = true
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
 }
 
 fun CjkCandidate.toSuggestionCandidate(

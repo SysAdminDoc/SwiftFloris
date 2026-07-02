@@ -30,4 +30,18 @@ internal object CandidateCommitSideEffectPolicy {
     ): Boolean {
         return commitSucceeded && !isClipboardCandidate
     }
+
+    fun shouldCommitPlainSpaceAfterSpacebar(
+        candidate: SuggestionCandidate?,
+        suppressPlainSpaceForPrediction: Boolean,
+        supportsAutoSpace: Boolean,
+    ): Boolean {
+        if (suppressPlainSpaceForPrediction) return false
+        return when (candidate?.trailingSpacePolicy) {
+            null,
+            CandidateTrailingSpacePolicy.ALWAYS -> true
+            CandidateTrailingSpacePolicy.AUTO_SPACE_LOCALE -> supportsAutoSpace
+            CandidateTrailingSpacePolicy.NEVER -> false
+        }
+    }
 }

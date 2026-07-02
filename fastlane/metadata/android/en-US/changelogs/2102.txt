@@ -1,3 +1,3 @@
-Privacy audit logs now support copy, Save JSON file, and Android share-sheet export with user-chosen destinations and no automatic upload. Release evidence also guards Kotlin CVE-2026-53914 with caches off until stable Kotlin/KSP updates land, and targetSdk 37 shadow preflight builds/tests without changing release target.
+Privacy audit logs now support copy, Save JSON, and Android share export with user-chosen destinations and no upload. Candidate spacing is provider-owned: Latin autocorrect keeps its trailing space, while CJK and emoji/media candidates do not inherit it. Release evidence guards Kotlin CVE-2026-53914 with caches off and adds targetSdk 37 shadow preflight.
 
-Also: compileSdk 37, Android 17 CJK metadata, Tink 1.22.0, AboutLibraries 15.0.3, addon validation, snippets, and inline-autofill fixes.
+Also: compileSdk 37, Android 17 CJK metadata, Tink 1.22.0, AboutLibraries 15.0.3, addon validation, snippets, inline-autofill.

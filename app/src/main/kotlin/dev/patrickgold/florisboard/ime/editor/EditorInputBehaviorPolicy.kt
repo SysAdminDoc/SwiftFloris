@@ -120,15 +120,6 @@ internal object EditorInputBehaviorPolicy {
         return textBeforeCursor.length == 2 && DoubleSpacePeriodMatcher.matches(textBeforeCursor)
     }
 
-    fun shouldCommitPlainSpaceAfterSpacebar(
-        candidateAccepted: Boolean,
-        suppressPlainSpaceForPrediction: Boolean,
-        supportsAutoSpace: Boolean,
-    ): Boolean {
-        if (suppressPlainSpaceForPrediction) return false
-        return supportsAutoSpace || !candidateAccepted
-    }
-
     private fun isSentenceEndingPunctuation(char: String): Boolean {
         return char.isNotEmpty() && char.first() in ".!?"
     }

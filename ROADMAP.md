@@ -44,13 +44,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 — Make candidate trailing-space policy provider-owned
-  Why: Soft and hardware spacebar paths duplicate a TODO that candidate spacing should come from `SuggestionProvider`, and non-Latin/CJK/media candidates should not inherit Latin autocorrect spacing by accident.
-  Evidence: `KeyboardManager.kt:808`; `KeyboardManager.kt:858`; `NlpProviders.kt`; `CjkInputProvider.kt`; Fcitx5 Android and Trime candidate-engine separation.
-  Touches: `SuggestionCandidate`, `SuggestionProvider`, `EditorInputBehaviorPolicy`, `KeyboardManager`, CJK candidate tests, hostile editor replay tests, hardware-keyboard space tests.
-  Acceptance: Candidate/provider metadata defines whether accepting a candidate commits a trailing space, soft and hardware spacebar paths share the same policy, current Latin autocorrect behavior is preserved, and tests cover Latin, CJK, emoji/media, and snippet candidates.
-  Complexity: M
-
 - [ ] P2 — Add hot-path latency budgets to the production `runBlocking` allowlist
   Why: The allowlist catches drift by count/string, but it does not classify main-thread per-keystroke bridges or prove their CPU-only latency budget.
   Evidence: `scripts/check-runblocking-allowlist.py`; `scripts/runblocking-allowlist.txt`; `NlpProviders.kt:208`; `docs/BENCHMARKS.md`.

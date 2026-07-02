@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.cjk
 
+import dev.patrickgold.florisboard.ime.nlp.CandidateTrailingSpacePolicy
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -58,6 +59,7 @@ class CjkInputProviderTest : FunSpec({
         candidate.isEligibleForAutoCommit shouldBe true
         candidate.isEligibleForUserRemoval shouldBe false
         candidate.isTextSuggestionSelected shouldBe true
+        candidate.trailingSpacePolicy shouldBe CandidateTrailingSpacePolicy.NEVER
     }
 
     test("Registry default + replace + reset works") {

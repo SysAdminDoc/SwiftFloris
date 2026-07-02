@@ -31,6 +31,25 @@ import dev.patrickgold.florisboard.ime.media.emoji.Emoji
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 
+enum class CandidateTrailingSpacePolicy {
+    /**
+     * Preserve legacy Latin behavior: accepting the candidate via spacebar
+     * inserts a plain trailing space only when the active locale supports
+     * auto-spacing.
+     */
+    AUTO_SPACE_LOCALE,
+
+    /**
+     * Always append a plain trailing space after a spacebar candidate commit.
+     */
+    ALWAYS,
+
+    /**
+     * Never append a plain trailing space after a spacebar candidate commit.
+     */
+    NEVER,
+}
+
 /**
  * Interface for a candidate item, which is returned by a suggestion provider and used by the UI logic to render
  * the candidate row.
@@ -100,6 +119,14 @@ interface SuggestionCandidate {
     val sourceProvider: SuggestionProvider?
 
     /**
+     * Candidate/provider-owned policy for whether selecting this candidate via the spacebar should also commit a
+     * trailing plain space. Providers for conversion/media candidates should override this to avoid inheriting Latin
+     * autocorrect spacing.
+     */
+    val trailingSpacePolicy: CandidateTrailingSpacePolicy
+        get() = sourceProvider?.candidateTrailingSpacePolicy ?: CandidateTrailingSpacePolicy.AUTO_SPACE_LOCALE
+
+    /**
      * True when accepting this candidate should tell API 37+ editors that the
      * user selected a conversion/suggestion candidate, not raw typed text.
      * Kept false for ordinary Latin autocorrect and clipboard/media commits.
@@ -121,6 +148,8 @@ data class WordSuggestionCandidate(
     override val isEligibleForUserRemoval: Boolean = true,
     override val sourceProvider: SuggestionProvider? = null,
     val nextWordContext: NextWordSuggestionContext? = null,
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy =
+        sourceProvider?.candidateTrailingSpacePolicy ?: CandidateTrailingSpacePolicy.AUTO_SPACE_LOCALE,
 ) : SuggestionCandidate {
     override val icon: ImageVector? = null
 }
@@ -142,6 +171,7 @@ data class AutoCommitUndoSuggestionCandidate(
     override val isEligibleForAutoCommit: Boolean = false
     override val isEligibleForUserRemoval: Boolean = false
     override val icon: ImageVector? = null
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
 }
 
 data class LearnedWordForgetSuggestionCandidate(
@@ -155,6 +185,7 @@ data class LearnedWordForgetSuggestionCandidate(
     override val isEligibleForUserRemoval: Boolean = false
     override val icon: ImageVector? = null
     override val sourceProvider: SuggestionProvider? = null
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
 }
 
 /**
@@ -177,6 +208,8 @@ data class ClipboardSuggestionCandidate(
     override val isEligibleForAutoCommit: Boolean = false
 
     override val isEligibleForUserRemoval: Boolean = true
+
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
 
     override val icon: ImageVector = when (clipboardItem.type) {
         ItemType.TEXT -> when {
@@ -207,6 +240,7 @@ data class EmojiSuggestionCandidate(
     override val isEligibleForUserRemoval: Boolean = false,
     override val icon: ImageVector? = null,
     override val sourceProvider: SuggestionProvider? = null,
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER,
 ) : SuggestionCandidate {
     override val text = emoji.value
     override val secondaryText = if (showName) emoji.name else null
@@ -243,4 +277,5 @@ data class GhostTextSuggestionCandidate(
     override val isEligibleForAutoCommit: Boolean = false
     override val isEligibleForUserRemoval: Boolean = false
     override val icon: ImageVector? = null
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
 }

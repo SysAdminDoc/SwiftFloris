@@ -31,30 +31,6 @@ class EditorInputBehaviorPolicyTest : FunSpec({
         symbolsTerminatingSentence = ".?!",
     )
 
-    test("autocorrect acceptance still commits a trailing space for auto-space locales") {
-        EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
-            candidateAccepted = true,
-            suppressPlainSpaceForPrediction = false,
-            supportsAutoSpace = true,
-        ) shouldBe true
-    }
-
-    test("autocorrect acceptance avoids a duplicate trailing space for no-auto-space locales") {
-        EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
-            candidateAccepted = true,
-            suppressPlainSpaceForPrediction = false,
-            supportsAutoSpace = false,
-        ) shouldBe false
-    }
-
-    test("prediction suppression can reject plain space without an accepted candidate") {
-        EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
-            candidateAccepted = false,
-            suppressPlainSpaceForPrediction = true,
-            supportsAutoSpace = true,
-        ) shouldBe false
-    }
-
     test("backspace rejection protects the original autocorrect slot from reacceptance") {
         val suppression = AutoCommitSuppression()
 

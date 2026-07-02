@@ -805,13 +805,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             return
         }
         // Skip handling changing to characters keyboard and double space periods
-        // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
-        if (EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
-                candidateAccepted = candidate != null,
-                suppressPlainSpaceForPrediction = suppressPlainSpace,
-                supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
-            )
-        ) {
+        if (shouldCommitPlainSpaceAfterSpacebar(candidate, suppressPlainSpace)) {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
         }
     }
@@ -855,15 +849,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
             }
         }
-        // TODO: this is whether we commit space after selecting candidate. Should be determined by SuggestionProvider
-        if (EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar(
-                candidateAccepted = candidate != null,
-                suppressPlainSpaceForPrediction = suppressPlainSpace,
-                supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
-            )
-        ) {
+        if (shouldCommitPlainSpaceAfterSpacebar(candidate, suppressPlainSpace)) {
             editorInstance.commitText(KeyCode.SPACE.toChar().toString())
         }
+    }
+
+    private fun shouldCommitPlainSpaceAfterSpacebar(
+        candidate: SuggestionCandidate?,
+        suppressPlainSpace: Boolean,
+    ): Boolean {
+        return CandidateCommitSideEffectPolicy.shouldCommitPlainSpaceAfterSpacebar(
+            candidate = candidate,
+            suppressPlainSpaceForPrediction = suppressPlainSpace,
+            supportsAutoSpace = subtypeManager.activeSubtype.primaryLocale.supportsAutoSpace,
+        )
     }
 
     /**
