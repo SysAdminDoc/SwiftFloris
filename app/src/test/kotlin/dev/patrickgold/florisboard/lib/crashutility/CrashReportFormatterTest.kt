@@ -24,8 +24,8 @@ class CrashReportFormatterTest : FunSpec({
     test("generated crash report uses SwiftFloris identity and redaction fields") {
         val report = CrashReportFormatter.formatReport(
             environment = CrashReportEnvironment(
-                versionNameMarkdown = "[1.9.53](https://example.invalid/release)",
-                versionCode = 2102,
+                versionNameMarkdown = "[1.9.54](https://example.invalid/release)",
+                versionCode = 2103,
                 applicationId = "io.github.sysadmindoc.swiftfloris.debug",
                 buildType = "debug",
                 buildCommitHash = "abc123",
@@ -37,7 +37,7 @@ class CrashReportFormatterTest : FunSpec({
             stacktraces = listOf(CrashUtility.Stacktrace("trace-1.stacktrace", "boom")),
         )
 
-        report shouldContain "- SwiftFloris [1.9.53](https://example.invalid/release) (2102)"
+        report shouldContain "- SwiftFloris [1.9.54](https://example.invalid/release) (2103)"
         report shouldContain "- Package: io.github.sysadmindoc.swiftfloris.debug"
         report shouldContain "- Build type: debug"
         report shouldContain "- Build commit: abc123"

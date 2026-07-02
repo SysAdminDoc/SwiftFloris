@@ -1,0 +1,1 @@
+Premium polish pass for setup and settings: shared controls now use consistent 44dp targets, square-radius shapes, ellipsized labels, and safer dropdown press handling. First-run setup has responsive footer wrapping and step state semantics. Home, Search, Snippets, and Voice settings use shared controls, with new Roborazzi baselines for setup and settings search.

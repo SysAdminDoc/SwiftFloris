@@ -44,8 +44,8 @@ def write_fixture(root: Path) -> None:
             projectMinSdk=26
             projectTargetSdk=36
             projectCompileSdk=37
-            projectVersionCode=2102
-            projectVersionName=1.9.53
+            projectVersionCode=2103
+            projectVersionName=1.9.54
             """
         ).strip()
         + "\n",
@@ -64,8 +64,8 @@ def write_fixture(root: Path) -> None:
     (root / "README.md").write_text(
         dedent(
             """
-            ![Version](https://img.shields.io/badge/version-v1.9.53-blue)
-            | Area | What's in v1.9.53 | Privacy posture |
+            ![Version](https://img.shields.io/badge/version-v1.9.54-blue)
+            | Area | What's in v1.9.54 | Privacy posture |
             |------|-------------------|-----------------|
             dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0
             - Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3.
@@ -75,7 +75,7 @@ def write_fixture(root: Path) -> None:
             - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available).
             # Gradle 9.6.1 (use the bundled wrapper)
             - **Visual regression:** Roborazzi 1.64.0, plugin alias active.
-            Current release: **v1.9.53**
+            Current release: **v1.9.54**
             """
         ).strip()
         + "\n",
@@ -98,13 +98,13 @@ def write_fixture(root: Path) -> None:
             | Android Gradle Plugin | `gradle/libs.versions.toml` `[versions] android-gradle-plugin` | 9.2.1 | resolves |
             | Kotlin | `gradle/libs.versions.toml` `[versions] kotlin` | 2.4.0 | fixed |
             | KSP | `gradle/libs.versions.toml` `[versions] ksp` | 2.3.9 | fixed |
-            git clone --branch v1.9.53 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
-            APK_PUBLISHED=app-release-v1.9.53.apk
-              - versionName: "1.9.53"
-                versionCode: 2102
-                commit: v1.9.53
-            CurrentVersion: "1.9.53"
-            CurrentVersionCode: 2102
+            git clone --branch v1.9.54 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+            APK_PUBLISHED=app-release-v1.9.54.apk
+              - versionName: "1.9.54"
+                versionCode: 2103
+                commit: v1.9.54
+            CurrentVersion: "1.9.54"
+            CurrentVersionCode: 2103
             """
         ).strip()
         + "\n",
@@ -114,11 +114,11 @@ def write_fixture(root: Path) -> None:
         dedent(
             """
             Builds:
-              - versionName: "1.9.53"
-                versionCode: 2102
-                commit: v1.9.53
-            CurrentVersion: "1.9.53"
-            CurrentVersionCode: 2102
+              - versionName: "1.9.54"
+                versionCode: 2103
+                commit: v1.9.54
+            CurrentVersion: "1.9.54"
+            CurrentVersionCode: 2103
             """
         ).strip()
         + "\n",
@@ -185,7 +185,7 @@ def main() -> int:
         write_fixture(fixture)
         repro = fixture / "docs" / "REPRODUCIBLE_BUILDS.md"
         repro.write_text(
-            repro.read_text(encoding="utf-8").replace("CurrentVersionCode: 2102", "CurrentVersionCode: 2101"),
+            repro.read_text(encoding="utf-8").replace("CurrentVersionCode: 2103", "CurrentVersionCode: 2102"),
             encoding="utf-8",
         )
         failing = run_checker(fixture)
@@ -197,7 +197,7 @@ def main() -> int:
         write_fixture(fixture)
         fdroid = fixture / "fdroid" / "io.github.sysadmindoc.swiftfloris.yml"
         fdroid.write_text(
-            fdroid.read_text(encoding="utf-8").replace("commit: v1.9.53", "commit: v1.9.52"),
+            fdroid.read_text(encoding="utf-8").replace("commit: v1.9.54", "commit: v1.9.53"),
             encoding="utf-8",
         )
         failing = run_checker(fixture)

@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.53-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.54-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.53 | Privacy posture |
+| Area | What's in v1.9.54 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc/F-Droid version-pin, repo-hygiene, root-crash-log, Kotlin build-cache CVE guard, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed theme/Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc/F-Droid version-pin, repo-hygiene, root-crash-log, Kotlin build-cache CVE guard, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0 | Audit-friendly |
 
 ## Distribution
 
@@ -331,6 +331,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.54** (2026-07-02) — Premium polish pass: shared Compose buttons, chips, bottom bars, dropdown-like fields, and long-press icon controls now use consistent 44dp targets, square-radius shapes, ellipsized labels, and safer press handling; first-run setup gained responsive footer wrapping and step state semantics; Home, Search, Snippets, and Voice settings now use shared controls; Settings search and setup gained committed Roborazzi baselines.
 - **v1.9.53** (2026-06-25) — Roadmap drain: release-channel freshness is now a blocking local gate, Android 17 CJK selected-candidate accessibility metadata, targetSdk 37 shadow preflight, sample addon APK validation in local release evidence, Kotlin build-cache CVE guard, runtime addon bundle-size rejection reasons, Tink 1.22.0 (security), AboutLibraries 15.0.3, deprecated `announceForAccessibility` migrated to Compose live-region, data-extraction rules verified by XML-parsed domain/path pairs, public trust docs tracked in git, destructive clipboard Room migrations replaced with row-preserving, addon provenance tap-to-copy JSON, one-tap privacy proof export plus privacy audit JSON save/share, provider-owned candidate trailing-space policy for Latin/CJK/emoji/media spacebar commits, categorized `runBlocking` allowlist budgets for main-thread composing bridges, crash-report environment/redaction fields and SwiftFloris crash-dialog report identity, EditorInfo sensitive-field replay tests, keyboard layout JSON validation, a new Snippet management Settings screen with Espanso YAML import, reduced-motion polish across Settings/setup transitions, safer snippet deletion, clipboard text-tile accessibility labels, unsaved-draft recovery in the custom layout editor, and bounded inline-autofill rendering that drops invalid host suggestions instead of crashing.
 - **v1.9.52** (2026-06-16) — Premium Settings polish: the Settings home now opens with one status-aware overview card, compact Search / Import / Privacy quick actions, and local-trust checks for no-network releases, local imports, and verifiable builds. Settings search now uses a calmer Material 3 field treatment and shows result counts before the list.
 - **v1.9.51** (2026-06-16) — Added spacebar touchpad cursor mode, migration assistant import guidance, source-code and release-verification links in Privacy posture, CLDR/Emoji version metadata gates, and the prepared F-Droid fdroiddata YAML recipe.
@@ -546,7 +547,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.53** (2026-06-25). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.54** (2026-07-02). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
