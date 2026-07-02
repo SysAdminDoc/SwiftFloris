@@ -17,6 +17,7 @@
 package org.florisboard.lib.compose
 
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Icon
@@ -53,8 +54,8 @@ fun FlorisChip(
                 overflow = TextOverflow.Ellipsis
             )
         },
-        modifier = modifier,
-        leadingIcon = {
+        modifier = modifier.defaultMinSize(minHeight = 44.dp),
+        leadingIcon = if (leadingIcons.isNotEmpty()) ({
             Row {
                 for (leadingIcon in leadingIcons) {
                     Icon(
@@ -66,8 +67,8 @@ fun FlorisChip(
                     )
                 }
             }
-        },
-        trailingIcon = {
+        }) else null,
+        trailingIcon = if (trailingIcons.isNotEmpty()) ({
             Row {
                 for (trailingIcon in trailingIcons) {
                     Icon(
@@ -79,6 +80,6 @@ fun FlorisChip(
                     )
                 }
             }
-        }
+        }) else null,
     )
 }

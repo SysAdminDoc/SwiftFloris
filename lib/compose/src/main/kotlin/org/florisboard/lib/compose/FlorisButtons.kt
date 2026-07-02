@@ -129,7 +129,7 @@ fun FlorisTextButton(
     colors: ButtonColors = ButtonDefaults.textButtonColors(),
 ) {
     TextButton(
-        modifier = modifier.defaultMinSize(minHeight = 40.dp),
+        modifier = modifier.defaultMinSize(minHeight = 44.dp),
         enabled = enabled,
         shape = shape,
         colors = colors,
@@ -186,8 +186,8 @@ fun FlorisIconButton(
     enabled: Boolean = true,
     colors: IconButtonColors = IconButtonDefaults.iconButtonColors(),
     interactionSource: MutableInteractionSource? = null,
-    shape: Shape = IconButtonDefaults.standardShape,
-    size: DpSize = DpSize(52.dp, 30.dp),
+    shape: Shape = MaterialTheme.shapes.small,
+    size: DpSize = DpSize(44.dp, 44.dp),
     content: @Composable () -> Unit,
 ) {
     // This is a modified version of https://cs.android.com/androidx/platform/frameworks/support/+/androidx-main:compose/material3/material3/src/commonMain/kotlin/androidx/compose/material3/IconButton.kt;l=235-266;drc=e6d33dd5d0a60001a5784d84123b05308d35f410

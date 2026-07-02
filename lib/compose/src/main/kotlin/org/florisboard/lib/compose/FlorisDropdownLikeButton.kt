@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -49,8 +50,10 @@ fun FlorisDropdownLikeButton(
         val interactionSource = remember { MutableInteractionSource() }
         val pressed by interactionSource.collectIsPressedAsState()
 
-        if (pressed) {
-            onClick()
+        LaunchedEffect(pressed) {
+            if (pressed) {
+                onClick()
+            }
         }
 
         JetPrefTextField(
