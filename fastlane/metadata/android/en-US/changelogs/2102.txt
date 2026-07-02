@@ -1,3 +1,3 @@
-Release evidence now guards Kotlin CVE-2026-53914 by requiring Gradle/Kotlin build caches off for release/repro builds until stable Kotlin 2.4.20+ and KSP land. Runtime addon enrollment rejects missing or over-cap bundle-size evidence with Settings reasons.
+Release evidence guards Kotlin CVE-2026-53914 by requiring Gradle/Kotlin caches off for release/repro builds until stable Kotlin 2.4.20+ and KSP land. targetSdk 37 shadow preflight now builds/tests without changing the release target. Runtime addon enrollment rejects over-cap bundles with Settings reasons.
 
-Also: compileSdk 37, Android 17 CJK metadata, Tink 1.22.0, AboutLibraries 15.0.3, provenance exports, sample addon APK validation, Roborazzi 1.64 baselines, glide benchmarks, sticker import/export, and inline-autofill reliability fixes.
+Also: compileSdk 37, Android 17 CJK metadata, Tink 1.22.0, AboutLibraries 15.0.3, provenance exports, addon validation, glide benchmarks, sticker import/export, and inline-autofill fixes.

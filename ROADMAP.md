@@ -29,13 +29,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 — Add a targetSdk 37 shadow build/replay preflight
-  Why: compileSdk is 37 while release target remains 36; a local shadow target gate catches source/test drift before a future target bump or device-only validation pass.
-  Evidence: `gradle.properties`; Android 17 behavior docs; existing `ImeVisibilityConfigurationPolicyTest` and `AndroidAdaptiveImeWindowTest`.
-  Touches: Gradle project properties/build scripts, release evidence or a dedicated local preflight script, API 37 behavior tests, README verification notes.
-  Acceptance: A documented local command temporarily builds/tests with `projectTargetSdk=37` without changing the release target, covers the existing API 37 behavior replay tests, and reports clear pass/fail evidence.
-  Complexity: M
-
 - [ ] P2 — Add save/share export paths for the local privacy audit log
   Why: The audit bundle is stable JSON but `PrivacyAuditScreen` only copies it to the clipboard; reviewers need an explicit file/share route that avoids clipboard mediation.
   Evidence: `AddonAuditExport.kt`; `PrivacyAuditScreen.kt`; `strings.xml`; commercial keyboard trust surfaces; local-only privacy posture.

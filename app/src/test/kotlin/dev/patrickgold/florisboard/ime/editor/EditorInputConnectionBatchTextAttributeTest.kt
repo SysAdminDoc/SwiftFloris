@@ -29,6 +29,7 @@ import java.lang.reflect.Method
 import java.lang.reflect.Proxy
 
 @RunWith(AndroidJUnit4::class)
+@Config(sdk = [35])
 class EditorInputConnectionBatchTextAttributeTest {
     @Test
     fun selectedSuggestionAttributeGateRequiresSelectionAndApi37() {
@@ -38,7 +39,6 @@ class EditorInputConnectionBatchTextAttributeTest {
     }
 
     @Test
-    @Config(sdk = [35])
     fun selectedCjkFinalizeFallsBackBeforeApi37() {
         val recorder = AttributeRecordingInputConnection()
 
