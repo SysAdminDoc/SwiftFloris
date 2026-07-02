@@ -179,10 +179,28 @@ $gradleReleaseEvidenceArgs = @(
     "--no-daemon",
     "--no-build-cache",
     "--rerun-tasks",
-    "-Dorg.gradle.caching=false"
+    "-Dorg.gradle.caching=false",
+    "-Dkotlin.caching.enabled=false"
 )
 $gradleMitigation = $gradleReleaseEvidenceArgs -join " "
 Add-Summary "Kotlin build-cache mitigation: gradle-local-gates use $gradleMitigation; remove after final Kotlin 2.4.20+ and compatible KSP ship."
+
+function Get-KotlinBuildCacheGuardArguments {
+    param(
+        [string]$Label,
+        [string[]]$GradleArguments
+    )
+
+    $guardArguments = @(
+        "scripts/check-kotlin-build-cache-cve-guard.py",
+        "--label",
+        $Label
+    )
+    foreach ($gradleArgument in $GradleArguments) {
+        $guardArguments += "--gradle-arg=$gradleArgument"
+    }
+    return $guardArguments
+}
 
 $releaseArgs = @((Convert-ToGitBashPath "scripts\check-release-front-door.sh"))
 if ($StrictRelease) {
@@ -196,6 +214,7 @@ Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public
 Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-integrity.py")
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))
+Invoke-EvidenceCommand "kotlin-build-cache-cve-guard" $python (Get-KotlinBuildCacheGuardArguments "gradle-local-gates" $gradleReleaseEvidenceArgs)
 
 Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") ($gradleReleaseEvidenceArgs + @(
     ":app:verifyNoInternetPermission",

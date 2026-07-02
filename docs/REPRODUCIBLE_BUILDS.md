@@ -37,19 +37,23 @@ sets the maintainer host JDK path explicitly and records the exact command logs
 under `build/release-evidence/<timestamp>/`.
 
 The release-evidence Gradle gates run with
-`--no-build-cache --rerun-tasks -Dorg.gradle.caching=false` while SwiftFloris is
-on Kotlin `2.4.0`. This is intentionally scoped to release evidence so normal
-developer builds keep their existing `gradle.properties` cache behavior. Remove
-the mitigation only after the repo adopts a final Kotlin `2.4.20+` compiler with
-the build-cache CVE fix and a compatible KSP release.
+`--no-build-cache --rerun-tasks -Dorg.gradle.caching=false -Dkotlin.caching.enabled=false`
+while SwiftFloris is on Kotlin `2.4.0`, and
+`scripts/check-kotlin-build-cache-cve-guard.py` fails release/reproducible
+invocations that drop those flags before the fix is available. This is
+intentionally scoped to release evidence so normal developer builds keep their
+existing `gradle.properties` cache behavior. Remove the mitigation only after
+the repo adopts a final Kotlin `2.4.20+` compiler with the build-cache CVE fix
+and a compatible KSP release.
 
 ## Local self-verification
 
 `scripts/verify-reproducible-apk.sh` is the repository-local "build twice,
 compare APK bytes" guard. It creates two detached Git worktrees at the same
 commit, updates submodules, runs release assembly in both clean trees with
-Gradle build cache disabled and tasks re-run, then compares the two APKs
-byte-for-byte.
+Gradle and Kotlin build caches disabled and tasks re-run, then compares the two
+APKs byte-for-byte. The same Kotlin build-cache CVE guard runs before either
+worktree build starts.
 
 `scripts/release-evidence.ps1` runs this verifier before publication unless the
 maintainer is doing a focused smoke run with `-SkipReproducibleApk`. On mismatch,
@@ -64,9 +68,8 @@ metadata.
   resign with their key for the F-Droid track. Reproducibility verification
   compares *unsigned* APK bytes via `apksigner verify --print-certs`.
 - **Build timestamps**: Gradle and AGP both default to deterministic timestamps
-  for AAB / APK ZIP entries when `org.gradle.caching` is on and the AGP
-  reproducibility flags are honored. SwiftFloris does not currently override
-  these defaults (good).
+  for AAB / APK ZIP entries when AGP reproducibility flags are honored.
+  SwiftFloris does not currently override these defaults (good).
 
 ## How to verify locally
 

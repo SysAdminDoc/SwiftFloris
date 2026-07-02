@@ -13,6 +13,13 @@ if [[ -z "$ARTIFACT_DIR" ]]; then
   ARTIFACT_DIR="$ROOT/build/reproducible-apk"
 fi
 WORK_ROOT="$(mktemp -d "${RUNNER_TEMP:-/tmp}/swiftfloris-repro.XXXXXX")"
+GRADLE_REPRO_ARGS=(
+  --no-daemon
+  --no-build-cache
+  --rerun-tasks
+  -Dorg.gradle.caching=false
+  -Dkotlin.caching.enabled=false
+)
 
 cleanup() {
   git -C "$ROOT" worktree remove --force "$WORK_ROOT/first" >/dev/null 2>&1 || true
@@ -37,7 +44,7 @@ build_apk() {
   (
     cd "$tree"
     chmod +x ./gradlew
-    ./gradlew --no-daemon --no-build-cache --rerun-tasks clean :app:assembleRelease
+    ./gradlew "${GRADLE_REPRO_ARGS[@]}" clean :app:assembleRelease
   )
 
   local apk
@@ -47,6 +54,17 @@ build_apk() {
     exit 1
   fi
   cp "$apk" "$apk_out"
+}
+
+run_kotlin_build_cache_guard() {
+  local args=()
+  local gradle_arg
+  for gradle_arg in "${GRADLE_REPRO_ARGS[@]}"; do
+    args+=("--gradle-arg=$gradle_arg")
+  done
+  python3 "$ROOT/scripts/check-kotlin-build-cache-cve-guard.py" \
+    --label "reproducible-apk" \
+    "${args[@]}"
 }
 
 write_entry_manifest() {
@@ -70,6 +88,7 @@ PY
 
 add_worktree first
 add_worktree second
+run_kotlin_build_cache_guard
 
 FIRST_APK="$ARTIFACT_DIR/first-release.apk"
 SECOND_APK="$ARTIFACT_DIR/second-release.apk"

@@ -92,13 +92,6 @@ gated on external deliverables or hardware testing live in
 
 ### P1
 
-- [ ] P1 — Add a Kotlin build-cache CVE guard until stable 2.4.20+ KSP upgrade
-  Why: Kotlin `2.4.0` is affected by CVE-2026-53914; release builds disable Gradle caching today, but a future property or command change could re-enable the vulnerable cache path before a stable Kotlin/KSP upgrade exists.
-  Evidence: NVD CVE-2026-53914; `gradle/libs.versions.toml`; `scripts/release-evidence.ps1`; `scripts/verify-reproducible-apk.sh`; `docs/REPRODUCIBLE_BUILDS.md`.
-  Touches: release-evidence scripts, reproducible-build verifier, Gradle/version-catalog metadata, security/reproducible-build docs, script tests.
-  Acceptance: A local gate fails when Kotlin is `< 2.4.20` and Gradle build cache is enabled for release/reproducible builds, records the mitigation in release evidence, and documents removal criteria after stable Kotlin `2.4.20+` plus compatible KSP pass the full local suite.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 — Correct in-app crash dialog report identity and redaction copy
