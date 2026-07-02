@@ -1178,6 +1178,15 @@
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
     <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere — it never leaves the device on its own.</string>
     <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
+    <string name="settings__privacy_audit__save" comment="Action title">Save JSON file</string>
+    <string name="settings__privacy_audit__save__summary" comment="Action summary">Creates a local application/json document that you choose. SwiftFloris does not upload it.</string>
+    <string name="settings__privacy_audit__save_toast" comment="Toast after saving">Audit log saved as JSON.</string>
+    <string name="settings__privacy_audit__save_cancelled_toast" comment="Toast after cancelling save">Audit log save cancelled.</string>
+    <string name="settings__privacy_audit__save_failed_toast" comment="Toast after save failure">Couldn\'t save the audit log.</string>
+    <string name="settings__privacy_audit__share" comment="Action title">Share JSON</string>
+    <string name="settings__privacy_audit__share__summary" comment="Action summary">Opens the Android share sheet with the same local JSON bundle. Choose a destination yourself.</string>
+    <string name="settings__privacy_audit__share_chooser_title" comment="Share sheet title">Share audit log</string>
+    <string name="settings__privacy_audit__share_failed_toast" comment="Toast after share failure">Couldn\'t open the share sheet.</string>
     <string name="settings__privacy_audit__clear" comment="Action title">Clear log</string>
     <string name="settings__privacy_audit__clear__summary" comment="Action summary">Drops every recorded entry. The log starts fresh from the next call.</string>
     <string name="settings__privacy_audit__clear_toast" comment="Toast after clearing">Audit log cleared.</string>
