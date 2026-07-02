@@ -29,11 +29,68 @@ body:
         4. See crash
     validations:
       required: true
+  - type: input
+    id: florisversion
+    attributes:
+      label: SwiftFloris Version
+      placeholder: e.g. 1.9.53 (2102)
+    validations:
+      required: true
+  - type: dropdown
+    id: installsource
+    attributes:
+      label: Install Source
+      options:
+        - GitHub Releases
+        - Obtainium
+        - F-Droid
+        - Self-built release APK
+        - Self-built debug APK
+        - Other / unknown
+    validations:
+      required: true
+  - type: input
+    id: androidversion
+    attributes:
+      label: Android Version
+      placeholder: e.g. Android 16, stock ROM
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device Model
+      placeholder: e.g. Samsung Galaxy S25 Ultra / SM-S938B
+    validations:
+      required: true
+  - type: dropdown
+    id: reproducibility
+    attributes:
+      label: Reproducibility
+      options:
+        - Every time
+        - Often
+        - Intermittent
+        - Once
+        - Unknown
+    validations:
+      required: true
+  - type: dropdown
+    id: crashlogsource
+    attributes:
+      label: Crash Log Source
+      options:
+        - In-app crash dialog
+        - Android crash prompt
+        - adb logcat
+        - Other / unknown
+    validations:
+      required: true
   - type: textarea
     id: crashlog
     attributes:
       label: Crash log
-      description: Paste the generated crash log below
+      description: Paste the generated crash log below after redacting private typed content.
     validations:
       required: true
   - type: checkboxes
@@ -45,7 +102,7 @@ body:
           required: true
         - label: "I have read and understood the [SwiftFloris contribution notes](https://github.com/SysAdminDoc/SwiftFloris#contributing)."
           required: true
-        - label: "I have removed personal dictionary content, clipboard content, private APKs, and unrelated device logs unless a maintainer explicitly asked for them."
+        - label: "I have removed typed text, clipboard content, personal dictionary content, private APK paths, and unrelated device logs unless a maintainer explicitly asked for them."
           required: true
         - label: "I have taken the time to fill in all the required details. I understand that the crash report will be dismissed otherwise."
           required: true

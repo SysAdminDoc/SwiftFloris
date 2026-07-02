@@ -44,13 +44,6 @@ gated on external deliverables or hardware testing live in
 
 ### P2
 
-- [ ] P2 — Add environment and privacy-redaction fields to crash reports
-  Why: Crash reports need the same version/install/device context as bug reports, plus explicit redaction prompts because keyboard logs can contain private typed content.
-  Evidence: `.github/ISSUE_TEMPLATE/bug_report.yml`; `.github/ISSUE_TEMPLATE/crash_report.yml`; `docs/SECURITY.md`; `docs/PRIVACY_AND_AI.md`.
-  Touches: `.github/ISSUE_TEMPLATE/crash_report.yml`, `docs/SECURITY.md` only if reporting guidance changes.
-  Acceptance: Crash reports require SwiftFloris version, install source, Android version, device model, reproducibility, crash-log source, and a checkbox confirming typed text, clipboard content, personal dictionaries, private APK paths, and unrelated device logs were removed.
-  Complexity: S
-
 ### P3
 
 - [ ] P3 — Replace stale `RESEARCH_FEATURE_PLAN.md` source references
@@ -65,13 +58,6 @@ gated on external deliverables or hardware testing live in
 ### P1
 
 ### P2
-
-- [ ] P2 — Correct in-app crash dialog report identity and redaction copy
-  Why: The generated crash report still starts with `FlorisBoard` even though public issue templates and docs use SwiftFloris; crash copy should also remind users to redact typed text before clipboard/GitHub handoff.
-  Evidence: `CrashDialogActivity.kt`; `strings.xml`; `.github/ISSUE_TEMPLATE/crash_report.yml`; `README.md`.
-  Touches: `CrashDialogActivity.kt`, crash dialog strings/layout if needed, crash utility tests or snapshot coverage.
-  Acceptance: Generated crash reports use `SwiftFloris` plus version code, include install/build context where locally available, link/open the crash-report template directly, show a redaction reminder before copy, and have regression coverage preventing a `FlorisBoard` product-name relapse in generated report text.
-  Complexity: S
 
 ### P3
 

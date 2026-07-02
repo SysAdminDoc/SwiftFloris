@@ -1,3 +1,3 @@
-Privacy audit export now supports copy, Save JSON, and Android share with user-chosen destinations. Candidate spacing and production runBlocking bridges are policy-gated: Latin keeps trailing spaces, CJK/media avoid them, and main-thread bridges carry latency budgets. Release evidence guards Kotlin CVE-2026-53914 and targetSdk 37 preflight.
+Privacy audit export now supports copy, Save JSON, and Android share. Candidate spacing and runBlocking bridges are policy-gated with latency budgets. Crash reports require version/install/device/repro/source fields, generated text says SwiftFloris, and redaction reminders cover typed text, clipboard, dictionaries, APK paths, and logs.
 
-Also: compileSdk 37, Tink 1.22.0, AboutLibraries 15.0.3, addon validation, snippets.
+Also: compileSdk 37, Tink 1.22.0, AboutLibraries 15.0.3, addon validation, Kotlin CVE guard.

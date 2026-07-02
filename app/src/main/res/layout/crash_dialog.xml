@@ -33,6 +33,13 @@
                 android:padding="8dp"
                 android:text="@string/crash_dialog__report_instructions"/>
 
+            <TextView
+                android:id="@+id/redaction_warning"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="8dp"
+                android:text="@string/crash_dialog__redaction_warning"/>
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -67,7 +74,7 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:padding="8dp"
-            android:text="@string/crash_dialog__open_issue_tracker" tools:ignore="ButtonStyle"/>
+            android:text="@string/crash_dialog__open_crash_report" tools:ignore="ButtonStyle"/>
     </LinearLayout>
 
     <LinearLayout

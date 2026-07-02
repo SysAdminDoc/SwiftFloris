@@ -3,6 +3,7 @@
 
     <string name="florisboard__repo_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris</string>
     <string name="florisboard__issue_tracker_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/issues</string>
+    <string name="florisboard__crash_report_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/issues/new?template=crash_report.yml</string>
     <string name="florisboard__privacy_policy_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris</string>
     <string name="florisboard__changelog_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/releases/v{version}</string>
     <string name="florisboard__privacy_and_ai_url" translatable="false">https://github.com/SysAdminDoc/SwiftFloris/blob/master/docs/PRIVACY_AND_AI.md</string>

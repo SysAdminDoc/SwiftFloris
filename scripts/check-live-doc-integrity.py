@@ -34,6 +34,27 @@ FORBIDDEN_CANONICAL_REFS = [
 
 LINK_PATTERN = re.compile(r"\[([^\]]*)\]\(([^)]+)\)")
 
+CRASH_REPORT_TEMPLATE = ".github/ISSUE_TEMPLATE/crash_report.yml"
+REQUIRED_CRASH_TEMPLATE_IDS = [
+    "description",
+    "reproduce",
+    "florisversion",
+    "installsource",
+    "androidversion",
+    "device",
+    "reproducibility",
+    "crashlogsource",
+    "crashlog",
+    "checklist",
+]
+REQUIRED_CRASH_REDACTION_TERMS = [
+    "typed text",
+    "clipboard content",
+    "personal dictionary content",
+    "private apk paths",
+    "unrelated device logs",
+]
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Check live Markdown for broken links and stale references.")
@@ -137,6 +158,34 @@ def check_file(path: Path, root: Path, tracked_paths: set[str] | None) -> list[s
     return errors
 
 
+def check_crash_report_template(root: Path) -> list[str]:
+    template_path = root / CRASH_REPORT_TEMPLATE
+    if not template_path.exists():
+        return [f"{CRASH_REPORT_TEMPLATE}: missing crash report template"]
+
+    try:
+        text = template_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        return [f"{CRASH_REPORT_TEMPLATE}: cannot read ({exc})"]
+
+    errors: list[str] = []
+    for field_id in REQUIRED_CRASH_TEMPLATE_IDS:
+        if re.search(rf"^\s*id:\s*{re.escape(field_id)}\s*$", text, flags=re.MULTILINE) is None:
+            errors.append(f"{CRASH_REPORT_TEMPLATE}: missing required field id '{field_id}'")
+
+    lower_text = text.lower()
+    for term in REQUIRED_CRASH_REDACTION_TERMS:
+        if term not in lower_text:
+            errors.append(f"{CRASH_REPORT_TEMPLATE}: redaction checklist missing '{term}'")
+
+    if "SwiftFloris Version" not in text:
+        errors.append(f"{CRASH_REPORT_TEMPLATE}: version field must name SwiftFloris")
+    if "Crash Log Source" not in text:
+        errors.append(f"{CRASH_REPORT_TEMPLATE}: crash-log source field must be explicit")
+
+    return errors
+
+
 def main() -> int:
     root = Path(parse_args().root).resolve()
     tracked_paths = collect_tracked_paths(root)
@@ -144,6 +193,7 @@ def main() -> int:
     all_errors: list[str] = []
     for md in files:
         all_errors.extend(check_file(md, root, tracked_paths))
+    all_errors.extend(check_crash_report_template(root))
 
     if all_errors:
         for error in all_errors:

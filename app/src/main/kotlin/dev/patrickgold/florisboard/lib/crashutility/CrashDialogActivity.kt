@@ -21,23 +21,24 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.widget.Button
 import android.widget.TextView
 import android.widget.Toast
 import android.widget.Toolbar
 import androidx.activity.ComponentActivity
+import androidx.core.net.toUri
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
-import androidx.core.net.toUri
-import org.florisboard.lib.android.stringRes
 import dev.patrickgold.florisboard.lib.devtools.Devtools
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KProperty
+import org.florisboard.lib.android.stringRes
 
 private class SafePreferenceInstanceWrapper : ReadOnlyProperty<Any?, FlorisPreferenceModel?> {
     val cachedPreferenceModel = try {
@@ -53,7 +54,7 @@ private class SafePreferenceInstanceWrapper : ReadOnlyProperty<Any?, FlorisPrefe
 
 class CrashDialogActivity : ComponentActivity() {
     private var stacktraces: List<CrashUtility.Stacktrace> = listOf()
-    private var errorReport: StringBuilder = StringBuilder()
+    private var errorReport: String = ""
     private val prefs by SafePreferenceInstanceWrapper()
 
     private val stacktrace by lazy { findViewById<TextView>(R.id.stacktrace) }
@@ -83,29 +84,25 @@ class CrashDialogActivity : ComponentActivity() {
             }
             append(")")
         }
-        errorReport.apply {
-            appendLine("#### Environment information")
-            appendLine("- FlorisBoard $versionName (${BuildConfig.VERSION_CODE})")
-            appendLine("- Device: ${Devtools.getDeviceName()}")
-            appendLine("- Android: ${Devtools.getAndroidVersion()}")
-            appendLine()
-            appendLine("#### Attached logs and stacktrace files")
-            appendCollapsibleSection(
-                summary = "Detailed info (Debug log header)",
-                details = Devtools.generateDebugLog(this@CrashDialogActivity, prefs, includeLogcat = false),
-            )
-            appendLine()
-            if (stacktraces.isNotEmpty()) {
-                stacktraces.forEach {
-                    appendCollapsibleSection(it.name, it.details)
-                    appendLine()
-                }
-            } else {
-                flogWarning(LogTopic.CRASH_UTILITY) {
-                    "Stacktrace file list is empty."
-                }
+        if (stacktraces.isEmpty()) {
+            flogWarning(LogTopic.CRASH_UTILITY) {
+                "Stacktrace file list is empty."
             }
         }
+        errorReport = CrashReportFormatter.formatReport(
+            environment = CrashReportEnvironment(
+                versionNameMarkdown = versionName,
+                versionCode = BuildConfig.VERSION_CODE,
+                applicationId = BuildConfig.APPLICATION_ID,
+                buildType = BuildConfig.BUILD_TYPE,
+                buildCommitHash = BuildConfig.BUILD_COMMIT_HASH,
+                installSource = resolveInstallSource(),
+                deviceName = Devtools.getDeviceName(),
+                androidVersion = Devtools.getAndroidVersion(),
+            ),
+            debugLogHeader = Devtools.generateDebugLog(this@CrashDialogActivity, prefs, includeLogcat = false),
+            stacktraces = stacktraces,
+        )
         stacktrace.text = errorReport
 
         reportInstructions.text =
@@ -116,7 +113,7 @@ class CrashDialogActivity : ComponentActivity() {
         copyToClipboard.setOnClickListener {
             val clipboardManager = getSystemService(Context.CLIPBOARD_SERVICE)
             val toastMessage: String = if (clipboardManager != null && clipboardManager is ClipboardManager) {
-                clipboardManager.setPrimaryClip(ClipData.newPlainText(errorReport, errorReport))
+                clipboardManager.setPrimaryClip(ClipData.newPlainText(CrashReportFormatter.PRODUCT_NAME, errorReport))
                 resources.getString(R.string.crash_dialog__copy_to_clipboard_success)
             } else {
                 resources.getString(R.string.crash_dialog__copy_to_clipboard_failure)
@@ -127,7 +124,7 @@ class CrashDialogActivity : ComponentActivity() {
         openBugReportForm.setOnClickListener {
             val browserIntent = Intent(
                 Intent.ACTION_VIEW,
-                resources.getString(R.string.florisboard__issue_tracker_url).toUri()
+                resources.getString(R.string.florisboard__crash_report_url).toUri()
             )
             startActivity(browserIntent)
         }
@@ -137,17 +134,14 @@ class CrashDialogActivity : ComponentActivity() {
         }
     }
 
-    /**
-     * Rules for collapsible markdown on GitHub:
-     *  https://gist.github.com/pierrejoubert73/902cc94d79424356a8d20be2b382e1ab
-     */
-    private fun StringBuilder.appendCollapsibleSection(summary: String, details: String) {
-        this.appendLine("<details>")
-        this.append("<summary>").append(summary).appendLine("</summary>")
-        this.appendLine()
-        this.appendLine("```")
-        this.appendLine(details)
-        this.appendLine("```")
-        this.appendLine("</details>")
+    private fun resolveInstallSource(): String {
+        return runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                packageManager.getInstallSourceInfo(packageName).installingPackageName
+            } else {
+                @Suppress("DEPRECATION")
+                packageManager.getInstallerPackageName(packageName)
+            }
+        }.getOrNull()?.takeUnless { it.isBlank() } ?: "unknown / sideload"
     }
 }
