@@ -76,6 +76,12 @@ data class EmojiData(
         private const val EMOJI_VERSION_PREFIX = "# EMOJI-VERSION: "
 
         private fun loadEmojiDataMap(context: Context, path: String): EmojiData {
+            return context.assets.bufferedReader(path).useLines { lines ->
+                parseEmojiDataLines(lines)
+            }
+        }
+
+        internal fun parseEmojiDataLines(lines: Sequence<String>): EmojiData {
             val byCategory = newByCategory()
             val bySkinTone = newBySkinTone()
 
@@ -93,65 +99,63 @@ data class EmojiData(
                 emojiEditorList = null
             }
 
-            context.assets.bufferedReader(path).useLines { lines ->
-                for (line in lines) {
-                    if (line.startsWith("#")) {
-                        when {
-                            line.startsWith(CLDR_VERSION_PREFIX) ->
-                                cldrVersion = line.removePrefix(CLDR_VERSION_PREFIX).trim()
-                            line.startsWith(EMOJI_VERSION_PREFIX) ->
-                                emojiVersion = line.removePrefix(EMOJI_VERSION_PREFIX).trim()
-                        }
-                    } else if (line.startsWith("[")) {
+            for (line in lines) {
+                if (line.startsWith("#")) {
+                    when {
+                        line.startsWith(CLDR_VERSION_PREFIX) ->
+                            cldrVersion = line.removePrefix(CLDR_VERSION_PREFIX).trim()
+                        line.startsWith(EMOJI_VERSION_PREFIX) ->
+                            emojiVersion = line.removePrefix(EMOJI_VERSION_PREFIX).trim()
+                    }
+                } else if (line.startsWith("[")) {
+                    commitEmojiEditorList()
+                    skipVariations = false
+                    ec = EmojiCategory.entries.find { it.id == line.slice(1 until (line.length - 1)) }
+                } else if (line.trim().isEmpty() || ec == null) {
+                    // Empty line
+                    continue
+                } else {
+                    val isTabLine = line.startsWith("\t")
+                    if (!isTabLine) {
                         commitEmojiEditorList()
                         skipVariations = false
-                        ec = EmojiCategory.entries.find { it.id == line.slice(1 until (line.length - 1)) }
-                    } else if (line.trim().isEmpty() || ec == null) {
-                        // Empty line
+                    } else if (skipVariations) {
+                        // This variation belongs to a base that was dropped as malformed.
                         continue
-                    } else {
-                        val isTabLine = line.startsWith("\t")
-                        if (!isTabLine) {
-                            commitEmojiEditorList()
-                            skipVariations = false
-                        } else if (skipVariations) {
-                            // This variation belongs to a base that was dropped as malformed.
+                    }
+                    // Assume it is a data line
+                    val data = line.split(";")
+                    if (data.size == 3) {
+                        val value = data[0].trim()
+                        // ROADMAP section 6 N17.1 - reject malformed asset lines
+                        // whose codepoint column is blank. Downstream
+                        // Paint.hasGlyph("") throws and crashes the
+                        // palette on first render; the bundled assets
+                        // SHOULDN'T contain such lines but a future
+                        // contributor / addon-supplied asset should
+                        // never be able to crash the IME this way.
+                        if (value.isEmpty()) {
+                            // If the malformed line is the BASE of a set, drop the whole
+                            // set: skip its following variation lines so they don't
+                            // reseed a bogus standalone emoji with the wrong name.
+                            if (!isTabLine) skipVariations = true
                             continue
                         }
-                        // Assume it is a data line
-                        val data = line.split(";")
-                        if (data.size == 3) {
-                            val value = data[0].trim()
-                            // ROADMAP §6 N17.1 — reject malformed asset lines
-                            // whose codepoint column is blank. Downstream
-                            // Paint.hasGlyph("") throws and crashes the
-                            // palette on first render; the bundled assets
-                            // SHOULDN'T contain such lines but a future
-                            // contributor / addon-supplied asset should
-                            // never be able to crash the IME this way.
-                            if (value.isEmpty()) {
-                                // If the malformed line is the BASE of a set, drop the whole
-                                // set: skip its following variation lines so they don't
-                                // reseed a bogus standalone emoji with the wrong name.
-                                if (!isTabLine) skipVariations = true
-                                continue
-                            }
-                            val base = emojiEditorList?.first()
-                            val emoji = Emoji(
-                                value = value,
-                                name = base?.name ?: data[1].trim(),
-                                keywords = data[2].split("|").map { it.trim() },
-                            )
-                            if (emojiEditorList != null) {
-                                emojiEditorList!!.add(emoji)
-                            } else {
-                                emojiEditorList = mutableListOf(emoji)
-                            }
+                        val base = emojiEditorList?.first()
+                        val emoji = Emoji(
+                            value = value,
+                            name = base?.name ?: data[1].trim(),
+                            keywords = data[2].split("|").map { it.trim() },
+                        )
+                        if (emojiEditorList != null) {
+                            emojiEditorList!!.add(emoji)
+                        } else {
+                            emojiEditorList = mutableListOf(emoji)
                         }
                     }
                 }
-                commitEmojiEditorList()
             }
+            commitEmojiEditorList()
 
             for (category in byCategory.keys) {
                 for (emojiSet in byCategory[category]!!) {
