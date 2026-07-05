@@ -182,6 +182,9 @@ object SettingsSearchIndex {
         entry("gestures.glide-sensitivity", R.string.settings__gestures__title, R.string.pref__glide__sensitivity__label, destination = SettingsSearchDestination.GESTURES, keywords = "swipe trace shape writing threshold"),
         entry("gestures.trail", R.string.settings__gestures__title, R.string.pref__glide__show_trail__label, destination = SettingsSearchDestination.GESTURES, keywords = "trace shape writing path"),
         entry("gestures.symbol-flick", R.string.settings__gestures__title, R.string.pref__gestures__symbol_flick_enabled__label, destination = SettingsSearchDestination.GESTURES, keywords = "punctuation programmer hinted symbols"),
+        entry("gestures.spacebar-sensitivity", R.string.settings__gestures__title, R.string.pref__gestures__space_bar_swipe_sensitivity__label, destination = SettingsSearchDestination.GESTURES, keywords = "spacebar cursor touchpad swipe threshold"),
+        entry("gestures.delete-sensitivity", R.string.settings__gestures__title, R.string.pref__gestures__delete_key_swipe_sensitivity__label, destination = SettingsSearchDestination.GESTURES, keywords = "backspace delete swipe threshold"),
+        entry("gestures.language-switch-sensitivity", R.string.settings__gestures__title, R.string.pref__gestures__language_switch_swipe_sensitivity__label, destination = SettingsSearchDestination.GESTURES, keywords = "language subtype switch swipe threshold"),
 
         entry("voice", R.string.settings__voice_input__title, R.string.settings__voice_input__title, R.string.settings__home__voice_input_summary, SettingsSearchDestination.VOICE_INPUT, "futo microphone whisper vosk dictation"),
         entry("voice.engine", R.string.settings__voice_input__title, R.string.settings__voice_input__recognition_engine_preference, destination = SettingsSearchDestination.VOICE_INPUT),

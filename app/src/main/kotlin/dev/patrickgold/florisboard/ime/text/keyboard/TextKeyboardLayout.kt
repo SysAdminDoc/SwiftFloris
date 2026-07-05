@@ -98,6 +98,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeGesture
+import dev.patrickgold.florisboard.ime.text.gestures.SwipeSensitivityPolicy
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -395,6 +396,9 @@ fun TextKeyboardLayout(
         }
     }
 }
+
+private val SwipeAction.isSubtypeSwitchAction: Boolean
+    get() = this == SwipeAction.SWITCH_TO_PREV_SUBTYPE || this == SwipeAction.SWITCH_TO_NEXT_SUBTYPE
 
 private val SwipeGesture.Direction.isCardinal: Boolean
     get() = when (this) {
@@ -745,6 +749,31 @@ private class TextKeyboardLayoutController(
         editorInstance.activeInfo.isRichInputEditor &&
         keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD
 
+    private fun swipeSensitivityFor(pointer: TouchPointer): Int {
+        val initialCode = pointer.initialKey?.computedData?.code
+        val activeCode = pointer.activeKey?.computedData?.code
+        return when {
+            initialCode == KeyCode.DELETE -> prefs.gestures.deleteKeySwipeSensitivity.get()
+            initialCode == KeyCode.SPACE || initialCode == KeyCode.CJK_SPACE -> {
+                prefs.gestures.spaceBarSwipeSensitivity.get()
+            }
+            initialCode == KeyCode.SHIFT && (activeCode == KeyCode.SPACE || activeCode == KeyCode.CJK_SPACE) -> {
+                prefs.gestures.spaceBarSwipeSensitivity.get()
+            }
+            !isGlideEnabled && usesLanguageSwitchSwipeAction() -> {
+                prefs.gestures.languageSwitchSwipeSensitivity.get()
+            }
+            else -> SwipeSensitivityPolicy.DEFAULT_SENSITIVITY
+        }
+    }
+
+    private fun usesLanguageSwitchSwipeAction(): Boolean {
+        return prefs.gestures.swipeUp.get().isSubtypeSwitchAction ||
+            prefs.gestures.swipeDown.get().isSubtypeSwitchAction ||
+            prefs.gestures.swipeLeft.get().isSubtypeSwitchAction ||
+            prefs.gestures.swipeRight.get().isSubtypeSwitchAction
+    }
+
     fun onTouchEventInternal(event: MotionEvent) {
         flogDebug { "event=$event" }
         swipeGestureDetector.onTouchEvent(event)
@@ -811,7 +840,14 @@ private class TextKeyboardLayoutController(
                             }
                             || pointer.initialKey?.computedData?.code == KeyCode.SPACE
                             || pointer.initialKey?.computedData?.code == KeyCode.CJK_SPACE))
-                        if (swipeGestureDetector.onTouchMove(event, pointer, alwaysTriggerOnMove) || pointer.hasTriggeredGestureMove) {
+                        if (
+                            swipeGestureDetector.onTouchMove(
+                                event,
+                                pointer,
+                                alwaysTriggerOnMove,
+                                swipeSensitivityFor(pointer),
+                            ) || pointer.hasTriggeredGestureMove
+                        ) {
                             pointer.hasTriggeredGestureMove = true
                             pointer.activeKey?.let { activeKey ->
                                 inputEventDispatcher.sendCancel(activeKey.computedDataOnDown)
@@ -828,7 +864,13 @@ private class TextKeyboardLayoutController(
                 val pointer = pointerMap.findById(pointerId)
                 if (pointer != null) {
                     pointer.index = pointerIndex
-                    if (swipeGestureDetector.onTouchUp(event, pointer) || pointer.hasTriggeredGestureMove) {
+                    if (
+                        swipeGestureDetector.onTouchUp(
+                            event,
+                            pointer,
+                            swipeSensitivityFor(pointer),
+                        ) || pointer.hasTriggeredGestureMove
+                    ) {
                         if (pointer.hasTriggeredGestureMove && pointer.initialKey?.computedData?.code == KeyCode.DELETE) {
                             val selection = editorInstance.activeContent.selection
                             if (selection.isSelectionMode) {
@@ -848,7 +890,13 @@ private class TextKeyboardLayoutController(
                 for (pointer in pointerMap) {
                     if (pointer.id == pointerId) {
                         pointer.index = pointerIndex
-                        if (swipeGestureDetector.onTouchUp(event, pointer) || pointer.hasTriggeredGestureMove) {
+                        if (
+                            swipeGestureDetector.onTouchUp(
+                                event,
+                                pointer,
+                                swipeSensitivityFor(pointer),
+                            ) || pointer.hasTriggeredGestureMove
+                        ) {
                             if (pointer.hasTriggeredGestureMove &&
                                 pointer.initialKey?.computedData?.code == KeyCode.DELETE &&
                                 prefs.gestures.deleteKeySwipeLeft.get() != SwipeAction.SELECT_CHARACTERS_PRECISELY &&

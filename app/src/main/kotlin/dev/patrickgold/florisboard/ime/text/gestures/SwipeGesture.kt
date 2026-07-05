@@ -25,7 +25,6 @@ import dev.patrickgold.florisboard.lib.PointerMap
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.util.ViewUtils
-import kotlin.math.abs
 import kotlin.math.atan2
 
 /**
@@ -63,7 +62,12 @@ abstract class SwipeGesture {
             }
         }
 
-        fun onTouchMove(event: MotionEvent, pointer: Pointer, alwaysTriggerOnMove: Boolean): Boolean {
+        fun onTouchMove(
+            event: MotionEvent,
+            pointer: Pointer,
+            alwaysTriggerOnMove: Boolean,
+            sensitivity: Int = SwipeSensitivityPolicy.DEFAULT_SENSITIVITY,
+        ): Boolean {
             if (!isEnabled) return false
             pointerMap.findById(pointer.id)?.let { gesturePointer ->
                 gesturePointer.index = pointer.index
@@ -73,9 +77,16 @@ abstract class SwipeGesture {
                 val absDiffY = currentY - gesturePointer.firstY
                 val relDiffX = currentX - gesturePointer.lastX
                 val relDiffY = currentY - gesturePointer.lastY
-                val thresholdWidth = prefs.gestures.swipeDistanceThreshold.get().dp.value.toDouble()
-                val unitWidth = thresholdWidth / 4.0
-                return if (alwaysTriggerOnMove || abs(relDiffX) > (thresholdWidth / 2.0) || abs(relDiffY) > (thresholdWidth / 2.0)) {
+                val baseThresholdWidth = prefs.gestures.swipeDistanceThreshold.get().dp.value.toDouble()
+                val unitWidth = SwipeSensitivityPolicy.unitWidth(baseThresholdWidth, sensitivity)
+                return if (
+                    alwaysTriggerOnMove || SwipeSensitivityPolicy.shouldTriggerTouchMove(
+                        relDiffX = relDiffX.toDouble(),
+                        relDiffY = relDiffY.toDouble(),
+                        baseDistance = baseThresholdWidth,
+                        sensitivity = sensitivity,
+                    )
+                ) {
                     gesturePointer.lastX = currentX
                     gesturePointer.lastY = currentY
                     val direction = detectDirection(relDiffX.toDouble(), relDiffY.toDouble())
@@ -101,7 +112,11 @@ abstract class SwipeGesture {
             return false
         }
 
-        fun onTouchUp(event: MotionEvent, pointer: Pointer): Boolean {
+        fun onTouchUp(
+            event: MotionEvent,
+            pointer: Pointer,
+            sensitivity: Int = SwipeSensitivityPolicy.DEFAULT_SENSITIVITY,
+        ): Boolean {
             if (!isEnabled) return false
             pointerMap.findById(pointer.id)?.let { gesturePointer ->
                 val currentX = ViewUtils.px2dp(event.getX(pointer.index))
@@ -113,10 +128,18 @@ abstract class SwipeGesture {
                 val velocityY = ViewUtils.px2dp(velocityTracker.getYVelocity(pointer.id))
                 flogDebug(LogTopic.GESTURES) { "Velocity: $velocityX $velocityY dp/s" }
                 pointerMap.removeById(pointer.id)
-                val thresholdSpeed = prefs.gestures.swipeVelocityThreshold.get().toDouble()
-                val thresholdWidth = prefs.gestures.swipeDistanceThreshold.get().dp.value.toDouble()
-                val unitWidth = thresholdWidth / 4.0
-                return if ((abs(absDiffX) > thresholdWidth || abs(absDiffY) > thresholdWidth) && (abs(velocityX) > thresholdSpeed || abs(velocityY) > thresholdSpeed)) {
+                val baseThresholdSpeed = prefs.gestures.swipeVelocityThreshold.get().toDouble()
+                val baseThresholdWidth = prefs.gestures.swipeDistanceThreshold.get().dp.value.toDouble()
+                val unitWidth = SwipeSensitivityPolicy.unitWidth(baseThresholdWidth, sensitivity)
+                return if (SwipeSensitivityPolicy.shouldTriggerTouchUp(
+                    absDiffX = absDiffX.toDouble(),
+                    absDiffY = absDiffY.toDouble(),
+                    velocityX = velocityX.toDouble(),
+                    velocityY = velocityY.toDouble(),
+                    baseDistance = baseThresholdWidth,
+                    baseVelocity = baseThresholdSpeed,
+                    sensitivity = sensitivity,
+                )) {
                     val direction = detectDirection(absDiffX.toDouble(), absDiffY.toDouble())
                     gesturePointer.absUnitCountX = (absDiffX / unitWidth).toInt()
                     gesturePointer.absUnitCountY = (absDiffY / unitWidth).toInt()

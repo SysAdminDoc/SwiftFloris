@@ -229,6 +229,15 @@ fun GesturesScreen() = FlorisScreen {
                 entries = enumDisplayEntriesOf(SwipeAction::class, "general"),
                 enabledIf = { prefs.glide.enabled isEqualTo false },
             )
+            DialogSliderPreference(
+                prefs.gestures.languageSwitchSwipeSensitivity,
+                title = stringRes(R.string.pref__gestures__language_switch_swipe_sensitivity__label),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 0,
+                max = 100,
+                stepIncrement = 5,
+                enabledIf = { prefs.glide.enabled isEqualTo false },
+            )
             SwitchPreference(
                 prefs.gestures.symbolFlickEnabled,
                 title = stringRes(R.string.pref__gestures__symbol_flick_enabled__label),
@@ -242,6 +251,14 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.gestures.spaceBarTouchpadMode,
                 title = stringRes(R.string.pref__gestures__space_bar_touchpad_mode__label),
                 summary = stringRes(R.string.pref__gestures__space_bar_touchpad_mode__summary),
+            )
+            DialogSliderPreference(
+                prefs.gestures.spaceBarSwipeSensitivity,
+                title = stringRes(R.string.pref__gestures__space_bar_swipe_sensitivity__label),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 0,
+                max = 100,
+                stepIncrement = 5,
             )
             ListPreference(
                 prefs.gestures.spaceBarSwipeUp,
@@ -279,6 +296,14 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.gestures.deleteKeySwipeLeft,
                 title = stringRes(R.string.pref__gestures__delete_key_swipe_left__label),
                 entries = enumDisplayEntriesOf(SwipeAction::class, "deleteSwipe"),
+            )
+            DialogSliderPreference(
+                prefs.gestures.deleteKeySwipeSensitivity,
+                title = stringRes(R.string.pref__gestures__delete_key_swipe_sensitivity__label),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = 0,
+                max = 100,
+                stepIncrement = 5,
             )
             ListPreference(
                 prefs.gestures.deleteKeyLongPress,

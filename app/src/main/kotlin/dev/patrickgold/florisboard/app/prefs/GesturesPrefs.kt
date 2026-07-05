@@ -114,6 +114,10 @@ open class GesturesPrefs : PreferenceModel() {
         key = "gestures__space_bar_touchpad_mode",
         default = false,
     )
+    val spaceBarSwipeSensitivity = int(
+        key = "gestures__space_bar_swipe_sensitivity",
+        default = 50,
+    )
     val symbolFlickEnabled = boolean(
         key = "gestures__symbol_flick_enabled",
         default = false,
@@ -125,6 +129,14 @@ open class GesturesPrefs : PreferenceModel() {
     val deleteKeySwipeLeft = enum(
         key = "gestures__delete_key_swipe_left",
         default = SwipeAction.DELETE_WORD,
+    )
+    val deleteKeySwipeSensitivity = int(
+        key = "gestures__delete_key_swipe_sensitivity",
+        default = 50,
+    )
+    val languageSwitchSwipeSensitivity = int(
+        key = "gestures__language_switch_swipe_sensitivity",
+        default = 50,
     )
     val deleteKeyLongPress = enum(
         key = "gestures__delete_key_long_press",
