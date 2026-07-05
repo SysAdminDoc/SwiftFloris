@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import json
+import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path, PurePosixPath
@@ -46,6 +49,8 @@ STALE_RESEARCH_PLAN_SCAN_ROOTS = (
 CRASH_REPORT_TEMPLATE = ".github/ISSUE_TEMPLATE/crash_report.yml"
 PULL_REQUEST_TEMPLATE = ".github/PULL_REQUEST_TEMPLATE.md"
 APP_BUILD_GRADLE = "app/build.gradle.kts"
+BLOCKED_ROADMAP = "Roadmap_Blocked.md"
+DEFAULT_GITHUB_REPO = "SysAdminDoc/SwiftFloris"
 REQUIRED_CRASH_TEMPLATE_IDS = [
     "description",
     "reproduce",
@@ -65,12 +70,78 @@ REQUIRED_CRASH_REDACTION_TERMS = [
     "private apk paths",
     "unrelated device logs",
 ]
+GITHUB_ISSUE_URL_PATTERN = re.compile(
+    r"https://github\.com/(?P<repo>[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/issues/(?P<number>[0-9]+)"
+)
+RELEASE_ADVANCE_PATTERN = re.compile(r"\badvance[sd]?\s+past\s+`?(?P<tag>v[0-9]+[.][0-9]+[.][0-9]+)`?", re.IGNORECASE)
+VERSION_PATTERN = re.compile(r"\bv(?P<major>[0-9]+)[.](?P<minor>[0-9]+)[.](?P<patch>[0-9]+)\b")
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Check live Markdown for broken links and stale references.")
     parser.add_argument("--root", default=str(ROOT), help="Repository root.")
     return parser.parse_args()
+
+
+def gh_command() -> list[str]:
+    raw = os.environ.get("GH_BIN")
+    if raw:
+        return shlex.split(raw, posix=os.name != "nt")
+    return ["gh"]
+
+
+def run_gh_json(root: Path, args: list[str]) -> tuple[object | None, str | None]:
+    try:
+        result = subprocess.run(
+            [*gh_command(), *args],
+            cwd=root,
+            check=False,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+    except FileNotFoundError:
+        return None, "gh is unavailable; skipped blocked-roadmap freshness checks"
+
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        if detail:
+            return None, f"gh {' '.join(args[:3])} failed: {detail}"
+        return None, f"gh {' '.join(args[:3])} failed with exit code {result.returncode}"
+
+    try:
+        return json.loads(result.stdout), None
+    except json.JSONDecodeError as exc:
+        return None, f"gh {' '.join(args[:3])} returned invalid JSON: {exc}"
+
+
+def parse_version(tag: str) -> tuple[int, int, int] | None:
+    match = VERSION_PATTERN.search(tag)
+    if match is None:
+        return None
+    return (
+        int(match.group("major")),
+        int(match.group("minor")),
+        int(match.group("patch")),
+    )
+
+
+def latest_github_release(root: Path, repo: str, warnings: list[str]) -> str | None:
+    data, warning = run_gh_json(
+        root,
+        ["release", "list", "--repo", repo, "--limit", "20", "--json", "tagName,isLatest,publishedAt"],
+    )
+    if warning is not None:
+        warnings.append(warning)
+        return None
+    if not isinstance(data, list) or not data:
+        warnings.append(f"gh release list for {repo} returned no releases")
+        return None
+    latest = next((release for release in data if isinstance(release, dict) and release.get("isLatest")), data[0])
+    if not isinstance(latest, dict) or not isinstance(latest.get("tagName"), str):
+        warnings.append(f"gh release list for {repo} did not include tagName")
+        return None
+    return latest["tagName"]
 
 
 def collect_tracked_paths(root: Path) -> set[str] | None:
@@ -282,16 +353,88 @@ def check_pr_template_debug_package(root: Path) -> list[str]:
     return errors
 
 
+def check_blocked_roadmap_freshness(root: Path) -> tuple[list[str], list[str]]:
+    blocked_path = root / BLOCKED_ROADMAP
+    if not blocked_path.exists():
+        return [], []
+
+    try:
+        text = blocked_path.read_text(encoding="utf-8-sig")
+    except Exception as exc:
+        return [f"{BLOCKED_ROADMAP}: cannot read ({exc})"], []
+
+    errors: list[str] = []
+    warnings: list[str] = []
+    issue_cache: dict[tuple[str, str], dict[str, object] | None] = {}
+    latest_release_cache: dict[str, str | None] = {}
+
+    for line_no, line in enumerate(text.splitlines(), start=1):
+        for match in GITHUB_ISSUE_URL_PATTERN.finditer(line):
+            repo = match.group("repo")
+            number = match.group("number")
+            cache_key = (repo, number)
+            if cache_key not in issue_cache:
+                data, warning = run_gh_json(
+                    root,
+                    ["issue", "view", number, "--repo", repo, "--json", "number,state,title,closedAt,url"],
+                )
+                if warning is not None:
+                    warnings.append(warning)
+                    issue_cache[cache_key] = None
+                elif isinstance(data, dict):
+                    issue_cache[cache_key] = data
+                else:
+                    warnings.append(f"gh issue view {number} for {repo} did not return an object")
+                    issue_cache[cache_key] = None
+
+            issue = issue_cache[cache_key]
+            if issue is not None and issue.get("state") == "CLOSED":
+                closed_at = issue.get("closedAt") or "unknown close time"
+                errors.append(
+                    f"{BLOCKED_ROADMAP}:{line_no}: blocked item references closed GitHub issue "
+                    f"#{number} in {repo} ({closed_at})"
+                )
+
+        release_match = RELEASE_ADVANCE_PATTERN.search(line)
+        if release_match is not None:
+            baseline_tag = release_match.group("tag")
+            baseline_version = parse_version(baseline_tag)
+            if baseline_version is None:
+                continue
+            if DEFAULT_GITHUB_REPO not in latest_release_cache:
+                latest_release_cache[DEFAULT_GITHUB_REPO] = latest_github_release(
+                    root,
+                    DEFAULT_GITHUB_REPO,
+                    warnings,
+                )
+            latest_tag = latest_release_cache[DEFAULT_GITHUB_REPO]
+            latest_version = parse_version(latest_tag or "")
+            if latest_tag is not None and latest_version is not None and latest_version > baseline_version:
+                errors.append(
+                    f"{BLOCKED_ROADMAP}:{line_no}: release-follow-through blocker says the public channel "
+                    f"must advance past {baseline_tag}, but latest public GitHub release is {latest_tag}"
+                )
+
+    return errors, warnings
+
+
 def main() -> int:
     root = Path(parse_args().root).resolve()
     tracked_paths = collect_tracked_paths(root)
     files = collect_live_markdown(root, tracked_paths)
     all_errors: list[str] = []
+    all_warnings: list[str] = []
     for md in files:
         all_errors.extend(check_file(md, root, tracked_paths))
     all_errors.extend(check_crash_report_template(root))
     all_errors.extend(check_stale_research_plan_refs(root, tracked_paths))
     all_errors.extend(check_pr_template_debug_package(root))
+    blocked_errors, blocked_warnings = check_blocked_roadmap_freshness(root)
+    all_errors.extend(blocked_errors)
+    all_warnings.extend(blocked_warnings)
+
+    for warning in sorted(set(all_warnings)):
+        print(f"::warning::live-doc-integrity: {warning}", file=sys.stderr)
 
     if all_errors:
         for error in all_errors:
@@ -299,7 +442,8 @@ def main() -> int:
         print(f"live doc integrity: FAIL ({len(all_errors)} error(s))", file=sys.stderr)
         return 1
 
-    print(f"live doc integrity: OK ({len(files)} files checked)")
+    warning_suffix = f", {len(set(all_warnings))} warning(s)" if all_warnings else ""
+    print(f"live doc integrity: OK ({len(files)} files checked{warning_suffix})")
     return 0
 
 
