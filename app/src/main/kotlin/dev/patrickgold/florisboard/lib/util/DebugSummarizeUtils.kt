@@ -16,14 +16,19 @@
 
 package dev.patrickgold.florisboard.lib.util
 
+import android.net.Uri
 import android.os.Bundle
+import android.os.Parcelable
 import android.text.InputType
 import android.text.TextUtils
+import android.util.SparseArray
 import android.view.inputmethod.EditorInfo
 import androidx.core.view.inputmethod.EditorInfoCompat
+import java.io.Serializable
 import kotlin.reflect.KClass
 
 private const val SECTION_SEPARATOR = "---"
+private const val MAX_BUNDLE_SUMMARY_DEPTH = 3
 
 fun EditorInfo.debugSummarize(): String {
     val info = this
@@ -33,16 +38,16 @@ fun EditorInfo.debugSummarize(): String {
         appendLine(SECTION_SEPARATOR)
         append("inputType: ").appendLine(info.inputType.debugSummarize(InputType::class))
         append("imeOptions: ").appendLine(info.imeOptions.debugSummarize(EditorInfo::class))
-        append("privateImeOptions: ").appendLine(info.privateImeOptions ?: "(null)")
+        append("privateImeOptions: ").appendLine(info.privateImeOptions.debugSummarizeText())
         appendLine(SECTION_SEPARATOR)
         append("actionId: ").appendLine(info.actionId.dsEditorInfoActionId())
-        append("actionLabel: ").appendLine(info.actionLabel ?: "(null)")
+        append("actionLabel: ").appendLine(info.actionLabel.debugSummarizeText())
         append("contentMimeTypes: ").appendLine(EditorInfoCompat.getContentMimeTypes(info).contentToString())
         append("extras: ").appendLine(info.extras?.debugSummarize() ?: "(null)")
         append("hintLocales: ").also {
             appendLine(info.hintLocales?.toLanguageTags() ?: "(null)")
         }
-        append("hintText: ").appendLine(info.hintText ?: "(null)")
+        append("hintText: ").appendLine(info.hintText.debugSummarizeText())
         appendLine(SECTION_SEPARATOR)
         append("initialCapsMode: ").appendLine(info.initialCapsMode.debugSummarize(TextUtils::class))
         append("initialSelStart: ").appendLine(info.initialSelStart)
@@ -50,20 +55,80 @@ fun EditorInfo.debugSummarize(): String {
     }
 }
 
-private fun Bundle.debugSummarize(): String {
-    val bundle = this
-    return buildString {
-        append("[")
-        for ((i, key) in bundle.keySet().withIndex()) {
-            if (i > 0) {
-                append(",")
-            }
-            append(key)
-            append("=")
-            // TODO: classcastexception append(bundle.getString(key))
-        }
-        append("]")
+private fun CharSequence?.debugSummarizeText(): String {
+    return this?.let {
+        "${it.debugTypeName()}(<redacted>, length=${it.length})"
+    } ?: "(null)"
+}
+
+private fun Bundle.debugSummarize(depth: Int = 0): String {
+    val keys = try {
+        keySet().toList().sorted()
+    } catch (e: RuntimeException) {
+        return "[<unreadable:${e.javaClass.simpleName}>]"
     }
+    if (depth >= MAX_BUNDLE_SUMMARY_DEPTH) {
+        return "Bundle(depthLimit, keys=${keys.size})"
+    }
+    return keys.joinToString(prefix = "[", postfix = "]") { key ->
+        "$key=${debugSummarizeValueForKey(key, depth + 1)}"
+    }
+}
+
+@Suppress("DEPRECATION")
+private fun Bundle.debugSummarizeValueForKey(key: String, depth: Int): String {
+    return try {
+        get(key).debugSummarizeBundleValue(depth)
+    } catch (e: RuntimeException) {
+        "<unreadable:${e.javaClass.simpleName}>"
+    }
+}
+
+private fun Any?.debugSummarizeBundleValue(depth: Int): String {
+    return when (this) {
+        null -> "null"
+        is Boolean -> "Boolean($this)"
+        is Byte -> "Byte($this)"
+        is Double -> "Double($this)"
+        is Float -> "Float($this)"
+        is Int -> "Int($this)"
+        is Long -> "Long($this)"
+        is Short -> "Short($this)"
+        is Char -> "Char(<redacted>)"
+        is CharSequence -> debugSummarizeText()
+        is Bundle -> debugSummarize(depth)
+        is BooleanArray -> "BooleanArray(size=${size})"
+        is ByteArray -> "ByteArray(size=${size})"
+        is CharArray -> "CharArray(size=${size})"
+        is DoubleArray -> "DoubleArray(size=${size})"
+        is FloatArray -> "FloatArray(size=${size})"
+        is IntArray -> "IntArray(size=${size})"
+        is LongArray -> "LongArray(size=${size})"
+        is ShortArray -> "ShortArray(size=${size})"
+        is Array<*> -> "Array<${componentTypeName()}>(size=${size})"
+        is Collection<*> -> "${debugTypeName()}(size=${size}, elements=${elementTypeName()})"
+        is Map<*, *> -> "${debugTypeName()}(size=${size})"
+        is SparseArray<*> -> "SparseArray(size=${size()})"
+        is Uri -> "Uri(<redacted>)"
+        is Parcelable -> "${debugTypeName()}(Parcelable)"
+        is Enum<*> -> "${debugTypeName()}(Enum)"
+        is Serializable -> "${debugTypeName()}(Serializable)"
+        else -> "${debugTypeName()}(<unsupported>)"
+    }
+}
+
+private fun Any.debugTypeName(): String {
+    return this::class.simpleName ?: javaClass.name
+}
+
+private fun Array<*>.componentTypeName(): String {
+    return javaClass.componentType?.simpleName
+        ?: firstNotNullOfOrNull { it?.debugTypeName() }
+        ?: "Any"
+}
+
+private fun Collection<*>.elementTypeName(): String {
+    return firstNotNullOfOrNull { it?.debugTypeName() } ?: "Any"
 }
 
 private fun Int.dsEditorInfoActionId(): String {
