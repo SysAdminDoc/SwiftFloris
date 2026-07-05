@@ -82,12 +82,25 @@ class LanguagePackExtension(
 
     override fun serialType() = SERIAL_TYPE
 
-    @Transient var hanShapeBasedSQLiteDatabase: SQLiteDatabase? = null
+    @Transient private val hanShapeBasedSQLiteDatabaseLock = Any()
+    @Transient private var _hanShapeBasedSQLiteDatabase: SQLiteDatabase? = null
+
+    val hanShapeBasedSQLiteDatabase: SQLiteDatabase?
+        get() = synchronized(hanShapeBasedSQLiteDatabaseLock) {
+            _hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }
+        }
 
     fun supportsHanShapeBased(): Boolean = kind == LanguagePackKind.HAN_SHAPE_BASED
 
     fun hanShapeBasedComponents(): List<LanguagePackComponent> {
         return if (supportsHanShapeBased()) items else emptyList()
+    }
+
+    fun <T> withHanShapeBasedSQLiteDatabase(block: (SQLiteDatabase) -> T): T? {
+        synchronized(hanShapeBasedSQLiteDatabaseLock) {
+            val database = _hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen } ?: return null
+            return block(database)
+        }
     }
 
     override fun onAfterLoad(context: Context, cacheDir: FsDir) {
@@ -100,20 +113,36 @@ class LanguagePackExtension(
         val databasePath = workingDir?.subFile(hanShapeBasedSQLite)?.path
         if (databasePath == null) {
             flogError { "Han shape-based language pack not found or loaded" }
+            closeHanShapeBasedSQLiteDatabase()
         } else try {
-            // TODO: use lock on database?
-            hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }?.close()
-            hanShapeBasedSQLiteDatabase =
-                SQLiteDatabase.openDatabase(databasePath, null, SQLiteDatabase.OPEN_READONLY);
+            openHanShapeBasedSQLiteDatabase(databasePath)
         } catch (e: SQLiteException) {
+            closeHanShapeBasedSQLiteDatabase()
             flogError { "SQLiteException in openDatabase: path=$databasePath, error='${e}'" }
         }
     }
 
     override fun onBeforeUnload(context: Context, cacheDir: FsDir) {
         super.onBeforeUnload(context, cacheDir)
-        hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }?.close()
-        hanShapeBasedSQLiteDatabase = null
+        closeHanShapeBasedSQLiteDatabase()
+    }
+
+    private fun openHanShapeBasedSQLiteDatabase(databasePath: String) {
+        synchronized(hanShapeBasedSQLiteDatabaseLock) {
+            val replacement = SQLiteDatabase.openDatabase(databasePath, null, SQLiteDatabase.OPEN_READONLY)
+            val previous = _hanShapeBasedSQLiteDatabase
+            _hanShapeBasedSQLiteDatabase = replacement
+            if (previous !== replacement) {
+                previous?.takeIf { it.isOpen }?.close()
+            }
+        }
+    }
+
+    private fun closeHanShapeBasedSQLiteDatabase() {
+        synchronized(hanShapeBasedSQLiteDatabaseLock) {
+            _hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }?.close()
+            _hanShapeBasedSQLiteDatabase = null
+        }
     }
 }
 

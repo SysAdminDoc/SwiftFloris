@@ -154,12 +154,13 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         }
         val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return SpellingResult.unspecified()
         val layout = languagePackItem.hanShapeBasedTable
-        val database = databaseFor(languagePackExtension) ?: return SpellingResult.unspecified()
         return withContext(Dispatchers.IO) {
-            if (HanShapeLanguagePackQuery.containsWord(database, layout, word)) {
-                SpellingResult.validWord()
-            } else {
-                SpellingResult.unspecified()
+            withDatabase(languagePackExtension, fallback = SpellingResult.unspecified()) { database ->
+                if (HanShapeLanguagePackQuery.containsWord(database, layout, word)) {
+                    SpellingResult.validWord()
+                } else {
+                    SpellingResult.unspecified()
+                }
             }
         }
     }
@@ -182,16 +183,17 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         }
         val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList()
         val layout: String = languagePackItem.hanShapeBasedTable
-        val database = databaseFor(languagePackExtension) ?: return emptyList()
         return withContext(Dispatchers.IO) {
             flogDebug { "Query was '${content.composingText}'" }
-            HanShapeLanguagePackQuery.suggestions(
-                database = database,
-                table = layout,
-                composingText = content.composingText,
-                maxCandidateCount = maxCandidateCount,
-                sourceProvider = this@HanShapeBasedLanguageProvider,
-            )
+            withDatabase(languagePackExtension, fallback = emptyList()) { database ->
+                HanShapeLanguagePackQuery.suggestions(
+                    database = database,
+                    table = layout,
+                    composingText = content.composingText,
+                    maxCandidateCount = maxCandidateCount,
+                    sourceProvider = this@HanShapeBasedLanguageProvider,
+                )
+            }
         }
     }
 
@@ -241,13 +243,16 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         }
     }
 
-    private fun databaseFor(languagePackExtension: LanguagePackExtension): SQLiteDatabase? {
-        val database = languagePackExtension.hanShapeBasedSQLiteDatabase
-        if (database == null || !database.isOpen) {
+    private fun <T : Any> withDatabase(
+        languagePackExtension: LanguagePackExtension,
+        fallback: T,
+        block: (SQLiteDatabase) -> T,
+    ): T {
+        val result = languagePackExtension.withHanShapeBasedSQLiteDatabase(block)
+        if (result == null) {
             flogError { "Han shape-based database is not loaded for '${languagePackExtension.meta.id}'" }
-            return null
         }
-        return database
+        return result ?: fallback
     }
 
     override suspend fun getListOfWords(subtype: Subtype): List<String> {
@@ -258,9 +263,10 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             }
         }
         val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList()
-        val database = databaseFor(languagePackExtension) ?: return emptyList()
         val words = withContext(Dispatchers.IO) {
-            HanShapeLanguagePackQuery.words(database, languagePackItem.hanShapeBasedTable)
+            withDatabase(languagePackExtension, fallback = emptyList()) { database ->
+                HanShapeLanguagePackQuery.words(database, languagePackItem.hanShapeBasedTable)
+            }
         }
         flogDebug { "Read ${words.size} words for ${subtype.primaryLocale.localeTag()}" }
         return words
@@ -274,9 +280,10 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
             }
         }
         val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return 0.0
-        val database = databaseFor(languagePackExtension) ?: return 0.0
         return withContext(Dispatchers.IO) {
-            HanShapeLanguagePackQuery.frequencyForWord(database, languagePackItem.hanShapeBasedTable, word)
+            withDatabase(languagePackExtension, fallback = 0.0) { database ->
+                HanShapeLanguagePackQuery.frequencyForWord(database, languagePackItem.hanShapeBasedTable, word)
+            }
         }
     }
 
