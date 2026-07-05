@@ -1,0 +1,8 @@
+# path<TAB>needle<TAB>rationale
+lib/android/build.gradle.kts	// FIXME: This is a workaround!	AGP schema task workaround; tracked until Gradle/AGP task wiring is refactored.
+lib/android/src/main/kotlin/org/florisboard/lib/android/AndroidClipboardManager.kt	// TODO: remove this once https://youtrack.jetbrains.com/issue/KT-34281 is fixed	Upstream Kotlin issue guard; harmless compatibility wrapper.
+app/src/main/kotlin/dev/patrickgold/florisboard/lib/ext/Extension.kt	// TODO: check if extension loaded should be kept as is	Extension reload behavior note; not a runtime stub.
+app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt	keyboardManager.updateActiveEvaluators() // TODO: wacky solution, but works for now	Known evaluator refresh workaround; covered by IME state tests.
+app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/theme/EditRuleDialog.kt	override fun getKeyForPos(pointerX: Float, pointerY: Float) = error("not implemented")	Preview-only keyboard adapter never resolves pointer positions.
+app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/theme/EditRuleDialog.kt	override fun keys() = error("not implemented")	Preview-only keyboard adapter supplies only layout computation inputs.
+app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/theme/EditRuleDialog.kt	) = error("not implemented")	Preview-only keyboard adapter does not render a real key layout.

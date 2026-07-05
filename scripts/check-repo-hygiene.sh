@@ -75,3 +75,71 @@ done
 if [ "$link_errors" -gt 0 ]; then
   exit 1
 fi
+
+source_stub_allowlist="$ROOT_DIR/scripts/source-stub-hygiene-allowlist.tsv"
+source_stub_regex='TODO\(|NotImplementedError|error\("not implemented"\)|error\('\''not implemented'\''\)'
+high_risk_todo_regex='FIXME|HACK|XXX|TODO.*(unsafe|privacy|security|redact|permission|network|crash|leak|secret|remove|loaded|wacky|workaround|not implemented|stub)'
+source_stub_matches="$(
+  {
+    git grep -n -E "$source_stub_regex" -- app/src/main lib || true
+    git grep -n -E "$high_risk_todo_regex" -- app/src/main lib || true
+  } | sort -u
+)"
+
+allowlist_errors=0
+if [ -f "$source_stub_allowlist" ]; then
+  while IFS=$'\t' read -r allow_path allow_needle allow_reason extra; do
+    case "$allow_path" in
+      ""|\#*) continue ;;
+    esac
+    if [ -n "${extra:-}" ] || [ -z "${allow_needle:-}" ] || [ -z "${allow_reason:-}" ]; then
+      echo "::error::$source_stub_allowlist contains a malformed entry for '$allow_path'. Expected path<TAB>needle<TAB>rationale."
+      allowlist_errors=$((allowlist_errors + 1))
+      continue
+    fi
+    if ! git grep -F -q -- "$allow_needle" -- "$allow_path" 2>/dev/null; then
+      echo "::error::$source_stub_allowlist has a stale entry for '$allow_path' with needle '$allow_needle'."
+      allowlist_errors=$((allowlist_errors + 1))
+    fi
+  done < "$source_stub_allowlist"
+fi
+
+stub_errors=0
+if [ -n "$source_stub_matches" ]; then
+  if [ ! -f "$source_stub_allowlist" ]; then
+    echo "::error::Source stub/TODO allowlist is missing: $source_stub_allowlist"
+    echo "$source_stub_matches"
+    exit 1
+  fi
+
+  while IFS= read -r match; do
+    [ -z "$match" ] && continue
+    path="${match%%:*}"
+    rest="${match#*:}"
+    line="${rest%%:*}"
+    text="${rest#*:}"
+    allowed=0
+    while IFS=$'\t' read -r allow_path allow_needle allow_reason extra; do
+      case "$allow_path" in
+        ""|\#*) continue ;;
+      esac
+      if [ -n "${extra:-}" ] || [ -z "${allow_needle:-}" ] || [ -z "${allow_reason:-}" ]; then
+        continue
+      fi
+      if [ "$path" = "$allow_path" ] && [[ "$text" == *"$allow_needle"* ]]; then
+        allowed=1
+        break
+      fi
+    done < "$source_stub_allowlist"
+
+    if [ "$allowed" -ne 1 ]; then
+      echo "::error::$path:$line contains an unallowlisted runtime stub or high-risk TODO: $text"
+      stub_errors=$((stub_errors + 1))
+    fi
+  done <<<"$source_stub_matches"
+fi
+
+if [ "$allowlist_errors" -gt 0 ] || [ "$stub_errors" -gt 0 ]; then
+  echo "::error::Source stub hygiene failed. Add a narrowly-scoped allowlist entry with a rationale only for intentional preview/test-only stubs."
+  exit 1
+fi
