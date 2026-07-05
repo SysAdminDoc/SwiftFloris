@@ -8,6 +8,24 @@ import kotlin.test.assertIs
 
 class SnyggUriValueTest {
     private val encoder = SnyggUriValue
+    private val invalidFlexUris = listOf(
+        "flex:/",
+        "flex:/../secret.png",
+        "flex:/assets/./icon.png",
+        "flex:/assets/%2e%2e/secret.png",
+        "flex:/assets/%2E/icon.png",
+        "flex:/assets/%00/icon.png",
+        "flex:/assets/%zz/icon.png",
+        "flex:/assets\\icon.png",
+        "flex:/assets/icon name.png",
+        "flex:/assets/icon%20name.png",
+        "flex:/assets/icon\tname.png",
+        "file:/assets/icon.png",
+        "http://example.com/icon.png",
+        "flex://example.com/icon.png",
+        "flex:/assets/icon.png?cache=1",
+        "flex:/assets/icon.png#fragment",
+    )
 
     @Test
     fun `deserialize uri values`() {
@@ -15,6 +33,7 @@ class SnyggUriValueTest {
             // valid
             "uri(`flex:/my_image.png`)" to SnyggUriValue("flex:/my_image.png"),
             "uri(`flex:/roboto.ttf`)" to SnyggUriValue("flex:/roboto.ttf"),
+            "uri(`flex:/assets/fonts/roboto-v1.ttf`)" to SnyggUriValue("flex:/assets/fonts/roboto-v1.ttf"),
             // invalid
             "some-color" to null,
         )
@@ -24,16 +43,31 @@ class SnyggUriValueTest {
     }
 
     @Test
+    fun `deserialize rejects unsafe flex uri values`() {
+        assertAll(invalidFlexUris.map { uri -> {
+            assertEquals(null, encoder.deserialize("uri(`$uri`)").getOrNull(), "deserialize $uri")
+        } })
+    }
+
+    @Test
     fun `serialize uri values`() {
         val pairs = listOf(
             // valid
             SnyggUriValue("flex:/my_image.png") to "uri(`flex:/my_image.png`)",
             SnyggUriValue("flex:/roboto.ttf") to "uri(`flex:/roboto.ttf`)",
+            SnyggUriValue("flex:/assets/fonts/roboto-v1.ttf") to "uri(`flex:/assets/fonts/roboto-v1.ttf`)",
             // invalid
             SnyggDefinedVarValue("shenanigans") to null
         )
         assertAll(pairs.map { (snyggValue, expected) -> {
             assertEquals(expected, encoder.serialize(snyggValue).getOrNull(), "serialize $snyggValue")
+        } })
+    }
+
+    @Test
+    fun `serialize rejects unsafe flex uri values`() {
+        assertAll(invalidFlexUris.map { uri -> {
+            assertEquals(null, encoder.serialize(SnyggUriValue(uri)).getOrNull(), "serialize $uri")
         } })
     }
 

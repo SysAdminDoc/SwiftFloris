@@ -23,8 +23,7 @@ data class SnyggUriValue(val uri: String) : SnyggValue {
     companion object : SnyggValueEncoder {
         private const val EnclosedUriFunction = "uri"
         private const val EnclosedUriId = "enclosedUri"
-        // TODO: evaluate the pattern for the URI
-        private val EnclosedUriPattern = """`flex:/[^` ]+`""".toRegex()
+        private val EnclosedUriPattern = """`flex:/[A-Za-z0-9._~!${'$'}&'()*+,;=:@%/-]+`""".toRegex()
 
         override val spec = SnyggValueSpec {
             function(name = EnclosedUriFunction) {
@@ -36,7 +35,7 @@ data class SnyggUriValue(val uri: String) : SnyggValue {
 
         override fun serialize(v: SnyggValue) = runCatching<String> {
             require(v is SnyggUriValue)
-            val map = snyggIdToValueMapOf(EnclosedUriId to "`${v.uri}`")
+            val map = snyggIdToValueMapOf(EnclosedUriId to "`${validateFlexUri(v.uri)}`")
             return@runCatching spec.pack(map)
         }
 
@@ -45,7 +44,36 @@ data class SnyggUriValue(val uri: String) : SnyggValue {
             spec.parse(v, map)
             val enclosedUri = map.getString(EnclosedUriId)
             val uri = enclosedUri.substring(1, enclosedUri.length - 1)
-            return@runCatching SnyggUriValue(URI.create(uri).toString())
+            return@runCatching SnyggUriValue(validateFlexUri(uri))
+        }
+
+        private fun validateFlexUri(rawUri: String): String {
+            require(rawUri.none { it.isUnsafeFlexUriChar() }) { "Invalid flex URI characters" }
+
+            val uri = URI.create(rawUri)
+            require(uri.scheme == "flex") { "Expected flex URI scheme" }
+            require(uri.rawAuthority.isNullOrEmpty()) { "Expected flex URI without authority" }
+            require(uri.rawQuery == null) { "Expected flex URI without query" }
+            require(uri.rawFragment == null) { "Expected flex URI without fragment" }
+
+            val rawPath = uri.rawPath.orEmpty()
+            require(rawPath.startsWith("/") && rawPath.length > 1) { "Expected non-empty flex URI path" }
+            validateFlexPathSegments(rawPath.removePrefix("/").split("/"))
+            validateFlexPathSegments(uri.path.orEmpty().removePrefix("/").split("/"))
+
+            return rawUri
+        }
+
+        private fun validateFlexPathSegments(segments: List<String>) {
+            require(segments.isNotEmpty() && segments.all { it.isNotEmpty() }) { "Expected non-empty flex URI segments" }
+            require(segments.none { it == "." || it == ".." }) { "Expected flex URI without traversal segments" }
+            require(segments.none { segment -> segment.any { it.isUnsafeFlexUriChar() } }) {
+                "Invalid flex URI segment characters"
+            }
+        }
+
+        private fun Char.isUnsafeFlexUriChar(): Boolean {
+            return this == '\\' || isWhitespace() || code <= 0x1F || code == 0x7F
         }
     }
 
