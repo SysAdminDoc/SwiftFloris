@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import re
 import sys
 from dataclasses import dataclass
@@ -38,6 +39,13 @@ def read_text(path: Path) -> str:
         return path.read_text(encoding="utf-8-sig")
     except FileNotFoundError as exc:
         raise ValueError(f"missing required file: {path.as_posix()}") from exc
+
+
+def read_json(path: Path) -> object:
+    try:
+        return json.loads(read_text(path))
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"{path.as_posix()}: invalid JSON: {exc}") from exc
 
 
 def parse_properties(path: Path) -> dict[str, str]:
@@ -334,6 +342,51 @@ def check_expectation(root: Path, expectation: Expectation) -> str | None:
     return None
 
 
+def check_obtainium_manifest(root: Path, path: str, expected: dict[str, object]) -> list[str]:
+    manifest_path = root / path
+    try:
+        manifest = read_json(manifest_path)
+    except ValueError as exc:
+        return [str(exc)]
+    if not isinstance(manifest, dict):
+        return [f"{path}: expected top-level JSON object"]
+
+    errors: list[str] = []
+    for key, expected_value in expected.items():
+        if key == "additionalSettings":
+            raw_settings = manifest.get(key)
+            if not isinstance(raw_settings, str):
+                errors.append(f"{path}: additionalSettings must be a JSON string")
+                continue
+            try:
+                actual_settings = json.loads(raw_settings)
+            except json.JSONDecodeError as exc:
+                errors.append(f"{path}: additionalSettings invalid JSON: {exc}")
+                continue
+            if actual_settings != expected_value:
+                errors.append(
+                    f"{path}: additionalSettings reports {actual_settings!r} "
+                    f"but expected {expected_value!r}"
+                )
+            continue
+
+        actual_value = manifest.get(key)
+        if actual_value != expected_value:
+            errors.append(f"{path}: {key} reports {actual_value!r} but expected {expected_value!r}")
+
+    serialized = json.dumps(manifest, sort_keys=True)
+    for forbidden in (
+        "dev.patrickgold.florisboard",
+        "https://github.com/florisboard/florisboard",
+        '"author": "florisboard"',
+        "FlorisBoard Stable",
+        "FlorisBoard Preview",
+    ):
+        if forbidden in serialized:
+            errors.append(f"{path}: contains upstream Obtainium identity fragment {forbidden!r}")
+    return errors
+
+
 def main() -> int:
     root = Path(parse_args().root).resolve()
     expectations, errors = build_expectations(root)
@@ -341,6 +394,35 @@ def main() -> int:
         error = check_expectation(root, expectation)
         if error is not None:
             errors.append(error)
+
+    obtainium_common = {
+        "url": "https://github.com/SysAdminDoc/SwiftFloris",
+        "author": "SysAdminDoc",
+        "additionalSettings": {
+            "fallbackToOlderReleases": True,
+            "trackOnly": False,
+            "versionDetection": True,
+            "apkFilterRegEx": r"app-release.*\.apk",
+        },
+    }
+    errors.extend(check_obtainium_manifest(root, "fastlane/obtainium/stable.json", {
+        **obtainium_common,
+        "id": "io.github.sysadmindoc.swiftfloris",
+        "name": "SwiftFloris",
+        "additionalSettings": {
+            **obtainium_common["additionalSettings"],
+            "includePrereleases": False,
+        },
+    }))
+    errors.extend(check_obtainium_manifest(root, "fastlane/obtainium/preview.json", {
+        **obtainium_common,
+        "id": "io.github.sysadmindoc.swiftfloris.beta",
+        "name": "SwiftFloris Preview",
+        "additionalSettings": {
+            **obtainium_common["additionalSettings"],
+            "includePrereleases": True,
+        },
+    }))
 
     if errors:
         for error in errors:

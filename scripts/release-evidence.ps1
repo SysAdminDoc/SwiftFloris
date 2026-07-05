@@ -3,6 +3,7 @@ param(
     [string]$JavaHome = "C:\Program Files\Eclipse Adoptium\jdk-21.0.11.10-hotspot",
     [string]$AndroidSdk = "$env:LOCALAPPDATA\Android\Sdk",
     [switch]$StrictRelease,
+    [switch]$AllowUnpublishedRelease,
     [switch]$SkipOsvScan,
     [switch]$SkipReproducibleApk
 )
@@ -204,7 +205,10 @@ function Get-KotlinBuildCacheGuardArguments {
 
 $releaseArgs = @((Convert-ToGitBashPath "scripts\check-release-front-door.sh"))
 if ($StrictRelease) {
-    $releaseArgs += "--strict"
+    Add-Summary "StrictRelease: default release-front-door mode is already strict"
+}
+if ($AllowUnpublishedRelease) {
+    $releaseArgs += "--allow-unpublished"
 }
 
 Invoke-EvidenceCommand "release-front-door" $bash $releaseArgs

@@ -13,6 +13,7 @@
 #   5. No localized Fastlane title contains "FlorisBoard"
 #   6. FLADDONS_STORE_URL is confirmed removed (was upstream dead code)
 #   7. rootProject.name is flagged as cosmetic FlorisBoard reference
+#   8. Obtainium and funding metadata do not point users to upstream
 #
 # Intentional upstream references (not flagged):
 #   - AGP namespace dev.patrickgold.florisboard (preserves cherry-pick ergonomics)
@@ -123,6 +124,29 @@ while IFS= read -r -d '' strings_file; do
     fi
   fi
 done < <(find app/src/main/res/values-* -name "strings.xml" -print0 2>/dev/null)
+
+# --- 9. Obtainium manifests must not route users to upstream FlorisBoard ---
+for obtainium_manifest in fastlane/obtainium/stable.json fastlane/obtainium/preview.json; do
+  if [ -f "$obtainium_manifest" ]; then
+    if grep -Eqi 'dev\.patrickgold\.florisboard|github\.com/florisboard/florisboard|"author"[[:space:]]*:[[:space:]]*"florisboard"|FlorisBoard (Stable|Preview)' "$obtainium_manifest"; then
+      fail "$obtainium_manifest contains upstream FlorisBoard Obtainium identity"
+    else
+      ok "$obtainium_manifest uses SwiftFloris identity"
+    fi
+  fi
+done
+
+# --- 10. Funding metadata must not route users to upstream maintainers ---
+funding_file=".github/FUNDING.yml"
+if [ -f "$funding_file" ]; then
+  if grep -Eqi 'patrickgold|paypal\.me/devpatrickgold|florisboard' "$funding_file"; then
+    fail "$funding_file routes sponsorship to upstream FlorisBoard identities"
+  else
+    ok "$funding_file does not contain upstream funding identities"
+  fi
+else
+  ok "no GitHub funding metadata present"
+fi
 
 # --- Summary ---
 if [ "$errors" -gt 0 ]; then

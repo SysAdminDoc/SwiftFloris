@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from textwrap import dedent
@@ -18,6 +19,7 @@ def write_fixture(root: Path) -> None:
     (root / "gradle" / "wrapper").mkdir(parents=True, exist_ok=True)
     (root / "docs").mkdir(exist_ok=True)
     (root / "fdroid").mkdir(exist_ok=True)
+    (root / "fastlane" / "obtainium").mkdir(parents=True, exist_ok=True)
     (root / "gradle" / "libs.versions.toml").write_text(
         dedent(
             """
@@ -124,6 +126,46 @@ def write_fixture(root: Path) -> None:
         + "\n",
         encoding="utf-8",
     )
+    obtainium_settings = {
+        "fallbackToOlderReleases": True,
+        "trackOnly": False,
+        "versionDetection": True,
+        "apkFilterRegEx": r"app-release.*\.apk",
+    }
+    (root / "fastlane" / "obtainium" / "stable.json").write_text(
+        json.dumps(
+            {
+                "id": "io.github.sysadmindoc.swiftfloris",
+                "url": "https://github.com/SysAdminDoc/SwiftFloris",
+                "author": "SysAdminDoc",
+                "name": "SwiftFloris",
+                "additionalSettings": json.dumps({
+                    **obtainium_settings,
+                    "includePrereleases": False,
+                }, separators=(",", ":")),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+    (root / "fastlane" / "obtainium" / "preview.json").write_text(
+        json.dumps(
+            {
+                "id": "io.github.sysadmindoc.swiftfloris.beta",
+                "url": "https://github.com/SysAdminDoc/SwiftFloris",
+                "author": "SysAdminDoc",
+                "name": "SwiftFloris Preview",
+                "additionalSettings": json.dumps({
+                    **obtainium_settings,
+                    "includePrereleases": True,
+                }, separators=(",", ":")),
+            },
+            indent=2,
+        )
+        + "\n",
+        encoding="utf-8",
+    )
 
 
 def run_checker(root: Path) -> subprocess.CompletedProcess[str]:
@@ -204,6 +246,21 @@ def main() -> int:
         if failing.returncode != 1 or "F-Droid YAML build commit tag" not in failing.stdout:
             print(failing.stdout)
             print("expected stale checked-in F-Droid YAML to fail")
+            return 1
+
+        write_fixture(fixture)
+        stable = fixture / "fastlane" / "obtainium" / "stable.json"
+        stable.write_text(
+            stable.read_text(encoding="utf-8").replace(
+                "https://github.com/SysAdminDoc/SwiftFloris",
+                "https://github.com/florisboard/florisboard",
+            ),
+            encoding="utf-8",
+        )
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "stable.json" not in failing.stdout:
+            print(failing.stdout)
+            print("expected stale Obtainium stable manifest to fail")
             return 1
 
     print("public doc version pin checker self-test: PASS")

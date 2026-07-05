@@ -11,14 +11,13 @@
 #   1. gradle.properties declares projectVersionName and projectVersionCode
 #   2. Fastlane changelog for projectVersionCode exists and is non-empty
 #   3. README.md "Current release" line matches projectVersionName
-#   4. (optional, with gh available) latest GitHub Release tag matches
-#      projectVersionName, or the publication step has not run yet (first
-#      release is allowed to be missing)
+#   4. Exact local tag, origin tag, and GitHub Release exist for
+#      projectVersionName once public surfaces claim that version
 #
-# The GitHub Release check is advisory by default because the release
-# evidence command can run before creating the release. Pass --strict
-# to promote the GitHub Release mismatch to a hard failure when checking
-# that a claimed version is already published.
+# Publication checks are hard failures by default because public install
+# trust breaks when README/F-Droid metadata claim a version that GitHub
+# Releases does not serve. Pass --allow-unpublished only while preparing
+# a local unpublished version before README/F-Droid surfaces claim it.
 #
 # Local surfaces (gradle.properties, fastlane, README.md) are always
 # hard failures regardless of --strict.
@@ -27,10 +26,11 @@
 
 set -euo pipefail
 
-strict=false
+allow_unpublished=false
 for arg in "$@"; do
   case "$arg" in
-    --strict) strict=true ;;
+    --allow-unpublished) allow_unpublished=true ;;
+    --strict) ;;
   esac
 done
 
@@ -48,6 +48,25 @@ fail() {
 warn() {
   echo "::warning::release-front-door: $*"
   warnings=$((warnings + 1))
+}
+
+public_surfaces_claim_release=false
+
+mark_public_claim() {
+  local value="$1"
+  if [ -n "$value" ] && [ "$value" = "$version_name" ]; then
+    public_surfaces_claim_release=true
+  fi
+}
+
+surface_mismatch() {
+  local surface="$1"
+  local actual="$2"
+  if $allow_unpublished; then
+    warn "${surface} reports v${actual} but gradle.properties declares v${version_name} (allowed only for unpublished local prep)"
+  else
+    fail "${surface} reports v${actual} but gradle.properties declares v${version_name}"
+  fi
 }
 
 # --- 1. Read gradle.properties ---
@@ -97,10 +116,14 @@ if [ -f README.md ]; then
     readme_version="$releases_version"
   fi
 
+  mark_public_claim "$badge_version"
+  mark_public_claim "$status_version"
+  mark_public_claim "$releases_version"
+
   if [ -z "$readme_version" ]; then
     fail "could not find a version string in README.md (checked badge, status line, recent releases)"
   elif [ "$readme_version" != "$version_name" ]; then
-    fail "README.md reports v${readme_version} but gradle.properties declares v${version_name}"
+    surface_mismatch "README.md" "$readme_version"
   else
     echo "README.md version: OK (v${readme_version})"
   fi
@@ -109,35 +132,75 @@ if [ -f README.md ]; then
   for src_name in badge status releases; do
     eval "src_val=\${${src_name}_version}"
     if [ -n "$src_val" ] && [ "$src_val" != "$version_name" ]; then
-      fail "README.md ${src_name} version (v${src_val}) disagrees with gradle.properties (v${version_name})"
+      surface_mismatch "README.md ${src_name} version" "$src_val"
     fi
   done
 else
   fail "README.md not found"
 fi
 
-# --- 4. GitHub Release tag (advisory by default, hard failure with --strict) ---
-if command -v gh >/dev/null 2>&1; then
-  latest_release="$(gh release list --limit 1 --json tagName --jq '.[0].tagName' 2>/dev/null)" || true
-  expected_tag="v${version_name}"
+# --- 4. Public metadata and publication proof ---
+fdroid_yaml="fdroid/io.github.sysadmindoc.swiftfloris.yml"
+if [ -f "$fdroid_yaml" ]; then
+  fdroid_current="$(grep -oP 'CurrentVersion:\s*"\K[0-9]+\.[0-9]+\.[0-9]+' "$fdroid_yaml" | head -1)" || true
+  fdroid_commit="$(grep -oP 'commit:\s*v\K[0-9]+\.[0-9]+\.[0-9]+' "$fdroid_yaml" | head -1)" || true
+  mark_public_claim "$fdroid_current"
+  mark_public_claim "$fdroid_commit"
+  for fdroid_source in current commit; do
+    eval "fdroid_value=\${fdroid_${fdroid_source}}"
+    if [ -n "$fdroid_value" ] && [ "$fdroid_value" != "$version_name" ]; then
+      surface_mismatch "${fdroid_yaml} ${fdroid_source}" "$fdroid_value"
+    fi
+  done
+fi
 
-  if [ -z "$latest_release" ]; then
-    if $strict; then
-      fail "no GitHub Releases found — expected ${expected_tag}; publish the release or revert the version bump"
-    else
-      warn "no GitHub Releases found — expected ${expected_tag} (advisory — publish the release after local evidence passes)"
-    fi
-  elif [ "$latest_release" != "$expected_tag" ]; then
-    if $strict; then
-      fail "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag}; publish the release or revert the version bump"
-    else
-      warn "latest GitHub Release is ${latest_release} but gradle.properties declares ${expected_tag} (advisory — publish the release after local evidence passes)"
-    fi
+publication_required=true
+if $allow_unpublished; then
+  if $public_surfaces_claim_release; then
+    fail "--allow-unpublished cannot pass because README.md or F-Droid metadata already claims v${version_name}"
   else
-    echo "GitHub Release: OK (${latest_release})"
+    publication_required=false
+    warn "publication proof relaxed by --allow-unpublished; do not publish README/F-Droid claims until tags and GitHub Release exist"
+  fi
+fi
+
+publication_problem() {
+  if $publication_required; then
+    fail "$*"
+  else
+    warn "$*"
+  fi
+}
+
+expected_tag="v${version_name}"
+
+if git rev-parse -q --verify "refs/tags/${expected_tag}" >/dev/null; then
+  echo "local tag: OK (${expected_tag})"
+else
+  publication_problem "missing local tag ${expected_tag}; create the tag or revert the public version bump"
+fi
+
+origin_url="$(git remote get-url origin 2>/dev/null || true)"
+if [ -z "$origin_url" ]; then
+  publication_problem "origin remote missing; cannot verify remote tag ${expected_tag}"
+else
+  if git ls-remote --exit-code --tags --refs origin "refs/tags/${expected_tag}" >/dev/null 2>&1; then
+    echo "origin tag: OK (${expected_tag})"
+  else
+    publication_problem "missing origin tag ${expected_tag}; push the tag or revert the public version bump"
+  fi
+fi
+
+gh_bin="${GH_BIN:-gh}"
+if command -v "$gh_bin" >/dev/null 2>&1; then
+  release_tag="$("$gh_bin" release view "$expected_tag" --json tagName --jq '.tagName' 2>/dev/null)" || true
+  if [ "$release_tag" = "$expected_tag" ]; then
+    echo "GitHub Release: OK (${release_tag})"
+  else
+    publication_problem "GitHub Release ${expected_tag} not found; publish the release or revert the public version bump"
   fi
 else
-  echo "GitHub Release: SKIPPED (gh CLI not available)"
+  publication_problem "${gh_bin} CLI not available; cannot verify GitHub Release ${expected_tag}"
 fi
 
 # --- 5. Developer verification guidance freshness ---

@@ -1,7 +1,7 @@
 {
-  "id": "dev.patrickgold.florisboard.beta",
-  "url": "https://github.com/florisboard/florisboard",
-  "author": "florisboard",
-  "name": "FlorisBoard Preview",
-  "additionalSettings": "{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"apkFilterRegEx\":\"preview\"}"
+  "id": "io.github.sysadmindoc.swiftfloris.beta",
+  "url": "https://github.com/SysAdminDoc/SwiftFloris",
+  "author": "SysAdminDoc",
+  "name": "SwiftFloris Preview",
+  "additionalSettings": "{\"includePrereleases\":true,\"fallbackToOlderReleases\":true,\"trackOnly\":false,\"versionDetection\":true,\"apkFilterRegEx\":\"app-release.*\\\\.apk\"}"
 }
