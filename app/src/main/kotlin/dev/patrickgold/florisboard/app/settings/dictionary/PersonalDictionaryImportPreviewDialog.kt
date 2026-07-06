@@ -124,7 +124,7 @@ fun PersonalDictionaryImportPreviewDialog(
                 ) {
                     Checkbox(
                         checked = skipFuturePreview,
-                        onCheckedChange = { skipFuturePreview = it },
+                        onCheckedChange = null,
                     )
                     Text(text = stringRes(R.string.settings__udm__import_preview__skip_next_time))
                 }
@@ -161,7 +161,7 @@ private fun ImportPreviewRow(
     ) {
         Checkbox(
             checked = checked,
-            onCheckedChange = onCheckedChange,
+            onCheckedChange = null,
         )
         Column(modifier = Modifier.weight(1f)) {
             Text(

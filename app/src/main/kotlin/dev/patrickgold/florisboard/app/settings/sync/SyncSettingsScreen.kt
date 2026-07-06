@@ -77,6 +77,7 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryScreenAction
 import dev.patrickgold.florisboard.app.settings.dictionary.UserDictionaryType
+import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDevice
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDeviceList
@@ -761,6 +762,8 @@ private fun SyncChannelPreference(
 
 @Composable
 private fun SyncQrPayloadCard(rawPayload: String) {
+    val context = LocalContext.current
+    val clipboardManager by context.clipboardManager()
     val matrix = remember(rawPayload) { SyncQrCode.encode(rawPayload) }
     Column(
         modifier = Modifier
@@ -781,6 +784,23 @@ private fun SyncQrPayloadCard(rawPayload: String) {
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
+        OutlinedTextField(
+            modifier = Modifier.fillMaxWidth(),
+            value = rawPayload,
+            onValueChange = {},
+            label = { Text(text = stringRes(R.string.settings__sync__paste_pairing_payload_label)) },
+            readOnly = true,
+            minLines = 3,
+            maxLines = 5,
+        )
+        TextButton(
+            onClick = {
+                clipboardManager.addNewPlaintext(rawPayload)
+                Toast.makeText(context, R.string.settings__sync__pairing_payload_copied, Toast.LENGTH_SHORT).show()
+            },
+        ) {
+            Text(text = stringRes(R.string.settings__sync__copy_pairing_payload))
+        }
     }
 }
 

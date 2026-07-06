@@ -21,6 +21,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import java.io.File
 
 class SyncPairingUiModelTest : FunSpec({
     test("PairingPayloadGenerator emits a parseable v1 payload for the selected channel") {
@@ -105,4 +107,23 @@ class SyncPairingUiModelTest : FunSpec({
         shouldThrow<IllegalArgumentException> { SyncQrCode.encode("") }
         shouldThrow<IllegalArgumentException> { SyncQrCode.encode("{}", size = 20) }
     }
+
+    test("settings QR card exposes a copyable text fallback for pairing payloads") {
+        val source = locateSyncSettingsScreenSource().readText()
+
+        source shouldContain "OutlinedTextField("
+        source shouldContain "value = rawPayload"
+        source shouldContain "readOnly = true"
+        source shouldContain "clipboardManager.addNewPlaintext(rawPayload)"
+        source shouldContain "settings__sync__copy_pairing_payload"
+    }
 })
+
+private fun locateSyncSettingsScreenSource(): File {
+    val candidates = listOf(
+        "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt",
+        "src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("SyncSettingsScreen.kt not reachable from working directory ${File(".").absolutePath}")
+}

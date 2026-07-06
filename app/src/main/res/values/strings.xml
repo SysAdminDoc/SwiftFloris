@@ -432,6 +432,8 @@
     <string name="settings__sync__receive_pairing_summary" comment="Sync pairing action summary">Scan another device QR code, or paste the payload when no scanner app is installed.</string>
     <string name="settings__sync__qr_ready" comment="Sync pairing QR status">Pairing QR ready</string>
     <string name="settings__sync__qr_ready_summary" comment="Sync pairing QR status summary">Show this QR code to the other SwiftFloris device. It contains no private key.</string>
+    <string name="settings__sync__copy_pairing_payload" comment="Sync pairing action to copy the generated pairing JSON">Copy pairing payload</string>
+    <string name="settings__sync__pairing_payload_copied" comment="Sync toast shown after copying the generated pairing JSON">Pairing payload copied.</string>
     <string name="settings__sync__group_devices" comment="Sync settings group title">Paired devices</string>
     <string name="settings__sync__no_paired_devices" comment="Sync settings empty state">No paired devices yet.</string>
     <string name="settings__sync__syncthing_dialog_title" comment="Sync dialog title">Syncthing folder</string>
