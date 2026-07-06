@@ -36,6 +36,8 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import dev.patrickgold.compose.tooltip.PlainTooltip
@@ -107,6 +109,7 @@ fun QuickActionButton(
         tooltip = actionTooltip,
         fallback = stringRes(R.string.a11y__smartbar_action__fallback),
     )
+    val isActionActivatable = isEnabled && type != QuickActionBarType.EDITOR_TILE
     PlainTooltip(actionTooltip, enabled = type == QuickActionBarType.INTERACTIVE_BUTTON) {
         SnyggBox(
             elementName = elementName,
@@ -118,13 +121,23 @@ fun QuickActionButton(
                 .semantics {
                     contentDescription = actionA11yLabel
                     role = Role.Button
+                    if (isActionActivatable) {
+                        onClick(label = actionA11yLabel) {
+                            inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                            action.onPointerDown(context)
+                            action.onPointerUp(context)
+                            true
+                        }
+                    } else {
+                        disabled()
+                    }
                 }
                 .indication(interactionSource, LocalIndication.current)
-                .pointerInput(action, isEnabled) {
+                .pointerInput(action, isActionActivatable) {
                     awaitEachGesture {
                         val down = awaitFirstDown()
                         down.consume()
-                        if (isEnabled && type != QuickActionBarType.EDITOR_TILE) {
+                        if (isActionActivatable) {
                             val press = PressInteraction.Press(down.position)
                             inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                             interactionSource.tryEmit(press)
