@@ -23,15 +23,21 @@ import dev.patrickgold.florisboard.ime.nlp.advanced.AdvancedSpellingProvider
 import dev.patrickgold.florisboard.ime.nlp.han.HanShapeBasedLanguageProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.florisboard.lib.kotlin.guardedByLock
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-internal class NlpProviderRegistry(context: Context) {
-    private val providerFactory = NlpProviderFactory(context)
+internal class NlpProviderRegistry private constructor(
+    createProviders: () -> List<NlpProvider>,
+) {
+    constructor(context: Context) : this(createProviders = { NlpProviderFactory(context).createProviders() })
+
+    internal constructor(testProviders: List<NlpProvider>) : this(createProviders = { testProviders })
+
     private val providers = guardedByLock {
-        providerFactory.createProviders().associateBy { it.providerId }.mapValues { (_, provider) ->
+        createProviders().associateBy { it.providerId }.mapValues { (_, provider) ->
             ProviderInstanceWrapper(provider)
         }
     }
@@ -48,13 +54,15 @@ internal class NlpProviderRegistry(context: Context) {
     }
 
     suspend fun preload(subtype: Subtype) {
-        providers.withLock { providers ->
-            subtype.nlpProviders.forEach { _, providerId ->
-                providers[providerId]?.let { provider ->
-                    provider.createIfNecessary()
-                    provider.preload(subtype)
+        val providersToPreload = providers.withLock { providers ->
+            buildList {
+                subtype.nlpProviders.forEach { _, providerId ->
+                    providers[providerId]?.let(::add)
                 }
             }
+        }.distinct()
+        for (provider in providersToPreload) {
+            provider.preload(subtype)
         }
     }
 
@@ -67,9 +75,10 @@ internal class NlpProviderRegistry(context: Context) {
     }
 
     private class ProviderInstanceWrapper(val provider: NlpProvider) {
+        private val lifecycleLock = Mutex(locked = false)
         private var isInstanceAlive = AtomicBoolean(false)
 
-        suspend fun createIfNecessary() {
+        private suspend fun createIfNecessary() {
             if (isInstanceAlive.compareAndSet(false, true)) {
                 try {
                     provider.create()
@@ -81,11 +90,16 @@ internal class NlpProviderRegistry(context: Context) {
         }
 
         suspend fun preload(subtype: Subtype) {
-            provider.preload(subtype)
+            lifecycleLock.withLock {
+                createIfNecessary()
+                provider.preload(subtype)
+            }
         }
 
         suspend fun destroyIfNecessary() {
-            if (isInstanceAlive.getAndSet(false)) provider.destroy()
+            lifecycleLock.withLock {
+                if (isInstanceAlive.getAndSet(false)) provider.destroy()
+            }
         }
     }
 }
