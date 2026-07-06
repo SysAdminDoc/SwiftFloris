@@ -950,6 +950,8 @@
     <string name="pref__smartbar__group_layout_specific__label" comment="Preference group title">Layout behavior</string>
     <string name="pref__smartbar__flip_toggles__label" comment="Preference title">Flip toggle buttons</string>
     <string name="pref__smartbar__flip_toggles__summary" comment="Preference summary">Move action row toggles to the opposite side</string>
+    <string name="pref__smartbar__shared_actions_auto_expand_collapse__label" comment="Preference title">Automatically expand/collapse</string>
+    <string name="pref__smartbar__shared_actions_auto_expand_collapse__summary" comment="Preference summary">Automatically expand or collapse the shared action row based on the current state</string>
     <string name="pref__smartbar__extended_actions_placement__label" comment="Preference title">Action row placement</string>
     <string name="ime__per_app_accent_hint__message" comment="One-time Smartbar hint for per-app accent">App tint?</string>
     <string name="ime__per_app_accent_hint__enable" comment="Smartbar hint action to enable per-app accent">Enable</string>

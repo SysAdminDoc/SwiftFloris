@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2022-2025 The FlorisBoard Contributors
+ * Copyright (C) 2026 The FlorisBoard Contributors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,21 @@
 
 package org.florisboard.lib.kotlin
 
-import kotlin.contracts.InvocationKind
-import kotlin.contracts.contract
+import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.shouldBe
 
-inline fun <R> tryOrNull(block: () -> R): R? {
-    contract {
-        callsInPlace(block, InvocationKind.AT_MOST_ONCE)
+class LibraryTest : FunSpec({
+    test("tryOrNull returns the block result") {
+        tryOrNull { "ready" } shouldBe "ready"
     }
-    return try {
-        block()
-    } catch (_: Throwable) {
-        null
+
+    test("tryOrNull preserves successful null results") {
+        tryOrNull<String?> { null } shouldBe null
     }
-}
+
+    test("tryOrNull converts thrown work to null") {
+        tryOrNull {
+            error("boom")
+        } shouldBe null
+    }
+})
