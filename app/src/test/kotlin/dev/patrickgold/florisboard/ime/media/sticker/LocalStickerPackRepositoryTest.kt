@@ -33,7 +33,7 @@ class LocalStickerPackRepositoryTest : FunSpec({
     test("imports a local image into an app-private sticker pack") {
         val dir = tempDir()
         val image = dir.resolve("thumbs-up.PNG").apply {
-            writeBytes(byteArrayOf(0x01, 0x02, 0x03))
+            writeBytes(samplePngBytes())
         }
 
         LocalStickerPackRepository.importStickerFile(
@@ -56,7 +56,7 @@ class LocalStickerPackRepositoryTest : FunSpec({
     test("exports and imports a portable sticker-pack archive") {
         val sourceDir = tempDir()
         val image = sourceDir.resolve("Friday_Dance.webp").apply {
-            writeBytes(byteArrayOf(0x10, 0x11, 0x12, 0x13))
+            writeBytes(sampleWebpBytes())
         }
         LocalStickerPackRepository.importStickerFile(
             storageDir = sourceDir,
@@ -106,6 +106,23 @@ class LocalStickerPackRepositoryTest : FunSpec({
         oversizedResult.reason shouldBe LocalStickerPackFailure.OVERSIZED
     }
 
+    test("rejects declared image MIME when file bytes are not an image") {
+        val dir = tempDir()
+        val fake = dir.resolve("fake.png").apply {
+            writeText("not actually an image")
+        }
+
+        val result = LocalStickerPackRepository.importStickerFile(
+            storageDir = dir,
+            sourceFile = fake,
+            declaredMimeType = "image/png",
+        ) as LocalStickerPackResult.Failure
+
+        result.reason shouldBe LocalStickerPackFailure.UNSUPPORTED_MIME_TYPE
+        LocalStickerPackRepository.loadPack(dir) shouldBe null
+        dir.resolve(LocalStickerPackRepository.ManifestFileName).exists() shouldBe false
+    }
+
     test("rejects sticker-pack archives with unsafe file paths") {
         val dir = tempDir()
         val archive = dir.resolve("unsafe.sfstickers")
@@ -136,4 +153,21 @@ class LocalStickerPackRepositoryTest : FunSpec({
 
 private fun tempDir(): File {
     return Files.createTempDirectory("swiftfloris-local-stickers-").toFile().also { it.deleteOnExit() }
+}
+
+private fun samplePngBytes(): ByteArray {
+    return byteArrayOf(
+        0x89.toByte(), 0x50, 0x4E, 0x47,
+        0x0D, 0x0A, 0x1A, 0x0A,
+        0x00, 0x00, 0x00, 0x00,
+    )
+}
+
+private fun sampleWebpBytes(): ByteArray {
+    return byteArrayOf(
+        0x52, 0x49, 0x46, 0x46,
+        0x04, 0x00, 0x00, 0x00,
+        0x57, 0x45, 0x42, 0x50,
+        0x56, 0x50, 0x38, 0x20,
+    )
 }

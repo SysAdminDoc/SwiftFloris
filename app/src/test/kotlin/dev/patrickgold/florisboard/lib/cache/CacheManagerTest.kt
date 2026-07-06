@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.lib.cache
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import java.nio.file.Files
@@ -23,6 +24,25 @@ import java.nio.file.Files
 class CacheManagerTest : FunSpec({
     test("import cache has a hard per-file byte budget") {
         CacheManager.MaxImportFileBytes shouldBe 256L * 1024L * 1024L
+    }
+
+    test("import cache has hard batch count and byte budgets") {
+        CacheManager.MaxImportUriCount shouldBe 32
+        CacheManager.MaxImportBatchBytes shouldBe 512L * 1024L * 1024L
+
+        CacheManager.requireImportUriCount(CacheManager.MaxImportUriCount)
+        shouldThrow<IllegalStateException> {
+            CacheManager.requireImportUriCount(CacheManager.MaxImportUriCount + 1)
+        }
+
+        CacheManager.addImportBatchBytes(CacheManager.MaxImportBatchBytes - 1L, 1L) shouldBe
+            CacheManager.MaxImportBatchBytes
+        shouldThrow<IllegalStateException> {
+            CacheManager.requireImportBatchCapacity(CacheManager.MaxImportBatchBytes, 1L)
+        }
+        shouldThrow<IllegalStateException> {
+            CacheManager.requireImportBatchCapacity(0L, CacheManager.MaxImportBatchBytes + 1L)
+        }
     }
 
     test("sanitizeImportFileName strips path traversal and unsafe characters") {

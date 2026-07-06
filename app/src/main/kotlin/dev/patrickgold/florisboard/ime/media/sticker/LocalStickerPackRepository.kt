@@ -243,6 +243,12 @@ object LocalStickerPackRepository {
                                 throw LocalStickerPackException(LocalStickerPackFailure.EMPTY)
                             }
                         }
+                        if (!fileHeaderMatchesMimeType(tempFile, mimeType)) {
+                            throw LocalStickerPackException(
+                                LocalStickerPackFailure.UNSUPPORTED_MIME_TYPE,
+                                "Sticker file bytes do not match $mimeType",
+                            )
+                        }
                         imported += LocalStickerPackEntry(
                             id = id,
                             fileName = internalFileName,
@@ -356,6 +362,12 @@ object LocalStickerPackRepository {
                     if (copied == 0L) {
                         return LocalStickerPackResult.Failure(LocalStickerPackFailure.EMPTY)
                     }
+                }
+                if (!fileHeaderMatchesMimeType(tempFile, mimeType)) {
+                    return LocalStickerPackResult.Failure(
+                        LocalStickerPackFailure.UNSUPPORTED_MIME_TYPE,
+                        "Sticker file bytes do not match $mimeType",
+                    )
                 }
                 val label = UserStickerRepository.labelFromDisplayName(displayName)
                 val entry = LocalStickerPackEntry(
@@ -532,6 +544,36 @@ object LocalStickerPackRepository {
             "image/jpeg" -> "jpg"
             "image/gif" -> "gif"
             else -> "bin"
+        }
+    }
+
+    private fun fileHeaderMatchesMimeType(file: File, mimeType: String): Boolean {
+        val header = file.inputStream().use { input ->
+            ByteArray(16).also { buffer ->
+                val read = input.read(buffer)
+                if (read < buffer.size) {
+                    buffer.fill(0.toByte(), fromIndex = read.coerceAtLeast(0))
+                }
+            }
+        }
+        return when (mimeType) {
+            "image/png" -> header.size >= 8 &&
+                header[0] == 0x89.toByte() &&
+                header[1] == 0x50.toByte() &&
+                header[2] == 0x4E.toByte() &&
+                header[3] == 0x47.toByte() &&
+                header[4] == 0x0D.toByte() &&
+                header[5] == 0x0A.toByte() &&
+                header[6] == 0x1A.toByte() &&
+                header[7] == 0x0A.toByte()
+            "image/jpeg" -> header.size >= 3 &&
+                header[0] == 0xFF.toByte() &&
+                header[1] == 0xD8.toByte() &&
+                header[2] == 0xFF.toByte()
+            "image/gif" -> header.copyOfRange(0, 6).toString(Charsets.US_ASCII) in setOf("GIF87a", "GIF89a")
+            "image/webp" -> header.copyOfRange(0, 4).toString(Charsets.US_ASCII) == "RIFF" &&
+                header.copyOfRange(8, 12).toString(Charsets.US_ASCII) == "WEBP"
+            else -> false
         }
     }
 

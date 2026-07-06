@@ -98,6 +98,7 @@ object Restore {
         AppPackageContract.LEGACY_APPLICATION_ID,
     )
     const val BACKUP_ARCHIVE_FILE_NAME = "backup.zip"
+    const val MAX_ARCHIVE_BYTES = 256L * 1024L * 1024L
 }
 
 @Composable
@@ -140,7 +141,7 @@ fun RestoreScreen() = FlorisScreen {
         val workspace = cacheManager.backupAndRestore.new()
         try {
             workspace.zipFile = workspace.inputDir.subFile(Restore.BACKUP_ARCHIVE_FILE_NAME)
-            context.contentResolver.readToFile(uri, workspace.zipFile)
+            context.contentResolver.readToFile(uri, workspace.zipFile, Restore.MAX_ARCHIVE_BYTES)
             ZipUtils.unzip(workspace.zipFile, workspace.outputDir)
             workspace.metadata = try {
                 workspace.outputDir.subFile(Backup.METADATA_JSON_NAME).readJson()

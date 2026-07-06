@@ -455,6 +455,7 @@ fun UserDictionaryScreen(
                             }
                         }.recoverCatching { modularError ->
                             if (modularError !is DictionaryImportException) throw modularError
+                            if (modularError.isSafetyLimit) throw modularError
                             db.importCombinedList(context, uri)
                             DictionaryImportFlowResult.Applied(null)
                         }.getOrThrow()

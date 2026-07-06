@@ -29,6 +29,10 @@ class BackupRestorePolicyTest : FunSpec({
         timestamp = 42L,
     )
 
+    test("restore archive copy has a hard provider-stream byte budget") {
+        Restore.MAX_ARCHIVE_BYTES shouldBe 256L * 1024L * 1024L
+    }
+
     test("backup document result distinguishes success cancellation and failure") {
         BackupRestorePolicy.classifyBackupDocumentResult(
             uriSelected = true,

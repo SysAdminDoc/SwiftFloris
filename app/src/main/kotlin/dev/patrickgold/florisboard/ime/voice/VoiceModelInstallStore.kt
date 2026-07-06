@@ -25,6 +25,7 @@ import java.io.InputStream
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.florisboard.lib.android.copyToLimited
 
 data class VoiceModelInstallState(
     val modelId: String,
@@ -70,10 +71,9 @@ class VoiceModelInstallStore(
         val tmpFile = File(stagingDir, "$targetName.tmp")
         val targetFile = File(stagingDir, targetName)
         try {
+            val maxArtifactBytes = maxArtifactBytes(entry)
             inputStream.use { input ->
-                tmpFile.outputStream().use { output ->
-                    input.copyTo(output)
-                }
+                copyModelArtifact(input, tmpFile, maxArtifactBytes)
             }
             if (!tmpFile.renameTo(targetFile)) {
                 tmpFile.copyTo(targetFile, overwrite = true)
@@ -149,6 +149,7 @@ class VoiceModelInstallStore(
     companion object {
         private val SafeModelIdPattern = Regex("""[A-Za-z0-9][A-Za-z0-9._-]{0,127}""")
         private val UnsafeArtifactNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
+        private const val ArtifactSizeHeadroomMb = 32
         // Dotted prefixes keep these out of `state()`'s `listFiles()` filter
         // (it skips non-files) but more importantly they make the leftover
         // dirs unambiguously ours so the sweeper never touches a real
@@ -167,6 +168,25 @@ class VoiceModelInstallStore(
                 ?.take(160)
                 ?.takeIf { it.isNotBlank() }
             return sanitized ?: fallbackName
+        }
+
+        internal fun maxArtifactBytes(entry: VoiceModelCatalogEntry): Long {
+            val headroomMb = maxOf(ArtifactSizeHeadroomMb, entry.approximateSizeMb / 4)
+            return (entry.approximateSizeMb.toLong() + headroomMb.toLong()) * 1024L * 1024L
+        }
+
+        internal fun requireArtifactSize(entry: VoiceModelCatalogEntry, byteCount: Long) {
+            if (byteCount < 0L) return
+            val maxArtifactBytes = maxArtifactBytes(entry)
+            check(byteCount <= maxArtifactBytes) {
+                "Selected voice model artifact is $byteCount bytes; maximum for ${entry.id} is $maxArtifactBytes bytes."
+            }
+        }
+
+        internal fun copyModelArtifact(inputStream: InputStream, targetFile: File, maxBytes: Long): Long {
+            targetFile.outputStream().use { output ->
+                return inputStream.copyToLimited(output, maxBytes)
+            }
         }
     }
 }
@@ -187,6 +207,9 @@ class VoiceModelInstallRepository(
     ): VoiceModelInstallState {
         return withContext(Dispatchers.IO) {
             val displayName = context.displayName(uri)
+            context.fileSize(uri)?.let { reportedSize ->
+                VoiceModelInstallStore.requireArtifactSize(entry, reportedSize)
+            }
             val inputStream = context.contentResolver.openInputStream(uri)
                 ?: error("Unable to open selected model artifact.")
             store.install(
@@ -216,6 +239,21 @@ class VoiceModelInstallRepository(
     private fun Cursor.getStringOrNull(columnName: String): String? {
         val index = getColumnIndex(columnName)
         return if (index >= 0 && !isNull(index)) getString(index) else null
+    }
+
+    private fun Context.fileSize(uri: Uri): Long? {
+        return contentResolver.query(uri, null, null, null, null)?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                cursor.getLongOrNull(OpenableColumns.SIZE)
+            } else {
+                null
+            }
+        }
+    }
+
+    private fun Cursor.getLongOrNull(columnName: String): Long? {
+        val index = getColumnIndex(columnName)
+        return if (index >= 0 && !isNull(index)) getLong(index) else null
     }
 
     companion object {

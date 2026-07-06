@@ -66,9 +66,40 @@ class CacheManager(context: Context) {
 
         const val LoadedDirName = "loaded"
 
+        internal const val MaxImportUriCount = 32
         internal const val MaxImportFileBytes = 256L * 1024L * 1024L
+        internal const val MaxImportBatchBytes = 512L * 1024L * 1024L
 
         private val UnsafeImportFileNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
+
+        internal fun requireImportUriCount(size: Int) {
+            check(size <= MaxImportUriCount) {
+                "Import batch contains $size files; maximum is $MaxImportUriCount."
+            }
+        }
+
+        internal fun requireImportBatchCapacity(currentBytes: Long, nextBytes: Long) {
+            if (nextBytes <= 0L) return
+            check(nextBytes <= MaxImportBatchBytes && currentBytes <= MaxImportBatchBytes - nextBytes) {
+                "Import batch exceeds maximum size of $MaxImportBatchBytes bytes."
+            }
+        }
+
+        internal fun addImportBatchBytes(currentBytes: Long, nextBytes: Long): Long {
+            requireImportBatchCapacity(currentBytes, nextBytes)
+            return currentBytes + nextBytes.coerceAtLeast(0L)
+        }
+
+        private fun directoryFileBytes(dir: FsDir): Long {
+            if (!dir.exists()) return 0L
+            var totalBytes = 0L
+            dir.walkTopDown().forEach { file ->
+                if (file.isFile) {
+                    totalBytes = addImportBatchBytes(totalBytes, file.length())
+                }
+            }
+            return totalBytes
+        }
 
         internal fun sanitizeImportFileName(displayName: String?, fallbackName: String): String {
             val sanitized = displayName
@@ -119,12 +150,15 @@ class CacheManager(context: Context) {
     fun readFromUriIntoCache(uri: Uri) = readFromUriIntoCache(listOf(uri))
 
     fun readFromUriIntoCache(uriList: List<Uri>): ImporterWorkspace {
+        val importUris = uriList.distinct()
+        requireImportUriCount(importUris.size)
         val contentResolver = appContext.contentResolver ?: error("Content resolver is null.")
         val workspace = ImporterWorkspace(uuid = UUID.randomUUID().toString()).also { it.mkdirs() }
         try {
             val usedFileNames = mutableSetOf<String>()
+            var totalImportBytes = 0L
             workspace.inputFileInfos = buildList {
-                for ((index, uri) in uriList.withIndex()) {
+                for ((index, uri) in importUris.withIndex()) {
                     val fallbackFileName = "import-${index + 1}"
                     val (displayName, reportedSize) = contentResolver.query(uri)?.use { cursor ->
                         if (cursor.moveToFirst()) {
@@ -133,6 +167,9 @@ class CacheManager(context: Context) {
                             null to null
                         }
                     } ?: (null to null)
+                    reportedSize?.takeIf { it >= 0L }?.let {
+                        requireImportBatchCapacity(totalImportBytes, it)
+                    }
                     val fileName = uniqueImportFileName(
                         fileName = sanitizeImportFileName(displayName ?: uri.lastPathSegment, fallbackFileName),
                         usedNames = usedFileNames,
@@ -141,11 +178,16 @@ class CacheManager(context: Context) {
                     usedFileNames += fileName
                     val file = workspace.inputDir.subFile(fileName)
                     contentResolver.readToFile(uri, file, MaxImportFileBytes)
+                    totalImportBytes = addImportBatchBytes(totalImportBytes, file.length())
+                    val extWorkingDir = workspace.outputDir.subDir(file.nameWithoutExtension)
                     val ext = runCatching {
-                        val extWorkingDir = workspace.outputDir.subDir(file.nameWithoutExtension)
                         ZipUtils.unzip(srcFile = file, dstDir = extWorkingDir)
                         val extJsonFile = extWorkingDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
                         extJsonFile.readJson<Extension>(ExtensionJsonConfig).also { it.workingDir = extWorkingDir }
+                    }
+                    totalImportBytes = addImportBatchBytes(totalImportBytes, directoryFileBytes(extWorkingDir))
+                    if (ext.isFailure) {
+                        extWorkingDir.deleteRecursively()
                     }
                     add(
                         FileInfo(

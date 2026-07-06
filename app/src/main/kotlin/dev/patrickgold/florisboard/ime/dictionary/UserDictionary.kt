@@ -37,9 +37,10 @@ import androidx.room.Update
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.ValidationRule
-import org.florisboard.lib.android.readText
+import org.florisboard.lib.android.copyToLimited
 import org.florisboard.lib.android.writeText
 import org.florisboard.lib.kotlin.tryOrNull
+import java.io.ByteArrayOutputStream
 import java.lang.ref.WeakReference
 
 private const val WORDS_TABLE = "words"
@@ -148,9 +149,25 @@ interface UserDictionaryDatabase {
     fun reset()
 
     fun importCombinedList(context: Context, uri: Uri) {
-        context.contentResolver.readText(uri) { src ->
-            importCombinedListEntries(UserDictionaryCombinedListCodec.decodeLines(src.lineSequence()))
+        val inputStream = context.contentResolver.openInputStream(uri)
+            ?: error("Could not open import source for reading.")
+        val text = inputStream.use { input ->
+            val out = ByteArrayOutputStream()
+            try {
+                input.copyToLimited(out, DictionaryImporter.MAX_IMPORT_FILE_BYTES)
+            } catch (error: IllegalStateException) {
+                if (error.message?.contains("maximum size") == true) {
+                    throw DictionaryImportException(
+                        "Legacy combined-list import exceeds the " +
+                            "${DictionaryImporter.MAX_IMPORT_FILE_BYTES / (1024 * 1024)} MiB safety limit.",
+                        isSafetyLimit = true,
+                    )
+                }
+                throw error
+            }
+            String(out.toByteArray(), Charsets.UTF_8)
         }
+        importCombinedListEntries(UserDictionaryCombinedListCodec.decode(text))
     }
 
     fun exportCombinedList(context: Context, uri: Uri) {
@@ -305,6 +322,13 @@ object UserDictionaryCombinedListCodec {
                 locale = locale,
                 shortcut = shortcut,
             )
+            if (entries.size > DictionaryImporter.MAX_IMPORTED_ENTRIES) {
+                throw DictionaryImportException(
+                    "Dictionary import contains more than ${DictionaryImporter.MAX_IMPORTED_ENTRIES} entries; " +
+                        "split the file and retry.",
+                    isSafetyLimit = true,
+                )
+            }
         }
         return entries
     }

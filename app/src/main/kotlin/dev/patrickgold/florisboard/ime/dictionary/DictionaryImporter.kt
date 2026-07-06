@@ -436,6 +436,7 @@ class DictionaryImporter {
             if (entryBytes > MAX_IMPORT_FILE_BYTES) {
                 throw DictionaryImportException(
                     "$label exceeds the ${MAX_IMPORT_FILE_BYTES / (1024 * 1024)} MiB safety limit.",
+                    isSafetyLimit = true,
                 )
             }
             if (cumulative.value > MAX_IMPORT_FILE_BYTES) {
@@ -445,6 +446,7 @@ class DictionaryImporter {
                 // any single file.
                 throw DictionaryImportException(
                     "Dictionary archive exceeds the ${MAX_IMPORT_FILE_BYTES / (1024 * 1024)} MiB total safety limit.",
+                    isSafetyLimit = true,
                 )
             }
             out.write(buffer, 0, read)
@@ -456,6 +458,7 @@ class DictionaryImporter {
         if (size > MAX_IMPORTED_ENTRIES) {
             throw DictionaryImportException(
                 "Dictionary import contains more than $MAX_IMPORTED_ENTRIES entries; split the file and retry.",
+                isSafetyLimit = true,
             )
         }
     }
@@ -525,8 +528,8 @@ class DictionaryImporter {
 
     companion object {
         private const val MAX_SNIFF_BYTES = 1024
-        private const val MAX_IMPORT_FILE_BYTES = 16L * 1024L * 1024L
-        private const val MAX_IMPORTED_ENTRIES = 50_000
+        internal const val MAX_IMPORT_FILE_BYTES = 16L * 1024L * 1024L
+        internal const val MAX_IMPORTED_ENTRIES = 50_000
         private const val MAX_JSON_DEPTH = 64
         private const val MAX_ZIP_ENTRIES = 256
         private val ENTRY_REGEX = Regex(
@@ -559,4 +562,7 @@ data class PersonalDictionaryEntry(
     val locale: String?,
 )
 
-class DictionaryImportException(message: String) : RuntimeException(message)
+class DictionaryImportException(
+    message: String,
+    val isSafetyLimit: Boolean = false,
+) : RuntimeException(message)

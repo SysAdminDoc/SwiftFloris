@@ -204,6 +204,40 @@ class DictionaryImporterTest : FunSpec({
         }
     }
 
+    test("entry-limit failures are marked non-retriable by legacy fallback") {
+        val csv = buildString {
+            appendLine("word,frequency")
+            repeat(50_001) { index ->
+                append("word")
+                append(index)
+                appendLine(",128")
+            }
+        }
+
+        val error = shouldThrow<DictionaryImportException> {
+            importer.import(ByteArrayInputStream(csv.toByteArray(Charsets.UTF_8)))
+        }
+
+        error.isSafetyLimit shouldBe true
+    }
+
+    test("legacy combined-list codec enforces the same entry limit") {
+        val combinedList = buildString {
+            appendLine("dictionary=legacy.sfexp")
+            repeat(50_001) { index ->
+                append(" w=word")
+                append(index)
+                appendLine(";f=128;l=en")
+            }
+        }
+
+        val error = shouldThrow<DictionaryImportException> {
+            UserDictionaryCombinedListCodec.decode(combinedList)
+        }
+
+        error.isSafetyLimit shouldBe true
+    }
+
     test("detectFormat routes by structure, not file extension") {
         importer.detectFormat("PK\u0003\u0004".toByteArray()) shouldBe DictionaryImportFormat.ZIP
         importer.detectFormat("<?xml version=\"1.0\"?><userdictionary/>".toByteArray()) shouldBe

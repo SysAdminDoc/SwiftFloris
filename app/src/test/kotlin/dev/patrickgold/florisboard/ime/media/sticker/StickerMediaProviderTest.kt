@@ -151,8 +151,9 @@ class StickerMediaProviderTest {
     fun localStickerPackFilesAreServedFromAppPrivateStorage() {
         val storageDir = LocalStickerPackRepository.storageDir(context)
         storageDir.deleteRecursively()
+        val stickerBytes = samplePngBytes()
         val source = File.createTempFile("local-sticker", ".png", context.cacheDir).apply {
-            writeBytes(byteArrayOf(0x21, 0x22, 0x23))
+            writeBytes(stickerBytes)
         }
         LocalStickerPackRepository.importStickerFile(
             storageDir = storageDir,
@@ -168,12 +169,12 @@ class StickerMediaProviderTest {
             .shouldNotBeNull()
             .use { cursor ->
                 cursor.moveToFirst() shouldBe true
-                cursor.getLong(0) shouldBe 3L
+                cursor.getLong(0) shouldBe stickerBytes.size.toLong()
             }
         val bytes = provider.openFile(uri, "r").use { pfd ->
             FileInputStream(pfd.fileDescriptor).use { input -> input.readBytes() }
         }
-        bytes.toList() shouldBe listOf(0x21.toByte(), 0x22.toByte(), 0x23.toByte())
+        bytes.toList() shouldBe stickerBytes.toList()
     }
 
     private fun grantStickerFolder(): Uri {
@@ -202,6 +203,14 @@ class StickerMediaProviderTest {
     companion object {
         private const val DOCS_AUTHORITY = "com.example.documents"
         private const val TREE_ID = "primary:Stickers"
+
+        private fun samplePngBytes(): ByteArray {
+            return byteArrayOf(
+                0x89.toByte(), 0x50, 0x4E, 0x47,
+                0x0D, 0x0A, 0x1A, 0x0A,
+                0x00, 0x00, 0x00, 0x00,
+            )
+        }
     }
 }
 

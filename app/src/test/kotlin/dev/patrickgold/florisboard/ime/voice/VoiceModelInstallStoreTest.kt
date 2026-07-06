@@ -92,6 +92,53 @@ class VoiceModelInstallStoreTest : FunSpec({
         }
     }
 
+    test("oversized replacement stream keeps the previously installed model intact") {
+        val root = Files.createTempDirectory("voice-models").toFile()
+        val store = VoiceModelInstallStore(root)
+        val model = VoiceModelCatalog.byId("vosk-en-us-small-0-15")!!.copy(
+            id = "voice-test-small",
+            approximateSizeMb = 0,
+        )
+        try {
+            store.install(
+                entry = model,
+                displayName = "old.zip",
+                inputStream = ByteArrayInputStream(byteArrayOf(1, 2, 3, 4)),
+            )
+
+            shouldThrow<IllegalStateException> {
+                store.install(
+                    entry = model,
+                    displayName = "too-large.zip",
+                    inputStream = RepeatingInputStream(VoiceModelInstallStore.maxArtifactBytes(model) + 1L),
+                )
+            }
+
+            val state = store.state(model)
+            state.installed shouldBe true
+            state.diskBytes shouldBe 4L
+            state.artifactName shouldBe "old.zip"
+            root.resolve(model.id).resolve("old.zip").readBytes().toList() shouldBe
+                byteArrayOf(1, 2, 3, 4).toList()
+            root.listFiles()?.none { it.name.startsWith(".swiftfloris-staging-") } shouldBe true
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("model artifact byte budget follows catalog metadata") {
+        val tiny = VoiceModelCatalog.byId("whisper-en-tiny-en")!!
+        val large = VoiceModelCatalog.byId("whisper-multi-large-v3-turbo-q8")!!
+
+        VoiceModelInstallStore.maxArtifactBytes(tiny) shouldBe (75L + 32L) * 1024L * 1024L
+        VoiceModelInstallStore.maxArtifactBytes(large) shouldBe (834L + 208L) * 1024L * 1024L
+
+        VoiceModelInstallStore.requireArtifactSize(tiny, VoiceModelInstallStore.maxArtifactBytes(tiny))
+        shouldThrow<IllegalStateException> {
+            VoiceModelInstallStore.requireArtifactSize(tiny, VoiceModelInstallStore.maxArtifactBytes(tiny) + 1L)
+        }
+    }
+
     test("model ids must not escape the install root") {
         val root = Files.createTempDirectory("voice-models").toFile()
         val store = VoiceModelInstallStore(root)
@@ -138,5 +185,23 @@ private class FailingInputStream(private val failAfterBytes: Int) : InputStream(
         if (emitted >= failAfterBytes) throw IOException("simulated read failure")
         emitted++
         return emitted
+    }
+}
+
+private class RepeatingInputStream(private val totalBytes: Long) : InputStream() {
+    private var emitted = 0L
+
+    override fun read(): Int {
+        if (emitted >= totalBytes) return -1
+        emitted++
+        return 0
+    }
+
+    override fun read(buffer: ByteArray, offset: Int, length: Int): Int {
+        if (emitted >= totalBytes) return -1
+        val count = minOf(length.toLong(), totalBytes - emitted).toInt()
+        buffer.fill(0.toByte(), offset, offset + count)
+        emitted += count
+        return count
     }
 }
