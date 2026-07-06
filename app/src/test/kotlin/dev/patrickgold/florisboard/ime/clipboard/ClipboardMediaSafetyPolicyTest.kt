@@ -21,6 +21,9 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaClonePol
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
+import java.io.File
 
 class ClipboardMediaSafetyPolicyTest : FunSpec({
     test("clipboard image clone cap stays at 32 MiB") {
@@ -41,6 +44,15 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
     test("provider reads EXIF orientation for images only") {
         ClipboardMediaClonePolicy.shouldReadExifOrientation(ClipboardFileStorage.MediaKind.IMAGE) shouldBe true
         ClipboardMediaClonePolicy.shouldReadExifOrientation(ClipboardFileStorage.MediaKind.VIDEO) shouldBe false
+    }
+
+    test("provider metadata writes require a ready DAO instead of nullable async drops") {
+        val source = locateClipboardMediaProviderSource().readText()
+
+        source shouldContain "requireClipboardFilesDao().insert(fileInfo)"
+        source shouldContain "requireClipboardFilesDao().delete(id)"
+        source shouldNotContain "clipboardFilesDao?.insert(fileInfo)"
+        source shouldNotContain "clipboardFilesDao?.delete(id)"
     }
 
     test("preview policy accepts bounded image dimensions") {
@@ -75,3 +87,12 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme(null) shouldBe false
     }
 })
+
+private fun locateClipboardMediaProviderSource(): File {
+    val candidates = listOf(
+        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaProvider.kt",
+        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaProvider.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("ClipboardMediaProvider.kt not reachable from working directory ${File(".").absolutePath}")
+}

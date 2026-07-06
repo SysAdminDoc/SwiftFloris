@@ -45,6 +45,8 @@ import org.florisboard.lib.kotlin.tryOrNull
  * Database accesses are performed async.
  */
 class ClipboardMediaProvider : ContentProvider() {
+    private val clipboardFilesDaoLock = Any()
+    @Volatile
     private var clipboardFilesDao: ClipboardFilesDao? = null
     // ConcurrentHashMap: this cache is mutated/read from binder pool threads
     // (insert/delete/getType) AND from the ioScope init() iteration concurrently.
@@ -77,15 +79,23 @@ class ClipboardMediaProvider : ContentProvider() {
     }
 
     fun init() {
-        clipboardFilesDao = ClipboardFilesDatabase.new(context!!).clipboardFilesDao()
-
-        for (clipboardFileInfo in clipboardFilesDao?.getAll() ?: emptyList()) {
+        val dao = requireClipboardFilesDao()
+        for (clipboardFileInfo in dao.getAll()) {
             cachedFileInfos[clipboardFileInfo.id] = clipboardFileInfo
         }
     }
 
+    private fun requireClipboardFilesDao(): ClipboardFilesDao {
+        clipboardFilesDao?.let { return it }
+        return synchronized(clipboardFilesDaoLock) {
+            clipboardFilesDao ?: ClipboardFilesDatabase.new(context!!).clipboardFilesDao().also { dao ->
+                clipboardFilesDao = dao
+            }
+        }
+    }
+
     private fun cachedFileInfo(id: Long): ClipboardFileInfo? {
-        return cachedFileInfos[id] ?: clipboardFilesDao?.getById(id)?.also { fileInfo ->
+        return cachedFileInfos[id] ?: requireClipboardFilesDao().getById(id)?.also { fileInfo ->
             cachedFileInfos[id] = fileInfo
         }
     }
@@ -110,13 +120,13 @@ class ClipboardMediaProvider : ContentProvider() {
                 // Callers (notably the platform image-paste path) request
                 // just the ORIENTATION column. Return that cursor instead
                 // of discarding it and falling through to the full row.
-                clipboardFilesDao?.getOrientationCursorById(id)
+                requireClipboardFilesDao().getOrientationCursorById(id)
             } else {
                 //Return null if the projection query is invalid
                 null
             }
         }
-        return clipboardFilesDao?.getCursorById(id)
+        return requireClipboardFilesDao().getCursorById(id)
     }
 
     override fun getType(uri: Uri): String? {
@@ -189,7 +199,7 @@ class ClipboardMediaProvider : ContentProvider() {
                     val fileInfo = ClipboardFileInfo(id, displayName, size, rotation, mimeTypes)
                     cachedFileInfos[id] = fileInfo
                     ioScope.launch {
-                        clipboardFilesDao?.insert(fileInfo)
+                        requireClipboardFilesDao().insert(fileInfo)
                     }
                     if (m == IMAGE_CLIPS_TABLE) {
                         ContentUris.withAppendedId(IMAGE_CLIPS_URI, id)
@@ -213,7 +223,7 @@ class ClipboardMediaProvider : ContentProvider() {
                 cachedFileInfos.remove(id)
                 context?.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 ioScope.launch {
-                    clipboardFilesDao?.delete(id)
+                    requireClipboardFilesDao().delete(id)
                 }
                 return 1
             }
