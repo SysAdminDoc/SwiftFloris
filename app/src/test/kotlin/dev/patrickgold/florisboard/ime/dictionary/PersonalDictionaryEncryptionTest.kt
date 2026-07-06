@@ -49,6 +49,20 @@ class PersonalDictionaryEncryptionTest : FunSpec({
         source shouldNotContain "allowMainThreadQueries"
     }
 
+    test("encrypted dictionary recovery preserves unreadable stores instead of deleting them") {
+        val source = locateProjectFile(
+            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
+            "src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
+        ).readText()
+
+        source shouldContain "quarantineFlorisUserDictionaryDatabaseFiles(context, \"unreadable\")"
+        source shouldContain "quarantineFlorisUserDictionaryDatabaseFiles(context, \"failed-migration\")"
+        source shouldContain "replacement aborted because the unreadable store could not be preserved"
+        source shouldContain "renameTo(quarantine)"
+        source shouldNotContain "deleteFlorisUserDictionaryDatabaseFiles"
+        source shouldNotContain "context.deleteDatabase(FlorisUserDictionaryDatabase.DB_FILE_NAME)"
+    }
+
     test("SQLCipher passphrase is generated locally and wrapped by Tink AndroidKeystore") {
         val dictionarySource = locateProjectFile(
             "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/FlorisUserDictionaryEncryption.kt",

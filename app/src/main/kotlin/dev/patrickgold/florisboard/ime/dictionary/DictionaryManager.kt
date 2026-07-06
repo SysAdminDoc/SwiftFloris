@@ -384,9 +384,12 @@ class DictionaryManager private constructor(context: Context) {
             database.userDictionaryDao().queryLanguageList()
             database
         }.getOrElse { error ->
-            flogWarning(LogTopic.DICTIONARY) { "Encrypted user dictionary could not be opened; recreating empty store: ${error.message}" }
+            flogWarning(LogTopic.DICTIONARY) { "Encrypted user dictionary could not be opened; preserving unreadable store before creating a replacement: ${error.message}" }
             database.close()
-            deleteFlorisUserDictionaryDatabaseFiles(context)
+            if (!quarantineFlorisUserDictionaryDatabaseFiles(context, "unreadable")) {
+                flogError(LogTopic.DICTIONARY) { "Encrypted user dictionary replacement aborted because the unreadable store could not be preserved" }
+                return null
+            }
             val replacement = buildEncryptedFlorisUserDictionary(context) ?: return null
             runCatching {
                 replacement.userDictionaryDao().queryLanguageList()
@@ -454,7 +457,10 @@ class DictionaryManager private constructor(context: Context) {
         }.getOrElse { error ->
             flogError(LogTopic.DICTIONARY) { "Encrypted user dictionary migration failed; restoring plaintext store: ${error.message}" }
             encryptedDatabase.close()
-            deleteFlorisUserDictionaryDatabaseFiles(context)
+            if (!quarantineFlorisUserDictionaryDatabaseFiles(context, "failed-migration")) {
+                flogError(LogTopic.DICTIONARY) { "Could not preserve failed encrypted migration store before plaintext restore" }
+                return false
+            }
             restoreFlorisUserDictionaryDatabaseFiles(backups)
             false
         }
@@ -525,12 +531,19 @@ class DictionaryManager private constructor(context: Context) {
         }
     }
 
-    private fun deleteFlorisUserDictionaryDatabaseFiles(context: Context) {
-        context.deleteDatabase(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+    private fun quarantineFlorisUserDictionaryDatabaseFiles(context: Context, reason: String): Boolean {
         val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
+        val timestamp = System.currentTimeMillis()
+        var quarantined = true
         for (file in florisUserDictionaryDatabaseFiles(databaseFile)) {
-            file.delete()
+            if (!file.exists()) continue
+            val quarantine = File(file.parentFile, "${file.name}.$reason-$timestamp")
+            if (!file.renameTo(quarantine)) {
+                flogWarning(LogTopic.DICTIONARY) { "Could not preserve ${file.name} as ${quarantine.name}" }
+                quarantined = false
+            }
         }
+        return quarantined
     }
 
     private fun florisUserDictionaryDatabaseFiles(databaseFile: File): List<File> {
