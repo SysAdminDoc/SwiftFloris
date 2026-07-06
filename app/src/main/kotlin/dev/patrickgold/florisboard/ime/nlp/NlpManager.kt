@@ -338,7 +338,7 @@ class NlpManager(context: Context) {
         }
     }
 
-    private fun buildGhostTextCandidate(
+    private suspend fun buildGhostTextCandidate(
         subtype: Subtype,
         content: EditorContent,
         currentWord: String,
@@ -361,7 +361,7 @@ class NlpManager(context: Context) {
             locale = locale,
             editorPackageName = null,
         )
-        val result = provider.predictNextTokens(context, maxCandidates = 1)
+        val result = provider.predictNextTokensAsync(context, maxCandidates = 1)
         val top = (result as? SmartComposeResult.Suggestion)?.candidates?.firstOrNull()
             ?: return null
         if (top.confidence < 0.45f) return null

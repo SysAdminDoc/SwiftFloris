@@ -65,6 +65,13 @@ class HeuristicSmartComposeProvider(private val appContext: Context) : SmartComp
     override fun predictNextTokens(
         context: SmartComposeContext,
         maxCandidates: Int,
+    ): SmartComposeResult = runBlocking {
+        predictNextTokensAsync(context, maxCandidates)
+    }
+
+    override suspend fun predictNextTokensAsync(
+        context: SmartComposeContext,
+        maxCandidates: Int,
     ): SmartComposeResult {
         if (!enabled() || maxCandidates <= 0) return SmartComposeResult.NoSuggestion
         // Strip the in-progress word (composingPrefix) off the preceding text before
@@ -86,26 +93,24 @@ class HeuristicSmartComposeProvider(private val appContext: Context) : SmartComp
         val trigramStore = PersonalTrigramStore.get(appContext)
         val bigramStore = PersonalBigramStore.get(appContext)
 
-        return runBlocking {
-            val trigram = if (prev2 != null) {
-                trigramStore.predict(prev2, prev1, locale, maxCandidates)
-            } else {
-                emptyList()
-            }
-            val bigram = if (trigram.isEmpty()) {
-                bigramStore.predict(prev1, locale, maxCandidates)
-            } else {
-                emptyList()
-            }
-            val coldStart = if (trigram.isEmpty() && bigram.isEmpty()) {
-                ColdStartNextWordPriors
-                    .suggest(base, context.locale, maxCandidates)
-                    .map { it.word }
-            } else {
-                emptyList()
-            }
-            HeuristicSmartCompose.buildResult(trigram, bigram, coldStart, maxCandidates)
+        val trigram = if (prev2 != null) {
+            trigramStore.predict(prev2, prev1, locale, maxCandidates)
+        } else {
+            emptyList()
         }
+        val bigram = if (trigram.isEmpty()) {
+            bigramStore.predict(prev1, locale, maxCandidates)
+        } else {
+            emptyList()
+        }
+        val coldStart = if (trigram.isEmpty() && bigram.isEmpty()) {
+            ColdStartNextWordPriors
+                .suggest(base, context.locale, maxCandidates)
+                .map { it.word }
+        } else {
+            emptyList()
+        }
+        return HeuristicSmartCompose.buildResult(trigram, bigram, coldStart, maxCandidates)
     }
 }
 

@@ -1,0 +1,1 @@
+Smart-compose ghost text no longer blocks while reading personal trigram/bigram storage. The heuristic provider and cache now expose a suspend-aware prediction path used by the NLP worker, reducing per-keystroke stalls when heuristic smart compose is enabled.

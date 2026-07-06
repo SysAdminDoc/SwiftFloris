@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.ime.smartcompose
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 
 private class CountingProvider(
     private val table: Map<String, SmartComposeResult>,
@@ -32,6 +33,35 @@ private class CountingProvider(
         return table[context.precedingText + "|" + context.composingPrefix]
             ?: SmartComposeResult.NoSuggestion
     }
+    override fun isReady(locale: String) = true
+    override val activeModel: LiteRtModelDescriptor? = null
+    override val supportedLocales: Set<String> = setOf("en")
+}
+
+private class AsyncCountingProvider(
+    private val response: SmartComposeResult,
+) : SmartComposeProvider {
+    var syncCalls: Int = 0
+        private set
+    var asyncCalls: Int = 0
+        private set
+
+    override fun predictNextTokens(
+        context: SmartComposeContext,
+        maxCandidates: Int,
+    ): SmartComposeResult {
+        syncCalls++
+        return response
+    }
+
+    override suspend fun predictNextTokensAsync(
+        context: SmartComposeContext,
+        maxCandidates: Int,
+    ): SmartComposeResult {
+        asyncCalls++
+        return response
+    }
+
     override fun isReady(locale: String) = true
     override val activeModel: LiteRtModelDescriptor? = null
     override val supportedLocales: Set<String> = setOf("en")
@@ -100,6 +130,24 @@ class SmartComposeCacheAndGuardTest : FunSpec({
         cache.size() shouldBe 0
         cache.hits shouldBe 0
         cache.misses shouldBe 0
+    }
+
+    test("SmartComposeCache: async predictions use the suspend provider path") {
+        runBlocking {
+            val suggestion = SmartComposeResult.Suggestion(
+                listOf(SmartComposeCandidate("world", 0.9f, 1)),
+            )
+            val under = AsyncCountingProvider(suggestion)
+            val cache = SmartComposeCache(under)
+
+            cache.predictNextTokensAsync(ctx("hello "))
+            cache.predictNextTokensAsync(ctx("hello "))
+
+            under.syncCalls shouldBe 0
+            under.asyncCalls shouldBe 1
+            cache.hits shouldBe 1
+            cache.misses shouldBe 1
+        }
     }
 
     test("SensitiveFieldGuard: TEXT password field is sensitive") {

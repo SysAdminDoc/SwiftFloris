@@ -55,6 +55,17 @@ interface SmartComposeProvider {
         maxCandidates: Int = 3,
     ): SmartComposeResult
 
+    /**
+     * Suspend-aware prediction path for providers backed by local storage or
+     * addon IPC. The synchronous method stays as the compatibility surface for
+     * existing tests/addons; production coroutine callers should prefer this
+     * method so they do not block an IME worker thread.
+     */
+    suspend fun predictNextTokensAsync(
+        context: SmartComposeContext,
+        maxCandidates: Int = 3,
+    ): SmartComposeResult = predictNextTokens(context, maxCandidates)
+
     fun isReady(locale: String): Boolean
     val activeModel: LiteRtModelDescriptor?
     val supportedLocales: Set<String>

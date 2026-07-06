@@ -84,6 +84,29 @@ class SmartComposeCache(
         return computed
     }
 
+    override suspend fun predictNextTokensAsync(
+        context: SmartComposeContext,
+        maxCandidates: Int,
+    ): SmartComposeResult {
+        val key = buildKey(context, maxCandidates)
+        synchronized(cacheLock) {
+            cache[key]?.let {
+                hits++
+                return it
+            }
+        }
+        val computed = delegate.predictNextTokensAsync(context, maxCandidates)
+        synchronized(cacheLock) {
+            // Don't cache NoSuggestion - the underlying provider may
+            // flip ready mid-session.
+            if (computed is SmartComposeResult.Suggestion) {
+                cache[key] = computed
+            }
+            misses++
+        }
+        return computed
+    }
+
     override fun isReady(locale: String): Boolean = delegate.isReady(locale)
     override val activeModel: LiteRtModelDescriptor? get() = delegate.activeModel
     override val supportedLocales: Set<String> get() = delegate.supportedLocales
