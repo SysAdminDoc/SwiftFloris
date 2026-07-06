@@ -21,6 +21,10 @@ import io.kotest.matchers.shouldBe
 import java.nio.file.Files
 
 class CacheManagerTest : FunSpec({
+    test("import cache has a hard per-file byte budget") {
+        CacheManager.MaxImportFileBytes shouldBe 256L * 1024L * 1024L
+    }
+
     test("sanitizeImportFileName strips path traversal and unsafe characters") {
         CacheManager.sanitizeImportFileName("../evil:name?.flex", "fallback.flex") shouldBe "evil_name_.flex"
         CacheManager.sanitizeImportFileName("..\\nested\\theme.flex", "fallback.flex") shouldBe "theme.flex"

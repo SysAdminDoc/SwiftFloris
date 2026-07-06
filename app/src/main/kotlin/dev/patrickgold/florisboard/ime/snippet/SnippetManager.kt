@@ -17,7 +17,9 @@ import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 
 class SnippetManager(private val context: Context) {
 
@@ -37,7 +39,8 @@ class SnippetManager(private val context: Context) {
         dir.listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
             ?.forEach { file ->
                 runCatching {
-                    all.addAll(EspansoMatchParser.parse(file.readText()))
+                    val yaml = file.inputStream().use(SnippetImportPolicy::readYamlTextLimited)
+                    all.addAll(EspansoMatchParser.parse(yaml))
                 }
             }
         _snippets.value = all
@@ -75,6 +78,27 @@ class SnippetManager(private val context: Context) {
     fun clearAll() {
         snippetsDir.listFiles()?.forEach { it.delete() }
         _snippets.value = emptyList()
+    }
+}
+
+internal object SnippetImportPolicy {
+    const val MaxYamlBytes: Long = 2L * 1024L * 1024L
+
+    fun readYamlTextLimited(inputStream: InputStream, maxBytes: Long = MaxYamlBytes): String {
+        require(maxBytes > 0L) { "Argument `maxBytes` must be greater than 0" }
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        while (true) {
+            val read = inputStream.read(buffer)
+            if (read < 0) break
+            total += read.toLong()
+            if (total > maxBytes) {
+                error("Snippet YAML exceeds the ${maxBytes / (1024L * 1024L)} MiB safety limit.")
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toString(Charsets.UTF_8.name())
     }
 }
 

@@ -41,6 +41,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.settings.copyImportDiagnosticsToClipboard
 import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.snippet.EspansoMatchParser
+import dev.patrickgold.florisboard.ime.snippet.SnippetImportPolicy
 import dev.patrickgold.florisboard.ime.snippet.SnippetManager
 import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -97,10 +98,9 @@ fun SnippetSettingsScreen() = FlorisScreen {
         scope.launch {
             val result = runCatching {
                 val contentResolver = context.contentResolver
-                val bytes = withContext(Dispatchers.IO) {
-                    contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                val yamlContent = withContext(Dispatchers.IO) {
+                    contentResolver.openInputStream(uri)?.use(SnippetImportPolicy::readYamlTextLimited)
                 } ?: error("null stream")
-                val yamlContent = bytes.decodeToString()
                 val filename = uri.lastPathSegment.orEmpty().ifBlank { "import.yml" }
                 snippetManager.importYaml(yamlContent, filename)
             }
@@ -163,7 +163,12 @@ fun SnippetSettingsScreen() = FlorisScreen {
                 val triggerCount = remember(filename, snippets) {
                     runCatching {
                         val file = java.io.File(context.filesDir, "snippets/$filename")
-                        if (file.exists()) EspansoMatchParser.parseWithDiagnostics(file.readText()).matches.size else 0
+                        if (file.exists()) {
+                            val yaml = file.inputStream().use(SnippetImportPolicy::readYamlTextLimited)
+                            EspansoMatchParser.parseWithDiagnostics(yaml).matches.size
+                        } else {
+                            0
+                        }
                     }.getOrDefault(0)
                 }
                 JetPrefListItem(

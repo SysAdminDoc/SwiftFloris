@@ -18,11 +18,13 @@ package dev.patrickgold.florisboard.ime.sync
 
 import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySync.SyncDictionaryWord
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldBeEmpty
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import java.io.ByteArrayInputStream
 
 class PersonalDictionarySyncTest : FunSpec({
 
@@ -208,5 +210,25 @@ class PersonalDictionarySyncTest : FunSpec({
             currentWords = listOf(word("hello")),
         )
         plan.isNoOp shouldBe true
+    }
+
+    test("sync JSON reader accepts files within the byte budget") {
+        val json = """{"kind":"swiftfloris-dictionary-sync","envelopes":[]}"""
+
+        SyncJsonTransferPolicy.readJsonTextLimited(
+            inputStream = ByteArrayInputStream(json.toByteArray()),
+            maxBytes = json.toByteArray().size.toLong(),
+        ) shouldBe json
+    }
+
+    test("sync JSON reader rejects oversized files before parsing") {
+        val bytes = ByteArray(9) { 'x'.code.toByte() }
+
+        shouldThrow<IllegalStateException> {
+            SyncJsonTransferPolicy.readJsonTextLimited(
+                inputStream = ByteArrayInputStream(bytes),
+                maxBytes = 8L,
+            )
+        }
     }
 })

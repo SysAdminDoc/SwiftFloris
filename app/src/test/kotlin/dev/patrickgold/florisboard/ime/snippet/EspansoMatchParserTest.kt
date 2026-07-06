@@ -19,6 +19,8 @@ package dev.patrickgold.florisboard.ime.snippet
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.shouldBe
+import io.kotest.assertions.throwables.shouldThrow
+import java.io.ByteArrayInputStream
 
 class EspansoMatchParserTest : FunSpec({
     test("parses simple trigger -> replace pairs") {
@@ -139,6 +141,30 @@ class EspansoMatchParserTest : FunSpec({
         )
         result.diagnostics.skippedCount shouldBe 1
         result.diagnostics.summary().contains("Entry 2") shouldBe true
+    }
+
+    test("snippet import reader accepts files within the byte budget") {
+        val yaml = """
+            matches:
+              - trigger: ":ok"
+                replace: "kept"
+        """.trimIndent()
+
+        SnippetImportPolicy.readYamlTextLimited(
+            inputStream = ByteArrayInputStream(yaml.toByteArray()),
+            maxBytes = yaml.toByteArray().size.toLong(),
+        ) shouldBe yaml
+    }
+
+    test("snippet import reader rejects oversized files before parsing") {
+        val bytes = ByteArray(9) { 'x'.code.toByte() }
+
+        shouldThrow<IllegalStateException> {
+            SnippetImportPolicy.readYamlTextLimited(
+                inputStream = ByteArrayInputStream(bytes),
+                maxBytes = 8L,
+            )
+        }
     }
 })
 

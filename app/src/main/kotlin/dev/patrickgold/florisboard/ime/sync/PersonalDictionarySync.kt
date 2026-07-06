@@ -18,6 +18,8 @@ package dev.patrickgold.florisboard.ime.sync
 
 import android.os.Build
 import androidx.annotation.RequiresApi
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 import java.security.KeyPair
 import java.util.Locale
 import kotlinx.serialization.Serializable
@@ -196,6 +198,27 @@ object PersonalDictionarySync {
             wordsToUpsert = wordsToUpsert,
             wordsToDelete = wordsToDelete,
         )
+    }
+}
+
+object SyncJsonTransferPolicy {
+    const val MaxFileBytes: Long = 16L * 1024L * 1024L
+
+    fun readJsonTextLimited(inputStream: InputStream, maxBytes: Long = MaxFileBytes): String {
+        require(maxBytes > 0L) { "Argument `maxBytes` must be greater than 0" }
+        val out = ByteArrayOutputStream()
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var total = 0L
+        while (true) {
+            val read = inputStream.read(buffer)
+            if (read < 0) break
+            total += read.toLong()
+            if (total > maxBytes) {
+                error("Sync JSON exceeds the ${maxBytes / (1024L * 1024L)} MiB safety limit.")
+            }
+            out.write(buffer, 0, read)
+        }
+        return out.toString(Charsets.UTF_8.name())
     }
 }
 

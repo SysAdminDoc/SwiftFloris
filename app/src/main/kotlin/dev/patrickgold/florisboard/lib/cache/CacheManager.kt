@@ -66,6 +66,8 @@ class CacheManager(context: Context) {
 
         const val LoadedDirName = "loaded"
 
+        internal const val MaxImportFileBytes = 256L * 1024L * 1024L
+
         private val UnsafeImportFileNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
 
         internal fun sanitizeImportFileName(displayName: String?, fallbackName: String): String {
@@ -138,7 +140,7 @@ class CacheManager(context: Context) {
                     )
                     usedFileNames += fileName
                     val file = workspace.inputDir.subFile(fileName)
-                    contentResolver.readToFile(uri, file)
+                    contentResolver.readToFile(uri, file, MaxImportFileBytes)
                     val ext = runCatching {
                         val extWorkingDir = workspace.outputDir.subDir(file.nameWithoutExtension)
                         ZipUtils.unzip(srcFile = file, dstDir = extWorkingDir)

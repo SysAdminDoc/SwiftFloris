@@ -86,6 +86,7 @@ import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySync
 import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySyncDaoApplier
 import dev.patrickgold.florisboard.ime.sync.SyncChannel
 import dev.patrickgold.florisboard.ime.sync.SyncIdentityStore
+import dev.patrickgold.florisboard.ime.sync.SyncJsonTransferPolicy
 import dev.patrickgold.florisboard.ime.sync.SyncQrCode
 import dev.patrickgold.florisboard.ime.sync.SyncQrCodeMatrix
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -224,7 +225,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     fun readSyncJsonFromUri(uri: Uri): String {
         val stream = context.contentResolver.openInputStream(uri)
             ?: throw FileNotFoundException(uri.toString())
-        return stream.use { it.readBytes().toString(Charsets.UTF_8) }
+        return stream.use(SyncJsonTransferPolicy::readJsonTextLimited)
     }
 
     suspend fun exportSyncSnapshot(targetUri: Uri) {
