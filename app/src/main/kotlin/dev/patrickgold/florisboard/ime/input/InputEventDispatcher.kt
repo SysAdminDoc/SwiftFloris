@@ -105,10 +105,14 @@ class InputEventDispatcher private constructor(private val repeatableKeyCodes: I
                 pressedKeyInfo.job = scope.launch {
                     val longPressDelay = determineLongPressDelay(data)
                     delay(longPressDelay)
-                    val longPressResult = withContext(Dispatchers.Main) { onLongPress() }
-                    if (longPressResult) {
-                        pressedKeyInfo.blockUp = true
-                    } else if (repeatableKeyCodes.contains(data.code)) {
+                    val longPressResult = withContext(Dispatchers.Main) {
+                        val handled = onLongPress()
+                        if (handled) {
+                            pressedKeyInfo.blockUp = true
+                        }
+                        handled
+                    }
+                    if (!longPressResult && repeatableKeyCodes.contains(data.code)) {
                         val repeatData = determineRepeatData(data)
                         val repeatDelay = determineRepeatDelay(repeatData)
                         while (isActive) {
@@ -116,15 +120,12 @@ class InputEventDispatcher private constructor(private val repeatableKeyCodes: I
                             // onRepeat(): onInputKeyRepeat drives editor batch
                             // edits and learn-state that all other key events
                             // touch exclusively from the main thread.
-                            val onRepeatResult = withContext(Dispatchers.Main) {
+                            withContext(Dispatchers.Main) {
                                 val proceed = onRepeat()
                                 if (proceed) {
+                                    pressedKeyInfo.blockUp = true
                                     keyEventReceiver?.onInputKeyRepeat(repeatData)
                                 }
-                                proceed
-                            }
-                            if (onRepeatResult) {
-                                pressedKeyInfo.blockUp = true
                             }
                             delay(repeatDelay)
                         }
@@ -234,10 +235,11 @@ class InputEventDispatcher private constructor(private val repeatableKeyCodes: I
 
     data class PressedKeyInfo(
         val eventTimeDown: Long,
-        // job/blockUp are written by the long-press/repeat coroutine on
-        // Dispatchers.Default (outside the pressedKeys lock) and read under the
-        // lock in sendUp(); @Volatile guarantees the write is visible across
-        // threads so a long-press up-suppression can't be missed.
+        // job is written by the long-press/repeat coroutine on
+        // Dispatchers.Default. blockUp is published from the Main-thread
+        // action block before long-press/repeat side effects can race ACTION_UP.
+        // Both are read under the lock in sendUp(); @Volatile guarantees the
+        // writes are visible across threads.
         @Volatile var job: Job? = null,
         @Volatile var blockUp: Boolean = false,
     ) {
