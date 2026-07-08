@@ -27,15 +27,18 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
+import java.io.File
+import java.io.RandomAccessFile
 
 @RunWith(AndroidJUnit4::class)
 @Config(sdk = [35])
 class SwiftKeyTypingTraceRecorderTest {
+    private lateinit var context: Context
     private lateinit var recorder: SwiftKeyTypingTraceRecorder
 
     @Before
     fun setUp() {
-        val context = ApplicationProvider.getApplicationContext<Context>()
+        context = ApplicationProvider.getApplicationContext()
         recorder = SwiftKeyTypingTraceRecorder(context)
         recorder.setEnabled(false)
         recorder.clearTraceFile()
@@ -63,6 +66,20 @@ class SwiftKeyTypingTraceRecorderTest {
     }
 
     @Test
+    fun sensitiveSuggestionTraceDoesNotCreateTraceFile() {
+        recorder.recordSuggestion(
+            content = editorContent("secret"),
+            context = SwiftKeyDecoderContext(currentWord = "secret", maxCandidateCount = 3),
+            scoredCandidates = emptyList(),
+            rankedCandidates = listOf(WordSuggestionCandidate("secret")),
+            isSensitiveEditor = true,
+        )
+
+        recorder.traceFileSizeBytes() shouldBe 0L
+        recorder.copyTraceFileToShareCache() shouldBe null
+    }
+
+    @Test
     fun privateAutoCommitTraceDoesNotCreateTraceFile() {
         val content = editorContent("hello")
 
@@ -78,6 +95,44 @@ class SwiftKeyTypingTraceRecorderTest {
 
         recorder.traceFileSizeBytes() shouldBe 0L
         recorder.copyTraceFileToShareCache() shouldBe null
+    }
+
+    @Test
+    fun sensitiveAutoCommitTraceDoesNotCreateTraceFile() {
+        val content = editorContent("secret")
+
+        recorder.recordAutoCommitAccepted(
+            content = content,
+            candidate = WordSuggestionCandidate("secret"),
+            isSensitiveEditor = true,
+        )
+        recorder.recordAutoCommitRejected(
+            content = content,
+            isSensitiveEditor = true,
+        )
+
+        recorder.traceFileSizeBytes() shouldBe 0L
+        recorder.copyTraceFileToShareCache() shouldBe null
+    }
+
+    @Test
+    fun traceFileStopsAppendingAtHardCap() {
+        val traceFile = File(context.filesDir, "swiftkey_typing_traces.jsonl")
+        RandomAccessFile(traceFile, "rw").use { file ->
+            file.setLength(MaxTraceFileBytes)
+        }
+
+        recorder.recordAutoCommitAccepted(
+            content = editorContent("hello"),
+            candidate = WordSuggestionCandidate("hello"),
+        )
+        Thread.sleep(100)
+
+        recorder.traceFileSizeBytes() shouldBe MaxTraceFileBytes
+    }
+
+    private companion object {
+        const val MaxTraceFileBytes = 32L * 1024 * 1024
     }
 }
 

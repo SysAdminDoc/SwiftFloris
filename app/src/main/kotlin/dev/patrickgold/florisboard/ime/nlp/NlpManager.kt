@@ -216,6 +216,21 @@ class NlpManager(context: Context) {
             || prefs.clipboard.suggestionEnabled.get()
             || providerForcesSuggestionOn(subtypeManager.activeSubtype)
 
+    /**
+     * Whether the active editor is a password field or declares itself
+     * sensitive ([SensitiveFieldGuard]). Used to gate the typing-trace
+     * recorder on paths that don't build a [SuggestionPrivacyPolicy]
+     * request snapshot.
+     */
+    private fun isActiveEditorSensitive(): Boolean {
+        val editorInfo = editorInstance.activeInfo
+        return keyboardManager.activeState.keyVariation == dev.patrickgold.florisboard.ime.text.key.KeyVariation.PASSWORD ||
+            SensitiveFieldGuard.isSensitive(
+                editorInfo.inputAttributes.raw,
+                editorInfo.imeOptions.raw,
+            )
+    }
+
     fun suggest(subtype: Subtype, content: EditorContent) {
         autoCommitSuppression.onContentChanged(content.autoCommitWord(), content.autoCommitWordStart())
         autoCommitUndoSession.onContentChanged(content)
@@ -308,6 +323,10 @@ class NlpManager(context: Context) {
                     ),
                     rankedCandidates = wordSuggestions,
                     isPrivateSession = requestPrivacy.isPrivateSession,
+                    // Same gate every other learning surface honours: never write
+                    // password-field or sensitive-field text into the shareable
+                    // plaintext trace file.
+                    isSensitiveEditor = requestPrivacy.isPasswordEditor || requestPrivacy.isEditorSensitive,
                 )
             }
             // ROADMAP §0 P1 — Smart-Compose inline ghost-text. When a
@@ -500,7 +519,12 @@ class NlpManager(context: Context) {
             originalText = originalText,
             correctedText = candidate.text,
         )
-        typingTraceRecorder.recordAutoCommitAccepted(content, candidate, keyboardManager.activeState.isIncognitoMode)
+        typingTraceRecorder.recordAutoCommitAccepted(
+            content = content,
+            candidate = candidate,
+            isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+            isSensitiveEditor = isActiveEditorSensitive(),
+        )
     }
 
     fun rejectAcceptedAutoCommitOnBackspace(content: EditorContent): Boolean {
@@ -516,7 +540,11 @@ class NlpManager(context: Context) {
                     correctedText = pair.corrected,
                 )
             }
-            typingTraceRecorder.recordAutoCommitRejected(content, keyboardManager.activeState.isIncognitoMode)
+            typingTraceRecorder.recordAutoCommitRejected(
+                content = content,
+                isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+                isSensitiveEditor = isActiveEditorSensitive(),
+            )
         }
         return rejected
     }

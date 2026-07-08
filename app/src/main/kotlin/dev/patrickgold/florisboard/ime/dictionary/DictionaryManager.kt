@@ -61,6 +61,68 @@ private const val LEARN_MIN_LENGTH = 3
  *  email, or pasted token and shouldn't be added to the personal dictionary. */
 private const val LEARN_MAX_LENGTH = 32
 
+/** Prefix of the broken pre-v1.9.56 learned-row locale format (`FlorisLocale.toString()`). */
+internal const val LEGACY_DEBUG_LOCALE_PREFIX = "FlorisLocale {"
+private val LEGACY_DEBUG_LOCALE_REGEX =
+    Regex("""^FlorisLocale \{ l=(\S*) c=(\S*) v=(\S*) \}$""")
+
+/**
+ * Parses the pre-v1.9.56 debug locale string back into a proper locale tag
+ * (`en_US`), or `null` (= all locales) when the string cannot be parsed or
+ * carries no language.
+ */
+internal fun parseLegacyDebugLocaleTag(debugString: String): String? {
+    val match = LEGACY_DEBUG_LOCALE_REGEX.matchEntire(debugString.trim()) ?: return null
+    val (language, country, variant) = match.destructured
+    if (language.isBlank()) return null
+    val locale = when {
+        variant.isNotBlank() -> FlorisLocale.from(language, country, variant)
+        country.isNotBlank() -> FlorisLocale.from(language, country)
+        else -> FlorisLocale.from(language)
+    }
+    return locale.localeTag().takeIf { it.isNotBlank() }
+}
+
+internal data class LegacyLearnedLocaleRepairResult(
+    val rewritten: Int,
+    val merged: Int,
+)
+
+internal fun repairLegacyLearnedLocaleRows(dao: UserDictionaryDao): LegacyLearnedLocaleRepairResult {
+    val all = dao.queryAll()
+    val broken = all.filter { it.locale?.startsWith(LEGACY_DEBUG_LOCALE_PREFIX) == true }
+    if (broken.isEmpty()) return LegacyLearnedLocaleRepairResult(rewritten = 0, merged = 0)
+
+    val healthyByKey = HashMap<Pair<String, String?>, UserDictionaryEntry>()
+    for (entry in all) {
+        if (entry.locale?.startsWith(LEGACY_DEBUG_LOCALE_PREFIX) == true) continue
+        healthyByKey.putIfAbsent(entry.word.lowercase() to entry.locale, entry)
+    }
+
+    var rewritten = 0
+    var merged = 0
+    for (entry in broken) {
+        val fixedTag = parseLegacyDebugLocaleTag(entry.locale.orEmpty())
+        val key = entry.word.lowercase() to fixedTag
+        val existing = healthyByKey[key]
+        if (existing != null) {
+            if (entry.freq > existing.freq) {
+                val updated = existing.copy(freq = entry.freq)
+                dao.update(updated)
+                healthyByKey[key] = updated
+            }
+            dao.delete(entry)
+            merged++
+        } else {
+            val updated = entry.copy(locale = fixedTag)
+            dao.update(updated)
+            healthyByKey[key] = updated
+            rewritten++
+        }
+    }
+    return LegacyLearnedLocaleRepairResult(rewritten = rewritten, merged = merged)
+}
+
 /**
  * Coordinates SwiftFloris' internal user dictionary and the platform user dictionary.
  *
@@ -72,6 +134,7 @@ class DictionaryManager private constructor(context: Context) {
     private val applicationContext: Context = context.applicationContext ?: context
     private val prefs by FlorisPreferenceStore
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val legacyLocaleRepairStarted = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private var florisUserDictionaryDatabase: FlorisUserDictionaryDatabase? = null
     private var systemUserDictionaryDatabase: SystemUserDictionaryDatabase? = null
@@ -184,7 +247,11 @@ class DictionaryManager private constructor(context: Context) {
         return runCatching {
             runRoomBlocking {
                 val dao = florisUserDictionaryDao() ?: return@runRoomBlocking false
-                val matches = dao.queryExactFuzzyLocale(normalized, locale)
+                // queryExactFuzzyLocale's `WORD = :word` is case-sensitive in SQLite,
+                // so it misses manually-added cased entries ("Patrick" vs "patrick").
+                // The LIKE-based query() is ASCII case-insensitive; the equals-filter
+                // below then narrows it back to exact (case-insensitive) matches.
+                val matches = dao.query(normalized, locale)
                     .filter { it.word.equals(normalized, ignoreCase = true) }
                 for (entry in matches) dao.delete(entry)
                 matches.isNotEmpty()
@@ -222,7 +289,9 @@ class DictionaryManager private constructor(context: Context) {
         ioScope.launch {
             runCatching {
                 val dao = florisUserDictionaryDao() ?: return@launch
-                val existingMatches = dao.queryExactFuzzyLocale(normalized, locale)
+                // LIKE-based query is ASCII case-insensitive, so a manually-added
+                // cased entry ("Patrick") reinforces instead of duplicating.
+                val existingMatches = dao.query(normalized, locale)
                     .filter { it.word.equals(normalized, ignoreCase = true) }
                 if (existingMatches.isNotEmpty()) {
                     val entry = existingMatches.first()
@@ -236,7 +305,12 @@ class DictionaryManager private constructor(context: Context) {
                             id = 0,
                             word = normalized,
                             freq = LEARN_INITIAL_FREQUENCY,
-                            locale = locale.toString(),
+                            // Must match the Room TypeConverter format (localeTag(), e.g.
+                            // "en_US") — FlorisLocale.toString() is a debug format that no
+                            // locale-scoped DAO query can ever match, which made learned
+                            // words invisible after process restart and grew a new row per
+                            // re-commit. See repairLegacyLearnedLocaleRowsAsync().
+                            locale = locale.localeTag(),
                             shortcut = null,
                         ),
                     )
@@ -275,7 +349,15 @@ class DictionaryManager private constructor(context: Context) {
             val dao = florisUserDictionaryDao() ?: return@launch
             val pairs = runCatching {
                 dao.queryAll(locale).map { entry -> entry.word.lowercase() to entry.freq }
-            }.getOrDefault(emptyList())
+            }.getOrElse { e ->
+                // Do NOT mark the locale hydrated on a failed read: hydrateLocale
+                // pins its locale for the whole process lifetime, so a transient
+                // Room/SQLCipher error here would silently drop the user's saved
+                // vocabulary from ranking and spell-check for the session.
+                // Leaving it un-hydrated lets the next suggest() retry.
+                flogError(LogTopic.DICTIONARY) { "Overlay hydration read failed for $locale: ${e.message}" }
+                return@launch
+            }
             overlay.hydrateLocale(locale, pairs)
         }
     }
@@ -367,6 +449,38 @@ class DictionaryManager private constructor(context: Context) {
         if (florisUserDictionaryDatabase == null && prefs.dictionary.enableFlorisUserDictionary.get()) {
             florisUserDictionaryDatabase = runRoomBlocking {
                 openEncryptedFlorisUserDictionary(context)
+            }
+            if (florisUserDictionaryDatabase != null) {
+                repairLegacyLearnedLocaleRowsAsync()
+            }
+        }
+    }
+
+    /**
+     * One-time (per process) repair for rows written by the pre-v1.9.56
+     * [learnWord], which persisted `FlorisLocale.toString()` (a debug format,
+     * `FlorisLocale { l=en c=US v= }`) instead of the Room TypeConverter's
+     * `localeTag()` format (`en_US`). Such rows can never match a
+     * locale-scoped query: learned words did not survive process restart,
+     * could not be forgotten, and every re-commit of the same word inserted
+     * a fresh duplicate row. This pass rewrites each broken row to its
+     * intended locale tag and merges duplicates (keeping the highest
+     * frequency). Rows whose debug string cannot be parsed fall back to a
+     * NULL locale, which every locale-scoped query treats as "all locales".
+     */
+    private fun repairLegacyLearnedLocaleRowsAsync() {
+        if (!legacyLocaleRepairStarted.compareAndSet(false, true)) return
+        ioScope.launch {
+            runCatching {
+                val dao = florisUserDictionaryDao() ?: return@launch
+                val result = repairLegacyLearnedLocaleRows(dao)
+                if (result.rewritten > 0 || result.merged > 0) {
+                    flogInfo(LogTopic.DICTIONARY) {
+                        "Repaired learned-word locale tags: ${result.rewritten} rewritten, ${result.merged} duplicates merged"
+                    }
+                }
+            }.onFailure { e ->
+                flogError(LogTopic.DICTIONARY) { "Legacy learned-locale repair failed: ${e.message}" }
             }
         }
     }

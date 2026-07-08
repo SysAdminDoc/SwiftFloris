@@ -103,8 +103,9 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         scoredCandidates: List<SwiftKeyScoredCandidate>,
         rankedCandidates: List<SuggestionCandidate>,
         isPrivateSession: Boolean = false,
+        isSensitiveEditor: Boolean = false,
     ) {
-        if (!isEnabled() || isPrivateSession) return
+        if (!isEnabled() || isPrivateSession || isSensitiveEditor) return
         append(
             JSONObject()
                 .put("type", "suggestion")
@@ -119,8 +120,13 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         )
     }
 
-    fun recordAutoCommitAccepted(content: EditorContent, candidate: SuggestionCandidate, isPrivateSession: Boolean = false) {
-        if (!isEnabled() || isPrivateSession) return
+    fun recordAutoCommitAccepted(
+        content: EditorContent,
+        candidate: SuggestionCandidate,
+        isPrivateSession: Boolean = false,
+        isSensitiveEditor: Boolean = false,
+    ) {
+        if (!isEnabled() || isPrivateSession || isSensitiveEditor) return
         append(
             JSONObject()
                 .put("type", "autoCommitAccepted")
@@ -131,8 +137,12 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         )
     }
 
-    fun recordAutoCommitRejected(content: EditorContent, isPrivateSession: Boolean = false) {
-        if (!isEnabled() || isPrivateSession) return
+    fun recordAutoCommitRejected(
+        content: EditorContent,
+        isPrivateSession: Boolean = false,
+        isSensitiveEditor: Boolean = false,
+    ) {
+        if (!isEnabled() || isPrivateSession || isSensitiveEditor) return
         append(
             JSONObject()
                 .put("type", "autoCommitRejected")
@@ -146,6 +156,12 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         ioScope.launch {
             runCatching {
                 traceFile.parentFile?.mkdirs()
+                // Hard cap: the trace grows on every suggest() while enabled and
+                // only a manual "clear" empties it. Stop appending past the cap
+                // instead of letting a forgotten toggle fill the data partition.
+                if (traceFile.exists() && traceFile.length() >= MaxTraceFileBytes) {
+                    return@runCatching
+                }
                 traceFile.appendText(event.toString() + "\n")
             }
         }
@@ -223,5 +239,8 @@ internal class SwiftKeyTypingTraceRecorder(context: Context) {
         const val ReplayFixtureFileName = "swiftkey_trace_replay_cases.jsonl"
         const val TraceExportCacheDir = "swiftkey-trace-export"
         const val MaxPreviousWordsInTrace = 3
+
+        /** 32 MiB — generous for replay tuning, small enough to never threaten storage. */
+        const val MaxTraceFileBytes = 32L * 1024 * 1024
     }
 }

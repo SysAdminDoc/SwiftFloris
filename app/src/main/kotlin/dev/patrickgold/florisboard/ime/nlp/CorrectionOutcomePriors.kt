@@ -17,12 +17,16 @@
 package dev.patrickgold.florisboard.ime.nlp
 
 import android.content.Context
+import dev.patrickgold.florisboard.ime.dictionary.PersonalNgramPersistence
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.util.concurrent.atomic.AtomicLong
 
 internal data class CorrectionOutcomeSignal(
     val acceptedConfidence: Double = 0.0,
@@ -69,6 +73,9 @@ internal class CorrectionOutcomePriors private constructor(
     private val entries = LinkedHashMap<String, OutcomeEntry>(MaxEntries, 0.75f, true)
     private val weeklyStats = LinkedHashMap<Long, WeeklyOutcomeEntry>(MaxWeeklyBuckets, 0.75f, true)
     private var loaded = storageFile == null
+    private val persistMutex = Mutex()
+    private val persistSequence = AtomicLong(0)
+    private val lastPersistedSequence = AtomicLong(0)
 
     @Synchronized
     fun recordAccepted(originalText: CharSequence, correctedText: CharSequence) {
@@ -244,39 +251,44 @@ internal class CorrectionOutcomePriors private constructor(
                     rejectedCount = entry.rejectedCount,
                 )
             }
+        // Serialize writers and drop stale snapshots: rapid accept/undo pairs
+        // used to launch concurrent coroutines sharing one .tmp path (torn or
+        // interleaved file), and the old rename fallback deleted the
+        // destination before the replacement rename. atomicReplace never
+        // deletes the destination and fsyncs the temp file first.
+        val sequence = persistSequence.incrementAndGet()
         ioScope.launch {
-            runCatching {
-                file.parentFile?.mkdirs()
-                val tmp = File(file.parentFile, file.name + ".tmp")
-                tmp.bufferedWriter().use { writer ->
-                    for (row in weeklySnapshot) {
-                        if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
-                        writer.write(WeeklyMetaPrefix)
-                        writer.write('\t'.code)
-                        writer.write(row.weekIndex.toString())
-                        writer.write('\t'.code)
-                        writer.write(row.acceptedCount.toString())
-                        writer.write('\t'.code)
-                        writer.write(row.rejectedCount.toString())
-                        writer.newLine()
+            persistMutex.withLock {
+                if (sequence <= lastPersistedSequence.get()) return@withLock
+                lastPersistedSequence.set(sequence)
+                runCatching {
+                    file.parentFile?.mkdirs()
+                    PersonalNgramPersistence.atomicReplace(file) { writer ->
+                        for (row in weeklySnapshot) {
+                            if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
+                            writer.write(WeeklyMetaPrefix)
+                            writer.write('\t'.code)
+                            writer.write(row.weekIndex.toString())
+                            writer.write('\t'.code)
+                            writer.write(row.acceptedCount.toString())
+                            writer.write('\t'.code)
+                            writer.write(row.rejectedCount.toString())
+                            writer.newLine()
+                        }
+                        for (row in snapshot) {
+                            if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
+                            writer.write(row.original)
+                            writer.write('\t'.code)
+                            writer.write(row.corrected)
+                            writer.write('\t'.code)
+                            writer.write(row.acceptedCount.toString())
+                            writer.write('\t'.code)
+                            writer.write(row.rejectedCount.toString())
+                            writer.write('\t'.code)
+                            writer.write(row.lastSeenMs.toString())
+                            writer.newLine()
+                        }
                     }
-                    for (row in snapshot) {
-                        if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
-                        writer.write(row.original)
-                        writer.write('\t'.code)
-                        writer.write(row.corrected)
-                        writer.write('\t'.code)
-                        writer.write(row.acceptedCount.toString())
-                        writer.write('\t'.code)
-                        writer.write(row.rejectedCount.toString())
-                        writer.write('\t'.code)
-                        writer.write(row.lastSeenMs.toString())
-                        writer.newLine()
-                    }
-                }
-                if (!tmp.renameTo(file)) {
-                    file.delete()
-                    tmp.renameTo(file)
                 }
             }
         }

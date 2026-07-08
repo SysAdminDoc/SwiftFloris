@@ -18,9 +18,14 @@
        ciphertext would arrive at the new device with no key to decrypt it,
        bricking the dictionary AND leaking the encrypted PII blob.
 
-    2. Tink-wrapped passphrase preferences (floris_user_dictionary_key,
-       jetpref-encrypted-*) are excluded for the same reason — the wrap key
-       is bound to the original device's keystore alias.
+    2. The Tink-wrapped passphrase preference file
+       (floris_user_dictionary_key.xml) is excluded for the same reason — the
+       wrap key is bound to the original device's keystore alias. Note: the
+       Room DB file is named `floris_user_dictionary` (no `.db` suffix), so
+       its WAL/journal siblings are `-wal`/`-shm`/`-journal` on the bare
+       name. Quarantined `.plaintext-<timestamp>` recovery artifacts cannot
+       be listed here (no wildcard support); they stay protected because the
+       database domain is never included.
 
     3. JetPref non-encrypted preferences and the `files/ime/` extension/theme
        directory are safe to include (no typed-text history).
@@ -41,16 +46,13 @@
             path="floris_user_dictionary"/>
         <exclude
             domain="database"
-            path="floris_user_dictionary.db"/>
+            path="floris_user_dictionary-journal"/>
         <exclude
             domain="database"
-            path="floris_user_dictionary.db-journal"/>
+            path="floris_user_dictionary-wal"/>
         <exclude
             domain="database"
-            path="floris_user_dictionary.db-wal"/>
-        <exclude
-            domain="database"
-            path="floris_user_dictionary.db-shm"/>
+            path="floris_user_dictionary-shm"/>
         <exclude
             domain="sharedpref"
             path="floris_user_dictionary_key.xml"/>
@@ -99,16 +101,13 @@
             path="floris_user_dictionary"/>
         <exclude
             domain="database"
-            path="floris_user_dictionary.db"/>
+            path="floris_user_dictionary-journal"/>
         <exclude
             domain="database"
-            path="floris_user_dictionary.db-journal"/>
+            path="floris_user_dictionary-wal"/>
         <exclude
             domain="database"
-            path="floris_user_dictionary.db-wal"/>
-        <exclude
-            domain="database"
-            path="floris_user_dictionary.db-shm"/>
+            path="floris_user_dictionary-shm"/>
         <exclude
             domain="sharedpref"
             path="floris_user_dictionary_key.xml"/>

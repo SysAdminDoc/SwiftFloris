@@ -23,6 +23,7 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
+import android.os.PersistableBundle
 import android.provider.BaseColumns
 import android.provider.MediaStore.Images.Media
 import android.provider.OpenableColumns
@@ -232,7 +233,7 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
      * Creates a new ClipData which has the same contents as this.
      */
     fun toClipData(context: Context): ClipData {
-        return when (type) {
+        val clipData = when (type) {
             ItemType.TEXT -> {
                 ClipData.newPlainText(FLORIS_CLIP_LABEL, text)
             }
@@ -240,6 +241,12 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                 ClipData.newUri(context.contentResolver, FLORIS_CLIP_LABEL, uri)
             }
         }
+        if (isSensitive && AndroidVersion.ATLEAST_API33_T) {
+            clipData.description.extras = PersistableBundle().apply {
+                putBoolean(EXTRA_IS_SENSITIVE, true)
+            }
+        }
+        return clipData
     }
 
     /**

@@ -445,10 +445,9 @@ val verifyDataExtractionRules = tasks.register("verifyDataExtractionRules") {
     // domain to path — each pair must be an <exclude> inside BOTH sections.
     val requiredExcludes = listOf(
         "database" to "floris_user_dictionary",
-        "database" to "floris_user_dictionary.db",
-        "database" to "floris_user_dictionary.db-journal",
-        "database" to "floris_user_dictionary.db-wal",
-        "database" to "floris_user_dictionary.db-shm",
+        "database" to "floris_user_dictionary-journal",
+        "database" to "floris_user_dictionary-wal",
+        "database" to "floris_user_dictionary-shm",
         "sharedpref" to "floris_user_dictionary_key.xml",
         "file" to "clipboard_history",
         "file" to "personal_bigrams",

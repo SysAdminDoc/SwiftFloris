@@ -560,21 +560,26 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
             // ROADMAP §6 N7.2 — Never write password-field text into the keyboard
-            // clipboard history. The system clipboard still receives it (the host
-            // app initiated the cut), but our IME-local history must not retain it.
+            // clipboard history. The system clipboard must still receive it —
+            // the user explicitly asked to cut, and the cut below deletes the
+            // selection, so dropping the text entirely would be silent data
+            // loss. Suppression only skips the IME-local history insert.
             //
-            // Also suppress when the active field is incognito (user-toggled or
-            // app-declared `IME_FLAG_NO_PERSONALIZED_LEARNING`). Without this gate,
-            // a user typing in Signal who hits Cut would leak the selected
-            // ciphertext-bound text into the IME-local clipboard palette where
-            // it can be re-pasted to any other app via the history surface —
-            // bypassing the host-app sensitive-field declaration that the rest
-            // of the IME (dictionary learn, bigram store, smart-compose) honours.
-            if (!shouldSuppressClipboardHistory()) {
+            // Suppress history when the active field is a password field or
+            // incognito (user-toggled or app-declared
+            // `IME_FLAG_NO_PERSONALIZED_LEARNING`). Without this gate, a user
+            // typing in Signal who hits Cut would leak the selected text into
+            // the IME-local clipboard palette where it can be re-pasted to any
+            // other app via the history surface — bypassing the host-app
+            // sensitive-field declaration that the rest of the IME (dictionary
+            // learn, bigram store, smart-compose) honours.
+            if (shouldSuppressClipboardHistory()) {
+                setSensitivePrimaryClipWithoutHistory(text.toString())
+            } else {
                 clipboardManager.addNewPlaintext(text.toString())
             }
         } else {
-            appContext.showShortToastSync("Failed to retrieve selected text requested to cut: Eiter selection state is invalid or an error occurred within the input connection.")
+            appContext.showShortToastSync("Failed to retrieve selected text requested to cut: Either selection state is invalid or an error occurred within the input connection.")
         }
         return deleteBackwards(OperationUnit.CHARACTERS)
     }
@@ -590,13 +595,16 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         phantomSpace.setInactive()
         val text = activeContent.selectedText.ifBlank { currentInputConnection()?.getSelectedText(0) }
         if (text != null) {
-            // ROADMAP §6 N7.2 — same gating as performClipboardCut. Suppress when
-            // the field is password OR incognito (user-toggled or app-declared).
-            if (!shouldSuppressClipboardHistory()) {
+            // ROADMAP §6 N7.2 — same gating as performClipboardCut: the system
+            // clipboard always receives the copy, only the IME-local history
+            // insert is suppressed for password/incognito fields.
+            if (shouldSuppressClipboardHistory()) {
+                setSensitivePrimaryClipWithoutHistory(text.toString())
+            } else {
                 clipboardManager.addNewPlaintext(text.toString())
             }
         } else {
-            appContext.showShortToastSync("Failed to retrieve selected text requested to copy: Eiter selection state is invalid or an error occurred within the input connection.")
+            appContext.showShortToastSync("Failed to retrieve selected text requested to copy: Either selection state is invalid or an error occurred within the input connection.")
         }
         val activeSelection = activeContent.selection
         return setSelection(activeSelection.end, activeSelection.end)
@@ -604,6 +612,20 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
 
     private fun isPasswordField(): Boolean {
         return keyboardManager.activeState.keyVariation == KeyVariation.PASSWORD
+    }
+
+    /**
+     * Places [text] on the system primary clip WITHOUT inserting it into the
+     * IME-local clipboard history. Used by cut/copy in password/incognito
+     * fields: the user explicitly requested the clipboard operation, so the
+     * system clipboard must receive the text, but the IME-local history must
+     * not retain it. Forced `isSensitive` so the Android 13+ clipboard
+     * preview redacts it once the sensitive flag propagates to the ClipData.
+     */
+    private fun setSensitivePrimaryClipWithoutHistory(text: String) {
+        clipboardManager.updatePrimaryClip(
+            ClipboardItem.text(text).copy(isSensitive = true),
+        )
     }
 
     /**

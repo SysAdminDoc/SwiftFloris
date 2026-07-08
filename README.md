@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.55-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.56-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.55 | Privacy posture |
+| Area | What's in v1.9.56 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -331,6 +331,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.56** (2026-07-08) - Personal-dictionary auto-learn now persists locale tags that survive restart, legacy debug-locale rows are repaired, sensitive typing traces and cut/copy paths stay out of IME-local history, Android clipboard previews receive sensitive flags, and backup rules exclude the actual Room database files.
 - **v1.9.55** (2026-07-06) - Smart-compose ghost text now uses a suspend-aware provider/cache path from the NLP worker instead of blocking while reading personal trigram/bigram storage, reducing per-keystroke stalls when heuristic smart compose is enabled.
 - **v1.9.54** (2026-07-02) — Premium polish pass: shared Compose buttons, chips, bottom bars, dropdown-like fields, and long-press icon controls now use consistent 44dp targets, square-radius shapes, ellipsized labels, and safer press handling; first-run setup gained responsive footer wrapping and step state semantics; Home, Search, Snippets, and Voice settings now use shared controls; Settings search and setup gained committed Roborazzi baselines.
 - **v1.9.53** (2026-06-25) — Roadmap drain: release-channel freshness is now a blocking local gate, Android 17 CJK selected-candidate accessibility metadata, targetSdk 37 shadow preflight, sample addon APK validation in local release evidence, Kotlin build-cache CVE guard, runtime addon bundle-size rejection reasons, Tink 1.22.0 (security), AboutLibraries 15.0.3, deprecated `announceForAccessibility` migrated to Compose live-region, data-extraction rules verified by XML-parsed domain/path pairs, public trust docs tracked in git, destructive clipboard Room migrations replaced with row-preserving, addon provenance tap-to-copy JSON, one-tap privacy proof export plus privacy audit JSON save/share, provider-owned candidate trailing-space policy for Latin/CJK/emoji/media spacebar commits, categorized `runBlocking` allowlist budgets for main-thread composing bridges, crash-report environment/redaction fields and SwiftFloris crash-dialog report identity, EditorInfo sensitive-field replay tests, keyboard layout JSON validation, a new Snippet management Settings screen with Espanso YAML import, reduced-motion polish across Settings/setup transitions, safer snippet deletion, clipboard text-tile accessibility labels, unsaved-draft recovery in the custom layout editor, and bounded inline-autofill rendering that drops invalid host suggestions instead of crashing.
@@ -548,7 +549,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.55** (2026-07-06). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.56** (2026-07-08). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
