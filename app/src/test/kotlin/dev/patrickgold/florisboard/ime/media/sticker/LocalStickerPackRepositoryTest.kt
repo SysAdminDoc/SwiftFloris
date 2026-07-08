@@ -20,6 +20,8 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Files
@@ -51,6 +53,45 @@ class LocalStickerPackRepositoryTest : FunSpec({
         sticker.mimeType shouldBe "image/png"
         sticker.sourceUri shouldBe "content://local/${sticker.id}"
         StickerSearch.search(listOf(pack), "thumbs").single().id shouldBe sticker.id
+    }
+
+    test("subsequent sticker imports preserve existing manifest entries") {
+        val dir = tempDir()
+        val first = dir.resolve("thumbs-up.png").apply {
+            writeBytes(samplePngBytes())
+        }
+        val second = dir.resolve("Friday_Dance.webp").apply {
+            writeBytes(sampleWebpBytes())
+        }
+
+        LocalStickerPackRepository.importStickerFile(
+            storageDir = dir,
+            sourceFile = first,
+            declaredMimeType = "image/png",
+        ) shouldBe LocalStickerPackResult.Success(1)
+        LocalStickerPackRepository.importStickerFile(
+            storageDir = dir,
+            sourceFile = second,
+            declaredMimeType = "image/webp",
+        ) shouldBe LocalStickerPackResult.Success(1)
+
+        val pack = LocalStickerPackRepository.loadPack(dir) { id -> "content://local/$id" }.shouldNotBeNull()
+        pack.stickers shouldHaveSize 2
+        pack.stickers.map { it.label }.toSet() shouldBe setOf("Friday Dance", "thumbs up")
+        dir.listFiles { file ->
+            file.name.startsWith(LocalStickerPackRepository.ManifestFileName) && file.name.endsWith(".tmp")
+        }?.toList().orEmpty() shouldBe emptyList()
+    }
+
+    test("manifest persistence replaces by synced move instead of copy-over-target") {
+        val source = locateRepositorySource().readText()
+
+        source shouldContain "File.createTempFile(\"${'$'}ManifestFileName-\", \".tmp\", storageDir)"
+        source shouldContain "output.fd.sync()"
+        source shouldContain "StandardCopyOption.ATOMIC_MOVE"
+        source shouldContain "StandardCopyOption.REPLACE_EXISTING"
+        source shouldContain "moveReplacing(tempFile, manifestFile)"
+        source shouldNotContain "copyTo(manifestFile, overwrite = true)"
     }
 
     test("exports and imports a portable sticker-pack archive") {
@@ -153,6 +194,15 @@ class LocalStickerPackRepositoryTest : FunSpec({
 
 private fun tempDir(): File {
     return Files.createTempDirectory("swiftfloris-local-stickers-").toFile().also { it.deleteOnExit() }
+}
+
+private fun locateRepositorySource(): File {
+    val candidates = listOf(
+        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/LocalStickerPackRepository.kt",
+        "src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/LocalStickerPackRepository.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("LocalStickerPackRepository.kt not reachable from working directory ${File(".").absolutePath}")
 }
 
 private fun samplePngBytes(): ByteArray {
