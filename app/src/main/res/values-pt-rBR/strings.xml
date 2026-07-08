@@ -660,7 +660,6 @@
     <string name="ext__home__info">Você pode baixar e instalar extensões na FlorisBoard Addons Store ou importar qualquer arquivo de extensão que tenha baixado da interne.</string>
     <string name="ext__home__manage_extensions">Gerenciar extensões instaladas</string>
     <string name="ext__list__view_details">Ver detalhes</string>
-    <string name="ext__check_updates__title">Verifique se há atualizações</string>
     <!-- Action strings -->
     <string name="action__add">Adicionar</string>
     <string name="action__apply">Aplicar</string>

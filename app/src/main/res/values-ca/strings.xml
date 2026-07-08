@@ -696,7 +696,6 @@
     <string name="ext__home__visit_store">Visita la botiga de complements</string>
     <string name="ext__home__manage_extensions">Administra les extensions instal·lades</string>
     <string name="ext__list__view_details">Visualitza els detalls</string>
-    <string name="ext__check_updates__title">Comprova les actualitzacions</string>
     <!-- Action strings -->
     <string name="action__add">Afegeix</string>
     <string name="action__apply">Aplica</string>

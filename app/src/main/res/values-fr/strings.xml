@@ -715,7 +715,6 @@
     <string name="ext__home__visit_store">Visiter le magasin d\'extensions</string>
     <string name="ext__home__manage_extensions">Gestion des Extensions Installées</string>
     <string name="ext__list__view_details">Voir les détails</string>
-    <string name="ext__check_updates__title">Vérifier les mises à jour</string>
     <!-- Action strings -->
     <string name="action__add">Ajouter</string>
     <string name="action__apply">Appliquer</string>

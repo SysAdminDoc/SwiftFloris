@@ -781,7 +781,6 @@ Klik di sini untuk menyelesaikan masalah ini.</string>
     <string name="ext__home__visit_store">Kunjungi Add-ons Store</string>
     <string name="ext__home__manage_extensions">Kelola ekstensi terpasang</string>
     <string name="ext__list__view_details">Lihat rincian</string>
-    <string name="ext__check_updates__title">Periksa Pembaruan</string>
     <!-- Action strings -->
     <string name="action__add">Tambahkan</string>
     <string name="action__apply">Terapkan</string>

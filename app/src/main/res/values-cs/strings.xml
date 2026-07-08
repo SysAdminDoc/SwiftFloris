@@ -812,7 +812,6 @@
     <string name="ext__home__visit_store">Navštívit Obchod s doplňky</string>
     <string name="ext__home__manage_extensions">Správa nainstalovaných doplňků</string>
     <string name="ext__list__view_details">Zobrazit podrobnosti</string>
-    <string name="ext__check_updates__title">Zkontrolovat aktualizace</string>
     <!-- Action strings -->
     <string name="action__add">Přidat</string>
     <string name="action__apply">Použít</string>

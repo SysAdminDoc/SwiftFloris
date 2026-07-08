@@ -562,7 +562,6 @@
     <string name="ext__home__visit_store">Viziti Aldonaĵejon</string>
     <string name="ext__home__manage_extensions">Administri instalitajn etendaĵojn</string>
     <string name="ext__list__view_details">Vidi detalojn</string>
-    <string name="ext__check_updates__title">Serĉi ĝisdatigojn</string>
     <!-- Action strings -->
     <string name="action__add">Aldoni</string>
     <string name="action__apply">Apliki</string>

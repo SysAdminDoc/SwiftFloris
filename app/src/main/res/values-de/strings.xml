@@ -698,7 +698,6 @@
     <string name="ext__home__visit_store">Besuche den Add-ons Store</string>
     <string name="ext__home__manage_extensions">Installierte Erweiterungen verwalten</string>
     <string name="ext__list__view_details">Details anzeigen</string>
-    <string name="ext__check_updates__title">Auf Updates prüfen</string>
     <!-- Action strings -->
     <string name="action__add">Hinzufügen</string>
     <string name="action__apply">Übernehmen</string>

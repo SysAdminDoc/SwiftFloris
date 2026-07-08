@@ -807,7 +807,6 @@
     <string name="ext__home__visit_store">Kiegészítőbolt meglátogatása</string>
     <string name="ext__home__manage_extensions">Telepített kiterjesztések kezelése</string>
     <string name="ext__list__view_details">Részletek megtekintése</string>
-    <string name="ext__check_updates__title">Frissítések keresése</string>
     <!-- Action strings -->
     <string name="action__add">Hozzáadás</string>
     <string name="action__apply">Alkalmaz</string>

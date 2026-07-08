@@ -2016,7 +2016,6 @@
     <string name="ext__view__delete_in_progress_summary">Keep this screen open while SwiftFloris removes the extension and refreshes installed themes.</string>
     <string name="ext__view__delete_failure">Could not delete extension</string>
     <string name="ext__view__delete_failure_summary">The extension is still installed. Review the error, then retry after leaving screens that use this extension. Details: {error_message}</string>
-    <string name="ext__check_updates__title">Check for updates</string>
 
     <!-- Action strings -->
     <string name="action__add">Add</string>

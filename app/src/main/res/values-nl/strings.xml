@@ -719,7 +719,6 @@ Deze toestemming kan op elk moment worden gewijzigd in de systeeminstellingen.  
     <string name="ext__home__visit_store">Bezoek de Addons Store</string>
     <string name="ext__home__manage_extensions">Geïnstalleerde extensies beheren</string>
     <string name="ext__list__view_details">Details weergeven</string>
-    <string name="ext__check_updates__title">Controleren op Updates</string>
     <!-- Action strings -->
     <string name="action__add">Toevoegen</string>
     <string name="action__apply">Van toepassing zijn</string>
