@@ -108,6 +108,7 @@ private val expectedRoutes = mapOf<SettingsSearchDestination, Any>(
     SettingsSearchDestination.TYPING_STATS to Routes.Settings.TypingStats,
     SettingsSearchDestination.VOICE_INPUT to Routes.Settings.VoiceInput,
     SettingsSearchDestination.DICTIONARY to Routes.Settings.Dictionary,
+    SettingsSearchDestination.MIGRATION_ASSISTANT to Routes.Settings.MigrationAssistant,
     SettingsSearchDestination.USER_DICTIONARY_SYSTEM to
         Routes.Settings.UserDictionary(UserDictionaryType.SYSTEM),
     SettingsSearchDestination.USER_DICTIONARY_FLORIS to

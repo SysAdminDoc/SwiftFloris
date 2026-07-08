@@ -59,6 +59,15 @@ class SettingsSearchIndexTest : FunSpec({
         results.first().entry.destination shouldBe SettingsSearchDestination.KEYBOARD
     }
 
+    test("migration assistant is searchable from import and keyboard-brand terms") {
+        listOf("migration", "swiftkey", "gboard", "import words").forEach { query ->
+            val result = SettingsSearchIndex.search(query, ::resolve).first()
+
+            result.entry.id shouldBe "dictionary.migration-assistant"
+            result.entry.destination shouldBe SettingsSearchDestination.MIGRATION_ASSISTANT
+        }
+    }
+
     test("query normalization folds diacritics") {
         SettingsSearchIndex.search("theme", ::resolve).first().entry.id shouldBe "theme"
         SettingsSearchIndex.search("themé", ::resolve).first().entry.id shouldBe "theme"
@@ -147,6 +156,9 @@ private val testStrings = mapOf(
         "Off by default. When enabled, automation apps can send validated SwiftFloris actions.",
     R.string.settings__voice_input__title to "Voice input",
     R.string.settings__home__voice_input_summary to "FUTO setup, offline language models, and voice keyboard status",
+    R.string.settings__migration_assistant__title to "Migration assistant",
+    R.string.settings__migration_assistant__home_summary to
+        "Import words from SwiftKey, Gboard, FlorisBoard, or a backup",
 )
 
 private fun resolve(resId: Int): String = testStrings[resId] ?: "res-$resId"

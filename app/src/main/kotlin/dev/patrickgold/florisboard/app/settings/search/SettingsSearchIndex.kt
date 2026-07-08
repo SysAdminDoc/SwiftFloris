@@ -38,6 +38,7 @@ enum class SettingsSearchDestination {
     TYPING_STATS,
     VOICE_INPUT,
     DICTIONARY,
+    MIGRATION_ASSISTANT,
     USER_DICTIONARY_SYSTEM,
     USER_DICTIONARY_FLORIS,
     LEARNED_ENTRIES,
@@ -192,6 +193,7 @@ object SettingsSearchIndex {
         entry("voice.futo", R.string.settings__voice_input__title, R.string.settings__voice_input__open_futo_language_settings, destination = SettingsSearchDestination.VOICE_INPUT),
 
         entry("dictionary", R.string.settings__dictionary__title, R.string.settings__dictionary__title, R.string.settings__home__dictionary_summary, SettingsSearchDestination.DICTIONARY, "personal words"),
+        entry("dictionary.migration-assistant", R.string.settings__migration_assistant__title, R.string.settings__migration_assistant__title, R.string.settings__migration_assistant__home_summary, SettingsSearchDestination.MIGRATION_ASSISTANT, "swiftkey gboard import migrate words"),
         entry("dictionary.system", R.string.settings__udm__title_system, R.string.pref__dictionary__manage_system_user_dictionary__label, destination = SettingsSearchDestination.USER_DICTIONARY_SYSTEM),
         entry("dictionary.floris", R.string.settings__udm__title_floris, R.string.pref__dictionary__manage_floris_user_dictionary__label, destination = SettingsSearchDestination.USER_DICTIONARY_FLORIS),
         entry("dictionary.learned", R.string.settings__learned_entries__title, R.string.pref__dictionary__manage_learned_entries__label, R.string.pref__dictionary__manage_learned_entries__summary, SettingsSearchDestination.LEARNED_ENTRIES, "learned words bigrams trigrams forget remove phrases predictions"),

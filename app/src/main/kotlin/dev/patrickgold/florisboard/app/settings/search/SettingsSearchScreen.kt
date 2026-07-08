@@ -285,6 +285,7 @@ internal fun SettingsSearchDestination.toSearchRoute(): Any {
         SettingsSearchDestination.TYPING_STATS -> Routes.Settings.TypingStats
         SettingsSearchDestination.VOICE_INPUT -> Routes.Settings.VoiceInput
         SettingsSearchDestination.DICTIONARY -> Routes.Settings.Dictionary
+        SettingsSearchDestination.MIGRATION_ASSISTANT -> Routes.Settings.MigrationAssistant
         SettingsSearchDestination.USER_DICTIONARY_SYSTEM ->
             Routes.Settings.UserDictionary(UserDictionaryType.SYSTEM)
         SettingsSearchDestination.USER_DICTIONARY_FLORIS ->
