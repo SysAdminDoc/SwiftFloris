@@ -401,11 +401,12 @@ class ClipboardManager(
 
     fun deleteClip(item: ClipboardItem, onlyIfUnpinned: Boolean) {
         ioScope.launch {
-            if (onlyIfUnpinned) {
+            val deletedRows = if (onlyIfUnpinned) {
                 clipHistoryDao?.deleteIfUnpinned(item.id)
             } else {
                 clipHistoryDao?.delete(item.id)
-            }
+            } ?: 0
+            if (onlyIfUnpinned && deletedRows <= 0) return@launch
             tryOrNull {
                 val uri = item.uri
                 if (uri != null) {
