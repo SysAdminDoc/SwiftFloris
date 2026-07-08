@@ -214,7 +214,9 @@ fun SyncSettingsScreen() = FlorisScreen {
         }
     }
 
-    fun resolveLocalFolderSyncFileUri(channel: SyncChannel.LocalFolder, create: Boolean): Uri? {
+    suspend fun resolveLocalFolderSyncFileUri(channel: SyncChannel.LocalFolder, create: Boolean): Uri? = withContext(
+        Dispatchers.IO,
+    ) {
         val treeUri = Uri.parse(channel.absolutePath)
         val treeDocumentId = DocumentsContract.getTreeDocumentId(treeUri)
         val childrenUri = DocumentsContract.buildChildDocumentsUriUsingTree(treeUri, treeDocumentId)
@@ -231,13 +233,13 @@ fun SyncSettingsScreen() = FlorisScreen {
                 val name = cursor.getStringOrNull(nameCol)
                 val mime = cursor.getStringOrNull(mimeCol)
                 if (name == SYNC_FILE_NAME && mime != Document.MIME_TYPE_DIR) {
-                    val documentId = cursor.getStringOrNull(idCol) ?: return null
-                    return DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
+                    val documentId = cursor.getStringOrNull(idCol) ?: return@withContext null
+                    return@withContext DocumentsContract.buildDocumentUriUsingTree(treeUri, documentId)
                 }
             }
         }
-        if (!create) return null
-        return DocumentsContract.createDocument(
+        if (!create) return@withContext null
+        DocumentsContract.createDocument(
             context.contentResolver,
             DocumentsContract.buildDocumentUriUsingTree(treeUri, treeDocumentId),
             SYNC_FILE_MIME_TYPE,
@@ -560,19 +562,23 @@ fun SyncSettingsScreen() = FlorisScreen {
                     title = stringRes(R.string.settings__sync__export_now),
                     summary = stringRes(R.string.settings__sync__export_now_summary),
                     onClick = {
-                        val target = when (val channel = activeChannel) {
-                            is SyncChannel.LocalFolder -> runCatching {
-                                resolveLocalFolderSyncFileUri(channel, create = true)
-                            }.getOrNull()
-                            SyncChannel.ManualExport -> manualExportTargetUri
-                                .takeIf { it.isNotBlank() }
-                                ?.let { Uri.parse(it) }
-                            else -> null
-                        }
-                        if (target == null) {
-                            failTransfer(syncMissingTargetText)
-                        } else {
-                            scope.launch { exportSyncSnapshot(target) }
+                        val channel = activeChannel
+                        val savedManualExportTargetUri = manualExportTargetUri
+                        scope.launch {
+                            val target = when (channel) {
+                                is SyncChannel.LocalFolder -> runCatching {
+                                    resolveLocalFolderSyncFileUri(channel, create = true)
+                                }.getOrNull()
+                                SyncChannel.ManualExport -> savedManualExportTargetUri
+                                    .takeIf { it.isNotBlank() }
+                                    ?.let { Uri.parse(it) }
+                                else -> null
+                            }
+                            if (target == null) {
+                                failTransfer(syncMissingTargetText)
+                            } else {
+                                exportSyncSnapshot(target)
+                            }
                         }
                     },
                 )
@@ -583,13 +589,15 @@ fun SyncSettingsScreen() = FlorisScreen {
                     onClick = {
                         when (val channel = activeChannel) {
                             is SyncChannel.LocalFolder -> {
-                                val source = runCatching {
-                                    resolveLocalFolderSyncFileUri(channel, create = false)
-                                }.getOrNull()
-                                if (source == null) {
-                                    failTransfer(syncMissingTargetText)
-                                } else {
-                                    scope.launch { importSyncSnapshot(source) }
+                                scope.launch {
+                                    val source = runCatching {
+                                        resolveLocalFolderSyncFileUri(channel, create = false)
+                                    }.getOrNull()
+                                    if (source == null) {
+                                        failTransfer(syncMissingTargetText)
+                                    } else {
+                                        importSyncSnapshot(source)
+                                    }
                                 }
                             }
                             else -> manualImportLauncher.launch(
