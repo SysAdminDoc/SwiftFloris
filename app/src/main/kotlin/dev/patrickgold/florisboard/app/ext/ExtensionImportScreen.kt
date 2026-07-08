@@ -325,27 +325,24 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     FlorisSuccessCard(
                         modifier = Modifier.defaultFlorisOutlinedBox(),
                         text = stringRes(R.string.ext__import__review_title),
-                        secondaryText = buildString {
-                            append(pluralsRes(
+                        secondaryText = stringRes(
+                            R.string.ext__import__review_summary,
+                            "new_files" to pluralsRes(
                                 R.plurals.ext__import__review_new_files,
                                 importSummary.newInstallCount,
                                 "new_count" to importSummary.newInstallCount,
-                            ))
-                            append(", ")
-                            append(pluralsRes(
+                            ),
+                            "updates" to pluralsRes(
                                 R.plurals.ext__import__review_updates,
                                 importSummary.updateCount,
                                 "update_count" to importSummary.updateCount,
-                            ))
-                            append(", and ")
-                            append(pluralsRes(
+                            ),
+                            "skipped_files" to pluralsRes(
                                 R.plurals.ext__import__review_skipped_files,
                                 skippedFileCount,
                                 "skipped_count" to skippedFileCount,
-                            ))
-                            append(" ")
-                            append(stringRes(R.string.ext__import__review_message_with_actions_suffix))
-                        },
+                            ),
+                        ),
                         actionLabel = stringRes(R.string.action__select_files).takeIf {
                             initUuid == null && ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress)
                         },

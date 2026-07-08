@@ -1956,7 +1956,7 @@
         <item quantity="one">1 skipped file</item>
         <item quantity="other">{skipped_count} skipped files</item>
     </plurals>
-    <string name="ext__import__review_message_with_actions_suffix">were found. Review the details, then import when you are comfortable.</string>
+    <string name="ext__import__review_summary" comment="Import review summary; {new_files}, {updates}, and {skipped_files} are localized count fragments">{new_files}, {updates}, and {skipped_files} were found. Review the details, then import when you are comfortable.</string>
     <string name="ext__import__none_ready_title">No importable files</string>
     <string name="ext__import__none_ready_message">Choose a supported SwiftFloris extension archive and try again.</string>
     <string name="ext__import__error_title">Could not prepare import</string>
