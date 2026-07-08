@@ -2406,6 +2406,8 @@
     <string name="settings__mcp__group_status" comment="MCP settings group title">Status</string>
     <string name="settings__mcp__group_daemons" comment="MCP settings group title">Bound daemons</string>
     <string name="settings__mcp__group_trust" comment="MCP settings group title">Daemon trust</string>
+    <string name="settings__mcp__status_disabled" comment="MCP status row title when the bridge is disabled">MCP bridge off</string>
+    <string name="settings__mcp__status_disabled_summary" comment="MCP status row summary when the bridge is disabled">SwiftFloris will not discover, trust, or bind MCP daemons at keyboard startup until you enable the bridge.</string>
     <string name="settings__mcp__status_no_daemons" comment="MCP status row title when no daemons are installed">No MCP daemons installed</string>
     <string name="settings__mcp__status_no_daemons_summary" comment="MCP status row summary when no daemons are installed">Install a sibling app that advertises an MCP service; SwiftFloris binds only co-signed or explicitly trusted daemons. The bridge is local-only and never opens a network connection.</string>
     <string name="settings__mcp__status_bound_title" comment="MCP status row title when daemons are bound">MCP bridge active</string>
@@ -2418,9 +2420,12 @@
         <item quantity="one">{count} tool</item>
         <item quantity="other">{count} tools</item>
     </plurals>
+    <string name="settings__mcp__bridge_enabled" comment="MCP settings switch title">Enable MCP bridge</string>
+    <string name="settings__mcp__bridge_enabled_summary" comment="MCP settings switch summary when enabled">Trusted daemons can bind after the keyboard service starts. Turn this off to stop new binds.</string>
+    <string name="settings__mcp__bridge_disabled_summary" comment="MCP settings switch summary when disabled">No daemon is discovered or bound at keyboard startup. Turn this on, then restart the keyboard service to bind trusted daemons.</string>
     <string name="settings__mcp__rescan" comment="MCP settings action title">Scan MCP daemons</string>
     <string name="settings__mcp__rescan_running" comment="MCP settings action title while scan is running">Scanning MCP daemons…</string>
-    <string name="settings__mcp__rescan_summary" comment="MCP settings action summary">Refresh installed daemon trust state. Newly trusted daemons bind the next time the keyboard service starts.</string>
+    <string name="settings__mcp__rescan_summary" comment="MCP settings action summary">Refresh installed daemon trust state. Newly trusted daemons bind only after the bridge is enabled and the keyboard service restarts.</string>
     <string name="settings__mcp__rescan_failed" comment="MCP settings error title">MCP daemon scan failed</string>
     <string name="settings__mcp__reset_trust" comment="MCP settings action title">Reset MCP daemon trust</string>
     <string name="settings__mcp__reset_trust_summary" comment="MCP settings action summary">Clear manually trusted daemon signing certificates.</string>

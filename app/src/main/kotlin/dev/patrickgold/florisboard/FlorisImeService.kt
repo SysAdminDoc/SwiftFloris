@@ -419,15 +419,15 @@ class FlorisImeService : LifecycleInputMethodService() {
 
         // ROADMAP §10.5 L7.5b — discover any installed MCP daemons, bind to
         // each, and install the AndroidMcpClient into the registry so the
-        // smart-compose path can call MCP tools. Failure here must not abort
-        // IME startup — McpServiceLifecycle.start internally tolerates
-        // discovery failures.
+        // smart-compose path can call MCP tools. The first bind is gated on
+        // explicit MCP consent; failure here must not abort IME startup.
         try {
             mcpLifecycle = dev.patrickgold.florisboard.ime.mcp
                 .McpServiceLifecycle.start(
                     appContext = applicationContext,
                     persistedSigningPinsRaw = prefs.mcp.signingCertPins.get(),
                     trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
+                    bridgeEnabled = prefs.privacy.mcpConsent.get().allowsInvocation(),
                 )
         } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "MCP bridge startup failed: $e" }

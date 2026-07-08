@@ -45,6 +45,7 @@ import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonTrustPolicy
 import dev.patrickgold.florisboard.ime.mcp.McpSigningPinSet
 import dev.patrickgold.florisboard.ime.mcp.RejectedMcpDaemon
+import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
@@ -91,6 +92,8 @@ fun McpSettingsScreen() = FlorisScreen {
     }
     val disabledToolsSerialized by prefs.mcp.disabledTools.collectAsState()
     val signingPinsRaw by prefs.mcp.signingCertPins.collectAsState()
+    val mcpConsent by prefs.privacy.mcpConsent.collectAsState()
+    val bridgeEnabled = mcpConsent.allowsInvocation()
     val signingPinSet = remember(signingPinsRaw) {
         McpSigningPinSet.parse(signingPinsRaw)
     }
@@ -129,8 +132,18 @@ fun McpSettingsScreen() = FlorisScreen {
     }
 
     content {
-        val activeCount = activeDaemons.keys.count { it.packageName !in disabledSet }
-        if (activeDaemons.isEmpty()) {
+        val activeCount = if (bridgeEnabled) {
+            activeDaemons.keys.count { it.packageName !in disabledSet }
+        } else {
+            0
+        }
+        if (!bridgeEnabled) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__mcp__status_disabled),
+                secondaryText = stringRes(R.string.settings__mcp__status_disabled_summary),
+            )
+        } else if (activeDaemons.isEmpty()) {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
                 text = stringRes(R.string.settings__mcp__status_no_daemons),
@@ -149,6 +162,27 @@ fun McpSettingsScreen() = FlorisScreen {
         }
 
         PreferenceGroup(title = stringRes(R.string.settings__mcp__group_status)) {
+            Preference(
+                icon = if (bridgeEnabled) Icons.Default.PlayCircleOutline else Icons.Default.Block,
+                title = stringRes(R.string.settings__mcp__bridge_enabled),
+                summary = if (bridgeEnabled) {
+                    stringRes(R.string.settings__mcp__bridge_enabled_summary)
+                } else {
+                    stringRes(R.string.settings__mcp__bridge_disabled_summary)
+                },
+                trailing = {
+                    Switch(
+                        checked = bridgeEnabled,
+                        onCheckedChange = { enabled ->
+                            scope.launch {
+                                prefs.privacy.mcpConsent.set(
+                                    if (enabled) AddonConsentState.GRANTED else AddonConsentState.DENIED,
+                                )
+                            }
+                        },
+                    )
+                },
+            )
             Preference(
                 icon = Icons.Default.Refresh,
                 title = if (scanInProgress) {
@@ -178,7 +212,7 @@ fun McpSettingsScreen() = FlorisScreen {
             }
         }
 
-        if (activeDaemons.isNotEmpty()) {
+        if (bridgeEnabled && activeDaemons.isNotEmpty()) {
             PreferenceGroup(title = stringRes(R.string.settings__mcp__group_daemons)) {
                 for ((_, entry) in activeDaemons) {
                     val daemonEnabled = entry.key.packageName !in disabledSet

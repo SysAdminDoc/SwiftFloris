@@ -49,11 +49,13 @@ class McpServiceLifecycleTest : FunSpec({
         unbind: (DaemonKey) -> Unit = {},
         shutdown: () -> Unit = {},
         binderLookup: (DaemonKey) -> IBinder? = { null },
+        bridgeEnabled: () -> Boolean = { true },
     ) = McpServiceLifecycle(
         bindCallback = bind,
         unbindCallback = unbind,
         shutdownCallback = shutdown,
         binderLookup = binderLookup,
+        isBridgeEnabled = bridgeEnabled,
     )
 
     test("startWithDaemons publishes the daemon map into McpDaemonRegistry") {
@@ -68,6 +70,21 @@ class McpServiceLifecycleTest : FunSpec({
         val l = lifecycle(bind = { key -> bound.add(key); true })
         l.startWithDaemons(mapOf(keyA to entryA, keyB to entryB))
         bound shouldBe setOf(keyA, keyB)
+    }
+
+    test("startWithDaemons does not bind or publish daemons while the bridge is disabled") {
+        val bound = mutableSetOf<DaemonKey>()
+        val l = lifecycle(
+            bind = { key -> bound.add(key); true },
+            bridgeEnabled = { false },
+        )
+
+        l.startWithDaemons(mapOf(keyA to entryA, keyB to entryB))
+
+        bound shouldBe emptySet()
+        McpDaemonRegistry.size() shouldBe 0
+        McpClientRegistry.active() shouldBe NoOpMcpClient
+        l.isStarted shouldBe false
     }
 
     test("startWithDaemons installs an AndroidMcpClient into McpClientRegistry") {

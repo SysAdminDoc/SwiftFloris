@@ -25,11 +25,11 @@ import dev.patrickgold.florisboard.lib.devtools.flogInfo
  *
  * Lifecycle owned by [FlorisImeService]:
  *
- *  - [start] is called from `onCreate`. It runs a single discovery
- *    pass, publishes the daemon list into [McpDaemonRegistry], binds
- *    every daemon via [McpServiceConnectionManager], and installs an
- *    [AndroidMcpClient] backed by the manager's `binderFor` into
- *    [McpClientRegistry].
+ *  - [start] is called from `onCreate` after the user has explicitly
+ *    enabled the MCP bridge. It runs a single discovery pass, publishes
+ *    the daemon list into [McpDaemonRegistry], binds every daemon via
+ *    [McpServiceConnectionManager], and installs an [AndroidMcpClient]
+ *    backed by the manager's `binderFor` into [McpClientRegistry].
  *  - [stop] is called from `onDestroy`. It unbinds every daemon and
  *    resets both registries to their startup defaults.
  *
@@ -43,6 +43,7 @@ class McpServiceLifecycle(
     private val unbindCallback: (DaemonKey) -> Unit,
     private val shutdownCallback: () -> Unit,
     private val binderLookup: (DaemonKey) -> android.os.IBinder?,
+    private val isBridgeEnabled: () -> Boolean = { true },
 ) {
 
     private var started: Boolean = false
@@ -53,6 +54,12 @@ class McpServiceLifecycle(
      */
     fun startWithDaemons(daemons: Map<DaemonKey, DaemonEntry>) {
         check(!started) { "McpServiceLifecycle already started" }
+        if (!isBridgeEnabled()) {
+            McpDaemonRegistry.setActive(emptyMap())
+            McpClientRegistry.setActive(NoOpMcpClient)
+            flogInfo { "MCP bridge: disabled until user consent is granted" }
+            return
+        }
         started = true
         McpDaemonRegistry.setActive(daemons)
         for (key in daemons.keys) {
@@ -87,6 +94,7 @@ class McpServiceLifecycle(
             appContext: Context,
             persistedSigningPinsRaw: String = "",
             trustedRootSigningCertSha256: String? = null,
+            bridgeEnabled: Boolean = true,
         ): McpServiceLifecycle {
             val manager = McpServiceConnectionManager(appContext)
             val lifecycle = McpServiceLifecycle(
@@ -94,7 +102,15 @@ class McpServiceLifecycle(
                 unbindCallback = manager::unbind,
                 shutdownCallback = manager::shutdown,
                 binderLookup = manager::binderFor,
+                isBridgeEnabled = { bridgeEnabled },
             )
+            if (!bridgeEnabled) {
+                McpDaemonDiscoveryStore.reset()
+                McpDaemonRegistry.setActive(emptyMap())
+                McpClientRegistry.setActive(NoOpMcpClient)
+                flogInfo { "MCP bridge: startup skipped until user consent is granted" }
+                return lifecycle
+            }
             val snapshot = runCatching {
                 McpAndroidDiscoverer.runDiscoverySnapshot(
                     context = appContext,
