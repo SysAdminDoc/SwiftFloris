@@ -35,7 +35,10 @@ class GlideTypingGesture {
      * Class which detects swipes based on given [MotionEvent]s. Only supports single-finger swipes
      * and ignores additional pointers provided, if any.
      */
-    class Detector(context: Context) {
+    class Detector(
+        context: Context,
+        private val currentTimeMillis: () -> Long = System::currentTimeMillis,
+    ) {
         private val prefs by FlorisPreferenceStore
         private var pointerData: PointerData = PointerData(mutableListOf(), 0)
         private val keySize = ViewUtils.px2dp(context.resources.getDimension(R.dimen.key_width))
@@ -68,7 +71,7 @@ class GlideTypingGesture {
                     pointerId = event.getPointerId(pointerIndex)
                     pointerData.apply {
                         positions.add(Position(event.getX(pointerIndex), event.getY(pointerIndex)))
-                        startTime = System.currentTimeMillis()
+                        startTime = currentTimeMillis()
                     }
                     return false
                 }
@@ -87,16 +90,7 @@ class GlideTypingGesture {
                         pointerData.positions.add(pos)
                         if (pointerData.isActuallyGesture == null) {
                             // evaluate whether is actually a gesture
-                            val dist = ViewUtils.px2dp(pointerData.positions[0].dist(pos))
-                            val time = (System.currentTimeMillis() - pointerData.startTime) + 1
-                            val thresholdScale = GlideSensitivityPolicy.thresholdScale(prefs.glide.sensitivity.get())
-                            val distanceThreshold = keySize * thresholdScale
-                            val velocityThreshold = VELOCITY_THRESHOLD * thresholdScale
-                            flogDebug { "Distance glided: $dist dp with velocity: ${dist / time} dp/ms" }
-                            if (dist > distanceThreshold &&
-                                (dist / time) > velocityThreshold &&
-                                (initialKey?.computedData?.code !in SWIPE_GESTURE_KEYS)
-                            ) {
+                            if (pointerData.hasQualifiedBeforeWordBoundary) {
                                 pointerData.isActuallyGesture = true
                                 // Let listener know all those points need to be added.
                                 pointerData.positions.take(pointerData.positions.size - 1).forEach { point ->
@@ -104,8 +98,27 @@ class GlideTypingGesture {
                                         it.onGlideAddPoint(point)
                                     }
                                 }
-                            } else if (time > MAX_DETECT_TIME) {
-                                pointerData.isActuallyGesture = false
+                            } else {
+                                val dist = ViewUtils.px2dp(pointerData.positions[0].dist(pos))
+                                val time = (currentTimeMillis() - pointerData.startTime) + 1
+                                val thresholdScale = GlideSensitivityPolicy.thresholdScale(prefs.glide.sensitivity.get())
+                                val distanceThreshold = keySize * thresholdScale
+                                val velocityThreshold = VELOCITY_THRESHOLD * thresholdScale
+                                flogDebug { "Distance glided: $dist dp with velocity: ${dist / time} dp/ms" }
+                                if (dist > distanceThreshold &&
+                                    (dist / time) > velocityThreshold &&
+                                    (initialKey?.computedData?.code !in SWIPE_GESTURE_KEYS)
+                                ) {
+                                    pointerData.isActuallyGesture = true
+                                    // Let listener know all those points need to be added.
+                                    pointerData.positions.take(pointerData.positions.size - 1).forEach { point ->
+                                        listeners.forEach {
+                                            it.onGlideAddPoint(point)
+                                        }
+                                    }
+                                } else if (time > MAX_DETECT_TIME) {
+                                    pointerData.isActuallyGesture = false
+                                }
                             }
 
                         }
@@ -160,8 +173,9 @@ class GlideTypingGesture {
             val lastPoint = pointerData.positions.lastOrNull()
             pointerData.positions.clear()
             if (lastPoint != null) pointerData.positions.add(lastPoint)
-            pointerData.startTime = System.currentTimeMillis()
+            pointerData.startTime = currentTimeMillis()
             pointerData.isActuallyGesture = null
+            pointerData.hasQualifiedBeforeWordBoundary = true
         }
 
         fun registerListener(listener: Listener) {
@@ -177,6 +191,7 @@ class GlideTypingGesture {
                 positions.clear()
                 startTime = 0
                 isActuallyGesture = null
+                hasQualifiedBeforeWordBoundary = false
             }
             pointerId = -1
         }
@@ -185,6 +200,7 @@ class GlideTypingGesture {
             val positions: MutableList<Position>,
             var startTime: Long,
             var isActuallyGesture: Boolean? = null,
+            var hasQualifiedBeforeWordBoundary: Boolean = false,
         )
 
         data class Position(val x: Float, val y: Float) {
