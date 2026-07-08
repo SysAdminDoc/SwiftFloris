@@ -90,6 +90,7 @@ class PersonalDictionarySyncTest : FunSpec({
     }
 
     test("envelope round-trip delivers the snapshot only to the addressed device") {
+        val (deviceA, keysA) = deviceKeys("dev-a")
         val (deviceB, keysB) = deviceKeys("dev-b")
         val (deviceC, keysC) = deviceKeys("dev-c")
         val state = PersonalDictionarySync.reconcileLocalState(
@@ -102,35 +103,44 @@ class PersonalDictionarySyncTest : FunSpec({
             state = state,
             clusterId = "cluster-1",
             recipients = listOf(deviceB, deviceC),
+            senderKeyPair = keysA,
             nowMillis = 1_500L,
         )
         val raw = file.serializeToString()
 
-        val openedB = PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "cluster-1", keysB)
+        val openedB = PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "cluster-1", keysB, listOf(deviceA))
         openedB.shouldNotBeNull()
         openedB.entries.single().word shouldBe "hello"
         openedB.entries.single().frequency shouldBe 200
 
         // dev-c can open its own envelope but not authenticate as dev-b.
-        PersonalDictionarySync.openEnvelopeFor(raw, "dev-c", "cluster-1", keysC).shouldNotBeNull()
-        PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "cluster-1", keysC).shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor(raw, "dev-c", "cluster-1", keysC, listOf(deviceA)).shouldNotBeNull()
+        PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "cluster-1", keysC, listOf(deviceA)).shouldBeNull()
     }
 
     test("envelope open fails closed on cluster mismatch, tamper, and unknown recipient") {
+        val (deviceA, keysA) = deviceKeys("dev-a")
         val (deviceB, keysB) = deviceKeys("dev-b")
+        val (deviceC, _) = deviceKeys("dev-c")
         val state = PersonalDictionarySync.reconcileLocalState(
             previous = null,
             words = listOf(word("hello")),
             deviceId = "dev-a",
             nowMillis = 1_000L,
         )
-        val file = PersonalDictionarySync.sealEnvelopes(state, "cluster-1", listOf(deviceB), 1_500L)
+        val file = PersonalDictionarySync.sealEnvelopes(state, "cluster-1", listOf(deviceB), keysA, 1_500L)
         val raw = file.serializeToString()
 
-        PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "other-cluster", keysB).shouldBeNull()
-        PersonalDictionarySync.openEnvelopeFor(raw, "dev-x", "cluster-1", keysB).shouldBeNull()
-        PersonalDictionarySync.openEnvelopeFor("not json", "dev-b", "cluster-1", keysB).shouldBeNull()
-        PersonalDictionarySync.openEnvelopeFor("""{"kind":"something-else","envelopes":[]}""", "dev-b", "cluster-1", keysB).shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "other-cluster", keysB, listOf(deviceA)).shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor(raw, "dev-x", "cluster-1", keysB, listOf(deviceA)).shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor("not json", "dev-b", "cluster-1", keysB, listOf(deviceA)).shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor(
+            """{"kind":"something-else","envelopes":[]}""",
+            "dev-b",
+            "cluster-1",
+            keysB,
+            listOf(deviceA),
+        ).shouldBeNull()
 
         // Flip one ciphertext byte — GCM tag must reject it.
         val envelope = file.envelopes.single()
@@ -139,7 +149,22 @@ class PersonalDictionarySyncTest : FunSpec({
         val tamperedFile = SyncEnvelopeFile(
             envelopes = listOf(envelope.copy(sealedHex = tamperedBytes.toLowerHex())),
         ).serializeToString()
-        PersonalDictionarySync.openEnvelopeFor(tamperedFile, "dev-b", "cluster-1", keysB).shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor(tamperedFile, "dev-b", "cluster-1", keysB, listOf(deviceA))
+            .shouldBeNull()
+
+        val unauthenticatedFile = SyncEnvelopeFile(
+            envelopes = listOf(envelope.copy(schema = 1, authHex = null)),
+        ).serializeToString()
+        PersonalDictionarySync.openEnvelopeFor(unauthenticatedFile, "dev-b", "cluster-1", keysB, listOf(deviceA))
+            .shouldBeNull()
+
+        val spoofedSenderFile = SyncEnvelopeFile(
+            envelopes = listOf(envelope.copy(senderDeviceId = "dev-c")),
+        ).serializeToString()
+        PersonalDictionarySync.openEnvelopeFor(spoofedSenderFile, "dev-b", "cluster-1", keysB, listOf(deviceC))
+            .shouldBeNull()
+        PersonalDictionarySync.openEnvelopeFor(raw, "dev-b", "cluster-1", keysB, emptyList())
+            .shouldBeNull()
     }
 
     test("two devices converge on the merged dictionary including deletes") {

@@ -166,4 +166,16 @@ class SealedBoxCryptoTest : FunSpec({
             SealedBoxCrypto.seal("x".toByteArray(), ByteArray(31))
         }.isFailure shouldBe true
     }
+
+    test("low-order all-zero public keys never derive usable secrets") {
+        val keyPair = SealedBoxCrypto.generateKeyPair()
+        val lowOrderPublicKey = ByteArray(32)
+
+        runCatching {
+            SealedBoxCrypto.seal("x".toByteArray(), lowOrderPublicKey)
+        }.isFailure shouldBe true
+        runCatching {
+            SealedBoxCrypto.deriveAuthenticationKey(keyPair.private, lowOrderPublicKey)
+        }.isFailure shouldBe true
+    }
 })

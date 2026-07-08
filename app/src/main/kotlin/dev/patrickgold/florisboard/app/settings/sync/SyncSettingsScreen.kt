@@ -294,6 +294,7 @@ fun SyncSettingsScreen() = FlorisScreen {
                     state = state,
                     clusterId = resolvedClusterId,
                     recipients = pairedDevices.filterNot { it.deviceId == resolvedDeviceId },
+                    senderKeyPair = identity.keyPair,
                     nowMillis = System.currentTimeMillis(),
                 )
                 if (file.envelopes.isEmpty()) {
@@ -349,6 +350,7 @@ fun SyncSettingsScreen() = FlorisScreen {
                     myDeviceId = resolvedDeviceId,
                     expectedClusterId = resolvedClusterId,
                     recipientKeyPair = identity.keyPair,
+                    trustedSenders = pairedDevices.filterNot { it.deviceId == resolvedDeviceId },
                 ) ?: throw IllegalArgumentException(syncOpenFailedText)
                 val words = PersonalDictionarySyncDaoApplier.snapshot(dao)
                 val localState = PersonalDictionarySync.reconcileLocalState(

@@ -21,7 +21,12 @@ import androidx.annotation.RequiresApi
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.security.KeyPair
+import java.security.MessageDigest
+import java.security.PrivateKey
+import java.util.Arrays
 import java.util.Locale
+import javax.crypto.Mac
+import javax.crypto.spec.SecretKeySpec
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
@@ -124,18 +129,30 @@ object PersonalDictionarySync {
         state: PersonalDictionaryCrdt,
         clusterId: String,
         recipients: List<PairedSyncDevice>,
+        senderKeyPair: KeyPair,
         nowMillis: Long,
     ): SyncEnvelopeFile {
         val plaintext = state.serializeToString().toByteArray(Charsets.UTF_8)
-        val envelopes = recipients.map { recipient ->
-            SyncEnvelope(
-                schema = SyncEnvelope.SUPPORTED_SCHEMA,
-                clusterId = clusterId,
-                senderDeviceId = state.deviceId,
-                recipientDeviceId = recipient.deviceId,
-                createdAtMillis = nowMillis,
-                sealedHex = SealedBoxCrypto.seal(plaintext, recipient.pubkeyHex.hexToBytes()).toLowerHex(),
-            )
+        val envelopes = try {
+            recipients.map { recipient ->
+                val unsignedEnvelope = SyncEnvelope(
+                    schema = SyncEnvelope.SUPPORTED_SCHEMA,
+                    clusterId = clusterId,
+                    senderDeviceId = state.deviceId,
+                    recipientDeviceId = recipient.deviceId,
+                    createdAtMillis = nowMillis,
+                    sealedHex = SealedBoxCrypto.seal(plaintext, recipient.pubkeyHex.hexToBytes()).toLowerHex(),
+                )
+                unsignedEnvelope.copy(
+                    authHex = computeEnvelopeAuthHex(
+                        envelope = unsignedEnvelope,
+                        privateKey = senderKeyPair.private,
+                        peerPublicKeyHex = recipient.pubkeyHex,
+                    ),
+                )
+            }
+        } finally {
+            Arrays.fill(plaintext, 0.toByte())
         }
         return SyncEnvelopeFile(envelopes = envelopes)
     }
@@ -152,19 +169,33 @@ object PersonalDictionarySync {
         myDeviceId: String,
         expectedClusterId: String,
         recipientKeyPair: KeyPair,
+        trustedSenders: List<PairedSyncDevice>,
     ): PersonalDictionaryCrdt? {
         val file = SyncEnvelopeFile.parse(rawFileJson) ?: return null
-        val envelope = file.envelopes.firstOrNull { envelope ->
-            envelope.recipientDeviceId == myDeviceId &&
-                envelope.clusterId == expectedClusterId &&
-                envelope.schema in 1..SyncEnvelope.SUPPORTED_SCHEMA &&
-                envelope.senderDeviceId != myDeviceId
-        } ?: return null
-        val sealed = envelope.sealedHex.hexToBytesOrNull() ?: return null
-        val plaintext = SealedBoxCrypto.open(sealed, recipientKeyPair) ?: return null
-        val parsed = PersonalDictionaryCrdt.parse(plaintext.toString(Charsets.UTF_8)) ?: return null
-        if (parsed.schema > PersonalDictionaryCrdt.SUPPORTED_SCHEMA) return null
-        return parsed
+        val trustedByDeviceId = trustedSenders.associateBy { it.deviceId }
+        for (envelope in file.envelopes) {
+            if (
+                envelope.recipientDeviceId != myDeviceId ||
+                envelope.clusterId != expectedClusterId ||
+                envelope.schema != SyncEnvelope.SUPPORTED_SCHEMA ||
+                envelope.senderDeviceId == myDeviceId
+            ) {
+                continue
+            }
+            val sender = trustedByDeviceId[envelope.senderDeviceId] ?: continue
+            if (!verifyEnvelopeAuth(envelope, recipientKeyPair, sender)) continue
+            val sealed = envelope.sealedHex.hexToBytesOrNull() ?: continue
+            val plaintext = SealedBoxCrypto.open(sealed, recipientKeyPair) ?: continue
+            val parsed = PersonalDictionaryCrdt.parse(plaintext.toString(Charsets.UTF_8)) ?: continue
+            if (
+                parsed.schema > PersonalDictionaryCrdt.SUPPORTED_SCHEMA ||
+                parsed.deviceId != envelope.senderDeviceId
+            ) {
+                continue
+            }
+            return parsed
+        }
+        return null
     }
 
     /**
@@ -201,6 +232,89 @@ object PersonalDictionarySync {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun computeEnvelopeAuthHex(
+    envelope: SyncEnvelope,
+    privateKey: PrivateKey,
+    peerPublicKeyHex: String,
+): String {
+    var peerPublicKey: ByteArray? = null
+    var key: ByteArray? = null
+    var auth: ByteArray? = null
+    return try {
+        val peerPub = peerPublicKeyHex.hexToBytes()
+        peerPublicKey = peerPub
+        val authKey = SealedBoxCrypto.deriveAuthenticationKey(privateKey, peerPub)
+        key = authKey
+        val tag = hmacSha256(authKey, envelope.authenticationData())
+        auth = tag
+        tag.toLowerHex()
+    } finally {
+        peerPublicKey?.let { Arrays.fill(it, 0.toByte()) }
+        key?.let { Arrays.fill(it, 0.toByte()) }
+        auth?.let { Arrays.fill(it, 0.toByte()) }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+private fun verifyEnvelopeAuth(
+    envelope: SyncEnvelope,
+    recipientKeyPair: KeyPair,
+    sender: PairedSyncDevice,
+): Boolean {
+    var expectedAuth: ByteArray? = null
+    var senderPublicKey: ByteArray? = null
+    var key: ByteArray? = null
+    return try {
+        val expected = envelope.authHex?.hexToBytesOrNull() ?: return false
+        expectedAuth = expected
+        if (expected.size != AUTH_TAG_BYTES) return false
+        val senderPub = sender.pubkeyHex.hexToBytesOrNull() ?: return false
+        senderPublicKey = senderPub
+        val authKey = SealedBoxCrypto.deriveAuthenticationKey(
+            privateKey = recipientKeyPair.private,
+            peerPublicKeyRaw = senderPub,
+        )
+        key = authKey
+        val actualAuth = hmacSha256(authKey, envelope.authenticationData())
+        try {
+            MessageDigest.isEqual(expected, actualAuth)
+        } finally {
+            Arrays.fill(actualAuth, 0.toByte())
+        }
+    } catch (_: Throwable) {
+        false
+    } finally {
+        expectedAuth?.let { Arrays.fill(it, 0.toByte()) }
+        senderPublicKey?.let { Arrays.fill(it, 0.toByte()) }
+        key?.let { Arrays.fill(it, 0.toByte()) }
+    }
+}
+
+private fun hmacSha256(key: ByteArray, data: ByteArray): ByteArray {
+    val mac = Mac.getInstance(HMAC_ALGORITHM)
+    mac.init(SecretKeySpec(key, HMAC_ALGORITHM))
+    return mac.doFinal(data)
+}
+
+private fun SyncEnvelope.authenticationData(): ByteArray {
+    val out = ByteArrayOutputStream()
+    fun writeField(value: String) {
+        val bytes = value.toByteArray(Charsets.UTF_8)
+        out.write(bytes.size.toString().toByteArray(Charsets.US_ASCII))
+        out.write(':'.code)
+        out.write(bytes)
+        out.write('\n'.code)
+    }
+    writeField(schema.toString())
+    writeField(clusterId)
+    writeField(senderDeviceId)
+    writeField(recipientDeviceId)
+    writeField(createdAtMillis.toString())
+    writeField(sealedHex)
+    return out.toByteArray()
+}
+
 object SyncJsonTransferPolicy {
     const val MaxFileBytes: Long = 16L * 1024L * 1024L
 
@@ -235,6 +349,7 @@ data class SyncEnvelope(
     val recipientDeviceId: String,
     val createdAtMillis: Long,
     val sealedHex: String,
+    val authHex: String? = null,
 ) {
     init {
         require(schema >= 1) { "schema must be >= 1" }
@@ -243,11 +358,15 @@ data class SyncEnvelope(
         require(recipientDeviceId.isNotBlank()) { "recipientDeviceId must not be blank" }
         require(createdAtMillis >= 0) { "createdAtMillis must be non-negative" }
         require(sealedHex.matches(HEX_REGEX)) { "sealedHex must be lowercase hex" }
+        if (authHex != null) {
+            require(authHex.matches(AUTH_HEX_REGEX)) { "authHex must be a lowercase HMAC-SHA256 hex string" }
+        }
     }
 
     companion object {
-        const val SUPPORTED_SCHEMA: Int = 1
+        const val SUPPORTED_SCHEMA: Int = 2
         private val HEX_REGEX = Regex("^(?:[0-9a-f]{2})+$")
+        private val AUTH_HEX_REGEX = Regex("^[0-9a-f]{64}$")
     }
 }
 
@@ -291,3 +410,6 @@ internal fun String.hexToBytes(): ByteArray {
 
 internal fun String.hexToBytesOrNull(): ByteArray? =
     runCatching { hexToBytes() }.getOrNull()?.takeIf { it.isNotEmpty() }
+
+private const val AUTH_TAG_BYTES = 32
+private const val HMAC_ALGORITHM = "HmacSHA256"

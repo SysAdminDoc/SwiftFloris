@@ -21,7 +21,7 @@ import androidx.annotation.RequiresApi
 import java.security.KeyPair
 import java.security.KeyPairGenerator
 import java.security.MessageDigest
-import java.security.SecureRandom
+import java.security.PrivateKey
 import java.security.spec.NamedParameterSpec
 import java.util.Arrays
 import javax.crypto.Cipher
@@ -124,6 +124,18 @@ object SealedBoxCrypto {
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    internal fun deriveAuthenticationKey(
+        privateKey: PrivateKey,
+        peerPublicKeyRaw: ByteArray,
+    ): ByteArray {
+        return computeSharedSecret(
+            privateKey = privateKey,
+            recipientPublicKeyRaw = peerPublicKeyRaw,
+            info = HKDF_INFO_AUTH_KEY,
+        )
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun sealWithEphemeral(
         plaintext: ByteArray,
         recipientPublicKey: ByteArray,
@@ -133,7 +145,11 @@ object SealedBoxCrypto {
             "recipientPublicKey must be 32 bytes; was ${recipientPublicKey.size}"
         }
         val ephemeralPubBytes = ephemeral.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
-        val sharedSecret = computeSharedSecret(ephemeral.private, recipientPublicKey)
+        val sharedSecret = computeSharedSecret(
+            privateKey = ephemeral.private,
+            recipientPublicKeyRaw = recipientPublicKey,
+            info = HKDF_INFO_KEY,
+        )
         var nonce: ByteArray? = null
         try {
             nonce = deriveNonce(sharedSecret, ephemeralPubBytes, recipientPublicKey)
@@ -166,7 +182,11 @@ object SealedBoxCrypto {
         var expectedNonce: ByteArray? = null
         var recipientPub: ByteArray? = null
         return try {
-            sharedSecret = computeSharedSecret(recipientKeyPair.private, ephemeralPub)
+            sharedSecret = computeSharedSecret(
+                privateKey = recipientKeyPair.private,
+                recipientPublicKeyRaw = ephemeralPub,
+                info = HKDF_INFO_KEY,
+            )
             recipientPub = recipientKeyPair.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray()
             expectedNonce = deriveNonce(sharedSecret, ephemeralPub, recipientPub)
             if (!nonce.contentEquals(expectedNonce)) return null
@@ -185,8 +205,9 @@ object SealedBoxCrypto {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun computeSharedSecret(
-        privateKey: java.security.PrivateKey,
+        privateKey: PrivateKey,
         recipientPublicKeyRaw: ByteArray,
+        info: String,
     ): ByteArray {
         require(recipientPublicKeyRaw.size == PUBKEY_LENGTH)
         // X25519 raw public keys can be wrapped in an
@@ -209,11 +230,14 @@ object SealedBoxCrypto {
         // a versioned info constant so persisted envelopes fail closed if a
         // future schema intentionally changes the KDF.
         return try {
-            hkdfExtractAndExpand(sharedRaw, info = HKDF_INFO_KEY)
+            require(!sharedRaw.isAllZero()) { "X25519 shared secret must not be all zero" }
+            hkdfExtractAndExpand(sharedRaw, info = info)
         } finally {
             Arrays.fill(sharedRaw, 0.toByte())
         }
     }
+
+    private fun ByteArray.isAllZero(): Boolean = all { it == 0.toByte() }
 
     private fun deriveNonce(
         sharedSecret: ByteArray,
@@ -260,4 +284,5 @@ object SealedBoxCrypto {
     private const val AES_KEY_ALGORITHM = "AES"
     private const val AES_GCM_TRANSFORM = "AES/GCM/NoPadding"
     private const val HKDF_INFO_KEY = "swiftfloris-sealed-box-key-v1"
+    private const val HKDF_INFO_AUTH_KEY = "swiftfloris-sync-envelope-auth-v1"
 }
