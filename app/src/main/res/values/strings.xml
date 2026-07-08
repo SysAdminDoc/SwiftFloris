@@ -444,6 +444,7 @@
     <string name="settings__sync__manual_export_target_selected" comment="Sync toast">Manual export target selected.</string>
     <string name="settings__sync__pairing_received" comment="Sync toast">Pairing device saved.</string>
     <string name="settings__sync__pairing_invalid" comment="Sync toast">Could not read that pairing payload.</string>
+    <string name="settings__sync__pairing_cluster_mismatch" comment="Sync toast">That pairing payload belongs to another sync cluster. Reset sync on this device before joining it.</string>
     <string name="settings__sync__pairing_requires_android_13" comment="Sync toast">Pairing requires Android 13 or newer.</string>
     <string name="settings__sync__scanner_missing" comment="Sync toast">Scanner app not found. Paste the payload manually.</string>
     <string name="settings__sync__group_actions" comment="Sync settings group title">Dictionary sync</string>

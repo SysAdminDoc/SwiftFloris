@@ -22,6 +22,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.types.shouldBeInstanceOf
 import java.io.File
 
 class SyncPairingUiModelTest : FunSpec({
@@ -86,6 +87,85 @@ class SyncPairingUiModelTest : FunSpec({
         PairedSyncDeviceList.parse("{not-json") shouldBe emptyList()
     }
 
+    test("PairingPayloadReceiver adopts a peer cluster for an unclustered local device") {
+        val payload = PairingPayloadGenerator.generate(
+            displayName = "Phone",
+            syncChannelId = SyncChannel.ManualExport.channelId,
+            clusterId = "cluster-peer",
+            deviceId = "peer-device",
+            senderClock = 900L,
+        )
+
+        val accepted = PairingPayloadReceiver.plan(
+            payload = payload,
+            localClusterId = "",
+            localDeviceId = "",
+            pairedDevicesJson = "[]",
+            previousLocalState = null,
+            pairedAtMillis = 123L,
+            newDeviceId = { "local-device" },
+        ).shouldBeInstanceOf<PairingPayloadReceiver.Plan.Accepted>()
+
+        accepted.clusterId shouldBe "cluster-peer"
+        accepted.deviceId shouldBe "local-device"
+        accepted.foldedLocalState shouldBe PersonalDictionaryCrdt(
+            deviceId = "local-device",
+            clock = 900L,
+        )
+        PairedSyncDeviceList.parse(accepted.pairedDevicesJson).single() shouldBe PairedSyncDevice(
+            deviceId = "peer-device",
+            displayName = "Phone",
+            pubkeyHex = payload.pubkeyHex,
+            syncChannelId = SyncChannel.ManualExport.channelId,
+            pairedAtMillis = 123L,
+        )
+    }
+
+    test("PairingPayloadReceiver rejects a payload from a different existing cluster") {
+        val payload = PairingPayloadGenerator.generate(
+            displayName = "Phone",
+            syncChannelId = SyncChannel.ManualExport.channelId,
+            clusterId = "cluster-peer",
+            deviceId = "peer-device",
+            senderClock = 900L,
+        )
+
+        val mismatch = PairingPayloadReceiver.plan(
+            payload = payload,
+            localClusterId = "cluster-local",
+            localDeviceId = "local-device",
+            pairedDevicesJson = "[]",
+            previousLocalState = PersonalDictionaryCrdt(deviceId = "local-device", clock = 50L),
+            pairedAtMillis = 123L,
+            newDeviceId = { "unused-device" },
+        ).shouldBeInstanceOf<PairingPayloadReceiver.Plan.ClusterMismatch>()
+
+        mismatch.localClusterId shouldBe "cluster-local"
+        mismatch.payloadClusterId shouldBe "cluster-peer"
+    }
+
+    test("PairingPayloadReceiver folds in sender clock without lowering local state") {
+        val payload = PairingPayloadGenerator.generate(
+            displayName = "Phone",
+            syncChannelId = SyncChannel.ManualExport.channelId,
+            clusterId = "cluster-1",
+            deviceId = "peer-device",
+            senderClock = 500L,
+        )
+
+        val accepted = PairingPayloadReceiver.plan(
+            payload = payload,
+            localClusterId = "cluster-1",
+            localDeviceId = "local-device",
+            pairedDevicesJson = "[]",
+            previousLocalState = PersonalDictionaryCrdt(deviceId = "local-device", clock = 700L),
+            pairedAtMillis = 123L,
+            newDeviceId = { "unused-device" },
+        ).shouldBeInstanceOf<PairingPayloadReceiver.Plan.Accepted>()
+
+        accepted.foldedLocalState.clock shouldBe 700L
+    }
+
     test("SyncQrCode encodes pairing JSON into a square matrix") {
         val payload = PairingPayloadGenerator.generate(
             displayName = "Phone",
@@ -117,6 +197,15 @@ class SyncPairingUiModelTest : FunSpec({
         source shouldContain "clipboardManager.addNewPlaintext(rawPayload)"
         source shouldContain "settings__sync__copy_pairing_payload"
     }
+
+    test("main manifest declares ZXing scanner visibility for Android 11 package queries") {
+        val manifest = locateProjectFile(
+            "app/src/main/AndroidManifest.xml",
+            "src/main/AndroidManifest.xml",
+        ).readText()
+
+        manifest shouldContain "com.google.zxing.client.android.SCAN"
+    }
 })
 
 private fun locateSyncSettingsScreenSource(): File {
@@ -126,4 +215,11 @@ private fun locateSyncSettingsScreenSource(): File {
     )
     return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
         ?: error("SyncSettingsScreen.kt not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateProjectFile(vararg paths: String): File {
+    return paths.asSequence()
+        .map { File(it) }
+        .firstOrNull { it.exists() && it.canRead() }
+        ?: error("None of these files are reachable from ${File(".").absolutePath}: ${paths.joinToString()}")
 }

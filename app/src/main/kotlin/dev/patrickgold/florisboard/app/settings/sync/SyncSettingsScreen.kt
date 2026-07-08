@@ -83,6 +83,7 @@ import dev.patrickgold.florisboard.ime.sync.PairedSyncDevice
 import dev.patrickgold.florisboard.ime.sync.PairedSyncDeviceList
 import dev.patrickgold.florisboard.ime.sync.PairingPayload
 import dev.patrickgold.florisboard.ime.sync.PairingPayloadGenerator
+import dev.patrickgold.florisboard.ime.sync.PairingPayloadReceiver
 import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySync
 import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySyncDaoApplier
 import dev.patrickgold.florisboard.ime.sync.SyncChannel
@@ -141,6 +142,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     val manualExportPickedText = stringRes(R.string.settings__sync__manual_export_target_selected)
     val pairingReceivedText = stringRes(R.string.settings__sync__pairing_received)
     val pairingInvalidText = stringRes(R.string.settings__sync__pairing_invalid)
+    val pairingClusterMismatchText = stringRes(R.string.settings__sync__pairing_cluster_mismatch)
     val scannerMissingText = stringRes(R.string.settings__sync__scanner_missing)
     val pairingUnsupportedText = stringRes(R.string.settings__sync__pairing_requires_android_13)
     val manualExportDefaultSummary = stringRes(R.string.settings__sync__channel_manual_export_summary)
@@ -178,12 +180,38 @@ fun SyncSettingsScreen() = FlorisScreen {
             Toast.makeText(context, pairingInvalidText, Toast.LENGTH_LONG).show()
             return
         }
-        val device = PairedSyncDevice.fromPayload(payload, pairedAtMillis = System.currentTimeMillis())
         scope.launch {
-            prefs.sync.pairedDevicesJson.set(PairedSyncDeviceList.upsert(pairedDevicesJson, device))
-            prefs.sync.channelId.set(payload.syncChannelId)
+            val plan = withContext(Dispatchers.IO) {
+                PairingPayloadReceiver.plan(
+                    payload = payload,
+                    localClusterId = clusterId,
+                    localDeviceId = deviceId,
+                    pairedDevicesJson = pairedDevicesJson,
+                    previousLocalState = SyncIdentityStore.loadLocalState(context),
+                    pairedAtMillis = System.currentTimeMillis(),
+                    newDeviceId = { UUID.randomUUID().toString() },
+                )
+            }
+            when (plan) {
+                is PairingPayloadReceiver.Plan.Accepted -> {
+                    val stateSaved = withContext(Dispatchers.IO) {
+                        SyncIdentityStore.saveLocalState(context, plan.foldedLocalState)
+                    }
+                    if (!stateSaved) {
+                        failTransfer(syncOpenFailedText)
+                        return@launch
+                    }
+                    prefs.sync.pairedDevicesJson.set(plan.pairedDevicesJson)
+                    prefs.sync.channelId.set(payload.syncChannelId)
+                    prefs.sync.clusterId.set(plan.clusterId)
+                    prefs.sync.deviceId.set(plan.deviceId)
+                    Toast.makeText(context, pairingReceivedText, Toast.LENGTH_SHORT).show()
+                }
+                is PairingPayloadReceiver.Plan.ClusterMismatch -> {
+                    Toast.makeText(context, pairingClusterMismatchText, Toast.LENGTH_LONG).show()
+                }
+            }
         }
-        Toast.makeText(context, pairingReceivedText, Toast.LENGTH_SHORT).show()
     }
 
     fun resolveLocalFolderSyncFileUri(channel: SyncChannel.LocalFolder, create: Boolean): Uri? {
