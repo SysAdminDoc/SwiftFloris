@@ -40,6 +40,47 @@ private fun TextKey.baseCode(): Int {
     return (data as? KeyData)?.code ?: KeyCode.UNSPECIFIED
 }
 
+internal data class GlideLayoutFingerprint(
+    private val keys: List<KeyFingerprint>,
+) {
+    companion object {
+        fun from(keyViews: List<TextKey>): GlideLayoutFingerprint {
+            return GlideLayoutFingerprint(
+                keyViews.map { key ->
+                    KeyFingerprint(
+                        code = key.baseCode(),
+                        left = key.visibleBounds.left.toRawBits(),
+                        top = key.visibleBounds.top.toRawBits(),
+                        right = key.visibleBounds.right.toRawBits(),
+                        bottom = key.visibleBounds.bottom.toRawBits(),
+                    )
+                },
+            )
+        }
+
+        fun matches(
+            layoutSubtype: Subtype?,
+            subtype: Subtype,
+            currentKeys: List<TextKey>,
+            newKeys: List<TextKey>,
+            currentFingerprint: GlideLayoutFingerprint?,
+            newFingerprint: GlideLayoutFingerprint,
+        ): Boolean {
+            return layoutSubtype == subtype &&
+                currentKeys == newKeys &&
+                currentFingerprint == newFingerprint
+        }
+    }
+
+    data class KeyFingerprint(
+        val code: Int,
+        val left: Int,
+        val top: Int,
+        val right: Int,
+        val bottom: Int,
+    )
+}
+
 /**
  * Classifies gestures by comparing them with an "ideal gesture".
  *
@@ -63,6 +104,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     private lateinit var pruner: Pruner
     private var wordDataSubtype: Subtype? = null
     private var layoutSubtype: Subtype? = null
+    private var layoutFingerprint: GlideLayoutFingerprint? = null
     private var currentSubtype: Subtype? = null
     val ready: Boolean
         get() = currentSubtype == layoutSubtype && wordDataSubtype == layoutSubtype && wordDataSubtype != null
@@ -131,8 +173,17 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
 
     override fun setLayout(keyViews: List<TextKey>, subtype: Subtype) {
         setWordData(subtype)
+        val newLayoutFingerprint = GlideLayoutFingerprint.from(keyViews)
         // stop duplicate calls
-        if (layoutSubtype == subtype && keys == keyViews) {
+        if (GlideLayoutFingerprint.matches(
+                layoutSubtype = layoutSubtype,
+                subtype = subtype,
+                currentKeys = keys,
+                newKeys = keyViews,
+                currentFingerprint = layoutFingerprint,
+                newFingerprint = newLayoutFingerprint,
+            )
+        ) {
             return
         }
 
@@ -148,6 +199,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
             keys.add(it)
         }
         layoutSubtype = subtype
+        layoutFingerprint = newLayoutFingerprint
         distanceThresholdSquared = (keyViews.first().visibleBounds.width / 4).toInt()
         distanceThresholdSquared *= distanceThresholdSquared
 
