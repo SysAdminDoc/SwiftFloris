@@ -57,7 +57,6 @@ import org.florisboard.lib.kotlin.collectIn
 import org.florisboard.lib.kotlin.io.FsDir
 import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.io.subDir
-import org.florisboard.lib.kotlin.io.subFile
 import org.florisboard.lib.snygg.SnyggStylesheet
 import org.florisboard.lib.snygg.value.SnyggStaticColorValue
 import java.time.LocalTime
@@ -201,7 +200,10 @@ class ThemeManager(context: Context) {
             loadedDir.deleteContentsRecursively()
             ZipUtils.unzip(appContext, themeExtRef, loadedDir).getOrThrow()
             flogInfo { "Loaded extension ${themeExt.meta.id} into $loadedDir" }
-            val stylesheetFile = loadedDir.subFile(themeConfig.stylesheetPath())
+            val stylesheetFile = ThemeStylesheetLoadPolicy.resolveStylesheetFile(
+                loadedDir = loadedDir,
+                stylesheetPath = themeConfig.stylesheetPath(),
+            )
             val stylesheetJson = stylesheetFile.readText()
             SnyggStylesheet.fromJson(stylesheetJson).getOrThrow()
         }.fold(
@@ -211,6 +213,9 @@ class ThemeManager(context: Context) {
                 _activeThemeInfo.value = newInfo
             },
             onFailure = { cause ->
+                runCatching {
+                    ThemeStylesheetLoadPolicy.cleanupLoadedDir(loadedDir)
+                }
                 _activeThemeInfo.value = ThemeInfo.DEFAULT.copy(
                     loadFailure = LoadFailure(themeExt.meta, themeConfig, cause)
                 )
