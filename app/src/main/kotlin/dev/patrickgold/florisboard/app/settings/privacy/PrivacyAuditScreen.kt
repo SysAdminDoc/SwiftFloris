@@ -35,6 +35,8 @@ import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -58,6 +60,27 @@ import java.util.Locale
 
 private const val MAX_DISPLAYED_RECORDS = 100
 
+private val PrivacyAuditExportPayloadSaver = Saver<PrivacyAuditExportPayload?, ArrayList<String>>(
+    save = { payload ->
+        if (payload == null) {
+            arrayListOf()
+        } else {
+            arrayListOf(payload.fileName, payload.mimeType, payload.json)
+        }
+    },
+    restore = { values ->
+        if (values.size == 3) {
+            PrivacyAuditExportPayload(
+                fileName = values[0],
+                mimeType = values[1],
+                json = values[2],
+            )
+        } else {
+            null
+        }
+    },
+)
+
 /**
  * Privacy audit feature contract F7 — Settings → Privacy → "Local audit log".
  *
@@ -79,18 +102,26 @@ fun PrivacyAuditScreen() = FlorisScreen {
     val scope = rememberCoroutineScope()
 
     var refreshTick by remember { mutableLongStateOf(0L) }
-    var pendingSavePayload by remember { mutableStateOf<PrivacyAuditExportPayload?>(null) }
+    var pendingSavePayload by rememberSaveable(stateSaver = PrivacyAuditExportPayloadSaver) {
+        mutableStateOf<PrivacyAuditExportPayload?>(null)
+    }
 
     val saveLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument(PrivacyAuditExportPolicy.MIME_TYPE),
         onResult = { uri ->
-            val payload = pendingSavePayload
+            val pendingPayload = pendingSavePayload
             pendingSavePayload = null
-            if (payload == null) {
-                return@rememberLauncherForActivityResult
-            }
             if (uri == null) {
                 Toast.makeText(context, R.string.settings__privacy_audit__save_cancelled_toast, Toast.LENGTH_LONG)
+                    .show()
+                return@rememberLauncherForActivityResult
+            }
+            val payload = PrivacyAuditExportPolicy.resolveSavePayload(
+                pending = pendingPayload,
+                records = if (pendingPayload == null) AddonInvocationAudit.snapshot() else emptyList(),
+            )
+            if (payload == null) {
+                Toast.makeText(context, R.string.settings__privacy_audit__save_failed_toast, Toast.LENGTH_LONG)
                     .show()
                 return@rememberLauncherForActivityResult
             }

@@ -45,6 +45,17 @@ internal object PrivacyAuditExportPolicy {
         )
     }
 
+    fun resolveSavePayload(
+        pending: PrivacyAuditExportPayload?,
+        records: List<AddonInvocationAudit.Record> = AddonInvocationAudit.snapshot(),
+        nowMillis: Long = System.currentTimeMillis(),
+        totalCount: Long = AddonInvocationAudit.totalCount(),
+    ): PrivacyAuditExportPayload? {
+        return pending ?: records.takeIf { it.isNotEmpty() }?.let { liveRecords ->
+            buildPayload(records = liveRecords, nowMillis = nowMillis, totalCount = totalCount)
+        }
+    }
+
     fun defaultFileName(nowMillis: Long): String {
         val formatter = SimpleDateFormat("yyyyMMdd'T'HHmmss'Z'", Locale.US)
         formatter.timeZone = TimeZone.getTimeZone("UTC")

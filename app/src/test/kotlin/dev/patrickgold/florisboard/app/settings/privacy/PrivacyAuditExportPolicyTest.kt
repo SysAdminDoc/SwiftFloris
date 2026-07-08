@@ -79,4 +79,42 @@ class PrivacyAuditExportPolicyTest : FunSpec({
         payload.json shouldNotContain "clipboard"
         payload.json shouldNotContain "hello secret"
     }
+
+    test("save payload resolver keeps the pending payload when recreation preserved it") {
+        val pending = PrivacyAuditExportPolicy.buildPayload(
+            records = listOf(auditRecord(sequence = 1L)),
+            nowMillis = 1_778_947_200_000L,
+            totalCount = 1L,
+        )
+
+        PrivacyAuditExportPolicy.resolveSavePayload(
+            pending = pending,
+            records = emptyList(),
+            nowMillis = 1_778_947_201_000L,
+            totalCount = 0L,
+        ) shouldBe pending
+    }
+
+    test("save payload resolver rebuilds from the audit ring when pending state was lost") {
+        val payload = PrivacyAuditExportPolicy.resolveSavePayload(
+            pending = null,
+            records = listOf(auditRecord(sequence = 7L)),
+            nowMillis = 1_778_947_200_000L,
+            totalCount = 7L,
+        )!!
+        val parsed = Json.parseToJsonElement(payload.json).jsonObject
+
+        payload.fileName shouldBe "swiftfloris-privacy-audit-20260516T160000Z.json"
+        parsed["totalCount"]!!.jsonPrimitive.content shouldBe "7"
+        parsed["records"]!!.jsonArray.single().jsonObject["sequence"]!!.jsonPrimitive.content shouldBe "7"
+    }
+
+    test("save payload resolver returns null when there is no pending payload or live audit record") {
+        PrivacyAuditExportPolicy.resolveSavePayload(
+            pending = null,
+            records = emptyList(),
+            nowMillis = 1_778_947_200_000L,
+            totalCount = 0L,
+        ) shouldBe null
+    }
 })
