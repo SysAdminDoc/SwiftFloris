@@ -22,8 +22,10 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Before
 import org.junit.Test
@@ -36,17 +38,33 @@ class TaskerActionReceiverTest {
     private lateinit var context: Context
     private lateinit var sink: RecordingTaskerActionSink
     private val receiver = TaskerActionReceiver()
+    private val prefs by FlorisPreferenceStore
 
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         sink = RecordingTaskerActionSink()
         TaskerActionDispatcher.sinkFactory = { sink }
+        setExternalAutomationEnabled(true)
     }
 
     @After
     fun tearDown() {
+        setExternalAutomationEnabled(false)
         TaskerActionDispatcher.resetSinkFactoryForTests()
+    }
+
+    @Test
+    fun receiverDropsActionsWhenExternalAutomationIsDisabled() {
+        setExternalAutomationEnabled(false)
+
+        receiver.onReceive(
+            context,
+            Intent(TaskerIntentContract.InsertText.ACTION)
+                .putExtra(TaskerIntentContract.InsertText.EXTRA_TEXT, "Hello"),
+        )
+
+        sink.calls shouldBe emptyList()
     }
 
     @Test
@@ -121,7 +139,7 @@ class TaskerActionReceiverTest {
     }
 
     @Test
-    fun receiverIsExportedAndSignatureProtectedInManifest() {
+    fun receiverIsExportedAndRuntimeGatedInManifest() {
         @Suppress("DEPRECATION")
         val info = context.packageManager.getReceiverInfo(
             ComponentName(context, TaskerActionReceiver::class.java),
@@ -129,7 +147,7 @@ class TaskerActionReceiverTest {
         )
 
         info.exported shouldBe true
-        info.permission shouldBe TaskerIntentContract.PERMISSION_TRIGGER
+        info.permission shouldBe null
     }
 
     private class RecordingTaskerActionSink : TaskerActionSink {
@@ -153,6 +171,12 @@ class TaskerActionReceiverTest {
         override fun triggerVoice(mode: String?): Boolean {
             calls += "voice:${mode ?: "dictation"}"
             return true
+        }
+    }
+
+    private fun setExternalAutomationEnabled(enabled: Boolean) {
+        runBlocking {
+            prefs.privacy.externalAutomationEnabled.set(enabled).getOrThrow()
         }
     }
 }

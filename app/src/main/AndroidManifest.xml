@@ -212,12 +212,12 @@
             </intent-filter>
         </activity>
 
-        <!-- Signature-protected automation endpoint for Tasker-class senders. -->
+        <!-- Off-by-default automation endpoint for Tasker-class broadcast senders.
+             Runtime dispatch is gated by privacy__external_automation_enabled. -->
         <receiver
             android:name="dev.patrickgold.florisboard.ime.tasker.TaskerActionReceiver"
             android:enabled="true"
-            android:exported="true"
-            android:permission="io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON">
+            android:exported="true">
             <intent-filter>
                 <action android:name="swiftfloris.action.INSERT_TEXT"/>
                 <action android:name="swiftfloris.action.INSERT_CLIP"/>

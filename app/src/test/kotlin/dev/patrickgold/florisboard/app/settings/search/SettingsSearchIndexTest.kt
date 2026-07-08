@@ -83,6 +83,8 @@ class SettingsSearchIndexTest : FunSpec({
         SettingsSearchIndex.search("dark mode", ::resolve).first().entry.id shouldBe "theme.mode"
         SettingsSearchIndex.search("punctuation", ::resolve).first().entry.id shouldBe "typing.auto-space-punctuation"
         SettingsSearchIndex.search("privacy", ::resolve).first().entry.id shouldBe "privacy-audit"
+        SettingsSearchIndex.search("tasker automation", ::resolve).first().entry.id shouldBe
+            "privacy-posture.automation"
     }
 
     test("search target stores resolved labels for destination highlight") {
@@ -140,6 +142,9 @@ private val testStrings = mapOf(
     R.string.pref__correction__auto_space_punctuation__summary to "Insert spacing around punctuation automatically",
     R.string.settings__privacy_audit__title to "Privacy audit",
     R.string.settings__privacy_audit__home_summary to "Review local privacy and addon activity",
+    R.string.settings__privacy_posture__automation_title to "Tasker automation",
+    R.string.settings__privacy_posture__automation_summary to
+        "Off by default. When enabled, automation apps can send validated SwiftFloris actions.",
     R.string.settings__voice_input__title to "Voice input",
     R.string.settings__home__voice_input_summary to "FUTO setup, offline language models, and voice keyboard status",
 )

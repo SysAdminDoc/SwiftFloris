@@ -29,6 +29,7 @@ data class ProfilePreferenceValues(
     val smartComposeConsent: AddonConsentState,
     val translationConsent: AddonConsentState,
     val mcpConsent: AddonConsentState,
+    val externalAutomationEnabled: Boolean,
 )
 
 object PrivacyPosturePolicy {
@@ -49,6 +50,7 @@ object PrivacyPosturePolicy {
         smartComposeConsent = AddonConsentState.DENIED,
         translationConsent = AddonConsentState.DENIED,
         mcpConsent = AddonConsentState.DENIED,
+        externalAutomationEnabled = false,
     )
 
     val powerSavingValues = ProfilePreferenceValues(
@@ -68,6 +70,7 @@ object PrivacyPosturePolicy {
         smartComposeConsent = AddonConsentState.NEEDS_PROMPT,
         translationConsent = AddonConsentState.NEEDS_PROMPT,
         mcpConsent = AddonConsentState.NEEDS_PROMPT,
+        externalAutomationEnabled = false,
     )
 
     val focusModeValues = ProfilePreferenceValues(
@@ -87,6 +90,7 @@ object PrivacyPosturePolicy {
         smartComposeConsent = AddonConsentState.NEEDS_PROMPT,
         translationConsent = AddonConsentState.NEEDS_PROMPT,
         mcpConsent = AddonConsentState.NEEDS_PROMPT,
+        externalAutomationEnabled = false,
     )
 
     val fullModeValues = ProfilePreferenceValues(
@@ -106,6 +110,7 @@ object PrivacyPosturePolicy {
         smartComposeConsent = AddonConsentState.NEEDS_PROMPT,
         translationConsent = AddonConsentState.NEEDS_PROMPT,
         mcpConsent = AddonConsentState.NEEDS_PROMPT,
+        externalAutomationEnabled = false,
     )
 
     fun isSimpleModeActive(values: ProfilePreferenceValues): Boolean = values == simpleModeValues

@@ -1089,6 +1089,8 @@
     <string name="settings__privacy_posture__emoji_summary" comment="Preference summary. Placeholders show enabled surfaces and total surfaces.">Enabled: {enabled}/{total}. Covers emoji history and emoji suggestions.</string>
     <string name="settings__privacy_posture__addons_title" comment="Preference title">Addon permissions</string>
     <string name="settings__privacy_posture__addons_summary" comment="Preference summary. Placeholders show granted consent surfaces, total surfaces, pinned cert count, and disabled daemon count.">Granted: {granted}/{surfaces}. Signing pins: {pins}. Disabled MCP daemons: {disabled}.</string>
+    <string name="settings__privacy_posture__automation_title" comment="Preference title">Tasker automation</string>
+    <string name="settings__privacy_posture__automation_summary" comment="Preference summary">Off by default. When enabled, automation apps can send validated SwiftFloris actions for text insert, clipboard paste, layout switching, and voice input.</string>
     <string name="settings__privacy_posture__voice_title" comment="Preference title">Voice provider</string>
     <string name="settings__privacy_posture__voice_ready" comment="Preference summary. Placeholder shows provider label.">Ready: {provider}. SwiftFloris only hands off when you tap voice input.</string>
     <plurals name="settings__privacy_posture__voice_installed" comment="Preference summary. Placeholder shows installed provider count.">

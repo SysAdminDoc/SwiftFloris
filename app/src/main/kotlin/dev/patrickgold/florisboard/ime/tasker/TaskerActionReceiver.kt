@@ -20,9 +20,18 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 
 class TaskerActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
+        val prefs by FlorisPreferenceStore
+        if (!prefs.privacy.externalAutomationEnabled.get()) {
+            flogWarning {
+                "TaskerActionReceiver rejected '${intent?.action.orEmpty()}': external automation disabled"
+            }
+            return
+        }
         TaskerActionDispatcher.dispatch(
             context = context,
             action = intent?.action,

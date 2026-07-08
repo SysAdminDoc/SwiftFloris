@@ -90,6 +90,10 @@ open class PrivacyPrefs : PreferenceModel() {
         key = "privacy__addon_consent_mcp",
         default = AddonConsentState.NEEDS_PROMPT,
     )
+    val externalAutomationEnabled = boolean(
+        key = "privacy__external_automation_enabled",
+        default = false,
+    )
     val perAppKeyboardProfiles = string(
         key = "privacy__per_app_keyboard_profiles",
         default = PerAppKeyboardProfiles.EmptyJson,

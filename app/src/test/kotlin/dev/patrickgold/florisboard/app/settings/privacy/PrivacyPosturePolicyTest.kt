@@ -33,6 +33,7 @@ class PrivacyPosturePolicyTest : FunSpec({
             smartComposeConsent = AddonConsentState.DENIED,
             translationConsent = AddonConsentState.DENIED,
             mcpConsent = AddonConsentState.DENIED,
+            externalAutomationEnabled = false,
         )
     }
 
@@ -45,6 +46,7 @@ class PrivacyPosturePolicyTest : FunSpec({
         PrivacyPosturePolicy.powerSavingValues.nextWordPredictionEnabled shouldBe false
         PrivacyPosturePolicy.powerSavingValues.clipboardSuggestionEnabled shouldBe false
         PrivacyPosturePolicy.powerSavingValues.emojiSuggestionEnabled shouldBe false
+        PrivacyPosturePolicy.powerSavingValues.externalAutomationEnabled shouldBe false
         PrivacyPosturePolicy.isPowerSavingActive(PrivacyPosturePolicy.powerSavingValues) shouldBe true
     }
 
@@ -57,6 +59,7 @@ class PrivacyPosturePolicyTest : FunSpec({
         PrivacyPosturePolicy.focusModeValues.smartbarExtendedActionsExpanded shouldBe false
         PrivacyPosturePolicy.focusModeValues.inputFeedbackAudioEnabled shouldBe true
         PrivacyPosturePolicy.focusModeValues.inputFeedbackHapticEnabled shouldBe true
+        PrivacyPosturePolicy.focusModeValues.externalAutomationEnabled shouldBe false
         PrivacyPosturePolicy.isFocusModeActive(PrivacyPosturePolicy.focusModeValues) shouldBe true
     }
 
@@ -68,6 +71,7 @@ class PrivacyPosturePolicyTest : FunSpec({
         PrivacyPosturePolicy.fullModeValues.emojiHistoryEnabled shouldBe true
         PrivacyPosturePolicy.fullModeValues.inputFeedbackAudioEnabled shouldBe true
         PrivacyPosturePolicy.fullModeValues.inputFeedbackHapticEnabled shouldBe true
+        PrivacyPosturePolicy.fullModeValues.externalAutomationEnabled shouldBe false
     }
 
     test("simple mode active requires the exact simple profile") {

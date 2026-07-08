@@ -16,37 +16,26 @@
 
 package dev.patrickgold.florisboard.ime.tasker
 
-import dev.patrickgold.florisboard.AppPackageContract
-
 /**
- * ROADMAP §7 L11.1 — Tasker intent endpoint contract.
+ * Tasker intent endpoint contract.
  *
- * Tasker is the universal Android automation app; "broadcast intent →
- * action" is its core extension mechanism. Exposing a few well-defined
- * intents lets users wire IME-driven actions into existing Tasker
- * scenes (e.g. "when Tasker says I'm at home, switch the IME to
- * Dvorak"). This contract pins the intent surface so the receiver
- * implementation can land independently from the wiring.
+ * Tasker is the universal Android automation app; broadcast intent to action is
+ * its core extension mechanism. Exposing a few well-defined intents lets users
+ * wire IME-driven actions into existing Tasker scenes, such as switching the
+ * IME layout when a profile changes.
  *
- * The IME registers `BroadcastReceiver`s for these actions inside
- * `AndroidManifest.xml` (Next-L11.1a — see the corresponding `<receiver>`
- * block once the receiver lives in `:app`). The actions are
- * **signature-protected** by the same `permission.REGISTER_ADDON`
- * surface the addon framework uses (no random app can send these);
- * Tasker users grant the IME the relevant permission once per device.
+ * The IME registers a broadcast receiver for these actions inside
+ * `AndroidManifest.xml`. Android does not provide reliable sender identity for
+ * every supported broadcast path, and third-party automation apps cannot hold
+ * SwiftFloris signature permissions. The receiver is therefore reachable by
+ * normal broadcast tools but guarded by an off-by-default privacy setting,
+ * strict schema validation, and sensitive-editor suppression for text/clip
+ * actions.
  *
- * Every action carries a small fixed extras schema documented inline
- * to make the surface predictable to script authors.
+ * Every action carries a small fixed extras schema documented inline to make
+ * the surface predictable to script authors.
  */
 object TaskerIntentContract {
-
-    /**
-     * Permission a Tasker-class sender must hold to send any of the
-     * intents in this contract. Same signature-protected permission
-     * the addon framework uses (Next-10.1).
-     */
-    const val PERMISSION_TRIGGER: String =
-        AppPackageContract.PERMISSION_PREFIX + "REGISTER_ADDON"
 
     /** Insert literal text at the cursor of the focused editor. */
     object InsertText {
@@ -54,7 +43,8 @@ object TaskerIntentContract {
 
         /** Extras key: required UTF-8 text to insert. */
         const val EXTRA_TEXT: String = "text"
-        /** Extras key: optional boolean — append a trailing space after the insert. */
+
+        /** Extras key: optional boolean, append a trailing space after the insert. */
         const val EXTRA_APPEND_SPACE: String = "appendSpace"
     }
 
@@ -67,7 +57,7 @@ object TaskerIntentContract {
     object SwitchLayout {
         const val ACTION: String = "swiftfloris.action.SWITCH_LAYOUT"
 
-        /** Extras key: required layout id (e.g. `dvorak`, `colemak_dh`). */
+        /** Extras key: required layout id, for example `dvorak` or `colemak_dh`. */
         const val EXTRA_LAYOUT_ID: String = "layoutId"
     }
 
@@ -75,15 +65,15 @@ object TaskerIntentContract {
     object TriggerVoice {
         const val ACTION: String = "swiftfloris.action.TRIGGER_VOICE"
 
-        /** Extras key: optional command mode flag (`"dictation"` | `"command"`). */
+        /** Extras key: optional command mode flag, `"dictation"` or `"command"`. */
         const val EXTRA_MODE: String = "mode"
     }
 
     /**
-     * Validate an incoming Tasker intent: confirms the action is a
-     * known SwiftFloris action, the extras are well-formed for that
-     * action, and the values fall within the per-action size cap. The
-     * receiver should reject any intent that fails this check.
+     * Validate an incoming Tasker intent: confirms the action is a known
+     * SwiftFloris action, the extras are well-formed for that action, and the
+     * values fall within the per-action size cap. The receiver should reject
+     * any intent that fails this check.
      */
     fun validate(action: String, extras: Map<String, Any?>): ValidationResult {
         return when (action) {

@@ -51,6 +51,7 @@ import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
+import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisSuccessCard
@@ -91,6 +92,7 @@ fun PrivacyPostureScreen() = FlorisScreen {
     val smartComposeConsent by prefs.privacy.smartComposeConsent.collectAsState()
     val translationConsent by prefs.privacy.translationConsent.collectAsState()
     val mcpConsent by prefs.privacy.mcpConsent.collectAsState()
+    val externalAutomationEnabled by prefs.privacy.externalAutomationEnabled.collectAsState()
 
     val declaredInternetPermission = remember(context) {
         isPermissionDeclared(context, Manifest.permission.INTERNET)
@@ -115,6 +117,7 @@ fun PrivacyPostureScreen() = FlorisScreen {
         smartComposeConsent = smartComposeConsent,
         translationConsent = translationConsent,
         mcpConsent = mcpConsent,
+        externalAutomationEnabled = externalAutomationEnabled,
     )
     val simpleModeActive = PrivacyPosturePolicy.isSimpleModeActive(currentProfileValues)
     val powerSavingActive = PrivacyPosturePolicy.isPowerSavingActive(currentProfileValues)
@@ -198,6 +201,12 @@ fun PrivacyPostureScreen() = FlorisScreen {
                     mcpConsent = mcpConsent,
                 ),
                 onClick = { navController.navigate(Routes.Settings.Addons) },
+            )
+            SwitchPreference(
+                prefs.privacy.externalAutomationEnabled,
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.settings__privacy_posture__automation_title),
+                summary = stringRes(R.string.settings__privacy_posture__automation_summary),
             )
             Preference(
                 icon = Icons.Default.Mic,
@@ -343,6 +352,7 @@ private suspend fun applyProfileValues(
     prefs.privacy.smartComposeConsent.set(values.smartComposeConsent)
     prefs.privacy.translationConsent.set(values.translationConsent)
     prefs.privacy.mcpConsent.set(values.mcpConsent)
+    prefs.privacy.externalAutomationEnabled.set(values.externalAutomationEnabled)
 }
 
 private fun isPermissionDeclared(context: Context, permission: String): Boolean {
