@@ -17,8 +17,12 @@
 package dev.patrickgold.florisboard.ime.smartbar.quickaction
 
 import android.content.Context
+import android.widget.Toast
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.calendarQuickInsertManager
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.calendar.CalendarPermissionActivity
@@ -26,7 +30,14 @@ import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
+import dev.patrickgold.florisboard.ime.translate.InlineTranslatorRegistry
+import dev.patrickgold.florisboard.ime.translate.TranslationLanguagePackManager
+import dev.patrickgold.florisboard.ime.translate.TranslationRouter
 import dev.patrickgold.florisboard.keyboardManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.florisboard.lib.compose.stringRes
@@ -74,13 +85,11 @@ sealed class QuickAction {
     /**
      * ROADMAP §0 P2 — Translation toolbar (SwiftKey-style).
      *
-     * Reads the current selection from `EditorInstance` and routes it
-     * through the `InlineTranslator` facade (`ime/translate/`). When
-     * no addon is installed, the registry's default `Unavailable`
-     * result is returned and the action surfaces a Toast explaining
-     * the user needs to install the L2.1a Bergamot translator addon.
-     * When the addon IS installed, the translated text is committed
-     * back to the editor in place of the selection.
+     * Reads the current selection from `EditorInstance` and routes it through
+     * [TranslationRouter], which owns addon consent, sensitive-field guards,
+     * language-pack availability, sentence splitting, and cache lookup. When no
+     * translator/language pack is ready, the action surfaces a Toast instead of
+     * committing anything back to the editor.
      *
      * The target locale is read from the user's preferred target in
      * [TranslationLanguagePackManager], falling back to `"en"`.
@@ -90,23 +99,53 @@ sealed class QuickAction {
     data object TranslateSelection : QuickAction() {
         override fun onPointerUp(context: Context) {
             val editorInstance by context.editorInstance()
-            val raw = editorInstance.activeContent.selectedText.toString()
+            val raw = editorInstance.activeContent.selectedText
             if (raw.isBlank()) return
-            val translator = dev.patrickgold.florisboard.ime.translate
-                .InlineTranslatorRegistry.active
-            val sourceLocale = "auto"
-            val targetLocale = dev.patrickgold.florisboard.ime.translate
-                .TranslationLanguagePackManager.preferredTargetLocale() ?: "en"
-            when (val result = translator.translate(raw, sourceLocale, targetLocale)) {
-                is dev.patrickgold.florisboard.ime.translate.TranslationResult.Translated -> {
-                    editorInstance.commitText(result.translatedText)
+            val activeInfo = editorInstance.activeInfo
+            val prefs by FlorisPreferenceStore
+            val request = TranslationRouter.Request(
+                sourceText = raw,
+                targetLocale = TranslationLanguagePackManager.preferredTargetLocale() ?: "en",
+                inputType = activeInfo.inputAttributes.raw,
+                imeOptions = activeInfo.imeOptions.raw,
+            )
+            val router = TranslationRouter(
+                translator = InlineTranslatorRegistry.active,
+                packManager = TranslationRouter.PackManagerView.from(),
+                isConsentGranted = {
+                    prefs.privacy.translationConsent.get().allowsInvocation()
+                },
+            )
+            val scope = context.quickActionCoroutineScope()
+            if (scope == null) {
+                Toast.makeText(
+                    context,
+                    "Translation is not available in this context.",
+                    Toast.LENGTH_SHORT,
+                ).show()
+                return
+            }
+            scope.launch {
+                val response = withContext(Dispatchers.IO) {
+                    router.translate(request)
                 }
-                is dev.patrickgold.florisboard.ime.translate.TranslationResult.Unavailable -> {
-                    android.widget.Toast.makeText(
-                        context,
-                        "Install an InlineTranslator addon to translate selections.",
-                        android.widget.Toast.LENGTH_SHORT,
-                    ).show()
+                when (response) {
+                    is TranslationRouter.Response.Translated -> {
+                        if (editorInstance.activeContent.selectedText == raw) {
+                            editorInstance.commitText(response.translatedText)
+                        } else {
+                            Toast.makeText(
+                                context,
+                                "Selection changed before translation completed.",
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    }
+                    is TranslationRouter.Response.Suppressed -> {
+                        translateSelectionSuppressedMessage(response.reason)?.let { message ->
+                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        }
+                    }
                 }
             }
         }
@@ -153,9 +192,9 @@ sealed class QuickAction {
                 ).show()
                 return
             }
-            val selection = editorInstance.activeContent.selectedText.toString()
+            val selection = editorInstance.activeContent.selectedText
             val title = selection.ifBlank {
-                editorInstance.activeContent.textBeforeSelection.toString().trim().takeLast(140)
+                editorInstance.activeContent.textBeforeSelection.trim().takeLast(140)
             }
             val sendIntent = android.content.Intent(android.content.Intent.ACTION_SEND).apply {
                 type = "text/plain"
@@ -203,6 +242,30 @@ sealed class QuickAction {
                 ).show()
             }
         }
+    }
+}
+
+private fun Context.quickActionCoroutineScope(): CoroutineScope? {
+    return (this as? LifecycleOwner)?.lifecycleScope
+}
+
+internal fun translateSelectionSuppressedMessage(reason: String): String? {
+    return when {
+        reason == "blank input" -> null
+        reason == "consent required" ->
+            "Enable translation addon consent in Privacy settings."
+        reason == "sensitive field" ->
+            "Translation is blocked in sensitive fields."
+        reason == "source == target" ->
+            "Choose a different translation target language."
+        reason == "source-locale detection failed" ->
+            "Could not detect the selection language."
+        reason == "no target locale resolved" ->
+            "Choose a translation target language first."
+        reason.startsWith("no installed pair") ||
+            reason == "translator returned Unavailable" ->
+            "Install an InlineTranslator addon and language pack to translate selections."
+        else -> "Translation is not available for this selection."
     }
 }
 
