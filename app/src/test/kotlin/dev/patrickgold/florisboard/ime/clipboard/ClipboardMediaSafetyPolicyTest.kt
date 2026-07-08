@@ -17,7 +17,9 @@
 package dev.patrickgold.florisboard.ime.clipboard
 
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaClonePolicy
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -53,6 +55,25 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         source shouldContain "requireClipboardFilesDao().delete(id)"
         source shouldNotContain "clipboardFilesDao?.insert(fileInfo)"
         source shouldNotContain "clipboardFilesDao?.delete(id)"
+    }
+
+    test("history-disabled primary replacement closes only provider-backed media") {
+        ClipboardPrimaryClipCleanupPolicy.shouldCloseProviderBackedPrimaryClipUri(
+            uriString = "content://${ClipboardMediaProvider.AUTHORITY}/clips/images/7",
+            historyEnabled = false,
+        ) shouldBe true
+        ClipboardPrimaryClipCleanupPolicy.shouldCloseProviderBackedPrimaryClipUri(
+            uriString = "content://external.provider/images/7",
+            historyEnabled = false,
+        ) shouldBe false
+        ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
+            replacedItem = ClipboardItem.text("plain text"),
+            historyEnabled = false,
+        ) shouldBe false
+        ClipboardPrimaryClipCleanupPolicy.shouldCloseProviderBackedPrimaryClipUri(
+            uriString = "content://${ClipboardMediaProvider.AUTHORITY}/clips/images/7",
+            historyEnabled = true,
+        ) shouldBe false
     }
 
     test("preview policy accepts bounded image dimensions") {

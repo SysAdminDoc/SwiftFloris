@@ -25,6 +25,7 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.io.Closeable
@@ -196,14 +197,14 @@ class ClipboardManager(
 
                 if (systemPrimaryClip == null) {
                     if (syncBehavior.shouldSyncClear) {
-                        primaryClip = null
+                        replaceSystemPrimaryClip(null)
                     }
                     return@launch
                 }
 
                 if (systemPrimaryClip.getItemAt(0).let { it.text == null && it.uri == null }) {
                     if (syncBehavior.shouldSyncClear) {
-                        primaryClip = null
+                        replaceSystemPrimaryClip(null)
                     }
                     return@launch
                 }
@@ -234,7 +235,7 @@ class ClipboardManager(
                         flogError { "Failed to import system clipboard item: ${e.message.orEmpty()}" }
                         return@launch
                     }
-                    primaryClip = item
+                    replaceSystemPrimaryClip(item)
                     // Skip IME-local history when the source app marked the
                     // clip as sensitive via
                     // `ClipDescription.EXTRA_IS_SENSITIVE` (API 33+).
@@ -253,6 +254,18 @@ class ClipboardManager(
                     }
                 }
             }
+        }
+    }
+
+    private fun replaceSystemPrimaryClip(item: ClipboardItem?) {
+        val previous = primaryClip
+        primaryClip = item
+        if (ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
+                replacedItem = previous,
+                historyEnabled = prefs.clipboard.historyEnabled.get(),
+            )
+        ) {
+            previous?.close(appContext)
         }
     }
 
@@ -461,5 +474,28 @@ class ClipboardManager(
         // launches a long-lived clipboard-history flow collector in the same scope,
         // and cancelling only cleanUpJob would leak it (and any in-flight launches).
         ioScope.cancel()
+    }
+}
+
+internal object ClipboardPrimaryClipCleanupPolicy {
+    private val ProviderBackedUriPrefix = "content://${ClipboardMediaProvider.AUTHORITY}/"
+
+    fun shouldCloseReplacedPrimaryClip(
+        replacedItem: ClipboardItem?,
+        historyEnabled: Boolean,
+    ): Boolean {
+        return shouldCloseProviderBackedPrimaryClipUri(
+            uriString = replacedItem?.uri?.toString(),
+            historyEnabled = historyEnabled,
+        )
+    }
+
+    fun shouldCloseProviderBackedPrimaryClipUri(
+        uriString: String?,
+        historyEnabled: Boolean,
+    ): Boolean {
+        if (historyEnabled) return false
+        val uri = uriString ?: return false
+        return uri.startsWith(ProviderBackedUriPrefix, ignoreCase = true)
     }
 }
