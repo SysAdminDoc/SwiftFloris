@@ -17,7 +17,6 @@
 package dev.patrickgold.florisboard.ime.editor
 
 import android.content.ClipDescription
-import android.content.ContentUris
 import android.content.Context
 import android.net.Uri
 import android.view.KeyEvent
@@ -418,7 +417,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             }
             ItemType.IMAGE, ItemType.VIDEO -> {
                 item.uri ?: return false
-                val id = ContentUris.parseId(item.uri)
+                val id = ClipboardCommitMediaPolicy.providerFileId(item.uri) ?: return false
                 val file = ClipboardFileStorage.getFileForId(appContext, id)
                 if (!file.exists()) return false
                 val inputContentInfo = InputContentInfoCompat(

@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.editor
 
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -107,5 +108,37 @@ class EditorContentMimeMatrixTest : FunSpec({
         EditorContentMimeMatrix.PREFERRED_STATIC_STICKER_MIMES.first() shouldBe "image/png"
         EditorContentMimeMatrix.PREFERRED_STATIC_STICKER_MIMES[1] shouldBe "image/webp"
         EditorContentMimeMatrix.PREFERRED_ANIMATED_STICKER_MIMES.first() shouldBe "image/webp"
+    }
+
+    test("providerFileId accepts SwiftFloris provider media URIs") {
+        ClipboardCommitMediaPolicy.providerFileId(
+            ClipboardMediaProvider.AUTHORITY,
+            "42",
+        ) shouldBe 42L
+    }
+
+    test("providerFileId rejects foreign media URIs without parsing their path as an id") {
+        ClipboardCommitMediaPolicy.providerFileId(
+            "example.fileprovider",
+            "secret.png",
+        ) shouldBe null
+    }
+
+    test("providerFileId rejects malformed SwiftFloris provider media URIs without throwing") {
+        ClipboardCommitMediaPolicy.providerFileId(
+            ClipboardMediaProvider.AUTHORITY,
+            "secret.png",
+        ) shouldBe null
+    }
+
+    test("providerFileId rejects non-positive SwiftFloris provider media ids") {
+        ClipboardCommitMediaPolicy.providerFileId(
+            ClipboardMediaProvider.AUTHORITY,
+            "0",
+        ) shouldBe null
+        ClipboardCommitMediaPolicy.providerFileId(
+            ClipboardMediaProvider.AUTHORITY,
+            "-1",
+        ) shouldBe null
     }
 })
