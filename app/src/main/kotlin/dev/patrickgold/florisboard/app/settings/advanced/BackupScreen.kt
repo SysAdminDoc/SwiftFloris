@@ -36,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -157,6 +158,36 @@ object Backup {
             clipboardImageItems = true
             clipboardVideoItems = true
             updateCheckboxState()
+        }
+
+        companion object {
+            val Saver = Saver<FilesSelector, ArrayList<Boolean>>(
+                save = { selector ->
+                    arrayListOf(
+                        selector.jetprefDatastore,
+                        selector.imeKeyboard,
+                        selector.imeTheme,
+                        selector.localStickerPacks,
+                        selector.clipboardTextItems,
+                        selector.clipboardImageItems,
+                        selector.clipboardVideoItems,
+                    )
+                },
+                restore = { values ->
+                    FilesSelector().apply {
+                        if (values.size == 7) {
+                            jetprefDatastore = values[0]
+                            imeKeyboard = values[1]
+                            imeTheme = values[2]
+                            localStickerPacks = values[3]
+                            clipboardTextItems = values[4]
+                            clipboardImageItems = values[5]
+                            clipboardVideoItems = values[6]
+                            updateCheckboxState()
+                        }
+                    }
+                },
+            )
         }
     }
 

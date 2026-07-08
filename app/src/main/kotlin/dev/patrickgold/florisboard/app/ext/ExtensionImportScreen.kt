@@ -37,10 +37,13 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +52,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.findActivity
 import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
@@ -110,13 +114,14 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val activity = context.findActivity()
     val cacheManager by context.cacheManager()
     val extensionManager by context.extensionManager()
     val scope = rememberCoroutineScope()
     var isPreparingFiles by remember { mutableStateOf(false) }
     var isImportInProgress by remember { mutableStateOf(false) }
-    var lastImportNotice by remember { mutableStateOf<ExtensionImportFlowNotice?>(null) }
-    var lastImportErrorMessage by remember { mutableStateOf<String?>(null) }
+    var lastImportNotice by rememberSaveable { mutableStateOf<ExtensionImportFlowNotice?>(null) }
+    var lastImportErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
 
     fun getImportDecision(fileInfo: CacheManager.FileInfo): ExtensionImportDecision {
         val ext = fileInfo.ext
@@ -144,11 +149,35 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
         }
     }
 
+    var importWorkspaceUuid by rememberSaveable(initUuid) { mutableStateOf(initUuid) }
     var importResult by remember(initUuid) {
-        val workspace = initUuid?.let { cacheManager.importer.getWorkspaceByUuid(it) }
+        val workspace = importWorkspaceUuid?.let { cacheManager.importer.getWorkspaceByUuid(it) }
             ?.let { resultOk(it) }
             ?.mapSkipReasons()
         mutableStateOf(workspace)
+    }
+
+    fun setImportResult(result: Result<CacheManager.ImporterWorkspace>?) {
+        importResult = result
+        importWorkspaceUuid = result?.getOrNull()?.uuid
+    }
+
+    fun closeImportResult() {
+        importResult?.getOrNull()?.close()
+        setImportResult(null)
+    }
+
+    val currentImportResult by rememberUpdatedState(importResult)
+    val currentIsPreparingFiles by rememberUpdatedState(isPreparingFiles)
+    val currentIsImportInProgress by rememberUpdatedState(isImportInProgress)
+    val currentActivity by rememberUpdatedState(activity)
+    DisposableEffect(activity) {
+        onDispose {
+            val isConfigurationChange = currentActivity?.isChangingConfigurations == true
+            if (!isConfigurationChange && !currentIsPreparingFiles && !currentIsImportInProgress) {
+                currentImportResult?.getOrNull()?.close()
+            }
+        }
     }
 
     val importLauncher = rememberLauncherForActivityResult(
@@ -167,15 +196,15 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 isPreparingFiles = true
                 lastImportNotice = null
                 lastImportErrorMessage = null
-                importResult?.getOrNull()?.close()
-                importResult = runCatching {
+                closeImportResult()
+                setImportResult(runCatching {
                     withContext(Dispatchers.IO) {
                         cacheManager.readFromUriIntoCache(uriList)
                     }
                 }.mapSkipReasons().onFailure { error ->
                     lastImportNotice = ExtensionImportFlowNotice.Failure
                     lastImportErrorMessage = error.localizedMessage
-                }
+                })
                 isPreparingFiles = false
             }
         },
@@ -198,7 +227,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                 text = stringRes(R.string.action__cancel),
                 enabled = ExtensionImportPolicy.canSelectFiles(isPreparingFiles, isImportInProgress),
             ) {
-                importResult?.getOrNull()?.close()
+                closeImportResult()
                 navController.popBackStack()
             }
             val hasImportableFiles = importResult?.getOrNull()?.let { workspace ->
@@ -249,7 +278,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     }.onSuccess {
                         lastImportNotice = ExtensionImportFlowNotice.Success
                         context.showLongToast(R.string.ext__import__success)
-                        workspace.close()
+                        closeImportResult()
                         navController.popBackStack()
                     }.onFailure { error ->
                         lastImportNotice = ExtensionImportFlowNotice.Failure

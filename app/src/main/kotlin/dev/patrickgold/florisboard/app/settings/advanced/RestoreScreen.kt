@@ -33,6 +33,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,6 +46,7 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
+import dev.patrickgold.florisboard.app.findActivity
 import dev.patrickgold.florisboard.cacheManager
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardRestoredFileInfo
@@ -101,6 +104,35 @@ object Restore {
     const val MAX_ARCHIVE_BYTES = 256L * 1024L * 1024L
 }
 
+private val RestoreOperationSummarySaver = Saver<RestoreOperationSummary?, ArrayList<String>>(
+    save = { summary ->
+        if (summary == null) {
+            arrayListOf()
+        } else {
+            arrayListOf(
+                summary.selectedSections.toString(),
+                summary.restoredSections.toString(),
+                summary.missingSections.toString(),
+                summary.failedSections.toString(),
+                summary.firstFailureMessage.orEmpty(),
+            )
+        }
+    },
+    restore = { values ->
+        if (values.size == 5) {
+            RestoreOperationSummary(
+                selectedSections = values[0].toIntOrNull() ?: 0,
+                restoredSections = values[1].toIntOrNull() ?: 0,
+                missingSections = values[2].toIntOrNull() ?: 0,
+                failedSections = values[3].toIntOrNull() ?: 0,
+                firstFailureMessage = values[4].takeIf { it.isNotBlank() },
+            )
+        } else {
+            null
+        }
+    },
+)
+
 @Composable
 fun RestoreScreen() = FlorisScreen {
     title = stringRes(R.string.backup_and_restore__restore__title)
@@ -108,32 +140,58 @@ fun RestoreScreen() = FlorisScreen {
 
     val navController = LocalNavController.current
     val context = LocalContext.current
+    val activity = context.findActivity()
     val cacheManager by context.cacheManager()
 
-    val restoreFilesSelector = remember { Backup.FilesSelector() }
-    var importStrategy by remember { mutableStateOf(ImportStrategy.Merge) }
+    val restoreFilesSelector = rememberSaveable(saver = Backup.FilesSelector.Saver) {
+        Backup.FilesSelector()
+    }
+    var importStrategy by rememberSaveable { mutableStateOf(ImportStrategy.Merge) }
     val restoreScope = rememberCoroutineScope()
     var isRestoreInProgress by remember { mutableStateOf(false) }
+    var restoreWorkspaceUuid by rememberSaveable { mutableStateOf<String?>(null) }
     var restoreWorkspace by remember {
-        mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null)
+        mutableStateOf(
+            restoreWorkspaceUuid?.let { uuid ->
+                cacheManager.backupAndRestore.getWorkspaceByUuid(uuid)
+            },
+        )
     }
-    var showEraseRestoreConfirmation by remember { mutableStateOf(false) }
-    var lastRestoreNotice by remember { mutableStateOf<RestoreFlowNotice?>(null) }
-    var lastRestoreErrorMessage by remember { mutableStateOf<String?>(null) }
-    var lastRestoreSummary by remember { mutableStateOf<RestoreOperationSummary?>(null) }
+    var showEraseRestoreConfirmation by rememberSaveable { mutableStateOf(false) }
+    var lastRestoreNotice by rememberSaveable { mutableStateOf<RestoreFlowNotice?>(null) }
+    var lastRestoreErrorMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    var lastRestoreSummary by rememberSaveable(stateSaver = RestoreOperationSummarySaver) {
+        mutableStateOf<RestoreOperationSummary?>(null)
+    }
+
+    fun setRestoreWorkspace(workspace: CacheManager.BackupAndRestoreWorkspace?) {
+        restoreWorkspace = workspace
+        restoreWorkspaceUuid = workspace?.uuid
+    }
+
+    fun closeRestoreWorkspace() {
+        restoreWorkspace?.close()
+        setRestoreWorkspace(null)
+    }
     val unknownRestoreError = stringRes(R.string.backup_and_restore__restore__unknown_error)
 
     // Close the workspace when the screen leaves composition (system-back / nav-up),
     // not only via the Cancel button. prepareRestoreWorkspace extracts the archive —
     // including clipboard plaintext and the decrypted jetpref datastore — into the
     // cache dir; without this, leaving any other way leaves that plaintext on disk.
-    // rememberUpdatedState so onDispose sees the latest workspace/flag, and we skip
-    // closing mid-restore so we don't pull the dir out from under an in-flight copy.
+    // rememberUpdatedState so onDispose sees the latest workspace/flag. Rotation
+    // keeps the workspace alive for UUID re-attachment; real exits still delete
+    // it, and we skip closing mid-restore so we don't pull the dir out from
+    // under an in-flight copy.
     val currentRestoreWorkspace by rememberUpdatedState(restoreWorkspace)
     val currentIsRestoreInProgress by rememberUpdatedState(isRestoreInProgress)
-    DisposableEffect(Unit) {
+    val currentActivity by rememberUpdatedState(activity)
+    DisposableEffect(activity) {
         onDispose {
-            if (!currentIsRestoreInProgress) currentRestoreWorkspace?.close()
+            val isConfigurationChange = currentActivity?.isChangingConfigurations == true
+            if (!isConfigurationChange && !currentIsRestoreInProgress) {
+                currentRestoreWorkspace?.close()
+            }
         }
     }
 
@@ -195,11 +253,10 @@ fun RestoreScreen() = FlorisScreen {
                 lastRestoreErrorMessage = null
                 lastRestoreSummary = null
                 runCatching {
-                    restoreWorkspace?.close()
-                    restoreWorkspace = null
+                    closeRestoreWorkspace()
                     prepareRestoreWorkspace(uri)
                 }.onSuccess { workspace ->
-                    restoreWorkspace = workspace
+                    setRestoreWorkspace(workspace)
                 }.onFailure { error ->
                     flogError { error.stackTraceToString() }
                     val errorMessage = BackupRestorePolicy.restoreErrorMessage(error, unknownRestoreError)
@@ -401,6 +458,7 @@ fun RestoreScreen() = FlorisScreen {
                 lastRestoreNotice = BackupRestorePolicy.noticeForRestoreOperationResult(result)
                 when (result) {
                     RestoreOperationResult.Success -> {
+                        closeRestoreWorkspace()
                         context.showLongToast(R.string.backup_and_restore__restore__success)
                         navController.navigateUp()
                     }
@@ -454,7 +512,7 @@ fun RestoreScreen() = FlorisScreen {
             ButtonBarSpacer()
             ButtonBarTextButton(
                 onClick = {
-                    restoreWorkspace?.close()
+                    closeRestoreWorkspace()
                     navController.navigateUp()
                 },
                 text = stringRes(R.string.action__cancel),
