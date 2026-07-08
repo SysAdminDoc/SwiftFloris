@@ -130,6 +130,30 @@ class StartupCrashRecoveryTest {
         }
     }
 
+    @Test
+    fun stagedCrashPrunesUnhandledStacktracesToLatestFifty() {
+        val ustDir = context.noBackupFilesDir.resolve("unhandled_stacktraces").apply { mkdirs() }
+        for (timestamp in 1L..55L) {
+            ustDir.resolve("$timestamp.stacktrace").writeText("old crash $timestamp")
+        }
+
+        CrashUtility.stageException(IllegalStateException("latest crash"))
+
+        CrashUtility.consumeStagedException(context) shouldBe true
+
+        val files = ustDir.listFiles { file -> file.name.endsWith(".stacktrace") }
+            ?.map { it.name }
+            .orEmpty()
+        files shouldHaveSize 50
+        (1L..6L).forEach { prunedTimestamp ->
+            files.contains("$prunedTimestamp.stacktrace") shouldBe false
+        }
+        files.contains("55.stacktrace") shouldBe true
+        files.any { name ->
+            name.substringBefore(".").toLongOrNull()?.let { it > 55L } == true
+        } shouldBe true
+    }
+
     private fun clearCrashState() {
         CrashUtility.consumeStagedException(context)
         CrashUtility.getUnhandledStacktraces(context)

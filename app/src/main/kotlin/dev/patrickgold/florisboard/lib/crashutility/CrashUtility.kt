@@ -60,6 +60,7 @@ abstract class CrashUtility private constructor() {
 
         private const val UNHANDLED_STACKTRACES_DIR_NAME = "unhandled_stacktraces"
         private const val UNHANDLED_STACKTRACE_FILE_EXT = "stacktrace"
+        private const val MAX_UNHANDLED_STACKTRACE_FILES = 50
 
         private var lastActivityCreated: WeakReference<Activity?> = WeakReference(null)
         private var stagedException: Throwable? = null
@@ -185,7 +186,9 @@ abstract class CrashUtility private constructor() {
 
             val timestamp = System.currentTimeMillis()
             val stacktrace = Log.getStackTraceString(e)
-            writeToFile(context.getUstFile(timestamp), stacktrace)
+            val ustDir = context.getUstDir()
+            writeToFile(ustDir.subFile("$timestamp.$UNHANDLED_STACKTRACE_FILE_EXT"), stacktrace)
+            pruneUnhandledStacktraces(ustDir)
             setLastCrashTimestamp(context, timestamp)
             pushCrashOnceNotification(context)
             return true
@@ -391,6 +394,38 @@ abstract class CrashUtility private constructor() {
                 }
             }
         }
+
+        private fun pruneUnhandledStacktraces(ustDir: FsDir) {
+            try {
+                val stacktraceFiles = ustDir.listFiles { pathname ->
+                    pathname.isFile && pathname.name.endsWith(".$UNHANDLED_STACKTRACE_FILE_EXT")
+                } ?: return
+                if (stacktraceFiles.size <= MAX_UNHANDLED_STACKTRACE_FILES) return
+
+                stacktraceFiles
+                    .sortedWith(
+                        compareByDescending<FsFile> {
+                            it.nameWithoutExtension.toLongOrNull() ?: Long.MIN_VALUE
+                        }.thenByDescending {
+                            it.lastModified()
+                        }.thenByDescending {
+                            it.name
+                        },
+                    )
+                    .drop(MAX_UNHANDLED_STACKTRACE_FILES)
+                    .forEach { file ->
+                        if (!file.delete()) {
+                            flogError(LogTopic.CRASH_UTILITY) {
+                                "Failed to prune old stacktrace file '${file.name}'"
+                            }
+                        }
+                    }
+            } catch (e: Exception) {
+                flogError(LogTopic.CRASH_UTILITY) {
+                    "Failed to prune unhandled stacktrace files:\n$e"
+                }
+            }
+        }
     }
 
     /**
@@ -437,6 +472,7 @@ abstract class CrashUtility private constructor() {
                     pushCrashOnceNotification(application)
                 }
             }
+            pruneUnhandledStacktraces(ustDir)
             val lastActivity = lastActivityCreated.get()
             if (lastActivity != null) {
                 //oldHandler.get()?.uncaughtException(thread, throwable)
