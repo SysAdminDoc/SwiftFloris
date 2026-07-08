@@ -60,7 +60,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     private var pendingContextRescore: PendingGlideCommit? = null
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
-        previewJob?.cancel()
+        cancelPreviewJob()
         commitCurrentGesture()
     }
 
@@ -69,7 +69,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         // the classifier so the continuing trace starts fresh for the next word. The
         // existing commitGesture path already activates phantom-space, so the next
         // committed word will be auto-prefixed with " ".
-        previewJob?.cancel()
+        cancelPreviewJob()
         commitCurrentGesture()
     }
 
@@ -83,6 +83,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     }
 
     override fun onGlideCancelled() {
+        cancelPreviewJob()
         glideTypingClassifier.clear()
         pendingContextRescore = null
     }
@@ -95,7 +96,7 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         val time = System.currentTimeMillis()
         if (prefs.glide.showPreview.get() && time - lastTime > prefs.glide.previewRefreshDelay.get()) {
             // Cancel any stale preview job so they don't pile up.
-            previewJob?.cancel()
+            cancelPreviewJob()
             previewJob = launchSuggestions(gestureSnapshot = null, maxSuggestionsToShow = 1, commit = false)
             lastTime = time
         }
@@ -212,6 +213,11 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
             contextScores = contextScores,
         ) ?: return null
         return pending.committedWord to replacement
+    }
+
+    private fun cancelPreviewJob() {
+        previewJob?.cancel()
+        previewJob = null
     }
 
     private fun rememberPendingGlideCommit(suggestions: List<CharSequence>) {

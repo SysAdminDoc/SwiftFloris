@@ -271,6 +271,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
      * boundary so the continuing trace cannot leak into the classification.
      */
     fun getSuggestionsForSnapshot(snapshot: Gesture, maxSuggestionCount: Int): List<String> {
+        if (snapshot.isEmpty) return emptyList()
         val subtype = currentSubtype ?: return emptyList()
         val key = SuggestionCacheKey(snapshot, maxSuggestionCount, subtype)
         return when (val cached = lruSuggestionCache.get(key)) {
