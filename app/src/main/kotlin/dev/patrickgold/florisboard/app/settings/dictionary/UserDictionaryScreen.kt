@@ -629,8 +629,15 @@ fun UserDictionaryScreen(
         onResult = { uri ->
             val passphrase = pendingEncryptedExportPassphrase
             pendingEncryptedExportPassphrase = null
-            if (uri == null || passphrase == null) {
+            if (uri == null) {
                 passphrase?.fill('\u0000')
+                return@rememberLauncherForActivityResult
+            }
+            if (passphrase == null) {
+                encryptedExportDialogVisible = true
+                scope.launch {
+                    context.showLongToast(R.string.settings__udm__encrypted_dictionary_export_passphrase_lost)
+                }
                 return@rememberLauncherForActivityResult
             }
             if (!canStartDictionaryTransfer()) {
