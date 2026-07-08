@@ -76,6 +76,16 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         ) shouldBe false
     }
 
+    test("clipboard palette media previews decode off the composition thread") {
+        val source = locateClipboardInputLayoutSource().readText()
+
+        source shouldContain "produceState<ClipboardMediaPreviewResult>"
+        source shouldContain "withContext(Dispatchers.IO)"
+        source shouldContain "ClipboardPreviewImagePolicy.sampleSizeForPreview"
+        source shouldContain "ThumbnailUtils.createVideoThumbnail(file, Size(bounds.width, bounds.height), null)"
+        source shouldNotContain "val bitmap = remember(id)"
+    }
+
     test("preview policy accepts bounded image dimensions") {
         ClipboardPreviewImagePolicy.requireSupportedBounds(
             ClipboardPreviewImagePolicy.MAX_DECODE_BITMAP_SIDE,
@@ -98,6 +108,21 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         }
     }
 
+    test("preview policy samples large images to the preview budget") {
+        ClipboardPreviewImagePolicy.sampleSizeForPreview(1024, 768) shouldBe 1
+        ClipboardPreviewImagePolicy.sampleSizeForPreview(4096, 2048) shouldBe 4
+        ClipboardPreviewImagePolicy.sampleSizeForPreview(2048, 4096) shouldBe 4
+    }
+
+    test("preview policy scales video thumbnail targets to the preview budget") {
+        ClipboardPreviewImagePolicy.scaledPreviewBounds(1024, 768) shouldBe
+            ClipboardPreviewImagePolicy.PreviewBounds(1024, 768)
+        ClipboardPreviewImagePolicy.scaledPreviewBounds(4096, 2048) shouldBe
+            ClipboardPreviewImagePolicy.PreviewBounds(1024, 512)
+        ClipboardPreviewImagePolicy.scaledPreviewBounds(2048, 4096) shouldBe
+            ClipboardPreviewImagePolicy.PreviewBounds(512, 1024)
+    }
+
     test("copy-to-clipboard activity does not auto-preview content provider URIs") {
         CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme("content") shouldBe false
         CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme("CONTENT") shouldBe false
@@ -108,6 +133,15 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme(null) shouldBe false
     }
 })
+
+private fun locateClipboardInputLayoutSource(): File {
+    val candidates = listOf(
+        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt",
+        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("ClipboardInputLayout.kt not reachable from working directory ${File(".").absolutePath}")
+}
 
 private fun locateClipboardMediaProviderSource(): File {
     val candidates = listOf(

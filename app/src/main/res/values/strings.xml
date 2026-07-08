@@ -1714,6 +1714,7 @@
     <string name="clipboard__filter_chip__videos" comment="Filter chip label for video clips in the clipboard history panel">Videos</string>
     <string name="clipboard__media_image_unavailable" comment="Shown in place of a clipboard image that can no longer be loaded">Image unavailable</string>
     <string name="clipboard__media_video_unavailable" comment="Shown in place of a clipboard video thumbnail that can no longer be loaded">Video unavailable</string>
+    <string name="clipboard__media_loading" comment="Shown while a clipboard image or video preview is loading">Loading preview…</string>
     <string name="clipboard__media_load_error" comment="Shown in place of a clipboard media preview when loading fails unexpectedly">Something went wrong</string>
     <string name="clip__clear_history">Clear history</string>
     <string name="clip__unpin_item">Unpin item</string>

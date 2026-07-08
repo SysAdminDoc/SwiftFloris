@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.clipboard
 
 import android.content.ContentUris
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.media.ThumbnailUtils
@@ -80,6 +81,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.mutableStateSetOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -87,6 +89,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.pointerInput
@@ -119,9 +122,12 @@ import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
+import java.io.File
 import java.time.Instant
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.showShortToast
@@ -155,6 +161,12 @@ internal fun capPreviewText(text: String, charLimit: Int): String {
 
 internal fun clipboardTextAccessibilityPreview(text: String): String {
     return capPreviewText(text.replace(Regex("\\s+"), " ").trim(), TEXT_A11Y_PREVIEW_CHAR_LIMIT)
+}
+
+private sealed interface ClipboardMediaPreviewResult {
+    data object Loading : ClipboardMediaPreviewResult
+    data object Failed : ClipboardMediaPreviewResult
+    data class Ready(val bitmap: ImageBitmap) : ClipboardMediaPreviewResult
 }
 
 const val CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO: Int = 0
@@ -473,26 +485,34 @@ fun ClipboardInputLayout(
                 }
                 val id = ContentUris.parseId(uri)
                 val file = ClipboardFileStorage.getFileForId(context, id)
-                val bitmap = remember(id) {
-                    runCatching {
-                        check(file.exists()) { "Unable to resolve image at ${file.absolutePath}" }
-                        val rawBitmap = BitmapFactory.decodeFile(file.absolutePath)
-                        checkNotNull(rawBitmap) { "Unable to decode image at ${file.absolutePath}" }
-                        rawBitmap.asImageBitmap()
-                    }
+                val preview by produceState<ClipboardMediaPreviewResult>(
+                    initialValue = ClipboardMediaPreviewResult.Loading,
+                    key1 = item.type,
+                    key2 = file.absolutePath,
+                ) {
+                    value = loadClipboardMediaPreview(file, item.type)
                 }
-                if (bitmap.isSuccess) {
-                    Image(
-                        modifier = Modifier.fillMaxWidth(),
-                        bitmap = bitmap.getOrThrow(),
-                        contentDescription = null,
-                        contentScale = ContentScale.FillWidth,
-                    )
-                } else {
-                    SnyggText(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = stringRes(R.string.clipboard__media_load_error),
-                    )
+                when (val result = preview) {
+                    ClipboardMediaPreviewResult.Loading -> {
+                        SnyggText(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringRes(R.string.clipboard__media_loading),
+                        )
+                    }
+                    ClipboardMediaPreviewResult.Failed -> {
+                        SnyggText(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringRes(R.string.clipboard__media_load_error),
+                        )
+                    }
+                    is ClipboardMediaPreviewResult.Ready -> {
+                        Image(
+                            modifier = Modifier.fillMaxWidth(),
+                            bitmap = result.bitmap,
+                            contentDescription = null,
+                            contentScale = ContentScale.FillWidth,
+                        )
+                    }
                 }
             } else if (item.type == ItemType.VIDEO) {
                 val uri = item.uri
@@ -505,51 +525,44 @@ fun ClipboardInputLayout(
                 }
                 val id = ContentUris.parseId(uri)
                 val file = ClipboardFileStorage.getFileForId(context, id)
-                val bitmap = remember(id) {
-                    runCatching {
-                        check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
-                        val rawBitmap = if (AndroidVersion.ATLEAST_API29_Q) {
-                            val dataRetriever = MediaMetadataRetriever()
-                            try {
-                                dataRetriever.setDataSource(file.absolutePath)
-                                val w = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-                                    ?.toIntOrNull() ?: 320
-                                val h = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-                                    ?.toIntOrNull() ?: 240
-                                ThumbnailUtils.createVideoThumbnail(file, Size(w, h), null)
-                            } finally {
-                                dataRetriever.release()
-                            }
-                        } else {
-                            @Suppress("DEPRECATION")
-                            ThumbnailUtils.createVideoThumbnail(file.absolutePath, MediaStore.Video.Thumbnails.MINI_KIND)
-                        }
-                        checkNotNull(rawBitmap) { "Unable to decode video at ${file.absolutePath}" }
-                        rawBitmap.asImageBitmap()
-                    }
+                val preview by produceState<ClipboardMediaPreviewResult>(
+                    initialValue = ClipboardMediaPreviewResult.Loading,
+                    key1 = item.type,
+                    key2 = file.absolutePath,
+                ) {
+                    value = loadClipboardMediaPreview(file, item.type)
                 }
-                if (bitmap.isSuccess) {
-                    Image(
-                        modifier = Modifier.fillMaxWidth(),
-                        bitmap = bitmap.getOrThrow(),
-                        contentDescription = null,
-                        contentScale = ContentScale.FillWidth,
-                    )
-                    Icon(
-                        modifier = Modifier
-                            .align(Alignment.BottomStart)
-                            .padding(start = 4.dp, bottom = 4.dp)
-                            .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
-                            .padding(2.dp),
-                        imageVector = Icons.Default.Videocam,
-                        contentDescription = null,
-                        tint = Color.White,
-                    )
-                } else {
-                    SnyggText(
-                        modifier = Modifier.fillMaxWidth(),
-                        text = stringRes(R.string.clipboard__media_load_error),
-                    )
+                when (val result = preview) {
+                    ClipboardMediaPreviewResult.Loading -> {
+                        SnyggText(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringRes(R.string.clipboard__media_loading),
+                        )
+                    }
+                    ClipboardMediaPreviewResult.Failed -> {
+                        SnyggText(
+                            modifier = Modifier.fillMaxWidth(),
+                            text = stringRes(R.string.clipboard__media_load_error),
+                        )
+                    }
+                    is ClipboardMediaPreviewResult.Ready -> {
+                        Image(
+                            modifier = Modifier.fillMaxWidth(),
+                            bitmap = result.bitmap,
+                            contentDescription = null,
+                            contentScale = ContentScale.FillWidth,
+                        )
+                        Icon(
+                            modifier = Modifier
+                                .align(Alignment.BottomStart)
+                                .padding(start = 4.dp, bottom = 4.dp)
+                                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(8.dp))
+                                .padding(2.dp),
+                            imageVector = Icons.Default.Videocam,
+                            contentDescription = null,
+                            tint = Color.White,
+                        )
+                    }
                 }
             } else {
                 val charLimit = if (contentScrollInsteadOfClip) POPUP_PREVIEW_CHAR_LIMIT else GRID_PREVIEW_CHAR_LIMIT
@@ -996,6 +1009,63 @@ private fun ClipTextItemDescription(
                 text = description,
             )
         }
+    }
+}
+
+private suspend fun loadClipboardMediaPreview(
+    file: File,
+    type: ItemType,
+): ClipboardMediaPreviewResult = withContext(Dispatchers.IO) {
+    runCatching {
+        when (type) {
+            ItemType.IMAGE -> decodeClipboardImagePreview(file)
+            ItemType.VIDEO -> decodeClipboardVideoPreview(file)
+            ItemType.TEXT -> error("Text clipboard items do not have media previews")
+        }
+    }.fold(
+        onSuccess = { bitmap -> ClipboardMediaPreviewResult.Ready(bitmap) },
+        onFailure = { ClipboardMediaPreviewResult.Failed },
+    )
+}
+
+private fun decodeClipboardImagePreview(file: File): ImageBitmap {
+    check(file.exists()) { "Unable to resolve image at ${file.absolutePath}" }
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    BitmapFactory.decodeFile(file.absolutePath, bounds)
+    val sampleSize = ClipboardPreviewImagePolicy.sampleSizeForPreview(bounds.outWidth, bounds.outHeight)
+    val rawBitmap = BitmapFactory.decodeFile(
+        file.absolutePath,
+        BitmapFactory.Options().apply {
+            inSampleSize = sampleSize
+            inPreferredConfig = Bitmap.Config.ARGB_8888
+        },
+    )
+    return checkNotNull(rawBitmap) { "Unable to decode image at ${file.absolutePath}" }.asImageBitmap()
+}
+
+private fun decodeClipboardVideoPreview(file: File): ImageBitmap {
+    check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
+    val rawBitmap = if (AndroidVersion.ATLEAST_API29_Q) {
+        val bounds = videoPreviewBounds(file)
+        ThumbnailUtils.createVideoThumbnail(file, Size(bounds.width, bounds.height), null)
+    } else {
+        @Suppress("DEPRECATION")
+        ThumbnailUtils.createVideoThumbnail(file.absolutePath, MediaStore.Video.Thumbnails.MINI_KIND)
+    }
+    return checkNotNull(rawBitmap) { "Unable to decode video at ${file.absolutePath}" }.asImageBitmap()
+}
+
+private fun videoPreviewBounds(file: File): ClipboardPreviewImagePolicy.PreviewBounds {
+    val dataRetriever = MediaMetadataRetriever()
+    return try {
+        dataRetriever.setDataSource(file.absolutePath)
+        val width = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+            ?.toIntOrNull() ?: 320
+        val height = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+            ?.toIntOrNull() ?: 240
+        ClipboardPreviewImagePolicy.scaledPreviewBounds(width, height)
+    } finally {
+        dataRetriever.release()
     }
 }
 
