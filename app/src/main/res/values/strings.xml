@@ -213,11 +213,26 @@
     <string name="settings__home__privacy_posture" comment="Home screen privacy posture card title">Private keyboard, local control</string>
     <string name="settings__home__privacy_posture_summary" comment="Home screen privacy posture card summary">SwiftFloris ships without Internet permission. Addons, translation, sync, and tool calls are opt-in and auditable on this device.</string>
     <string name="settings__home__privacy_posture_action" comment="Home screen privacy posture card action">Review privacy posture</string>
+    <string name="settings__home__dashboard_eyebrow" comment="Home dashboard eyebrow label">Keyboard settings</string>
+    <string name="settings__home__dashboard_summary" comment="Home dashboard summary">No cloud, no account, no telemetry. Imports, addons, sync, and tools stay local and opt-in.</string>
     <string name="settings__home__overview_status_a11y" comment="Home overview status accessibility label">Status: {status_title}. {status_summary}</string>
-    <string name="settings__home__quick_actions_title" comment="Home overview quick action section title">Start here</string>
+    <string name="settings__home__status_signal_setup_needed" comment="Home dashboard compact keyboard status value">Setup needed</string>
+    <string name="settings__home__status_signal_choose_keyboard" comment="Home dashboard compact keyboard status value">Choose keyboard</string>
+    <string name="settings__home__status_signal_ready" comment="Home dashboard compact keyboard status value">Ready</string>
+    <string name="settings__home__search_summary" comment="Home dashboard search summary">Find any setting, route, or privacy control</string>
+    <string name="settings__home__search_a11y" comment="Home dashboard search accessibility label">Search settings. Opens the settings search screen.</string>
+    <string name="settings__home__signal_privacy_title" comment="Home dashboard signal title">Privacy</string>
+    <string name="settings__home__signal_privacy_value" comment="Home dashboard signal value">No Internet</string>
+    <string name="settings__home__signal_build_title" comment="Home dashboard signal title">Build</string>
+    <string name="settings__home__signal_build_value" comment="Home dashboard signal value">v{version}</string>
+    <string name="settings__home__signal_status_title" comment="Home dashboard signal title">Keyboard</string>
+    <string name="settings__home__signal_sync_title" comment="Home dashboard signal title">Sync</string>
+    <string name="settings__home__signal_sync_value" comment="Home dashboard signal value">Local files</string>
+    <string name="settings__home__quick_actions_title" comment="Home overview quick action section title">Pinned tools</string>
     <string name="settings__home__quick_action_search" comment="Home overview quick action">Search</string>
     <string name="settings__home__quick_action_import" comment="Home overview quick action">Import</string>
     <string name="settings__home__quick_action_privacy" comment="Home overview quick action">Privacy</string>
+    <string name="settings__home__quick_action_about" comment="Home overview quick action">About</string>
     <string name="settings__home__trust_checks_title" comment="Home overview trust-check section title">Trust checks</string>
     <string name="settings__home__trust_no_network_title" comment="Home overview trust-check title">No Internet permission</string>
     <string name="settings__home__trust_no_network_summary" comment="Home overview trust-check summary">Release checks fail if network permissions appear.</string>

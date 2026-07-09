@@ -107,6 +107,13 @@ class PendingSettingsScreensScreenshotTest {
     }
 
     @Test
+    fun homeScreenOverviewAmoledDark() {
+        captureSettingsScreen("home_screen_overview_amoled_dark.png", theme = AppTheme.AMOLED_DARK) {
+            HomeScreen()
+        }
+    }
+
+    @Test
     fun setupScreen() {
         captureSettingsScreen("setup_screen.png", theme = AppTheme.DARK) {
             SetupScreen()

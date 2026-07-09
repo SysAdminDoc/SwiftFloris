@@ -25,14 +25,19 @@ class HomeScreenPremiumPolishContractTest {
     fun homeScreenKeepsPolishedOverviewAndPrimaryActions() {
         val source = locateHomeScreenSource().readText()
 
-        source shouldContain "SettingsHomeOverviewCard("
+        source shouldContain "SettingsHomeDashboard("
         source shouldContain "SettingsHomeStatusRow("
+        source shouldContain "SettingsHomeSignalGrid("
+        source shouldContain "SettingsHomeSearchRail("
         source shouldContain "SettingsHomeQuickActions("
-        source shouldContain "SettingsHomeTrustChecks()"
         source shouldContain "settings__home__overview_status_a11y"
-        source shouldContain "settings__home__quick_action_search"
+        source shouldContain "settings__home__search_a11y"
+        source shouldContain "settings__home__status_signal_setup_needed"
+        source shouldContain "settings__home__signal_privacy_value"
+        source shouldContain "settings__home__signal_sync_value"
         source shouldContain "settings__home__quick_action_import"
         source shouldContain "settings__home__quick_action_privacy"
+        source shouldContain "settings__home__quick_action_about"
         source shouldContain "FlorisOutlinedButton("
 
         val buttonSource = locateSharedButtonSource().readText()
@@ -44,9 +49,12 @@ class HomeScreenPremiumPolishContractTest {
     fun homeScreenTrustCopyStaysAvailable() {
         val strings = locateStringsSource().readText()
 
-        strings shouldContain "settings__home__trust_no_network_title"
-        strings shouldContain "settings__home__trust_local_import_title"
-        strings shouldContain "settings__home__trust_verification_title"
+        strings shouldContain "settings__home__privacy_posture_summary"
+        strings shouldContain "settings__home__dashboard_summary"
+        strings shouldContain "settings__home__status_signal_ready"
+        strings shouldContain "settings__home__signal_privacy_value"
+        strings shouldContain "settings__home__signal_build_value"
+        strings shouldContain "settings__home__signal_sync_value"
     }
 }
 
