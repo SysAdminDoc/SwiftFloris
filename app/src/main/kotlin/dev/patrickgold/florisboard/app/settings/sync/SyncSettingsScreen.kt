@@ -152,6 +152,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     val syncMissingTargetText = stringRes(R.string.settings__sync__missing_target_toast)
     val syncNeedsPairingText = stringRes(R.string.settings__sync__needs_pairing_toast)
     val syncOpenFailedText = stringRes(R.string.settings__sync__open_failed_toast)
+    val syncPermissionFailedText = stringRes(R.string.settings__sync__permission_failed_toast)
     val syncUnsupportedText = stringRes(R.string.settings__sync__unsupported_toast)
     val syncUnknownError = stringRes(R.string.settings__sync__unknown_error)
 
@@ -172,6 +173,17 @@ fun SyncSettingsScreen() = FlorisScreen {
         syncTransferNotice = SyncTransferNotice.Failure
         syncTransferError = error?.localizedMessage ?: error?.message ?: message
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
+
+    fun takePersistableUriPermissionOrFail(uri: Uri, flags: Int): Boolean {
+        val result = runCatching {
+            context.contentResolver.takePersistableUriPermission(uri, flags)
+        }
+        if (result.isFailure) {
+            failTransfer(syncPermissionFailedText, result.exceptionOrNull())
+            return false
+        }
+        return true
     }
 
     fun receivePayload(rawPayload: String) {
@@ -386,23 +398,20 @@ fun SyncSettingsScreen() = FlorisScreen {
 
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            // Release the previous folder grant before taking the new one, otherwise
-            // each re-pick orphans a persisted grant and slowly exhausts Android's
-            // per-app persisted-URI-permission cap (the stale grants survive reboots).
+            val grantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            if (!takePersistableUriPermissionOrFail(uri, grantFlags)) {
+                return@rememberLauncherForActivityResult
+            }
+            // Release the previous folder grant only after the new grant is secured,
+            // otherwise a failed re-pick can strand the saved channel without access.
             val previousFolderUri = (activeChannel as? SyncChannel.LocalFolder)?.absolutePath
             if (!previousFolderUri.isNullOrBlank() && previousFolderUri != uri.toString()) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
                         Uri.parse(previousFolderUri),
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                        grantFlags,
                     )
                 }
-            }
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                )
             }
             setChannel(SyncChannel.LocalFolder(uri.toString(), uri.lastPathSegment ?: "Local folder"))
             Toast.makeText(context, folderPickedText, Toast.LENGTH_SHORT).show()
@@ -413,26 +422,20 @@ fun SyncSettingsScreen() = FlorisScreen {
         ActivityResultContracts.CreateDocument("application/json"),
     ) { uri ->
         if (uri != null) {
-            // Release the previous manual-export grant before taking the new one (see
-            // folderLauncher) so re-picking a target doesn't leak persisted grants.
+            val grantFlags = Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+            if (!takePersistableUriPermissionOrFail(uri, grantFlags)) {
+                return@rememberLauncherForActivityResult
+            }
+            // Release the previous manual-export grant only after the new target is
+            // secured, so a failed re-pick leaves the existing target usable.
             val previousExportUri = manualExportTargetUri
             if (previousExportUri.isNotBlank() && previousExportUri != uri.toString()) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
                         Uri.parse(previousExportUri),
-                        Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
+                        grantFlags,
                     )
                 }
-            }
-            // Persist the write grant, otherwise the transient ActivityResult
-            // permission is lost on process death and every later export to this
-            // saved target fails with SecurityException (the folder channel above
-            // already does this).
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
-                )
             }
             scope.launch {
                 prefs.sync.manualExportTargetUri.set(uri.toString())

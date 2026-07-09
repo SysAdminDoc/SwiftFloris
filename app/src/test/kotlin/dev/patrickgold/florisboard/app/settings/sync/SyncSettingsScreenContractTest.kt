@@ -38,6 +38,19 @@ class SyncSettingsScreenContractTest : FunSpec({
         source shouldContain "resolveLocalFolderSyncFileUri(channel, create = true)"
         source shouldContain "resolveLocalFolderSyncFileUri(channel, create = false)"
     }
+
+    test("persisted sync targets are saved only after Android grants durable access") {
+        val source = locateProjectFile(
+            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt",
+        ).readText()
+
+        source shouldContain "fun takePersistableUriPermissionOrFail(uri: Uri, flags: Int): Boolean"
+        source shouldContain "failTransfer(syncPermissionFailedText, result.exceptionOrNull())"
+        source shouldContain "if (!takePersistableUriPermissionOrFail(uri, grantFlags))"
+        source shouldContain "return@rememberLauncherForActivityResult"
+        source shouldContain "setChannel(SyncChannel.LocalFolder(uri.toString(), uri.lastPathSegment ?: \"Local folder\"))"
+        source shouldContain "prefs.sync.manualExportTargetUri.set(uri.toString())"
+    }
 })
 
 private fun locateProjectFile(path: String): File {

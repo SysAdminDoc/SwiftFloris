@@ -89,26 +89,28 @@ fun MediaScreen() = FlorisScreen {
     }
     val folderSelectedText = stringRes(R.string.prefs__media__stickers_folder_selected)
     val folderClearedText = stringRes(R.string.prefs__media__stickers_folder_cleared)
+    val folderPermissionFailedText = stringRes(R.string.prefs__media__stickers_folder_permission_failed)
     val localPackClearedText = stringRes(R.string.prefs__media__stickers_pack_cleared)
     val folderLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
         if (uri != null) {
-            // Release the previous folder grant before taking the new one — otherwise
-            // each re-pick orphans a persisted read grant (privacy leak + slowly
-            // exhausts Android's per-app persisted-URI cap). Mirrors SyncSettingsScreen.
+            val grantFlags = Intent.FLAG_GRANT_READ_URI_PERMISSION
+            val grantResult = runCatching {
+                context.contentResolver.takePersistableUriPermission(uri, grantFlags)
+            }
+            if (grantResult.isFailure) {
+                Toast.makeText(context, folderPermissionFailedText, Toast.LENGTH_LONG).show()
+                return@rememberLauncherForActivityResult
+            }
+            // Release the previous folder grant only after the new grant is secured,
+            // otherwise a failed re-pick can strand the saved folder without access.
             val previousFolderUri = userStickerFolderUri
             if (previousFolderUri.isNotBlank() && previousFolderUri != uri.toString()) {
                 runCatching {
                     context.contentResolver.releasePersistableUriPermission(
                         Uri.parse(previousFolderUri),
-                        Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                        grantFlags,
                     )
                 }
-            }
-            runCatching {
-                context.contentResolver.takePersistableUriPermission(
-                    uri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION,
-                )
             }
             scope.launch {
                 prefs.sticker.userFolderUri.set(uri.toString())
