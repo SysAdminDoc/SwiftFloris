@@ -1,0 +1,1 @@
+Roadmap hardening: Han DB access serialization, typed-text log redaction, SQLCipher refresh and freshness gate, bounded sync and translation addon bridges with typed failure/timeout/cancel copy, runtime addon capability gates, and fixture-tested legacy preference migrations.
