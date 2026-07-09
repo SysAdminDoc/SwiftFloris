@@ -27,6 +27,7 @@ import androidx.compose.animation.scaleOut
 import androidx.compose.animation.slideIn
 import androidx.compose.animation.slideOut
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.unit.IntOffset
@@ -95,6 +96,7 @@ import dev.patrickgold.florisboard.app.settings.voice.VoiceInputScreen
 import dev.patrickgold.florisboard.app.setup.SetupScreen
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import dev.patrickgold.jetpref.datastore.model.collectAsState
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
@@ -112,6 +114,17 @@ inline fun <reified T : Any> NavGraphBuilder.composableWithDeepLink(
         deepLinks = listOf(navDeepLink<T>(basePath = "ui://florisboard/${deeplink.path}")),
         content = content,
     )
+}
+
+@Composable
+private fun DevtoolsRouteGate(content: @Composable () -> Unit) {
+    val prefs by FlorisPreferenceStore
+    val devtoolsEnabled by prefs.devtools.enabled.collectAsState()
+    if (devtoolsEnabled) {
+        content()
+    } else {
+        DevtoolsScreen()
+    }
 }
 
 object Routes {
@@ -426,12 +439,18 @@ object Routes {
             composableWithDeepLink(Settings.ThirdPartyLicenses::class) { ThirdPartyLicensesScreen() }
 
             composableWithDeepLink(Devtools.Home::class) { DevtoolsScreen() }
-            composableWithDeepLink(Devtools.AndroidLocales::class) { AndroidLocalesScreen() }
-            composableWithDeepLink(Devtools.AndroidSettings::class) { navBackStack ->
-                val payload = navBackStack.toRoute<Devtools.AndroidSettings>()
-                AndroidSettingsScreen(payload.name)
+            composableWithDeepLink(Devtools.AndroidLocales::class) {
+                DevtoolsRouteGate { AndroidLocalesScreen() }
             }
-            composableWithDeepLink(Devtools.ExportDebugLog::class) { ExportDebugLogScreen() }
+            composableWithDeepLink(Devtools.AndroidSettings::class) { navBackStack ->
+                DevtoolsRouteGate {
+                    val payload = navBackStack.toRoute<Devtools.AndroidSettings>()
+                    AndroidSettingsScreen(payload.name)
+                }
+            }
+            composableWithDeepLink(Devtools.ExportDebugLog::class) {
+                DevtoolsRouteGate { ExportDebugLogScreen() }
+            }
 
             composableWithDeepLink(Ext.Home::class) { ExtensionHomeScreen() }
             composableWithDeepLink(Ext.List::class) { navBackStack ->
