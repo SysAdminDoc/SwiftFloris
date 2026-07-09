@@ -100,7 +100,7 @@ class UserDictionaryOverlayTest : FunSpec({
         val overlay = UserDictionaryOverlay.get()
         overlay.learn("kabob", en)
         overlay.learn("kabob", en)  // freq 86
-        overlay.learn("kabob", es)  // freq 80
+        overlay.learn("kabob", es)  // initial frequency
         overlay.frequencyFor("kabob", en) shouldBe
             UserDictionaryOverlay.INITIAL_FREQUENCY + UserDictionaryOverlay.INCREMENT
         overlay.frequencyFor("kabob", es) shouldBe UserDictionaryOverlay.INITIAL_FREQUENCY
@@ -120,7 +120,7 @@ class UserDictionaryOverlayTest : FunSpec({
 
     test("hydrateLocale is idempotent and respects in-memory entries") {
         val overlay = UserDictionaryOverlay.get()
-        overlay.learn("manual", en)  // user typed this — freq 80
+        overlay.learn("manual", en)  // user typed this - high instant-remember frequency
         overlay.isHydrated(en) shouldBe false
         overlay.hydrateLocale(en, listOf("daoword" to 100, "manual" to 200))
         overlay.isHydrated(en) shouldBe true
@@ -130,6 +130,31 @@ class UserDictionaryOverlayTest : FunSpec({
         // Second hydrate is a no-op.
         overlay.hydrateLocale(en, listOf("another" to 100))
         overlay.contains("another", en) shouldBe false
+    }
+
+    test("hydrateLocale trims oversized locale snapshots and keeps stronger entries") {
+        val overlay = UserDictionaryOverlay.get()
+        val weakEntries = (0 until UserDictionaryOverlay.MAX_ENTRIES_PER_LOCALE + 320)
+            .map { index -> "word${index.toString().padStart(5, '0')}" to 1 }
+        overlay.hydrateLocale(en, weakEntries + ("keeper" to UserDictionaryOverlay.MAX_FREQUENCY))
+
+        val snapshot = overlay.snapshotFor(en)
+        (snapshot.size <= UserDictionaryOverlay.MAX_ENTRIES_PER_LOCALE) shouldBe true
+        snapshot["keeper"] shouldBe UserDictionaryOverlay.MAX_FREQUENCY
+    }
+
+    test("learn trims oversized live overlays and keeps reinforced words") {
+        val overlay = UserDictionaryOverlay.get()
+        overlay.learn("keeper", en)
+        overlay.learn("keeper", en)
+
+        repeat(UserDictionaryOverlay.MAX_ENTRIES_PER_LOCALE + 720) { index ->
+            overlay.learn("word${index.toString().padStart(5, '0')}", en)
+        }
+
+        val snapshot = overlay.snapshotFor(en)
+        (snapshot.size <= UserDictionaryOverlay.MAX_ENTRIES_PER_LOCALE) shouldBe true
+        overlay.frequencyFor("keeper", en) shouldBe UserDictionaryOverlay.MAX_FREQUENCY
     }
 
     test("clearLocale wipes one locale and leaves others untouched") {

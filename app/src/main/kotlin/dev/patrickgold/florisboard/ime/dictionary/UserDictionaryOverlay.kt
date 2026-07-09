@@ -35,13 +35,13 @@ import java.util.concurrent.atomic.AtomicReference
  * This overlay closes the loop: every `learnWord` call also bumps
  * an in-memory `Map<localeTag, ConcurrentHashMap<word, freq>>` that
  * the ranker consults alongside the SCOWL snapshot. The overlay
- * frequency lives on the same `0..255` scale as SCOWL (initial 80
- * on first sight, +6 per re-use, capped at 250 — matching
+ * frequency lives on the same `0..255` scale as SCOWL (initial 245
+ * on first sight, +5 per re-use, capped at 250, matching
  * `LEARN_INITIAL_FREQUENCY` / `LEARN_INCREMENT` /
  * `LEARN_MAX_FREQUENCY` in `DictionaryManager`).
  *
- * Reads are lock-free (`ConcurrentHashMap` + atomic per-locale
- * map switch); writes are short-critical-section.
+ * Reads are lock-free (`ConcurrentHashMap`); writes prune in bounded
+ * batches when a locale grows past [MAX_ENTRIES_PER_LOCALE].
  *
  * Per §1 (no cloud / no telemetry) the overlay lives in process
  * memory only.  Disk durability comes from the existing user-dict
@@ -69,7 +69,10 @@ class UserDictionaryOverlay private constructor() {
                 (current + INCREMENT).coerceAtMost(MAX_FREQUENCY)
             }
             if (current == null) {
-                if (map.putIfAbsent(normalized, next) == null) return
+                if (map.putIfAbsent(normalized, next) == null) {
+                    trimLocaleMap(map)
+                    return
+                }
             } else {
                 if (map.replace(normalized, current, next)) return
             }
@@ -140,6 +143,7 @@ class UserDictionaryOverlay private constructor() {
             val clamped = freq.coerceIn(1, MAX_FREQUENCY)
             map.putIfAbsent(normalized, clamped)
         }
+        trimLocaleMap(map)
     }
 
     /** Snapshot of the per-locale map for diagnostics + tests. */
@@ -176,6 +180,19 @@ class UserDictionaryOverlay private constructor() {
         return cleaned.lowercase()
     }
 
+    private fun trimLocaleMap(map: ConcurrentHashMap<String, Int>) {
+        val overflow = map.size - MAX_ENTRIES_PER_LOCALE
+        if (overflow <= 0) return
+        val removeCount = map.size - TRIM_TARGET_ENTRIES_PER_LOCALE
+        map.entries
+            .asSequence()
+            .sortedWith(compareBy<Map.Entry<String, Int>> { it.value }.thenBy { it.key })
+            .take(removeCount)
+            .forEach { entry ->
+                map.remove(entry.key, entry.value)
+            }
+    }
+
     companion object {
         /**
          * SwiftKey-style "instant remember" — a word the user typed even
@@ -190,6 +207,8 @@ class UserDictionaryOverlay private constructor() {
         const val MAX_FREQUENCY: Int = 250
         const val MIN_LENGTH: Int = 3
         const val MAX_LENGTH: Int = 32
+        const val MAX_ENTRIES_PER_LOCALE: Int = 4096
+        private const val TRIM_TARGET_ENTRIES_PER_LOCALE: Int = 3584
 
         private val instance = AtomicReference(UserDictionaryOverlay())
 
