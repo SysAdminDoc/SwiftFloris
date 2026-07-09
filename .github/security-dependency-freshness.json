@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "_comment": "Release-evidence freshness floor for security-critical dependencies OSV cannot fully model, such as embedded native baselines.",
+  "dependencies": [
+    {
+      "catalogKey": "sqlcipher-android",
+      "module": "net.zetetic:sqlcipher-android",
+      "minimumVersion": "4.17.0",
+      "reviewedOn": "2026-07-09",
+      "reason": "SQLCipher 4.17.0 includes the reviewed SQLite CVE baseline for encrypted personal dictionaries."
+    }
+  ],
+  "overrides": []
+}

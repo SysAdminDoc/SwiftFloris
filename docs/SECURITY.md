@@ -93,6 +93,10 @@ If the release-time scan finds a HIGH or CRITICAL advisory, `scripts/osv-release
 gate parses `osv-result.json`, classifies each finding by CVSS score or database severity, and exits non-zero for any
 unoverridden HIGH/CRITICAL match. LOW and MEDIUM findings are summarized but non-blocking.
 
+Release evidence also runs `scripts/check-security-dependency-freshness.py` for security-critical dependencies whose
+embedded native baselines are not fully modeled by OSV. The reviewed floors and temporary override records live in
+`.github/security-dependency-freshness.json`; each override must name an owner, rationale, and expiry date.
+
 To override a blocking advisory (e.g. not reachable, awaiting upstream fix), add an entry to `.github/osv-overrides.json`
 with the advisory `id`, `severity`, `rationale`, `owner`, and `expiry` (YYYY-MM-DD). Expired overrides are ignored and
 produce a local warning. The override file is committed and auditable.

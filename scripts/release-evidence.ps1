@@ -215,6 +215,7 @@ Invoke-EvidenceCommand "release-front-door" $bash $releaseArgs
 Invoke-EvidenceCommand "fastlane-metadata" $bash @((Convert-ToGitBashPath "scripts\check-fastlane-metadata.sh"))
 Invoke-EvidenceCommand "backup-privacy-copy" $bash @((Convert-ToGitBashPath "scripts\check-backup-privacy-copy.sh"))
 Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public-doc-version-pins.py")
+Invoke-EvidenceCommand "security-dependency-freshness" $python @("scripts/check-security-dependency-freshness.py")
 Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-integrity.py")
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))
