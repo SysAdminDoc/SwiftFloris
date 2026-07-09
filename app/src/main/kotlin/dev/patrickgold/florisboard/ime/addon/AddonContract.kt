@@ -86,6 +86,14 @@ object AddonContract {
         const val REGISTER_DICTIONARY_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_DICTIONARY_PACK"
         const val REGISTER_LAYOUT_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_LAYOUT_PACK"
         const val REGISTER_POPUP_MAPPING_PACK = AppPackageContract.ACTION_PREFIX + "REGISTER_POPUP_MAPPING_PACK"
+        const val REGISTER_SMART_COMPOSE_RUNTIME =
+            AppPackageContract.ACTION_PREFIX + "REGISTER_SMART_COMPOSE_RUNTIME"
+        const val REGISTER_TRANSLATION_RUNTIME =
+            AppPackageContract.ACTION_PREFIX + "REGISTER_TRANSLATION_RUNTIME"
+        const val REGISTER_CJK_RUNTIME = AppPackageContract.ACTION_PREFIX + "REGISTER_CJK_RUNTIME"
+        const val REGISTER_HANDWRITING_RUNTIME =
+            AppPackageContract.ACTION_PREFIX + "REGISTER_HANDWRITING_RUNTIME"
+        const val REGISTER_VOICE_RUNTIME = AppPackageContract.ACTION_PREFIX + "REGISTER_VOICE_RUNTIME"
 
         /** Reverse direction: the IME pushes this broadcast to a single addon
          *  package to ask it to surface its current state (e.g. after an
@@ -131,16 +139,43 @@ object AddonContract {
 
 /** The set of first-class addon types the IME understands. The enrolment
  *  surface (Next-10.2) dispatches on this value to validate the addon's
- *  declared assets against the expected schema for that type. */
-enum class AddonType(val metadataValue: String, val intentAction: String) {
+ *  declared assets or runtime capability against the expected schema for that
+ *  type. Runtime-engine entries are declarations only; provider registries
+ *  must consume them through [AddonRegistry] so certificate trust is reconciled
+ *  before any engine can receive text, strokes, audio, or selection payloads. */
+enum class AddonType(
+    val metadataValue: String,
+    val intentAction: String,
+    val isRuntimeEngine: Boolean = false,
+) {
     LANGUAGE_PACK("language-pack", AddonContract.Action.REGISTER_LANGUAGE_PACK),
     THEME_PACK("theme-pack", AddonContract.Action.REGISTER_THEME_PACK),
     DICTIONARY_PACK("dictionary-pack", AddonContract.Action.REGISTER_DICTIONARY_PACK),
     LAYOUT_PACK("layout-pack", AddonContract.Action.REGISTER_LAYOUT_PACK),
     POPUP_MAPPING_PACK("popup-mapping-pack", AddonContract.Action.REGISTER_POPUP_MAPPING_PACK),
+    SMART_COMPOSE_RUNTIME(
+        "smart-compose-runtime",
+        AddonContract.Action.REGISTER_SMART_COMPOSE_RUNTIME,
+        true,
+    ),
+    TRANSLATION_RUNTIME(
+        "translation-runtime",
+        AddonContract.Action.REGISTER_TRANSLATION_RUNTIME,
+        true,
+    ),
+    CJK_RUNTIME("cjk-runtime", AddonContract.Action.REGISTER_CJK_RUNTIME, true),
+    HANDWRITING_RUNTIME(
+        "handwriting-runtime",
+        AddonContract.Action.REGISTER_HANDWRITING_RUNTIME,
+        true,
+    ),
+    VOICE_RUNTIME("voice-runtime", AddonContract.Action.REGISTER_VOICE_RUNTIME, true),
     ;
 
     companion object {
+        val runtimeEngineTypes: Set<AddonType> =
+            entries.filterTo(linkedSetOf()) { it.isRuntimeEngine }
+
         /** Parse a metadata string back into a typed [AddonType], or null when
          *  the value is unrecognised. Unknown values are intentionally not
          *  fatal so future addons declaring a newer addon-type don't crash

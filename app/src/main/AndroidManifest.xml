@@ -69,6 +69,21 @@
         <intent>
             <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_POPUP_MAPPING_PACK"/>
         </intent>
+        <intent>
+            <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_SMART_COMPOSE_RUNTIME"/>
+        </intent>
+        <intent>
+            <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_TRANSLATION_RUNTIME"/>
+        </intent>
+        <intent>
+            <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_CJK_RUNTIME"/>
+        </intent>
+        <intent>
+            <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_HANDWRITING_RUNTIME"/>
+        </intent>
+        <intent>
+            <action android:name="io.github.sysadmindoc.swiftfloris.action.REGISTER_VOICE_RUNTIME"/>
+        </intent>
         <!-- ROADMAP §10.5 L7.5 — MCP daemon visibility. Without this entry,
              McpAndroidDiscoverer's queryIntentServices() silently returns no
              candidates on Android 11+ package-visibility filtering. -->

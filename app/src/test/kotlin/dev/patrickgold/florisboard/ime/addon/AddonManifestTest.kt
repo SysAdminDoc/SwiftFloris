@@ -20,7 +20,9 @@ import android.content.pm.ApplicationInfo
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldStartWith
+import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Files
 
@@ -43,6 +45,23 @@ class AddonManifestTest : FunSpec({
         AddonType.fromMetadata("dictionary-pack") shouldBe AddonType.DICTIONARY_PACK
         AddonType.fromMetadata("layout-pack") shouldBe AddonType.LAYOUT_PACK
         AddonType.fromMetadata("popup-mapping-pack") shouldBe AddonType.POPUP_MAPPING_PACK
+        AddonType.fromMetadata("smart-compose-runtime") shouldBe AddonType.SMART_COMPOSE_RUNTIME
+        AddonType.fromMetadata("translation-runtime") shouldBe AddonType.TRANSLATION_RUNTIME
+        AddonType.fromMetadata("cjk-runtime") shouldBe AddonType.CJK_RUNTIME
+        AddonType.fromMetadata("handwriting-runtime") shouldBe AddonType.HANDWRITING_RUNTIME
+        AddonType.fromMetadata("voice-runtime") shouldBe AddonType.VOICE_RUNTIME
+    }
+
+    test("AddonType identifies runtime engine capabilities") {
+        AddonType.runtimeEngineTypes shouldBe setOf(
+            AddonType.SMART_COMPOSE_RUNTIME,
+            AddonType.TRANSLATION_RUNTIME,
+            AddonType.CJK_RUNTIME,
+            AddonType.HANDWRITING_RUNTIME,
+            AddonType.VOICE_RUNTIME,
+        )
+        AddonType.DICTIONARY_PACK.isRuntimeEngine shouldBe false
+        AddonType.TRANSLATION_RUNTIME.isRuntimeEngine shouldBe true
     }
 
     test("AddonType.fromMetadata returns null for unknown values") {
@@ -51,8 +70,16 @@ class AddonManifestTest : FunSpec({
         // enrol. Unknown values returning null is how the enumerator
         // signals "skip silently".
         AddonType.fromMetadata("future-type-from-a-newer-addon") shouldBe null
+        AddonType.fromMetadata("translation-runtime-v2") shouldBe null
         AddonType.fromMetadata(null) shouldBe null
         AddonType.fromMetadata("") shouldBe null
+    }
+
+    test("AddonEnumerator explains unsupported runtime capability metadata") {
+        AddonEnumerator.unknownAddonTypeRejectionReason("translation-runtime-v2") shouldBe
+            "unsupported runtime addon capability: translation-runtime-v2"
+        AddonEnumerator.unknownAddonTypeRejectionReason("future-type-from-a-newer-addon") shouldBe
+            "unknown addon-type=future-type-from-a-newer-addon"
     }
 
     test("AddonManifest stableId carries the addon: namespace prefix") {
@@ -153,6 +180,17 @@ class AddonManifestTest : FunSpec({
             "io.github.sysadmindoc.swiftfloris.action.REGISTER_ADDON"
     }
 
+    test("main manifest declares package visibility for every addon action") {
+        val manifest = locateProjectFile(
+            "app/src/main/AndroidManifest.xml",
+            "src/main/AndroidManifest.xml",
+        ).readText()
+
+        AddonType.entries.forEach { type ->
+            manifest shouldContain type.intentAction
+        }
+    }
+
     test("AddonEnumerator default banned permission set blocks all network surfaces") {
         // ROADMAP §1 — addons must never become a back-door network channel.
         // Reject the entire suite — not just INTERNET, because state-of-network
@@ -178,3 +216,10 @@ class AddonManifestTest : FunSpec({
         ) shouldBe "android.permission.INTERNET"
     }
 })
+
+private fun locateProjectFile(vararg paths: String): File {
+    return paths.asSequence()
+        .map { File(it) }
+        .firstOrNull { it.exists() && it.canRead() }
+        ?: error("None of these files are reachable from ${File(".").absolutePath}: ${paths.joinToString()}")
+}

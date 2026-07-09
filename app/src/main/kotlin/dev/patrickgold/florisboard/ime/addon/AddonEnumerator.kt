@@ -105,6 +105,15 @@ class AddonEnumerator(
                 null
             }
         }
+
+        internal fun unknownAddonTypeRejectionReason(typeRaw: String): String {
+            val normalized = typeRaw.lowercase()
+            return if ("runtime" in normalized || "engine" in normalized) {
+                "unsupported runtime addon capability: $typeRaw"
+            } else {
+                "unknown addon-type=$typeRaw"
+            }
+        }
     }
 
     /**
@@ -178,7 +187,7 @@ class AddonEnumerator(
         val typeRaw = meta.getString(AddonContract.MetadataKey.ADDON_TYPE)
             ?: return AddonVerdict.NotAnAddon
         val type = AddonType.fromMetadata(typeRaw)
-            ?: return AddonVerdict.Rejected("unknown addon-type=$typeRaw")
+            ?: return AddonVerdict.Rejected(unknownAddonTypeRejectionReason(typeRaw))
         val banned = firstRejectedNetworkPermission(info.requestedPermissions)
         if (banned != null) {
             return AddonVerdict.Rejected("declares banned network permission $banned")

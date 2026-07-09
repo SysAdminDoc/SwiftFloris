@@ -108,6 +108,18 @@ class AddonRegistry(
     fun dictionaryPacks(): List<AddonManifest> = byType(AddonType.DICTIONARY_PACK)
 
     @Synchronized
+    fun runtimeEngineAddons(): List<AddonManifest> =
+        liveManifests.values.filter { it.type.isRuntimeEngine }
+
+    @Synchronized
+    fun runtimeEngineAddonsFor(type: AddonType): List<AddonManifest> {
+        require(type.isRuntimeEngine) {
+            "runtimeEngineAddonsFor requires a runtime-engine addon type; was $type"
+        }
+        return byType(type)
+    }
+
+    @Synchronized
     fun manifestForPackage(packageName: String): AddonManifest? = liveManifests[packageName]
 
     @Synchronized

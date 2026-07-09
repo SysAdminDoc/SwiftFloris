@@ -16,9 +16,11 @@
 
 package dev.patrickgold.florisboard.ime.addon
 
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
 
 private const val REGISTRY_SHA_A =
     "AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:AA:" +
@@ -71,6 +73,41 @@ class AddonRegistryTest : FunSpec({
         registry.manifestForPackage("org.swiftfloris.theme.dark") shouldBe theme
         registry.manifestForStableId("addon:org.swiftfloris.dict.pl") shouldBe dictionary
         registry.pinnedSigningCertificates() shouldBe emptyMap()
+    }
+
+    test("runtime engine addons are exposed only after provenance reconciliation") {
+        val registry = AddonRegistry(trustedRootSigningCertSha256 = REGISTRY_SHA_A)
+        val trustedRuntime = registryManifest(
+            packageName = "org.swiftfloris.runtime.translate",
+            type = AddonType.TRANSLATION_RUNTIME,
+            displayName = "Local Translator",
+            signingCertSha256 = REGISTRY_SHA_A,
+        )
+        val untrustedRuntime = registryManifest(
+            packageName = "org.swiftfloris.runtime.voice.external",
+            type = AddonType.VOICE_RUNTIME,
+            displayName = "External Voice",
+            signingCertSha256 = REGISTRY_SHA_B,
+        )
+
+        val snapshot = registry.refresh(listOf(untrustedRuntime, trustedRuntime))
+
+        snapshot.accepted shouldContainExactly listOf(trustedRuntime)
+        snapshot.rejected.single().packageName shouldBe "org.swiftfloris.runtime.voice.external"
+        snapshot.rejected.single().reason shouldBe AddonRegistry.ReasonExplicitTrustRequired
+        registry.runtimeEngineAddons() shouldContainExactly listOf(trustedRuntime)
+        registry.runtimeEngineAddonsFor(AddonType.TRANSLATION_RUNTIME) shouldContainExactly listOf(trustedRuntime)
+        registry.runtimeEngineAddonsFor(AddonType.VOICE_RUNTIME) shouldBe emptyList()
+    }
+
+    test("runtime engine lookup rejects static asset pack types") {
+        val registry = AddonRegistry(trustedRootSigningCertSha256 = REGISTRY_SHA_A)
+
+        val error = shouldThrow<IllegalArgumentException> {
+            registry.runtimeEngineAddonsFor(AddonType.DICTIONARY_PACK)
+        }
+
+        error.message shouldContain "runtime-engine addon type"
     }
 
     test("refresh rejects first-seen non-co-signed addons until explicitly trusted") {
