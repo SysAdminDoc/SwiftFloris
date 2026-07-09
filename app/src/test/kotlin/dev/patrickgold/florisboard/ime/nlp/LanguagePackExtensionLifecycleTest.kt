@@ -18,7 +18,6 @@ import dev.patrickgold.florisboard.ime.nlp.han.HanShapeLanguagePackQuery
 import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
 import io.kotest.matchers.collections.shouldContainExactly
-import io.kotest.matchers.nulls.shouldBeNull
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
 import java.io.File
@@ -79,7 +78,7 @@ class LanguagePackExtensionLifecycleTest {
         result shouldBe true
         unloadThread.join(2_000)
         unloadFinished.get() shouldBe true
-        extension.hanShapeBasedSQLiteDatabase.shouldBeNull()
+        extension.hasOpenHanShapeBasedSQLiteDatabase() shouldBe false
     }
 
     @Test
@@ -92,16 +91,19 @@ class LanguagePackExtensionLifecycleTest {
             extension.workingDir = workDir
             extension.onAfterLoad(context, workDir)
 
-            val loadedDatabase = extension.hanShapeBasedSQLiteDatabase.shouldNotBeNull()
-            loadedDatabase.isOpen shouldBe true
+            val loadedDatabase = extension.withHanShapeBasedSQLiteDatabase { database ->
+                database.isOpen shouldBe true
+                HanShapeLanguagePackQuery.words(database, "zhengma")
+                database
+            }.shouldNotBeNull()
+
             extension.withHanShapeBasedSQLiteDatabase { database ->
                 HanShapeLanguagePackQuery.words(database, "zhengma")
             } shouldContainExactly listOf("word$cycle")
-
             previousDatabase?.let { it.isOpen shouldBe false }
             extension.onBeforeUnload(context, workDir)
             loadedDatabase.isOpen shouldBe false
-            extension.hanShapeBasedSQLiteDatabase.shouldBeNull()
+            extension.hasOpenHanShapeBasedSQLiteDatabase() shouldBe false
             previousDatabase = loadedDatabase
         }
     }

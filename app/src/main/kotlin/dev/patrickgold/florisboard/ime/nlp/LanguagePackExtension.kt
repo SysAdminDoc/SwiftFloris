@@ -85,15 +85,16 @@ class LanguagePackExtension(
     @Transient private val hanShapeBasedSQLiteDatabaseLock = Any()
     @Transient private var _hanShapeBasedSQLiteDatabase: SQLiteDatabase? = null
 
-    val hanShapeBasedSQLiteDatabase: SQLiteDatabase?
-        get() = synchronized(hanShapeBasedSQLiteDatabaseLock) {
-            _hanShapeBasedSQLiteDatabase?.takeIf { it.isOpen }
-        }
-
     fun supportsHanShapeBased(): Boolean = kind == LanguagePackKind.HAN_SHAPE_BASED
 
     fun hanShapeBasedComponents(): List<LanguagePackComponent> {
         return if (supportsHanShapeBased()) items else emptyList()
+    }
+
+    fun hasOpenHanShapeBasedSQLiteDatabase(): Boolean {
+        return synchronized(hanShapeBasedSQLiteDatabaseLock) {
+            _hanShapeBasedSQLiteDatabase?.isOpen == true
+        }
     }
 
     fun <T> withHanShapeBasedSQLiteDatabase(block: (SQLiteDatabase) -> T): T? {

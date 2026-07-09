@@ -79,7 +79,7 @@ internal object LanguagePackManagerPolicy {
         extensions: List<LanguagePackExtension>,
         activeLocaleTags: Set<String>,
         hasUsableHanRuntime: (LanguagePackExtension) -> Boolean = { extension ->
-            !extension.isLoaded() || extension.hanShapeBasedSQLiteDatabase?.isOpen == true
+            !extension.isLoaded() || extension.hasOpenHanShapeBasedSQLiteDatabase()
         },
     ): List<LanguagePackCatalogEntry> {
         return extensions.map { extension ->
