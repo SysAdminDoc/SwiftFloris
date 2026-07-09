@@ -33,12 +33,20 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.io.File
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
+import java.util.concurrent.atomic.AtomicInteger
 
 private const val FLORIS_USER_DICTIONARY_SOURCE_PRIORITY = 0
 private const val SYSTEM_USER_DICTIONARY_SOURCE_PRIORITY = 1
 private const val SHORTCUT_MATCH_PRIORITY = 0
 private const val PREFIX_MATCH_PRIORITY = 1
 private const val CONTAINS_MATCH_PRIORITY = 2
+internal const val DICTIONARY_ROOM_SYNC_TIMEOUT_MS = 150L
 
 /**
  * Frequency starting point assigned to a freshly-learned word.
@@ -136,6 +144,12 @@ class DictionaryManager private constructor(context: Context) {
     private val prefs by FlorisPreferenceStore
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val legacyLocaleRepairStarted = java.util.concurrent.atomic.AtomicBoolean(false)
+    private val roomSyncThreadIndex = AtomicInteger(0)
+    private val roomSyncExecutor = Executors.newFixedThreadPool(2) { runnable ->
+        Thread(runnable, "SwiftFloris-DictionaryRoomSync-${roomSyncThreadIndex.incrementAndGet()}").apply {
+            isDaemon = true
+        }
+    }
 
     private var florisUserDictionaryDatabase: FlorisUserDictionaryDatabase? = null
     private var systemUserDictionaryDatabase: SystemUserDictionaryDatabase? = null
@@ -175,10 +189,13 @@ class DictionaryManager private constructor(context: Context) {
         val query = word.trim()
         if (query.isBlank()) return null
 
-        return runRoomBlocking {
+        return runRoomQueryBlocking<String?>(
+            operation = "queryUserDictionaryShortcutExact",
+            fallback = null,
+        ) {
             val florisDao = florisUserDictionaryDao()
             val systemDao = systemUserDictionaryDao()
-            if (florisDao == null && systemDao == null) return@runRoomBlocking null
+            if (florisDao == null && systemDao == null) return@runRoomQueryBlocking null
 
             val matches = buildList {
                 if (prefs.dictionary.enableFlorisUserDictionary.get() && florisDao != null) {
@@ -204,11 +221,14 @@ class DictionaryManager private constructor(context: Context) {
             return emptyList()
         }
 
-        return runRoomBlocking {
+        return runRoomQueryBlocking(
+            operation = "queryUserDictionary",
+            fallback = emptyList(),
+        ) {
             val florisDao = florisUserDictionaryDao()
             val systemDao = systemUserDictionaryDao()
             if (florisDao == null && systemDao == null) {
-                return@runRoomBlocking emptyList()
+                return@runRoomQueryBlocking emptyList()
             }
 
             val candidates = buildList {
@@ -243,25 +263,20 @@ class DictionaryManager private constructor(context: Context) {
         // Drop the in-memory overlay entry immediately so the next suggest
         // can't surface the forgotten word from the ranker.
         UserDictionaryOverlay.get().forget(normalized, locale)
-        // Synchronous-on-IO inside a runBlocking is acceptable here because the long-press
-        // removal path expects an immediate boolean acknowledgement before re-running suggest.
-        return runCatching {
-            runRoomBlocking {
-                val dao = florisUserDictionaryDao() ?: return@runRoomBlocking false
-                // queryExactFuzzyLocale's `WORD = :word` is case-sensitive in SQLite,
-                // so it misses manually-added cased entries ("Patrick" vs "patrick").
-                // The LIKE-based query() is ASCII case-insensitive; the equals-filter
-                // below then narrows it back to exact (case-insensitive) matches.
-                val matches = dao.query(normalized, locale)
-                    .filter { it.word.equals(normalized, ignoreCase = true) }
-                for (entry in matches) dao.delete(entry)
-                matches.isNotEmpty()
-            }
-        }.onFailure { e ->
-            flogError(LogTopic.DICTIONARY) {
-                "forgetWord(word=${normalized.debugSummarizeTextForLog()}) failed: ${e.message}"
-            }
-        }.getOrDefault(false)
+        return runRoomQueryBlocking(
+            operation = "forgetWord(word=${normalized.debugSummarizeTextForLog()})",
+            fallback = false,
+        ) {
+            val dao = florisUserDictionaryDao() ?: return@runRoomQueryBlocking false
+            // queryExactFuzzyLocale's `WORD = :word` is case-sensitive in SQLite,
+            // so it misses manually-added cased entries ("Patrick" vs "patrick").
+            // The LIKE-based query() is ASCII case-insensitive; the equals-filter
+            // below then narrows it back to exact (case-insensitive) matches.
+            val matches = dao.query(normalized, locale)
+                .filter { it.word.equals(normalized, ignoreCase = true) }
+            for (entry in matches) dao.delete(entry)
+            matches.isNotEmpty()
+        }
     }
 
     /**
@@ -373,21 +388,24 @@ class DictionaryManager private constructor(context: Context) {
             return false
         }
 
-        return runRoomBlocking {
+        return runRoomQueryBlocking(
+            operation = "isKnownUserDictionaryWord",
+            fallback = false,
+        ) {
             val florisDao = florisUserDictionaryDao()
             val systemDao = systemUserDictionaryDao()
             if (florisDao == null && systemDao == null) {
-                return@runRoomBlocking false
+                return@runRoomQueryBlocking false
             }
 
             if (prefs.dictionary.enableFlorisUserDictionary.get()) {
                 if (florisDao?.containsWordOrShortcut(query, locale) == true) {
-                    return@runRoomBlocking true
+                    return@runRoomQueryBlocking true
                 }
             }
             if (prefs.dictionary.enableSystemUserDictionary.get()) {
                 if (systemDao?.containsWordOrShortcut(query, locale) == true) {
-                    return@runRoomBlocking true
+                    return@runRoomQueryBlocking true
                 }
             }
 
@@ -680,6 +698,29 @@ class DictionaryManager private constructor(context: Context) {
         }
     }
 
+    private fun <T> runRoomQueryBlocking(
+        operation: String,
+        fallback: T,
+        block: () -> T,
+    ): T {
+        return DictionarySyncBridge.runWithTimeout(
+            executor = roomSyncExecutor,
+            timeoutMs = DICTIONARY_ROOM_SYNC_TIMEOUT_MS,
+            fallback = fallback,
+            onTimeout = {
+                flogWarning(LogTopic.DICTIONARY) {
+                    "$operation timed out after ${DICTIONARY_ROOM_SYNC_TIMEOUT_MS}ms; returning fallback"
+                }
+            },
+            onFailure = { error ->
+                flogError(LogTopic.DICTIONARY) {
+                    "$operation failed: ${error.message}"
+                }
+            },
+            block = block,
+        )
+    }
+
     private fun UserDictionaryDao.queryCandidates(
         query: String,
         locale: FlorisLocale,
@@ -759,4 +800,32 @@ internal fun rankUserDictionaryCandidates(
         .distinctBy { it.entry.word.lowercase() }
         .map { it.entry }
         .toList()
+}
+
+internal object DictionarySyncBridge {
+    fun <T> runWithTimeout(
+        executor: ExecutorService,
+        timeoutMs: Long,
+        fallback: T,
+        onTimeout: () -> Unit = {},
+        onFailure: (Throwable) -> Unit = {},
+        block: () -> T,
+    ): T {
+        val future = executor.submit(Callable { block() })
+        return try {
+            future.get(timeoutMs, TimeUnit.MILLISECONDS)
+        } catch (e: TimeoutException) {
+            future.cancel(true)
+            onTimeout()
+            fallback
+        } catch (e: InterruptedException) {
+            future.cancel(true)
+            Thread.currentThread().interrupt()
+            onFailure(e)
+            fallback
+        } catch (e: ExecutionException) {
+            onFailure(e.cause ?: e)
+            fallback
+        }
+    }
 }

@@ -28,10 +28,31 @@ import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeoutOrNull
 import org.florisboard.lib.kotlin.map
+
+internal const val SPELLCHECK_SYNC_TIMEOUT_MS = 250L
+
+internal object SpellCheckerSyncBridge {
+    suspend fun <T> runWithTimeout(
+        operation: String,
+        fallback: T,
+        timeoutMs: Long = SPELLCHECK_SYNC_TIMEOUT_MS,
+        block: suspend () -> T,
+    ): T {
+        return withTimeoutOrNull(timeoutMs) {
+            block()
+        } ?: fallback.also {
+            flogWarning(LogTopic.SPELL_EVENTS) {
+                "$operation timed out after ${timeoutMs}ms; returning fallback"
+            }
+        }
+    }
+}
 
 class FlorisSpellCheckerService : SpellCheckerService() {
     private val prefs by FlorisPreferenceStore
@@ -93,7 +114,14 @@ class FlorisSpellCheckerService : SpellCheckerService() {
         ): Array<SpellingResult> = runBlocking {
             val retInfos = Array(textInfos.size) { n ->
                 val word = textInfos[n].text ?: ""
-                async { nlpManager.spell(spellingSubtype, word, emptyList(), emptyList(), suggestionsLimit) }
+                async {
+                    SpellCheckerSyncBridge.runWithTimeout(
+                        operation = "spellMultiple",
+                        fallback = SpellingResult.unspecified(),
+                    ) {
+                        nlpManager.spell(spellingSubtype, word, emptyList(), emptyList(), suggestionsLimit)
+                    }
+                }
             }
             Array(textInfos.size) { n ->
                 retInfos[n].await().apply {
@@ -112,8 +140,13 @@ class FlorisSpellCheckerService : SpellCheckerService() {
             val spellingSubtype = cachedSpellingSubtype ?: return SpellingResult.unspecified().suggestionsInfo
 
             return runBlocking {
-                nlpManager
-                    .spell(spellingSubtype, textInfo.text, emptyList(), emptyList(), suggestionsLimit)
+                SpellCheckerSyncBridge
+                    .runWithTimeout(
+                        operation = "spellSingle",
+                        fallback = SpellingResult.unspecified(),
+                    ) {
+                        nlpManager.spell(spellingSubtype, textInfo.text, emptyList(), emptyList(), suggestionsLimit)
+                    }
                     .sendToDebugOverlayIfEnabled(textInfo)
                     .suggestionsInfo
             }

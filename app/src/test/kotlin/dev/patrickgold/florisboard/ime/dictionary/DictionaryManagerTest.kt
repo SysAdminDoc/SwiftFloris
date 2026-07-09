@@ -18,11 +18,14 @@ package dev.patrickgold.florisboard.ime.dictionary
 
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.string.shouldNotContain
 import java.io.File
+import java.util.concurrent.Executors
+import kotlin.time.measureTime
 
 class DictionaryManagerTest : FunSpec({
     test("rankUserDictionaryCandidates prefers internal entries over system duplicates") {
@@ -92,6 +95,41 @@ class DictionaryManagerTest : FunSpec({
             "globalword" to null,
         )
         dao.queryAll().first { it.word == "patrick" }.freq shouldBe 250
+    }
+
+    test("DictionarySyncBridge returns fallback when a blocking Room query exceeds budget") {
+        val executor = Executors.newSingleThreadExecutor()
+        var timedOut = false
+        var result = "unset"
+        try {
+            val elapsed = measureTime {
+                result = DictionarySyncBridge.runWithTimeout(
+                    executor = executor,
+                    timeoutMs = 25L,
+                    fallback = "fallback",
+                    onTimeout = { timedOut = true },
+                ) {
+                    Thread.sleep(250L)
+                    "late"
+                }
+            }
+
+            result shouldBe "fallback"
+            timedOut.shouldBeTrue()
+            (elapsed.inWholeMilliseconds < 200L).shouldBeTrue()
+        } finally {
+            executor.shutdownNow()
+        }
+    }
+
+    test("DictionaryManager source keeps synchronous lookups on bounded query bridge") {
+        val source = locateDictionaryManagerSource().readText()
+
+        source shouldContain "DICTIONARY_ROOM_SYNC_TIMEOUT_MS"
+        source shouldContain "runRoomQueryBlocking<String?>"
+        source shouldContain "operation = \"queryUserDictionary\""
+        source shouldContain "operation = \"isKnownUserDictionaryWord\""
+        source shouldContain "DictionarySyncBridge.runWithTimeout"
     }
 })
 
