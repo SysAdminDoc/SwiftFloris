@@ -98,6 +98,32 @@ function Invoke-EvidenceCommand {
     Add-Summary "${Name}: OK exit=$exitCode log=$logPath"
 }
 
+function Assert-StrictReleaseSigning {
+    $requiredEnv = @(
+        "KEYSTORE_PATH",
+        "SIGNING_KEYSTORE_PASSWORD",
+        "SIGNING_KEY_ALIAS",
+        "SIGNING_KEY_PASSWORD"
+    )
+    $missingEnv = @()
+    foreach ($name in $requiredEnv) {
+        $value = [Environment]::GetEnvironmentVariable($name)
+        if ([string]::IsNullOrWhiteSpace($value)) {
+            $missingEnv += $name
+        }
+    }
+    if ($missingEnv.Count -gt 0) {
+        throw "StrictRelease requires release signing environment variables: $($missingEnv -join ', ')"
+    }
+
+    $keystorePath = [Environment]::GetEnvironmentVariable("KEYSTORE_PATH")
+    if (-not (Test-Path $keystorePath)) {
+        throw "StrictRelease KEYSTORE_PATH does not exist: $keystorePath"
+    }
+
+    Add-Summary "StrictRelease signing: release keystore material present"
+}
+
 function Get-OsvScanArguments {
     param([string]$OsvExecutable, [string]$OutputPath)
 
@@ -206,6 +232,9 @@ function Get-KotlinBuildCacheGuardArguments {
 $releaseArgs = @((Convert-ToGitBashPath "scripts\check-release-front-door.sh"))
 if ($StrictRelease) {
     Add-Summary "StrictRelease: default release-front-door mode is already strict"
+    Assert-StrictReleaseSigning
+} else {
+    Add-Summary "Signing: non-strict evidence allows debug-signed local APKs; pass -StrictRelease to require release signing material"
 }
 if ($AllowUnpublishedRelease) {
     $releaseArgs += "--allow-unpublished"
@@ -216,6 +245,7 @@ Invoke-EvidenceCommand "fastlane-metadata" $bash @((Convert-ToGitBashPath "scrip
 Invoke-EvidenceCommand "backup-privacy-copy" $bash @((Convert-ToGitBashPath "scripts\check-backup-privacy-copy.sh"))
 Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public-doc-version-pins.py")
 Invoke-EvidenceCommand "security-dependency-freshness" $python @("scripts/check-security-dependency-freshness.py")
+Invoke-EvidenceCommand "runblocking-allowlist" $python @("scripts/check-runblocking-allowlist.py")
 Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-integrity.py")
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))

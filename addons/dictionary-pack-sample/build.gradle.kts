@@ -20,9 +20,9 @@ plugins {
     alias(libs.plugins.agp.application)
 }
 
-val projectCompileSdk: String by project
-val projectMinSdk: String by project
-val projectTargetSdk: String by project
+val projectCompileSdk = providers.gradleProperty("projectCompileSdk").get()
+val projectMinSdk = providers.gradleProperty("projectMinSdk").get()
+val projectTargetSdk = providers.gradleProperty("projectTargetSdk").get()
 
 configure<ApplicationExtension> {
     namespace = "io.github.sysadmindoc.swiftfloris.addons.dictionarypack.sample"

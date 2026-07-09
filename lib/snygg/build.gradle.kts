@@ -26,8 +26,8 @@ plugins {
     alias(libs.plugins.kotlinx.kover)
 }
 
-val projectMinSdk: String by project
-val projectCompileSdk: String by project
+val projectMinSdk = providers.gradleProperty("projectMinSdk").get()
+val projectCompileSdk = providers.gradleProperty("projectCompileSdk").get()
 
 kotlin {
     compilerOptions {
@@ -85,9 +85,9 @@ kover {
 }
 
 dependencies {
-    implementation(projects.lib.android)
-    implementation(projects.lib.color)
-    implementation(projects.lib.kotlin)
+    implementation(project(":lib:android"))
+    implementation(project(":lib:color"))
+    implementation(project(":lib:kotlin"))
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)

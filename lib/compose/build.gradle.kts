@@ -22,8 +22,8 @@ plugins {
     alias(libs.plugins.kotlin.plugin.compose)
 }
 
-val projectMinSdk: String by project
-val projectCompileSdk: String by project
+val projectMinSdk = providers.gradleProperty("projectMinSdk").get()
+val projectCompileSdk = providers.gradleProperty("projectCompileSdk").get()
 
 kotlin {
     compilerOptions {
@@ -70,9 +70,9 @@ configure<LibraryExtension> {
 }
 
 dependencies {
-    implementation(projects.lib.android)
-    implementation(projects.lib.color)
-    implementation(projects.lib.kotlin)
+    implementation(project(":lib:android"))
+    implementation(project(":lib:color"))
+    implementation(project(":lib:kotlin"))
 
     val composeBom = platform(libs.androidx.compose.bom)
     implementation(composeBom)
@@ -90,4 +90,3 @@ dependencies {
 
     testImplementation(libs.kotlin.test.junit5)
 }
-

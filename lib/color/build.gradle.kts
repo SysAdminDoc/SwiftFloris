@@ -7,8 +7,8 @@ plugins {
     alias(libs.plugins.kotlin.serialization)
 }
 
-val projectMinSdk: String by project
-val projectCompileSdk: String by project
+val projectMinSdk = providers.gradleProperty("projectMinSdk").get()
+val projectCompileSdk = providers.gradleProperty("projectCompileSdk").get()
 
 kotlin {
     compilerOptions {
@@ -61,7 +61,6 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.kotlinx.serialization.json)
 
-    implementation(projects.lib.android)
-    implementation(projects.lib.kotlin)
+    implementation(project(":lib:android"))
+    implementation(project(":lib:kotlin"))
 }
-

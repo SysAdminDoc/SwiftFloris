@@ -33,18 +33,19 @@ plugins {
     // `:app:recordRoborazziDebug` (baseline capture),
     // `:app:verifyRoborazziDebug` (PR/push regression verify), and the
     // `:app:verifyRoborazziRelease` alias backed by the non-shipping
-    // releaseRoborazzi variant so CI covers both hand-written screenshots and
-    // opt-in @RoboPreviewInclude previews before publishing.
+    // releaseRoborazzi variant so local release evidence covers both
+    // hand-written screenshots and opt-in @RoboPreviewInclude previews before
+    // publishing.
     // Baseline images live under
     // `app/src/test/snapshots/images/` per Roborazzi convention.
     alias(libs.plugins.roborazzi)
 }
 
-val projectMinSdk: String by project
-val projectTargetSdk: String by project
-val projectCompileSdk: String by project
-val projectVersionCode: String by project
-val projectVersionName: String by project
+val projectMinSdk = providers.gradleProperty("projectMinSdk").get()
+val projectTargetSdk = providers.gradleProperty("projectTargetSdk").get()
+val projectCompileSdk = providers.gradleProperty("projectCompileSdk").get()
+val projectVersionCode = providers.gradleProperty("projectVersionCode").get()
+val projectVersionName = providers.gradleProperty("projectVersionName").get()
 val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { suffix ->
     if (suffix.isNotEmpty()) {
         "-$suffix"
@@ -74,9 +75,9 @@ configure<ApplicationExtension> {
     ndkVersion = tools.versions.ndk.get()
 
     // ROADMAP §6 N6.2 — release signing. The KEYSTORE_PATH + SIGNING_*
-    // env vars are populated by the GitHub release workflow from encrypted
-    // secrets. When KEYSTORE_PATH is unset (local builds, fork dispatches
-    // without secrets), the release variant falls back to debug signing
+    // env vars are populated by the maintainer's local release environment.
+    // When KEYSTORE_PATH is unset (developer builds or test dispatches without
+    // signing material), the release variant falls back to debug signing
     // so contributors can still validate the build pipeline.
     signingConfigs {
         val keystorePath = System.getenv("KEYSTORE_PATH")
@@ -563,12 +564,12 @@ dependencies {
     implementation(libs.zxing.core)
     compileOnly(libs.roborazzi.annotations)
 
-    implementation(projects.lib.android)
-    implementation(projects.lib.color)
-    implementation(projects.lib.compose)
-    implementation(projects.lib.kotlin)
-    //implementation(projects.lib.native)  // Rust native - optional for keyboard core
-    implementation(projects.lib.snygg)
+    implementation(project(":lib:android"))
+    implementation(project(":lib:color"))
+    implementation(project(":lib:compose"))
+    implementation(project(":lib:kotlin"))
+    //implementation(project(":lib:native"))  // Rust native - optional for keyboard core
+    implementation(project(":lib:snygg"))
 
     testImplementation(libs.kotest.assertions.core)
     testImplementation(libs.kotest.property)
@@ -579,7 +580,7 @@ dependencies {
 
     // ROADMAP §7 Next-12.2 — Roborazzi Compose screenshot regression suite.
     // Robolectric-backed so the snapshots run on the JVM (no device, no
-    // emulator), which makes them cheap to run on every CI pull request.
+    // emulator), which makes them cheap to run during local release checks.
     // junit-vintage-engine lets the JUnit-4-style Robolectric tests run
     // under the project-wide `useJUnitPlatform()` runner alongside the
     // Kotest 5 suites.
