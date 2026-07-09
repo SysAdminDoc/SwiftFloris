@@ -32,6 +32,7 @@ import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.SuggestionProvider
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -184,7 +185,7 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         val (languagePackItem, languagePackExtension) = getLanguagePack(subtype) ?: return emptyList()
         val layout: String = languagePackItem.hanShapeBasedTable
         return withContext(Dispatchers.IO) {
-            flogDebug { "Query was '${content.composingText}'" }
+            flogDebug { "Query text=${content.composingText.debugSummarizeTextForLog()}" }
             withDatabase(languagePackExtension, fallback = emptyList()) { database ->
                 HanShapeLanguagePackQuery.suggestions(
                     database = database,
@@ -306,8 +307,8 @@ class HanShapeBasedLanguageProvider(val context: Context) : SpellingProvider, Su
         )
         if (composing.isValid) {
             flogDebug {
-                "Determined ${composing.start} - ${composing.end} as composing: " +
-                    textBeforeSelection.substring(composing.start, composing.end)
+                "Determined ${composing.start} - ${composing.end} as composing " +
+                    "(length=${composing.end - composing.start})"
             }
         } else {
             flogDebug { "Determined Unspecified as composing" }

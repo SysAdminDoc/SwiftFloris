@@ -80,6 +80,7 @@ import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.florisboard.lib.util.debugSummarize
+import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import dev.patrickgold.florisboard.lib.util.launchActivity
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -667,7 +668,10 @@ class FlorisImeService : LifecycleInputMethodService() {
                 val best = result.candidates.firstOrNull()
                 if (best != null) {
                     currentInputConnection?.commitText(best.text, 1)
-                    flogInfo { "Stylus handwriting committed: '${best.text}' (confidence=${best.confidence})" }
+                    flogInfo {
+                        "Stylus handwriting committed: text=${best.text.debugSummarizeTextForLog()} " +
+                            "(confidence=${best.confidence})"
+                    }
                 }
             }
             is dev.patrickgold.florisboard.ime.handwriting.StrokeRecognitionResult.NoRecognition -> {

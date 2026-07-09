@@ -30,6 +30,15 @@ import java.io.Serializable
 class DebugSummarizeUtilsTest {
 
     @Test
+    fun textLogSummariesRedactContentAndExposeLength() {
+        val summary = "hunter2".debugSummarizeTextForLog()
+
+        summary shouldContain "String(<redacted>, length=7)"
+        summary shouldNotContain "hunter2"
+        (null as CharSequence?).debugSummarizeTextForLog() shouldContain "(null)"
+    }
+
+    @Test
     fun editorInfoExtrasSummarizeSafePrimitiveValuesAndRedactRawContent() {
         val extras = Bundle().apply {
             putBoolean("boolean", true)

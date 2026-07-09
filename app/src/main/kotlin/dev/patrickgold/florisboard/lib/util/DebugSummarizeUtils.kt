@@ -55,10 +55,14 @@ fun EditorInfo.debugSummarize(): String {
     }
 }
 
-private fun CharSequence?.debugSummarizeText(): String {
+fun CharSequence?.debugSummarizeTextForLog(): String {
     return this?.let {
         "${it.debugTypeName()}(<redacted>, length=${it.length})"
     } ?: "(null)"
+}
+
+private fun CharSequence?.debugSummarizeText(): String {
+    return debugSummarizeTextForLog()
 }
 
 private fun Bundle.debugSummarize(depth: Int = 0): String {

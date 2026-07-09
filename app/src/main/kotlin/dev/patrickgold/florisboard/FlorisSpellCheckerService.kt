@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.ime.nlp.SpellingResult
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
+import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import kotlinx.coroutines.async
 import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.kotlin.map
@@ -102,7 +103,9 @@ class FlorisSpellCheckerService : SpellCheckerService() {
         }
 
         override fun onGetSuggestions(textInfo: TextInfo?, suggestionsLimit: Int): SuggestionsInfo {
-            flogInfo(LogTopic.SPELL_EVENTS) { "text=${textInfo?.text}, limit=$suggestionsLimit" }
+            flogInfo(LogTopic.SPELL_EVENTS) {
+                "textInfo=${textInfo.debugSummarizeForSpellLog()}, limit=$suggestionsLimit"
+            }
 
             textInfo?.text ?: return SpellingResult.unspecified().suggestionsInfo
             setupSpellingIfNecessary()
@@ -181,6 +184,11 @@ class FlorisSpellCheckerService : SpellCheckerService() {
                 }
             }
             return this
+        }
+
+        private fun TextInfo?.debugSummarizeForSpellLog(): String {
+            if (this == null) return "(null)"
+            return "TextInfo(text=${text.debugSummarizeTextForLog()}, cookie=$cookie, sequence=$sequence)"
         }
     }
 }

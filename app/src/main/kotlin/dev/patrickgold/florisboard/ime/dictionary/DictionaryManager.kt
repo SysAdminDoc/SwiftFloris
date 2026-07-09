@@ -26,6 +26,7 @@ import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
+import dev.patrickgold.florisboard.lib.util.debugSummarizeTextForLog
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -257,7 +258,9 @@ class DictionaryManager private constructor(context: Context) {
                 matches.isNotEmpty()
             }
         }.onFailure { e ->
-            flogError(LogTopic.DICTIONARY) { "forgetWord($normalized) failed: ${e.message}" }
+            flogError(LogTopic.DICTIONARY) {
+                "forgetWord(word=${normalized.debugSummarizeTextForLog()}) failed: ${e.message}"
+            }
         }.getOrDefault(false)
     }
 
@@ -316,7 +319,9 @@ class DictionaryManager private constructor(context: Context) {
                     )
                 }
             }.onFailure { e ->
-                flogError(LogTopic.DICTIONARY) { "learnWord($normalized) DAO write failed: ${e.message}" }
+                flogError(LogTopic.DICTIONARY) {
+                    "learnWord(word=${normalized.debugSummarizeTextForLog()}) DAO write failed: ${e.message}"
+                }
                 UserDictionaryOverlay.get().forget(normalized, locale)
             }
         }
