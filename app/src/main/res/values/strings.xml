@@ -161,6 +161,8 @@
     <string name="quick_action__translation_source_detection_failed" comment="Toast shown when automatic source-language detection fails">Could not detect the selection language.</string>
     <string name="quick_action__translation_target_missing" comment="Toast shown when no translation target language is configured">Choose a translation target language first.</string>
     <string name="quick_action__translation_pair_unavailable" comment="Toast shown when the selected translation language pair is not installed or ready">Install a translation addon and language pack to translate selections.</string>
+    <string name="quick_action__translation_timeout" comment="Toast shown when an installed translation addon exceeds the quick-action timeout">Translation took too long and was stopped. Your selection was not changed.</string>
+    <string name="quick_action__translation_cancelled" comment="Toast shown when a translation quick action is cancelled before completion">Translation was cancelled. Your selection was not changed.</string>
     <string name="voice_input_setup__title">Set up voice input</string>
     <string name="voice_input_setup__ready_message">Voice input is already available. Return to the keyboard and use the voice action to start dictation.</string>
     <string name="voice_input_setup__not_installed_message">Install an offline voice keyboard such as FUTO Voice Input, WhisperInput, or Whisper, then enable it in Android keyboard settings. SwiftFloris keeps dictation offline by handing voice input to that external keyboard.</string>

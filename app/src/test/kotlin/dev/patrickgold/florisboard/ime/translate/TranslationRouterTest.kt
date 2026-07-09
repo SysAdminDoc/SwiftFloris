@@ -18,6 +18,8 @@ package dev.patrickgold.florisboard.ime.translate
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
+import java.util.concurrent.Executors
+import kotlin.system.measureTimeMillis
 
 private class FakeTranslator(
     private val table: Map<Triple<String, String, String>, TranslationResult>,
@@ -43,6 +45,29 @@ private class FakePackManager(
 ) : TranslationRouter.PackManagerView {
     override fun installedPairs() = installed
     override fun preferredTargetLocale() = preferred
+}
+
+private class SlowTranslator(
+    private val sleepMs: Long,
+) : InlineTranslator {
+    var calls: Int = 0
+        private set
+    var interrupted: Boolean = false
+        private set
+
+    override fun translate(sourceText: String, sourceLocale: String, targetLocale: String): TranslationResult {
+        calls++
+        try {
+            Thread.sleep(sleepMs)
+        } catch (e: InterruptedException) {
+            interrupted = true
+            throw e
+        }
+        return TranslationResult.Translated("too late", 0.5f)
+    }
+
+    override fun isLanguagePairReady(sourceLocale: String, targetLocale: String) = true
+    override val installedPairs: Set<LanguagePairDescriptor> = emptySet()
 }
 
 class TranslationRouterTest : FunSpec({
@@ -203,5 +228,59 @@ class TranslationRouterTest : FunSpec({
         ))
         val suppressed = resp as TranslationRouter.Response.Suppressed
         suppressed.reason shouldBe TranslationSuppressionReason.TranslatorUnavailable
+    }
+
+    test("slow translator returns typed timeout without waiting for addon completion") {
+        val tr = SlowTranslator(sleepMs = 1_000L)
+        val pm = FakePackManager(listOf(pair("en", "es")), preferred = "es")
+        val router = TranslationRouter(
+            translator = tr,
+            packManager = pm,
+            bypassCache = true,
+            translationTimeoutMs = 25L,
+        )
+        lateinit var resp: TranslationRouter.Response
+
+        val elapsedMs = measureTimeMillis {
+            resp = router.translate(TranslationRouter.Request(
+                sourceText = "hello",
+                sourceLocale = "en",
+                targetLocale = "es",
+            ))
+        }
+
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.TranslatorTimedOut
+        (elapsedMs < 500L) shouldBe true
+        tr.calls shouldBe 1
+        val deadline = System.currentTimeMillis() + 250L
+        while (!tr.interrupted && System.currentTimeMillis() < deadline) {
+            Thread.sleep(5L)
+        }
+        tr.interrupted shouldBe true
+    }
+
+    test("translation bridge maps caller interruption to cancellation") {
+        val executor = Executors.newSingleThreadExecutor()
+        var result: TranslationCallResult? = null
+        val thread = Thread {
+            Thread.currentThread().interrupt()
+            result = TranslationCallBridge.translateWithTimeout(
+                executor = executor,
+                timeoutMs = 100L,
+            ) {
+                TranslationResult.Translated("hola", 0.9f)
+            }
+            Thread.interrupted()
+        }
+
+        try {
+            thread.start()
+            thread.join(1_000L)
+        } finally {
+            executor.shutdownNow()
+        }
+
+        result shouldBe TranslationCallResult.Cancelled
     }
 })

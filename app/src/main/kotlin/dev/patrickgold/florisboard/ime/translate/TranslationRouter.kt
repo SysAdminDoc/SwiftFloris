@@ -17,6 +17,14 @@
 package dev.patrickgold.florisboard.ime.translate
 
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
+import java.util.concurrent.Callable
+import java.util.concurrent.ExecutionException
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.RejectedExecutionException
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * ROADMAP §10.5 L2.1f — translation end-to-end router.
@@ -51,7 +59,12 @@ class TranslationRouter(
     private val bypassCache: Boolean = false,
     cacheCapacity: Int = TranslationCache.DEFAULT_CAPACITY,
     private val isConsentGranted: () -> Boolean = { true },
+    private val translationTimeoutMs: Long = DEFAULT_TRANSLATION_TIMEOUT_MS,
 ) {
+
+    init {
+        require(translationTimeoutMs > 0L) { "translationTimeoutMs must be positive" }
+    }
 
     private val cache: TranslationCache? = if (bypassCache) null else TranslationCache(
         delegate = translator,
@@ -107,10 +120,22 @@ class TranslationRouter(
                 out.append(piece)
                 continue
             }
-            val pieceResult = if (cache != null) {
-                cache.translate(core, resolvedSource, target)
-            } else {
-                translator.translate(core, resolvedSource, target)
+            val pieceResult = when (val callResult = TranslationCallBridge.translateWithTimeout(
+                timeoutMs = translationTimeoutMs,
+            ) {
+                if (cache != null) {
+                    cache.translate(core, resolvedSource, target)
+                } else {
+                    translator.translate(core, resolvedSource, target)
+                }
+            }) {
+                is TranslationCallResult.Completed -> callResult.result
+                TranslationCallResult.TimedOut ->
+                    return Response.Suppressed(TranslationSuppressionReason.TranslatorTimedOut)
+                TranslationCallResult.Cancelled ->
+                    return Response.Suppressed(TranslationSuppressionReason.TranslationCancelled)
+                is TranslationCallResult.Failed ->
+                    return Response.Suppressed(TranslationSuppressionReason.TranslatorUnavailable)
             }
             when (pieceResult) {
                 is TranslationResult.Translated -> {
@@ -201,6 +226,10 @@ class TranslationRouter(
             }
         }
     }
+
+    companion object {
+        const val DEFAULT_TRANSLATION_TIMEOUT_MS: Long = 1_500L
+    }
 }
 
 enum class TranslationSuppressionReason(val auditReason: String) {
@@ -212,4 +241,53 @@ enum class TranslationSuppressionReason(val auditReason: String) {
     SourceEqualsTarget("source == target"),
     NoInstalledPair("no installed language pair"),
     TranslatorUnavailable("translator unavailable"),
+    TranslatorTimedOut("translator timeout"),
+    TranslationCancelled("translation cancelled"),
+}
+
+internal object TranslationCallBridge {
+    private val sharedExecutor: ExecutorService = ThreadPoolExecutor(
+        2,
+        2,
+        0L,
+        TimeUnit.MILLISECONDS,
+        LinkedBlockingQueue<Runnable>(8),
+        { runnable ->
+            Thread(runnable, "SwiftFloris-TranslationCall").apply {
+                isDaemon = true
+            }
+        },
+        ThreadPoolExecutor.AbortPolicy(),
+    )
+
+    fun translateWithTimeout(
+        executor: ExecutorService = sharedExecutor,
+        timeoutMs: Long,
+        block: () -> TranslationResult,
+    ): TranslationCallResult {
+        val future = try {
+            executor.submit(Callable { block() })
+        } catch (e: RejectedExecutionException) {
+            return TranslationCallResult.TimedOut
+        }
+        return try {
+            TranslationCallResult.Completed(future.get(timeoutMs, TimeUnit.MILLISECONDS))
+        } catch (e: TimeoutException) {
+            future.cancel(true)
+            TranslationCallResult.TimedOut
+        } catch (e: InterruptedException) {
+            future.cancel(true)
+            Thread.currentThread().interrupt()
+            TranslationCallResult.Cancelled
+        } catch (e: ExecutionException) {
+            TranslationCallResult.Failed(e.cause ?: e)
+        }
+    }
+}
+
+internal sealed interface TranslationCallResult {
+    data class Completed(val result: TranslationResult) : TranslationCallResult
+    data object TimedOut : TranslationCallResult
+    data object Cancelled : TranslationCallResult
+    data class Failed(val cause: Throwable) : TranslationCallResult
 }

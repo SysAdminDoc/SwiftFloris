@@ -35,6 +35,7 @@ import dev.patrickgold.florisboard.ime.translate.TranslationLanguagePackManager
 import dev.patrickgold.florisboard.ime.translate.TranslationRouter
 import dev.patrickgold.florisboard.ime.translate.TranslationSuppressionReason
 import dev.patrickgold.florisboard.keyboardManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -127,8 +128,12 @@ sealed class QuickAction {
                 return
             }
             scope.launch {
-                val response = withContext(Dispatchers.IO) {
-                    router.translate(request)
+                val response = try {
+                    withContext(Dispatchers.IO) {
+                        router.translate(request)
+                    }
+                } catch (_: CancellationException) {
+                    TranslationRouter.Response.Suppressed(TranslationSuppressionReason.TranslationCancelled)
                 }
                 when (response) {
                     is TranslationRouter.Response.Translated -> {
@@ -266,6 +271,10 @@ internal fun translateSelectionSuppressedMessageRes(reason: TranslationSuppressi
         TranslationSuppressionReason.NoInstalledPair,
         TranslationSuppressionReason.TranslatorUnavailable,
         -> R.string.quick_action__translation_pair_unavailable
+        TranslationSuppressionReason.TranslatorTimedOut ->
+            R.string.quick_action__translation_timeout
+        TranslationSuppressionReason.TranslationCancelled ->
+            R.string.quick_action__translation_cancelled
     }
 }
 

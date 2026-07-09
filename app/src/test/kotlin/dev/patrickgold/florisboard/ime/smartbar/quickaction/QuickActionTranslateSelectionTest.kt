@@ -27,6 +27,8 @@ class QuickActionTranslateSelectionTest : FunSpec({
         body shouldContain "prefs.privacy.translationConsent.get().allowsInvocation()"
         body shouldContain "withContext(Dispatchers.IO)"
         body shouldContain "R.string.quick_action__translation_selection_changed"
+        body shouldContain "editorInstance.activeContent.selectedText == raw"
+        body shouldContain "TranslationSuppressionReason.TranslationCancelled"
         body shouldNotContain ".translate(raw, sourceLocale, targetLocale)"
         body shouldNotContain "Selection changed before translation completed."
     }
@@ -47,6 +49,10 @@ class QuickActionTranslateSelectionTest : FunSpec({
             R.string.quick_action__translation_pair_unavailable
         translateSelectionSuppressedMessageRes(TranslationSuppressionReason.TranslatorUnavailable) shouldBe
             R.string.quick_action__translation_pair_unavailable
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.TranslatorTimedOut) shouldBe
+            R.string.quick_action__translation_timeout
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.TranslationCancelled) shouldBe
+            R.string.quick_action__translation_cancelled
     }
 
     test("translation quick action does not keep hard-coded English failure toasts") {
@@ -59,6 +65,8 @@ class QuickActionTranslateSelectionTest : FunSpec({
         body shouldNotContain "Could not detect the selection language."
         body shouldNotContain "Choose a translation target language first."
         body shouldNotContain "Install an InlineTranslator addon and language pack to translate selections."
+        body shouldNotContain "Translation took too long and was stopped."
+        body shouldNotContain "Translation was cancelled."
     }
 })
 
