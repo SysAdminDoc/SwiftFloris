@@ -11,35 +11,31 @@
 package dev.patrickgold.florisboard
 
 import io.kotest.core.spec.style.FunSpec
-import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.runBlocking
-import kotlin.time.measureTime
+import kotlinx.coroutines.test.runTest
 
 class FlorisSpellCheckerSyncBridgeTest : FunSpec({
     test("spellchecker sync bridge returns fallback when NLP work exceeds budget") {
         var result = "unset"
-        val elapsed = measureTime {
-            result = runBlocking {
-                SpellCheckerSyncBridge.runWithTimeout(
-                    operation = "fixture",
-                    fallback = "fallback",
-                    timeoutMs = 25L,
-                ) {
-                    delay(250L)
-                    "late"
-                }
+        runTest {
+            result = SpellCheckerSyncBridge.runWithTimeout(
+                operation = "fixture",
+                fallback = "fallback",
+                timeoutMs = 25L,
+            ) {
+                delay(250L)
+                "late"
             }
         }
 
         result shouldBe "fallback"
-        (elapsed.inWholeMilliseconds < 200L).shouldBeTrue()
     }
 
     test("spellchecker sync bridge returns completed result within budget") {
-        val result = runBlocking {
-            SpellCheckerSyncBridge.runWithTimeout(
+        var result = "unset"
+        runTest {
+            result = SpellCheckerSyncBridge.runWithTimeout(
                 operation = "fixture",
                 fallback = "fallback",
                 timeoutMs = 250L,

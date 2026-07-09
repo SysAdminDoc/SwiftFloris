@@ -38,11 +38,10 @@ fun Context.launchUrl(url: String) {
         this.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
         flogError { e.toString() }
-        Toast.makeText(
-            this,
-            this.stringRes(R.string.general__no_browser_app_found_for_url, "url" to url),
-            Toast.LENGTH_LONG,
-        ).show()
+        showUrlLaunchFailure(url)
+    } catch (e: SecurityException) {
+        flogError { e.toString() }
+        showUrlLaunchFailure(url)
     }
 }
 
@@ -61,7 +60,10 @@ inline fun <T : Any> Context.launchActivity(kClass: KClass<T>, intentModifier: (
         this.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
         flogError { e.toString() }
-        Toast.makeText(this, e.localizedMessage, Toast.LENGTH_LONG).show()
+        showActivityLaunchFailure()
+    } catch (e: SecurityException) {
+        flogError { e.toString() }
+        showActivityLaunchFailure()
     }
 }
 
@@ -72,6 +74,25 @@ inline fun Context.launchActivity(intentModifier: (Intent) -> Unit) {
         this.startActivity(intent)
     } catch (e: ActivityNotFoundException) {
         flogError { e.toString() }
-        Toast.makeText(this, e.localizedMessage, Toast.LENGTH_LONG).show()
+        showActivityLaunchFailure()
+    } catch (e: SecurityException) {
+        flogError { e.toString() }
+        showActivityLaunchFailure()
     }
+}
+
+fun Context.showUrlLaunchFailure(url: String) {
+    Toast.makeText(
+        this,
+        this.stringRes(R.string.general__no_browser_app_found_for_url, "url" to url),
+        Toast.LENGTH_LONG,
+    ).show()
+}
+
+fun Context.showActivityLaunchFailure() {
+    Toast.makeText(
+        this,
+        this.stringRes(R.string.general__could_not_open_requested_screen),
+        Toast.LENGTH_LONG,
+    ).show()
 }
