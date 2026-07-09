@@ -23,6 +23,7 @@ import android.view.KeyEvent
 import androidx.core.view.inputmethod.InputConnectionCompat
 import androidx.core.view.inputmethod.InputContentInfoCompat
 import dev.patrickgold.florisboard.FlorisImeService
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.clipboardManager
@@ -48,7 +49,7 @@ import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
 import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.runBlocking
-import org.florisboard.lib.android.showShortToastSync
+import org.florisboard.lib.android.postShortToast
 
 class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     companion object {
@@ -578,7 +579,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                 clipboardManager.addNewPlaintext(text.toString())
             }
         } else {
-            appContext.showShortToastSync("Failed to retrieve selected text requested to cut: Either selection state is invalid or an error occurred within the input connection.")
+            appContext.postShortToast(R.string.clipboard__cut_selection_failed)
         }
         return deleteBackwards(OperationUnit.CHARACTERS)
     }
@@ -603,7 +604,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                 clipboardManager.addNewPlaintext(text.toString())
             }
         } else {
-            appContext.showShortToastSync("Failed to retrieve selected text requested to copy: Either selection state is invalid or an error occurred within the input connection.")
+            appContext.postShortToast(R.string.clipboard__copy_selection_failed)
         }
         val activeSelection = activeContent.selection
         return setSelection(activeSelection.end, activeSelection.end)
@@ -672,7 +673,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         phantomSpace.setInactive()
         return commitClipboardItem(clipboardManager.primaryClip).also { result ->
             if (!result) {
-                appContext.showShortToastSync("Failed to paste item.")
+                appContext.postShortToast(R.string.clipboard__paste_failed)
             }
         }
     }

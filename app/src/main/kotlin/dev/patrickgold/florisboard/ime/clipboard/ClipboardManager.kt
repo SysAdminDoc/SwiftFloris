@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 import android.content.ClipData
 import android.content.ClipDescription.EXTRA_IS_SENSITIVE
 import android.content.Context
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
@@ -46,8 +47,8 @@ import org.florisboard.lib.android.AndroidClipboardManager
 import org.florisboard.lib.android.AndroidClipboardManager_OnPrimaryClipChangedListener
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.clearPrimaryClipAnyApi
+import org.florisboard.lib.android.postShortToast
 import org.florisboard.lib.android.setOrClearPrimaryClip
-import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.kotlin.tryOrNull
 
@@ -445,7 +446,7 @@ class ClipboardManager(
         val editorInstance by appContext.editorInstance()
         editorInstance.commitClipboardItem(item).also { result ->
             if (!result) {
-                appContext.showShortToastSync("Failed to paste item.")
+                appContext.postShortToast(R.string.clipboard__paste_failed)
             }
         }
     }

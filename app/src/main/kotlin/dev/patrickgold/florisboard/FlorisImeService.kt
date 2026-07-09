@@ -90,7 +90,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.florisboard.lib.android.AndroidInternalR
 import org.florisboard.lib.android.AndroidVersion
-import org.florisboard.lib.android.showShortToastSync
+import org.florisboard.lib.android.postShortToast
 import org.florisboard.lib.android.systemServiceOrNull
 import org.florisboard.lib.kotlin.collectIn
 import org.florisboard.lib.kotlin.collectLatestIn
@@ -271,7 +271,7 @@ class FlorisImeService : LifecycleInputMethodService() {
             state.isIncognitoMode
         ) {
             if (showFailureToast) {
-                showShortToastSync(R.string.voice_input__suppressed_on_sensitive_field)
+                postShortToast(R.string.voice_input__suppressed_on_sensitive_field)
             }
             return false
         }
@@ -301,7 +301,7 @@ class FlorisImeService : LifecycleInputMethodService() {
                 if (showFailureToast) {
                     val shown = voiceInputManager.showSetupDialog(VoiceInputSetupReason.FUTO_MIC_PERMISSION_DENIED)
                     if (!shown) {
-                        showShortToastSync(R.string.voice_input_setup__open_failed)
+                        postShortToast(R.string.voice_input_setup__open_failed)
                     }
                 }
                 return false
@@ -310,7 +310,7 @@ class FlorisImeService : LifecycleInputMethodService() {
                 if (showFailureToast) {
                     val shown = voiceInputManager.showSetupDialog()
                     if (!shown) {
-                        showShortToastSync(R.string.voice_input_setup__open_failed)
+                        postShortToast(R.string.voice_input_setup__open_failed)
                     }
                 }
                 return false
@@ -608,9 +608,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         val recognizer = dev.patrickgold.florisboard.ime.handwriting.StrokeRecognizerRegistry.active
         if (!recognizer.isReady(locale)) {
             flogInfo { "Stylus handwriting: no recognizer addon installed for $locale" }
-            android.widget.Toast.makeText(
-                this, getString(R.string.handwriting__no_recognizer), android.widget.Toast.LENGTH_SHORT
-            ).show()
+            postShortToast(R.string.handwriting__no_recognizer)
             return false
         }
         handwritingSessionActive = true

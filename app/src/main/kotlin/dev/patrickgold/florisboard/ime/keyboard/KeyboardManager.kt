@@ -91,8 +91,8 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
+import org.florisboard.lib.android.postShortToast
 import org.florisboard.lib.android.showLongToast
-import org.florisboard.lib.android.showShortToastSync
 import org.florisboard.lib.android.systemService
 import org.florisboard.lib.kotlin.collectIn
 import org.florisboard.lib.kotlin.collectLatestIn
@@ -1026,7 +1026,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     clipboardManager.primaryClip?.let { clipboardManager.deleteClip(it, onlyIfUnpinned = true) }
                 }
                 clipboardManager.updatePrimaryClip(null)
-                appContext.showShortToastSync(R.string.clipboard__cleared_primary_clip)
+                appContext.postShortToast(R.string.clipboard__cleared_primary_clip)
             }
             KeyCode.TOGGLE_FLOATING_WINDOW -> windowController.actions.toggleFloatingWindow()
             KeyCode.TOGGLE_COMPACT_LAYOUT -> windowController.actions.toggleCompactLayout()

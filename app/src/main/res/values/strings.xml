@@ -1764,6 +1764,9 @@
     <string name="clipboard__cleared_primary_clip">Cleared primary clip</string>
     <string name="clipboard__cleared_history">Cleared history</string>
     <string name="clipboard__cleared_full_history">Cleared full history</string>
+    <string name="clipboard__cut_selection_failed" comment="Toast shown when the focused app refuses to provide selected text for a cut operation.">Couldn\'t cut the selected text. The app did not provide a valid selection.</string>
+    <string name="clipboard__copy_selection_failed" comment="Toast shown when the focused app refuses to provide selected text for a copy operation.">Couldn\'t copy the selected text. The app did not provide a valid selection.</string>
+    <string name="clipboard__paste_failed" comment="Toast shown when the focused app refuses a clipboard item paste.">This app doesn\'t allow pasting this content.</string>
     <string name="clipboard__confirm_clear_unfiltered_history__message">Are you sure you want to clear your full clipboard history? This will affect all items, except pinned ones.</string>
     <string name="clipboard__confirm_clear_filtered_history__message">Are you sure you want to clear your clipboard history? This will affect all currently filtered items, except pinned ones.</string>
     <string name="settings__clipboard__title">Clipboard</string>

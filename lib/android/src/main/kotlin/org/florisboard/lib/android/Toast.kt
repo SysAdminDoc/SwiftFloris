@@ -28,6 +28,17 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 
+private fun Context.postToast(text: String, duration: Int) {
+    val appContext = applicationContext
+    if (Looper.myLooper() == Looper.getMainLooper()) {
+        Toast.makeText(appContext, text, duration).show()
+    } else {
+        Handler(Looper.getMainLooper()).post {
+            Toast.makeText(appContext, text, duration).show()
+        }
+    }
+}
+
 /**
  * Shows a short toast with specified text.
  *
@@ -88,6 +99,22 @@ suspend fun Context.showLongToast(@StringRes id: Int): Toast {
 suspend fun Context.showLongToast(@StringRes id: Int, vararg args: CurlyArg): Toast {
     val text = this.stringRes(id, *args)
     return showLongToast(text)
+}
+
+/**
+ * Posts a short toast without blocking the caller. This is intended for synchronous
+ * IME/editor paths which cannot suspend but should not wait on the main thread.
+ */
+fun Context.postShortToast(text: String) {
+    postToast(text, Toast.LENGTH_SHORT)
+}
+
+/**
+ * Posts a short toast with the string resource specified by [id] without blocking
+ * the caller. Must not be used for text derived from typed input.
+ */
+fun Context.postShortToast(@StringRes id: Int) {
+    postToast(stringRes(id), Toast.LENGTH_SHORT)
 }
 
 
