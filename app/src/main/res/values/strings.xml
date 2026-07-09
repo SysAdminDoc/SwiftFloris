@@ -153,6 +153,14 @@
     <string name="quick_action__toggle_autocorrect__tooltip">Toggle autocorrect</string>
     <string name="quick_action__voice_input" comment="Please mind the limited available space for the quick action strings">Voice input</string>
     <string name="quick_action__voice_input__tooltip" comment="IME stands for Input Method Editor and is indirectly equivalent to 'keyboard'.">Open voice input provider</string>
+    <string name="quick_action__translation_unavailable_context" comment="Toast shown when the translation quick action cannot access a lifecycle scope">Translation is not available in this context.</string>
+    <string name="quick_action__translation_selection_changed" comment="Toast shown when selected text changes before translation completes">Selection changed before translation completed.</string>
+    <string name="quick_action__translation_consent_required" comment="Toast shown when translation consent has not been granted">Enable translation addon consent in Privacy settings.</string>
+    <string name="quick_action__translation_sensitive_field" comment="Toast shown when translation is blocked in a sensitive field">Translation is blocked in sensitive fields.</string>
+    <string name="quick_action__translation_same_language" comment="Toast shown when source and target translation languages match">Choose a different translation target language.</string>
+    <string name="quick_action__translation_source_detection_failed" comment="Toast shown when automatic source-language detection fails">Could not detect the selection language.</string>
+    <string name="quick_action__translation_target_missing" comment="Toast shown when no translation target language is configured">Choose a translation target language first.</string>
+    <string name="quick_action__translation_pair_unavailable" comment="Toast shown when the selected translation language pair is not installed or ready">Install a translation addon and language pack to translate selections.</string>
     <string name="voice_input_setup__title">Set up voice input</string>
     <string name="voice_input_setup__ready_message">Voice input is already available. Return to the keyboard and use the voice action to start dictation.</string>
     <string name="voice_input_setup__not_installed_message">Install an offline voice keyboard such as FUTO Voice Input, WhisperInput, or Whisper, then enable it in Android keyboard settings. SwiftFloris keeps dictation offline by handing voice input to that external keyboard.</string>

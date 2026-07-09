@@ -65,7 +65,23 @@ class TranslationRouterTest : FunSpec({
             targetLocale = "es",
             inputType = 0x81,
         ))
-        (resp is TranslationRouter.Response.Suppressed) shouldBe true
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.SensitiveField
+        tr.calls shouldBe 0
+    }
+
+    test("missing consent short-circuits to Suppressed") {
+        val tr = FakeTranslator(emptyMap())
+        val pm = FakePackManager(listOf(pair("en", "es")), preferred = "es")
+        val router = TranslationRouter(tr, pm, isConsentGranted = { false })
+        val resp = router.translate(TranslationRouter.Request(
+            sourceText = "hello",
+            sourceLocale = "en",
+            targetLocale = "es",
+        ))
+
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.ConsentRequired
         tr.calls shouldBe 0
     }
 
@@ -74,7 +90,8 @@ class TranslationRouterTest : FunSpec({
         val pm = FakePackManager(listOf(pair("en", "es")), preferred = "es")
         val router = TranslationRouter(tr, pm)
         val resp = router.translate(TranslationRouter.Request(sourceText = "   "))
-        (resp is TranslationRouter.Response.Suppressed) shouldBe true
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.BlankInput
     }
 
     test("happy path: explicit src+tgt with installed pair returns Translated") {
@@ -114,7 +131,8 @@ class TranslationRouterTest : FunSpec({
             sourceLocale = "en",
             targetLocale = "en",
         ))
-        (resp is TranslationRouter.Response.Suppressed) shouldBe true
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.SourceEqualsTarget
     }
 
     test("missing target without preferred is suppressed") {
@@ -124,7 +142,8 @@ class TranslationRouterTest : FunSpec({
             sourceText = "hello",
             sourceLocale = "en",
         ))
-        (resp is TranslationRouter.Response.Suppressed) shouldBe true
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.NoTargetLocaleResolved
     }
 
     test("paragraph: each sentence dispatched separately and stitched") {
@@ -169,7 +188,8 @@ class TranslationRouterTest : FunSpec({
             sourceLocale = "en",
             targetLocale = "es",
         ))
-        (resp is TranslationRouter.Response.Suppressed) shouldBe true
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.NoInstalledPair
     }
 
     test("translator returns Unavailable → router suppresses (per-sentence fallback to source)") {
@@ -181,6 +201,7 @@ class TranslationRouterTest : FunSpec({
             sourceLocale = "en",
             targetLocale = "es",
         ))
-        (resp is TranslationRouter.Response.Suppressed) shouldBe true
+        val suppressed = resp as TranslationRouter.Response.Suppressed
+        suppressed.reason shouldBe TranslationSuppressionReason.TranslatorUnavailable
     }
 })

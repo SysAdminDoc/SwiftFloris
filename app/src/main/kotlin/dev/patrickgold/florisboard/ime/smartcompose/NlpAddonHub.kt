@@ -110,7 +110,7 @@ class NlpAddonHub(
             is TranslationRouter.Response.Suppressed -> AddonInvocationAudit.record(
                 surface = AddonInvocationAudit.Surface.TRANSLATION,
                 outcome = AddonInvocationAudit.Outcome.SUPPRESSED,
-                reason = response.reason,
+                reason = response.reason.auditReason,
                 timestampMillis = now,
             )
         }

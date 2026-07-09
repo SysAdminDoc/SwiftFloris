@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.translate.InlineTranslatorRegistry
 import dev.patrickgold.florisboard.ime.translate.TranslationLanguagePackManager
 import dev.patrickgold.florisboard.ime.translate.TranslationRouter
+import dev.patrickgold.florisboard.ime.translate.TranslationSuppressionReason
 import dev.patrickgold.florisboard.keyboardManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -120,7 +121,7 @@ sealed class QuickAction {
             if (scope == null) {
                 Toast.makeText(
                     context,
-                    "Translation is not available in this context.",
+                    R.string.quick_action__translation_unavailable_context,
                     Toast.LENGTH_SHORT,
                 ).show()
                 return
@@ -136,14 +137,14 @@ sealed class QuickAction {
                         } else {
                             Toast.makeText(
                                 context,
-                                "Selection changed before translation completed.",
+                                R.string.quick_action__translation_selection_changed,
                                 Toast.LENGTH_SHORT,
                             ).show()
                         }
                     }
                     is TranslationRouter.Response.Suppressed -> {
-                        translateSelectionSuppressedMessage(response.reason)?.let { message ->
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        translateSelectionSuppressedMessageRes(response.reason)?.let { messageRes ->
+                            Toast.makeText(context, messageRes, Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -249,23 +250,22 @@ private fun Context.quickActionCoroutineScope(): CoroutineScope? {
     return (this as? LifecycleOwner)?.lifecycleScope
 }
 
-internal fun translateSelectionSuppressedMessage(reason: String): String? {
-    return when {
-        reason == "blank input" -> null
-        reason == "consent required" ->
-            "Enable translation addon consent in Privacy settings."
-        reason == "sensitive field" ->
-            "Translation is blocked in sensitive fields."
-        reason == "source == target" ->
-            "Choose a different translation target language."
-        reason == "source-locale detection failed" ->
-            "Could not detect the selection language."
-        reason == "no target locale resolved" ->
-            "Choose a translation target language first."
-        reason.startsWith("no installed pair") ||
-            reason == "translator returned Unavailable" ->
-            "Install an InlineTranslator addon and language pack to translate selections."
-        else -> "Translation is not available for this selection."
+internal fun translateSelectionSuppressedMessageRes(reason: TranslationSuppressionReason): Int? {
+    return when (reason) {
+        TranslationSuppressionReason.BlankInput -> null
+        TranslationSuppressionReason.ConsentRequired ->
+            R.string.quick_action__translation_consent_required
+        TranslationSuppressionReason.SensitiveField ->
+            R.string.quick_action__translation_sensitive_field
+        TranslationSuppressionReason.SourceEqualsTarget ->
+            R.string.quick_action__translation_same_language
+        TranslationSuppressionReason.SourceLocaleDetectionFailed ->
+            R.string.quick_action__translation_source_detection_failed
+        TranslationSuppressionReason.NoTargetLocaleResolved ->
+            R.string.quick_action__translation_target_missing
+        TranslationSuppressionReason.NoInstalledPair,
+        TranslationSuppressionReason.TranslatorUnavailable,
+        -> R.string.quick_action__translation_pair_unavailable
     }
 }
 

@@ -7,6 +7,8 @@
 
 package dev.patrickgold.florisboard.ime.smartbar.quickaction
 
+import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.ime.translate.TranslationSuppressionReason
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -24,25 +26,39 @@ class QuickActionTranslateSelectionTest : FunSpec({
         body shouldContain "imeOptions = activeInfo.imeOptions.raw"
         body shouldContain "prefs.privacy.translationConsent.get().allowsInvocation()"
         body shouldContain "withContext(Dispatchers.IO)"
+        body shouldContain "R.string.quick_action__translation_selection_changed"
         body shouldNotContain ".translate(raw, sourceLocale, targetLocale)"
+        body shouldNotContain "Selection changed before translation completed."
     }
 
-    test("suppressed translation outcomes surface specific user feedback") {
-        translateSelectionSuppressedMessage("blank input") shouldBe null
-        translateSelectionSuppressedMessage("consent required") shouldBe
-            "Enable translation addon consent in Privacy settings."
-        translateSelectionSuppressedMessage("sensitive field") shouldBe
-            "Translation is blocked in sensitive fields."
-        translateSelectionSuppressedMessage("source == target") shouldBe
-            "Choose a different translation target language."
-        translateSelectionSuppressedMessage("source-locale detection failed") shouldBe
-            "Could not detect the selection language."
-        translateSelectionSuppressedMessage("no target locale resolved") shouldBe
-            "Choose a translation target language first."
-        translateSelectionSuppressedMessage("no installed pair for en->es") shouldBe
-            "Install an InlineTranslator addon and language pack to translate selections."
-        translateSelectionSuppressedMessage("translator returned Unavailable") shouldBe
-            "Install an InlineTranslator addon and language pack to translate selections."
+    test("suppressed translation outcomes map to localized string resources") {
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.BlankInput) shouldBe null
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.ConsentRequired) shouldBe
+            R.string.quick_action__translation_consent_required
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.SensitiveField) shouldBe
+            R.string.quick_action__translation_sensitive_field
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.SourceEqualsTarget) shouldBe
+            R.string.quick_action__translation_same_language
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.SourceLocaleDetectionFailed) shouldBe
+            R.string.quick_action__translation_source_detection_failed
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.NoTargetLocaleResolved) shouldBe
+            R.string.quick_action__translation_target_missing
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.NoInstalledPair) shouldBe
+            R.string.quick_action__translation_pair_unavailable
+        translateSelectionSuppressedMessageRes(TranslationSuppressionReason.TranslatorUnavailable) shouldBe
+            R.string.quick_action__translation_pair_unavailable
+    }
+
+    test("translation quick action does not keep hard-coded English failure toasts") {
+        val body = extractObjectBody(locateQuickActionSource().readText(), "data object TranslateSelection")
+
+        body shouldNotContain "Translation is not available in this context."
+        body shouldNotContain "Enable translation addon consent in Privacy settings."
+        body shouldNotContain "Translation is blocked in sensitive fields."
+        body shouldNotContain "Choose a different translation target language."
+        body shouldNotContain "Could not detect the selection language."
+        body shouldNotContain "Choose a translation target language first."
+        body shouldNotContain "Install an InlineTranslator addon and language pack to translate selections."
     }
 })
 

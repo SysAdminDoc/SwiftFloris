@@ -67,22 +67,22 @@ class TranslationRouter(
         // Matrix #37 — consent gate. NEEDS_PROMPT / DENIED short-circuits with the "consent required" reason
         // so the IME's UI layer can drive the consent-dialog flow.
         if (!isConsentGranted()) {
-            return Response.Suppressed(reason = "consent required")
+            return Response.Suppressed(TranslationSuppressionReason.ConsentRequired)
         }
         if (SensitiveFieldGuard.isSensitive(request.inputType, request.imeOptions)) {
-            return Response.Suppressed(reason = "sensitive field")
+            return Response.Suppressed(TranslationSuppressionReason.SensitiveField)
         }
         if (request.sourceText.isBlank()) {
-            return Response.Suppressed(reason = "blank input")
+            return Response.Suppressed(TranslationSuppressionReason.BlankInput)
         }
         val resolvedSource = request.sourceLocale ?: detectSourceLocale(request.sourceText)
-            ?: return Response.Suppressed(reason = "source-locale detection failed")
+            ?: return Response.Suppressed(TranslationSuppressionReason.SourceLocaleDetectionFailed)
         val target = request.targetLocale ?: packManager.preferredTargetLocale()
-            ?: return Response.Suppressed(reason = "no target locale resolved")
-        if (resolvedSource == target) return Response.Suppressed(reason = "source == target")
+            ?: return Response.Suppressed(TranslationSuppressionReason.NoTargetLocaleResolved)
+        if (resolvedSource == target) return Response.Suppressed(TranslationSuppressionReason.SourceEqualsTarget)
         val pair = packManager.installedPairs()
             .firstOrNull { it.sourceLocale == resolvedSource && it.targetLocale == target }
-            ?: return Response.Suppressed(reason = "no installed pair for $resolvedSource→$target")
+            ?: return Response.Suppressed(TranslationSuppressionReason.NoInstalledPair)
 
         // Sentence-split + translate piece-by-piece for paragraphs.
         val pieces = if (SentenceTokenizer.hasMultipleSentences(request.sourceText)) {
@@ -126,7 +126,7 @@ class TranslationRouter(
                 }
             }
         }
-        if (!anyTranslated) return Response.Suppressed(reason = "translator returned Unavailable")
+        if (!anyTranslated) return Response.Suppressed(TranslationSuppressionReason.TranslatorUnavailable)
         return Response.Translated(
             translatedText = out.toString(),
             resolvedSourceLocale = resolvedSource,
@@ -180,7 +180,7 @@ class TranslationRouter(
             val pair: LanguagePairDescriptor,
         ) : Response()
 
-        data class Suppressed(val reason: String) : Response()
+        data class Suppressed(val reason: TranslationSuppressionReason) : Response()
     }
 
     /**
@@ -201,4 +201,15 @@ class TranslationRouter(
             }
         }
     }
+}
+
+enum class TranslationSuppressionReason(val auditReason: String) {
+    BlankInput("blank input"),
+    ConsentRequired("consent required"),
+    SensitiveField("sensitive field"),
+    SourceLocaleDetectionFailed("source-locale detection failed"),
+    NoTargetLocaleResolved("no target locale resolved"),
+    SourceEqualsTarget("source == target"),
+    NoInstalledPair("no installed language pair"),
+    TranslatorUnavailable("translator unavailable"),
 }
