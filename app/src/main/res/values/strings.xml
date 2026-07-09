@@ -65,10 +65,14 @@
     <string name="emoji__history__action_move_right" comment="Accessibility label for the move-right action in the emoji history long-press popup">Move emoji right</string>
     <string name="emoji__history__action_remove" comment="Accessibility label for the remove action in the emoji history long-press popup">Remove emoji from history</string>
     <string name="emoji__search__placeholder" comment="Placeholder in the emoji panel search field">Search emoji</string>
+    <string name="emoji__search__field_content_description" comment="Accessibility label for the emoji panel search field">Search emoji</string>
+    <string name="emoji__search__clear" comment="Accessibility label for clearing the emoji panel search field">Clear emoji search</string>
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
     <string name="emoji__pin_group__title" comment="In-keyboard sheet title for pinning an emoji to a named group. {emoji} is the selected emoji.">Pin {emoji} to group</string>
     <string name="emoji__pin_group__existing_empty" comment="Empty state in the pin-to-group sheet when no groups exist yet">No groups yet. Create one below.</string>
     <string name="emoji__pin_group__new_group_placeholder" comment="Text field placeholder in the pin-to-group sheet">Group name</string>
+    <string name="emoji__pin_group__field_content_description" comment="Accessibility label for the pin-to-group sheet group-name field">New group name</string>
+    <string name="emoji__pin_group__existing_group_a11y" comment="Accessibility label for selecting an existing pin group. {group} is the group name.">Pin to {group}</string>
     <string name="emoji__pin_group__create" comment="Action button in the pin-to-group sheet">Create</string>
     <string name="emoji__pin_group__error_no_emoji" comment="Pin-to-group sheet error when no emoji is selected">Choose an emoji first.</string>
     <string name="emoji__pin_group__error_blank" comment="Pin-to-group sheet error when the new group name is blank">Enter a group name.</string>
@@ -77,14 +81,21 @@
     <string name="emoji__pin_group__error_already_pinned" comment="Pin-to-group sheet error when the emoji is already pinned to the selected group">Already pinned to this group.</string>
     <string name="emoji__pin_group__pinned_toast" comment="Toast after pinning an emoji to a group. {group} is the group name.">Pinned to {group}.</string>
     <string name="emoji__pin_group__chip_hint" comment="Toast after long-pressing a pinned emoji group chip. {group} is the group name.">Tap {group} to insert the group.</string>
+    <string name="emoji__pin_group__chip_a11y" comment="Accessibility label for a pinned emoji group chip. {group} is the group name; {count} is the number of emoji in the group.">Insert {group} group, {count} emoji</string>
+    <string name="emoji__pin_group__chip_hint_a11y" comment="Accessibility label for the pinned emoji group chip long-press hint. {group} is the group name.">Show {group} hint</string>
     <string name="emoji__pin_group__open" comment="Accessibility label for the action that opens the pin-to-group sheet">Pin to group</string>
+    <string name="emoji__variation__select_a11y" comment="Accessibility label for selecting an emoji variation. {emoji} is the emoji name.">Use {emoji}</string>
     <string name="sticker__unsupported_message" comment="State shown when the active app does not accept image insertion from the keyboard">This app does not accept sticker images.</string>
     <string name="sticker__commit_failed" comment="Toast shown when sticker insertion fails">Sticker could not be inserted here.</string>
     <string name="sticker__user_folder_grant_lost" comment="In-keyboard banner shown on the Imported sticker tab when Android revoked the persistable SAF read permission for the user's imported folder. Mirrors the Settings preference summary; instructs the user to re-pick the folder from Settings.">Imported folder access lost. Open Settings → Emoji &amp; stickers to re-pick.</string>
     <string name="sticker__share_import__label" comment="Android share-sheet label for saving a shared image as a local sticker">Save as SwiftFloris sticker</string>
     <string name="sticker__share_import__success" comment="Toast after an image shared from another app is copied into SwiftFloris' local sticker pack">Sticker saved to local stickers.</string>
     <string name="sticker__search__placeholder" comment="Placeholder in the sticker panel search field">Search stickers</string>
+    <string name="sticker__search__field_content_description" comment="Accessibility label for the sticker panel search field">Search stickers</string>
+    <string name="sticker__search__clear" comment="Accessibility label for clearing the sticker panel search field">Clear sticker search</string>
     <string name="sticker__search__empty" comment="Empty state shown when sticker search has no results; filenames and folder names are the local source for imported sticker indexing">No stickers match this filename, folder, or keyword search.</string>
+    <string name="sticker__tile_a11y" comment="Accessibility label for a sticker tile. {label} is the sticker label.">Insert sticker {label}</string>
+    <string name="sticker__tile_disabled_a11y" comment="Accessibility label for a disabled sticker tile. {label} is the sticker label.">Sticker unavailable: {label}. This app does not accept sticker images.</string>
     <string name="voice_input__suppressed_on_sensitive_field" comment="Toast shown when the user taps the voice key while focus is on a password / PIN / web-password field or while the IME is in incognito mode. Voice handoff is refused to keep credentials from being routed through an external recogniser process whose privacy boundary the IME's no-INTERNET contract does not cover.">Voice input is disabled for this field for your privacy.</string>
     <string name="prefs__media__stickers__title" comment="Preference group title">Stickers</string>
     <string name="prefs__media__stickers_pack_import" comment="Preference title">Import sticker pack</string>

@@ -63,6 +63,12 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -272,6 +278,8 @@ private fun StickerSearchRow(
 ) {
     val inputFeedbackController = LocalInputFeedbackController.current
     val style = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
+    val searchContentDescription = stringRes(R.string.sticker__search__field_content_description)
+    val clearSearchLabel = stringRes(R.string.sticker__search__clear)
     SnyggRow(
         elementName = FlorisImeUi.MediaEmojiTab.elementName,
         modifier = Modifier
@@ -287,7 +295,11 @@ private fun StickerSearchRow(
             imageVector = Icons.Outlined.Search,
         )
         BasicTextField(
-            modifier = Modifier.weight(1f),
+            modifier = Modifier
+                .weight(1f)
+                .semantics {
+                    contentDescription = searchContentDescription
+                },
             value = query,
             onValueChange = { value -> onQueryChange(value.take(40)) },
             singleLine = true,
@@ -313,6 +325,15 @@ private fun StickerSearchRow(
                 elementName = FlorisImeUi.MediaEmojiTab.elementName,
                 modifier = Modifier
                     .size(FlorisImeSizing.smartbarHeight)
+                    .semantics(mergeDescendants = true) {
+                        role = Role.Button
+                        contentDescription = clearSearchLabel
+                        onClick(label = clearSearchLabel) {
+                            inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                            onQueryChange("")
+                            true
+                        }
+                    }
                     .pointerInput(Unit) {
                         detectTapGestures {
                             inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
@@ -420,6 +441,10 @@ private fun StickerTile(
     enabled: Boolean,
     onTap: () -> Unit,
 ) {
+    val tileLabel = stringRes(
+        if (enabled) R.string.sticker__tile_a11y else R.string.sticker__tile_disabled_a11y,
+        "label" to sticker.label,
+    )
     Box(
         modifier = Modifier
             .aspectRatio(1f)
@@ -427,6 +452,18 @@ private fun StickerTile(
             .alpha(if (enabled) 1f else 0.42f)
             .clip(RoundedCornerShape(18.dp))
             .background(Color(sticker.backgroundColor))
+            .semantics(mergeDescendants = true) {
+                role = Role.Button
+                contentDescription = tileLabel
+                if (enabled) {
+                    onClick(label = tileLabel) {
+                        onTap()
+                        true
+                    }
+                } else {
+                    disabled()
+                }
+            }
             .pointerInput(enabled, sticker.id) {
                 detectTapGestures(
                     onTap = {

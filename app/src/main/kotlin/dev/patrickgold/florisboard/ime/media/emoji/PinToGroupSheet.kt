@@ -40,7 +40,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
@@ -126,11 +129,16 @@ fun PinToGroupSheet(
                         )
                     } else {
                         for (groupName in existingGroups) {
+                            val groupActionLabel = stringRes(
+                                R.string.emoji__pin_group__existing_group_a11y,
+                                "group" to groupName,
+                            )
                             ExistingGroupRow(
                                 groupName = groupName,
                                 preview = state.emojisForExistingGroup(groupName)
                                     .take(PinnedGroupChip.PREVIEW_LIMIT)
                                     .joinToString(separator = ""),
+                                actionLabel = groupActionLabel,
                                 foreground = foreground,
                                 background = actionBackground,
                                 onClick = {
@@ -142,6 +150,7 @@ fun PinToGroupSheet(
                         }
                     }
 
+                    val fieldContentDescription = stringRes(R.string.emoji__pin_group__field_content_description)
                     BasicTextField(
                         value = state.newGroupNameInput(),
                         onValueChange = { text ->
@@ -150,6 +159,9 @@ fun PinToGroupSheet(
                         },
                         modifier = Modifier
                             .fillMaxWidth()
+                            .semantics {
+                                contentDescription = fieldContentDescription
+                            }
                             .clip(RoundedCornerShape(8.dp))
                             .background(fieldBackground)
                             .padding(horizontal = 10.dp, vertical = 8.dp),
@@ -173,8 +185,13 @@ fun PinToGroupSheet(
                     )
 
                     state.error()?.let { error ->
+                        val errorText = pinErrorText(error)
                         Text(
-                            text = pinErrorText(error),
+                            modifier = Modifier.semantics {
+                                contentDescription = errorText
+                                liveRegion = LiveRegionMode.Assertive
+                            },
+                            text = errorText,
                             color = errorForeground,
                             fontSize = 12.sp,
                         )
@@ -214,6 +231,7 @@ fun PinToGroupSheet(
 private fun ExistingGroupRow(
     groupName: String,
     preview: String,
+    actionLabel: String,
     foreground: Color,
     background: Color,
     onClick: () -> Unit,
@@ -230,7 +248,8 @@ private fun ExistingGroupRow(
             .background(background)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
-                onClick(label = null) {
+                contentDescription = actionLabel
+                onClick(label = actionLabel) {
                     onClick()
                     true
                 }
@@ -271,7 +290,7 @@ private fun SheetAction(
             .background(background)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
-                onClick(label = null) {
+                onClick(label = label) {
                     onClick()
                     true
                 }

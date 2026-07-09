@@ -286,6 +286,8 @@ fun EmojiPaletteView(
         val inputFeedbackController = LocalInputFeedbackController.current
         val style = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiTab.elementName)
         val searchFontSize = DynamicFontScale.fixedGeometrySp(16f, LocalDensity.current.fontScale)
+        val searchContentDescription = stringRes(R.string.emoji__search__field_content_description)
+        val clearSearchLabel = stringRes(R.string.emoji__search__clear)
         SnyggRow(
             elementName = FlorisImeUi.MediaEmojiTab.elementName,
             modifier = Modifier
@@ -301,7 +303,11 @@ fun EmojiPaletteView(
                 imageVector = Icons.Outlined.Search,
             )
             BasicTextField(
-                modifier = Modifier.weight(1f),
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics {
+                        contentDescription = searchContentDescription
+                    },
                 value = query,
                 onValueChange = { value -> onQueryChange(value.take(40)) },
                 singleLine = true,
@@ -327,6 +333,15 @@ fun EmojiPaletteView(
                     elementName = FlorisImeUi.MediaEmojiTab.elementName,
                     modifier = Modifier
                         .size(FlorisImeSizing.smartbarHeight)
+                        .semantics(mergeDescendants = true) {
+                            role = Role.Button
+                            contentDescription = clearSearchLabel
+                            onClick(label = clearSearchLabel) {
+                                inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
+                                onQueryChange("")
+                                true
+                            }
+                        }
                         .pointerInput(Unit) {
                             detectTapGestures {
                                 inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
@@ -375,7 +390,11 @@ fun EmojiPaletteView(
                 if (category == EmojiCategory.RECENTLY_USED && !emojiHistoryEnabled) {
                     continue
                 }
+                val categoryLabel = stringRes(category.labelRes())
                 Tab(
+                    modifier = Modifier.semantics {
+                        contentDescription = categoryLabel
+                    },
                     onClick = {
                         inputFeedbackController.keyPress(TextKeyData.UNSPECIFIED)
                         onCategoryChange(category)
@@ -743,9 +762,18 @@ private fun EmojiVariationsPopup(
                 modifier = Modifier
                     .widthIn(max = EmojiBaseWidth * 6),
             ) {
+                val pinBaseLabel = stringRes(R.string.emoji__pin_group__open)
                 SnyggBox(
                     elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
                     modifier = Modifier
+                        .semantics(mergeDescendants = true) {
+                            role = Role.Button
+                            contentDescription = pinBaseLabel
+                            onClick(label = pinBaseLabel) {
+                                onPinBaseToGroup()
+                                true
+                            }
+                        }
                         .pointerInput(Unit) {
                             detectTapGestures { onPinBaseToGroup() }
                         }
@@ -758,9 +786,21 @@ private fun EmojiVariationsPopup(
                     )
                 }
                 for (emoji in variations) {
+                    val variationLabel = stringRes(
+                        R.string.emoji__variation__select_a11y,
+                        "emoji" to emoji.name,
+                    )
                     SnyggBox(
                         elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
                         modifier = Modifier
+                            .semantics(mergeDescendants = true) {
+                                role = Role.Button
+                                contentDescription = variationLabel
+                                onClick(label = variationLabel) {
+                                    onEmojiTap(emoji)
+                                    true
+                                }
+                            }
                             .pointerInput(Unit) {
                                 detectTapGestures { onEmojiTap(emoji) }
                             }

@@ -56,4 +56,19 @@ enum class EmojiCategory(val id: String) {
             FLAGS -> Icons.Default.EmojiFlags
         }
     }
+
+    fun labelRes(): Int {
+        return when (this) {
+            RECENTLY_USED -> R.string.emoji__history__recent
+            SMILEYS_EMOTION -> R.string.emoji__category__smileys_emotion
+            PEOPLE_BODY -> R.string.emoji__category__people_body
+            ANIMALS_NATURE -> R.string.emoji__category__animals_nature
+            FOOD_DRINK -> R.string.emoji__category__food_drink
+            TRAVEL_PLACES -> R.string.emoji__category__travel_places
+            ACTIVITIES -> R.string.emoji__category__activities
+            OBJECTS -> R.string.emoji__category__objects
+            SYMBOLS -> R.string.emoji__category__symbols
+            FLAGS -> R.string.emoji__category__flags
+        }
+    }
 }

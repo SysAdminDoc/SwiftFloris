@@ -41,13 +41,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
 import androidx.compose.ui.semantics.onLongClick
 import androidx.compose.ui.semantics.role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
+import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.snygg.ui.rememberSnyggThemeQuery
 
 /**
@@ -117,17 +120,27 @@ private fun PinnedGroupChip(
     val fontScale = LocalDensity.current.fontScale
     val chipFontSize = DynamicFontScale.fixedGeometrySp(13f, fontScale)
     val countFontSize = DynamicFontScale.fixedGeometrySp(10f, fontScale)
+    val chipLabel = stringRes(
+        R.string.emoji__pin_group__chip_a11y,
+        "group" to chip.name,
+        "count" to chip.totalEmojiCount,
+    )
+    val chipHintLabel = stringRes(
+        R.string.emoji__pin_group__chip_hint_a11y,
+        "group" to chip.name,
+    )
     Box(
         modifier = Modifier
             .clip(RoundedCornerShape(8.dp))
             .background(if (pressed) pressedColor else baseColor)
             .semantics(mergeDescendants = true) {
                 role = Role.Button
-                onClick(label = null) {
+                contentDescription = chipLabel
+                onClick(label = chipLabel) {
                     onTap()
                     true
                 }
-                onLongClick(label = null) {
+                onLongClick(label = chipHintLabel) {
                     onLongPress()
                     true
                 }
