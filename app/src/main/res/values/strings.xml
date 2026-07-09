@@ -228,6 +228,9 @@
     <string name="settings__home__signal_status_title" comment="Home dashboard signal title">Keyboard</string>
     <string name="settings__home__signal_sync_title" comment="Home dashboard signal title">Sync</string>
     <string name="settings__home__signal_sync_value" comment="Home dashboard signal value">Local files</string>
+    <string name="settings__home__trust_chip_no_cloud" comment="Home dashboard compact trust chip">No cloud</string>
+    <string name="settings__home__trust_chip_no_telemetry" comment="Home dashboard compact trust chip">No telemetry</string>
+    <string name="settings__home__trust_chip_offline" comment="Home dashboard compact trust chip">Offline</string>
     <string name="settings__home__quick_actions_title" comment="Home overview quick action section title">Pinned tools</string>
     <string name="settings__home__quick_action_search" comment="Home overview quick action">Search</string>
     <string name="settings__home__quick_action_import" comment="Home overview quick action">Import</string>
@@ -245,6 +248,12 @@
     <string name="settings__home__section_privacy_data" comment="Home screen section title">Privacy &amp; data</string>
     <string name="settings__home__section_advanced" comment="Home screen section title">Advanced</string>
     <string name="settings__home__section_about" comment="Home screen section title">About</string>
+    <string name="settings__home__navigation_title" comment="Home overview settings navigation section title">Explore settings</string>
+    <string name="settings__home__nav_typing_summary" comment="Home overview navigation card summary">Keyboard, typing, gestures, and voice</string>
+    <string name="settings__home__nav_personalization_summary" comment="Home overview navigation card summary">Themes, languages, emoji, and media</string>
+    <string name="settings__home__nav_privacy_summary" comment="Home overview navigation card summary">Clipboard, dictionary, sync, and backups</string>
+    <string name="settings__home__nav_advanced_summary" comment="Home overview navigation card summary">Addons, extensions, MCP, and hardware</string>
+    <string name="settings__home__nav_about_summary" comment="Home overview navigation card summary">Version, source, licenses, and disclosures</string>
     <string name="settings__home__localization_summary" comment="Home screen preference summary">Languages, layouts, subtype presets, and language packs</string>
     <string name="settings__home__typing_summary" comment="Home screen preference summary">Word suggestions, autocorrect, spelling, and dictionaries</string>
     <string name="settings__home__keyboard_summary" comment="Home screen preference summary">Rows, labels, popups, spacing, and key behavior</string>

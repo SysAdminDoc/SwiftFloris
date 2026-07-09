@@ -86,6 +86,7 @@ import dev.patrickgold.florisboard.lib.util.InputMethodUtils
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisButton
 import org.florisboard.lib.compose.FlorisOutlinedButton
 import org.florisboard.lib.compose.stringRes
 
@@ -158,6 +159,10 @@ fun HomeScreen() = FlorisScreen {
             buildVersion = BuildConfig.VERSION_NAME.substringBefore("-"),
             onStatusAction = statusAction,
             onSearch = { navController.navigate(Routes.Settings.Search) },
+            onTyping = { navController.navigate(Routes.Settings.Typing) },
+            onPersonalization = { navController.navigate(Routes.Settings.Theme) },
+            onPrivacyData = { navController.navigate(Routes.Settings.PrivacyPosture) },
+            onAdvanced = { navController.navigate(Routes.Settings.Addons) },
             onImport = { navController.navigate(Routes.Settings.MigrationAssistant) },
             onPrivacy = { navController.navigate(Routes.Settings.PrivacyPosture) },
             onAbout = { navController.navigate(Routes.Settings.About) },
@@ -330,6 +335,10 @@ private fun SettingsHomeDashboard(
     modifier: Modifier = Modifier,
     onStatusAction: (() -> Unit)?,
     onSearch: () -> Unit,
+    onTyping: () -> Unit,
+    onPersonalization: () -> Unit,
+    onPrivacyData: () -> Unit,
+    onAdvanced: () -> Unit,
     onImport: () -> Unit,
     onPrivacy: () -> Unit,
     onAbout: () -> Unit,
@@ -349,8 +358,8 @@ private fun SettingsHomeDashboard(
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp),
     ) {
         Column(
-            modifier = Modifier.padding(horizontal = 16.dp, vertical = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             SettingsHomeDashboardHeader()
             SettingsHomeStatusRow(
@@ -362,6 +371,13 @@ private fun SettingsHomeDashboard(
                 onAction = onStatusAction,
             )
             SettingsHomeSearchRail(onSearch = onSearch)
+            SettingsHomeNavigationCards(
+                onTyping = onTyping,
+                onPersonalization = onPersonalization,
+                onPrivacyData = onPrivacyData,
+                onAdvanced = onAdvanced,
+                onAbout = onAbout,
+            )
             SettingsHomeSignalGrid(
                 toneColor = toneColor,
                 statusValue = statusSignalValue,
@@ -396,6 +412,73 @@ private fun SettingsHomeDashboardHeader() {
             text = stringRes(R.string.settings__home__dashboard_summary),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        SettingsHomeTrustChips()
+    }
+}
+
+@Composable
+private fun SettingsHomeTrustChips() {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        SettingsHomeTrustChip(
+            modifier = Modifier.weight(1f),
+            icon = Icons.Default.CloudOff,
+            label = stringRes(R.string.settings__home__trust_chip_no_cloud),
+            tint = MaterialTheme.colorScheme.primary,
+        )
+        SettingsHomeTrustChip(
+            modifier = Modifier.weight(1.28f),
+            icon = Icons.Default.Shield,
+            label = stringRes(R.string.settings__home__trust_chip_no_telemetry),
+            tint = MaterialTheme.colorScheme.secondary,
+        )
+        SettingsHomeTrustChip(
+            modifier = Modifier.weight(0.92f),
+            icon = Icons.Default.CheckCircle,
+            label = stringRes(R.string.settings__home__trust_chip_offline),
+            tint = MaterialTheme.colorScheme.tertiary,
+        )
+    }
+}
+
+@Composable
+private fun SettingsHomeTrustChip(
+    icon: ImageVector,
+    label: String,
+    tint: Color,
+    modifier: Modifier = Modifier,
+) {
+    Row(
+        modifier = modifier
+            .defaultMinSize(minHeight = 32.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(tint.copy(alpha = 0.10f))
+            .border(
+                width = 1.dp,
+                color = tint.copy(alpha = 0.24f),
+                shape = MaterialTheme.shapes.small,
+            )
+            .padding(horizontal = 7.dp, vertical = 6.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Icon(
+            modifier = Modifier
+                .padding(end = 5.dp)
+                .size(14.dp),
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint,
+        )
+        Text(
+            modifier = Modifier.weight(1f),
+            text = label,
+            style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
         )
     }
 }
@@ -447,14 +530,17 @@ private fun SettingsHomeStatusRow(
                 Text(
                     modifier = Modifier.fillMaxWidth(),
                     text = summary,
-                    style = MaterialTheme.typography.bodyMedium,
+                    style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 3,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
         }
         if (actionLabel != null && onAction != null) {
-            FlorisOutlinedButton(
+            FlorisButton(
                 modifier = Modifier.fillMaxWidth(),
+                icon = icon,
                 contentPadding = PaddingValues(horizontal = 16.dp, vertical = 10.dp),
                 text = actionLabel,
                 onClick = onAction,
@@ -515,6 +601,129 @@ private fun SettingsHomeSignalGrid(
 }
 
 @Composable
+private fun SettingsHomeNavigationCards(
+    onTyping: () -> Unit,
+    onPersonalization: () -> Unit,
+    onPrivacyData: () -> Unit,
+    onAdvanced: () -> Unit,
+    onAbout: () -> Unit,
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = stringRes(R.string.settings__home__navigation_title),
+            style = MaterialTheme.typography.titleSmall,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SettingsHomeNavigationCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Keyboard,
+                title = stringRes(R.string.settings__home__section_typing),
+                summary = stringRes(R.string.settings__home__nav_typing_summary),
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = onTyping,
+            )
+            SettingsHomeNavigationCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Outlined.Palette,
+                title = stringRes(R.string.settings__home__section_personalization),
+                summary = stringRes(R.string.settings__home__nav_personalization_summary),
+                tint = MaterialTheme.colorScheme.secondary,
+                onClick = onPersonalization,
+            )
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            SettingsHomeNavigationCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Shield,
+                title = stringRes(R.string.settings__home__section_privacy_data),
+                summary = stringRes(R.string.settings__home__nav_privacy_summary),
+                tint = MaterialTheme.colorScheme.tertiary,
+                onClick = onPrivacyData,
+            )
+            SettingsHomeNavigationCard(
+                modifier = Modifier.weight(1f),
+                icon = Icons.Default.Extension,
+                title = stringRes(R.string.settings__home__section_advanced),
+                summary = stringRes(R.string.settings__home__nav_advanced_summary),
+                tint = MaterialTheme.colorScheme.primary,
+                onClick = onAdvanced,
+            )
+        }
+        SettingsHomeNavigationCard(
+            modifier = Modifier.fillMaxWidth(),
+            icon = Icons.Outlined.Info,
+            title = stringRes(R.string.settings__home__section_about),
+            summary = stringRes(R.string.settings__home__nav_about_summary),
+            tint = MaterialTheme.colorScheme.secondary,
+            onClick = onAbout,
+        )
+    }
+}
+
+@Composable
+private fun SettingsHomeNavigationCard(
+    icon: ImageVector,
+    title: String,
+    summary: String,
+    tint: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    Column(
+        modifier = modifier
+            .defaultMinSize(minHeight = 86.dp)
+            .clip(MaterialTheme.shapes.small)
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
+            .border(
+                width = 1.dp,
+                color = tint.copy(alpha = 0.24f),
+                shape = MaterialTheme.shapes.small,
+            )
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(10.dp),
+        verticalArrangement = Arrangement.spacedBy(5.dp),
+    ) {
+        Box(
+            modifier = Modifier
+                .size(28.dp)
+                .clip(MaterialTheme.shapes.small)
+                .background(tint.copy(alpha = 0.12f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(
+                modifier = Modifier.size(17.dp),
+                imageVector = icon,
+                contentDescription = null,
+                tint = tint,
+            )
+        }
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = title,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = MaterialTheme.colorScheme.onSurface,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+        )
+        Text(
+            modifier = Modifier.fillMaxWidth(),
+            text = summary,
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 2,
+            overflow = TextOverflow.Ellipsis,
+        )
+    }
+}
+
+@Composable
 private fun SettingsHomeSignalTile(
     icon: ImageVector,
     title: String,
@@ -524,7 +733,7 @@ private fun SettingsHomeSignalTile(
 ) {
     Column(
         modifier = modifier
-            .defaultMinSize(minHeight = 68.dp)
+            .defaultMinSize(minHeight = 60.dp)
             .clip(MaterialTheme.shapes.small)
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .border(
@@ -532,11 +741,11 @@ private fun SettingsHomeSignalTile(
                 color = tint.copy(alpha = 0.24f),
                 shape = MaterialTheme.shapes.small,
             )
-            .padding(10.dp),
-        verticalArrangement = Arrangement.spacedBy(5.dp),
+            .padding(8.dp),
+        verticalArrangement = Arrangement.spacedBy(3.dp),
     ) {
         Icon(
-            modifier = Modifier.size(18.dp),
+            modifier = Modifier.size(16.dp),
             imageVector = icon,
             contentDescription = null,
             tint = tint,

@@ -35,6 +35,7 @@ import com.github.takahirom.roborazzi.captureRoboImage
 import dev.patrickgold.florisboard.FlorisApplication
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.HomeScreen
@@ -57,7 +58,9 @@ import dev.patrickgold.florisboard.ime.mcp.DaemonKey
 import dev.patrickgold.florisboard.ime.mcp.McpBridgeContract
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.ime.mcp.McpToolDescriptor
+import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
+import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 import org.junit.After
@@ -91,12 +94,14 @@ class PendingSettingsScreensScreenshotTest {
     @Before
     fun setUp() {
         waitForPreferenceStore()
+        setMcpConsent(AddonConsentState.NEEDS_PROMPT)
     }
 
     @After
     fun tearDown() {
         McpDaemonRegistry.setActive(emptyMap())
         AddonInvocationAudit.clear()
+        setMcpConsent(AddonConsentState.NEEDS_PROMPT)
     }
 
     @Test
@@ -273,6 +278,7 @@ class PendingSettingsScreensScreenshotTest {
     }
 
     private fun seedMcpDaemons() {
+        setMcpConsent(AddonConsentState.GRANTED)
         val calendarKey = DaemonKey(
             packageName = "dev.swiftfloris.mcp.calendar",
             daemonClassName = ".CalendarDaemonService",
@@ -312,6 +318,13 @@ class PendingSettingsScreensScreenshotTest {
                 ),
             ),
         )
+    }
+
+    private fun setMcpConsent(consent: AddonConsentState) {
+        val prefs by FlorisPreferenceStore
+        runBlocking {
+            prefs.privacy.mcpConsent.set(consent)
+        }
     }
 
     private companion object {

@@ -26,18 +26,28 @@ class HomeScreenPremiumPolishContractTest {
         val source = locateHomeScreenSource().readText()
 
         source shouldContain "SettingsHomeDashboard("
+        source shouldContain "SettingsHomeTrustChips("
         source shouldContain "SettingsHomeStatusRow("
         source shouldContain "SettingsHomeSignalGrid("
+        source shouldContain "SettingsHomeNavigationCards("
+        source shouldContain "SettingsHomeNavigationCard("
         source shouldContain "SettingsHomeSearchRail("
         source shouldContain "SettingsHomeQuickActions("
         source shouldContain "settings__home__overview_status_a11y"
         source shouldContain "settings__home__search_a11y"
+        source shouldContain "settings__home__trust_chip_no_cloud"
+        source shouldContain "settings__home__trust_chip_no_telemetry"
+        source shouldContain "settings__home__trust_chip_offline"
         source shouldContain "settings__home__status_signal_setup_needed"
         source shouldContain "settings__home__signal_privacy_value"
         source shouldContain "settings__home__signal_sync_value"
+        source shouldContain "settings__home__navigation_title"
+        source shouldContain "settings__home__nav_typing_summary"
+        source shouldContain "settings__home__nav_privacy_summary"
         source shouldContain "settings__home__quick_action_import"
         source shouldContain "settings__home__quick_action_privacy"
         source shouldContain "settings__home__quick_action_about"
+        source shouldContain "FlorisButton("
         source shouldContain "FlorisOutlinedButton("
 
         val buttonSource = locateSharedButtonSource().readText()
@@ -51,10 +61,15 @@ class HomeScreenPremiumPolishContractTest {
 
         strings shouldContain "settings__home__privacy_posture_summary"
         strings shouldContain "settings__home__dashboard_summary"
+        strings shouldContain "settings__home__trust_chip_no_cloud"
+        strings shouldContain "settings__home__trust_chip_no_telemetry"
+        strings shouldContain "settings__home__trust_chip_offline"
         strings shouldContain "settings__home__status_signal_ready"
         strings shouldContain "settings__home__signal_privacy_value"
         strings shouldContain "settings__home__signal_build_value"
         strings shouldContain "settings__home__signal_sync_value"
+        strings shouldContain "settings__home__navigation_title"
+        strings shouldContain "settings__home__nav_about_summary"
     }
 }
 
