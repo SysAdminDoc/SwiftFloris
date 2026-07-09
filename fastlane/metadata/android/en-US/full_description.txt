@@ -18,7 +18,7 @@
 <ul>
     <li>No <tt>INTERNET</tt> permission — build-gate enforced</li>
     <li>No vendor account — Microsoft, Google, Samsung, or otherwise</li>
-    <li>Personal dictionary encrypted at rest (SQLCipher 4.16.0 + Google Tink + AndroidKeystore AES-256-GCM)</li>
+    <li>Personal dictionary encrypted at rest (SQLCipher 4.17.0 + Google Tink + AndroidKeystore AES-256-GCM)</li>
     <li>Sensitive-clip and incognito-field guards across cut/copy/paste, voice handoff, and learning</li>
     <li><tt>FLAG_SECURE</tt> on password and incognito fields blocks screenshots / screen recording during private typing</li>
     <li>First-run AI/ML transparency screen + reopenable Settings → About → AI features explainer</li>

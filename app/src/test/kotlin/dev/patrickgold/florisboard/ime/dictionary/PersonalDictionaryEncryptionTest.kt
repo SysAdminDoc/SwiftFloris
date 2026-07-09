@@ -133,7 +133,7 @@ class PersonalDictionaryEncryptionTest : FunSpec({
             "build.gradle.kts",
         ).readText()
 
-        source shouldContain "sqlcipher-android = \"4.16.0\""
+        source shouldContain "sqlcipher-android = \"4.17.0\""
         source shouldContain "androidx-sqlite = \"2.6.2\""
         source shouldContain "tink-android = \"1.22.0\""
         source shouldContain "net.zetetic:sqlcipher-android"

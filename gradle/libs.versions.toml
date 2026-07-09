@@ -24,7 +24,7 @@ material-kolor = "4.1.1"
 mikepenz-aboutlibraries = "15.0.3"
 patrickgold-compose-tooltip = "0.2.0-rc02"
 patrickgold-jetpref = "0.3.0"
-sqlcipher-android = "4.16.0"
+sqlcipher-android = "4.17.0"
 tink-android = "1.22.0"
 zxing-core = "3.5.4"
 

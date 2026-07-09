@@ -33,7 +33,7 @@ def write_fixture(root: Path) -> None:
             kotest = "6.1.11"
             robolectric = "4.16.1"
             roborazzi = "1.64.0"
-            sqlcipher-android = "4.16.0"
+            sqlcipher-android = "4.17.0"
             tink-android = "1.22.0"
             """
         ).strip()
@@ -72,7 +72,7 @@ def write_fixture(root: Path) -> None:
             dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0
             - Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3.
             - AGP 9.2.1, Gradle 9.6.1, JDK 21.
-            - KSP 2.3.9, Room 2.8.4, SQLCipher 4.16.0, Tink Android 1.22.0.
+            - KSP 2.3.9, Room 2.8.4, SQLCipher 4.17.0, Tink Android 1.22.0.
             - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1 for regressions.
             - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available).
             # Gradle 9.6.1 (use the bundled wrapper)
@@ -87,7 +87,7 @@ def write_fixture(root: Path) -> None:
         dedent(
             """
             `TinkStringPreferenceCrypto` uses Tink Android `1.22.0`, creates keys.
-            As of SQLCipher 4.16.0, Zetetic documents the provider matrix.
+            As of SQLCipher 4.17.0, Zetetic documents the provider matrix.
             """
         ).strip()
         + "\n",
