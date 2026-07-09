@@ -114,8 +114,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
     override fun migrate(entry: PreferenceMigrationEntry): PreferenceMigrationEntry {
         return when (entry.key) {
 
-            // Migrate media prefs to emoji prefs
-            // Keep migration rule until: 0.6 dev cycle
+            // Retained for legacy backup/import compatibility: media prefs were split into emoji prefs.
+            // Covered by AppPrefsMigrationTest.
             "media__emoji_recently_used" -> {
                 // Filter blanks: split(";") on an empty/trailing-separator value
                 // yields "" entries, which would migrate into bogus empty Emoji("")
@@ -131,8 +131,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 entry.transform(key = "emoji__history_recent_max_size")
             }
 
-            // Migrate advanced prefs to other prefs
-            // Keep migration rules until: 0.7 dev cycle
+            // Retained for legacy backup/import compatibility: advanced prefs were partitioned.
+            // Covered by AppPrefsMigrationTest.
             "advanced__settings_theme" -> {
                 entry.transform(key = "other__settings_theme")
             }
@@ -151,8 +151,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
             "advanced__force_incognito_mode_from_dynamic" -> {
                 entry.transform(key = "suggestion__force_incognito_mode_from_dynamic")
             }
-            // Migrate clipboard suggestion prefs to clipboard
-            // Keep migration rules until: 0.7 dev cycle
+            // Retained for legacy backup/import compatibility: clipboard suggestions moved from suggestion prefs.
+            // Covered by AppPrefsMigrationTest.
             "suggestion__clipboard_content_enabled" -> {
                 entry.transform(key = "clipboard__suggestion_enabled")
             }
@@ -160,7 +160,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 entry.transform(key = "clipboard__suggestion_timeout")
             }
 
-            //Migrate one hand mode prefs keep until: 0.7 dev cycle
+            // Retained for legacy backup/import compatibility: obsolete one-handed mode values reset safely.
+            // Covered by AppPrefsMigrationTest.
             "keyboard__one_handed_mode" -> {
                 if (entry.rawValue == "OFF") {
                     entry.reset()
@@ -225,8 +226,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 entry.transform(rawValue = json)
             }
 
-            // Migrate theme editor fine-tuning
-            // Keep migration rule until: 0.6 dev cycle
+            // Retained for legacy backup/import compatibility: theme editor color mode was renamed.
+            // Covered by AppPrefsMigrationTest.
             "theme__editor_display_colors_as" -> {
                 val colorRepresentation = when (entry.rawValue) {
                     "RGBA" -> ColorRepresentation.RGB
@@ -238,8 +239,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 )
             }
 
-            // Migrate clipboard history pref names
-            // Keep migration rules until: 0.7 dev cycle
+            // Retained for legacy backup/import compatibility: clipboard history keys were renamed.
+            // Covered by AppPrefsMigrationTest.
             "clipboard__sync_to_floris", "clipboard__sync_to_system" -> {
                 entry.transform(
                     type = PreferenceType.string(),
@@ -278,8 +279,8 @@ abstract class FlorisPreferenceModel : PreferenceModel() {
                 entry.transform(key = "clipboard__clear_primary_clip_affects_history_if_unpinned")
             }
 
-            // Migrate key spacing rules
-            // Keep migration rules until: 0.8 dev cycle
+            // Retained for legacy backup/import compatibility: keyboard/theme defaults changed.
+            // Covered by AppPrefsMigrationTest.
             "keyboard__key_spacing_horizontal" -> {
                 if (entry.type.isFloat()) {
                     entry.reset()
