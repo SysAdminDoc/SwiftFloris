@@ -25,15 +25,21 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.Restore
+import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.SentimentSatisfiedAlt
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material.icons.filled.WifiOff
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -44,6 +50,7 @@ import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
+import dev.patrickgold.florisboard.ime.tasker.TaskerAuthentication
 import dev.patrickgold.florisboard.ime.voice.ExternalVoiceInputProviderState
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -53,6 +60,8 @@ import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.pluralsRes
@@ -127,6 +136,45 @@ fun PrivacyPostureScreen() = FlorisScreen {
     val powerSavingAppliedToast = stringRes(R.string.settings__privacy_posture__power_saving_applied)
     val focusModeAppliedToast = stringRes(R.string.settings__privacy_posture__focus_mode_applied)
     val fullModeRestoredToast = stringRes(R.string.settings__privacy_posture__full_mode_restored)
+    val taskerRotatedToast = stringRes(R.string.settings__privacy_posture__automation_rotated)
+    val taskerRotateFailedToast = stringRes(R.string.settings__privacy_posture__automation_rotate_failed)
+    var showTaskerRotationDialog by remember { mutableStateOf(false) }
+
+    if (showTaskerRotationDialog) {
+        AlertDialog(
+            onDismissRequest = { showTaskerRotationDialog = false },
+            title = {
+                Text(stringRes(R.string.settings__privacy_posture__automation_rotate_dialog_title))
+            },
+            text = {
+                Text(stringRes(R.string.settings__privacy_posture__automation_rotate_dialog_message))
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showTaskerRotationDialog = false
+                        scope.launch {
+                            val rotated = withContext(Dispatchers.IO) {
+                                TaskerAuthentication.rotate(context)
+                            }
+                            Toast.makeText(
+                                context,
+                                if (rotated) taskerRotatedToast else taskerRotateFailedToast,
+                                Toast.LENGTH_SHORT,
+                            ).show()
+                        }
+                    },
+                ) {
+                    Text(stringRes(R.string.settings__privacy_posture__automation_rotate_confirm))
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTaskerRotationDialog = false }) {
+                    Text(stringRes(R.string.settings__privacy_posture__automation_rotate_cancel))
+                }
+            },
+        )
+    }
 
     content {
         if (declaredInternetPermission) {
@@ -207,6 +255,12 @@ fun PrivacyPostureScreen() = FlorisScreen {
                 icon = Icons.Default.Extension,
                 title = stringRes(R.string.settings__privacy_posture__automation_title),
                 summary = stringRes(R.string.settings__privacy_posture__automation_summary),
+            )
+            Preference(
+                icon = Icons.Default.Refresh,
+                title = stringRes(R.string.settings__privacy_posture__automation_rotate_title),
+                summary = stringRes(R.string.settings__privacy_posture__automation_rotate_summary),
+                onClick = { showTaskerRotationDialog = true },
             )
             Preference(
                 icon = Icons.Default.Mic,

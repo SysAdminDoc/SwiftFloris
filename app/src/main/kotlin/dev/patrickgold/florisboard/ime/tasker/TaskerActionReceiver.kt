@@ -27,48 +27,43 @@ class TaskerActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent?) {
         val prefs by FlorisPreferenceStore
         if (!prefs.privacy.externalAutomationEnabled.get()) {
-            flogWarning {
-                "TaskerActionReceiver rejected '${intent?.action.orEmpty()}': external automation disabled"
-            }
+            flogWarning { "TaskerActionReceiver rejected action: external automation disabled" }
             return
         }
-        TaskerActionDispatcher.dispatch(
-            context = context,
-            action = intent?.action,
-            extras = intent.toTaskerExtrasMap(),
-        )
+        if (intent?.action != TaskerIntentContract.Plugin.ACTION_FIRE_SETTING) {
+            flogWarning { "TaskerActionReceiver rejected action: invalid plug-in action" }
+            return
+        }
+
+        val rawJson = intent.readTaskerPluginJson()
+        if (rawJson == null) {
+            flogWarning { "TaskerActionReceiver rejected action: malformed plug-in bundle" }
+            return
+        }
+        when (val result = TaskerAuthentication.authenticate(context, rawJson)) {
+            is PluginAuthenticationResult.Accept -> {
+                TaskerActionDispatcher.dispatch(
+                    context = context,
+                    action = result.action.action,
+                    extras = result.action.extras,
+                )
+            }
+            is PluginAuthenticationResult.Reject -> {
+                flogWarning { "TaskerActionReceiver rejected action: ${result.reason}" }
+            }
+        }
     }
 }
 
 @Suppress("DEPRECATION")
-private fun Intent?.toTaskerExtrasMap(): Map<String, Any?> {
-    val intent = this ?: return emptyMap()
-    val bundle: Bundle = intent.extras ?: return emptyMap()
-    val allowedKeys = when (intent.action) {
-        TaskerIntentContract.InsertText.ACTION -> setOf(
-            TaskerIntentContract.InsertText.EXTRA_TEXT,
-            TaskerIntentContract.InsertText.EXTRA_APPEND_SPACE,
-        )
-        TaskerIntentContract.InsertClipboard.ACTION -> emptySet()
-        TaskerIntentContract.SwitchLayout.ACTION -> setOf(
-            TaskerIntentContract.SwitchLayout.EXTRA_LAYOUT_ID,
-        )
-        TaskerIntentContract.TriggerVoice.ACTION -> setOf(
-            TaskerIntentContract.TriggerVoice.EXTRA_MODE,
-        )
-        else -> return emptyMap()
-    }
-    val values = linkedMapOf<String, Any?>()
-    for (key in bundle.keySet()) {
-        values[key] = if (key in allowedKeys) {
-            runCatching { bundle.get(key) }.getOrDefault(UnreadableTaskerExtra)
-        } else {
-            UnexpectedTaskerExtra
+internal fun Intent.readTaskerPluginJson(): String? {
+    return runCatching {
+        val outerExtras = extras ?: return@runCatching null
+        val pluginBundle = outerExtras.get(TaskerIntentContract.Plugin.EXTRA_BUNDLE) as? Bundle
+            ?: return@runCatching null
+        if (pluginBundle.keySet() != setOf(TaskerIntentContract.Plugin.EXTRA_STRING_JSON)) {
+            return@runCatching null
         }
-    }
-    return values
+        pluginBundle.get(TaskerIntentContract.Plugin.EXTRA_STRING_JSON) as? String
+    }.getOrNull()
 }
-
-private data object UnreadableTaskerExtra
-
-private data object UnexpectedTaskerExtra

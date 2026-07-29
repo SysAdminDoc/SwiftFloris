@@ -1137,7 +1137,15 @@
     <string name="settings__privacy_posture__addons_title" comment="Preference title">Addon permissions</string>
     <string name="settings__privacy_posture__addons_summary" comment="Preference summary. Placeholders show granted consent surfaces, total surfaces, pinned cert count, and disabled daemon count.">Granted: {granted}/{surfaces}. Signing pins: {pins}. Disabled MCP daemons: {disabled}.</string>
     <string name="settings__privacy_posture__automation_title" comment="Preference title">Tasker automation</string>
-    <string name="settings__privacy_posture__automation_summary" comment="Preference summary">Off by default. When enabled, automation apps can send validated SwiftFloris actions for text insert, clipboard paste, layout switching, and voice input.</string>
+    <string name="settings__privacy_posture__automation_summary" comment="Preference summary">Off by default. When enabled, saved Tasker plug-in actions can insert text, paste the clipboard, switch layouts, or start voice input.</string>
+    <string name="settings__privacy_posture__automation_rotate_title" comment="Preference title">Rotate Tasker authentication</string>
+    <string name="settings__privacy_posture__automation_rotate_summary" comment="Preference summary">Invalidate every saved SwiftFloris action in Tasker. Re-open each action in Tasker to authorize it again.</string>
+    <string name="settings__privacy_posture__automation_rotate_dialog_title" comment="Confirmation dialog title">Rotate Tasker authentication?</string>
+    <string name="settings__privacy_posture__automation_rotate_dialog_message" comment="Confirmation dialog body">Existing SwiftFloris Tasker actions will stop working until you open and save each one again.</string>
+    <string name="settings__privacy_posture__automation_rotate_confirm" comment="Confirmation dialog button">Rotate</string>
+    <string name="settings__privacy_posture__automation_rotate_cancel" comment="Confirmation dialog button">Cancel</string>
+    <string name="settings__privacy_posture__automation_rotated" comment="Toast after successful rotation">Tasker authentication rotated</string>
+    <string name="settings__privacy_posture__automation_rotate_failed" comment="Toast after failed rotation">Could not rotate Tasker authentication</string>
     <string name="settings__privacy_posture__voice_title" comment="Preference title">Voice provider</string>
     <string name="settings__privacy_posture__voice_ready" comment="Preference summary. Placeholder shows provider label.">Ready: {provider}. SwiftFloris only hands off when you tap voice input.</string>
     <plurals name="settings__privacy_posture__voice_installed" comment="Preference summary. Placeholder shows installed provider count.">
@@ -1154,6 +1162,25 @@
     <string name="settings__privacy_posture__copy_proof_title" comment="Preference title">Copy privacy proof</string>
     <string name="settings__privacy_posture__copy_proof_summary" comment="Preference summary">Copy a JSON bundle containing version, signer fingerprint, no-network status, and addon counts to the clipboard for auditors and reviewers.</string>
     <string name="settings__privacy_posture__proof_copied" comment="Toast shown after copying privacy proof">Privacy proof copied to clipboard</string>
+    <string name="tasker_plugin__title" comment="Tasker plug-in configuration title">SwiftFloris Tasker action</string>
+    <string name="tasker_plugin__intro" comment="Tasker plug-in configuration intro">Choose one action. SwiftFloris signs this configuration on-device so other apps cannot forge it.</string>
+    <string name="tasker_plugin__disabled_warning" comment="Warning when external automation is disabled">Tasker automation is disabled in SwiftFloris Privacy posture. You can save this action, but it will not run until you enable that setting.</string>
+    <string name="tasker_plugin__action_label" comment="Tasker plug-in action selector label">Action</string>
+    <string name="tasker_plugin__insert_text" comment="Tasker action name">Insert configured text</string>
+    <string name="tasker_plugin__insert_clipboard" comment="Tasker action name">Paste current clipboard</string>
+    <string name="tasker_plugin__switch_layout" comment="Tasker action name">Switch keyboard layout</string>
+    <string name="tasker_plugin__trigger_voice" comment="Tasker action name">Start voice input</string>
+    <string name="tasker_plugin__text_label" comment="Tasker insert-text field label">Text to insert</string>
+    <string name="tasker_plugin__text_count" comment="Tasker insert-text character count; {count} and {limit} are integer values">{count}/{limit} characters</string>
+    <string name="tasker_plugin__append_space" comment="Tasker insert-text option">Append a space</string>
+    <string name="tasker_plugin__clipboard_summary" comment="Tasker clipboard action help">Pastes the clipboard item available when this action runs. Password and other sensitive fields remain blocked.</string>
+    <string name="tasker_plugin__layout_id" comment="Tasker layout field label">Layout ID</string>
+    <string name="tasker_plugin__layout_id_summary" comment="Tasker layout field help">Use the lowercase layout ID, such as dvorak or colemak_dh.</string>
+    <string name="tasker_plugin__voice_dictation" comment="Tasker voice mode">Dictation</string>
+    <string name="tasker_plugin__voice_command" comment="Tasker voice mode">Command mode</string>
+    <string name="tasker_plugin__save_failed" comment="Tasker configuration error">SwiftFloris could not protect this action. No configuration was saved.</string>
+    <string name="tasker_plugin__cancel" comment="Tasker configuration button">Cancel</string>
+    <string name="tasker_plugin__save" comment="Tasker configuration button">Save</string>
     <string name="settings__privacy_posture__per_app_profiles_title" comment="Preference title">Per-app keyboard profiles</string>
     <string name="settings__privacy_posture__per_app_profiles_summary" comment="Preference summary; {count} is the number of saved app-specific profiles">Configured apps: {count}. Profiles can override adaptive accent, incognito, clipboard history, suggestions, and smartbar gesture sets for the focused app.</string>
     <string name="settings__per_app_keyboard_profiles__title" comment="Screen title">Per-app keyboard profiles</string>

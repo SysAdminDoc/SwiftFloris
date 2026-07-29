@@ -299,7 +299,7 @@ The full bridge spans `IMcpDaemon.aidl` (Binder surface), `AndroidMcpClient` (JS
 
 ## Tasker integration
 
-SwiftFloris exposes a Tasker intent contract for INSERT_TEXT / INSERT_CLIP / SWITCH_LAYOUT / TRIGGER_VOICE actions, guarded by the app's signature-level integration permission.
+SwiftFloris appears in Tasker under **Action → Plugin → SwiftFloris Tasker action**. Configure text insertion, clipboard paste, layout switching, or voice input there, then enable **Settings → Privacy posture → Tasker automation** in SwiftFloris. The integration uses the standard Locale/Tasker plug-in protocol; each saved configuration is authenticated with an app-private per-install key, and text/clipboard actions remain blocked in password and other sensitive fields. **Rotate Tasker authentication** on the Privacy posture screen immediately invalidates every saved action; open and save each Tasker action again to re-authorize it.
 
 ## Performance and benchmarks
 

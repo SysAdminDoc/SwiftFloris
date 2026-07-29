@@ -227,17 +227,33 @@
             </intent-filter>
         </activity>
 
-        <!-- Off-by-default automation endpoint for Tasker-class broadcast senders.
-             Runtime dispatch is gated by privacy__external_automation_enabled. -->
+        <!-- Locale/Tasker setting plug-in configuration. The visible activity
+             returns a compact HMAC-authenticated bundle only after the user
+             explicitly saves it; the app-private signing key never leaves
+             SwiftFloris. -->
+        <activity
+            android:name="dev.patrickgold.florisboard.ime.tasker.TaskerConfigActivity"
+            android:excludeFromRecents="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="@string/tasker_plugin__title"
+            android:theme="@style/FlorisAppTheme">
+            <intent-filter>
+                <action android:name="com.twofortyfouram.locale.intent.action.EDIT_SETTING"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
+        </activity>
+
+        <!-- Single Locale/Tasker setting receiver. Tasker invokes this
+             explicitly with the configuration produced above. Runtime
+             dispatch remains gated by privacy__external_automation_enabled
+             and rejects malformed or unauthenticated bundles. -->
         <receiver
             android:name="dev.patrickgold.florisboard.ime.tasker.TaskerActionReceiver"
             android:enabled="true"
             android:exported="true">
             <intent-filter>
-                <action android:name="swiftfloris.action.INSERT_TEXT"/>
-                <action android:name="swiftfloris.action.INSERT_CLIP"/>
-                <action android:name="swiftfloris.action.SWITCH_LAYOUT"/>
-                <action android:name="swiftfloris.action.TRIGGER_VOICE"/>
+                <action android:name="com.twofortyfouram.locale.intent.action.FIRE_SETTING"/>
             </intent-filter>
         </receiver>
 
