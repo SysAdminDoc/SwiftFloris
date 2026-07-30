@@ -25,13 +25,9 @@ package dev.patrickgold.florisboard.ime.handwriting
  * which would break the §1 no-network promise that this IME's F-Droid
  * privacy review depends on. Instead, this facade defines the
  * stroke-recogniser contract; an **out-of-tree signed addon APK**
- * (Next-4.2a — slated identifier `handwriting-mlkit`, distributed via
- * GitHub Releases / Obtainium / F-Droid alongside SwiftFloris, never
- * bundled into `:app`) provides the actual ML Kit binding. The user
- * explicitly opts into installing the addon — at which point the addon
- * enumerator (Next-10.2) registers it as a recogniser provider through
- * the `AddonContract.Action.REGISTER_*` enrolment path and the IME
- * consumes its output through this same interface.
+ * could provide the actual model binding. No handwriting recognizer
+ * addon currently ships and no production path activates this registry,
+ * so the facade remains contract-only.
  *
  * Until an addon registers a real implementation, [Default] is used:
  * it accepts strokes but returns `NoRecognition` so the IME falls
@@ -87,10 +83,9 @@ data class StrokeCandidate(
 }
 
 /**
- * Process-wide registry mediating between the IME and the bound
- * recogniser. The addon enumerator (Next-10.2) installs the active
- * recogniser via [setActive] when a handwriting-recogniser addon is
- * enrolled; if none is installed, [active] stays [StrokeRecognizer.Default].
+ * Process-wide registry mediating between the IME and a potential bound
+ * recogniser. No production binding ships, so [active] stays
+ * [StrokeRecognizer.Default].
  */
 object StrokeRecognizerRegistry {
 

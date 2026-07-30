@@ -26,16 +26,11 @@ import kotlinx.serialization.Serializable
  * dependency on Google's LiteRT-LM runtime (the orchestration layer
  * Gemini Nano uses on Chrome / Pixel Watch). LiteRT-LM brings a
  * multi-MB native runtime + GPU/NPU/CPU backend dispatch + KV-cache
- * management — too large to embed in the base APK that ships on
- * F-Droid. Like ML Kit Digital Ink (Next-4.2), the actual LiteRT-LM
- * binding lives in an **out-of-tree signed addon APK** (L1.1a — slated
- * identifier `smart-compose-litert`, distributed via GitHub Releases /
- * Obtainium / F-Droid alongside SwiftFloris, never bundled into `:app`)
- * that the user explicitly opts into installing. Once that addon is
- * registered through the `AddonContract.Action.REGISTER_*` enrolment
- * path (Next-10.x), it calls [SmartComposeProviderRegistry.setActive]
- * with a real implementation and the IME's typing pipeline consumes its
- * output through this interface.
+ * management — too large to embed in the base APK. No LiteRT-LM
+ * runtime addon currently ships. Production registers the opt-in local
+ * [HeuristicSmartComposeProvider]; this interface preserves a narrow
+ * boundary for a future model-backed implementation without claiming
+ * that one is delivered.
  *
  * The facade exposes the minimal surface the keyboard needs:
  *  - [predictNextTokens]  — given the typing context, return ranked
@@ -101,11 +96,9 @@ data class SmartComposeContext(
 }
 
 /**
- * Descriptor of a loaded LiteRT-LM model. Mirrors the on-disk
- * `.litertlm` header shape so the IME UI can surface model name +
- * quantisation + size without parsing the binary itself. The smart-compose
- * addon populates this when it registers a provider through
- * [SmartComposeProviderRegistry.setActive].
+ * Descriptor contract for a potential loaded model. A future
+ * model-backed provider can expose name, quantisation, and size without
+ * making the IME parse its binary format.
  */
 @Serializable
 data class LiteRtModelDescriptor(
@@ -166,10 +159,9 @@ data class SmartComposeCandidate(
 }
 
 /**
- * Process-wide registry — mirrors `StrokeRecognizerRegistry` (Next-4.2).
- * The addon enumerator installs the active provider on enrolment; until
- * a smart-compose addon is installed, [active] is [SmartComposeProvider.Default]
- * and the rest of the IME observes that no model is loaded.
+ * Process-wide provider registry. It starts with
+ * [SmartComposeProvider.Default]; application startup replaces that
+ * with the opt-in heuristic provider. No model-backed provider ships.
  */
 object SmartComposeProviderRegistry {
 

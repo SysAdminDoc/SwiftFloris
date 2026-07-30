@@ -48,7 +48,7 @@
 | **Clipboard** | Room-backed history with pinning + per-app source tag, media/provider metadata, sensitive-item gates, startup/restore reconciliation, in-keyboard text search with type-filter composition, and TalkBack labels for image/video media history tiles | On-device |
 | **Productivity** | Calendar quick-insert reads local agenda entries for today + next 7 days; task quick-insert sends selected text to user-chosen task / note apps | Calendar permission is explicit opt-in; no network |
 | **Themes** | 21 bundled themes — SwiftKey Pure (Light/Dark + M3 Expressive), SwiftKey High Contrast (AAA), Aurora Animated, Floris Day/Night, Swift Glacier, Swift Slate, M3E Nord (light + dark), Tokyo Night, Dracula, Catppuccin Mocha; borderless variants where applicable; Snygg theme engine; per-app accent with Settings preview and one-time opt-in hint | No telemetry |
-| **MCP daemon bridge** | AIDL bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | Local-only binder, no network |
+| **MCP daemon bridge** | AIDL client bridge to user-installed MCP daemons with per-daemon enable / disable in Settings → MCP daemon bridge | SwiftFloris uses local Binder; daemon packages remain a separate trust boundary |
 | **Addon packs** | Addon manifest/enumerator contracts, IME-startup registry reconciliation, Settings -> Addons status/rescan, explicit trust for non-co-signed addons, trust reset/changed-certificate controls, dictionary-pack catalog details, persisted signing-certificate pins, descriptor validation, provenance reports, runtime bundle-size rejection reasons, typed dictionary-pack catalog, and addon APK dictionary asset mounting | No-network addon rejection |
 | **Settings UX** | Premium dashboard-style five-bucket Settings home (Typing experience, Personalization, Privacy & data, Advanced, About) with compact no-cloud/no-telemetry/offline trust chips, a primary setup action, search rail, local privacy/build/sync signals, grouped navigation cards, pinned migration/privacy/about actions, global Settings search with accent-insensitive matching, first-open focus, clear action, Search IME action, no-results path back to all settings, synonym hits for dark theme, haptic, trace, punctuation, and privacy queries, result-list scroll reset, TalkBack labels/live result-status/result-row context, and one-shot dismissible destination highlights; per-app keyboard profile editor for package-specific accent, incognito, clipboard, suggestion, and Smartbar gesture overrides; clearer empty states for voice setup, selected user-dictionary languages, extension categories, language packs, filtered clipboard history, and theme-manager recovery; user-dictionary back feedback during active save/delete/import/export work; surfaced keyboard preview field with ready/active state feedback | Local UI only |
 | **Migration** | First-run local dictionary import hint; preview-before-save personal dictionary imports with row exclusion; Gboard / FlorisBoard / SwiftKey JSON export importer; passphrase-encrypted SwiftFloris dictionary export/import; Settings-based Keyman LDML / `.kmp` metadata + Windows KLC + macOS hardware-keyboard imports | All file-system based |
@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc/F-Droid version-pin, repo-hygiene, root-crash-log, Kotlin build-cache CVE guard, production `runBlocking` allowlist, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, security-dependency freshness, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; `-StrictRelease` also requires local release-signing material before evidence collection; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; tests cover settings-search resource/route drift, MIME helper aggregate contracts, NativeStr ByteBuffer slices, localization/copy contracts, Arabic shaping, Snygg imports, private trace suppression, and locale-scoped n-gram flushes; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` runs the release-front-door, Fastlane metadata, backup/privacy copy, public-doc/F-Droid version pins, the semantic trust-capability gate, repo hygiene, root-crash-log, Kotlin build-cache CVE guard, production `runBlocking` allowlist, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, security-dependency freshness, and reproducible-APK gates into `build/release-evidence/<timestamp>/`; high-risk SDK, permission, storage, AIDL, dependency, runtime, and accessibility assertions are normalized in `app/src/main/config/trust-capabilities.json`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0 | Audit-friendly |
 
 ## Distribution
 
@@ -193,9 +193,8 @@ lib/snygg                  — Snygg theme engine
 :benchmark                 — Macrobenchmark + adb benchmark harness (active in settings)
 ```
 
-Native runtimes for optional capabilities (LiteRT-LM, Bergamot, librime, ML
-Kit Digital Ink, Vosk) ship as out-of-tree signed addon APKs through the
-addon enrolment contract, not as a `:lib:native` module in the base APK.
+Optional runtime contracts keep future model engines outside the base APK.
+None of the Bergamot, LiteRT-LM, handwriting, or local voice recognizer runtimes currently ships. The production Smart Compose path is the opt-in local n-gram heuristic; model-backed Smart Compose, rewrite, translation, handwriting, and local voice remain contract-only or preview-only.
 
 The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard/ime/{keyboard,nlp,theme,ext,emoji,mcp,voice,bidi,dictionary,kenlm}`.
 
@@ -245,14 +244,21 @@ Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, 
 
 ## Permissions
 
-| Permission | Purpose | Required? |
-|------------|---------|-----------|
-| `INPUT_METHOD` | IME service binding | ✅ Yes |
-| `VIBRATE` | Haptic feedback | Optional |
-| `RECORD_AUDIO` | Not requested by SwiftFloris; the external voice keyboard owns microphone access | No |
-| `BIND_NOTIFICATION_LISTENER` | App-aware smartbar features | Optional |
+| Manifest permission | Purpose | Runtime behavior |
+|---------------------|---------|------------------|
+| `android.permission.VIBRATE` | Key-press haptic feedback | Used only when vibration is enabled |
+| `android.permission.POST_NOTIFICATIONS` | User-visible notifications on Android 13+ | Runtime-granted where a notification flow needs it |
+| `android.permission.READ_CALENDAR` | Calendar quick-insert agenda titles and times | Requested only from the explicit calendar action |
+| `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP` | Bind a co-signed, permission-gated MCP service | Signature-protected local Binder transport |
 
-> **Privacy note:** SwiftFloris does not request `INTERNET`. The local release gate validates this before publication.
+The IME and spellchecker services are protected by the platform's
+`android.permission.BIND_INPUT_METHOD` and
+`android.permission.BIND_TEXT_SERVICE` service permissions; SwiftFloris does
+not request either permission from the user. It also does not request
+`android.permission.RECORD_AUDIO`; an external voice keyboard owns microphone
+access.
+
+> **Privacy note:** SwiftFloris does not request `android.permission.INTERNET`. The local release gate derives and validates the complete permission set before publication.
 
 ## Privacy & Security
 
@@ -266,6 +272,9 @@ Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, 
 
 - **Personal dictionary:** SQLCipher-encrypted Room database, with the
   SQLCipher passphrase wrapped by Tink / AndroidKeystore.
+- **Clipboard history:** currently a plaintext Room database plus plaintext
+  app-private media files. Sensitive-field ingestion gates reduce exposure,
+  but at-rest clipboard encryption has not shipped.
 - **IME window:** `FLAG_SECURE` set on password/no-personalized-learning fields and while incognito is active, including mid-session dynamic incognito toggles, so the keyboard is excluded from screenshots and screen-recording overlays.
 - **Long-press popups:** suppressed on every `KeyVariation.PASSWORD` (Android 17 password-visibility behavior closed on the IME side as of v1.8.44).
 - **Personalized learning:** clipboard write / dictionary learn paths skip password and `IME_FLAG_NO_PERSONALIZED_LEARNING` fields.
@@ -293,7 +302,7 @@ Inline translation has the cache + language detector + sentence tokenizer + lang
 
 ## MCP daemon bridge
 
-SwiftFloris is the first FOSS Android keyboard to ship an end-to-end MCP (Model Context Protocol) daemon bridge. It binds **local-only** to MCP daemons advertised by other apps on the device (no network, no cloud), surfaces them in Settings → MCP daemon bridge, and lets users enable / disable individual daemons. The bridge is opt-in by construction: tool invocations route through the same `SensitiveFieldGuard` as smart-compose and translation, so password fields cannot trigger remote tool calls.
+SwiftFloris ships an MCP (Model Context Protocol) AIDL client bridge. The keyboard reaches advertised services through local Android Binder, surfaces them in Settings → MCP daemon bridge, and lets users enable or disable individual daemons. MCP daemon packages are a separate trust boundary: current discovery validates binding metadata and signing trust but does not yet reject a daemon that declares network permissions. Tool invocations route through the same `SensitiveFieldGuard` as smart-compose and translation, so password fields short-circuit before dispatch.
 
 The full bridge spans `IMcpDaemon.aidl` (Binder surface), `AndroidMcpClient` (JSON envelope translation), `McpServiceConnectionManager` (per-daemon bind lifecycle), `McpAndroidDiscoverer` (PackageManager discovery), `McpDispatchRouter` (registry → guard → tool → response), and the Settings screen that lists bound daemons + per-daemon switches.
 
@@ -337,7 +346,7 @@ The full public release stream lives on [GitHub Releases](https://github.com/Sys
 - **v1.9.53** (2026-06-25) — Roadmap drain: release-channel freshness is now a blocking local gate, Android 17 CJK selected-candidate accessibility metadata, targetSdk 37 shadow preflight, sample addon APK validation in local release evidence, Kotlin build-cache CVE guard, runtime addon bundle-size rejection reasons, Tink 1.22.0 (security), AboutLibraries 15.0.3, deprecated `announceForAccessibility` migrated to Compose live-region, data-extraction rules verified by XML-parsed domain/path pairs, public trust docs tracked in git, destructive clipboard Room migrations replaced with row-preserving, addon provenance tap-to-copy JSON, one-tap privacy proof export plus privacy audit JSON save/share, provider-owned candidate trailing-space policy for Latin/CJK/emoji/media spacebar commits, categorized `runBlocking` allowlist budgets for main-thread composing bridges, crash-report environment/redaction fields and SwiftFloris crash-dialog report identity, EditorInfo sensitive-field replay tests, keyboard layout JSON validation, a new Snippet management Settings screen with Espanso YAML import, reduced-motion polish across Settings/setup transitions, safer snippet deletion, clipboard text-tile accessibility labels, unsaved-draft recovery in the custom layout editor, and bounded inline-autofill rendering that drops invalid host suggestions instead of crashing.
 - **v1.9.52** (2026-06-16) — Premium Settings polish: the Settings home now opens with one status-aware overview card, compact Search / Import / Privacy quick actions, and local-trust checks for no-network releases, local imports, and verifiable builds. Settings search now uses a calmer Material 3 field treatment and shows result counts before the list.
 - **v1.9.51** (2026-06-16) — Added spacebar touchpad cursor mode, migration assistant import guidance, source-code and release-verification links in Privacy posture, CLDR/Emoji version metadata gates, and the prepared F-Droid fdroiddata YAML recipe.
-- **v1.9.50** (2026-06-14) — Added a Terminal bottom-row preset with Esc / Ctrl / Alt / Home / End / Tab keys and verified keyboard magnification accessibility on API 36 across text, emoji, and touch input surfaces.
+- **v1.9.50** (2026-06-14) — Added a Terminal bottom-row preset with Esc / Ctrl / Alt / Home / End / Tab keys and a manual API 36 keyboard-magnification QA checklist covering text, emoji, and touch input surfaces.
 - **v1.9.49** (2026-06-14) — Fixed stale backup/transfer privacy copy, added OSV severity release blocking, converted lazy plural strings to Android quantity resources, renamed the Gradle root project for reviewer clarity, wired Android 14+ stylus handwriting through the recognizer facade, and added bounded file-backed diagnostics.
 - **v1.9.48** (2026-06-14) — Audit hardening pass: the exported share-to-clipboard handler now rejects `file://` URIs (closing a confused-deputy read of the app's own private files); MCP daemon discovery bounds untrusted catalog reads to prevent an out-of-memory denial; incognito `FLAG_SECURE` now reapplies reliably across keyboard restarts; corrected an inverted SERA vowel order in the Ge'ez/Tigrinya transliterators; and several settings polish fixes — a real empty-state message for the privacy audit log, dark/light theme accessibility labels, no more dangling empty headers in Learned entries, and clearer sync-import and update-check wording.
 - **v1.9.47** (2026-06-14) — New one-tap "Full backup" action on the Backup screen ticks every section (preferences, layouts, themes, and all local clipboard items) and writes a dated archive in a single tap — no manual checkbox juggling before a reinstall or migration. Reuses the existing local, no-network backup flow.

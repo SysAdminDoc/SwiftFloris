@@ -6,6 +6,30 @@ import kotlin.test.Test
 
 class ReleaseEvidenceContractTest {
     @Test
+    fun `release evidence derives high risk trust claims from live sources`() {
+        val script = locateProjectFile("scripts/release-evidence.ps1").readText()
+        val checker = locateProjectFile("scripts/check-trust-capabilities.py").readText()
+        val registry = locateProjectFile(
+            "app/src/main/config/trust-capabilities.json",
+        ).readText()
+        val readme = locateProjectFile("README.md").readText()
+
+        script shouldContain "Invoke-EvidenceCommand \"trust-capability-gate-self-test\""
+        script shouldContain "scripts/test-check-trust-capabilities.py"
+        script shouldContain "Invoke-EvidenceCommand \"trust-capability-gate\""
+        script shouldContain "scripts/check-trust-capabilities.py"
+        checker shouldContain "app/src/main/AndroidManifest.xml"
+        checker shouldContain "IMcpDaemon.aidl"
+        checker shouldContain "gradle/libs.versions.toml"
+        checker shouldContain "derive_optional_capabilities"
+        checker shouldContain "validate_public_copy"
+        registry shouldContain "\"clipboardHistory\": \"plaintext_room\""
+        registry shouldContain "\"localVoiceRecognizer\": \"preview_only\""
+        registry shouldContain "\"daemonNetworkPermissionsRejected\": false"
+        readme shouldContain "app/src/main/config/trust-capabilities.json"
+    }
+
+    @Test
     fun `release evidence includes runBlocking drift gate`() {
         val script = locateProjectFile("scripts/release-evidence.ps1").readText()
         val readme = locateProjectFile("README.md").readText()

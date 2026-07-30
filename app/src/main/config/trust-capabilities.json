@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "sdk": {
+    "min": 26,
+    "target": 36,
+    "compile": 37,
+    "buildTools": "36.0.0"
+  },
+  "baseApp": {
+    "usesPermissions": [
+      "android.permission.POST_NOTIFICATIONS",
+      "android.permission.READ_CALENDAR",
+      "android.permission.VIBRATE",
+      "io.github.sysadmindoc.swiftfloris.permission.BIND_MCP"
+    ],
+    "declaredSignaturePermissions": [
+      "io.github.sysadmindoc.swiftfloris.permission.BIND_MCP",
+      "io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON"
+    ],
+    "networkPermission": false
+  },
+  "storage": {
+    "clipboardHistory": "plaintext_room",
+    "clipboardMedia": "plaintext_app_private_files",
+    "personalDictionary": "sqlcipher_room",
+    "sqlcipherVersion": "4.17.0"
+  },
+  "mcp": {
+    "appRole": "aidl_client",
+    "transport": "local_android_binder",
+    "aidlMethods": [
+      "invoke",
+      "listToolNames"
+    ],
+    "daemonNetworkPermissionsRejected": false
+  },
+  "optionalCapabilities": {
+    "externalVoiceImeHandoff": "shipped",
+    "localVoiceRecognizer": "preview_only",
+    "heuristicSmartCompose": "shipped_opt_in",
+    "modelSmartCompose": "contract_only",
+    "rewriteModel": "contract_only",
+    "translationRuntime": "contract_only",
+    "handwritingRecognizer": "contract_only",
+    "mcpBinderBridge": "shipped"
+  },
+  "accessibility": {
+    "automatedContracts": [
+      "semantic_labels",
+      "theme_contrast",
+      "touch_targets",
+      "visual_regression"
+    ],
+    "manualAssistiveTechnologyReleaseGate": false
+  }
+}

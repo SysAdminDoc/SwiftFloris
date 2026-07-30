@@ -26,9 +26,12 @@ import kotlinx.serialization.Serializable
  * local MCP daemon is increasingly the way smart-compose engines reach
  * structured tools (calendar, contacts, clipboard) without sending text
  * to the cloud. SwiftFloris carries the §1 no-network promise, so any
- * MCP server we talk to must be hosted *on-device* (a sibling app the
- * user opted into installing) and reached via Android's
- * `bindService` + AIDL transport — never a network socket.
+ * MCP service SwiftFloris talks to is hosted *on-device* (a sibling app
+ * the user opted into installing) and reached by the keyboard through
+ * Android `bindService` + AIDL, never by a keyboard-owned network
+ * socket. This only constrains SwiftFloris's transport: daemon package
+ * network permissions are a separate trust boundary and are not yet
+ * rejected by discovery.
  *
  * This scaffold defines:
  *  - [McpBridgeContract] — the Intent + AIDL action constants that an

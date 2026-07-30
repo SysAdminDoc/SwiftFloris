@@ -244,6 +244,8 @@ Invoke-EvidenceCommand "release-front-door" $bash $releaseArgs
 Invoke-EvidenceCommand "fastlane-metadata" $bash @((Convert-ToGitBashPath "scripts\check-fastlane-metadata.sh"))
 Invoke-EvidenceCommand "backup-privacy-copy" $bash @((Convert-ToGitBashPath "scripts\check-backup-privacy-copy.sh"))
 Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public-doc-version-pins.py")
+Invoke-EvidenceCommand "trust-capability-gate-self-test" $python @("scripts/test-check-trust-capabilities.py")
+Invoke-EvidenceCommand "trust-capability-gate" $python @("scripts/check-trust-capabilities.py")
 Invoke-EvidenceCommand "security-dependency-freshness" $python @("scripts/check-security-dependency-freshness.py")
 Invoke-EvidenceCommand "runblocking-allowlist" $python @("scripts/check-runblocking-allowlist.py")
 Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-integrity.py")

@@ -27,14 +27,13 @@ import kotlinx.serialization.Serializable
  * facade exists to counter. Bergamot's WASM NMT runtime runs the
  * compressed Mozilla/Bergamot encoder+decoder models entirely
  * on-device (Firefox embeds the same `marian-decoder` shape). Like the
- * LiteRT-LM smart-compose provider (L1) and ML Kit Digital Ink stroke
- * recogniser (Next-4.2), the actual Bergamot runtime ships in an
- * **out-of-tree signed addon APK** (L2.1a — slated identifier
- * `translator-bergamot`, distributed via GitHub Releases / Obtainium /
- * F-Droid alongside SwiftFloris, never bundled into `:app`) that the
- * user explicitly installs, then registers itself via
- * [InlineTranslatorRegistry.setActive] through the
- * `AddonContract.Action.REGISTER_*` enrolment path.
+ * LiteRT-LM smart-compose and handwriting model bindings, a future
+ * Bergamot integration belongs outside the base APK. No translator
+ * runtime addon currently ships and no production path calls
+ * [InlineTranslatorRegistry.setActive], so [InlineTranslator.Default]
+ * remains active and translation is unavailable. Any future runtime
+ * must use the explicit addon trust/enrolment boundary before this
+ * registry is activated.
  *
  * The facade exposes the minimum the IME's smartbar quick-action +
  * preview-row UI needs:
@@ -65,10 +64,9 @@ interface InlineTranslator {
 }
 
 /**
- * Descriptor of one bundled Bergamot translation model. The
- * `mozilla/translations-models` repo packages models per pair
- * (`en→es`, `en→fr`, `es→en`, ...); each descriptor here corresponds
- * to one such pair as a vocab-and-decoder bundle.
+ * Descriptor contract for one potential local translation model. A
+ * future runtime can expose pair metadata without making the base APK
+ * parse or bundle model binaries.
  */
 @Serializable
 data class LanguagePairDescriptor(

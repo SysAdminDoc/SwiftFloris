@@ -106,8 +106,9 @@ class FlorisApplication : Application() {
             // heuristic SmartComposeProvider as the baseline so inline
             // ghost-text works without any LLM addon. Gated at call time by
             // prefs.correction.heuristicSmartCompose (default off). The debug
-            // provider (below) overrides this on debug builds, and an
-            // out-of-tree LiteRT-LM addon overrides it at enrolment.
+            // provider (below) overrides this on debug builds. The optional
+            // model-backed provider remains a contract only until a runtime is
+            // implemented and wired.
             dev.patrickgold.florisboard.ime.smartcompose.SmartComposeProviderRegistry
                 .setActive(
                     dev.patrickgold.florisboard.ime.smartcompose
@@ -116,9 +117,9 @@ class FlorisApplication : Application() {
             // ROADMAP §0 P1 (debug-only) — wire the debug
             // SmartComposeProvider via reflection so release builds
             // never reference it. The class only exists in
-            // app/src/debug/kotlin/ so Class.forName throws on
-            // release; we swallow that and stay on the default no-op
-            // provider.
+            // app/src/debug/kotlin/ so Class.forName throws on release; we
+            // swallow that and stay on the heuristic provider registered
+            // above.
             if (BuildConfig.DEBUG) {
                 try {
                     val klass = Class.forName(
