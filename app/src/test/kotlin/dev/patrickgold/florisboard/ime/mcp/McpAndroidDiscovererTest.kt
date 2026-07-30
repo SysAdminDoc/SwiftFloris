@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.ime.mcp
 
+import android.content.pm.PackageManager
+import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -40,6 +42,7 @@ class McpAndroidDiscovererTest : FunSpec({
         protocolVersion: Int = 1,
         catalogResourceId: Int = 42,
         signingCertSha256: String? = signingCert,
+        requestedPermissions: Set<String> = emptySet(),
     ) = McpAndroidDiscoverer.ServiceAttrs(
         packageName = packageName,
         className = className,
@@ -47,6 +50,7 @@ class McpAndroidDiscovererTest : FunSpec({
         protocolVersion = protocolVersion,
         catalogResourceId = catalogResourceId,
         signingCertSha256 = signingCertSha256,
+        requestedPermissions = requestedPermissions,
     )
 
     test("returns a DiscoveryCandidate for a well-formed ServiceAttrs with non-blank catalog") {
@@ -75,6 +79,67 @@ class McpAndroidDiscovererTest : FunSpec({
     test("hasBindPermission is false when the service's permission attr is null") {
         val cand = McpAndroidDiscoverer.shapeCandidate(attrs(permission = null)) { _, _ -> catalogJson }
         cand?.hasBindPermission shouldBe false
+    }
+
+    test("shapeCandidate carries requested package permissions into the trust core") {
+        val requested = setOf("android.permission.INTERNET", "android.permission.VIBRATE")
+        val cand = McpAndroidDiscoverer.shapeCandidate(
+            attrs(requestedPermissions = requested),
+        ) { _, _ -> catalogJson }
+
+        cand?.requestedPermissions shouldBe requested
+    }
+
+    test("service query requests metadata and package permissions together") {
+        McpAndroidDiscoverer.SERVICE_QUERY_FLAGS and PackageManager.GET_META_DATA shouldBe
+            PackageManager.GET_META_DATA
+        McpAndroidDiscoverer.SERVICE_QUERY_FLAGS and PackageManager.GET_PERMISSIONS shouldBe
+            PackageManager.GET_PERMISSIONS
+    }
+
+    test("null requestedPermissions array is eligible") {
+        McpAndroidDiscoverer.permissionRejection(
+            packageName = "com.daemon.a",
+            className = "com.daemon.a.Svc",
+            snapshot = McpAndroidDiscoverer.RequestedPermissionsSnapshot(
+                requestedPermissions = null,
+                lookupSucceeded = true,
+            ),
+        ) shouldBe null
+    }
+
+    test("every shared no-network permission produces a package-specific rejection") {
+        for (permission in NoNetworkPermissionPolicy.DeniedPermissions) {
+            McpAndroidDiscoverer.permissionRejection(
+                packageName = "com.daemon.a",
+                className = "com.daemon.a.Svc",
+                snapshot = McpAndroidDiscoverer.RequestedPermissionsSnapshot(
+                    requestedPermissions = arrayOf("android.permission.VIBRATE", permission),
+                    lookupSucceeded = true,
+                ),
+            ) shouldBe RejectedMcpDaemon(
+                packageName = "com.daemon.a",
+                daemonClassName = "com.daemon.a.Svc",
+                signingCertSha256 = null,
+                reason = NoNetworkPermissionPolicy.rejectionReason(permission),
+            )
+        }
+    }
+
+    test("permission lookup failure fails closed without inventing a permission") {
+        McpAndroidDiscoverer.permissionRejection(
+            packageName = "com.daemon.a",
+            className = "com.daemon.a.Svc",
+            snapshot = McpAndroidDiscoverer.RequestedPermissionsSnapshot(
+                requestedPermissions = null,
+                lookupSucceeded = false,
+            ),
+        ) shouldBe RejectedMcpDaemon(
+            packageName = "com.daemon.a",
+            daemonClassName = "com.daemon.a.Svc",
+            signingCertSha256 = null,
+            reason = McpAndroidDiscoverer.REASON_PERMISSION_LOOKUP_FAILED,
+        )
     }
 
     test("returns null when packageName is blank") {

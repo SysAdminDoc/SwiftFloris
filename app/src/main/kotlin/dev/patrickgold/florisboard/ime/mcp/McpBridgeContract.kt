@@ -29,9 +29,9 @@ import kotlinx.serialization.Serializable
  * MCP service SwiftFloris talks to is hosted *on-device* (a sibling app
  * the user opted into installing) and reached by the keyboard through
  * Android `bindService` + AIDL, never by a keyboard-owned network
- * socket. This only constrains SwiftFloris's transport: daemon package
- * network permissions are a separate trust boundary and are not yet
- * rejected by discovery.
+ * socket. Daemon packages remain a separate trust boundary, so discovery
+ * rejects requested network permissions before certificate trust,
+ * registration, or binding.
  *
  * This scaffold defines:
  *  - [McpBridgeContract] — the Intent + AIDL action constants that an

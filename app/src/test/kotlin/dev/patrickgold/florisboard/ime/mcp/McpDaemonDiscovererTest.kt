@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.mcp
 
+import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -43,6 +44,7 @@ class McpDaemonDiscovererTest : FunSpec({
         hasBindPermission: Boolean = true,
         signingCertSha256: String? = MCP_SHA_A,
         toolCatalogJson: String = validJson,
+        requestedPermissions: Set<String> = emptySet(),
     ) = DiscoveryCandidate(
         packageName = packageName,
         daemonClassName = daemonClassName,
@@ -50,6 +52,7 @@ class McpDaemonDiscovererTest : FunSpec({
         hasBindPermission = hasBindPermission,
         signingCertSha256 = signingCertSha256,
         toolCatalogJson = toolCatalogJson,
+        requestedPermissions = requestedPermissions,
     )
 
     test("happy path discovers a single daemon") {
@@ -62,6 +65,45 @@ class McpDaemonDiscovererTest : FunSpec({
     test("rejects candidate missing the BIND permission") {
         val cand = candidate(hasBindPermission = false)
         McpDaemonDiscoverer.discover(listOf(cand), trustedPolicy).size shouldBe 0
+    }
+
+    test("rejects every denied permission before co-signed or pinned trust") {
+        val pinnedPolicy = McpDaemonTrustPolicy(
+            pinnedSigningCertificates = mapOf("com.example.mcp" to MCP_SHA_B),
+            trustedRootSigningCertSha256 = MCP_SHA_A,
+        )
+        for (permission in NoNetworkPermissionPolicy.DeniedPermissions) {
+            val coSigned = candidate(requestedPermissions = setOf(permission))
+            val pinned = candidate(
+                signingCertSha256 = MCP_SHA_B,
+                requestedPermissions = setOf(permission),
+            )
+
+            for ((cand, policy) in listOf(coSigned to trustedPolicy, pinned to pinnedPolicy)) {
+                val snapshot = McpDaemonDiscoverer.discoverSnapshot(listOf(cand), policy)
+                snapshot.accepted shouldBe emptyMap()
+                snapshot.rejected.single().reason shouldBe
+                    NoNetworkPermissionPolicy.rejectionReason(permission)
+            }
+        }
+    }
+
+    test("rescan removes a daemon after its package begins requesting network access") {
+        val initial = McpDaemonDiscoverer.discoverSnapshot(
+            candidates = listOf(candidate()),
+            trustPolicy = trustedPolicy,
+        )
+        val afterPackageUpdate = McpDaemonDiscoverer.discoverSnapshot(
+            candidates = listOf(
+                candidate(requestedPermissions = setOf("android.permission.INTERNET")),
+            ),
+            trustPolicy = trustedPolicy,
+        )
+
+        initial.accepted.size shouldBe 1
+        afterPackageUpdate.accepted shouldBe emptyMap()
+        afterPackageUpdate.rejected.single().reason shouldBe
+            NoNetworkPermissionPolicy.rejectionReason("android.permission.INTERNET")
     }
 
     test("rejects candidate with unreadable signing certificate before catalog parsing") {

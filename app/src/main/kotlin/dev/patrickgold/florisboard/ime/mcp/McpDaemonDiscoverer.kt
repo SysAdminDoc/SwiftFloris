@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.ime.mcp
 
+import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonObject
@@ -42,14 +43,16 @@ import kotlinx.serialization.json.jsonPrimitive
  *     enforced by PackageManager before reaching the discoverer; the
  *     discoverer re-checks defensively in case the caller hand-fed
  *     a fixture list.
- *  3. Candidate must expose a signing-certificate fingerprint that is
+ *  3. Candidate package must not request a permission from
+ *     [NoNetworkPermissionPolicy.DeniedPermissions].
+ *  4. Candidate must expose a signing-certificate fingerprint that is
  *     either co-signed with the IME or explicitly pinned by the user.
- *  4. Protocol version metadata must be in `1..SUPPORTED_PROTOCOL_VERSION`.
- *  5. Tool catalog JSON must parse + contain at least one entry with
+ *  5. Protocol version metadata must be in `1..SUPPORTED_PROTOCOL_VERSION`.
+ *  6. Tool catalog JSON must parse + contain at least one entry with
  *     a non-blank `name`. Tools missing `description` or
  *     `parameterSchema` default to safe placeholders so a partial
  *     catalog still lights up something.
- *  6. Catalog payload must not exceed
+ *  7. Catalog payload must not exceed
  *     [McpBridgeContract.MAX_PAYLOAD_BYTES] — runaway-tool guard.
  *
  * The full Android-side wrapper that converts `ResolveInfo` →
@@ -93,11 +96,7 @@ object McpDaemonDiscoverer {
         }
         return McpDiscoverySnapshot(
             accepted = out,
-            rejected = rejected.sortedWith(
-                compareBy<RejectedMcpDaemon> { it.packageName }
-                    .thenBy { it.daemonClassName }
-                    .thenBy { it.reason },
-            ),
+            rejected = rejected.sortedWith(RejectedMcpDaemonDisplayOrder),
         )
     }
 
@@ -106,6 +105,9 @@ object McpDaemonDiscoverer {
         trustPolicy: McpDaemonTrustPolicy,
     ): RejectedMcpDaemon? {
         if (cand.packageName.isBlank() || cand.daemonClassName.isBlank()) return null
+        NoNetworkPermissionPolicy.firstDenied(cand.requestedPermissions)?.let { permission ->
+            return cand.rejected(NoNetworkPermissionPolicy.rejectionReason(permission))
+        }
         if (!cand.hasBindPermission) return null
         val signingCert = cand.signingCertSha256
         if (signingCert.isNullOrBlank()) {
@@ -171,6 +173,8 @@ object McpDaemonDiscoverer {
  *  - [hasBindPermission] — true when the service declares
  *    [McpBridgeContract.PERMISSION_BIND_MCP]; PackageManager normally
  *    enforces this for us, but the discoverer re-checks defensively.
+ *  - [requestedPermissions] — every permission requested by the daemon
+ *    package, regardless of current grant state.
  *  - [toolCatalogJson] — raw JSON pulled from the resource pointed to
  *    by [McpBridgeContract.METADATA_TOOL_CATALOG]. Expected shape:
  *    `{"tools": [{"name": "...", "description": "...", "parameterSchema": "..."}, ...]}`.
@@ -182,6 +186,7 @@ data class DiscoveryCandidate(
     val hasBindPermission: Boolean,
     val signingCertSha256: String?,
     val toolCatalogJson: String,
+    val requestedPermissions: Set<String> = emptySet(),
 )
 
 data class McpDiscoverySnapshot(
@@ -202,6 +207,11 @@ data class RejectedMcpDaemon(
     val signingCertSha256: String?,
     val reason: String,
 )
+
+internal val RejectedMcpDaemonDisplayOrder: Comparator<RejectedMcpDaemon> =
+    compareBy<RejectedMcpDaemon> { it.packageName }
+        .thenBy { it.daemonClassName }
+        .thenBy { it.reason }
 
 data class McpDaemonTrustPolicy(
     val pinnedSigningCertificates: Map<String, String> = emptyMap(),

@@ -20,8 +20,10 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.os.Build
 import android.os.Bundle
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
+import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
 
 /**
  * ROADMAP §10.5 L7.5 — Android wrapper that converts
@@ -31,16 +33,18 @@ import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
  *
  * Lookup pipeline:
  *  1. Query services matching the [McpBridgeContract.ACTION_BIND_MCP_DAEMON]
- *     intent + `GET_META_DATA` flag.
+ *     intent + `GET_META_DATA | GET_PERMISSIONS` flags.
  *  2. For each [ResolveInfo], extract the package/class names,
  *     protocol version meta-data, tool-catalog resource pointer.
- *  3. Read the daemon package's signing-certificate fingerprint.
- *  4. Resolve the tool-catalog resource through the daemon's own
+ *  3. Reject a daemon package requesting any permission in the shared
+ *     [NoNetworkPermissionPolicy.DeniedPermissions] set.
+ *  4. Read the daemon package's signing-certificate fingerprint.
+ *  5. Resolve the tool-catalog resource through the daemon's own
  *     `Resources` (via `Context.createPackageContext`) so we can read
  *     the JSON without needing a content URI handshake.
- *  5. Confirm the daemon advertises the signature-protected
+ *  6. Confirm the daemon advertises the signature-protected
  *     [McpBridgeContract.PERMISSION_BIND_MCP] on its `<service>`.
- *  6. Hand the [DiscoveryCandidate] list to [McpDaemonDiscoverer]
+ *  7. Hand the [DiscoveryCandidate] list to [McpDaemonDiscoverer]
  *     for validation + parse-and-build into a [DaemonEntry] map.
  *
  * **Pure-JVM testability:** the Android-bound pipeline is decomposed
@@ -52,6 +56,10 @@ import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
  * inspection covers it.
  */
 object McpAndroidDiscoverer {
+    internal const val SERVICE_QUERY_FLAGS: Int =
+        PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS
+    internal const val REASON_PERMISSION_LOOKUP_FAILED: String =
+        "cannot read requested permissions"
 
     /**
      * Drive a full discovery pass against [PackageManager]. Returns
@@ -83,8 +91,33 @@ object McpAndroidDiscoverer {
     ): McpDiscoverySnapshot {
         val pm = context.packageManager
         val resolveInfos = queryServices(pm)
-        val candidates = resolveInfos.mapNotNull { info ->
-            val attrs = serviceAttrsFrom(info) ?: return@mapNotNull null
+        val packagePermissions = mutableMapOf<String, RequestedPermissionsSnapshot>()
+        val platformRejections = mutableListOf<RejectedMcpDaemon>()
+        val candidates = resolveInfos.mapNotNull candidateLoop@ { info ->
+            val service = info.serviceInfo ?: return@candidateLoop null
+            val packageName = service.packageName.orEmpty()
+            val className = service.name.orEmpty()
+            if (packageName.isBlank() || className.isBlank()) return@candidateLoop null
+
+            val permissionSnapshot = packagePermissions.getOrPut(packageName) {
+                readRequestedPermissions(pm, packageName)
+            }
+            permissionRejection(
+                packageName = packageName,
+                className = className,
+                snapshot = permissionSnapshot,
+            )?.let { rejected ->
+                platformRejections += rejected
+                return@candidateLoop null
+            }
+
+            val attrs = serviceAttrsFrom(info)
+                ?.copy(
+                    requestedPermissions = permissionSnapshot.requestedPermissions
+                        .orEmpty()
+                        .toSet(),
+                )
+                ?: return@candidateLoop null
             val attrsWithSigning = attrs.copy(
                 signingCertSha256 = readSigningFingerprint(context, attrs.packageName),
             )
@@ -93,12 +126,16 @@ object McpAndroidDiscoverer {
             }
         }
         val pinSet = McpSigningPinSet.parse(persistedSigningPinsRaw)
-        return McpDaemonDiscoverer.discoverSnapshot(
+        val discovered = McpDaemonDiscoverer.discoverSnapshot(
             candidates = candidates,
             trustPolicy = McpDaemonTrustPolicy(
                 pinnedSigningCertificates = pinSet.asMap(),
                 trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
             ),
+        )
+        return discovered.copy(
+            rejected = (platformRejections + discovered.rejected)
+                .sortedWith(RejectedMcpDaemonDisplayOrder),
         )
     }
 
@@ -128,6 +165,7 @@ object McpAndroidDiscoverer {
             hasBindPermission = attrs.permission == McpBridgeContract.PERMISSION_BIND_MCP,
             signingCertSha256 = attrs.signingCertSha256,
             toolCatalogJson = catalogJson,
+            requestedPermissions = attrs.requestedPermissions,
         )
     }
 
@@ -153,6 +191,7 @@ object McpAndroidDiscoverer {
                 /* defaultValue = */ 0,
             ),
             signingCertSha256 = null,
+            requestedPermissions = emptySet(),
         )
     }
 
@@ -164,7 +203,33 @@ object McpAndroidDiscoverer {
         val protocolVersion: Int,
         val catalogResourceId: Int,
         val signingCertSha256: String?,
+        val requestedPermissions: Set<String> = emptySet(),
     )
+
+    internal data class RequestedPermissionsSnapshot(
+        val requestedPermissions: Array<String>?,
+        val lookupSucceeded: Boolean,
+    )
+
+    internal fun permissionRejection(
+        packageName: String,
+        className: String,
+        snapshot: RequestedPermissionsSnapshot,
+    ): RejectedMcpDaemon? {
+        val reason = if (!snapshot.lookupSucceeded) {
+            REASON_PERMISSION_LOOKUP_FAILED
+        } else {
+            val permission = NoNetworkPermissionPolicy.firstDenied(snapshot.requestedPermissions)
+                ?: return null
+            NoNetworkPermissionPolicy.rejectionReason(permission)
+        }
+        return RejectedMcpDaemon(
+            packageName = packageName,
+            daemonClassName = className,
+            signingCertSha256 = null,
+            reason = reason,
+        )
+    }
 
     private fun queryServices(pm: PackageManager): List<ResolveInfo> {
         val intent = Intent(McpBridgeContract.ACTION_BIND_MCP_DAEMON)
@@ -172,8 +237,34 @@ object McpAndroidDiscoverer {
             @Suppress("DEPRECATION") // The PackageManager.ResolveInfoFlags API
             // returns the same data on API 33+; the legacy overload keeps
             // us compatible across the full minSdk 26 target range.
-            pm.queryIntentServices(intent, PackageManager.GET_META_DATA)
+            pm.queryIntentServices(intent, SERVICE_QUERY_FLAGS)
         }.getOrDefault(emptyList())
+    }
+
+    @Suppress("DEPRECATION")
+    private fun readRequestedPermissions(
+        pm: PackageManager,
+        packageName: String,
+    ): RequestedPermissionsSnapshot {
+        return runCatching {
+            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.getPackageInfo(
+                    packageName,
+                    PackageManager.PackageInfoFlags.of(PackageManager.GET_PERMISSIONS.toLong()),
+                )
+            } else {
+                pm.getPackageInfo(packageName, PackageManager.GET_PERMISSIONS)
+            }
+            RequestedPermissionsSnapshot(
+                requestedPermissions = packageInfo.requestedPermissions,
+                lookupSucceeded = true,
+            )
+        }.getOrElse {
+            RequestedPermissionsSnapshot(
+                requestedPermissions = null,
+                lookupSucceeded = false,
+            )
+        }
     }
 
     /**

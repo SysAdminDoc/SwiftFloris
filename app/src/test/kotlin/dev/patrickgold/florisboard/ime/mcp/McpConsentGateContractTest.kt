@@ -42,6 +42,18 @@ class McpConsentGateContractTest : FunSpec({
         strings shouldContain "settings__mcp__status_disabled"
         strings shouldContain "settings__mcp__bridge_enabled"
     }
+
+    test("MCP settings rescan narrows the running registry and displays rejection reasons") {
+        val source = locateProjectFile(
+            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/mcp/McpSettingsScreen.kt",
+        ).readText()
+
+        source shouldContain "McpServiceLifecycle.reconcileActiveDaemons(snapshot.accepted)"
+        source shouldContain "McpSigningPinPersistencePolicy.shouldPersistProposedPin"
+        source shouldContain """.replace("{reason}", rejected.reason)"""
+        source shouldContain "rejected.reason == McpDaemonTrustPolicy.ReasonExplicitTrustRequired"
+        source shouldContain "rejected.reason == McpDaemonTrustPolicy.ReasonSigningCertificateChanged"
+    }
 })
 
 private fun locateProjectFile(path: String): File {

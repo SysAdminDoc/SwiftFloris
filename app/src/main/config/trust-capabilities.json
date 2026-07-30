@@ -32,7 +32,7 @@
       "invoke",
       "listToolNames"
     ],
-    "daemonNetworkPermissionsRejected": false
+    "daemonNetworkPermissionsRejected": true
   },
   "optionalCapabilities": {
     "externalVoiceImeHandoff": "shipped",

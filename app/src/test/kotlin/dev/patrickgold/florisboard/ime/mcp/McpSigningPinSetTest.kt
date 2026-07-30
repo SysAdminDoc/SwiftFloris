@@ -83,4 +83,41 @@ class McpSigningPinSetTest : FunSpec({
         pins.withoutPackage("org.swiftfloris.mcp.a").asMap() shouldBe
             mapOf("org.swiftfloris.mcp.b" to PIN_SHA_B)
     }
+
+    test("proposed pin persists only after a fresh scan accepts the exact daemon") {
+        val key = DaemonKey(
+            packageName = "org.swiftfloris.mcp.a",
+            daemonClassName = "org.swiftfloris.mcp.a.Daemon",
+        )
+        val entry = DaemonEntry(
+            key = key,
+            protocolVersion = 1,
+            tools = emptyList(),
+        )
+        val accepted = McpDiscoverySnapshot(
+            accepted = mapOf(key to entry),
+            rejected = emptyList(),
+        )
+        val rejectedAfterPackageUpdate = McpDiscoverySnapshot(
+            accepted = emptyMap(),
+            rejected = listOf(
+                RejectedMcpDaemon(
+                    packageName = key.packageName,
+                    daemonClassName = key.daemonClassName,
+                    signingCertSha256 = null,
+                    reason = "declares denied network permission android.permission.INTERNET",
+                ),
+            ),
+        )
+
+        McpSigningPinPersistencePolicy.shouldPersistProposedPin(accepted, key) shouldBe true
+        McpSigningPinPersistencePolicy.shouldPersistProposedPin(
+            rejectedAfterPackageUpdate,
+            key,
+        ) shouldBe false
+        McpSigningPinPersistencePolicy.shouldPersistProposedPin(
+            accepted,
+            key.copy(daemonClassName = "org.swiftfloris.mcp.a.OtherDaemon"),
+        ) shouldBe false
+    }
 })

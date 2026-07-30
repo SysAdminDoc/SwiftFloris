@@ -26,7 +26,9 @@ FIXTURE_FILES = (
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/handwriting/StrokeRecognizer.kt",
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/mcp/McpAndroidDiscoverer.kt",
+    "app/src/main/kotlin/dev/patrickgold/florisboard/ime/mcp/McpDaemonDiscoverer.kt",
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/mcp/McpServiceLifecycle.kt",
+    "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/NoNetworkPermissionPolicy.kt",
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/HeuristicSmartComposeProvider.kt",
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/RewriteProvider.kt",
     "app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/SmartComposeProvider.kt",
@@ -155,6 +157,17 @@ def main() -> int:
                     "const val AVAILABLE = true",
                 ),
                 "optionalCapabilities",
+            ),
+            (
+                "MCP daemon network policy drift",
+                lambda root: replace(
+                    root
+                    / "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/"
+                    "NoNetworkPermissionPolicy.kt",
+                    '"android.permission.INTERNET",',
+                    '"android.permission.NETWORK_PERMISSION_REMOVED",',
+                ),
+                "mcp.daemonNetworkPermissionsRejected",
             ),
             (
                 "clipboard documentation regression",

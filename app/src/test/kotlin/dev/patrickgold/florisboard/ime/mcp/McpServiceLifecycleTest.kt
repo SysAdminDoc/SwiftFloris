@@ -93,6 +93,58 @@ class McpServiceLifecycleTest : FunSpec({
         McpClientRegistry.active().shouldBeInstanceOf<AndroidMcpClient>()
     }
 
+    test("rescan removes registry eligibility before unbinding a rejected daemon") {
+        val observedRegistryAtUnbind = mutableListOf<Set<DaemonKey>>()
+        val l = lifecycle(
+            unbind = {
+                observedRegistryAtUnbind += McpDaemonRegistry.active().keys
+            },
+        )
+        l.startWithDaemons(mapOf(keyA to entryA))
+
+        l.replaceDaemons(emptyMap())
+
+        McpDaemonRegistry.active() shouldBe emptyMap()
+        observedRegistryAtUnbind shouldBe listOf(emptySet())
+    }
+
+    test("rescan unbinds removed daemons and binds only newly eligible daemons") {
+        val bound = mutableListOf<DaemonKey>()
+        val unbound = mutableListOf<DaemonKey>()
+        val l = lifecycle(
+            bind = { key -> bound += key; true },
+            unbind = { key -> unbound += key },
+        )
+        l.startWithDaemons(mapOf(keyA to entryA))
+        bound.clear()
+
+        l.replaceDaemons(mapOf(keyB to entryB))
+
+        bound shouldBe listOf(keyB)
+        unbound shouldBe listOf(keyA)
+        McpDaemonRegistry.active() shouldBe mapOf(keyB to entryB)
+    }
+
+    test("rescan leaves unchanged eligible daemons bound while refreshing metadata") {
+        val bound = mutableListOf<DaemonKey>()
+        val unbound = mutableListOf<DaemonKey>()
+        val refreshedEntry = entryA.copy(
+            tools = listOf(toolA.copy(description = "Updated description")),
+        )
+        val l = lifecycle(
+            bind = { key -> bound += key; true },
+            unbind = { key -> unbound += key },
+        )
+        l.startWithDaemons(mapOf(keyA to entryA))
+        bound.clear()
+
+        l.replaceDaemons(mapOf(keyA to refreshedEntry))
+
+        bound shouldBe emptyList()
+        unbound shouldBe emptyList()
+        McpDaemonRegistry.get(keyA) shouldBe refreshedEntry
+    }
+
     test("startWithDaemons throws on second call (lifecycle is single-shot)") {
         val l = lifecycle()
         l.startWithDaemons(emptyMap())

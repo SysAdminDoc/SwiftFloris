@@ -79,3 +79,16 @@ data class McpSigningPinSet(
             FingerprintPattern.matches(fingerprint.uppercase())
     }
 }
+
+/**
+ * Prevents a trust-confirmation TOCTOU: the package may change permissions,
+ * signing identity, service metadata, or catalog after Settings rendered the
+ * confirmation row. A proposed pin becomes durable only when a fresh scan
+ * accepts that exact daemon key under the proposed fingerprint.
+ */
+internal object McpSigningPinPersistencePolicy {
+    fun shouldPersistProposedPin(
+        snapshot: McpDiscoverySnapshot,
+        daemonKey: DaemonKey,
+    ): Boolean = daemonKey in snapshot.accepted
+}

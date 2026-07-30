@@ -25,7 +25,8 @@ class ReleaseEvidenceContractTest {
         checker shouldContain "validate_public_copy"
         registry shouldContain "\"clipboardHistory\": \"plaintext_room\""
         registry shouldContain "\"localVoiceRecognizer\": \"preview_only\""
-        registry shouldContain "\"daemonNetworkPermissionsRejected\": false"
+        checker shouldContain "NoNetworkPermissionPolicy.kt"
+        registry shouldContain "\"daemonNetworkPermissionsRejected\": true"
         readme shouldContain "app/src/main/config/trust-capabilities.json"
     }
 

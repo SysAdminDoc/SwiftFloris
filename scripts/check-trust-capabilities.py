@@ -241,19 +241,31 @@ def derive_optional_capabilities(root: Path) -> dict[str, str]:
 
 
 def derive_mcp_network_policy(root: Path) -> bool:
-    source = strip_comments(
+    discoverer = strip_comments(
         read_text(
             root,
             "app/src/main/kotlin/dev/patrickgold/florisboard/ime/mcp/McpAndroidDiscoverer.kt",
         )
     )
-    return (
-        "GET_PERMISSIONS" in source
-        and "requestedPermissions" in source
-        and (
-            "DefaultNetworkPermissions" in source
-            or all(permission in source for permission in NETWORK_PERMISSIONS)
+    trust_core = strip_comments(
+        read_text(
+            root,
+            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/mcp/McpDaemonDiscoverer.kt",
         )
+    )
+    policy = strip_comments(
+        read_text(
+            root,
+            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/"
+            "NoNetworkPermissionPolicy.kt",
+        )
+    )
+    return (
+        "GET_PERMISSIONS" in discoverer
+        and "readRequestedPermissions(pm, packageName)" in discoverer
+        and "NoNetworkPermissionPolicy.firstDenied(snapshot.requestedPermissions)" in discoverer
+        and "NoNetworkPermissionPolicy.firstDenied(cand.requestedPermissions)" in trust_core
+        and all(permission in policy for permission in NETWORK_PERMISSIONS)
     )
 
 
@@ -494,11 +506,18 @@ def validate_public_copy(root: Path, registry: dict[str, Any]) -> list[str]:
         "No handwriting recognizer addon currently ships",
         "handwriting runtime status",
     )
-    require(
-        privacy,
-        "SwiftFloris does not currently inspect or reject a daemon's network permissions",
-        "MCP daemon trust boundary",
-    )
+    if registry["mcp"]["daemonNetworkPermissionsRejected"]:
+        forbid(
+            privacy,
+            "SwiftFloris does not currently inspect or reject a daemon's network permissions",
+            "stale MCP daemon trust boundary",
+        )
+    else:
+        require(
+            privacy,
+            "SwiftFloris does not currently inspect or reject a daemon's network permissions",
+            "MCP daemon trust boundary",
+        )
     forbid(
         privacy,
         "The actual translator is the **Bergamot WASM runtime** delivered",
@@ -514,11 +533,12 @@ def validate_public_copy(root: Path, registry: dict[str, Any]) -> list[str]:
         "Recognizer engine is delivered as a separately-installed",
         "delivered handwriting runtime claim",
     )
-    forbid(
-        privacy,
-        "they cannot themselves declare `INTERNET` and remain enrollable",
-        "MCP network-permission rejection claim",
-    )
+    if not registry["mcp"]["daemonNetworkPermissionsRejected"]:
+        forbid(
+            privacy,
+            "they cannot themselves declare `INTERNET` and remain enrollable",
+            "MCP network-permission rejection claim",
+        )
 
     readme = "README.md"
     require(
@@ -531,6 +551,12 @@ def validate_public_copy(root: Path, registry: dict[str, Any]) -> list[str]:
         "MCP daemon packages are a separate trust boundary",
         "MCP daemon trust disclosure",
     )
+    if registry["mcp"]["daemonNetworkPermissionsRejected"]:
+        require(
+            readme,
+            "packages requesting network permissions are rejected before trust or binding",
+            "MCP daemon network-permission gate",
+        )
     require(
         readme,
         "None of the Bergamot, LiteRT-LM, handwriting, or local voice recognizer runtimes currently ships",

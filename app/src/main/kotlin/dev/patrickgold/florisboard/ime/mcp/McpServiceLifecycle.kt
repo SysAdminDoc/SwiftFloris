@@ -69,16 +69,42 @@ class McpServiceLifecycle(
         flogInfo { "MCP bridge: bound ${daemons.size} daemon(s)" }
     }
 
+    /**
+     * Replace the live eligible-daemon set after an explicit PackageManager
+     * rescan. The registry is narrowed before removed services are unbound so
+     * dispatch cannot race a package that just became ineligible.
+     */
+    @Synchronized
+    fun replaceDaemons(daemons: Map<DaemonKey, DaemonEntry>) {
+        if (!started) return
+        val previousKeys = McpDaemonRegistry.active().keys
+        val nextKeys = daemons.keys
+        McpDaemonRegistry.setActive(daemons)
+        for (key in previousKeys - nextKeys) {
+            unbindCallback(key)
+        }
+        for (key in nextKeys - previousKeys) {
+            bindCallback(key)
+        }
+        flogInfo {
+            "MCP bridge: discovery rescan accepted ${daemons.size} daemon(s)"
+        }
+    }
+
     /** Tear down the bridge. Idempotent. */
     fun stop() {
         if (!started) return
         started = false
-        for (key in McpDaemonRegistry.active().keys) {
-            unbindCallback(key)
+        try {
+            for (key in McpDaemonRegistry.active().keys) {
+                unbindCallback(key)
+            }
+            shutdownCallback()
+        } finally {
+            McpDaemonRegistry.setActive(emptyMap())
+            McpClientRegistry.setActive(NoOpMcpClient)
+            unregisterActiveLifecycle(this)
         }
-        shutdownCallback()
-        McpDaemonRegistry.setActive(emptyMap())
-        McpClientRegistry.setActive(NoOpMcpClient)
     }
 
     val isStarted: Boolean get() = started
@@ -120,7 +146,36 @@ class McpServiceLifecycle(
             }.getOrDefault(McpDiscoverySnapshot.Empty)
             McpDaemonDiscoveryStore.setActive(snapshot)
             lifecycle.startWithDaemons(snapshot.accepted)
+            registerActiveLifecycle(lifecycle)
             return lifecycle
+        }
+
+        /**
+         * Apply a Settings-triggered trust/package rescan to the running IME
+         * lifecycle, if one exists in this process.
+         */
+        fun reconcileActiveDaemons(daemons: Map<DaemonKey, DaemonEntry>): Boolean {
+            val lifecycle = synchronized(ActiveLifecycleLock) { activeLifecycle }
+                ?: return false
+            lifecycle.replaceDaemons(daemons)
+            return true
+        }
+
+        private val ActiveLifecycleLock = Any()
+        private var activeLifecycle: McpServiceLifecycle? = null
+
+        private fun registerActiveLifecycle(lifecycle: McpServiceLifecycle) {
+            synchronized(ActiveLifecycleLock) {
+                activeLifecycle = lifecycle
+            }
+        }
+
+        private fun unregisterActiveLifecycle(lifecycle: McpServiceLifecycle) {
+            synchronized(ActiveLifecycleLock) {
+                if (activeLifecycle === lifecycle) {
+                    activeLifecycle = null
+                }
+            }
         }
     }
 }

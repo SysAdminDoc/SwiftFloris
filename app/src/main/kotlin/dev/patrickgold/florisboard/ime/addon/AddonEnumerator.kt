@@ -22,6 +22,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
+import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import java.io.File
@@ -45,7 +46,7 @@ import java.io.File
  */
 class AddonEnumerator(
     private val context: Context,
-    private val networkPermissionsRejected: Set<String> = DefaultNetworkPermissions,
+    private val networkPermissionsRejected: Set<String> = NoNetworkPermissionPolicy.DeniedPermissions,
 ) {
 
     companion object {
@@ -54,13 +55,7 @@ class AddonEnumerator(
          *  no-INTERNET posture (ROADMAP §1, STD-NO-INTERNET). An addon that
          *  needs *any* of these is fundamentally incompatible with the
          *  privacy stance, regardless of intent. */
-        val DefaultNetworkPermissions: Set<String> = setOf(
-            "android.permission.INTERNET",
-            "android.permission.ACCESS_NETWORK_STATE",
-            "android.permission.ACCESS_WIFI_STATE",
-            "android.permission.CHANGE_NETWORK_STATE",
-            "android.permission.CHANGE_WIFI_STATE",
-        )
+        val DefaultNetworkPermissions: Set<String> = NoNetworkPermissionPolicy.DeniedPermissions
 
         /** Convenience: the IME's own package name, used to skip self-scan. */
         private const val SCAN_FLAGS_BASE =
@@ -70,7 +65,10 @@ class AddonEnumerator(
             requestedPermissions: Array<String>?,
             networkPermissionsRejected: Set<String>,
         ): String? {
-            return requestedPermissions.orEmpty().firstOrNull { it in networkPermissionsRejected }
+            return NoNetworkPermissionPolicy.firstDenied(
+                requestedPermissions,
+                networkPermissionsRejected,
+            )
         }
 
         internal fun packageBundleSizeBytes(app: ApplicationInfo): Long? {
@@ -173,7 +171,7 @@ class AddonEnumerator(
      *  1. Skip if missing addon-type metadata — common case, not an error.
      *  2. Reject if addon-type metadata is present but unrecognised
      *     (forward-compat: silent so old IME with new addon doesn't crash).
-     *  3. Reject if the addon requests any banned network permission.
+     *  3. Reject if the addon requests any denied network permission.
      *  4. Reject if the addon manifest is missing the descriptor / version /
      *     license metadata keys.
      *  5. Reject if the signing-cert fingerprint can't be read (Android 8
@@ -190,7 +188,7 @@ class AddonEnumerator(
             ?: return AddonVerdict.Rejected(unknownAddonTypeRejectionReason(typeRaw))
         val banned = firstRejectedNetworkPermission(info.requestedPermissions)
         if (banned != null) {
-            return AddonVerdict.Rejected("declares banned network permission $banned")
+            return AddonVerdict.Rejected(NoNetworkPermissionPolicy.rejectionReason(banned))
         }
         val descriptorRes = meta.getInt(AddonContract.MetadataKey.ADDON_DESCRIPTOR, 0)
         if (descriptorRes == 0) {

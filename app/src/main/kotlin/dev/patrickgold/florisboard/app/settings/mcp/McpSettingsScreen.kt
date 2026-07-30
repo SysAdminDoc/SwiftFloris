@@ -37,12 +37,15 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
+import dev.patrickgold.florisboard.ime.mcp.DaemonKey
 import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
 import dev.patrickgold.florisboard.ime.mcp.DisabledToolSet
 import dev.patrickgold.florisboard.ime.mcp.McpAndroidDiscoverer
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonDiscoveryStore
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonTrustPolicy
+import dev.patrickgold.florisboard.ime.mcp.McpServiceLifecycle
+import dev.patrickgold.florisboard.ime.mcp.McpSigningPinPersistencePolicy
 import dev.patrickgold.florisboard.ime.mcp.McpSigningPinSet
 import dev.patrickgold.florisboard.ime.mcp.RejectedMcpDaemon
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
@@ -62,9 +65,9 @@ import org.florisboard.lib.compose.stringRes
 /**
  * ROADMAP §10.5 L7.6 + L7.6b — Settings → MCP daemon bridge.
  *
- * Reads `McpDaemonRegistry.active()` once on entry — the registry is
- * rebuilt at IME service startup, so the snapshot is stable for the
- * life of the screen. Per-daemon enable / disable writes back to
+ * Seeds its daemon view from `McpDaemonRegistry.active()` and replaces
+ * it after each explicit discovery rescan so revoked packages disappear
+ * from both dispatch and Settings immediately. Per-daemon enable / disable writes back to
  * [dev.patrickgold.florisboard.app.AppPrefs.Mcp.disabledDaemonPackages]
  * via the [DisabledDaemonSet] codec. The router consults the same
  * pref before forwarding any `callTool` request so disabled daemons
@@ -85,7 +88,9 @@ fun McpSettingsScreen() = FlorisScreen {
         SigningFingerprint.sha256(context.applicationContext)
     }
 
-    val activeDaemons = McpDaemonRegistry.active()
+    var activeDaemons by remember {
+        mutableStateOf(McpDaemonRegistry.active())
+    }
     val disabledSerialized by prefs.mcp.disabledDaemonPackages.collectAsState()
     val disabledSet = remember(disabledSerialized) {
         DisabledDaemonSet.parse(disabledSerialized)
@@ -104,24 +109,48 @@ fun McpSettingsScreen() = FlorisScreen {
     var scanError by remember { mutableStateOf<String?>(null) }
     var pendingTrustAction by remember { mutableStateOf<McpTrustAction?>(null) }
 
-    fun rescanDaemonTrust(persistedPinsOverride: String? = null) {
+    fun rescanDaemonTrust(
+        persistedPinsOverride: String? = null,
+        trustTarget: DaemonKey? = null,
+    ) {
         if (scanInProgress) return
         scanInProgress = true
         scanError = null
         scope.launch {
             try {
-                val persistedPins = persistedPinsOverride ?: prefs.mcp.signingCertPins.get()
-                if (persistedPinsOverride != null) {
-                    prefs.mcp.signingCertPins.set(persistedPinsOverride)
-                }
-                val snapshot = withContext(Dispatchers.Default) {
+                val currentPins = prefs.mcp.signingCertPins.get()
+                val proposedPins = persistedPinsOverride ?: currentPins
+                var snapshot = withContext(Dispatchers.Default) {
                     McpAndroidDiscoverer.runDiscoverySnapshot(
                         context = context.applicationContext,
-                        persistedSigningPinsRaw = persistedPins,
+                        persistedSigningPinsRaw = proposedPins,
                         trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
                     )
                 }
+                if (persistedPinsOverride != null) {
+                    val mayPersist = trustTarget == null ||
+                        McpSigningPinPersistencePolicy.shouldPersistProposedPin(
+                            snapshot = snapshot,
+                            daemonKey = trustTarget,
+                        )
+                    if (mayPersist) {
+                        prefs.mcp.signingCertPins.set(persistedPinsOverride)
+                    } else {
+                        // The package changed after confirmation. Re-run under
+                        // the still-durable pins so Settings never presents a
+                        // snapshot based on trust that was correctly refused.
+                        snapshot = withContext(Dispatchers.Default) {
+                            McpAndroidDiscoverer.runDiscoverySnapshot(
+                                context = context.applicationContext,
+                                persistedSigningPinsRaw = currentPins,
+                                trustedRootSigningCertSha256 = trustedRootSigningCertSha256,
+                            )
+                        }
+                    }
+                }
                 McpDaemonDiscoveryStore.setActive(snapshot)
+                McpServiceLifecycle.reconcileActiveDaemons(snapshot.accepted)
+                activeDaemons = snapshot.accepted
                 discoverySnapshot = snapshot
             } catch (e: Exception) {
                 scanError = e.message ?: e::class.simpleName
@@ -317,7 +346,13 @@ fun McpSettingsScreen() = FlorisScreen {
                             val nextPins = McpSigningPinSet.parse(prefs.mcp.signingCertPins.get())
                                 .withPinnedCertificate(action.packageName, action.signingCertSha256)
                                 .encode()
-                            rescanDaemonTrust(persistedPinsOverride = nextPins)
+                            rescanDaemonTrust(
+                                persistedPinsOverride = nextPins,
+                                trustTarget = DaemonKey(
+                                    packageName = action.packageName,
+                                    daemonClassName = action.daemonClassName,
+                                ),
+                            )
                         }
                     }
                 },
