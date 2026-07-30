@@ -23,7 +23,6 @@ import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.florisboard.lib.kotlin.io.FsDir
-import org.florisboard.lib.kotlin.resultErr
 import org.florisboard.lib.kotlin.resultOk
 
 /**
@@ -48,7 +47,7 @@ abstract class Extension {
 
     abstract fun components(): List<ExtensionComponent>
 
-    fun isLoaded() = workingDir != null
+    fun isLoaded() = workingDir?.let { it.exists() && it.isDirectory } == true
 
     open fun onBeforeLoad(context: Context, cacheDir: FsDir) {
         /* Empty */
@@ -59,29 +58,47 @@ abstract class Extension {
     }
 
     fun load(context: Context, force: Boolean = false): Result<Unit> {
-        val cacheDir = FsDir(context.cacheDir, meta.id)
-        if (cacheDir.exists()) {
-            if (force) {
-                cacheDir.deleteRecursively()
-            } else {
-                // TODO: check if extension loaded should be kept as is
-                cacheDir.deleteRecursively()
-            }
+        if (isLoaded() && !force) {
+            return resultOk()
         }
-        cacheDir.mkdirs()
+        if (workingDir != null) {
+            unload(context)
+        }
         val sourceRef = sourceRef ?: return resultOk()
-        onBeforeLoad(context, cacheDir)
-        ZipUtils.unzip(context, sourceRef, cacheDir).onFailure { return resultErr(it) }
-        runCatching {
+        val cacheDir = FsDir(context.cacheDir, meta.id)
+        val result = runCatching {
+            if (cacheDir.exists()) {
+                check(cacheDir.deleteRecursively() && !cacheDir.exists()) {
+                    "Could not remove stale extension working directory"
+                }
+            }
+            check(cacheDir.mkdirs() || cacheDir.isDirectory) {
+                "Could not create extension working directory"
+            }
+            onBeforeLoad(context, cacheDir)
+            ZipUtils.unzip(context, sourceRef, cacheDir).getOrThrow()
             if (sourceRef.isAssets) {
                 ExtensionPackagePolicy.inspect(this)
             } else {
                 ExtensionPackagePolicy.validateExtracted(this, cacheDir)
             }
-        }.onFailure { return resultErr(it) }
-        workingDir = cacheDir
-        onAfterLoad(context, cacheDir)
-        return resultOk()
+            workingDir = cacheDir
+            onAfterLoad(context, cacheDir)
+        }
+        result.exceptionOrNull()?.let { loadError ->
+            if (workingDir == cacheDir) {
+                runCatching {
+                    onBeforeUnload(context, cacheDir)
+                }.onFailure(loadError::addSuppressed)
+            }
+            workingDir = null
+            runCatching {
+                check(!cacheDir.exists() || (cacheDir.deleteRecursively() && !cacheDir.exists())) {
+                    "Could not remove failed extension working directory"
+                }
+            }.onFailure(loadError::addSuppressed)
+        }
+        return result
     }
 
     open fun onBeforeUnload(context: Context, cacheDir: FsDir) {
@@ -94,11 +111,19 @@ abstract class Extension {
 
     fun unload(context: Context) {
         val cacheDir = workingDir ?: FsDir(context.cacheDir, meta.id)
-        if (!cacheDir.exists()) return
-        onBeforeUnload(context, cacheDir)
-        cacheDir.deleteRecursively()
-        workingDir = null
-        onAfterUnload(context, cacheDir)
+        if (workingDir == null && !cacheDir.exists()) return
+        try {
+            onBeforeUnload(context, cacheDir)
+        } finally {
+            try {
+                check(!cacheDir.exists() || (cacheDir.deleteRecursively() && !cacheDir.exists())) {
+                    "Could not remove extension working directory"
+                }
+            } finally {
+                workingDir = null
+                onAfterUnload(context, cacheDir)
+            }
+        }
     }
 
     fun readExtensionFile(context: Context, relPath: String): String? {

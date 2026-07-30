@@ -153,8 +153,11 @@ class ThemeAndAddonsScreenshotTest {
             SmartbarOnlyTextInputThemeSurface(stylesheetFileName = "swiftkey_high_contrast.json")
         }
         val nlpManager by composeRule.activity.nlpManager()
+        val candidates = smartbarOnlyCandidates()
+        val candidateTexts = candidates.map { it.text }
+        nlpManager.suggestDirectly(candidates)
         composeRule.waitUntil(timeoutMillis = 10_000) {
-            nlpManager.activeCandidatesFlow.value.isNotEmpty()
+            nlpManager.activeCandidatesFlow.value.map { it.text } == candidateTexts
         }
         composeRule.waitForIdle()
         composeRule.onRoot().captureRoboImage(
@@ -268,26 +271,26 @@ class ThemeAndAddonsScreenshotTest {
             prefs.theme.perAppAccentDiscoveryHintState.set(PerAppAccentDiscoveryHintState.DISMISSED)
         }
         keyboardManager.activeState.isSmartbarOnlyMode = true
-        nlpManager.suggestDirectly(
-            listOf(
-                WordSuggestionCandidate(
-                    text = "hardware",
-                    secondaryText = "mode",
-                    confidence = 0.98,
-                    isEligibleForAutoCommit = true,
-                ),
-                WordSuggestionCandidate(
-                    text = "privacy",
-                    secondaryText = "local",
-                    confidence = 0.91,
-                ),
-                WordSuggestionCandidate(
-                    text = "SwiftFloris",
-                    confidence = 0.86,
-                ),
-            ),
-        )
+        nlpManager.clearSuggestions()
     }
+
+    private fun smartbarOnlyCandidates() = listOf(
+        WordSuggestionCandidate(
+            text = "hardware",
+            secondaryText = "mode",
+            confidence = 0.98,
+            isEligibleForAutoCommit = true,
+        ),
+        WordSuggestionCandidate(
+            text = "privacy",
+            secondaryText = "local",
+            confidence = 0.91,
+        ),
+        WordSuggestionCandidate(
+            text = "SwiftFloris",
+            confidence = 0.86,
+        ),
+    )
 
     private fun resetSmartbarOnlyState() {
         val keyboardManager by composeRule.activity.keyboardManager()

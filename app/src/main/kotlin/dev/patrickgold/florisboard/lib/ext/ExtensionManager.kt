@@ -33,11 +33,11 @@ import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.io.FlorisRef
 import dev.patrickgold.florisboard.lib.io.ZipUtils
-import dev.patrickgold.florisboard.lib.io.ArchiveEntryTooLargeException
 import dev.patrickgold.florisboard.lib.io.delete
 import dev.patrickgold.florisboard.lib.io.listDirs
 import dev.patrickgold.florisboard.lib.io.listFiles
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
+import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalForInheritanceCoroutinesApi
@@ -55,6 +55,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
 import org.florisboard.lib.android.FileObserver
+import org.florisboard.lib.android.writeFromFile
+import org.florisboard.lib.kotlin.io.FsDir
 import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.io.writeJson
 import org.florisboard.lib.kotlin.throwOnFailure
@@ -117,33 +119,62 @@ class ExtensionManager(context: Context) {
     }
 
     fun import(ext: Extension) {
-        val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
-        ExtensionPackagePolicy.validateExtracted(ext, workingDir)
-        val extFileName = ExtensionDefaults.createFlexName(ext.meta.id)
-        val relGroupPath = when (ext) {
-            is KeyboardExtension -> IME_KEYBOARD_PATH
-            is ThemeExtension -> IME_THEME_PATH
-            is LanguagePackExtension -> IME_LANGUAGEPACK_PATH
-            else -> error("Unknown extension type")
+        try {
+            val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
+            ExtensionPackagePolicy.validateExtracted(ext, workingDir)
+            val extFileName = ExtensionDefaults.createFlexName(ext.meta.id)
+            val relGroupPath = when (ext) {
+                is KeyboardExtension -> IME_KEYBOARD_PATH
+                is ThemeExtension -> IME_THEME_PATH
+                is LanguagePackExtension -> IME_LANGUAGEPACK_PATH
+                else -> error("Unknown extension type")
+            }
+            ext.sourceRef = FlorisRef.internal(relGroupPath).subRef(extFileName)
+            FsFile(workingDir, ExtensionDefaults.MANIFEST_FILE_NAME).writeJson(ext, ExtensionJsonConfig)
+            writeExtension(ext)
+        } finally {
+            ext.unload(appContext)
+            ext.workingDir = null
         }
-        ext.sourceRef = FlorisRef.internal(relGroupPath).subRef(extFileName)
-        FsFile(workingDir, ExtensionDefaults.MANIFEST_FILE_NAME).writeJson(ext, ExtensionJsonConfig)
-        writeExtension(ext).throwOnFailure()
-        ext.unload(appContext)
-        ext.workingDir = null
     }
 
     fun export(ext: Extension, uri: Uri) {
-        ext.load(appContext).throwOnFailure()
-        val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
-        ZipUtils.zip(appContext, workingDir, uri).throwOnFailure()
-        ext.unload(appContext)
+        val loadedForExport = !ext.isLoaded()
+        val exportDir = FsDir(
+            FsDir(appContext.cacheDir, "extension-export"),
+            UUID.randomUUID().toString(),
+        )
+        val stagedArchive = FsFile(exportDir, ExtensionDefaults.createFlexName(ext.meta.id))
+        try {
+            if (loadedForExport) {
+                ext.load(appContext).throwOnFailure()
+            }
+            val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
+            exportDir.mkdirs()
+            ZipUtils.zip(workingDir, stagedArchive) { archive ->
+                ExtensionPackagePolicy.validateArchive(ext, archive)
+            }
+            appContext.contentResolver.writeFromFile(uri, stagedArchive)
+        } finally {
+            try {
+                if (loadedForExport) {
+                    ext.unload(appContext)
+                }
+            } finally {
+                check(!exportDir.exists() || (exportDir.deleteRecursively() && !exportDir.exists())) {
+                    "Could not remove extension export workspace"
+                }
+            }
+        }
     }
 
-    private fun writeExtension(ext: Extension) = runCatching {
+    private fun writeExtension(ext: Extension) {
         val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
         val sourceRef = requireNotNull(ext.sourceRef) { "No source ref specified" }
-        ZipUtils.zip(appContext, workingDir, sourceRef).throwOnFailure()
+        val targetFile = FsFile(sourceRef.absolutePath(appContext))
+        ZipUtils.zip(workingDir, targetFile) { archive ->
+            ExtensionPackagePolicy.validateArchive(ext, archive)
+        }
     }
 
     fun getExtensionById(id: String): Extension? {
@@ -256,58 +287,10 @@ class ExtensionManager(context: Context) {
                             continue
                         }
                         runCatching {
-                            val manifest = ZipUtils.readFileFromArchive(
-                                context = appContext,
-                                zipRef = extRef,
-                                relPath = ExtensionDefaults.MANIFEST_FILE_NAME,
-                                maxBytes = ExtensionPackagePolicy.MAX_MANIFEST_BYTES,
-                            ).getOrElse { error ->
-                                if (error is ArchiveEntryTooLargeException) {
-                                    throw ExtensionPackageException(
-                                        ExtensionQuarantineReason.MANIFEST_TOO_LARGE,
-                                    )
-                                }
-                                throw error
-                            }
-                            val ext = loadJsonAsset(
-                                manifest,
-                                serializer,
-                                ExtensionJsonConfig,
-                            ).getOrElse {
-                                throw ExtensionPackageException(
-                                    ExtensionQuarantineReason.MANIFEST_MALFORMED,
-                                )
-                            }
-                            val inspection = ExtensionPackagePolicy.inspect(ext)
-                            inspection.componentJsonPaths.forEach { componentPath ->
-                                ZipUtils.validateFileInArchive(
-                                    context = appContext,
-                                    zipRef = extRef,
-                                    relPath = componentPath,
-                                    maxBytes = ExtensionPackagePolicy.MAX_COMPONENT_JSON_BYTES,
-                                ).getOrElse { error ->
-                                    if (error is ArchiveEntryTooLargeException) {
-                                        throw ExtensionPackageException(
-                                            ExtensionQuarantineReason.COMPONENT_TOO_LARGE,
-                                        )
-                                    }
-                                    throw ExtensionPackageException(
-                                        ExtensionQuarantineReason.MISSING_COMPONENT_FILE,
-                                    )
-                                }
-                            }
-                            inspection.requiredBinaryPaths.forEach { componentPath ->
-                                ZipUtils.validateFileInArchive(
-                                    context = appContext,
-                                    zipRef = extRef,
-                                    relPath = componentPath,
-                                    maxBytes = Long.MAX_VALUE,
-                                ).getOrElse {
-                                    throw ExtensionPackageException(
-                                        ExtensionQuarantineReason.MISSING_COMPONENT_FILE,
-                                    )
-                                }
-                            }
+                            val ext = ExtensionPackagePolicy.readValidatedArchive(
+                                archiveFile = fileRef,
+                                serializer = serializer,
+                            )
                             if (!reservedIds.add(ext.meta.id)) {
                                 throw ExtensionPackageException(
                                     ExtensionQuarantineReason.DUPLICATE_COMPONENT_ID,
@@ -344,7 +327,6 @@ internal data class QuarantinedExtension(
 private fun Throwable.toQuarantineReason(): ExtensionQuarantineReason {
     return when (this) {
         is ExtensionPackageException -> reason
-        is ArchiveEntryTooLargeException -> ExtensionQuarantineReason.MANIFEST_TOO_LARGE
         else -> ExtensionQuarantineReason.UNREADABLE_ARCHIVE
     }
 }

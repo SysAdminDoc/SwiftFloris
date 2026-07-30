@@ -283,6 +283,7 @@ fun ExtensionImportScreen(type: ExtensionImportScreenType, initUuid: String?) = 
                     }.onFailure { error ->
                         lastImportNotice = ExtensionImportFlowNotice.Failure
                         lastImportErrorMessage = error.localizedMessage
+                        closeImportResult()
                         context.showLongToast(R.string.ext__import__failure, "error_message" to error.localizedMessage)
                     }
                     isImportInProgress = false

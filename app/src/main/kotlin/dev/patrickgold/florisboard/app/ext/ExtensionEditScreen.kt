@@ -142,13 +142,18 @@ fun ExtensionEditScreen(id: String, createSerialType: String?) {
     ): W {
         val workspace = container.getWorkspaceByUuid(uuid)
         return workspace ?: container.new(uuid).also { newWorkspace ->
-            val sourceRef = ext.sourceRef
-            if (createSerialType == null) {
-                checkNotNull(sourceRef) { "Extension source ref must not be null" }
-                ZipUtils.unzip(context, sourceRef, newWorkspace.extDir)
+            try {
+                val sourceRef = ext.sourceRef
+                if (createSerialType == null) {
+                    checkNotNull(sourceRef) { "Extension source ref must not be null" }
+                    ZipUtils.unzip(context, sourceRef, newWorkspace.extDir).getOrThrow()
+                }
+                newWorkspace.ext = ext
+                newWorkspace.editor = ext.edit() as? T
+            } catch (error: Throwable) {
+                newWorkspace.close()
+                throw error
             }
-            newWorkspace.ext = ext
-            newWorkspace.editor = ext.edit() as? T
         }
     }
 
@@ -282,43 +287,47 @@ private fun EditScreen(
         themeEditors: List<ThemeExtensionComponentEditor>?,
     ) = withContext(Dispatchers.IO) {
         workspace.saverDir.deleteContentsRecursively()
-        val manifestFile = workspace.saverDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
-        manifestFile.writeJson(manifest, ExtensionJsonConfig)
-        when {
-            themeEditors != null -> {
-                val fonts = workspace.extDir.subDir("fonts")
-                if (fonts.exists()) {
-                    fonts.copyRecursively(workspace.saverDir.subDir("fonts"), overwrite = true)
-                }
-                val images = workspace.extDir.subDir("images")
-                if (images.exists()) {
-                    images.copyRecursively(workspace.saverDir.subDir("images"), overwrite = true)
-                }
-                for (theme in themeEditors) {
-                    val stylesheetFile = workspace.saverDir.subFile(theme.stylesheetPath())
-                    stylesheetFile.parentFile?.mkdirs()
-                    val stylesheetEditor = theme.stylesheetEditor
-                    if (stylesheetEditor != null) {
-                        val stylesheet = stylesheetEditor.build().toJson(PrettyPrintConfig).getOrThrow()
-                        stylesheetFile.writeText(stylesheet)
-                    } else {
-                        val unmodifiedStylesheetFile = workspace.extDir.subFile(theme.stylesheetPath())
-                        if (unmodifiedStylesheetFile.exists()) {
-                            unmodifiedStylesheetFile.copyTo(stylesheetFile, overwrite = true)
+        try {
+            val manifestFile = workspace.saverDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
+            manifestFile.writeJson(manifest, ExtensionJsonConfig)
+            when {
+                themeEditors != null -> {
+                    val fonts = workspace.extDir.subDir("fonts")
+                    if (fonts.exists()) {
+                        fonts.copyRecursively(workspace.saverDir.subDir("fonts"), overwrite = true)
+                    }
+                    val images = workspace.extDir.subDir("images")
+                    if (images.exists()) {
+                        images.copyRecursively(workspace.saverDir.subDir("images"), overwrite = true)
+                    }
+                    for (theme in themeEditors) {
+                        val stylesheetFile = workspace.saverDir.subFile(theme.stylesheetPath())
+                        stylesheetFile.parentFile?.mkdirs()
+                        val stylesheetEditor = theme.stylesheetEditor
+                        if (stylesheetEditor != null) {
+                            val stylesheet = stylesheetEditor.build().toJson(PrettyPrintConfig).getOrThrow()
+                            stylesheetFile.writeText(stylesheet)
+                        } else {
+                            val unmodifiedStylesheetFile = workspace.extDir.subFile(theme.stylesheetPath())
+                            if (unmodifiedStylesheetFile.exists()) {
+                                unmodifiedStylesheetFile.copyTo(stylesheetFile, overwrite = true)
+                            }
                         }
                     }
                 }
             }
+            val flexArchiveName = ExtensionDefaults.createFlexName(extEditor.meta.id)
+            val sourceRef = if (isCreateExt) {
+                FlorisRef.internal(ExtensionManager.IME_THEME_PATH).subRef(flexArchiveName)
+            } else {
+                workspace.ext!!.sourceRef!!
+            }
+            ZipUtils.zip(workspace.saverDir, sourceRef.absoluteFile(context)) { archive ->
+                ExtensionPackagePolicy.validateArchive(manifest, archive)
+            }
+        } finally {
+            workspace.saverDir.deleteContentsRecursively()
         }
-        val flexArchiveName = ExtensionDefaults.createFlexName(extEditor.meta.id)
-        val flexArchiveFile = workspace.dir.subFile(flexArchiveName)
-        ZipUtils.zip(workspace.saverDir, flexArchiveFile)
-        val sourceRef = if (isCreateExt) {
-            FlorisRef.internal(ExtensionManager.IME_THEME_PATH).subRef(flexArchiveName)
-        } else {
-            workspace.ext!!.sourceRef!!
-        }
-        flexArchiveFile.copyTo(sourceRef.absoluteFile(context), overwrite = true)
     }
 
     fun handleSave() {

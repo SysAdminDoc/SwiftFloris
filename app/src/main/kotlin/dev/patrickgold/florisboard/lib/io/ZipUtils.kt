@@ -154,27 +154,31 @@ object ZipUtils {
         when {
             dstRef.isCache || dstRef.isInternal -> {
                 val flexFile = FsFile(dstRef.absolutePath(context))
-                flexFile.parentFile?.mkdirs()
-                flexFile.delete()
-                FileOutputStream(flexFile).use { fileOut ->
-                    ZipOutputStream(fileOut).use { zipOut ->
-                        zip(srcDir, zipOut, "")
-                    }
-                }
+                zip(srcDir, flexFile)
             }
             else -> error("Unsupported destination!")
         }
     }
 
-    fun zip(srcDir: FsDir, dstFile: FsFile) {
+    fun zip(
+        srcDir: FsDir,
+        dstFile: FsFile,
+        validate: (FsFile) -> Unit = ::validateReadableArchive,
+    ) {
         check(srcDir.exists() && srcDir.isDirectory) { "Cannot zip standalone file." }
-        dstFile.parentFile?.mkdirs()
-        dstFile.delete()
-        FileOutputStream(dstFile).use { outStream ->
-            ZipOutputStream(outStream).use { zipOut ->
-                zip(srcDir, zipOut, "")
+        AtomicFileWriter.replace(
+            targetFile = dstFile,
+            write = { stagedFile ->
+                FileOutputStream(stagedFile).use { outStream ->
+                    ZipOutputStream(outStream).use { zipOut ->
+                        zip(srcDir, zipOut, "")
+                    }
+                }
+            },
+            validate = { stagedFile ->
+                validate(FsFile(stagedFile.path))
             }
-        }
+        )
     }
 
     fun zip(context: Context, srcDir: FsDir, uri: Uri) = runCatching {
@@ -402,6 +406,12 @@ object ZipUtils {
             if (totalBytes > maxBytes) {
                 throw ArchiveEntryTooLargeException(maxBytes)
             }
+        }
+    }
+
+    private fun validateReadableArchive(file: FsFile) {
+        ZipFile(file).use { archive ->
+            archive.entries()
         }
     }
 }

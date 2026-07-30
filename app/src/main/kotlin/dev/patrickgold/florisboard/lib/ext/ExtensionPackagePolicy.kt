@@ -20,10 +20,14 @@ import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
 import dev.patrickgold.florisboard.ime.keyboard.LayoutType
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
+import dev.patrickgold.florisboard.lib.io.ArchiveEntryTooLargeException
+import dev.patrickgold.florisboard.lib.io.ZipUtils
+import dev.patrickgold.florisboard.lib.io.loadJsonAsset
+import java.io.File
+import kotlinx.serialization.KSerializer
 import org.florisboard.lib.kotlin.io.FsDir
 import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.io.subFile
-import java.io.File
 
 internal enum class ExtensionQuarantineReason {
     MANIFEST_TOO_LARGE,
@@ -96,6 +100,67 @@ internal object ExtensionPackagePolicy {
             resolveRequiredFile(extractedRoot, relativePath)
         }
         return inspection
+    }
+
+    fun validateArchive(
+        expected: Extension,
+        archiveFile: FsFile,
+    ) {
+        val actual = when (expected) {
+            is KeyboardExtension -> readValidatedArchive(archiveFile, KeyboardExtension.serializer())
+            is ThemeExtension -> readValidatedArchive(archiveFile, ThemeExtension.serializer())
+            is LanguagePackExtension -> readValidatedArchive(archiveFile, LanguagePackExtension.serializer())
+            else -> reject(ExtensionQuarantineReason.MANIFEST_MALFORMED)
+        }
+        if (actual != expected) {
+            reject(ExtensionQuarantineReason.INVALID_METADATA)
+        }
+    }
+
+    fun <T : Extension> readValidatedArchive(
+        archiveFile: FsFile,
+        serializer: KSerializer<T>,
+    ): T {
+        val manifest = ZipUtils.readFileFromArchive(
+            srcFile = archiveFile,
+            relPath = ExtensionDefaults.MANIFEST_FILE_NAME,
+            maxBytes = MAX_MANIFEST_BYTES,
+        ).getOrElse { error ->
+            if (error is ArchiveEntryTooLargeException) {
+                reject(ExtensionQuarantineReason.MANIFEST_TOO_LARGE)
+            }
+            reject(ExtensionQuarantineReason.UNREADABLE_ARCHIVE)
+        }
+        val extension = loadJsonAsset(
+            manifest,
+            serializer,
+            ExtensionJsonConfig,
+        ).getOrElse {
+            reject(ExtensionQuarantineReason.MANIFEST_MALFORMED)
+        }
+        val inspection = inspect(extension)
+        inspection.componentJsonPaths.forEach { componentPath ->
+            ZipUtils.validateFileInArchive(
+                srcFile = archiveFile,
+                relPath = componentPath,
+                maxBytes = MAX_COMPONENT_JSON_BYTES,
+            ).getOrElse { error ->
+                if (error is ArchiveEntryTooLargeException) {
+                    reject(ExtensionQuarantineReason.COMPONENT_TOO_LARGE)
+                }
+                reject(ExtensionQuarantineReason.MISSING_COMPONENT_FILE)
+            }
+        }
+        inspection.requiredBinaryPaths.forEach { componentPath ->
+            ZipUtils.validateFileInArchive(
+                srcFile = archiveFile,
+                relPath = componentPath,
+                maxBytes = Long.MAX_VALUE,
+            ).getOrElse {
+                reject(ExtensionQuarantineReason.MISSING_COMPONENT_FILE)
+            }
+        }
+        return extension
     }
 
     fun resolveRequiredFile(root: FsDir, relativePath: String): FsFile {

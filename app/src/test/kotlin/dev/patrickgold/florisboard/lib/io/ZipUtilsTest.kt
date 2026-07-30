@@ -87,6 +87,40 @@ class ZipUtilsTest : FunSpec({
             root.deleteRecursively()
         }
     }
+
+    test("zip replacement validates the staged archive before replacing the previous archive") {
+        val root = Files.createTempDirectory("floris-zip-test").toFile()
+        val source = root.subFile("source").also { it.mkdirs() }
+        val archive = root.subFile("extension.flex")
+        try {
+            source.subFile("extension.json").writeText("replacement")
+            writeZip(archive, "extension.json" to "previous")
+
+            shouldThrow<IllegalStateException> {
+                ZipUtils.zip(source, archive) { stagedArchive ->
+                    ZipUtils.readFileFromArchive(
+                        stagedArchive,
+                        "extension.json",
+                    ).getOrThrow() shouldBe "replacement"
+                    ZipUtils.readFileFromArchive(
+                        archive,
+                        "extension.json",
+                    ).getOrThrow() shouldBe "previous"
+                    error("injected archive validation failure")
+                }
+            }
+
+            ZipUtils.readFileFromArchive(
+                archive,
+                "extension.json",
+            ).getOrThrow() shouldBe "previous"
+            root.listFiles().orEmpty()
+                .filter { it.name.startsWith(".extension.flex.") && it.name.endsWith(".tmp") }
+                .size shouldBe 0
+        } finally {
+            root.deleteRecursively()
+        }
+    }
 })
 
 private fun writeZip(file: File, vararg entries: Pair<String, String>) {

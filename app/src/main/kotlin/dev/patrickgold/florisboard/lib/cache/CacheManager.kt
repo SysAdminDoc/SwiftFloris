@@ -239,6 +239,12 @@ class CacheManager(context: Context) {
             }
         }
 
+        internal fun removeByUuid(uuid: String) = runBlocking {
+            workspacesGuard.withLock {
+                workspaces.removeAll { it.uuid == uuid }
+            }
+        }
+
         fun getWorkspaceByUuid(uuid: String) = runBlocking { getWorkspaceByUuidAsync(uuid).await() }
 
         fun getWorkspaceByUuidAsync(uuid: String): Deferred<T?> = scope.async {
@@ -305,6 +311,14 @@ class CacheManager(context: Context) {
             super.mkdirs()
             extDir.mkdirs()
             saverDir.mkdirs()
+        }
+
+        override fun close() {
+            try {
+                super.close()
+            } finally {
+                themeExtEditor.removeByUuid(uuid)
+            }
         }
 
         inline fun <R> update(block: T.() -> R): R {

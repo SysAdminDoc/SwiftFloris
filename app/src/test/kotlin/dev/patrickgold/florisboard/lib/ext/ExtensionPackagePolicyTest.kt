@@ -22,12 +22,14 @@ import dev.patrickgold.florisboard.ime.nlp.LanguagePackExtension
 import dev.patrickgold.florisboard.ime.nlp.LanguagePackKind
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionComponentImpl
+import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
+import org.florisboard.lib.kotlin.io.writeJson
 import java.io.File
 import java.nio.file.Files
 
@@ -156,6 +158,39 @@ class ExtensionPackagePolicyTest : FunSpec({
         rejectedReason {
             ExtensionPackagePolicy.inspect(extension)
         } shouldBe ExtensionQuarantineReason.UNSAFE_COMPONENT_PATH
+    }
+
+    test("staged archives are fully validated and must match the expected manifest") {
+        val root = Files.createTempDirectory("extension-policy").toFile()
+        try {
+            val staging = root.subDir("staging").also { it.mkdirs() }
+            val archive = root.subFile("extension.flex")
+            val expected = keyboardExtension(
+                layouts = mapOf("characters" to listOf(layout("safe"))),
+            )
+            val manifest: Extension = expected
+            staging.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
+                .writeJson(manifest, ExtensionJsonConfig)
+            staging.subFile("layouts/characters/safe.json").also { layoutFile ->
+                layoutFile.parentFile?.mkdirs()
+                layoutFile.writeText("[]")
+            }
+
+            ZipUtils.zip(staging, archive) { stagedArchive ->
+                ExtensionPackagePolicy.validateArchive(expected, stagedArchive)
+            }
+            ExtensionPackagePolicy.readValidatedArchive(
+                archiveFile = archive,
+                serializer = KeyboardExtension.serializer(),
+            ) shouldBe expected
+
+            val mismatched = expected.copy(meta = expected.meta.copy(title = "Different"))
+            rejectedReason {
+                ExtensionPackagePolicy.validateArchive(mismatched, archive)
+            } shouldBe ExtensionQuarantineReason.INVALID_METADATA
+        } finally {
+            root.deleteRecursively()
+        }
     }
 
     test("every bundled extension satisfies manifest structure and size policy") {

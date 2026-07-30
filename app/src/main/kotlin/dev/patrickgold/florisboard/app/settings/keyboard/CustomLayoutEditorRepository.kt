@@ -73,21 +73,22 @@ internal class CustomLayoutEditorRepository(
             val archiveRef = FlorisRef.internal(ExtensionManager.IME_KEYBOARD_PATH).subRef(archiveName)
             val workspace = FsDir(context.cacheDir, "custom-layout-editor")
             val stagingDir = FsDir(workspace, draft.layoutId)
-            val archiveTmp = FsFile(workspace, "$archiveName.tmp")
             val archiveDst = archiveRef.absoluteFile(context)
 
             stagingDir.deleteRecursively()
             stagingDir.mkdirs()
-            archiveTmp.delete()
             archiveDst.parentFile?.mkdirs()
 
-            writeManifest(stagingDir, extension)
-            writeArrangement(stagingDir, draft)
-            ZipUtils.zip(stagingDir, archiveTmp)
-            archiveTmp.copyTo(archiveDst, overwrite = true)
-
-            stagingDir.deleteRecursively()
-            archiveTmp.delete()
+            try {
+                writeManifest(stagingDir, extension)
+                writeArrangement(stagingDir, draft)
+                ZipUtils.zip(stagingDir, archiveDst) { archive ->
+                    ExtensionPackagePolicy.validateArchive(extension, archive)
+                }
+            } finally {
+                stagingDir.deleteRecursively()
+                workspace.delete()
+            }
             extensionManager.keyboardExtensions.init()
             CustomLayoutEditorPolicy.componentNameFor(draft.layoutId)
         }
