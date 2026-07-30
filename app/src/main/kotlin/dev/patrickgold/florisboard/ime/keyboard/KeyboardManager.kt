@@ -192,6 +192,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             clipboardManager.primaryClipFlow.collectLatestIn(scope) {
                 updateActiveEvaluators()
             }
+            clipboardManager.primaryClipAvailableFlow.collectLatestIn(scope) {
+                updateActiveEvaluators()
+            }
             editorInstance.activeContentFlow.collectIn(scope) { content ->
                 if (editorInstance.lastCommitPosition.pos < 0) {
                     resetLearnChain()
@@ -1366,10 +1369,10 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
                 KeyCode.CLIPBOARD_PASTE -> {
                     !androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
-                        && clipboardManager.canBePasted(clipboardManager.primaryClip)
+                        && clipboardManager.canPastePrimaryClip()
                 }
                 KeyCode.CLIPBOARD_CLEAR_PRIMARY_CLIP -> {
-                    clipboardManager.canBePasted(clipboardManager.primaryClip)
+                    clipboardManager.canPastePrimaryClip()
                 }
                 KeyCode.CLIPBOARD_SELECT_ALL -> {
                     editorInfo.isRichInputEditor

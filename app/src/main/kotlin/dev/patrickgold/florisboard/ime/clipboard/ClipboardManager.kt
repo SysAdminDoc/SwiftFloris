@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 import android.content.ClipData
 import android.content.ClipDescription.EXTRA_IS_SENSITIVE
 import android.content.Context
+import android.os.PersistableBundle
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.appContext
@@ -112,8 +113,12 @@ class ClipboardManager(
 
     private val primaryClipLastFromCallbackGuard = Mutex(locked = false)
     private var primaryClipLastFromCallback: ClipData? = null
+    @Volatile
+    private var directPastePrimaryText: CharSequence? = null
     val primaryClipFlow: StateFlow<ClipboardItem?>
         field = MutableStateFlow(null)
+    val primaryClipAvailableFlow: StateFlow<Boolean>
+        field = MutableStateFlow(false)
     inline var primaryClip
         get() = primaryClipFlow.value
         private set(v) {
@@ -146,20 +151,34 @@ class ClipboardManager(
 
     private suspend fun updateHistory(items: List<ClipboardItem>) {
         historyMaintenanceMutex.withLock {
+            val (retainedItems, rejectedItems) = withContext(Dispatchers.Default) {
+                items.partition(ClipboardTextRetentionPolicy::shouldRetain)
+            }
             val clipHistory = withContext(Dispatchers.Default) {
-                ClipboardHistoryMaintenance.sortedHistory(items)
+                ClipboardHistoryMaintenance.sortedHistory(retainedItems)
             }
             val overflowItems = overflowHistoryItems(clipHistory)
-            evictClipboardHistoryItemsNow(overflowItems)
+            evictClipboardHistoryItemsNow((rejectedItems + overflowItems).distinctBy { it.id })
             historyFlow.value = ClipboardHistoryMaintenance.withoutEvictedItems(clipHistory, overflowItems)
         }
+    }
+
+    private fun replacePrimaryState(item: ClipboardItem?, directPasteText: CharSequence?) {
+        directPastePrimaryText = directPasteText
+        primaryClip = item
+        primaryClipAvailableFlow.value = item != null || directPasteText != null
     }
 
     /**
      * Sets the current primary clip without updating the internal clipboard history.
      */
     fun updatePrimaryClip(item: ClipboardItem?) {
-        primaryClip = item
+        if (item != null && !ClipboardTextRetentionPolicy.shouldRetain(item)) {
+            val text = item.text ?: return
+            setPlaintextWithoutHistory(text, item.isSensitive)
+            return
+        }
+        replacePrimaryState(item, directPasteText = null)
         if (prefs.clipboard.useInternalClipboard.get()) {
             val syncBehavior = prefs.clipboard.syncToSystem.get()
             val clipData = item?.toClipData(appContext)
@@ -181,22 +200,10 @@ class ClipboardManager(
         if (!prefs.clipboard.useInternalClipboard.get() || syncBehavior != ClipboardSyncBehavior.NO_EVENTS) {
             val systemPrimaryClip = systemClipboardManager.primaryClip
             ioScope.launch {
-                val isDuplicate: Boolean
-                primaryClipLastFromCallbackGuard.withLock {
-                    val a = primaryClipLastFromCallback?.getItemAt(0)
-                    val b = systemPrimaryClip?.getItemAt(0)
-                    isDuplicate = when {
-                        a === b -> true
-                        a == null || b == null -> false
-                        else -> a.text == b.text && a.uri == b.uri
-                    }
-                    primaryClipLastFromCallback = systemPrimaryClip
-                }
-                if (isDuplicate) return@launch
-
-                val internalPrimaryClip = primaryClip
-
                 if (systemPrimaryClip == null) {
+                    primaryClipLastFromCallbackGuard.withLock {
+                        primaryClipLastFromCallback = null
+                    }
                     if (syncBehavior.shouldSyncClear) {
                         replaceSystemPrimaryClip(null)
                     }
@@ -204,6 +211,9 @@ class ClipboardManager(
                 }
 
                 if (systemPrimaryClip.getItemAt(0).let { it.text == null && it.uri == null }) {
+                    primaryClipLastFromCallbackGuard.withLock {
+                        primaryClipLastFromCallback = null
+                    }
                     if (syncBehavior.shouldSyncClear) {
                         replaceSystemPrimaryClip(null)
                     }
@@ -214,6 +224,31 @@ class ClipboardManager(
                     return@launch
                 }
 
+                val pasteOnlyText = ClipboardTextRetentionPolicy.pasteOnlyTextOrNull(systemPrimaryClip)
+                if (pasteOnlyText != null) {
+                    primaryClipLastFromCallbackGuard.withLock {
+                        // Oversized text is not compared or retained in the
+                        // callback-deduplication snapshot.
+                        primaryClipLastFromCallback = null
+                    }
+                    replaceSystemPrimaryClipWithDirectPasteText(pasteOnlyText)
+                    return@launch
+                }
+
+                val isDuplicate: Boolean
+                primaryClipLastFromCallbackGuard.withLock {
+                    val a = primaryClipLastFromCallback?.getItemAt(0)
+                    val b = systemPrimaryClip.getItemAt(0)
+                    isDuplicate = when {
+                        a === b -> true
+                        a == null -> false
+                        else -> a.text == b.text && a.uri == b.uri
+                    }
+                    primaryClipLastFromCallback = systemPrimaryClip
+                }
+                if (isDuplicate) return@launch
+
+                val internalPrimaryClip = primaryClip
                 val isEqual = internalPrimaryClip?.isEqualTo(systemPrimaryClip) == true
                 if (!isEqual) {
                     // Decide sensitivity BEFORE cloning. fromClipData(cloneUri = true)
@@ -260,7 +295,19 @@ class ClipboardManager(
 
     private fun replaceSystemPrimaryClip(item: ClipboardItem?) {
         val previous = primaryClip
-        primaryClip = item
+        replacePrimaryState(item, directPasteText = null)
+        if (ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
+                replacedItem = previous,
+                historyEnabled = prefs.clipboard.historyEnabled.get(),
+            )
+        ) {
+            previous?.close(appContext)
+        }
+    }
+
+    private fun replaceSystemPrimaryClipWithDirectPasteText(text: CharSequence) {
+        val previous = primaryClip
+        replacePrimaryState(item = null, directPasteText = text)
         if (ClipboardPrimaryClipCleanupPolicy.shouldCloseReplacedPrimaryClip(
                 replacedItem = previous,
                 historyEnabled = prefs.clipboard.historyEnabled.get(),
@@ -282,14 +329,49 @@ class ClipboardManager(
      * Wraps some plaintext in a ClipData and calls [addNewClip]
      */
     fun addNewPlaintext(newText: String) {
+        if (!ClipboardTextRetentionPolicy.shouldRetain(newText)) {
+            setPlaintextWithoutHistory(newText, isSensitive = false)
+            return
+        }
         val newData = ClipboardItem.text(newText)
         addNewClip(newData)
+    }
+
+    /**
+     * Publishes text for direct paste without inserting it into history.
+     *
+     * Oversized text is held only as the current in-memory paste target and is
+     * never converted to a Room-backed [ClipboardItem].
+     */
+    fun setPlaintextWithoutHistory(newText: CharSequence, isSensitive: Boolean) {
+        if (ClipboardTextRetentionPolicy.shouldRetain(newText)) {
+            updatePrimaryClip(
+                ClipboardItem.text(newText.toString()).copy(isSensitive = isSensitive),
+            )
+            return
+        }
+
+        replacePrimaryState(item = null, directPasteText = newText)
+        val clipData = ClipData.newPlainText(ClipboardItem.FLORIS_CLIP_LABEL, newText)
+        if (isSensitive && AndroidVersion.ATLEAST_API33_T) {
+            clipData.description.extras = PersistableBundle().apply {
+                putBoolean(EXTRA_IS_SENSITIVE, true)
+            }
+        }
+        if (prefs.clipboard.useInternalClipboard.get()) {
+            if (prefs.clipboard.syncToSystem.get().shouldSyncSet) {
+                systemClipboardManager.setPrimaryClip(clipData)
+            }
+        } else {
+            systemClipboardManager.setPrimaryClip(clipData)
+        }
     }
 
     /**
      * Adds a new item to the clipboard history (if enabled).
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
+        if (!ClipboardTextRetentionPolicy.shouldRetain(newItem)) return
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive
@@ -352,6 +434,7 @@ class ClipboardManager(
     }
 
     fun insertClip(item: ClipboardItem) {
+        if (!ClipboardTextRetentionPolicy.shouldRetain(item)) return
         ioScope.launch {
             val id = clipHistoryDao?.insert(item)
             item.id = id ?: 0
@@ -405,9 +488,12 @@ class ClipboardManager(
     fun restoreHistory(items: List<ClipboardItem>) {
         ioScope.launch {
             val currentHistory = currentHistory.all
+                .mapTo(mutableSetOf()) { it.copy(id = 0) }
             for (item in items) {
-                if (!currentHistory.map { it.copy(id = 0) }.contains(item.copy(id = 0))) {
-                    insertClip(item.copy(id = 0))
+                if (!ClipboardTextRetentionPolicy.shouldRetain(item)) continue
+                val restoredItem = item.copy(id = 0)
+                if (currentHistory.add(restoredItem)) {
+                    insertClip(restoredItem)
                 }
             }
         }
@@ -463,6 +549,16 @@ class ClipboardManager(
             }
         }
     }
+
+    fun canPastePrimaryClip(): Boolean {
+        return directPastePrimaryText != null || canBePasted(primaryClip)
+    }
+
+    /**
+     * The live, non-retained oversized text accepted only by the explicit
+     * direct-paste path. Callers must not search, classify, or persist it.
+     */
+    fun primaryTextForDirectPaste(): CharSequence? = directPastePrimaryText
 
     /**
      * Cleans up.

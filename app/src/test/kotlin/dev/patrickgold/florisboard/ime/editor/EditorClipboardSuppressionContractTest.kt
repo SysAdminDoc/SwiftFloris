@@ -32,9 +32,16 @@ class EditorClipboardSuppressionContractTest : FunSpec({
     test("suppressed clipboard helper bypasses history and marks the clip sensitive") {
         val body = extractFunctionBody(source, "private fun setSensitivePrimaryClipWithoutHistory(")
 
-        body shouldContain "clipboardManager.updatePrimaryClip"
-        body shouldContain "ClipboardItem.text(text).copy(isSensitive = true)"
+        body shouldContain "clipboardManager.setPlaintextWithoutHistory(text, isSensitive = true)"
         body shouldNotContain "clipboardManager.addNewPlaintext"
+    }
+
+    test("paste checks the direct-only text path before retained ClipboardItem state") {
+        val body = extractFunctionBody(source, "fun performClipboardPaste(")
+
+        body shouldContain "clipboardManager.primaryTextForDirectPaste()"
+        body shouldContain "commitText(directPasteText.toString())"
+        body shouldContain "commitClipboardItem(clipboardManager.primaryClip)"
     }
 })
 

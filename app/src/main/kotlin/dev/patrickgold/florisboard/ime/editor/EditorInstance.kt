@@ -623,9 +623,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
      * preview redacts it once the sensitive flag propagates to the ClipData.
      */
     private fun setSensitivePrimaryClipWithoutHistory(text: String) {
-        clipboardManager.updatePrimaryClip(
-            ClipboardItem.text(text).copy(isSensitive = true),
-        )
+        clipboardManager.setPlaintextWithoutHistory(text, isSensitive = true)
     }
 
     /**
@@ -671,7 +669,18 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     fun performClipboardPaste(): Boolean {
         autoSpace.setInactive()
         phantomSpace.setInactive()
-        return commitClipboardItem(clipboardManager.primaryClip).also { result ->
+        val directPasteText = clipboardManager.primaryTextForDirectPaste()
+        val result = if (directPasteText != null) {
+            commitText(directPasteText.toString()).also {
+                updateLastCommitPosition()
+                if (prefs.clipboard.historyHideOnPaste.get()) {
+                    keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                }
+            }
+        } else {
+            commitClipboardItem(clipboardManager.primaryClip)
+        }
+        return result.also {
             if (!result) {
                 appContext.postShortToast(R.string.clipboard__paste_failed)
             }

@@ -52,6 +52,7 @@ import androidx.room.migration.AutoMigrationSpec
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.ime.clipboard.ClipboardTextRetentionPolicy
 import kotlinx.coroutines.flow.Flow
 import kotlinx.serialization.EncodeDefault
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -113,6 +114,9 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
         const val FLORIS_CLIP_LABEL = "florisboard/clipboard_item"
 
         fun text(text: String): ClipboardItem {
+            require(ClipboardTextRetentionPolicy.shouldRetain(text)) {
+                "Clipboard text exceeds the retained-history UTF-8 limit"
+            }
             return ClipboardItem(
                 type = ItemType.TEXT,
                 text = text,
@@ -124,6 +128,15 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
             )
         }
 
+        internal fun typeOf(data: ClipData): ItemType {
+            val dataItem = data.getItemAt(0)
+            return when {
+                dataItem.uri != null && data.description.hasMimeType("image/*") -> ItemType.IMAGE
+                dataItem.uri != null && data.description.hasMimeType("video/*") -> ItemType.VIDEO
+                else -> ItemType.TEXT
+            }
+        }
+
         /**
          * Returns a new ClipboardItem based on a ClipData.
          *
@@ -132,10 +145,10 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
          */
         fun fromClipData(context: Context, data: ClipData, cloneUri: Boolean) : ClipboardItem {
             val dataItem = data.getItemAt(0)
-            val type = when {
-                dataItem?.uri != null && data.description.hasMimeType("image/*") -> ItemType.IMAGE
-                dataItem?.uri != null && data.description.hasMimeType("video/*") -> ItemType.VIDEO
-                else -> ItemType.TEXT
+            val type = typeOf(data)
+            val rawText = dataItem.text
+            require(type != ItemType.TEXT || ClipboardTextRetentionPolicy.shouldRetain(rawText)) {
+                "Clipboard text exceeds the retained-history UTF-8 limit"
             }
 
             val isSensitive = if (AndroidVersion.ATLEAST_API33_T) {
@@ -180,7 +193,11 @@ data class ClipboardItem @OptIn(ExperimentalSerializationApi::class) constructor
                 }
             } else { null }
 
-            val text = dataItem.text?.toString()
+            // Optional media metadata does not get a separate escape hatch:
+            // drop oversized text before copying it into the persistent entity.
+            val text = rawText
+                ?.takeIf(ClipboardTextRetentionPolicy::shouldRetain)
+                ?.toString()
             val isTextSensitive = if (type == ItemType.TEXT) {
                 ClipboardSensitiveTextClassifier.isSensitive(text)
             } else {
