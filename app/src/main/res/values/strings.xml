@@ -1670,7 +1670,7 @@
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_image_items">Images</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_video_items">Videos</string>
     <string name="backup_and_restore__back_up__privacy_title">Local archive under your control</string>
-    <string name="backup_and_restore__back_up__privacy_summary">SwiftFloris prepares the ZIP on-device. Sensitive clipboard items are skipped, and nothing leaves app-private storage until you save or share the archive.</string>
+    <string name="backup_and_restore__back_up__privacy_summary">SwiftFloris prepares the archive on-device. Clipboard-bearing backups are passphrase encrypted, sensitive items are skipped, and nothing leaves app-private storage until you save or share it.</string>
     <string name="backup_and_restore__back_up__success">Backup archive exported.</string>
     <string name="backup_and_restore__back_up__share_sheet_opened">Backup archive ready to share</string>
     <string name="backup_and_restore__back_up__share_sheet_opened_summary">Complete the share sheet to copy the archive into another app or storage provider.</string>
@@ -1680,8 +1680,10 @@
     <string name="backup_and_restore__back_up__failure">Could not export backup archive. No backup archive was saved. Details: {error_message}</string>
     <string name="backup_and_restore__back_up__failure_recovery">No backup archive was saved. Check available storage or choose another destination, then try again. Details: {error_message}</string>
     <string name="backup_and_restore__back_up__unknown_error">Unknown error</string>
-    <string name="backup_and_restore__back_up__clipboard_privacy_warning_title">Sensitive clipboard items stay private</string>
-    <string name="backup_and_restore__back_up__clipboard_privacy_warning_summary">Clipboard entries marked sensitive by apps are skipped even when clipboard history is selected.</string>
+    <string name="backup_and_restore__back_up__clipboard_privacy_warning_title">Clipboard backup requires encryption</string>
+    <string name="backup_and_restore__back_up__clipboard_privacy_warning_summary">SwiftFloris will ask for a passphrase and expose only authenticated ciphertext. Entries marked sensitive by apps remain excluded.</string>
+    <string name="backup_and_restore__back_up__encryption_dialog_title">Encrypt clipboard backup</string>
+    <string name="backup_and_restore__back_up__encryption_dialog_message">Choose a passphrase for this portable backup. SwiftFloris cannot recover the passphrase if you forget it.</string>
     <string name="backup_and_restore__back_up__full_backup" comment="Button label for a one-tap complete backup">Full backup</string>
     <string name="backup_and_restore__back_up__in_progress">Preparing backup</string>
     <string name="backup_and_restore__back_up__in_progress_summary">Keep this screen open until the save or share sheet appears.</string>
@@ -1689,10 +1691,13 @@
     <string name="backup_and_restore__restore__summary">Restore preferences and customizations from a backup archive</string>
     <string name="backup_and_restore__restore__files">Select what to restore</string>
     <string name="backup_and_restore__restore__metadata">Selected backup archive</string>
+    <string name="backup_and_restore__restore__metadata_encrypted">Passphrase-protected authenticated archive</string>
+    <string name="backup_and_restore__restore__metadata_plaintext">Unencrypted ZIP archive</string>
     <string name="backup_and_restore__restore__metadata_warning_title">Review before restoring</string>
     <string name="backup_and_restore__restore__metadata_error_title">Restore unavailable</string>
     <string name="backup_and_restore__restore__metadata_warn_different_version">This archive was created by a different SwiftFloris version. Restore is usually supported, but some newer settings may not transfer exactly.</string>
     <string name="backup_and_restore__restore__metadata_warn_different_vendor">This archive appears to come from another app build. Review the selected data carefully before restoring.</string>
+    <string name="backup_and_restore__restore__metadata_warn_legacy_plaintext">This is an unencrypted ZIP, including the format used by earlier releases. It remains restorable for migration; replace any copy containing clipboard data with a passphrase-protected backup.</string>
     <string name="backup_and_restore__restore__metadata_error_invalid_metadata">This archive has invalid backup metadata. Select a different backup ZIP.</string>
     <string name="backup_and_restore__restore__metadata_error_nothing_to_restore">This archive does not contain restorable files. Select another backup ZIP.</string>
     <string name="backup_and_restore__restore__mode">Restore mode</string>
@@ -1713,6 +1718,12 @@
     <string name="backup_and_restore__restore__failure">Could not restore data. Restore stopped before all selected data was imported. Details: {error_message}</string>
     <string name="backup_and_restore__restore__failure_recovery">Restore stopped before all selected data could be imported. Review the archive, select only the needed sections, or retry from a newer backup. Details: {error_message}</string>
     <string name="backup_and_restore__restore__unknown_error">Unknown error</string>
+    <string name="backup_and_restore__restore__encryption_dialog_title">Unlock encrypted backup</string>
+    <string name="backup_and_restore__restore__encryption_dialog_message">Enter the passphrase used when this portable backup was created. Authentication completes before any local data is changed.</string>
+    <string name="backup_and_restore__restore__bad_passphrase">Wrong passphrase or the backup was modified. No local data was changed.</string>
+    <string name="backup_and_restore__restore__unsupported_envelope">This encrypted backup was created with an unsupported format version. No local data was changed.</string>
+    <string name="backup_and_restore__restore__rollback_complete">No changes were kept; SwiftFloris restored the app state from before this attempt. Review the selected archive before retrying. Details: {error_message}</string>
+    <string name="backup_and_restore__restore__rollback_failure">Restore failed and the app-private recovery copy could not be fully reapplied. Free storage and restore from a known-good backup before making more changes.</string>
     <string name="backup_and_restore__restore__partial_failure_title">Restore finished with warnings</string>
     <plurals name="backup_and_restore__restore__partial_restored_count">
         <item quantity="one">Restored 1 section</item>

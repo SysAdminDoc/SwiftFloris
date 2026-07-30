@@ -29,6 +29,12 @@ object FileRegistry {
         ),
     )
 
+    val EncryptedBackupArchive = Entry(
+        type = Type.BINARY,
+        fileExt = "sfbak",
+        mediaType = "application/octet-stream",
+    )
+
     val FlexExtension = Entry(
         type = Type.BINARY,
         fileExt = "flex",

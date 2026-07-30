@@ -56,6 +56,22 @@ object ClipboardFileStorage {
             }
     }
 
+    data class RestoredFile(
+        val id: Long,
+        val file: FsFile,
+    )
+
+    private fun nextAvailableFile(context: Context): RestoredFile {
+        val dir = context.clipboardFilesDir
+        var id = idSource.getAndIncrement()
+        var file = dir.subFile(id.toString())
+        while (file.exists()) {
+            id = idSource.getAndIncrement()
+            file = dir.subFile(id.toString())
+        }
+        return RestoredFile(id, file)
+    }
+
     /**
      * Clones a content URI to internal storage.
      *
@@ -65,24 +81,22 @@ object ClipboardFileStorage {
      */
     @Synchronized
     fun cloneUri(context: Context, uri: Uri, mediaKind: MediaKind): Long {
-        val dir = context.clipboardFilesDir
         // Pick an id that does not already name a stored file. nanoTime() alone is
         // boot-relative and can collide with files written before a reboot, which
         // would silently overwrite an existing clipboard entry; the exists() guard
         // makes the id genuinely unique against what is on disk.
-        var id = idSource.getAndIncrement()
-        var file = dir.subFile(id.toString())
-        while (file.exists()) {
-            id = idSource.getAndIncrement()
-            file = dir.subFile(id.toString())
-        }
+        val restoredFile = nextAvailableFile(context)
         try {
-            context.contentResolver.readToFile(uri, file, mediaKind.maxCloneBytes)
+            context.contentResolver.readToFile(
+                uri,
+                restoredFile.file,
+                mediaKind.maxCloneBytes,
+            )
         } catch (e: Exception) {
-            file.delete()
+            restoredFile.file.delete()
             throw e
         }
-        return id
+        return restoredFile.id
     }
 
     /**
@@ -106,17 +120,21 @@ object ClipboardFileStorage {
     }
 
     /**
-     * Insert file from backup if not existing
-     *
-     * @param context the application context
-     * @param file the file to be inserted
+     * Imports backup media under a fresh provider id. Portable archives can
+     * originate on another device, so their numeric ids must never alias an
+     * unrelated file already present in a merge restore.
      */
-    fun insertFileFromBackupIfNotExisting(context: Context, file: FsFile): FsFile {
-        val storedFile = context.clipboardFilesDir.subFile(file.name)
-        if (!storedFile.isFile) {
-            file.copyTo(storedFile, overwrite = false)
+    @Synchronized
+    fun insertFileFromBackup(context: Context, source: FsFile): RestoredFile {
+        require(source.isFile) { "Clipboard backup media file is missing." }
+        val restoredFile = nextAvailableFile(context)
+        try {
+            source.copyTo(restoredFile.file, overwrite = false)
+            return restoredFile
+        } catch (error: Throwable) {
+            restoredFile.file.delete()
+            throw error
         }
-        return storedFile
     }
 
     /**

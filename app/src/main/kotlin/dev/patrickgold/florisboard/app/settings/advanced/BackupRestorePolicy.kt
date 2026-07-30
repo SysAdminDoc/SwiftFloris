@@ -19,6 +19,9 @@ package dev.patrickgold.florisboard.app.settings.advanced
 import dev.patrickgold.florisboard.R
 
 internal object BackupRestorePolicy {
+    fun requiresPortableEncryption(clipboardItemsSelected: Boolean): Boolean =
+        clipboardItemsSelected
+
     fun classifyBackupDocumentResult(
         uriSelected: Boolean,
         writeSucceeded: Boolean,

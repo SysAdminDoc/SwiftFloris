@@ -67,6 +67,20 @@ class ClipboardHistoryDaoTest {
         dao.getAll() shouldBe emptyList()
     }
 
+    @Test
+    fun replaceAllForRestoreCommitsTheRecoverySnapshotWithStableIds() {
+        val dao = database.clipboardItemDao()
+        dao.insert(mediaItem(isPinned = false).copy(id = 41L))
+        val recoveryItem = mediaItem(isPinned = true).copy(
+            id = 77L,
+            creationTimestampMs = 2_000L,
+        )
+
+        dao.replaceAllForRestore(listOf(recoveryItem))
+
+        dao.getAll().shouldContainExactly(recoveryItem)
+    }
+
     private fun mediaItem(isPinned: Boolean): ClipboardItem {
         return ClipboardItem(
             type = ItemType.IMAGE,

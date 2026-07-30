@@ -69,4 +69,8 @@ class CacheManagerTest : FunSpec({
             dir.deleteRecursively()
         }
     }
+
+    test("shared backup cache and URI grants have explicit expiry bounds") {
+        CacheManager.SharedBackupGrantLeaseMillis shouldBe 15L * 60L * 1000L
+    }
 })

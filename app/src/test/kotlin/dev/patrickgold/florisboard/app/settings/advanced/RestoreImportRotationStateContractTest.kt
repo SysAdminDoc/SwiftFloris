@@ -22,6 +22,20 @@ import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 
 class RestoreImportRotationStateContractTest : FunSpec({
+    test("backup document handoff preserves its prepared workspace across rotation") {
+        val source = locateProjectFile(
+            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupScreen.kt",
+        ).readText()
+
+        source shouldContain "var backupWorkspaceUuid by rememberSaveable"
+        source shouldContain "cacheManager.backupAndRestore::getWorkspaceByUuid"
+        source shouldContain "var isBackupInProgress by remember { mutableStateOf(backupWorkspace != null) }"
+        source shouldContain "fun setBackupWorkspace("
+        source shouldContain "backupWorkspaceUuid = workspace?.uuid"
+        source shouldContain "withContext(Dispatchers.IO)"
+        source shouldContain "workspace.close()"
+    }
+
     test("restore flow preserves selected archive state across rotation") {
         val source = locateProjectFile(
             "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/RestoreScreen.kt",
@@ -36,11 +50,14 @@ class RestoreImportRotationStateContractTest : FunSpec({
         source shouldContain "fun closeRestoreWorkspace()"
         source shouldContain "currentActivity?.isChangingConfigurations == true"
         source shouldContain "if (!isConfigurationChange && !currentIsRestoreInProgress)"
+        source shouldContain "var showRestorePassphraseDialog by remember { mutableStateOf(false) }"
+        source shouldContain "currentPendingEncryptedWorkspace?.close()"
 
         source shouldNotContain "val restoreFilesSelector = remember { Backup.FilesSelector() }"
         source shouldNotContain "var importStrategy by remember { mutableStateOf(ImportStrategy.Merge) }"
         source shouldNotContain "var lastRestoreNotice by remember { mutableStateOf<RestoreFlowNotice?>(null) }"
         source shouldNotContain "var lastRestoreSummary by remember { mutableStateOf<RestoreOperationSummary?>(null) }"
+        source shouldNotContain "var showRestorePassphraseDialog by rememberSaveable"
         source shouldNotContain "DisposableEffect(Unit)"
     }
 

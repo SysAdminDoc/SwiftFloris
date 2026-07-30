@@ -37,6 +37,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
@@ -65,7 +66,9 @@ import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
 import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import org.florisboard.lib.android.showLongToast
@@ -91,8 +94,16 @@ object Backup {
     const val CLIPBOARD_IMAGES_JSON_NAME = "clipboard_images.json"
     const val CLIPBOARD_VIDEO_JSON_NAME = "clipboard_video.json"
 
-    fun defaultFileName(metadata: Metadata): String {
-        return "backup_${metadata.packageName}_${metadata.versionCode}_${metadata.timestamp}.zip"
+    fun defaultFileName(
+        metadata: Metadata,
+        encrypted: Boolean = false,
+    ): String {
+        val extension = if (encrypted) {
+            FileRegistry.EncryptedBackupArchive.fileExt
+        } else {
+            FileRegistry.BackupArchive.fileExt
+        }
+        return "backup_${metadata.packageName}_${metadata.versionCode}_${metadata.timestamp}.$extension"
     }
 
     enum class Destination {
@@ -140,6 +151,16 @@ object Backup {
                 clipboardImageItems ||
                 clipboardVideoItems
         }
+
+        fun snapshot(): FilesSelection = FilesSelection(
+            jetprefDatastore = jetprefDatastore,
+            imeKeyboard = imeKeyboard,
+            imeTheme = imeTheme,
+            localStickerPacks = localStickerPacks,
+            clipboardTextItems = clipboardTextItems,
+            clipboardImageItems = clipboardImageItems,
+            clipboardVideoItems = clipboardVideoItems,
+        )
 
         /**
          * Selects every backup section — preferences, keyboard layouts, themes,
@@ -191,6 +212,19 @@ object Backup {
         }
     }
 
+    data class FilesSelection(
+        val jetprefDatastore: Boolean,
+        val imeKeyboard: Boolean,
+        val imeTheme: Boolean,
+        val localStickerPacks: Boolean,
+        val clipboardTextItems: Boolean,
+        val clipboardImageItems: Boolean,
+        val clipboardVideoItems: Boolean,
+    ) {
+        val containsClipboard: Boolean
+            get() = clipboardTextItems || clipboardImageItems || clipboardVideoItems
+    }
+
     @Serializable
     data class Metadata(
         @SerialName("package")
@@ -213,15 +247,30 @@ fun BackupScreen() = FlorisScreen {
 
     var backupDestination by remember { mutableStateOf(Backup.Destination.FILE_SYS) }
     val backupFilesSelector = remember { Backup.FilesSelector() }
-    var backupWorkspace by remember { mutableStateOf<CacheManager.BackupAndRestoreWorkspace?>(null) }
-    var isBackupInProgress by remember { mutableStateOf(false) }
+    var backupWorkspaceUuid by rememberSaveable { mutableStateOf<String?>(null) }
+    var backupWorkspace by remember {
+        mutableStateOf(
+            backupWorkspaceUuid?.let(cacheManager.backupAndRestore::getWorkspaceByUuid),
+        )
+    }
+    var isBackupInProgress by remember { mutableStateOf(backupWorkspace != null) }
     var lastBackupNotice by remember { mutableStateOf<BackupFlowNotice?>(null) }
     var lastBackupErrorMessage by remember { mutableStateOf<String?>(null) }
+    var showEncryptionPassphraseDialog by remember { mutableStateOf(false) }
 
-    // Close the workspace when the screen leaves composition (system-back / nav-up),
-    // mirroring RestoreScreen. The share-intent path deliberately sets backupWorkspace
-    // = null after handing the zip to FileProvider, so onDispose only closes a
-    // still-owned workspace and never deletes a zip a receiving app is still reading.
+    fun setBackupWorkspace(workspace: CacheManager.BackupAndRestoreWorkspace?) {
+        backupWorkspace = workspace
+        backupWorkspaceUuid = workspace?.uuid
+    }
+
+    fun closeBackupWorkspace() {
+        backupWorkspace?.close()
+        setBackupWorkspace(null)
+    }
+
+    // Close screen-owned plaintext/ciphertext workspaces on every exit. Shared
+    // artifacts transfer to CacheManager's bounded grant lease and are nulled
+    // here, so onDispose never races a receiving app.
     val currentBackupWorkspace by rememberUpdatedState(backupWorkspace)
     val currentIsBackupInProgress by rememberUpdatedState(isBackupInProgress)
     DisposableEffect(Unit) {
@@ -231,7 +280,7 @@ fun BackupScreen() = FlorisScreen {
     }
 
     val backUpToFileSystemLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.CreateDocument("application/zip"),
+        contract = ActivityResultContracts.CreateDocument("application/octet-stream"),
         onResult = { uri ->
             if (uri == null) {
                 val result = BackupRestorePolicy.classifyBackupDocumentResult(
@@ -241,178 +290,254 @@ fun BackupScreen() = FlorisScreen {
                 if (result != BackupDocumentResult.Cancelled) return@rememberLauncherForActivityResult
                 // User can modify checkboxes between cancellation and second
                 // trigger, so we make sure to clear out the previous workspace
-                backupWorkspace?.close()
-                backupWorkspace = null
+                closeBackupWorkspace()
                 isBackupInProgress = false
                 lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(result)
                 lastBackupErrorMessage = null
                 return@rememberLauncherForActivityResult
             }
-            runCatching {
-                context.contentResolver.writeFromFile(uri, backupWorkspace!!.zipFile)
-                backupWorkspace!!.close()
-            }.onSuccess {
-                backupWorkspace = null
-                isBackupInProgress = false
-                lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Success)
-                lastBackupErrorMessage = null
-                scope.launch {
+            scope.launch {
+                val workspace = backupWorkspace
+                runCatching {
+                    checkNotNull(workspace) {
+                        "Prepared backup workspace is no longer available."
+                    }
+                    withContext(Dispatchers.IO) {
+                        context.contentResolver.writeFromFile(uri, workspace.archiveFile)
+                    }
+                    workspace.close()
+                }.onSuccess {
+                    setBackupWorkspace(null)
+                    isBackupInProgress = false
+                    lastBackupNotice =
+                        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Success)
+                    lastBackupErrorMessage = null
                     context.showLongToast(R.string.backup_and_restore__back_up__success)
                     navController.popBackStack()
-                }
-            }.onFailure { error ->
-                flogError { error.stackTraceToString() }
-                scope.launch {
+                }.onFailure { error ->
+                    flogError { error.stackTraceToString() }
                     context.showLongToast(
                         R.string.backup_and_restore__back_up__failure,
                         "error_message" to error.message,
                     )
+                    closeBackupWorkspace()
+                    isBackupInProgress = false
+                    lastBackupNotice =
+                        BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
+                    lastBackupErrorMessage = error.message
                 }
-                backupWorkspace?.close()
-                backupWorkspace = null
-                isBackupInProgress = false
-                lastBackupNotice = BackupRestorePolicy.noticeForBackupDocumentResult(BackupDocumentResult.Failure)
-                lastBackupErrorMessage = error.message
             }
         },
     )
 
-    suspend fun prepareBackupWorkspace() {
+    suspend fun prepareBackupWorkspace(
+        passphrase: CharArray?,
+    ): CacheManager.BackupAndRestoreWorkspace {
+        val selection = backupFilesSelector.snapshot()
+        val clipboardHistory = if (selection.containsClipboard) {
+            context.clipboardManager().value.snapshotHistoryForRestore()
+                .filterNot { it.isSensitive }
+        } else {
+            emptyList()
+        }
         val workspace = cacheManager.backupAndRestore.new()
-        try {
-            if (backupFilesSelector.jetprefDatastore) {
-                val fileBasedStorage = workspace.inputDir
-                    .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
-                    .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
-                    .let { FileBasedStorage(it.path) }
-                FlorisPreferenceStore.export(fileBasedStorage).getOrThrow()
-            }
-            val workspaceFilesDir = workspace.inputDir.subDir("files")
-            if (backupFilesSelector.imeKeyboard) {
-                context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).let { dir ->
-                    dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH))
+        return try {
+            withContext(Dispatchers.IO) {
+                if (selection.jetprefDatastore) {
+                    val fileBasedStorage = workspace.inputDir
+                        .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
+                        .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
+                        .let { FileBasedStorage(it.path) }
+                    FlorisPreferenceStore.export(fileBasedStorage).getOrThrow()
                 }
-            }
-            if (backupFilesSelector.imeTheme) {
-                context.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
-                    dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))
+                val workspaceFilesDir = workspace.inputDir.subDir("files")
+                if (selection.imeKeyboard) {
+                    context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).let { dir ->
+                        dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH))
+                    }
                 }
-            }
-            if (backupFilesSelector.localStickerPacks) {
-                val stickerDir = LocalStickerPackRepository.storageDir(context)
-                if (stickerDir.exists()) {
-                    stickerDir.copyRecursively(
-                        workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName),
-                        overwrite = true,
-                    )
+                if (selection.imeTheme) {
+                    context.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
+                        dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))
+                    }
                 }
-            }
+                if (selection.localStickerPacks) {
+                    val stickerDir = LocalStickerPackRepository.storageDir(context)
+                    if (stickerDir.exists()) {
+                        stickerDir.copyRecursively(
+                            workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName),
+                            overwrite = true,
+                        )
+                    }
+                }
 
-            if (backupFilesSelector.provideClipboardItems()) {
-                val clipboardManager by context.clipboardManager()
-                // Drop clipboard items the source app flagged as sensitive
-                // (`ClipDescription.EXTRA_IS_SENSITIVE`, API 33+, also v1.8.105's
-                // primary-clip gate now refuses to insert these — but legacy
-                // history rows from before that fix can still carry the flag).
-                // Backups are user-portable artifacts that move via Syncthing /
-                // USB / cloud sync at the user's choice; passwords / OTPs / 2FA
-                // codes that landed in history must not be serialised into the
-                // backup zip in plaintext. The personal-dictionary backup is
-                // passphrase-encrypted (v1.8.65); clipboard history is not, so
-                // the only safe path is to exclude sensitive rows.
-                val clipboardHistory = clipboardManager.currentHistory.all
-                    .filterNot { it.isSensitive }
-                val clipboardFilesDir = workspace.inputDir.subDir("clipboard")
-                clipboardFilesDir.mkdir()
-                if (backupFilesSelector.clipboardTextItems) {
-                    clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
-                        .writeJson(clipboardHistory.filter { it.type == ItemType.TEXT })
-                }
-                if (backupFilesSelector.clipboardImageItems) {
-                    clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
-                        .writeJson(clipboardHistory.filter { it.type == ItemType.IMAGE })
-                    for (item in clipboardHistory.filter { it.type == ItemType.IMAGE }) {
-                        val uri = item.uri ?: continue
-                        val id = ContentUris.parseId(uri)
-                        ClipboardFileStorage.getFileForId(context, id).copyTo(
-                            clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
-                        )
+                if (BackupRestorePolicy.requiresPortableEncryption(selection.containsClipboard)) {
+                    // Sensitive rows are excluded before the app-private ZIP is
+                    // built. Every remaining clipboard byte is then sealed by
+                    // PortableBackupEnvelope before any SAF/share exposure.
+                    val clipboardFilesDir = workspace.inputDir.subDir("clipboard")
+                    clipboardFilesDir.mkdir()
+                    if (selection.clipboardTextItems) {
+                        clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
+                            .writeJson(clipboardHistory.filter { it.type == ItemType.TEXT })
+                    }
+                    if (selection.clipboardImageItems) {
+                        clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
+                            .writeJson(clipboardHistory.filter { it.type == ItemType.IMAGE })
+                        for (item in clipboardHistory.filter { it.type == ItemType.IMAGE }) {
+                            val uri = item.uri ?: continue
+                            val id = ContentUris.parseId(uri)
+                            ClipboardFileStorage.getFileForId(context, id).copyTo(
+                                clipboardFilesDir.subFile(
+                                    "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id",
+                                ),
+                            )
+                        }
+                    }
+                    if (selection.clipboardVideoItems) {
+                        clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
+                            .writeJson(clipboardHistory.filter { it.type == ItemType.VIDEO })
+                        for (item in clipboardHistory.filter { it.type == ItemType.VIDEO }) {
+                            val uri = item.uri ?: continue
+                            val id = ContentUris.parseId(uri)
+                            ClipboardFileStorage.getFileForId(context, id).copyTo(
+                                clipboardFilesDir.subFile(
+                                    "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id",
+                                ),
+                            )
+                        }
                     }
                 }
-                if (backupFilesSelector.clipboardVideoItems) {
-                    clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
-                        .writeJson(clipboardHistory.filter { it.type == ItemType.VIDEO })
-                    for (item in clipboardHistory.filter { it.type == ItemType.VIDEO }) {
-                        val uri = item.uri ?: continue
-                        val id = ContentUris.parseId(uri)
-                        ClipboardFileStorage.getFileForId(context, id).copyTo(
-                            clipboardFilesDir.subFile("${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id")
-                        )
+                workspace.metadata = Backup.Metadata(
+                    packageName = BuildConfig.APPLICATION_ID,
+                    versionCode = BuildConfig.VERSION_CODE,
+                    versionName = BuildConfig.VERSION_NAME,
+                    timestamp = System.currentTimeMillis(),
+                )
+                workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
+                val plaintextZip = workspace.outputDir.subFile(
+                    Backup.defaultFileName(workspace.metadata),
+                )
+                ZipUtils.zip(workspace.inputDir, plaintextZip)
+                if (selection.containsClipboard) {
+                    requireNotNull(passphrase) {
+                        "Clipboard-bearing backups require a passphrase."
                     }
+                    val encryptedArchive = workspace.outputDir.subFile(
+                        Backup.defaultFileName(workspace.metadata, encrypted = true),
+                    )
+                    PortableBackupEnvelope.encrypt(
+                        plaintextZip = plaintextZip,
+                        encryptedTarget = encryptedArchive,
+                        passphrase = passphrase,
+                        containsClipboard = true,
+                    )
+                    check(plaintextZip.delete()) {
+                        "Could not remove the app-private plaintext backup ZIP."
+                    }
+                    check(workspace.inputDir.deleteRecursively()) {
+                        "Could not remove the app-private plaintext backup workspace."
+                    }
+                    workspace.archiveFile = encryptedArchive
+                } else {
+                    workspace.archiveFile = plaintextZip
                 }
+                workspace
             }
-            workspace.metadata = Backup.Metadata(
-                packageName = BuildConfig.APPLICATION_ID,
-                versionCode = BuildConfig.VERSION_CODE,
-                versionName = BuildConfig.VERSION_NAME,
-                timestamp = System.currentTimeMillis(),
-            )
-            workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
-            workspace.zipFile = workspace.outputDir.subFile(Backup.defaultFileName(workspace.metadata))
-            ZipUtils.zip(workspace.inputDir, workspace.zipFile)
-            backupWorkspace = workspace
         } catch (error: Throwable) {
+            // withContext has prompt cancellation: ownership may fail to
+            // transfer even after its IO block returned successfully.
             workspace.close()
             throw error
         }
     }
 
-    suspend fun prepareAndPerformBackup() {
+    suspend fun prepareAndPerformBackup(passphrase: CharArray? = null) {
         if (isBackupInProgress) {
+            passphrase?.fill('\u0000')
             return
         }
         isBackupInProgress = true
         lastBackupNotice = null
         lastBackupErrorMessage = null
-        runCatching {
-            if (backupWorkspace == null || backupWorkspace!!.isClosed()) {
-                prepareBackupWorkspace()
-            }
-            when (backupDestination) {
-                Backup.Destination.FILE_SYS -> {
-                    backUpToFileSystemLauncher.launch(backupWorkspace!!.zipFile.name)
+        try {
+            runCatching {
+                if (backupWorkspace == null || backupWorkspace!!.isClosed()) {
+                    setBackupWorkspace(prepareBackupWorkspace(passphrase))
                 }
+                when (backupDestination) {
+                    Backup.Destination.FILE_SYS -> {
+                        backUpToFileSystemLauncher.launch(backupWorkspace!!.archiveFile.name)
+                    }
 
-                Backup.Destination.SHARE_INTENT -> {
-                    val uri =
-                        FileProvider.getUriForFile(context, Backup.FILE_PROVIDER_AUTHORITY, backupWorkspace!!.zipFile)
-                    val shareIntent = ShareCompat.IntentBuilder(context)
-                        .setStream(uri)
-                        .setType(FileRegistry.BackupArchive.mediaType)
-                        .createChooserIntent()
-                        .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    context.startActivity(shareIntent)
-                    // Don't close() here: the receiving app reads the zip from the
-                    // FileProvider URI after this returns, and close() deletes the
-                    // workspace dir (the zip with it). But drop our reference so the
-                    // next backup rebuilds a fresh workspace instead of re-sharing this
-                    // stale zip — prepareAndPerformBackup() only rebuilds when
-                    // backupWorkspace is null/closed, so a non-null leftover would
-                    // re-share the old selection even after the user changes checkboxes.
-                    backupWorkspace = null
-                    isBackupInProgress = false
-                    lastBackupNotice = BackupFlowNotice.ShareSheetOpened
+                    Backup.Destination.SHARE_INTENT -> {
+                        val workspace = backupWorkspace!!
+                        val uri = FileProvider.getUriForFile(
+                            context,
+                            Backup.FILE_PROVIDER_AUTHORITY,
+                            workspace.archiveFile,
+                        )
+                        val shareIntent = ShareCompat.IntentBuilder(context)
+                            .setStream(uri)
+                            .setType(
+                                if (PortableBackupEnvelope.isEncryptedEnvelope(workspace.archiveFile)) {
+                                    FileRegistry.EncryptedBackupArchive.mediaType
+                                } else {
+                                    FileRegistry.BackupArchive.mediaType
+                                },
+                            )
+                            .createChooserIntent()
+                            .addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                        context.startActivity(shareIntent)
+                        cacheManager.leaseSharedBackupArtifact(workspace, uri)
+                        setBackupWorkspace(null)
+                        isBackupInProgress = false
+                        lastBackupNotice = BackupFlowNotice.ShareSheetOpened
+                    }
                 }
+            }.onFailure { error ->
+                flogError { error.stackTraceToString() }
+                context.showLongToast(
+                    R.string.backup_and_restore__back_up__failure,
+                    "error_message" to error.message,
+                )
+                closeBackupWorkspace()
+                isBackupInProgress = false
+                lastBackupNotice = BackupFlowNotice.Failure
+                lastBackupErrorMessage = error.message
             }
-        }.onFailure { error ->
-            flogError { error.stackTraceToString() }
-            context.showLongToast(R.string.backup_and_restore__back_up__failure, "error_message" to error.message)
-            backupWorkspace?.close()
-            backupWorkspace = null
-            isBackupInProgress = false
-            lastBackupNotice = BackupFlowNotice.Failure
-            lastBackupErrorMessage = error.message
+        } finally {
+            passphrase?.fill('\u0000')
         }
+    }
+
+    fun requestBackup() {
+        if (BackupRestorePolicy.requiresPortableEncryption(
+                backupFilesSelector.provideClipboardItems(),
+            )
+        ) {
+            showEncryptionPassphraseDialog = true
+        } else {
+            scope.launch { prepareAndPerformBackup() }
+        }
+    }
+
+    if (showEncryptionPassphraseDialog) {
+        BackupPassphraseDialog(
+            title = stringRes(R.string.backup_and_restore__back_up__encryption_dialog_title),
+            message = stringRes(R.string.backup_and_restore__back_up__encryption_dialog_message),
+            confirmLabel = stringRes(R.string.action__back_up),
+            requireConfirmation = true,
+            onDismiss = {
+                showEncryptionPassphraseDialog = false
+                lastBackupNotice = BackupFlowNotice.Cancelled
+                lastBackupErrorMessage = null
+            },
+            onConfirm = { passphrase ->
+                showEncryptionPassphraseDialog = false
+                scope.launch { prepareAndPerformBackup(passphrase) }
+            },
+        )
     }
 
     bottomBar {
@@ -424,7 +549,7 @@ fun BackupScreen() = FlorisScreen {
                 // in-flight zip/copy coroutine (mirrors RestoreScreen's guard).
                 enabled = !isBackupInProgress,
                 onClick = {
-                    backupWorkspace?.close()
+                    closeBackupWorkspace()
                     navController.popBackStack()
                 },
                 text = stringRes(R.string.action__cancel),
@@ -436,17 +561,16 @@ fun BackupScreen() = FlorisScreen {
                 // now-complete selection (it only rebuilds when null/closed).
                 enabled = !isBackupInProgress,
                 onClick = {
-                    backupWorkspace?.close()
-                    backupWorkspace = null
+                    closeBackupWorkspace()
                     backupFilesSelector.selectAll()
                     backupDestination = Backup.Destination.FILE_SYS
-                    scope.launch { prepareAndPerformBackup() }
+                    requestBackup()
                 },
                 text = stringRes(R.string.backup_and_restore__back_up__full_backup),
             )
             ButtonBarButton(
                 onClick = {
-                    scope.launch { prepareAndPerformBackup() }
+                    requestBackup()
                 },
                 text = if (isBackupInProgress) {
                     stringRes(R.string.backup_and_restore__back_up__in_progress)

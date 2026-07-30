@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.clipboard
 import android.content.ClipData
 import android.content.ClipDescription.EXTRA_IS_SENSITIVE
 import android.content.Context
+import android.content.Intent
 import android.os.PersistableBundle
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
@@ -31,6 +32,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.io.Closeable
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -105,6 +107,7 @@ class ClipboardManager(
     private val historyMaintenanceMutex = Mutex(locked = false)
     private var clipHistoryDb: ClipboardHistoryDatabase? = null
     private val clipHistoryDao: ClipboardHistoryDao? get() = clipHistoryDb?.clipboardItemDao()
+    private val clipHistoryDaoReady = CompletableDeferred<ClipboardHistoryDao>()
 
     val historyFlow: StateFlow<ClipboardHistory>
         field = MutableStateFlow(ClipboardHistory.EMPTY)
@@ -137,14 +140,21 @@ class ClipboardManager(
 
     fun initializeForContext(context: Context) {
         ioScope.launch {
-            if (clipHistoryDb == null) {
-                clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
-                clipHistoryDao?.let { dao ->
+            try {
+                if (clipHistoryDb == null) {
+                    clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
+                    val dao = checkNotNull(clipHistoryDao)
                     ClipboardStorageReconciliation.reconcile(context.applicationContext, dao)
+                    clipHistoryDaoReady.complete(dao)
+                    dao.getAllAsFlow().collect { items ->
+                        updateHistory(items)
+                    }
+                } else {
+                    clipHistoryDao?.let(clipHistoryDaoReady::complete)
                 }
-                clipHistoryDao?.getAllAsFlow()?.collect { items ->
-                    updateHistory(items)
-                }
+            } catch (error: Throwable) {
+                clipHistoryDaoReady.completeExceptionally(error)
+                throw error
             }
         }
     }
@@ -496,6 +506,55 @@ class ClipboardManager(
                     insertClip(restoredItem)
                 }
             }
+        }
+    }
+
+    /**
+     * Transactional restore primitives. Unlike the legacy fire-and-forget
+     * methods above, these return only after Room has committed so callers can
+     * coordinate backup restore and rollback with clipboard media storage.
+     */
+    suspend fun snapshotHistoryForRestore(): List<ClipboardItem> = withContext(Dispatchers.IO) {
+        clipHistoryDaoReady.await().getAll()
+    }
+
+    suspend fun clearFullHistoryForRestore() = withContext(Dispatchers.IO) {
+        historyMaintenanceMutex.withLock {
+            val dao = clipHistoryDaoReady.await()
+            dao.getAll().forEach { item ->
+                val uri = item.uri
+                if (uri?.authority == ClipboardMediaProvider.AUTHORITY) {
+                    runCatching {
+                        appContext.revokeUriPermission(
+                            uri,
+                            Intent.FLAG_GRANT_READ_URI_PERMISSION,
+                        )
+                    }
+                }
+            }
+            dao.deleteAll()
+        }
+    }
+
+    suspend fun restoreHistoryAndAwait(items: List<ClipboardItem>) = withContext(Dispatchers.IO) {
+        historyMaintenanceMutex.withLock {
+            val dao = clipHistoryDaoReady.await()
+            val existing = dao.getAll()
+                .mapTo(mutableSetOf()) { it.copy(id = 0) }
+            for (item in items) {
+                if (!ClipboardTextRetentionPolicy.shouldRetain(item)) continue
+                val restoredItem = item.copy(id = 0)
+                if (existing.add(restoredItem)) {
+                    dao.insert(restoredItem)
+                }
+            }
+        }
+    }
+
+    suspend fun replaceHistoryFromRollback(items: List<ClipboardItem>) = withContext(Dispatchers.IO) {
+        historyMaintenanceMutex.withLock {
+            val retainedItems = items.filter(ClipboardTextRetentionPolicy::shouldRetain)
+            clipHistoryDaoReady.await().replaceAllForRestore(retainedItems)
         }
     }
 

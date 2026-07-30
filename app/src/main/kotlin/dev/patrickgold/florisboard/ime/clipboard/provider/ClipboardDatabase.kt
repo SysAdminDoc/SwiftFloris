@@ -364,6 +364,12 @@ interface ClipboardHistoryDao {
     fun deleteAllUnpinned()
 
     @Transaction
+    fun replaceAllForRestore(items: List<ClipboardItem>) {
+        deleteAll()
+        items.forEach(::insert)
+    }
+
+    @Transaction
     fun deleteAndInsert(deleteId: Long, newItem: ClipboardItem): Long {
         delete(deleteId)
         return insert(newItem)
@@ -463,6 +469,17 @@ interface ClipboardFilesDao {
 
     @Query("SELECT * FROM $CLIPBOARD_FILES_TABLE")
     fun getAll(): List<ClipboardFileInfo>
+
+    @Query("DELETE FROM $CLIPBOARD_FILES_TABLE")
+    fun deleteAll()
+
+    @Transaction
+    fun replaceAllForRestore(clipboardFileInfos: List<ClipboardFileInfo>) {
+        deleteAll()
+        if (clipboardFileInfos.isNotEmpty()) {
+            insert(*clipboardFileInfos.toTypedArray())
+        }
+    }
 }
 
 @Database(entities = [ClipboardFileInfo::class], version = 2)

@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.lib.cache
 
 import android.content.Context
+import android.content.Intent
 import android.database.Cursor
 import android.net.Uri
 import android.provider.OpenableColumns
@@ -41,6 +42,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -70,6 +72,7 @@ class CacheManager(context: Context) {
         internal const val MaxImportUriCount = 32
         internal const val MaxImportFileBytes = 256L * 1024L * 1024L
         internal const val MaxImportBatchBytes = 512L * 1024L * 1024L
+        internal const val SharedBackupGrantLeaseMillis = 15L * 60L * 1000L
 
         private val UnsafeImportFileNameChars = Regex("""[\p{Cntrl}/\\:*?"<>|]+""")
 
@@ -147,6 +150,39 @@ class CacheManager(context: Context) {
     val exporter = WorkspacesContainer(ExporterDirName) { ExporterWorkspace(it) }
     val themeExtEditor = WorkspacesContainer(EditorDirName) { ExtEditorWorkspace<ThemeExtensionEditor>(it) }
     val backupAndRestore = WorkspacesContainer(BackupAndRestoreDirName) { BackupAndRestoreWorkspace(it) }
+
+    init {
+        // Capture before this CacheManager can hand out a new workspace. These
+        // directories can only belong to an earlier process, so no age grace
+        // is needed for plaintext restore staging or expired shared exports.
+        val abandonedBackupWorkspaces = backupAndRestore.dir.listFiles().orEmpty()
+            .filter { it.isDirectory }
+        scope.launch {
+            abandonedBackupWorkspaces.forEach { staleDir ->
+                runCatching { staleDir.deleteRecursively() }
+            }
+        }
+    }
+
+    /**
+     * Keep a shared backup artifact available only for a bounded receiver
+     * window. Android also revokes temporary grants when the receiver's task
+     * finishes; this lease is the deterministic upper bound while our process
+     * remains alive. Process-death leftovers are swept on the next startup.
+     */
+    fun leaseSharedBackupArtifact(
+        workspace: BackupAndRestoreWorkspace,
+        uri: Uri,
+    ) {
+        workspace.dir.setLastModified(System.currentTimeMillis())
+        scope.launch {
+            delay(SharedBackupGrantLeaseMillis)
+            runCatching {
+                appContext.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            workspace.close()
+        }
+    }
 
     fun readFromUriIntoCache(uri: Uri) = readFromUriIntoCache(listOf(uri))
 
@@ -335,8 +371,10 @@ class CacheManager(context: Context) {
         val inputDir: FsDir = dir.subDir(InputDirName)
         val outputDir: FsDir = dir.subDir(OutputDirName)
 
-        lateinit var zipFile: FsFile
+        lateinit var archiveFile: FsFile
         lateinit var metadata: Backup.Metadata
+        var archiveWasEncrypted: Boolean = false
+        var archiveWasLegacyPlaintext: Boolean = false
         var restoreWarningId: Int? = null
         var restoreErrorId: Int? = null
 

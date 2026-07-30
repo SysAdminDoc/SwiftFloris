@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.app.settings.advanced
 
 import androidx.compose.ui.state.ToggleableState
 import dev.patrickgold.florisboard.R
+import dev.patrickgold.florisboard.lib.io.FileRegistry
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -31,6 +32,20 @@ class BackupRestorePolicyTest : FunSpec({
 
     test("restore archive copy has a hard provider-stream byte budget") {
         Restore.MAX_ARCHIVE_BYTES shouldBe 256L * 1024L * 1024L
+        Restore.MAX_PORTABLE_ARCHIVE_BYTES shouldBe
+            Restore.MAX_ARCHIVE_BYTES +
+            PortableBackupEnvelope.HeaderBytes +
+            PortableBackupEnvelope.GcmTagBytes
+    }
+
+    test("clipboard selection is the mandatory portable-encryption boundary") {
+        BackupRestorePolicy.requiresPortableEncryption(clipboardItemsSelected = false) shouldBe false
+        BackupRestorePolicy.requiresPortableEncryption(clipboardItemsSelected = true) shouldBe true
+
+        Backup.defaultFileName(validMetadata, encrypted = false).endsWith(".zip") shouldBe true
+        Backup.defaultFileName(validMetadata, encrypted = true).endsWith(".sfbak") shouldBe true
+        FileRegistry.EncryptedBackupArchive.fileExt shouldBe "sfbak"
+        FileRegistry.EncryptedBackupArchive.mediaType shouldBe "application/octet-stream"
     }
 
     test("backup document result distinguishes success cancellation and failure") {
