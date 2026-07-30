@@ -23,10 +23,16 @@ import org.florisboard.lib.android.copyRecursively
 import org.florisboard.lib.android.write
 import org.florisboard.lib.kotlin.io.FsDir
 import org.florisboard.lib.kotlin.io.FsFile
+import java.io.ByteArrayOutputStream
 import java.io.FileOutputStream
+import java.io.InputStream
 import java.util.zip.ZipEntry
 import java.util.zip.ZipFile
 import java.util.zip.ZipOutputStream
+
+class ArchiveEntryTooLargeException(
+    val maxBytes: Long,
+) : IllegalArgumentException("Archive entry exceeds the $maxBytes-byte limit")
 
 object ZipUtils {
     private const val MaxUnzippedEntrySizeBytes = 100_000_000L
@@ -56,23 +62,87 @@ object ZipUtils {
         return false
     }
 
-    fun readFileFromArchive(context: Context, zipRef: FlorisRef, relPath: String) = runCatching<String> {
+    fun readFileFromArchive(
+        context: Context,
+        zipRef: FlorisRef,
+        relPath: String,
+        maxBytes: Long = Long.MAX_VALUE,
+    ) = runCatching<String> {
+        require(maxBytes > 0L) { "maxBytes must be positive" }
         when {
             zipRef.isAssets -> {
-                zipRef.subRef(relPath).loadTextAsset(context).getOrThrow()
+                context.assets.open(zipRef.subRef(relPath).relativePath).use { input ->
+                    input.readUtf8TextLimited(maxBytes)
+                }
             }
             zipRef.isCache || zipRef.isInternal -> {
                 val flexHandle = FsFile(zipRef.absolutePath(context))
-                check(flexHandle.isFile) { "Given ref $zipRef is not a file!" }
-                var fileContents: String? = null
-                ZipFile(flexHandle).use { flexFile ->
-                    flexFile.getEntry(relPath)?.let { flexEntry ->
-                        fileContents = flexFile.getInputStream(flexEntry).bufferedReader().use { it.readText() }
-                    }
-                }
-                fileContents ?: error("Failed to load requested file $relPath")
+                readFileFromArchive(flexHandle, relPath, maxBytes).getOrThrow()
             }
             else -> error("Unsupported source!")
+        }
+    }
+
+    fun readFileFromArchive(
+        srcFile: FsFile,
+        relPath: String,
+        maxBytes: Long = Long.MAX_VALUE,
+    ) = runCatching<String> {
+        require(maxBytes > 0L) { "maxBytes must be positive" }
+        check(srcFile.isFile) { "Given archive $srcFile is not a file!" }
+        ZipFile(srcFile).use { archive ->
+            val entry = archive.getEntry(relPath)
+                ?: error("Failed to load requested file $relPath")
+            check(!entry.isDirectory) { "Requested archive entry $relPath is a directory" }
+            if (entry.size > maxBytes) {
+                throw ArchiveEntryTooLargeException(maxBytes)
+            }
+            archive.getInputStream(entry).use { input ->
+                input.readUtf8TextLimited(maxBytes)
+            }
+        }
+    }
+
+    fun validateFileInArchive(
+        context: Context,
+        zipRef: FlorisRef,
+        relPath: String,
+        maxBytes: Long,
+    ) = runCatching<Unit> {
+        require(maxBytes > 0L) { "maxBytes must be positive" }
+        when {
+            zipRef.isAssets -> {
+                context.assets.open(zipRef.subRef(relPath).relativePath).use { input ->
+                    input.requireAtMost(maxBytes)
+                }
+            }
+            zipRef.isCache || zipRef.isInternal -> {
+                val flexHandle = FsFile(zipRef.absolutePath(context))
+                validateFileInArchive(flexHandle, relPath, maxBytes).getOrThrow()
+            }
+            else -> error("Unsupported source!")
+        }
+    }
+
+    fun validateFileInArchive(
+        srcFile: FsFile,
+        relPath: String,
+        maxBytes: Long,
+    ) = runCatching<Unit> {
+        require(maxBytes > 0L) { "maxBytes must be positive" }
+        check(srcFile.isFile) { "Given archive $srcFile is not a file!" }
+        ZipFile(srcFile).use { archive ->
+            val entry = archive.getEntry(relPath)
+                ?: error("Failed to load requested file $relPath")
+            check(!entry.isDirectory) { "Requested archive entry $relPath is a directory" }
+            if (entry.size > maxBytes) {
+                throw ArchiveEntryTooLargeException(maxBytes)
+            }
+            if (maxBytes != Long.MAX_VALUE) {
+                archive.getInputStream(entry).use { input ->
+                    input.requireAtMost(maxBytes)
+                }
+            }
         }
     }
 
@@ -303,5 +373,35 @@ object ZipUtils {
             return 0L
         }
         return copiedBytes
+    }
+
+    private fun InputStream.readUtf8TextLimited(maxBytes: Long): String {
+        val initialCapacity = minOf(maxBytes, DEFAULT_BUFFER_SIZE.toLong()).toInt()
+        val output = ByteArrayOutputStream(initialCapacity)
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var totalBytes = 0L
+        while (true) {
+            val readBytes = read(buffer)
+            if (readBytes < 0) break
+            totalBytes += readBytes
+            if (totalBytes > maxBytes) {
+                throw ArchiveEntryTooLargeException(maxBytes)
+            }
+            output.write(buffer, 0, readBytes)
+        }
+        return output.toString(Charsets.UTF_8.name())
+    }
+
+    private fun InputStream.requireAtMost(maxBytes: Long) {
+        val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+        var totalBytes = 0L
+        while (true) {
+            val readBytes = read(buffer)
+            if (readBytes < 0) return
+            totalBytes += readBytes
+            if (totalBytes > maxBytes) {
+                throw ArchiveEntryTooLargeException(maxBytes)
+            }
+        }
     }
 }

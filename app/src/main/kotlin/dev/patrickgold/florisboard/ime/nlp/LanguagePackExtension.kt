@@ -25,11 +25,11 @@ import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponent
 import dev.patrickgold.florisboard.lib.ext.ExtensionEditor
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
+import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.florisboard.lib.kotlin.io.FsDir
-import org.florisboard.lib.kotlin.io.subFile
 
 @Serializable
 enum class LanguagePackKind {
@@ -111,15 +111,20 @@ class LanguagePackExtension(
             return
         }
 
-        val databasePath = workingDir?.subFile(hanShapeBasedSQLite)?.path
-        if (databasePath == null) {
-            flogError { "Han shape-based language pack not found or loaded" }
+        val loadedRoot = workingDir
+        val databaseFile = loadedRoot?.let { root ->
+            runCatching {
+                ExtensionPackagePolicy.resolveRequiredFile(root, hanShapeBasedSQLite)
+            }.getOrNull()
+        }
+        if (databaseFile == null) {
+            flogError { "Han shape-based language pack database failed package validation" }
             closeHanShapeBasedSQLiteDatabase()
         } else try {
-            openHanShapeBasedSQLiteDatabase(databasePath)
+            openHanShapeBasedSQLiteDatabase(databaseFile.path)
         } catch (e: SQLiteException) {
             closeHanShapeBasedSQLiteDatabase()
-            flogError { "SQLiteException in openDatabase: path=$databasePath, error='${e}'" }
+            flogError { "SQLiteException while opening validated Han language pack database: ${e.javaClass.simpleName}" }
         }
     }
 

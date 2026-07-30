@@ -77,6 +77,7 @@ import dev.patrickgold.florisboard.lib.ext.ExtensionJsonConfig
 import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
+import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
 import dev.patrickgold.florisboard.lib.ext.ExtensionValidation
 import dev.patrickgold.florisboard.lib.ext.validate
 import dev.patrickgold.florisboard.lib.io.FlorisRef
@@ -838,8 +839,13 @@ private fun <T : ExtensionComponent> CreateComponentScreen(
                                 componentEditor.id = componentId
                                 componentEditor.stylesheetPath = ""
                                 val externalExt = extensionManager.getExtensionById(componentName.extensionId) ?: return
+                                val stylesheetPath = component.stylesheetPath()
+                                ExtensionPackagePolicy.requireSafeRelativePath(stylesheetPath)
                                 val stylesheetJson = ZipUtils.readFileFromArchive(
-                                    context, externalExt.sourceRef!!, component.stylesheetPath()
+                                    context = context,
+                                    zipRef = externalExt.sourceRef!!,
+                                    relPath = stylesheetPath,
+                                    maxBytes = ExtensionPackagePolicy.MAX_COMPONENT_JSON_BYTES,
                                 ).getOrNull() ?: return
                                 val dstStylesheetFile = workspace.extDir.subFile(componentEditor.stylesheetPath())
                                 dstStylesheetFile.parentFile?.mkdirs()

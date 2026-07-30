@@ -55,9 +55,11 @@ import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.theme.ThemeExtension
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
+import dev.patrickgold.florisboard.lib.ext.ExtensionQuarantineReason
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisOutlinedBox
 import org.florisboard.lib.compose.FlorisTextButton
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.florisScrollbar
 import org.florisboard.lib.compose.stringRes
@@ -105,7 +107,9 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
     val context = LocalContext.current
     val navController = LocalNavController.current
     val extensionManager by context.extensionManager()
-    val extensionIndex by type.getExtensionIndex(extensionManager).collectAsState()
+    val selectedIndex = type.getExtensionIndex(extensionManager)
+    val extensionIndex by selectedIndex.collectAsState()
+    val quarantinedExtensions by selectedIndex.quarantined.collectAsState()
 
     var fabHeight by remember {
         mutableIntStateOf(0)
@@ -124,6 +128,37 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
             if (showUpdate) {
                 item {
                     ImportExtensionBox(navController)
+                }
+            }
+            if (quarantinedExtensions.isNotEmpty()) {
+                item {
+                    val visibleDiagnostics = mutableListOf<String>()
+                    for (record in quarantinedExtensions.take(5)) {
+                        visibleDiagnostics += "${record.fileName}: ${
+                            stringRes(record.reason.messageRes())
+                        }"
+                    }
+                    val additionalCount = (quarantinedExtensions.size - 5).coerceAtLeast(0)
+                    val additionalSummary = if (additionalCount > 0) {
+                        stringRes(
+                            R.string.ext__list__quarantine_additional,
+                            "count" to additionalCount,
+                        )
+                    } else {
+                        ""
+                    }
+                    FlorisWarningCard(
+                        modifier = Modifier.defaultFlorisOutlinedBox(),
+                        text = stringRes(
+                            R.string.ext__list__quarantine_title,
+                            "count" to quarantinedExtensions.size,
+                        ),
+                        secondaryText = stringRes(
+                            R.string.ext__list__quarantine_summary,
+                            "diagnostics" to visibleDiagnostics.joinToString("\n"),
+                            "additional" to additionalSummary,
+                        ),
+                    )
                 }
             }
             if (extensionIndex.isEmpty()) {
@@ -203,5 +238,33 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
                 onClick = { type.launchExtensionCreate.invoke(navController) },
             )
         }
+    }
+}
+
+@StringRes
+private fun ExtensionQuarantineReason.messageRes(): Int {
+    return when (this) {
+        ExtensionQuarantineReason.MANIFEST_TOO_LARGE ->
+            R.string.ext__list__quarantine_reason_manifest_too_large
+        ExtensionQuarantineReason.MANIFEST_MALFORMED ->
+            R.string.ext__list__quarantine_reason_manifest_malformed
+        ExtensionQuarantineReason.INVALID_METADATA ->
+            R.string.ext__list__quarantine_reason_invalid_metadata
+        ExtensionQuarantineReason.TOO_MANY_COMPONENTS ->
+            R.string.ext__list__quarantine_reason_too_many_components
+        ExtensionQuarantineReason.INVALID_COMPONENT_ID ->
+            R.string.ext__list__quarantine_reason_invalid_component_id
+        ExtensionQuarantineReason.DUPLICATE_COMPONENT_ID ->
+            R.string.ext__list__quarantine_reason_duplicate_component_id
+        ExtensionQuarantineReason.UNKNOWN_LAYOUT_TYPE ->
+            R.string.ext__list__quarantine_reason_unknown_layout_type
+        ExtensionQuarantineReason.UNSAFE_COMPONENT_PATH ->
+            R.string.ext__list__quarantine_reason_unsafe_component_path
+        ExtensionQuarantineReason.MISSING_COMPONENT_FILE ->
+            R.string.ext__list__quarantine_reason_missing_component_file
+        ExtensionQuarantineReason.COMPONENT_TOO_LARGE ->
+            R.string.ext__list__quarantine_reason_component_too_large
+        ExtensionQuarantineReason.UNREADABLE_ARCHIVE ->
+            R.string.ext__list__quarantine_reason_unreadable_archive
     }
 }

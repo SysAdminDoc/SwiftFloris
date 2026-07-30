@@ -23,7 +23,6 @@ import kotlinx.serialization.Polymorphic
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
 import org.florisboard.lib.kotlin.io.FsDir
-import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.resultErr
 import org.florisboard.lib.kotlin.resultOk
 
@@ -73,6 +72,13 @@ abstract class Extension {
         val sourceRef = sourceRef ?: return resultOk()
         onBeforeLoad(context, cacheDir)
         ZipUtils.unzip(context, sourceRef, cacheDir).onFailure { return resultErr(it) }
+        runCatching {
+            if (sourceRef.isAssets) {
+                ExtensionPackagePolicy.inspect(this)
+            } else {
+                ExtensionPackagePolicy.validateExtracted(this, cacheDir)
+            }
+        }.onFailure { return resultErr(it) }
         workingDir = cacheDir
         onAfterLoad(context, cacheDir)
         return resultOk()
@@ -98,14 +104,10 @@ abstract class Extension {
     fun readExtensionFile(context: Context, relPath: String): String? {
         val cacheDir = FsDir(context.cacheDir, meta.id)
         if (cacheDir.exists() && cacheDir.isDirectory) {
-            val file = FsFile(cacheDir, relPath)
-            if (file.exists() && file.isFile) {
-                return try {
-                    file.readText()
-                } catch (e: Exception) {
-                    null
-                }
-            }
+            return runCatching {
+                val file = ExtensionPackagePolicy.resolveRequiredFile(cacheDir, relPath)
+                ExtensionPackagePolicy.readComponentJson(file)
+            }.getOrNull()
         }
         return null
     }

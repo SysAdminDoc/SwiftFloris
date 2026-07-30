@@ -42,6 +42,7 @@ import dev.patrickgold.florisboard.extensionManager
 import dev.patrickgold.florisboard.ime.smartbar.CachedInlineSuggestionsChipStyleSet
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
 import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.florisboard.lib.util.TimeUtils.javaLocalTime
@@ -204,7 +205,7 @@ class ThemeManager(context: Context) {
                 loadedDir = loadedDir,
                 stylesheetPath = themeConfig.stylesheetPath(),
             )
-            val stylesheetJson = stylesheetFile.readText()
+            val stylesheetJson = ExtensionPackagePolicy.readComponentJson(stylesheetFile)
             SnyggStylesheet.fromJson(stylesheetJson).getOrThrow()
         }.fold(
             onSuccess = { newStylesheet ->

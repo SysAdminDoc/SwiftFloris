@@ -26,6 +26,7 @@ import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionDefaults
 import dev.patrickgold.florisboard.lib.ext.ExtensionJsonConfig
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
+import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
 import dev.patrickgold.florisboard.lib.io.FlorisRef
 import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
@@ -47,10 +48,13 @@ internal class CustomLayoutEditorRepository(
         runCatching {
             val extension = extensionManager.getExtensionById(componentName.extensionId)
                 ?: error("Extension ${componentName.extensionId} is not indexed.")
+            val arrangementPath = component.arrangementFile(LayoutType.CHARACTERS)
+            ExtensionPackagePolicy.requireSafeRelativePath(arrangementPath)
             val json = ZipUtils.readFileFromArchive(
                 context = context,
                 zipRef = requireNotNull(extension.sourceRef) { "Extension has no source archive." },
-                relPath = component.arrangementFile(LayoutType.CHARACTERS),
+                relPath = arrangementPath,
+                maxBytes = ExtensionPackagePolicy.MAX_COMPONENT_JSON_BYTES,
             ).getOrThrow()
             loadJsonAsset<LayoutArrangement>(json).getOrThrow()
         }

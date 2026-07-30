@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.lib.io
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.assertions.throwables.shouldThrow
+import io.kotest.matchers.types.shouldBeInstanceOf
 import io.kotest.matchers.shouldBe
 import java.io.File
 import java.io.FileOutputStream
@@ -56,6 +57,32 @@ class ZipUtilsTest : FunSpec({
 
             root.subFile("escape.txt").exists() shouldBe false
             destination.subFile("safe/file.txt").exists() shouldBe false
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("archive text reads enforce UTF-8 byte limits before returning content") {
+        val root = Files.createTempDirectory("floris-zip-test").toFile()
+        val archive = root.subFile("bounded.flex")
+        try {
+            writeZip(archive, "extension.json" to "éé")
+
+            ZipUtils.readFileFromArchive(
+                srcFile = archive,
+                relPath = "extension.json",
+                maxBytes = 4L,
+            ).getOrThrow() shouldBe "éé"
+            ZipUtils.readFileFromArchive(
+                srcFile = archive,
+                relPath = "extension.json",
+                maxBytes = 3L,
+            ).exceptionOrNull().shouldBeInstanceOf<ArchiveEntryTooLargeException>()
+            ZipUtils.validateFileInArchive(
+                srcFile = archive,
+                relPath = "extension.json",
+                maxBytes = 3L,
+            ).exceptionOrNull().shouldBeInstanceOf<ArchiveEntryTooLargeException>()
         } finally {
             root.deleteRecursively()
         }

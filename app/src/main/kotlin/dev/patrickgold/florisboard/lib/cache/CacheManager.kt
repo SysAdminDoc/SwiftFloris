@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.lib.ext.ExtensionDefaults
 import dev.patrickgold.florisboard.lib.ext.ExtensionEditor
 import dev.patrickgold.florisboard.lib.ext.ExtensionJsonConfig
+import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
 import dev.patrickgold.florisboard.lib.io.FileRegistry
 import dev.patrickgold.florisboard.lib.io.ZipUtils
 import kotlinx.coroutines.CoroutineScope
@@ -183,7 +184,11 @@ class CacheManager(context: Context) {
                     val ext = runCatching {
                         ZipUtils.unzip(srcFile = file, dstDir = extWorkingDir)
                         val extJsonFile = extWorkingDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
-                        extJsonFile.readJson<Extension>(ExtensionJsonConfig).also { it.workingDir = extWorkingDir }
+                        ExtensionPackagePolicy.requireManifestSize(extJsonFile.length())
+                        extJsonFile.readJson<Extension>(ExtensionJsonConfig).also { extension ->
+                            extension.workingDir = extWorkingDir
+                            ExtensionPackagePolicy.validateExtracted(extension, extWorkingDir)
+                        }
                     }
                     totalImportBytes = addImportBatchBytes(totalImportBytes, directoryFileBytes(extWorkingDir))
                     if (ext.isFailure) {

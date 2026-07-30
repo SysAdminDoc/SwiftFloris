@@ -33,6 +33,7 @@ import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.io.FlorisRef
 import dev.patrickgold.florisboard.lib.io.ZipUtils
+import dev.patrickgold.florisboard.lib.io.ArchiveEntryTooLargeException
 import dev.patrickgold.florisboard.lib.io.delete
 import dev.patrickgold.florisboard.lib.io.listDirs
 import dev.patrickgold.florisboard.lib.io.listFiles
@@ -116,8 +117,8 @@ class ExtensionManager(context: Context) {
     }
 
     fun import(ext: Extension) {
-        require(ext.meta.validate()) { "Invalid extension metadata" }
         val workingDir = requireNotNull(ext.workingDir) { "No working dir specified" }
+        ExtensionPackagePolicy.validateExtracted(ext, workingDir)
         val extFileName = ExtensionDefaults.createFlexName(ext.meta.id)
         val relGroupPath = when (ext) {
             is KeyboardExtension -> IME_KEYBOARD_PATH
@@ -170,6 +171,8 @@ class ExtensionManager(context: Context) {
         var internalModuleDir = internalModuleRef.absoluteFile(appContext)
 
         private var staticExtensions = listOf<T>()
+        private val quarantineFlow = MutableStateFlow<List<QuarantinedExtension>>(emptyList())
+        internal val quarantined: StateFlow<List<QuarantinedExtension>> = quarantineFlow
         private var fileObserver: FileObserver? = null
         private val initGuard = Mutex()
         private val refreshGuard = Mutex()
@@ -201,8 +204,11 @@ class ExtensionManager(context: Context) {
         }
 
         private fun refresh() {
-            val dynamicExtensions = staticExtensions + indexInternalModule()
-            flow.value = dynamicExtensions
+            val (dynamicExtensions, quarantined) = indexInternalModule(
+                reservedIds = staticExtensions.mapTo(mutableSetOf()) { it.meta.id },
+            )
+            quarantineFlow.value = quarantined
+            flow.value = staticExtensions + dynamicExtensions
         }
 
         private fun indexAssetsModule(): List<T> {
@@ -210,16 +216,24 @@ class ExtensionManager(context: Context) {
             assetsModuleRef.listDirs(appContext).fold(
                 onSuccess = { extRefs ->
                     for (extRef in extRefs) {
-                        val fileRef = extRef.subRef(ExtensionDefaults.MANIFEST_FILE_NAME)
-                        fileRef.loadJsonAsset(appContext, serializer, ExtensionJsonConfig).fold(
-                            onSuccess = { ext ->
-                                ext.sourceRef = extRef
-                                list.add(ext)
-                            },
-                            onFailure = { error ->
-                                flogError { error.toString() }
-                            },
-                        )
+                        runCatching {
+                            val manifest = ZipUtils.readFileFromArchive(
+                                context = appContext,
+                                zipRef = extRef,
+                                relPath = ExtensionDefaults.MANIFEST_FILE_NAME,
+                                maxBytes = ExtensionPackagePolicy.MAX_MANIFEST_BYTES,
+                            ).getOrThrow()
+                            val ext = loadJsonAsset(
+                                manifest,
+                                serializer,
+                                ExtensionJsonConfig,
+                            ).getOrThrow()
+                            ExtensionPackagePolicy.inspect(ext)
+                            ext.sourceRef = extRef
+                            list.add(ext)
+                        }.onFailure { error ->
+                            flogError { "Bundled extension rejected: ${error.safeExtensionReason()}" }
+                        }
                     }
                 },
                 onFailure = { error ->
@@ -229,38 +243,112 @@ class ExtensionManager(context: Context) {
             return list.toList()
         }
 
-        private fun indexInternalModule(): List<T> {
+        private fun indexInternalModule(
+            reservedIds: MutableSet<String>,
+        ): Pair<List<T>, List<QuarantinedExtension>> {
             val list = mutableListOf<T>()
+            val quarantined = mutableListOf<QuarantinedExtension>()
             internalModuleRef.listFiles(appContext).fold(
                 onSuccess = { extRefs ->
-                    for (extRef in extRefs) {
+                    for (extRef in extRefs.sortedBy { it.absoluteFile(appContext).name }) {
                         val fileRef = extRef.absoluteFile(appContext)
-                        if (!fileRef.name.endsWith(ExtensionDefaults.FILE_EXTENSION)) {
+                        if (!fileRef.name.endsWith(".${ExtensionDefaults.FILE_EXTENSION}")) {
                             continue
                         }
-                        ZipUtils.readFileFromArchive(appContext, extRef, ExtensionDefaults.MANIFEST_FILE_NAME).fold(
-                            onSuccess = { metaStr ->
-                                loadJsonAsset(metaStr, serializer, ExtensionJsonConfig).fold(
-                                    onSuccess = { ext ->
-                                        ext.sourceRef = extRef
-                                        list.add(ext)
-                                    },
-                                    onFailure = { error ->
-                                        flogError { error.toString() }
-                                    },
+                        runCatching {
+                            val manifest = ZipUtils.readFileFromArchive(
+                                context = appContext,
+                                zipRef = extRef,
+                                relPath = ExtensionDefaults.MANIFEST_FILE_NAME,
+                                maxBytes = ExtensionPackagePolicy.MAX_MANIFEST_BYTES,
+                            ).getOrElse { error ->
+                                if (error is ArchiveEntryTooLargeException) {
+                                    throw ExtensionPackageException(
+                                        ExtensionQuarantineReason.MANIFEST_TOO_LARGE,
+                                    )
+                                }
+                                throw error
+                            }
+                            val ext = loadJsonAsset(
+                                manifest,
+                                serializer,
+                                ExtensionJsonConfig,
+                            ).getOrElse {
+                                throw ExtensionPackageException(
+                                    ExtensionQuarantineReason.MANIFEST_MALFORMED,
                                 )
-                            },
-                            onFailure = { error ->
-                                flogError { error.toString() }
-                            },
-                        )
+                            }
+                            val inspection = ExtensionPackagePolicy.inspect(ext)
+                            inspection.componentJsonPaths.forEach { componentPath ->
+                                ZipUtils.validateFileInArchive(
+                                    context = appContext,
+                                    zipRef = extRef,
+                                    relPath = componentPath,
+                                    maxBytes = ExtensionPackagePolicy.MAX_COMPONENT_JSON_BYTES,
+                                ).getOrElse { error ->
+                                    if (error is ArchiveEntryTooLargeException) {
+                                        throw ExtensionPackageException(
+                                            ExtensionQuarantineReason.COMPONENT_TOO_LARGE,
+                                        )
+                                    }
+                                    throw ExtensionPackageException(
+                                        ExtensionQuarantineReason.MISSING_COMPONENT_FILE,
+                                    )
+                                }
+                            }
+                            inspection.requiredBinaryPaths.forEach { componentPath ->
+                                ZipUtils.validateFileInArchive(
+                                    context = appContext,
+                                    zipRef = extRef,
+                                    relPath = componentPath,
+                                    maxBytes = Long.MAX_VALUE,
+                                ).getOrElse {
+                                    throw ExtensionPackageException(
+                                        ExtensionQuarantineReason.MISSING_COMPONENT_FILE,
+                                    )
+                                }
+                            }
+                            if (!reservedIds.add(ext.meta.id)) {
+                                throw ExtensionPackageException(
+                                    ExtensionQuarantineReason.DUPLICATE_COMPONENT_ID,
+                                )
+                            }
+                            ext.sourceRef = extRef
+                            list.add(ext)
+                        }.onFailure { error ->
+                            val reason = error.toQuarantineReason()
+                            quarantined += QuarantinedExtension(
+                                fileName = fileRef.name,
+                                reason = reason,
+                            )
+                            flogError {
+                                "Installed extension quarantined: file=${fileRef.name}, reason=$reason"
+                            }
+                        }
                     }
                 },
                 onFailure = { error ->
                     flogError { error.toString() }
                 },
             )
-            return list.toList()
+            return list.toList() to quarantined.toList()
         }
     }
+}
+
+internal data class QuarantinedExtension(
+    val fileName: String,
+    val reason: ExtensionQuarantineReason,
+)
+
+private fun Throwable.toQuarantineReason(): ExtensionQuarantineReason {
+    return when (this) {
+        is ExtensionPackageException -> reason
+        is ArchiveEntryTooLargeException -> ExtensionQuarantineReason.MANIFEST_TOO_LARGE
+        else -> ExtensionQuarantineReason.UNREADABLE_ARCHIVE
+    }
+}
+
+private fun Throwable.safeExtensionReason(): ExtensionQuarantineReason {
+    return toQuarantineReason()
 }

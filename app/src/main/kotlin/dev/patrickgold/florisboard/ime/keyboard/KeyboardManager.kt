@@ -72,6 +72,7 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyboardCache
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.titlecase
 import dev.patrickgold.florisboard.lib.uppercase
@@ -1303,8 +1304,17 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     localCurrencySets[ExtensionComponentName(keyboardExtension.meta.id, currencySet.id)] = currencySet
                 }
                 keyboardExtension.layouts.forEach { (type, layoutComponents) ->
+                    val layoutType = LayoutType.entries.find { it.id == type }
+                    if (layoutType == null) {
+                        flogWarning {
+                            "Skipping invalid layout type in extension ${keyboardExtension.meta.id}"
+                        }
+                        return@forEach
+                    }
                     for (layoutComponent in layoutComponents) {
-                        localLayouts[LayoutType.entries.first { it.id == type }]!![ExtensionComponentName(keyboardExtension.meta.id, layoutComponent.id)] = layoutComponent
+                        localLayouts.getValue(layoutType)[
+                            ExtensionComponentName(keyboardExtension.meta.id, layoutComponent.id)
+                        ] = layoutComponent
                     }
                 }
                 keyboardExtension.popupMappings.forEach { popupMapping ->

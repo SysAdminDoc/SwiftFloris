@@ -34,6 +34,7 @@ import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
+import dev.patrickgold.florisboard.lib.ext.ExtensionPackagePolicy
 import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
 import kotlinx.coroutines.CoroutineScope
@@ -119,7 +120,13 @@ class LayoutManager(context: Context) {
                 val path = meta.arrangementFile(ltn.type)
                 val layout = async {
                     runCatching {
-                        val jsonStr = ZipUtils.readFileFromArchive(appContext, ext.sourceRef!!, path).getOrThrow()
+                        ExtensionPackagePolicy.requireSafeRelativePath(path)
+                        val jsonStr = ZipUtils.readFileFromArchive(
+                            context = appContext,
+                            zipRef = ext.sourceRef!!,
+                            relPath = path,
+                            maxBytes = ExtensionPackagePolicy.MAX_COMPONENT_JSON_BYTES,
+                        ).getOrThrow()
                         val arrangement = loadJsonAsset<LayoutArrangement>(jsonStr).getOrThrow()
                         CachedLayout(ltn.type, ltn.name, meta, arrangement)
                     }
@@ -146,7 +153,13 @@ class LayoutManager(context: Context) {
                 val path = meta.mappingFile()
                 val popupMapping = async {
                     runCatching {
-                        val jsonStr = ZipUtils.readFileFromArchive(appContext, ext.sourceRef!!, path).getOrThrow()
+                        ExtensionPackagePolicy.requireSafeRelativePath(path)
+                        val jsonStr = ZipUtils.readFileFromArchive(
+                            context = appContext,
+                            zipRef = ext.sourceRef!!,
+                            relPath = path,
+                            maxBytes = ExtensionPackagePolicy.MAX_COMPONENT_JSON_BYTES,
+                        ).getOrThrow()
                         val mapping = loadJsonAsset<PopupMapping>(jsonStr).getOrThrow()
                         CachedPopupMapping(name, meta, mapping)
                     }
