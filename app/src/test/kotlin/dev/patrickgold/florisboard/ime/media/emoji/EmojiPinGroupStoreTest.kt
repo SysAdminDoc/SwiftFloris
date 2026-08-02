@@ -21,6 +21,7 @@ import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
 import java.io.File
 import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 
 class EmojiPinGroupStoreTest : FunSpec({
     fun freshStore(): Pair<EmojiPinGroupStore, File> {
@@ -98,5 +99,29 @@ class EmojiPinGroupStoreTest : FunSpec({
         // Reload from the same file.
         val restored = EmojiPinGroupStore.forStorageFile(file)
         restored.emojisFor("a") shouldContainExactly listOf("\uD83C\uDF82", "\uD83C\uDF89")
+    }
+
+    test("replacement failure keeps the previous good file intact") {
+        val (directory, file) = run {
+            val tmpDir = Files.createTempDirectory("emoji-pin-failure-test").toFile()
+            tmpDir to File(tmpDir, "groups.json")
+        }
+        var moveCount = 0
+        val store = EmojiPinGroupStore.forStorageFile(file) { staged, target ->
+            moveCount++
+            if (moveCount == 2) error("forced replacement failure")
+            Files.move(
+                staged.toPath(),
+                target.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        }
+        store.pinEmojiToGroup("party", "🎂") shouldContainExactly listOf("🎂")
+        store.pinEmojiToGroup("party", "🎉") shouldContainExactly listOf("🎂", "🎉")
+
+        file.readText().contains("🎂") shouldBe true
+        file.readText().contains("🎉") shouldBe false
+        EmojiPinGroupStore.forStorageFile(file).emojisFor("party") shouldContainExactly listOf("🎂")
+        directory.deleteRecursively()
     }
 })

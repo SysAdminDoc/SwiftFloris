@@ -22,6 +22,9 @@ import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -43,6 +46,7 @@ import java.util.concurrent.atomic.AtomicReference
  */
 class EmojiPinGroupStore private constructor(
     private val storageFile: File,
+    private val moveFile: (File, File) -> Unit = ::moveReplacing,
 ) {
 
     private val cache = AtomicReference<Map<String, List<String>>>(emptyMap())
@@ -123,11 +127,9 @@ class EmojiPinGroupStore private constructor(
             storageFile.parentFile?.mkdirs()
             val tmp = File(storageFile.parentFile, storageFile.name + ".tmp")
             tmp.writeText(JsonConfig.encodeToString(StoreFile(map)))
-            if (!tmp.renameTo(storageFile)) {
-                storageFile.writeText(tmp.readText())
-                tmp.delete()
-            }
+            moveFile(tmp, storageFile)
         } catch (e: Throwable) {
+            File(storageFile.parentFile, storageFile.name + ".tmp").delete()
             flogError { "EmojiPinGroupStore.flush failed: $e" }
         }
     }
@@ -178,7 +180,26 @@ class EmojiPinGroupStore private constructor(
         }
 
         /** Test-only constructor for in-memory + custom-file use. */
-        internal fun forStorageFile(file: File): EmojiPinGroupStore =
-            EmojiPinGroupStore(file).also { it.load() }
+        internal fun forStorageFile(
+            file: File,
+            moveFile: (File, File) -> Unit = ::moveReplacing,
+        ): EmojiPinGroupStore = EmojiPinGroupStore(file, moveFile).also { it.load() }
+    }
+}
+
+private fun moveReplacing(stagedFile: File, targetFile: File) {
+    try {
+        Files.move(
+            stagedFile.toPath(),
+            targetFile.toPath(),
+            StandardCopyOption.ATOMIC_MOVE,
+            StandardCopyOption.REPLACE_EXISTING,
+        )
+    } catch (_: AtomicMoveNotSupportedException) {
+        Files.move(
+            stagedFile.toPath(),
+            targetFile.toPath(),
+            StandardCopyOption.REPLACE_EXISTING,
+        )
     }
 }
