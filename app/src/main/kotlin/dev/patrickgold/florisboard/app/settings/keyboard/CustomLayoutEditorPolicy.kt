@@ -16,6 +16,8 @@
 
 package dev.patrickgold.florisboard.app.settings.keyboard
 
+import android.content.Context
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.keyboard.AbstractKeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardExtension
@@ -71,7 +73,6 @@ internal object CustomLayoutEditorPolicy {
     const val MaxKeysPerRow = 16
 
     private const val ExtensionIdPrefix = "local.swiftfloris.keyboardlayout"
-    private const val LocalMaintainer = "SwiftFloris user"
     private val ComponentIdRegex = """^[a-z][a-z0-9_]*${'$'}""".toRegex()
 
     val ArrangementJsonConfig = Json(DefaultJsonConfig) {
@@ -81,11 +82,24 @@ internal object CustomLayoutEditorPolicy {
     }
 
     fun newDraftFromArrangement(
+        context: Context,
         source: LayoutArrangementComponent,
         arrangement: LayoutArrangement,
         existingComponentIds: Set<String>,
+    ): Result<CustomLayoutEditorDraft> = newDraftFromArrangement(
+        source = source,
+        arrangement = arrangement,
+        existingComponentIds = existingComponentIds,
+        defaultLabel = context.getString(R.string.custom_layout__default_label_template, source.label),
+    )
+
+    fun newDraftFromArrangement(
+        source: LayoutArrangementComponent,
+        arrangement: LayoutArrangement,
+        existingComponentIds: Set<String>,
+        defaultLabel: String,
     ): Result<CustomLayoutEditorDraft> = runCatching {
-        val label = "${source.label} Custom"
+        val label = defaultLabel
         CustomLayoutEditorDraft(
             layoutId = layoutIdForLabel(label, existingComponentIds),
             label = label,
@@ -281,11 +295,27 @@ internal object CustomLayoutEditorPolicy {
         return "layouts/${LayoutType.CHARACTERS.id}/$layoutId.json"
     }
 
-    fun buildKeyboardExtension(draft: CustomLayoutEditorDraft): KeyboardExtension {
+    fun buildKeyboardExtension(context: Context, draft: CustomLayoutEditorDraft): KeyboardExtension =
+        buildKeyboardExtension(
+            draft = draft,
+            extensionTitle = context.getString(
+                R.string.custom_layout__extension_title_template,
+                draft.label.trim(),
+            ),
+            extensionDescription = context.getString(R.string.custom_layout__extension_description),
+            localMaintainer = context.getString(R.string.custom_layout__local_maintainer),
+        )
+
+    fun buildKeyboardExtension(
+        draft: CustomLayoutEditorDraft,
+        extensionTitle: String,
+        extensionDescription: String,
+        localMaintainer: String,
+    ): KeyboardExtension {
         val layout = LayoutArrangementComponent(
             id = draft.layoutId,
             label = draft.label.trim(),
-            authors = listOf(LocalMaintainer),
+            authors = listOf(localMaintainer),
             direction = "ltr",
             arrangementFile = arrangementPath(draft.layoutId),
         )
@@ -293,9 +323,9 @@ internal object CustomLayoutEditorPolicy {
             meta = ExtensionMeta(
                 id = extensionIdFor(draft.layoutId),
                 version = "1.0.0",
-                title = "Custom layout: ${draft.label.trim()}",
-                description = "Local keyboard layout created with SwiftFloris.",
-                maintainers = listOf(ExtensionMaintainer(LocalMaintainer)),
+                title = extensionTitle,
+                description = extensionDescription,
+                maintainers = listOf(ExtensionMaintainer(localMaintainer)),
                 license = "NOASSERTION",
             ),
             layouts = mapOf(LayoutTypeId.CHARACTERS to listOf(layout)),

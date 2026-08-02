@@ -132,6 +132,7 @@ fun CustomLayoutEditorScreen() = FlorisScreen {
         val loaded = repository.loadArrangement(sourceName, sourceComponent)
             .mapCatching { arrangement ->
                 CustomLayoutEditorPolicy.newDraftFromArrangement(
+                    context = context,
                     source = sourceComponent,
                     arrangement = arrangement,
                     existingComponentIds = existingComponentIds,

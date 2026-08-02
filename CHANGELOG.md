@@ -14,3 +14,4 @@
 - Preserve existing emoji pin-group files when an atomic replacement fails, including on Windows hosts that reject rename-over-existing.
 - Surface snippet load and delete failures, move snippet file work to Dispatchers.IO, and expose per-file trigger counts from state.
 - Route emoji and sticker empty-state copy through the keyboard theme text pipeline, including expanded-font-scale Roborazzi coverage.
+- Resolve custom-layout labels and generated extension metadata through localized resources while preserving stable on-disk slugs.

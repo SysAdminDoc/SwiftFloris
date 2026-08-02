@@ -68,7 +68,7 @@ internal class CustomLayoutEditorRepository(
             val validation = CustomLayoutEditorPolicy.validate(draft, existingComponentIds)
             require(validation.isValid) { "Layout contains invalid edits: ${validation.errors.joinToString()}" }
 
-            val extension = CustomLayoutEditorPolicy.buildKeyboardExtension(draft)
+            val extension = CustomLayoutEditorPolicy.buildKeyboardExtension(context, draft)
             val archiveName = ExtensionDefaults.createFlexName(extension.meta.id)
             val archiveRef = FlorisRef.internal(ExtensionManager.IME_KEYBOARD_PATH).subRef(archiveName)
             val workspace = FsDir(context.cacheDir, "custom-layout-editor")

@@ -967,6 +967,10 @@
     <string name="pref__keyboard__group_layout__label" comment="Preference group title">Layout &amp; size</string>
     <string name="settings__keyboard__custom_layout_editor__title" comment="Keyboard settings screen title">Custom layout editor</string>
     <string name="settings__keyboard__custom_layout_editor__summary" comment="Keyboard settings preference summary">Clone a character layout, edit rows and keys, then save it as a local layout.</string>
+    <string name="custom_layout__default_label_template" comment="Default name for a cloned custom keyboard layout. {source} is the source layout name.">%1$s Custom</string>
+    <string name="custom_layout__extension_title_template" comment="Title for a saved custom keyboard layout extension. {layout} is the edited layout name.">Custom layout: %1$s</string>
+    <string name="custom_layout__extension_description" comment="Description for a saved custom keyboard layout extension">Local keyboard layout created with SwiftFloris.</string>
+    <string name="custom_layout__local_maintainer" comment="Maintainer name for a saved custom keyboard layout extension">SwiftFloris user</string>
     <string name="settings__keyboard__custom_layout_editor__saving" comment="Custom layout editor save button state">Saving…</string>
     <string name="settings__keyboard__custom_layout_editor__source" comment="Custom layout editor field label">Source layout</string>
     <string name="settings__keyboard__custom_layout_editor__no_sources" comment="Custom layout editor empty state">No character layouts are indexed.</string>

@@ -34,6 +34,7 @@ class CustomLayoutEditorPolicyTest : FunSpec({
             source = qwertyComponent(),
             arrangement = simpleArrangement(),
             existingComponentIds = setOf("qwerty_custom"),
+            defaultLabel = "QWERTY Custom",
         ).getOrThrow()
 
         draft.layoutId shouldBe "qwerty_custom_2"
@@ -49,6 +50,7 @@ class CustomLayoutEditorPolicyTest : FunSpec({
             source = qwertyComponent(),
             arrangement = listOf(listOf(TextKeyData.SHIFT)),
             existingComponentIds = emptySet(),
+            defaultLabel = "QWERTY Custom",
         ).isFailure shouldBe true
     }
 
@@ -90,8 +92,16 @@ class CustomLayoutEditorPolicyTest : FunSpec({
         key.label shouldBe "z"
         key.code shouldBe 122
 
-        val extension = CustomLayoutEditorPolicy.buildKeyboardExtension(draft)
+        val extension = CustomLayoutEditorPolicy.buildKeyboardExtension(
+            draft = draft,
+            extensionTitle = "Custom layout: Custom",
+            extensionDescription = "Local keyboard layout created with SwiftFloris.",
+            localMaintainer = "SwiftFloris user",
+        )
         extension.meta.id shouldBe "local.swiftfloris.keyboardlayout.custom"
+        extension.meta.title shouldBe "Custom layout: Custom"
+        extension.meta.description shouldBe "Local keyboard layout created with SwiftFloris."
+        extension.meta.maintainers.single().name shouldBe "SwiftFloris user"
         val layout = extension.layouts.getValue(LayoutTypeId.CHARACTERS).single()
         layout.id shouldBe "custom"
         layout.label shouldBe "Custom"
