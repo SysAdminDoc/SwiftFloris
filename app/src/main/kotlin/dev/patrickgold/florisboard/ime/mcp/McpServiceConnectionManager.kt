@@ -55,7 +55,15 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 class McpServiceConnectionManager(
     private val appContext: Context,
-    private val table: BindingTable = BindingTable(),
+    private val table: BindingTable = BindingTable(
+        onStateChanged = { daemonKey, state ->
+            if (state == null) {
+                McpConnectionStateStore.forget(daemonKey)
+            } else {
+                McpConnectionStateStore.update(daemonKey, state)
+            }
+        },
+    ),
 ) {
     /**
      * Per-daemon count of `onBindingDied` rebind attempts. Reset on a
@@ -69,18 +77,21 @@ class McpServiceConnectionManager(
     private val rebindAttempts = ConcurrentHashMap<DaemonKey, AtomicInteger>()
 
     /**
-     * Returns the current live binder for [daemonKey], or null when no
-     * connection is bound. Pass this method reference straight to
+     * Returns the current live binder for [daemonKey], or null unless the daemon is
+     * [McpDaemonConnectionState.Connected]. Pass this method reference straight to
      * [AndroidMcpClient]'s constructor.
      */
     fun binderFor(daemonKey: DaemonKey): IBinder? = table.binderFor(daemonKey)
 
+    /** Observable state of [daemonKey], or null when the daemon was never bound in this session. */
+    fun stateFor(daemonKey: DaemonKey): McpDaemonConnectionState? = table.stateFor(daemonKey)
+
     /**
      * Bind to the daemon identified by [daemonKey]. Returns true if
      * the bind request was accepted by the system (the binder may
-     * not be live yet — callers receive it through subsequent
-     * [binderFor] calls). Returns false if a bind is already in
-     * progress or live.
+     * not be live yet — callers observe arrival through the daemon's
+     * [McpDaemonConnectionState]). Returns false if a bind is already in
+     * progress or live, or if the system refused the request.
      */
     fun bind(daemonKey: DaemonKey): Boolean {
         if (table.hasBinding(daemonKey)) return false
@@ -88,7 +99,14 @@ class McpServiceConnectionManager(
         val intent = Intent(McpBridgeContract.ACTION_BIND_MCP_DAEMON).apply {
             component = ComponentName(daemonKey.packageName, daemonKey.daemonClassName)
         }
-        val accepted = appContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        val accepted = try {
+            appContext.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+        } catch (error: SecurityException) {
+            // The daemon tightened its permissions, or the package is no longer visible to this
+            // process. Report it instead of leaving the row looking bound forever.
+            flogWarning { "MCP daemon ${daemonKey.packageName} refused the bind request: $error" }
+            false
+        }
         if (accepted) {
             table.registerPending(daemonKey, connection)
         } else {
@@ -98,14 +116,26 @@ class McpServiceConnectionManager(
             // re-enters this path for an uninstalled / permission-revoked
             // daemon, which would otherwise leak one connection per attempt.
             runCatching { appContext.unbindService(connection) }
+            table.onBindRefused(daemonKey)
         }
         return accepted
     }
 
+    /**
+     * Explicit user-triggered retry for a daemon that failed or died. Clears the terminal state
+     * and the rebind budget so a daemon the user just fixed can connect again.
+     */
+    fun retry(daemonKey: DaemonKey): Boolean {
+        unbind(daemonKey)
+        rebindAttempts.remove(daemonKey)
+        table.clear(daemonKey)
+        return bind(daemonKey)
+    }
+
     /** Unbind from the daemon. Safe to call when not bound. */
     fun unbind(daemonKey: DaemonKey) {
-        val connection = table.removeBinding(daemonKey) ?: return
         rebindAttempts.remove(daemonKey)
+        val connection = table.removeBinding(daemonKey) ?: return
         runCatching { appContext.unbindService(connection) }
     }
 
@@ -114,6 +144,7 @@ class McpServiceConnectionManager(
         for (key in table.activeKeys()) {
             unbind(key)
         }
+        table.clearAll()
     }
 
     /**
@@ -152,6 +183,7 @@ class McpServiceConnectionManager(
                     "MCP daemon ${daemonKey.packageName} binding died $attempt times " +
                         "consecutively; giving up until next manual bind."
                 }
+                table.onDead(daemonKey)
                 return
             }
             // Restore the counter that unbind() just dropped, then attempt
@@ -166,7 +198,7 @@ class McpServiceConnectionManager(
 
         override fun onNullBinding(name: ComponentName) {
             // Daemon's onBind returned null — treat as a hard refusal.
-            table.onDisconnected(daemonKey)
+            table.onNullBinding(daemonKey)
         }
     }
 
@@ -176,11 +208,26 @@ class McpServiceConnectionManager(
      * exercised in pure-JVM tests by driving the public methods
      * directly.
      */
-    class BindingTable {
+    class BindingTable(
+        /** Called on every observable transition; `null` means the daemon left the table. */
+        private val onStateChanged: (DaemonKey, McpDaemonConnectionState?) -> Unit = { _, _ -> },
+    ) {
 
+        /** Live `ServiceConnection`s — only daemons that are Pending or Connected appear here. */
         private val entries = ConcurrentHashMap<DaemonKey, Entry>()
 
-        fun binderFor(daemonKey: DaemonKey): IBinder? = entries[daemonKey]?.binder
+        /** Authoritative state, including the terminal Failed / Dead states with no connection. */
+        private val states = ConcurrentHashMap<DaemonKey, McpDaemonConnectionState>()
+
+        /** Only a Connected daemon exposes its binder; a pending or dead one dispatches nowhere. */
+        fun binderFor(daemonKey: DaemonKey): IBinder? {
+            if (states[daemonKey] != McpDaemonConnectionState.Connected) return null
+            return entries[daemonKey]?.binder
+        }
+
+        fun stateFor(daemonKey: DaemonKey): McpDaemonConnectionState? = states[daemonKey]
+
+        fun states(): Map<DaemonKey, McpDaemonConnectionState> = states.toMap()
 
         fun hasBinding(daemonKey: DaemonKey): Boolean = entries.containsKey(daemonKey)
 
@@ -188,20 +235,66 @@ class McpServiceConnectionManager(
 
         fun registerPending(daemonKey: DaemonKey, connection: ServiceConnection) {
             entries[daemonKey] = Entry(connection = connection, binder = null)
+            publish(daemonKey, McpDaemonConnectionState.Pending)
+        }
+
+        /** `bindService` returned false or threw: no connection exists to wait on. */
+        fun onBindRefused(daemonKey: DaemonKey) {
+            entries.remove(daemonKey)
+            publish(daemonKey, McpDaemonConnectionState.Failed)
         }
 
         fun removeBinding(daemonKey: DaemonKey): ServiceConnection? {
-            return entries.remove(daemonKey)?.connection
+            val connection = entries.remove(daemonKey)?.connection
+            // A terminal state survives the unbind so Settings can still offer a retry; an
+            // ordinary unbind of a healthy daemon drops the row instead.
+            if (states[daemonKey]?.isRetryable != true) {
+                states.remove(daemonKey)
+                onStateChanged(daemonKey, null)
+            }
+            return connection
         }
 
         fun onConnected(daemonKey: DaemonKey, binder: IBinder) {
             val entry = entries[daemonKey] ?: return
             entries[daemonKey] = entry.copy(binder = binder)
+            publish(daemonKey, McpDaemonConnectionState.Connected)
         }
 
+        /** The process hosting the daemon went away; the system will reconnect the same binding. */
         fun onDisconnected(daemonKey: DaemonKey) {
             val entry = entries[daemonKey] ?: return
             entries[daemonKey] = entry.copy(binder = null)
+            publish(daemonKey, McpDaemonConnectionState.Pending)
+        }
+
+        /** The daemon's `onBind` returned null — a hard refusal, not a transient disconnect. */
+        fun onNullBinding(daemonKey: DaemonKey) {
+            entries[daemonKey]?.let { entries[daemonKey] = it.copy(binder = null) }
+            publish(daemonKey, McpDaemonConnectionState.Failed)
+        }
+
+        /** The rebind budget is exhausted; only an explicit retry can revive this daemon. */
+        fun onDead(daemonKey: DaemonKey) {
+            publish(daemonKey, McpDaemonConnectionState.Dead)
+        }
+
+        /** Drops any terminal state so [McpServiceConnectionManager.retry] can start clean. */
+        fun clear(daemonKey: DaemonKey) {
+            if (states.remove(daemonKey) != null) {
+                onStateChanged(daemonKey, null)
+            }
+        }
+
+        fun clearAll() {
+            for (key in states.keys.toSet()) {
+                clear(key)
+            }
+        }
+
+        private fun publish(daemonKey: DaemonKey, state: McpDaemonConnectionState) {
+            states[daemonKey] = state
+            onStateChanged(daemonKey, state)
         }
 
         private data class Entry(

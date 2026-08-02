@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,8 +42,11 @@ import dev.patrickgold.florisboard.ime.mcp.DaemonKey
 import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
 import dev.patrickgold.florisboard.ime.mcp.DisabledToolSet
 import dev.patrickgold.florisboard.ime.mcp.McpAndroidDiscoverer
+import dev.patrickgold.florisboard.ime.mcp.McpConnectionStateStore
+import dev.patrickgold.florisboard.ime.mcp.McpDaemonConnectionState
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonDiscoveryStore
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
+import dev.patrickgold.florisboard.ime.mcp.McpDaemonStatePolicy
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonTrustPolicy
 import dev.patrickgold.florisboard.ime.mcp.McpServiceLifecycle
 import dev.patrickgold.florisboard.ime.mcp.McpSigningPinPersistencePolicy
@@ -59,6 +63,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisSuccessCard
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -105,6 +110,8 @@ fun McpSettingsScreen() = FlorisScreen {
     var discoverySnapshot by remember {
         mutableStateOf(McpDaemonDiscoveryStore.active())
     }
+    val connectionStates by McpConnectionStateStore.states.collectAsState()
+    var retryUnavailable by remember { mutableStateOf(false) }
     var scanInProgress by remember { mutableStateOf(false) }
     var scanError by remember { mutableStateOf<String?>(null) }
     var pendingTrustAction by remember { mutableStateOf<McpTrustAction?>(null) }
@@ -161,11 +168,14 @@ fun McpSettingsScreen() = FlorisScreen {
     }
 
     content {
-        val activeCount = if (bridgeEnabled) {
-            activeDaemons.keys.count { it.packageName !in disabledSet }
-        } else {
-            0
-        }
+        // Acceptance by the trust policy is not a connection: only daemons the binder actually
+        // handed back count as bound.
+        val connectedCount = McpDaemonStatePolicy.connectedCount(
+            daemonKeys = activeDaemons.keys,
+            bridgeEnabled = bridgeEnabled,
+            disabledPackages = disabledSet,
+            connectionStates = connectionStates,
+        )
         if (!bridgeEnabled) {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
@@ -178,6 +188,16 @@ fun McpSettingsScreen() = FlorisScreen {
                 text = stringRes(R.string.settings__mcp__status_no_daemons),
                 secondaryText = stringRes(R.string.settings__mcp__status_no_daemons_summary),
             )
+        } else if (connectedCount == 0) {
+            FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__mcp__status_not_connected_title),
+                secondaryText = pluralsRes(
+                    R.plurals.settings__mcp__status_bound_summary,
+                    activeDaemons.size,
+                    "count" to "$connectedCount/${activeDaemons.size}",
+                ),
+            )
         } else {
             FlorisSuccessCard(
                 modifier = Modifier.padding(8.dp),
@@ -185,8 +205,18 @@ fun McpSettingsScreen() = FlorisScreen {
                 secondaryText = pluralsRes(
                     R.plurals.settings__mcp__status_bound_summary,
                     activeDaemons.size,
-                    "count" to "$activeCount/${activeDaemons.size}",
+                    "count" to "$connectedCount/${activeDaemons.size}",
                 ),
+            )
+        }
+
+        if (retryUnavailable) {
+            FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__mcp__retry_unavailable_title),
+                secondaryText = stringRes(R.string.settings__mcp__retry_unavailable_summary),
+                actionLabel = stringRes(R.string.action__ok),
+                onClick = { retryUnavailable = false },
             )
         }
 
@@ -245,9 +275,16 @@ fun McpSettingsScreen() = FlorisScreen {
             PreferenceGroup(title = stringRes(R.string.settings__mcp__group_daemons)) {
                 for ((_, entry) in activeDaemons) {
                     val daemonEnabled = entry.key.packageName !in disabledSet
+                    val daemonState = McpDaemonStatePolicy.resolve(
+                        daemonKey = entry.key,
+                        bridgeEnabled = bridgeEnabled,
+                        disabledPackages = disabledSet,
+                        connectionStates = connectionStates,
+                    )
                     DaemonRow(
                         entry = entry,
                         isEnabled = daemonEnabled,
+                        connectionState = daemonState,
                         onEnabledChange = { enabled ->
                             scope.launch {
                                 val current = prefs.mcp.disabledDaemonPackages.get()
@@ -260,6 +297,18 @@ fun McpSettingsScreen() = FlorisScreen {
                             }
                         },
                     )
+                    if (daemonState.isRetryable) {
+                        // Rebinding is bounded and never automatic past the budget, so recovery is
+                        // an explicit action rather than a background loop.
+                        Preference(
+                            icon = Icons.Default.Refresh,
+                            title = stringRes(R.string.settings__mcp__daemon_retry),
+                            summary = stringRes(R.string.settings__mcp__daemon_retry_summary),
+                            onClick = {
+                                retryUnavailable = !McpServiceLifecycle.retryActiveDaemon(entry.key)
+                            },
+                        )
+                    }
                     // Matrix #38 follow-up — per-tool toggle row under each daemon. Per-tool switches are
                     // greyed out while the parent daemon is disabled (the daemon switch wins), but the
                     // per-tool persisted state is preserved across re-enables so users do not lose their
@@ -404,12 +453,19 @@ private fun ToolRow(
 private fun DaemonRow(
     entry: DaemonEntry,
     isEnabled: Boolean,
+    connectionState: McpDaemonConnectionState,
     onEnabledChange: (Boolean) -> Unit,
 ) {
     Preference(
-        icon = if (isEnabled) Icons.Default.PlayCircleOutline else Icons.Default.Block,
+        icon = if (isEnabled && connectionState.acceptsCalls) {
+            Icons.Default.PlayCircleOutline
+        } else {
+            Icons.Default.Block
+        },
         title = entry.key.packageName,
         summary = buildString {
+            append(stringRes(connectionState.labelRes))
+            append(" · ")
             append(stringRes(
                 R.string.settings__mcp__daemon_protocol,
                 "version" to entry.protocolVersion,
@@ -430,6 +486,16 @@ private fun DaemonRow(
         },
     )
 }
+
+/** Localized label for each observable binding state. */
+private val McpDaemonConnectionState.labelRes: Int
+    get() = when (this) {
+        McpDaemonConnectionState.Pending -> R.string.settings__mcp__daemon_state_pending
+        McpDaemonConnectionState.Connected -> R.string.settings__mcp__daemon_state_connected
+        McpDaemonConnectionState.Failed -> R.string.settings__mcp__daemon_state_failed
+        McpDaemonConnectionState.Dead -> R.string.settings__mcp__daemon_state_dead
+        McpDaemonConnectionState.Disabled -> R.string.settings__mcp__daemon_state_disabled
+    }
 
 private sealed interface McpTrustAction {
     data object ResetAll : McpTrustAction

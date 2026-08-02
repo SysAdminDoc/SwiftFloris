@@ -2535,6 +2535,16 @@
         <item quantity="other">Currently bound to {count} daemons. The bridge is local-only and never opens a network connection.</item>
     </plurals>
     <string name="settings__mcp__daemon_protocol" comment="MCP daemon row protocol-version fragment; {version} = integer">Protocol v{version}</string>
+    <string name="settings__mcp__status_not_connected_title" comment="MCP status card title when daemons are discovered but none is connected">No MCP daemon connected</string>
+    <string name="settings__mcp__daemon_state_pending" comment="MCP daemon binding state">Connecting</string>
+    <string name="settings__mcp__daemon_state_connected" comment="MCP daemon binding state">Connected</string>
+    <string name="settings__mcp__daemon_state_failed" comment="MCP daemon binding state">Connection refused</string>
+    <string name="settings__mcp__daemon_state_dead" comment="MCP daemon binding state">Connection lost</string>
+    <string name="settings__mcp__daemon_state_disabled" comment="MCP daemon binding state">Off</string>
+    <string name="settings__mcp__daemon_retry" comment="Action that re-attempts a failed MCP daemon binding">Retry connection</string>
+    <string name="settings__mcp__daemon_retry_summary" comment="Summary of the MCP daemon retry action">Bind to this daemon again. Automatic retries stop after a few failures so a crashing daemon cannot keep the keyboard busy.</string>
+    <string name="settings__mcp__retry_unavailable_title" comment="Card title shown when a retry cannot be dispatched">Keyboard bridge not running</string>
+    <string name="settings__mcp__retry_unavailable_summary" comment="Card summary shown when a retry cannot be dispatched">Daemons connect while SwiftFloris is the active keyboard. Open the keyboard once, then retry.</string>
     <plurals name="settings__mcp__daemon_tools_count" comment="MCP daemon row tools-count fragment; {count} = integer">
         <item quantity="one">{count} tool</item>
         <item quantity="other">{count} tools</item>

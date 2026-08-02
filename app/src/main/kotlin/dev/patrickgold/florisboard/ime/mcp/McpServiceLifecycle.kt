@@ -44,6 +44,7 @@ class McpServiceLifecycle(
     private val shutdownCallback: () -> Unit,
     private val binderLookup: (DaemonKey) -> android.os.IBinder?,
     private val isBridgeEnabled: () -> Boolean = { true },
+    private val retryCallback: (DaemonKey) -> Boolean = { false },
 ) {
 
     private var started: Boolean = false
@@ -57,6 +58,7 @@ class McpServiceLifecycle(
         if (!isBridgeEnabled()) {
             McpDaemonRegistry.setActive(emptyMap())
             McpClientRegistry.setActive(NoOpMcpClient)
+            McpConnectionStateStore.reset()
             flogInfo { "MCP bridge: disabled until user consent is granted" }
             return
         }
@@ -86,9 +88,22 @@ class McpServiceLifecycle(
         for (key in nextKeys - previousKeys) {
             bindCallback(key)
         }
+        // Drop reported states for daemons that discovery no longer accepts, so Settings cannot
+        // keep showing a connection for a package that was revoked or uninstalled.
+        McpConnectionStateStore.retainOnly(nextKeys)
         flogInfo {
             "MCP bridge: discovery rescan accepted ${daemons.size} daemon(s)"
         }
+    }
+
+    /**
+     * Re-attempts a binding the user asked to recover. Returns whether a running bridge received
+     * the request; the daemon's observable state carries the bind outcome itself.
+     */
+    fun retryDaemon(daemonKey: DaemonKey): Boolean {
+        if (!started) return false
+        retryCallback(daemonKey)
+        return true
     }
 
     /** Tear down the bridge. Idempotent. */
@@ -103,6 +118,7 @@ class McpServiceLifecycle(
         } finally {
             McpDaemonRegistry.setActive(emptyMap())
             McpClientRegistry.setActive(NoOpMcpClient)
+            McpConnectionStateStore.reset()
             unregisterActiveLifecycle(this)
         }
     }
@@ -129,11 +145,13 @@ class McpServiceLifecycle(
                 shutdownCallback = manager::shutdown,
                 binderLookup = manager::binderFor,
                 isBridgeEnabled = { bridgeEnabled },
+                retryCallback = manager::retry,
             )
             if (!bridgeEnabled) {
                 McpDaemonDiscoveryStore.reset()
                 McpDaemonRegistry.setActive(emptyMap())
                 McpClientRegistry.setActive(NoOpMcpClient)
+                McpConnectionStateStore.reset()
                 flogInfo { "MCP bridge: startup skipped until user consent is granted" }
                 return lifecycle
             }
@@ -159,6 +177,17 @@ class McpServiceLifecycle(
                 ?: return false
             lifecycle.replaceDaemons(daemons)
             return true
+        }
+
+        /**
+         * Settings-triggered retry for a daemon whose binding failed or died. Returns false when
+         * no bridge is running in this process, which Settings reports rather than pretending the
+         * daemon reconnected.
+         */
+        fun retryActiveDaemon(daemonKey: DaemonKey): Boolean {
+            val lifecycle = synchronized(ActiveLifecycleLock) { activeLifecycle }
+                ?: return false
+            return lifecycle.retryDaemon(daemonKey)
         }
 
         private val ActiveLifecycleLock = Any()
