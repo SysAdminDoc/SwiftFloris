@@ -53,10 +53,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.LocalLocalizedDateTimeFormatter
+import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 private const val MAX_DISPLAYED_RECORDS = 100
 
@@ -146,8 +145,38 @@ fun PrivacyAuditScreen() = FlorisScreen {
         // refreshTick is read so re-snapshots recompose the list after Clear.
         @Suppress("UNUSED_EXPRESSION") refreshTick
         val records = remember(refreshTick) { AddonInvocationAudit.snapshot() }
-        val summaryLine = remember(refreshTick) { AddonAuditExport.summaryLine(records) }
+        val summary = remember(refreshTick) {
+            PrivacyAuditDisplay.summary(
+                records = records,
+                totalCount = AddonInvocationAudit.totalCount(),
+            )
+        }
+        val summaryLine = when {
+            summary.totalCount == 0L -> stringRes(R.string.settings__privacy_audit__summary_empty)
+            summary.rolledOffCount == 0L -> pluralsRes(
+                R.plurals.settings__privacy_audit__summary_records,
+                summary.recordCount,
+                "count" to summary.recordCount,
+            )
+            else -> buildString {
+                append(pluralsRes(
+                    R.plurals.settings__privacy_audit__summary_records,
+                    summary.recordCount,
+                    "count" to summary.recordCount,
+                ))
+                append("; ")
+                val rolledOffCount = summary.rolledOffCount
+                    .coerceAtMost(Int.MAX_VALUE.toLong())
+                    .toInt()
+                append(pluralsRes(
+                    R.plurals.settings__privacy_audit__summary_rolled,
+                    rolledOffCount,
+                    "count" to summary.rolledOffCount,
+                ))
+            }
+        }
         val shareChooserTitle = stringRes(R.string.settings__privacy_audit__share_chooser_title)
+        val dateTimeFormatter = LocalLocalizedDateTimeFormatter.current
 
         PreferenceGroup(title = stringRes(R.string.settings__privacy_audit__group_summary)) {
             FlorisInfoCard(
@@ -234,9 +263,10 @@ fun PrivacyAuditScreen() = FlorisScreen {
             } else {
                 for (record in records.asReversed().take(MAX_DISPLAYED_RECORDS)) {
                     Preference(
-                        title = "${prettyEnum(record.surface.name)} · ${prettyEnum(record.outcome.name)}",
+                        title = "${stringRes(PrivacyAuditDisplay.surfaceLabelRes(record.surface))} · " +
+                            stringRes(PrivacyAuditDisplay.outcomeLabelRes(record.outcome)),
                         summary = buildString {
-                            append(formatTimestamp(record.timestampMillis))
+                            append(PrivacyAuditDisplay.formatTimestamp(dateTimeFormatter, record.timestampMillis))
                             record.subject?.let { append("  ·  ").append(it) }
                             record.reason?.let { append("\n").append(it) }
                         },
@@ -246,14 +276,6 @@ fun PrivacyAuditScreen() = FlorisScreen {
         }
     }
 }
-
-private val TIMESTAMP_FORMAT = SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US)
-
-private fun formatTimestamp(millis: Long): String = TIMESTAMP_FORMAT.format(Date(millis))
-
-/** "SMART_COMPOSE" → "Smart compose". Categorical enum names only; no localization churn. */
-private fun prettyEnum(raw: String): String =
-    raw.lowercase(Locale.US).replace('_', ' ').replaceFirstChar { it.titlecase(Locale.US) }
 
 private fun savePayloadToUri(context: Context, uri: Uri, payload: PrivacyAuditExportPayload) {
     val output = context.contentResolver.openOutputStream(uri)

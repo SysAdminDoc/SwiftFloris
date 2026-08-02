@@ -1259,6 +1259,21 @@
     <string name="settings__privacy_audit__group_actions" comment="Preference group title">Actions</string>
     <string name="settings__privacy_audit__group_records" comment="Preference group title">Recent activity</string>
     <string name="settings__privacy_audit__summary_title" comment="Preference title showing the audit summary line">Audit log</string>
+    <string name="settings__privacy_audit__summary_empty" comment="Summary shown when the audit log is empty">Audit log is empty.</string>
+    <plurals name="settings__privacy_audit__summary_records" comment="Audit summary record count; {count} = records currently retained">
+        <item quantity="one">{count} record in the audit log</item>
+        <item quantity="other">{count} records in the audit log</item>
+    </plurals>
+    <plurals name="settings__privacy_audit__summary_rolled" comment="Audit summary rollover count; {count} = earlier records no longer retained">
+        <item quantity="one">{count} earlier record has rolled off the ring.</item>
+        <item quantity="other">{count} earlier records have rolled off the ring.</item>
+    </plurals>
+    <string name="settings__privacy_audit__surface_smart_compose" comment="Audit record surface label">Smart compose</string>
+    <string name="settings__privacy_audit__surface_translation" comment="Audit record surface label">Translation</string>
+    <string name="settings__privacy_audit__surface_mcp" comment="Audit record surface label">MCP</string>
+    <string name="settings__privacy_audit__outcome_accepted" comment="Audit record outcome label">Accepted</string>
+    <string name="settings__privacy_audit__outcome_suppressed" comment="Audit record outcome label">Suppressed</string>
+    <string name="settings__privacy_audit__outcome_failed" comment="Audit record outcome label">Failed</string>
     <string name="settings__privacy_audit__empty" comment="Shown when no records exist">No recorded activity yet.</string>
     <string name="settings__privacy_audit__empty_message" comment="Empty-state body shown when no audit records exist">SwiftFloris hasn\'t made any cross-process calls on this device yet. Addon, MCP, and translation activity will appear here as it happens.</string>
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
