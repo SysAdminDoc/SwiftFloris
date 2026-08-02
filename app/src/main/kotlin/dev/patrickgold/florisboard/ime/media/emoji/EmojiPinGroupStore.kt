@@ -35,11 +35,11 @@ import java.util.concurrent.atomic.AtomicReference
  * feature lets the user name a group and pin a list of emoji to it,
  * surfaced in a dedicated "Pinned groups" row in the emoji palette.
  *
- * Storage mirrors [CustomEmojiTagStore] — single JSON file under
- * `filesDir/emoji_pin_groups.json`, atomic-rename writes, in-memory
- * cache read once on first access. Backups: included in
- * device-transfer (carries the user's groups phone-to-phone), excluded
- * from cloud backup (§1 no-network — group data is local-only).
+ * Storage is a single JSON file under `filesDir/emoji_pin_groups.json`, with
+ * staged atomic replacement and an in-memory cache read once on first access.
+ * Backup treatment is defined by `BackupDataInventory`: the file is included
+ * in the manual archive and in Android's cloud-backup and device-transfer
+ * allowlists.
  *
  * Caps: 32 groups total, 12 emoji per group, 32-char group-name
  * length. Keeps the file under ~64 KB worst-case.
@@ -111,7 +111,7 @@ class EmojiPinGroupStore private constructor(
         return removed
     }
 
-    /** Drop every pin group. Used by Settings → Reset typing learning. */
+    /** Drop every pin group for an explicit data reset. */
     fun clearAll() = synchronized(writeLock) {
         cache.set(emptyMap())
         flush(emptyMap())

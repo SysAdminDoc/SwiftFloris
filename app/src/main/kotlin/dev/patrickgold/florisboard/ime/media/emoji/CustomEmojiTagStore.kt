@@ -41,9 +41,9 @@ import java.util.concurrent.atomic.AtomicReference
  * Storage: a single JSON file at `<filesDir>/custom_emoji_tags.json` of the
  * form `{ "🦋": ["freedom", "transform"], "🎯": ["focus", "goal"] }`. The
  * file is read once on first access (cached in-memory) and rewritten in
- * full on any tag change. Backups: included in device-transfer (so a
- * phone-to-phone migration carries custom tags) but excluded from cloud
- * backup (per the §1 no-network philosophy — tag data is local-only).
+ * full on any tag change. Backup treatment is defined by `BackupDataInventory`:
+ * the file is included in the manual archive and in Android's cloud-backup
+ * and device-transfer allowlists.
  *
  * Caps: 16 tags per emoji, 5,000 tagged emoji total, 32-char per-tag length
  * — keeps the file under ~256 KB in pathological cases.
@@ -107,7 +107,7 @@ class CustomEmojiTagStore private constructor(
         return updated
     }
 
-    /** Drop every user tag. Used by explicit data reset and restore flows. */
+    /** Drop every user tag for an explicit data reset. */
     fun clearAll() = synchronized(writeLock) {
         cache.set(emptyMap())
         flush(emptyMap())
