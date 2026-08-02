@@ -66,9 +66,7 @@ class WithRules(
     val rules: Map<String, String>,
 ) : Composer {
     // maxOfOrNull (not maxOf): rules is deserialized from extension/language-pack JSON,
-    // so an empty {} map would make maxOf throw NoSuchElementException at construction —
-    // crashing text entry the moment a subtype references this composer. Mirrors the
-    // null-safe guard in IndicTransliterator / GeezSeraTransliterator.
+    // so an empty {} map must remain a valid no-op composer.
     override val toRead = ((rules.keys.maxOfOrNull { it.length } ?: 0) - 1).coerceAtLeast(0)
 
     @Transient val ruleOrder = rules.keys.toList().sortedBy { it.length }.reversed()

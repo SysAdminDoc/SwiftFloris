@@ -41,7 +41,7 @@
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
-| **Scripts** | Devanagari + Bengali + Tamil + Telugu + ... (63-script transliteration coverage); RTL Arabic shaper, Persian / Urdu / Hebrew normalisers, bundled Noto Nastaliq Urdu rendering for Urdu subtype key text | On-device |
+| **Scripts** | Shipped non-Latin layouts use direct key mappings; bundled Noto Nastaliq Urdu rendering is available for Urdu subtype key text | On-device |
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |
 | **Voice input** | FUTO Voice Input handoff (live path), FUTO install guidance when no voice keyboard is available, plus preview-only local Whisper/Vosk route selector and model catalog until a recognizer runtime ships | SwiftFloris itself does not record audio |
 | **Emoji & stickers** | Emoji search/history/pinned groups with an in-keyboard pin-to-group sheet, bundled local sticker packs, share-to-sticker image copy-in, portable local sticker-pack import/export, and user-imported SAF sticker folders for PNG / WebP / JPEG / GIF files | App-private local files and local folder URI only |
@@ -304,7 +304,7 @@ Report suspected vulnerabilities through [GitHub Security Advisories](https://gi
 
 SwiftFloris ships first-class **bilingual subtype presets** for SwiftKey-style EN+ES / EN+FR / EN+DE typing, plus per-token language identification over Latin-script subtypes (EN / ES / FR / DE / IT / PT). The multilingual ranker refuses to autocommit when the two strongest plausible replacement candidates come from different enrolled languages, so cross-language autocorrects stop bleeding into the wrong sentence.
 
-For non-Latin scripts, the transliteration layer currently covers **63 scripts** ranging from Devanagari, Bengali, Tamil, Telugu, Gujarati, Gurmukhi, Kannada, Malayalam, Odia, Sinhala (Indic) through Khmer, Burmese, Lao, Thai, Tibetan, Mongolian, Javanese, Sundanese (Brahmic) into Arabic with FE70-FEFC connected-form shaping, Persian / Urdu / Hebrew normalisers, and historical scripts such as Phoenician, Imperial Aramaic, Avestan, and 20th-century constructed alphabets (Adlam, N'Ko, Cherokee, Vai, Bassa Vah, Mende Kikakui, Pahawh Hmong, Nyiakeng Puachue Hmong, Wancho, Medefaidrin).
+For non-Latin scripts, SwiftFloris uses each selected subtype's shipped key mappings and Android/Compose text rendering. The bundled Noto Nastaliq Urdu font is available for Urdu subtype key text. Script-specific transliteration and RTL transformation engines are not included in the base IME until they have an end-to-end runtime path and acceptance coverage.
 
 Inline translation has the cache + language detector + sentence tokenizer + language-pack manager + router shipped on the IME side; the Bergamot WASM runtime addon is the outstanding piece tracked as L2.1a in the roadmap.
 
@@ -506,7 +506,7 @@ The full public release stream lives on [GitHub Releases](https://github.com/Sys
 - **v1.8.35–v1.8.39** — Full MCP daemon bridge: AIDL surface, AndroidMcpClient, per-daemon bind lifecycle, discoverer, IME-startup wire-up, Settings UI.
 - **v1.8.34** — Macrobenchmark trace instrumentation across six production hot paths.
 - **v1.8.31–v1.8.33, v1.8.79** — Honeycomb hex renderer foundation (`HoneycombHexShape` + `HoneycombHexButton` + `HoneycombKeyboardRow` + `HoneycombLayoutLoader`) and production `TextKeyboardLayout` wire-up.
-- **v1.8.0–v1.8.30** — Smart-compose / inline-translation router stack, KenLM reader pipeline, 63-script transliteration build-out, addon scaffold sweep, SwiftKey-parity slices.
+- **v1.8.0–v1.8.30** — Smart-compose / inline-translation router stack, KenLM reader pipeline, addon scaffold sweep, SwiftKey-parity slices.
 - **v1.7.x** — Multilingual hot-switch, bigram + trigram next-word, adaptive touch, SymSpell d1+d2, Flow Through Space, encrypted personal dictionary.
 - **v1.6.0** — Personal-learning dictionary + 117k SCOWL English + SwiftKey design tokens.
 - **v1.5.0** — FUTO Voice Input integration (replacing Google Speech Recognizer).
