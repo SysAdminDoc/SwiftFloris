@@ -71,6 +71,10 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     protected override fun currentInputConnection() = FlorisImeService.currentInputConnection()
 
     override fun handleStartInputView(editorInfo: FlorisEditorInfo, isRestart: Boolean) {
+        keyboardManager.prepareForEditor(
+            preserveClipboard = activeState.imeUiMode == ImeUiMode.CLIPBOARD &&
+                !prefs.clipboard.historyHideOnNextTextField.get(),
+        )
         if (!prefs.correction.rememberCapsLockState.get()) {
             // Enable auto-capitalization for the first letter of the text field
             activeState.inputShiftState = InputShiftState.SHIFTED_AUTOMATIC
@@ -96,7 +100,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         // generation. This keeps the first composing decision consistent with
         // the editor metadata even on a dispatcher that runs immediately.
         activeState.keyVariation = editorContract.keyVariation
-        activeState.keyboardMode = keyboardMode
+        keyboardManager.setKeyboardModeForEditor(keyboardMode)
         val profile = activePerAppProfile(editorInfo.packageName)
         val baseComposingEnabled = editorContract.allowsComposing && prefs.suggestion.enabled.get()
         activeState.isComposingEnabled = PerAppKeyboardProfilePolicy.shouldEnableComposing(
@@ -430,7 +434,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             }
         }.also {
             if (prefs.clipboard.historyHideOnPaste.get()) {
-                keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                keyboardManager.transitionToImeUiMode(ImeUiMode.TEXT)
             }
         }
     }
@@ -668,7 +672,7 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             commitText(directPasteText.toString()).also {
                 updateLastCommitPosition()
                 if (prefs.clipboard.historyHideOnPaste.get()) {
-                    keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT
+                    keyboardManager.transitionToImeUiMode(ImeUiMode.TEXT)
                 }
             }
         } else {

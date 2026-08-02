@@ -52,7 +52,6 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.app.settings.advanced.HardwareKeyboardDeviceOption
 import dev.patrickgold.florisboard.app.settings.advanced.PhysicalKeyboardPolicy
-import dev.patrickgold.florisboard.ime.ImeUiMode
 import dev.patrickgold.florisboard.ime.addon.AddonEnumerator
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStartup
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
@@ -690,9 +689,6 @@ class FlorisImeService : LifecycleInputMethodService() {
         flagSecureEditorInfo = editorInfo
         subtypeManager.onEditorPackageFocus(editorInfo.packageName)
         activeState.batchEdit {
-            if (activeState.imeUiMode != ImeUiMode.CLIPBOARD || prefs.clipboard.historyHideOnNextTextField.get()) {
-                activeState.imeUiMode = ImeUiMode.TEXT
-            }
             activeState.isSelectionMode = editorInfo.initialSelection.isSelectionMode
             editorInstance.handleStartInputView(editorInfo, isRestart = restarting)
         }
@@ -840,7 +836,7 @@ class FlorisImeService : LifecycleInputMethodService() {
         if (windowController.onWindowHidden()) {
             flogInfo(LogTopic.IMS_EVENTS)
             activeState.batchEdit {
-                activeState.imeUiMode = ImeUiMode.TEXT
+                keyboardManager.resetUiModeAndHistory()
                 activeState.isActionsOverflowVisible = false
                 activeState.isActionsEditorVisible = false
             }

@@ -235,7 +235,7 @@ fun ClipboardInputLayout(
                 .size(FlorisImeSizing.smartbarHeight)
             SnyggIconButton(
                 elementName = FlorisImeUi.ClipboardHeaderButton.elementName,
-                onClick = { keyboardManager.activeState.imeUiMode = ImeUiMode.TEXT },
+                onClick = { keyboardManager.transitionToImeUiMode(ImeUiMode.TEXT) },
                 modifier = sizeModifier,
             ) {
                 SnyggIcon(

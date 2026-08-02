@@ -124,6 +124,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     val resources = KeyboardManagerResources()
     val activeState = ObservableKeyboardState.new()
+    private val modeTransitions = KeyboardModeTransitionController()
     var smartbarVisibleDynamicActionsCount by mutableIntStateOf(0)
     @Volatile
     private var incognitoModeChangedListener: ((Boolean) -> Unit)? = null
@@ -273,6 +274,33 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
 
     fun setIncognitoModeChangedListener(listener: ((Boolean) -> Unit)?) {
         incognitoModeChangedListener = listener
+    }
+
+    fun transitionToKeyboardMode(mode: KeyboardMode) {
+        applyModeTransition(modeTransitions.transitionToKeyboardMode(mode))
+    }
+
+    fun transitionToImeUiMode(mode: ImeUiMode) {
+        applyModeTransition(modeTransitions.transitionToImeUiMode(mode))
+    }
+
+    fun prepareForEditor(preserveClipboard: Boolean) {
+        applyModeTransition(modeTransitions.prepareForEditor(preserveClipboard))
+    }
+
+    fun setKeyboardModeForEditor(mode: KeyboardMode) {
+        applyModeTransition(modeTransitions.setKeyboardModeForEditor(mode))
+    }
+
+    fun resetUiModeAndHistory() {
+        applyModeTransition(modeTransitions.resetUiModeAndHistory())
+    }
+
+    private fun applyModeTransition(state: KeyboardModeTransitionState) {
+        activeState.batchEdit {
+            activeState.keyboardMode = state.keyboardMode
+            activeState.imeUiMode = state.imeUiMode
+        }
     }
 
     fun clearIncognitoModeChangedListener(listener: ((Boolean) -> Unit)? = null) {
@@ -878,7 +906,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 KeyboardMode.NUMERIC_ADVANCED,
                 KeyboardMode.SYMBOLS,
                 KeyboardMode.SYMBOLS2 -> {
-                    activeState.keyboardMode = KeyboardMode.CHARACTERS
+                    transitionToKeyboardMode(KeyboardMode.CHARACTERS)
                 }
                 else -> { /* Do nothing */ }
             }
@@ -919,6 +947,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         prefs.suggestion.forceIncognitoModeFromDynamic.set(!prefs.suggestion.forceIncognitoModeFromDynamic.get())
         val newState = !activeState.isIncognitoMode
         activeState.isIncognitoMode = newState
+        resetUiModeAndHistory()
         incognitoModeChangedListener?.let { listener ->
             withContext(Dispatchers.Main.immediate) {
                 listener(newState)
@@ -1089,9 +1118,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.IME_HIDE_UI -> FlorisImeService.hideUi()
             KeyCode.IME_PREV_SUBTYPE -> subtypeManager.switchToPrevSubtype()
             KeyCode.IME_NEXT_SUBTYPE -> subtypeManager.switchToNextSubtype()
-            KeyCode.IME_UI_MODE_TEXT -> activeState.imeUiMode = ImeUiMode.TEXT
-            KeyCode.IME_UI_MODE_MEDIA -> activeState.imeUiMode = ImeUiMode.MEDIA
-            KeyCode.IME_UI_MODE_CLIPBOARD -> activeState.imeUiMode = ImeUiMode.CLIPBOARD
+            KeyCode.IME_UI_MODE_TEXT -> transitionToImeUiMode(ImeUiMode.TEXT)
+            KeyCode.IME_UI_MODE_MEDIA -> transitionToImeUiMode(ImeUiMode.MEDIA)
+            KeyCode.IME_UI_MODE_CLIPBOARD -> transitionToImeUiMode(ImeUiMode.CLIPBOARD)
             KeyCode.VOICE_INPUT -> FlorisImeService.switchToVoiceInputMethod()
             KeyCode.KANA_SWITCHER -> handleKanaSwitch()
             KeyCode.KANA_HIRA -> handleKanaHira()
@@ -1120,13 +1149,13 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.TOGGLE_INCOGNITO_MODE -> scope.launch { handleToggleIncognitoMode() }
             KeyCode.TOGGLE_AUTOCORRECT -> scope.launch { handleToggleAutocorrect() }
             KeyCode.UNDO -> editorInstance.performUndo()
-            KeyCode.VIEW_CHARACTERS -> activeState.keyboardMode = KeyboardMode.CHARACTERS
-            KeyCode.VIEW_NUMERIC -> activeState.keyboardMode = KeyboardMode.NUMERIC
-            KeyCode.VIEW_NUMERIC_ADVANCED -> activeState.keyboardMode = KeyboardMode.NUMERIC_ADVANCED
-            KeyCode.VIEW_PHONE -> activeState.keyboardMode = KeyboardMode.PHONE
-            KeyCode.VIEW_PHONE2 -> activeState.keyboardMode = KeyboardMode.PHONE2
-            KeyCode.VIEW_SYMBOLS -> activeState.keyboardMode = KeyboardMode.SYMBOLS
-            KeyCode.VIEW_SYMBOLS2 -> activeState.keyboardMode = KeyboardMode.SYMBOLS2
+            KeyCode.VIEW_CHARACTERS -> transitionToKeyboardMode(KeyboardMode.CHARACTERS)
+            KeyCode.VIEW_NUMERIC -> transitionToKeyboardMode(KeyboardMode.NUMERIC)
+            KeyCode.VIEW_NUMERIC_ADVANCED -> transitionToKeyboardMode(KeyboardMode.NUMERIC_ADVANCED)
+            KeyCode.VIEW_PHONE -> transitionToKeyboardMode(KeyboardMode.PHONE)
+            KeyCode.VIEW_PHONE2 -> transitionToKeyboardMode(KeyboardMode.PHONE2)
+            KeyCode.VIEW_SYMBOLS -> transitionToKeyboardMode(KeyboardMode.SYMBOLS)
+            KeyCode.VIEW_SYMBOLS2 -> transitionToKeyboardMode(KeyboardMode.SYMBOLS2)
             else -> {
                 if (activeState.imeUiMode == ImeUiMode.MEDIA) {
                     val text = data.asString(isForDisplay = false)
@@ -1194,7 +1223,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                                     currentMode = activeState.keyboardMode,
                                     autoReturnEnabled = prefs.keyboard.autoReturnAfterApostrophe.get(),
                                 )) {
-                                activeState.keyboardMode = KeyboardMode.CHARACTERS
+                                transitionToKeyboardMode(KeyboardMode.CHARACTERS)
                             }
 
                             tryExpandSnippet()
