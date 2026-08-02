@@ -53,7 +53,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -73,6 +75,50 @@ object FlorisCardDefaults {
     val ContentPadding = PaddingValues(start = 0.dp, end = 18.dp, top = 16.dp, bottom = 16.dp)
 }
 
+/**
+ * Severity of a shared status card. Drives which accessibility live region — if any — the card
+ * opts into, so asynchronous state changes are announced instead of only being visible.
+ */
+enum class FlorisStatusSeverity {
+    /** Long-running work in progress; announced without interrupting the current utterance. */
+    Progress,
+
+    /** Work finished successfully. */
+    Success,
+
+    /** Degraded but non-blocking state. */
+    Warning,
+
+    /** Failure the user has to act on; interrupts to avoid a silently failed operation. */
+    Error,
+
+    /** Static explanatory copy that does not change asynchronously. */
+    Info,
+
+    /** Static unavailable/disabled copy that does not change asynchronously. */
+    Neutral,
+}
+
+object FlorisStatusSemantics {
+    /**
+     * Maps [severity] to a live-region mode.
+     *
+     * Only severities that represent a *transition* announce themselves. Static copy returns
+     * `null`, as does every non-status surface, so per-keystroke keyboard UI (candidates,
+     * key popups) is never turned into a live region by accident.
+     */
+    fun liveRegionFor(severity: FlorisStatusSeverity): LiveRegionMode? {
+        return when (severity) {
+            FlorisStatusSeverity.Progress -> LiveRegionMode.Polite
+            FlorisStatusSeverity.Success -> LiveRegionMode.Polite
+            FlorisStatusSeverity.Warning -> LiveRegionMode.Polite
+            FlorisStatusSeverity.Error -> LiveRegionMode.Assertive
+            FlorisStatusSeverity.Info -> null
+            FlorisStatusSeverity.Neutral -> null
+        }
+    }
+}
+
 object BoxDefaults {
     val OutlinedBoxShape = RoundedCornerShape(8.dp)
 
@@ -89,12 +135,17 @@ fun FlorisSimpleCard(
     contentColor: Color = MaterialTheme.colorScheme.onSurface,
     borderColor: Color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.42f),
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = null,
     icon: (@Composable () -> Unit)? = null,
     onClick: (() -> Unit)? = null,
 ) {
     val cardModifier = modifier
         .fillMaxWidth()
-        .semantics(mergeDescendants = true) { }
+        .semantics(mergeDescendants = true) {
+            if (liveRegion != null) {
+                this.liveRegion = liveRegion
+            }
+        }
     val cardColors = CardDefaults.cardColors(
         contentColor = contentColor,
         containerColor = backgroundColor,
@@ -199,6 +250,7 @@ fun FlorisErrorCard(
     actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = FlorisStatusSemantics.liveRegionFor(FlorisStatusSeverity.Error),
     onClick: (() -> Unit)? = null,
 ) {
     FlorisSimpleCard(
@@ -206,6 +258,7 @@ fun FlorisErrorCard(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.error.copy(alpha = FlorisCardDefaults.StatusBorderAlpha),
+        liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -228,6 +281,7 @@ fun FlorisWarningCard(
     actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = FlorisStatusSemantics.liveRegionFor(FlorisStatusSeverity.Warning),
     onClick: (() -> Unit)? = null,
 ) {
     FlorisSimpleCard(
@@ -235,6 +289,7 @@ fun FlorisWarningCard(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.tertiary.copy(alpha = FlorisCardDefaults.StatusBorderAlpha),
+        liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -257,6 +312,7 @@ fun FlorisSuccessCard(
     actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = FlorisStatusSemantics.liveRegionFor(FlorisStatusSeverity.Success),
     onClick: (() -> Unit)? = null,
 ) {
     FlorisSimpleCard(
@@ -264,6 +320,7 @@ fun FlorisSuccessCard(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = FlorisCardDefaults.StatusBorderAlpha),
+        liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -286,6 +343,7 @@ fun FlorisProgressCard(
     actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = FlorisStatusSemantics.liveRegionFor(FlorisStatusSeverity.Progress),
     onClick: (() -> Unit)? = null,
 ) {
     FlorisSimpleCard(
@@ -293,6 +351,7 @@ fun FlorisProgressCard(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.32f),
+        liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -315,6 +374,7 @@ fun FlorisNeutralCard(
     actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = FlorisStatusSemantics.liveRegionFor(FlorisStatusSeverity.Neutral),
     onClick: (() -> Unit)? = null,
 ) {
     FlorisSimpleCard(
@@ -322,6 +382,7 @@ fun FlorisNeutralCard(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+        liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
@@ -344,6 +405,7 @@ fun FlorisInfoCard(
     actionLabel: String? = null,
     showIcon: Boolean = true,
     contentPadding: PaddingValues = FlorisCardDefaults.ContentPadding,
+    liveRegion: LiveRegionMode? = FlorisStatusSemantics.liveRegionFor(FlorisStatusSeverity.Info),
     onClick: (() -> Unit)? = null,
 ) {
     FlorisSimpleCard(
@@ -351,6 +413,7 @@ fun FlorisInfoCard(
         backgroundColor = MaterialTheme.colorScheme.surfaceContainerHigh,
         contentColor = MaterialTheme.colorScheme.onSurface,
         borderColor = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.56f),
+        liveRegion = liveRegion,
         onClick = onClick,
         icon = if (showIcon) ({
             FlorisStatusIcon(
