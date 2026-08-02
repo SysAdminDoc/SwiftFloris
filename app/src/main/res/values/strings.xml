@@ -1604,6 +1604,8 @@
     <string name="physical_keyboard__system_settings__title">System physical keyboard settings</string>
     <string name="physical_keyboard__system_settings__summary">Layouts, keyboard shortcuts and modifier keys</string>
     <string name="physical_keyboard__system_settings__summary_not_attached">Only available when keyboard is attached</string>
+    <string name="physical_keyboard__system_settings__unavailable_title" comment="Error card title shown when the system hardware-keyboard settings screen cannot be opened">System keyboard settings unavailable</string>
+    <string name="physical_keyboard__system_settings__unavailable_summary" comment="Error card summary shown when the system hardware-keyboard settings screen cannot be opened">This device has no hardware keyboard settings screen, or it is blocked for this user. SwiftFloris layout settings below still apply.</string>
     <string name="physical_keyboard__show_on_screen_keyboard__title">Show on-screen keyboard</string>
     <string name="physical_keyboard__show_on_screen_keyboard__summary">Show on-screen keyboard while using physical keyboard</string>
     <string name="physical_keyboard__custom_layouts__title">Custom layouts</string>

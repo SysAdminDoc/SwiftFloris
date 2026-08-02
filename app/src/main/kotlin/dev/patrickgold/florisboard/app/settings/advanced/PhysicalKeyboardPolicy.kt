@@ -84,6 +84,32 @@ internal enum class PhysicalKeyboardNotice {
     ApplyFailure,
     DeleteSuccess,
     DeleteFailure,
+    SystemSettingsUnavailable,
+}
+
+/**
+ * Guarded launch of a system settings screen.
+ *
+ * `Settings.ACTION_HARD_KEYBOARD_SETTINGS` is not present on every build - stripped OEM images,
+ * managed profiles and restricted users can all leave it unresolvable, and the resulting
+ * `ActivityNotFoundException` propagated straight out of the click handler. The launch is a
+ * lambda so both the success and the failure branch are testable without an Activity.
+ */
+internal object SystemSettingsLaunchPolicy {
+    fun launchGuarded(launch: () -> Unit): Boolean {
+        return try {
+            launch()
+            true
+        } catch (_: android.content.ActivityNotFoundException) {
+            false
+        } catch (_: SecurityException) {
+            false
+        }
+    }
+
+    fun noticeFor(launched: Boolean, current: PhysicalKeyboardNotice?): PhysicalKeyboardNotice? {
+        return if (launched) current else PhysicalKeyboardNotice.SystemSettingsUnavailable
+    }
 }
 
 internal object PhysicalKeyboardPolicy {

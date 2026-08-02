@@ -171,7 +171,13 @@ fun PhysicalKeyboardScreen() = FlorisScreen {
                     title = stringRes(R.string.physical_keyboard__system_settings__title),
                     summary = stringRes(R.string.physical_keyboard__system_settings__summary),
                     onClick = {
-                        activityForResult.launch(Intent(Settings.ACTION_HARD_KEYBOARD_SETTINGS))
+                        // Some builds ship no hard-keyboard settings activity at all; a missing
+                        // one must report itself rather than take the settings app down.
+                        val launched = SystemSettingsLaunchPolicy.launchGuarded {
+                            activityForResult.launch(Intent(Settings.ACTION_HARD_KEYBOARD_SETTINGS))
+                        }
+                        lastNotice = SystemSettingsLaunchPolicy.noticeFor(launched, lastNotice)
+                        if (launched) lastNoticeDetail = null
                     }
                 )
             } else {
@@ -389,6 +395,11 @@ private fun PhysicalKeyboardNoticeCard(
             modifier = Modifier.padding(8.dp),
             text = stringRes(R.string.physical_keyboard__forget_layout__failure),
             secondaryText = stringRes(R.string.physical_keyboard__forget_layout__failure_summary),
+        )
+        PhysicalKeyboardNotice.SystemSettingsUnavailable -> FlorisErrorCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.physical_keyboard__system_settings__unavailable_title),
+            secondaryText = stringRes(R.string.physical_keyboard__system_settings__unavailable_summary),
         )
         PhysicalKeyboardNotice.None -> Unit
     }
