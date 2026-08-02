@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.theme
 
 import androidx.compose.ui.graphics.Color
+import androidx.compose.material3.ColorScheme
 import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -26,6 +27,7 @@ import kotlinx.serialization.json.jsonPrimitive
 import org.florisboard.lib.color.ColorMappings
 import org.florisboard.lib.color.neutralDynamicColorScheme
 import org.florisboard.lib.compose.FlorisCardDefaults
+import dev.patrickgold.florisboard.app.apptheme.refinedSurfaces
 import java.io.File
 import kotlin.math.max
 import kotlin.math.min
@@ -117,41 +119,52 @@ class ThemeContrastTest : FunSpec({
             }
     }
 
-    test("settings warning, error, and dialog colors meet WCAG AA contrast") {
+    test("production status and empty-state color pairs meet WCAG AA contrast") {
         ColorMappings.colors.forEach { accent ->
             val accentLabel = accent.toColorRgb().toHexLabel()
             listOf(
-                "light" to neutralDynamicColorScheme(primary = accent, isDark = false),
-                "dark" to neutralDynamicColorScheme(primary = accent, isDark = true),
-                "amoled" to neutralDynamicColorScheme(primary = accent, isDark = true, isAmoled = true),
+                "light" to productionColorScheme(accent = accent, isDark = false),
+                "dark" to productionColorScheme(accent = accent, isDark = true),
+                "amoled" to productionColorScheme(accent = accent, isDark = true, isAmoled = true),
             ).forEach { (schemeName, scheme) ->
                 val label = "$schemeName accent $accentLabel"
 
+                listOf(
+                    "progress card" to scheme.surfaceContainer,
+                    "success card" to scheme.surfaceContainerHigh,
+                    "warning card" to scheme.surfaceContainerHigh,
+                    "error card" to scheme.surfaceContainerHigh,
+                    "neutral card" to scheme.surfaceContainerHigh,
+                    "info card" to scheme.surfaceContainerHigh,
+                ).forEach { (cardName, background) ->
+                    assertProductionCardTextContrast(
+                        label = "$label $cardName",
+                        foreground = scheme.onSurface,
+                        background = background,
+                    )
+                }
                 assertContrast(
-                    label = "$label warning card",
-                    foreground = scheme.onTertiaryContainer.toColorRgb(),
-                    background = scheme.tertiaryContainer.toColorRgb(),
+                    label = "$label empty-state title",
+                    foreground = scheme.onSurface.toColorRgb(),
+                    background = scheme.surfaceContainerLow.toColorRgb(),
                 )
                 assertContrast(
-                    label = "$label warning card secondary",
-                    foreground = scheme.onTertiaryContainer.toColorRgb().compositeOver(
-                        background = scheme.tertiaryContainer.toColorRgb(),
-                        alpha = FlorisCardDefaults.SecondaryContentAlpha,
+                    label = "$label empty-state message",
+                    foreground = scheme.onSurfaceVariant.toColorRgb(),
+                    background = scheme.surfaceContainerLow.toColorRgb(),
+                )
+                assertContrast(
+                    label = "$label empty-state icon",
+                    foreground = scheme.onPrimaryContainer.toColorRgb(),
+                    background = scheme.primaryContainer.toColorRgb().compositeOver(
+                        background = scheme.surfaceContainerLow.toColorRgb(),
+                        alpha = 0.88f,
                     ),
-                    background = scheme.tertiaryContainer.toColorRgb(),
                 )
                 assertContrast(
-                    label = "$label error card",
-                    foreground = scheme.onErrorContainer.toColorRgb(),
-                    background = scheme.errorContainer.toColorRgb(),
-                )
-                assertContrast(
-                    label = "$label error card secondary",
-                    foreground = scheme.onErrorContainer.toColorRgb().compositeOver(
-                        background = scheme.errorContainer.toColorRgb(),
-                        alpha = FlorisCardDefaults.SecondaryContentAlpha,
-                    ),
-                    background = scheme.errorContainer.toColorRgb(),
+                    label = "$label empty-state action",
+                    foreground = scheme.primary.toColorRgb(),
+                    background = scheme.surfaceContainerLow.toColorRgb(),
                 )
                 assertContrast(
                     label = "$label settings dialog text",
@@ -178,6 +191,44 @@ class ThemeContrastTest : FunSpec({
         locateBundledStylesheet("aurora_animated.json").exists() shouldBe true
     }
 })
+
+private const val ProductionContrastLevel = 0.18
+
+private fun productionColorScheme(
+    accent: Color,
+    isDark: Boolean,
+    isAmoled: Boolean = false,
+): ColorScheme {
+    return neutralDynamicColorScheme(
+        primary = accent,
+        isDark = isDark,
+        isAmoled = isAmoled,
+        contrastLevel = ProductionContrastLevel,
+        modifyColorScheme = {
+            it.refinedSurfaces(tint = accent, isDark = isDark, isAmoled = isAmoled)
+        },
+    )
+}
+
+private fun assertProductionCardTextContrast(
+    label: String,
+    foreground: Color,
+    background: Color,
+) {
+    assertContrast(
+        label = label,
+        foreground = foreground.toColorRgb(),
+        background = background.toColorRgb(),
+    )
+    assertContrast(
+        label = "$label secondary",
+        foreground = foreground.toColorRgb().compositeOver(
+            background = background.toColorRgb(),
+            alpha = FlorisCardDefaults.SecondaryContentAlpha,
+        ),
+        background = background.toColorRgb(),
+    )
+}
 
 private fun assertTextContrast(
     colors: Map<String, ColorRgb>,
