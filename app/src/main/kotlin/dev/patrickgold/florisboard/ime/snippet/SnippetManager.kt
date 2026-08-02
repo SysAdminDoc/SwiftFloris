@@ -14,7 +14,9 @@ import android.content.Context
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -22,9 +24,21 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
+
+data class SnippetFileInfo(
+    val filename: String,
+    val triggerCount: Int,
+)
+
+data class SnippetLoadReport(
+    val skippedFileCount: Int = 0,
+)
 
 class SnippetManager internal constructor(private val filesDir: File) {
 
@@ -40,6 +54,14 @@ class SnippetManager internal constructor(private val filesDir: File) {
     private val _snippets = MutableStateFlow<List<EspansoMatch>>(emptyList())
     val snippets: StateFlow<List<EspansoMatch>> = _snippets.asStateFlow()
 
+    private val _fileStates = MutableStateFlow<List<SnippetFileInfo>>(emptyList())
+    val fileStates: StateFlow<List<SnippetFileInfo>> = _fileStates.asStateFlow()
+
+    private val _loadReport = MutableStateFlow(SnippetLoadReport())
+    val loadReport: StateFlow<SnippetLoadReport> = _loadReport.asStateFlow()
+
+    private val loadMutex = Mutex()
+
     private val snippetsDir: File
         get() = File(filesDir, "snippets").also { it.mkdirs() }
 
@@ -51,55 +73,103 @@ class SnippetManager internal constructor(private val filesDir: File) {
      */
     fun initialize(): Job = initializationJob
 
-    fun loadAll() {
-        val dir = snippetsDir
-        if (!dir.exists()) {
-            _snippets.value = emptyList()
-            return
-        }
-        val all = mutableListOf<EspansoMatch>()
-        dir.listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
-            ?.forEach { file ->
-                runCatching {
-                    val yaml = file.inputStream().use(SnippetImportPolicy::readYamlTextLimited)
-                    all.addAll(EspansoMatchParser.parse(yaml))
-                }
+    suspend fun loadAll() = withContext(Dispatchers.IO) {
+        loadMutex.withLock {
+            val dir = snippetsDir
+            if (!dir.exists()) {
+                publishLoadedState(emptyList(), emptyList(), 0)
+                return@withLock
             }
-        _snippets.value = all
+            val all = mutableListOf<EspansoMatch>()
+            val files = mutableListOf<SnippetFileInfo>()
+            var skippedFileCount = 0
+            dir.listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
+                ?.filter { it.isFile }
+                ?.sortedBy { it.name }
+                ?.forEach { file ->
+                    runCatching {
+                        val yaml = file.inputStream().use(SnippetImportPolicy::readYamlTextLimited)
+                        val result = EspansoMatchParser.parseWithDiagnostics(yaml)
+                        all.addAll(result.matches)
+                        files += SnippetFileInfo(file.name, result.matches.size)
+                    }.onFailure { error ->
+                        if (error is CancellationException) throw error
+                        skippedFileCount++
+                        flogWarning {
+                            "SnippetManager.loadAll skipped ${file.name}: ${error::class.java.simpleName}"
+                        }
+                    }
+                }
+            publishLoadedState(all, files, skippedFileCount)
+        }
     }
 
-    fun importYaml(yamlContent: String, filename: String): SnippetImportResult {
-        val result = EspansoMatchParser.parseWithDiagnostics(yamlContent)
-        if (result.matches.isEmpty()) {
-            return SnippetImportResult(
-                importedCount = 0,
+    suspend fun importYaml(yamlContent: String, filename: String): SnippetImportResult =
+        withContext(Dispatchers.IO) {
+            require(yamlContent.toByteArray(Charsets.UTF_8).size <= SnippetImportPolicy.MaxYamlBytes) {
+                "Snippet YAML exceeds the ${SnippetImportPolicy.MaxYamlBytes / (1024L * 1024L)} MiB safety limit."
+            }
+            val result = EspansoMatchParser.parseWithDiagnostics(yamlContent)
+            if (result.matches.isEmpty()) {
+                return@withContext SnippetImportResult(
+                    importedCount = 0,
+                    diagnostics = result.diagnostics,
+                )
+            }
+            val safeName = sanitizeFileName(filename)
+            val target = File(snippetsDir, safeName)
+            target.writeText(yamlContent)
+            loadAll()
+            SnippetImportResult(
+                importedCount = result.matches.size,
                 diagnostics = result.diagnostics,
             )
         }
-        val safeName = filename.replace(Regex("[^a-zA-Z0-9._-]"), "_")
-        val target = File(snippetsDir, safeName)
-        target.writeText(yamlContent)
+
+    suspend fun removeFile(filename: String): Boolean = withContext(Dispatchers.IO) {
+        val target = safeFile(filename) ?: return@withContext false
+        val removed = target.isFile && target.delete()
+        if (!removed) {
+            flogWarning { "SnippetManager.removeFile could not delete ${target.name}" }
+        }
         loadAll()
-        return SnippetImportResult(
-            importedCount = result.matches.size,
-            diagnostics = result.diagnostics,
-        )
+        removed
     }
 
-    fun removeFile(filename: String) {
-        File(snippetsDir, filename).delete()
-        loadAll()
+    suspend fun clearAll(): Boolean = withContext(Dispatchers.IO) {
+        val files = snippetsDir.listFiles().orEmpty()
+        var success = true
+        files.forEach { file ->
+            if (!file.delete()) {
+                success = false
+                flogWarning { "SnippetManager.clearAll could not delete ${file.name}" }
+            }
+        }
+        if (!success) loadAll() else publishLoadedState(emptyList(), emptyList(), 0)
+        success
     }
 
-    fun listFiles(): List<String> {
-        return snippetsDir.listFiles { f -> f.extension == "yml" || f.extension == "yaml" }
-            ?.map { it.name }
-            .orEmpty()
+    private fun publishLoadedState(
+        matches: List<EspansoMatch>,
+        files: List<SnippetFileInfo>,
+        skippedFileCount: Int,
+    ) {
+        _snippets.value = matches
+        _fileStates.value = files
+        _loadReport.value = SnippetLoadReport(skippedFileCount)
     }
 
-    fun clearAll() {
-        snippetsDir.listFiles()?.forEach { it.delete() }
-        _snippets.value = emptyList()
+    private fun safeFile(filename: String): File? {
+        val directory = snippetsDir.canonicalFile
+        val target = File(directory, filename).canonicalFile
+        return target.takeIf { it.parentFile == directory }
+    }
+
+    internal fun sanitizeFileName(filename: String): String {
+        val sanitized = filename
+            .replace(Regex("[^a-zA-Z0-9._-]"), "_")
+            .take(128)
+        return sanitized.takeIf { it.isNotBlank() && it != "." && it != ".." } ?: "import.yml"
     }
 }
 

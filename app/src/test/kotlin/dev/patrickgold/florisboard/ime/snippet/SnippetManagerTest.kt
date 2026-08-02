@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.snippet
 
 import io.kotest.core.spec.style.FunSpec
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import java.io.File
@@ -47,6 +48,116 @@ class SnippetManagerTest : FunSpec({
             )
             expansion?.triggerLength shouldBe 5
             expansion?.replacement shouldBe "123 Privacy Lane"
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("load keeps valid files and reports oversized files without swallowing the failure") {
+        val root = Files.createTempDirectory("snippet-manager-load").toFile()
+        try {
+            val snippetsDirectory = File(root, "snippets").apply { mkdirs() }
+            File(snippetsDirectory, "valid.yml").writeText(
+                """
+                    matches:
+                      - trigger: ":ok"
+                        replace: "Loaded"
+                """.trimIndent(),
+            )
+            File(snippetsDirectory, "oversized.yml").writeText(
+                "x".repeat((SnippetImportPolicy.MaxYamlBytes + 1L).toInt()),
+            )
+            val manager = SnippetManager(root)
+
+            runBlocking { manager.loadAll() }
+
+            manager.snippets.value.map { it.trigger } shouldBe listOf(":ok")
+            manager.fileStates.value shouldBe listOf(SnippetFileInfo("valid.yml", 1))
+            manager.loadReport.value.skippedFileCount shouldBe 1
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("import runs through the bounded parser and sanitizes hostile filenames") {
+        val root = Files.createTempDirectory("snippet-manager-import").toFile()
+        try {
+            val manager = SnippetManager(root)
+            val result = runBlocking {
+                manager.importYaml(
+                    """
+                        matches:
+                          - trigger: ":imported"
+                            replace: "Imported"
+                    """.trimIndent(),
+                    "../private/notes.yml",
+                )
+            }
+
+            result.importedCount shouldBe 1
+            manager.sanitizeFileName("../private/notes.yml") shouldBe ".._private_notes.yml"
+            manager.fileStates.value shouldBe listOf(SnippetFileInfo(".._private_notes.yml", 1))
+            File(root, "snippets/.._private_notes.yml").isFile shouldBe true
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("import rejects YAML over the safety limit before writing") {
+        val root = Files.createTempDirectory("snippet-manager-limit").toFile()
+        try {
+            val manager = SnippetManager(root)
+            shouldThrow<IllegalArgumentException> {
+                runBlocking {
+                    manager.importYaml(
+                        "x".repeat((SnippetImportPolicy.MaxYamlBytes + 1L).toInt()),
+                        "too-large.yml",
+                    )
+                }
+            }
+
+            File(root, "snippets/too-large.yml").exists() shouldBe false
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("remove and clear surface deletion failures instead of reporting success") {
+        val root = Files.createTempDirectory("snippet-manager-delete-failure").toFile()
+        try {
+            val snippetsDirectory = File(root, "snippets").apply { mkdirs() }
+            File(snippetsDirectory, "blocked.yml").apply {
+                mkdirs()
+                File(this, "child.yml").writeText("not a file")
+            }
+            val manager = SnippetManager(root)
+
+            runBlocking { manager.removeFile("blocked.yml") } shouldBe false
+            runBlocking { manager.clearAll() } shouldBe false
+            File(snippetsDirectory, "blocked.yml").isDirectory shouldBe true
+        } finally {
+            root.deleteRecursively()
+        }
+    }
+
+    test("clearAll removes imported files and resets file state") {
+        val root = Files.createTempDirectory("snippet-manager-clear").toFile()
+        try {
+            val manager = SnippetManager(root)
+            runBlocking {
+                manager.importYaml(
+                    """
+                        matches:
+                          - trigger: ":one"
+                            replace: "One"
+                    """.trimIndent(),
+                    "one.yml",
+                )
+                manager.clearAll() shouldBe true
+            }
+
+            manager.snippets.value shouldBe emptyList()
+            manager.fileStates.value shouldBe emptyList()
         } finally {
             root.deleteRecursively()
         }
