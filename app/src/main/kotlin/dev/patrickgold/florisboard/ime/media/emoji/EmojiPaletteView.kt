@@ -102,7 +102,10 @@ import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.jetpref.datastore.model.collectAsState
+import dev.patrickgold.florisboard.subtypeManager
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidKeyguardManager
 import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.android.systemService
@@ -148,8 +151,30 @@ fun EmojiPaletteView(
     val context = LocalContext.current
     val editorInstance by context.editorInstance()
     val keyboardManager by context.keyboardManager()
+    val subtypeManager by context.subtypeManager()
 
     val activeEditorInfo by editorInstance.activeInfoFlow.collectAsState()
+    val activeSubtype by subtypeManager.activeSubtypeFlow.collectAsState()
+    val enrolledSubtypes by subtypeManager.subtypesFlow.collectAsState()
+    val searchLocales = remember(activeSubtype, enrolledSubtypes) {
+        buildList {
+            addAll(activeSubtype.locales())
+            enrolledSubtypes.forEach { subtype -> addAll(subtype.locales()) }
+        }
+            .distinctBy { locale -> locale.languageTag() }
+            .take(EmojiSearch.MaxLocaleMappings)
+    }
+    var loadedSearchMappings by remember { mutableStateOf(emptyList<EmojiDataByCategory>()) }
+    LaunchedEffect(searchLocales) {
+        // Clear the previous locale index immediately so a subtype change cannot show stale annotations while the new
+        // asset files are being loaded.
+        loadedSearchMappings = emptyList()
+        loadedSearchMappings = withContext(Dispatchers.IO) {
+            searchLocales.mapNotNull { locale ->
+                runCatching { EmojiData.get(context, locale).byCategory }.getOrNull()
+            }
+        }
+    }
     val systemFontPaint = remember(Typeface.DEFAULT) {
         Paint().apply {
             typeface = Typeface.DEFAULT
@@ -158,8 +183,8 @@ fun EmojiPaletteView(
     val metadataVersion = activeEditorInfo.emojiCompatMetadataVersion
     val replaceAll = activeEditorInfo.emojiCompatReplaceAll
     val emojiCompatInstance by FlorisEmojiCompat.getAsFlow(replaceAll).collectAsState()
-    val emojiMappings = remember(emojiCompatInstance, fullEmojiMappings, metadataVersion, systemFontPaint) {
-        fullEmojiMappings.byCategory.mapValues { (_, emojiSetList) ->
+    fun supportedEmojiMappings(source: EmojiDataByCategory): EmojiDataByCategory {
+        return source.mapValues { (_, emojiSetList) ->
             emojiSetList.mapNotNull { emojiSet ->
                 emojiSet.emojis.filter { emoji ->
                     // ROADMAP §6 N17.1 — defensive guard against empty
@@ -181,6 +206,20 @@ fun EmojiPaletteView(
             }
         }
     }
+    val emojiMappings = remember(emojiCompatInstance, fullEmojiMappings, metadataVersion, systemFontPaint) {
+        supportedEmojiMappings(fullEmojiMappings.byCategory)
+    }
+    val supportedSearchMappings = remember(
+        emojiCompatInstance,
+        loadedSearchMappings,
+        metadataVersion,
+        systemFontPaint,
+    ) {
+        loadedSearchMappings.map(::supportedEmojiMappings)
+    }
+    val searchMappings = remember(supportedSearchMappings, emojiMappings) {
+        supportedSearchMappings + emojiMappings
+    }
     val androidKeyguardManager = remember { context.systemService(AndroidKeyguardManager::class) }
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
@@ -197,8 +236,8 @@ fun EmojiPaletteView(
     }
     var recentlyUsedVersion by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
-    val searchResults = remember(emojiMappings, searchQuery) {
-        EmojiSearch.results(emojiMappings, searchQuery)
+    val searchResults = remember(searchMappings, searchQuery) {
+        EmojiSearch.results(searchMappings, searchQuery)
     }
     val scope = rememberCoroutineScope()
 

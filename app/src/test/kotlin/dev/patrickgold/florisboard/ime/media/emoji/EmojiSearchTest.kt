@@ -46,6 +46,37 @@ class EmojiSearchTest : FunSpec({
 
         EmojiSearch.results(recentOnly, "smile") shouldBe emptyList()
     }
+
+    test("search uses enrolled locale fallbacks while preferring the primary locale on ties") {
+        val primary = emojiSet("😀", "same label", "smile")
+        val enrolled = emojiSet("🥳", "same label", "fiesta")
+        val spanishOnly = emojiSet("😄", "cara sonriente", "sonrisa")
+
+        EmojiSearch.results(
+            mappingsByLocale = listOf(
+                emojiMappings(listOf(primary)),
+                emojiMappings(listOf(enrolled, spanishOnly)),
+            ),
+            query = "same label",
+        ).map { it.base().value } shouldContainExactly listOf("😀", "🥳")
+
+        EmojiSearch.results(
+            mappingsByLocale = listOf(
+                emojiMappings(listOf(primary)),
+                emojiMappings(listOf(enrolled, spanishOnly)),
+            ),
+            query = "sonrisa",
+        ).map { it.base().value } shouldContainExactly listOf("😄")
+    }
+
+    test("missing locale mappings degrade to later fallbacks") {
+        val fallback = emojiSet("😀", "cara sonriente", "sonrisa")
+
+        EmojiSearch.results(
+            mappingsByLocale = listOf(emptyMap(), emojiMappings(listOf(fallback))),
+            query = "sonrisa",
+        ).map { it.base().value } shouldContainExactly listOf("😀")
+    }
 })
 
 private fun emojiMappings(sets: List<EmojiSet>): EmojiDataByCategory {

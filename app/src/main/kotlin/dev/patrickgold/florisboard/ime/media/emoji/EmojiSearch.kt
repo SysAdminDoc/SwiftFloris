@@ -19,6 +19,10 @@ package dev.patrickgold.florisboard.ime.media.emoji
 import java.util.Locale
 
 object EmojiSearch {
+    internal const val MaxLocaleMappings = 8
+    private const val MAX_SEARCH_MAPPINGS = MaxLocaleMappings + 1
+    private const val MAX_EMOJI_SETS_PER_LOCALE = 4096
+    private const val MAX_INDEXED_EMOJI_VALUES = 4096
     private const val DEFAULT_MAX_RESULTS = 96
 
     /**
@@ -36,23 +40,56 @@ object EmojiSearch {
         customTagStore: CustomEmojiTagStore? = null,
         maxResults: Int = DEFAULT_MAX_RESULTS,
     ): List<EmojiSet> {
+        return results(
+            mappingsByLocale = listOf(mappings),
+            query = query,
+            customTagStore = customTagStore,
+            maxResults = maxResults,
+        )
+    }
+
+    /**
+     * Searches locale mappings in priority order. The active subtype's primary locale should be first, followed by
+     * its secondary locales and other enrolled subtype locales; the root mapping can be appended as the final
+     * fallback. A value is emitted once, while the best matching locale annotation wins its score and locale tie-break.
+     */
+    fun results(
+        mappingsByLocale: List<EmojiDataByCategory>,
+        query: String,
+        customTagStore: CustomEmojiTagStore? = null,
+        maxResults: Int = DEFAULT_MAX_RESULTS,
+    ): List<EmojiSet> {
         val normalizedQuery = query.normalizedForEmojiSearch()
         if (normalizedQuery.isBlank() || maxResults <= 0) return emptyList()
 
-        return mappings.asSequence()
-            .filter { (category, _) -> category != EmojiCategory.RECENTLY_USED }
-            .flatMap { (_, emojiSets) -> emojiSets.asSequence() }
-            .distinctBy { emojiSet -> emojiSet.base().value }
-            .mapNotNull { emojiSet ->
-                val score = score(emojiSet, normalizedQuery, customTagStore)
-                    ?: return@mapNotNull null
-                ScoredEmojiSet(emojiSet, score)
+        val ranking = compareBy<ScoredEmojiSet> { it.score }
+            .thenBy { it.localePriority }
+            .thenBy { it.emojiSet.base().name }
+            .thenBy { it.emojiSet.base().value }
+        val bestByValue = LinkedHashMap<String, ScoredEmojiSet>()
+        mappingsByLocale
+            .asSequence()
+            .take(MAX_SEARCH_MAPPINGS)
+            .forEachIndexed { localePriority, mappings ->
+                mappings.asSequence()
+                    .filter { (category, _) -> category != EmojiCategory.RECENTLY_USED }
+                    .flatMap { (_, emojiSets) -> emojiSets.asSequence() }
+                    .take(MAX_EMOJI_SETS_PER_LOCALE)
+                    .forEach { emojiSet ->
+                        val value = emojiSet.base().value
+                        val score = score(emojiSet, normalizedQuery, customTagStore) ?: return@forEach
+                        val candidate = ScoredEmojiSet(emojiSet, score, localePriority)
+                        val existing = bestByValue[value]
+                        if (
+                            existing == null && bestByValue.size < MAX_INDEXED_EMOJI_VALUES ||
+                            existing != null && ranking.compare(candidate, existing) < 0
+                        ) {
+                            bestByValue[value] = candidate
+                        }
+                    }
             }
-            .sortedWith(
-                compareBy<ScoredEmojiSet> { it.score }
-                    .thenBy { it.emojiSet.base().name }
-                    .thenBy { it.emojiSet.base().value },
-            )
+        return bestByValue.values
+            .sortedWith(ranking)
             .take(maxResults)
             .map { it.emojiSet }
             .toList()
@@ -96,6 +133,7 @@ object EmojiSearch {
     private data class ScoredEmojiSet(
         val emojiSet: EmojiSet,
         val score: Int,
+        val localePriority: Int,
     )
 }
 
