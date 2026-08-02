@@ -30,11 +30,11 @@ def write_fixture(root: Path) -> None:
             kotlin = "2.4.0"
             ksp = "2.3.9"
             mikepenz-aboutlibraries = "15.0.3"
-            kotest = "6.1.11"
+            kotest = "6.2.3"
             robolectric = "4.16.1"
-            roborazzi = "1.64.0"
+            roborazzi = "1.70.0"
             sqlcipher-android = "4.17.0"
-            tink-android = "1.22.0"
+            tink-android = "1.23.0"
             """
         ).strip()
         + "\n",
@@ -69,14 +69,14 @@ def write_fixture(root: Path) -> None:
             ![Version](https://img.shields.io/badge/version-v1.9.54-blue)
             | Area | What's in v1.9.54 | Privacy posture |
             |------|-------------------|-----------------|
-            dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.64.0
+            dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.70.0
             - Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3.
             - AGP 9.2.1, Gradle 9.6.1, JDK 21.
-            - KSP 2.3.9, Room 2.8.4, SQLCipher 4.17.0, Tink Android 1.22.0.
-            - Kotest 6.1.11 unit-test runner; Roborazzi 1.64.0 and Robolectric 4.16.1 for regressions.
+            - KSP 2.3.9, Room 2.8.4, SQLCipher 4.17.0, Tink Android 1.23.0.
+            - Kotest 6.2.3 unit-test runner; Roborazzi 1.70.0 and Robolectric 4.16.1 for regressions.
             - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available).
             # Gradle 9.6.1 (use the bundled wrapper)
-            - **Visual regression:** Roborazzi 1.64.0, plugin alias active.
+            - **Visual regression:** Roborazzi 1.70.0, plugin alias active.
             Current release: **v1.9.54**
             """
         ).strip()
@@ -86,7 +86,7 @@ def write_fixture(root: Path) -> None:
     (root / "docs" / "SECURITY.md").write_text(
         dedent(
             """
-            `TinkStringPreferenceCrypto` uses Tink Android `1.22.0`, creates keys.
+            `TinkStringPreferenceCrypto` uses Tink Android `1.23.0`, creates keys.
             As of SQLCipher 4.17.0, Zetetic documents the provider matrix.
             """
         ).strip()
@@ -191,7 +191,7 @@ def main() -> int:
 
         readme = fixture / "README.md"
         readme.write_text(
-            readme.read_text(encoding="utf-8").replace("Roborazzi 1.64.0 and", "Roborazzi 1.63.0 and"),
+            readme.read_text(encoding="utf-8").replace("Roborazzi 1.70.0 and", "Roborazzi 1.69.0 and"),
             encoding="utf-8",
         )
         failing = run_checker(fixture)
@@ -215,7 +215,7 @@ def main() -> int:
         write_fixture(fixture)
         security = fixture / "docs" / "SECURITY.md"
         security.write_text(
-            security.read_text(encoding="utf-8").replace("Tink Android `1.22.0`", "Tink Android `1.21.0`"),
+            security.read_text(encoding="utf-8").replace("Tink Android `1.23.0`", "Tink Android `1.22.0`"),
             encoding="utf-8",
         )
         failing = run_checker(fixture)

@@ -5,3 +5,4 @@
 - Retain bounded, privacy-gated glide alternatives for unchanged committed words and restore them when the cursor returns to the word.
 - Search emoji across the active and enrolled subtype locales with ordered fallback matching and bounded deduplication.
 - Expand headless settings screenshot coverage across compact, wide-landscape, RTL, and 200% font-scale states, with shared loading/error/empty semantics and production color contrast checks.
+- Refresh Tink to 1.23.0, Roborazzi to 1.70.0, and Kotest to 6.2.3 with the existing verification gates retained.

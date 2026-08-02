@@ -56,6 +56,8 @@ import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
 import dev.patrickgold.florisboard.ime.mcp.DaemonKey
 import dev.patrickgold.florisboard.ime.mcp.McpBridgeContract
+import dev.patrickgold.florisboard.ime.mcp.McpConnectionStateStore
+import dev.patrickgold.florisboard.ime.mcp.McpDaemonConnectionState
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.ime.mcp.McpToolDescriptor
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
@@ -100,6 +102,7 @@ class PendingSettingsScreensScreenshotTest {
     @After
     fun tearDown() {
         McpDaemonRegistry.setActive(emptyMap())
+        McpConnectionStateStore.reset()
         AddonInvocationAudit.clear()
         setMcpConsent(AddonConsentState.NEEDS_PROMPT)
     }
@@ -318,6 +321,8 @@ class PendingSettingsScreensScreenshotTest {
                 ),
             ),
         )
+        McpConnectionStateStore.update(calendarKey, McpDaemonConnectionState.Connected)
+        McpConnectionStateStore.update(notesKey, McpDaemonConnectionState.Connected)
     }
 
     private fun setMcpConsent(consent: AddonConsentState) {
