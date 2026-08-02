@@ -57,8 +57,11 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFilesDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.media.emoji.CustomEmojiTagStore
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiPinGroupStore
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache
+import dev.patrickgold.florisboard.snippetManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -306,6 +309,18 @@ fun RestoreScreen() = FlorisScreen {
                     hasLocalStickerPacks = workspaceFilesDir
                         .subDir(LocalStickerPackRepository.StorageDirName)
                         .exists(),
+                    hasSnippets = workspaceFilesDir
+                        .subDir(BackupArchiveStores.SnippetsDirName)
+                        .exists(),
+                    hasHardwareKeyboardLayouts = workspaceFilesDir
+                        .subFile(BackupArchiveStores.HardwareKeyboardLayoutFileName)
+                        .isFile,
+                    hasCustomEmojiTags = workspaceFilesDir
+                        .subFile(BackupArchiveStores.CustomEmojiTagsFileName)
+                        .isFile,
+                    hasEmojiPinGroups = workspaceFilesDir
+                        .subFile(BackupArchiveStores.EmojiPinGroupsFileName)
+                        .isFile,
                     hasClipboardTextItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME).exists(),
                     hasClipboardImageItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME).exists(),
                     hasClipboardVideoItems = clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME).exists(),
@@ -322,6 +337,26 @@ fun RestoreScreen() = FlorisScreen {
             workspace.close()
             throw error
         }
+    }
+
+    fun syncAdditionalRestoreSelection(
+        workspace: CacheManager.BackupAndRestoreWorkspace,
+    ) {
+        val workspaceFilesDir = workspace.outputDir.subDir("files")
+        restoreFilesSelector.selectAvailableAdditionalStores(
+            snippetsAvailable = workspaceFilesDir
+                .subDir(BackupArchiveStores.SnippetsDirName)
+                .exists(),
+            hardwareKeyboardLayoutsAvailable = workspaceFilesDir
+                .subFile(BackupArchiveStores.HardwareKeyboardLayoutFileName)
+                .isFile,
+            customEmojiTagsAvailable = workspaceFilesDir
+                .subFile(BackupArchiveStores.CustomEmojiTagsFileName)
+                .isFile,
+            emojiPinGroupsAvailable = workspaceFilesDir
+                .subFile(BackupArchiveStores.EmojiPinGroupsFileName)
+                .isFile,
+        )
     }
 
     val restoreDataFromFileSystemLauncher = rememberLauncherForActivityResult(
@@ -353,6 +388,7 @@ fun RestoreScreen() = FlorisScreen {
                     } else {
                         val readyWorkspace = prepareRestoreWorkspace(copiedWorkspace)
                         copiedWorkspace = null
+                        syncAdditionalRestoreSelection(readyWorkspace)
                         setRestoreWorkspace(readyWorkspace)
                     }
                 } catch (error: Throwable) {
@@ -408,6 +444,7 @@ fun RestoreScreen() = FlorisScreen {
                                 workspace = encryptedWorkspace,
                                 passphrase = passphrase,
                             )
+                            syncAdditionalRestoreSelection(readyWorkspace)
                             setRestoreWorkspace(readyWorkspace)
                         } catch (error: Throwable) {
                             flogError { error.stackTraceToString() }
@@ -525,6 +562,49 @@ fun RestoreScreen() = FlorisScreen {
                 }
                 srcDir.copyRecursively(dstDir, overwrite = true)
                 evictStickerBitmapCache()
+            }
+        }
+        if (selection.snippets) {
+            val srcDir = workspaceFilesDir.subDir(BackupArchiveStores.SnippetsDirName)
+            val dstDir = context.filesDir.subDir(BackupArchiveStores.SnippetsDirName)
+            restoreSelectedSection(sourceExists = srcDir.exists()) {
+                if (shouldReset) {
+                    dstDir.deleteRecursively()
+                }
+                BackupArchiveStores.copyDirectory(srcDir, dstDir)
+                context.snippetManager().value.loadAll()
+            }
+        }
+        if (selection.hardwareKeyboardLayouts) {
+            val srcFile = workspaceFilesDir.subFile(BackupArchiveStores.HardwareKeyboardLayoutFileName)
+            val dstFile = context.filesDir.subFile(BackupArchiveStores.HardwareKeyboardLayoutFileName)
+            restoreSelectedSection(sourceExists = srcFile.isFile) {
+                if (shouldReset) {
+                    dstFile.delete()
+                }
+                BackupArchiveStores.copyFile(srcFile, dstFile)
+            }
+        }
+        if (selection.customEmojiTags) {
+            val srcFile = workspaceFilesDir.subFile(BackupArchiveStores.CustomEmojiTagsFileName)
+            val dstFile = context.filesDir.subFile(BackupArchiveStores.CustomEmojiTagsFileName)
+            restoreSelectedSection(sourceExists = srcFile.isFile) {
+                if (shouldReset) {
+                    dstFile.delete()
+                }
+                BackupArchiveStores.copyFile(srcFile, dstFile)
+                CustomEmojiTagStore.get(context).reload()
+            }
+        }
+        if (selection.emojiPinGroups) {
+            val srcFile = workspaceFilesDir.subFile(BackupArchiveStores.EmojiPinGroupsFileName)
+            val dstFile = context.filesDir.subFile(BackupArchiveStores.EmojiPinGroupsFileName)
+            restoreSelectedSection(sourceExists = srcFile.isFile) {
+                if (shouldReset) {
+                    dstFile.delete()
+                }
+                BackupArchiveStores.copyFile(srcFile, dstFile)
+                EmojiPinGroupStore.get(context).reload()
             }
         }
         val clipboardManager = context.clipboardManager().value

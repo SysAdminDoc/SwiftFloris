@@ -147,6 +147,36 @@ class BackupRestorePolicyTest : FunSpec({
         ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_nothing_to_restore
     }
 
+    test("archive format accepts legacy and current versions but rejects future versions") {
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(
+                archiveVersion = Backup.LEGACY_ARCHIVE_FORMAT_VERSION,
+            ),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
+            hasRestorableContent = true,
+        ).errorId shouldBe null
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(
+                archiveVersion = Backup.CURRENT_ARCHIVE_FORMAT_VERSION,
+            ),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
+            hasRestorableContent = true,
+        ).errorId shouldBe null
+        BackupRestorePolicy.validateRestoreArchive(
+            metadata = validMetadata.copy(
+                archiveVersion = Backup.CURRENT_ARCHIVE_FORMAT_VERSION + 1,
+            ),
+            currentVersionCode = 1933,
+            minimumVersionCode = Restore.MIN_VERSION_CODE,
+            expectedPackagePrefixes = Restore.ACCEPTED_PACKAGE_PREFIXES,
+            hasRestorableContent = true,
+        ).errorId shouldBe R.string.backup_and_restore__restore__metadata_error_invalid_metadata
+    }
+
     test("restore archive validation accepts both current and legacy application IDs") {
         // The app-ID migration data path: a backup created by the
         // pre-migration install (dev.patrickgold.florisboard[.debug]) must
@@ -330,6 +360,10 @@ class BackupRestorePolicyTest : FunSpec({
         selector.imeKeyboard shouldBe true
         selector.imeTheme shouldBe true
         selector.localStickerPacks shouldBe true
+        selector.snippets shouldBe true
+        selector.hardwareKeyboardLayouts shouldBe true
+        selector.customEmojiTags shouldBe true
+        selector.emojiPinGroups shouldBe true
         selector.clipboardTextItems shouldBe false
         selector.clipboardImageItems shouldBe false
         selector.clipboardVideoItems shouldBe false
@@ -344,6 +378,10 @@ class BackupRestorePolicyTest : FunSpec({
         selector.imeKeyboard shouldBe true
         selector.imeTheme shouldBe true
         selector.localStickerPacks shouldBe true
+        selector.snippets shouldBe true
+        selector.hardwareKeyboardLayouts shouldBe true
+        selector.customEmojiTags shouldBe true
+        selector.emojiPinGroups shouldBe true
         selector.clipboardTextItems shouldBe true
         selector.clipboardImageItems shouldBe true
         selector.clipboardVideoItems shouldBe true
@@ -358,6 +396,10 @@ class BackupRestorePolicyTest : FunSpec({
         selector.imeKeyboard = false
         selector.imeTheme = false
         selector.localStickerPacks = false
+        selector.snippets = false
+        selector.hardwareKeyboardLayouts = false
+        selector.customEmojiTags = false
+        selector.emojiPinGroups = false
         selector.atLeastOneSelected() shouldBe false
         selector.selectAll()
         selector.atLeastOneSelected() shouldBe true

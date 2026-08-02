@@ -40,6 +40,21 @@
         <include
             domain="file"
             path="ime"/>
+        <include
+            domain="file"
+            path="sticker_packs"/>
+        <include
+            domain="file"
+            path="snippets"/>
+        <include
+            domain="file"
+            path="hardware_keyboard_layouts.json"/>
+        <include
+            domain="file"
+            path="custom_emoji_tags.json"/>
+        <include
+            domain="file"
+            path="emoji_pin_groups.json"/>
         <!-- Hard excludes — never let these leave the device via cloud. -->
         <exclude
             domain="database"
@@ -116,6 +131,21 @@
         <include
             domain="file"
             path="ime"/>
+        <include
+            domain="file"
+            path="sticker_packs"/>
+        <include
+            domain="file"
+            path="snippets"/>
+        <include
+            domain="file"
+            path="hardware_keyboard_layouts.json"/>
+        <include
+            domain="file"
+            path="custom_emoji_tags.json"/>
+        <include
+            domain="file"
+            path="emoji_pin_groups.json"/>
         <!-- Even D2D transfer cannot carry these: the wrap key is bound to
              the original device's Android Keystore and the ciphertext is
              undecryptable on the new device. Forcing the user to re-enrol

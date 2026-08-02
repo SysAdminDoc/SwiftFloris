@@ -1679,6 +1679,14 @@
     <string name="backup_and_restore__back_up__files_ime_theme_summary">Installed themes and custom theme extension files</string>
     <string name="backup_and_restore__back_up__files_local_stickers">Local sticker packs</string>
     <string name="backup_and_restore__back_up__files_local_stickers_summary">Stickers copied into SwiftFloris through share or sticker-pack import</string>
+    <string name="backup_and_restore__back_up__files_snippets">Snippets</string>
+    <string name="backup_and_restore__back_up__files_snippets_summary">Imported text shortcuts and their local YAML files</string>
+    <string name="backup_and_restore__back_up__files_hardware_keyboard_layouts">Hardware keyboard layouts</string>
+    <string name="backup_and_restore__back_up__files_hardware_keyboard_layouts_summary">Imported KLC, macOS, and Keyman hardware layouts</string>
+    <string name="backup_and_restore__back_up__files_custom_emoji_tags">Custom emoji tags</string>
+    <string name="backup_and_restore__back_up__files_custom_emoji_tags_summary">Your local keywords attached to emoji</string>
+    <string name="backup_and_restore__back_up__files_emoji_pin_groups">Pinned emoji groups</string>
+    <string name="backup_and_restore__back_up__files_emoji_pin_groups_summary">Your local named groups of pinned emoji</string>
     <string name="backup_and_restore__back_up__files_clipboard_history">Clipboard history</string>
     <string name="backup_and_restore__back_up__files_clipboard_history_summary">Optional clipboard items, including text and saved media clips</string>
     <string name="backup_and_restore__back_up__files_clipboard_history__clipboard_text_items">Text items</string>
@@ -1687,7 +1695,7 @@
     <string name="backup_and_restore__back_up__privacy_title">Local archive under your control</string>
     <string name="backup_and_restore__back_up__privacy_summary">SwiftFloris prepares the archive on-device. Clipboard-bearing backups are passphrase encrypted, sensitive items are skipped, and nothing leaves app-private storage until you save or share it.</string>
     <string name="backup_and_restore__back_up__coverage_title" comment="Card title listing what a manual archive does not contain">What an archive leaves behind</string>
-    <string name="backup_and_restore__back_up__coverage_summary" comment="Card summary listing stores excluded from the manual archive">Learned words, phrase predictions, autocorrect history and the sync identity are never archived: they are personal to this device and their encryption keys cannot leave it. Snippets, custom emoji tags, pinned emoji groups and hardware keyboard layouts are not carried yet either, so export them separately if you need them.</string>
+    <string name="backup_and_restore__back_up__coverage_summary" comment="Card summary listing stores excluded from the manual archive">Learned words, phrase predictions, autocorrect history and the sync identity are never archived: they are personal to this device and their encryption keys cannot leave it.</string>
     <string name="backup_and_restore__back_up__success">Backup archive exported.</string>
     <string name="backup_and_restore__back_up__share_sheet_opened">Backup archive ready to share</string>
     <string name="backup_and_restore__back_up__share_sheet_opened_summary">Complete the share sheet to copy the archive into another app or storage provider.</string>

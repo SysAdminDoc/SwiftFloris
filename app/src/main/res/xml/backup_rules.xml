@@ -8,7 +8,8 @@
     may include names, addresses, codenames, slang, and other PII. Auto
     Backup on these old API levels uploads to the user's Google Drive
     without granular cloud-vs-device-transfer control. This pre-31 file is
-    therefore an allowlist: only JetPref state and files/ime are included.
+    therefore an allowlist: only JetPref state and user-owned customization
+    files are included.
     Learned typing files such as personal n-grams, correction priors, and
     SwiftKey trace logs remain outside those included paths. Android 12+
     cloud and device-transfer rules keep explicit excludes in
@@ -21,4 +22,19 @@
     <include
         domain="file"
         path="ime"/>
+    <include
+        domain="file"
+        path="sticker_packs"/>
+    <include
+        domain="file"
+        path="snippets"/>
+    <include
+        domain="file"
+        path="hardware_keyboard_layouts.json"/>
+    <include
+        domain="file"
+        path="custom_emoji_tags.json"/>
+    <include
+        domain="file"
+        path="emoji_pin_groups.json"/>
 </full-backup-content>

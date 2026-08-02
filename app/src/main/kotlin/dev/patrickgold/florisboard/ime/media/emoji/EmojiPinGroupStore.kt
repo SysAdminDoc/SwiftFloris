@@ -113,6 +113,11 @@ class EmojiPinGroupStore private constructor(
         flush(emptyMap())
     }
 
+    /** Reloads the on-disk store after a portable backup restore. */
+    fun reload() = synchronized(writeLock) {
+        load()
+    }
+
     private fun flush(map: Map<String, List<String>>) {
         try {
             storageFile.parentFile?.mkdirs()

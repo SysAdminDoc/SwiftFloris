@@ -93,6 +93,8 @@ object Backup {
     const val CLIPBOARD_TEXT_ITEMS_JSON_NAME = "clipboard_text_items.json"
     const val CLIPBOARD_IMAGES_JSON_NAME = "clipboard_images.json"
     const val CLIPBOARD_VIDEO_JSON_NAME = "clipboard_video.json"
+    const val LEGACY_ARCHIVE_FORMAT_VERSION = 1
+    const val CURRENT_ARCHIVE_FORMAT_VERSION = 2
 
     fun defaultFileName(
         metadata: Metadata,
@@ -116,6 +118,10 @@ object Backup {
         var imeKeyboard by mutableStateOf(true)
         var imeTheme by mutableStateOf(true)
         var localStickerPacks by mutableStateOf(true)
+        var snippets by mutableStateOf(true)
+        var hardwareKeyboardLayouts by mutableStateOf(true)
+        var customEmojiTags by mutableStateOf(true)
+        var emojiPinGroups by mutableStateOf(true)
         var clipboardTextItems by mutableStateOf(false)
         var clipboardImageItems by mutableStateOf(false)
         var clipboardVideoItems by mutableStateOf(false)
@@ -147,6 +153,10 @@ object Backup {
                 imeKeyboard ||
                 imeTheme ||
                 localStickerPacks ||
+                snippets ||
+                hardwareKeyboardLayouts ||
+                customEmojiTags ||
+                emojiPinGroups ||
                 clipboardTextItems ||
                 clipboardImageItems ||
                 clipboardVideoItems
@@ -157,6 +167,10 @@ object Backup {
             imeKeyboard = imeKeyboard,
             imeTheme = imeTheme,
             localStickerPacks = localStickerPacks,
+            snippets = snippets,
+            hardwareKeyboardLayouts = hardwareKeyboardLayouts,
+            customEmojiTags = customEmojiTags,
+            emojiPinGroups = emojiPinGroups,
             clipboardTextItems = clipboardTextItems,
             clipboardImageItems = clipboardImageItems,
             clipboardVideoItems = clipboardVideoItems,
@@ -175,10 +189,26 @@ object Backup {
             imeKeyboard = true
             imeTheme = true
             localStickerPacks = true
+            snippets = true
+            hardwareKeyboardLayouts = true
+            customEmojiTags = true
+            emojiPinGroups = true
             clipboardTextItems = true
             clipboardImageItems = true
             clipboardVideoItems = true
             updateCheckboxState()
+        }
+
+        fun selectAvailableAdditionalStores(
+            snippetsAvailable: Boolean,
+            hardwareKeyboardLayoutsAvailable: Boolean,
+            customEmojiTagsAvailable: Boolean,
+            emojiPinGroupsAvailable: Boolean,
+        ) {
+            snippets = snippetsAvailable
+            hardwareKeyboardLayouts = hardwareKeyboardLayoutsAvailable
+            customEmojiTags = customEmojiTagsAvailable
+            emojiPinGroups = emojiPinGroupsAvailable
         }
 
         companion object {
@@ -189,6 +219,10 @@ object Backup {
                         selector.imeKeyboard,
                         selector.imeTheme,
                         selector.localStickerPacks,
+                        selector.snippets,
+                        selector.hardwareKeyboardLayouts,
+                        selector.customEmojiTags,
+                        selector.emojiPinGroups,
                         selector.clipboardTextItems,
                         selector.clipboardImageItems,
                         selector.clipboardVideoItems,
@@ -196,14 +230,26 @@ object Backup {
                 },
                 restore = { values ->
                     FilesSelector().apply {
-                        if (values.size == 7) {
+                        if (values.size >= 7) {
                             jetprefDatastore = values[0]
                             imeKeyboard = values[1]
                             imeTheme = values[2]
                             localStickerPacks = values[3]
-                            clipboardTextItems = values[4]
-                            clipboardImageItems = values[5]
-                            clipboardVideoItems = values[6]
+                            if (values.size >= 11) {
+                                snippets = values[4]
+                                hardwareKeyboardLayouts = values[5]
+                                customEmojiTags = values[6]
+                                emojiPinGroups = values[7]
+                                clipboardTextItems = values[8]
+                                clipboardImageItems = values[9]
+                                clipboardVideoItems = values[10]
+                            } else {
+                                // State saved before the four portable stores
+                                // were selectable. Keep their new safe defaults.
+                                clipboardTextItems = values[4]
+                                clipboardImageItems = values[5]
+                                clipboardVideoItems = values[6]
+                            }
                             updateCheckboxState()
                         }
                     }
@@ -217,6 +263,10 @@ object Backup {
         val imeKeyboard: Boolean,
         val imeTheme: Boolean,
         val localStickerPacks: Boolean,
+        val snippets: Boolean,
+        val hardwareKeyboardLayouts: Boolean,
+        val customEmojiTags: Boolean,
+        val emojiPinGroups: Boolean,
         val clipboardTextItems: Boolean,
         val clipboardImageItems: Boolean,
         val clipboardVideoItems: Boolean,
@@ -232,6 +282,11 @@ object Backup {
         val versionCode: Int,
         val versionName: String,
         val timestamp: Long,
+        /**
+         * Portable archive schema version. A missing field is a v1 archive
+         * written before the additional user-owned stores were carried.
+         */
+        val archiveVersion: Int = LEGACY_ARCHIVE_FORMAT_VERSION,
     )
 }
 
@@ -370,6 +425,54 @@ fun BackupScreen() = FlorisScreen {
                         )
                     }
                 }
+                if (selection.snippets) {
+                    val snippetsDir = context.filesDir.subDir(BackupArchiveStores.SnippetsDirName)
+                    if (snippetsDir.exists()) {
+                        BackupArchiveStores.copyDirectory(
+                            snippetsDir,
+                            workspaceFilesDir.subDir(BackupArchiveStores.SnippetsDirName),
+                        )
+                    }
+                }
+                if (selection.hardwareKeyboardLayouts) {
+                    val layoutFile = context.filesDir.subFile(
+                        BackupArchiveStores.HardwareKeyboardLayoutFileName,
+                    )
+                    if (layoutFile.isFile) {
+                        BackupArchiveStores.copyFile(
+                            layoutFile,
+                            workspaceFilesDir.subFile(
+                                BackupArchiveStores.HardwareKeyboardLayoutFileName,
+                            ),
+                        )
+                    }
+                }
+                if (selection.customEmojiTags) {
+                    val tagFile = context.filesDir.subFile(
+                        BackupArchiveStores.CustomEmojiTagsFileName,
+                    )
+                    if (tagFile.isFile) {
+                        BackupArchiveStores.copyFile(
+                            tagFile,
+                            workspaceFilesDir.subFile(
+                                BackupArchiveStores.CustomEmojiTagsFileName,
+                            ),
+                        )
+                    }
+                }
+                if (selection.emojiPinGroups) {
+                    val pinGroupFile = context.filesDir.subFile(
+                        BackupArchiveStores.EmojiPinGroupsFileName,
+                    )
+                    if (pinGroupFile.isFile) {
+                        BackupArchiveStores.copyFile(
+                            pinGroupFile,
+                            workspaceFilesDir.subFile(
+                                BackupArchiveStores.EmojiPinGroupsFileName,
+                            ),
+                        )
+                    }
+                }
 
                 if (BackupRestorePolicy.requiresPortableEncryption(selection.containsClipboard)) {
                     // Sensitive rows are excluded before the app-private ZIP is
@@ -413,6 +516,7 @@ fun BackupScreen() = FlorisScreen {
                     versionCode = BuildConfig.VERSION_CODE,
                     versionName = BuildConfig.VERSION_NAME,
                     timestamp = System.currentTimeMillis(),
+                    archiveVersion = Backup.CURRENT_ARCHIVE_FORMAT_VERSION,
                 )
                 workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
                 val plaintextZip = workspace.outputDir.subFile(
@@ -705,6 +809,40 @@ internal fun BackupFilesSelector(
             checked = filesSelector.localStickerPacks,
             text = stringRes(R.string.backup_and_restore__back_up__files_local_stickers),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_local_stickers_summary),
+            enabled = enabled,
+        )
+        CheckboxListItem(
+            onClick = { filesSelector.snippets = !filesSelector.snippets },
+            checked = filesSelector.snippets,
+            text = stringRes(R.string.backup_and_restore__back_up__files_snippets),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_snippets_summary),
+            enabled = enabled,
+        )
+        CheckboxListItem(
+            onClick = { filesSelector.hardwareKeyboardLayouts = !filesSelector.hardwareKeyboardLayouts },
+            checked = filesSelector.hardwareKeyboardLayouts,
+            text = stringRes(R.string.backup_and_restore__back_up__files_hardware_keyboard_layouts),
+            secondaryText = stringRes(
+                R.string.backup_and_restore__back_up__files_hardware_keyboard_layouts_summary,
+            ),
+            enabled = enabled,
+        )
+        CheckboxListItem(
+            onClick = { filesSelector.customEmojiTags = !filesSelector.customEmojiTags },
+            checked = filesSelector.customEmojiTags,
+            text = stringRes(R.string.backup_and_restore__back_up__files_custom_emoji_tags),
+            secondaryText = stringRes(
+                R.string.backup_and_restore__back_up__files_custom_emoji_tags_summary,
+            ),
+            enabled = enabled,
+        )
+        CheckboxListItem(
+            onClick = { filesSelector.emojiPinGroups = !filesSelector.emojiPinGroups },
+            checked = filesSelector.emojiPinGroups,
+            text = stringRes(R.string.backup_and_restore__back_up__files_emoji_pin_groups),
+            secondaryText = stringRes(
+                R.string.backup_and_restore__back_up__files_emoji_pin_groups_summary,
+            ),
             enabled = enabled,
         )
 

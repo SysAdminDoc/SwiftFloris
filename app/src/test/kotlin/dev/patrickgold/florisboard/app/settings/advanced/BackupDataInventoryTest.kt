@@ -54,6 +54,20 @@ class BackupDataInventoryTest : FunSpec({
             .toSet()
     }
 
+    fun includesIn(xml: String, ruleSet: String): Set<Pair<String, String>> {
+        val section = Regex("<$ruleSet>(.*?)</$ruleSet>", RegexOption.DOT_MATCHES_ALL)
+            .find(xml)
+            ?.groupValues
+            ?.get(1)
+            ?: error("<$ruleSet> block missing")
+        return Regex(
+            """<include\s+domain="([^"]+)"\s+path="([^"]+)"\s*/>""",
+            RegexOption.DOT_MATCHES_ALL,
+        ).findAll(section.replace(Regex("\\s+"), " "))
+            .map { it.groupValues[1] to it.groupValues[2] }
+            .toSet()
+    }
+
     /** WAL / SHM / journal companions are rule detail, not separate stores. */
     fun canonical(domain: String, path: String): Pair<String, String> {
         if (domain != "database") return domain to path
@@ -90,12 +104,36 @@ class BackupDataInventoryTest : FunSpec({
 
         // The old rule file has no <exclude> support worth relying on, so it must be an allowlist
         // of included stores only.
+        val included = setOf(
+            "root" to "jetpref_datastore",
+            "file" to "ime",
+            "file" to "sticker_packs",
+            "file" to "snippets",
+            "file" to "hardware_keyboard_layouts.json",
+            "file" to "custom_emoji_tags.json",
+            "file" to "emoji_pin_groups.json",
+        )
         val heldBack = BackupDataInventory.entries
             .filter { it.disposition != BackupDisposition.Included }
             .map { it.domain.xmlName to it.path }
             .toSet()
         includes.intersect(heldBack).shouldBeEmpty()
-        includes shouldContainExactlyInAnyOrder setOf("root" to "jetpref_datastore", "file" to "ime")
+        includes shouldContainExactlyInAnyOrder included
+    }
+
+    test("Android 12+ include rules carry every manual included store") {
+        val expected = setOf(
+            "root" to "jetpref_datastore",
+            "file" to "ime",
+            "file" to "sticker_packs",
+            "file" to "snippets",
+            "file" to "hardware_keyboard_layouts.json",
+            "file" to "custom_emoji_tags.json",
+            "file" to "emoji_pin_groups.json",
+        )
+        val xml = readRules("data_extraction_rules.xml")
+        includesIn(xml, "cloud-backup") shouldContainExactlyInAnyOrder expected
+        includesIn(xml, "device-transfer") shouldContainExactlyInAnyOrder expected
     }
 
     test("every manual archive section maps to at least one inventory entry") {
@@ -103,15 +141,7 @@ class BackupDataInventoryTest : FunSpec({
     }
 
     test("stores the archive does not carry are enumerated rather than assumed") {
-        BackupDataInventory.notYetCovered().map { it.id } shouldContainExactlyInAnyOrder listOf(
-            "snippets",
-            "hardware_keyboard_layouts",
-            "custom_emoji_tags",
-            "emoji_pin_groups",
-        )
-        BackupDataInventory.notYetCovered().forEach { entry ->
-            entry.section shouldBe null
-        }
+        BackupDataInventory.notYetCovered().shouldBeEmpty()
     }
 
     test("sensitive exclusions all carry an explicit Android rule") {

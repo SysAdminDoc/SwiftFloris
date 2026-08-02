@@ -153,6 +153,7 @@ class BenchmarkBackupRestoreActivity : ComponentActivity() {
                 versionCode = BuildConfig.VERSION_CODE,
                 versionName = BuildConfig.VERSION_NAME,
                 timestamp = System.currentTimeMillis(),
+                archiveVersion = Backup.CURRENT_ARCHIVE_FORMAT_VERSION,
             )
             workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
             workspace.zipFile = workspace.outputDir.subFile(Backup.defaultFileName(workspace.metadata))

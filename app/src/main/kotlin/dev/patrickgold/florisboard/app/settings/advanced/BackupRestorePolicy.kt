@@ -69,11 +69,19 @@ internal object BackupRestorePolicy {
         hasClipboardTextItems: Boolean,
         hasClipboardImageItems: Boolean,
         hasClipboardVideoItems: Boolean,
+        hasSnippets: Boolean = false,
+        hasHardwareKeyboardLayouts: Boolean = false,
+        hasCustomEmojiTags: Boolean = false,
+        hasEmojiPinGroups: Boolean = false,
     ): Boolean {
         return hasJetprefDatastore ||
             hasImeKeyboard ||
             hasImeTheme ||
             hasLocalStickerPacks ||
+            hasSnippets ||
+            hasHardwareKeyboardLayouts ||
+            hasCustomEmojiTags ||
+            hasEmojiPinGroups ||
             hasClipboardTextItems ||
             hasClipboardImageItems ||
             hasClipboardVideoItems
@@ -87,7 +95,10 @@ internal object BackupRestorePolicy {
         hasRestorableContent: Boolean,
     ): RestoreArchiveValidation {
         val errorId = when {
-            metadata.packageName.isBlank() || metadata.versionCode < minimumVersionCode -> {
+            metadata.packageName.isBlank() ||
+                metadata.versionCode < minimumVersionCode ||
+                metadata.archiveVersion !in
+                Backup.LEGACY_ARCHIVE_FORMAT_VERSION..Backup.CURRENT_ARCHIVE_FORMAT_VERSION -> {
                 R.string.backup_and_restore__restore__metadata_error_invalid_metadata
             }
             !hasRestorableContent -> {

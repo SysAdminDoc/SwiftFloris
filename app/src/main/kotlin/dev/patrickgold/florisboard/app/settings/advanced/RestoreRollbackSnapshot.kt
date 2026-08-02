@@ -24,10 +24,13 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileInfo
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFilesDatabase
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
+import dev.patrickgold.florisboard.ime.media.emoji.CustomEmojiTagStore
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiPinGroupStore
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionManager
+import dev.patrickgold.florisboard.snippetManager
 import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
 import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
 import dev.patrickgold.jetpref.datastore.runtime.ImportStrategy
@@ -54,6 +57,10 @@ internal class RestoreRollbackSnapshot private constructor(
     private val keyboardDirExisted: Boolean,
     private val themeDirExisted: Boolean,
     private val stickerDirExisted: Boolean,
+    private val snippetsDirExisted: Boolean,
+    private val hardwareKeyboardLayoutsFileExisted: Boolean,
+    private val customEmojiTagsFileExisted: Boolean,
+    private val emojiPinGroupsFileExisted: Boolean,
 ) : Closeable {
     companion object {
         private const val SnapshotRootName = "restore-rollback"
@@ -61,6 +68,10 @@ internal class RestoreRollbackSnapshot private constructor(
         private const val KeyboardDirName = "keyboard"
         private const val ThemeDirName = "theme"
         private const val StickerDirName = "stickers"
+        private const val SnippetsDirName = "snippets"
+        private const val HardwareKeyboardLayoutsFileName = "hardware-keyboard-layouts.json"
+        private const val CustomEmojiTagsFileName = "custom-emoji-tags.json"
+        private const val EmojiPinGroupsFileName = "emoji-pin-groups.json"
         private const val ClipboardDirName = "clipboard"
         private const val ClipboardHistoryName = "history.json"
         private const val ClipboardFileInfoName = "file-info.json"
@@ -104,6 +115,32 @@ internal class RestoreRollbackSnapshot private constructor(
                         source = LocalStickerPackRepository.storageDir(context),
                         target = snapshotRoot.subDir(StickerDirName),
                     )
+                    val snippetsExisted = captureDirectory(
+                        selected = selection.snippets,
+                        source = context.filesDir.subDir(BackupArchiveStores.SnippetsDirName),
+                        target = snapshotRoot.subDir(SnippetsDirName),
+                    )
+                    val hardwareKeyboardLayoutsFileExisted = captureFile(
+                        selected = selection.hardwareKeyboardLayouts,
+                        source = context.filesDir.subFile(
+                            BackupArchiveStores.HardwareKeyboardLayoutFileName,
+                        ),
+                        target = snapshotRoot.subFile(HardwareKeyboardLayoutsFileName),
+                    )
+                    val customEmojiTagsFileExisted = captureFile(
+                        selected = selection.customEmojiTags,
+                        source = context.filesDir.subFile(
+                            BackupArchiveStores.CustomEmojiTagsFileName,
+                        ),
+                        target = snapshotRoot.subFile(CustomEmojiTagsFileName),
+                    )
+                    val emojiPinGroupsFileExisted = captureFile(
+                        selected = selection.emojiPinGroups,
+                        source = context.filesDir.subFile(
+                            BackupArchiveStores.EmojiPinGroupsFileName,
+                        ),
+                        target = snapshotRoot.subFile(EmojiPinGroupsFileName),
+                    )
 
                     if (selection.containsClipboard) {
                         val clipboardDir = snapshotRoot.subDir(ClipboardDirName)
@@ -130,15 +167,28 @@ internal class RestoreRollbackSnapshot private constructor(
                         }
                     }
 
-                    Triple(keyboardExisted, themeExisted, stickerExisted)
+                    CapturedStorePresence(
+                        keyboardDirExisted = keyboardExisted,
+                        themeDirExisted = themeExisted,
+                        stickerDirExisted = stickerExisted,
+                        snippetsDirExisted = snippetsExisted,
+                        hardwareKeyboardLayoutsFileExisted = hardwareKeyboardLayoutsFileExisted,
+                        customEmojiTagsFileExisted = customEmojiTagsFileExisted,
+                        emojiPinGroupsFileExisted = emojiPinGroupsFileExisted,
+                    )
                 }
                 RestoreRollbackSnapshot(
                     context = context.applicationContext,
                     workspace = workspace,
                     selection = selection,
-                    keyboardDirExisted = directoryPresence.first,
-                    themeDirExisted = directoryPresence.second,
-                    stickerDirExisted = directoryPresence.third,
+                    keyboardDirExisted = directoryPresence.keyboardDirExisted,
+                    themeDirExisted = directoryPresence.themeDirExisted,
+                    stickerDirExisted = directoryPresence.stickerDirExisted,
+                    snippetsDirExisted = directoryPresence.snippetsDirExisted,
+                    hardwareKeyboardLayoutsFileExisted =
+                        directoryPresence.hardwareKeyboardLayoutsFileExisted,
+                    customEmojiTagsFileExisted = directoryPresence.customEmojiTagsFileExisted,
+                    emojiPinGroupsFileExisted = directoryPresence.emojiPinGroupsFileExisted,
                 )
             } catch (error: Throwable) {
                 workspace.close()
@@ -155,6 +205,26 @@ internal class RestoreRollbackSnapshot private constructor(
             source.copyRecursively(target, overwrite = true)
             return true
         }
+
+        private fun captureFile(
+            selected: Boolean,
+            source: org.florisboard.lib.kotlin.io.FsFile,
+            target: org.florisboard.lib.kotlin.io.FsFile,
+        ): Boolean {
+            if (!selected || !source.isFile) return false
+            source.copyTo(target, overwrite = true)
+            return true
+        }
+
+        private data class CapturedStorePresence(
+            val keyboardDirExisted: Boolean,
+            val themeDirExisted: Boolean,
+            val stickerDirExisted: Boolean,
+            val snippetsDirExisted: Boolean,
+            val hardwareKeyboardLayoutsFileExisted: Boolean,
+            val customEmojiTagsFileExisted: Boolean,
+            val emojiPinGroupsFileExisted: Boolean,
+        )
     }
 
     private val snapshotRoot: FsDir
@@ -209,6 +279,47 @@ internal class RestoreRollbackSnapshot private constructor(
                     existed = stickerDirExisted,
                 )
                 evictStickerBitmapCache()
+            }
+        }
+        if (selection.snippets) {
+            restoreStep {
+                restoreDirectory(
+                    snapshot = snapshotRoot.subDir(SnippetsDirName),
+                    target = context.filesDir.subDir(BackupArchiveStores.SnippetsDirName),
+                    existed = snippetsDirExisted,
+                )
+                context.snippetManager().value.loadAll()
+            }
+        }
+        if (selection.hardwareKeyboardLayouts) {
+            restoreStep {
+                restoreFile(
+                    snapshot = snapshotRoot.subFile(HardwareKeyboardLayoutsFileName),
+                    target = context.filesDir.subFile(
+                        BackupArchiveStores.HardwareKeyboardLayoutFileName,
+                    ),
+                    existed = hardwareKeyboardLayoutsFileExisted,
+                )
+            }
+        }
+        if (selection.customEmojiTags) {
+            restoreStep {
+                restoreFile(
+                    snapshot = snapshotRoot.subFile(CustomEmojiTagsFileName),
+                    target = context.filesDir.subFile(BackupArchiveStores.CustomEmojiTagsFileName),
+                    existed = customEmojiTagsFileExisted,
+                )
+                CustomEmojiTagStore.get(context).reload()
+            }
+        }
+        if (selection.emojiPinGroups) {
+            restoreStep {
+                restoreFile(
+                    snapshot = snapshotRoot.subFile(EmojiPinGroupsFileName),
+                    target = context.filesDir.subFile(BackupArchiveStores.EmojiPinGroupsFileName),
+                    existed = emojiPinGroupsFileExisted,
+                )
+                EmojiPinGroupStore.get(context).reload()
             }
         }
         if (selection.containsClipboard) {
@@ -266,6 +377,19 @@ internal class RestoreRollbackSnapshot private constructor(
         }
         if (existed) {
             snapshot.copyRecursively(target, overwrite = true)
+        }
+    }
+
+    private fun restoreFile(
+        snapshot: org.florisboard.lib.kotlin.io.FsFile,
+        target: org.florisboard.lib.kotlin.io.FsFile,
+        existed: Boolean,
+    ) {
+        check(target.delete() || !target.exists()) {
+            "Could not clear restore target before rollback."
+        }
+        if (existed) {
+            snapshot.copyTo(target, overwrite = true)
         }
     }
 
