@@ -14,20 +14,42 @@ import android.content.Context
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.importing.ImportDiagnostics
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.InputStream
 
-class SnippetManager(private val context: Context) {
+class SnippetManager internal constructor(private val filesDir: File) {
+
+    constructor(context: Context) : this(context.filesDir)
+
+    private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val initializationJob: Job by lazy {
+        ioScope.launch {
+            loadAll()
+        }
+    }
 
     private val _snippets = MutableStateFlow<List<EspansoMatch>>(emptyList())
     val snippets: StateFlow<List<EspansoMatch>> = _snippets.asStateFlow()
 
     private val snippetsDir: File
-        get() = File(context.filesDir, "snippets").also { it.mkdirs() }
+        get() = File(filesDir, "snippets").also { it.mkdirs() }
+
+    /**
+     * Loads persisted snippets for IME use without requiring the Settings screen to be opened.
+     *
+     * The returned job is shared so repeated application startup calls do not start concurrent
+     * file scans. Settings can still call [loadAll] when it explicitly refreshes its view.
+     */
+    fun initialize(): Job = initializationJob
 
     fun loadAll() {
         val dir = snippetsDir

@@ -158,6 +158,7 @@ class FlorisApplication : Application() {
         }
         extensionManager.value.init()
         clipboardManager.value.initializeForContext(this)
+        snippetManager.value.initialize()
         DictionaryManager.init(this)
         AdaptiveTouchModel.initialize(this)
     }
