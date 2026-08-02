@@ -8,6 +8,13 @@
     <!-- Permission needed to create notifications on devices running Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- WorkManager declares this optional tracker permission. Scheduled
+         backups deliberately have no network constraint and SwiftFloris ships
+         without network permissions. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="remove"/>
+
     <!-- Permission requested only from the Calendar quick-insert action. Lets
          users insert local agenda event titles + date/time from the smartbar. -->
     <uses-permission android:name="android.permission.READ_CALENDAR"/>

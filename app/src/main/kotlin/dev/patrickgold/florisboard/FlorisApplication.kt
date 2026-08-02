@@ -27,6 +27,7 @@ import android.util.Log
 import androidx.core.os.UserManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceModel
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.app.settings.advanced.ScheduledBackupScheduler
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardManager
 import dev.patrickgold.florisboard.ime.calendar.CalendarQuickInsertManager
 import dev.patrickgold.florisboard.ime.core.SubtypeManager
@@ -161,6 +162,10 @@ class FlorisApplication : Application() {
         snippetManager.value.initialize()
         DictionaryManager.init(this)
         AdaptiveTouchModel.initialize(this)
+        runCatching { ScheduledBackupScheduler.reconcile(this) }
+            .onFailure { error ->
+                flogError { "Scheduled backup work reconciliation failed: ${error.message}" }
+            }
     }
 
     private inner class BootComplete : BroadcastReceiver() {

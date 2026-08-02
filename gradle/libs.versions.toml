@@ -14,6 +14,7 @@ androidx-profileinstaller = "1.4.1"
 androidx-room = "2.8.4"
 androidx-sqlite = "2.6.2"
 androidx-window = "1.5.1"
+androidx-work = "2.11.2"
 cache4k = "0.14.0"
 coil = "3.4.0"
 kotlin = "2.4.0"
@@ -68,6 +69,7 @@ androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
 androidx-window-core = { module = "androidx.window:window-core", version.ref = "androidx-window" }
+androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }
 coil-compose = { module = "io.coil-kt.coil3:coil-compose", version.ref = "coil" }
 coil-gif = { module = "io.coil-kt.coil3:coil-gif", version.ref = "coil" }

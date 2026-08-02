@@ -628,6 +628,7 @@ fun BackupScreen() = FlorisScreen {
             title = stringRes(R.string.backup_and_restore__back_up__files),
             enabled = !isBackupInProgress,
         )
+        ScheduledBackupPanel(context)
     }
 }
 

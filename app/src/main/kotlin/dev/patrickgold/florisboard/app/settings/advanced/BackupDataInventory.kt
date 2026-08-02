@@ -192,6 +192,13 @@ object BackupDataInventory {
             requiresAndroidExclude = true,
         ),
         BackupDataEntry(
+            id = "scheduled_backup_config",
+            domain = BackupDomain.SharedPref,
+            path = "${ScheduledBackupStore.PREFS_FILE_NAME}.xml",
+            disposition = BackupDisposition.SensitiveExcluded,
+            requiresAndroidExclude = true,
+        ),
+        BackupDataEntry(
             id = "personal_dictionary",
             domain = BackupDomain.Database,
             path = "floris_user_dictionary",
