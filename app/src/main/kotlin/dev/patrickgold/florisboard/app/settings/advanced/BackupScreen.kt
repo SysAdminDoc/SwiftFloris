@@ -630,6 +630,13 @@ fun BackupScreen() = FlorisScreen {
             text = stringRes(R.string.backup_and_restore__back_up__privacy_title),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__privacy_summary),
         )
+        // An archive is not a full device image. Name what it leaves behind, from the one
+        // inventory that also drives Android's own backup rules, rather than implying coverage.
+        FlorisInfoCard(
+            modifier = Modifier.padding(8.dp),
+            text = stringRes(R.string.backup_and_restore__back_up__coverage_title),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__coverage_summary),
+        )
         FlorisOutlinedBox(
             modifier = Modifier.defaultFlorisOutlinedBox(),
             title = stringRes(R.string.backup_and_restore__back_up__destination),
