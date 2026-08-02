@@ -68,6 +68,23 @@
     <string name="emoji__search__field_content_description" comment="Accessibility label for the emoji panel search field">Search emoji</string>
     <string name="emoji__search__clear" comment="Accessibility label for clearing the emoji panel search field">Clear emoji search</string>
     <string name="emoji__search__empty" comment="Empty state shown when emoji search has no results">No emojis match this search.</string>
+    <string name="emoji__custom_tag__title" comment="In-keyboard sheet title for adding a custom tag to an emoji. {emoji} is the selected emoji.">Tag {emoji}</string>
+    <string name="emoji__custom_tag__empty" comment="Empty state in the custom emoji tag sheet">No custom tags yet.</string>
+    <string name="emoji__custom_tag__field_placeholder" comment="Text field placeholder for a custom emoji tag">Add a tag</string>
+    <string name="emoji__custom_tag__field_a11y" comment="Accessibility label for the custom emoji tag field">Custom emoji tag</string>
+    <string name="emoji__custom_tag__add" comment="Action for adding a custom emoji tag">Add tag</string>
+    <string name="emoji__custom_tag__remove_short" comment="Short action label shown beside a custom emoji tag">Remove</string>
+    <string name="emoji__custom_tag__remove" comment="Accessibility label for removing a tag from an emoji. {tag} is the tag and {emoji} is the emoji.">Remove {tag} from {emoji}</string>
+    <string name="emoji__custom_tag__error_no_emoji" comment="Custom emoji tag error when no emoji is selected">Choose an emoji first.</string>
+    <string name="emoji__custom_tag__error_blank" comment="Custom emoji tag error when the tag is blank">Enter a tag.</string>
+    <string name="emoji__custom_tag__error_duplicate" comment="Custom emoji tag error when the tag already exists">This emoji already has that tag.</string>
+    <string name="emoji__custom_tag__error_too_many_tags" comment="Custom emoji tag error when the per-emoji tag limit is reached">This emoji has reached its tag limit.</string>
+    <string name="emoji__custom_tag__error_too_many_emoji" comment="Custom emoji tag error when the total tagged emoji limit is reached">The custom emoji limit has been reached.</string>
+    <string name="prefs__media__emoji_tags__title" comment="Preference group title for custom emoji tags">Custom emoji tags</string>
+    <string name="prefs__media__emoji_tags__manage" comment="Preference title for managing custom emoji tags">Manage custom emoji tags</string>
+    <string name="prefs__media__emoji_tags__manage_summary" comment="Preference summary for managing custom emoji tags">Review or remove tags assigned to emoji.</string>
+    <string name="prefs__media__emoji_tags__dialog_title" comment="Dialog title for managing custom emoji tags">Custom emoji tags</string>
+    <string name="prefs__media__emoji_tags__empty" comment="Empty state in the custom emoji tag manager">No custom emoji tags have been added.</string>
     <string name="emoji__pin_group__title" comment="In-keyboard sheet title for pinning an emoji to a named group. {emoji} is the selected emoji.">Pin {emoji} to group</string>
     <string name="emoji__pin_group__existing_empty" comment="Empty state in the pin-to-group sheet when no groups exist yet">No groups yet. Create one below.</string>
     <string name="emoji__pin_group__new_group_placeholder" comment="Text field placeholder in the pin-to-group sheet">Group name</string>

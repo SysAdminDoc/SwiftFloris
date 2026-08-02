@@ -48,6 +48,7 @@ import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material.icons.outlined.PushPin
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material3.ButtonDefaults
@@ -220,6 +221,11 @@ fun EmojiPaletteView(
     val searchMappings = remember(supportedSearchMappings, emojiMappings) {
         supportedSearchMappings + emojiMappings
     }
+    val customEmojiTagStore = remember(context) { CustomEmojiTagStore.get(context) }
+    val emojiTagSheetState = remember(customEmojiTagStore) {
+        EmojiTagSheetState.forStore(customEmojiTagStore)
+    }
+    var customEmojiTagVersion by remember { mutableIntStateOf(0) }
     val androidKeyguardManager = remember { context.systemService(AndroidKeyguardManager::class) }
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
@@ -236,8 +242,12 @@ fun EmojiPaletteView(
     }
     var recentlyUsedVersion by remember { mutableIntStateOf(0) }
     var searchQuery by remember { mutableStateOf("") }
-    val searchResults = remember(searchMappings, searchQuery) {
-        EmojiSearch.results(searchMappings, searchQuery)
+    val searchResults = remember(searchMappings, searchQuery, customEmojiTagVersion) {
+        EmojiSearch.results(
+            mappingsByLocale = searchMappings,
+            query = searchQuery,
+            customTagStore = customEmojiTagStore,
+        )
     }
     val scope = rememberCoroutineScope()
 
@@ -259,6 +269,11 @@ fun EmojiPaletteView(
     fun openPinToGroupSheet(emoji: Emoji) {
         pinToGroupSheetState.open(emoji.value)
         pinSheetVersion++
+    }
+
+    fun openEmojiTagSheet(emoji: Emoji) {
+        emojiTagSheetState.open(emoji.value)
+        customEmojiTagVersion++
     }
 
     @Composable
@@ -291,6 +306,7 @@ fun EmojiPaletteView(
                 recentlyUsedVersion++
             },
             onPinToGroup = ::openPinToGroupSheet,
+            onAddTag = ::openEmojiTagSheet,
         )
     }
 
@@ -653,6 +669,12 @@ fun EmojiPaletteView(
                 }
             },
         )
+        EmojiTagSheet(
+            state = emojiTagSheetState,
+            version = customEmojiTagVersion,
+            onStateChanged = { customEmojiTagVersion++ },
+            onTagged = { customEmojiTagVersion++ },
+        )
     }
 }
 
@@ -666,16 +688,14 @@ private fun EmojiKey(
     onEmojiInput: (Emoji) -> Unit,
     onHistoryAction: () -> Unit,
     onPinToGroup: (Emoji) -> Unit,
+    onAddTag: (Emoji) -> Unit,
 ) {
     val inputFeedbackController = LocalInputFeedbackController.current
     val base = emojiSet.base(withSkinTone = preferredSkinTone)
     val variations = emojiSet.variations(withoutSkinTone = preferredSkinTone)
     var showVariantsBox by remember { mutableStateOf(false) }
     val keyStyle = rememberSnyggThemeQuery(FlorisImeUi.MediaEmojiKey.elementName)
-    val hasLongPressOptions = variations.isNotEmpty() || isPinned || isRecent
-    val longPressLabel = stringRes(
-        if (hasLongPressOptions) R.string.action__more_options else R.string.emoji__pin_group__open,
-    )
+    val longPressLabel = stringRes(R.string.action__more_options)
 
     SnyggBox(FlorisImeUi.MediaEmojiKey.elementName,
         modifier = Modifier
@@ -688,11 +708,7 @@ private fun EmojiKey(
                     true
                 }
                 onLongClick(label = longPressLabel) {
-                    if (hasLongPressOptions) {
-                        showVariantsBox = true
-                    } else {
-                        onPinToGroup(base)
-                    }
+                    showVariantsBox = true
                     true
                 }
             }
@@ -706,11 +722,7 @@ private fun EmojiKey(
                     },
                     onLongPress = {
                         inputFeedbackController.keyLongPress(TextKeyData.UNSPECIFIED)
-                        if (variations.isNotEmpty() || isPinned || isRecent) {
-                            showVariantsBox = true
-                        } else {
-                            onPinToGroup(base)
-                        }
+                        showVariantsBox = true
                     },
                 )
             },
@@ -749,6 +761,10 @@ private fun EmojiKey(
                     onPinToGroup(base)
                     showVariantsBox = false
                 },
+                onAddTag = {
+                    onAddTag(base)
+                    showVariantsBox = false
+                },
                 onDismiss = {
                     showVariantsBox = false
                 },
@@ -764,6 +780,10 @@ private fun EmojiKey(
                 },
                 onPinBaseToGroup = {
                     onPinToGroup(base)
+                    showVariantsBox = false
+                },
+                onAddTag = {
+                    onAddTag(base)
                     showVariantsBox = false
                 },
                 onDismiss = {
@@ -782,6 +802,7 @@ private fun EmojiVariationsPopup(
     emojiCompatInstance: EmojiCompat?,
     onEmojiTap: (Emoji) -> Unit,
     onPinBaseToGroup: () -> Unit,
+    onAddTag: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val emojiKeyHeight = FlorisImeSizing.smartbarHeight
@@ -791,7 +812,7 @@ private fun EmojiVariationsPopup(
         Popup(
             alignment = Alignment.TopCenter,
             offset = with(LocalDensity.current) {
-                val y = -emojiKeyHeight * ceil((variations.size + 1) / 6f)
+                val y = -emojiKeyHeight * ceil((variations.size + 2) / 6f)
                 IntOffset(x = 0, y = y.toPx().toInt())
             },
             onDismissRequest = onDismiss,
@@ -801,6 +822,27 @@ private fun EmojiVariationsPopup(
                 modifier = Modifier
                     .widthIn(max = EmojiBaseWidth * 6),
             ) {
+                val addTagLabel = stringRes(R.string.emoji__custom_tag__add)
+                SnyggBox(
+                    elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
+                    modifier = Modifier
+                        .semantics(mergeDescendants = true) {
+                            role = Role.Button
+                            contentDescription = addTagLabel
+                            onClick(label = addTagLabel) {
+                                onAddTag()
+                                true
+                            }
+                        }
+                        .pointerInput(Unit) { detectTapGestures { onAddTag() } }
+                        .width(EmojiBaseWidth)
+                        .height(emojiKeyHeight),
+                ) {
+                    SnyggIcon(
+                        modifier = Modifier.align(Alignment.Center),
+                        imageVector = Icons.Outlined.Edit,
+                    )
+                }
                 val pinBaseLabel = stringRes(R.string.emoji__pin_group__open)
                 SnyggBox(
                     elementName = FlorisImeUi.MediaEmojiKeyPopupElement.elementName,
@@ -867,6 +909,7 @@ private fun EmojiHistoryPopup(
     isCurrentlyPinned: Boolean,
     onHistoryAction: () -> Unit,
     onPinToGroup: () -> Unit,
+    onAddTag: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val prefs by FlorisPreferenceStore
@@ -912,7 +955,7 @@ private fun EmojiHistoryPopup(
         }
     }
 
-    val numActions = 3 + (if (showMoveLeft) 1 else 0) + (if (showMoveRight) 1 else 0)
+    val numActions = 4 + (if (showMoveLeft) 1 else 0) + (if (showMoveRight) 1 else 0)
     if (visible) {
         Popup(
             alignment = Alignment.TopCenter,
@@ -962,6 +1005,11 @@ private fun EmojiHistoryPopup(
                         },
                     )
                 }
+                Action(
+                    icon = Icons.Outlined.Edit,
+                    label = stringRes(R.string.emoji__custom_tag__add),
+                    action = onAddTag,
+                )
                 Action(
                     icon = Icons.Outlined.Add,
                     label = stringRes(R.string.emoji__pin_group__open),

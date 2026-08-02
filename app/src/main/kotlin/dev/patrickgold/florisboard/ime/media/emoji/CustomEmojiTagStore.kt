@@ -22,6 +22,10 @@ import dev.patrickgold.florisboard.lib.devtools.flogError
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.io.File
+import java.nio.file.AtomicMoveNotSupportedException
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.Locale
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -63,6 +67,9 @@ class CustomEmojiTagStore private constructor(
     /** Return every emoji value that carries at least one user tag. */
     fun taggedEmojiValues(): Set<String> = cache.get().keys
 
+    /** Return all user tags as a stable read-only snapshot for management UI. */
+    fun snapshot(): Map<String, List<String>> = cache.get()
+
     /**
      * Add [tag] to [emojiValue]. No-op if the emoji is already at the
      * per-emoji cap (16) or the total tagged-emoji cap (5,000), or if the
@@ -70,7 +77,8 @@ class CustomEmojiTagStore private constructor(
      * list for that emoji (including a possibly-rejected addition).
      */
     fun addTag(emojiValue: String, tag: String): List<String> = synchronized(writeLock) {
-        val normalised = tag.trim().lowercase().take(MaxTagLength)
+        if (emojiValue.isBlank()) return tagsFor(emojiValue)
+        val normalised = tag.trim().lowercase(Locale.ROOT).take(MaxTagLength)
         if (normalised.isBlank()) return tagsFor(emojiValue)
         val current = cache.get().toMutableMap()
         val existing = current[emojiValue] ?: emptyList()
@@ -89,7 +97,7 @@ class CustomEmojiTagStore private constructor(
      * the store when its tag list becomes empty. Returns the new list.
      */
     fun removeTag(emojiValue: String, tag: String): List<String> = synchronized(writeLock) {
-        val normalised = tag.trim().lowercase()
+        val normalised = tag.trim().lowercase(Locale.ROOT)
         val current = cache.get().toMutableMap()
         val existing = current[emojiValue] ?: return emptyList()
         val updated = existing - normalised
@@ -99,7 +107,7 @@ class CustomEmojiTagStore private constructor(
         return updated
     }
 
-    /** Drop every user tag. Used by Settings → Reset typing learning. */
+    /** Drop every user tag. Used by explicit data reset and restore flows. */
     fun clearAll() = synchronized(writeLock) {
         cache.set(emptyMap())
         flush(emptyMap())
@@ -116,12 +124,22 @@ class CustomEmojiTagStore private constructor(
             val tmp = File(storageFile.parentFile, storageFile.name + ".tmp")
             tmp.writeText(JsonConfig.encodeToString(StoreFile(map)))
             if (!tmp.renameTo(storageFile)) {
-                // Do NOT hand-copy tmp into the live file: a write that throws partway
-                // (low disk, interruption) would truncate/corrupt the previously-good
-                // file, defeating the whole tmp+rename atomicity. Keep the old file
-                // intact; the in-memory cache already holds the new state for this session.
-                flogError { "CustomEmojiTagStore.flush: atomic rename failed; keeping previous tag file" }
-                tmp.delete()
+                // JVM hosts on Windows refuse rename-over-existing. NIO keeps the
+                // replacement staged and never hand-copies over the previous file.
+                try {
+                    Files.move(
+                        tmp.toPath(),
+                        storageFile.toPath(),
+                        StandardCopyOption.ATOMIC_MOVE,
+                        StandardCopyOption.REPLACE_EXISTING,
+                    )
+                } catch (_: AtomicMoveNotSupportedException) {
+                    Files.move(
+                        tmp.toPath(),
+                        storageFile.toPath(),
+                        StandardCopyOption.REPLACE_EXISTING,
+                    )
+                }
             }
         } catch (e: Throwable) {
             flogError { "CustomEmojiTagStore.flush failed: $e" }
@@ -169,6 +187,10 @@ class CustomEmojiTagStore private constructor(
             val file = File(context.applicationContext.filesDir, "custom_emoji_tags.json")
             return CustomEmojiTagStore(file).also { it.load() }
         }
+
+        /** Test-only constructor for in-memory + custom-file use. */
+        internal fun forStorageFile(file: File): CustomEmojiTagStore =
+            CustomEmojiTagStore(file).also { it.load() }
 
         private val JsonConfig = Json {
             ignoreUnknownKeys = true

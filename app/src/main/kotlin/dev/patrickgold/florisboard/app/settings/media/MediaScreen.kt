@@ -48,6 +48,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistory
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiHistoryHelper
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSkinTone
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionType
+import dev.patrickgold.florisboard.ime.media.emoji.CustomEmojiTagStore
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackFailure
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackResult
@@ -80,8 +81,11 @@ fun MediaScreen() = FlorisScreen {
     val prefs by FlorisPreferenceStore
     val context = LocalContext.current
     val userStickerFolderUri by prefs.sticker.userFolderUri.collectAsState()
+    val customEmojiTagStore = remember(context) { CustomEmojiTagStore.get(context) }
 
     var shouldDelete by remember { mutableStateOf<ShouldDelete?>(null) }
+    var showCustomEmojiTags by remember { mutableStateOf(false) }
+    var customEmojiTagsRevision by remember { mutableIntStateOf(0) }
     var localStickerPackRevision by remember { mutableIntStateOf(0) }
     val scope = rememberCoroutineScope()
     val hasLocalStickerPack = remember(localStickerPackRevision) {
@@ -270,6 +274,18 @@ fun MediaScreen() = FlorisScreen {
             )
         }
 
+        PreferenceGroup(title = stringRes(R.string.prefs__media__emoji_tags__title)) {
+            Preference(
+                icon = Icons.Outlined.EmojiSymbols,
+                title = stringRes(R.string.prefs__media__emoji_tags__manage),
+                summary = stringRes(R.string.prefs__media__emoji_tags__manage_summary),
+                onClick = {
+                    showCustomEmojiTags = true
+                    customEmojiTagsRevision++
+                },
+            )
+        }
+
         PreferenceGroup(title = stringRes(R.string.prefs__media__stickers__title)) {
             Preference(
                 icon = Icons.Outlined.FileUpload,
@@ -369,6 +385,13 @@ fun MediaScreen() = FlorisScreen {
                 shouldDelete = null
             }
         },
+    )
+    CustomEmojiTagManagerDialog(
+        visible = showCustomEmojiTags,
+        store = customEmojiTagStore,
+        revision = customEmojiTagsRevision,
+        onChanged = { customEmojiTagsRevision++ },
+        onDismiss = { showCustomEmojiTags = false },
     )
 }
 
