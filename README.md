@@ -186,7 +186,8 @@ Public project information is available in this README, [Security](docs/SECURITY
 - Kotest 6.2.3 unit-test runner; Roborazzi 1.70.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available behind behavior gates).
-- Crowdin pipeline for translations.
+- Crowdin pipeline for translations; translated resources are reviewed and
+  promoted independently from typing-language subtype coverage.
 - No `INTERNET` permission in the manifest (local release gate enforced).
 
 **Module layout**
@@ -303,6 +304,24 @@ Report suspected vulnerabilities through [GitHub Security Advisories](https://gi
 ## Multilingual support
 
 SwiftFloris ships first-class **bilingual subtype presets** for SwiftKey-style EN+ES / EN+FR / EN+DE typing, plus per-token language identification over Latin-script subtypes (EN / ES / FR / DE / IT / PT). The multilingual ranker refuses to autocommit when the two strongest plausible replacement candidates come from different enrolled languages, so cross-language autocorrects stop bleeding into the wrong sentence.
+
+Android UI localization is reported separately from typing support. The English
+`values/` resources are the only currently reviewed UI-complete locale; every
+translated `values-*` directory is explicitly reported as partial/fallback
+until a maintainer completes human review. Run the deterministic local gate
+before release:
+
+```bash
+python scripts/check-locale-coverage.py --check
+python scripts/test-check-locale-coverage.py
+```
+
+The report ratchets existing resource and trust-critical coverage, rejects
+hard-coded permission/privacy/destructive UI copy, and exercises the critical
+screen resource contract with Android's `en-XA` and `ar-XB` pseudolocale
+directions. Subtype presets are counted as typing-language coverage only; they
+do not promote a partial UI locale. A non-English locale may be promoted only
+after human review updates the explicit reviewed-locale policy in the checker.
 
 For non-Latin scripts, SwiftFloris uses each selected subtype's shipped key mappings and Android/Compose text rendering. The bundled Noto Nastaliq Urdu font is available for Urdu subtype key text. Script-specific transliteration and RTL transformation engines are not included in the base IME until they have an end-to-end runtime path and acceptance coverage.
 

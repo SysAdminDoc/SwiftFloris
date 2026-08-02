@@ -175,6 +175,10 @@
     <string name="quick_action__translation_pair_unavailable" comment="Toast shown when the selected translation language pair is not installed or ready">Install a translation addon and language pack to translate selections.</string>
     <string name="quick_action__translation_timeout" comment="Toast shown when an installed translation addon exceeds the quick-action timeout">Translation took too long and was stopped. Your selection was not changed.</string>
     <string name="quick_action__translation_cancelled" comment="Toast shown when a translation quick action is cancelled before completion">Translation was cancelled. Your selection was not changed.</string>
+    <string name="quick_action__insert_task__sensitive_field" comment="Toast shown when task insertion is blocked for a sensitive editor">Sending tasks from sensitive fields is blocked.</string>
+    <string name="quick_action__insert_task__chooser_title" comment="Chooser title for sending the current selection to a task app">Add to tasks</string>
+    <string name="quick_action__insert_task__no_target" comment="Toast shown when no task or note app can receive the selection">Install a task or note app to use this action.</string>
+    <string name="quick_action__insert_calendar_event__permission_required" comment="Toast shown when calendar insertion cannot open because permission is unavailable">Calendar permission is required to insert agenda events.</string>
     <string name="voice_input_setup__title">Set up voice input</string>
     <string name="voice_input_setup__ready_message">Voice input is already available. Return to the keyboard and use the voice action to start dictation.</string>
     <string name="voice_input_setup__not_installed_message">Install an offline voice keyboard such as FUTO Voice Input, WhisperInput, or Whisper, then enable it in Android keyboard settings. SwiftFloris keeps dictation offline by handing voice input to that external keyboard.</string>

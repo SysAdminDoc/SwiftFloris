@@ -217,6 +217,21 @@ if grep -q "reassess Q3 2026" README.md 2>/dev/null; then
   fi
 fi
 
+# --- 6. Trust-critical localization coverage ---
+# Resource coverage is a local, deterministic gate.  It distinguishes the
+# reviewed English UI from partial translation/fallback and keeps existing
+# translated-resource floors from regressing.  The checker emits only keys,
+# counts, and source locations; it never reads user data.
+if command -v python >/dev/null 2>&1; then
+  if python scripts/check-locale-coverage.py --check; then
+    echo "locale coverage: OK"
+  else
+    fail "trust-critical locale coverage gate failed"
+  fi
+else
+  fail "python is required for the trust-critical locale coverage gate"
+fi
+
 # --- Summary ---
 if [ "$errors" -gt 0 ]; then
   echo "release-front-door: FAIL ($errors error(s), $warnings warning(s))"

@@ -193,7 +193,7 @@ sealed class QuickAction {
             ) {
                 android.widget.Toast.makeText(
                     context,
-                    "Sending tasks from sensitive fields is blocked.",
+                    context.getString(R.string.quick_action__insert_task__sensitive_field),
                     android.widget.Toast.LENGTH_SHORT,
                 ).show()
                 return
@@ -210,7 +210,10 @@ sealed class QuickAction {
                 // FLAG_ACTIVITY_NEW_DOCUMENT it needs.
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             }
-            val chooser = android.content.Intent.createChooser(sendIntent, "Add to tasks").apply {
+            val chooser = android.content.Intent.createChooser(
+                sendIntent,
+                context.getString(R.string.quick_action__insert_task__chooser_title),
+            ).apply {
                 addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK)
             }
             try {
@@ -218,7 +221,7 @@ sealed class QuickAction {
             } catch (e: android.content.ActivityNotFoundException) {
                 android.widget.Toast.makeText(
                     context,
-                    "Install a task or note app to use this action.",
+                    context.getString(R.string.quick_action__insert_task__no_target),
                     android.widget.Toast.LENGTH_SHORT,
                 ).show()
             }
@@ -243,7 +246,9 @@ sealed class QuickAction {
             } else if (!CalendarPermissionActivity.launch(context)) {
                 android.widget.Toast.makeText(
                     context,
-                    "Calendar permission is required to insert agenda events.",
+                    context.getString(
+                        R.string.quick_action__insert_calendar_event__permission_required,
+                    ),
                     android.widget.Toast.LENGTH_SHORT,
                 ).show()
             }
