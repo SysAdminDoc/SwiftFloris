@@ -96,6 +96,9 @@
             domain="sharedpref"
             path="clipboard_history_key.xml"/>
         <exclude
+            domain="sharedpref"
+            path="clipboard_media_key.xml"/>
+        <exclude
             domain="file"
             path="clipboard_history"/>
         <!-- Learned typing patterns — plaintext n-gram stores and trace logs. -->
@@ -189,6 +192,9 @@
         <exclude
             domain="sharedpref"
             path="clipboard_history_key.xml"/>
+        <exclude
+            domain="sharedpref"
+            path="clipboard_media_key.xml"/>
         <exclude
             domain="file"
             path="clipboard_history"/>

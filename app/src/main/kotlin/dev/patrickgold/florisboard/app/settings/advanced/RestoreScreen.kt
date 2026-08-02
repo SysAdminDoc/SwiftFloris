@@ -656,6 +656,7 @@ fun RestoreScreen() = FlorisScreen {
                                 source = clipboardFilesDir.subFile(
                                     relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$archivedFileId",
                                 ),
+                                mediaKind = ClipboardFileStorage.MediaKind.IMAGE,
                             )
                             val restoredItem = item.copy(
                                 uri = ContentUris.withAppendedId(
@@ -666,7 +667,7 @@ fun RestoreScreen() = FlorisScreen {
                             ClipboardRestoredFileInfo.create(
                                 restoredItem,
                                 restoredFile.id,
-                                restoredFile.file.length(),
+                                restoredFile.plaintextSize,
                             )?.let(restoredFileInfos::add)
                             restoredItem
                         }
@@ -693,6 +694,7 @@ fun RestoreScreen() = FlorisScreen {
                                 source = clipboardFilesDir.subFile(
                                     relPath = "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$archivedFileId",
                                 ),
+                                mediaKind = ClipboardFileStorage.MediaKind.VIDEO,
                             )
                             val restoredItem = item.copy(
                                 uri = ContentUris.withAppendedId(
@@ -703,7 +705,7 @@ fun RestoreScreen() = FlorisScreen {
                             ClipboardRestoredFileInfo.create(
                                 restoredItem,
                                 restoredFile.id,
-                                restoredFile.file.length(),
+                                restoredFile.plaintextSize,
                             )?.let(restoredFileInfos::add)
                             restoredItem
                         }

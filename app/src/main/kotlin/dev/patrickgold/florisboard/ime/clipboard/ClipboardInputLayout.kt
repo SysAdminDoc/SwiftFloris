@@ -16,13 +16,11 @@
 
 package dev.patrickgold.florisboard.ime.clipboard
 
-import android.content.ContentUris
+import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.media.ThumbnailUtils
-import android.provider.MediaStore
-import android.util.Size
+import android.net.Uri
 import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
@@ -107,7 +105,6 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.ImeUiMode
-import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
@@ -122,7 +119,6 @@ import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
-import java.io.File
 import java.time.Instant
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -483,14 +479,12 @@ fun ClipboardInputLayout(
                     )
                     return@SnyggBox
                 }
-                val id = ContentUris.parseId(uri)
-                val file = ClipboardFileStorage.getFileForId(context, id)
                 val preview by produceState<ClipboardMediaPreviewResult>(
                     initialValue = ClipboardMediaPreviewResult.Loading,
                     key1 = item.type,
-                    key2 = file.absolutePath,
+                    key2 = uri.toString(),
                 ) {
-                    value = loadClipboardMediaPreview(file, item.type)
+                    value = loadClipboardMediaPreview(context, uri, item.type)
                 }
                 when (val result = preview) {
                     ClipboardMediaPreviewResult.Loading -> {
@@ -523,14 +517,12 @@ fun ClipboardInputLayout(
                     )
                     return@SnyggBox
                 }
-                val id = ContentUris.parseId(uri)
-                val file = ClipboardFileStorage.getFileForId(context, id)
                 val preview by produceState<ClipboardMediaPreviewResult>(
                     initialValue = ClipboardMediaPreviewResult.Loading,
                     key1 = item.type,
-                    key2 = file.absolutePath,
+                    key2 = uri.toString(),
                 ) {
-                    value = loadClipboardMediaPreview(file, item.type)
+                    value = loadClipboardMediaPreview(context, uri, item.type)
                 }
                 when (val result = preview) {
                     ClipboardMediaPreviewResult.Loading -> {
@@ -1013,13 +1005,14 @@ private fun ClipTextItemDescription(
 }
 
 private suspend fun loadClipboardMediaPreview(
-    file: File,
+    context: Context,
+    uri: Uri,
     type: ItemType,
 ): ClipboardMediaPreviewResult = withContext(Dispatchers.IO) {
     runCatching {
         when (type) {
-            ItemType.IMAGE -> decodeClipboardImagePreview(file)
-            ItemType.VIDEO -> decodeClipboardVideoPreview(file)
+            ItemType.IMAGE -> decodeClipboardImagePreview(context, uri)
+            ItemType.VIDEO -> decodeClipboardVideoPreview(context, uri)
             ItemType.TEXT -> error("Text clipboard items do not have media previews")
         }
     }.fold(
@@ -1028,45 +1021,57 @@ private suspend fun loadClipboardMediaPreview(
     )
 }
 
-private fun decodeClipboardImagePreview(file: File): ImageBitmap {
-    check(file.exists()) { "Unable to resolve image at ${file.absolutePath}" }
+private fun decodeClipboardImagePreview(context: Context, uri: Uri): ImageBitmap {
     val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    BitmapFactory.decodeFile(file.absolutePath, bounds)
+    context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+        BitmapFactory.decodeFileDescriptor(descriptor.fileDescriptor, null, bounds)
+    } ?: error("Unable to resolve image at $uri")
     val sampleSize = ClipboardPreviewImagePolicy.sampleSizeForPreview(bounds.outWidth, bounds.outHeight)
-    val rawBitmap = BitmapFactory.decodeFile(
-        file.absolutePath,
-        BitmapFactory.Options().apply {
-            inSampleSize = sampleSize
-            inPreferredConfig = Bitmap.Config.ARGB_8888
-        },
-    )
-    return checkNotNull(rawBitmap) { "Unable to decode image at ${file.absolutePath}" }.asImageBitmap()
+    val rawBitmap = context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+        BitmapFactory.decodeFileDescriptor(
+            descriptor.fileDescriptor,
+            null,
+            BitmapFactory.Options().apply {
+                inSampleSize = sampleSize
+                inPreferredConfig = Bitmap.Config.ARGB_8888
+            },
+        )
+    }
+    return checkNotNull(rawBitmap) { "Unable to decode image at $uri" }.asImageBitmap()
 }
 
-private fun decodeClipboardVideoPreview(file: File): ImageBitmap {
-    check(file.exists()) { "Unable to resolve video at ${file.absolutePath}" }
-    val rawBitmap = if (AndroidVersion.ATLEAST_API29_Q) {
-        val bounds = videoPreviewBounds(file)
-        ThumbnailUtils.createVideoThumbnail(file, Size(bounds.width, bounds.height), null)
-    } else {
-        @Suppress("DEPRECATION")
-        ThumbnailUtils.createVideoThumbnail(file.absolutePath, MediaStore.Video.Thumbnails.MINI_KIND)
+@Suppress("DEPRECATION", "NewApi")
+private fun decodeClipboardVideoPreview(context: Context, uri: Uri): ImageBitmap {
+    val rawBitmap = context.contentResolver.openFileDescriptor(uri, "r")?.use { descriptor ->
+        val dataRetriever = MediaMetadataRetriever()
+        try {
+            dataRetriever.setDataSource(descriptor.fileDescriptor)
+            val bounds = videoPreviewBounds(dataRetriever)
+            if (AndroidVersion.ATLEAST_API27_O_MR1) {
+                dataRetriever.getScaledFrameAtTime(
+                    0L,
+                    MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
+                    bounds.width,
+                    bounds.height,
+                )
+            } else {
+                dataRetriever.getFrameAtTime(0L, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            }
+        } finally {
+            dataRetriever.release()
+        }
     }
-    return checkNotNull(rawBitmap) { "Unable to decode video at ${file.absolutePath}" }.asImageBitmap()
+    return checkNotNull(rawBitmap) { "Unable to decode video at $uri" }.asImageBitmap()
 }
 
-private fun videoPreviewBounds(file: File): ClipboardPreviewImagePolicy.PreviewBounds {
-    val dataRetriever = MediaMetadataRetriever()
-    return try {
-        dataRetriever.setDataSource(file.absolutePath)
-        val width = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
-            ?.toIntOrNull() ?: 320
-        val height = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
-            ?.toIntOrNull() ?: 240
-        ClipboardPreviewImagePolicy.scaledPreviewBounds(width, height)
-    } finally {
-        dataRetriever.release()
-    }
+private fun videoPreviewBounds(
+    dataRetriever: MediaMetadataRetriever,
+): ClipboardPreviewImagePolicy.PreviewBounds {
+    val width = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_WIDTH)
+        ?.toIntOrNull() ?: 320
+    val height = dataRetriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_VIDEO_HEIGHT)
+        ?.toIntOrNull() ?: 240
+    return ClipboardPreviewImagePolicy.scaledPreviewBounds(width, height)
 }
 
 internal enum class ClipboardItemDescriptionKind {

@@ -31,6 +31,7 @@ class PortableBackupScreenContractTest : FunSpec({
         source shouldContain "BackupRestorePolicy.requiresPortableEncryption"
         source shouldContain "snapshotHistoryForRestore()"
         source shouldContain "PortableBackupEnvelope.encrypt("
+        source shouldContain "ClipboardFileStorage.copyDecryptedTo("
         source shouldContain "check(plaintextZip.delete())"
         source shouldContain "check(workspace.inputDir.deleteRecursively())"
         source shouldContain "workspace.archiveFile = encryptedArchive"

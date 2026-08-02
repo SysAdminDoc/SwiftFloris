@@ -20,9 +20,10 @@ import android.content.Context
 import android.net.Uri
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
-import org.florisboard.lib.android.readToFile
 import org.florisboard.lib.kotlin.io.FsFile
 import org.florisboard.lib.kotlin.io.subFile
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -45,6 +46,9 @@ object ClipboardFileStorage {
     private val Context.clipboardFilesDir: FsFile
         get() = FsFile(this.noBackupFilesDir, "clipboard_files").also { it.mkdirs() }
 
+    private val Context.clipboardTransientDir: FsFile
+        get() = FsFile(this.cacheDir, "clipboard_media").also { it.mkdirs() }
+
     enum class MediaKind {
         IMAGE,
         VIDEO;
@@ -59,9 +63,15 @@ object ClipboardFileStorage {
     data class RestoredFile(
         val id: Long,
         val file: FsFile,
+        val plaintextSize: Long,
     )
 
-    private fun nextAvailableFile(context: Context): RestoredFile {
+    private data class AvailableFile(
+        val id: Long,
+        val file: FsFile,
+    )
+
+    private fun nextAvailableFile(context: Context): AvailableFile {
         val dir = context.clipboardFilesDir
         var id = idSource.getAndIncrement()
         var file = dir.subFile(id.toString())
@@ -69,7 +79,7 @@ object ClipboardFileStorage {
             id = idSource.getAndIncrement()
             file = dir.subFile(id.toString())
         }
-        return RestoredFile(id, file)
+        return AvailableFile(id, file)
     }
 
     /**
@@ -77,26 +87,32 @@ object ClipboardFileStorage {
      *
      * @param uri The URI
      *
-     * @return The file's name which is a unique long
+     * @return the stored file id and plaintext size
      */
     @Synchronized
-    fun cloneUri(context: Context, uri: Uri, mediaKind: MediaKind): Long {
+    fun cloneUri(context: Context, uri: Uri, mediaKind: MediaKind): RestoredFile {
         // Pick an id that does not already name a stored file. nanoTime() alone is
         // boot-relative and can collide with files written before a reboot, which
         // would silently overwrite an existing clipboard entry; the exists() guard
         // makes the id genuinely unique against what is on disk.
-        val restoredFile = nextAvailableFile(context)
+        val availableFile = nextAvailableFile(context)
         try {
-            context.contentResolver.readToFile(
-                uri,
-                restoredFile.file,
-                mediaKind.maxCloneBytes,
-            )
+            val input = requireNotNull(context.contentResolver.openInputStream(uri)) {
+                "Unable to open clipboard media URI: $uri"
+            }
+            val plaintextSize = input.use {
+                ClipboardMediaEncryption.encrypt(
+                    context = context,
+                    input = it,
+                    target = availableFile.file,
+                    maxPlaintextBytes = mediaKind.maxCloneBytes,
+                )
+            }
+            return RestoredFile(availableFile.id, availableFile.file, plaintextSize)
         } catch (e: Exception) {
-            restoredFile.file.delete()
+            availableFile.file.delete()
             throw e
         }
-        return restoredFile.id
     }
 
     /**
@@ -106,6 +122,7 @@ object ClipboardFileStorage {
         flogDebug(LogTopic.CLIPBOARD) { "Cleaning up $id" }
         val file = context.clipboardFilesDir.subFile(id.toString())
         file.delete()
+        deleteTransientFilesForId(context, id)
     }
 
     fun getFileForId(context: Context, id: Long): FsFile {
@@ -125,15 +142,188 @@ object ClipboardFileStorage {
      * unrelated file already present in a merge restore.
      */
     @Synchronized
-    fun insertFileFromBackup(context: Context, source: FsFile): RestoredFile {
+    fun insertFileFromBackup(
+        context: Context,
+        source: FsFile,
+        mediaKind: MediaKind,
+    ): RestoredFile {
         require(source.isFile) { "Clipboard backup media file is missing." }
-        val restoredFile = nextAvailableFile(context)
+        val availableFile = nextAvailableFile(context)
         try {
-            source.copyTo(restoredFile.file, overwrite = false)
-            return restoredFile
+            val plaintextSize = if (ClipboardMediaEncryption.isEncrypted(source)) {
+                ClipboardMediaEncryption.decrypt(
+                    context = context,
+                    source = source,
+                    target = availableFile.file,
+                    maxPlaintextBytes = mediaKind.maxCloneBytes,
+                )
+            } else {
+                source.inputStream().use {
+                    ClipboardMediaEncryption.encrypt(
+                        context = context,
+                        input = it,
+                        target = availableFile.file,
+                        maxPlaintextBytes = mediaKind.maxCloneBytes,
+                    )
+                }
+            }
+            return RestoredFile(availableFile.id, availableFile.file, plaintextSize)
         } catch (error: Throwable) {
-            restoredFile.file.delete()
+            availableFile.file.delete()
             throw error
+        }
+    }
+
+    /**
+     * Copies media into a portable-backup workspace in plaintext. The caller
+     * immediately seals that workspace inside [PortableBackupEnvelope]; the
+     * app-private workspace is deleted before any SAF/share operation.
+     */
+    fun copyDecryptedTo(
+        context: Context,
+        id: Long,
+        target: FsFile,
+        mediaKind: MediaKind,
+    ): Long {
+        val source = getFileForId(context, id)
+        require(source.isFile) { "Clipboard media file $id is missing." }
+        return try {
+            if (ClipboardMediaEncryption.isEncrypted(source)) {
+                ClipboardMediaEncryption.decrypt(
+                    context = context,
+                    source = source,
+                    target = target,
+                    maxPlaintextBytes = mediaKind.maxCloneBytes,
+                )
+            } else {
+                source.inputStream().use {
+                    ClipboardMediaEncryption.copyPlaintext(
+                        input = it,
+                        target = target,
+                        maxPlaintextBytes = mediaKind.maxCloneBytes,
+                    )
+                }
+            }
+        } catch (error: Throwable) {
+            target.delete()
+            throw error
+        }
+    }
+
+    /** Migrates legacy plaintext media without deleting the last good copy first. */
+    @Synchronized
+    fun migratePlaintextFiles(context: Context) {
+        context.clipboardFilesDir.listFiles()
+            ?.filter { it.isFile && it.name.toLongOrNull() != null }
+            ?.forEach { file ->
+                if (ClipboardMediaEncryption.isEncrypted(file)) return@forEach
+                val replacement = FsFile.createTempFile(
+                    ".${file.name}.encrypted-",
+                    ".tmp",
+                    file.parentFile,
+                )
+                try {
+                    file.inputStream().use {
+                        ClipboardMediaEncryption.encrypt(
+                            context = context,
+                            input = it,
+                            target = replacement,
+                            maxPlaintextBytes = MAX_VIDEO_CLIP_BYTES,
+                        )
+                    }
+                    runCatching {
+                        Files.move(
+                            replacement.toPath(),
+                            file.toPath(),
+                            StandardCopyOption.ATOMIC_MOVE,
+                            StandardCopyOption.REPLACE_EXISTING,
+                        )
+                    }.recoverCatching {
+                        Files.move(
+                            replacement.toPath(),
+                            file.toPath(),
+                            StandardCopyOption.REPLACE_EXISTING,
+                        )
+                    }.getOrThrow()
+                } finally {
+                    replacement.delete()
+                }
+            }
+    }
+
+    /** Creates a seekable, short-lived plaintext copy for a receiving app. */
+    fun openDecryptedTempFile(
+        context: Context,
+        id: Long,
+        mediaKind: MediaKind,
+    ): FsFile {
+        val source = getFileForId(context, id)
+        require(source.isFile) { "Clipboard media file $id is missing." }
+        if (!ClipboardMediaEncryption.isEncrypted(source)) {
+            migratePlaintextFile(context, source)
+        }
+        val tempFile = FsFile.createTempFile(
+            "$id-",
+            ".plain",
+            context.clipboardTransientDir,
+        )
+        return try {
+            ClipboardMediaEncryption.decrypt(
+                context = context,
+                source = source,
+                target = tempFile,
+                maxPlaintextBytes = mediaKind.maxCloneBytes,
+            )
+            tempFile
+        } catch (error: Throwable) {
+            tempFile.delete()
+            throw error
+        }
+    }
+
+    fun cleanupTransientFiles(context: Context) {
+        context.clipboardTransientDir.listFiles()?.forEach { it.delete() }
+    }
+
+    private fun deleteTransientFilesForId(context: Context, id: Long) {
+        context.clipboardTransientDir.listFiles()
+            ?.filter { it.name.startsWith("$id-") }
+            ?.forEach { it.delete() }
+    }
+
+    @Synchronized
+    private fun migratePlaintextFile(context: Context, file: FsFile) {
+        if (ClipboardMediaEncryption.isEncrypted(file)) return
+        val replacement = FsFile.createTempFile(
+            ".${file.name}.encrypted-",
+            ".tmp",
+            file.parentFile,
+        )
+        try {
+            file.inputStream().use {
+                ClipboardMediaEncryption.encrypt(
+                    context = context,
+                    input = it,
+                    target = replacement,
+                    maxPlaintextBytes = MAX_VIDEO_CLIP_BYTES,
+                )
+            }
+            runCatching {
+                Files.move(
+                    replacement.toPath(),
+                    file.toPath(),
+                    StandardCopyOption.ATOMIC_MOVE,
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
+            }.recoverCatching {
+                Files.move(
+                    replacement.toPath(),
+                    file.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING,
+                )
+            }.getOrThrow()
+        } finally {
+            replacement.delete()
         }
     }
 
@@ -144,8 +334,9 @@ object ClipboardFileStorage {
      */
     fun resetClipboardFileStorage(context: Context) {
         context.clipboardFilesDir.listFiles()?.forEach {
-            it.delete()
+            it.deleteRecursively()
         }
+        cleanupTransientFiles(context)
     }
 
 }

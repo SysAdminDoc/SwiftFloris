@@ -26,6 +26,8 @@ import android.content.UriMatcher
 import android.database.Cursor
 import android.net.Uri
 import android.os.ParcelFileDescriptor
+import android.os.Handler
+import android.os.Looper
 import android.provider.MediaStore
 import android.provider.OpenableColumns
 import androidx.exifinterface.media.ExifInterface
@@ -36,6 +38,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
+import java.io.FileNotFoundException
 import org.florisboard.lib.kotlin.tryOrNull
 
 /**
@@ -79,6 +82,9 @@ class ClipboardMediaProvider : ContentProvider() {
     }
 
     fun init() {
+        val appContext = requireNotNull(context)
+        ClipboardFileStorage.cleanupTransientFiles(appContext)
+        ClipboardFileStorage.migratePlaintextFiles(appContext)
         val dao = requireClipboardFilesDao()
         for (clipboardFileInfo in dao.getAll()) {
             cachedFileInfos[clipboardFileInfo.id] = clipboardFileInfo
@@ -150,11 +156,40 @@ class ClipboardMediaProvider : ContentProvider() {
     }
 
     override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
+        if (!mode.startsWith("r")) {
+            throw FileNotFoundException("Clipboard media is read-only")
+        }
+        val mediaKind = when (Matcher.match(uri)) {
+            IMAGE_CLIP_ITEM -> ClipboardFileStorage.MediaKind.IMAGE
+            VIDEO_CLIP_ITEM -> ClipboardFileStorage.MediaKind.VIDEO
+            else -> throw FileNotFoundException("Unknown clipboard media URI: $uri")
+        }
         val id = ContentUris.parseId(uri)
-        val file = ClipboardFileStorage.getFileForId(context!!, id)
-
-        // Nothing has permission to write anyway.
-        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
+        val plaintextFile = try {
+            ClipboardFileStorage.openDecryptedTempFile(
+                context = requireNotNull(context),
+                id = id,
+                mediaKind = mediaKind,
+            )
+        } catch (error: Throwable) {
+            throw FileNotFoundException("Cannot decrypt clipboard media URI: $uri").also {
+                it.initCause(error)
+            }
+        }
+        return try {
+            // The descriptor is seekable for receivers such as video decoders,
+            // but its plaintext backing file is deleted as soon as the grant
+            // closes. Eviction also scans and removes still-open transient files.
+            ParcelFileDescriptor.open(
+                plaintextFile,
+                ParcelFileDescriptor.MODE_READ_ONLY,
+                Handler(Looper.getMainLooper()),
+                ParcelFileDescriptor.OnCloseListener { plaintextFile.delete() },
+            )
+        } catch (error: Throwable) {
+            plaintextFile.delete()
+            throw error
+        }
     }
 
     private fun readImageRotation(context: Context, mediaUri: Uri): Int {
@@ -192,19 +227,24 @@ class ClipboardMediaProvider : ContentProvider() {
                     } else {
                         0
                     }
-                    val id = ClipboardFileStorage.cloneUri(context, mediaUri, mediaKind)
-                    val size = ClipboardFileStorage.getFileForId(context, id).length()
+                    val clonedFile = ClipboardFileStorage.cloneUri(context, mediaUri, mediaKind)
                     val mimeTypes = values.getAsString(Columns.MimeTypes).split(",")
                     val displayName = values.getAsString(OpenableColumns.DISPLAY_NAME)
-                    val fileInfo = ClipboardFileInfo(id, displayName, size, rotation, mimeTypes)
-                    cachedFileInfos[id] = fileInfo
+                    val fileInfo = ClipboardFileInfo(
+                        clonedFile.id,
+                        displayName,
+                        clonedFile.plaintextSize,
+                        rotation,
+                        mimeTypes,
+                    )
+                    cachedFileInfos[clonedFile.id] = fileInfo
                     ioScope.launch {
                         requireClipboardFilesDao().insert(fileInfo)
                     }
                     if (m == IMAGE_CLIPS_TABLE) {
-                        ContentUris.withAppendedId(IMAGE_CLIPS_URI, id)
+                        ContentUris.withAppendedId(IMAGE_CLIPS_URI, clonedFile.id)
                     } else {
-                        ContentUris.withAppendedId(VIDEO_CLIPS_URI, id)
+                        ContentUris.withAppendedId(VIDEO_CLIPS_URI, clonedFile.id)
                     }
                 } catch (e: Exception) {
                     flogError { "Failed to clone clipboard media URI: ${e.message.orEmpty()}" }

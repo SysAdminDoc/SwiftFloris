@@ -57,6 +57,28 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         source shouldNotContain "clipboardFilesDao?.delete(id)"
     }
 
+    test("clipboard media is encrypted before it reaches app-private storage") {
+        val storageSource = locateClipboardFileStorageSource().readText()
+        val cryptoSource = locateClipboardMediaEncryptionSource().readText()
+
+        storageSource shouldContain "ClipboardMediaEncryption.encrypt"
+        storageSource shouldContain "migratePlaintextFiles"
+        storageSource shouldContain "openDecryptedTempFile"
+        storageSource shouldContain "copyDecryptedTo"
+        cryptoSource shouldContain "TinkStringPreferenceCrypto"
+        cryptoSource shouldContain "clipboard_media_key"
+        cryptoSource shouldContain "swiftfloris_clipboard_media_aes_v1"
+    }
+
+    test("clipboard previews consume provider descriptors instead of raw ciphertext files") {
+        val source = locateClipboardInputLayoutSource().readText()
+
+        source shouldContain "openFileDescriptor(uri, \"r\")"
+        source shouldContain "getScaledFrameAtTime"
+        source shouldNotContain "ClipboardFileStorage.getFileForId"
+        source shouldNotContain "BitmapFactory.decodeFile("
+    }
+
     test("history-disabled primary replacement closes only provider-backed media") {
         ClipboardPrimaryClipCleanupPolicy.shouldCloseProviderBackedPrimaryClipUri(
             uriString = "content://${ClipboardMediaProvider.AUTHORITY}/clips/images/7",
@@ -82,7 +104,7 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         source shouldContain "produceState<ClipboardMediaPreviewResult>"
         source shouldContain "withContext(Dispatchers.IO)"
         source shouldContain "ClipboardPreviewImagePolicy.sampleSizeForPreview"
-        source shouldContain "ThumbnailUtils.createVideoThumbnail(file, Size(bounds.width, bounds.height), null)"
+        source shouldContain "MediaMetadataRetriever.OPTION_CLOSEST_SYNC"
         source shouldNotContain "val bitmap = remember(id)"
     }
 
@@ -150,4 +172,22 @@ private fun locateClipboardMediaProviderSource(): File {
     )
     return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
         ?: error("ClipboardMediaProvider.kt not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateClipboardFileStorageSource(): File {
+    val candidates = listOf(
+        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardFileStorage.kt",
+        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardFileStorage.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("ClipboardFileStorage.kt not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateClipboardMediaEncryptionSource(): File {
+    val candidates = listOf(
+        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaEncryption.kt",
+        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaEncryption.kt",
+    )
+    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
+        ?: error("ClipboardMediaEncryption.kt not reachable from working directory ${File(".").absolutePath}")
 }

@@ -1851,7 +1851,7 @@
     <string name="settings__clipboard__history_unencrypted_title" comment="Card title shown when clipboard history cannot be encrypted on this device">Clipboard history is not encrypted</string>
     <string name="settings__clipboard__history_unencrypted_summary" comment="Card summary shown when clipboard history cannot be encrypted on this device">The encryption library could not be loaded on this device, so clipboard history is stored in app-private storage without an extra layer of encryption. It still never leaves this device.</string>
     <string name="settings__clipboard__local_retention_title" comment="Clipboard settings intro card title">Clipboard history stays under your control</string>
-    <string name="settings__clipboard__local_retention_summary" comment="Clipboard settings intro card summary">History, suggestions, size limits, and sensitive-item cleanup are local settings. Use the controls below to decide what SwiftFloris remembers and when it forgets.</string>
+    <string name="settings__clipboard__local_retention_summary" comment="Clipboard settings intro card summary">History and saved media are encrypted at rest on this device. Suggestions, size limits, and sensitive-item cleanup are local settings you control below.</string>
     <string name="pref__clipboard__group_system_clipboard__label">System clipboard sync</string>
     <string name="pref__clipboard__use_internal_clipboard__label">Use internal clipboard</string>
     <string name="pref__clipboard__use_internal_clipboard__summary">Use an internal clipboard instead of the system clipboard</string>

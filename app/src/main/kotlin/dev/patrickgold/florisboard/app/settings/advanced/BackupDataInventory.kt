@@ -185,6 +185,13 @@ object BackupDataInventory {
             requiresAndroidExclude = true,
         ),
         BackupDataEntry(
+            id = "clipboard_media_key",
+            domain = BackupDomain.SharedPref,
+            path = "clipboard_media_key.xml",
+            disposition = BackupDisposition.SensitiveExcluded,
+            requiresAndroidExclude = true,
+        ),
+        BackupDataEntry(
             id = "personal_dictionary",
             domain = BackupDomain.Database,
             path = "floris_user_dictionary",

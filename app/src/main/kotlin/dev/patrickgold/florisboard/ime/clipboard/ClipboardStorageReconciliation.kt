@@ -39,6 +39,10 @@ object ClipboardStorageReconciliation {
     }
 
     fun reconcile(context: Context, historyDao: ClipboardHistoryDao) {
+        // Files created before media encryption must be upgraded before any
+        // provider URI can serve them. The migration keeps the plaintext file
+        // in place until its authenticated encrypted replacement is complete.
+        ClipboardFileStorage.migratePlaintextFiles(context)
         val filesDb = ClipboardFilesDatabase.new(context)
         try {
             val filesDao = filesDb.clipboardFilesDao()
