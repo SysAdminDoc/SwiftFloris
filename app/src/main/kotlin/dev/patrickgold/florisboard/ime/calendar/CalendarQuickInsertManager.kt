@@ -22,7 +22,9 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.database.Cursor
 import android.provider.CalendarContract
+import androidx.annotation.StringRes
 import androidx.core.content.ContextCompat
+import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.keyboardManager
 import kotlinx.coroutines.CoroutineScope
@@ -160,7 +162,9 @@ sealed interface CalendarAgendaPickerState {
     data object Loading : CalendarAgendaPickerState
     data object Empty : CalendarAgendaPickerState
     data class Showing(val events: List<CalendarAgendaEvent>) : CalendarAgendaPickerState
-    data class Error(val message: String) : CalendarAgendaPickerState
+
+    /** [messageResId] is a string resource so the panel follows the app locale. */
+    data class Error(@StringRes val messageResId: Int) : CalendarAgendaPickerState
 }
 
 class CalendarQuickInsertManager(private val context: Context) {
@@ -197,7 +201,7 @@ class CalendarQuickInsertManager(private val context: Context) {
                     }
                 },
                 onFailure = {
-                    CalendarAgendaPickerState.Error("Calendar events could not be loaded.")
+                    CalendarAgendaPickerState.Error(R.string.calendar__panel__error)
                 },
             )
         }

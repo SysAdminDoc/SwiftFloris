@@ -86,7 +86,7 @@ fun CalendarAgendaPickerPanel(
                     SnyggText(text = stringRes(R.string.calendar__panel__empty))
                 }
                 is CalendarAgendaPickerState.Error -> {
-                    SnyggText(text = state.message)
+                    SnyggText(text = stringRes(state.messageResId))
                 }
                 is CalendarAgendaPickerState.Showing -> {
                     LazyColumn(

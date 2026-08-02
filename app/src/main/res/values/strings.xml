@@ -1868,6 +1868,11 @@
     <string name="calendar__panel__title" comment="Title of the in-keyboard calendar agenda picker panel">Calendar</string>
     <string name="calendar__panel__loading" comment="Loading state of the in-keyboard calendar agenda picker panel">Loading calendar events…</string>
     <string name="calendar__panel__empty" comment="Empty state of the in-keyboard calendar agenda picker panel">No upcoming events found for today and the next 7 days.</string>
+    <string name="calendar__panel__error" comment="Error state of the in-keyboard calendar agenda picker panel">Calendar events could not be loaded.</string>
+    <string name="calendar__permission__title" comment="Title of the calendar permission recovery dialog">Calendar access needed</string>
+    <string name="calendar__permission__denied_message" comment="Shown after the user declined the calendar permission prompt once">SwiftFloris reads your upcoming events on this device only, and only while the agenda picker is open. Nothing is uploaded.</string>
+    <string name="calendar__permission__blocked_message" comment="Shown when the calendar permission can no longer be requested from the keyboard">Calendar access is blocked for SwiftFloris, so the prompt can no longer be shown. Grant the calendar permission in app settings to use the agenda picker.</string>
+    <string name="calendar__permission__open_settings_failed" comment="Toast shown when the app settings screen cannot be opened">App settings could not be opened on this device. Grant the calendar permission to SwiftFloris from the system settings app.</string>
 
 
     <!-- Bottom sheet strings -->
