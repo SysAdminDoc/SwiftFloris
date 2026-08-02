@@ -1402,6 +1402,11 @@
     <string name="settings__learned_entries__ngram_summary" comment="Learned n-gram row summary">Language: {language} · Count: {count}</string>
     <string name="settings__learned_entries__remove_title" comment="Confirmation dialog title">Remove learned entry?</string>
     <string name="settings__learned_entries__remove_message" comment="Confirmation dialog message">Remove "{entry}" from on-device learning?</string>
+    <string name="settings__learned_entries__load_failure" comment="Error card title shown when learned entries could not be read">Could not load learned entries</string>
+    <string name="settings__learned_entries__load_failure_summary" comment="Error card summary shown when learned entries could not be read. {error_class} is a technical error name, never a learned word.">Nothing was changed on this device. Retry the read, or reopen this screen after closing the keyboard. Error type: {error_class}</string>
+    <string name="settings__learned_entries__removing" comment="Progress card text while a learned entry is being removed">Removing learned entry</string>
+    <string name="settings__learned_entries__remove_failure" comment="Error card title shown when a learned entry could not be removed">Could not remove learned entry</string>
+    <string name="settings__learned_entries__remove_failure_summary" comment="Error card summary shown when a learned entry could not be removed. {error_class} is a technical error name, never a learned word.">The entry is still stored on this device. Review the error, then select it again to retry. Error type: {error_class}</string>
 
     <string name="settings__gestures__title" comment="Title of Gestures screen">Gestures &amp; Glide typing</string>
     <string name="pref__glide__title" comment="Preference group title">Glide typing</string>
@@ -2154,6 +2159,7 @@
     <string name="action__open_settings">Open settings</string>
     <string name="action__done">Done</string>
     <string name="action__restore">Restore</string>
+    <string name="action__retry">Retry</string>
     <string name="action__save">Save</string>
     <string name="action__select">Select</string>
     <string name="action__select_dir">Select directory</string>

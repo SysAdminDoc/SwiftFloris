@@ -36,12 +36,14 @@ import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.compose.FlorisEmptyState
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
@@ -62,29 +64,56 @@ fun LearnedEntriesScreen() = FlorisScreen {
     var refreshKey by remember { mutableIntStateOf(0) }
     var state by remember { mutableStateOf<LearnedEntriesState>(LearnedEntriesState.Loading) }
     var pendingRemoval by remember { mutableStateOf<LearnedEntryRow?>(null) }
+    var removal by remember { mutableStateOf<LearnedEntryRemoval?>(null) }
 
     LaunchedEffect(refreshKey) {
+        removal = null
         state = LearnedEntriesState.Loading
         state = withContext(Dispatchers.IO) {
-            val words = dictionaryManager.florisUserDictionaryDao()
-                ?.queryAll()
-                .orEmpty()
-                .sortedWith(compareBy<UserDictionaryEntry> { it.locale.orEmpty() }.thenBy { it.word })
-            LearnedEntriesState.Ready(
-                words = words,
-                bigrams = bigramStore.snapshot(),
-                trigrams = trigramStore.snapshot(),
+            LearnedEntriesPolicy.load(
+                readWords = { dictionaryManager.florisUserDictionaryDao()?.queryAll().orEmpty() },
+                readBigrams = { bigramStore.snapshot() },
+                readTrigrams = { trigramStore.snapshot() },
+                onError = { errorClass -> flogError { "Reading learned entries failed: $errorClass" } },
             )
         }
     }
 
     content {
+        when (val current = removal) {
+            null, LearnedEntryRemoval.Success -> Unit
+            LearnedEntryRemoval.InProgress -> FlorisProgressCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__learned_entries__removing),
+            )
+            is LearnedEntryRemoval.Failure -> FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__learned_entries__remove_failure),
+                secondaryText = stringRes(
+                    R.string.settings__learned_entries__remove_failure_summary,
+                    "error_class" to current.errorClass,
+                ),
+            )
+        }
+
         when (val current = state) {
             LearnedEntriesState.Loading -> FlorisProgressCard(
                 modifier = Modifier
                     .padding(16.dp)
                     .defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__learned_entries__loading),
+            )
+            is LearnedEntriesState.Failure -> FlorisErrorCard(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__learned_entries__load_failure),
+                secondaryText = stringRes(
+                    R.string.settings__learned_entries__load_failure_summary,
+                    "error_class" to current.errorClass,
+                ),
+                actionLabel = stringRes(R.string.action__retry),
+                onClick = { refreshKey++ },
             )
             is LearnedEntriesState.Ready -> {
                 val isEmpty = current.words.isEmpty() &&
@@ -173,16 +202,29 @@ fun LearnedEntriesScreen() = FlorisScreen {
                     TextButton(
                         onClick = {
                             pendingRemoval = null
+                            removal = LearnedEntryRemoval.InProgress
                             scope.launch {
-                                withContext(Dispatchers.IO) {
-                                    removeLearnedEntry(
-                                        row = row,
-                                        dictionaryManager = dictionaryManager,
-                                        bigramStore = bigramStore,
-                                        trigramStore = trigramStore,
+                                val outcome = withContext(Dispatchers.IO) {
+                                    LearnedEntriesPolicy.remove(
+                                        operation = {
+                                            removeLearnedEntry(
+                                                row = row,
+                                                dictionaryManager = dictionaryManager,
+                                                bigramStore = bigramStore,
+                                                trigramStore = trigramStore,
+                                            )
+                                        },
+                                        onError = { errorClass ->
+                                            flogError { "Removing a learned entry failed: $errorClass" }
+                                        },
                                     )
                                 }
-                                refreshKey++
+                                removal = outcome
+                                // A failed removal keeps the row on screen; only a success
+                                // needs the list re-read.
+                                if (outcome is LearnedEntryRemoval.Success) {
+                                    refreshKey++
+                                }
                             }
                         },
                     ) {
@@ -197,15 +239,6 @@ fun LearnedEntriesScreen() = FlorisScreen {
             )
         }
     }
-}
-
-private sealed interface LearnedEntriesState {
-    data object Loading : LearnedEntriesState
-    data class Ready(
-        val words: List<UserDictionaryEntry>,
-        val bigrams: List<PersonalBigramStore.LearnedBigram>,
-        val trigrams: List<PersonalTrigramStore.LearnedTrigram>,
-    ) : LearnedEntriesState
 }
 
 private sealed interface LearnedEntryRow {
