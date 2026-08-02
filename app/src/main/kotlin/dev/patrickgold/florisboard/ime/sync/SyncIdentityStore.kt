@@ -18,16 +18,16 @@ package dev.patrickgold.florisboard.ime.sync
 
 import android.content.Context
 import android.os.Build
-import android.util.Base64
 import androidx.annotation.RequiresApi
+import com.google.crypto.tink.Aead
+import com.google.crypto.tink.integration.android.AndroidKeystore
+import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.io.File
 import java.security.KeyFactory
 import java.security.KeyPair
 import java.security.spec.NamedParameterSpec
 import java.security.spec.PKCS8EncodedKeySpec
 import java.security.spec.XECPublicKeySpec
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.json.Json
 
 /**
  * ROADMAP P2 — persistent local sync identity (device id + long-lived
@@ -46,8 +46,14 @@ import kotlinx.serialization.json.Json
  *    never rides into a user-shareable backup zip — devices pair via QR,
  *    they don't clone identities.
  *
- * Files are written atomically (tmp + rename) so a crash mid-write cannot
- * destroy an identity that peers already pinned.
+ * The PKCS#8 private half is wrapped with an AndroidKeystore-held AES-GCM key
+ * (see [SyncIdentityEnvelope]) and every write keeps the previous copy until the
+ * replacement is durable, so neither a crash nor a failed rename can destroy an
+ * identity that peers already pinned. When the wrap key is gone — keystore
+ * invalidation, a restored file, tampering — the store refuses to silently mint a
+ * new identity under the same device id and reports [SyncIdentityResult.RePairRequired]
+ * instead: peers pin (deviceId, publicKey), so a silent re-mint would look like a
+ * working device that can never open an envelope again.
  */
 object SyncIdentityStore {
 
@@ -57,18 +63,18 @@ object SyncIdentityStore {
         val keyPair: KeyPair,
     )
 
-    @Serializable
-    private data class PersistedIdentity(
-        val schema: Int = 1,
-        val deviceId: String,
-        val publicKeyHex: String,
-        val privateKeyPkcs8Base64: String,
-    )
+    /** Outcome of opening the persisted identity. */
+    sealed interface SyncIdentityResult {
+        data class Ready(val identity: SyncIdentity) : SyncIdentityResult
 
-    private val JsonConfig = Json {
-        ignoreUnknownKeys = true
-        explicitNulls = false
-        encodeDefaults = true
+        /** X25519 is unavailable (API < 33) or the identity could not be persisted at all. */
+        data object Unsupported : SyncIdentityResult
+
+        /**
+         * An identity exists but cannot be used. The stored file is left untouched; recovery is
+         * the user's explicit [resetForRePair] followed by re-pairing every peer.
+         */
+        data class RePairRequired(val failure: SyncIdentityFailure) : SyncIdentityResult
     }
 
     private const val SYNC_DIR_NAME = "sync"
@@ -77,35 +83,108 @@ object SyncIdentityStore {
     private const val X25519_ALGORITHM = "X25519"
     private const val PUBKEY_LENGTH = 32
 
+    /** AndroidKeystore alias wrapping the sync identity's private key. */
+    internal const val KEYSTORE_ALIAS = "swiftfloris_sync_identity_key"
+
     private val lock = Any()
 
     /**
      * Load the persisted identity, or mint and persist a new one. Returns
-     * null only when the platform lacks X25519 (API < 33) or persistence
-     * fails — callers surface that as "pairing unavailable".
+     * null when pairing is unavailable *or* when the stored identity needs an explicit
+     * re-pair; call [open] to tell those apart and offer recovery.
      */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    fun getOrCreate(context: Context, deviceId: String): SyncIdentity? = synchronized(lock) {
-        val file = identityFile(context)
-        load(file, deviceId)?.let { return it }
-        return runCatching {
-            val keyPair = SealedBoxCrypto.generateKeyPair()
-            val publicKeyHex = keyPair.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray().toLowerHex()
-            val persisted = PersistedIdentity(
-                deviceId = deviceId,
-                publicKeyHex = publicKeyHex,
-                privateKeyPkcs8Base64 = Base64.encodeToString(keyPair.private.encoded, Base64.NO_WRAP),
-            )
-            writeAtomically(file, JsonConfig.encodeToString(PersistedIdentity.serializer(), persisted))
-            SyncIdentity(deviceId = deviceId, publicKeyHex = publicKeyHex, keyPair = keyPair)
-        }.getOrNull()
+    fun getOrCreate(context: Context, deviceId: String): SyncIdentity? {
+        return (open(context, deviceId) as? SyncIdentityResult.Ready)?.identity
     }
 
-    /** The locally persisted CRDT state from the last reconcile, if any. */
+    /**
+     * Opens the persisted identity, migrating a legacy plaintext file to the wrapped schema
+     * without changing the advertised public key, or mints a fresh identity when none exists.
+     */
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    fun open(context: Context, deviceId: String): SyncIdentityResult = synchronized(lock) {
+        val file = identityFile(context)
+        if (DurableIdentityFile.exists(file)) {
+            var failure: SyncIdentityFailure? = null
+            for (candidate in DurableIdentityFile.readableCopies(file)) {
+                when (val outcome = loadFrom(candidate, deviceId)) {
+                    is LoadOutcome.Loaded -> {
+                        if (candidate != file || outcome.needsRewrap) {
+                            // Either the backup carried the surviving copy or the file is still in
+                            // the plaintext schema; rewrite it wrapped, keeping the same key pair.
+                            persist(file, outcome.identity)
+                        }
+                        return SyncIdentityResult.Ready(outcome.identity)
+                    }
+                    is LoadOutcome.Failed -> failure = failure ?: outcome.failure
+                }
+            }
+            return SyncIdentityResult.RePairRequired(failure ?: SyncIdentityFailure.Corrupt)
+        }
+        return mint(file, deviceId)
+    }
+
+    /**
+     * Discards an unusable identity so a fresh one can be minted. Callers must treat this as
+     * destructive: every peer has to be paired again afterwards.
+     */
+    fun resetForRePair(context: Context): Boolean = synchronized(lock) {
+        return DurableIdentityFile.deleteAll(identityFile(context))
+    }
+
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
+    private fun mint(file: File, deviceId: String): SyncIdentityResult {
+        return runCatching {
+            val keyPair = SealedBoxCrypto.generateKeyPair()
+            val identity = SyncIdentity(
+                deviceId = deviceId,
+                publicKeyHex = keyPair.public.encoded.takeLast(PUBKEY_LENGTH).toByteArray().toLowerHex(),
+                keyPair = keyPair,
+            )
+            persist(file, identity)
+            SyncIdentityResult.Ready(identity)
+        }.getOrElse { error ->
+            flogError { "Could not mint a sync identity: ${error::class.java.simpleName}" }
+            SyncIdentityResult.Unsupported
+        }
+    }
+
+    private fun persist(file: File, identity: SyncIdentity) {
+        DurableIdentityFile.write(
+            target = file,
+            content = SyncIdentityEnvelope.encode(
+                aead = keystoreAead(createIfMissing = true),
+                deviceId = identity.deviceId,
+                publicKeyHex = identity.publicKeyHex,
+                privateKeyPkcs8 = identity.keyPair.private.encoded,
+            ),
+        )
+    }
+
+    private sealed interface LoadOutcome {
+        data class Loaded(val identity: SyncIdentity, val needsRewrap: Boolean) : LoadOutcome
+        data class Failed(val failure: SyncIdentityFailure) : LoadOutcome
+    }
+
+    private fun keystoreAead(createIfMissing: Boolean): Aead {
+        if (createIfMissing && !AndroidKeystore.hasKey(KEYSTORE_ALIAS)) {
+            AndroidKeystore.generateNewAes256GcmKey(KEYSTORE_ALIAS)
+        }
+        return AndroidKeystore.getAead(KEYSTORE_ALIAS)
+    }
+
+    /**
+     * The locally persisted CRDT state from the last reconcile, if any. Falls back to the
+     * write-backup copy so an interrupted save cannot cost the device its merge history.
+     */
     fun loadLocalState(context: Context): PersonalDictionaryCrdt? = synchronized(lock) {
-        val file = stateFile(context)
-        if (!file.isFile) return null
-        return runCatching { PersonalDictionaryCrdt.parse(file.readText(Charsets.UTF_8)) }.getOrNull()
+        for (candidate in DurableIdentityFile.readableCopies(stateFile(context))) {
+            runCatching { PersonalDictionaryCrdt.parse(candidate.readText(Charsets.UTF_8)) }
+                .getOrNull()
+                ?.let { return it }
+        }
+        return null
     }
 
     fun saveLocalState(context: Context, state: PersonalDictionaryCrdt): Boolean = synchronized(lock) {
@@ -115,33 +194,48 @@ object SyncIdentityStore {
         }.getOrDefault(false)
     }
 
+    /**
+     * Reads one identity copy. A device-id mismatch means prefs were reset or restored under a
+     * different identity than the key pair was minted for; peers pin (deviceId, pubkey) pairs from
+     * the QR payload, so it fails closed rather than pretending the identity still matches.
+     */
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
-    private fun load(file: File, expectedDeviceId: String): SyncIdentity? {
-        if (!file.isFile) return null
-        return runCatching {
-            val persisted = JsonConfig.decodeFromString(PersistedIdentity.serializer(), file.readText(Charsets.UTF_8))
-            // A device-id mismatch means prefs were reset/restored under a
-            // different identity than the keypair was minted for; peers pin
-            // (deviceId, pubkey) pairs from the QR payload, so fail closed
-            // and let the caller mint a fresh identity via re-pairing.
-            if (persisted.deviceId != expectedDeviceId) return null
-            if (!persisted.publicKeyHex.matches(Regex("^[0-9a-f]{64}$"))) return null
-            val factory = KeyFactory.getInstance(X25519_ALGORITHM)
-            val privateKey = factory.generatePrivate(
-                PKCS8EncodedKeySpec(Base64.decode(persisted.privateKeyPkcs8Base64, Base64.NO_WRAP)),
+    private fun loadFrom(file: File, expectedDeviceId: String): LoadOutcome {
+        val json = runCatching { file.readText(Charsets.UTF_8) }.getOrElse {
+            return LoadOutcome.Failed(SyncIdentityFailure.Corrupt)
+        }
+        val decoded = try {
+            SyncIdentityEnvelope.decode(
+                aead = keystoreAead(createIfMissing = false),
+                json = json,
+                expectedDeviceId = expectedDeviceId,
             )
+        } catch (error: SyncIdentityDecodeException) {
+            flogError { "Stored sync identity is unusable: ${error.failure}" }
+            return LoadOutcome.Failed(error.failure)
+        } catch (error: Exception) {
+            // A missing keystore alias surfaces here; the wrapped key is unrecoverable either way.
+            flogError { "Sync identity wrap key unavailable: ${error::class.java.simpleName}" }
+            return LoadOutcome.Failed(SyncIdentityFailure.KeyUnavailable)
+        }
+        return runCatching {
+            val factory = KeyFactory.getInstance(X25519_ALGORITHM)
+            val privateKey = factory.generatePrivate(PKCS8EncodedKeySpec(decoded.privateKeyPkcs8))
             val publicKey = factory.generatePublic(
                 XECPublicKeySpec(
                     NamedParameterSpec(X25519_ALGORITHM),
-                    java.math.BigInteger(1, persisted.publicKeyHex.hexToBytes().reversedArray()),
+                    java.math.BigInteger(1, decoded.publicKeyHex.hexToBytes().reversedArray()),
                 ),
             )
-            SyncIdentity(
-                deviceId = persisted.deviceId,
-                publicKeyHex = persisted.publicKeyHex,
-                keyPair = KeyPair(publicKey, privateKey),
+            LoadOutcome.Loaded(
+                identity = SyncIdentity(
+                    deviceId = decoded.deviceId,
+                    publicKeyHex = decoded.publicKeyHex,
+                    keyPair = KeyPair(publicKey, privateKey),
+                ),
+                needsRewrap = decoded.needsRewrap,
             )
-        }.getOrNull()
+        }.getOrElse { LoadOutcome.Failed(SyncIdentityFailure.Corrupt) }
     }
 
     private fun identityFile(context: Context): File = syncDir(context).resolve(IDENTITY_FILE_NAME)
@@ -152,13 +246,6 @@ object SyncIdentityStore {
         context.filesDir.resolve(SYNC_DIR_NAME).also { it.mkdirs() }
 
     private fun writeAtomically(target: File, content: String) {
-        val tmp = File(target.parentFile, "${target.name}.tmp")
-        tmp.writeText(content, Charsets.UTF_8)
-        if (!tmp.renameTo(target)) {
-            // Windows-style rename-over-existing failure path; fall back to
-            // delete + rename so the identity is never half-written.
-            target.delete()
-            check(tmp.renameTo(target)) { "Failed to persist ${target.name}" }
-        }
+        DurableIdentityFile.write(target, content)
     }
 }

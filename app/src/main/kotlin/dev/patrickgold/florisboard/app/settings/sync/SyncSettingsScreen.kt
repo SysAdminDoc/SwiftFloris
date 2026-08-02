@@ -87,6 +87,7 @@ import dev.patrickgold.florisboard.ime.sync.PairingPayloadReceiver
 import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySync
 import dev.patrickgold.florisboard.ime.sync.PersonalDictionarySyncDaoApplier
 import dev.patrickgold.florisboard.ime.sync.SyncChannel
+import dev.patrickgold.florisboard.ime.sync.SyncIdentityFailure
 import dev.patrickgold.florisboard.ime.sync.SyncIdentityStore
 import dev.patrickgold.florisboard.ime.sync.SyncJsonTransferPolicy
 import dev.patrickgold.florisboard.ime.sync.SyncQrCode
@@ -137,6 +138,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     var syncImportedInsertCount by rememberSaveable { mutableStateOf<Int?>(null) }
     var syncImportedUpdateCount by rememberSaveable { mutableStateOf<Int?>(null) }
     var syncImportedDeleteCount by rememberSaveable { mutableStateOf<Int?>(null) }
+    var syncIdentityFailure by remember { mutableStateOf<SyncIdentityFailure?>(null) }
 
     val folderPickedText = stringRes(R.string.settings__sync__folder_selected)
     val manualExportPickedText = stringRes(R.string.settings__sync__manual_export_target_selected)
@@ -155,6 +157,7 @@ fun SyncSettingsScreen() = FlorisScreen {
     val syncPermissionFailedText = stringRes(R.string.settings__sync__permission_failed_toast)
     val syncUnsupportedText = stringRes(R.string.settings__sync__unsupported_toast)
     val syncUnknownError = stringRes(R.string.settings__sync__unknown_error)
+    val syncIdentityResetText = stringRes(R.string.settings__sync__identity_reset_toast)
 
     fun setChannel(channel: SyncChannel) {
         scope.launch { prefs.sync.channelId.set(channel.channelId) }
@@ -173,6 +176,26 @@ fun SyncSettingsScreen() = FlorisScreen {
         syncTransferNotice = SyncTransferNotice.Failure
         syncTransferError = error?.localizedMessage ?: error?.message ?: message
         Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+    }
+
+    /**
+     * Opens the persisted sync identity. A wrap key that no longer decrypts must not silently mint
+     * a replacement: peers pinned the old public key, so the user has to reset and re-pair
+     * deliberately. Returns null once the failure has been surfaced.
+     */
+    fun resolveIdentity(resolvedDeviceId: String): SyncIdentityStore.SyncIdentity? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return null
+        return when (val result = SyncIdentityStore.open(context, resolvedDeviceId)) {
+            is SyncIdentityStore.SyncIdentityResult.Ready -> {
+                syncIdentityFailure = null
+                result.identity
+            }
+            is SyncIdentityStore.SyncIdentityResult.RePairRequired -> {
+                syncIdentityFailure = result.failure
+                null
+            }
+            SyncIdentityStore.SyncIdentityResult.Unsupported -> null
+        }
     }
 
     fun takePersistableUriPermissionOrFail(uri: Uri, flags: Int): Boolean {
@@ -287,7 +310,7 @@ fun SyncSettingsScreen() = FlorisScreen {
         }
         val resolvedClusterId = clusterId.ifBlank { UUID.randomUUID().toString() }
         val resolvedDeviceId = deviceId.ifBlank { UUID.randomUUID().toString() }
-        val identity = SyncIdentityStore.getOrCreate(context, resolvedDeviceId)
+        val identity = resolveIdentity(resolvedDeviceId)
         if (identity == null) {
             failTransfer(syncUnsupportedText)
             return
@@ -346,7 +369,7 @@ fun SyncSettingsScreen() = FlorisScreen {
             failTransfer(syncOpenFailedText)
             return
         }
-        val identity = SyncIdentityStore.getOrCreate(context, resolvedDeviceId)
+        val identity = resolveIdentity(resolvedDeviceId)
         if (identity == null) {
             failTransfer(syncUnsupportedText)
             return
@@ -493,7 +516,7 @@ fun SyncSettingsScreen() = FlorisScreen {
         // The advertised public key MUST be the persisted identity's — the
         // generator's default argument mints a throwaway keypair whose
         // private half nothing could ever use to open an envelope.
-        val identity = SyncIdentityStore.getOrCreate(context, resolvedDeviceId)
+        val identity = resolveIdentity(resolvedDeviceId)
         if (identity == null) {
             Toast.makeText(context, pairingUnsupportedText, Toast.LENGTH_LONG).show()
             return
@@ -513,6 +536,31 @@ fun SyncSettingsScreen() = FlorisScreen {
             text = stringRes(R.string.settings__sync__intro_title),
             secondaryText = stringRes(R.string.settings__sync__intro_summary),
         )
+
+        syncIdentityFailure?.let { failure ->
+            // The private half of the pairing key is gone. Minting a replacement behind the user's
+            // back would leave peers sealing envelopes to a key this device can no longer open, so
+            // recovery is explicit: drop the identity, then pair every device again.
+            FlorisErrorCard(
+                modifier = Modifier.defaultFlorisOutlinedBox(),
+                text = stringRes(R.string.settings__sync__identity_unusable_title),
+                secondaryText = stringRes(
+                    when (failure) {
+                        SyncIdentityFailure.DeviceIdMismatch ->
+                            R.string.settings__sync__identity_device_mismatch_summary
+                        SyncIdentityFailure.Corrupt, SyncIdentityFailure.KeyUnavailable ->
+                            R.string.settings__sync__identity_key_lost_summary
+                    },
+                ),
+                actionLabel = stringRes(R.string.settings__sync__identity_reset_action),
+                onClick = {
+                    SyncIdentityStore.resetForRePair(context)
+                    syncIdentityFailure = null
+                    scope.launch { prefs.sync.pairedDevicesJson.set("") }
+                    Toast.makeText(context, syncIdentityResetText, Toast.LENGTH_LONG).show()
+                },
+            )
+        }
 
         SyncTransferStatusCard(
             notice = syncTransferNotice,
