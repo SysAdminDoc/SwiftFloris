@@ -1,6 +1,6 @@
 # SwiftFloris
 
-![Version](https://img.shields.io/badge/version-v1.9.56-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
+![Version](https://img.shields.io/badge/version-v1.9.57-blue) ![License](https://img.shields.io/badge/license-Apache%202.0-green) ![Platform](https://img.shields.io/badge/platform-Android%208.0+-orange) ![Network](https://img.shields.io/badge/network-none-lightgrey) ![Dictionary imports](https://img.shields.io/badge/dictionary%20imports-local%20files-green)
 
 **SwiftFloris** is a privacy-first Android keyboard, forked from FlorisBoard and pushed toward SwiftKey-class multilingual typing without the cloud. It ships under Apache-2.0, holds no `INTERNET` permission, and binds zero accounts.
 
@@ -37,7 +37,7 @@
 
 ## Highlights
 
-| Area | What's in v1.9.56 | Privacy posture |
+| Area | What's in v1.9.57 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
@@ -348,6 +348,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 
 The full public release stream lives on [GitHub Releases](https://github.com/SysAdminDoc/SwiftFloris/releases).
 
+- **v1.9.57** (2026-08-02) - Privacy and reliability pass: clipboard history is SQLCipher-encrypted at rest with a staged, row-verified migration and an explicit recovery path; the X25519 sync identity is Keystore-wrapped and every write keeps the previous copy until the replacement is durable; MCP daemons expose their real Pending/Connected/Failed/Dead/Disabled binding state with an explicit retry instead of being reported as bound on discovery; glide typing skips its 120k-word build on low-RAM devices and releases everything after an allocation failure; voice-command matching is Unicode-safe across Cyrillic, Arabic, CJK and Turkish; calendar permission denial offers localized retry and guarded app-settings recovery; learned-entry read and delete failures are retryable and announced; shared status cards opt into accessibility live regions; and one data inventory now drives both Android backup rule sets.
 - **v1.9.56** (2026-07-09) - Roadmap hardening: Han database access is serialized, typed text is redacted from logs, SQLCipher/dependency freshness gates are refreshed, sync and translation addon bridges are bounded with typed failure/timeout/cancel paths, runtime addon capability gates reject unsupported engines, and legacy preference migrations now have fixture coverage.
 - **v1.9.55** (2026-07-06) - Smart-compose ghost text now uses a suspend-aware provider/cache path from the NLP worker instead of blocking while reading personal trigram/bigram storage, reducing per-keystroke stalls when heuristic smart compose is enabled.
 - **v1.9.54** (2026-07-02) — Premium polish pass: shared Compose buttons, chips, bottom bars, dropdown-like fields, and long-press icon controls now use consistent 44dp targets, square-radius shapes, ellipsized labels, and safer press handling; first-run setup gained responsive footer wrapping and step state semantics; Home, Search, Snippets, and Voice settings now use shared controls; Settings search and setup gained committed Roborazzi baselines.
@@ -566,7 +567,7 @@ limitations under the License.
 
 ## Status
 
-🚀 **Active development.** Current release: **v1.9.56** (2026-07-09). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
+🚀 **Active development.** Current release: **v1.9.57** (2026-08-02). The SwiftKey account export window closed on **2026-05-31**; local/on-device migration paths remain documented above.
 
 ---
 
