@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.dictionary.PersonalBigramStore
 import dev.patrickgold.florisboard.ime.dictionary.PersonalTrigramStore
+import dev.patrickgold.florisboard.ime.editor.EditorCompatibilityPolicy
 import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
@@ -233,6 +234,10 @@ class NlpManager(context: Context) {
     }
 
     fun suggest(subtype: Subtype, content: EditorContent) {
+        if (!EditorCompatibilityPolicy.snapshot(editorInstance.activeInfo).allowsImeSuggestions) {
+            clearSuggestions()
+            return
+        }
         autoCommitSuppression.onContentChanged(content.autoCommitWord(), content.autoCommitWordStart())
         autoCommitUndoSession.onContentChanged(content)
         glideAlternativeSession.onContentChanged(

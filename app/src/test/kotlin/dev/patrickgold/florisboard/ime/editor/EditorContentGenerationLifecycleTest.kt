@@ -101,6 +101,26 @@ class EditorContentGenerationLifecycleTest {
     }
 
     @Test
+    fun restartingInputViewRebuildsContentFromTheCurrentConnection() {
+        val editor = TestEditorInstance(context)
+        val firstConnection = LifecycleRecordingInputConnection(textBeforeSelection = "before-restart")
+        val restartedConnection = LifecycleRecordingInputConnection(textBeforeSelection = "after-restart")
+
+        editor.inputConnection = firstConnection.connection
+        editor.handleStartInputView(editorInfo(selection = 14), isRestart = false)
+        scheduler.runCurrent()
+        assertEquals("before-restart", editor.activeContent.text)
+
+        editor.inputConnection = restartedConnection.connection
+        editor.handleStartInputView(editorInfo(selection = 13), isRestart = true)
+        scheduler.runCurrent()
+
+        assertEquals("after-restart", editor.activeContent.text)
+        assertEquals(listOf("finishComposingText"), firstConnection.composingCalls)
+        assertEquals(listOf("finishComposingText"), restartedConnection.composingCalls)
+    }
+
+    @Test
     fun finishInputCancelsPendingSelectionUpdateContentJob() {
         val editor = TestEditorInstance(context)
         val connection = LifecycleRecordingInputConnection(textBeforeSelection = "hello")

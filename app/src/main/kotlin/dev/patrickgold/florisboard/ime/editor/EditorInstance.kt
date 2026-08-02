@@ -77,70 +77,28 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
         }
         activeState.isActionsOverflowVisible = false
         activeState.isActionsEditorVisible = false
-        super.handleStartInputView(editorInfo, isRestart)
+        val editorContract = EditorCompatibilityPolicy.snapshot(editorInfo)
         val keyboardMode = when (editorInfo.inputAttributes.type) {
             InputAttributes.Type.NUMBER -> {
-                // TYPE_NUMBER_VARIATION_PASSWORD (numeric PIN / OTP fields)
-                // collapses to InputAttributes.Variation.PASSWORD. Mirror
-                // that through to keyVariation so the privacy gates that
-                // key off `keyVariation == KeyVariation.PASSWORD`
-                // (clipboard history in EditorInstance.performClipboardCut /
-                // performClipboardCopy, suggestion suppression here, glide /
-                // long-press scaling in TextKeyboardLayout, etc.) all fire
-                // for PIN entry. Without this, a numeric-PIN copy lands in
-                // the IME-local clipboard history.
-                activeState.keyVariation = if (editorInfo.inputAttributes.variation ==
-                    InputAttributes.Variation.PASSWORD
-                ) {
-                    KeyVariation.PASSWORD
-                } else {
-                    KeyVariation.NORMAL
-                }
                 KeyboardMode.NUMERIC
             }
             InputAttributes.Type.PHONE -> {
-                activeState.keyVariation = KeyVariation.NORMAL
                 KeyboardMode.PHONE
             }
             InputAttributes.Type.TEXT -> {
-                activeState.keyVariation = when (editorInfo.inputAttributes.variation) {
-                    InputAttributes.Variation.EMAIL_ADDRESS,
-                    InputAttributes.Variation.WEB_EMAIL_ADDRESS,
-                    -> {
-                        KeyVariation.EMAIL_ADDRESS
-                    }
-                    InputAttributes.Variation.PASSWORD,
-                    InputAttributes.Variation.VISIBLE_PASSWORD,
-                    InputAttributes.Variation.WEB_PASSWORD,
-                    -> {
-                        KeyVariation.PASSWORD
-                    }
-                    InputAttributes.Variation.URI -> {
-                        KeyVariation.URI
-                    }
-                    else -> {
-                        KeyVariation.NORMAL
-                    }
-                }
                 KeyboardMode.CHARACTERS
             }
             else -> {
-                activeState.keyVariation = KeyVariation.NORMAL
                 KeyboardMode.CHARACTERS
             }
         }
+        // Set the contract before the superclass starts asynchronous content
+        // generation. This keeps the first composing decision consistent with
+        // the editor metadata even on a dispatcher that runs immediately.
+        activeState.keyVariation = editorContract.keyVariation
         activeState.keyboardMode = keyboardMode
         val profile = activePerAppProfile(editorInfo.packageName)
-        val baseComposingEnabled = when (keyboardMode) {
-            KeyboardMode.NUMERIC,
-            KeyboardMode.PHONE,
-            KeyboardMode.PHONE2,
-            -> false
-            else -> activeState.keyVariation != KeyVariation.PASSWORD &&
-                prefs.suggestion.enabled.get()// &&
-            //!instance.inputAttributes.flagTextAutoComplete &&
-            //!instance.inputAttributes.flagTextNoSuggestions
-        }
+        val baseComposingEnabled = editorContract.allowsComposing && prefs.suggestion.enabled.get()
         activeState.isComposingEnabled = PerAppKeyboardProfilePolicy.shouldEnableComposing(
             baseEnabled = baseComposingEnabled,
             suggestions = profile?.suggestions ?: PerAppSuggestionAggressiveness.FOLLOW_GLOBAL,
@@ -164,6 +122,10 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             isDynamicIncognitoForced = prefs.suggestion.forceIncognitoModeFromDynamic.get(),
             override = profile?.incognito ?: PerAppBooleanOverride.FOLLOW_GLOBAL,
         )
+        super.handleStartInputView(editorInfo, isRestart)
+        if (!editorContract.allowsImeSuggestions) {
+            nlpManager.clearSuggestions()
+        }
     }
 
     override fun handleSelectionUpdate(oldSelection: EditorRange, newSelection: EditorRange, composing: EditorRange) {

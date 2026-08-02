@@ -26,6 +26,8 @@ class HardwareKeyboardInputPolicyTest : FunSpec({
             keyCode = KeyEvent.KEYCODE_SPACE,
             mappedKey = null,
         ) shouldBe HardwareKeyboardKeyDownAction.HandleSpace
+        HardwareKeyboardInputPolicy.keyUpAction(KeyEvent.KEYCODE_SPACE) shouldBe
+            HardwareKeyboardKeyUpAction.PassThrough
     }
 
     test("enter key routes through the IME enter handler") {
