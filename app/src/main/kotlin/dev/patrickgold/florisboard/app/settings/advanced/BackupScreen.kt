@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.app.settings.advanced
 
-import android.content.ContentUris
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -49,22 +48,12 @@ import androidx.core.app.ShareCompat
 import androidx.core.content.FileProvider
 import dev.patrickgold.florisboard.BuildConfig
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.FlorisPreferenceModel
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.cacheManager
-import dev.patrickgold.florisboard.clipboardManager
-import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardFileStorage
-import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
-import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.lib.cache.CacheManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.flogError
-import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import dev.patrickgold.florisboard.lib.io.FileRegistry
-import dev.patrickgold.florisboard.lib.io.ZipUtils
-import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
-import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -83,9 +72,6 @@ import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
-import org.florisboard.lib.kotlin.io.subDir
-import org.florisboard.lib.kotlin.io.subFile
-import org.florisboard.lib.kotlin.io.writeJson
 
 object Backup {
     const val FILE_PROVIDER_AUTHORITY = "${BuildConfig.APPLICATION_ID}.provider.file"
@@ -107,6 +93,25 @@ object Backup {
         }
         return "backup_${metadata.packageName}_${metadata.versionCode}_${metadata.timestamp}.$extension"
     }
+
+    /**
+     * Scheduled archives carry the non-sensitive canonical stores. Clipboard
+     * history remains an explicit manual-backup choice because recurring
+     * retention of copied secrets would be surprising even when encrypted.
+     */
+    fun scheduledSelection() = FilesSelection(
+        jetprefDatastore = true,
+        imeKeyboard = true,
+        imeTheme = true,
+        localStickerPacks = true,
+        snippets = true,
+        hardwareKeyboardLayouts = true,
+        customEmojiTags = true,
+        emojiPinGroups = true,
+        clipboardTextItems = false,
+        clipboardImageItems = false,
+        clipboardVideoItems = false,
+    )
 
     enum class Destination {
         FILE_SYS,
@@ -389,171 +394,19 @@ fun BackupScreen() = FlorisScreen {
         passphrase: CharArray?,
     ): CacheManager.BackupAndRestoreWorkspace {
         val selection = backupFilesSelector.snapshot()
-        val clipboardHistory = if (selection.containsClipboard) {
-            context.clipboardManager().value.snapshotHistoryForRestore()
-                .filterNot { it.isSensitive }
-        } else {
-            emptyList()
-        }
         val workspace = cacheManager.backupAndRestore.new()
         return try {
-            withContext(Dispatchers.IO) {
-                if (selection.jetprefDatastore) {
-                    val fileBasedStorage = workspace.inputDir
-                        .subDir(AndroidAppDataStorage.JETPREF_DIR_NAME)
-                        .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
-                        .let { FileBasedStorage(it.path) }
-                    FlorisPreferenceStore.export(fileBasedStorage).getOrThrow()
-                }
-                val workspaceFilesDir = workspace.inputDir.subDir("files")
-                if (selection.imeKeyboard) {
-                    context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).let { dir ->
-                        dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH))
-                    }
-                }
-                if (selection.imeTheme) {
-                    context.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
-                        dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))
-                    }
-                }
-                if (selection.localStickerPacks) {
-                    val stickerDir = LocalStickerPackRepository.storageDir(context)
-                    if (stickerDir.exists()) {
-                        stickerDir.copyRecursively(
-                            workspaceFilesDir.subDir(LocalStickerPackRepository.StorageDirName),
-                            overwrite = true,
-                        )
-                    }
-                }
-                if (selection.snippets) {
-                    val snippetsDir = context.filesDir.subDir(BackupArchiveStores.SnippetsDirName)
-                    if (snippetsDir.exists()) {
-                        BackupArchiveStores.copyDirectory(
-                            snippetsDir,
-                            workspaceFilesDir.subDir(BackupArchiveStores.SnippetsDirName),
-                        )
-                    }
-                }
-                if (selection.hardwareKeyboardLayouts) {
-                    val layoutFile = context.filesDir.subFile(
-                        BackupArchiveStores.HardwareKeyboardLayoutFileName,
-                    )
-                    if (layoutFile.isFile) {
-                        BackupArchiveStores.copyFile(
-                            layoutFile,
-                            workspaceFilesDir.subFile(
-                                BackupArchiveStores.HardwareKeyboardLayoutFileName,
-                            ),
-                        )
-                    }
-                }
-                if (selection.customEmojiTags) {
-                    val tagFile = context.filesDir.subFile(
-                        BackupArchiveStores.CustomEmojiTagsFileName,
-                    )
-                    if (tagFile.isFile) {
-                        BackupArchiveStores.copyFile(
-                            tagFile,
-                            workspaceFilesDir.subFile(
-                                BackupArchiveStores.CustomEmojiTagsFileName,
-                            ),
-                        )
-                    }
-                }
-                if (selection.emojiPinGroups) {
-                    val pinGroupFile = context.filesDir.subFile(
-                        BackupArchiveStores.EmojiPinGroupsFileName,
-                    )
-                    if (pinGroupFile.isFile) {
-                        BackupArchiveStores.copyFile(
-                            pinGroupFile,
-                            workspaceFilesDir.subFile(
-                                BackupArchiveStores.EmojiPinGroupsFileName,
-                            ),
-                        )
-                    }
-                }
-
-                if (BackupRestorePolicy.requiresPortableEncryption(selection.containsClipboard)) {
-                    // Sensitive rows are excluded before the app-private ZIP is
-                    // built. Every remaining clipboard byte is then sealed by
-                    // PortableBackupEnvelope before any SAF/share exposure.
-                    val clipboardFilesDir = workspace.inputDir.subDir("clipboard")
-                    clipboardFilesDir.mkdir()
-                    if (selection.clipboardTextItems) {
-                        clipboardFilesDir.subFile(Backup.CLIPBOARD_TEXT_ITEMS_JSON_NAME)
-                            .writeJson(clipboardHistory.filter { it.type == ItemType.TEXT })
-                    }
-                    if (selection.clipboardImageItems) {
-                        clipboardFilesDir.subFile(Backup.CLIPBOARD_IMAGES_JSON_NAME)
-                            .writeJson(clipboardHistory.filter { it.type == ItemType.IMAGE })
-                        for (item in clipboardHistory.filter { it.type == ItemType.IMAGE }) {
-                            val uri = item.uri ?: continue
-                            val id = ContentUris.parseId(uri)
-                            ClipboardFileStorage.copyDecryptedTo(
-                                context = context,
-                                id = id,
-                                target = clipboardFilesDir.subFile(
-                                    "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id",
-                                ),
-                                mediaKind = ClipboardFileStorage.MediaKind.IMAGE,
-                            )
-                        }
-                    }
-                    if (selection.clipboardVideoItems) {
-                        clipboardFilesDir.subFile(Backup.CLIPBOARD_VIDEO_JSON_NAME)
-                            .writeJson(clipboardHistory.filter { it.type == ItemType.VIDEO })
-                        for (item in clipboardHistory.filter { it.type == ItemType.VIDEO }) {
-                            val uri = item.uri ?: continue
-                            val id = ContentUris.parseId(uri)
-                            ClipboardFileStorage.copyDecryptedTo(
-                                context = context,
-                                id = id,
-                                target = clipboardFilesDir.subFile(
-                                    "${ClipboardFileStorage.CLIPBOARD_FILES_PATH}/$id",
-                                ),
-                                mediaKind = ClipboardFileStorage.MediaKind.VIDEO,
-                            )
-                        }
-                    }
-                }
-                workspace.metadata = Backup.Metadata(
-                    packageName = BuildConfig.APPLICATION_ID,
-                    versionCode = BuildConfig.VERSION_CODE,
-                    versionName = BuildConfig.VERSION_NAME,
-                    timestamp = System.currentTimeMillis(),
-                    archiveVersion = Backup.CURRENT_ARCHIVE_FORMAT_VERSION,
-                )
-                workspace.inputDir.subFile(Backup.METADATA_JSON_NAME).writeJson(workspace.metadata)
-                val plaintextZip = workspace.outputDir.subFile(
-                    Backup.defaultFileName(workspace.metadata),
-                )
-                ZipUtils.zip(workspace.inputDir, plaintextZip)
-                if (selection.containsClipboard) {
-                    requireNotNull(passphrase) {
-                        "Clipboard-bearing backups require a passphrase."
-                    }
-                    val encryptedArchive = workspace.outputDir.subFile(
-                        Backup.defaultFileName(workspace.metadata, encrypted = true),
-                    )
-                    PortableBackupEnvelope.encrypt(
-                        plaintextZip = plaintextZip,
-                        encryptedTarget = encryptedArchive,
-                        passphrase = passphrase,
-                        containsClipboard = true,
-                    )
-                    check(plaintextZip.delete()) {
-                        "Could not remove the app-private plaintext backup ZIP."
-                    }
-                    check(workspace.inputDir.deleteRecursively()) {
-                        "Could not remove the app-private plaintext backup workspace."
-                    }
-                    workspace.archiveFile = encryptedArchive
-                } else {
-                    workspace.archiveFile = plaintextZip
-                }
-                workspace
-            }
+            val built = BackupArchiveBuilder.build(
+                context = context,
+                inputDir = workspace.inputDir,
+                outputDir = workspace.outputDir,
+                selection = selection,
+                passphrase = passphrase,
+            )
+            workspace.metadata = built.metadata
+            workspace.archiveFile = built.archiveFile
+            workspace.archiveWasEncrypted = built.encrypted
+            workspace
         } catch (error: Throwable) {
             // withContext has prompt cancellation: ownership may fail to
             // transfer even after its IO block returned successfully.

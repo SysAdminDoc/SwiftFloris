@@ -27,14 +27,18 @@ class PortableBackupScreenContractTest : FunSpec({
         val source = projectFile(
             "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupScreen.kt",
         ).readText()
+        val builder = projectFile(
+            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/BackupArchiveBuilder.kt",
+        ).readText()
 
         source shouldContain "BackupRestorePolicy.requiresPortableEncryption"
-        source shouldContain "snapshotHistoryForRestore()"
-        source shouldContain "PortableBackupEnvelope.encrypt("
-        source shouldContain "ClipboardFileStorage.copyDecryptedTo("
-        source shouldContain "check(plaintextZip.delete())"
-        source shouldContain "check(workspace.inputDir.deleteRecursively())"
-        source shouldContain "workspace.archiveFile = encryptedArchive"
+        source shouldContain "BackupArchiveBuilder.build("
+        builder shouldContain "snapshotHistoryForRestore()"
+        builder shouldContain "PortableBackupEnvelope.encrypt("
+        builder shouldContain "ClipboardFileStorage.copyDecryptedTo("
+        builder shouldContain "check(plaintextZip.delete())"
+        builder shouldContain "check(inputDir.deleteRecursively())"
+        builder shouldContain "containsClipboard = selection.containsClipboard"
         source shouldContain "writeFromFile(uri, workspace.archiveFile)"
         source shouldContain "FileProvider.getUriForFile("
         source shouldContain "workspace.archiveFile"
