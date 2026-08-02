@@ -1448,6 +1448,9 @@
     <string name="pref__glide__engine__unsupported" comment="Glide typing engine label">Unavailable</string>
     <string name="settings__gestures__intro">Configure glide typing and keyboard swipe actions. Space bar and delete key gestures stay available even when glide typing is on.</string>
     <string name="settings__gestures__glide_conflict_notice">General key swipes and symbol flicks are paused for languages where glide typing is enabled so swipe-to-type remains predictable.</string>
+    <string name="settings__gestures__glide_unavailable_title" comment="Card title shown when glide typing cannot run on this device">Glide typing unavailable</string>
+    <string name="settings__gestures__glide_unavailable_low_ram" comment="Card summary shown on Android low-RAM devices">This device reports limited memory, so SwiftFloris does not build the glide word list or gesture models. Tap typing, suggestions and autocorrect are unaffected.</string>
+    <string name="settings__gestures__glide_unavailable_memory" comment="Card summary shown after glide data could not be allocated">Glide typing data could not be loaded into memory and was released, so glide is off for now. Close some apps and reopen the keyboard to try again.</string>
     <string name="settings__gestures__symbol_flick_ready">Symbol flicks are active for keys with hinted symbols. Flick a hinted key in any cardinal direction to enter its symbol.</string>
     <string name="settings__gestures__symbol_flick_needs_hints">Symbol flicks need hinted symbols. Enable Keyboard > Hinted symbols to use them.</string>
     <string name="settings__gestures__spacebar_cursor_ready">Space bar cursor movement is active. Set each space bar swipe to No action to disable it.</string>

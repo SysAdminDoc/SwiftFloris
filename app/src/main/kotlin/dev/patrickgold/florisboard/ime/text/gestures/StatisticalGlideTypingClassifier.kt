@@ -101,7 +101,7 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
     private var keysByCharacter: SparseArrayCompat<TextKey> = SparseArrayCompat()
     private var words: List<String> = emptyList()
     private var keys: ArrayList<TextKey> = arrayListOf()
-    private lateinit var pruner: Pruner
+    private var pruner: Pruner? = null
     private var wordDataSubtype: Subtype? = null
     private var layoutSubtype: Subtype? = null
     private var layoutFingerprint: GlideLayoutFingerprint? = null
@@ -237,12 +237,36 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
             else -> prunerCache.get(currentSubtype)
         }
         if (cached == null) {
-            this.pruner = Pruner(PRUNING_LENGTH_THRESHOLD, this.words, keysByCharacter)
-            prunerCache.put(currentSubtype, this.pruner)
+            val built = Pruner(PRUNING_LENGTH_THRESHOLD, this.words, keysByCharacter)
+            this.pruner = built
+            prunerCache.put(currentSubtype, built)
         } else {
             this.pruner = cached
         }
         this.currentSubtype = currentSubtype
+    }
+
+    /**
+     * Drops every allocation this classifier owns — word list, pruner cache, ideal-gesture cache,
+     * suggestion cache and layout keys — and resets [ready] so nothing classifies against partial
+     * data. Used by the low-RAM gate and by the allocation-failure recovery path; no typed text or
+     * gesture trace survives it.
+     */
+    fun releaseMemory() {
+        synchronized(gestureLock) {
+            gesture.clear()
+        }
+        lruSuggestionCache.evictAll()
+        idealGestureCache.evictAll()
+        prunerCache.evictAll()
+        pruner = null
+        words = emptyList()
+        keysByCharacter.clear()
+        keys.clear()
+        wordDataSubtype = null
+        layoutSubtype = null
+        layoutFingerprint = null
+        currentSubtype = null
     }
 
     override fun initGestureFromPointerData(pointerData: GlideTypingGesture.Detector.PointerData) {
@@ -306,11 +330,14 @@ class StatisticalGlideTypingClassifier(context: Context) : GlideTypingClassifier
         val candidates = arrayListOf<String>()
         val candidateWeights = arrayListOf<Float>()
         val key = keys.firstOrNull() ?: return listOf()
+        // The pruner is dropped whenever glide is released (low-RAM gate, allocation failure),
+        // so classification has to degrade to "no suggestions" rather than assume it is there.
+        val activePruner = pruner ?: return listOf()
         val radius = min(key.visibleBounds.height, key.visibleBounds.width)
-        var remainingWords = pruner.pruneByExtremities(userGestureSnapshot, this.keys)
+        var remainingWords = activePruner.pruneByExtremities(userGestureSnapshot, this.keys)
         val userGesture = userGestureSnapshot.resample(SAMPLING_POINTS)
         val normalizedUserGesture: Gesture = userGesture.normalizeByBoxSide()
-        remainingWords = pruner.pruneByLength(userGestureSnapshot, remainingWords, keysByCharacter, keys)
+        remainingWords = activePruner.pruneByLength(userGestureSnapshot, remainingWords, keysByCharacter, keys)
 
         for (i in remainingWords.indices) {
             val word = remainingWords[i]

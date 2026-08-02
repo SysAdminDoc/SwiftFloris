@@ -67,6 +67,7 @@ import dev.patrickgold.florisboard.ime.lifecycle.LifecycleInputMethodService
 import dev.patrickgold.florisboard.ime.nlp.InlineSuggestionSizePolicy
 import dev.patrickgold.florisboard.ime.nlp.NlpInlineAutofill
 import dev.patrickgold.florisboard.ime.security.FlagSecurePolicy
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingCapability
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.WallpaperChangeReceiver
 import dev.patrickgold.florisboard.ime.voice.VoiceInputManager
@@ -375,6 +376,9 @@ class FlorisImeService : LifecycleInputMethodService() {
         FlorisImeServiceReference = WeakReference(this)
         systemLocalesFlow.value = resources.configuration.locales
         keyboardManager.setIncognitoModeChangedListener(flagSecureIncognitoModeChangedListener)
+        // A previous session may have disabled glide typing after an allocation failure. Each new
+        // IME session gets a clean attempt; the device's low-RAM verdict is unaffected.
+        GlideTypingCapability.resetForNewSession()
 
         // Initialize voice input manager
         voiceInputManager.initialize()

@@ -16,13 +16,17 @@
 
 package dev.patrickgold.florisboard.ime.text.gestures
 
+import android.app.ActivityManager
 import android.content.Context
+import androidx.core.app.ActivityManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import dev.patrickgold.florisboard.nlpManager
 import dev.patrickgold.florisboard.subtypeManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -58,6 +62,18 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     // read and cleared from the serialized classifier scope (context rescore).
     @Volatile
     private var pendingContextRescore: PendingGlideCommit? = null
+
+    init {
+        // Android flags devices that cannot afford large heaps; the glide vocabulary, its pruner
+        // and the ideal-gesture cache are exactly the kind of allocation that flag exists for.
+        val activityManager = context.applicationContext
+            .getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager
+        val isLowRam = activityManager?.let { ActivityManagerCompat.isLowRamDevice(it) } ?: false
+        GlideTypingCapability.setLowRamDevice(isLowRam)
+        if (isLowRam) {
+            flogWarning { "Glide typing disabled: device is flagged low-RAM" }
+        }
+    }
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
         cancelPreviewJob()
@@ -109,13 +125,38 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         if (keys.isEmpty()) return
         val subtype = subtypeManager.activeSubtype
         if (!prefs.glide.isEnabledForSubtype(subtype)) return
+        // A low-RAM device, or a session that already ran out of memory building this data, must
+        // not attempt the build again — that is the allocation that failed in the first place.
+        if (!GlideTypingCapability.isAvailable) return
         // Word-list load + pruner construction are far too heavy for the
         // composition path (the first glide-enabled layout per subtype used to
         // stall the main thread for the whole dictionary normalization pass);
         // run them on the serialized classifier scope instead. Queued commit
         // jobs run after this completes, so they observe the new layout.
         scope.launch {
-            glideTypingClassifier.setLayout(keys, subtype)
+            try {
+                glideTypingClassifier.setLayout(keys, subtype)
+            } catch (cancellation: CancellationException) {
+                // A cancelled build leaves half a dictionary and a half-filled pruner behind.
+                glideTypingClassifier.releaseMemory()
+                throw cancellation
+            } catch (error: OutOfMemoryError) {
+                disableAfterAllocationFailure(error)
+            }
+        }
+    }
+
+    /**
+     * Releases every partial allocation and turns glide off for the rest of this IME session.
+     * The next session re-evaluates, so a transient memory spike does not disable the feature
+     * permanently. Only the error class is logged — never the gesture or any typed text.
+     */
+    private fun disableAfterAllocationFailure(error: Throwable) {
+        glideTypingClassifier.releaseMemory()
+        GlideTypingCapability.disableAfterAllocationFailure()
+        flogWarning {
+            "Glide typing disabled for this session after ${error::class.java.simpleName} " +
+                "while building gesture data"
         }
     }
 
@@ -130,6 +171,9 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         if (!prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype)) {
             return null
         }
+        if (!GlideTypingCapability.isAvailable) {
+            return null
+        }
 
         return scope.launch {
             // The ready check runs inside the serialized scope so a commit that
@@ -138,10 +182,17 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
             if (!glideTypingClassifier.ready) return@launch
             // For preview, only compute the few we'll display; for commit, compute all.
             val classifierCount = if (commit) MAX_SUGGESTION_COUNT else maxSuggestionsToShow.coerceAtLeast(1)
-            val suggestions = if (gestureSnapshot != null) {
-                glideTypingClassifier.getSuggestionsForSnapshot(gestureSnapshot, classifierCount)
-            } else {
-                glideTypingClassifier.getSuggestions(classifierCount, true)
+            val suggestions = try {
+                if (gestureSnapshot != null) {
+                    glideTypingClassifier.getSuggestionsForSnapshot(gestureSnapshot, classifierCount)
+                } else {
+                    glideTypingClassifier.getSuggestions(classifierCount, true)
+                }
+            } catch (error: OutOfMemoryError) {
+                // Classification grows the ideal-gesture cache; if that is what tips the heap
+                // over, drop it all rather than retry the same allocation on the next gesture.
+                disableAfterAllocationFailure(error)
+                return@launch
             }
 
             // Score the previous-glide context rescore here, still on the

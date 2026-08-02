@@ -18,16 +18,19 @@ package dev.patrickgold.florisboard.app.settings.gestures
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingCapability
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingEngine
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageProfile
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageSupport
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingQuality
+import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingUnavailableReason
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.lib.FlorisLocale
@@ -39,6 +42,7 @@ import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.stringRes
 
 @OptIn(ExperimentalJetPrefDatastoreUi::class)
@@ -76,6 +80,23 @@ fun GesturesScreen() = FlorisScreen {
             modifier = Modifier.padding(8.dp),
             text = stringRes(R.string.settings__gestures__intro),
         )
+        // Glide can be switched on in preferences and still not run: the device may be flagged
+        // low-RAM, or this session may have released the gesture data after a failed allocation.
+        val glideCapability by GlideTypingCapability.state.collectAsState()
+        glideCapability.unavailableReason?.let { reason ->
+            FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__gestures__glide_unavailable_title),
+                secondaryText = stringRes(
+                    when (reason) {
+                        GlideTypingUnavailableReason.LowRamDevice ->
+                            R.string.settings__gestures__glide_unavailable_low_ram
+                        GlideTypingUnavailableReason.AllocationFailed ->
+                            R.string.settings__gestures__glide_unavailable_memory
+                    },
+                ),
+            )
+        }
         if (conflictSummary.glidePausesGeneralKeySwipes) {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),
