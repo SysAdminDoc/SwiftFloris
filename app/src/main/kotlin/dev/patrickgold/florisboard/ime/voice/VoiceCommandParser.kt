@@ -17,12 +17,20 @@
 package dev.patrickgold.florisboard.ime.voice
 
 import kotlinx.serialization.Serializable
+import java.text.BreakIterator
 import java.text.Normalizer
+import java.util.Locale
 import kotlin.math.max
 
 class VoiceCommandParser(
     private val commands: List<VoiceCommandDefinition> = VoiceCommandDefinition.builtIns(),
     private val defaultMinimumConfidence: Double = DEFAULT_MINIMUM_CONFIDENCE,
+    /**
+     * Locale used for case folding. Defaults to [Locale.ROOT] because command matching must not
+     * depend on the device locale; a caller that knows the dictation locale can pass it, and the
+     * dotless/dotted-I fold below keeps Turkish casing from breaking Latin command phrases.
+     */
+    private val matchingLocale: Locale = Locale.ROOT,
 ) {
     fun parse(
         spokenText: String,
@@ -123,10 +131,19 @@ class VoiceCommandParser(
         )
     }
 
+    /**
+     * Normalises an utterance or command phrase into a comparable matching key.
+     *
+     * The pipeline is Unicode-aware end to end: canonical composition (NFC) so combining-mark
+     * spellings compare equal, locale-aware case folding, script-scoped diacritic removal, and a
+     * separator pass that keeps every Unicode letter, number and remaining mark. ASCII-only
+     * filtering used to erase Cyrillic, Arabic and CJK utterances entirely, which made every
+     * non-Latin command and dictation argument collapse to an empty string.
+     */
     internal fun normalizeForMatching(text: String): String {
-        val withoutDiacritics = Normalizer.normalize(text.lowercase(), Normalizer.Form.NFD)
-            .replace(CombiningMarksRegex, "")
-        return withoutDiacritics
+        val composed = Normalizer.normalize(text, Normalizer.Form.NFC)
+        val folded = foldCaseInsensitiveLatin(composed.lowercase(matchingLocale))
+        return stripOptionalDiacritics(folded)
             .replace(ApostropheRegex, "")
             .replace(NonWordRegex, " ")
             .replace(WhitespaceRegex, " ")
@@ -136,26 +153,47 @@ class VoiceCommandParser(
             .trim()
     }
 
+    /**
+     * Splits [text] into grapheme clusters so an emoji, a surrogate pair or a base character with
+     * combining marks counts as one edit rather than two to four.
+     */
+    internal fun graphemes(text: String): List<String> {
+        if (text.isEmpty()) return emptyList()
+        val iterator = BreakIterator.getCharacterInstance(Locale.ROOT)
+        iterator.setText(text)
+        val clusters = ArrayList<String>(text.length)
+        var start = iterator.first()
+        var end = iterator.next()
+        while (end != BreakIterator.DONE) {
+            clusters += text.substring(start, end)
+            start = end
+            end = iterator.next()
+        }
+        return clusters
+    }
+
     private fun confidence(spokenText: String, commandPhrase: String): Double {
         if (spokenText == commandPhrase) {
             return 1.0
         }
-        val length = max(spokenText.length, commandPhrase.length).coerceAtLeast(1)
-        return (1.0 - editDistance(spokenText, commandPhrase).toDouble() / length)
+        val left = graphemes(spokenText)
+        val right = graphemes(commandPhrase)
+        val length = max(left.size, right.size).coerceAtLeast(1)
+        return (1.0 - editDistance(left, right).toDouble() / length)
             .coerceIn(0.0, 1.0)
     }
 
-    private fun editDistance(left: String, right: String): Int {
-        val distances = Array(left.length + 1) { row -> IntArray(right.length + 1) { column -> row + column } }
-        for (row in 0..left.length) {
+    private fun editDistance(left: List<String>, right: List<String>): Int {
+        val distances = Array(left.size + 1) { row -> IntArray(right.size + 1) { column -> row + column } }
+        for (row in 0..left.size) {
             distances[row][0] = row
         }
-        for (column in 0..right.length) {
+        for (column in 0..right.size) {
             distances[0][column] = column
         }
 
-        for (row in 1..left.length) {
-            for (column in 1..right.length) {
+        for (row in 1..left.size) {
+            for (column in 1..right.size) {
                 val substitutionCost = if (left[row - 1] == right[column - 1]) 0 else 1
                 var best = minOf(
                     distances[row - 1][column] + 1,
@@ -173,17 +211,79 @@ class VoiceCommandParser(
                 distances[row][column] = best
             }
         }
-        return distances[left.length][right.length]
+        return distances[left.size][right.size]
+    }
+
+    /**
+     * Folds the two Latin letters whose lowercase form depends on the locale, so `I` dictated
+     * under a Turkish locale (`ı`) and `İ` still match the Latin command phrases. `ſ` is folded
+     * for the same reason: it lowercases to itself but compares equal to `s` under case folding.
+     */
+    private fun foldCaseInsensitiveLatin(text: String): String {
+        if (text.none { it == 'ı' || it == 'ſ' }) return text
+        return text.map { character ->
+            when (character) {
+                'ı' -> 'i'
+                'ſ' -> 's'
+                else -> character
+            }
+        }.joinToString(separator = "")
+    }
+
+    /**
+     * Removes non-spacing marks only where they are optional for the script — Latin, Greek,
+     * Cyrillic, Arabic and Hebrew — so `wórd` still matches `word` while Devanagari, Thai and
+     * other scripts keep marks that carry phonemic meaning. Spacing marks are never removed.
+     */
+    private fun stripOptionalDiacritics(text: String): String {
+        val decomposed = Normalizer.normalize(text, Normalizer.Form.NFD)
+        val builder = StringBuilder(decomposed.length)
+        var baseAllowsStripping = false
+        var index = 0
+        while (index < decomposed.length) {
+            val codePoint = decomposed.codePointAt(index)
+            index += Character.charCount(codePoint)
+            if (Character.getType(codePoint) == Character.NON_SPACING_MARK.toInt()) {
+                if (!baseAllowsStripping) {
+                    builder.appendCodePoint(codePoint)
+                }
+                continue
+            }
+            baseAllowsStripping = Character.UnicodeScript.of(codePoint) in DiacriticOptionalScripts
+            builder.appendCodePoint(codePoint)
+        }
+        return Normalizer.normalize(builder, Normalizer.Form.NFC)
     }
 
     companion object {
         const val DEFAULT_MINIMUM_CONFIDENCE = 0.85
         const val DEFAULT_SUGGESTION_MINIMUM_CONFIDENCE = 0.50
 
-        private val CombiningMarksRegex = "\\p{Mn}+".toRegex()
-        private val ApostropheRegex = "[']".toRegex()
-        private val NonWordRegex = "[^a-z0-9\\s]".toRegex()
-        private val WhitespaceRegex = "\\s+".toRegex()
+        /** Straight, typographic and modifier apostrophes all elide (`don't` == `dont`). */
+        private val ApostropheRegex = "['’ʼʹ`´]".toRegex()
+
+        /**
+         * Everything that is not a Unicode letter, number, mark or separator becomes a word
+         * separator. Punctuation, symbols and emoji therefore split tokens deterministically
+         * instead of being pattern-matched.
+         */
+        private val NonWordRegex = "[^\\p{L}\\p{N}\\p{M}\\s\\p{Z}]".toRegex()
+
+        /** Unicode-aware whitespace collapse; `\s` alone misses NBSP and the ideographic space. */
+        private val WhitespaceRegex = "[\\s\\p{Z}]+".toRegex()
+
+        /**
+         * Scripts where non-spacing marks are presentational and routinely omitted by speech
+         * recognisers. Marks outside this set (Devanagari matras, Thai vowel signs, …) change the
+         * word and are preserved.
+         */
+        private val DiacriticOptionalScripts = setOf(
+            Character.UnicodeScript.LATIN,
+            Character.UnicodeScript.GREEK,
+            Character.UnicodeScript.CYRILLIC,
+            Character.UnicodeScript.ARABIC,
+            Character.UnicodeScript.HEBREW,
+        )
 
         // ROADMAP §6 N15.3 — Smart Edit voice REMOVE_ITEM_FROM_LIST patterns.
         // Each pattern's `prefix` + optional `suffix` must match the
