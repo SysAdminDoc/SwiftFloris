@@ -55,7 +55,6 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRowDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -373,10 +372,11 @@ fun EmojiPaletteView(
                 decorationBox = { innerTextField ->
                     Box(modifier = Modifier.fillMaxWidth()) {
                         if (query.isBlank()) {
-                            Text(
+                            SnyggText(
+                                elementName = FlorisImeUi.MediaEmojiTab.elementName,
                                 text = stringRes(R.string.emoji__search__placeholder),
-                                color = style.foreground().copy(alpha = 0.58f),
-                                fontSize = searchFontSize,
+                                colorOverride = style.foreground().copy(alpha = 0.58f),
+                                fontSizeOverride = searchFontSize,
                             )
                         }
                         innerTextField()
@@ -481,7 +481,7 @@ fun EmojiPaletteView(
                         .fillMaxSize()
                         .padding(all = 12.dp),
                 ) {
-                    Text(text = stringRes(R.string.emoji__search__empty))
+                    EmojiPaletteStateText(text = stringRes(R.string.emoji__search__empty))
                 }
             } else {
                 LazyVerticalGrid(
@@ -563,7 +563,7 @@ fun EmojiPaletteView(
                                 .fillMaxSize()
                                 .padding(all = 8.dp),
                         ) {
-                            Text(
+                            EmojiPaletteStateText(
                                 text = stringRes(R.string.emoji__history__phone_locked_message),
                             )
                         }
@@ -574,10 +574,10 @@ fun EmojiPaletteView(
                                 .fillMaxSize()
                                 .padding(all = 8.dp),
                         ) {
-                            Text(
+                            EmojiPaletteStateText(
                                 text = stringRes(R.string.emoji__history__empty_message),
                             )
-                            Text(
+                            EmojiPaletteStateText(
                                 modifier = Modifier.padding(top = 8.dp),
                                 text = stringRes(R.string.emoji__history__usage_tip),
                                 fontStyle = FontStyle.Italic,
@@ -676,6 +676,20 @@ fun EmojiPaletteView(
             onTagged = { customEmojiTagVersion++ },
         )
     }
+}
+
+@Composable
+internal fun EmojiPaletteStateText(
+    text: String,
+    modifier: Modifier = Modifier,
+    fontStyle: FontStyle? = null,
+) {
+    SnyggText(
+        elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
+        modifier = modifier,
+        text = text,
+        fontStyleOverride = fontStyle,
+    )
 }
 
 @Composable

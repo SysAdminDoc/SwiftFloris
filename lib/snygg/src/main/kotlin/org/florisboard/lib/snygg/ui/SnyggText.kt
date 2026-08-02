@@ -20,12 +20,14 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import org.florisboard.lib.snygg.SnyggQueryAttributes
@@ -43,6 +45,10 @@ import org.florisboard.lib.snygg.SnyggStylesheet
  * @param selector A specific SnyggSelector to query the style for.
  * @param modifier The modifier to be applied to the Text.
  * @param text The text of the element.
+ * @param fontFamilyOverride Optional font family override while retaining the rest of the queried style.
+ * @param colorOverride Optional foreground color override while retaining the rest of the queried style.
+ * @param fontSizeOverride Optional font size override while retaining the rest of the queried style.
+ * @param fontStyleOverride Optional font style override while retaining the rest of the queried style.
  *
  * @since 0.5.0-alpha01
  *
@@ -56,6 +62,9 @@ fun SnyggText(
     modifier: Modifier = Modifier,
     text: String,
     fontFamilyOverride: FontFamily? = null,
+    colorOverride: Color? = null,
+    fontSizeOverride: TextUnit? = null,
+    fontStyleOverride: FontStyle? = null,
 ) {
     ProvideSnyggStyle(elementName, attributes, selector) { style ->
         Text(
@@ -66,9 +75,9 @@ fun SnyggText(
                 .snyggBackground(style, allowClip = false)
                 .snyggPadding(style),
             text = text,
-            color = style.foreground(),
-            fontSize = style.fontSize(),
-            fontStyle = style.fontStyle(),
+            color = colorOverride ?: style.foreground(),
+            fontSize = fontSizeOverride ?: style.fontSize(),
+            fontStyle = fontStyleOverride ?: style.fontStyle(),
             fontWeight = style.fontWeight(),
             fontFamily = fontFamilyOverride ?: style.fontFamily(LocalSnyggPreloadedCustomFontFamilies.current),
             letterSpacing = style.letterSpacing(),

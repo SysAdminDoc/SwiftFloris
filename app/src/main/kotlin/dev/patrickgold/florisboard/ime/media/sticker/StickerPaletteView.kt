@@ -218,7 +218,10 @@ fun StickerPaletteView(
                         .fillMaxSize()
                         .padding(all = 12.dp),
                 ) {
-                    Text(text = stringRes(R.string.sticker__search__empty))
+                    SnyggText(
+                        elementName = FlorisImeUi.MediaEmojiSubheader.elementName,
+                        text = stringRes(R.string.sticker__search__empty),
+                    )
                 }
             } else {
                 StickerGrid(

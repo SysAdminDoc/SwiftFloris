@@ -1,6 +1,7 @@
 package dev.patrickgold.florisboard.ime.media
 
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import kotlin.test.Test
 
@@ -23,6 +24,9 @@ class MediaPaletteAccessibilityContractTest {
         palette shouldContain "category.labelRes()"
         palette shouldContain "emoji__variation__select_a11y"
         palette shouldContain "onClick(label = variationLabel)"
+        palette shouldContain "EmojiPaletteStateText"
+        palette shouldContain "MediaEmojiSubheader.elementName"
+        palette shouldNotContain "import androidx.compose.material3.Text"
         categories shouldContain "fun labelRes()"
         chips shouldContain "emoji__pin_group__chip_a11y"
         chips shouldContain "onLongClick(label = chipHintLabel)"
@@ -42,6 +46,8 @@ class MediaPaletteAccessibilityContractTest {
         palette shouldContain "sticker__tile_disabled_a11y"
         palette shouldContain "disabled()"
         palette shouldContain "onClick(label = tileLabel)"
+        palette shouldContain "sticker__search__empty"
+        palette shouldContain "MediaEmojiSubheader.elementName"
         strings shouldContain "sticker__tile_disabled_a11y"
     }
 

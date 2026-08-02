@@ -35,6 +35,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.unit.dp
@@ -54,6 +55,7 @@ import dev.patrickgold.florisboard.ime.addon.AddonManifest
 import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
 import dev.patrickgold.florisboard.ime.addon.AddonType
+import dev.patrickgold.florisboard.ime.media.emoji.EmojiPaletteStateText
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.smartbar.CandidatesDisplayMode
 import dev.patrickgold.florisboard.ime.smartbar.SmartbarLayout
@@ -120,6 +122,20 @@ class ThemeAndAddonsScreenshotTest {
         }
         composeRule.onRoot().captureRoboImage(
             filePath = "$BASELINE_DIR/swiftkey_high_contrast_keyboard_surface.png",
+            roborazziOptions = ROBORAZZI_OPTIONS,
+        )
+    }
+
+    @Test
+    fun emojiPaletteEmptyStatesAtExpandedFontScale() {
+        composeRule.setContent {
+            EmojiPaletteEmptyStateThemeSurface(
+                stylesheetFileName = "swiftkey_high_contrast.json",
+                fontSizeMultiplier = 1.5f,
+            )
+        }
+        composeRule.onRoot().captureRoboImage(
+            filePath = "$BASELINE_DIR/emoji_palette_empty_states_expanded.png",
             roborazziOptions = ROBORAZZI_OPTIONS,
         )
     }
@@ -333,6 +349,41 @@ class ThemeAndAddonsScreenshotTest {
 
         fun fingerprint(byte: String): String =
             List(32) { byte }.joinToString(separator = ":")
+    }
+}
+
+@Composable
+private fun EmojiPaletteEmptyStateThemeSurface(
+    stylesheetFileName: String,
+    fontSizeMultiplier: Float,
+) {
+    val stylesheet = remember(stylesheetFileName) {
+        loadBundledStylesheet(stylesheetFileName)
+    }
+    val theme = rememberSnyggTheme(stylesheet)
+
+    MaterialTheme {
+        ProvideSnyggTheme(theme, fontSizeMultiplier = fontSizeMultiplier) {
+            SnyggBox(
+                elementName = FlorisImeUi.Window.elementName,
+                attributes = mapOf(FlorisImeUi.Attr.WindowMode to "fixed"),
+                modifier = Modifier.size(width = 360.dp, height = 220.dp),
+            ) {
+                SnyggColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    EmojiPaletteStateText(text = "No emoji matches this search.")
+                    EmojiPaletteStateText(text = "Your emoji history is empty.")
+                    EmojiPaletteStateText(
+                        text = "Use emojis to see them here.",
+                        fontStyle = FontStyle.Italic,
+                    )
+                }
+            }
+        }
     }
 }
 
