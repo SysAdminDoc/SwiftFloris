@@ -27,6 +27,7 @@ import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDao
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryDatabase
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStore
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
@@ -142,7 +143,7 @@ class ClipboardManager(
         ioScope.launch {
             try {
                 if (clipHistoryDb == null) {
-                    clipHistoryDb = ClipboardHistoryDatabase.new(context.applicationContext)
+                    clipHistoryDb = ClipboardHistoryStore.open(context.applicationContext)
                     val dao = checkNotNull(clipHistoryDao)
                     ClipboardStorageReconciliation.reconcile(context.applicationContext, dao)
                     clipHistoryDaoReady.complete(dao)

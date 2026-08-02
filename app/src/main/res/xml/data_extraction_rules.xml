@@ -59,6 +59,27 @@
         <exclude
             domain="sharedpref"
             path="swiftfloris_tasker_auth.xml"/>
+        <!-- Clipboard history is a SQLCipher database whose passphrase is wrapped by a
+             non-exportable Android Keystore key. Both the ciphertext and the wrapped
+             passphrase stay on the device that minted the key. -->
+        <exclude
+            domain="database"
+            path="clipboard_history"/>
+        <exclude
+            domain="database"
+            path="clipboard_history-journal"/>
+        <exclude
+            domain="database"
+            path="clipboard_history-wal"/>
+        <exclude
+            domain="database"
+            path="clipboard_history-shm"/>
+        <exclude
+            domain="database"
+            path="clipboard_files"/>
+        <exclude
+            domain="sharedpref"
+            path="clipboard_history_key.xml"/>
         <exclude
             domain="file"
             path="clipboard_history"/>
@@ -117,6 +138,27 @@
         <exclude
             domain="sharedpref"
             path="swiftfloris_tasker_auth.xml"/>
+        <!-- Clipboard history is a SQLCipher database whose passphrase is wrapped by a
+             non-exportable Android Keystore key. Both the ciphertext and the wrapped
+             passphrase stay on the device that minted the key. -->
+        <exclude
+            domain="database"
+            path="clipboard_history"/>
+        <exclude
+            domain="database"
+            path="clipboard_history-journal"/>
+        <exclude
+            domain="database"
+            path="clipboard_history-wal"/>
+        <exclude
+            domain="database"
+            path="clipboard_history-shm"/>
+        <exclude
+            domain="database"
+            path="clipboard_files"/>
+        <exclude
+            domain="sharedpref"
+            path="clipboard_history_key.xml"/>
         <exclude
             domain="file"
             path="clipboard_history"/>

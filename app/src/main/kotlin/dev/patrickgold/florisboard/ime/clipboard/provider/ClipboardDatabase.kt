@@ -417,12 +417,36 @@ abstract class ClipboardHistoryDatabase : RoomDatabase() {
             }
         }
 
+        /** Room file name; the table and the database file happen to share a name. */
+        const val DB_FILE_NAME = CLIPBOARD_HISTORY_TABLE
+
+        /**
+         * Opens the history in the plaintext Room database. Only used to read a pre-encryption
+         * store during migration, and as the fallback when SQLCipher cannot load.
+         */
         fun new(context: Context): ClipboardHistoryDatabase {
             return Room
                 .databaseBuilder(
-                    context, ClipboardHistoryDatabase::class.java, CLIPBOARD_HISTORY_TABLE,
+                    context, ClipboardHistoryDatabase::class.java, DB_FILE_NAME,
                 )
                 .addMigrations(MIGRATION_1_2)
+                .build()
+        }
+
+        /**
+         * Opens the history through SQLCipher. Callers should prefer
+         * [dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStore.open], which
+         * also handles migration and the unreadable-store recovery path.
+         */
+        fun newEncrypted(context: Context): ClipboardHistoryDatabase {
+            val factory = ClipboardHistoryEncryption.openHelperFactory(context)
+                ?: return new(context)
+            return Room
+                .databaseBuilder(
+                    context, ClipboardHistoryDatabase::class.java, DB_FILE_NAME,
+                )
+                .addMigrations(MIGRATION_1_2)
+                .openHelperFactory(factory)
                 .build()
         }
     }

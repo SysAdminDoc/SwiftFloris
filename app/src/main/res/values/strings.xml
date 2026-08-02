@@ -1834,6 +1834,10 @@
     <string name="clipboard__confirm_clear_unfiltered_history__message">Are you sure you want to clear your full clipboard history? This will affect all items, except pinned ones.</string>
     <string name="clipboard__confirm_clear_filtered_history__message">Are you sure you want to clear your clipboard history? This will affect all currently filtered items, except pinned ones.</string>
     <string name="settings__clipboard__title">Clipboard</string>
+    <string name="settings__clipboard__history_reset_title" comment="Card title shown when the encrypted clipboard history could not be opened">Clipboard history was reset</string>
+    <string name="settings__clipboard__history_reset_summary" comment="Card summary shown when the encrypted clipboard history could not be opened">The encryption key protecting your clipboard history is no longer available, so a new empty history was started. The unreadable copy was kept on this device and never uploaded; clearing app storage removes it.</string>
+    <string name="settings__clipboard__history_unencrypted_title" comment="Card title shown when clipboard history cannot be encrypted on this device">Clipboard history is not encrypted</string>
+    <string name="settings__clipboard__history_unencrypted_summary" comment="Card summary shown when clipboard history cannot be encrypted on this device">The encryption library could not be loaded on this device, so clipboard history is stored in app-private storage without an extra layer of encryption. It still never leaves this device.</string>
     <string name="settings__clipboard__local_retention_title" comment="Clipboard settings intro card title">Clipboard history stays under your control</string>
     <string name="settings__clipboard__local_retention_summary" comment="Clipboard settings intro card summary">History, suggestions, size limits, and sensitive-item cleanup are local settings. Use the controls below to decide what SwiftFloris remembers and when it forgets.</string>
     <string name="pref__clipboard__group_system_clipboard__label">System clipboard sync</string>

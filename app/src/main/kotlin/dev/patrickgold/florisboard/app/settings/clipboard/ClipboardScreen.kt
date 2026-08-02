@@ -18,6 +18,8 @@ package dev.patrickgold.florisboard.app.settings.clipboard
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import dev.patrickgold.florisboard.R
@@ -26,6 +28,8 @@ import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.clipboard.CLIPBOARD_HISTORY_NUM_GRID_COLUMNS_AUTO
 import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStorageState
+import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
@@ -33,7 +37,9 @@ import dev.patrickgold.jetpref.datastore.ui.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -53,6 +59,26 @@ fun ClipboardScreen() = FlorisScreen {
             actionLabel = stringRes(R.string.settings__home__privacy_posture_action),
             onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
         )
+
+        // Clipboard history is encrypted at rest. If that store ever becomes unreadable the
+        // history is reset rather than silently emptied, and the user is told so here.
+        val storageState by ClipboardHistoryStore.state.collectAsState()
+        when (storageState) {
+            ClipboardHistoryStorageState.Encrypted,
+            ClipboardHistoryStorageState.MigratedToEncrypted -> Unit
+            ClipboardHistoryStorageState.ResetAfterUnreadableStore -> FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__clipboard__history_reset_title),
+                secondaryText = stringRes(R.string.settings__clipboard__history_reset_summary),
+                actionLabel = stringRes(R.string.action__ok),
+                onClick = { ClipboardHistoryStore.acknowledgeState() },
+            )
+            ClipboardHistoryStorageState.Unencrypted -> FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__clipboard__history_unencrypted_title),
+                secondaryText = stringRes(R.string.settings__clipboard__history_unencrypted_summary),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.pref__clipboard__group_system_clipboard__label)) {
             SwitchPreference(
