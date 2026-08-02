@@ -154,6 +154,22 @@ data class WordSuggestionCandidate(
     override val icon: ImageVector? = null
 }
 
+data class GlideAlternativeSuggestionCandidate(
+    val alternative: String,
+    val committed: String,
+    val range: dev.patrickgold.florisboard.ime.editor.EditorRange,
+    val rank: Int,
+    override val confidence: Double,
+) : SuggestionCandidate {
+    override val text: CharSequence = alternative
+    override val secondaryText: CharSequence? = null
+    override val isEligibleForAutoCommit: Boolean = false
+    override val isEligibleForUserRemoval: Boolean = false
+    override val icon: ImageVector? = null
+    override val sourceProvider: SuggestionProvider? = null
+    override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER
+}
+
 data class NextWordSuggestionContext(
     val previousWord: String,
     val secondPreviousWord: String? = null,

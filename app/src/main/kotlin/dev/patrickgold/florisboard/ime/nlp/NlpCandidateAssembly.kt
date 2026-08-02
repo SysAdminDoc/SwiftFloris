@@ -34,6 +34,7 @@ internal class NlpCandidateAssembler(
         isSuggestionOn: Boolean,
         internalSuggestions: List<SuggestionCandidate>,
         autoCommitUndoCandidate: AutoCommitUndoSuggestionCandidate?,
+        glideAlternativeCandidates: List<SuggestionCandidate> = emptyList(),
     ): List<SuggestionCandidate> {
         if (!isSuggestionOn) {
             return emptyList()
@@ -42,6 +43,7 @@ internal class NlpCandidateAssembler(
             if (autoCommitUndoCandidate != null) {
                 add(autoCommitUndoCandidate)
             }
+            addAll(glideAlternativeCandidates)
             addAll(
                 clipboardSuggestionProvider.suggest(
                     subtype = Subtype.DEFAULT,

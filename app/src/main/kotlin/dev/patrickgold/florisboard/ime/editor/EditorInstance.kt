@@ -399,6 +399,38 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
     }
 
     /**
+     * Replaces a previously committed glide word after verifying that the editor still contains the expected text at
+     * the original range. Unlike [commitCompletion], this also works after the composing region has been finalized.
+     */
+    fun replaceCommittedGestureWord(
+        range: EditorRange,
+        expectedText: String,
+        replacementText: String,
+    ): Boolean {
+        if (
+            expectedText.isBlank() ||
+            replacementText.isBlank() ||
+            activeInfo.isRawInputEditor ||
+            activeState.keyVariation == KeyVariation.PASSWORD ||
+            !range.isValid ||
+            range.start > range.end ||
+            range.length != expectedText.length
+        ) {
+            return false
+        }
+        val content = activeContent
+        if (content.offset < 0) return false
+        val localStart = range.start - content.offset
+        val localEnd = range.end - content.offset
+        if (localStart < 0 || localEnd > content.text.length || localStart >= localEnd) return false
+        if (content.text.substring(localStart, localEnd) != expectedText) return false
+        if (!setSelection(range.start, range.end)) return false
+        return super.commitText(replacementText).also {
+            if (it) updateLastCommitPosition()
+        }
+    }
+
+    /**
      * Commits the given [ClipboardItem]. If the clip data is text (incl. HTML), it delegates to [commitText].
      * If the item has a content URI (and the EditText supports it), the item is committed as rich data.
      * This allows for committing (e.g) images.

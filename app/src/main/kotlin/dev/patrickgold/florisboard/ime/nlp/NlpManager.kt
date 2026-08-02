@@ -97,6 +97,7 @@ class NlpManager(context: Context) {
     private val frequencyCache = LruCache<String, Double>(5000)
     private val autoCommitSuppression = AutoCommitSuppression()
     private val autoCommitUndoSession = AutoCommitUndoSession()
+    private val glideAlternativeSession = GlideAlternativeSession()
     private val correctionOutcomePriors = CorrectionOutcomePriors.get(appContext)
     private val touchDecoderEvidence = TouchDecoderEvidenceBuffer()
 
@@ -234,6 +235,10 @@ class NlpManager(context: Context) {
     fun suggest(subtype: Subtype, content: EditorContent) {
         autoCommitSuppression.onContentChanged(content.autoCommitWord(), content.autoCommitWordStart())
         autoCommitUndoSession.onContentChanged(content)
+        glideAlternativeSession.onContentChanged(
+            content = content,
+            allowRetention = !keyboardManager.activeState.isIncognitoMode && !isActiveEditorSensitive(),
+        )
         val requestId = suggestionsRequestCounter.incrementAndGet()
         val editorInfo = editorInstance.activeInfo
         val requestPrivacy = SuggestionPrivacyPolicy.snapshotSuggestionRequest(
@@ -405,6 +410,7 @@ class NlpManager(context: Context) {
     }
 
     fun clearSuggestions() {
+        glideAlternativeSession.clear()
         val requestId = suggestionsRequestCounter.incrementAndGet()
         scope.launch {
             internalSuggestionsGuard.withLock {
@@ -414,6 +420,36 @@ class NlpManager(context: Context) {
                 }
             }
         }
+    }
+
+    fun rememberAcceptedGlideCommit(
+        committedText: String,
+        alternatives: List<String>,
+        range: EditorRange,
+    ) {
+        if (keyboardManager.activeState.isIncognitoMode || isActiveEditorSensitive()) {
+            glideAlternativeSession.clear()
+        } else {
+            glideAlternativeSession.remember(
+                committedText = committedText,
+                alternatives = alternatives,
+                range = range,
+            )
+        }
+        assembleCandidates()
+    }
+
+    fun consumeGlideAlternative(candidate: GlideAlternativeSuggestionCandidate): Boolean {
+        val consumed = glideAlternativeSession.consume(candidate)
+        if (consumed) {
+            assembleCandidates()
+        }
+        return consumed
+    }
+
+    fun clearGlideAlternatives() {
+        glideAlternativeSession.clear()
+        assembleCandidates()
     }
 
     internal fun recordTouchDecoderSample(primaryText: String, alternatives: List<TouchDecoderCandidate>) {
@@ -911,6 +947,7 @@ class NlpManager(context: Context) {
                 isSuggestionOn = isSuggestionOn(),
                 internalSuggestions = suggestions,
                 autoCommitUndoCandidate = autoCommitUndoSession.activeUndoCandidate,
+                glideAlternativeCandidates = glideAlternativeSession.activeCandidates(),
             )
             activeCandidates = candidates
             autoExpandCollapseSmartbarActions(candidates, NlpInlineAutofill.suggestions.value)

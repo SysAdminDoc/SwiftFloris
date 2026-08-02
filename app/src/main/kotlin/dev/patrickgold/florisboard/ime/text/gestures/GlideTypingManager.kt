@@ -215,7 +215,6 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
                     }
                 }
 
-                nlpManager.suggestDirectly(suggestionList)
                 if (commit && suggestions.isNotEmpty()) {
                     rescore?.let { (expectedWord, replacementWord) ->
                         keyboardManager.replaceLastGestureWordForContext(
@@ -223,8 +222,13 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
                             replacementWord = replacementWord,
                         )
                     }
-                    keyboardManager.commitGesture(suggestions.first())
+                    keyboardManager.commitGesture(
+                        word = suggestions.first(),
+                        alternatives = suggestionList.map { it.text.toString() },
+                    )
                     rememberPendingGlideCommit(suggestions)
+                } else {
+                    nlpManager.suggestDirectly(suggestionList)
                 }
             }
         }

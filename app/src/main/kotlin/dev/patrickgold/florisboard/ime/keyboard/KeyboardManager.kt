@@ -40,6 +40,7 @@ import dev.patrickgold.florisboard.ime.core.SubtypePreset
 import dev.patrickgold.florisboard.ime.editor.EditorInputBehaviorPolicy
 import dev.patrickgold.florisboard.ime.dictionary.DictionaryManager
 import dev.patrickgold.florisboard.ime.editor.EditorContent
+import dev.patrickgold.florisboard.ime.editor.EditorRange
 import dev.patrickgold.florisboard.ime.editor.FlorisEditorInfo
 import dev.patrickgold.florisboard.ime.editor.ImeOptions
 import dev.patrickgold.florisboard.ime.editor.InputAttributes
@@ -56,6 +57,7 @@ import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.nlp.AutoCommitUndoSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.CandidateCommitSideEffectPolicy
 import dev.patrickgold.florisboard.ime.nlp.ClipboardSuggestionCandidate
+import dev.patrickgold.florisboard.ime.nlp.GlideAlternativeSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.LearnedWordForgetSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.PunctuationRule
 import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
@@ -86,6 +88,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -178,6 +182,12 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             activeState.collectLatestIn(scope) {
                 updateActiveEvaluators()
             }
+            activeState
+                .map { it.isIncognitoMode }
+                .distinctUntilChanged()
+                .collectIn(scope) {
+                    nlpManager.clearGlideAlternatives()
+                }
             subtypeManager.subtypesFlow.collectLatestIn(scope) {
                 updateActiveEvaluators()
             }
@@ -185,6 +195,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 reevaluateInputShiftState()
                 updateActiveEvaluators()
                 editorInstance.refreshComposing()
+                nlpManager.clearGlideAlternatives()
                 resetSuggestions(editorInstance.activeContent)
                 dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
                     .setActiveSubtype("${subtype.id}:${subtype.primaryLocale.languageTag()}")
@@ -211,6 +222,7 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             // never-typed pair "meeting tomorrow" to the personal n-gram store).
             editorInstance.activeInfoFlow.collectIn(scope) {
                 resetLearnChain()
+                nlpManager.clearGlideAlternatives()
             }
             prefs.devtools.enabled.asFlow().collectLatestIn(scope) {
                 reevaluateDebugFlags()
@@ -389,6 +401,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         if (candidate is AutoCommitUndoSuggestionCandidate) {
             return commitAutoCommitUndoCandidate(candidate)
         }
+        if (candidate is GlideAlternativeSuggestionCandidate) {
+            return commitGlideAlternativeCandidate(candidate)
+        }
         val committed = when (candidate) {
             is ClipboardSuggestionCandidate -> editorInstance.commitClipboardItem(candidate.clipboardItem)
             else -> editorInstance.commitCompletion(candidate)
@@ -430,6 +445,19 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                     )
                 }
             }
+        }
+        return committed
+    }
+
+    private fun commitGlideAlternativeCandidate(candidate: GlideAlternativeSuggestionCandidate): Boolean {
+        val committed = editorInstance.replaceCommittedGestureWord(
+            range = candidate.range,
+            expectedText = candidate.committed,
+            replacementText = candidate.alternative,
+        )
+        if (committed) {
+            nlpManager.consumeGlideAlternative(candidate)
+            learnIfAllowed(candidate.alternative)
         }
         return committed
     }
@@ -522,9 +550,21 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         }
     }
 
-    fun commitGesture(word: String) {
+    fun commitGesture(word: String, alternatives: List<String> = emptyList()) {
         val cased = fixCase(word)
-        editorInstance.commitGesture(cased)
+        val contentBeforeCommit = editorInstance.activeContent
+        val committed = editorInstance.commitGesture(cased)
+        if (committed && contentBeforeCommit.selection.isCursorMode && alternatives.isNotEmpty()) {
+            val end = editorInstance.lastCommitPosition.pos
+            val start = end - cased.length
+            if (start >= 0 && end >= start) {
+                nlpManager.rememberAcceptedGlideCommit(
+                    committedText = cased,
+                    alternatives = alternatives.map { fixCase(it) },
+                    range = EditorRange(start, end),
+                )
+            }
+        }
         learnIfAllowed(cased)
         announceForAccessibility(cased)
     }
