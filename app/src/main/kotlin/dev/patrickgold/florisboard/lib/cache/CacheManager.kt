@@ -29,6 +29,8 @@ import dev.patrickgold.florisboard.app.ext.EditorAction
 import dev.patrickgold.florisboard.app.settings.advanced.Backup
 import dev.patrickgold.florisboard.appContext
 import dev.patrickgold.florisboard.ime.theme.ThemeExtensionEditor
+import dev.patrickgold.florisboard.ime.keyboard3.Keyboard3Compiler
+import dev.patrickgold.florisboard.ime.keyboard3.Keyboard3Parser
 import dev.patrickgold.florisboard.lib.NATIVE_NULLPTR
 import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.lib.ext.ExtensionDefaults
@@ -222,6 +224,26 @@ class CacheManager(context: Context) {
                         val extJsonFile = extWorkingDir.subFile(ExtensionDefaults.MANIFEST_FILE_NAME)
                         ExtensionPackagePolicy.requireManifestSize(extJsonFile.length())
                         extJsonFile.readJson<Extension>(ExtensionJsonConfig).also { extension ->
+                            extension.workingDir = extWorkingDir
+                            ExtensionPackagePolicy.validateExtracted(extension, extWorkingDir)
+                        }
+                    }.recoverCatching { archiveError ->
+                        extWorkingDir.deleteRecursively()
+                        if (file.extension.lowercase() != FileRegistry.Keyboard3Layout.fileExt) {
+                            throw archiveError
+                        }
+                        check(file.length() <= Keyboard3Parser.MaxSourceBytes) {
+                            "Keyboard3 source exceeds the ${Keyboard3Parser.MaxSourceBytes / 1024} KiB limit."
+                        }
+                        val source = file.readText(Charsets.UTF_8)
+                        val compilation = Keyboard3Compiler.compileXml(source)
+                        check(compilation.isSuccess) {
+                            compilation.diagnostics.joinToString { diagnostic ->
+                                "${diagnostic.code} at ${diagnostic.path}: ${diagnostic.message}"
+                            }
+                        }
+                        Keyboard3Compiler.writePackage(compilation, extWorkingDir)
+                        compilation.extension!!.also { extension ->
                             extension.workingDir = extWorkingDir
                             ExtensionPackagePolicy.validateExtracted(extension, extWorkingDir)
                         }

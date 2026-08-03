@@ -45,11 +45,29 @@ object FileRegistry {
         ),
     )
 
+    /** Unicode LDML Keyboard3 source files are compiled into a local .flex package on import. */
+    val Keyboard3Layout = Entry(
+        type = Type.TEXT,
+        fileExt = "xml",
+        mediaType = "application/xml",
+        alternativeMediaTypes = listOf(
+            "text/xml",
+            "application/octet-stream",
+        ),
+    )
+
     fun guessMediaType(file: FsFile, givenMediaType: String?): String? {
-        return when (file.extension) {
+        return when (file.extension.lowercase()) {
             FlexExtension.fileExt -> {
                 if (FlexExtension.alternativeMediaTypes.contains(givenMediaType)) {
                     FlexExtension.mediaType
+                } else {
+                    givenMediaType
+                }
+            }
+            Keyboard3Layout.fileExt -> {
+                if (givenMediaType == null || Keyboard3Layout.alternativeMediaTypes.contains(givenMediaType)) {
+                    Keyboard3Layout.mediaType
                 } else {
                     givenMediaType
                 }
@@ -59,7 +77,7 @@ object FileRegistry {
     }
 
     fun matchesFileFilter(fileInfo: CacheManager.FileInfo, filter: List<Entry>): Boolean {
-        val fileExt = fileInfo.file.extension
+        val fileExt = fileInfo.file.extension.lowercase()
         filter.forEach {
             if (it.fileExt == fileExt ||
                 it.mediaType == fileInfo.mediaType ||

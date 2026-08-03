@@ -89,12 +89,12 @@ enum class ExtensionImportScreenType(
     EXT_ANY(
         id = "ext-any",
         titleResId = R.string.ext__import__ext_any,
-        supportedFiles = listOf(FileRegistry.FlexExtension),
+        supportedFiles = listOf(FileRegistry.FlexExtension, FileRegistry.Keyboard3Layout),
     ),
     EXT_KEYBOARD(
         id = "ext-keyboard",
         titleResId = R.string.ext__import__ext_keyboard,
-        supportedFiles = listOf(FileRegistry.FlexExtension),
+        supportedFiles = listOf(FileRegistry.FlexExtension, FileRegistry.Keyboard3Layout),
     ),
     EXT_THEME(
         id = "ext-theme",

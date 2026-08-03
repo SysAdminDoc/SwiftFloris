@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.lib.cache
 
+import dev.patrickgold.florisboard.lib.io.FileRegistry
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -72,5 +73,24 @@ class CacheManagerTest : FunSpec({
 
     test("shared backup cache and URI grants have explicit expiry bounds") {
         CacheManager.SharedBackupGrantLeaseMillis shouldBe 15L * 60L * 1000L
+    }
+
+    test("Keyboard3 XML files are recognized as text imports and not flex archives") {
+        val xml = Files.createTempFile("keyboard3", ".XML").toFile()
+        try {
+            FileRegistry.guessMediaType(xml, "application/octet-stream") shouldBe
+                FileRegistry.Keyboard3Layout.mediaType
+            FileRegistry.matchesFileFilter(
+                CacheManager.FileInfo(
+                    file = xml,
+                    mediaType = FileRegistry.Keyboard3Layout.mediaType,
+                    size = 0L,
+                    ext = null,
+                ),
+                listOf(FileRegistry.Keyboard3Layout),
+            ) shouldBe true
+        } finally {
+            xml.delete()
+        }
     }
 })
