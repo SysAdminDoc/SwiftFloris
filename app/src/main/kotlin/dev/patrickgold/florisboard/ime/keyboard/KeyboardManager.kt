@@ -147,6 +147,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.ARROW_UP,
             KeyCode.DELETE,
             KeyCode.FORWARD_DELETE,
+            KeyCode.PAGE_UP,
+            KeyCode.PAGE_DOWN,
             KeyCode.UNDO,
             KeyCode.REDO,
         )
@@ -690,6 +692,20 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
                 }
                 sendDownUpKeyEvent(KeyEvent.KEYCODE_DPAD_DOWN, meta(alt = true, shift = isShiftPressed), count)
             }
+            KeyCode.PAGE_UP -> {
+                if (!selection.isSelectionMode && activeState.isManualSelectionMode) {
+                    activeState.isManualSelectionModeStart = true
+                    activeState.isManualSelectionModeEnd = false
+                }
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_PAGE_UP, meta(shift = isShiftPressed), count)
+            }
+            KeyCode.PAGE_DOWN -> {
+                if (!selection.isSelectionMode && activeState.isManualSelectionMode) {
+                    activeState.isManualSelectionModeStart = false
+                    activeState.isManualSelectionModeEnd = true
+                }
+                sendDownUpKeyEvent(KeyEvent.KEYCODE_PAGE_DOWN, meta(shift = isShiftPressed), count)
+            }
             KeyCode.MOVE_START_OF_LINE -> {
                 if (!selection.isSelectionMode && activeState.isManualSelectionMode) {
                     activeState.isManualSelectionModeStart = true
@@ -1064,6 +1080,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.ARROW_UP,
             KeyCode.MOVE_START_OF_PAGE,
             KeyCode.MOVE_END_OF_PAGE,
+            KeyCode.PAGE_UP,
+            KeyCode.PAGE_DOWN,
             KeyCode.MOVE_START_OF_LINE,
             KeyCode.MOVE_END_OF_LINE -> {
                 editorInstance.massSelection.begin()
@@ -1081,6 +1099,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.ARROW_UP,
             KeyCode.MOVE_START_OF_PAGE,
             KeyCode.MOVE_END_OF_PAGE,
+            KeyCode.PAGE_UP,
+            KeyCode.PAGE_DOWN,
             KeyCode.MOVE_START_OF_LINE,
             KeyCode.MOVE_END_OF_LINE -> {
                 editorInstance.massSelection.end()
@@ -1267,6 +1287,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
             KeyCode.ARROW_UP,
             KeyCode.MOVE_START_OF_PAGE,
             KeyCode.MOVE_END_OF_PAGE,
+            KeyCode.PAGE_UP,
+            KeyCode.PAGE_DOWN,
             KeyCode.MOVE_START_OF_LINE,
             KeyCode.MOVE_END_OF_LINE -> {
                 editorInstance.massSelection.end()

@@ -21,6 +21,7 @@ import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangement
 import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangementComponent
 import dev.patrickgold.florisboard.ime.keyboard.LayoutType
 import dev.patrickgold.florisboard.ime.keyboard.LayoutTypeId
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.AutoTextKeyData
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.lib.io.loadJsonAsset
@@ -52,6 +53,30 @@ class CustomLayoutEditorPolicyTest : FunSpec({
             existingComponentIds = emptySet(),
             defaultLabel = "QWERTY Custom",
         ).isFailure shouldBe true
+    }
+
+    test("custom layouts retain Page Up and Page Down navigation keys") {
+        val draft = CustomLayoutEditorDraft(
+            layoutId = "terminal_navigation",
+            label = "Terminal navigation",
+            sourceLabel = "Terminal",
+            rows = listOf(listOf(CustomLayoutEditorKey("Page Up"), CustomLayoutEditorKey("Page Down"))),
+        )
+
+        CustomLayoutEditorPolicy.validate(draft, existingComponentIds = emptySet()).isValid shouldBe true
+        val decoded = loadJsonAsset<LayoutArrangement>(CustomLayoutEditorPolicy.encodeArrangement(draft)).getOrThrow()
+        decoded.single().map { (it as KeyData).code } shouldBe listOf(KeyCode.PAGE_UP, KeyCode.PAGE_DOWN)
+    }
+
+    test("cloning a layout with Page Up and Page Down keeps those actions editable") {
+        val draft = CustomLayoutEditorPolicy.newDraftFromArrangement(
+            source = qwertyComponent(),
+            arrangement = listOf(listOf(TextKeyData.PAGE_UP, TextKeyData.PAGE_DOWN)),
+            existingComponentIds = emptySet(),
+            defaultLabel = "Terminal navigation",
+        ).getOrThrow()
+
+        draft.rows.single().map { it.label } shouldBe listOf("Page Up", "Page Down")
     }
 
     test("editor operations swap add remove and validate keys") {

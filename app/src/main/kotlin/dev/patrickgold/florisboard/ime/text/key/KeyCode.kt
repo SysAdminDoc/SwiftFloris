@@ -58,6 +58,8 @@ object KeyCode {
     const val MOVE_END_OF_PAGE =             -26
     const val MOVE_START_OF_LINE =           -27
     const val MOVE_END_OF_LINE =             -28
+    const val PAGE_UP =                      -29
+    const val PAGE_DOWN =                    -30
 
     const val CLIPBOARD_COPY =               -31
     const val CLIPBOARD_CUT =                -32

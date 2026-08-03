@@ -49,6 +49,8 @@ class KeyboardKeyAccessibilityTest : FunSpec({
             KeyCode.VIEW_PHONE to "Phone keypad",
             KeyCode.SYSTEM_NEXT_INPUT_METHOD to "Next input method",
             KeyCode.IME_SUBTYPE_PICKER to "Language picker",
+            KeyCode.PAGE_UP to "Page up",
+            KeyCode.PAGE_DOWN to "Page down",
         )
 
         cases.forEach { (code, expected) ->
@@ -110,6 +112,8 @@ private fun testString(resId: Int): String {
         R.string.a11y__key__view_phone -> "Phone keypad"
         R.string.a11y__key__next_input_method -> "Next input method"
         R.string.a11y__key__subtype_picker -> "Language picker"
+        R.string.a11y__key__page_up -> "Page up"
+        R.string.a11y__key__page_down -> "Page down"
         R.string.a11y__key__generic -> "Key"
         else -> error("Unexpected string id: $resId")
     }

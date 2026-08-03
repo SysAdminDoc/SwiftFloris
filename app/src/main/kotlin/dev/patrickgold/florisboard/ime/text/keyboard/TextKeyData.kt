@@ -114,6 +114,8 @@ data class TextKeyData(
                 MOVE_END_OF_PAGE,
                 MOVE_START_OF_LINE,
                 MOVE_END_OF_LINE,
+                PAGE_UP,
+                PAGE_DOWN,
                 CLIPBOARD_COPY,
                 CLIPBOARD_CUT,
                 CLIPBOARD_PASTE,
@@ -308,6 +310,18 @@ data class TextKeyData(
             type = KeyType.NAVIGATION,
             code = KeyCode.MOVE_END_OF_LINE,
             label = "move_end_of_line",
+        )
+        /** Predefined key data for [KeyCode.PAGE_UP]. */
+        val PAGE_UP = TextKeyData(
+            type = KeyType.NAVIGATION,
+            code = KeyCode.PAGE_UP,
+            label = "page_up",
+        )
+        /** Predefined key data for [KeyCode.PAGE_DOWN]. */
+        val PAGE_DOWN = TextKeyData(
+            type = KeyType.NAVIGATION,
+            code = KeyCode.PAGE_DOWN,
+            label = "page_down",
         )
 
         /** Predefined key data for [KeyCode.CLIPBOARD_COPY] */

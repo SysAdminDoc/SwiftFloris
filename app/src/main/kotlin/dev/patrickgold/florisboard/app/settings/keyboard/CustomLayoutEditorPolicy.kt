@@ -25,8 +25,10 @@ import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangement
 import dev.patrickgold.florisboard.ime.keyboard.LayoutArrangementComponent
 import dev.patrickgold.florisboard.ime.keyboard.LayoutType
 import dev.patrickgold.florisboard.ime.keyboard.LayoutTypeId
+import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyType
 import dev.patrickgold.florisboard.ime.text.keyboard.AutoTextKeyData
+import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.lib.ext.ExtensionComponentName
 import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
 import dev.patrickgold.florisboard.lib.ext.ExtensionMeta
@@ -108,7 +110,7 @@ internal object CustomLayoutEditorPolicy {
                 require(row.isNotEmpty()) { "Row ${rowIndex + 1} is empty." }
                 row.mapIndexed { keyIndex, keyData ->
                     keyData.toEditableKey()
-                        ?: error("Row ${rowIndex + 1}, key ${keyIndex + 1} is not a simple printable character key.")
+                        ?: error("Row ${rowIndex + 1}, key ${keyIndex + 1} is not an editable key.")
                 }
             },
         )
@@ -253,6 +255,7 @@ internal object CustomLayoutEditorPolicy {
             for (key in row) {
                 val label = key.label.trim()
                 when {
+                    specialKeyData(label) != null -> Unit
                     label.isBlank() -> errors.add(CustomLayoutEditorValidationError.BlankKey)
                     label.singleCodePointOrNull() == null -> {
                         errors.add(CustomLayoutEditorValidationError.MultiCodePointKey)
@@ -271,6 +274,7 @@ internal object CustomLayoutEditorPolicy {
         return draft.rows.map { row ->
             row.map { key ->
                 val label = key.label.trim()
+                specialKeyData(label)?.let { return@map it }
                 val codePoint = requireNotNull(label.singleCodePointOrNull()) {
                     "Key label must be exactly one code point."
                 }
@@ -334,6 +338,10 @@ internal object CustomLayoutEditorPolicy {
 
     private fun AbstractKeyData.toEditableKey(): CustomLayoutEditorKey? {
         val data = this as? KeyData ?: return null
+        when (data.code) {
+            KeyCode.PAGE_UP -> return CustomLayoutEditorKey("Page Up")
+            KeyCode.PAGE_DOWN -> return CustomLayoutEditorKey("Page Down")
+        }
         val label = data.label.trim()
         val codePoint = label.singleCodePointOrNull() ?: return null
         if (data.type != KeyType.CHARACTER || data.code <= 0 || data.groupId != KeyData.GROUP_DEFAULT) {
@@ -343,6 +351,14 @@ internal object CustomLayoutEditorPolicy {
             return null
         }
         return CustomLayoutEditorKey(label)
+    }
+
+    private fun specialKeyData(label: String): TextKeyData? {
+        return when (label.trim().lowercase(Locale.US).replace('_', ' ')) {
+            "page up" -> TextKeyData.PAGE_UP
+            "page down" -> TextKeyData.PAGE_DOWN
+            else -> null
+        }
     }
 
     private fun slugFor(label: String): String {

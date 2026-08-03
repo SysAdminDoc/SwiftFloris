@@ -62,7 +62,9 @@ data class BottomRowPreset(
     companion object {
         const val AutomaticPreferenceValue = "automatic"
 
-        private const val MaxKeys = 9
+        // Terminal mode keeps its existing Esc/Ctrl/Alt/Space/Home/End/Tab/
+        // Enter contract and adds both page-navigation keys.
+        private const val MaxKeys = 10
 
         val DefaultKeys = listOf(
             BottomRowKey.VIEW_SYMBOLS,
@@ -146,7 +148,9 @@ data class BottomRowPreset(
             listOf(
                 BottomRowKey.ARROW_LEFT,
                 BottomRowKey.ARROW_UP,
+                BottomRowKey.PAGE_UP,
                 BottomRowKey.SPACE,
+                BottomRowKey.PAGE_DOWN,
                 BottomRowKey.ARROW_DOWN,
                 BottomRowKey.ARROW_RIGHT,
                 BottomRowKey.ENTER,
@@ -161,6 +165,8 @@ data class BottomRowPreset(
                 BottomRowKey.SPACE,
                 BottomRowKey.HOME,
                 BottomRowKey.END,
+                BottomRowKey.PAGE_UP,
+                BottomRowKey.PAGE_DOWN,
                 BottomRowKey.TAB,
                 BottomRowKey.ENTER,
             )
@@ -213,6 +219,9 @@ enum class BottomRowKey {
     ARROW_UP,
     ARROW_DOWN,
     ARROW_RIGHT,
+
+    PAGE_UP,
+    PAGE_DOWN,
 
     CTRL,
     ALT,
@@ -274,6 +283,8 @@ enum class BottomRowKey {
             ARROW_RIGHT -> TextKeyData.ARROW_RIGHT
             ARROW_UP -> TextKeyData.ARROW_UP
             ARROW_DOWN -> TextKeyData.ARROW_DOWN
+            PAGE_UP -> TextKeyData.PAGE_UP
+            PAGE_DOWN -> TextKeyData.PAGE_DOWN
             CTRL -> TextKeyData.CTRL
             ALT -> TextKeyData.ALT
             HOME -> TextKeyData.MOVE_START_OF_LINE

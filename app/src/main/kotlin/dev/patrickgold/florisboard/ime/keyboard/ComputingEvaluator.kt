@@ -168,6 +168,8 @@ fun ComputingEvaluator.computeLabel(data: KeyData): String? {
             KeyCode.VIEW_SYMBOLS2 -> {
                 evaluator.context()?.getString(R.string.key__view_symbols2)
             }
+            KeyCode.PAGE_UP -> evaluator.context()?.getString(R.string.key__page_up)
+            KeyCode.PAGE_DOWN -> evaluator.context()?.getString(R.string.key__page_down)
             KeyCode.HALF_SPACE -> {
                 evaluator.context()?.getString(R.string.key__view_half_space)
             }

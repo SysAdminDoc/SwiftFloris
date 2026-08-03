@@ -83,11 +83,13 @@ class BottomRowPresetTest : FunSpec({
     // docs/archive/SWIFTKEY_PARITY_ROADMAP_2026-05-17 §C2 — arrow-keys bottom-row
     // preset.
 
-    test("Navigation preset surfaces left / up / down / right arrows around a shrunken spacebar") {
+    test("Navigation preset surfaces arrows and page navigation around a shrunken spacebar") {
         BottomRowPreset.Navigation.toTextKeyDataRow().map { it.code }.shouldContainExactly(
             KeyCode.ARROW_LEFT,
             KeyCode.ARROW_UP,
+            KeyCode.PAGE_UP,
             KeyCode.SPACE,
+            KeyCode.PAGE_DOWN,
             KeyCode.ARROW_DOWN,
             KeyCode.ARROW_RIGHT,
             KeyCode.ENTER,
@@ -107,7 +109,7 @@ class BottomRowPresetTest : FunSpec({
         (BottomRowPreset.Navigation in BottomRowPreset.Presets) shouldBe true
     }
 
-    test("Terminal preset surfaces Esc / Ctrl / Alt / Home / End / Tab around spacebar") {
+    test("Terminal preset surfaces Esc / Ctrl / Alt / Home / End / Page Up / Page Down / Tab around spacebar") {
         BottomRowPreset.Terminal.toTextKeyDataRow().map { it.code }.shouldContainExactly(
             KeyCode.ESCAPE,
             KeyCode.CTRL,
@@ -115,6 +117,8 @@ class BottomRowPresetTest : FunSpec({
             KeyCode.SPACE,
             KeyCode.MOVE_START_OF_LINE,
             KeyCode.MOVE_END_OF_LINE,
+            KeyCode.PAGE_UP,
+            KeyCode.PAGE_DOWN,
             KeyCode.TAB,
             KeyCode.ENTER,
         )

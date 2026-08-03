@@ -657,6 +657,8 @@ internal fun keyContentDescription(
         KeyCode.MOVE_END_OF_LINE -> dev.patrickgold.florisboard.R.string.a11y__key__move_end_of_line
         KeyCode.MOVE_START_OF_PAGE -> dev.patrickgold.florisboard.R.string.a11y__key__move_start_of_page
         KeyCode.MOVE_END_OF_PAGE -> dev.patrickgold.florisboard.R.string.a11y__key__move_end_of_page
+        KeyCode.PAGE_UP -> dev.patrickgold.florisboard.R.string.a11y__key__page_up
+        KeyCode.PAGE_DOWN -> dev.patrickgold.florisboard.R.string.a11y__key__page_down
         KeyCode.LANGUAGE_SWITCH -> dev.patrickgold.florisboard.R.string.a11y__key__language_switch
         KeyCode.SHOW_SUBTYPE_PICKER, KeyCode.IME_SUBTYPE_PICKER -> dev.patrickgold.florisboard.R.string.a11y__key__subtype_picker
         KeyCode.IME_NEXT_SUBTYPE -> dev.patrickgold.florisboard.R.string.a11y__key__next_subtype
