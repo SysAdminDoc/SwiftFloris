@@ -1,0 +1,1 @@
+Keyboard3 XML imports, page-navigation keys, custom emoji and snippet workflows, localized layout metadata, trust-capability evidence, and the headless subsystem audit are now covered by deterministic contracts and release gates.

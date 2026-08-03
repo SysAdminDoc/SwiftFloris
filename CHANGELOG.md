@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.9.58 — 2026-08-02
+
 - Keep trust-capability evidence aligned with SQLCipher clipboard fallback and
   manifest permission-removal directives, and make the release-front-door
   locale gate portable across `python` and `python3` environments.
