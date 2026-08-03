@@ -17,6 +17,8 @@ REGISTRY_PATH = Path("app/src/main/config/trust-capabilities.json")
 ANDROID_NS = "http://schemas.android.com/apk/res/android"
 ANDROID_NAME = f"{{{ANDROID_NS}}}name"
 ANDROID_PROTECTION_LEVEL = f"{{{ANDROID_NS}}}protectionLevel"
+TOOLS_NS = "http://schemas.android.com/tools"
+TOOLS_NODE = f"{{{TOOLS_NS}}}node"
 NETWORK_PERMISSIONS = {
     "android.permission.ACCESS_NETWORK_STATE",
     "android.permission.ACCESS_WIFI_STATE",
@@ -105,6 +107,7 @@ def parse_manifest(root: Path) -> tuple[list[str], list[str]]:
         element.attrib[ANDROID_NAME]
         for element in manifest.findall("uses-permission")
         if ANDROID_NAME in element.attrib
+        and element.attrib.get(TOOLS_NODE) != "remove"
     )
     signature_permissions = sorted(
         element.attrib[ANDROID_NAME]
@@ -456,11 +459,24 @@ def validate_public_copy(root: Path, registry: dict[str, Any]) -> list[str]:
     )
 
     threat = "docs/THREAT_MODEL.md"
-    require(
-        threat,
-        "Clipboard history is currently a plaintext Room database",
-        "plaintext clipboard disclosure",
-    )
+    clipboard_history = registry["storage"]["clipboardHistory"]
+    if clipboard_history == "encrypted_or_unknown":
+        require(
+            threat,
+            "Clipboard history is SQLCipher-encrypted at rest when the local SQLCipher provider is available",
+            "encrypted clipboard disclosure",
+        )
+        forbid(
+            threat,
+            "Clipboard history is currently a plaintext Room database",
+            "plaintext clipboard disclosure",
+        )
+    else:
+        require(
+            threat,
+            "Clipboard history is currently a plaintext Room database",
+            "plaintext clipboard disclosure",
+        )
     require(
         threat,
         f"(`net.zetetic:sqlcipher-android` {sqlcipher_version})",
@@ -476,7 +492,7 @@ def validate_public_copy(root: Path, registry: dict[str, Any]) -> list[str]:
     forbid(
         threat,
         "Clipboard items are AES-256-GCM encrypted at rest",
-        "clipboard encryption claim",
+        "obsolete clipboard encryption claim",
     )
     forbid(
         threat,

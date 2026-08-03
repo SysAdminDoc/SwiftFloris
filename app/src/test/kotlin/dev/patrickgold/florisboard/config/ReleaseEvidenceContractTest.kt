@@ -23,7 +23,7 @@ class ReleaseEvidenceContractTest {
         checker shouldContain "gradle/libs.versions.toml"
         checker shouldContain "derive_optional_capabilities"
         checker shouldContain "validate_public_copy"
-        registry shouldContain "\"clipboardHistory\": \"plaintext_room\""
+        registry shouldContain "\"clipboardHistory\": \"encrypted_or_unknown\""
         registry shouldContain "\"localVoiceRecognizer\": \"preview_only\""
         checker shouldContain "NoNetworkPermissionPolicy.kt"
         registry shouldContain "\"daemonNetworkPermissionsRejected\": true"

@@ -51,6 +51,11 @@ def write_fixture(root: Path, *, version: str = "1.9.54", code: str = "2103", re
     (root / "fastlane" / "metadata" / "android" / "en-US" / "changelogs").mkdir(parents=True, exist_ok=True)
     (root / "fdroid").mkdir(exist_ok=True)
     shutil.copyfile(CHECKER, root / "scripts" / "check-release-front-door.sh")
+    (root / "scripts" / "check-locale-coverage.py").write_text(
+        "# Fixture stub: release-front-door owns invocation, locale tests own behavior.\n"
+        "raise SystemExit(0)\n",
+        encoding="utf-8",
+    )
     readme_claim = readme_version or version
     (root / "gradle.properties").write_text(
         f"projectVersionName={version}\nprojectVersionCode={code}\n",

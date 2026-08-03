@@ -20,7 +20,7 @@
     "networkPermission": false
   },
   "storage": {
-    "clipboardHistory": "plaintext_room",
+    "clipboardHistory": "encrypted_or_unknown",
     "clipboardMedia": "plaintext_app_private_files",
     "personalDictionary": "sqlcipher_room",
     "sqlcipherVersion": "4.17.0"

@@ -281,9 +281,10 @@ access.
 
 - **Personal dictionary:** SQLCipher-encrypted Room database, with the
   SQLCipher passphrase wrapped by Tink / AndroidKeystore.
-- **Clipboard history:** currently a plaintext Room database plus plaintext
-  app-private media files. Sensitive-field ingestion gates reduce exposure,
-  but at-rest clipboard encryption has not shipped.
+- **Clipboard history:** SQLCipher-encrypted at rest when the local provider is
+  available, with a Keystore-wrapped passphrase and row-verified migration from
+  older plaintext history. If SQLCipher cannot load, the UI reports an explicit
+  unencrypted state; clipboard media remains in app-private plaintext files.
 - **IME window:** `FLAG_SECURE` set on password/no-personalized-learning fields and while incognito is active, including mid-session dynamic incognito toggles, so the keyboard is excluded from screenshots and screen-recording overlays.
 - **Long-press popups:** suppressed on every `KeyVariation.PASSWORD` (Android 17 password-visibility behavior closed on the IME side as of v1.8.44).
 - **Personalized learning:** clipboard write / dictionary learn paths skip password and `IME_FLAG_NO_PERSONALIZED_LEARNING` fields.

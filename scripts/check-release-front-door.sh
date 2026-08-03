@@ -222,14 +222,20 @@ fi
 # reviewed English UI from partial translation/fallback and keeps existing
 # translated-resource floors from regressing.  The checker emits only keys,
 # counts, and source locations; it never reads user data.
+python_bin=""
 if command -v python >/dev/null 2>&1; then
-  if python scripts/check-locale-coverage.py --check; then
+  python_bin="python"
+elif command -v python3 >/dev/null 2>&1; then
+  python_bin="python3"
+fi
+if [ -n "$python_bin" ]; then
+  if "$python_bin" scripts/check-locale-coverage.py --check; then
     echo "locale coverage: OK"
   else
     fail "trust-critical locale coverage gate failed"
   fi
 else
-  fail "python is required for the trust-critical locale coverage gate"
+  fail "python or python3 is required for the trust-critical locale coverage gate"
 fi
 
 # --- Summary ---
