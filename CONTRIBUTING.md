@@ -30,7 +30,7 @@ addon instead of weakening the base app.
 Required:
 
 - JDK 21.
-- Android SDK with compile SDK 36 and Build Tools 36.0.0.
+- Android SDK with compile SDK 37 and Build Tools 36.0.0.
 - The bundled Gradle wrapper.
 - An Android device or emulator for manual IME smoke tests.
 

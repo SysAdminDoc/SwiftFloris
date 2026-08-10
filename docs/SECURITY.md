@@ -54,7 +54,7 @@ handoff. This document focuses on the dependency and supply-chain side of that p
 ## Local key storage
 
 As of v1.8.68, SwiftFloris no longer depends on AndroidX Security Crypto's deprecated
-`EncryptedSharedPreferences` APIs. `TinkStringPreferenceCrypto` uses Tink Android `1.22.0`, creates
+`EncryptedSharedPreferences` APIs. `TinkStringPreferenceCrypto` uses Tink Android `1.23.0`, creates
 AndroidKeystore-held AES-256-GCM wrapping keys, and binds ciphertext to the `prefsFile:key` associated-data tuple.
 Reads of existing ciphertext do not generate replacement Keystore keys; missing keys fail closed and writes are the
 only path that create a new wrapper key.

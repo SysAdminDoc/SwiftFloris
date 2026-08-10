@@ -157,18 +157,29 @@ Out of scope:
   of screenshots, screen recordings, and non-secure external displays during
   private typing.
 
-### 3.4 Encrypted clipboard
-- Clipboard items are AES-256-GCM encrypted at rest (max 50 entries). The
-  serialized history payload is wrapped by Tink `Aead` with an
-  AndroidKeystore-held AES-256-GCM key, hardware-backed when the device
-  supports it. Older AndroidX `EncryptedSharedPreferences` payloads migrate
-  once when their legacy keysets are still readable.
+### 3.4 Clipboard history
+- Clipboard history is SQLCipher-encrypted at rest when the local SQLCipher
+  provider is available; the 64-byte passphrase is wrapped by a
+  Keystore-backed Tink key. Existing plaintext history is staged, migrated with
+  row-count verification, and preserved on failure. If SQLCipher cannot load,
+  the store reports an explicit unencrypted state and keeps the history in
+  plaintext Room storage rather than hiding the downgrade.
+- Cloned clipboard media is stored as plaintext under the app-private no-backup
+  directory. Android app sandboxing and the non-exported provider restrict
+  ordinary cross-app reads.
 - Sensitive-clip flag (Android 13+) is preserved on clipboard ingestion and
   honored on display.
+- Clipboard data selected for portable export is never exposed as a ZIP:
+  SwiftFloris seals the app-private staging archive into a versioned
+  passphrase-derived AES-256-GCM `.sfbak` envelope before SAF or FileProvider
+  handoff. Restore authenticates before extraction, uses a pre-mutation
+  recovery snapshot for rollback, and keeps earlier plaintext ZIPs only as a
+  visibly warned migration path. This export envelope is separate from the
+  live clipboard database and cloned media storage described above.
 
 ### 3.5 SQLCipher personal dictionary
 - The app-private personal Room dictionary opens through SQLCipher
-  (`net.zetetic:sqlcipher-android` 4.16.0). The 64-byte SQLCipher passphrase is
+  (`net.zetetic:sqlcipher-android` 4.17.0). The 64-byte SQLCipher passphrase is
   generated locally, wrapped by Tink `Aead`, and protected by an
   AndroidKeystore-held AES-256-GCM key.
 - Existing AndroidX encrypted-preference passphrase payloads migrate once into
@@ -202,7 +213,15 @@ Out of scope:
   distribution target.
 
 ### 3.8 CAKI (cross-app KeyEvent injection)
-- IME does not expose AIDL services beyond the platform `InputMethodService`.
+- SwiftFloris contains a client-side `IMcpDaemon.aidl` Binder contract and
+  binds services exported by separately installed daemon apps. SwiftFloris
+  does not export an MCP AIDL service of its own; its platform IME and
+  spellchecker services remain protected by the platform binding
+  permissions.
+- Before certificate trust, registry enrollment, or binding, MCP discovery
+  rejects a daemon package requesting `INTERNET`, network-state, or Wi-Fi
+  state/change permissions. The check uses requested permissions regardless
+  of current grant state and is repeated on explicit Settings rescans.
 - KeyEvent dispatch in `AbstractEditorInstance.sendDownUpKeyEvent` always
   attaches `KeyCharacterMap.VIRTUAL_KEYBOARD` source; the host editor remains
   authoritative for whether a synthetic event is honored.
@@ -235,7 +254,11 @@ Out of scope:
 
 ## 5. Verification checklist (run on every release)
 
-- [ ] `aapt dump permissions app-release.apk` shows only `VIBRATE`, `POST_NOTIFICATIONS` (and any new ones must be justified in the release notes + threat model).
+- [ ] `aapt dump permissions app-release.apk` matches
+  `android.permission.VIBRATE`, `android.permission.POST_NOTIFICATIONS`,
+  `android.permission.READ_CALENDAR`, and
+  `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP` (and any new entry
+  is justified in the release notes + threat model).
 - [ ] `:app:verifyNoInternetPermission` passes locally.
 - [ ] `PersonalDictionaryIsolationTest` passes locally.
 - [ ] `PersonalDictionaryEncryptionTest` passes locally; this includes the SQLCipher/Tink guard and confirms the personal dictionary Room source no longer contains `allowMainThreadQueries`.

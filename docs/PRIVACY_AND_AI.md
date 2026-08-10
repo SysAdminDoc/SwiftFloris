@@ -129,46 +129,42 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 
 - **What runs.** Facade + cache + language-pack manager (in tree, at
   [`ime/translate/`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/translate)).
-  The actual translator is the **Bergamot WASM runtime** delivered as a
-  separately-installed user-opt-in addon (L2.1a) using
-  [`DavidVentura/firefox-translator`](https://github.com/DavidVentura/firefox-translator)
-  as the JNI reference. Bergamot is MPL-2.0; models are Mozilla's
-  Firefox translation pairs.
-- **Where.** On this device only. **No cloud translator (no Microsoft
-  Translator, no Google Translate, no DeepL).**
-- **Data seen.** The text fragment you ask to translate.
+  No Bergamot runtime addon currently ships. The production registry stays on
+  its unavailable provider, so the translation action cannot produce a
+  translation until a compatible local runtime is implemented and enrolled.
+- **Where.** The facade runs on this device only. There is no cloud translator
+  and no delivered local translation engine.
+- **Data seen.** The in-process facade receives the text fragment selected for
+  translation; no external translation provider currently receives it.
 - **Data sent.** Nothing leaves the device.
-- **Off switch.** Don't install the addon, or remove it. The keyboard's
-  translation surface is no-op until an addon binds.
+- **Off switch.** The keyboard's translation surface is already no-op while
+  no runtime is bound.
 
 ### 2.7 Smart Compose (ghost-text continuation)
 
-- **What runs.** Facade + provider registry (in tree, at
-  [`ime/smartcompose/`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/)).
-  The actual completion engine is **Gemma 3 270M Q4 / FunctionGemma
-  270M INT8** via **LiteRT-LM** delivered as a separately-installed
-  user-opt-in addon (L1.1a). Default behavior with no addon installed:
-  no completion suggestion ever appears.
+- **What runs.** The opt-in `HeuristicSmartComposeProvider` uses the local
+  personal trigram/bigram stores and cold-start priors. The optional
+  model-backed Smart Compose runtime does not currently ship; LiteRT-LM and
+  model descriptors are contract surfaces only.
 - **Where.** On this device only. **No cloud LLM (no GPT, no Gemini API,
-  no Claude API, no Bing Copilot).** LiteRT-LM is Google's deprecation
-  successor to MediaPipe LLM Inference, the orchestration layer Gemini
-  Nano uses on Chrome and Pixel Watch.
-- **Data seen.** Your typing context (preceding text + composing prefix
-  + focused-editor package name for per-app LoRA hot-swap).
+  no Claude API, no Bing Copilot).**
+- **Data seen.** When the heuristic is enabled, it reads the preceding local
+  word context and composing prefix. No model runtime receives the focused
+  editor package name because no model provider ships.
 - **Data sent.** Nothing leaves the device.
-- **Off switch.** Don't install the addon, or remove it. Settings →
-  Typing → Smart Compose toggles the surface even when the addon is
-  installed.
+- **Off switch.** Settings → Typing → Smart Compose disables the local
+  heuristic surface.
 
 ### 2.8 Tone / Rewrite (professional / casual / polite)
 
-- **What runs.** Same Gemma 3 instance as Smart Compose, invoked through
-  the rewrite router at [`ime/smartcompose/RewriteRouter.kt`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/RewriteRouter.kt).
-  Gated on L1.1a.
+- **What runs.** The rewrite router and no-op provider contract at
+  [`ime/smartcompose/RewriteRouter.kt`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartcompose/RewriteRouter.kt).
+  No rewrite model provider currently ships.
 - **Where.** On this device only.
-- **Data seen.** Your selected text plus the tone-target prompt.
+- **Data seen.** The in-process router evaluates the request; the default
+  provider returns unavailable and no model receives the selected text.
 - **Data sent.** Nothing leaves the device.
-- **Off switch.** Same as Smart Compose.
+- **Off switch.** Rewrite remains unavailable while no provider is bound.
 
 ### 2.9 Adaptive emoji prediction
 
@@ -182,15 +178,14 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 
 ### 2.10 Stylus handwriting recognition
 
-- **What runs.** Pen-down → pen-up polyline capture + stroke recognizer
-  facade ([`ime/handwriting/`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/handwriting/)).
-  Recognizer engine is delivered as a separately-installed user-opt-in
-  addon. **Two SKU plan** (see SECOND_PASS_FINDINGS): Play-Store-only
-  `addons/handwriting-mlkit/` using Google ML Kit Digital Ink, and
-  F-Droid-eligible `addons/handwriting-tflite/` using an OSS CRNN.
-- **Where.** On this device only.
-- **Data seen.** Your pen-stroke coordinates and timing during a
-  handwriting session.
+- **What runs.** Pen-down → pen-up polyline capture plus the default no-op
+  stroke-recognizer facade
+  ([`ime/handwriting/`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/handwriting/)).
+  No handwriting recognizer addon currently ships.
+- **Where.** Stroke capture runs on this device; there is no delivered
+  recognizer engine.
+- **Data seen.** The in-process facade receives pen-stroke coordinates and
+  timing, then returns no recognition.
 - **Data sent.** Nothing leaves the device.
 - **Off switch.** Settings → Keyboard → Stylus handwriting (default off).
 
@@ -214,16 +209,18 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 
 - **What runs.** AIDL local-binder bridge to user-installed MCP (Model
   Context Protocol) daemons on the same device. The IME never invokes
-  a network socket; daemons must declare local binding only.
+  a network socket; it binds an Android service exported by the daemon app.
 - **Where.** On this device only. **Local Android `bindService` +
   AIDL.** Per-daemon enable/disable in Settings → MCP daemon bridge.
   Per-tool allowlist gate in dispatch router.
 - **Data seen.** Your selected text plus any context fields the
   invoked tool's JSON schema requires.
 - **Data sent.** Sent **to the on-device daemon** the user explicitly
-  installed and enabled. Daemons themselves must be locally bound —
-  they cannot themselves declare `INTERNET` and remain enrollable
-  through the addon-enumerator's network-permission hard reject.
+  installed and enabled. SwiftFloris rejects daemon packages that request any
+  denied network permission before certificate trust, registration, or
+  binding, even when Android has not granted the permission. The separate
+  daemon remains a privacy boundary for its other permissions and behavior,
+  even though the keyboard-to-daemon transport is local Binder.
 - **Off switch.** Settings → MCP daemon bridge → Disable.
 
 ### 2.13 Personal dictionary + learning
@@ -267,6 +264,12 @@ Every surface above is subject to:
 - The **personal-dictionary backup exclusion** — encrypted DB is excluded
   from both cloud backup and device-to-device transfer (Android Keystore
   wrap key is non-portable).
+- The **portable clipboard-backup boundary** — selecting any clipboard
+  section requires a passphrase-encrypted, versioned AES-GCM `.sfbak`
+  envelope. Authentication and archive validation complete before live data
+  changes; failed or cancelled restores reapply an app-private recovery
+  snapshot. Earlier plaintext ZIP archives remain an explicit warned
+  migration path.
 
 All of the above is pinned by tests and gates, not promises.
 
@@ -299,9 +302,11 @@ To prevent re-litigation, here is the explicit non-list (see
 Three independent ways to audit the no-network promise:
 
 1. **`aapt dump permissions` against the installed APK** — should list
-   only `VIBRATE` + `POST_NOTIFICATIONS` (and optionally
-   `BIND_NOTIFICATION_LISTENER` if you've enabled the app-aware smartbar).
-   Crucially: no `INTERNET`, no `ACCESS_NETWORK_STATE`, no `WiFi`.
+   `android.permission.VIBRATE`, `android.permission.POST_NOTIFICATIONS`,
+   `android.permission.READ_CALENDAR`, and
+   `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP`. Crucially:
+   no `android.permission.INTERNET`, `ACCESS_NETWORK_STATE`, or Wi-Fi
+   network permission.
 2. **The local release evidence log** — `scripts/release-evidence.ps1` runs
    `:app:verifyNoInternetPermission` and fails if any `AndroidManifest.xml`
    declares a network permission.
@@ -326,14 +331,11 @@ SwiftFloris's response (shipped in the app UI in v1.8.66):
 - This file is the **first-interaction explainer surface**. The
   first-run flow links here once; Settings → About → "AI features in
   this keyboard" links here always.
-- AI-generated synthetic content marking is **scoped only to the smart-compose
-  addon path** (L1) — when an installed addon synthesizes a completion,
-  the IME marks it as a "suggestion" candidate (visually distinct from
-  literal typed text). The synthesized text is **never auto-committed**
-  without an explicit user action (swipe-space or tap).
-- The Bergamot translator addon (L2) treats the translated text as
-  user-generated (the user is the source of the input fragment); the
-  translation output is offered as a candidate, not a substitution.
+- No model-backed Smart Compose, rewrite, or translation runtime currently
+  ships. The delivered heuristic Smart Compose path emits an explicitly
+  labelled suggestion candidate and never commits without a tap or
+  swipe-space action. A future model-backed provider must preserve that
+  disclosure and explicit-commit contract.
 
 For users in the EU, the on-device-only posture means no cross-border
 data transfer. GDPR territorial scope therefore applies to the keyboard's

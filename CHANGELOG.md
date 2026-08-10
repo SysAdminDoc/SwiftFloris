@@ -22,3 +22,87 @@
 - Resolve custom-layout labels and generated extension metadata through localized resources while preserving stable on-disk slugs.
 - Add programmable Page Up/Page Down key codes, Android page-key dispatch, custom-layout editor support, localized labels, and Terminal/Navigation preset coverage.
 - Import Unicode Keyboard3 XML as hardened local keyboard extensions with bounded XML parsing, versioned bundled-CLDR allowlists, deterministic compilation, source provenance, and security/conformance diagnostics.
+
+## Roadmap archive — 2026-08-10 — ROADMAP.md
+
+<details>
+<summary>Original roadmap snapshot</summary>
+
+```markdown
+# SwiftFloris Roadmap
+
+This file contains only actionable, unblocked work. Completed items are
+deleted (they live in git history and the fastlane changelogs). Items
+gated on external deliverables or hardware testing live in
+[`Roadmap_Blocked.md`](Roadmap_Blocked.md).
+
+---
+
+## Research-Driven Additions
+
+### P3
+## Research-Driven Additions (2026-06-29)
+
+### P1
+
+### P3
+
+## Research-Driven Additions
+
+### P1
+
+### P2
+
+## Research-Driven Additions (2026-06-29 refresh)
+
+### P1
+
+### P2
+
+### P3
+
+## Research-Driven Additions
+
+### P1
+
+### P2
+
+### P3
+
+## Research-Driven Additions
+
+### P1
+
+### P2
+
+### P3
+
+## Research-Driven Additions
+
+### P0
+
+### P1
+
+### P2
+
+### P3
+
+## Research-Driven Additions
+
+### P2
+
+### P3
+
+## Audit Findings — 2026-08-02
+
+Baseline for this pass: `.\gradlew.bat :app:testDebugUnitTest :app:lintDebug`
+→ **BUILD SUCCESSFUL in 4m 34s**, no failing tests, no lint failures. Nothing
+below is a pre-existing baseline failure; every item is a defect found by
+reading and tracing the code against that green baseline.
+
+### P2
+
+### P3
+```
+
+</details>
