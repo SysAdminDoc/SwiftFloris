@@ -114,9 +114,49 @@ def test_hardcoded_critical_ui_copy_is_a_gate() -> None:
         assert any("hard-coded critical UI copy" in error for error in report["errors"])
 
 
+def test_locale_without_a_translation_route_is_a_gate() -> None:
+    # A values-* directory that crowdin.yml does not map can be hand-edited but
+    # never round-trips, so the translation silently rots. That is how zh-rCN
+    # ended up outside the pipeline.
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        write_fixture(root)
+        (root / "crowdin.yml").write_text(
+            "files:\n"
+            '  - source: "/app/src/main/res/values/strings.xml"\n'
+            '    translation: "/app/src/main/res/values-%android_code%/%original_file_name%"\n'
+            "    languages_mapping:\n"
+            "      android_code:\n"
+            '        de: "de"\n',
+            encoding="utf-8",
+        )
+        result = run_checker(root)
+        assert result.returncode == 1, result.stdout + result.stderr
+        report = json.loads(result.stdout)
+        assert any(
+            "no translation route in crowdin.yml: values-fr" in error
+            for error in report["errors"]
+        ), report["errors"]
+
+        # Mapping the locale clears it.
+        (root / "crowdin.yml").write_text(
+            "files:\n"
+            '  - source: "/app/src/main/res/values/strings.xml"\n'
+            '    translation: "/app/src/main/res/values-%android_code%/%original_file_name%"\n'
+            "    languages_mapping:\n"
+            "      android_code:\n"
+            '        fr: "fr"\n',
+            encoding="utf-8",
+        )
+        cleared = run_checker(root)
+        assert cleared.returncode == 0, cleared.stdout + cleared.stderr
+        assert json.loads(cleared.stdout)["violations"]["translation_route"] == []
+
+
 def main() -> int:
     test_fixture_report_and_pseudolocales()
     test_hardcoded_critical_ui_copy_is_a_gate()
+    test_locale_without_a_translation_route_is_a_gate()
     print("test-check-locale-coverage: OK")
     return 0
 

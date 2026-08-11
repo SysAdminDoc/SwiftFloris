@@ -186,7 +186,8 @@ Public project information is available in this README, [Security](docs/SECURITY
 - Kotest 6.2.3 unit-test runner; Roborazzi 1.70.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available behind behavior gates).
-- Crowdin pipeline for translations; translated resources are reviewed and
+- Crowdin for translations, synced locally with the Crowdin CLI (this project
+  runs no CI); see CONTRIBUTING.md. Translated resources are reviewed and
   promoted independently from typing-language subtype coverage.
 - No `INTERNET` permission in the manifest (local release gate enforced).
 

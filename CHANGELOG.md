@@ -7,6 +7,9 @@
   nearby-devices, shared storage — are rejected alongside the network ones.
 - Clear leftover cache off the main thread at startup, so a cold keyboard
   start no longer blocks on a recursive delete.
+- Route all 42 shipped locales through the translation pipeline; eight,
+  including Simplified Chinese and Urdu, previously had no mapping and could
+  never round-trip. A gate now fails when a locale has no route.
 - Declare the bundled emoji data as Unicode Emoji 17.0, which is what CLDR 48
   generated; the assets already carried every Emoji 17.0 character.
 

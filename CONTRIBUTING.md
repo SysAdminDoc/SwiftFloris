@@ -155,6 +155,33 @@ test commands, file paths, internal-only IDs, or claims not backed by the
 Docs-only housekeeping commits do not need a version bump unless they are being
 published as a release.
 
+## Translations
+
+Translations live in `app/src/main/res/values-<android-code>/strings.xml` and
+are managed through Crowdin. This project runs no CI, so the sync is a local
+step a maintainer performs with the Crowdin CLI rather than a workflow:
+
+```bash
+# Credentials come from the environment; crowdin.yml names them.
+export FSEC_CROWDIN_PROJECT_ID=...      # Crowdin project id
+export FSEC_CROWDIN_PERSONAL_TOKEN=...  # Crowdin personal access token
+
+crowdin upload sources      # after editing values/strings.xml
+crowdin download            # pull completed translations back into values-*/
+```
+
+Contributors without Crowdin access can edit a `values-*/strings.xml` directly
+in a pull request; a maintainer reconciles it on the next sync.
+
+Every shipped locale must appear in the `languages_mapping` block of
+`crowdin.yml`. A `values-*` directory with no entry there can be edited by hand
+but never round-trips — an upload will not carry it and a download will not
+update it — so `python scripts/check-locale-coverage.py --check` fails when one
+is missing. Add the mapping in the same commit as a new locale directory.
+
+Do not add `maxLength` constraints to `values/strings.xml`; they block
+translators whose language needs more room than English.
+
 ## Pull Requests
 
 Every pull request should include:

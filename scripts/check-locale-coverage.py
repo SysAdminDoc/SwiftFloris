@@ -456,6 +456,47 @@ def exact_base_count(
     )
 
 
+def translation_route_errors(root: Path, locale_directories: list[str]) -> list[str]:
+    """Every shipped locale must have a route back to the translation source.
+
+    `crowdin.yml` maps a Crowdin locale onto the `%android_code%` substituted
+    into the resource path. A `values-*` directory with no mapping entry can be
+    edited by hand but can never round-trip: an upload will not carry it and a
+    download will not update it, so the translation silently rots. That is how
+    zh-rCN — the largest translation in the tree — ended up outside the
+    pipeline. Assert the mapping covers what is actually shipped.
+    """
+    config_path = root / "crowdin.yml"
+    try:
+        config = config_path.read_text(encoding="utf-8")
+    except FileNotFoundError:
+        # Retiring the pipeline is a legitimate choice; it just has to be a
+        # deliberate one, documented for contributors.
+        try:
+            guidance = (root / "CONTRIBUTING.md").read_text(encoding="utf-8")
+        except FileNotFoundError:
+            # Neither file present: a synthetic fixture tree, not a checkout.
+            # Nothing to say about a translation route that was never claimed.
+            return []
+        if "translation" not in guidance.lower():
+            return [
+                "crowdin.yml is absent and CONTRIBUTING.md documents no "
+                "translation path; contributors have no way to submit translations"
+            ]
+        return []
+
+    mapped = set(re.findall(r'^\s{6,}"?[\w-]+"?:\s*"([^"]+)"\s*$', config, flags=re.MULTILINE))
+    errors: list[str] = []
+    for directory in sorted(locale_directories):
+        android_code = directory.removeprefix("values-")
+        if android_code not in mapped:
+            errors.append(
+                f"locale has no translation route in crowdin.yml: {directory} "
+                f"(add a `<crowdin-code>: \"{android_code}\"` entry)"
+            )
+    return errors
+
+
 def build_report(root: Path, *, check: bool, ratchet: bool) -> dict[str, object]:
     errors: list[str] = []
     structural_errors: list[str] = []
@@ -575,12 +616,15 @@ def build_report(root: Path, *, check: bool, ratchet: bool) -> dict[str, object]
         for violation in hardcoded_copy
     ]
 
+    route_errors = translation_route_errors(root, sorted(locale_paths))
+
     if check:
         errors.extend(structural_errors)
         errors.extend(floor_errors)
         errors.extend(complete_errors)
         errors.extend(pseudo_errors)
         errors.extend(hardcoded_errors)
+        errors.extend(route_errors)
 
     resource_languages = sorted({item["language"] for item in locale_reports})
     typing_only_languages = sorted(
@@ -627,6 +671,7 @@ def build_report(root: Path, *, check: bool, ratchet: bool) -> dict[str, object]
             "complete_ui": complete_errors,
             "pseudolocale": pseudo_errors,
             "hard_coded_critical_copy": hardcoded_errors,
+            "translation_route": route_errors,
         },
         "errors": errors,
     }
