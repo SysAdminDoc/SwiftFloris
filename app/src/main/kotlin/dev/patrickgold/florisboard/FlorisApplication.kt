@@ -43,6 +43,7 @@ import dev.patrickgold.florisboard.ime.wordstyles.WordStylesCanvasRenderer
 import dev.patrickgold.florisboard.ime.wordstyles.WordStylesRendererRegistry
 import dev.patrickgold.florisboard.ime.theme.ThemeManager
 import dev.patrickgold.florisboard.lib.cache.CacheManager
+import dev.patrickgold.florisboard.lib.cache.StartupCachePurge
 import dev.patrickgold.florisboard.lib.crashutility.CrashUtility
 import dev.patrickgold.florisboard.lib.devtools.Flog
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
@@ -55,7 +56,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
-import org.florisboard.lib.kotlin.io.deleteContentsRecursively
 import org.florisboard.lib.kotlin.tryOrNull
 import java.lang.ref.WeakReference
 
@@ -136,7 +136,7 @@ class FlorisApplication : Application() {
                 }
             }
             if (!UserManagerCompat.isUserUnlocked(this)) {
-                cacheDir?.deleteContentsRecursively()
+                purgeStaleCacheAsync()
                 extensionManager.value.init()
                 registerReceiver(BootComplete(), IntentFilter(Intent.ACTION_USER_UNLOCKED))
                 return
@@ -149,8 +149,24 @@ class FlorisApplication : Application() {
         }
     }
 
+    /**
+     * Snapshot the cache directory on the calling thread, then do the recursive
+     * delete on IO. See [StartupCachePurge] for why the split is load-bearing:
+     * a wholesale async delete would race [ExtensionManager.init]'s extraction.
+     */
+    private fun purgeStaleCacheAsync() {
+        val staleEntries = StartupCachePurge.snapshotStaleEntries(cacheDir)
+        if (staleEntries.isEmpty()) return
+        scope.launch(Dispatchers.IO) {
+            val failures = StartupCachePurge.purge(staleEntries)
+            if (failures.isNotEmpty()) {
+                flogError { "Cache purge left ${failures.size} entr(y|ies) behind" }
+            }
+        }
+    }
+
     fun init() {
-        cacheDir?.deleteContentsRecursively()
+        purgeStaleCacheAsync()
         scope.launch {
             initializePreferenceStoreForStartup(
                 context = this@FlorisApplication,
