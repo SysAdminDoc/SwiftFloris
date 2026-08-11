@@ -216,6 +216,8 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
 # Android SDK 36 target plus Android SDK 37 compile platform
 # JDK 21+
 # Gradle 9.6.1 (use the bundled wrapper)
+# NDK 29.0.14206865 - pinned for the reproducible-build image, not used by the
+#   app build itself (there are no native sources)
 ```
 
 ### Build commands

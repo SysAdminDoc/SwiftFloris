@@ -72,6 +72,19 @@ configure<ApplicationExtension> {
     namespace = "dev.patrickgold.florisboard"
     compileSdk = projectCompileSdk.toInt()
     buildToolsVersion = tools.versions.buildTools.get()
+    // SwiftFloris has no native sources — no CMakeLists.txt, no Cargo.toml, no
+    // jniLibs, no externalNativeBuild — and `:app:assembleDebug` succeeds with
+    // this line removed. It is pinned anyway because `gradle/tools.versions.toml`
+    // is the single input list the reproducible-build image is built from
+    // (`utils/repr_build/Dockerfile` installs `ndk;${NDK_VERSION}` and
+    // `cmake;${CMAKE_VERSION}` from these same properties), and a verifier
+    // reproducing a release must land on the same SDK component set the
+    // maintainer used. Pinning it here keeps the local toolchain and the
+    // container from silently diverging.
+    //
+    // If the reproducible-build image ever stops installing the NDK, drop this
+    // line with it — but do not drop it alone, and confirm the release APK is
+    // byte-identical across a clean build either way before doing so.
     ndkVersion = tools.versions.ndk.get()
 
     // ROADMAP §6 N6.2 — release signing. The KEYSTORE_PATH + SIGNING_*
