@@ -36,8 +36,8 @@ import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
  *     intent + `GET_META_DATA | GET_PERMISSIONS` flags.
  *  2. For each [ResolveInfo], extract the package/class names,
  *     protocol version meta-data, tool-catalog resource pointer.
- *  3. Reject a daemon package requesting any permission in the shared
- *     [NoNetworkPermissionPolicy.DeniedPermissions] set.
+ *  3. Reject a daemon package requesting any permission outside the shared
+ *     [NoNetworkPermissionPolicy.AllowedPermissions] allowlist.
  *  4. Read the daemon package's signing-certificate fingerprint.
  *  5. Resolve the tool-catalog resource through the daemon's own
  *     `Resources` (via `Context.createPackageContext`) so we can read
@@ -219,7 +219,7 @@ object McpAndroidDiscoverer {
         val reason = if (!snapshot.lookupSucceeded) {
             REASON_PERMISSION_LOOKUP_FAILED
         } else {
-            val permission = NoNetworkPermissionPolicy.firstDenied(snapshot.requestedPermissions)
+            val permission = NoNetworkPermissionPolicy.firstDisallowed(snapshot.requestedPermissions)
                 ?: return null
             NoNetworkPermissionPolicy.rejectionReason(permission)
         }

@@ -46,28 +46,33 @@ import java.io.File
  */
 class AddonEnumerator(
     private val context: Context,
-    private val networkPermissionsRejected: Set<String> = NoNetworkPermissionPolicy.DeniedPermissions,
+    private val permissionsAllowed: Set<String> = NoNetworkPermissionPolicy.AllowedPermissions,
 ) {
 
     companion object {
-        /** Permissions that are an automatic reject for an addon, because they
-         *  open a network exfil channel that bypasses the keyboard's
-         *  no-INTERNET posture (ROADMAP §1, STD-NO-INTERNET). An addon that
-         *  needs *any* of these is fundamentally incompatible with the
-         *  privacy stance, regardless of intent. */
+        /** The network permissions the privacy posture names explicitly
+         *  (ROADMAP §1, STD-NO-INTERNET). These are rejected — like every
+         *  other permission outside [DefaultAllowedPermissions] — but they
+         *  get their own rejection wording because they are the documented
+         *  case. See [NoNetworkPermissionPolicy] for why the gate itself is
+         *  an allowlist. */
         val DefaultNetworkPermissions: Set<String> = NoNetworkPermissionPolicy.DeniedPermissions
+
+        /** Every permission an addon may request. Anything else — including a
+         *  permission that did not exist when this was written — is rejected. */
+        val DefaultAllowedPermissions: Set<String> = NoNetworkPermissionPolicy.AllowedPermissions
 
         /** Convenience: the IME's own package name, used to skip self-scan. */
         private const val SCAN_FLAGS_BASE =
             PackageManager.GET_META_DATA or PackageManager.GET_PERMISSIONS
 
-        internal fun firstRejectedNetworkPermission(
+        internal fun firstDisallowedPermission(
             requestedPermissions: Array<String>?,
-            networkPermissionsRejected: Set<String>,
+            permissionsAllowed: Set<String>,
         ): String? {
-            return NoNetworkPermissionPolicy.firstDenied(
+            return NoNetworkPermissionPolicy.firstDisallowed(
                 requestedPermissions,
-                networkPermissionsRejected,
+                permissionsAllowed,
             )
         }
 
@@ -186,9 +191,9 @@ class AddonEnumerator(
             ?: return AddonVerdict.NotAnAddon
         val type = AddonType.fromMetadata(typeRaw)
             ?: return AddonVerdict.Rejected(unknownAddonTypeRejectionReason(typeRaw))
-        val banned = firstRejectedNetworkPermission(info.requestedPermissions)
-        if (banned != null) {
-            return AddonVerdict.Rejected(NoNetworkPermissionPolicy.rejectionReason(banned))
+        val disallowed = firstDisallowedPermission(info.requestedPermissions)
+        if (disallowed != null) {
+            return AddonVerdict.Rejected(NoNetworkPermissionPolicy.rejectionReason(disallowed))
         }
         val descriptorRes = meta.getInt(AddonContract.MetadataKey.ADDON_DESCRIPTOR, 0)
         if (descriptorRes == 0) {
@@ -249,8 +254,8 @@ class AddonEnumerator(
         } ?: info.packageName
     }
 
-    internal fun firstRejectedNetworkPermission(requestedPermissions: Array<String>?): String? {
-        return AddonEnumerator.firstRejectedNetworkPermission(requestedPermissions, networkPermissionsRejected)
+    internal fun firstDisallowedPermission(requestedPermissions: Array<String>?): String? {
+        return AddonEnumerator.firstDisallowedPermission(requestedPermissions, permissionsAllowed)
     }
 
     data class Snapshot(

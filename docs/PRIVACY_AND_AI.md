@@ -216,9 +216,14 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 - **Data seen.** Your selected text plus any context fields the
   invoked tool's JSON schema requires.
 - **Data sent.** Sent **to the on-device daemon** the user explicitly
-  installed and enabled. SwiftFloris rejects daemon packages that request any
-  denied network permission before certificate trust, registration, or
-  binding, even when Android has not granted the permission. The separate
+  installed and enabled. SwiftFloris screens a daemon package's requested
+  permissions against an **allowlist** before certificate trust, registration,
+  or binding, even when Android has not granted them: a daemon may hold only
+  SwiftFloris's own signature permissions plus a short list of permissions that
+  cannot move data off the device. Network permissions are rejected by name,
+  and so is everything else outside the allowlist — including transports such
+  as SMS, Bluetooth and nearby-devices that need no `INTERNET` permission, and
+  any permission a future Android release adds. The separate
   daemon remains a privacy boundary for its other permissions and behavior,
   even though the keyboard-to-daemon transport is local Binder.
 - **Off switch.** Settings → MCP daemon bridge → Disable.

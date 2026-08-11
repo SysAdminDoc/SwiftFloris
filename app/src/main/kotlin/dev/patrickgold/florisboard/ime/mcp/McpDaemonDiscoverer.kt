@@ -43,8 +43,9 @@ import kotlinx.serialization.json.jsonPrimitive
  *     enforced by PackageManager before reaching the discoverer; the
  *     discoverer re-checks defensively in case the caller hand-fed
  *     a fixture list.
- *  3. Candidate package must not request a permission from
- *     [NoNetworkPermissionPolicy.DeniedPermissions].
+ *  3. Every permission the candidate package requests must be in
+ *     [NoNetworkPermissionPolicy.AllowedPermissions] or SwiftFloris's own
+ *     signature-permission namespace. Anything else is a hard reject.
  *  4. Candidate must expose a signing-certificate fingerprint that is
  *     either co-signed with the IME or explicitly pinned by the user.
  *  5. Protocol version metadata must be in `1..SUPPORTED_PROTOCOL_VERSION`.
@@ -105,7 +106,7 @@ object McpDaemonDiscoverer {
         trustPolicy: McpDaemonTrustPolicy,
     ): RejectedMcpDaemon? {
         if (cand.packageName.isBlank() || cand.daemonClassName.isBlank()) return null
-        NoNetworkPermissionPolicy.firstDenied(cand.requestedPermissions)?.let { permission ->
+        NoNetworkPermissionPolicy.firstDisallowed(cand.requestedPermissions)?.let { permission ->
             return cand.rejected(NoNetworkPermissionPolicy.rejectionReason(permission))
         }
         if (!cand.hasBindPermission) return null

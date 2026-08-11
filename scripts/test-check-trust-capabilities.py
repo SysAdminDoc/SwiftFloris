@@ -170,6 +170,28 @@ def main() -> int:
                 "mcp.daemonNetworkPermissionsRejected",
             ),
             (
+                "enrollment allowlist downgraded to a denylist",
+                lambda root: replace(
+                    root
+                    / "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/"
+                    "NoNetworkPermissionPolicy.kt",
+                    "val AllowedPermissions",
+                    "val UnusedPermissions",
+                ),
+                "mcp.daemonNetworkPermissionsRejected",
+            ),
+            (
+                "enrollment allowlist widened to an exfiltration-capable permission",
+                lambda root: replace(
+                    root
+                    / "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/"
+                    "NoNetworkPermissionPolicy.kt",
+                    '"android.permission.VIBRATE",',
+                    '"android.permission.SEND_SMS",',
+                ),
+                "mcp.daemonNetworkPermissionsRejected",
+            ),
+            (
                 "clipboard documentation regression",
                 lambda root: (
                     root / "docs/THREAT_MODEL.md"

@@ -59,11 +59,14 @@ import dev.patrickgold.florisboard.AppPackageContract
  *     SQLCipher passphrase pin (N7.4).
  *
  * **Privacy invariants every addon must satisfy.** The enumerator (Next-10.2)
- * rejects any addon whose own manifest declares `INTERNET` / `ACCESS_NETWORK_*`
- * permissions, so an addon cannot become a back-door network channel that
- * bypasses the keyboard's no-`INTERNET` posture. This is a hard reject, not a
- * warning. The check is verified at addon enrolment AND at every reboot, so a
- * malicious addon update cannot escalate after the user opts in.
+ * rejects any addon that requests a permission outside
+ * `NoNetworkPermissionPolicy.AllowedPermissions` (plus SwiftFloris's own
+ * signature namespace), so an addon cannot become a back-door exfiltration
+ * channel that bypasses the keyboard's no-`INTERNET` posture — `INTERNET` and
+ * `ACCESS_NETWORK_*` are only the named cases; SMS, Bluetooth, nearby-devices
+ * and shared-storage transports are rejected on the same rule. This is a hard
+ * reject, not a warning. The check is verified at addon enrolment AND at every
+ * reboot, so a malicious addon update cannot escalate after the user opts in.
  */
 object AddonContract {
 

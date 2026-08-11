@@ -206,14 +206,28 @@ class AddonManifestTest : FunSpec({
     }
 
     test("AddonEnumerator permission screening treats a null requestedPermissions array as safe") {
-        AddonEnumerator.firstRejectedNetworkPermission(
+        AddonEnumerator.firstDisallowedPermission(
             requestedPermissions = null,
-            networkPermissionsRejected = AddonEnumerator.DefaultNetworkPermissions,
+            permissionsAllowed = AddonEnumerator.DefaultAllowedPermissions,
         ) shouldBe null
-        AddonEnumerator.firstRejectedNetworkPermission(
+        AddonEnumerator.firstDisallowedPermission(
             requestedPermissions = arrayOf("android.permission.INTERNET"),
-            networkPermissionsRejected = AddonEnumerator.DefaultNetworkPermissions,
+            permissionsAllowed = AddonEnumerator.DefaultAllowedPermissions,
         ) shouldBe "android.permission.INTERNET"
+    }
+
+    test("AddonEnumerator accepts the permissions a real addon needs") {
+        // The shipped sample addon holds exactly this one. If the allowlist
+        // ever stops covering it, every addon stops enrolling.
+        AddonEnumerator.firstDisallowedPermission(
+            requestedPermissions = arrayOf(
+                "io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON",
+                "io.github.sysadmindoc.swiftfloris.permission.BIND_MCP",
+                "android.permission.POST_NOTIFICATIONS",
+                "android.permission.VIBRATE",
+            ),
+            permissionsAllowed = AddonEnumerator.DefaultAllowedPermissions,
+        ) shouldBe null
     }
 })
 

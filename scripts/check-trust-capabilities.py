@@ -266,9 +266,21 @@ def derive_mcp_network_policy(root: Path) -> bool:
     return (
         "GET_PERMISSIONS" in discoverer
         and "readRequestedPermissions(pm, packageName)" in discoverer
-        and "NoNetworkPermissionPolicy.firstDenied(snapshot.requestedPermissions)" in discoverer
-        and "NoNetworkPermissionPolicy.firstDenied(cand.requestedPermissions)" in trust_core
+        and "NoNetworkPermissionPolicy.firstDisallowed(snapshot.requestedPermissions)" in discoverer
+        and "NoNetworkPermissionPolicy.firstDisallowed(cand.requestedPermissions)" in trust_core
         and all(permission in policy for permission in NETWORK_PERMISSIONS)
+        # The gate is an allowlist, not a denylist: enrollment must screen every
+        # requested permission, not only the network ones named above.
+        and "val AllowedPermissions" in policy
+        and all(
+            permission not in policy
+            for permission in (
+                "android.permission.SEND_SMS",
+                "android.permission.BLUETOOTH_CONNECT",
+                "android.permission.NEARBY_WIFI_DEVICES",
+                "android.permission.MANAGE_EXTERNAL_STORAGE",
+            )
+        )
     )
 
 
@@ -570,8 +582,8 @@ def validate_public_copy(root: Path, registry: dict[str, Any]) -> list[str]:
     if registry["mcp"]["daemonNetworkPermissionsRejected"]:
         require(
             readme,
-            "packages requesting network permissions are rejected before trust or binding",
-            "MCP daemon network-permission gate",
+            "a package may hold only allowlisted permissions",
+            "MCP daemon permission allowlist gate",
         )
     require(
         readme,
