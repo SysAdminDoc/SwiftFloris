@@ -61,6 +61,28 @@ internal object EditorInputConnectionBatch {
         }
     }
 
+    /**
+     * Replace `[replaceStart, replaceEnd)` with [text], then mark [composing].
+     *
+     * This used to mark the span as the composing region and overwrite it with
+     * `setComposingText`. That is correct only on a host that honours
+     * `setComposingRegion`, and rich-text and web editors are widely reported
+     * not to: they return `true` and mark nothing, so the following
+     * `setComposingText` inserts at the cursor and the user sees their word
+     * twice (FlorisBoard #3310, HeliBoard #2702, AnySoftKeyboard #4812/#4856).
+     *
+     * It now selects the span and commits over the selection instead.
+     * Replacing a selection is the one editing primitive every host implements,
+     * because it is what typing over selected text does. On a cooperative host
+     * the resulting text and cursor position are identical — `HostDesyncReplayTest`
+     * asserts both paths against a stateful fake editor — and on an
+     * uncooperative one this is the difference between a correct document and a
+     * duplicated word.
+     *
+     * An out-of-range span is refused rather than clamped: a host that has
+     * already dropped text can hand back a stale range, and clamping would
+     * delete whatever now occupies those offsets.
+     */
     fun replacePreviousWithComposingRegion(
         ic: InputConnection,
         replaceStart: Int,
@@ -68,9 +90,41 @@ internal object EditorInputConnectionBatch {
         text: String,
         composing: EditorRange,
     ) {
+        replaceRangeBySelection(ic, replaceStart, replaceEnd, text, composing)
+    }
+
+    /**
+     * Replace `[replaceStart, replaceEnd)` by selecting it and committing over
+     * the selection, instead of marking it as the composing region first.
+     *
+     * [replacePreviousWithComposingRegion] is correct on a host that honours
+     * `setComposingRegion`, but rich-text and web editors are widely reported
+     * not to: they return `true` and mark nothing, so the following
+     * `setComposingText` inserts at the cursor and the user sees their word
+     * twice (FlorisBoard #3310, HeliBoard #2702, AnySoftKeyboard #4812/#4856).
+     *
+     * Replacing a selection is the one editing primitive every host implements,
+     * because it is what typing over selected text does. The trade-off is that
+     * the replacement is committed rather than composed, so it is not
+     * underlined as in-progress — acceptable for a span the IME is finalising
+     * anyway.
+     *
+     * Refuses an out-of-range span rather than clamping it: a host that has
+     * already dropped text can hand back a stale range, and clamping would
+     * delete whatever now occupies those offsets.
+     */
+    fun replaceRangeBySelection(
+        ic: InputConnection,
+        replaceStart: Int,
+        replaceEnd: Int,
+        text: String,
+        composing: EditorRange,
+    ) {
+        if (replaceStart < 0 || replaceEnd < replaceStart) return
         runWithBatchEdit(ic) {
-            setComposingRegion(replaceStart, replaceEnd)
-            setComposingText(text, 1)
+            if (!setSelection(replaceStart, replaceEnd)) return@runWithBatchEdit
+            finishComposingText()
+            commitText(text, 1)
             setComposingRegion(composing)
         }
     }

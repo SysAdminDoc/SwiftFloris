@@ -117,8 +117,9 @@ class HostileEditorCandidateReplayTest : FunSpec({
 
         recorder.calls shouldBe listOf(
             "beginBatchEdit",
-            "setComposingRegion(6,9)",
-            "setComposingText(world,1)",
+            "setSelection(6,9)",
+            "finishComposingText",
+            "commitText(world,1)",
             "setComposingRegion(6,11)",
             "endBatchEdit",
         )
@@ -185,7 +186,12 @@ class HostileEditorCandidateReplayTest : FunSpec({
         recorder.depth shouldBe 0
     }
 
-    test("third-party editor: replacement still issues full call sequence even if editor is hostile") {
+    // Previously this asserted the composing-region sequence was still issued
+    // against a host that refuses setComposingRegion — which is true, and was
+    // exactly the bug: issuing it changed nothing and the following
+    // setComposingText inserted a duplicate. The replacement no longer depends
+    // on the host honouring composing regions at all.
+    test("third-party editor: replacement does not depend on the composing region") {
         val recorder = HostileRecordingInputConnection(
             textBeforeCursor = "helo",
             composingStart = 0,
@@ -203,8 +209,9 @@ class HostileEditorCandidateReplayTest : FunSpec({
 
         recorder.calls shouldBe listOf(
             "beginBatchEdit",
-            "setComposingRegion(0,4)",
-            "setComposingText(hello,1)",
+            "setSelection(0,4)",
+            "finishComposingText",
+            "commitText(hello,1)",
             "setComposingRegion(0,5)",
             "endBatchEdit",
         )

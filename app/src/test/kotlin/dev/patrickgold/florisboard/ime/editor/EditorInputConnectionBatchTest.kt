@@ -57,8 +57,11 @@ class EditorInputConnectionBatchTest : FunSpec({
 
         recorder.calls shouldBe listOf(
             "beginBatchEdit",
-            "setComposingRegion(2,5)",
-            "setComposingText(x,1)",
+            // Selection-based replacement, not a composing region: hosts that
+            // ignore setComposingRegion duplicated the word. See HostDesyncReplayTest.
+            "setSelection(2,5)",
+            "finishComposingText",
+            "commitText(x,1)",
             "setComposingRegion(3,6)",
             "endBatchEdit",
         )

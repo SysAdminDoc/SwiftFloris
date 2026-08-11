@@ -7,6 +7,9 @@
   nearby-devices, shared storage — are rejected alongside the network ones.
 - Clear leftover cache off the main thread at startup, so a cold keyboard
   start no longer blocks on a recursive delete.
+- Replace a typed word by selecting it and committing over the selection
+  instead of marking a composing region, so rich-text and web editors that
+  ignore composing regions no longer duplicate the word.
 - Route all 42 shipped locales through the translation pipeline; eight,
   including Simplified Chinese and Urdu, previously had no mapping and could
   never round-trip. A gate now fails when a locale has no route.
