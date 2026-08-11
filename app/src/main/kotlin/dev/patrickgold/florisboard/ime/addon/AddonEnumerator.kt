@@ -35,9 +35,10 @@ import java.io.File
  *
  * Inputs: a `Context` whose `packageManager` can query the install base.
  * Outputs: a list of [AddonManifest] entries, one per accepted addon. Rejected
- * addons are logged via `flogInfo` / `flogError` with the rejection reason so
- * a future Settings → Addons → "Why was X rejected?" surface can surface the
- * audit trail without re-running the scan.
+ * addons are logged via `flogInfo` / `flogError` with the rejection reason, and
+ * carried in [Snapshot.rejected] so Settings → Addons can show why a package
+ * was turned away without re-running the scan. That screen exists — see
+ * `app/settings/addons/AddonsSettingsScreen.kt`.
  *
  * Hot-path constraint: this is intentionally a *snapshot* scan — typical run
  * time is single-digit milliseconds across <500 installed packages on a

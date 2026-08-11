@@ -14,6 +14,8 @@
 - React to Android Advanced Protection Mode (Android 16+): while it is on,
   learning from typed text, clipboard history persistence and new add-on
   enrolment are all held off, and the privacy posture screen says so.
+- Reject unrenderable key code points during layout import instead of
+  producing a blank, unlabelled key.
 - Route all 42 shipped locales through the translation pipeline; eight,
   including Simplified Chinese and Urdu, previously had no mapping and could
   never round-trip. A gate now fails when a locale has no route.

@@ -72,21 +72,40 @@ data class TextKeyData(
 
     @Suppress("MemberVisibilityCanBePrivate")
     companion object {
+        /**
+         * Build the key for [code], or `null` when [code] is not a character
+         * this keyboard can render.
+         *
+         * The label used to be built inside a `try` that swallowed the failure,
+         * so a code point outside the Unicode range produced a key with an
+         * empty label: a blank, unlabelled, still-pressable key. Shipped layouts
+         * never hit it, but user-imported Keyboard3, KLC and Keyman layouts can,
+         * and a blank key gives the importer nothing to report. Returning null
+         * lets the import diagnostics say the key was rejected.
+         */
         fun getCodeInfoAsTextKeyData(code: Int): TextKeyData? {
             return if (code <= 0) {
                 InternalKeys.find { it.code == code }
+            } else if (!isRenderableCodePoint(code)) {
+                null
             } else {
                 TextKeyData(
                     type = KeyType.CHARACTER,
                     code = code,
-                    label = buildString {
-                        try {
-                            appendCodePoint(code)
-                        } catch (_: Throwable) {
-                        }
-                    },
+                    label = String(Character.toChars(code)),
                 )
             }
+        }
+
+        /**
+         * True when [code] is a Unicode code point that can be turned into
+         * text. Unpaired surrogates are excluded: they are valid `Int`s and
+         * valid `Char`s, but a lone surrogate is not a character and renders as
+         * a replacement glyph.
+         */
+        internal fun isRenderableCodePoint(code: Int): Boolean {
+            if (!Character.isValidCodePoint(code)) return false
+            return !Character.isSurrogate(code.toChar()) || code > Character.MAX_VALUE.code
         }
 
         // TODO: find better solution than to hand define array of below keys...
