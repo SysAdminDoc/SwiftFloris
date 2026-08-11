@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## v1.9.59 — 2026-08-11
+
 - Screen addon and MCP daemon enrolment against a permission allowlist so
   transports that need no `INTERNET` permission — SMS, Bluetooth,
   nearby-devices, shared storage — are rejected alongside the network ones.
