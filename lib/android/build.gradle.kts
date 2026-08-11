@@ -65,18 +65,17 @@ configure<LibraryExtension> {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    // FIXME: This is a workaround! Otherwise :lib:snygg:generateJsonSchema breakes.
-    //  Remove the lint block when we've migrated to the newDsl.
     lint {
-        disable.addAll(
-            listOf(
-                "UElementAsPsi",
-                "ApplySharedPref",
-                "CommitTransaction",
-                "Recycle",
-                "CommitPrefEdits",
-            )
-        )
+        // `UElementAsPsi` fires inside lint's own UAST bridge when
+        // :lib:snygg:generateJsonSchema runs lint over this module. It is a
+        // lint-API compatibility warning about lint internals, not a finding
+        // about this source tree, and there is nothing here to fix.
+        //
+        // It used to be disabled alongside `ApplySharedPref`,
+        // `CommitTransaction`, `Recycle` and `CommitPrefEdits`. Those four are
+        // real correctness checks — resource leaks and dropped writes — and
+        // they were never what broke the schema task; they were collateral.
+        disable.add("UElementAsPsi")
     }
 }
 
