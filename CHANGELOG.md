@@ -10,6 +10,7 @@
 - Replace a typed word by selecting it and committing over the selection
   instead of marking a composing region, so rich-text and web editors that
   ignore composing regions no longer duplicate the word.
+- Move the build to Android Gradle Plugin 9.3.0.
 - Route all 42 shipped locales through the translation pipeline; eight,
   including Simplified Chinese and Urdu, previously had no mapping and could
   never round-trip. A gate now fails when a locale has no route.
