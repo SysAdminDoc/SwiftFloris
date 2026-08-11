@@ -100,6 +100,18 @@ data class QuickActionArrangement(
             hiddenActions = listOf(
                 QuickAction.InsertTask,
                 QuickAction.InsertCalendarEvent,
+                // Line- and document-level movement. These key codes existed
+                // but were reachable only through swipe bindings the user had
+                // to already know about; the Page keys arrived in v1.9.58 with
+                // the same problem. Hidden rather than dynamic so no existing
+                // arrangement is reshuffled — the user drags them in from the
+                // quick-action editor.
+                QuickAction.InsertKey(TextKeyData.MOVE_START_OF_LINE),
+                QuickAction.InsertKey(TextKeyData.MOVE_END_OF_LINE),
+                QuickAction.InsertKey(TextKeyData.MOVE_START_OF_PAGE),
+                QuickAction.InsertKey(TextKeyData.MOVE_END_OF_PAGE),
+                QuickAction.InsertKey(TextKeyData.PAGE_UP),
+                QuickAction.InsertKey(TextKeyData.PAGE_DOWN),
             ),
         )
     }

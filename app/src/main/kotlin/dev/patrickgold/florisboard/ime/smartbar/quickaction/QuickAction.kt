@@ -297,6 +297,10 @@ fun QuickAction.computeDisplayName(evaluator: ComputingEvaluator): String {
             KeyCode.ARROW_RIGHT -> R.string.quick_action__arrow_right
             KeyCode.PAGE_UP -> R.string.quick_action__page_up
             KeyCode.PAGE_DOWN -> R.string.quick_action__page_down
+            KeyCode.MOVE_START_OF_LINE -> R.string.quick_action__move_start_of_line
+            KeyCode.MOVE_END_OF_LINE -> R.string.quick_action__move_end_of_line
+            KeyCode.MOVE_START_OF_PAGE -> R.string.quick_action__move_start_of_page
+            KeyCode.MOVE_END_OF_PAGE -> R.string.quick_action__move_end_of_page
             KeyCode.CLIPBOARD_CLEAR_PRIMARY_CLIP -> R.string.quick_action__clipboard_clear_primary_clip
             KeyCode.CLIPBOARD_COPY -> R.string.quick_action__clipboard_copy
             KeyCode.CLIPBOARD_CUT -> R.string.quick_action__clipboard_cut
@@ -343,6 +347,10 @@ fun QuickAction.computeTooltip(evaluator: ComputingEvaluator): String {
             KeyCode.ARROW_RIGHT -> R.string.quick_action__arrow_right__tooltip
             KeyCode.PAGE_UP -> R.string.quick_action__page_up__tooltip
             KeyCode.PAGE_DOWN -> R.string.quick_action__page_down__tooltip
+            KeyCode.MOVE_START_OF_LINE -> R.string.quick_action__move_start_of_line__tooltip
+            KeyCode.MOVE_END_OF_LINE -> R.string.quick_action__move_end_of_line__tooltip
+            KeyCode.MOVE_START_OF_PAGE -> R.string.quick_action__move_start_of_page__tooltip
+            KeyCode.MOVE_END_OF_PAGE -> R.string.quick_action__move_end_of_page__tooltip
             KeyCode.CLIPBOARD_CLEAR_PRIMARY_CLIP -> R.string.quick_action__clipboard_clear_primary_clip__tooltip
             KeyCode.CLIPBOARD_COPY -> R.string.quick_action__clipboard_copy__tooltip
             KeyCode.CLIPBOARD_CUT -> R.string.quick_action__clipboard_cut__tooltip

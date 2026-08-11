@@ -17,6 +17,8 @@
 - Reject unrenderable key code points during layout import instead of
   producing a blank, unlabelled key.
 - Move the build to Kotlin 2.4.10.
+- Offer line-start, line-end, text-start, text-end and Page Up/Down as
+  quick actions, so cursor jumps no longer require knowing a swipe binding.
 - Route all 42 shipped locales through the translation pipeline; eight,
   including Simplified Chinese and Urdu, previously had no mapping and could
   never round-trip. A gate now fails when a locale has no route.
