@@ -1160,6 +1160,9 @@
     <string name="settings__privacy_posture__group_status" comment="Preference group title">Current posture</string>
     <string name="settings__privacy_posture__group_profiles" comment="Preference group title">Profiles</string>
     <string name="settings__privacy_posture__network_title" comment="Preference title">Network permission</string>
+    <string name="settings__privacy_posture__advanced_protection_title" comment="Preference title on the privacy posture screen for Android Advanced Protection Mode">Advanced Protection</string>
+    <string name="settings__privacy_posture__advanced_protection_on" comment="Preference summary when the system Advanced Protection Mode is enabled. Lists what the keyboard withholds while it is on.">On. Learning from what you type, clipboard history and new add-on enrolment are paused while this system setting is enabled.</string>
+    <string name="settings__privacy_posture__advanced_protection_off" comment="Preference summary when the system Advanced Protection Mode is available but not enabled">Off. Turn on Advanced Protection in system settings to pause learning, clipboard history and new add-on enrolment.</string>
     <string name="settings__privacy_posture__network_absent" comment="Preference summary when INTERNET permission is not declared">No Internet permission declared in the installed app.</string>
     <string name="settings__privacy_posture__network_declared" comment="Preference summary when INTERNET permission is declared">Internet permission is declared. Review the installed build source before typing sensitive data.</string>
     <string name="settings__privacy_posture__learning_title" comment="Preference title">Learning surfaces</string>

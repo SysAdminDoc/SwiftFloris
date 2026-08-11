@@ -22,6 +22,7 @@ import android.content.pm.PackageInfo
 import android.content.pm.PackageManager
 import android.os.Build
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
+import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.ime.security.NoNetworkPermissionPolicy
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
@@ -50,6 +51,10 @@ class AddonEnumerator(
 ) {
 
     companion object {
+        /** Rejection reason while Android Advanced Protection Mode is on. */
+        const val ReasonAdvancedProtection: String =
+            "new enrollment is paused while Advanced Protection is on"
+
         /** The network permissions the privacy posture names explicitly
          *  (ROADMAP §1, STD-NO-INTERNET). These are rejected — like every
          *  other permission outside [DefaultAllowedPermissions] — but they
@@ -134,11 +139,24 @@ class AddonEnumerator(
             flogError { "AddonEnumerator: packageManager scan threw: ${t.message}" }
             return Snapshot(emptyList(), emptyList())
         }
+        // Under Android Advanced Protection Mode the platform has told us this
+        // user is a target. Enrolling an addon hands it selected text, so it is
+        // exactly the kind of trust grant AAPM exists to withhold. Packages
+        // already enrolled keep working; this refuses new ones and says why.
+        val advancedProtection = AdvancedProtectionPolicy.decide(context).blocksNewEnrolment
         val accepted = ArrayList<AddonManifest>(8)
         val rejected = ArrayList<RejectedPackage>(4)
         for (info in allPackages) {
             if (info.packageName == self) continue
-            val verdict = evaluate(info, pm)
+            val verdict = if (advancedProtection) {
+                when (val candidate = evaluate(info, pm)) {
+                    is AddonVerdict.Accepted ->
+                        AddonVerdict.Rejected(ReasonAdvancedProtection)
+                    else -> candidate
+                }
+            } else {
+                evaluate(info, pm)
+            }
             when (verdict) {
                 is AddonVerdict.Accepted -> accepted += verdict.manifest
                 is AddonVerdict.Rejected -> {

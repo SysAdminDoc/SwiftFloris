@@ -31,6 +31,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStore
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
+import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import java.io.Closeable
 import kotlinx.coroutines.CompletableDeferred
@@ -383,6 +384,11 @@ class ClipboardManager(
      */
     private fun insertOrMoveBeginning(newItem: ClipboardItem) {
         if (!ClipboardTextRetentionPolicy.shouldRetain(newItem)) return
+        // Under Android Advanced Protection Mode nothing the user copies is
+        // written to history, whatever the saved preference says. The clip is
+        // still pasteable right now — this withholds the on-disk record, not
+        // the clipboard itself.
+        if (AdvancedProtectionPolicy.decide(appContext).suspendsClipboardHistoryPersistence) return
         if (prefs.clipboard.historyEnabled.get()) {
             val historyElement = currentHistory.all.firstOrNull { item ->
                 item.type == ItemType.TEXT && item.text == newItem.text && item.isSensitive == newItem.isSensitive

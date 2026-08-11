@@ -40,6 +40,7 @@ import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfilePolicy
 import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.profile.PerAppSuggestionAggressiveness
 import dev.patrickgold.florisboard.ime.profile.ResolvedPerAppKeyboardProfile
+import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.ime.text.composing.Appender
 import dev.patrickgold.florisboard.ime.text.composing.Composer
 import dev.patrickgold.florisboard.ime.text.key.KeyVariation
@@ -125,6 +126,9 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
             globalPreference = prefs.suggestion.incognitoMode.get(),
             isDynamicIncognitoForced = prefs.suggestion.forceIncognitoModeFromDynamic.get(),
             override = profile?.incognito ?: PerAppBooleanOverride.FOLLOW_GLOBAL,
+            advancedProtectionEnabled = AdvancedProtectionPolicy
+                .decide(appContext)
+                .forcesIncognito,
         )
         super.handleStartInputView(editorInfo, isRestart)
         if (!editorContract.allowsImeSuggestions) {

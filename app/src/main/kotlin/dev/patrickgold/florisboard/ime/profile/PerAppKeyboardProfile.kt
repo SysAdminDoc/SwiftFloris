@@ -159,7 +159,13 @@ object PerAppKeyboardProfilePolicy {
         globalPreference: IncognitoMode,
         isDynamicIncognitoForced: Boolean,
         override: PerAppBooleanOverride,
+        advancedProtectionEnabled: Boolean = false,
     ): Boolean {
+        // Android Advanced Protection Mode outranks every saved preference,
+        // including a per-app FORCE_OFF: it is the platform telling us this
+        // user is a target, and learning from their keystrokes is exactly the
+        // retention it exists to stop.
+        if (advancedProtectionEnabled) return true
         if (appDeclaredNoPersonalizedLearning) return true
         return when (override) {
             PerAppBooleanOverride.FORCE_OFF -> false

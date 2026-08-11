@@ -48,6 +48,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.settings.about.SigningFingerprint
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
+import dev.patrickgold.florisboard.ime.security.AdvancedProtectionPolicy
 import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.ime.tasker.TaskerAuthentication
@@ -105,6 +106,11 @@ fun PrivacyPostureScreen() = FlorisScreen {
 
     val declaredInternetPermission = remember(context) {
         isPermissionDeclared(context, Manifest.permission.INTERNET)
+    }
+    // Null on releases without Advanced Protection Mode, so the row is absent
+    // rather than claiming a protection the platform cannot offer.
+    val advancedProtection = remember(context) {
+        if (AdvancedProtectionPolicy.isSupported()) AdvancedProtectionPolicy.decide(context) else null
     }
     val voiceProviderStatuses = remember(context) {
         VoiceInputManager(context).knownExternalVoiceInputProviderStatuses()
@@ -201,6 +207,17 @@ fun PrivacyPostureScreen() = FlorisScreen {
                     stringRes(R.string.settings__privacy_posture__network_absent)
                 },
             )
+            if (advancedProtection != null) {
+                Preference(
+                    icon = Icons.Default.Shield,
+                    title = stringRes(R.string.settings__privacy_posture__advanced_protection_title),
+                    summary = if (advancedProtection.advancedProtectionEnabled) {
+                        stringRes(R.string.settings__privacy_posture__advanced_protection_on)
+                    } else {
+                        stringRes(R.string.settings__privacy_posture__advanced_protection_off)
+                    },
+                )
+            }
             Preference(
                 icon = Icons.Default.TextFields,
                 title = stringRes(R.string.settings__privacy_posture__learning_title),

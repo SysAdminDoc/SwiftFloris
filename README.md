@@ -259,6 +259,7 @@ Published APKs are generated with pinned Gradle, Android Gradle Plugin, Kotlin, 
 | `android.permission.VIBRATE` | Key-press haptic feedback | Used only when vibration is enabled |
 | `android.permission.POST_NOTIFICATIONS` | User-visible notifications on Android 13+ | Runtime-granted where a notification flow needs it |
 | `android.permission.READ_CALENDAR` | Calendar quick-insert agenda titles and times | Requested only from the explicit calendar action |
+| `android.permission.QUERY_ADVANCED_PROTECTION_MODE` | Detect Android 16+ Advanced Protection Mode | Read-only signal; when it is on, learning, clipboard history and new addon enrolment are held off |
 | `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP` | Bind a co-signed, permission-gated MCP service | Signature-protected local Binder transport |
 
 The IME and spellchecker services are protected by the platform's

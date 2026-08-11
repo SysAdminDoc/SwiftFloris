@@ -9,6 +9,7 @@
   "baseApp": {
     "usesPermissions": [
       "android.permission.POST_NOTIFICATIONS",
+      "android.permission.QUERY_ADVANCED_PROTECTION_MODE",
       "android.permission.READ_CALENDAR",
       "android.permission.VIBRATE",
       "io.github.sysadmindoc.swiftfloris.permission.BIND_MCP"

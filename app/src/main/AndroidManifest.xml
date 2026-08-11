@@ -19,6 +19,13 @@
          users insert local agenda event titles + date/time from the smartbar. -->
     <uses-permission android:name="android.permission.READ_CALENDAR"/>
 
+    <!-- Android 16+ (API 36). Lets the keyboard read whether the user has
+         enabled Advanced Protection Mode so it can hold learning, clipboard
+         history and addon enrolment at their safest setting for an at-risk
+         user. Read-only: it grants no access to data, and grants nothing at
+         all below API 36. See ime/security/AdvancedProtectionPolicy.kt. -->
+    <uses-permission android:name="android.permission.QUERY_ADVANCED_PROTECTION_MODE"/>
+
     <!-- ROADMAP §7 Next-10.1 — signature-protected permission addons must hold
          to fire REGISTER_ADDON broadcasts. Only packages co-signed with the
          same key as the IME (or whitelisted by the user via Settings → Addons)

@@ -256,7 +256,8 @@ Out of scope:
 
 - [ ] `aapt dump permissions app-release.apk` matches
   `android.permission.VIBRATE`, `android.permission.POST_NOTIFICATIONS`,
-  `android.permission.READ_CALENDAR`, and
+  `android.permission.READ_CALENDAR`,
+  `android.permission.QUERY_ADVANCED_PROTECTION_MODE`, and
   `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP` (and any new entry
   is justified in the release notes + threat model).
 - [ ] `:app:verifyNoInternetPermission` passes locally.
