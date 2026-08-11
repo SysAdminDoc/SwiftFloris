@@ -57,7 +57,7 @@ val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { 
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
-        // Kotlin 2.4.0 defaults moduleName to "{group}:{project}" which contains colons;
+        // Kotlin 2.4.x defaults moduleName to "{group}:{project}" which contains colons;
         // KSP 2.3.9 chokes on colons in generated identifiers (ksp#2964). Remove when KSP 2.4.x ships.
         moduleName.set("swiftfloris_app")
         freeCompilerArgs.set(listOf(

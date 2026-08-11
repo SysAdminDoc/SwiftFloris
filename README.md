@@ -180,7 +180,7 @@ Public project information is available in this README, [Security](docs/SECURITY
 
 **Language and build**
 
-- Kotlin 2.4.0, Compose BOM 2026.06.00, Material 3 + material-kolor.
+- Kotlin 2.4.10, Compose BOM 2026.06.00, Material 3 + material-kolor.
 - AGP 9.3.0, Gradle 9.6.1, JDK 21.
 - KSP 2.3.9, Room 2.8.4, SQLCipher 4.17.0, Tink Android 1.23.0.
 - Kotest 6.2.3 unit-test runner; Roborazzi 1.70.0 and Robolectric 4.16.1
