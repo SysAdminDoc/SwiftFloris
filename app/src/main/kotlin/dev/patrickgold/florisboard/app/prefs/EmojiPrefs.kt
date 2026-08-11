@@ -120,6 +120,16 @@ open class EmojiPrefs : PreferenceModel() {
         key = "emoji__suggestion_candidate_show_name",
         default = false,
     )
+    /**
+     * Keep the typed word and put the emoji after it, instead of replacing the
+     * word with the emoji. Only meaningful for [EmojiSuggestionType.INLINE_TEXT]
+     * - a `:shortcode:` trigger is scaffolding the user does not want left
+     * behind. Default off, so the shipped behaviour is unchanged.
+     */
+    val suggestionCandidateAppendToWord = boolean(
+        key = "emoji__suggestion_candidate_append_to_word",
+        default = false,
+    )
     val suggestionQueryMinLength = int(
         key = "emoji__suggestion_query_min_length",
         default = 3,

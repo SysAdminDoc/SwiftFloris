@@ -69,6 +69,17 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
         val preferredSkinTone = prefs.emoji.preferredSkinTone.get()
         val showName = prefs.emoji.suggestionCandidateShowName.get()
         val query = validateInputQuery(content.composingText) ?: return emptyList()
+        // Append mode keeps the typed word in front of the emoji. It only
+        // applies to the inline trigger: with a leading `:` the composing text
+        // is a shortcode, and keeping ":smile" in the document would be wrong.
+        val precedingText = if (
+            prefs.emoji.suggestionCandidateAppendToWord.get() &&
+            prefs.emoji.suggestionType.get() == EmojiSuggestionType.INLINE_TEXT
+        ) {
+            content.composingText.toString()
+        } else {
+            ""
+        }
         val emojis = cachedEmojiMappings.get(subtype.primaryLocale)?.get(preferredSkinTone) ?: emptyList()
         // ROADMAP §7 Next-9.4 — custom user tags participate in predict-by-tag
         // ranking. User tags carry the highest weight (1.0) because the user
@@ -93,6 +104,7 @@ class EmojiSuggestionProvider(private val context: Context) : SuggestionProvider
                     EmojiSuggestionCandidate(
                         emoji = emoji,
                         showName = showName,
+                        precedingText = precedingText,
                         sourceProvider = this@EmojiSuggestionProvider,
                     )
                 }

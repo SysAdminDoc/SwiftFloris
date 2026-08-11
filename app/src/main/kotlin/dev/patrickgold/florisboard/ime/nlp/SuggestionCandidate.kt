@@ -251,6 +251,16 @@ data class ClipboardSuggestionCandidate(
 data class EmojiSuggestionCandidate(
     val emoji: Emoji,
     val showName: Boolean,
+    /**
+     * Text to keep in front of the emoji when this candidate is committed.
+     *
+     * Committing a candidate replaces the whole composing region, so an emoji
+     * suggestion normally destroys the word the user typed to find it. Carrying
+     * the word here makes the commit append instead of replace, which is what
+     * HeliBoard #2704 asks for. Empty keeps the original replace behaviour, and
+     * that stays the default.
+     */
+    val precedingText: String = "",
     override val confidence: Double = 1.0,
     override val isEligibleForAutoCommit: Boolean = false,
     override val isEligibleForUserRemoval: Boolean = false,
@@ -258,7 +268,7 @@ data class EmojiSuggestionCandidate(
     override val sourceProvider: SuggestionProvider? = null,
     override val trailingSpacePolicy: CandidateTrailingSpacePolicy = CandidateTrailingSpacePolicy.NEVER,
 ) : SuggestionCandidate {
-    override val text = emoji.value
+    override val text = precedingText + emoji.value
     override val secondaryText = if (showName) emoji.name else null
 }
 

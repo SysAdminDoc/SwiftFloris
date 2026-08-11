@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 199
+        rows shouldHaveSize 200
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -100,6 +100,7 @@ emoji__history_recent_max_size	i	90
 emoji__history_recent_update_strategy	s	AUTO_SORT_PREPEND
 emoji__preferred_hair_style	s	DEFAULT
 emoji__preferred_skin_tone	s	DEFAULT
+emoji__suggestion_candidate_append_to_word	b	false
 emoji__suggestion_candidate_max_count	i	5
 emoji__suggestion_candidate_show_name	b	false
 emoji__suggestion_enabled	b	true

@@ -19,6 +19,8 @@
 - Move the build to Kotlin 2.4.10.
 - Offer line-start, line-end, text-start, text-end and Page Up/Down as
   quick actions, so cursor jumps no longer require knowing a swipe binding.
+- Add an opt-in emoji suggestion mode that keeps the typed word and puts the
+  emoji after it instead of replacing the word.
 - Route all 42 shipped locales through the translation pipeline; eight,
   including Simplified Chinese and Urdu, previously had no mapping and could
   never round-trip. A gate now fails when a locale has no route.

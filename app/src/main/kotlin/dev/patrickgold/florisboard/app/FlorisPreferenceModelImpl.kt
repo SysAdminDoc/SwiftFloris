@@ -80,6 +80,7 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             emoji.suggestionType to "emoji.suggestionType",
             emoji.suggestionUpdateHistory to "emoji.suggestionUpdateHistory",
             emoji.suggestionCandidateShowName to "emoji.suggestionCandidateShowName",
+            emoji.suggestionCandidateAppendToWord to "emoji.suggestionCandidateAppendToWord",
             emoji.suggestionQueryMinLength to "emoji.suggestionQueryMinLength",
             emoji.suggestionCandidateMaxCount to "emoji.suggestionCandidateMaxCount",
             gestures.swipeUp to "gestures.swipeUp",
