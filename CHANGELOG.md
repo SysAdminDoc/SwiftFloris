@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Screen addon and MCP daemon enrolment against a permission allowlist so
+  transports that need no `INTERNET` permission — SMS, Bluetooth,
+  nearby-devices, shared storage — are rejected alongside the network ones.
+- Declare the bundled emoji data as Unicode Emoji 17.0, which is what CLDR 48
+  generated; the assets already carried every Emoji 17.0 character.
+
 ## v1.9.58 — 2026-08-02
 
 - Keep trust-capability evidence aligned with SQLCipher clipboard fallback and

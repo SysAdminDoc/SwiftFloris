@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.ime.media.emoji
 
+import io.kotest.assertions.withClue
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
@@ -64,12 +65,46 @@ class EmojiDataVersionTest : FunSpec({
         data.bySkinTone[EmojiSkinTone.LIGHT_SKIN_TONE]!!.single().value shouldBe distortedFace
     }
 
-    test("bundled root emoji asset stays pinned to CLDR 48 and Emoji 16") {
-        val rootAsset = mainAssetText("ime/media/emoji/root.txt")
+    // CLDR 48 (2025-10-29) is the Unicode 17 update: "Updated for Unicode 17,
+    // including new names and search terms for new emoji, new sort-order."
+    // The bundled assets were generated from it, so they have carried the
+    // Emoji 17.0 characters all along while the header still declared 16.0.
+    // These cases check the declared version against what is actually in the
+    // file, in both directions, so the label cannot drift again.
+    val emoji17BaseCodePoints = mapOf(
+        "distorted face" to 0x1FAEA,
+        "fight cloud" to 0x1FAEF,
+        "hairy creature" to 0x1FAC8,
+        "orca" to 0x1FACD,
+        "landslide" to 0x1F6D8,
+        "trombone" to 0x1FA8A,
+        "treasure chest" to 0x1FA8E,
+    )
+    val bundledAssets = listOf("root", "de", "en", "es", "fr", "it", "pt")
 
-        rootAsset shouldContain "# CLDR-VERSION: 48"
-        rootAsset shouldContain "# EMOJI-VERSION: 16.0"
-        rootAsset shouldNotContain "# EMOJI-VERSION: 17.0"
+    test("every bundled emoji asset declares the CLDR and Emoji version it was built from") {
+        for (locale in bundledAssets) {
+            val asset = mainAssetText("ime/media/emoji/$locale.txt")
+
+            withClue("$locale.txt") {
+                asset shouldContain "# CLDR-VERSION: 48"
+                asset shouldContain "# EMOJI-VERSION: 17.0"
+                asset shouldNotContain "# EMOJI-VERSION: 16.0"
+            }
+        }
+    }
+
+    test("bundled assets actually contain every Emoji 17.0 base character they claim") {
+        for (locale in bundledAssets) {
+            val asset = mainAssetText("ime/media/emoji/$locale.txt")
+
+            for ((name, codePoint) in emoji17BaseCodePoints) {
+                val character = String(intArrayOf(codePoint), 0, 1)
+                withClue("$locale.txt is missing $name (U+${codePoint.toString(16).uppercase()})") {
+                    asset shouldContain character
+                }
+            }
+        }
     }
 })
 
