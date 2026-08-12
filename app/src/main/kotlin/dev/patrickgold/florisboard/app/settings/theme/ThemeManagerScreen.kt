@@ -47,6 +47,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
 import org.florisboard.lib.compose.rippleClickable
 import org.florisboard.lib.compose.stringRes
@@ -54,6 +55,17 @@ import org.florisboard.lib.compose.stringRes
 enum class ThemeManagerScreenAction(val id: String) {
     SELECT_DAY("select-day"),
     SELECT_NIGHT("select-night");
+}
+
+@Composable
+internal fun ThemeManagerLoadingState() {
+    FlorisProgressCard(
+        modifier = Modifier
+            .padding(16.dp)
+            .defaultFlorisOutlinedBox(),
+        text = stringRes(R.string.settings__theme_manager__loading),
+        secondaryText = stringRes(R.string.settings__theme_manager__loading_summary),
+    )
 }
 
 @Composable
@@ -72,6 +84,7 @@ fun ThemeManagerScreen(action: ThemeManagerScreenAction?) = FlorisScreen {
     val scope = rememberCoroutineScope()
 
     val indexedThemeExtensions by extensionManager.themes.collectAsState()
+    val themesInitialized by extensionManager.themes.initialized.collectAsState()
     val extGroupedThemes = remember(indexedThemeExtensions) {
         buildMap<String, List<ThemeExtensionComponent>> {
             for (ext in indexedThemeExtensions) {
@@ -108,54 +121,57 @@ fun ThemeManagerScreen(action: ThemeManagerScreenAction?) = FlorisScreen {
                 themeManager.previewThemeId.value = null
             }
         }
-        if (extGroupedThemes.isEmpty()) {
+        if (!themesInitialized) {
+            ThemeManagerLoadingState()
+        } else if (extGroupedThemes.isEmpty()) {
             FlorisEmptyState(
                 modifier = Modifier.padding(16.dp),
                 icon = Icons.Default.DarkMode,
                 title = stringRes(R.string.settings__theme_manager__empty_title),
                 message = stringRes(R.string.settings__theme_manager__empty_message),
             )
-        }
-        val grayColor = LocalContentColor.current.copy(alpha = 0.56f)
-        for ((extensionId, configs) in extGroupedThemes) key(extensionId) {
-            val ext = extensionManager.getExtensionById(extensionId)!!
-            FlorisOutlinedBox(
-                modifier = Modifier.defaultFlorisOutlinedBox(),
-                title = ext.meta.title,
-                subtitle = extensionId,
-            ) {
-                for (config in configs) key(extensionId, config.id) {
-                    JetPrefListItem(
-                        modifier = Modifier.rippleClickable {
-                            setTheme(extensionId, config.id)
-                        },
-                        icon = {
-                            RadioButton(
-                                selected = activeThemeId.extensionId == extensionId &&
-                                    activeThemeId.componentId == config.id,
-                                onClick = null,
-                            )
-                        },
-                        text = config.label,
-                        trailing = {
-                            Icon(
-                                modifier = Modifier.size(ButtonDefaults.IconSize),
-                                imageVector = if (config.isNightTheme) {
-                                    Icons.Default.DarkMode
-                                } else {
-                                    Icons.Default.LightMode
-                                },
-                                contentDescription = stringRes(
-                                    if (config.isNightTheme) {
-                                        R.string.settings__theme_manager__variant_dark
+        } else {
+            val grayColor = LocalContentColor.current.copy(alpha = 0.56f)
+            for ((extensionId, configs) in extGroupedThemes) key(extensionId) {
+                val ext = extensionManager.getExtensionById(extensionId)!!
+                FlorisOutlinedBox(
+                    modifier = Modifier.defaultFlorisOutlinedBox(),
+                    title = ext.meta.title,
+                    subtitle = extensionId,
+                ) {
+                    for (config in configs) key(extensionId, config.id) {
+                        JetPrefListItem(
+                            modifier = Modifier.rippleClickable {
+                                setTheme(extensionId, config.id)
+                            },
+                            icon = {
+                                RadioButton(
+                                    selected = activeThemeId.extensionId == extensionId &&
+                                        activeThemeId.componentId == config.id,
+                                    onClick = null,
+                                )
+                            },
+                            text = config.label,
+                            trailing = {
+                                Icon(
+                                    modifier = Modifier.size(ButtonDefaults.IconSize),
+                                    imageVector = if (config.isNightTheme) {
+                                        Icons.Default.DarkMode
                                     } else {
-                                        R.string.settings__theme_manager__variant_light
+                                        Icons.Default.LightMode
                                     },
-                                ),
-                                tint = grayColor,
-                            )
-                        },
-                    )
+                                    contentDescription = stringRes(
+                                        if (config.isNightTheme) {
+                                            R.string.settings__theme_manager__variant_dark
+                                        } else {
+                                            R.string.settings__theme_manager__variant_light
+                                        },
+                                    ),
+                                    tint = grayColor,
+                                )
+                            },
+                        )
+                    }
                 }
             }
         }

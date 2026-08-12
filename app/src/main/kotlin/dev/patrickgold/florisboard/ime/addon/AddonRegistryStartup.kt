@@ -16,6 +16,10 @@
 
 package dev.patrickgold.florisboard.ime.addon
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 /**
  * ROADMAP §7 Next-10.3c — pure startup reconciliation for addon enrolment.
  *
@@ -79,6 +83,9 @@ object AddonRegistryStore {
     private var activeSnapshot: AddonRegistry.Snapshot = activeRegistry.lastRefresh()
     @Volatile
     private var activeGeneration: Long = 0L
+    private val initializedFlow = MutableStateFlow(false)
+
+    val initialized: StateFlow<Boolean> = initializedFlow.asStateFlow()
 
     fun active(): AddonRegistry = activeRegistry
 
@@ -93,11 +100,13 @@ object AddonRegistryStore {
         activeRegistry = registry
         activeSnapshot = snapshot
         activeGeneration += 1L
+        initializedFlow.value = true
     }
 
     fun reset() {
         activeRegistry = AddonRegistry()
         activeSnapshot = activeRegistry.lastRefresh()
         activeGeneration += 1L
+        initializedFlow.value = true
     }
 }

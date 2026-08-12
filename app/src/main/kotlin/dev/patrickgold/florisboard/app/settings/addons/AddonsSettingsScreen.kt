@@ -26,6 +26,7 @@ import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -95,11 +96,13 @@ fun AddonsSettingsScreen() = FlorisScreen {
         SigningFingerprint.sha256(context.applicationContext)
     }
     val persistedPinsRaw by prefs.addon.signingCertPins.collectAsState()
+    val registryInitialized by AddonRegistryStore.initialized.collectAsState()
     var snapshot by remember { mutableStateOf(AddonRegistryStore.snapshot()) }
     var registryGeneration by remember { mutableStateOf(AddonRegistryStore.generation()) }
     var dictionaryCatalog by remember {
         mutableStateOf(DictionaryPackCatalog(entries = emptyList(), rejected = emptyList()))
     }
+    var dictionaryCatalogLoaded by remember { mutableStateOf(false) }
     var activePinnedPackageNames by remember {
         mutableStateOf(AddonRegistryStore.active().pinnedSigningCertificates().keys)
     }
@@ -124,6 +127,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
     fun rescanInstalledAddons(persistedPinsOverride: String? = null) {
         if (scanInProgress) return
         scanInProgress = true
+        dictionaryCatalogLoaded = false
         scanError = null
         scope.launch {
             try {
@@ -146,6 +150,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 }
             } catch (e: Exception) {
                 scanError = e.message ?: e::class.simpleName
+                dictionaryCatalogLoaded = true
             } finally {
                 scanInProgress = false
             }
@@ -155,6 +160,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
     fun resetTrustDecisions() {
         if (scanInProgress) return
         scanInProgress = true
+        dictionaryCatalogLoaded = false
         scanError = null
         scope.launch {
             try {
@@ -165,6 +171,7 @@ fun AddonsSettingsScreen() = FlorisScreen {
                 registryGeneration = AddonRegistryStore.generation()
             } catch (e: Exception) {
                 scanError = e.message ?: e::class.simpleName
+                dictionaryCatalogLoaded = true
             } finally {
                 scanInProgress = false
             }
@@ -175,6 +182,13 @@ fun AddonsSettingsScreen() = FlorisScreen {
         dictionaryCatalog = dictionaryCatalogReader.build(
             AddonRegistryStore.active().dictionaryPacks(),
         )
+        dictionaryCatalogLoaded = true
+    }
+
+    LaunchedEffect(Unit) {
+        if (!AddonRegistryStore.initialized.value) {
+            rescanInstalledAddons()
+        }
     }
 
     content {
@@ -183,149 +197,151 @@ fun AddonsSettingsScreen() = FlorisScreen {
             .replace("{rejected}", snapshot.rejected.size.toString())
             .replace("{pinned}", pinnedCount.toString())
 
-        if (scanInProgress) {
+        val isLoading = scanInProgress || (!registryInitialized && scanError == null) ||
+            !dictionaryCatalogLoaded
+        if (isLoading) {
             FlorisProgressCard(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__addons__rescan_running),
                 secondaryText = stringRes(R.string.settings__addons__rescan_running_summary),
             )
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__addons__group_status)) {
-            if (scanError != null) {
-                FlorisErrorCard(
-                    modifier = Modifier.padding(8.dp),
-                    text = stringRes(R.string.settings__addons__rescan_failed),
-                    secondaryText = scanError,
-                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
-                    onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
-                )
-            } else if (snapshot.rejected.isNotEmpty() || dictionaryCatalog.rejected.isNotEmpty()) {
-                FlorisWarningCard(
-                    modifier = Modifier.padding(8.dp),
-                    text = stringRes(R.string.settings__addons__status_title),
-                    secondaryText = addonStatusSummary,
-                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
-                    onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
-                )
-            } else {
-                FlorisSuccessCard(
-                    modifier = Modifier.padding(8.dp),
-                    text = stringRes(R.string.settings__addons__status_title),
-                    secondaryText = addonStatusSummary,
-                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
-                    onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
-                )
-            }
-            if (pinnedCount > 0) {
-                Preference(
-                    icon = Icons.Default.Delete,
-                    title = stringRes(R.string.settings__addons__reset_trust),
-                    summary = stringRes(R.string.settings__addons__reset_trust_summary),
-                    enabledIf = { !scanInProgress },
-                    onClick = { pendingPinAction = SigningPinAction.ResetAll },
-                )
-            }
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__addons__group_installed)) {
-            if (snapshot.accepted.isEmpty()) {
-                FlorisEmptyState(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    icon = Icons.Default.Extension,
-                    title = stringRes(R.string.settings__addons__none_installed),
-                    message = stringRes(R.string.settings__addons__none_installed_summary),
-                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
-                    onAction = if (scanInProgress) null else ({ rescanInstalledAddons() }),
-                )
-            } else {
-                for (manifest in snapshot.accepted) {
-                    InstalledAddonRow(manifest = manifest)
-                }
-            }
-        }
-
-        PreferenceGroup(title = stringRes(R.string.settings__addons__group_dictionary_packs)) {
-            if (dictionaryCatalog.entries.isEmpty()) {
-                FlorisEmptyState(
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                    icon = Icons.Default.Extension,
-                    title = stringRes(R.string.settings__addons__none_dictionary_packs),
-                    message = stringRes(R.string.settings__addons__none_dictionary_packs_summary),
-                    actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
-                    onAction = if (scanInProgress) null else ({ rescanInstalledAddons() }),
-                )
-            } else {
-                for (entry in dictionaryCatalog.entries) {
-                    DictionaryPackRow(entry = entry)
-                }
-            }
-            for (rejectedDescriptor in dictionaryCatalog.rejected) {
-                Preference(
-                    icon = Icons.Default.Block,
-                    title = stringRes(R.string.settings__addons__dictionary_pack_rejected),
-                    summary = stringRes(R.string.settings__addons__dictionary_pack_rejected_summary)
-                        .replace("{package}", rejectedDescriptor.packageName)
-                        .replace("{reason}", rejectedDescriptor.reason),
-                )
-            }
-        }
-
-        if (snapshot.rejected.isNotEmpty()) {
-            PreferenceGroup(title = stringRes(R.string.settings__addons__group_rejected)) {
-                for (rejected in snapshot.rejected) {
-                    Preference(
-                        icon = Icons.Default.Block,
-                        title = rejected.displayName ?: rejected.packageName,
-                        summary = stringRes(R.string.settings__addons__rejected_summary)
-                            .replace("{package}", rejected.packageName)
-                            .replace("{reason}", rejected.reason),
+        } else {
+            PreferenceGroup(title = stringRes(R.string.settings__addons__group_status)) {
+                if (scanError != null) {
+                    FlorisErrorCard(
+                        modifier = Modifier.padding(8.dp),
+                        text = stringRes(R.string.settings__addons__rescan_failed),
+                        secondaryText = scanError,
+                        actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                        onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
                     )
-                    val signingCertSha256 = rejected.signingCertSha256
-                    if (
-                        rejected.reason == AddonRegistry.ReasonExplicitTrustRequired &&
-                        signingCertSha256 != null
-                    ) {
-                        Preference(
-                            icon = Icons.Default.Refresh,
-                            title = stringRes(R.string.settings__addons__trust_new_certificate),
-                            summary = stringRes(R.string.settings__addons__trust_new_certificate_summary)
-                                .replace("{package}", rejected.packageName),
-                            enabledIf = { !scanInProgress },
-                            onClick = {
-                                pendingPinAction = SigningPinAction.TrustNewCertificate(
-                                    packageName = rejected.packageName,
-                                    displayName = rejected.displayName,
-                                    signingCertSha256 = signingCertSha256,
-                                )
-                            },
-                        )
-                    } else if (rejected.packageName in pinnedPackageNames && signingCertSha256 != null) {
-                        Preference(
-                            icon = Icons.Default.Refresh,
-                            title = stringRes(R.string.settings__addons__trust_changed_certificate),
-                            summary = stringRes(R.string.settings__addons__trust_changed_certificate_summary)
-                                .replace("{package}", rejected.packageName),
-                            enabledIf = { !scanInProgress },
-                            onClick = {
-                                pendingPinAction = SigningPinAction.TrustChangedCertificate(
-                                    packageName = rejected.packageName,
-                                    displayName = rejected.displayName,
-                                    signingCertSha256 = signingCertSha256,
-                                )
-                            },
-                        )
+                } else if (snapshot.rejected.isNotEmpty() || dictionaryCatalog.rejected.isNotEmpty()) {
+                    FlorisWarningCard(
+                        modifier = Modifier.padding(8.dp),
+                        text = stringRes(R.string.settings__addons__status_title),
+                        secondaryText = addonStatusSummary,
+                        actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                        onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                    )
+                } else {
+                    FlorisSuccessCard(
+                        modifier = Modifier.padding(8.dp),
+                        text = stringRes(R.string.settings__addons__status_title),
+                        secondaryText = addonStatusSummary,
+                        actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                        onClick = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                    )
+                }
+                if (pinnedCount > 0) {
+                    Preference(
+                        icon = Icons.Default.Delete,
+                        title = stringRes(R.string.settings__addons__reset_trust),
+                        summary = stringRes(R.string.settings__addons__reset_trust_summary),
+                        enabledIf = { !scanInProgress },
+                        onClick = { pendingPinAction = SigningPinAction.ResetAll },
+                    )
+                }
+            }
+
+            PreferenceGroup(title = stringRes(R.string.settings__addons__group_installed)) {
+                if (snapshot.accepted.isEmpty()) {
+                    FlorisEmptyState(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        icon = Icons.Default.Extension,
+                        title = stringRes(R.string.settings__addons__none_installed),
+                        message = stringRes(R.string.settings__addons__none_installed_summary),
+                        actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                        onAction = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                    )
+                } else {
+                    for (manifest in snapshot.accepted) {
+                        InstalledAddonRow(manifest = manifest)
                     }
                 }
             }
-        }
 
-        PreferenceGroup(title = stringRes(R.string.settings__addons__group_install)) {
-            Preference(
-                icon = Icons.Default.Extension,
-                title = stringRes(R.string.settings__addons__install_title),
-                summary = stringRes(R.string.settings__addons__install_summary),
-            )
+            PreferenceGroup(title = stringRes(R.string.settings__addons__group_dictionary_packs)) {
+                if (dictionaryCatalog.entries.isEmpty()) {
+                    FlorisEmptyState(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        icon = Icons.Default.Extension,
+                        title = stringRes(R.string.settings__addons__none_dictionary_packs),
+                        message = stringRes(R.string.settings__addons__none_dictionary_packs_summary),
+                        actionLabel = if (scanInProgress) null else stringRes(R.string.settings__addons__rescan),
+                        onAction = if (scanInProgress) null else ({ rescanInstalledAddons() }),
+                    )
+                } else {
+                    for (entry in dictionaryCatalog.entries) {
+                        DictionaryPackRow(entry = entry)
+                    }
+                }
+                for (rejectedDescriptor in dictionaryCatalog.rejected) {
+                    Preference(
+                        icon = Icons.Default.Block,
+                        title = stringRes(R.string.settings__addons__dictionary_pack_rejected),
+                        summary = stringRes(R.string.settings__addons__dictionary_pack_rejected_summary)
+                            .replace("{package}", rejectedDescriptor.packageName)
+                            .replace("{reason}", rejectedDescriptor.reason),
+                    )
+                }
+            }
+
+            if (snapshot.rejected.isNotEmpty()) {
+                PreferenceGroup(title = stringRes(R.string.settings__addons__group_rejected)) {
+                    for (rejected in snapshot.rejected) {
+                        Preference(
+                            icon = Icons.Default.Block,
+                            title = rejected.displayName ?: rejected.packageName,
+                            summary = stringRes(R.string.settings__addons__rejected_summary)
+                                .replace("{package}", rejected.packageName)
+                                .replace("{reason}", rejected.reason),
+                        )
+                        val signingCertSha256 = rejected.signingCertSha256
+                        if (
+                            rejected.reason == AddonRegistry.ReasonExplicitTrustRequired &&
+                            signingCertSha256 != null
+                        ) {
+                            Preference(
+                                icon = Icons.Default.Refresh,
+                                title = stringRes(R.string.settings__addons__trust_new_certificate),
+                                summary = stringRes(R.string.settings__addons__trust_new_certificate_summary)
+                                    .replace("{package}", rejected.packageName),
+                                enabledIf = { !scanInProgress },
+                                onClick = {
+                                    pendingPinAction = SigningPinAction.TrustNewCertificate(
+                                        packageName = rejected.packageName,
+                                        displayName = rejected.displayName,
+                                        signingCertSha256 = signingCertSha256,
+                                    )
+                                },
+                            )
+                        } else if (rejected.packageName in pinnedPackageNames && signingCertSha256 != null) {
+                            Preference(
+                                icon = Icons.Default.Refresh,
+                                title = stringRes(R.string.settings__addons__trust_changed_certificate),
+                                summary = stringRes(R.string.settings__addons__trust_changed_certificate_summary)
+                                    .replace("{package}", rejected.packageName),
+                                enabledIf = { !scanInProgress },
+                                onClick = {
+                                    pendingPinAction = SigningPinAction.TrustChangedCertificate(
+                                        packageName = rejected.packageName,
+                                        displayName = rejected.displayName,
+                                        signingCertSha256 = signingCertSha256,
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+
+            PreferenceGroup(title = stringRes(R.string.settings__addons__group_install)) {
+                Preference(
+                    icon = Icons.Default.Extension,
+                    title = stringRes(R.string.settings__addons__install_title),
+                    summary = stringRes(R.string.settings__addons__install_summary),
+                )
+            }
         }
 
         pendingPinAction?.let { action ->

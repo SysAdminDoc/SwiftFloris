@@ -663,6 +663,8 @@
     <string name="settings__per_app_accent_preview__default_label" comment="Label for preview without app tint">Theme accent</string>
     <string name="settings__per_app_accent_preview__app_label" comment="Label for preview with selected app tint">{app} tint</string>
     <string name="settings__theme_manager__title_manage" comment="Title of the theme manager screen for managing installed and custom themes">Manage installed themes</string>
+    <string name="settings__theme_manager__loading" comment="Progress title while installed themes are indexed">Loading themes</string>
+    <string name="settings__theme_manager__loading_summary" comment="Progress summary while installed themes are indexed">Reading bundled and imported theme extensions.</string>
     <string name="settings__theme_manager__empty_title">No themes available</string>
     <string name="settings__theme_manager__empty_message">Bundled themes should appear here. If this stays empty, reinstall SwiftFloris or import a trusted theme extension.</string>
     <string name="settings__theme_manager__variant_dark" comment="Accessibility label for the dark-theme indicator icon">Dark theme</string>
@@ -2060,6 +2062,8 @@
     <string name="ext__list__ext_theme">Theme extensions</string>
     <string name="ext__list__ext_keyboard">Keyboard extensions</string>
     <string name="ext__list__ext_languagepack">Language pack extensions</string>
+    <string name="ext__list__loading" comment="Progress title while an extension category is indexed">Loading extensions</string>
+    <string name="ext__list__loading_summary" comment="Progress summary while an extension category is indexed">Reading bundled and imported extension packages.</string>
     <string name="ext__list__empty_title">No extensions in this category</string>
     <string name="ext__list__empty">Import a local SwiftFloris extension archive or install a trusted addon APK, then rescan if it should appear here.</string>
     <string name="ext__list__quarantine_title">Extension packages isolated: {count}</string>

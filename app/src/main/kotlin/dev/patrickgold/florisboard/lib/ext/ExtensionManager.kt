@@ -204,12 +204,16 @@ class ExtensionManager(context: Context) {
         private var staticExtensions = listOf<T>()
         private val quarantineFlow = MutableStateFlow<List<QuarantinedExtension>>(emptyList())
         internal val quarantined: StateFlow<List<QuarantinedExtension>> = quarantineFlow
+        private val initializedFlow = MutableStateFlow(false)
+        val initialized: StateFlow<Boolean> = initializedFlow
         private var fileObserver: FileObserver? = null
         private val initGuard = Mutex()
         private val refreshGuard = Mutex()
 
         suspend fun init() {
             initGuard.withLock {
+                initializedFlow.value = false
+
                 // Update internal module dir to actual path and make directory if not exists
                 internalModuleDir = internalModuleRef.absoluteFile(appContext)
                 internalModuleDir.mkdirs()
@@ -218,6 +222,7 @@ class ExtensionManager(context: Context) {
                 refreshGuard.withLock {
                     staticExtensions = indexAssetsModule()
                     refresh()
+                    initializedFlow.value = true
                 }
 
                 // Stop watching on old file observer if one exists and start new observer on new path

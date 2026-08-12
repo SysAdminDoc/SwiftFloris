@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Stop rendering empty states while data is still loading
-  Why: three screens show "there's nothing here" before their flow emits. The theme screen's copy tells a first-run user to reinstall the app; the addons screen renders its progress card and two "nothing installed" empty states simultaneously during the first scan because `scanInProgress` suppresses only the action button.
-  Evidence: `app/settings/theme/ThemeManagerScreen.kt:111-118` (+ `strings.xml:664-665`); `app/ext/ExtensionListScreen.kt:164-178`; `app/settings/addons/AddonsSettingsScreen.kt:187`, `:232-239`, `:249-257`
-  Touches: `app/settings/theme/ThemeManagerScreen.kt`, `app/ext/ExtensionListScreen.kt`, `app/settings/addons/AddonsSettingsScreen.kt`, `lib/compose/FlorisCards.kt`
-  Acceptance: each screen distinguishes loading from empty and renders the progress card alone until its flow emits; the existing Roborazzi settings baselines gain a loading-state capture for at least the theme screen.
-  Complexity: S
-
 - [ ] P1 — Extend the contrast gate past its ten selectors and fix what it then finds
   Why: `ThemeContrastTest` enumerates 10 selectors; each shipped stylesheet defines 98. `key-hint` is not covered and fails WCAG AA in three shipped themes — `floris_night` `#a0a0a0` on `#424242` = 3.84:1, `swiftkey_pure_light` `#7A7E85` on `#FFFFFF` = 4.08:1, `floris_pure_night` `#ffffff73` over `#212121` = 4.37:1. The theme editor has no contrast validation at all, so a user can save a theme with identical foreground and background, and `docs/ACCESSIBILITY.md:151-155` claims both a 4.5:1 floor and a per-element editor warning.
   Evidence: `app/src/test/.../ime/theme/ThemeContrastTest.kt:328-343`; `app/src/main/assets/ime/theme/org.florisboard.themes/stylesheets/{floris_night,swiftkey_pure_light,floris_pure_night}.json` (`--on-surface-variant` over `--surface`); `app/settings/theme/EditPropertyDialog.kt`, `ThemeEditorScreen.kt` (no ratio check); `docs/ACCESSIBILITY.md:151-155`

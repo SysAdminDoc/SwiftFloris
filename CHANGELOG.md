@@ -39,6 +39,9 @@
 - Declare API-33 stylus-handwriting and TalkBack touch-exploration inline-
   autofill capabilities in the IME manifest, with a contract test and updated
   accessibility/autofill verification guidance.
+- Keep theme, extension, and addon settings loading states separate from their
+  empty states, automatically start the first addon scan, and add a Roborazzi
+  baseline for the theme loading surface.
 
 ## v1.9.59 — 2026-08-11
 

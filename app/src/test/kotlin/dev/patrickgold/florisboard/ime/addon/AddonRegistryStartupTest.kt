@@ -145,11 +145,13 @@ class AddonRegistryStartupTest : FunSpec({
         )
 
         AddonRegistryStore.setActive(result.registry)
+        AddonRegistryStore.initialized.value shouldBe true
         AddonRegistryStore.active().dictionaryPacks().map { it.packageName } shouldContainExactly listOf(
             "org.swiftfloris.dict.pl",
         )
 
         AddonRegistryStore.reset()
+        AddonRegistryStore.initialized.value shouldBe true
         AddonRegistryStore.active().snapshot() shouldBe emptyList()
     }
 

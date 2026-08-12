@@ -58,6 +58,7 @@ import dev.patrickgold.florisboard.lib.ext.ExtensionManager
 import dev.patrickgold.florisboard.lib.ext.ExtensionQuarantineReason
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisOutlinedBox
+import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisTextButton
 import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -109,6 +110,7 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
     val extensionManager by context.extensionManager()
     val selectedIndex = type.getExtensionIndex(extensionManager)
     val extensionIndex by selectedIndex.collectAsState()
+    val indexInitialized by selectedIndex.initialized.collectAsState()
     val quarantinedExtensions by selectedIndex.quarantined.collectAsState()
 
     var fabHeight by remember {
@@ -125,99 +127,111 @@ fun ExtensionListScreen(type: ExtensionListScreenType, showUpdate: Boolean) = Fl
             state = listState,
             contentPadding = PaddingValues(bottom = fabHeightDp),
         ) {
-            if (showUpdate) {
+            if (!indexInitialized) {
                 item {
-                    ImportExtensionBox(navController)
-                }
-            }
-            if (quarantinedExtensions.isNotEmpty()) {
-                item {
-                    val visibleDiagnostics = mutableListOf<String>()
-                    for (record in quarantinedExtensions.take(5)) {
-                        visibleDiagnostics += "${record.fileName}: ${
-                            stringRes(record.reason.messageRes())
-                        }"
-                    }
-                    val additionalCount = (quarantinedExtensions.size - 5).coerceAtLeast(0)
-                    val additionalSummary = if (additionalCount > 0) {
-                        stringRes(
-                            R.string.ext__list__quarantine_additional,
-                            "count" to additionalCount,
-                        )
-                    } else {
-                        ""
-                    }
-                    FlorisWarningCard(
-                        modifier = Modifier.defaultFlorisOutlinedBox(),
-                        text = stringRes(
-                            R.string.ext__list__quarantine_title,
-                            "count" to quarantinedExtensions.size,
-                        ),
-                        secondaryText = stringRes(
-                            R.string.ext__list__quarantine_summary,
-                            "diagnostics" to visibleDiagnostics.joinToString("\n"),
-                            "additional" to additionalSummary,
-                        ),
-                    )
-                }
-            }
-            if (extensionIndex.isEmpty()) {
-                item {
-                    FlorisEmptyState(
-                        modifier = Modifier.padding(16.dp),
-                        icon = Icons.Default.Extension,
-                        title = stringRes(R.string.ext__list__empty_title),
-                        message = stringRes(R.string.ext__list__empty),
-                        actionLabel = stringRes(R.string.action__import),
-                        onAction = {
-                            navController.navigate(Routes.Ext.Import(type.importScreenType(), null))
-                        },
-                    )
-                }
-            }
-            items(extensionIndex) { ext ->
-                FlorisOutlinedBox(
-                    modifier = Modifier.defaultFlorisOutlinedBox(),
-                    title = ext.meta.title,
-                    subtitle = ext.meta.id,
-                ) {
-                    if (!ext.meta.description.isNullOrBlank()) {
-                        Text(
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            text = ext.meta.description!!,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                    Row(
+                    FlorisProgressCard(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 6.dp),
+                            .padding(16.dp)
+                            .defaultFlorisOutlinedBox(),
+                        text = stringRes(R.string.ext__list__loading),
+                        secondaryText = stringRes(R.string.ext__list__loading_summary),
+                    )
+                }
+            } else {
+                if (showUpdate) {
+                    item {
+                        ImportExtensionBox(navController)
+                    }
+                }
+                if (quarantinedExtensions.isNotEmpty()) {
+                    item {
+                        val visibleDiagnostics = mutableListOf<String>()
+                        for (record in quarantinedExtensions.take(5)) {
+                            visibleDiagnostics += "${record.fileName}: ${
+                                stringRes(record.reason.messageRes())
+                            }"
+                        }
+                        val additionalCount = (quarantinedExtensions.size - 5).coerceAtLeast(0)
+                        val additionalSummary = if (additionalCount > 0) {
+                            stringRes(
+                                R.string.ext__list__quarantine_additional,
+                                "count" to additionalCount,
+                            )
+                        } else {
+                            ""
+                        }
+                        FlorisWarningCard(
+                            modifier = Modifier.defaultFlorisOutlinedBox(),
+                            text = stringRes(
+                                R.string.ext__list__quarantine_title,
+                                "count" to quarantinedExtensions.size,
+                            ),
+                            secondaryText = stringRes(
+                                R.string.ext__list__quarantine_summary,
+                                "diagnostics" to visibleDiagnostics.joinToString("\n"),
+                                "additional" to additionalSummary,
+                            ),
+                        )
+                    }
+                }
+                if (extensionIndex.isEmpty()) {
+                    item {
+                        FlorisEmptyState(
+                            modifier = Modifier.padding(16.dp),
+                            icon = Icons.Default.Extension,
+                            title = stringRes(R.string.ext__list__empty_title),
+                            message = stringRes(R.string.ext__list__empty),
+                            actionLabel = stringRes(R.string.action__import),
+                            onAction = {
+                                navController.navigate(Routes.Ext.Import(type.importScreenType(), null))
+                            },
+                        )
+                    }
+                }
+                items(extensionIndex) { ext ->
+                    FlorisOutlinedBox(
+                        modifier = Modifier.defaultFlorisOutlinedBox(),
+                        title = ext.meta.title,
+                        subtitle = ext.meta.id,
                     ) {
-                        FlorisTextButton(
-                            onClick = {
-                                navController.navigate(Routes.Ext.View(ext.meta.id))
-                            },
-                            icon = Icons.Outlined.Info,
-                            text = stringRes(id = R.string.ext__list__view_details),//stringRes(R.string.action__add),
-                            colors = ButtonDefaults.textButtonColors(),
-                        )
-                        Spacer(modifier = Modifier.weight(1f))
-                        FlorisTextButton(
-                            onClick = {
-                                navController.navigate(Routes.Ext.Edit(ext.meta.id))
-                            },
-                            icon = Icons.Default.Edit,
-                            text = stringRes(R.string.action__edit),
-                            enabled = extensionManager.canDelete(ext),
-                        )
+                        if (!ext.meta.description.isNullOrBlank()) {
+                            Text(
+                                modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                                text = ext.meta.description!!,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 6.dp),
+                        ) {
+                            FlorisTextButton(
+                                onClick = {
+                                    navController.navigate(Routes.Ext.View(ext.meta.id))
+                                },
+                                icon = Icons.Outlined.Info,
+                                text = stringRes(id = R.string.ext__list__view_details),//stringRes(R.string.action__add),
+                                colors = ButtonDefaults.textButtonColors(),
+                            )
+                            Spacer(modifier = Modifier.weight(1f))
+                            FlorisTextButton(
+                                onClick = {
+                                    navController.navigate(Routes.Ext.Edit(ext.meta.id))
+                                },
+                                icon = Icons.Default.Edit,
+                                text = stringRes(R.string.action__edit),
+                                enabled = extensionManager.canDelete(ext),
+                            )
+                        }
                     }
                 }
             }
         }
     }
 
-    if (type.launchExtensionCreate != null) {
+    if (indexInitialized && type.launchExtensionCreate != null) {
         floatingActionButton {
             ExtendedFloatingActionButton(
                 icon = {

@@ -51,6 +51,7 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
 import dev.patrickgold.florisboard.app.settings.addons.AddonsSettingsScreen
+import dev.patrickgold.florisboard.app.settings.theme.ThemeManagerLoadingState
 import dev.patrickgold.florisboard.ime.addon.AddonManifest
 import dev.patrickgold.florisboard.ime.addon.AddonRegistry
 import dev.patrickgold.florisboard.ime.addon.AddonRegistryStore
@@ -189,6 +190,28 @@ class ThemeAndAddonsScreenshotTest {
         }
         composeRule.onRoot().captureRoboImage(
             filePath = "$BASELINE_DIR/aurora_animated_keyboard_surface.png",
+            roborazziOptions = ROBORAZZI_OPTIONS,
+        )
+    }
+
+    @Test
+    fun themeManagerLoadingState() {
+        composeRule.setContent {
+            ProvideLocalizedResources(
+                resourcesContext = composeRule.activity,
+                appName = R.string.app_name,
+            ) {
+                FlorisAppTheme(theme = AppTheme.LIGHT) {
+                    Surface(color = MaterialTheme.colorScheme.background) {
+                        Box(modifier = Modifier.size(width = 360.dp, height = 640.dp)) {
+                            ThemeManagerLoadingState()
+                        }
+                    }
+                }
+            }
+        }
+        composeRule.onRoot().captureRoboImage(
+            filePath = "$BASELINE_DIR/theme_manager_loading_state.png",
             roborazziOptions = ROBORAZZI_OPTIONS,
         )
     }
