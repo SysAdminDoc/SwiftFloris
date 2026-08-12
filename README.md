@@ -68,7 +68,7 @@ SwiftFloris ships through GitHub Releases (canonical), Obtainium for GitHub-back
 - **Package ID:** `io.github.sysadmindoc.swiftfloris`
 - **GitHub / Obtainium channel:** APKs are built locally by the maintainer from the tagged source, signed with the SwiftFloris release key, and published with a `SHA256SUMS` manifest.
 - **F-Droid channel:** prepared for fdroiddata submission with local reproducible-build and no-network gates. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
-- **No-network proof:** the local release evidence command fails if the merged app manifest declares `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`.
+- **Permission proof:** the local release evidence command fails if the merged app manifest declares a permission outside the explicit enrollment allowlist shared with addon/MCP runtime trust checks; network and unknown permissions fail closed.
 - **Reproducibility proof:** `scripts/release-evidence.ps1` runs the build-twice APK verifier and records APK hash evidence before publication.
 
 ### Option A — Obtainium (recommended for auto-updates)

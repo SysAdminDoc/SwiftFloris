@@ -74,6 +74,7 @@ object NoNetworkPermissionPolicy {
         "android.permission.FOREGROUND_SERVICE",
         "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
         "android.permission.POST_NOTIFICATIONS",
+        "android.permission.QUERY_ADVANCED_PROTECTION_MODE",
         "android.permission.READ_CALENDAR",
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",

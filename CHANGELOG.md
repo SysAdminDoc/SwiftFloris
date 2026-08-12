@@ -13,6 +13,9 @@
 - Keep Android system dictionary access read-only in SwiftFloris: system entries
   remain browsable and exportable, while add, edit, delete, and import actions
   stay in the internal dictionary and Android system dictionary settings.
+- Unify addon/MCP enrollment, merged-manifest, and addon-APK permission gates
+  around the same fail-closed allowlist, including a SEND_SMS fixture regression
+  check and the shared trust-capabilities registry.
 
 ## v1.9.59 — 2026-08-11
 

@@ -26,9 +26,13 @@ The validation contract makes the requirements load-bearing on the addon side to
   the case where SwiftFloris itself accidentally regresses; the addon-side check catches the case where an addon
   ships a 4 KB-aligned native lib that crashes only when SwiftFloris tries to load it via
   `System.load(/data/app/.../lib/arm64-v8a/libfoo.so)`.
-- **Banned permissions.** An addon must not request `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`,
-  `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`. The IME's `AddonEnumerator` already rejects on these — but a
-  release-time check fails the addon build before publication, so the rejection never reaches a user.
+- **Permission allowlist.** An addon must request only the platform permissions in
+  `enrollment.allowedPermissions` in [`trust-capabilities.json`](../../app/src/main/config/trust-capabilities.json),
+  or a SwiftFloris signature permission under the configured prefix. The IME's `AddonEnumerator`, the merged
+  manifest gate, and this APK validator all consume that same policy. Network, SMS, Bluetooth, storage, and future
+  unknown permissions therefore fail closed before publication.
+  The merged base-APK gate also permits only its explicitly listed generated base-manifest permissions and prefixes;
+  those base-only exceptions are never accepted for addon APKs.
 - **REGISTER_ADDON receiver.** The addon must expose a broadcast receiver with the appropriate
   `REGISTER_*` intent action and the required meta-data keys.
 - **Bundle size cap.** `AddonContract.ADDON_MAX_BUNDLE_BYTES = 64 MiB`. The enumerator rejects oversized addons;
@@ -41,7 +45,7 @@ Every addon APK is required to pass:
 | Check | What | Rationale |
 |---|---|---|
 | Native-lib 16 KB alignment | `zipalign -c -P 16 -v 4 path/to/addon.apk` exits 0 | Crash-on-load avoidance on Android 15+ 16 KiB-page devices |
-| No banned permissions | `aapt2 dump permissions` does not list any of `INTERNET` / `ACCESS_NETWORK_STATE` / `ACCESS_WIFI_STATE` / `CHANGE_NETWORK_STATE` / `CHANGE_WIFI_STATE` | §1 no-network philosophy |
+| Permission allowlist | `aapt2 dump permissions` contains only the permissions in `enrollment.allowedPermissions` or the configured SwiftFloris signature namespace | Runtime enrolment and release gates must agree |
 | `REGISTER_ADDON` receiver present | `aapt2 dump xmltree` over `AndroidManifest.xml` shows at least one `<receiver>` carrying a `REGISTER_*` intent action from `AddonContract.Action` | Enrolment will silently no-op otherwise |
 | Required meta-data keys | `addon.type`, `addon.version`, `addon.license`, `addon.descriptor` are all present on the receiver | `AddonEnumerator.evaluate` rejection cascade |
 | Bundle size ≤ 64 MiB | `stat` reports `≤ 67_108_864` bytes | `AddonContract.ADDON_MAX_BUNDLE_BYTES` |
@@ -65,7 +69,10 @@ remediate. It produces no output beyond the per-check status, so it composes cle
 ./scripts/verify-addon-apk.sh ./build/outputs/apk/release/addon-release.apk
 ```
 
-The script requires Android SDK build-tools `r33+` (for `zipalign -P` flag) and `aapt2`.
+The script requires Android SDK build-tools `r33+` (for the `zipalign -P 16` flag), `aapt2`, `apksigner`,
+and `unzip`. If the local script is copied into another addon repository, copy the trust-capabilities registry too
+or set `SWIFTFLORIS_TRUST_CAPABILITIES` to the SwiftFloris registry path. A legacy zipalign fallback is accepted
+only for APKs with no native libraries; native-bearing APKs fail closed when `-P 16` is unavailable.
 
 ## What this contract does not cover
 

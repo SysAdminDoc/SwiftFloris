@@ -19,15 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-### P1
-
-- [ ] P1 — Give the merged manifest and addon APKs the same allowlist the enrolment gate uses
-  Why: v1.9.59 inverted enrolment to a permitted-permission allowlist because `SEND_SMS`, Bluetooth, nearby-devices, storage and Android 17's `ACCESS_LOCAL_NETWORK` exfiltrate without `INTERNET`. The APK-level gates were not inverted: both the source and merged-manifest checks and the addon APK validator still test five permission names. A dependency AAR merging in any other exfil permission ships unnoticed, and a third-party addon author self-certifying with the script gets a PASS on an APK the IME rejects at enrolment.
-  Evidence: `app/build.gradle.kts:309-315` (`bannedNetworkPermissions`, used by `verifyNoInternetPermission` at `:341` and `verifyNoInternetPermissionMerged<Variant>` at `:395`); `scripts/verify-addon-apk.sh:42-46`; contrast with `ime/security/NoNetworkPermissionPolicy.kt:73-81`; `scripts/check-trust-capabilities.py:98` reads only `app/src/main/AndroidManifest.xml`
-  Touches: `app/build.gradle.kts`, `scripts/verify-addon-apk.sh`, `scripts/check-trust-capabilities.py`, `app/src/main/config/trust-capabilities.json`, `docs/PRIVACY_AND_AI.md`, `docs/THREAT_MODEL.md`, `docs/addons/apk-validation.md`
-  Acceptance: the merged-manifest gate fails on any permission outside an explicit allowlist, not only the five network names; `verify-addon-apk.sh` applies the same allowlist as `NoNetworkPermissionPolicy` so script PASS and runtime enrolment agree; a fixture manifest declaring `android.permission.SEND_SMS` fails both.
-  Complexity: M
-
 - [ ] P1 — Widen the live-doc-integrity gate to the files that actually drift
   Why: the gate that exists to catch stale docs is configured to skip them. `EXCLUDED_FILES` holds the five planning docs, `EXCLUDED_PREFIXES` holds the two files containing every `.github/workflows/` reference so `FORBIDDEN_CANONICAL_REFS` can never fire, `collect_live_markdown()` iterates tracked paths so 23 of 27 `docs/*.md` are never scanned, and `check_blocked_roadmap_freshness()` looks for GitHub URLs and release-advance lines that `Roadmap_Blocked.md` does not contain — making it a no-op on the file it is named for. It currently reports `OK (11 files checked)` against 63 dangling `ROADMAP §N` references across 15 docs.
   Evidence: `scripts/check-live-doc-integrity.py:19-25`, `:27-30`, `:33-37`, `:169-175`, `:355-418`; `git ls-files docs/` returns 4 top-level docs of 27

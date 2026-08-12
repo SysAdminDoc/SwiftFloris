@@ -12,9 +12,9 @@ The headline:
 > **All AI/ML processing in SwiftFloris happens on this device. No data
 > leaves the device. No vendor accounts. No telemetry. The
 > [`verifyNoInternetPermission`](../app/build.gradle.kts) Gradle task
-> fails the build if any `INTERNET`, `ACCESS_NETWORK_STATE`,
-> `ACCESS_WIFI_STATE`, `CHANGE_NETWORK_STATE`, or `CHANGE_WIFI_STATE`
-> permission is declared anywhere under `app/src/`.**
+> fails the build if any manifest declares a permission outside the explicit
+> enrollment allowlist in `app/src/main/config/trust-capabilities.json` or
+> SwiftFloris's signature-protected permission namespace.**
 
 This is enforced by build gate, not just by marketing.
 
@@ -320,7 +320,7 @@ Three independent ways to audit the no-network promise:
    network permission.
 2. **The local release evidence log** — `scripts/release-evidence.ps1` runs
    `:app:verifyNoInternetPermission` and fails if any `AndroidManifest.xml`
-   declares a network permission.
+   declares a permission outside the enrollment allowlist.
 3. **The merged manifest** — build `:app:assembleRelease` and inspect
    `app/build/intermediates/merged_manifest/release/AndroidManifest.xml`.
 

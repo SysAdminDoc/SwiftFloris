@@ -17,6 +17,7 @@
 import com.android.build.api.dsl.ApplicationExtension
 import com.github.takahirom.roborazzi.AnnotationFilter
 import com.github.takahirom.roborazzi.ExperimentalRoborazziApi
+import groovy.json.JsonSlurper
 import org.gradle.api.tasks.testing.logging.TestLogEvent
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
@@ -291,10 +292,11 @@ kover {
 }
 
 // ROADMAP §6 N7.1 — Pin the no-network promise in code, not just in marketing.
-// Fails the build if INTERNET / network permissions appear in either the :app
-// source manifests OR the variant's merged manifest (which folds in every
-// library AAR and every flavor/buildType overlay). A library that tries to
-// re-add INTERNET via manifest-merging is caught by the merged-manifest check.
+// Fails the build if a permission outside the enrollment allowlist appears in
+// either the :app source manifests OR the variant's merged manifest (which
+// folds in every library AAR and every flavor/buildType overlay). A library
+// that tries to add an exfiltration-capable permission via manifest-merging is
+// caught by the merged-manifest check.
 //
 // Legitimate `tools:node="remove"` directives (used to strip a permission a
 // library erroneously declares) are exempted in both checks — the source-
@@ -306,17 +308,35 @@ kover {
 // MERGED_MANIFEST artifact so PRs cannot accidentally break the offline-only
 // contract that makes SwiftFloris viable for F-Droid privacy review.
 // Removing either check is itself a load-bearing review signal.
-val bannedNetworkPermissions = listOf(
-    "android.permission.INTERNET",
-    "android.permission.ACCESS_NETWORK_STATE",
-    "android.permission.ACCESS_WIFI_STATE",
-    "android.permission.CHANGE_NETWORK_STATE",
-    "android.permission.CHANGE_WIFI_STATE",
-)
+@Suppress("UNCHECKED_CAST")
+private val enrollmentPolicy = JsonSlurper()
+    .parse(file("src/main/config/trust-capabilities.json")) as Map<String, Any>
 
-// Match a <uses-permission ...> element that declares one of the banned names
-// AND does NOT carry tools:node="remove" / "removeAll". Multi-line tolerant.
-fun findBannedPermissionViolations(manifestText: String): List<String> {
+@Suppress("UNCHECKED_CAST")
+private val enrollmentConfig = enrollmentPolicy["enrollment"] as Map<String, Any>
+
+@Suppress("UNCHECKED_CAST")
+private val enrollmentAllowedPermissions = enrollmentConfig["allowedPermissions"] as List<String>
+
+private val enrollmentSignaturePermissionPrefix = enrollmentConfig["signaturePermissionPrefix"] as String
+
+@Suppress("UNCHECKED_CAST")
+private val baseManifestPermissions = enrollmentConfig["baseManifestPermissions"] as List<String>
+
+@Suppress("UNCHECKED_CAST")
+private val baseManifestPermissionPrefixes = enrollmentConfig["baseManifestPermissionPrefixes"] as List<String>
+
+private fun isEnrollmentPermissionAllowed(permission: String): Boolean {
+    return permission in enrollmentAllowedPermissions ||
+        permission.startsWith(enrollmentSignaturePermissionPrefix) ||
+        permission in baseManifestPermissions ||
+        baseManifestPermissionPrefixes.any(permission::startsWith)
+}
+
+// Match a <uses-permission ...> element that declares a permission outside the
+// explicit enrollment allowlist AND does NOT carry tools:node="remove" /
+// "removeAll". Multi-line tolerant.
+fun findDisallowedPermissionViolations(manifestText: String): List<String> {
     val usesPermissionPattern = Regex(
         """<uses-permission\b[^>]*?/>|<uses-permission\b[^>]*?>.*?</uses-permission>""",
         setOf(RegexOption.DOT_MATCHES_ALL, RegexOption.IGNORE_CASE),
@@ -331,7 +351,7 @@ fun findBannedPermissionViolations(manifestText: String): List<String> {
         val element = match.value
         if (toolsNodeRemovePattern.containsMatchIn(element)) continue
         val name = namePattern.find(element)?.groupValues?.getOrNull(1) ?: continue
-        if (name in bannedNetworkPermissions) {
+        if (!isEnrollmentPermissionAllowed(name)) {
             violations += name
         }
     }
@@ -340,7 +360,7 @@ fun findBannedPermissionViolations(manifestText: String): List<String> {
 
 val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
     group = "verification"
-    description = "Fails the build if any source AndroidManifest.xml declares INTERNET / network permissions (ROADMAP §6 N7.1)."
+    description = "Fails the build if any source AndroidManifest.xml declares a permission outside the enrollment allowlist (ROADMAP §6 N7.1)."
 
     val manifests = fileTree("src") {
         include("**/AndroidManifest.xml")
@@ -352,19 +372,18 @@ val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
         val violations = mutableListOf<String>()
         manifests.forEach { manifest ->
             val text = manifest.readText()
-            findBannedPermissionViolations(text).forEach { perm ->
+            findDisallowedPermissionViolations(text).forEach { perm ->
                 violations += "${manifest.relativeTo(projectDir)} declares $perm"
             }
         }
         if (violations.isNotEmpty()) {
             throw GradleException(
                 buildString {
-                    appendLine("SwiftFloris no-network contract violation (ROADMAP §6 N7.1):")
+                    appendLine("SwiftFloris enrollment permission contract violation (ROADMAP §6 N7.1):")
                     violations.forEach { appendLine("  - $it") }
                     appendLine()
-                    append("SwiftFloris must ship without ANY network permission. ")
-                    append("If a feature genuinely needs network access, it must move to ")
-                    append("an isolated optional module loaded by user opt-in, never the base APK.")
+                    append("Every permission must be explicitly allowlisted or belong to SwiftFloris's signature namespace. ")
+                    append("If a feature genuinely needs a new permission, update the policy and its threat-model review together.")
                 }
             )
         }
@@ -394,7 +413,7 @@ androidComponents {
     onVariants { variant ->
         val verifyMerged = tasks.register("verifyNoInternetPermissionMerged${variant.name.replaceFirstChar { it.uppercase() }}") {
             group = "verification"
-            description = "Fails the build if the merged AndroidManifest for variant ${variant.name} declares INTERNET / network permissions (ROADMAP §6 N7.1)."
+            description = "Fails the build if the merged AndroidManifest for variant ${variant.name} declares a permission outside the enrollment allowlist (ROADMAP §6 N7.1)."
 
             val mergedManifest = variant.artifacts.get(com.android.build.api.artifact.SingleArtifact.MERGED_MANIFEST)
             inputs.file(mergedManifest).withPathSensitivity(PathSensitivity.RELATIVE)
@@ -408,14 +427,14 @@ androidComponents {
                     throw GradleException("verifyNoInternetPermissionMerged: merged manifest missing for $variantName at $file")
                 }
                 val text = file.readText()
-                val violations = findBannedPermissionViolations(text)
+                val violations = findDisallowedPermissionViolations(text)
                 if (violations.isNotEmpty()) {
                     throw GradleException(
                         buildString {
-                            appendLine("SwiftFloris no-network contract violation in MERGED manifest for $variantName (ROADMAP §6 N7.1):")
+                            appendLine("SwiftFloris enrollment permission contract violation in MERGED manifest for $variantName (ROADMAP §6 N7.1):")
                             violations.distinct().forEach { appendLine("  - $it") }
                             appendLine()
-                            append("A library / AAR re-introduced a banned permission via manifest merging. ")
+                            append("A library / AAR introduced a permission outside the enrollment allowlist via manifest merging. ")
                             append("If the addition is from an unwanted dependency, strip it with ")
                             append("""<uses-permission android:name="..." tools:node="remove" />""")
                             append(" in app/src/main/AndroidManifest.xml after confirming the library does not actually require network access.")

@@ -14,6 +14,9 @@ clean-clone summary:
 - **v1.8.85** — `verifyNoInternetPermission` now scans **merged** manifests in addition to source
   manifests, and honours `tools:node="remove"`. Source-only scanning could miss a transitively-
   declared INTERNET permission from an aggregated library; the merged-manifest scan closes it.
+- **v1.9.59** — the same fail-closed enrollment permission allowlist now drives the runtime addon/MCP
+  policy, source and merged manifest gates, and addon APK validation. The registry also pins the
+  allowlist to `NoNetworkPermissionPolicy` so an unknown permission cannot pass one surface and fail another.
 - **v1.8.85** — Personal dictionary now excluded from cloud-backup AND device-to-device transfer.
   New `app/src/main/res/xml/data_extraction_rules.xml` ships the Android-12+ schema with explicit
   excludes for the SQLCipher database and its Tink-wrapped passphrase.
@@ -95,8 +98,9 @@ zero account requirement"**. Three load-bearing implications:
 1. **Zero network permissions on the base APK.** No `INTERNET`, no
    `ACCESS_NETWORK_STATE`, no `ACCESS_WIFI_STATE`. Pinned by
    `:app:verifyNoInternetPermission` Gradle task (ROADMAP §6 N7.1). The build
-   fails if any AndroidManifest declares a network permission. Users can verify
-   this by inspecting the installed APK's manifest (`aapt dump permissions`).
+   fails if any AndroidManifest declares a permission outside the explicit
+   enrollment allowlist. Users can verify this by inspecting the installed
+   APK's manifest (`aapt dump permissions`).
 
 2. **No vendor account, no telemetry.** Crash reporting (if ever introduced)
    would be opt-in only, never auto-upload. Federated learning to vendor cloud

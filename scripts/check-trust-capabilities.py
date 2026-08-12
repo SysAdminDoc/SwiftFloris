@@ -284,6 +284,34 @@ def derive_mcp_network_policy(root: Path) -> bool:
     )
 
 
+def derive_enrollment_policy(root: Path) -> tuple[list[str], str, list[str], list[str]]:
+    policy = strip_comments(
+        read_text(
+            root,
+            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/"
+            "NoNetworkPermissionPolicy.kt",
+        )
+    )
+    allowed_match = re.search(
+        r"val\s+AllowedPermissions\s*:\s*Set<String>\s*=\s*setOf\((.*?)\n\s*\)",
+        policy,
+        flags=re.DOTALL,
+    )
+    if allowed_match is None:
+        raise ValueError("NoNetworkPermissionPolicy.kt: missing AllowedPermissions set")
+    allowed = re.findall(r'"([^"\n]+)"', allowed_match.group(1))
+    if "AppPackageContract.PERMISSION_PREFIX" not in policy:
+        raise ValueError(
+            "NoNetworkPermissionPolicy.kt: missing signature permission namespace exemption",
+        )
+    return (
+        allowed,
+        "io.github.sysadmindoc.swiftfloris.permission.",
+        ["io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"],
+        ["io.github.sysadmindoc.swiftfloris.debug."],
+    )
+
+
 def validate_registry(root: Path, registry: dict[str, Any]) -> list[str]:
     errors: list[str] = []
 
@@ -324,6 +352,52 @@ def validate_registry(root: Path, registry: dict[str, Any]) -> list[str]:
         base_app.get("networkPermission"),
         bool(set(uses_permissions) & NETWORK_PERMISSIONS),
     )
+
+    enrollment = registry.get("enrollment", {})
+    try:
+        (
+            live_allowed_permissions,
+            live_signature_prefix,
+            live_base_permissions,
+            live_base_prefixes,
+        ) = derive_enrollment_policy(root)
+    except ValueError as exc:
+        errors.append(str(exc))
+    else:
+        expect(
+            "enrollment.allowedPermissions",
+            sorted(enrollment.get("allowedPermissions", [])),
+            sorted(live_allowed_permissions),
+        )
+        expect(
+            "enrollment.signaturePermissionPrefix",
+            enrollment.get("signaturePermissionPrefix"),
+            live_signature_prefix,
+        )
+        expect(
+            "enrollment.baseManifestPermissions",
+            enrollment.get("baseManifestPermissions"),
+            live_base_permissions,
+        )
+        expect(
+            "enrollment.baseManifestPermissionPrefixes",
+            enrollment.get("baseManifestPermissionPrefixes"),
+            live_base_prefixes,
+        )
+        allowed = set(live_allowed_permissions)
+        prefix = live_signature_prefix
+        base_permissions = set(live_base_permissions)
+        base_prefixes = tuple(live_base_prefixes)
+        for permission in uses_permissions:
+            if (
+                permission not in allowed
+                and not permission.startswith(prefix)
+                and permission not in base_permissions
+                and not any(permission.startswith(base_prefix) for base_prefix in base_prefixes)
+            ):
+                errors.append(
+                    f"baseApp.usesPermissions contains permission outside enrollment policy: {permission}",
+                )
 
     clipboard_source = read_text(
         root,

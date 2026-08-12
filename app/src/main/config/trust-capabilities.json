@@ -20,6 +20,25 @@
     ],
     "networkPermission": false
   },
+  "enrollment": {
+    "allowedPermissions": [
+      "android.permission.FOREGROUND_SERVICE",
+      "android.permission.FOREGROUND_SERVICE_SPECIAL_USE",
+      "android.permission.POST_NOTIFICATIONS",
+      "android.permission.QUERY_ADVANCED_PROTECTION_MODE",
+      "android.permission.READ_CALENDAR",
+      "android.permission.RECEIVE_BOOT_COMPLETED",
+      "android.permission.VIBRATE",
+      "android.permission.WAKE_LOCK"
+    ],
+    "signaturePermissionPrefix": "io.github.sysadmindoc.swiftfloris.permission.",
+    "baseManifestPermissions": [
+      "io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+    ],
+    "baseManifestPermissionPrefixes": [
+      "io.github.sysadmindoc.swiftfloris.debug."
+    ]
+  },
   "storage": {
     "clipboardHistory": "encrypted_or_unknown",
     "clipboardMedia": "plaintext_app_private_files",

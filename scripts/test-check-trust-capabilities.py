@@ -103,6 +103,13 @@ def change_registry_compile_sdk(root: Path) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
 
 
+def remove_enrollment_permission_from_registry(root: Path) -> None:
+    path = root / "app/src/main/config/trust-capabilities.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["enrollment"]["allowedPermissions"].remove("android.permission.VIBRATE")
+    path.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+
+
 def main() -> int:
     with TemporaryDirectory() as tmp:
         fixture = Path(tmp)
@@ -120,11 +127,11 @@ def main() -> int:
                 "sdk.compile",
             ),
             (
-                "manifest permission drift",
+                "manifest SEND_SMS permission drift",
                 lambda root: replace(
                     root / "app/src/main/AndroidManifest.xml",
                     "<application",
-                    '<uses-permission android:name="android.permission.INTERNET"/>\n\n    <application',
+                    '<uses-permission android:name="android.permission.SEND_SMS"/>\n\n    <application',
                 ),
                 "baseApp.usesPermissions",
             ),
@@ -168,6 +175,22 @@ def main() -> int:
                     '"android.permission.NETWORK_PERMISSION_REMOVED",',
                 ),
                 "mcp.daemonNetworkPermissionsRejected",
+            ),
+            (
+                "enrollment permission registry drift",
+                remove_enrollment_permission_from_registry,
+                "enrollment.allowedPermissions",
+            ),
+            (
+                "runtime enrollment allowlist drift",
+                lambda root: replace(
+                    root
+                    / "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/"
+                    "NoNetworkPermissionPolicy.kt",
+                    '"android.permission.VIBRATE",',
+                    '"android.permission.READ_MEDIA_IMAGES",',
+                ),
+                "enrollment.allowedPermissions",
             ),
             (
                 "enrollment allowlist downgraded to a denylist",
