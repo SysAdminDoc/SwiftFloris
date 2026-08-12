@@ -33,6 +33,9 @@
 - Remove the maintainer device serial from benchmark baselines and emit a
   stable SHA-256 device key derived from manufacturer, model, and SDK, with
   repository hygiene rejecting serial fields in tracked documentation.
+- Reconcile stale device-tier blockers with the attached API-36 emulator:
+  preserve the real app/password-manager/API-37 gaps, close the already-shipped
+  instrumented smoke coverage, and keep the missing MCP addon sample blocked.
 
 ## v1.9.59 — 2026-08-11
 

@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Re-verify the blocked hardware section against the attached device
-  Why: 11 items are gated on "`adb devices -l` reported no attached device or emulator". A device is attached (`R5CY34G070L`, SM-S938B, Android 16 / SDK 36) with the debug build installed, Chrome and a password manager present, plus API 26/35/36/36.1/37 system images and an API-37 AVD on disk. Nine of the eleven blockers have cleared; the remaining two need a Play install and an emulator profile, not hardware. Four items in the external-deliverables section are likewise blocked on premises the tree contradicts.
-  Evidence: `Roadmap_Blocked.md:20`, `:169`, `:184`, `:197`, `:203`, `:210`, `:222`, `:229`, `:246`; `adb devices -l`; `app/src/androidTest/.../ImeEndToEndSmokeTest.kt:64` (the test "Expand instrumented coverage" asks for); `settings.gradle.kts:47` + `scripts/release-evidence.ps1:262-272` (the addon trust kit it says needs building); `ime/voice/VoiceModelCatalog.kt:31-32,46-68,150` (the size/licence review it says is outstanding); `ime/sync/SyncChannel.kt:22-44,51,76` (the transport it says is unselected); the Han pack ships 235,847 rows
-  Touches: `Roadmap_Blocked.md`, `ROADMAP.md`
-  Acceptance: every hardware item is re-tested against the attached device and either moved to `ROADMAP.md` or given a blocker that survives inspection; the addon-trust-kit and instrumented-coverage items are closed as already-shipped; the voice, sync and CJK blockers are rescoped to what is genuinely missing. Note: the VNI analysis at `Roadmap_Blocked.md:30-42` is exact and must not be redone. Never set the device's default IME without asking — it is the maintainer's personal phone.
-  Complexity: M
-
 - [ ] P1 — Declare the two missing `<input-method>` attributes
   Why: `onPrepareStylusHandwriting`/`onStartStylusHandwriting`/`onStylusHandwritingMotionEvent`/`onFinishStylusHandwriting` are fully implemented and a shipped Settings toggle gates them, but `android:supportsStylusHandwriting` defaults to `false` in AOSP, so the platform never starts a handwriting session and the whole path is unreachable. `android:supportsInlineSuggestionsWithTouchExploration` also defaults to `false`, which suppresses inline autofill suggestions for every TalkBack user — on a keyboard that ships inline autofill and advertises TalkBack support.
   Evidence: `app/src/main/res/xml/method.xml` (20 lines, declares neither); `FlorisImeService.kt:601-680`; `app/prefs/KeyboardPrefs.kt:145`; parsing and defaults in https://github.com/aosp-mirror/platform_frameworks_base/blob/master/core/java/android/view/inputmethod/InputMethodInfo.java
