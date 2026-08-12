@@ -31,6 +31,8 @@ function Invoke-AdbText {
     return ($output -join "`n")
 }
 
+. (Join-Path $PSScriptRoot "benchmark-device.ps1")
+
 function Get-Median([double[]]$Values) {
     if ($Values.Count -eq 0) {
         return $null
@@ -84,14 +86,7 @@ if ($selectedIme -ne $ImeComponent) {
     throw "Expected $ImeComponent to be selected, got $selectedIme"
 }
 
-$device = [ordered]@{
-    serial = (Invoke-AdbText get-serialno).Trim()
-    manufacturer = (Invoke-AdbText shell getprop ro.product.manufacturer).Trim()
-    model = (Invoke-AdbText shell getprop ro.product.model).Trim()
-    device = (Invoke-AdbText shell getprop ro.product.device).Trim()
-    androidRelease = (Invoke-AdbText shell getprop ro.build.version.release).Trim()
-    sdk = (Invoke-AdbText shell getprop ro.build.version.sdk).Trim()
-}
+$device = Get-BenchmarkDeviceMetadata
 
 $escapedText = ($Text -replace "\s+", "%s")
 $runs = @()

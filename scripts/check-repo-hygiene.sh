@@ -13,6 +13,13 @@ if [ -n "$generated_paths" ]; then
   exit 1
 fi
 
+benchmark_serial_fields="$(git grep -n -I -E '"(serial|deviceSerial|device_serial)"[[:space:]]*:[[:space:]]*"[A-Za-z0-9][A-Za-z0-9._-]{5,}"' -- docs || true)"
+if [ -n "$benchmark_serial_fields" ]; then
+  echo "::error::Tracked documentation contains a device serial. Benchmark outputs must use deviceKey derived from manufacturer/model/SDK:"
+  echo "$benchmark_serial_fields"
+  exit 1
+fi
+
 deleted_markdown="$(git status --porcelain=v1 | awk '$1 ~ /D/ && $2 ~ /\.md$/ { print $2 }')"
 if [ -n "$deleted_markdown" ]; then
   echo "::error::Deleted Markdown files are present in the working tree. Confirm they are intentional before staging/pushing:"

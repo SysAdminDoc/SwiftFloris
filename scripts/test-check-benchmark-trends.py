@@ -27,7 +27,12 @@ def write_result(path: Path, benchmark: str, value: float) -> None:
             {
                 "benchmark": benchmark,
                 "measuredAt": "2026-06-11T00:00:00Z",
-                "device": {"model": "fixture", "androidRelease": "16", "sdk": "36"},
+                "device": {
+                    "deviceKey": "sha256:fixture",
+                    "model": "fixture",
+                    "androidRelease": "16",
+                    "sdk": "36",
+                },
                 "summary": summary,
             },
         ),
@@ -83,6 +88,20 @@ def main() -> int:
         write_result(candidate_dir / "candidate-theme-switch.json", "themeSwitch", 1.0)
         if run_checker(baseline_dir, candidate_dir, report, "--require-benchmark", "imeFirstRender") != 1:
             print("expected missing required benchmark to fail")
+            return 1
+
+        (candidate_dir / "candidate-theme-switch.json").write_text(
+            json.dumps(
+                {
+                    "benchmark": "themeSwitch",
+                    "device": {"serial": "fixture-value"},
+                    "summary": {"themeSwitchMedianOfRunMediansMs": 1.0},
+                },
+            ),
+            encoding="utf-8",
+        )
+        if run_checker(baseline_dir, candidate_dir, report) != 2:
+            print("expected device serial field to be rejected")
             return 1
 
     print("benchmark trend checker self-test: PASS")

@@ -136,6 +136,8 @@ def load_benchmark(path: Path) -> BenchmarkFile:
 
     measured_at = payload.get("measuredAt")
     device = payload.get("device")
+    if isinstance(device, dict) and any(key in device for key in ("serial", "deviceSerial", "device_serial")):
+        raise ValueError(f"{path}: device serial fields are not allowed; use 'deviceKey'")
     return BenchmarkFile(
         benchmark=benchmark,
         path=path,

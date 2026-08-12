@@ -6,7 +6,7 @@
   "iterations": 5,
   "profile": "settingsKeyboardTheme",
   "device": {
-    "serial": "R5CY34G070L",
+    "deviceKey": "sha256:9b5401cdf62a3260789205c3df07343cc78b1b59be93bbbd2daa00e398398591",
     "manufacturer": "samsung",
     "model": "SM-S938B",
     "device": "pa3q",

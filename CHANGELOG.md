@@ -30,6 +30,9 @@
 - Make MCP lifecycle startup single-shot even when consent is disabled and
   serialize start, rescan, retry, and teardown so a Settings rescan cannot
   repopulate registries during IME shutdown.
+- Remove the maintainer device serial from benchmark baselines and emit a
+  stable SHA-256 device key derived from manufacturer, model, and SDK, with
+  repository hygiene rejecting serial fields in tracked documentation.
 
 ## v1.9.59 — 2026-08-11
 

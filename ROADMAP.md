@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Remove the maintainer's device serial from the tracked benchmark baselines
-  Why: all six committed baseline files embed `"serial": "R5CY34G070L"` alongside manufacturer, model and device. They are `git ls-files`-tracked and therefore public. A privacy-first keyboard publishing a hardware identifier in its own repo is an avoidable contradiction, and nothing in the benchmark pipeline needs the serial.
-  Evidence: `docs/benchmark-results/baseline-2026-05-18-*.json` (6 files); `git ls-files docs/benchmark-results/`
-  Touches: `docs/benchmark-results/*.json`, `tools/benchmark-*.ps1`, `scripts/check-benchmark-trends.py`, `scripts/check-repo-hygiene.sh`
-  Acceptance: no tracked file contains a device serial; the capture scripts record a stable anonymised device key (manufacturer/model/SDK) instead; repo hygiene fails if a serial-shaped value reappears in `docs/`.
-  Complexity: S
-
 - [ ] P1 — Re-verify the blocked hardware section against the attached device
   Why: 11 items are gated on "`adb devices -l` reported no attached device or emulator". A device is attached (`R5CY34G070L`, SM-S938B, Android 16 / SDK 36) with the debug build installed, Chrome and a password manager present, plus API 26/35/36/36.1/37 system images and an API-37 AVD on disk. Nine of the eleven blockers have cleared; the remaining two need a Play install and an emulator profile, not hardware. Four items in the external-deliverables section are likewise blocked on premises the tree contradicts.
   Evidence: `Roadmap_Blocked.md:20`, `:169`, `:184`, `:197`, `:203`, `:210`, `:222`, `:229`, `:246`; `adb devices -l`; `app/src/androidTest/.../ImeEndToEndSmokeTest.kt:64` (the test "Expand instrumented coverage" asks for); `settings.gradle.kts:47` + `scripts/release-evidence.ps1:262-272` (the addon trust kit it says needs building); `ime/voice/VoiceModelCatalog.kt:31-32,46-68,150` (the size/licence review it says is outstanding); `ime/sync/SyncChannel.kt:22-44,51,76` (the transport it says is unselected); the Han pack ships 235,847 rows
