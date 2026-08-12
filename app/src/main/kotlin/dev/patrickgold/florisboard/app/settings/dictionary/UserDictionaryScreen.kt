@@ -79,6 +79,7 @@ import dev.patrickgold.florisboard.ime.dictionary.PersonalDictionaryEntry
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDatabase
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryDao
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryEntry
+import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryReadDao
 import dev.patrickgold.florisboard.ime.dictionary.UserDictionaryValidation
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -100,6 +101,7 @@ import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisEmptyState
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.FlorisSuccessCard
 import org.florisboard.lib.compose.defaultFlorisOutlinedBox
@@ -171,10 +173,11 @@ fun UserDictionaryScreen(
     var lastEntryNoticeDetail by rememberSaveable { mutableStateOf<String?>(null) }
     val isEntryOperationInProgress = activeEntryOperation != null
     val isDictionaryTransferInProgress = activeDictionaryTransfer != null
-    val entryActionsEnabled = UserDictionaryEntryPolicy.canMutateEntry(
-        isOperationInProgress = isEntryOperationInProgress,
-        isTransferInProgress = isDictionaryTransferInProgress,
-    )
+    val entryActionsEnabled = UserDictionaryEntryPolicy.canMutateDictionary(type) &&
+        UserDictionaryEntryPolicy.canMutateEntry(
+            isOperationInProgress = isEntryOperationInProgress,
+            isTransferInProgress = isDictionaryTransferInProgress,
+        )
     val canLeaveDictionaryScreen = UserDictionaryEntryPolicy.canLeave(
         isOperationInProgress = isEntryOperationInProgress,
         isTransferInProgress = isDictionaryTransferInProgress,
@@ -199,6 +202,10 @@ fun UserDictionaryScreen(
             isOperationInProgress = isEntryOperationInProgress,
             isTransferInProgress = isDictionaryTransferInProgress,
         )
+    }
+
+    fun canStartDictionaryMutation(): Boolean {
+        return UserDictionaryEntryPolicy.canMutateDictionary(type) && canStartDictionaryTransfer()
     }
 
     fun startDictionaryTransfer(operation: UserDictionaryTransferOperation) {
@@ -227,10 +234,17 @@ fun UserDictionaryScreen(
         }
     }
 
-    fun userDictionaryDao(): UserDictionaryDao? {
+    fun userDictionaryDao(): UserDictionaryReadDao? {
         return when (type) {
             UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDao()
             UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDao()
+        }
+    }
+
+    fun mutableUserDictionaryDao(): UserDictionaryDao? {
+        return when (type) {
+            UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDao()
+            UserDictionaryType.SYSTEM -> null
         }
     }
 
@@ -288,6 +302,14 @@ fun UserDictionaryScreen(
         return when (type) {
             UserDictionaryType.FLORIS -> dictionaryManager.florisUserDictionaryDatabase()
             UserDictionaryType.SYSTEM -> dictionaryManager.systemUserDictionaryDatabase()
+        }
+    }
+
+    fun mutableUserDictionaryDatabase(): UserDictionaryDatabase? {
+        return if (UserDictionaryEntryPolicy.canMutateDictionary(type)) {
+            dictionaryManager.florisUserDictionaryDatabase()
+        } else {
+            null
         }
     }
 
@@ -379,10 +401,10 @@ fun UserDictionaryScreen(
         parsed: ParsedDictionaryImport,
         excludedEntryIndexes: Set<Int> = emptySet(),
     ) {
-        if (!canStartDictionaryTransfer()) {
+        if (!canStartDictionaryMutation()) {
             return
         }
-        val dao = userDictionaryDao()
+        val dao = mutableUserDictionaryDao()
         if (dao == null) {
             scope.launch {
                 context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
@@ -413,17 +435,17 @@ fun UserDictionaryScreen(
     }
 
     fun importPlainDictionary(uri: Uri) {
-        if (!canStartDictionaryTransfer()) {
+        if (!canStartDictionaryMutation()) {
             return
         }
-        val db = userDictionaryDatabase()
+        val db = mutableUserDictionaryDatabase()
         if (db == null) {
             scope.launch {
                 context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
             }
             return
         }
-        val dao = userDictionaryDao()
+        val dao = mutableUserDictionaryDao()
         if (dao == null) {
             scope.launch {
                 context.showLongToast(R.string.settings__udm__dictionary_store_unavailable)
@@ -480,11 +502,11 @@ fun UserDictionaryScreen(
     }
 
     fun importEncryptedDictionary(uri: Uri, passphrase: CharArray) {
-        if (!canStartDictionaryTransfer()) {
+        if (!canStartDictionaryMutation()) {
             passphrase.fill('\u0000')
             return
         }
-        val dao = userDictionaryDao()
+        val dao = mutableUserDictionaryDao()
         if (dao == null) {
             passphrase.fill('\u0000')
             scope.launch {
@@ -551,7 +573,7 @@ fun UserDictionaryScreen(
             // If uri is null it indicates that the selection activity was cancelled (mostly
             // by pressing the back button), so we don't display an error message here.
             if (uri == null) return@rememberLauncherForActivityResult
-            if (!canStartDictionaryTransfer()) return@rememberLauncherForActivityResult
+            if (!canStartDictionaryMutation()) return@rememberLauncherForActivityResult
             val isEncrypted = runCatching {
                 detectEncryptedEnvelope(uri)
             }.getOrElse { error ->
@@ -709,7 +731,7 @@ fun UserDictionaryScreen(
             onClick = { expanded = !expanded },
             icon = Icons.Default.MoreVert,
             contentDescription = stringRes(R.string.action__more_options),
-            enabled = entryActionsEnabled,
+            enabled = canStartDictionaryTransfer(),
         )
         DropdownMenu(
             expanded = expanded,
@@ -729,7 +751,7 @@ fun UserDictionaryScreen(
                     expanded = false
                 },
                 text = { Text(text = stringRes(R.string.action__export)) },
-                enabled = entryActionsEnabled,
+                enabled = canStartDictionaryTransfer(),
             )
             DropdownMenuItem(
                 onClick = {
@@ -737,7 +759,7 @@ fun UserDictionaryScreen(
                     expanded = false
                 },
                 text = { Text(text = stringRes(R.string.settings__udm__encrypted_export)) },
-                enabled = entryActionsEnabled,
+                enabled = canStartDictionaryTransfer(),
             )
             if (type == UserDictionaryType.SYSTEM) {
                 DropdownMenuItem(
@@ -746,28 +768,26 @@ fun UserDictionaryScreen(
                         expanded = false
                     },
                     text = { Text(text = stringRes(R.string.settings__udm__open_system_manager_ui)) },
-                    enabled = entryActionsEnabled,
+                    enabled = canStartDictionaryTransfer(),
                 )
             }
         }
     }
 
     floatingActionButton {
-        ExtendedFloatingActionButton(
-            onClick = {
-                if (entryActionsEnabled) {
-                    userDictionaryEntryForDialog = UserDictionaryEntryToAdd
-                }
-            },
-            shape = MaterialTheme.shapes.medium,
-            icon = {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = stringRes(R.string.settings__udm__dialog__title_add),
-                )
-            },
-            text = { Text(text = stringRes(R.string.settings__udm__dialog__title_add)) },
-        )
+        if (entryActionsEnabled) {
+            ExtendedFloatingActionButton(
+                onClick = { userDictionaryEntryForDialog = UserDictionaryEntryToAdd },
+                shape = MaterialTheme.shapes.medium,
+                icon = {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = stringRes(R.string.settings__udm__dialog__title_add),
+                    )
+                },
+                text = { Text(text = stringRes(R.string.settings__udm__dialog__title_add)) },
+            )
+        }
     }
 
     content {
@@ -796,6 +816,14 @@ fun UserDictionaryScreen(
                 modifier = Modifier.defaultFlorisOutlinedBox(),
                 text = stringRes(R.string.settings__udm__dictionary_export_in_progress),
                 secondaryText = stringRes(R.string.settings__udm__dictionary_export_in_progress_summary),
+            )
+        }
+
+        if (type == UserDictionaryType.SYSTEM) {
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__udm__system_read_only_title),
+                secondaryText = stringRes(R.string.settings__udm__system_read_only_summary),
             )
         }
 
@@ -848,7 +876,13 @@ fun UserDictionaryScreen(
                         modifier = Modifier.padding(16.dp),
                         icon = Icons.AutoMirrored.Filled.LibraryBooks,
                         title = stringRes(R.string.settings__udm__empty_title),
-                        message = stringRes(R.string.settings__udm__no_words_in_dictionary),
+                        message = stringRes(
+                            if (type == UserDictionaryType.SYSTEM) {
+                                R.string.settings__udm__system_no_words
+                            } else {
+                                R.string.settings__udm__no_words_in_dictionary
+                            },
+                        ),
                         actionLabel = if (entryActionsEnabled) {
                             stringRes(R.string.settings__udm__dialog__title_add)
                         } else {
@@ -866,7 +900,7 @@ fun UserDictionaryScreen(
                 items(languageList) { language ->
                     JetPrefListItem(
                         modifier = Modifier.rippleClickable {
-                            if (entryActionsEnabled) {
+                            if (canLeaveDictionaryScreen) {
                                 scope.launch {
                                     // Delay makes UI ripple visible and experience better
                                     delay(150)
@@ -886,7 +920,11 @@ fun UserDictionaryScreen(
                             icon = Icons.AutoMirrored.Filled.LibraryBooks,
                             title = stringRes(R.string.settings__udm__empty_locale_title),
                             message = stringRes(
-                                R.string.settings__udm__empty_locale_message,
+                                if (type == UserDictionaryType.SYSTEM) {
+                                    R.string.settings__udm__system_no_words_locale
+                                } else {
+                                    R.string.settings__udm__empty_locale_message
+                                },
                                 "language" to getDisplayNameForLocale(currentLocale!!),
                             ),
                             actionLabel = if (entryActionsEnabled) {
@@ -975,7 +1013,7 @@ fun UserDictionaryScreen(
                         scope.launch {
                             val saved = runCatching {
                                 withContext(Dispatchers.IO) {
-                                    val dao = userDictionaryDao() ?: error(dictionaryStoreUnavailableMessage)
+                                    val dao = mutableUserDictionaryDao() ?: error(dictionaryStoreUnavailableMessage)
                                     if (isAddWord) {
                                         dao.insert(entry)
                                     } else {
@@ -1022,7 +1060,7 @@ fun UserDictionaryScreen(
                     scope.launch {
                         val deleted = runCatching {
                             withContext(Dispatchers.IO) {
-                                val dao = userDictionaryDao() ?: error(dictionaryStoreUnavailableMessage)
+                                val dao = mutableUserDictionaryDao() ?: error(dictionaryStoreUnavailableMessage)
                                 dao.delete(wordEntry)
                             }
                             localeTagsToRebuild.forEach { tag ->
@@ -1112,7 +1150,7 @@ fun UserDictionaryScreen(
                 onRollback = {
                     val deleted = PersonalDictionaryImportBatch.rollback(
                         result = summary,
-                        dao = userDictionaryDao() ?: return@PersonalDictionaryImportSummaryDialog,
+                        dao = mutableUserDictionaryDao() ?: return@PersonalDictionaryImportSummaryDialog,
                     )
                     importSummary = null
                     buildUi()

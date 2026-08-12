@@ -243,6 +243,11 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
   learned words to a new device, use Settings → Personal dictionary → Export.
 - **Off switch.** Settings → Typing → Learn from typing.
 
+The optional Android system user dictionary is a separate shared provider. SwiftFloris
+may read it for suggestions and show its entries in Settings, but the in-app system
+dictionary screen is read-only: SwiftFloris never adds, edits, deletes, or imports
+rows into that provider. Use Android's system dictionary settings for those changes.
+
 ---
 
 ## 3. The cross-cutting privacy contract
@@ -264,8 +269,9 @@ Every surface above is subject to:
   screenshots and screen recordings during private typing.
 - The **personal-dictionary isolation contract** — the `learnWord` path
   never references the system `UserDictionary.Words`. The
-  `PersonalDictionaryIsolationTest` will fail if a future contributor
-  breaks this.
+  `PersonalDictionaryIsolationTest` also pins the read-only system DAO and
+  Settings editor path, so a future contributor cannot silently restore shared
+  provider writes.
 - The **personal-dictionary backup exclusion** — encrypted DB is excluded
   from both cloud backup and device-to-device transfer (Android Keystore
   wrap key is non-portable).

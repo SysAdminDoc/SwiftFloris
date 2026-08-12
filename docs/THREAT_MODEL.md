@@ -140,9 +140,10 @@ Out of scope:
   inspection of `DictionaryManager.kt` `learnWord` body fails the build if a
   future contributor accidentally references `systemUserDictionaryDao`.
 - `enableSystemUserDictionary` is opt-in; even when on, it only **reads** from
-  the system provider, never writes (the existing `UserDictionaryDao` interface
-  exposed to system mode does not back `insert` / `update` / `delete` to the
-  ContentResolver writer paths).
+  the system provider, never writes. System mode exposes a read-only DAO, and
+  the SwiftFloris Settings screen disables add/edit/delete/import actions. Users
+  who want to change those shared entries are sent to Android's system dictionary
+  settings, outside SwiftFloris's provider access.
 
 ### 3.3 Password-field hardening
 - Suggestions disabled when `keyVariation == PASSWORD` (composing flagged off).

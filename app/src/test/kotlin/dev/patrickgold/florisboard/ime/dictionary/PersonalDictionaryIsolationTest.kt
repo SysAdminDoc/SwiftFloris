@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.dictionary
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 
 /**
@@ -81,6 +82,23 @@ class PersonalDictionaryIsolationTest : FunSpec({
         val body = extractFunctionBody(sourceFile.readText(), "fun learnWord(")
         body shouldContain "enableFlorisUserDictionary"
     }
+
+    test("system dictionary DAO and Settings editor expose no SwiftFloris write path") {
+        val dictionarySource = locateUserDictionarySource().readText()
+        val systemBody = extractClassBody(dictionarySource, "class SystemUserDictionaryDatabase")
+        systemBody shouldNotContain "override fun insert"
+        systemBody shouldNotContain "override fun update"
+        systemBody shouldNotContain "override fun delete"
+        systemBody shouldNotContain "resolver.insert"
+        systemBody shouldNotContain "resolver.update"
+        systemBody shouldNotContain "resolver.delete"
+
+        val screenSource = locateUserDictionaryScreenSource().readText()
+        screenSource shouldContain "fun mutableUserDictionaryDao(): UserDictionaryDao?"
+        screenSource shouldContain "UserDictionaryType.SYSTEM -> null"
+        screenSource shouldContain "canMutateDictionary(type)"
+        screenSource shouldContain "canStartDictionaryMutation()"
+    }
 })
 
 private fun locateDictionaryManagerSource(): File {
@@ -90,6 +108,45 @@ private fun locateDictionaryManagerSource(): File {
     )
     return candidates.firstOrNull { it.exists() }
         ?: error("DictionaryManager.kt not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateUserDictionarySource(): File {
+    val candidates = listOf(
+        File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/UserDictionary.kt"),
+        File("src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/UserDictionary.kt"),
+    )
+    return candidates.firstOrNull { it.exists() && it.canRead() }
+        ?: error("UserDictionary.kt not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun locateUserDictionaryScreenSource(): File {
+    val candidates = listOf(
+        File("app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryScreen.kt"),
+        File("src/main/kotlin/dev/patrickgold/florisboard/app/settings/dictionary/UserDictionaryScreen.kt"),
+    )
+    return candidates.firstOrNull { it.exists() && it.canRead() }
+        ?: error("UserDictionaryScreen.kt not reachable from working directory ${File(".").absolutePath}")
+}
+
+private fun extractClassBody(source: String, startsWith: String): String {
+    val classStart = source.indexOf(startsWith)
+    require(classStart >= 0) { "Class declaration '$startsWith' not found in source" }
+    val openBrace = source.indexOf('{', classStart)
+    require(openBrace >= 0) { "Class '$startsWith' has no opening brace" }
+
+    var depth = 0
+    var index = openBrace
+    while (index < source.length) {
+        when (source[index]) {
+            '{' -> depth++
+            '}' -> {
+                depth--
+                if (depth == 0) return source.substring(openBrace, index + 1)
+            }
+        }
+        index++
+    }
+    error("Class '$startsWith' is missing its closing brace")
 }
 
 /**

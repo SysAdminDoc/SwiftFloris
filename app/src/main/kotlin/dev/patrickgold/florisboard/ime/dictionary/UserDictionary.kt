@@ -16,7 +16,6 @@
 
 package dev.patrickgold.florisboard.ime.dictionary
 
-import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.net.Uri
@@ -81,8 +80,7 @@ data class UserDictionaryEntry(
     val shortcut: String?,
 )
 
-@Dao
-interface UserDictionaryDao {
+interface UserDictionaryReadDao {
     companion object {
         private const val SELECT_ALL_FROM_WORDS =
             "SELECT * FROM $WORDS_TABLE"
@@ -129,7 +127,10 @@ interface UserDictionaryDao {
             languageTag.takeIf { it.isNotEmpty() }?.let { FlorisLocale.fromTag(it) }
         }
     }
+}
 
+@Dao
+interface UserDictionaryDao : UserDictionaryReadDao {
     @Insert
     fun insert(entry: UserDictionaryEntry)
 
@@ -144,7 +145,11 @@ interface UserDictionaryDao {
 }
 
 interface UserDictionaryDatabase {
-    fun userDictionaryDao(): UserDictionaryDao
+    fun userDictionaryDao(): UserDictionaryReadDao
+
+    fun mutableUserDictionaryDao(): UserDictionaryDao? {
+        return userDictionaryDao() as? UserDictionaryDao
+    }
 
     fun reset()
 
@@ -212,9 +217,11 @@ interface UserDictionaryDatabase {
     }
 
     private fun importCombinedListEntries(entries: List<PersonalDictionaryEntry>) {
+        val dao = mutableUserDictionaryDao()
+            ?: error("This user dictionary is read-only.")
         for (entry in entries) {
             val locale = entry.locale
-            val alreadyExistingEntries = userDictionaryDao().queryExact(
+            val alreadyExistingEntries = dao.queryExact(
                 entry.word,
                 locale?.let { FlorisLocale.fromTag(it) },
             )
@@ -226,9 +233,9 @@ interface UserDictionaryDatabase {
                 shortcut = entry.shortcut,
             )
             if (alreadyExistingEntries.isNotEmpty()) {
-                userDictionaryDao().update(row)
+                dao.update(row)
             } else {
-                userDictionaryDao().insert(row)
+                dao.insert(row)
             }
         }
     }
@@ -343,6 +350,10 @@ abstract class FlorisUserDictionaryDatabase : RoomDatabase(), UserDictionaryData
 
     abstract override fun userDictionaryDao(): UserDictionaryDao
 
+    override fun mutableUserDictionaryDao(): UserDictionaryDao {
+        return userDictionaryDao()
+    }
+
     override fun reset() {
         userDictionaryDao().deleteAll()
     }
@@ -369,7 +380,7 @@ abstract class FlorisUserDictionaryDatabase : RoomDatabase(), UserDictionaryData
 class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
     private val applicationContext: WeakReference<Context> = WeakReference(context.applicationContext ?: context)
 
-    private val dao = object : UserDictionaryDao {
+    private val dao = object : UserDictionaryReadDao {
         override fun query(word: String): List<UserDictionaryEntry> {
             return queryResolver(
                 selection = "${UserDictionary.Words.WORD} LIKE ?",
@@ -554,40 +565,9 @@ class SystemUserDictionaryDatabase(context: Context) : UserDictionaryDatabase {
             return retList
         }
 
-        override fun insert(entry: UserDictionaryEntry) {
-            val resolver = applicationContext.get()?.contentResolver ?: return
-            val contentValues = ContentValues(5).apply {
-                put(UserDictionary.Words.WORD, entry.word)
-                put(UserDictionary.Words.FREQUENCY, entry.freq)
-                put(UserDictionary.Words.LOCALE, entry.locale)
-                put(UserDictionary.Words.APP_ID, 0)
-                put(UserDictionary.Words.SHORTCUT, entry.shortcut)
-            }
-            resolver.insert(UserDictionary.Words.CONTENT_URI, contentValues)
-        }
-
-        override fun update(entry: UserDictionaryEntry) {
-            val resolver = applicationContext.get()?.contentResolver ?: return
-            val contentValues = ContentValues(4).apply {
-                put(UserDictionary.Words.WORD, entry.word)
-                put(UserDictionary.Words.FREQUENCY, entry.freq)
-                put(UserDictionary.Words.LOCALE, entry.locale)
-                put(UserDictionary.Words.SHORTCUT, entry.shortcut)
-            }
-            resolver.update(UserDictionary.Words.CONTENT_URI, contentValues, "${UserDictionary.Words._ID} = ${entry.id}", null)
-        }
-
-        override fun delete(entry: UserDictionaryEntry) {
-            val resolver = applicationContext.get()?.contentResolver ?: return
-            resolver.delete(UserDictionary.Words.CONTENT_URI, "${UserDictionary.Words._ID} = ${entry.id}", null)
-        }
-
-        override fun deleteAll() {
-            // Unsupported action
-        }
     }
 
-    override fun userDictionaryDao(): UserDictionaryDao {
+    override fun userDictionaryDao(): UserDictionaryReadDao {
         return dao
     }
 

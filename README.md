@@ -170,7 +170,7 @@ so cancellation or a failed selected section rolls live data back.
 
 ## Migrating from SwiftKey
 
-SwiftFloris imports `swiftkey-cloud.json` through **Settings → Personal dictionary → Import**. The parser has cumulative-byte limits, post-import confirmation with rollback, and an encrypted SwiftFloris export/import round-trip for users moving their local dictionary between installs.
+SwiftFloris imports `swiftkey-cloud.json` through **Settings → Personal dictionary → Import**. The parser has cumulative-byte limits, post-import confirmation with rollback, and an encrypted SwiftFloris export/import round-trip for users moving their local dictionary between installs. The optional Android system dictionary is browse-only in SwiftFloris; use Android's system dictionary settings to add, edit, or remove shared entries.
 
 ## Documentation
 

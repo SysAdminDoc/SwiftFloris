@@ -20,6 +20,11 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
 class UserDictionaryEntryPolicyTest : FunSpec({
+    test("only the internal dictionary exposes mutation actions") {
+        UserDictionaryEntryPolicy.canMutateDictionary(UserDictionaryType.FLORIS) shouldBe true
+        UserDictionaryEntryPolicy.canMutateDictionary(UserDictionaryType.SYSTEM) shouldBe false
+    }
+
     test("entry mutations block leaving and duplicate entry actions while busy") {
         UserDictionaryEntryPolicy.canLeave(isOperationInProgress = true) shouldBe false
         UserDictionaryEntryPolicy.canMutateEntry(isOperationInProgress = true) shouldBe false

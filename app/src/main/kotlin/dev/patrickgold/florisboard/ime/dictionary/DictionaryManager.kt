@@ -428,7 +428,7 @@ class DictionaryManager private constructor(context: Context) {
     }
 
     @Synchronized
-    fun systemUserDictionaryDao(): UserDictionaryDao? {
+    fun systemUserDictionaryDao(): UserDictionaryReadDao? {
         return systemUserDictionaryDatabase()?.userDictionaryDao()
     }
 
@@ -721,7 +721,7 @@ class DictionaryManager private constructor(context: Context) {
         )
     }
 
-    private fun UserDictionaryDao.queryCandidates(
+    private fun UserDictionaryReadDao.queryCandidates(
         query: String,
         locale: FlorisLocale,
         sourcePriority: Int,
@@ -747,7 +747,7 @@ class DictionaryManager private constructor(context: Context) {
         return shortcutCandidates + wordCandidates
     }
 
-    private fun UserDictionaryDao.containsWordOrShortcut(word: String, locale: FlorisLocale): Boolean {
+    private fun UserDictionaryReadDao.containsWordOrShortcut(word: String, locale: FlorisLocale): Boolean {
         if (queryExactFuzzyLocale(word, locale).any { it.word.equals(word, ignoreCase = true) }) {
             return true
         }

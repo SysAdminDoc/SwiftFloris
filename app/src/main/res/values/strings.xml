@@ -1357,7 +1357,7 @@
     <string name="pref__dictionary__enable_system_user_dictionary__label" comment="Preference title">Enable system user dictionary</string>
     <string name="pref__dictionary__enable_system_user_dictionary__summary" comment="Preference summary">Suggest words stored in the system user dictionary</string>
     <string name="pref__dictionary__manage_system_user_dictionary__label" comment="Preference title">Manage system user dictionary</string>
-    <string name="pref__dictionary__manage_system_user_dictionary__summary" comment="Preference summary">Add, view, and remove entries for the system user dictionary</string>
+    <string name="pref__dictionary__manage_system_user_dictionary__summary" comment="Preference summary">View system dictionary entries here. Edit them in Android system dictionary settings.</string>
     <string name="pref__dictionary__enable_internal_user_dictionary__label" comment="Preference title">Enable internal user dictionary</string>
     <string name="pref__dictionary__enable_internal_user_dictionary__summary" comment="Preference summary">Suggest words stored in the internal user dictionary</string>
     <string name="pref__dictionary__manage_floris_user_dictionary__label" comment="Preference title">Manage internal user dictionary</string>
@@ -1368,6 +1368,10 @@
     <string name="pref__dictionary__preview_imports__summary" comment="Preference summary">Review parsed dictionary rows and exclude mistakes before they are added.</string>
     <string name="settings__udm__title_floris" comment="Title of the User Dictionary Manager activity for internal">Internal User Dictionary</string>
     <string name="settings__udm__title_system" comment="Title of the User Dictionary Manager activity for system">System User Dictionary</string>
+    <string name="settings__udm__system_read_only_title">System dictionary is read-only here</string>
+    <string name="settings__udm__system_read_only_summary">SwiftFloris only reads this provider. Use Open system manager UI to add, edit, or remove entries.</string>
+    <string name="settings__udm__system_no_words">No system dictionary words are available. Add or remove them in Android system dictionary settings.</string>
+    <string name="settings__udm__system_no_words_locale">No system dictionary words are attached to {language}. Edit them in Android system dictionary settings.</string>
     <string name="settings__udm__no_words_in_dictionary" comment="String to show if no words are present in the dictionary">No words are saved in this dictionary yet. Add custom words to make suggestions and corrections feel more personal.</string>
     <string name="settings__udm__empty_title" comment="Title for the empty user dictionary state">No words saved</string>
     <string name="settings__udm__empty_locale_title">No words for this language</string>

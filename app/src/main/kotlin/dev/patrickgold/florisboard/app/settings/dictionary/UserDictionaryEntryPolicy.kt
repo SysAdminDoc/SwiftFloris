@@ -51,6 +51,10 @@ internal enum class UserDictionaryBlockedBackNotice {
 }
 
 internal object UserDictionaryEntryPolicy {
+    fun canMutateDictionary(type: UserDictionaryType): Boolean {
+        return type == UserDictionaryType.FLORIS
+    }
+
     fun canLeave(
         isOperationInProgress: Boolean,
         isTransferInProgress: Boolean = false,

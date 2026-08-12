@@ -19,15 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-### P0
-
-- [ ] P0 — Reconcile the system user dictionary write path with the threat model
-  Why: `docs/THREAT_MODEL.md:142-145` guarantees that `enableSystemUserDictionary`, even when on, "only **reads** from the system provider, never writes". `SystemUserDictionaryDatabase` ships live `insert`/`update`/`delete` against `UserDictionary.Words.CONTENT_URI` and the Settings editor routes to them, so user words can reach a provider any app holding `READ_USER_DICTIONARY` can enumerate — the exact leak the isolation test exists to prevent on the learning path. The app declares no `WRITE_USER_DICTIONARY`, so the writes either leak or fail silently; both outcomes are undocumented.
-  Evidence: `ime/dictionary/UserDictionary.kt:557-566`, `:569-577`, `:580-582`; `app/settings/dictionary/UserDictionaryScreen.kt:233`, `:980`, `:982`, `:1026`; `app/src/test/.../PersonalDictionaryIsolationTest.kt:30,64`; `docs/THREAT_MODEL.md:142-145`
-  Touches: `ime/dictionary/UserDictionary.kt`, `app/settings/dictionary/UserDictionaryScreen.kt`, `app/src/test/.../PersonalDictionaryIsolationTest.kt`, `docs/THREAT_MODEL.md`, `docs/PRIVACY_AND_AI.md`
-  Acceptance: one of two states holds and a test pins it — either the system DAO's write methods are removed and the Settings editor is read-only for `UserDictionaryType.SYSTEM`, or the writes are retained behind an explicit in-UI warning naming `READ_USER_DICTIONARY` and the threat model is rewritten to describe them. `PersonalDictionaryIsolationTest` is extended to cover the manual editor path, not only `learnWord`.
-  Complexity: M
-
 ### P1
 
 - [ ] P1 — Give the merged manifest and addon APKs the same allowlist the enrolment gate uses
