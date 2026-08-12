@@ -27,6 +27,9 @@
   instead of treating them as empty, and only quarantine clipboard history on
   explicit SQLite corruption evidence while keeping transient read failures
   retryable.
+- Make MCP lifecycle startup single-shot even when consent is disabled and
+  serialize start, rescan, retry, and teardown so a Settings rescan cannot
+  repopulate registries during IME shutdown.
 
 ## v1.9.59 — 2026-08-11
 

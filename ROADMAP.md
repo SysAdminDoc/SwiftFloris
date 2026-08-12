@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Fix the test that catches its own failure signal, and the hole it hides
-  Why: the "lifecycle is single-shot" test calls `error("expected IllegalStateException")` inside a `try` whose `catch (e: IllegalStateException)` swallows it — `kotlin.error()` throws exactly that type, so the test passes unconditionally. The invariant it claims to prove does not hold: `startWithDaemons` returns early without setting `started = true` when the bridge is disabled. The same class also has real concurrency exposure — `started` is not `@Volatile`, and `replaceDaemons` is `@Synchronized` while `startWithDaemons`, `retryDaemon` and `stop` are not, so a Settings-thread rescan can repopulate the daemon registry after the IME thread has torn it down.
-  Evidence: `app/src/test/.../ime/mcp/McpServiceLifecycleTest.kt:148-157`; `ime/mcp/McpServiceLifecycle.kt:50`, `:56-62`, `:79`, `:102`, `:109`; `app/settings/mcp/McpSettingsScreen.kt:159`; correct idiom at `app/src/test/.../AddonProvenanceReportTest.kt:90-95`
-  Touches: `app/src/test/.../McpServiceLifecycleTest.kt`, `ime/mcp/McpServiceLifecycle.kt`
-  Acceptance: the test uses `shouldThrow`/`throw AssertionError` and fails when production does not throw; `started` is set on every return path from `startWithDaemons` and the lifecycle's mutable state is guarded consistently; a test covers rescan-during-teardown.
-  Complexity: S
-
 - [ ] P1 — Remove the maintainer's device serial from the tracked benchmark baselines
   Why: all six committed baseline files embed `"serial": "R5CY34G070L"` alongside manufacturer, model and device. They are `git ls-files`-tracked and therefore public. A privacy-first keyboard publishing a hardware identifier in its own repo is an avoidable contradiction, and nothing in the benchmark pipeline needs the serial.
   Evidence: `docs/benchmark-results/baseline-2026-05-18-*.json` (6 files); `git ls-files docs/benchmark-results/`

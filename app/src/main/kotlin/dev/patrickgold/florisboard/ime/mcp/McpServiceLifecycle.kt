@@ -47,14 +47,17 @@ class McpServiceLifecycle(
     private val retryCallback: (DaemonKey) -> Boolean = { false },
 ) {
 
+    @Volatile
     private var started: Boolean = false
 
     /**
      * Start the bridge with a pre-discovered daemon map. Used directly
      * by tests + indirectly by the production [start] glue below.
      */
+    @Synchronized
     fun startWithDaemons(daemons: Map<DaemonKey, DaemonEntry>) {
         check(!started) { "McpServiceLifecycle already started" }
+        started = true
         if (!isBridgeEnabled()) {
             McpDaemonRegistry.setActive(emptyMap())
             McpClientRegistry.setActive(NoOpMcpClient)
@@ -62,7 +65,6 @@ class McpServiceLifecycle(
             flogInfo { "MCP bridge: disabled until user consent is granted" }
             return
         }
-        started = true
         McpDaemonRegistry.setActive(daemons)
         for (key in daemons.keys) {
             bindCallback(key)
@@ -100,6 +102,7 @@ class McpServiceLifecycle(
      * Re-attempts a binding the user asked to recover. Returns whether a running bridge received
      * the request; the daemon's observable state carries the bind outcome itself.
      */
+    @Synchronized
     fun retryDaemon(daemonKey: DaemonKey): Boolean {
         if (!started) return false
         retryCallback(daemonKey)
@@ -107,6 +110,7 @@ class McpServiceLifecycle(
     }
 
     /** Tear down the bridge. Idempotent. */
+    @Synchronized
     fun stop() {
         if (!started) return
         started = false
@@ -123,6 +127,7 @@ class McpServiceLifecycle(
         }
     }
 
+    @get:Synchronized
     val isStarted: Boolean get() = started
 
     companion object {

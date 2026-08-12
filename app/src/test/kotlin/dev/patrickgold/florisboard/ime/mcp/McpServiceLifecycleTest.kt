@@ -17,9 +17,12 @@
 package dev.patrickgold.florisboard.ime.mcp
 
 import android.os.IBinder
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class McpServiceLifecycleTest : FunSpec({
 
@@ -42,6 +45,7 @@ class McpServiceLifecycleTest : FunSpec({
         // Reset both registries between tests to avoid test-order dependencies.
         McpDaemonRegistry.setActive(emptyMap())
         McpClientRegistry.setActive(NoOpMcpClient)
+        McpConnectionStateStore.reset()
     }
 
     fun lifecycle(
@@ -84,7 +88,7 @@ class McpServiceLifecycleTest : FunSpec({
         bound shouldBe emptySet()
         McpDaemonRegistry.size() shouldBe 0
         McpClientRegistry.active() shouldBe NoOpMcpClient
-        l.isStarted shouldBe false
+        l.isStarted shouldBe true
     }
 
     test("startWithDaemons installs an AndroidMcpClient into McpClientRegistry") {
@@ -148,12 +152,58 @@ class McpServiceLifecycleTest : FunSpec({
     test("startWithDaemons throws on second call (lifecycle is single-shot)") {
         val l = lifecycle()
         l.startWithDaemons(emptyMap())
-        try {
+        shouldThrow<IllegalStateException> {
             l.startWithDaemons(mapOf(keyA to entryA))
-            error("expected IllegalStateException")
-        } catch (e: IllegalStateException) {
-            // expected
         }
+    }
+
+    test("disabled start still consumes the lifecycle") {
+        val l = lifecycle(bridgeEnabled = { false })
+
+        l.startWithDaemons(emptyMap())
+
+        l.isStarted shouldBe true
+        shouldThrow<IllegalStateException> {
+            l.startWithDaemons(emptyMap())
+        }
+    }
+
+    test("rescan waits for teardown and cannot repopulate the registry") {
+        val unbindEntered = CountDownLatch(1)
+        val releaseUnbind = CountDownLatch(1)
+        val rescanFinished = CountDownLatch(1)
+        val l = lifecycle(
+            unbind = {
+                unbindEntered.countDown()
+                releaseUnbind.await(5, TimeUnit.SECONDS)
+            },
+        )
+        l.startWithDaemons(mapOf(keyA to entryA))
+
+        val stopThread = Thread { l.stop() }
+        val rescanThread = Thread {
+            try {
+                l.replaceDaemons(mapOf(keyB to entryB))
+            } finally {
+                rescanFinished.countDown()
+            }
+        }
+        try {
+            stopThread.start()
+            unbindEntered.await(5, TimeUnit.SECONDS) shouldBe true
+
+            rescanThread.start()
+            rescanFinished.await(100, TimeUnit.MILLISECONDS) shouldBe false
+        } finally {
+            releaseUnbind.countDown()
+            stopThread.join(5_000)
+            rescanThread.join(5_000)
+        }
+
+        stopThread.isAlive shouldBe false
+        rescanThread.isAlive shouldBe false
+        l.isStarted shouldBe false
+        McpDaemonRegistry.active() shouldBe emptyMap()
     }
 
     test("stop unbinds every bound daemon and calls shutdown") {
