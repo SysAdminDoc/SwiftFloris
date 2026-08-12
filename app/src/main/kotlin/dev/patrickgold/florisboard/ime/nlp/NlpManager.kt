@@ -34,7 +34,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.EmojiSuggestionProvider
 import dev.patrickgold.florisboard.ime.nlp.latin.ColdStartNextWordPriors
 import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeContext
-import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeProviderRegistry
+import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.smartcompose.SmartComposeResult
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisLocale
@@ -66,6 +66,7 @@ class NlpManager(context: Context) {
 
     private val appContext = context.applicationContext
     private val prefs by FlorisPreferenceStore
+    private val addonHub = NlpAddonHub.production()
     private val dictionaryManager = DictionaryManager.default()
     private val clipboardManager by context.clipboardManager()
     private val editorInstance by context.editorInstance()
@@ -351,6 +352,8 @@ class NlpManager(context: Context) {
                     currentWord = currentWord,
                     isPrivateSession = requestPrivacy.isPrivateSession,
                     isEditorSensitive = requestPrivacy.isEditorSensitive,
+                    inputType = editorInfo.inputAttributes.raw,
+                    imeOptions = editorInfo.imeOptions.raw,
                 )
             } else {
                 null
@@ -374,6 +377,8 @@ class NlpManager(context: Context) {
         currentWord: String,
         isPrivateSession: Boolean,
         isEditorSensitive: Boolean,
+        inputType: Int,
+        imeOptions: Int,
     ): GhostTextSuggestionCandidate? {
         // Honor both the user-controlled private session and sensitive fields before
         // deriving ghost text from the user's personal n-gram history. The composing-
@@ -382,16 +387,19 @@ class NlpManager(context: Context) {
         if (!SuggestionPrivacyPolicy.allowsGhostText(isPrivateSession, isEditorSensitive)) {
             return null
         }
-        val provider = SmartComposeProviderRegistry.active
         val locale = subtype.primaryLocale.languageTag()
-        if (!provider.isReady(locale)) return null
         val context = SmartComposeContext(
             precedingText = content.textBeforeSelection,
             composingPrefix = currentWord,
             locale = locale,
             editorPackageName = null,
         )
-        val result = provider.predictNextTokensAsync(context, maxCandidates = 1)
+        val result = addonHub.predictAsync(
+            context = context,
+            inputType = inputType,
+            imeOptions = imeOptions,
+            maxCandidates = 1,
+        )
         val top = (result as? SmartComposeResult.Suggestion)?.candidates?.firstOrNull()
             ?: return null
         if (top.confidence < 0.45f) return null

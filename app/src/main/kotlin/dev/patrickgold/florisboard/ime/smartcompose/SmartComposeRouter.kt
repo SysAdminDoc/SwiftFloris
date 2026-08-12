@@ -47,7 +47,7 @@ class SmartComposeRouter(
     private val minConfidence: Float = SmartComposeResultFilter.DEFAULT_MIN_CONFIDENCE,
     private val bypassCache: Boolean = false,
     cacheCapacity: Int = SmartComposeCache.DEFAULT_CAPACITY,
-    private val isConsentGranted: () -> Boolean = { true },
+    private val isConsentGranted: () -> Boolean,
 ) {
     private val cache: SmartComposeCache? = if (bypassCache) null else SmartComposeCache(
         delegate = provider,
@@ -73,11 +73,49 @@ class SmartComposeRouter(
         if (SensitiveFieldGuard.isSensitive(inputType, imeOptions)) {
             return SmartComposeResult.NoSuggestion
         }
+        if (!provider.isReady(context.locale)) {
+            return SmartComposeResult.NoSuggestion
+        }
         val truncated = SmartComposeContextWindow.truncate(context, maxContextChars)
         val raw = if (cache != null) {
             cache.predictNextTokens(truncated, maxCandidates)
         } else {
             provider.predictNextTokens(truncated, maxCandidates)
+        }
+        return SmartComposeResultFilter.filter(
+            input = raw,
+            minConfidence = minConfidence,
+            maxCandidates = maxCandidates,
+        )
+    }
+
+    /**
+     * Suspend-aware equivalent of [predict]. Production providers may perform
+     * local model or addon IPC work here, so the NLP worker must not fall back
+     * to the synchronous compatibility method.
+     */
+    suspend fun predictAsync(
+        context: SmartComposeContext,
+        inputType: Int,
+        imeOptions: Int,
+        maxCandidates: Int = 3,
+    ): SmartComposeResult {
+        // Keep the same ordering as the synchronous path so a denied or
+        // sensitive request never consults readiness, cache, or provider state.
+        if (!isConsentGranted()) {
+            return SmartComposeResult.NoSuggestion
+        }
+        if (SensitiveFieldGuard.isSensitive(inputType, imeOptions)) {
+            return SmartComposeResult.NoSuggestion
+        }
+        if (!provider.isReady(context.locale)) {
+            return SmartComposeResult.NoSuggestion
+        }
+        val truncated = SmartComposeContextWindow.truncate(context, maxContextChars)
+        val raw = if (cache != null) {
+            cache.predictNextTokensAsync(truncated, maxCandidates)
+        } else {
+            provider.predictNextTokensAsync(truncated, maxCandidates)
         }
         return SmartComposeResultFilter.filter(
             input = raw,

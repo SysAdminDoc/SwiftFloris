@@ -78,8 +78,8 @@ import org.florisboard.lib.compose.stringRes
  * pref before forwarding any `callTool` request so disabled daemons
  * stay bound but receive no traffic.
  *
- * Runtime re-scan + NlpManager smart-compose wire-up ride as
- * L7.6c / L7.7 in subsequent slices.
+ * Runtime discovery remains available for trust review, but production daemon
+ * binding is paused until an audited keyboard dispatch action exists.
  */
 @Composable
 fun McpSettingsScreen() = FlorisScreen {

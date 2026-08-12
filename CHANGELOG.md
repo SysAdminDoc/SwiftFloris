@@ -20,6 +20,9 @@
   dead roadmap/workflow references, and validate the blocked-roadmap structure.
 - Require the F-Droid recipe's `commit:` ref to resolve on both local and origin
   tag sets, with a fixture proving an unresolvable ref fails the release gate.
+- Route live smart-compose and translation calls through the audited addon hub,
+  require explicit MCP consent/disable gates, remove the dead direct dispatcher,
+  and pause MCP daemon binding until a real audited keyboard action exists.
 
 ## v1.9.59 — 2026-08-11
 

@@ -48,9 +48,9 @@ import dev.patrickgold.florisboard.ime.smartcompose.SensitiveFieldGuard
 class McpDispatchRouter(
     private val client: McpClient,
     private val registryView: RegistryView = RegistryView.from(),
-    private val isDaemonDisabled: (DaemonKey) -> Boolean = { false },
-    private val isToolDisabled: (DaemonKey, String) -> Boolean = { _, _ -> false },
-    private val isConsentGranted: () -> Boolean = { true },
+    private val isDaemonDisabled: (DaemonKey) -> Boolean,
+    private val isToolDisabled: (DaemonKey, String) -> Boolean,
+    private val isConsentGranted: () -> Boolean,
 ) {
 
     fun dispatch(request: Request): Response {

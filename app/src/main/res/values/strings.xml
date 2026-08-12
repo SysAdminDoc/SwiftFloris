@@ -1296,7 +1296,7 @@
     <string name="settings__privacy_posture__off" comment="Short disabled label">off</string>
     <string name="settings__privacy_audit__title" comment="Screen + preference title">Local audit log</string>
     <string name="settings__privacy_audit__home_summary" comment="Home preference summary">Review every on-device addon, MCP and translation call</string>
-    <string name="settings__privacy_audit__intro" comment="Explainer at the top of the audit log screen">Every cross-process call SwiftFloris makes on your behalf is recorded here, on this device only. Nothing is uploaded, and no typed text, suggestions or translated content is ever stored — only the app, the language pair, or the tool name.</string>
+    <string name="settings__privacy_audit__intro" comment="Explainer at the top of the audit log screen">Every routed cross-process call SwiftFloris makes on your behalf is recorded here, on this device only. Smart compose and translation use this audited path. MCP daemon binding and tool dispatch are paused until a live audited keyboard action exists, so no auditable MCP invocation can occur yet. Nothing is uploaded, and no typed text, suggestions or translated content is ever stored — only the app, the language pair, or the tool name.</string>
     <string name="settings__privacy_audit__group_summary" comment="Preference group title">Summary</string>
     <string name="settings__privacy_audit__group_actions" comment="Preference group title">Actions</string>
     <string name="settings__privacy_audit__group_records" comment="Preference group title">Recent activity</string>
@@ -1317,7 +1317,7 @@
     <string name="settings__privacy_audit__outcome_suppressed" comment="Audit record outcome label">Suppressed</string>
     <string name="settings__privacy_audit__outcome_failed" comment="Audit record outcome label">Failed</string>
     <string name="settings__privacy_audit__empty" comment="Shown when no records exist">No recorded activity yet.</string>
-    <string name="settings__privacy_audit__empty_message" comment="Empty-state body shown when no audit records exist">SwiftFloris hasn\'t made any cross-process calls on this device yet. Addon, MCP, and translation activity will appear here as it happens.</string>
+    <string name="settings__privacy_audit__empty_message" comment="Empty-state body shown when no audit records exist">SwiftFloris hasn\'t made any routed cross-process calls on this device yet. Smart compose and translation activity will appear here as it happens; no auditable MCP invocation can occur until a live keyboard action is connected.</string>
     <string name="settings__privacy_audit__export" comment="Action title">Copy log as JSON</string>
     <string name="settings__privacy_audit__export__summary" comment="Action summary">Copies the full audit bundle to the clipboard so you can paste it anywhere — it never leaves the device on its own.</string>
     <string name="settings__privacy_audit__export_toast" comment="Toast after copying">Audit log copied to the clipboard.</string>
@@ -2647,14 +2647,14 @@
     <string name="settings__mcp__status_disabled" comment="MCP status row title when the bridge is disabled">MCP bridge off</string>
     <string name="settings__mcp__status_disabled_summary" comment="MCP status row summary when the bridge is disabled">SwiftFloris will not discover, trust, or bind MCP daemons at keyboard startup until you enable the bridge.</string>
     <string name="settings__mcp__status_no_daemons" comment="MCP status row title when no daemons are installed">No MCP daemons installed</string>
-    <string name="settings__mcp__status_no_daemons_summary" comment="MCP status row summary when no daemons are installed">Install a sibling app that advertises an MCP service; SwiftFloris binds only co-signed or explicitly trusted daemons. The bridge is local-only and never opens a network connection.</string>
+    <string name="settings__mcp__status_no_daemons_summary" comment="MCP status row summary when no daemons are installed">Install a sibling app that advertises an MCP service to review its trust metadata. SwiftFloris does not bind daemons until a live audited dispatch action exists. The bridge is local-only and never opens a network connection.</string>
     <string name="settings__mcp__status_bound_title" comment="MCP status row title when daemons are bound">MCP bridge active</string>
     <plurals name="settings__mcp__status_bound_summary" comment="MCP status row summary when daemons are bound; {count} = active/total ratio">
         <item quantity="one">Currently bound to {count} daemon. The bridge is local-only and never opens a network connection.</item>
         <item quantity="other">Currently bound to {count} daemons. The bridge is local-only and never opens a network connection.</item>
     </plurals>
     <string name="settings__mcp__daemon_protocol" comment="MCP daemon row protocol-version fragment; {version} = integer">Protocol v{version}</string>
-    <string name="settings__mcp__status_not_connected_title" comment="MCP status card title when daemons are discovered but none is connected">No MCP daemon connected</string>
+    <string name="settings__mcp__status_not_connected_title" comment="MCP status card title when daemons are discovered but none is connected">MCP daemon binding paused</string>
     <string name="settings__mcp__daemon_state_pending" comment="MCP daemon binding state">Connecting</string>
     <string name="settings__mcp__daemon_state_connected" comment="MCP daemon binding state">Connected</string>
     <string name="settings__mcp__daemon_state_failed" comment="MCP daemon binding state">Connection refused</string>
@@ -2669,11 +2669,11 @@
         <item quantity="other">{count} tools</item>
     </plurals>
     <string name="settings__mcp__bridge_enabled" comment="MCP settings switch title">Enable MCP bridge</string>
-    <string name="settings__mcp__bridge_enabled_summary" comment="MCP settings switch summary when enabled">Trusted daemons can bind after the keyboard service starts. Turn this off to stop new binds.</string>
-    <string name="settings__mcp__bridge_disabled_summary" comment="MCP settings switch summary when disabled">No daemon is discovered or bound at keyboard startup. Turn this on, then restart the keyboard service to bind trusted daemons.</string>
+    <string name="settings__mcp__bridge_enabled_summary" comment="MCP settings switch summary when enabled">Trust state can be reviewed, but daemon binding remains paused until a live audited dispatch action exists.</string>
+    <string name="settings__mcp__bridge_disabled_summary" comment="MCP settings switch summary when disabled">No daemon is discovered or bound at keyboard startup. Turn this on only when a live audited dispatch action is available.</string>
     <string name="settings__mcp__rescan" comment="MCP settings action title">Scan MCP daemons</string>
     <string name="settings__mcp__rescan_running" comment="MCP settings action title while scan is running">Scanning MCP daemons…</string>
-    <string name="settings__mcp__rescan_summary" comment="MCP settings action summary">Refresh installed daemon trust state. Newly trusted daemons bind only after the bridge is enabled and the keyboard service restarts.</string>
+    <string name="settings__mcp__rescan_summary" comment="MCP settings action summary">Refresh installed daemon trust state. Newly trusted daemons remain unbound until a live audited dispatch action exists.</string>
     <string name="settings__mcp__rescan_failed" comment="MCP settings error title">MCP daemon scan failed</string>
     <string name="settings__mcp__reset_trust" comment="MCP settings action title">Reset MCP daemon trust</string>
     <string name="settings__mcp__reset_trust_summary" comment="MCP settings action summary">Clear manually trusted daemon signing certificates.</string>

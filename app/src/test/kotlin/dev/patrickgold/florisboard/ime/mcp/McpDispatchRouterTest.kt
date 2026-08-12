@@ -72,9 +72,23 @@ class McpDispatchRouterTest : FunSpec({
         errorCode = McpErrorCode.TOOL_INTERNAL_ERROR,
     )
 
+    fun makeRouter(
+        client: McpClient,
+        registryView: McpDispatchRouter.RegistryView,
+        isDaemonDisabled: (DaemonKey) -> Boolean = { false },
+        isToolDisabled: (DaemonKey, String) -> Boolean = { _, _ -> false },
+        isConsentGranted: () -> Boolean = { true },
+    ) = McpDispatchRouter(
+        client = client,
+        registryView = registryView,
+        isDaemonDisabled = isDaemonDisabled,
+        isToolDisabled = isToolDisabled,
+        isConsentGranted = isConsentGranted,
+    )
+
     test("password field short-circuits to Suppressed before touching the registry") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(mcp, FakeRegistry(listOf(resolved)))
+        val router = makeRouter(mcp, FakeRegistry(listOf(resolved)))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",
@@ -85,7 +99,7 @@ class McpDispatchRouterTest : FunSpec({
     }
 
     test("blank tool name returns Suppressed") {
-        val router = McpDispatchRouter(CountingMcp(successCall()), FakeRegistry(emptyList()))
+        val router = makeRouter(CountingMcp(successCall()), FakeRegistry(emptyList()))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "",
             parameterJson = "{}",
@@ -94,7 +108,7 @@ class McpDispatchRouterTest : FunSpec({
     }
 
     test("tool not in registry returns Suppressed with the lookup reason") {
-        val router = McpDispatchRouter(CountingMcp(successCall()), FakeRegistry(emptyList()))
+        val router = makeRouter(CountingMcp(successCall()), FakeRegistry(emptyList()))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "ghost.tool",
             parameterJson = "{}",
@@ -104,7 +118,7 @@ class McpDispatchRouterTest : FunSpec({
     }
 
     test("oversized parameterJson returns Suppressed with size reason") {
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             CountingMcp(successCall()),
             FakeRegistry(listOf(resolved)),
         )
@@ -118,7 +132,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("happy path returns Completed with the daemon + the OK response") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(mcp, FakeRegistry(listOf(resolved)))
+        val router = makeRouter(mcp, FakeRegistry(listOf(resolved)))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",
@@ -131,7 +145,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("delegate error response is wrapped in Failed") {
         val mcp = CountingMcp(errorCall())
-        val router = McpDispatchRouter(mcp, FakeRegistry(listOf(resolved)))
+        val router = makeRouter(mcp, FakeRegistry(listOf(resolved)))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",
@@ -143,7 +157,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("IME_FLAG_NO_PERSONALIZED_LEARNING suppresses dispatch") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(mcp, FakeRegistry(listOf(resolved)))
+        val router = makeRouter(mcp, FakeRegistry(listOf(resolved)))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",
@@ -155,7 +169,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("isDaemonDisabled=true short-circuits to Suppressed before the client is invoked") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isDaemonDisabled = { it == daemon },
@@ -172,7 +186,7 @@ class McpDispatchRouterTest : FunSpec({
     test("isDaemonDisabled lambda is consulted only after the tool resolves") {
         val mcp = CountingMcp(successCall())
         var disabledQueryCount = 0
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(emptyList()),  // No tool registered.
             isDaemonDisabled = { disabledQueryCount++; true },
@@ -187,7 +201,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("isToolDisabled=true short-circuits to Suppressed with the per-tool reason (matrix #38)") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isToolDisabled = { d, t -> d == daemon && t == "calendar.next" },
@@ -204,7 +218,7 @@ class McpDispatchRouterTest : FunSpec({
     test("isToolDisabled lambda is not consulted when isDaemonDisabled already short-circuits") {
         val mcp = CountingMcp(successCall())
         var toolGateCount = 0
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isDaemonDisabled = { true },
@@ -220,7 +234,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("isToolDisabled lambda lets non-matching (daemon,tool) pairs through to the client") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isToolDisabled = { _, t -> t == "other.tool" },
@@ -235,7 +249,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("missing consent short-circuits before any other check (matrix #37)") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isConsentGranted = { false },
@@ -251,7 +265,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("consent gate beats sensitive-field gate — consent reason wins on a password field too") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isConsentGranted = { false },
@@ -267,7 +281,7 @@ class McpDispatchRouterTest : FunSpec({
 
     test("granted consent lets requests pass through to the existing gates and client") {
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(
+        val router = makeRouter(
             client = mcp,
             registryView = FakeRegistry(listOf(resolved)),
             isConsentGranted = { true },
@@ -284,7 +298,7 @@ class McpDispatchRouterTest : FunSpec({
         val daemonB = DaemonKey("com.example.shadow", "com.example.shadow.Daemon")
         val shadowed = FakeRegistry(listOf(resolved, ResolvedTool(daemonB, tool)))
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(mcp, shadowed)
+        val router = makeRouter(mcp, shadowed)
         val respA = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",
@@ -306,7 +320,7 @@ class McpDispatchRouterTest : FunSpec({
         val daemonB = DaemonKey("com.example.shadow", "com.example.shadow.Daemon")
         val shadowed = FakeRegistry(listOf(resolved, ResolvedTool(daemonB, tool)))
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(mcp, shadowed)
+        val router = makeRouter(mcp, shadowed)
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",
@@ -321,7 +335,7 @@ class McpDispatchRouterTest : FunSpec({
     test("daemonKey-scoped dispatch is suppressed when the named daemon does not advertise the tool") {
         val daemonB = DaemonKey("com.example.shadow", "com.example.shadow.Daemon")
         val mcp = CountingMcp(successCall())
-        val router = McpDispatchRouter(mcp, FakeRegistry(listOf(resolved)))
+        val router = makeRouter(mcp, FakeRegistry(listOf(resolved)))
         val resp = router.dispatch(McpDispatchRouter.Request(
             toolName = "calendar.next",
             parameterJson = "{}",

@@ -128,7 +128,7 @@ class NlpManagerSuggestionPrivacySnapshotTest {
         source shouldContain "isPrivateSession: Boolean"
         source shouldContain "isEditorSensitive: Boolean"
         body shouldContain "SuggestionPrivacyPolicy.allowsGhostText"
-        body shouldContain "provider.predictNextTokensAsync"
+        body shouldContain "addonHub.predictAsync"
         check(!body.contains("editorInstance.activeInfo")) {
             "Ghost-text gating must use the request-scoped editor sensitivity snapshot."
         }

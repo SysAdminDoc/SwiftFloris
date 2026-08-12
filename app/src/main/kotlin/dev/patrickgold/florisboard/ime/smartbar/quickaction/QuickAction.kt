@@ -22,7 +22,6 @@ import androidx.compose.runtime.Composable
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
 import dev.patrickgold.florisboard.R
-import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.calendarQuickInsertManager
 import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.calendar.CalendarPermissionActivity
@@ -30,7 +29,7 @@ import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
-import dev.patrickgold.florisboard.ime.translate.InlineTranslatorRegistry
+import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.translate.TranslationLanguagePackManager
 import dev.patrickgold.florisboard.ime.translate.TranslationRouter
 import dev.patrickgold.florisboard.ime.translate.TranslationSuppressionReason
@@ -104,20 +103,13 @@ sealed class QuickAction {
             val raw = editorInstance.activeContent.selectedText
             if (raw.isBlank()) return
             val activeInfo = editorInstance.activeInfo
-            val prefs by FlorisPreferenceStore
             val request = TranslationRouter.Request(
                 sourceText = raw,
                 targetLocale = TranslationLanguagePackManager.preferredTargetLocale() ?: "en",
                 inputType = activeInfo.inputAttributes.raw,
                 imeOptions = activeInfo.imeOptions.raw,
             )
-            val router = TranslationRouter(
-                translator = InlineTranslatorRegistry.active,
-                packManager = TranslationRouter.PackManagerView.from(),
-                isConsentGranted = {
-                    prefs.privacy.translationConsent.get().allowsInvocation()
-                },
-            )
+            val addonHub = NlpAddonHub.production()
             val scope = context.quickActionCoroutineScope()
             if (scope == null) {
                 Toast.makeText(
@@ -130,7 +122,7 @@ sealed class QuickAction {
             scope.launch {
                 val response = try {
                     withContext(Dispatchers.IO) {
-                        router.translate(request)
+                        addonHub.translate(request)
                     }
                 } catch (_: CancellationException) {
                     TranslationRouter.Response.Suppressed(TranslationSuppressionReason.TranslationCancelled)

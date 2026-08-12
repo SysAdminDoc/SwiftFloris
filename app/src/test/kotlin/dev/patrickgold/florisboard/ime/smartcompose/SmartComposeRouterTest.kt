@@ -51,7 +51,7 @@ class SmartComposeRouterTest : FunSpec({
         val provider = FakeProvider(SmartComposeResult.Suggestion(
             listOf(SmartComposeCandidate("world", 0.95f, 1)),
         ))
-        val router = SmartComposeRouter(provider)
+        val router = SmartComposeRouter(provider, isConsentGranted = { true })
         val result = router.predict(
             context = ctx(),
             inputType = 0x81,   // TEXT password
@@ -68,7 +68,7 @@ class SmartComposeRouterTest : FunSpec({
                 SmartComposeCandidate("world", 0.9f, 1),
             ),
         ))
-        val router = SmartComposeRouter(provider)
+        val router = SmartComposeRouter(provider, isConsentGranted = { true })
         val result = router.predict(
             context = ctx(),
             inputType = 0x01,
@@ -81,7 +81,7 @@ class SmartComposeRouterTest : FunSpec({
 
     test("router truncates precedingText to maxContextChars before dispatch") {
         val provider = FakeProvider(SmartComposeResult.NoSuggestion)
-        val router = SmartComposeRouter(provider, maxContextChars = 32)
+        val router = SmartComposeRouter(provider, maxContextChars = 32, isConsentGranted = { true })
         val longContext = "x".repeat(500)
         router.predict(
             context = ctx(longContext),
@@ -97,7 +97,7 @@ class SmartComposeRouterTest : FunSpec({
         val provider = FakeProvider(SmartComposeResult.Suggestion(
             listOf(SmartComposeCandidate("world", 0.9f, 1)),
         ))
-        val router = SmartComposeRouter(provider)
+        val router = SmartComposeRouter(provider, isConsentGranted = { true })
         router.predict(ctx(), inputType = 0x01, imeOptions = 0)
         router.predict(ctx(), inputType = 0x01, imeOptions = 0)
         router.predict(ctx(), inputType = 0x01, imeOptions = 0)
@@ -108,7 +108,7 @@ class SmartComposeRouterTest : FunSpec({
         val provider = FakeProvider(SmartComposeResult.Suggestion(
             listOf(SmartComposeCandidate("world", 0.9f, 1)),
         ))
-        val router = SmartComposeRouter(provider, bypassCache = true)
+        val router = SmartComposeRouter(provider, bypassCache = true, isConsentGranted = { true })
         router.predict(ctx(), inputType = 0x01, imeOptions = 0)
         router.predict(ctx(), inputType = 0x01, imeOptions = 0)
         provider.calls shouldBe 2
@@ -118,7 +118,7 @@ class SmartComposeRouterTest : FunSpec({
         val provider = FakeProvider(SmartComposeResult.Suggestion(
             listOf(SmartComposeCandidate("world", 0.95f, 1)),
         ))
-        val router = SmartComposeRouter(provider)
+        val router = SmartComposeRouter(provider, isConsentGranted = { true })
         val result = router.predict(
             context = ctx(),
             inputType = 0x01,

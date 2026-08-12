@@ -421,21 +421,16 @@ class FlorisImeService : LifecycleInputMethodService() {
             flogWarning(LogTopic.IMS_EVENTS) { "Failed to register wallpaper change receiver: $e" }
         }
 
-        // ROADMAP §10.5 L7.5b — discover any installed MCP daemons, bind to
-        // each, and install the AndroidMcpClient into the registry so the
-        // smart-compose path can call MCP tools. The first bind is gated on
-        // explicit MCP consent; failure here must not abort IME startup.
-        try {
-            mcpLifecycle = dev.patrickgold.florisboard.ime.mcp
-                .McpServiceLifecycle.start(
-                    appContext = applicationContext,
-                    persistedSigningPinsRaw = prefs.mcp.signingCertPins.get(),
-                    trustedRootSigningCertSha256 = SigningFingerprint.sha256(applicationContext),
-                    bridgeEnabled = prefs.privacy.mcpConsent.get().allowsInvocation(),
-                )
-        } catch (e: Exception) {
-            flogWarning(LogTopic.IMS_EVENTS) { "MCP bridge startup failed: $e" }
-        }
+        // MCP dispatch has no live keyboard caller yet. Keep the process-wide
+        // registries empty so merely starting the keyboard cannot discover or
+        // bind a daemon that no audited production action can reach. The
+        // dispatch router remains available behind NlpAddonHub for the future
+        // action that will make this lifecycle safe to re-enable.
+        mcpLifecycle = null
+        dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry.setActive(emptyMap())
+        dev.patrickgold.florisboard.ime.mcp.McpClientRegistry.setActive(
+            dev.patrickgold.florisboard.ime.mcp.NoOpMcpClient,
+        )
 
         startAddonRegistry()
     }
@@ -543,6 +538,10 @@ class FlorisImeService : LifecycleInputMethodService() {
         try {
             mcpLifecycle?.stop()
             mcpLifecycle = null
+            dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry.setActive(emptyMap())
+            dev.patrickgold.florisboard.ime.mcp.McpClientRegistry.setActive(
+                dev.patrickgold.florisboard.ime.mcp.NoOpMcpClient,
+            )
         } catch (e: Exception) {
             flogWarning(LogTopic.IMS_EVENTS) { "mcpLifecycle.stop() failed: $e" }
         }

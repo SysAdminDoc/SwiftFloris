@@ -18,16 +18,20 @@ package dev.patrickgold.florisboard.ime.mcp
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 
 class McpConsentGateContractTest : FunSpec({
 
-    test("IME startup gates MCP bridge binding on persisted consent") {
+    test("IME startup leaves MCP binding paused until an audited keyboard action exists") {
         val source = locateProjectFile(
             "app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt",
         ).readText()
 
-        source shouldContain "bridgeEnabled = prefs.privacy.mcpConsent.get().allowsInvocation()"
+        source shouldContain "no live keyboard caller yet"
+        source shouldContain "McpDaemonRegistry.setActive(emptyMap())"
+        source shouldContain "McpClientRegistry.setActive"
+        source shouldNotContain "McpServiceLifecycle.start("
     }
 
     test("MCP settings exposes an explicit bridge enable switch") {

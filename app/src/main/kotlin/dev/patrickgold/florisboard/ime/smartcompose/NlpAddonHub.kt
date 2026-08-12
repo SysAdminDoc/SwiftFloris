@@ -16,8 +16,18 @@
 
 package dev.patrickgold.florisboard.ime.smartcompose
 
+import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.mcp.McpDispatchRouter
+import dev.patrickgold.florisboard.ime.mcp.McpClient
+import dev.patrickgold.florisboard.ime.mcp.McpClientRegistry
+import dev.patrickgold.florisboard.ime.mcp.DaemonKey
+import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
+import dev.patrickgold.florisboard.ime.mcp.DisabledToolSet
 import dev.patrickgold.florisboard.ime.translate.TranslationRouter
+import dev.patrickgold.florisboard.ime.translate.InlineTranslator
+import dev.patrickgold.florisboard.ime.translate.InlineTranslatorRegistry
+import dev.patrickgold.florisboard.ime.translate.LanguagePairDescriptor
+import dev.patrickgold.florisboard.ime.translate.TranslationResult
 
 /**
  * ROADMAP §10.5 N7.7 — unified opt-in addon hub.
@@ -47,6 +57,7 @@ class NlpAddonHub(
     private val smartCompose: SmartComposeRouter,
     private val translate: TranslationRouter,
     private val mcp: McpDispatchRouter,
+    private val isSmartComposeConsentGranted: () -> Boolean,
     private val clock: () -> Long = { System.currentTimeMillis() },
 ) {
 
@@ -57,6 +68,17 @@ class NlpAddonHub(
         maxCandidates: Int = 3,
     ): SmartComposeResult {
         val result = smartCompose.predict(context, inputType, imeOptions, maxCandidates)
+        recordSmartCompose(result, inputType, imeOptions)
+        return result
+    }
+
+    suspend fun predictAsync(
+        context: SmartComposeContext,
+        inputType: Int,
+        imeOptions: Int,
+        maxCandidates: Int = 3,
+    ): SmartComposeResult {
+        val result = smartCompose.predictAsync(context, inputType, imeOptions, maxCandidates)
         recordSmartCompose(result, inputType, imeOptions)
         return result
     }
@@ -87,13 +109,16 @@ class NlpAddonHub(
             )
             is SmartComposeResult.NoSuggestion -> AddonInvocationAudit.record(
                 surface = AddonInvocationAudit.Surface.SMART_COMPOSE,
-                outcome = if (SensitiveFieldGuard.isSensitive(inputType, imeOptions)) {
+                outcome = if (!isSmartComposeConsentGranted() || SensitiveFieldGuard.isSensitive(inputType, imeOptions)) {
                     AddonInvocationAudit.Outcome.SUPPRESSED
                 } else {
                     AddonInvocationAudit.Outcome.FAILED
                 },
-                reason = SensitiveFieldGuard.reasonFor(inputType, imeOptions)
-                    ?: "no candidate above confidence threshold",
+                reason = when {
+                    !isSmartComposeConsentGranted() -> "consent required"
+                    else -> SensitiveFieldGuard.reasonFor(inputType, imeOptions)
+                        ?: "no candidate above confidence threshold"
+                },
                 timestampMillis = now,
             )
         }
@@ -135,6 +160,104 @@ class NlpAddonHub(
                 outcome = AddonInvocationAudit.Outcome.SUPPRESSED,
                 reason = response.reason,
                 timestampMillis = now,
+            )
+        }
+    }
+
+    companion object {
+        /**
+         * Build the single production hub used by the NLP worker and quick
+         * actions. Registry adapters are deliberately dynamic: addon
+         * enrollment or lifecycle teardown can replace an active provider
+         * without leaving a router pointed at a stale instance.
+         */
+        fun production(): NlpAddonHub {
+            val prefs by FlorisPreferenceStore
+            val smartComposeProvider = object : SmartComposeProvider {
+                private val active: SmartComposeProvider
+                    get() = SmartComposeProviderRegistry.active
+
+                override fun predictNextTokens(
+                    context: SmartComposeContext,
+                    maxCandidates: Int,
+                ): SmartComposeResult = active.predictNextTokens(context, maxCandidates)
+
+                override suspend fun predictNextTokensAsync(
+                    context: SmartComposeContext,
+                    maxCandidates: Int,
+                ): SmartComposeResult = active.predictNextTokensAsync(context, maxCandidates)
+
+                override fun isReady(locale: String): Boolean = active.isReady(locale)
+                override val activeModel: LiteRtModelDescriptor?
+                    get() = active.activeModel
+                override val supportedLocales: Set<String>
+                    get() = active.supportedLocales
+            }
+            val translator = object : InlineTranslator {
+                private val active: InlineTranslator
+                    get() = InlineTranslatorRegistry.active
+
+                override fun translate(
+                    sourceText: String,
+                    sourceLocale: String,
+                    targetLocale: String,
+                ): TranslationResult = active.translate(sourceText, sourceLocale, targetLocale)
+
+                override fun isLanguagePairReady(sourceLocale: String, targetLocale: String): Boolean =
+                    active.isLanguagePairReady(sourceLocale, targetLocale)
+
+                override val installedPairs: Set<LanguagePairDescriptor>
+                    get() = active.installedPairs
+            }
+            val mcpClient = object : McpClient {
+                private val active: McpClient
+                    get() = McpClientRegistry.active()
+
+                override fun callTool(
+                    daemonKey: DaemonKey,
+                    toolName: String,
+                    parameterJson: String,
+                    timeoutMillis: Long,
+                ) = active.callTool(daemonKey, toolName, parameterJson, timeoutMillis)
+
+                override fun nextCorrelationId(): String = active.nextCorrelationId()
+            }
+            val smartComposeConsent = {
+                prefs.privacy.smartComposeConsent.get().allowsInvocation()
+            }
+            return NlpAddonHub(
+                smartCompose = SmartComposeRouter(
+                    provider = smartComposeProvider,
+                    isConsentGranted = smartComposeConsent,
+                ),
+                translate = TranslationRouter(
+                    translator = translator,
+                    packManager = TranslationRouter.PackManagerView.from(),
+                    isConsentGranted = {
+                        prefs.privacy.translationConsent.get().allowsInvocation()
+                    },
+                ),
+                mcp = McpDispatchRouter(
+                    client = mcpClient,
+                    registryView = McpDispatchRouter.RegistryView.from(),
+                    isDaemonDisabled = { daemon ->
+                        DisabledDaemonSet.contains(
+                            prefs.mcp.disabledDaemonPackages.get(),
+                            daemon.packageName,
+                        )
+                    },
+                    isToolDisabled = { daemon, tool ->
+                        DisabledToolSet.contains(
+                            prefs.mcp.disabledTools.get(),
+                            daemon.packageName,
+                            tool,
+                        )
+                    },
+                    isConsentGranted = {
+                        prefs.privacy.mcpConsent.get().allowsInvocation()
+                    },
+                ),
+                isSmartComposeConsentGranted = smartComposeConsent,
             )
         }
     }

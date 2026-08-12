@@ -16,15 +16,15 @@ import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 
 class QuickActionTranslateSelectionTest : FunSpec({
-    test("TranslateSelection routes through TranslationRouter with consent and sensitive-field inputs") {
+    test("TranslateSelection routes through the audited addon hub with consent and sensitive-field inputs") {
         val source = locateQuickActionSource().readText()
         val body = extractObjectBody(source, "data object TranslateSelection")
 
-        body shouldContain "TranslationRouter("
+        body shouldContain "NlpAddonHub.production()"
         body shouldContain "TranslationRouter.Request("
         body shouldContain "inputType = activeInfo.inputAttributes.raw"
         body shouldContain "imeOptions = activeInfo.imeOptions.raw"
-        body shouldContain "prefs.privacy.translationConsent.get().allowsInvocation()"
+        body shouldNotContain "prefs.privacy.translationConsent.get().allowsInvocation()"
         body shouldContain "withContext(Dispatchers.IO)"
         body shouldContain "R.string.quick_action__translation_selection_changed"
         body shouldContain "editorInstance.activeContent.selectedText == raw"
