@@ -37,6 +37,9 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import org.florisboard.lib.kotlin.io.subDir
 import org.florisboard.lib.kotlin.io.subFile
 
@@ -74,6 +77,13 @@ enum class LocalStickerPackFailure {
     IO_ERROR,
 }
 
+enum class LocalStickerPackStorageState {
+    UNKNOWN,
+    EMPTY,
+    READY,
+    UNREADABLE,
+}
+
 object LocalStickerPackRepository {
     const val PackId = "local_imported"
     const val PackName = "Local stickers"
@@ -93,6 +103,10 @@ object LocalStickerPackRepository {
         prettyPrint = true
     }
     private val SafeIdRegex = Regex("[A-Za-z0-9._-]{1,96}")
+    private val _storageState = MutableStateFlow(LocalStickerPackStorageState.UNKNOWN)
+
+    /** Observable load outcome so an unreadable manifest is not rendered as an empty pack. */
+    val storageState: StateFlow<LocalStickerPackStorageState> = _storageState.asStateFlow()
 
     fun storageDir(context: Context): File {
         return context.filesDir.subDir(StorageDirName)
@@ -110,14 +124,27 @@ object LocalStickerPackRepository {
         storageDir: File,
         contentUriForId: (String) -> String = { "" },
     ): StickerPack? {
-        val manifest = runCatching { readManifest(storageDir) }.getOrNull() ?: return null
+        val manifest = try {
+            readManifest(storageDir)
+        } catch (_: Throwable) {
+            _storageState.value = LocalStickerPackStorageState.UNREADABLE
+            return null
+        }
+        if (manifest.stickers.isEmpty()) {
+            _storageState.value = LocalStickerPackStorageState.EMPTY
+            return null
+        }
         val stickers = manifest.stickers
             .asSequence()
             .mapNotNull { entry -> stickerFromEntry(storageDir, entry, contentUriForId) }
             .sortedBy { it.label.lowercase(Locale.ROOT) }
             .take(UserStickerRepository.MaxStickers)
             .toList()
-        if (stickers.isEmpty()) return null
+        if (stickers.isEmpty()) {
+            _storageState.value = LocalStickerPackStorageState.EMPTY
+            return null
+        }
+        _storageState.value = LocalStickerPackStorageState.READY
         return StickerPack(
             id = PackId,
             name = manifest.name.ifBlank { PackName },
@@ -202,8 +229,7 @@ object LocalStickerPackRepository {
                     return LocalStickerPackResult.Failure(LocalStickerPackFailure.EMPTY)
                 }
 
-                val currentManifest = runCatching { readManifest(storageDir) }
-                    .getOrElse { LocalStickerPackManifest() }
+                val currentManifest = readExistingManifest(storageDir)
                 if (currentManifest.stickers.size + manifest.stickers.size > UserStickerRepository.MaxStickers) {
                     return LocalStickerPackResult.Failure(LocalStickerPackFailure.TOO_MANY_STICKERS)
                 }
@@ -279,6 +305,7 @@ object LocalStickerPackRepository {
                             stickers = currentManifest.stickers + imported,
                         ),
                     )
+                    _storageState.value = LocalStickerPackStorageState.READY
                     LocalStickerPackResult.Success(imported.size)
                 } finally {
                     tempDir.deleteRecursively()
@@ -305,7 +332,7 @@ object LocalStickerPackRepository {
 
     fun exportArchive(storageDir: File, outputStream: OutputStream): LocalStickerPackResult {
         return try {
-            val manifest = readManifest(storageDir)
+            val manifest = readExistingManifest(storageDir)
             val exportEntries = manifest.stickers.filter { entry -> fileForEntry(storageDir, entry)?.isFile == true }
             if (exportEntries.isEmpty()) {
                 return LocalStickerPackResult.Failure(LocalStickerPackFailure.EMPTY)
@@ -351,8 +378,7 @@ object LocalStickerPackRepository {
                 ?.takeUnless { it == "image/*" }
             val mimeType = UserStickerRepository.resolveMimeType(displayName, normalizedDeclaredMimeType)
                 ?: return LocalStickerPackResult.Failure(LocalStickerPackFailure.UNSUPPORTED_MIME_TYPE)
-            val currentManifest = runCatching { readManifest(storageDir) }
-                .getOrElse { LocalStickerPackManifest() }
+            val currentManifest = readExistingManifest(storageDir)
             if (currentManifest.stickers.size >= UserStickerRepository.MaxStickers) {
                 return LocalStickerPackResult.Failure(LocalStickerPackFailure.TOO_MANY_STICKERS)
             }
@@ -390,6 +416,7 @@ object LocalStickerPackRepository {
                         stickers = currentManifest.stickers + entry,
                     ),
                 )
+                _storageState.value = LocalStickerPackStorageState.READY
                 LocalStickerPackResult.Success(1)
             } finally {
                 tempDir.deleteRecursively()
@@ -431,9 +458,12 @@ object LocalStickerPackRepository {
 
     private fun entryForStickerId(storageDir: File, stickerId: String): LocalStickerPackEntry? {
         if (!isSafeStickerId(stickerId)) return null
-        return runCatching {
+        return try {
             readManifest(storageDir).stickers.firstOrNull { it.id == stickerId }
-        }.getOrNull()
+        } catch (_: Throwable) {
+            _storageState.value = LocalStickerPackStorageState.UNREADABLE
+            null
+        }
     }
 
     private fun fileForEntry(storageDir: File, entry: LocalStickerPackEntry): File? {
@@ -452,6 +482,19 @@ object LocalStickerPackRepository {
             error("Sticker manifest exceeds maximum size")
         }
         return JsonCodec.decodeFromString(manifestFile.readText())
+    }
+
+    private fun readExistingManifest(storageDir: File): LocalStickerPackManifest {
+        return try {
+            readManifest(storageDir)
+        } catch (error: Throwable) {
+            _storageState.value = LocalStickerPackStorageState.UNREADABLE
+            throw LocalStickerPackException(
+                reason = LocalStickerPackFailure.IO_ERROR,
+                message = "Cannot read the existing sticker manifest",
+                cause = error,
+            )
+        }
     }
 
     private fun writeManifest(storageDir: File, manifest: LocalStickerPackManifest) {
@@ -645,5 +688,6 @@ object LocalStickerPackRepository {
     private class LocalStickerPackException(
         val reason: LocalStickerPackFailure,
         message: String? = null,
-    ) : IllegalStateException(message)
+        cause: Throwable? = null,
+    ) : IllegalStateException(message, cause)
 }

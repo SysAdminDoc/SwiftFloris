@@ -132,6 +132,8 @@
     <string name="prefs__media__stickers_pack_failure_invalid" comment="Sticker import failure for malformed archives">Sticker pack is invalid. Choose a SwiftFloris sticker-pack ZIP and try again.</string>
     <string name="prefs__media__stickers_pack_failure_too_many" comment="Sticker import failure when the local sticker cap is reached">Local sticker pack is full. Clear old stickers before importing more.</string>
     <string name="prefs__media__stickers_pack_failure_io" comment="Sticker import/export failure for read/write problems">Could not read or write the sticker pack. Check storage access and try again.</string>
+    <string name="prefs__media__stickers_pack_unreadable_title" comment="Card title shown when the local sticker manifest cannot be read">Local sticker pack could not be read</string>
+    <string name="prefs__media__stickers_pack_unreadable_summary" comment="Card summary shown when the local sticker manifest cannot be read">The existing manifest was kept intact. Check storage access and retry; importing will not replace an unreadable manifest.</string>
     <string name="prefs__media__stickers_folder" comment="Preference title">Imported sticker folder</string>
     <string name="prefs__media__stickers_folder__summary_empty" comment="Preference summary">Choose a local folder of PNG, WebP, JPEG, or GIF files to show as a sticker pack.</string>
     <string name="prefs__media__stickers_folder__summary_selected" comment="Preference summary">Using {folder}</string>
@@ -1946,6 +1948,8 @@
     <string name="settings__clipboard__title">Clipboard</string>
     <string name="settings__clipboard__history_reset_title" comment="Card title shown when the encrypted clipboard history could not be opened">Clipboard history was reset</string>
     <string name="settings__clipboard__history_reset_summary" comment="Card summary shown when the encrypted clipboard history could not be opened">The encryption key protecting your clipboard history is no longer available, so a new empty history was started. The unreadable copy was kept on this device and never uploaded; clearing app storage removes it.</string>
+    <string name="settings__clipboard__history_retry_title" comment="Card title shown when clipboard history read failed without corruption evidence">Clipboard history could not be read</string>
+    <string name="settings__clipboard__history_retry_summary" comment="Card summary shown when clipboard history read failed without corruption evidence">The existing history and its encryption key were kept intact. Restart SwiftFloris and try again; app storage must not be cleared unless you have recovered the preserved database.</string>
     <string name="settings__clipboard__history_unencrypted_title" comment="Card title shown when clipboard history cannot be encrypted on this device">Clipboard history is not encrypted</string>
     <string name="settings__clipboard__history_unencrypted_summary" comment="Card summary shown when clipboard history cannot be encrypted on this device">The encryption library could not be loaded on this device, so clipboard history is stored in app-private storage without an extra layer of encryption. It still never leaves this device.</string>
     <string name="settings__clipboard__local_retention_title" comment="Clipboard settings intro card title">Clipboard history stays under your control</string>

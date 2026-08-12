@@ -18,6 +18,7 @@ import dev.patrickgold.florisboard.ime.nlp.NextWordSuggestionContext
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.latin.LatinLanguageProvider
 import dev.patrickgold.florisboard.lib.FlorisLocale
+import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.doubles.shouldBeLessThan
@@ -49,7 +50,7 @@ class PersonalNgramLearnedEntriesTest {
 
     @Test
     fun bigramSnapshotExposesPersistedEntriesAndExactForgetRemovesOneRow() = runStoreTest {
-        val store = PersonalBigramStore.get(context)
+        val store = PersonalBigramStore.forTesting(context)
         val testLocale = FlorisLocale.fromTag("en")
         store.resetAndAwait()
         repeat(4) { store.learnAndAwait("swift", "floris", testLocale) }
@@ -98,7 +99,7 @@ class PersonalNgramLearnedEntriesTest {
 
     @Test
     fun trigramSnapshotExposesPersistedEntriesAndExactForgetRemovesOneRow() = runStoreTest {
-        val store = PersonalTrigramStore.get(context)
+        val store = PersonalTrigramStore.forTesting(context)
         val testLocale = FlorisLocale.fromTag("de")
         store.resetAndAwait()
         repeat(4) { store.learnAndAwait("the", "quick", "brown", testLocale) }
@@ -175,5 +176,41 @@ class PersonalNgramLearnedEntriesTest {
         trigramStore.snapshot().map { it.next } shouldBe emptyList()
         bigramStore.resetAndAwait()
         trigramStore.resetAndAwait()
+    }
+
+    @Test
+    fun malformedBigramFileDoesNotInstallPartialRowsOrReplaceTheSource() = runStoreTest {
+        val store = PersonalBigramStore.forTesting(context)
+        val locale = FlorisLocale.fromTag("en")
+        val file = context.filesDir.resolve("personal_bigrams_${locale.languageTag()}.tsv")
+        store.resetAndAwait()
+        file.writeText("swift\tfloris\t4\t100\nbroken-row\n")
+        val originalBytes = file.readBytes().toList()
+
+        shouldThrow<PersonalNgramPersistence.LoadException> {
+            store.predict("swift", locale, max = 1)
+        }
+
+        store.loadState(locale) shouldBe PersonalNgramPersistence.LoadState.UNREADABLE
+        file.readBytes().toList() shouldBe originalBytes
+        store.resetAndAwait()
+    }
+
+    @Test
+    fun malformedTrigramFileDoesNotInstallPartialRowsOrReplaceTheSource() = runStoreTest {
+        val store = PersonalTrigramStore.forTesting(context)
+        val locale = FlorisLocale.fromTag("en")
+        val file = context.filesDir.resolve("personal_trigrams_${locale.languageTag()}.tsv")
+        store.resetAndAwait()
+        file.writeText("the\tquick\tbrown\t4\t100\nbroken-row\n")
+        val originalBytes = file.readBytes().toList()
+
+        shouldThrow<PersonalNgramPersistence.LoadException> {
+            store.predict("the", "quick", locale, max = 1)
+        }
+
+        store.loadState(locale) shouldBe PersonalNgramPersistence.LoadState.UNREADABLE
+        file.readBytes().toList() shouldBe originalBytes
+        store.resetAndAwait()
     }
 }

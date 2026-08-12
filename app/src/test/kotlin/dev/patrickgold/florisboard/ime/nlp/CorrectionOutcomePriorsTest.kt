@@ -16,9 +16,12 @@
 
 package dev.patrickgold.florisboard.ime.nlp
 
+import dev.patrickgold.florisboard.ime.dictionary.PersonalNgramPersistence
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.doubles.shouldBeGreaterThan
 import io.kotest.matchers.shouldBe
+import io.kotest.assertions.throwables.shouldThrow
+import java.nio.file.Files
 
 class CorrectionOutcomePriorsTest : FunSpec({
     test("accepted corrections build confidence for the same typed-corrected pair") {
@@ -119,6 +122,32 @@ class CorrectionOutcomePriorsTest : FunSpec({
         priors.recordAccepted("gello", "hello")
 
         priors.accuracyDelta().trend shouldBe CorrectionAccuracyTrend.UNCHANGED
+    }
+
+    test("a malformed persisted row fails the load without installing partial data") {
+        val file = Files.createTempFile("correction-outcomes-", ".tsv").toFile().apply {
+            writeText(
+                "teh\tthe\t2\t0\t100\n" +
+                    "broken-row\n",
+            )
+        }
+        val originalBytes = file.readBytes().toList()
+        val priors = CorrectionOutcomePriors.fromFile(file)
+
+        shouldThrow<PersonalNgramPersistence.LoadException> {
+            priors.entryCount()
+        }
+
+        priors.storageState shouldBe PersonalNgramPersistence.LoadState.UNREADABLE
+        file.readBytes().toList() shouldBe originalBytes
+    }
+
+    test("a missing or empty persisted file is a valid empty store") {
+        val file = Files.createTempFile("correction-outcomes-empty-", ".tsv").toFile()
+        val priors = CorrectionOutcomePriors.fromFile(file)
+
+        priors.entryCount() shouldBe 0
+        priors.storageState shouldBe PersonalNgramPersistence.LoadState.READY
     }
 })
 

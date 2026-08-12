@@ -164,6 +164,35 @@ class LocalStickerPackRepositoryTest : FunSpec({
         dir.resolve(LocalStickerPackRepository.ManifestFileName).exists() shouldBe false
     }
 
+    test("does not replace an unreadable manifest with an empty manifest") {
+        val dir = tempDir()
+        val manifest = dir.resolve(LocalStickerPackRepository.ManifestFileName)
+        val originalBytes = byteArrayOf(0x13, 0x37, 0x42)
+        manifest.writeBytes(originalBytes)
+        val image = dir.resolve("new.png").apply { writeBytes(samplePngBytes()) }
+
+        val result = LocalStickerPackRepository.importStickerFile(
+            storageDir = dir,
+            sourceFile = image,
+            declaredMimeType = "image/png",
+        ) as LocalStickerPackResult.Failure
+
+        result.reason shouldBe LocalStickerPackFailure.IO_ERROR
+        manifest.readBytes().toList() shouldBe originalBytes.toList()
+        LocalStickerPackRepository.storageState.value shouldBe LocalStickerPackStorageState.UNREADABLE
+    }
+
+    test("distinguishes a valid empty pack from an unreadable manifest") {
+        val dir = tempDir()
+
+        LocalStickerPackRepository.loadPack(dir) shouldBe null
+        LocalStickerPackRepository.storageState.value shouldBe LocalStickerPackStorageState.EMPTY
+
+        dir.resolve(LocalStickerPackRepository.ManifestFileName).writeText("not json")
+        LocalStickerPackRepository.loadPack(dir) shouldBe null
+        LocalStickerPackRepository.storageState.value shouldBe LocalStickerPackStorageState.UNREADABLE
+    }
+
     test("rejects sticker-pack archives with unsafe file paths") {
         val dir = tempDir()
         val archive = dir.resolve("unsafe.sfstickers")

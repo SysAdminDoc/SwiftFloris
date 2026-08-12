@@ -42,6 +42,19 @@ internal object PersonalNgramPersistence {
         return trimmed.lowercase()
     }
 
+    /** Load outcome exposed by the stores so callers can distinguish empty from unreadable data. */
+    enum class LoadState {
+        NOT_LOADED,
+        READY,
+        UNREADABLE,
+        WRITE_FAILED,
+    }
+
+    class LoadException(
+        val source: File,
+        cause: Throwable,
+    ) : IllegalStateException("Unable to read ${source.name}; retry without replacing it", cause)
+
     /**
      * Atomically replaces [target] with content produced by [writeBody].
      *

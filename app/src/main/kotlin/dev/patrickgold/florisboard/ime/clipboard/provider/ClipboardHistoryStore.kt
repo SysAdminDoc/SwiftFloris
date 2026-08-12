@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.clipboard.provider
 
 import android.content.Context
+import android.database.sqlite.SQLiteDatabaseCorruptException
 import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.lib.devtools.flogError
 import dev.patrickgold.florisboard.lib.devtools.flogInfo
@@ -39,6 +40,9 @@ enum class ClipboardHistoryStorageState {
      */
     ResetAfterUnreadableStore,
 
+    /** The read failed without corruption evidence; keep the database and key for a retry. */
+    RetryableReadFailure,
+
     /** SQLCipher is unavailable on this device; history stays in the plaintext Room database. */
     Unencrypted,
 }
@@ -50,8 +54,9 @@ enum class ClipboardHistoryStorageState {
  * The migration is deliberately conservative. The plaintext files are staged aside rather than
  * deleted, every row is re-inserted into the encrypted replacement inside a single transaction,
  * the row count is verified before the staged copies are dropped, and any failure rolls the
- * plaintext store back into place. A store that cannot be read is preserved under a
- * `.unreadable-<timestamp>` name and reported through [state]; nothing silently discards history.
+ * plaintext store back into place. A store proven corrupt is preserved under a
+ * `.unreadable-<timestamp>` name; an unclassified read failure remains in place for retry.
+ * Both outcomes are reported through [state], and nothing silently discards history.
  */
 object ClipboardHistoryStore {
     private val _state = MutableStateFlow(ClipboardHistoryStorageState.Encrypted)
@@ -68,8 +73,20 @@ object ClipboardHistoryStore {
 
     fun open(context: Context): ClipboardHistoryDatabase {
         val appContext = context.applicationContext ?: context
-        val factory = ClipboardHistoryEncryption.openHelperFactory(appContext)
+        val factory = try {
+            ClipboardHistoryEncryption.openHelperFactory(appContext)
+        } catch (error: Throwable) {
+            _state.value = ClipboardHistoryStorageState.RetryableReadFailure
+            throw ClipboardHistoryRetryableReadException(error)
+        }
         if (factory == null) {
+            val databaseFile = appContext.getDatabasePath(ClipboardHistoryDatabase.DB_FILE_NAME)
+            if (databaseFile.isFile && !EncryptedDatabaseFiles.isPlaintextSqliteDatabase(databaseFile)) {
+                _state.value = ClipboardHistoryStorageState.RetryableReadFailure
+                throw ClipboardHistoryRetryableReadException(
+                    IllegalStateException("Encrypted clipboard history cannot be opened without SQLCipher"),
+                )
+            }
             // SQLCipher could not be loaded. Falling back to the plaintext database keeps the
             // clipboard working; reporting it keeps the privacy claim honest.
             flogWarning { "Clipboard history is not encrypted: SQLCipher is unavailable" }
@@ -91,22 +108,58 @@ object ClipboardHistoryStore {
 
     private fun openVerified(context: Context): OpenResult {
         val database = ClipboardHistoryDatabase.newEncrypted(context)
-        val readable = runCatching { database.clipboardItemDao().getAll() }.isSuccess
-        if (readable) {
+        val readFailure = try {
+            database.clipboardItemDao().getAll()
+            null
+        } catch (error: Throwable) {
+            error
+        }
+        if (readFailure == null) {
             return OpenResult(database, wasReset = false)
         }
-        flogWarning { "Encrypted clipboard history could not be read; preserving it before creating a replacement" }
         database.close()
+        if (!isDefinitiveCorruption(readFailure)) {
+            _state.value = ClipboardHistoryStorageState.RetryableReadFailure
+            flogWarning {
+                "Encrypted clipboard history read failed without corruption evidence; preserving the store"
+            }
+            throw ClipboardHistoryRetryableReadException(readFailure)
+        }
+        flogWarning { "Encrypted clipboard history is corrupt; preserving it before creating a replacement" }
         val databaseFile = context.getDatabasePath(ClipboardHistoryDatabase.DB_FILE_NAME)
         if (!EncryptedDatabaseFiles.quarantine(databaseFile, "unreadable", System.currentTimeMillis())) {
-            // Preserving failed, so the existing ciphertext is still in place. Hand back a database
-            // handle anyway rather than deleting anything the user may still recover.
-            flogError { "Could not preserve unreadable clipboard history; leaving it untouched" }
-            return OpenResult(ClipboardHistoryDatabase.newEncrypted(context), wasReset = false)
+            // Preserving failed, so the existing ciphertext is still in place. Do not create a
+            // replacement or retire the key while the user's only copy may still be recoverable.
+            _state.value = ClipboardHistoryStorageState.RetryableReadFailure
+            flogError { "Could not preserve corrupt clipboard history; leaving it untouched" }
+            throw ClipboardHistoryRetryableReadException(
+                IllegalStateException("Could not preserve corrupt clipboard history"),
+            )
         }
         // The old passphrase can no longer open anything, so retire it with the data it protected.
-        ClipboardHistoryEncryption.clearStoredPassphrase(context)
-        return OpenResult(ClipboardHistoryDatabase.newEncrypted(context), wasReset = true)
+        if (!ClipboardHistoryEncryption.clearStoredPassphrase(context)) {
+            _state.value = ClipboardHistoryStorageState.RetryableReadFailure
+            throw ClipboardHistoryRetryableReadException(
+                IllegalStateException("Could not retire the corrupt clipboard history key"),
+            )
+        }
+        return try {
+            OpenResult(ClipboardHistoryDatabase.newEncrypted(context), wasReset = true)
+        } catch (error: Throwable) {
+            _state.value = ClipboardHistoryStorageState.RetryableReadFailure
+            throw ClipboardHistoryRetryableReadException(error)
+        }
+    }
+
+    /** Only this concrete platform exception is evidence strong enough to quarantine data. */
+    internal fun isDefinitiveCorruption(error: Throwable): Boolean {
+        val seen = HashSet<Throwable>()
+        var current: Throwable? = error
+        while (current != null && seen.add(current)) {
+            if (current is SQLiteDatabaseCorruptException) return true
+            current = current.cause
+        }
+        return false
     }
 
     /**
@@ -163,3 +216,6 @@ object ClipboardHistoryStore {
         }
     }
 }
+
+internal class ClipboardHistoryRetryableReadException(cause: Throwable) :
+    IllegalStateException("Clipboard history could not be read; retry without replacing it", cause)

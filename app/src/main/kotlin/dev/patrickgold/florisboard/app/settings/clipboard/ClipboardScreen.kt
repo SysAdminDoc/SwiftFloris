@@ -60,8 +60,8 @@ fun ClipboardScreen() = FlorisScreen {
             onClick = { navController.navigate(Routes.Settings.PrivacyPosture) },
         )
 
-        // Clipboard history is encrypted at rest. If that store ever becomes unreadable the
-        // history is reset rather than silently emptied, and the user is told so here.
+        // Clipboard history is encrypted at rest. Classified corruption is reset only after the
+        // old store is preserved; an unclassified read failure stays retryable and is not hidden.
         val storageState by ClipboardHistoryStore.state.collectAsState()
         when (storageState) {
             ClipboardHistoryStorageState.Encrypted,
@@ -72,6 +72,11 @@ fun ClipboardScreen() = FlorisScreen {
                 secondaryText = stringRes(R.string.settings__clipboard__history_reset_summary),
                 actionLabel = stringRes(R.string.action__ok),
                 onClick = { ClipboardHistoryStore.acknowledgeState() },
+            )
+            ClipboardHistoryStorageState.RetryableReadFailure -> FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__clipboard__history_retry_title),
+                secondaryText = stringRes(R.string.settings__clipboard__history_retry_summary),
             )
             ClipboardHistoryStorageState.Unencrypted -> FlorisWarningCard(
                 modifier = Modifier.padding(8.dp),

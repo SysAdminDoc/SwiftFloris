@@ -18,6 +18,8 @@ package dev.patrickgold.florisboard.ime.nlp
 
 import android.content.Context
 import dev.patrickgold.florisboard.ime.dictionary.PersonalNgramPersistence
+import dev.patrickgold.florisboard.lib.devtools.LogTopic
+import dev.patrickgold.florisboard.lib.devtools.flogWarning
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -73,6 +75,13 @@ internal class CorrectionOutcomePriors private constructor(
     private val entries = LinkedHashMap<String, OutcomeEntry>(MaxEntries, 0.75f, true)
     private val weeklyStats = LinkedHashMap<Long, WeeklyOutcomeEntry>(MaxWeeklyBuckets, 0.75f, true)
     private var loaded = storageFile == null
+    @Volatile
+    var storageState: PersonalNgramPersistence.LoadState = if (storageFile == null) {
+        PersonalNgramPersistence.LoadState.READY
+    } else {
+        PersonalNgramPersistence.LoadState.NOT_LOADED
+    }
+        private set
     private val persistMutex = Mutex()
     private val persistSequence = AtomicLong(0)
     private val lastPersistedSequence = AtomicLong(0)
@@ -142,15 +151,22 @@ internal class CorrectionOutcomePriors private constructor(
 
     @Synchronized
     fun reset() {
-        ensureLoadedLocked()
+        loaded = true
+        storageState = PersonalNgramPersistence.LoadState.READY
         entries.clear()
         weeklyStats.clear()
-        persistLocked()
+        val file = storageFile
+        if (file != null) {
+            ioScope.launch {
+                file.delete()
+            }
+        }
     }
 
     suspend fun resetAndAwait() {
         val file = synchronized(this) {
-            ensureLoadedLocked()
+            loaded = true
+            storageState = PersonalNgramPersistence.LoadState.READY
             entries.clear()
             weeklyStats.clear()
             storageFile
@@ -164,43 +180,74 @@ internal class CorrectionOutcomePriors private constructor(
 
     private fun ensureLoadedLocked() {
         if (loaded) return
-        loaded = true
         val file = storageFile ?: return
-        if (!file.exists() || file.length() <= 0L) return
-        runCatching {
+        if (!file.exists() || file.length() <= 0L) {
+            loaded = true
+            storageState = PersonalNgramPersistence.LoadState.READY
+            return
+        }
+        val loadedEntries = LinkedHashMap<String, OutcomeEntry>(MaxEntries, 0.75f, true)
+        val loadedWeeklyStats = LinkedHashMap<Long, WeeklyOutcomeEntry>(MaxWeeklyBuckets, 0.75f, true)
+        try {
             file.bufferedReader().useLines { lines ->
-                for (line in lines) {
+                for ((index, line) in lines.withIndex()) {
+                    if (line.isBlank()) continue
                     val parts = line.split('\t')
                     if (parts.firstOrNull() == WeeklyMetaPrefix) {
-                        if (parts.size != 4) continue
-                        val week = parts[1].toLongOrNull() ?: continue
-                        val accepted = parts[2].toIntOrNull()?.coerceIn(0, MaxWeeklyCount) ?: continue
-                        val rejected = parts[3].toIntOrNull()?.coerceIn(0, MaxWeeklyCount) ?: continue
+                        require(parts.size == 4) { "invalid weekly row at ${file.name}:${index + 1}" }
+                        val week = parts[1].toLongOrNull()
+                            ?: error("invalid week at ${file.name}:${index + 1}")
+                        val accepted = parts[2].toIntOrNull()?.takeIf { it >= 0 }
+                            ?: error("invalid accepted count at ${file.name}:${index + 1}")
+                        val rejected = parts[3].toIntOrNull()?.takeIf { it >= 0 }
+                            ?: error("invalid rejected count at ${file.name}:${index + 1}")
                         if (accepted == 0 && rejected == 0) continue
-                        weeklyStats[week] = WeeklyOutcomeEntry(
-                            acceptedCount = accepted,
-                            rejectedCount = rejected,
+                        loadedWeeklyStats[week] = WeeklyOutcomeEntry(
+                            acceptedCount = accepted.coerceAtMost(MaxWeeklyCount),
+                            rejectedCount = rejected.coerceAtMost(MaxWeeklyCount),
                         )
                         continue
                     }
-                    if (parts.size != 5) continue
-                    val key = keyFromNormalized(parts[0], parts[1]) ?: continue
-                    val accepted = parts[2].toIntOrNull()?.coerceIn(0, MaxCount) ?: continue
-                    val rejected = parts[3].toIntOrNull()?.coerceIn(0, MaxCount) ?: continue
-                    val lastSeen = parts[4].toLongOrNull()?.takeIf { it > 0L } ?: continue
+                    require(parts.size == 5) { "invalid outcome row at ${file.name}:${index + 1}" }
+                    val key = keyFromNormalized(parts[0], parts[1])
+                        ?: error("invalid outcome pair at ${file.name}:${index + 1}")
+                    val accepted = parts[2].toIntOrNull()?.takeIf { it >= 0 }
+                        ?: error("invalid accepted count at ${file.name}:${index + 1}")
+                    val rejected = parts[3].toIntOrNull()?.takeIf { it >= 0 }
+                        ?: error("invalid rejected count at ${file.name}:${index + 1}")
+                    val lastSeen = parts[4].toLongOrNull()?.takeIf { it > 0L }
+                        ?: error("invalid timestamp at ${file.name}:${index + 1}")
                     if (accepted == 0 && rejected == 0) continue
-                    entries[key] = OutcomeEntry(
-                        acceptedCount = accepted,
-                        rejectedCount = rejected,
+                    loadedEntries[key] = OutcomeEntry(
+                        acceptedCount = accepted.coerceAtMost(MaxCount),
+                        rejectedCount = rejected.coerceAtMost(MaxCount),
                         lastSeenMs = lastSeen,
                     )
                 }
             }
-            trimLocked()
+        } catch (error: Throwable) {
+            storageState = PersonalNgramPersistence.LoadState.UNREADABLE
+            val loadError = if (error is PersonalNgramPersistence.LoadException) {
+                error
+            } else {
+                PersonalNgramPersistence.LoadException(file, error)
+            }
+            flogWarning(LogTopic.DICTIONARY) {
+                "Correction outcome load for '${file.name}' failed; in-memory and on-disk state preserved"
+            }
+            throw loadError
         }
+        trimMaps(loadedEntries, loadedWeeklyStats)
+        entries.putAll(loadedEntries)
+        weeklyStats.putAll(loadedWeeklyStats)
+        loaded = true
+        storageState = PersonalNgramPersistence.LoadState.READY
     }
 
-    private fun trimLocked() {
+    private fun trimMaps(
+        entries: MutableMap<String, OutcomeEntry>,
+        weeklyStats: MutableMap<Long, WeeklyOutcomeEntry>,
+    ) {
         if (entries.size > MaxEntries) {
             val keep = entries.entries
                 .sortedWith(
@@ -219,6 +266,10 @@ internal class CorrectionOutcomePriors private constructor(
                 .toHashSet()
             weeklyStats.keys.removeAll { it !in keepWeeks }
         }
+    }
+
+    private fun trimLocked() {
+        trimMaps(entries, weeklyStats)
     }
 
     private fun weeklyEntryLocked(nowMs: Long): WeeklyOutcomeEntry {
@@ -261,34 +312,40 @@ internal class CorrectionOutcomePriors private constructor(
             persistMutex.withLock {
                 if (sequence <= lastPersistedSequence.get()) return@withLock
                 lastPersistedSequence.set(sequence)
-                runCatching {
-                    file.parentFile?.mkdirs()
-                    PersonalNgramPersistence.atomicReplace(file) { writer ->
-                        for (row in weeklySnapshot) {
-                            if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
-                            writer.write(WeeklyMetaPrefix)
-                            writer.write('\t'.code)
-                            writer.write(row.weekIndex.toString())
-                            writer.write('\t'.code)
-                            writer.write(row.acceptedCount.toString())
-                            writer.write('\t'.code)
-                            writer.write(row.rejectedCount.toString())
-                            writer.newLine()
-                        }
-                        for (row in snapshot) {
-                            if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
-                            writer.write(row.original)
-                            writer.write('\t'.code)
-                            writer.write(row.corrected)
-                            writer.write('\t'.code)
-                            writer.write(row.acceptedCount.toString())
-                            writer.write('\t'.code)
-                            writer.write(row.rejectedCount.toString())
-                            writer.write('\t'.code)
-                            writer.write(row.lastSeenMs.toString())
-                            writer.newLine()
-                        }
+                file.parentFile?.mkdirs()
+                val persisted = PersonalNgramPersistence.atomicReplace(file) { writer ->
+                    for (row in weeklySnapshot) {
+                        if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
+                        writer.write(WeeklyMetaPrefix)
+                        writer.write('\t'.code)
+                        writer.write(row.weekIndex.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.acceptedCount.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.rejectedCount.toString())
+                        writer.newLine()
                     }
+                    for (row in snapshot) {
+                        if (row.acceptedCount == 0 && row.rejectedCount == 0) continue
+                        writer.write(row.original)
+                        writer.write('\t'.code)
+                        writer.write(row.corrected)
+                        writer.write('\t'.code)
+                        writer.write(row.acceptedCount.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.rejectedCount.toString())
+                        writer.write('\t'.code)
+                        writer.write(row.lastSeenMs.toString())
+                        writer.newLine()
+                    }
+                }
+                if (!persisted) {
+                    storageState = PersonalNgramPersistence.LoadState.WRITE_FAILED
+                    flogWarning(LogTopic.DICTIONARY) {
+                        "Correction outcome flush for '${file.name}' failed; previous on-disk state preserved"
+                    }
+                } else if (storageState != PersonalNgramPersistence.LoadState.UNREADABLE) {
+                    storageState = PersonalNgramPersistence.LoadState.READY
                 }
             }
         }
@@ -349,6 +406,10 @@ internal class CorrectionOutcomePriors private constructor(
 
         fun inMemory(nowProvider: () -> Long): CorrectionOutcomePriors {
             return CorrectionOutcomePriors(storageFile = null, nowProvider = nowProvider)
+        }
+
+        internal fun fromFile(file: File, nowProvider: () -> Long = { System.currentTimeMillis() }): CorrectionOutcomePriors {
+            return CorrectionOutcomePriors(storageFile = file, nowProvider = nowProvider)
         }
 
         private fun pairKey(originalText: CharSequence, correctedText: CharSequence): String? {

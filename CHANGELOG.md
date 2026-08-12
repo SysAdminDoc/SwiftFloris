@@ -23,6 +23,10 @@
 - Route live smart-compose and translation calls through the audited addon hub,
   require explicit MCP consent/disable gates, remove the dead direct dispatcher,
   and pause MCP daemon binding until a real audited keyboard action exists.
+- Preserve unreadable sticker, correction-prior, and personal n-gram stores
+  instead of treating them as empty, and only quarantine clipboard history on
+  explicit SQLite corruption evidence while keeping transient read failures
+  retryable.
 
 ## v1.9.59 — 2026-08-11
 

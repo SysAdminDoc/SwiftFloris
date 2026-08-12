@@ -43,12 +43,13 @@ private const val PASSPHRASE_BYTES = 64
  */
 internal object ClipboardHistoryEncryption {
     fun openHelperFactory(context: Context): SupportOpenHelperFactory? {
-        return runCatching {
+        return try {
             System.loadLibrary(SQLCIPHER_LIBRARY)
             SupportOpenHelperFactory(getOrCreatePassphrase(context))
-        }.onFailure { error ->
-            Log.w(TAG, "Unable to initialize encrypted clipboard history: ${error.message}")
-        }.getOrNull()
+        } catch (error: UnsatisfiedLinkError) {
+            Log.w(TAG, "Unable to load encrypted clipboard history library: ${error.message}")
+            null
+        }
     }
 
     /** True when a wrapped passphrase already exists, i.e. an encrypted store was created before. */

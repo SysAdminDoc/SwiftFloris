@@ -32,6 +32,7 @@ import androidx.compose.material.icons.outlined.FileUpload
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +53,7 @@ import dev.patrickgold.florisboard.ime.media.emoji.CustomEmojiTagStore
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackFailure
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackRepository
 import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackResult
+import dev.patrickgold.florisboard.ime.media.sticker.LocalStickerPackStorageState
 import dev.patrickgold.florisboard.ime.media.sticker.UserStickerRepository
 import dev.patrickgold.florisboard.ime.media.sticker.evictStickerBitmapCache
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -68,6 +70,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisInfoCard
+import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.pluralsRes
 import org.florisboard.lib.compose.stringRes
 
@@ -91,6 +94,7 @@ fun MediaScreen() = FlorisScreen {
     val hasLocalStickerPack = remember(localStickerPackRevision) {
         LocalStickerPackRepository.hasLocalPack(context)
     }
+    val localStickerStorageState by LocalStickerPackRepository.storageState.collectAsState()
     val folderSelectedText = stringRes(R.string.prefs__media__stickers_folder_selected)
     val folderClearedText = stringRes(R.string.prefs__media__stickers_folder_cleared)
     val folderPermissionFailedText = stringRes(R.string.prefs__media__stickers_folder_permission_failed)
@@ -159,6 +163,13 @@ fun MediaScreen() = FlorisScreen {
             text = stringRes(R.string.settings__media__local_media_title),
             secondaryText = stringRes(R.string.settings__media__local_media_summary),
         )
+        if (localStickerStorageState == LocalStickerPackStorageState.UNREADABLE) {
+            FlorisErrorCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.prefs__media__stickers_pack_unreadable_title),
+                secondaryText = stringRes(R.string.prefs__media__stickers_pack_unreadable_summary),
+            )
+        }
 
         PreferenceGroup(title = stringRes(R.string.prefs__media__emoji_defaults__title)) {
             ListPreference(

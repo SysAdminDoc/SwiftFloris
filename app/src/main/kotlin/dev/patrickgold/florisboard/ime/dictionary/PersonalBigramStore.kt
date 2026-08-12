@@ -62,6 +62,10 @@ class PersonalBigramStore private constructor(private val context: Context) {
                 return PersonalBigramStore(context.applicationContext).also { instance = it }
             }
         }
+
+        internal fun forTesting(context: Context): PersonalBigramStore {
+            return PersonalBigramStore(context.applicationContext)
+        }
     }
 
     private val ioScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -76,6 +80,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
     private val rejectionLastSeenByLocale: MutableMap<String, MutableMap<String, MutableMap<String, Long>>> = ConcurrentHashMap()
     private val loadGuard = Mutex()
     private val pendingCommitsByLocale = java.util.concurrent.ConcurrentHashMap<String, AtomicInteger>()
+    private val loadStates = ConcurrentHashMap<String, PersonalNgramPersistence.LoadState>()
 
     private fun fileFor(localeTag: String): File =
         File(context.filesDir, "personal_bigrams_${localeTag.ifBlank { "default" }}.tsv")
@@ -107,6 +112,10 @@ class PersonalBigramStore private constructor(private val context: Context) {
 
     private fun normalize(word: String): String = PersonalNgramPersistence.normalizeToken(word)
 
+    internal fun loadState(locale: FlorisLocale): PersonalNgramPersistence.LoadState {
+        return loadStates[locale.languageTag()] ?: PersonalNgramPersistence.LoadState.NOT_LOADED
+    }
+
     private suspend fun ensureLoaded(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
         tablesByLocale[localeTag]?.let { return it }
         loadGuard.withLock {
@@ -116,69 +125,73 @@ class PersonalBigramStore private constructor(private val context: Context) {
 
     /** Loads (or returns) the table for [localeTag]. Caller must hold [loadGuard]. */
     private fun ensureLoadedLocked(localeTag: String): MutableMap<String, MutableMap<String, Int>> {
-        val table = tablesByLocale[localeTag] ?: run {
-            val loadedTable: MutableMap<String, MutableMap<String, Int>> = HashMap()
-            val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
-            val f = fileFor(localeTag)
-            val loadTimestampMs = System.currentTimeMillis()
-            if (f.exists() && f.length() > 0L) {
-                runCatching {
-                    f.bufferedReader().useLines { lines ->
-                        for (line in lines) {
-                            val parts = line.split('\t')
-                            if (parts.size != 3 && parts.size != 4) continue
-                            val prev = parts[0]
-                            val next = parts[1]
-                            val count = parts[2].toIntOrNull() ?: continue
-                            val lastSeenMs = parts.getOrNull(3)?.toLongOrNull()
-                                ?.takeIf { it > 0L }
-                                ?: loadTimestampMs
-                            if (prev.isBlank() || next.isBlank() || count <= 0) continue
-                            val nextMap = loadedTable.getOrPut(prev) { HashMap() }
-                            nextMap[next] = count.coerceAtMost(MAX_COUNT)
-                            val recencyNextMap = recencyTable.getOrPut(prev) { HashMap() }
-                            recencyNextMap[next] = lastSeenMs
-                        }
-                    }
-                }
+        tablesByLocale[localeTag]?.let { return it }
+        val loadedTable: MutableMap<String, MutableMap<String, Int>> = HashMap()
+        val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
+        val loadedRejectionTable: MutableMap<String, MutableMap<String, Int>> = HashMap()
+        val rejectionRecencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
+        val primaryFile = fileFor(localeTag)
+        val rejectionFile = rejectionFileFor(localeTag)
+        try {
+            readTable(primaryFile, loadedTable, recencyTable, MAX_COUNT)
+            readTable(rejectionFile, loadedRejectionTable, rejectionRecencyTable, MAX_REJECTION_COUNT)
+        } catch (error: Throwable) {
+            val loadError = if (error is PersonalNgramPersistence.LoadException) {
+                error
+            } else {
+                PersonalNgramPersistence.LoadException(primaryFile, error)
             }
-            tablesByLocale[localeTag] = loadedTable
-            lastSeenByLocale[localeTag] = recencyTable
-            loadedTable
+            loadStates[localeTag] = PersonalNgramPersistence.LoadState.UNREADABLE
+            flogWarning(LogTopic.DICTIONARY) {
+                "Personal bigram load for '${loadError.source.name}' failed; in-memory and on-disk state preserved"
+            }
+            throw loadError
         }
-        ensureRejectionsLoadedLocked(localeTag)
-        return table
+        tablesByLocale[localeTag] = loadedTable
+        lastSeenByLocale[localeTag] = recencyTable
+        rejectionCountsByLocale[localeTag] = loadedRejectionTable
+        rejectionLastSeenByLocale[localeTag] = rejectionRecencyTable
+        loadStates[localeTag] = PersonalNgramPersistence.LoadState.READY
+        return loadedTable
     }
 
-    private fun ensureRejectionsLoadedLocked(localeTag: String) {
-        if (rejectionCountsByLocale.containsKey(localeTag)) return
-        val table: MutableMap<String, MutableMap<String, Int>> = HashMap()
-        val recencyTable: MutableMap<String, MutableMap<String, Long>> = HashMap()
-        val f = rejectionFileFor(localeTag)
-        val loadTimestampMs = System.currentTimeMillis()
-        if (f.exists() && f.length() > 0L) {
-            runCatching {
-                f.bufferedReader().useLines { lines ->
-                    for (line in lines) {
-                        val parts = line.split('\t')
-                        if (parts.size != 3 && parts.size != 4) continue
-                        val prev = parts[0]
-                        val next = parts[1]
-                        val count = parts[2].toIntOrNull() ?: continue
-                        val lastSeenMs = parts.getOrNull(3)?.toLongOrNull()
-                            ?.takeIf { it > 0L }
-                            ?: loadTimestampMs
-                        if (prev.isBlank() || next.isBlank() || count <= 0) continue
-                        val nextMap = table.getOrPut(prev) { HashMap() }
-                        nextMap[next] = count.coerceAtMost(MAX_REJECTION_COUNT)
-                        val recencyNextMap = recencyTable.getOrPut(prev) { HashMap() }
-                        recencyNextMap[next] = lastSeenMs
+    private fun readTable(
+        file: File,
+        table: MutableMap<String, MutableMap<String, Int>>,
+        recencyTable: MutableMap<String, MutableMap<String, Long>>,
+        maxCount: Int,
+    ) {
+        if (!file.exists() || file.length() <= 0L) return
+        try {
+            file.bufferedReader().useLines { lines ->
+                for ((index, line) in lines.withIndex()) {
+                    if (line.isBlank()) continue
+                    val parts = line.split('\t')
+                    require(parts.size == 3 || parts.size == 4) {
+                        "invalid TSV column count at ${file.name}:${index + 1}"
                     }
+                    val prev = parts[0].takeUnless { it.isBlank() }
+                        ?: error("blank previous word at ${file.name}:${index + 1}")
+                    val next = parts[1].takeUnless { it.isBlank() }
+                        ?: error("blank next word at ${file.name}:${index + 1}")
+                    val count = parts[2].toIntOrNull()?.takeIf { it > 0 }
+                        ?: error("invalid count at ${file.name}:${index + 1}")
+                    val lastSeenMs = if (parts.size == 4) {
+                        parts[3].toLongOrNull()?.takeIf { it > 0L }
+                            ?: error("invalid timestamp at ${file.name}:${index + 1}")
+                    } else {
+                        System.currentTimeMillis()
+                    }
+                    val nextMap = table.getOrPut(prev) { HashMap() }
+                    nextMap[next] = count.coerceAtMost(maxCount)
+                    val recencyNextMap = recencyTable.getOrPut(prev) { HashMap() }
+                    recencyNextMap[next] = lastSeenMs
                 }
             }
+        } catch (error: Throwable) {
+            if (error is PersonalNgramPersistence.LoadException) throw error
+            throw PersonalNgramPersistence.LoadException(file, error)
         }
-        rejectionCountsByLocale[localeTag] = table
-        rejectionLastSeenByLocale[localeTag] = recencyTable
     }
 
     /**
@@ -418,6 +431,13 @@ class PersonalBigramStore private constructor(private val context: Context) {
         }?.forEach { file ->
             add(file.name.removePrefix("personal_bigrams_").removeSuffix(".tsv"))
         }
+        context.filesDir.listFiles { _, name ->
+            name.startsWith("personal_bigram_rejections_") &&
+                name.endsWith(".tsv") &&
+                !name.endsWith(".tsv.tmp")
+        }?.forEach { file ->
+            add(file.name.removePrefix("personal_bigram_rejections_").removeSuffix(".tsv"))
+        }
         synchronized(tablesByLocale) {
             addAll(tablesByLocale.keys)
         }
@@ -433,9 +453,9 @@ class PersonalBigramStore private constructor(private val context: Context) {
         }
     }
 
-    suspend fun flushAndAwait(localeTag: String) {
-        loadGuard.withLock {
-            val table = tablesByLocale[localeTag] ?: return@withLock
+    suspend fun flushAndAwait(localeTag: String): Boolean {
+        return loadGuard.withLock {
+            val table = tablesByLocale[localeTag] ?: return@withLock true
             val recencyTable = lastSeenByLocale[localeTag] ?: HashMap()
             val rejectionTable = rejectionCountsByLocale[localeTag] ?: HashMap()
             val rejectionRecencyTable = rejectionLastSeenByLocale[localeTag] ?: HashMap()
@@ -568,6 +588,13 @@ class PersonalBigramStore private constructor(private val context: Context) {
                     "Personal bigram rejection flush for '$localeTag' failed; previous on-disk state preserved"
                 }
             }
+            val persistedAll = persisted && rejectionsPersisted
+            loadStates[localeTag] = if (persistedAll) {
+                PersonalNgramPersistence.LoadState.READY
+            } else {
+                PersonalNgramPersistence.LoadState.WRITE_FAILED
+            }
+            persistedAll
         }
     }
 
@@ -685,6 +712,7 @@ class PersonalBigramStore private constructor(private val context: Context) {
             synchronized(rejectionCountsByLocale) { rejectionCountsByLocale.clear() }
             synchronized(rejectionLastSeenByLocale) { rejectionLastSeenByLocale.clear() }
             pendingCommitsByLocale.clear()
+            loadStates.clear()
             runCatching {
                 // Match the loose prefix so leftover `.tmp` flushes from a
                 // prior crashed save are cleaned up by reset too.
