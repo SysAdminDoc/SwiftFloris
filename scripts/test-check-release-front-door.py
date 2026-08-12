@@ -168,7 +168,7 @@ def main() -> int:
         fixture = Path(tmp) / "prep"
         fixture.mkdir()
         write_fixture(fixture, version="1.9.55", code="2104", readme_version="1.9.54")
-        init_repo(fixture)
+        init_repo(fixture, tag="v1.9.54", push_tag=True)
         passing = run_checker(fixture, "--allow-unpublished", released_tag=None)
         if passing.returncode != 0:
             print(passing.stdout)
@@ -184,6 +184,25 @@ def main() -> int:
         if failing.returncode != 1 or "--allow-unpublished cannot pass" not in failing.stdout:
             print(failing.stdout)
             print("expected allow-unpublished to fail once public surfaces claim the release")
+            return 1
+
+    with TemporaryDirectory(ignore_cleanup_errors=True) as tmp:
+        fixture = Path(tmp) / "fdroid-ref"
+        fixture.mkdir()
+        write_fixture(fixture)
+        init_repo(fixture, tag="v1.9.54", push_tag=True)
+        recipe = fixture / "fdroid" / "io.github.sysadmindoc.swiftfloris.yml"
+        recipe.write_text(
+            recipe.read_text(encoding="utf-8").replace(
+                "commit: v1.9.54",
+                "commit: v9.9.99",
+            ),
+            encoding="utf-8",
+        )
+        failing = run_checker(fixture, released_tag="v1.9.54")
+        if failing.returncode != 1 or "commit ref v9.9.99 does not resolve to a local tag" not in failing.stdout:
+            print(failing.stdout)
+            print("expected an unresolvable F-Droid commit ref to fail")
             return 1
 
     print("release-front-door checker self-test: PASS")

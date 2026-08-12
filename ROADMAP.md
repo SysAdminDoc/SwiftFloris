@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Gate the F-Droid recipe against a resolvable ref
-  Why: `fdroid/io.github.sysadmindoc.swiftfloris.yml:25` pins `commit: v1.9.59` and F-Droid resolves that ref literally. Nothing checks it, so the recipe treated as "prepared, awaiting a GitLab MR" would have failed on submission. Tagging is covered by the P0 runner item; this is the check that stops it recurring.
-  Evidence: `fdroid/io.github.sysadmindoc.swiftfloris.yml:25`; `git tag | sort -V | tail` ends at v1.9.56; `Roadmap_Blocked.md:135-139`; `README.md:375-377`
-  Touches: `scripts/check-release-front-door.sh`, `scripts/test-check-release-front-door.py`, `fdroid/io.github.sysadmindoc.swiftfloris.yml`
-  Acceptance: a release gate fails when the F-Droid recipe's `commit:` value does not resolve to an existing tag, and its self-test proves the gate can fail.
-  Complexity: S
-
 - [ ] P1 — Wire or delete the smart-compose / MCP router stack
   Why: roughly 900 LOC of router, cache, context window, result filter and opt-in dispatcher is constructed only in tests. The shipping path calls the provider registry directly, bypassing the router's truncation, cache, filter **and `AddonInvocationAudit.record(...)`** — so the privacy audit log has readers and no writer, and a user reads an empty log as "no AI invocation occurred". Meanwhile the IME still binds every discovered third-party MCP daemon at startup for a dispatch path whose only caller is the uncalled `NlpAddonHub`. Whichever dispatcher gets wired first also decides whether the `McpPrefs` daemon/tool toggles ever gate anything: `OptInAddonDispatcher` calls `mcpClient.callTool` directly while its own KDoc calls itself the load-bearing privacy seam.
   Evidence: `ime/smartcompose/{SmartComposeRouter,SmartComposeCache,SmartComposeContextWindow,SmartComposeResultFilter,OptInAddonDispatcher,RewriteRouter,NlpAddonHub}.kt` — no `app/src/main` construction; shipping call at `ime/nlp/NlpManager.kt:383-390`; audit readers at `app/settings/privacy/PrivacyAuditDisplay.kt:35` and `PrivacyAuditExportPolicy.kt:37`; binding at `FlorisImeService.kt:428-437` → `ime/mcp/McpServiceLifecycle.kt:56-71`; `ime/smartcompose/OptInAddonDispatcher.kt:41-45,80-99`; `ime/mcp/McpDispatchRouter.kt:51-53` (permissive defaults); `README.md:337`

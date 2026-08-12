@@ -13,6 +13,8 @@
 #   3. README.md "Current release" line matches projectVersionName
 #   4. Exact local tag, origin tag, and GitHub Release exist for
 #      projectVersionName once public surfaces claim that version
+#   5. The F-Droid recipe's commit ref resolves to the same local and origin
+#      tag that F-Droid will fetch
 #
 # Publication checks are hard failures by default because public install
 # trust breaks when README/F-Droid metadata claim a version that GitHub
@@ -140,10 +142,15 @@ else
 fi
 
 # --- 4. Public metadata and publication proof ---
+origin_url="$(git remote get-url origin 2>/dev/null || true)"
 fdroid_yaml="fdroid/io.github.sysadmindoc.swiftfloris.yml"
 if [ -f "$fdroid_yaml" ]; then
   fdroid_current="$(grep -oP 'CurrentVersion:\s*"\K[0-9]+\.[0-9]+\.[0-9]+' "$fdroid_yaml" | head -1)" || true
-  fdroid_commit="$(grep -oP 'commit:\s*v\K[0-9]+\.[0-9]+\.[0-9]+' "$fdroid_yaml" | head -1)" || true
+  fdroid_commit_ref="$(grep -oP '^\s*commit:\s*\K[^\s#]+' "$fdroid_yaml" | head -1)" || true
+  fdroid_commit=""
+  if [[ "$fdroid_commit_ref" =~ ^v([0-9]+\.[0-9]+\.[0-9]+)$ ]]; then
+    fdroid_commit="${BASH_REMATCH[1]}"
+  fi
   mark_public_claim "$fdroid_current"
   mark_public_claim "$fdroid_commit"
   for fdroid_source in current commit; do
@@ -152,6 +159,21 @@ if [ -f "$fdroid_yaml" ]; then
       surface_mismatch "${fdroid_yaml} ${fdroid_source}" "$fdroid_value"
     fi
   done
+
+  if [ -z "$fdroid_commit_ref" ]; then
+    fail "${fdroid_yaml} is missing a tag-valued commit ref"
+  elif ! git show-ref --verify --quiet "refs/tags/${fdroid_commit_ref}"; then
+    fail "${fdroid_yaml} commit ref ${fdroid_commit_ref} does not resolve to a local tag"
+  else
+    echo "${fdroid_yaml} local commit ref: OK (${fdroid_commit_ref})"
+    if [ -n "$origin_url" ] && git ls-remote --exit-code --tags --refs origin "refs/tags/${fdroid_commit_ref}" >/dev/null 2>&1; then
+      echo "${fdroid_yaml} origin commit ref: OK (${fdroid_commit_ref})"
+    elif [ -n "$origin_url" ]; then
+      fail "${fdroid_yaml} commit ref ${fdroid_commit_ref} is missing from origin tags"
+    else
+      fail "${fdroid_yaml} commit ref ${fdroid_commit_ref} cannot be checked because origin is missing"
+    fi
+  fi
 fi
 
 publication_required=true
@@ -180,7 +202,6 @@ else
   publication_problem "missing local tag ${expected_tag}; create the tag or revert the public version bump"
 fi
 
-origin_url="$(git remote get-url origin 2>/dev/null || true)"
 if [ -z "$origin_url" ]; then
   publication_problem "origin remote missing; cannot verify remote tag ${expected_tag}"
 else

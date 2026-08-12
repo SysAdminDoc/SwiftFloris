@@ -18,6 +18,8 @@
   check and the shared trust-capabilities registry.
 - Expand live-document integrity to scan planning and untracked Markdown, reject
   dead roadmap/workflow references, and validate the blocked-roadmap structure.
+- Require the F-Droid recipe's `commit:` ref to resolve on both local and origin
+  tag sets, with a fixture proving an unresolvable ref fails the release gate.
 
 ## v1.9.59 — 2026-08-11
 
