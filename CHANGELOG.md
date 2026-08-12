@@ -5,6 +5,8 @@
 - Make the OSV release gate classify numeric CVSS scores and supported vectors
   correctly, fail closed on unknown severity, and run a regression self-test
   beside the release gate.
+- Keep smart-compose ghost text off during incognito sessions, including in
+  ordinary non-sensitive editors, and retain request-scoped privacy gating.
 
 ## v1.9.59 — 2026-08-11
 

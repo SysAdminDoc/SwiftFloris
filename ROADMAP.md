@@ -21,13 +21,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P0
 
-- [ ] P0 — Gate inline ghost text on incognito, not only on editor sensitivity
-  Why: the request snapshot carries `isPrivateSession` (user-toggled or per-app incognito) but only `isEditorSensitive` reaches `buildGhostTextCandidate`, and `isEditorSensitive` is derived from `inputType`/`imeOptions` and cannot see the user's toggle. `HeuristicSmartComposeProvider` is registered in release builds and reads the personal bigram/trigram stores, so with the smart-compose preference on, learned personal words render as ghost text in an ordinary field while incognito is active. The word-suggestion path handles this correctly. The default-off preference bounds the blast radius; the advertised guarantee does not survive it.
-  Evidence: `ime/nlp/NlpManager.kt:249-259` (snapshot), `:347-353` (only `isEditorSensitive` passed), `:369-373` (gate); `ime/nlp/SuggestionPrivacyPolicy.kt:48-59` (`resolveIncognitoMode`); `ime/smartcompose/HeuristicSmartComposeProvider.kt:92-105`; `FlorisApplication.kt:113-117` (release registration) and the stale comment at `:134`; correct sibling in `ime/nlp/latin/LatinLanguageProvider.kt`; `app/prefs/CorrectionPrefs.kt:116`; `README.md:58`
-  Touches: `ime/nlp/NlpManager.kt`, `FlorisApplication.kt`, `app/src/test/.../ime/nlp/`
-  Acceptance: `buildGhostTextCandidate` receives and honours `isPrivateSession`; a test asserts no ghost-text candidate is produced with incognito on, smart compose on, and a non-sensitive editor; the stale "no-op provider" comment in `FlorisApplication` is corrected.
-  Complexity: S
-
 - [ ] P0 — Make the release-evidence runner impossible to skip, and fix the two gates it would have caught
   Why: `scripts/check-release-front-door.sh` fails at HEAD with 3 errors (no `v1.9.59` tag locally or on origin, no GitHub Release) and `scripts/check-repo-hygiene.sh` fails on a stale `source-stub-hygiene-allowlist.tsv` entry for a `FIXME` that v1.9.59 deleted. Both are wired with `AllowedExitCodes = @(0)` and `throw`, so v1.9.59 shipping proves the runner was not executed. The one test guarding the wiring pins 2 of ~15 gates, five gate scripts have no caller at all, and 12 of 13 self-tests never run — including one `Roadmap_Blocked.md:170` cites as standing evidence.
   Evidence: `bash scripts/check-release-front-door.sh` → `FAIL (3 error(s))`; `bash scripts/check-repo-hygiene.sh` → stale entry at `scripts/source-stub-hygiene-allowlist.tsv:2`; `scripts/release-evidence.ps1:243-254`; `app/src/test/.../config/ReleaseEvidenceContractTest.kt`; uncalled: `check-fork-identity.sh`, `check-layout-json.py`, `check-baseline-profile-freshness.sh`, `check-benchmark-trends.py`, `verify-targetsdk37-shadow.py`

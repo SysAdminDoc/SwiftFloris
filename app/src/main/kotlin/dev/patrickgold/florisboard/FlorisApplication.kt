@@ -131,8 +131,8 @@ class FlorisApplication : Application() {
                     dev.patrickgold.florisboard.ime.smartcompose
                         .SmartComposeProviderRegistry.setActive(instance)
                 } catch (_: Throwable) {
-                    // Release / non-debug — leave the default no-op
-                    // provider in place.
+                    // Release / non-debug — leave the heuristic provider
+                    // registered above in place.
                 }
             }
             if (!UserManagerCompat.isUserUnlocked(this)) {

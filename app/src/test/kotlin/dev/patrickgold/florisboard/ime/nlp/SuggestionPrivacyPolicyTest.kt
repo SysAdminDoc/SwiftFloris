@@ -116,4 +116,19 @@ class SuggestionPrivacyPolicyTest : FunSpec({
             keyVariation = KeyVariation.PASSWORD,
         ) shouldBe false
     }
+
+    test("incognito suppresses ghost text even in a non-sensitive editor") {
+        SuggestionPrivacyPolicy.allowsGhostText(
+            isPrivateSession = true,
+            isEditorSensitive = false,
+        ) shouldBe false
+        SuggestionPrivacyPolicy.allowsGhostText(
+            isPrivateSession = false,
+            isEditorSensitive = true,
+        ) shouldBe false
+        SuggestionPrivacyPolicy.allowsGhostText(
+            isPrivateSession = false,
+            isEditorSensitive = false,
+        ) shouldBe true
+    }
 })

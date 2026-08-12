@@ -125,8 +125,9 @@ class NlpManagerSuggestionPrivacySnapshotTest {
         val source = sourceFile.readText()
         val body = extractFunctionBody(source, "private suspend fun buildGhostTextCandidate(")
 
+        source shouldContain "isPrivateSession: Boolean"
         source shouldContain "isEditorSensitive: Boolean"
-        body shouldContain "if (isEditorSensitive)"
+        body shouldContain "SuggestionPrivacyPolicy.allowsGhostText"
         body shouldContain "provider.predictNextTokensAsync"
         check(!body.contains("editorInstance.activeInfo")) {
             "Ghost-text gating must use the request-scoped editor sensitivity snapshot."

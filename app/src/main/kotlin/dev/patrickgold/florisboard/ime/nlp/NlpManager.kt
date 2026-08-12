@@ -340,15 +340,16 @@ class NlpManager(context: Context) {
                 )
             }
             // ROADMAP §0 P1 — Smart-Compose inline ghost-text. When a
-            // SmartComposeProvider addon is bound, ask it for a multi-token
-            // continuation given the preceding text. The default no-op
-            // provider returns NoSuggestion, so this path is invisible
-            // until the L1.1a addon is installed.
+            // SmartComposeProvider is enabled, ask it for a multi-token
+            // continuation given the preceding text. The registered
+            // heuristic provider is preference-gated and returns NoSuggestion
+            // until smart compose is enabled.
             val ghostTextCandidate = if (suggestionsEnabled) {
                 buildGhostTextCandidate(
                     subtype = subtype,
                     content = content,
                     currentWord = currentWord,
+                    isPrivateSession = requestPrivacy.isPrivateSession,
                     isEditorSensitive = requestPrivacy.isEditorSensitive,
                 )
             } else {
@@ -371,14 +372,14 @@ class NlpManager(context: Context) {
         subtype: Subtype,
         content: EditorContent,
         currentWord: String,
+        isPrivateSession: Boolean,
         isEditorSensitive: Boolean,
     ): GhostTextSuggestionCandidate? {
-        // Honor sensitive fields before deriving ghost text from the user's personal
-        // n-gram history. The composing-disabled gate only covers password *variations*;
-        // it does NOT cover IME_FLAG_NO_PERSONALIZED_LEARNING, which a field can set to
-        // ask the IME to suppress personalized output. SensitiveFieldGuard covers both,
-        // keeping ghost text consistent with the rest of the sensitive-field surface.
-        if (isEditorSensitive) {
+        // Honor both the user-controlled private session and sensitive fields before
+        // deriving ghost text from the user's personal n-gram history. The composing-
+        // disabled gate only covers password variations; it cannot see the incognito
+        // toggle and is not a substitute for this request-scoped privacy gate.
+        if (!SuggestionPrivacyPolicy.allowsGhostText(isPrivateSession, isEditorSensitive)) {
             return null
         }
         val provider = SmartComposeProviderRegistry.active

@@ -84,6 +84,13 @@ internal object SuggestionPrivacyPolicy {
             !isIncognitoMode &&
             keyVariation != KeyVariation.PASSWORD
     }
+
+    fun allowsGhostText(
+        isPrivateSession: Boolean,
+        isEditorSensitive: Boolean,
+    ): Boolean {
+        return !isPrivateSession && !isEditorSensitive
+    }
 }
 
 internal data class SuggestionRequestPrivacySnapshot(
