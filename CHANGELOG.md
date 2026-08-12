@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Make the OSV release gate classify numeric CVSS scores and supported vectors
+  correctly, fail closed on unknown severity, and run a regression self-test
+  beside the release gate.
+
 ## v1.9.59 — 2026-08-11
 
 - Screen addon and MCP daemon enrolment against a permission allowlist so

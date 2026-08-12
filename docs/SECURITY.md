@@ -90,8 +90,12 @@ resolved Gradle metadata available in the checkout. It writes `osv-result.json`,
 summary under `build/release-evidence/<timestamp>/`.
 
 If the release-time scan finds a HIGH or CRITICAL advisory, `scripts/osv-release-gate.py` blocks the release. The
-gate parses `osv-result.json`, classifies each finding by CVSS score or database severity, and exits non-zero for any
-unoverridden HIGH/CRITICAL match. LOW and MEDIUM findings are summarized but non-blocking.
+gate parses `osv-result.json`, reads numeric CVSS scores or calculates supported CVSS v3 vectors, and falls back to
+the scanner's database severity for other vectors. CVSS v4 vectors are not treated as their `4.0` version prefix;
+their lookup/interpolation model is defined by [FIRST's specification](https://www.first.org/cvss/v4.0/specification-document).
+An unparseable or otherwise unclassified finding is `UNKNOWN` and also blocks the release, so malformed advisory data
+cannot silently pass. The gate exits non-zero for any unoverridden HIGH/CRITICAL/UNKNOWN match. LOW and MEDIUM findings
+are summarized but non-blocking.
 
 Release evidence also runs `scripts/check-security-dependency-freshness.py` for security-critical dependencies whose
 embedded native baselines are not fully modeled by OSV. The reviewed floors and temporary override records live in

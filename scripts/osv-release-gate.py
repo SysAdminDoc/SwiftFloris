@@ -3,7 +3,7 @@
 scripts/osv-release-gate.py
 
 Release-time OSV severity gate. Parses osv-result.json and fails if any
-HIGH or CRITICAL advisory is present that is not explicitly overridden in
+HIGH, CRITICAL, or unclassified advisory is present that is not explicitly overridden in
 .github/osv-overrides.json.
 
 Exit codes:
@@ -26,6 +26,7 @@ Override file format (.github/osv-overrides.json):
 """
 
 import json
+import math
 import sys
 from datetime import date
 from pathlib import Path
@@ -33,7 +34,112 @@ from pathlib import Path
 OSV_RESULT = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("osv-result.json")
 OVERRIDES_FILE = Path(".github/osv-overrides.json")
 
-BLOCKING_SEVERITIES = {"HIGH", "CRITICAL"}
+BLOCKING_SEVERITIES = {"HIGH", "CRITICAL", "UNKNOWN"}
+SEVERITY_ORDER = {"LOW": 0, "MEDIUM": 1, "HIGH": 2, "CRITICAL": 3, "UNKNOWN": 4}
+
+
+def classify_score(score):
+    """Map a numeric CVSS score to the standard qualitative severity."""
+    if not isinstance(score, (int, float)) or isinstance(score, bool):
+        return None
+    if not 0.0 <= score <= 10.0:
+        return None
+    if score >= 9.0:
+        return "CRITICAL"
+    if score >= 7.0:
+        return "HIGH"
+    if score >= 4.0:
+        return "MEDIUM"
+    return "LOW"
+
+
+def roundup(value):
+    """Round a CVSS value up to one decimal place."""
+    return math.ceil((value - 1e-10) * 10.0) / 10.0
+
+
+def parse_cvss_vector(vector):
+    """Return a CVSS v3 base score, or None for unsupported/invalid vectors.
+
+    OSV commonly publishes CVSS v3 vectors instead of a numeric score. CVSS v4
+    uses a lookup/interpolation model rather than the v3 equation; it must not
+    be treated as the numeric version prefix. If a v4 result has no numeric
+    score, the caller falls back to OSV's database severity and otherwise fails
+    closed as UNKNOWN.
+    """
+    if not isinstance(vector, str):
+        return None
+    parts = vector.strip().split("/")
+    if not parts or parts[0] not in {"CVSS:3.0", "CVSS:3.1"}:
+        return None
+
+    metrics = {}
+    for part in parts[1:]:
+        name, separator, value = part.partition(":")
+        if not separator or name in metrics:
+            return None
+        metrics[name] = value
+
+    required = {"AV", "AC", "PR", "UI", "S", "C", "I", "A"}
+    if not required.issubset(metrics) or set(metrics) - required - {"E", "RL", "RC"}:
+        return None
+
+    weights = {
+        "AV": {"N": 0.85, "A": 0.62, "L": 0.55, "P": 0.20},
+        "AC": {"L": 0.77, "H": 0.44},
+        "UI": {"N": 0.85, "R": 0.62},
+        "C": {"N": 0.0, "L": 0.22, "H": 0.56},
+        "I": {"N": 0.0, "L": 0.22, "H": 0.56},
+        "A": {"N": 0.0, "L": 0.22, "H": 0.56},
+    }
+    try:
+        av = weights["AV"][metrics["AV"]]
+        ac = weights["AC"][metrics["AC"]]
+        ui = weights["UI"][metrics["UI"]]
+        confidentiality = weights["C"][metrics["C"]]
+        integrity = weights["I"][metrics["I"]]
+        availability = weights["A"][metrics["A"]]
+        scope = metrics["S"]
+        if scope not in {"U", "C"}:
+            return None
+        if scope == "U":
+            pr = {"N": 0.85, "L": 0.62, "H": 0.27}[metrics["PR"]]
+        else:
+            pr = {"N": 0.85, "L": 0.68, "H": 0.50}[metrics["PR"]]
+    except (KeyError, TypeError):
+        return None
+
+    impact_sub_score = 1.0 - (
+        (1.0 - confidentiality)
+        * (1.0 - integrity)
+        * (1.0 - availability)
+    )
+    if scope == "U":
+        impact = 6.42 * impact_sub_score
+    else:
+        impact = 7.52 * (impact_sub_score - 0.029) - 3.25 * (impact_sub_score - 0.02) ** 15
+    if impact <= 0.0:
+        return 0.0
+
+    exploitability = 8.22 * av * ac * pr * ui
+    if scope == "U":
+        base_score = min(impact + exploitability, 10.0)
+    else:
+        base_score = min(1.08 * (impact + exploitability), 10.0)
+    return roundup(base_score)
+
+
+def extract_cvss_score(score_value):
+    """Extract a numeric score or calculate one from a supported CVSS vector."""
+    if isinstance(score_value, (int, float)) and not isinstance(score_value, bool):
+        return float(score_value)
+    if isinstance(score_value, str):
+        stripped = score_value.strip()
+        try:
+            return float(stripped)
+        except ValueError:
+            return parse_cvss_vector(stripped)
+    return None
 
 
 def load_overrides():
@@ -56,24 +162,18 @@ def load_overrides():
 
 
 def extract_severity(vuln):
+    candidates = []
     for sv in vuln.get("severity", []):
-        score_str = sv.get("score", "")
-        if "CVSS" in sv.get("type", ""):
-            try:
-                score = float(score_str.split("/")[0].split(":")[-1])
-            except (ValueError, IndexError):
-                continue
-            if score >= 9.0:
-                return "CRITICAL"
-            if score >= 7.0:
-                return "HIGH"
-            if score >= 4.0:
-                return "MEDIUM"
-            return "LOW"
-    db_severity = vuln.get("database_specific", {}).get("severity", "").upper()
+        if "CVSS" not in str(sv.get("type", "")).upper():
+            continue
+        severity = classify_score(extract_cvss_score(sv.get("score", "")))
+        if severity is not None:
+            candidates.append(severity)
+    database_specific = vuln.get("database_specific", {})
+    db_severity = database_specific.get("severity", "").upper() if isinstance(database_specific, dict) else ""
     if db_severity in ("CRITICAL", "HIGH", "MEDIUM", "LOW"):
-        return db_severity
-    return "UNKNOWN"
+        candidates.append(db_severity)
+    return max(candidates, key=SEVERITY_ORDER.get) if candidates else "UNKNOWN"
 
 
 def main():
@@ -124,7 +224,7 @@ def main():
             print(f"  {e['severity']:8s} {e['id']} ({e['package']}){status}")
 
     if blocking:
-        print(f"\n::error::Release blocked by {len(blocking)} HIGH/CRITICAL advisory(ies):")
+        print(f"\n::error::Release blocked by {len(blocking)} HIGH/CRITICAL/UNKNOWN advisory(ies):")
         for e in blocking:
             print(f"  {e['severity']:8s} {e['id']} ({e['package']}): {e['summary']}")
         print(

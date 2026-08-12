@@ -284,6 +284,7 @@ if ($SkipOsvScan) {
     }
     $osvResult = Join-Path $OutputDir "osv-result.json"
     Invoke-EvidenceCommand "osv-scan" $osv.Source (Get-OsvScanArguments $osv.Source $osvResult) @(0, 1)
+    Invoke-EvidenceCommand "osv-release-gate-self-test" $python @("scripts/test-osv-release-gate.py")
     Invoke-EvidenceCommand "osv-release-gate" $python @(
         "scripts/osv-release-gate.py",
         $osvResult

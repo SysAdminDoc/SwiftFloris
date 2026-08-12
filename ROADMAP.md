@@ -21,13 +21,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P0
 
-- [ ] P0 — Fix the OSV release gate, which currently cannot block any advisory
-  Why: `extract_severity` treats the CVSS *vector string* as the score. `float("CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H".split("/")[0].split(":")[-1])` is `3.1`, so a 9.8 CRITICAL grades `LOW`; v4 vectors yield `4.0` → `MEDIUM`. Because the loop returns inside the `if`, the `database_specific.severity` fallback is unreachable once any CVSS entry exists, and `UNKNOWN` is non-blocking too. With `BLOCKING_SEVERITIES = {"HIGH","CRITICAL"}` nothing can ever fail the gate. It is the only vulnerability gate in the release flow, there is no CI behind it, and `docs/SECURITY.md:92-93` says it blocks. Reproduced by hand on 2026-08-11.
-  Evidence: `scripts/osv-release-gate.py:36`, `:58-76`, gate at `:115`; invoked at `scripts/release-evidence.ps1:287-290`; claim at `docs/SECURITY.md:92-93`
-  Touches: `scripts/osv-release-gate.py`, a new `scripts/test-osv-release-gate.py`, `scripts/release-evidence.ps1`, `docs/SECURITY.md`
-  Acceptance: severity is read from the numeric CVSS base score (or computed from the vector), not from the vector prefix; `UNKNOWN` blocks rather than passes; a self-test feeds a synthetic OSV result containing one CRITICAL and asserts a non-zero exit, and the self-test is wired into `release-evidence.ps1` alongside the gate it guards.
-  Complexity: S
-
 - [ ] P0 — Gate inline ghost text on incognito, not only on editor sensitivity
   Why: the request snapshot carries `isPrivateSession` (user-toggled or per-app incognito) but only `isEditorSensitive` reaches `buildGhostTextCandidate`, and `isEditorSensitive` is derived from `inputType`/`imeOptions` and cannot see the user's toggle. `HeuristicSmartComposeProvider` is registered in release builds and reads the personal bigram/trigram stores, so with the smart-compose preference on, learned personal words render as ghost text in an ordinary field while incognito is active. The word-suggestion path handles this correctly. The default-off preference bounds the blast radius; the advertised guarantee does not survive it.
   Evidence: `ime/nlp/NlpManager.kt:249-259` (snapshot), `:347-353` (only `isEditorSensitive` passed), `:369-373` (gate); `ime/nlp/SuggestionPrivacyPolicy.kt:48-59` (`resolveIncognitoMode`); `ime/smartcompose/HeuristicSmartComposeProvider.kt:92-105`; `FlorisApplication.kt:113-117` (release registration) and the stale comment at `:134`; correct sibling in `ime/nlp/latin/LatinLanguageProvider.kt`; `app/prefs/CorrectionPrefs.kt:116`; `README.md:58`
