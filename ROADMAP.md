@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Declare the two missing `<input-method>` attributes
-  Why: `onPrepareStylusHandwriting`/`onStartStylusHandwriting`/`onStylusHandwritingMotionEvent`/`onFinishStylusHandwriting` are fully implemented and a shipped Settings toggle gates them, but `android:supportsStylusHandwriting` defaults to `false` in AOSP, so the platform never starts a handwriting session and the whole path is unreachable. `android:supportsInlineSuggestionsWithTouchExploration` also defaults to `false`, which suppresses inline autofill suggestions for every TalkBack user — on a keyboard that ships inline autofill and advertises TalkBack support.
-  Evidence: `app/src/main/res/xml/method.xml` (20 lines, declares neither); `FlorisImeService.kt:601-680`; `app/prefs/KeyboardPrefs.kt:145`; parsing and defaults in https://github.com/aosp-mirror/platform_frameworks_base/blob/master/core/java/android/view/inputmethod/InputMethodInfo.java
-  Touches: `app/src/main/res/xml/method.xml`, `app/src/test/.../` (a manifest-contract test), `docs/ACCESSIBILITY.md`, `docs/INLINE_AUTOFILL.md`
-  Acceptance: `method.xml` declares both attributes; a test asserts their presence so neither can be dropped; on the attached device, TalkBack + a password manager shows inline suggestion pills, and stylus handwriting reaches `onStartStylusHandwriting` (which still declines, correctly, with no recognizer bound).
-  Complexity: S
-
 - [ ] P1 — Stop rendering empty states while data is still loading
   Why: three screens show "there's nothing here" before their flow emits. The theme screen's copy tells a first-run user to reinstall the app; the addons screen renders its progress card and two "nothing installed" empty states simultaneously during the first scan because `scanInProgress` suppresses only the action button.
   Evidence: `app/settings/theme/ThemeManagerScreen.kt:111-118` (+ `strings.xml:664-665`); `app/ext/ExtensionListScreen.kt:164-178`; `app/settings/addons/AddonsSettingsScreen.kt:187`, `:232-239`, `:249-257`

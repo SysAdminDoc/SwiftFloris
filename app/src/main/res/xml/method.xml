@@ -3,8 +3,13 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:settingsActivity="dev.patrickgold.florisboard.SettingsLauncherAlias"
     android:supportsInlineSuggestions="true"
+    android:supportsInlineSuggestionsWithTouchExploration="true"
+    android:supportsStylusHandwriting="true"
     android:supportsSwitchingToNextInputMethod="true"
-    tools:targetApi="r">
+    tools:targetApi="tiramisu">
+
+    <!-- API 33+: advertise the IME callbacks and inline autofill path when TalkBack or
+         another touch-exploration service is active. A recognizer addon remains optional. -->
 
     <!-- Add default system subtype so we can properly set the icon and label -->
     <subtype

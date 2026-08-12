@@ -36,6 +36,9 @@
 - Reconcile stale device-tier blockers with the attached API-36 emulator:
   preserve the real app/password-manager/API-37 gaps, close the already-shipped
   instrumented smoke coverage, and keep the missing MCP addon sample blocked.
+- Declare API-33 stylus-handwriting and TalkBack touch-exploration inline-
+  autofill capabilities in the IME manifest, with a contract test and updated
+  accessibility/autofill verification guidance.
 
 ## v1.9.59 — 2026-08-11
 
