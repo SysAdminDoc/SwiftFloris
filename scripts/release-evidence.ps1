@@ -202,6 +202,37 @@ if (Test-Path $AndroidSdk) {
 $bash = Get-GitBash
 $python = Get-Python
 
+$manualGateManifest = Join-Path $RepoRoot "scripts\release-evidence-manual-gates.tsv"
+if (-not (Test-Path $manualGateManifest)) {
+    throw "Release-evidence manual-gate manifest is missing: $manualGateManifest"
+}
+$manualGateEntries = @()
+foreach ($line in Get-Content $manualGateManifest) {
+    if ([string]::IsNullOrWhiteSpace($line) -or $line.TrimStart().StartsWith("#")) {
+        continue
+    }
+    $fields = $line -split "`t", 2
+    if ($fields.Count -ne 2 -or [string]::IsNullOrWhiteSpace($fields[0]) -or [string]::IsNullOrWhiteSpace($fields[1])) {
+        throw "Malformed release-evidence manual-gate entry: $line"
+    }
+    $manualGateEntries += [pscustomobject]@{
+        Path = $fields[0].Trim()
+        Reason = $fields[1].Trim()
+    }
+}
+foreach ($entry in $manualGateEntries) {
+    if (-not (Test-Path (Join-Path $RepoRoot $entry.Path))) {
+        throw "Manual release-evidence gate does not exist: $($entry.Path)"
+    }
+    Add-Summary "Manual gate (operator-run): $($entry.Path) — $($entry.Reason)"
+}
+
+$selfTestScripts = Get-ChildItem -LiteralPath (Join-Path $RepoRoot "scripts") -Filter "test-*.py" -File | Sort-Object Name
+foreach ($selfTest in $selfTestScripts) {
+    $relativePath = "scripts/$($selfTest.Name)"
+    Invoke-EvidenceCommand "self-test-$($selfTest.BaseName)" $python @($relativePath)
+}
+
 $gradleReleaseEvidenceArgs = @(
     "--no-daemon",
     "--no-build-cache",
@@ -243,8 +274,10 @@ if ($AllowUnpublishedRelease) {
 Invoke-EvidenceCommand "release-front-door" $bash $releaseArgs
 Invoke-EvidenceCommand "fastlane-metadata" $bash @((Convert-ToGitBashPath "scripts\check-fastlane-metadata.sh"))
 Invoke-EvidenceCommand "backup-privacy-copy" $bash @((Convert-ToGitBashPath "scripts\check-backup-privacy-copy.sh"))
+Invoke-EvidenceCommand "fork-identity" $bash @((Convert-ToGitBashPath "scripts\check-fork-identity.sh"))
+Invoke-EvidenceCommand "layout-json" $python @("scripts/check-layout-json.py")
+Invoke-EvidenceCommand "locale-coverage" $python @("scripts/check-locale-coverage.py", "--check")
 Invoke-EvidenceCommand "public-doc-version-pins" $python @("scripts/check-public-doc-version-pins.py")
-Invoke-EvidenceCommand "trust-capability-gate-self-test" $python @("scripts/test-check-trust-capabilities.py")
 Invoke-EvidenceCommand "trust-capability-gate" $python @("scripts/check-trust-capabilities.py")
 Invoke-EvidenceCommand "security-dependency-freshness" $python @("scripts/check-security-dependency-freshness.py")
 Invoke-EvidenceCommand "runblocking-allowlist" $python @("scripts/check-runblocking-allowlist.py")
@@ -252,6 +285,7 @@ Invoke-EvidenceCommand "live-doc-integrity" $python @("scripts/check-live-doc-in
 Invoke-EvidenceCommand "root-crash-logs" $bash @((Convert-ToGitBashPath "scripts\check-no-root-crash-logs.sh"))
 Invoke-EvidenceCommand "repo-hygiene" $bash @((Convert-ToGitBashPath "scripts\check-repo-hygiene.sh"))
 Invoke-EvidenceCommand "kotlin-build-cache-cve-guard" $python (Get-KotlinBuildCacheGuardArguments "gradle-local-gates" $gradleReleaseEvidenceArgs)
+Invoke-EvidenceCommand "targetsdk37-shadow" $python @("scripts/verify-targetsdk37-shadow.py", "--shadow-target", "37")
 
 Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") ($gradleReleaseEvidenceArgs + @(
     ":app:verifyNoInternetPermission",
@@ -284,7 +318,6 @@ if ($SkipOsvScan) {
     }
     $osvResult = Join-Path $OutputDir "osv-result.json"
     Invoke-EvidenceCommand "osv-scan" $osv.Source (Get-OsvScanArguments $osv.Source $osvResult) @(0, 1)
-    Invoke-EvidenceCommand "osv-release-gate-self-test" $python @("scripts/test-osv-release-gate.py")
     Invoke-EvidenceCommand "osv-release-gate" $python @(
         "scripts/osv-release-gate.py",
         $osvResult

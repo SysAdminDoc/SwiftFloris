@@ -7,6 +7,9 @@
   beside the release gate.
 - Keep smart-compose ghost text off during incognito sessions, including in
   ordinary non-sensitive editors, and retain request-scoped privacy gating.
+- Make release evidence exhaustive: discover every gate and Python self-test,
+  record the two connected-device gates as explicit operator-run checks, and
+  repair the repo-hygiene allowlist drift.
 
 ## v1.9.59 — 2026-08-11
 

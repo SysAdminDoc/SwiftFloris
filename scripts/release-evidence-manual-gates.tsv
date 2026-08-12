@@ -1,0 +1,3 @@
+# relative script path<TAB>why this gate remains operator-run
+scripts/check-baseline-profile-freshness.sh	Requires a connected benchmark device to regenerate the baseline-prof.txt artifact; run it after the profile capture and before publishing.
+scripts/check-benchmark-trends.py	Requires fresh candidate benchmark JSON from the attached benchmark device; release-evidence does not manufacture performance measurements.
