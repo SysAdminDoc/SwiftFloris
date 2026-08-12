@@ -16,6 +16,8 @@
 - Unify addon/MCP enrollment, merged-manifest, and addon-APK permission gates
   around the same fail-closed allowlist, including a SEND_SMS fixture regression
   check and the shared trust-capabilities registry.
+- Expand live-document integrity to scan planning and untracked Markdown, reject
+  dead roadmap/workflow references, and validate the blocked-roadmap structure.
 
 ## v1.9.59 — 2026-08-11
 

@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Widen the live-doc-integrity gate to the files that actually drift
-  Why: the gate that exists to catch stale docs is configured to skip them. `EXCLUDED_FILES` holds the five planning docs, `EXCLUDED_PREFIXES` holds the two files containing every `.github/workflows/` reference so `FORBIDDEN_CANONICAL_REFS` can never fire, `collect_live_markdown()` iterates tracked paths so 23 of 27 `docs/*.md` are never scanned, and `check_blocked_roadmap_freshness()` looks for GitHub URLs and release-advance lines that `Roadmap_Blocked.md` does not contain — making it a no-op on the file it is named for. It currently reports `OK (11 files checked)` against 63 dangling `ROADMAP §N` references across 15 docs.
-  Evidence: `scripts/check-live-doc-integrity.py:19-25`, `:27-30`, `:33-37`, `:169-175`, `:355-418`; `git ls-files docs/` returns 4 top-level docs of 27
-  Touches: `scripts/check-live-doc-integrity.py`, `scripts/test-check-live-doc-integrity.py`, the `docs/*.md` files whose violations it then surfaces
-  Acceptance: the gate scans every `docs/*.md` and the planning docs regardless of tracked status; a doc citing a nonexistent path, a `ROADMAP §N` ID that ROADMAP.md does not define, or a `.github/workflows/` file fails the run; `check_blocked_roadmap_freshness` asserts something `Roadmap_Blocked.md` actually contains and its self-test proves it can fail.
-  Complexity: M
-
 - [ ] P1 — Gate the F-Droid recipe against a resolvable ref
   Why: `fdroid/io.github.sysadmindoc.swiftfloris.yml:25` pins `commit: v1.9.59` and F-Droid resolves that ref literally. Nothing checks it, so the recipe treated as "prepared, awaiting a GitLab MR" would have failed on submission. Tagging is covered by the P0 runner item; this is the check that stops it recurring.
   Evidence: `fdroid/io.github.sysadmindoc.swiftfloris.yml:25`; `git tag | sort -V | tail` ends at v1.9.56; `Roadmap_Blocked.md:135-139`; `README.md:375-377`

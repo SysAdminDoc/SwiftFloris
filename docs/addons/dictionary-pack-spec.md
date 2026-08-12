@@ -1,6 +1,6 @@
 # SwiftFloris Dictionary-Pack Addon Specification
 
-**ROADMAP §7 Next-10.3.** This document defines the exact APK + manifest +
+This document defines the exact APK + manifest +
 descriptor shape an external dictionary-pack addon must take to be enrolled
 by the SwiftFloris IME at runtime. It is the foundation that the bundled
 Polish (2025 baseline) addon — and every future language pack — will follow.
@@ -123,7 +123,7 @@ to	980
 
 When a `zipfAssetPath` is declared, the `.tsv` must contain one
 `word\tzipf` line per entry (per the rspeer/wordfreq Zipf scale, range
-[1, 8]). The IME's `ZipfFrequencyTable.parse(...)` (ROADMAP §7 Next-3.2)
+[1, 8]). The IME's `ZipfFrequencyTable.parse(...)`
 handles this format directly.
 
 ## 4. Routing

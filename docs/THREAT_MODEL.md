@@ -97,14 +97,14 @@ zero account requirement"**. Three load-bearing implications:
 
 1. **Zero network permissions on the base APK.** No `INTERNET`, no
    `ACCESS_NETWORK_STATE`, no `ACCESS_WIFI_STATE`. Pinned by
-   `:app:verifyNoInternetPermission` Gradle task (ROADMAP §6 N7.1). The build
+   `:app:verifyNoInternetPermission` Gradle task. The build
    fails if any AndroidManifest declares a permission outside the explicit
    enrollment allowlist. Users can verify this by inspecting the installed
    APK's manifest (`aapt dump permissions`).
 
 2. **No vendor account, no telemetry.** Crash reporting (if ever introduced)
    would be opt-in only, never auto-upload. Federated learning to vendor cloud
-   is on the rejected list (ROADMAP §10).
+   is on the rejected list in the privacy policy.
 
 3. **Auditability over performance/feature debt.** No closed-source `.so` blobs
    (e.g. Google's `libjni_latinimegoogle.so`). Reproducible-build verification

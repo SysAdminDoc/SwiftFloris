@@ -38,6 +38,10 @@ def run_checker(root: Path, gh_bin: str | None = None) -> subprocess.CompletedPr
 def write_fixture(root: Path) -> None:
     (root / "docs").mkdir(parents=True, exist_ok=True)
     (root / ".github" / "ISSUE_TEMPLATE").mkdir(parents=True, exist_ok=True)
+    (root / "ROADMAP.md").write_text(
+        "# Fixture Roadmap\n\n## §1\n\n- [ ] Fixture item\n",
+        encoding="utf-8",
+    )
     (root / "README.md").write_text(
         dedent(
             """
@@ -163,6 +167,18 @@ def main() -> int:
             print("expected tracked local links to pass")
             return 1
 
+        untracked_doc = fixture / "docs" / "UNTRACKED.md"
+        untracked_doc.write_text(
+            "# Untracked\n\n[missing](MISSING.md)\n",
+            encoding="utf-8",
+        )
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "broken link" not in failing.stdout:
+            print(failing.stdout)
+            print("expected an untracked live document to be scanned")
+            return 1
+        untracked_doc.write_text("# Untracked\n\nDeleted workflows are gone.\n", encoding="utf-8")
+
         readme = fixture / "README.md"
         readme.write_text(
             readme.read_text(encoding="utf-8").replace(
@@ -172,10 +188,10 @@ def main() -> int:
             encoding="utf-8",
         )
         git_add(fixture, "README.md")
-        failing = run_checker(fixture)
-        if failing.returncode != 1 or "untracked linked file" not in failing.stdout:
-            print(failing.stdout)
-            print("expected link to untracked local markdown to fail")
+        passing = run_checker(fixture)
+        if passing.returncode != 0:
+            print(passing.stdout)
+            print("expected an existing untracked local markdown link to pass")
             return 1
 
         readme.write_text("# Fixture\n\nDeleted workflows are gone.\n", encoding="utf-8")
@@ -194,13 +210,32 @@ def main() -> int:
             print("expected deleted workflow literal to fail")
             return 1
 
+        readme.write_text("# Fixture\n\nSee ROADMAP §2 for the next step.\n", encoding="utf-8")
+        git_add(fixture, "README.md")
+        failing = run_checker(fixture)
+        if failing.returncode != 1 or "undefined ROADMAP section §2" not in failing.stdout:
+            print(failing.stdout)
+            print("expected undefined ROADMAP section to fail")
+            return 1
+
         readme.write_text("# Fixture\n\nPublic docs link to [security](docs/SECURITY.md).\n", encoding="utf-8")
         git_add(fixture, "README.md")
         blocked = fixture / "Roadmap_Blocked.md"
+        blocked.write_text("# Blocked\n", encoding="utf-8")
+        malformed_blocked = run_checker(fixture)
+        if malformed_blocked.returncode != 1 or "missing required" not in malformed_blocked.stdout:
+            print(malformed_blocked.stdout)
+            print("expected malformed blocked roadmap to fail freshness checks")
+            return 1
+
         blocked.write_text(
             dedent(
                 """
-                # Blocked
+                # SwiftFloris — Blocked Roadmap Items
+
+                ## Blocked on External Deliverables
+
+                ## Blocked on Hardware / Device Testing
 
                 - [ ] P0 - Release and close the low-memory SymSpell crash follow-through
                   Why: issue #9 reports typing OOM on released `v1.9.48`; users need the public release channel to advance past `v1.9.48`.

@@ -1,6 +1,6 @@
 # SwiftFloris Addon APK Validation Contract
 
-**ROADMAP matrix #10 + ROADMAP §7 Next-12.4.** This document defines the universal validation contract every
+**Addon validation contract.** This document defines the universal validation contract every
 SwiftFloris addon APK must pass before it can be enrolled at runtime by the IME's `AddonEnumerator`. It applies to
 every addon type (dictionary-pack, theme-pack, layout-pack, popup-mapping-pack, language-pack) and to any future
 native-bearing addon (whisper.cpp voice runtime, ONNX glide model, LiteRT-LM smart-compose, Bergamot translator,

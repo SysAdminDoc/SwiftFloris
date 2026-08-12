@@ -74,7 +74,7 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
   [`ime/text/gestures/StatisticalGlideTypingClassifier.kt`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/StatisticalGlideTypingClassifier.kt).
 - **Where.** On this device only. **No cloud lookup. No closed
   `libjni_latinimegoogle.so` swipe blob** (explicitly rejected — see
-  [ROADMAP](../ROADMAP.md) §10).
+  privacy policy).
 - **Data seen.** Your finger's normalized x/y/t points on the keyboard
   surface during a glide.
 - **Data sent.** Nothing leaves the device.
@@ -289,7 +289,7 @@ All of the above is pinned by tests and gates, not promises.
 ## 4. What SwiftFloris does NOT do
 
 To prevent re-litigation, here is the explicit non-list (see
-[ROADMAP.md](../ROADMAP.md) §10 for the full rationale):
+the privacy policy for the full rationale):
 
 | What | Why no |
 |---|---|

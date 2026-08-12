@@ -17,19 +17,6 @@ ROOT = Path(__file__).resolve().parents[1]
 
 ARCHIVE_DIRS = {"docs/archive", ".ai", "docs/outreach"}
 
-EXCLUDED_FILES = {
-    "CLAUDE.md",
-    "AGENTS.md",
-    "ROADMAP.md",
-    "RESEARCH.md",
-    "Roadmap_Blocked.md",
-}
-
-EXCLUDED_PREFIXES = [
-    "docs/AUDIT_",
-    "docs/research-feature-plan-",
-]
-
 FORBIDDEN_CANONICAL_REFS = [
     (re.compile(r"\bPROJECT_CONTEXT\.md\b"), "PROJECT_CONTEXT.md (absent — use README.md)"),
     (re.compile(r"\.github/workflows/"), ".github/workflows/ (deleted — builds are local)"),
@@ -75,6 +62,19 @@ GITHUB_ISSUE_URL_PATTERN = re.compile(
 )
 RELEASE_ADVANCE_PATTERN = re.compile(r"\badvance[sd]?\s+past\s+`?(?P<tag>v[0-9]+[.][0-9]+[.][0-9]+)`?", re.IGNORECASE)
 VERSION_PATTERN = re.compile(r"\bv(?P<major>[0-9]+)[.](?P<minor>[0-9]+)[.](?P<patch>[0-9]+)\b")
+ROADMAP_SECTION_REF_PATTERN = re.compile(
+    r"\bROADMAP(?:\.md)?\b[^\r\n]{0,120}?§\s*(?P<section>[0-9]+(?:\.[0-9]+)*)",
+    re.IGNORECASE,
+)
+ROADMAP_SECTION_HEADING_PATTERN = re.compile(
+    r"^#{1,6}\s+[^\r\n]*?§\s*(?P<section>[0-9]+(?:\.[0-9]+)*)\b",
+    re.IGNORECASE | re.MULTILINE,
+)
+REQUIRED_BLOCKED_ROADMAP_MARKERS = (
+    ("title", "# SwiftFloris — Blocked Roadmap Items"),
+    ("external-deliverables heading", "## Blocked on External Deliverables"),
+    ("hardware heading", "## Blocked on Hardware / Device Testing"),
+)
 
 
 def parse_args() -> argparse.Namespace:
@@ -144,36 +144,16 @@ def latest_github_release(root: Path, repo: str, warnings: list[str]) -> str | N
     return latest["tagName"]
 
 
-def collect_tracked_paths(root: Path) -> set[str] | None:
-    result = subprocess.run(
-        ["git", "-C", str(root), "ls-files", "-z"],
-        check=False,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-    )
-    if result.returncode != 0:
-        return None
-    return {part.decode("utf-8").replace("\\", "/") for part in result.stdout.split(b"\0") if part}
-
-
 def is_excluded(path: Path, root: Path) -> bool:
     rel = path.relative_to(root).as_posix()
-    if rel in EXCLUDED_FILES:
-        return True
     if any(rel.startswith(d + "/") or rel.startswith(d + "\\") for d in ARCHIVE_DIRS):
-        return True
-    if any(rel.startswith(p) for p in EXCLUDED_PREFIXES):
         return True
     return False
 
 
-def collect_live_markdown(root: Path, tracked_paths: set[str] | None) -> list[Path]:
+def collect_live_markdown(root: Path) -> list[Path]:
     files: list[Path] = []
-    candidates = (
-        [root / rel for rel in sorted(tracked_paths) if rel.endswith(".md")]
-        if tracked_paths is not None
-        else sorted(root.rglob("*.md"))
-    )
+    candidates = sorted(root.rglob("*.md"))
     for md in candidates:
         if not md.exists() or md.name.startswith("."):
             continue
@@ -191,12 +171,11 @@ def collect_live_markdown(root: Path, tracked_paths: set[str] | None) -> list[Pa
     return sorted(files)
 
 
-def has_tracked_directory(rel: str, tracked_paths: set[str]) -> bool:
-    prefix = rel.rstrip("/") + "/"
-    return any(path.startswith(prefix) for path in tracked_paths)
-
-
-def check_file(path: Path, root: Path, tracked_paths: set[str] | None) -> list[str]:
+def check_file(
+    path: Path,
+    root: Path,
+    roadmap_sections: set[str],
+) -> list[str]:
     errors: list[str] = []
     rel_path = path.relative_to(root).as_posix()
     try:
@@ -208,6 +187,13 @@ def check_file(path: Path, root: Path, tracked_paths: set[str] | None) -> list[s
         for pattern, label in FORBIDDEN_CANONICAL_REFS:
             if pattern.search(line):
                 errors.append(f"{rel_path}:{line_no}: references {label}")
+
+        for match in ROADMAP_SECTION_REF_PATTERN.finditer(line):
+            section = match.group("section")
+            if section not in roadmap_sections:
+                errors.append(
+                    f"{rel_path}:{line_no}: references undefined ROADMAP section §{section}"
+                )
 
         for match in LINK_PATTERN.finditer(line):
             target = match.group(2)
@@ -222,20 +208,13 @@ def check_file(path: Path, root: Path, tracked_paths: set[str] | None) -> list[s
                 continue
             resolved = (path.parent / local_path).resolve()
             try:
-                resolved_rel = resolved.relative_to(root).as_posix()
+                resolved.relative_to(root)
             except ValueError:
                 errors.append(f"{rel_path}:{line_no}: local link points outside repo [{match.group(1)}]({target})")
                 continue
             if not resolved.exists():
                 errors.append(f"{rel_path}:{line_no}: broken link [{match.group(1)}]({target})")
                 continue
-            if tracked_paths is None:
-                continue
-            if resolved.is_dir():
-                if not has_tracked_directory(resolved_rel, tracked_paths):
-                    errors.append(f"{rel_path}:{line_no}: untracked linked directory [{match.group(1)}]({target})")
-            elif resolved_rel not in tracked_paths:
-                errors.append(f"{rel_path}:{line_no}: untracked linked file [{match.group(1)}]({target})")
 
     return errors
 
@@ -268,16 +247,12 @@ def check_crash_report_template(root: Path) -> list[str]:
     return errors
 
 
-def check_stale_research_plan_refs(root: Path, tracked_paths: set[str] | None) -> list[str]:
-    candidates = (
-        sorted(tracked_paths)
-        if tracked_paths is not None
-        else [
-            path.relative_to(root).as_posix()
-            for path in root.rglob("*")
-            if path.is_file() and ".git" not in path.parts
-        ]
-    )
+def check_stale_research_plan_refs(root: Path) -> list[str]:
+    candidates = [
+        path.relative_to(root).as_posix()
+        for path in root.rglob("*")
+        if path.is_file() and ".git" not in path.parts
+    ]
     errors: list[str] = []
     for rel in candidates:
         if not (
@@ -365,6 +340,14 @@ def check_blocked_roadmap_freshness(root: Path) -> tuple[list[str], list[str]]:
 
     errors: list[str] = []
     warnings: list[str] = []
+    for marker_name, marker in REQUIRED_BLOCKED_ROADMAP_MARKERS:
+        if marker not in text:
+            errors.append(f"{BLOCKED_ROADMAP}: missing required {marker_name} marker '{marker}'")
+    if re.search(r"^\s*-\s*\[ \]", text, flags=re.MULTILINE) is None:
+        errors.append(f"{BLOCKED_ROADMAP}: contains no open blocked roadmap item")
+    if re.search(r"^\s*\*\*Blocker:\*\*", text, flags=re.MULTILINE) is None:
+        errors.append(f"{BLOCKED_ROADMAP}: contains no explicit **Blocker:** explanation")
+
     issue_cache: dict[tuple[str, str], dict[str, object] | None] = {}
     latest_release_cache: dict[str, str | None] = {}
 
@@ -420,14 +403,28 @@ def check_blocked_roadmap_freshness(root: Path) -> tuple[list[str], list[str]]:
 
 def main() -> int:
     root = Path(parse_args().root).resolve()
-    tracked_paths = collect_tracked_paths(root)
-    files = collect_live_markdown(root, tracked_paths)
+    files = collect_live_markdown(root)
     all_errors: list[str] = []
     all_warnings: list[str] = []
+    roadmap_path = root / "ROADMAP.md"
+    if not roadmap_path.exists():
+        all_errors.append("ROADMAP.md: missing active roadmap")
+        roadmap_sections: set[str] = set()
+    else:
+        try:
+            roadmap_text = roadmap_path.read_text(encoding="utf-8-sig")
+        except Exception as exc:
+            all_errors.append(f"ROADMAP.md: cannot read ({exc})")
+            roadmap_sections = set()
+        else:
+            roadmap_sections = {
+                match.group("section")
+                for match in ROADMAP_SECTION_HEADING_PATTERN.finditer(roadmap_text)
+            }
     for md in files:
-        all_errors.extend(check_file(md, root, tracked_paths))
+        all_errors.extend(check_file(md, root, roadmap_sections))
     all_errors.extend(check_crash_report_template(root))
-    all_errors.extend(check_stale_research_plan_refs(root, tracked_paths))
+    all_errors.extend(check_stale_research_plan_refs(root))
     all_errors.extend(check_pr_template_debug_package(root))
     blocked_errors, blocked_warnings = check_blocked_roadmap_freshness(root)
     all_errors.extend(blocked_errors)
