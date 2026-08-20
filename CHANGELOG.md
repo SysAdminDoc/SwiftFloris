@@ -2,6 +2,15 @@
 
 ## Unreleased
 
+- Correct four public docs that described protections the code does not have:
+  the personal dictionary passphrase is Keystore-wrapped rather than
+  Keystore-held, the Tasker receiver is gated by a default-off preference and a
+  per-install HMAC signature rather than a signature permission (its `adb`
+  examples were rejected at runtime and are replaced with the real setup flow),
+  the reduced-motion guard reads `ANIMATOR_DURATION_SCALE` through
+  `rememberReducedMotion()` rather than a Compose API that does not exist, and
+  the release checklist now names the merged-manifest gate that actually
+  enforces the permission guarantee.
 - Raise the shared Settings widgets to the 48 dp WCAG 2.5.5 touch-target floor
   through a single named constant, including the custom layout editor's key
   buttons, and cover the floor with a test that measures the rendered target

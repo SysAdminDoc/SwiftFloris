@@ -233,8 +233,12 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 - **What runs.** Words you've typed are persisted in a SQLCipher-encrypted
   Room database, ranked into your future suggestions. Personal bigram +
   trigram stores feed n-gram completion.
-- **Where.** On this device only. The encryption key is generated locally
-  and held in Android Keystore.
+- **Where.** On this device only. The database passphrase is generated locally
+  with `SecureRandom` and stored in an app-private preferences file, encrypted
+  with Tink `Aead` under an AES-256-GCM key that Android Keystore holds and
+  will not export (`FlorisUserDictionaryEncryption.kt`,
+  `TinkStringPreferenceCrypto.kt`). The passphrase itself is not in Keystore;
+  the key that wraps it is.
 - **Data seen.** Every word you type, except in password fields and
   `IME_FLAG_NO_PERSONALIZED_LEARNING` editors.
 - **Data sent.** Nothing leaves the device. Backup rules exclude the

@@ -265,7 +265,12 @@ Out of scope:
   `android.permission.QUERY_ADVANCED_PROTECTION_MODE`, and
   `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP` (and any new entry
   is justified in the release notes + threat model).
-- [ ] `:app:verifyNoInternetPermission` passes locally.
+- [ ] `:app:verifyNoInternetPermission` passes locally. This scans the **source** manifests only.
+- [ ] The merged-manifest gate has run. `verifyNoInternetPermissionMerged<Variant>` is what enforces the
+  guarantee in §1 that a transitively-declared permission cannot slip in through manifest merging, and it
+  is wired as a `finalizedBy` of each variant's `process<Variant>Manifest`, so any `assemble`/`bundle` of
+  that variant exercises it. Assembling the release APK is therefore sufficient; running only
+  `verifyNoInternetPermission` is not.
 - [ ] `PersonalDictionaryIsolationTest` passes locally.
 - [ ] `PersonalDictionaryEncryptionTest` passes locally; this includes the SQLCipher/Tink guard and confirms the personal dictionary Room source no longer contains `allowMainThreadQueries`.
 - [ ] APK signing fingerprint matches the value pinned in README (release-build only; debug builds use a per-developer keystore).
