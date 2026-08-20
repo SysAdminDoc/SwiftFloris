@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Close
@@ -43,6 +44,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
@@ -67,6 +69,8 @@ import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.settings.search.SettingsSearchHighlightStore
 import dev.patrickgold.florisboard.app.settings.search.SettingsSearchTarget
+import dev.patrickgold.florisboard.app.settings.search.LocalSettingsSearchScreenTitle
+import dev.patrickgold.florisboard.app.settings.search.LocalSettingsSearchScrollState
 import dev.patrickgold.jetpref.datastore.ui.PreferenceLayout
 import dev.patrickgold.jetpref.datastore.ui.PreferenceUiContent
 import org.florisboard.lib.android.AndroidVersion
@@ -227,8 +231,13 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                 FlorisSnackbarController.Host()
             },
         ) { innerPadding ->
-            val scrollModifier = if (scrollable) {
-                Modifier.florisVerticalScroll()
+            val scrollState = if (scrollable) {
+                rememberScrollState()
+            } else {
+                null
+            }
+            val scrollModifier = if (scrollState != null) {
+                Modifier.florisVerticalScroll(scrollState)
             } else {
                 Modifier
             }
@@ -240,42 +249,52 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                         traversalIndex = FlorisScreenFocusOrder.Content
                     },
             ) {
-                PreferenceLayout(
-                    FlorisPreferenceStore,
-                    modifier = Modifier
-                        .align(Alignment.TopCenter)
-                        .widthIn(max = 840.dp)
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = if (scrollable) 12.dp else 0.dp)
-                        .then(scrollModifier),
-                    iconSpaceReserved = iconSpaceReserved,
-                    content = {
-                        val pendingSearchTarget = SettingsSearchHighlightStore.activeTarget
-                        var displayedSearchTarget by remember(title) {
-                            mutableStateOf<SettingsSearchTarget?>(null)
-                        }
-                        LaunchedEffect(title, pendingSearchTarget) {
-                            SettingsSearchHighlightStore.consumeTargetFor(title)?.let { target ->
-                                displayedSearchTarget = target
+                CompositionLocalProvider(
+                    LocalSettingsSearchScreenTitle provides title,
+                    LocalSettingsSearchScrollState provides scrollState,
+                ) {
+                    PreferenceLayout(
+                        FlorisPreferenceStore,
+                        modifier = Modifier
+                            .align(Alignment.TopCenter)
+                            .widthIn(max = 840.dp)
+                            .fillMaxWidth()
+                            .padding(horizontal = 12.dp, vertical = if (scrollable) 12.dp else 0.dp)
+                            .then(scrollModifier),
+                        iconSpaceReserved = iconSpaceReserved,
+                        content = {
+                            val pendingSearchTarget = SettingsSearchHighlightStore.activeTarget
+                            var displayedSearchTarget by remember(title) {
+                                mutableStateOf<SettingsSearchTarget?>(null)
                             }
-                        }
-                        displayedSearchTarget?.let { searchTarget ->
-                            SettingsSearchHighlightCard(
-                                modifier = Modifier.padding(8.dp),
-                                text = stringRes(
-                                    R.string.settings__search__highlight_title,
-                                    "setting_title" to searchTarget.title,
-                                ),
-                                secondaryText = searchTarget.summary ?: stringRes(
-                                    R.string.settings__search__highlight_summary,
-                                    "screen_title" to searchTarget.screenTitle,
-                                ),
-                                onDismiss = { displayedSearchTarget = null },
-                            )
-                        }
-                        content()
-                    },
-                )
+                            LaunchedEffect(title, pendingSearchTarget) {
+                                when {
+                                    pendingSearchTarget?.screenTitle == title -> {
+                                        displayedSearchTarget = pendingSearchTarget
+                                    }
+                                    pendingSearchTarget == null -> {
+                                        displayedSearchTarget = null
+                                    }
+                                }
+                            }
+                            displayedSearchTarget?.let { searchTarget ->
+                                SettingsSearchHighlightCard(
+                                    modifier = Modifier.padding(8.dp),
+                                    text = stringRes(
+                                        R.string.settings__search__highlight_title,
+                                        "setting_title" to searchTarget.title,
+                                    ),
+                                    secondaryText = searchTarget.summary ?: stringRes(
+                                        R.string.settings__search__highlight_summary,
+                                        "screen_title" to searchTarget.screenTitle,
+                                    ),
+                                    onDismiss = { displayedSearchTarget = null },
+                                )
+                            }
+                            content()
+                        },
+                    )
+                }
             }
         }
     }

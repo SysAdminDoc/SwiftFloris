@@ -70,7 +70,7 @@ import dev.patrickgold.florisboard.lib.io.ZipUtils
 import dev.patrickgold.jetpref.datastore.runtime.AndroidAppDataStorage
 import dev.patrickgold.jetpref.datastore.runtime.FileBasedStorage
 import dev.patrickgold.jetpref.datastore.runtime.ImportStrategy
-import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
 import java.io.FileNotFoundException
 import java.text.DateFormat

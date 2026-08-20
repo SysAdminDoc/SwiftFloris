@@ -57,7 +57,7 @@ import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.material.ui.JetPrefAlertDialog
-import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

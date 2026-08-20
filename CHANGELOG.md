@@ -3,6 +3,7 @@
 ## v1.9.61 — 2026-08-20
 
 - Add one snackbar surface to Settings and the keyboard panels. Clipboard text deletion and per-app profile deletion can now be undone, media deletion asks for confirmation, and Delete no longer sits in the profile dialog's dismiss controls.
+- Settings search now scrolls to the matching preference row and briefly highlights it. The shared preference wrappers keep the destination screens unchanged while the row reports its position, and the search card disappears after the row is reached.
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
   to a pre-release alpha, and Gradle picked that over the Compose BOM's stable

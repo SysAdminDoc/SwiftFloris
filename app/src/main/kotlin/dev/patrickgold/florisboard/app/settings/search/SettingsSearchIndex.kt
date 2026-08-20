@@ -100,13 +100,17 @@ object SettingsSearchHighlightStore {
         )
     }
 
-    fun consumeTargetFor(screenTitle: String): SettingsSearchTarget? {
+    fun targetFor(screenTitle: String): SettingsSearchTarget? {
+        return activeTarget?.takeIf { it.screenTitle == screenTitle }
+    }
+
+    fun claimTargetForRow(screenTitle: String, rowTitle: String): Boolean {
         val target = activeTarget
-        return if (target?.screenTitle == screenTitle) {
+        return if (target?.screenTitle == screenTitle && target.title == rowTitle) {
             activeTarget = null
-            target
+            true
         } else {
-            null
+            false
         }
     }
 

@@ -28,15 +28,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: every security-relevant claim currently asserted against source text is asserted against observable behaviour — on the attached device where a real store is required — and the source-grep assertions are deleted rather than kept alongside; the Roborazzi capture tests are excluded from, or clearly labelled in, the plain unit-test report so the suite's green count reflects assertions.
   Complexity: L
 
-- [ ] P2 — Scroll a settings search result to its row instead of announcing it in a card
-  Why: following a search result now lands on the right screen with every preference indexed, but the target row is only named in a card pinned at the top of the screen. On a long screen like Gestures the user still has to hunt for the row the card is talking about, which is the part of the interaction the card was standing in for.
-  Evidence: `lib/compose/FlorisScreen.kt:250-272` renders `SettingsSearchHighlightCard` above `content()`; `SettingsSearchHighlightStore` already carries the resolved row title, and `SettingsSearchCoverageTest` now guarantees every row has an entry to aim at
-  Touches: `app/src/main/kotlin/.../lib/compose/FlorisScreen.kt`, a new preference wrapper module, the 28 settings screen files
-  Acceptance: following a search result scrolls the target row into view and highlights it for a few seconds, the card is removed or demoted, and a test asserts the scroll position changed for a row below the fold. Note the mechanism this needs: Compose gives a parent no way to locate an arbitrary descendant, so the row has to report its own position. The cheapest route is a thin SwiftFloris wrapper over jetpref's `Preference`/`SwitchPreference`/`ListPreference`/`DialogSliderPreference`/`ColorPickerPreference`/`TextFieldPreference` that compares its resolved `title` against the pending target and reports its offset — the screens then change only their import line, not their call sites.
-  Complexity: M
-
-
-
 ### P3
 
 - [ ] P3 — Re-evaluate material-kolor 5.0.0 now that the Compose BOM is enforced

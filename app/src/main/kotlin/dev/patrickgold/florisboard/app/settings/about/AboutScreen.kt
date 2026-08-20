@@ -62,7 +62,7 @@ import dev.patrickgold.florisboard.lib.crashutility.CrashReportEnvironment
 import dev.patrickgold.florisboard.lib.crashutility.CrashReportFormatter
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.launchUrl
-import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import org.florisboard.lib.android.stringRes
 import org.florisboard.lib.compose.FlorisCanvasIcon
 import org.florisboard.lib.compose.stringRes

@@ -53,7 +53,7 @@ import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.ext.Extension
 import dev.patrickgold.florisboard.subtypeManager
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
-import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

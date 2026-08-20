@@ -31,11 +31,11 @@ import dev.patrickgold.florisboard.ime.clipboard.ClipboardSyncBehavior
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStorageState
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardHistoryStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.datastore.ui.DialogSliderPreference
+import dev.patrickgold.florisboard.app.settings.search.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
-import dev.patrickgold.jetpref.datastore.ui.ListPreference
+import dev.patrickgold.florisboard.app.settings.search.ListPreference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
-import dev.patrickgold.jetpref.datastore.ui.SwitchPreference
+import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.compose.FlorisErrorCard
 import org.florisboard.lib.compose.FlorisInfoCard

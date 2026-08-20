@@ -46,7 +46,7 @@ import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.ime.smartcompose.AddonAuditExport
 import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
-import dev.patrickgold.jetpref.datastore.ui.Preference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

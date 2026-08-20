@@ -110,23 +110,24 @@ class SettingsSearchIndexTest : FunSpec({
         )
     }
 
-    test("search target is consumed once for its matching destination screen") {
+    test("search target stays pending until its matching row claims it") {
         val result = SettingsSearchIndex.search("futo", ::resolve).first()
 
         SettingsSearchHighlightStore.mark(result.entry, " futo ", ::resolve)
 
-        SettingsSearchHighlightStore.consumeTargetFor("Typing") shouldBe null
+        SettingsSearchHighlightStore.targetFor("Typing") shouldBe null
         SettingsSearchHighlightStore.activeTarget?.entryId shouldBe "voice"
 
-        SettingsSearchHighlightStore.consumeTargetFor("Voice input") shouldBe SettingsSearchTarget(
+        SettingsSearchHighlightStore.targetFor("Voice input") shouldBe SettingsSearchTarget(
             entryId = "voice",
             screenTitle = "Voice input",
             title = "Voice input",
             summary = "FUTO setup, offline language models, and voice keyboard status",
             query = "futo",
         )
+        SettingsSearchHighlightStore.claimTargetForRow("Voice input", "Other row") shouldBe false
+        SettingsSearchHighlightStore.claimTargetForRow("Voice input", "Voice input") shouldBe true
         SettingsSearchHighlightStore.activeTarget shouldBe null
-        SettingsSearchHighlightStore.consumeTargetFor("Voice input") shouldBe null
     }
 })
 
