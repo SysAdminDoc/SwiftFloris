@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Give the backup exclude list one owner. The `verifyDataExtractionRules` build
+  task pinned a hand-written 13 of the 22 paths in `data_extraction_rules.xml`,
+  so removing the Tasker HMAC secret, the clipboard history and its keys, or the
+  scheduled-backup preferences left it green; `BackupDataInventoryTest` already
+  matched both rule sets exactly and now owns the check alone.
 - Give every security-relevant dependency a freshness floor. The gate checked a
   single dependency and printed `OK (1 checked dependency floor(s))`, which read
   like a pass while Tink, Room, androidx-sqlite, Kotlin, KSP and AGP had no floor

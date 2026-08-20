@@ -289,7 +289,6 @@ Invoke-EvidenceCommand "targetsdk37-shadow" $python @("scripts/verify-targetsdk3
 
 Invoke-EvidenceCommand "gradle-local-gates" (Join-Path $RepoRoot "gradlew.bat") ($gradleReleaseEvidenceArgs + @(
     ":app:verifyNoInternetPermission",
-    ":app:verifyDataExtractionRules",
     ":app:testDebugUnitTest",
     ":app:lintDebug",
     ":app:assembleRelease",

@@ -25,7 +25,11 @@ clean-clone summary:
   passphrase dialog. Previously the numeric-PIN entry path skipped the IME-side screenshot block.
 - **v1.8.95** — `verifyDataExtractionRules` build gate added. Pins the load-bearing
   data_extraction_rules.xml excludes against accidental rewrite (e.g. a tool that "normalizes" the
-  XML and drops the personal-dictionary include path).
+  XML and drops the personal-dictionary include path). **Superseded 2026-08-20:** that task pinned a
+  hand-written 13 of the file's 22 paths, so deleting the Tasker HMAC secret, the clipboard history
+  and its keys, or the scheduled-backup prefs left it green. `BackupDataInventoryTest` is now the
+  single owner and matches both rule sets exactly against
+  `BackupDataInventory.requiredAndroidExcludes()`.
 - **v1.8.85 / v1.8.89** — `ZipUtils.unzip` now aborts atomically on security violations (path
   traversal, oversized entries, decompression bombs). Benign anomalies (a single corrupted entry
   in an otherwise valid archive) continue with a warning so a partially-corrupted dictionary

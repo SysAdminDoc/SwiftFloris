@@ -22,7 +22,6 @@ REQUIRED_REPLAY_TESTS = (
 )
 SHADOW_TASKS = (
     ":app:verifyNoInternetPermission",
-    ":app:verifyDataExtractionRules",
     ":app:processDebugMainManifest",
     ":app:testDebugUnitTest",
     ":app:assembleDebug",

@@ -457,102 +457,17 @@ tasks.register("verifyRoborazziRelease") {
     dependsOn("verifyRoborazziReleaseRoborazzi")
 }
 
-// ROADMAP §6 N7.4 — pin the load-bearing excludes in
-// `app/src/main/res/xml/data_extraction_rules.xml` against accidental
-// rewrite. Android Lint validates the XML against the data-extraction-rules
-// schema, but it does NOT check that the file contains exclude entries for
-// the SQLCipher personal-dictionary DB, the Tink-wrapped passphrase prefs,
-// or the clipboard-history directory. Without those specific excludes the
-// Android 12+ D2D transfer leak that v1.8.85 closed comes back the moment
-// someone "cleans up" the rules file. This task fails the build if any of
-// the required excludes are missing from either rule set
-// (`<cloud-backup>` and `<device-transfer>`).
-val verifyDataExtractionRules = tasks.register("verifyDataExtractionRules") {
-    group = "verification"
-    description = "Fails the build if data_extraction_rules.xml drops a load-bearing exclude (ROADMAP §6 N7.4)."
-
-    val rulesFile = file("src/main/res/xml/data_extraction_rules.xml")
-    inputs.file(rulesFile).withPathSensitivity(PathSensitivity.RELATIVE)
-    outputs.upToDateWhen { true }
-
-    // domain to path — each pair must be an <exclude> inside BOTH sections.
-    val requiredExcludes = listOf(
-        "database" to "floris_user_dictionary",
-        "database" to "floris_user_dictionary-journal",
-        "database" to "floris_user_dictionary-wal",
-        "database" to "floris_user_dictionary-shm",
-        "sharedpref" to "floris_user_dictionary_key.xml",
-        "file" to "clipboard_history",
-        "file" to "personal_bigrams",
-        "file" to "personal_trigrams",
-        "file" to "correction_outcome_priors",
-        "file" to "swiftkey_typing_traces.jsonl",
-        "file" to "swiftkey_trace.enabled",
-        "file" to "sync",
-        "file" to "diagnostics",
-    )
-    val requiredSections = listOf("cloud-backup", "device-transfer")
-
-    doLast {
-        if (!rulesFile.exists()) {
-            throw GradleException(
-                "data_extraction_rules.xml missing at ${rulesFile.path} — this file is " +
-                    "load-bearing for the Android 12+ no-leak-via-D2D contract (ROADMAP §6 N7.4)."
-            )
-        }
-
-        val doc = javax.xml.parsers.DocumentBuilderFactory.newInstance()
-            .newDocumentBuilder()
-            .parse(rulesFile)
-
-        val errors = mutableListOf<String>()
-
-        for (section in requiredSections) {
-            val sectionNodes = doc.getElementsByTagName(section)
-            if (sectionNodes.length == 0) {
-                errors.add("missing <$section> section entirely")
-                continue
-            }
-            val sectionNode = sectionNodes.item(0)
-            val excludes = mutableSetOf<Pair<String, String>>()
-            val children = sectionNode.childNodes
-            for (i in 0 until children.length) {
-                val child = children.item(i)
-                if (child.nodeName == "exclude") {
-                    val attrs = child.attributes
-                    val domain = attrs?.getNamedItem("domain")?.nodeValue ?: continue
-                    val path = attrs.getNamedItem("path")?.nodeValue ?: continue
-                    excludes.add(domain to path)
-                }
-            }
-            for (required in requiredExcludes) {
-                if (required !in excludes) {
-                    errors.add("<$section> missing: <exclude domain=\"${required.first}\" path=\"${required.second}\"/>")
-                }
-            }
-        }
-
-        if (errors.isNotEmpty()) {
-            throw GradleException(
-                buildString {
-                    appendLine("data_extraction_rules.xml verification failed (ROADMAP §6 N7.4):")
-                    errors.forEach { appendLine("  - $it") }
-                    appendLine()
-                    append("Each exclude must appear inside BOTH <cloud-backup> and <device-transfer> ")
-                    append("with the exact domain/path pair. Without these excludes, Android 12+ backup ")
-                    append("or D2D transfer can leak PII (dictionary, clipboard, typing patterns, ")
-                    append("sync identity, or diagnostics).")
-                }
-            )
-        }
-    }
-}
-
-afterEvaluate {
-    tasks.named("preBuild").configure {
-        dependsOn(verifyDataExtractionRules)
-    }
-}
+// The load-bearing excludes in `app/src/main/res/xml/data_extraction_rules.xml`
+// have a single owner: `BackupDataInventoryTest`. It matches both the
+// <cloud-backup> and <device-transfer> exclude sets exactly against
+// `BackupDataInventory.requiredAndroidExcludes()`, so adding a persisted store
+// without an exclude fails there and names the file.
+//
+// A `verifyDataExtractionRules` Gradle task used to pin a hand-written subset
+// here as well. It covered 13 of the 22 paths, omitting the Tasker HMAC secret,
+// the clipboard history and its keys, and the scheduled-backup prefs, so
+// deleting any of those left it green. Two owners for one list means the weaker
+// one silently certifies what it does not check; the stronger one is kept.
 
 dependencies {
     val composeBom = platform(libs.androidx.compose.bom)
