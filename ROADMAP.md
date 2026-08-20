@@ -71,13 +71,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: S
   Note (2026-08-20): targets moved — Gradle 9.6.1 → 9.7.1, AGP 9.3.0 → 9.3.1, Compose BOM 2026.06.00 → 2026.08.00, Roborazzi → 1.72.0, KSP → 2.3.11, SQLCipher 4.17.0 → 4.18.0 (adds Room 3 support; requires compileSdk 37 — already satisfied), buildTools → 37.0.0; androidx-core 1.19.0, androidx-sqlite 2.7.0, Coil 3.5.0, Kotest 6.2.4 unchanged as targets. Kotlin 2.4.20 is still RC (2026-08-12); Robolectric stable is still 4.16.1. androidx-core 1.19.0's `TextAttributeCompat` backports the API 37 suggestion-selected attribute the editor already writes.
 
-- [ ] P2 — Fix the unreachable per-locale empty state in the user dictionary
-  Why: `loadUiSnapshot` resets `currentLocale` to null whenever the selected locale returns zero words, so the per-locale empty state can never render. Deleting the last word for a language silently bounces the user back to the language list with no explanation, and two shipped strings are dead.
-  Evidence: `app/settings/dictionary/UserDictionaryScreen.kt:251-273`, `:881-903`; `strings.xml:1373-1374`
-  Touches: `app/settings/dictionary/UserDictionaryScreen.kt`
-  Acceptance: deleting the last word for a locale keeps the user on that locale and shows the empty state with its add action; a test covers the zero-word snapshot.
-  Complexity: S
-
 - [ ] P2 — Prove the encrypted clipboard survives a very large clip
   Why: three keyboards report multi-second stalls or crashes on large clipboard payloads, one specifically at ~120 KiB of URLs. SwiftFloris bounds retention at 64 KiB UTF-8 and hands larger live clips to direct-paste only, but the history store is SQLCipher-encrypted and the search/filter path runs over decrypted rows — encryption makes this class worse, not better, and nothing replays it.
   Evidence: `ime/clipboard/ClipboardTextRetentionPolicy.kt:32`; `ime/clipboard/provider/ClipboardHistoryEncryption.kt:23,45-48`; `ime/clipboard/ClipboardHistoryFilter.kt:51-73`; https://github.com/HeliBorg/HeliBoard/issues/2697 ; https://github.com/florisboard/florisboard/issues/3117 ; https://github.com/florisboard/florisboard/pull/3303

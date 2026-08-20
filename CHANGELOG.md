@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Keep the personal dictionary on the language you are editing when you delete
+  its last word. It previously bounced back to the language list with no
+  explanation, which also made the per-language empty state unreachable; that
+  state now renders and names the language.
 - Give the backup exclude list one owner. The `verifyDataExtractionRules` build
   task pinned a hand-written 13 of the 22 paths in `data_extraction_rules.xml`,
   so removing the Tasker HMAC secret, the clipboard history and its keys, or the

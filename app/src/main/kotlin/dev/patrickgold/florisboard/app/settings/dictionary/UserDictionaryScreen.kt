@@ -265,15 +265,17 @@ fun UserDictionaryScreen(
     fun loadUiSnapshot(selectedLocale: FlorisLocale?): UserDictionaryUiSnapshot {
         val dao = userDictionaryDao()
         if (selectedLocale != null) {
+            // Stay on the selected locale even when it holds no words, so the
+            // per-locale empty state can render with its add action. Falling
+            // through to the language list here bounced the user out of the
+            // language they were editing the moment they deleted its last word,
+            // with no explanation, and left that empty state unreachable.
             val locale = if (selectedLocale == AllLanguagesLocale) null else selectedLocale
-            val words = dao?.queryAll(locale).orEmpty()
-            if (words.isNotEmpty()) {
-                return UserDictionaryUiSnapshot(
-                    currentLocale = selectedLocale,
-                    languageList = emptyList(),
-                    wordList = words,
-                )
-            }
+            return UserDictionaryUiSnapshot(
+                currentLocale = selectedLocale,
+                languageList = emptyList(),
+                wordList = dao?.queryAll(locale).orEmpty(),
+            )
         }
         return UserDictionaryUiSnapshot(
             currentLocale = null,
@@ -872,17 +874,29 @@ fun UserDictionaryScreen(
         ) {
             if (languageList.isEmpty()) {
                 item {
+                    // A locale is selected once currentLocale is non-null, so
+                    // the empty state can name the language the user is in
+                    // rather than implying the whole dictionary is empty.
+                    val emptyLocale = currentLocale?.takeIf { type != UserDictionaryType.SYSTEM }
                     FlorisEmptyState(
                         modifier = Modifier.padding(16.dp),
                         icon = Icons.AutoMirrored.Filled.LibraryBooks,
-                        title = stringRes(R.string.settings__udm__empty_title),
-                        message = stringRes(
-                            if (type == UserDictionaryType.SYSTEM) {
-                                R.string.settings__udm__system_no_words
+                        title = stringRes(
+                            if (emptyLocale != null) {
+                                R.string.settings__udm__empty_locale_title
                             } else {
-                                R.string.settings__udm__no_words_in_dictionary
+                                R.string.settings__udm__empty_title
                             },
                         ),
+                        message = when {
+                            emptyLocale != null -> stringRes(
+                                R.string.settings__udm__empty_locale_message,
+                                "language" to getDisplayNameForLocale(emptyLocale),
+                            )
+                            type == UserDictionaryType.SYSTEM ->
+                                stringRes(R.string.settings__udm__system_no_words)
+                            else -> stringRes(R.string.settings__udm__no_words_in_dictionary)
+                        },
                         actionLabel = if (entryActionsEnabled) {
                             stringRes(R.string.settings__udm__dialog__title_add)
                         } else {
