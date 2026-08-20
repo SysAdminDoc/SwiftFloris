@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; glide typing keeps alternating two-pointer traces separate; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates; smartbar translation and NLP prediction share one audited addon hub | On-device, no account, no telemetry |
-| **Local release evidence** | `scripts/release-evidence.ps1` discovers and runs every `scripts/test-*.py` self-test, wires every `scripts/check-*` / `scripts/verify-*` gate, and records explicit operator-run reasons for the connected-device baseline and benchmark gates alongside release-front-door, Fastlane metadata, backup/privacy copy, fork identity, layout JSON, locale coverage, public-doc/F-Droid version pins, the semantic trust-capability gate, repo hygiene, root-crash-log, Kotlin build-cache CVE guard, production `runBlocking` allowlist, target-SDK 37 shadow, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, security-dependency freshness, and reproducible-APK gates in `build/release-evidence/<timestamp>/`; high-risk SDK, permission, storage, AIDL, dependency, runtime, and accessibility assertions are normalized in `app/src/main/config/trust-capabilities.json`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.08.00 / material-kolor 5.0.0 / KSP 2.3.11 / AboutLibraries 15.1.0 / Roborazzi 1.72.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` discovers and runs every `scripts/test-*.py` self-test, wires every `scripts/check-*` / `scripts/verify-*` gate, and records explicit operator-run reasons for the connected-device baseline and benchmark gates alongside release-front-door, Fastlane metadata, backup/privacy copy, fork identity, layout JSON, locale coverage, public-doc/F-Droid version pins, the semantic trust-capability gate, repo hygiene, root-crash-log, Kotlin build-cache CVE guard, production `runBlocking` allowlist, target-SDK 37 shadow, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, security-dependency freshness, and reproducible-APK gates in `build/release-evidence/<timestamp>/`; high-risk SDK, permission, storage, AIDL, dependency, runtime, and accessibility assertions are normalized in `app/src/main/config/trust-capabilities.json`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.08.00 / KSP 2.3.11 / AboutLibraries 15.1.0 / Roborazzi 1.72.0 / material-kolor 5.0.0 | Audit-friendly |
 
 ## Distribution
 
@@ -70,6 +70,7 @@ SwiftFloris ships through GitHub Releases (canonical), Obtainium for GitHub-back
 - **F-Droid channel:** prepared for fdroiddata submission with local reproducible-build and no-network gates. If accepted, the F-Droid build/signature is a separate Android install channel; stay on one channel unless you back up, uninstall, reinstall, and restore.
 - **Permission proof:** the local release evidence command fails if the merged app manifest declares a permission outside the explicit enrollment allowlist shared with addon/MCP runtime trust checks; network and unknown permissions fail closed.
 - **Reproducibility proof:** `scripts/release-evidence.ps1` runs the build-twice APK verifier and records APK hash evidence before publication.
+- **Fork provenance:** the [provenance section below](#fork-provenance) lists the package identity, exact manifest permission surface, certificate capture commands, and third-party reproduction checklist. The official release fingerprint stays pending until a signed release APK is published.
 
 ### Option A — Obtainium (recommended for auto-updates)
 
@@ -136,6 +137,78 @@ This is a reversible default: maintainers can override this stance at any time.
 The release-front-door script parses the `reassess Q<n> <year>` tag above and
 fails the release once that quarter has ended, so this section cannot go stale
 without blocking a release.
+
+### Fork provenance
+
+This section is the checkable provenance record for the install package. It
+does not treat an unsigned or debug-signed local build as the published app.
+
+| Fact | Value |
+|------|-------|
+| Source repository | `https://github.com/SysAdminDoc/SwiftFloris` |
+| Install package ID | `io.github.sysadmindoc.swiftfloris` |
+| Source license | Apache-2.0 |
+| Network permission | No `android.permission.INTERNET` permission |
+
+The `.debug` build uses `io.github.sysadmindoc.swiftfloris.debug` and must not
+be compared with the release package. There is no signed SwiftFloris release
+APK currently attached to GitHub, and the private release keystore is not in
+the repository. The official release certificate SHA-256 is therefore pending
+until a signed release artifact exists.
+
+The local debug APK inspected on 2026-08-20 had this separate certificate:
+`f9c07b3eda90b2a06096d2ff904b3020c79eecdd19fe7cb9a91c753994fbd56a`.
+Capture the official release value with:
+
+```powershell
+apksigner verify --print-certs .\app-release.apk
+```
+
+The merged release manifest declares these user or package permissions:
+
+| Permission | Why it exists |
+|------------|---------------|
+| `android.permission.VIBRATE` | Optional key-press vibration feedback. |
+| `android.permission.POST_NOTIFICATIONS` | User-visible notifications on Android 13 and newer. |
+| `android.permission.READ_CALENDAR` | Explicit calendar quick-insert reads local agenda entries. |
+| `android.permission.QUERY_ADVANCED_PROTECTION_MODE` | Reads the Android 16 Advanced Protection Mode signal so sensitive features can pause. |
+| `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP` | Signature-protected binding for a trusted local MCP daemon. |
+| `android.permission.WAKE_LOCK` | Keeps scheduled local maintenance work alive while Android runs it. |
+| `android.permission.RECEIVE_BOOT_COMPLETED` | Reconciles local scheduled work after device restart. |
+| `android.permission.FOREGROUND_SERVICE` | Supports the platform-managed foreground service contract where Android requires it. |
+| `io.github.sysadmindoc.swiftfloris.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` | Signature-protects dynamically registered in-app receivers. |
+
+The manifest defines the signature permission
+`io.github.sysadmindoc.swiftfloris.permission.REGISTER_ADDON` for addon
+registration. Platform component guards also use `BIND_INPUT_METHOD`,
+`BIND_TEXT_SERVICE`, `BIND_JOB_SERVICE`, and `DUMP`; these protect declared
+services and are not user-granted permissions requested by the app.
+
+Inspect the actual APK with `aapt2 dump permissions .\app-release.apk`. The
+release gate rejects `INTERNET`, network-state, Wi-Fi, and unknown permissions
+before publication.
+
+For an independent rebuild, use an exact tag and a clean checkout:
+
+```bash
+git clone --branch v1.9.61 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+cd SwiftFloris
+bash scripts/verify-reproducible-apk.sh
+```
+
+For a direct build, run `./gradlew :app:assembleRelease`, then capture the
+APK hash, signing certificate, and permission output:
+
+```powershell
+Get-FileHash .\app\build\outputs\apk\release\app-release.apk -Algorithm SHA256
+apksigner verify --print-certs .\app\build\outputs\apk\release\app-release.apk
+aapt2 dump permissions .\app\build\outputs\apk\release\app-release.apk
+```
+
+Compare the permission output with this table and the certificate digest with
+the fingerprint published for the same release. A reviewer other than the
+maintainer must record the tag, commit, APK hash, certificate digest, and
+pass/fail result before the provenance claim is marked verified.
 
 ### Enable as Default Keyboard
 
