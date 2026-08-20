@@ -21,14 +21,12 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Apps
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PrivacyTip
 import androidx.compose.material3.AlertDialog
@@ -60,6 +58,7 @@ import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfiles
 import dev.patrickgold.florisboard.ime.profile.PerAppSuggestionAggressiveness
 import dev.patrickgold.florisboard.ime.profile.PerAppThemeOverride
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
+import dev.patrickgold.florisboard.lib.compose.FlorisSnackbarController
 import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
@@ -198,12 +197,26 @@ fun PerAppKeyboardProfileScreen() = FlorisScreen {
             resolveLabel = { packageName -> resolvePackageLabel(context, packageName) },
             onDismiss = { dialogSeed = null },
             onDelete = { packageName ->
+                val deletedProfile = profiles[packageName]
                 scope.launch {
                     prefs.privacy.perAppKeyboardProfiles.set(
                         PerAppKeyboardProfiles.remove(rawProfiles, packageName),
                     )
                 }
                 dialogSeed = null
+                if (deletedProfile != null) {
+                    FlorisSnackbarController.show(
+                        message = context.getString(R.string.settings__per_app_keyboard_profiles__deleted),
+                        actionLabel = context.getString(R.string.action__undo),
+                        onAction = {
+                            scope.launch {
+                                prefs.privacy.perAppKeyboardProfiles.set(
+                                    PerAppKeyboardProfiles.upsert(rawProfiles, deletedProfile),
+                                )
+                            }
+                        },
+                    )
+                }
             },
             onSave = { originalPackageName, profile ->
                 scope.launch {
@@ -323,6 +336,17 @@ private fun PerAppKeyboardProfileDialog(
                     label = { it.label() },
                     onChange = { gestureSet = it },
                 )
+                seed.originalPackageName?.let { packageName ->
+                    TextButton(
+                        onClick = { onDelete(packageName) },
+                        modifier = Modifier.fillMaxWidth(),
+                    ) {
+                        Text(
+                            text = stringRes(R.string.settings__per_app_keyboard_profiles__delete),
+                            color = MaterialTheme.colorScheme.error,
+                        )
+                    }
+                }
             }
         },
         confirmButton = {
@@ -351,18 +375,8 @@ private fun PerAppKeyboardProfileDialog(
             }
         },
         dismissButton = {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                seed.originalPackageName?.let { packageName ->
-                    TextButton(onClick = { onDelete(packageName) }) {
-                        Text(
-                            text = stringRes(R.string.action__delete),
-                            color = MaterialTheme.colorScheme.error,
-                        )
-                    }
-                }
-                TextButton(onClick = onDismiss) {
-                    Text(text = stringRes(R.string.action__cancel))
-                }
+            TextButton(onClick = onDismiss) {
+                Text(text = stringRes(R.string.action__cancel))
             }
         },
     )

@@ -430,6 +430,8 @@
     <string name="settings__voice_input__local_model_download" comment="Local voice model manager download action">Open download source</string>
     <string name="settings__voice_input__local_model_import" comment="Local voice model manager import action">Import downloaded model</string>
     <string name="settings__voice_input__local_model_delete" comment="Local voice model manager delete action">Remove local model</string>
+    <string name="settings__voice_input__local_model_delete_title" comment="Local voice model delete confirmation title">Remove local voice model?</string>
+    <string name="settings__voice_input__local_model_delete_message" comment="Local voice model delete confirmation message">Remove the local copy of {model}? The model can be imported again later.</string>
     <string name="settings__voice_input__model_imported" comment="Local voice model manager toast">Voice model imported.</string>
     <string name="settings__voice_input__model_import_failed" comment="Local voice model manager toast">Could not import voice model.</string>
     <string name="settings__voice_input__model_removed" comment="Local voice model manager toast">Voice model removed.</string>
@@ -1254,6 +1256,8 @@
     <string name="settings__per_app_keyboard_profiles__profile_summary" comment="Profile row summary; placeholders describe stored profile choices">Package: {package}\nAccent: {theme}; Incognito: {incognito}; Clipboard: {clipboard}; Suggestions: {suggestions}; Gestures: {gestures}</string>
     <string name="settings__per_app_keyboard_profiles__dialog_add_title" comment="Dialog title">Add app profile</string>
     <string name="settings__per_app_keyboard_profiles__dialog_edit_title" comment="Dialog title">Edit app profile</string>
+    <string name="settings__per_app_keyboard_profiles__delete" comment="Destructive action in the profile editor">Delete this app profile</string>
+    <string name="settings__per_app_keyboard_profiles__deleted" comment="Snackbar after deleting an app profile">App profile deleted</string>
     <string name="settings__per_app_keyboard_profiles__package_label" comment="Text field label">Package name</string>
     <string name="settings__per_app_keyboard_profiles__package_supporting" comment="Text field supporting text">Use the exact Android package name. Slashes and blank names are rejected.</string>
     <string name="settings__per_app_keyboard_profiles__package_invalid" comment="Text field error">Enter a valid package name without slashes.</string>
@@ -1935,6 +1939,7 @@
     <string name="clipboard__media_item_a11y" comment="Accessibility label for a clipboard image or video tile with its history group and copied time">{media_type}, {group}, copied {copied_time}.</string>
     <string name="clipboard__media_item_a11y_no_group" comment="Accessibility label for a clipboard image or video tile when no history group is shown">{media_type}, copied {copied_time}.</string>
     <string name="clipboard__item_actions_a11y" comment="Accessibility label for opening clipboard item actions from a history tile">Show clipboard item actions</string>
+    <string name="clipboard__item_deleted" comment="Snackbar after deleting a clipboard text item">Clipboard item deleted</string>
     <string name="clipboard__filter_chip__text" comment="Filter chip label for text clips in the clipboard history panel">Text</string>
     <string name="clipboard__filter_chip__images" comment="Filter chip label for image clips in the clipboard history panel">Images</string>
     <string name="clipboard__filter_chip__videos" comment="Filter chip label for video clips in the clipboard history panel">Videos</string>
@@ -2281,7 +2286,8 @@
     <string name="action__close">Close</string>
     <string name="action__create">Create</string>
     <string name="action__default">Default</string>
-    <string name="action__delete">Delete</string>
+<string name="action__delete">Delete</string>
+<string name="action__undo">Undo</string>
     <string name="action__delete_confirm_title">Confirm delete</string>
     <string name="action__delete_confirm_message">Delete \"{name}\"? This permanently removes the item from this device.</string>
     <string name="action__reset">Reset</string>

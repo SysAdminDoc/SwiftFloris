@@ -28,13 +28,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: every security-relevant claim currently asserted against source text is asserted against observable behaviour — on the attached device where a real store is required — and the source-grep assertions are deleted rather than kept alongside; the Roborazzi capture tests are excluded from, or clearly labelled in, the plain unit-test report so the suite's green count reflects assertions.
   Complexity: L
 
-- [ ] P2 — Add a snackbar host and undo for destructive actions
-  Why: the app has no undo infrastructure — zero `Snackbar`/`SnackbarHost`, 62 toasts — so the surface splits into 11 confirmation dialogs (against the project's stated preference for immediate action plus undo) and 8 deletions with neither confirmation nor undo. Deleting a single clipboard entry is completely silent; per-app profile delete is a destructive button in a dialog's dismiss slot. One piece of infrastructure fixes the whole category.
-  Evidence: no `SnackbarHost` under `app/` or `lib/`; silent delete at `ime/clipboard/ClipboardInputLayout.kt:786-792`; dismiss-slot delete at `app/settings/privacy/PerAppKeyboardProfileScreen.kt:356-360`; dialogs at `app/ext/ExtensionViewScreen.kt:276`, `app/settings/typing/SnippetSettingsScreen.kt:220,238`, `app/settings/localization/LocalizationScreen.kt:196`, `app/settings/addons/AddonsSettingsScreen.kt:504`; the one existing undo at `app/settings/dictionary/PersonalDictionaryImportSummaryDialog.kt:36-41`
-  Touches: `lib/compose/FlorisScreen.kt`, `lib/compose/FlorisCards.kt`, the 19 call sites above, `ime/clipboard/ClipboardInputLayout.kt`
-  Acceptance: a shared snackbar surface exists for both Settings and the IME panels; every deletion either produces an undoable snackbar or keeps its dialog with a stated reason; no destructive action sits in a dialog's dismiss slot.
-  Complexity: L
-
 - [ ] P2 — Scroll a settings search result to its row instead of announcing it in a card
   Why: following a search result now lands on the right screen with every preference indexed, but the target row is only named in a card pinned at the top of the screen. On a long screen like Gestures the user still has to hunt for the row the card is talking about, which is the part of the interaction the card was standing in for.
   Evidence: `lib/compose/FlorisScreen.kt:250-272` renders `SettingsSearchHighlightCard` above `content()`; `SettingsSearchHighlightStore` already carries the resolved row title, and `SettingsSearchCoverageTest` now guarantees every row has an entry to aim at

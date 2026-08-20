@@ -116,6 +116,8 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.compose.DynamicFontScale
+import dev.patrickgold.florisboard.lib.compose.FlorisConfirmDeleteDialog
+import dev.patrickgold.florisboard.lib.compose.FlorisSnackbarController
 import dev.patrickgold.florisboard.lib.observeAsTransformingState
 import dev.patrickgold.florisboard.lib.util.NetworkUtils
 import dev.patrickgold.jetpref.datastore.model.collectAsState
@@ -202,7 +204,10 @@ fun ClipboardInputLayout(
 
     val gridState = rememberLazyStaggeredGridState()
     var popupItem by remember(filteredHistory) { mutableStateOf<ClipboardItem?>(null) }
+    var pendingMediaDelete by remember { mutableStateOf<ClipboardItem?>(null) }
     var showClearAllHistory by remember { mutableStateOf(false) }
+    val deletedItemMessage = stringRes(R.string.clipboard__item_deleted)
+    val undoActionLabel = stringRes(R.string.action__undo)
 
     fun isPopupSurfaceActive() = popupItem != null || showClearAllHistory
 
@@ -787,7 +792,18 @@ fun ClipboardInputLayout(
                                 icon = Icons.Default.Delete,
                                 text = stringRes(R.string.clip__delete_item),
                             ) {
-                                clipboardManager.deleteClip(activePopupItem, onlyIfUnpinned = false)
+                                if (activePopupItem.type == ItemType.TEXT) {
+                                    clipboardManager.deleteClip(activePopupItem, onlyIfUnpinned = false)
+                                    FlorisSnackbarController.show(
+                                        message = deletedItemMessage,
+                                        actionLabel = undoActionLabel,
+                                        onAction = {
+                                            clipboardManager.restoreHistory(listOf(activePopupItem))
+                                        },
+                                    )
+                                } else {
+                                    pendingMediaDelete = activePopupItem
+                                }
                                 popupItem = null
                             }
                             PopupAction(
@@ -893,6 +909,23 @@ fun ClipboardInputLayout(
             ) {
                 SnyggText(
                     text = stringRes(R.string.clipboard__disabled__enable_button),
+                )
+            }
+
+            pendingMediaDelete?.let { item ->
+                FlorisConfirmDeleteDialog(
+                    onConfirm = {
+                        clipboardManager.deleteClip(item, onlyIfUnpinned = false)
+                        pendingMediaDelete = null
+                    },
+                    onDismiss = { pendingMediaDelete = null },
+                    what = stringRes(
+                        when (item.type) {
+                            ItemType.IMAGE -> R.string.clipboard__item_description_image
+                            ItemType.VIDEO -> R.string.clipboard__item_description_video
+                            ItemType.TEXT -> R.string.clipboard__item_description_text
+                        },
+                    ),
                 )
             }
         }

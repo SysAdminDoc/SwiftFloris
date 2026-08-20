@@ -71,6 +71,7 @@ import dev.patrickgold.florisboard.ime.sheet.BottomSheetWindow
 import dev.patrickgold.florisboard.ime.text.TextInputLayout
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.keyboardManager
+import dev.patrickgold.florisboard.lib.compose.FlorisSnackbarController
 import kotlinx.coroutines.delay
 import org.florisboard.lib.compose.ProvideActualLayoutDirection
 import org.florisboard.lib.compose.conditional
@@ -130,6 +131,11 @@ fun ImeRootWindow() {
         ImeWindow()
         BottomSheetWindow()
         ImeSystemUi()
+        FlorisSnackbarController.Host(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(12.dp),
+        )
     }
 }
 

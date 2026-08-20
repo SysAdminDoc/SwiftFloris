@@ -150,6 +150,7 @@ fun VoiceInputScreen() = FlorisScreen {
     val modelRepository = remember(appContext) { VoiceModelInstallRepository(appContext) }
     var modelStates by remember { mutableStateOf<Map<String, VoiceModelInstallState>>(emptyMap()) }
     var pendingModelImportId by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingModelDelete by remember { mutableStateOf<VoiceModelCatalogEntry?>(null) }
     val recognitionEnginePreference by prefs.voice.recognitionEnginePreference.collectAsState()
     val embeddedModelPreference by prefs.voice.embeddedModelPreference.collectAsState()
     val resolvedEmbeddedModel = embeddedModelPreference.resolve(ramProfile)
@@ -402,7 +403,7 @@ fun VoiceInputScreen() = FlorisScreen {
                             localRecognizerRuntimeAvailable = localRecognizerRuntimeAvailable,
                             onDownload = { context.launchUrl(model.sourceUrl) },
                             onImport = { importVoiceModel(model) },
-                            onDelete = { deleteVoiceModel(model) },
+                            onDelete = { pendingModelDelete = model },
                         )
                     }
                 }
@@ -552,6 +553,26 @@ fun VoiceInputScreen() = FlorisScreen {
                     commandDialogState = null
                 },
             )
+        }
+
+        pendingModelDelete?.let { model ->
+            JetPrefAlertDialog(
+                title = stringRes(R.string.settings__voice_input__local_model_delete_title),
+                confirmLabel = stringRes(R.string.action__delete),
+                onConfirm = {
+                    pendingModelDelete = null
+                    deleteVoiceModel(model)
+                },
+                dismissLabel = stringRes(R.string.action__cancel),
+                onDismiss = { pendingModelDelete = null },
+            ) {
+                Text(
+                    text = stringRes(
+                        R.string.settings__voice_input__local_model_delete_message,
+                        "model" to model.displayName,
+                    ),
+                )
+            }
         }
     }
 }

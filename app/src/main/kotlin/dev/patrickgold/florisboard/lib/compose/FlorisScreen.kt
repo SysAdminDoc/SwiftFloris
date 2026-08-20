@@ -223,6 +223,9 @@ private class FlorisScreenScopeImpl : FlorisScreenScope {
                     fab()
                 }
             },
+            snackbarHost = {
+                FlorisSnackbarController.Host()
+            },
         ) { innerPadding ->
             val scrollModifier = if (scrollable) {
                 Modifier.florisVerticalScroll()
