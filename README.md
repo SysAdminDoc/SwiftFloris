@@ -103,31 +103,39 @@ cd SwiftFloris
 adb install app/build/outputs/apk/debug/app-debug.apk
 ```
 
-### Google developer verification (Sept 2026)
+### Google developer verification (from 2026-09-30)
 
-Google's [developer verification policy](https://keepandroidopen.org/) begins
-enforcement in **September 2026** for Brazil, Indonesia, Thailand, and
-Singapore, with global rollout expected in 2027. It requires registered
-developers to provide a government ID, a one-time fee, and registration of
-signing keys before apps can be installed on certified Android devices —
-including, in the rolled-out form, sideloaded APKs. F-Droid has published an
-[open letter opposing it](https://f-droid.org/2026/02/24/open-letter-opposing-developer-verification.html).
+Google's [developer verification policy](https://developer.android.com/developer-verification)
+starts enforcement on **2026-09-30** in Brazil, Indonesia, Singapore, and
+Thailand, with global rollout expected during 2027. Full registration asks a
+developer for a government ID, a one-time fee, and the registration of their
+signing keys. F-Droid has published an
+[open letter opposing it](https://f-droid.org/2026/02/24/open-letter-opposing-developer-verification.html),
+and the [Keep Android Open](https://keepandroidopen.org/) campaign has gathered
+signatories including the EFF, the FSF, and the Tor Project.
 
-**Current posture (reassess Q3 2026):** SwiftFloris does **not** plan to
-pre-register under this scheme. The F-Droid track remains the primary
-privacy-first distribution channel and F-Droid's own response will shape what,
-if anything, packagers must do.
+**Current posture (reassess Q4 2026):** SwiftFloris does **not** plan to
+pre-register. The F-Droid track remains the primary privacy-first channel, and
+the September enforcement applies to a named list of app stores that does not
+include F-Droid, so F-Droid installs are not affected on the start date.
 
-**If you are in a pilot region** (Brazil, Indonesia, Thailand, Singapore): after
-September 2026, certified Android devices in your region may begin warning or
-blocking sideloaded APKs from unregistered developers. Until then, GitHub and
-Obtainium installs work normally. If blocking begins and no F-Droid workaround
-exists, the project will reassess registration. Watch the release notes for
-updates.
+**If you are in one of the four launch countries**, three things stay open to
+you after 2026-09-30 even though this project is not registered:
+
+- **F-Droid**, which the initial enforcement list does not cover.
+- **ADB installs**, which Google exempts explicitly.
+- **The advanced flow**: turn on "Allow apps from unverified developers" in
+  Developer options, accept the warnings, wait out a one-time 24-hour delay,
+  then return to the setting to finish. Google is rolling this out through an
+  "Android Developer Verifier" app, so availability on your device may lag.
+
+Google also offers a free tier with no fee and no ID, but it caps installs at 20
+devices, which does not fit public distribution through GitHub Releases.
 
 This is a reversible default: maintainers can override this stance at any time.
-The release-front-door script checks that this section has been reviewed within
-the current quarter; stale guidance blocks the release.
+The release-front-door script parses the `reassess Q<n> <year>` tag above and
+fails the release once that quarter has ended, so this section cannot go stale
+without blocking a release.
 
 ### Enable as Default Keyboard
 

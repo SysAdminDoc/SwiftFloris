@@ -158,13 +158,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P2
 
-- [ ] P2 — Refresh the README developer-verification section with the 2026-08 facts
-  Why: the section predates every material development: enforcement is precisely 2026-09-30 (Brazil, Indonesia, Singapore, Thailand), ADB installs are explicitly exempt, the "advanced flow" (Developer-options toggle → warnings → one-time 24-hour wait) is rolling out now, a free email-only tier covers up to 20 devices, and the September named-store list does not include F-Droid. The front-door gate requires this section to be reviewed each quarter, and users in pilot regions get materially wrong guidance six weeks before enforcement.
-  Evidence: `README.md` "Google developer verification (Sept 2026)" section; https://android-developers.googleblog.com/2026/03/android-developer-verification.html ; https://9to5google.com/2026/08/18/ (advanced-flow rollout); https://support.google.com/android-developer-console/answer/16561738
-  Touches: `README.md`, `Roadmap_Blocked.md` (registration item's blocker text)
-  Acceptance: the section states the exact enforcement date, the ADB and advanced-flow fallbacks for pilot-region users, and the 20-device free tier's irrelevance to public distribution; the quarterly-review stamp is current; the registration decision itself stays in `Roadmap_Blocked.md` as human-gated.
-  Complexity: S
-
 - [ ] P2 — Make the MCP settings surface honest about the parked engine
   Why: `FlorisImeService` now pins the MCP lifecycle to null and empties both registries (correct — no binding can occur), but `McpSettingsScreen` still offers discovery review, trust actions, and per-daemon toggles that govern a no-op. A user who enables a daemon there reasonably believes something turned on. The 2026-08-11 audit-hub commit deleted the routing roadmap item as done, so no open item tracks this residue.
   Evidence: `FlorisImeService.kt:424-434` (`mcpLifecycle = null`, registries pinned empty, parked comment); `app/settings/mcp/McpSettingsScreen.kt`; commit 491d90d93

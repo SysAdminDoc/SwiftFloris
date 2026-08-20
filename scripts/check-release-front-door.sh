@@ -225,16 +225,29 @@ else
 fi
 
 # --- 5. Developer verification guidance freshness ---
-# After Q3 2026, the developer-verification README section must have been
-# reviewed. The "(reassess Q3 2026)" tag triggers a warning if the current
-# date is past 2026-09-01 and the tag is still present — it means the
-# guidance was not updated for the enforcement window.
-if grep -q "reassess Q3 2026" README.md 2>/dev/null; then
+# The developer-verification README section carries a "(reassess Q<n> <year>)"
+# tag naming the quarter by which it must be reviewed again. Once that quarter
+# has ended the guidance is stale and the release fails until someone re-reads
+# it and moves the tag forward. Parsing the tag rather than hardcoding one
+# quarter means moving the tag is the whole update, and that removing it
+# entirely does not silently disable the check.
+verification_tag="$(grep -o "reassess Q[1-4] 20[0-9][0-9]" README.md 2>/dev/null | head -n 1)"
+if [ -z "$verification_tag" ]; then
+  fail "README.md has no 'reassess Q<n> <year>' tag in the developer-verification section — the guidance freshness check cannot run"
+else
+  tag_quarter="$(echo "$verification_tag" | sed 's/reassess Q\([1-4]\) .*/\1/')"
+  tag_year="$(echo "$verification_tag" | sed 's/.* \(20[0-9][0-9]\)$/\1/')"
+  case "$tag_quarter" in
+    1) quarter_end="${tag_year}0331" ;;
+    2) quarter_end="${tag_year}0630" ;;
+    3) quarter_end="${tag_year}0930" ;;
+    *) quarter_end="${tag_year}1231" ;;
+  esac
   current_date="$(date -u +%Y%m%d 2>/dev/null || echo 20260101)"
-  if [ "$current_date" -ge "20260901" ]; then
-    fail "README.md developer-verification section still says 'reassess Q3 2026' but we are past that date — update the guidance"
+  if [ "$current_date" -gt "$quarter_end" ]; then
+    fail "README.md developer-verification guidance is tagged '$verification_tag', which ended on $quarter_end — re-read it and move the tag forward"
   else
-    echo "developer-verification: OK (reassessment date not yet reached)"
+    echo "developer-verification: OK ($verification_tag)"
   fi
 fi
 
