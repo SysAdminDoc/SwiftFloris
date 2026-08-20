@@ -95,6 +95,7 @@ def main() -> int:
             overrides=[
                 {
                     "catalogKey": "sqlcipher-android",
+                    "module": "net.zetetic:sqlcipher-android",
                     "owner": "matt_parker@outlook.com",
                     "rationale": "Fixture emergency release while upstream rollout is pending.",
                     "expiry": "2999-01-01",
@@ -110,6 +111,7 @@ def main() -> int:
             overrides=[
                 {
                     "catalogKey": "sqlcipher-android",
+                    "module": "net.zetetic:sqlcipher-android",
                     "owner": "matt_parker@outlook.com",
                     "rationale": "Expired fixture.",
                     "expiry": "2000-01-01",
@@ -125,6 +127,7 @@ def main() -> int:
             overrides=[
                 {
                     "catalogKey": "sqlcipher-android",
+                    "module": "net.zetetic:sqlcipher-android",
                     "rationale": "Missing owner fixture.",
                     "expiry": "2999-01-01",
                 },

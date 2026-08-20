@@ -2,6 +2,16 @@
 
 ## Unreleased
 
+- Give every security-relevant dependency a freshness floor. The gate checked a
+  single dependency and printed `OK (1 checked dependency floor(s))`, which read
+  like a pass while Tink, Room, androidx-sqlite, Kotlin, KSP and AGP had no floor
+  at all; it now fails when a security-relevant catalog pin has no reviewed
+  entry. The override matcher was inverted and could let one coordinate's
+  override suppress another's floor, so overrides now match on both fields and
+  are rejected at load time when either is missing.
+- Record the Tink CVE-2026-15432 triage: the reported timing side channel is in
+  `ChunkedMacVerification`, which this app never calls, so the pin stays at
+  1.23.0 with a floor that surfaces the patched release when it ships.
 - Repair two dead ends in the migration flow: the "SwiftFloris encrypted backup
   (.sfexp)" tile now opens the personal dictionary import picker, which detects
   the encrypted envelope and prompts for the passphrase, instead of the archive

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "_comment": "Release-evidence freshness floor for security-critical dependencies OSV cannot fully model, such as embedded native baselines.",
+  "_comment": "Release-evidence freshness floors for security-critical dependencies. Every catalogKey in SECURITY_RELEVANT_CATALOG_KEYS (scripts/check-security-dependency-freshness.py) must appear here, so a security-relevant pin cannot ship without a reviewed floor. Raising a floor is a deliberate review step: update minimumVersion and reviewedOn together.",
   "dependencies": [
     {
       "catalogKey": "sqlcipher-android",
@@ -8,6 +8,48 @@
       "minimumVersion": "4.17.0",
       "reviewedOn": "2026-07-09",
       "reason": "SQLCipher 4.17.0 includes the reviewed SQLite CVE baseline for encrypted personal dictionaries."
+    },
+    {
+      "catalogKey": "tink-android",
+      "module": "com.google.crypto.tink:tink-android",
+      "minimumVersion": "1.23.0",
+      "reviewedOn": "2026-08-20",
+      "reason": "Tink wraps the personal dictionary, clipboard and Tasker secrets. CVE-2026-15432 (GHSA-xxmf-j3rw-f8p2, published 2026-07-21) reports a non-constant-time tag comparison in ChunkedMacVerification and lists no patched version. SwiftFloris uses no ChunkedMac API anywhere in app/ or lib/, so the timing side channel is unreachable here; 1.23.0 stays the floor and this entry is the reminder to raise it when a patched release ships."
+    },
+    {
+      "catalogKey": "androidx-room",
+      "module": "androidx.room:room-runtime",
+      "minimumVersion": "2.8.4",
+      "reviewedOn": "2026-08-20",
+      "reason": "Room is the storage engine for the SQLCipher-encrypted personal dictionary and clipboard history. No advisories affect 2.x as of this review; Room 2.x is in maintenance mode, so regressions below this pin are treated as unreviewed."
+    },
+    {
+      "catalogKey": "androidx-sqlite",
+      "module": "androidx.sqlite:sqlite",
+      "minimumVersion": "2.6.2",
+      "reviewedOn": "2026-08-20",
+      "reason": "Driver layer beneath Room and SQLCipher. No advisories as of this review; pinned so a downgrade below the reviewed baseline fails the release."
+    },
+    {
+      "catalogKey": "kotlin",
+      "module": "org.jetbrains.kotlin:kotlin-gradle-plugin",
+      "minimumVersion": "2.4.10",
+      "reviewedOn": "2026-08-20",
+      "reason": "CVE-2026-53914 (GHSA-r937-wjx7-w2jp) is an unsafe deserialization of build-cache metadata, fixed only in 2.4.20 which is still pre-release (RC, 2026-08-12). The attack requires write access to the build cache; this repository has no CI and no shared remote cache, so 2.4.10 remains the reviewed floor. See scripts/check-kotlin-build-cache-cve-guard.py."
+    },
+    {
+      "catalogKey": "ksp",
+      "module": "com.google.devtools.ksp:symbol-processing-api",
+      "minimumVersion": "2.3.9",
+      "reviewedOn": "2026-08-20",
+      "reason": "KSP runs in the build and must stay on the Kotlin line pinned above; a mismatched processor is a build-integrity risk rather than a runtime one."
+    },
+    {
+      "catalogKey": "android-gradle-plugin",
+      "module": "com.android.tools.build:gradle",
+      "minimumVersion": "9.3.0",
+      "reviewedOn": "2026-08-20",
+      "reason": "AGP produces the signed APK and enforces the merged-manifest permission allowlist. No advisories affect 9.3.0 as of this review."
     }
   ],
   "overrides": []

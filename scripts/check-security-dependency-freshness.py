@@ -25,6 +25,24 @@ class ParsedVersion:
     suffix: str
 
 
+# Catalog keys whose version carries a security consequence: the crypto that
+# wraps every local secret, the storage engines that hold the personal
+# dictionary and clipboard, and the build toolchain that produces the APK.
+# Every key here must have a floor in the freshness policy, so adding a
+# security-relevant pin cannot quietly ship without one.
+SECURITY_RELEVANT_CATALOG_KEYS = frozenset(
+    {
+        "android-gradle-plugin",
+        "androidx-room",
+        "androidx-sqlite",
+        "kotlin",
+        "ksp",
+        "sqlcipher-android",
+        "tink-android",
+    }
+)
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Check security-critical dependency versions against reviewed freshness floors.",
@@ -149,6 +167,11 @@ def load_policy(path: Path, today: date) -> tuple[list[dict[str, Any]], list[dic
     for index, override in enumerate(overrides):
         if not isinstance(override, dict):
             raise ValueError(f"{path.as_posix()}: overrides[{index}] must be an object")
+        # An override is matched on catalogKey *and* module, so one missing
+        # either field would silently never apply. Reject it here instead.
+        label = f"{path.as_posix()}: overrides[{index}]"
+        require_string(override, "catalogKey", label)
+        require_string(override, "module", label)
     return dependencies, overrides
 
 
@@ -162,7 +185,9 @@ def active_override_for(
 ) -> dict[str, Any] | None:
     active: dict[str, Any] | None = None
     for index, override in enumerate(overrides):
-        if override.get("catalogKey") != catalog_key and override.get("module") != module:
+        # Both fields must match. Requiring only one to match let an override
+        # written for a different coordinate suppress this one's floor.
+        if override.get("catalogKey") != catalog_key or override.get("module") != module:
             continue
         label = f".github/security-dependency-freshness.json overrides[{index}]"
         try:
@@ -195,6 +220,21 @@ def main() -> int:
     errors: list[str] = []
     warnings: list[str] = []
     checked = 0
+
+    # A floor only protects what it names. Listing one dependency and printing
+    # "OK (1 checked dependency floor(s))" reads like a pass while the crypto,
+    # storage and build-toolchain pins carry no floor at all, so require every
+    # security-relevant catalog key to be covered.
+    # Scoped to keys the catalog actually pins: a dependency that is not used
+    # carries no risk, and synthetic fixture catalogs legitimately omit most of
+    # them. What must not happen is a security-relevant pin shipping unfloored.
+    floored_keys = {dependency["catalogKey"] for dependency in dependencies}
+    for catalog_key in sorted(SECURITY_RELEVANT_CATALOG_KEYS & catalog.keys()):
+        if catalog_key not in floored_keys:
+            errors.append(
+                f"{catalog_key}: security-relevant dependency has no freshness floor in "
+                f"{config_path.as_posix()}; add a minimumVersion/reviewedOn/reason entry"
+            )
 
     for dependency in dependencies:
         catalog_key = dependency["catalogKey"]

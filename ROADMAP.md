@@ -28,14 +28,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: every security-relevant claim currently asserted against source text is asserted against observable behaviour — on the attached device where a real store is required — and the source-grep assertions are deleted rather than kept alongside; the Roborazzi capture tests are excluded from, or clearly labelled in, the plain unit-test report so the suite's green count reflects assertions.
   Complexity: L
 
-- [ ] P2 — Give every security-relevant dependency a freshness floor
-  Why: `.github/security-dependency-freshness.json` lists exactly one dependency, so Tink (which wraps the dictionary, clipboard and Tasker secrets), Room, AGP, Kotlin and the Gradle wrapper have no floor at all. The gate prints `OK (1 checked dependency floor(s))`, which reads like a pass. The override matcher is also inverted — it requires both `catalogKey` **and** `module` to differ before skipping, so one override can suppress a second dependency's floor (latent; `overrides` is empty).
-  Evidence: `.github/security-dependency-freshness.json:4-13`; `scripts/check-security-dependency-freshness.py:131-134`, `:165`, `:199-225`; `gradle/libs.versions.toml` is never enumerated
-  Touches: `.github/security-dependency-freshness.json`, `scripts/check-security-dependency-freshness.py`, `scripts/test-check-security-dependency-freshness.py`
-  Acceptance: every crypto, storage and build-toolchain pin in `gradle/libs.versions.toml` has a floor, the gate fails when the catalog contains a security-relevant coordinate with no entry, and the override matcher requires both fields to match before suppressing.
-  Complexity: S
-  Note (2026-08-20): fresh motivation — Tink CVE-2026-15432 (ChunkedMac timing side channel, HIGH, 2026-07-21) landed against a dependency this gate does not floor. No `ChunkedMac` API is used in this tree (grep verified 2026-08-20), so exposure is nil, but the gate would not have surfaced the advisory either.
-
 - [ ] P2 — Retire the drifted copy of the data-extraction exclude list
   Why: `verifyDataExtractionRules` pins 13 of the 22 paths in `data_extraction_rules.xml`. Unpinned: `swiftfloris_tasker_auth.xml` (the per-install Tasker HMAC secret), the whole `clipboard_history*` family, `clipboard_files`, `clipboard_history_key.xml`, `clipboard_media_key.xml`, `swiftfloris_scheduled_backup.xml`. Deleting any leaves the gate green. `BackupDataInventoryTest` already does a bidirectional exact match over all of them, so the Gradle task is a weaker, drifted second copy of a list that has a stronger owner.
   Evidence: `app/build.gradle.kts:451-474` (13 pairs) vs `app/src/main/res/xml/data_extraction_rules.xml` (22 unique paths, 44 `<exclude>` elements across both sections); `app/src/test/.../BackupDataInventoryTest.kt`; `ime/tasker/TaskerAuthentication.kt:23-26`
@@ -199,13 +191,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Evidence: `ime/addons/AddonInvocationAudit.kt:43-49` ("nothing is persisted"); `PrivacyAuditDisplay.kt`; wired in production via `NlpAddonHub.kt:98-160` since commit 491d90d93
   Touches: `ime/addons/AddonInvocationAudit.kt`, `app/settings/privacy/PrivacyAuditScreen.kt`, `app/src/main/res/values/strings.xml`
   Acceptance: either a bounded, size-capped local persistence (covered by the backup exclude inventory) or an explicit "since keyboard start" caption with the process start time on the audit screen; a test pins whichever contract is chosen.
-  Complexity: S
-
-- [ ] P2 — Record the Tink CVE-2026-15432 triage and floor the bump
-  Why: a HIGH advisory (ChunkedMac non-constant-time tag comparison, published 2026-07-21, patched version unlisted) landed against the library wrapping every secret in the app. The tree uses no ChunkedMac API (grep verified 2026-08-20), so exposure is nil — but that conclusion lives nowhere a future maintainer can find it, and no gate would flag the patched release when it ships.
-  Evidence: https://github.com/advisories/GHSA-xxmf-j3rw-f8p2 ; `gradle/libs.versions.toml` (Tink 1.23.0); zero `ChunkedMac` matches in `app/`/`lib/`
-  Touches: `docs/DEPENDENCY_TRIAGE.md`, `.github/security-dependency-freshness.json`
-  Acceptance: the triage (advisory id, affected API, non-usage evidence, decision) is recorded in `docs/DEPENDENCY_TRIAGE.md`; Tink gains a freshness-floor entry so the next release is flagged; the bump lands when a patched Tink ships.
   Complexity: S
 
 - [ ] P2 — Add Transcribro to the external voice-IME providers
