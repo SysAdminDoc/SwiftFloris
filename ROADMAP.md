@@ -25,6 +25,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `app/src/test/.../ThemeContrastTest.kt`, the shipped stylesheets, `app/settings/theme/EditPropertyDialog.kt`, `docs/ACCESSIBILITY.md`
   Acceptance: the test derives its cases from every text-bearing selector present in a stylesheet rather than a literal list, so a new selector is covered without editing the test; all shipped themes meet 4.5:1 on text and 3:1 on non-text UI, with any deliberate exemption named in the test rather than absent from it; the theme editor warns inline when a chosen pair falls below the floor.
   Complexity: M
+  Note (2026-08-20): a half-finished implementation exists uncommitted in the working tree — 21 modified stylesheets, `ThemeContrastTest.kt` (+192/-98), modified `EditPropertyDialog.kt`/`ThemeEditorScreen.kt`, plus untracked `ThemeContrastPolicy.kt` and its test. Finish that WIP rather than restarting, and normalize the CRLF line endings the modified stylesheets picked up (repo is LF, `core.autocrlf=false`) before committing.
 
 - [ ] P1 — Correct the four public docs that contradict the code
   Why: these are tracked, public files that assert security and accessibility properties the tree does not have. `PRIVACY_AND_AI.md` says the dictionary key is held in Android Keystore when it is a `SecureRandom` passphrase in SharedPreferences AEAD-wrapped by a Keystore key (`SECURITY.md` says this correctly — the two disagree). `TASKER_INTEGRATION.md` claims a signature permission on a receiver that has none, and its four `adb` examples are all rejected at runtime. `ACCESSIBILITY.md` claims a Compose API that does not exist, a settings key never read, an `announceForAccessibility` absence that is false, and an editor contrast warning that does not exist. `THREAT_MODEL.md` claims a merged-manifest guarantee its own checklist command does not verify.
@@ -32,6 +33,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `docs/PRIVACY_AND_AI.md`, `docs/TASKER_INTEGRATION.md`, `docs/ACCESSIBILITY.md`, `docs/THREAT_MODEL.md`, `docs/SECURITY.md`
   Acceptance: every corrected claim names the file and symbol that implements it; the Tasker doc documents the real gates (default-off preference plus HMAC payload signature) and replaces the non-working `adb` examples; no doc describes a Compose or platform API that does not exist. Depends on the doc-integrity gate widening so regressions are caught.
   Complexity: M
+  Note (2026-08-20): reduced but still open — the THREAT_MODEL system-dictionary claim was made true by making the DAO read-only (`e18a59578`), and the doc-integrity gate was widened (`1c4b43b4a`); `docs/PRIVACY_AND_AI.md:236-237` still misstates the dictionary key as "held in Android Keystore", and the Tasker/ACCESSIBILITY corrections remain undone.
 
 - [ ] P1 — Raise the shared touch-target minimum from 44 dp to 48 dp
   Why: the shared Settings widgets standardise on `44.dp` — the iOS figure — which is 4 dp under the Android/WCAG 2.5.5 floor, while two composables in the same file correctly use `minimumInteractiveComponentSize()`. Every text button, chip and card action in Settings is affected. `docs/ACCESSIBILITY.md:141` claims 48 dp on every interactive element, and `TouchTargetWcagTest` only measures keyboard row heights on one synthetic device, so nothing catches it.
@@ -69,6 +71,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `.github/security-dependency-freshness.json`, `scripts/check-security-dependency-freshness.py`, `scripts/test-check-security-dependency-freshness.py`
   Acceptance: every crypto, storage and build-toolchain pin in `gradle/libs.versions.toml` has a floor, the gate fails when the catalog contains a security-relevant coordinate with no entry, and the override matcher requires both fields to match before suppressing.
   Complexity: S
+  Note (2026-08-20): fresh motivation — Tink CVE-2026-15432 (ChunkedMac timing side channel, HIGH, 2026-07-21) landed against a dependency this gate does not floor. No `ChunkedMac` API is used in this tree (grep verified 2026-08-20), so exposure is nil, but the gate would not have surfaced the advisory either.
 
 - [ ] P2 — Retire the drifted copy of the data-extraction exclude list
   Why: `verifyDataExtractionRules` pins 13 of the 22 paths in `data_extraction_rules.xml`. Unpinned: `swiftfloris_tasker_auth.xml` (the per-install Tasker HMAC secret), the whole `clipboard_history*` family, `clipboard_files`, `clipboard_history_key.xml`, `clipboard_media_key.xml`, `swiftfloris_scheduled_backup.xml`. Deleting any leaves the gate green. `BackupDataInventoryTest` already does a bidirectional exact match over all of them, so the Gradle task is a weaker, drifted second copy of a list that has a stronger owner.
@@ -118,6 +121,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `gradle/libs.versions.toml`, `gradle/tools.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`, `README.md`, `docs/REPRODUCIBLE_BUILDS.md`, `docs/DEPENDENCY_TRIAGE.md`
   Acceptance: pins are current, the full unit suite and Roborazzi verify stay green, `scripts/check-public-doc-version-pins.py` passes, and the reproducible-build image installs the same component set. Kotlin stays on 2.4.10 — see the CVE item in `Roadmap_Blocked.md`. Coil 3.5.0 raises minSdk to 23, which is below this project's 26; confirm no other bump raises it above 26.
   Complexity: S
+  Note (2026-08-20): targets moved — Gradle 9.6.1 → 9.7.1, AGP 9.3.0 → 9.3.1, Compose BOM 2026.06.00 → 2026.08.00, Roborazzi → 1.72.0, KSP → 2.3.11, SQLCipher 4.17.0 → 4.18.0 (adds Room 3 support; requires compileSdk 37 — already satisfied), buildTools → 37.0.0; androidx-core 1.19.0, androidx-sqlite 2.7.0, Coil 3.5.0, Kotest 6.2.4 unchanged as targets. Kotlin 2.4.20 is still RC (2026-08-12); Robolectric stable is still 4.16.1. androidx-core 1.19.0's `TextAttributeCompat` backports the API 37 suggestion-selected attribute the editor already writes.
 
 - [ ] P2 — Fix the unreachable per-locale empty state in the user dictionary
   Why: `loadUiSnapshot` resets `currentLocale` to null whenever the selected locale returns zero words, so the per-locale empty state can never render. Deleting the last word for a language silently bounces the user back to the language list with no explanation, and two shipped strings are dead.
@@ -183,6 +187,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `app/src/main/assets/ime/media/emoji/*.txt`, `ime/media/emoji/EmojiData.kt`, `app/src/test/.../EmojiDataVersionTest.kt`, `CHANGELOG.md`
   Acceptance: after CLDR publishes its Unicode 18 update, the assets are regenerated, the declared version matches a probe set of Emoji 18.0 code points present in the data, and `EmojiDataVersion` gains a real consumer so a mismatch is observable at runtime rather than only in a test.
   Complexity: S
+  Note (2026-08-20): now schedulable — draft `emoji-test.txt` v18.0 (dated 2026-04-30) is published at unicode.org/Public/draft/emoji/; final data lands at unicode.org/Public/emoji/18.0/ on 2026-09-16. Localized names/annotations/search keywords arrive with CLDR 49 (49-alpha0 tagged 2026-08-14; final ~Oct 2026) — CLDR 48 will never carry Emoji 18. Codepoints and ordering are regenerable today; hold annotation regeneration for CLDR 49.
 
 - [ ] P3 — Publish a fork-provenance proof
   Why: a paid Play app is reported to ship FlorisBoard's service and native library while recording microphone clips and logging keystrokes. Every Floris derivative inherits that suspicion, and SwiftFloris already produces the two artefacts that answer it — a reproducible build and a `SHA256SUMS` manifest — but presents them as release hygiene rather than as a provenance argument a reviewer can check in one page.
@@ -190,6 +195,7 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `README.md`, `docs/REPRODUCIBLE_BUILDS.md`, `docs/SECURITY.md`
   Acceptance: one page states the package id, the signing-certificate SHA-256 (which the README currently does not carry despite `docs/THREAT_MODEL.md:207-209,266` telling users to compare against it), the exact permission set with a one-line justification each, and the commands a third party runs to reproduce the APK and diff the permissions — verified end to end by someone other than the maintainer.
   Complexity: S
+  Note (2026-08-20): stronger case now — Urik Keyboard (F-Droid, 2026-06) leads its listing with SQLCipher-encrypted learning, and Gboard markets its writing tools as on-device, so "on-device" alone no longer differentiates; the provenance page should lead with the properties Google cannot match: no network permission, reproducible build, verifiable signing.
 
 - [ ] P3 — Evaluate a bundled rule-based offline proofreader
   Why: Gboard's on-device writing tools are gated to Gemini-Nano-class hardware and the Grammarly keyboard is being discontinued, leaving grammar assistance unavailable to everyone on ordinary devices. A rule-and-dictionary proofreader is the one credible offline answer that fits `minSdk 26` and needs no model runtime — and SwiftFloris already has the surfaces (spell-checker service, smartbar candidates, `SensitiveFieldGuard`, the addon contract) to host it without touching the base APK's no-network posture.
@@ -197,3 +203,68 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `ime/nlp/SpellingResult.kt`, `FlorisSpellCheckerService.kt`, `ime/smartcompose/`, `addons/`, `docs/PRIVACY_AND_AI.md`
   Acceptance: a written evaluation covering licence compatibility with Apache-2.0, per-language rule-data size, and APK-vs-addon packaging, plus a spike proving one English rule set produces `RESULT_ATTR_LOOKS_LIKE_GRAMMAR_ERROR` results through the existing spell-checker service on the attached device. Ship the decision, not the integration, in this item. Distinct from the blocked transformer-prediction addon: no model runtime, no GPU, no `INTERNET`.
   Complexity: L
+
+## Research-Driven Additions (2026-08-20)
+
+### P1
+
+- [ ] P1 — Fix the non-terminating `findWindow()` recursion
+  Why: `Context.findWindow()` recurses on the same receiver instead of unwrapping `baseContext`, so any `ContextWrapper` that is not itself an `Activity` or `InputMethodService` — a Compose `Dialog`, any `ContextThemeWrapper` — loops forever on the main thread, and the call site force-unwraps the result. Today's call sites happen to pass raw IMS/Activity contexts, which is the only reason it has not fired; upstream hit exactly this composing inside a non-Activity window.
+  Evidence: `ime/window/ImeSystemUi.kt:287-292` (`val context = this; … return if (context is ContextWrapper) context.findWindow() else null`), `!!` at `:96`; https://github.com/florisboard/florisboard/issues/3326
+  Touches: `ime/window/ImeSystemUi.kt`, `app/src/test/.../ime/window/`
+  Acceptance: the recursion steps through `baseContext`; a wrapped-but-rooted context resolves, an unrooted chain returns null without hanging, and the `:96` call site handles null without `!!`; a JVM test covers Activity-rooted, IMS-rooted, wrapper-chained, and unrooted contexts.
+  Complexity: S
+
+- [ ] P1 — Cut v1.9.60 for the eight unreleased post-tag commits
+  Why: eight commits of shipped fixes (incognito ghost text, read-only system dictionary, merged-manifest permission allowlist, MCP no-bind, data-preservation rewrites, loading states, method.xml capabilities, MCP lifecycle serialization) sit past the `v1.9.59` tag with `gradle.properties` still at 1.9.59/2108 — the exact drift the front-door gate exists to stop, re-accumulating from the other direction. The uncommitted contrast-gate WIP should be finished (see the 2026-08-11 P1 item's note) or explicitly shelved before the cut.
+  Evidence: `git log v1.9.59..HEAD` (8 commits, b6f368f8a..89bc87d6a); `gradle.properties:14-15`; `scripts/check-release-front-door.sh` (green today only because HEAD is unreleased)
+  Touches: `gradle.properties`, `README.md` (badge, table header, release log), `fastlane/metadata/android/en-US/changelogs/2109.txt`, `CHANGELOG.md`
+  Acceptance: versionCode/versionName bumped, fastlane changelog written, full release-evidence run green, tag pushed, GitHub Release published with APK + SHA256SUMS, front-door gate green against the published release.
+  Complexity: S
+
+### P2
+
+- [ ] P2 — Refresh the README developer-verification section with the 2026-08 facts
+  Why: the section predates every material development: enforcement is precisely 2026-09-30 (Brazil, Indonesia, Singapore, Thailand), ADB installs are explicitly exempt, the "advanced flow" (Developer-options toggle → warnings → one-time 24-hour wait) is rolling out now, a free email-only tier covers up to 20 devices, and the September named-store list does not include F-Droid. The front-door gate requires this section to be reviewed each quarter, and users in pilot regions get materially wrong guidance six weeks before enforcement.
+  Evidence: `README.md` "Google developer verification (Sept 2026)" section; https://android-developers.googleblog.com/2026/03/android-developer-verification.html ; https://9to5google.com/2026/08/18/ (advanced-flow rollout); https://support.google.com/android-developer-console/answer/16561738
+  Touches: `README.md`, `Roadmap_Blocked.md` (registration item's blocker text)
+  Acceptance: the section states the exact enforcement date, the ADB and advanced-flow fallbacks for pilot-region users, and the 20-device free tier's irrelevance to public distribution; the quarterly-review stamp is current; the registration decision itself stays in `Roadmap_Blocked.md` as human-gated.
+  Complexity: S
+
+- [ ] P2 — Make the MCP settings surface honest about the parked engine
+  Why: `FlorisImeService` now pins the MCP lifecycle to null and empties both registries (correct — no binding can occur), but `McpSettingsScreen` still offers discovery review, trust actions, and per-daemon toggles that govern a no-op. A user who enables a daemon there reasonably believes something turned on. The 2026-08-11 audit-hub commit deleted the routing roadmap item as done, so no open item tracks this residue.
+  Evidence: `FlorisImeService.kt:424-434` (`mcpLifecycle = null`, registries pinned empty, parked comment); `app/settings/mcp/McpSettingsScreen.kt`; commit 491d90d93
+  Touches: `app/settings/mcp/McpSettingsScreen.kt`, `app/src/main/res/values/strings.xml`, `docs/PRIVACY_AND_AI.md`
+  Acceptance: the screen carries a persistent parked-state banner stating that no daemon is bound or dispatchable in this build (or the screen is gated behind a developer toggle until a live action exists); trust and toggle state remain editable and persisted; README/PRIVACY_AND_AI wording matches.
+  Complexity: M
+
+- [ ] P2 — Persist or caption the in-memory addon invocation audit
+  Why: `AddonInvocationAudit` is an in-memory object by design, so the privacy audit screen silently resets on process death — an empty log after a reboot reads as "no AI invocation ever occurred", which is the exact misreading the audit surface exists to prevent.
+  Evidence: `ime/addons/AddonInvocationAudit.kt:43-49` ("nothing is persisted"); `PrivacyAuditDisplay.kt`; wired in production via `NlpAddonHub.kt:98-160` since commit 491d90d93
+  Touches: `ime/addons/AddonInvocationAudit.kt`, `app/settings/privacy/PrivacyAuditScreen.kt`, `app/src/main/res/values/strings.xml`
+  Acceptance: either a bounded, size-capped local persistence (covered by the backup exclude inventory) or an explicit "since keyboard start" caption with the process start time on the audit screen; a test pins whichever contract is chosen.
+  Complexity: S
+
+- [ ] P2 — Record the Tink CVE-2026-15432 triage and floor the bump
+  Why: a HIGH advisory (ChunkedMac non-constant-time tag comparison, published 2026-07-21, patched version unlisted) landed against the library wrapping every secret in the app. The tree uses no ChunkedMac API (grep verified 2026-08-20), so exposure is nil — but that conclusion lives nowhere a future maintainer can find it, and no gate would flag the patched release when it ships.
+  Evidence: https://github.com/advisories/GHSA-xxmf-j3rw-f8p2 ; `gradle/libs.versions.toml` (Tink 1.23.0); zero `ChunkedMac` matches in `app/`/`lib/`
+  Touches: `docs/DEPENDENCY_TRIAGE.md`, `.github/security-dependency-freshness.json`
+  Acceptance: the triage (advisory id, affected API, non-usage evidence, decision) is recorded in `docs/DEPENDENCY_TRIAGE.md`; Tink gains a freshness-floor entry so the next release is flagged; the bump lands when a patched Tink ships.
+  Complexity: S
+
+- [ ] P2 — Add Transcribro to the external voice-IME providers
+  Why: the offline voice handoff supports exactly three voice IMEs (FUTO, WhisperInput, Whisper), and FUTO's standalone Voice Input is in maintenance mode. Transcribro (whisper.cpp + Silero VAD, on-device, actively developed, F-Droid) is the current best-maintained private voice IME and costs one list entry to support.
+  Evidence: `ime/voice/ExternalVoiceInputProvider.kt:39-58` (`SupportedOfflineImeProviders`); https://github.com/soupslurpr/Transcribro ; https://github.com/futo-org/voice-input/releases (maintenance cadence)
+  Touches: `ime/voice/ExternalVoiceInputProvider.kt`, `ime/voice/VoiceInputSetupActivity.kt` (provider-agnostic copy where it is FUTO-specific), `app/src/main/res/values/strings.xml`
+  Acceptance: Transcribro's exact package id is verified from its F-Droid listing before coding; with it installed and enabled, the mic action hands off to it and returns; setup guidance lists it alongside the existing three; existing FUTO-first behavior is unchanged when multiple providers are installed.
+  Complexity: S
+
+### P3
+
+- [ ] P3 — Share one `NlpAddonHub` between the smartbar action and the NLP manager
+  Why: `QuickAction` constructs `NlpAddonHub.production()` per invocation while `NlpManager` holds a long-lived instance — harmless today because the audit sink is a global object, but silently wrong the day the hub gains any per-instance state (cache, cooldown, rate limit), and two construction sites already drifted once before the hub became load-bearing.
+  Evidence: `ime/keyboard/QuickAction.kt:112` vs `ime/nlp/NlpManager.kt:69`; commit 491d90d93
+  Touches: `ime/keyboard/QuickAction.kt`, `ime/nlp/NlpManager.kt`
+  Acceptance: one production hub instance is shared (injected or resolved via the existing manager), construction-site count for `NlpAddonHub.production()` is one, and a test pins it.
+  Complexity: S
+
