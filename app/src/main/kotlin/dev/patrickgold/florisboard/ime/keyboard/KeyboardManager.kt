@@ -121,6 +121,8 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     val layoutManager = LayoutManager(context)
     private val keyboardCache = TextKeyboardCache()
+    @Volatile
+    private var numericPasswordDigitMapping: Map<Int, Int> = emptyMap()
 
     val resources = KeyboardManagerResources()
     val activeState = ObservableKeyboardState.new()
@@ -129,6 +131,15 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
     @Volatile
     private var incognitoModeChangedListener: ((Boolean) -> Unit)? = null
     private var lastToastReference = WeakReference<Toast>(null)
+
+    fun configureNumericPasswordScramble(enabled: Boolean) {
+        numericPasswordDigitMapping = if (enabled) {
+            NumericPasswordScramblePolicy.newMapping()
+        } else {
+            emptyMap()
+        }
+        updateActiveEvaluators()
+    }
 
     private val activeEvaluatorGuard = Mutex(locked = false)
     private var activeEvaluatorVersion = AtomicInteger(0)
@@ -1446,6 +1457,9 @@ class KeyboardManager(context: Context) : InputKeyEventReceiver {
         override val state: KeyboardState,
         override val subtype: Subtype,
     ) : ComputingEvaluator {
+
+        override val numericPasswordDigitMapping: Map<Int, Int>
+            get() = this@KeyboardManager.numericPasswordDigitMapping
 
         override fun context(): Context = appContext
 

@@ -133,6 +133,7 @@ object SettingsSearchIndex {
 
         entry("keyboard", R.string.settings__keyboard__title, R.string.settings__keyboard__title, R.string.settings__home__keyboard_summary, SettingsSearchDestination.KEYBOARD),
         entry("keyboard.number-row", R.string.settings__keyboard__title, R.string.pref__keyboard__number_row__label, destination = SettingsSearchDestination.KEYBOARD),
+        entry("keyboard.scrambled-numeric-password", R.string.settings__keyboard__title, R.string.pref__keyboard__scrambled_numeric_password__label, R.string.pref__keyboard__scrambled_numeric_password__summary, SettingsSearchDestination.KEYBOARD, "PIN passcode random keypad shoulder surfing"),
         entry("keyboard.hinted-number-row", R.string.settings__keyboard__title, R.string.pref__keyboard__hinted_number_row_mode__label, destination = SettingsSearchDestination.KEYBOARD),
         entry("keyboard.hinted-symbols", R.string.settings__keyboard__title, R.string.pref__keyboard__hinted_symbols_mode__label, destination = SettingsSearchDestination.KEYBOARD),
         entry("keyboard.bottom-row", R.string.settings__keyboard__title, R.string.pref__keyboard__bottom_row_preset__label, destination = SettingsSearchDestination.KEYBOARD, keywords = "voice navigation spacebar"),

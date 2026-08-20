@@ -80,6 +80,10 @@ open class KeyboardPrefs : PreferenceModel() {
         key = "keyboard__number_row",
         default = true,
     )
+    val scrambledNumericPasswordEnabled = boolean(
+        key = "keyboard__scrambled_numeric_password_enabled",
+        default = false,
+    )
     val hintedNumberRowEnabled = boolean(
         key = "keyboard__hinted_number_row_enabled",
         default = false,

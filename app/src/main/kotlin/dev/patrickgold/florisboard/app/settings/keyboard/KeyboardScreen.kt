@@ -59,6 +59,11 @@ fun KeyboardScreen() = FlorisScreen {
                 title = stringRes(R.string.pref__keyboard__number_row__label),
                 summary = stringRes(R.string.pref__keyboard__number_row__summary),
             )
+            SwitchPreference(
+                prefs.keyboard.scrambledNumericPasswordEnabled,
+                title = stringRes(R.string.pref__keyboard__scrambled_numeric_password__label),
+                summary = stringRes(R.string.pref__keyboard__scrambled_numeric_password__summary),
+            )
             ListPreference(
                 listPref = prefs.keyboard.hintedNumberRowMode,
                 switchPref = prefs.keyboard.hintedNumberRowEnabled,

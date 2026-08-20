@@ -46,7 +46,12 @@ class TextKey(override val data: AbstractKeyData) : Key(data) {
     fun compute(evaluator: ComputingEvaluator) {
         val keyboard = evaluator.keyboard as? TextKeyboard ?: return
         val keyboardMode = keyboard.mode
-        val computed = data.compute(evaluator)
+        val computed = data.compute(evaluator)?.let { keyData ->
+            dev.patrickgold.florisboard.ime.keyboard.NumericPasswordScramblePolicy.remap(
+                data = keyData,
+                mapping = evaluator.numericPasswordDigitMapping,
+            )
+        }
 
         if (computed == null || !evaluator.evaluateVisible(computed)) {
             computedData = TextKeyData.UNSPECIFIED

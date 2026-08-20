@@ -965,6 +965,8 @@
     <string name="pref__keyboard__group_behavior__label" comment="Preference group title">Key behavior</string>
     <string name="pref__keyboard__number_row__label" comment="Preference title">Number row</string>
     <string name="pref__keyboard__number_row__summary" comment="Preference summary">Show a number row above the character layout</string>
+    <string name="pref__keyboard__scrambled_numeric_password__label" comment="Preference title">Scramble numeric passwords</string>
+    <string name="pref__keyboard__scrambled_numeric_password__summary" comment="Preference summary">Randomize digit positions once per PIN or numeric password field</string>
     <string name="pref__keyboard__hinted_number_row_mode__label" comment="Preference title">Hinted number row</string>
     <string name="pref__keyboard__hinted_symbols_mode__label" comment="Preference title">Hinted symbols</string>
     <string name="pref__keyboard__bottom_row_preset__label" comment="Preference title">Bottom row</string>

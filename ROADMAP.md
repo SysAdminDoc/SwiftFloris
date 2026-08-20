@@ -14,13 +14,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P3
 
-- [ ] P3 — Offer scrambled digit layouts for PIN and numeric password fields
-  Why: shoulder-surfing and touch-trace attacks on a fixed numeric grid are the one keyboard-layer threat a privacy IME can actually mitigate, and no FOSS Android keyboard ships it — upstream accepted the proposal and never implemented it. SwiftFloris already detects password variations for popup suppression, so the field-classification half exists.
-  Evidence: no `scramble`/`randomiz` match anywhere in `app/src/main`; existing password detection at `ime/text/keyboard/PasswordFieldPopupGate.kt:25`, used at `ime/text/keyboard/TextKeyboardLayout.kt:350,364`; layouts at `app/src/main/assets/ime/keyboard/org.florisboard.layouts/layouts/{numeric,phone,phone2}`; https://github.com/florisboard/florisboard/issues/3225
-  Touches: `ime/text/keyboard/TextKeyboardLayout.kt`, `ime/keyboard/KeyboardMode.kt`, `app/prefs/KeyboardPrefs.kt`, the numeric layout assets, `app/src/main/res/values/strings.xml`
-  Acceptance: an opt-in preference scrambles digit positions on numeric password fields only, reshuffling per field focus rather than per keypress; TalkBack announces the actual digit under the finger; a test asserts the scramble never applies outside a password variation.
-  Complexity: M
-
 - [ ] P3 — Support user-supplied keypress sounds
   Why: key feedback is limited to the four `AudioManager.FX_KEYPRESS_*` system effects, so the sound is whatever the OEM ships and cannot be themed alongside a Snygg theme. This has been an accepted upstream proposal since 2021 and is a visible, low-risk differentiator that needs no network.
   Evidence: `ime/input/InputFeedbackController.kt:108-123`; `app/prefs/InputFeedbackPrefs.kt` has volume and effect toggles but no sound source; https://github.com/florisboard/florisboard/issues/1360

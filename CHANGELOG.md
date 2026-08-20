@@ -10,6 +10,7 @@
 - Decode alternating two-pointer glides as separate traces, committing each word in finger-release order. The existing single-pointer detector behavior remains covered, and the active trail now renders both traces.
 - Add a fork-provenance section to README with the install package identity, merged release permission surface, certificate capture commands, and reproducible-build review checklist. The official release fingerprint remains pending until a signed release APK is published.
 - Add clipboard privacy controls: long-press can mark or unmark a text entry as sensitive, and a deliberate reveal shows it for four seconds only while the device is unlocked and the keyboard is not incognito. The default accessibility label stays masked.
+- Add an opt-in scrambled keypad for numeric password fields. The permutation is generated per field focus, and the key label, TalkBack text, and committed digit stay aligned. Normal numeric and phone fields are unchanged.
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
   to a pre-release alpha, and Gradle picked that over the Compose BOM's stable

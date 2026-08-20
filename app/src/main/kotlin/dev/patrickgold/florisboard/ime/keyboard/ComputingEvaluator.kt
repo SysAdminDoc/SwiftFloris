@@ -72,6 +72,10 @@ interface ComputingEvaluator {
 
     val subtype: Subtype
 
+    /** Stable digit mapping for the focused numeric password field, or empty when inactive. */
+    val numericPasswordDigitMapping: Map<Int, Int>
+        get() = emptyMap()
+
     fun context(): Context?
 
     fun displayLanguageNamesIn(): DisplayLanguageNamesIn

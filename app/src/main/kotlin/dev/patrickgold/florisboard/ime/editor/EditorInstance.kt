@@ -34,6 +34,7 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
 import dev.patrickgold.florisboard.ime.cjk.MixedScriptSpacing
 import dev.patrickgold.florisboard.ime.input.InputShiftState
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.keyboard.NumericPasswordScramblePolicy
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.profile.PerAppBooleanOverride
 import dev.patrickgold.florisboard.ime.profile.PerAppKeyboardProfilePolicy
@@ -131,6 +132,13 @@ class EditorInstance(context: Context) : AbstractEditorInstance(context) {
                 .forcesIncognito,
         )
         super.handleStartInputView(editorInfo, isRestart)
+        keyboardManager.configureNumericPasswordScramble(
+            NumericPasswordScramblePolicy.shouldApply(
+                enabled = prefs.keyboard.scrambledNumericPasswordEnabled.get(),
+                type = editorInfo.inputAttributes.type,
+                variation = editorInfo.inputAttributes.variation,
+            ),
+        )
         if (!editorContract.allowsImeSuggestions) {
             nlpManager.clearSuggestions()
         }
