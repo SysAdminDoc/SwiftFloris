@@ -399,6 +399,54 @@ fun findDisallowedPermissionViolations(manifestText: String): List<String> {
     return violations
 }
 
+/**
+ * Fails when a Compose artifact resolves to a version the repository does not name.
+ *
+ * `docs/REPRODUCIBLE_BUILDS.md` states that every Compose dependency resolves through
+ * `gradle/libs.versions.toml` with no floating selectors. That was not true: four Compose
+ * Multiplatform dependencies (`aboutlibraries-compose-m3`, `jetpref-datastore-ui`,
+ * `jetpref-material-ui`, `material-kolor`) depend on `org.jetbrains.compose.material3`, which
+ * carries a constraint on `androidx.compose.material3:material3` at a pre-release alpha. Gradle
+ * conflict resolution picked the alpha over the BOM's stable pin, so the shipped app was built
+ * against an alpha Material 3 that appeared in no file here. It surfaced when a material-kolor
+ * bump raised that alpha past the BOM's `compose-foundation` and three screenshot tests died with
+ * `AbstractMethodError`.
+ *
+ * The Compose BOM is applied as an `enforcedPlatform` now, so it wins. This is the gate that says
+ * so out loud: if a future dependency reintroduces a pre-release Compose artifact, the build stops
+ * rather than shipping it unannounced.
+ */
+val verifyComposeBomAuthority = tasks.register("verifyComposeBomAuthority") {
+    group = "verification"
+    description = "Fails the build if any androidx.compose artifact resolves to a pre-release version."
+
+    val runtimeClasspath = configurations.named("debugRuntimeClasspath")
+    val resolved = runtimeClasspath.map { configuration ->
+        configuration.incoming.resolutionResult.allComponents
+            .map { it.moduleVersion }
+            .filter { it != null && it.group.startsWith("androidx.compose") }
+            .map { "${it!!.group}:${it.name}:${it.version}" }
+    }
+
+    doLast {
+        val preRelease = Regex("""-(alpha|beta|rc|dev)""", RegexOption.IGNORE_CASE)
+        val offenders = resolved.get().filter { preRelease.containsMatchIn(it.substringAfterLast(':')) }.sorted()
+        if (offenders.isNotEmpty()) {
+            throw GradleException(
+                buildString {
+                    appendLine("A Compose artifact resolved to a pre-release version no repository file names:")
+                    offenders.forEach { appendLine("  - $it") }
+                    appendLine()
+                    append("The Compose BOM is applied as an enforcedPlatform so it decides these versions. ")
+                    append("Run `gradlew :app:dependencyInsight --configuration debugRuntimeClasspath ")
+                    append("--dependency <group>:<name>` to find what pulled it in. If the pre-release is ")
+                    append("genuinely wanted, pin it in gradle/libs.versions.toml with a written reason.")
+                }
+            )
+        }
+    }
+}
+
 val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
     group = "verification"
     description = "Fails the build if any source AndroidManifest.xml declares a permission outside the enrollment allowlist (ROADMAP §6 N7.1)."
@@ -434,6 +482,12 @@ val verifyNoInternetPermission = tasks.register("verifyNoInternetPermission") {
 afterEvaluate {
     tasks.named("preBuild").configure {
         dependsOn(verifyNoInternetPermission)
+    }
+    // Not on preBuild: this one resolves a configuration, and doing that during every build's
+    // preBuild would drag dependency resolution into tasks that do not need it. It runs with the
+    // other release gates instead.
+    tasks.named("check").configure {
+        dependsOn(verifyComposeBomAuthority)
     }
 }
 
@@ -511,7 +565,7 @@ tasks.register("verifyRoborazziRelease") {
 // one silently certifies what it does not check; the stronger one is kept.
 
 dependencies {
-    val composeBom = platform(libs.androidx.compose.bom)
+    val composeBom = enforcedPlatform(libs.androidx.compose.bom)
     implementation(composeBom)
     // testImplementation(composeBom)
     // androidTestImplementation(composeBom)

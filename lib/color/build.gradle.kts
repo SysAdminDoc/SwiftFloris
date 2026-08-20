@@ -53,7 +53,7 @@ configure<LibraryExtension> {
 }
 
 dependencies {
-    val composeBom = platform(libs.androidx.compose.bom)
+    val composeBom = enforcedPlatform(libs.androidx.compose.bom)
     implementation(composeBom)
     // testImplementation(composeBom)
     // androidTestImplementation(composeBom)

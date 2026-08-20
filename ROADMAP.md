@@ -43,14 +43,15 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: M
 
 
-- [ ] P2 — Stop transitive Compose Multiplatform dependencies from overriding the Compose BOM
-  Why: `docs/REPRODUCIBLE_BUILDS.md` states that every Compose dependency resolves through `gradle/libs.versions.toml` version refs with no floating selectors, but four Compose Multiplatform artifacts (`aboutlibraries-compose-m3`, `jetpref-datastore-ui`, `jetpref-material-ui`, `material-kolor`) each depend on `org.jetbrains.compose.material3:material3`, which carries a constraint on `androidx.compose.material3:material3` at a **pre-release alpha**. Gradle conflict resolution picks the alpha over the BOM's stable pin, so the shipped app has been built against an alpha Material 3 that no file in the repo names. This is how the 2026-08-20 pin batch broke: material-kolor 5.0.0 escalated material3 to 1.5.0-alpha17 against the BOM's foundation 1.12.0 and three screenshot tests died with `AbstractMethodError` on `androidx.compose.foundation.style.CustomStyle.applyStyle`.
-  Evidence: `./gradlew :app:dependencyInsight --configuration debugUnitTestRuntimeClasspath --dependency androidx.compose.material3:material3` reports `1.5.0-alpha08`, "By constraint / By conflict resolution: between versions 1.5.0-alpha08, 1.4.0 and 1.3.1"; Compose BOM 2026.08.00 declares `material3 = 1.4.0`, `foundation = 1.12.0`; `docs/REPRODUCIBLE_BUILDS.md:28`
-  Touches: `app/build.gradle.kts`, `lib/compose/build.gradle.kts`, `lib/color/build.gradle.kts`, `lib/snygg/build.gradle.kts`, `gradle/libs.versions.toml`, `docs/REPRODUCIBLE_BUILDS.md`
-  Acceptance: the resolved `androidx.compose.material3:material3` version is the one the BOM names, or the alpha is declared explicitly in the catalog with a written reason; a gate fails when a Compose artifact resolves to a version no repository file names; the reproducible-build doc's pinning claim matches what resolution actually does. Verify the Compose Multiplatform libraries still work against the chosen version — they are compiled against the alpha, so forcing the stable line risks the mirror-image `AbstractMethodError` in the jetpref settings UI.
-  Complexity: M
 
 ### P3
+
+- [ ] P3 — Re-evaluate material-kolor 5.0.0 now that the Compose BOM is enforced
+  Why: material-kolor was held at 4.1.1 in the 2026-08-20 pin batch because 5.0.0 escalated `androidx.compose.material3` to `1.5.0-alpha17` through Compose Multiplatform, which needed a newer `compose-foundation` than the BOM ships. The BOM is applied as an `enforcedPlatform` now, so that escalation can no longer happen — the bump may simply work, or may fail the other way if material-kolor 5.0.0 genuinely needs the alpha's API.
+  Evidence: `docs/DEPENDENCY_TRIAGE.md` audit-log entry for 2026-08-20; `gradle/libs.versions.toml` pins `material-kolor = "4.1.1"`; `:app:verifyComposeBomAuthority`
+  Touches: `gradle/libs.versions.toml`, `docs/DEPENDENCY_TRIAGE.md`
+  Acceptance: material-kolor is either current or held with a written reason recorded in the dependency audit log; the full unit suite and Roborazzi verify stay green, and the theme colour surfaces are checked visually because this library generates them.
+  Complexity: S
 
 - [ ] P3 — Decode a true dual-thumb alternating-hand glide
   Why: the detector now traces whichever finger is gliding and survives a second pointer, but it still traces exactly one at a time, so alternating-hand swiping produces one trace with a jump where the hands change over rather than two interleaved words. Two-finger swipe is the most-repeated must-have in the highest-traffic 2026 keyboard discussion and the stated reason people stay on HeliBoard; the pointer plumbing that blocked it is done, the decoding is not.

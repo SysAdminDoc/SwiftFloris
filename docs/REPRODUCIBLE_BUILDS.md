@@ -26,6 +26,8 @@ verify it matches the official Release artifact.
 | Rust toolchain | `gradle/tools.versions.toml` `rustToolchain` | 1.93.0 | dormant pin retained for future out-of-tree native addons; `:app` ships no Rust today (the `:lib:native` placeholder was dropped in v1.8.185) |
 
 All Compose / library dependencies live behind `gradle/libs.versions.toml` version refs — no transitive `+` or `latest.release` selectors.
+
+The Compose BOM is applied as an `enforcedPlatform`, which is what makes that true for Compose. It was not true before: four Compose Multiplatform dependencies (`aboutlibraries-compose-m3`, `jetpref-datastore-ui`, `jetpref-material-ui`, `material-kolor`) depend on `org.jetbrains.compose.material3`, which constrains `androidx.compose.material3:material3` to a pre-release alpha, and ordinary conflict resolution picked that alpha over the BOM's stable pin. The app shipped against a Material 3 version no file here named. `./gradlew :app:verifyComposeBomAuthority` fails the build if any `androidx.compose` artifact resolves to a pre-release version again.
 `scripts/check-public-doc-version-pins.py` verifies this table plus the README and security version claims against
 the Gradle catalog, wrapper, and project properties.
 

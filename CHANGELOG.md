@@ -2,6 +2,12 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Stop shipping a Material 3 version no file in the repository names. Four
+  Compose Multiplatform dependencies each constrain `androidx.compose.material3`
+  to a pre-release alpha, and Gradle picked that over the Compose BOM's stable
+  pin, so the reproducible-build doc's claim that every Compose version is pinned
+  here was not true. The BOM is now applied as an `enforcedPlatform`, and a gate
+  fails the build if any Compose artifact resolves to a pre-release again.
 - Add "Report a problem" to Settings → About. Reaching the issue tracker from
   inside the app previously required an actual crash: the version, build type,
   commit hash, install source, device and Android version the issue templates ask
