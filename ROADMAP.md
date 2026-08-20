@@ -56,13 +56,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: About offers "Report a problem" with a pre-filled block containing version, versionCode, build type, commit hash, install source, device and Android version; crash reports and debug logs can be shared via `ACTION_SEND` through the existing FileProvider, with the same redaction the crash template asks the user to perform.
   Complexity: M
 
-- [ ] P2 — Tell users what backup does not cover, and what import overwrites
-  Why: the personal dictionary — everything a SwiftKey/Gboard migrant brings — is `SensitiveExcluded` from backups, and the coverage notice mentions only "learned words", never the personal dictionary, Tasker auth or the typing-trace file. `BackupDataInventory.sensitiveExclusions()` exists but no UI calls it, so the notice is a hand-written string free to drift. Separately, importing over an existing `(word, locale)` destroys the prior `freq`/`shortcut` irrecoverably while the summary reports only "Updated N existing words".
-  Evidence: `app/settings/advanced/BackupDataInventory.kt:201-214`, `:280-282`; `app/settings/advanced/BackupScreen.kt:598-602` + `strings.xml:1755`; `ime/dictionary/PersonalDictionaryImportBatch.kt:34-37,102-113,146-150` + `strings.xml:1406`
-  Touches: `app/settings/advanced/BackupScreen.kt`, `app/settings/advanced/BackupDataInventory.kt`, `app/settings/dictionary/PersonalDictionaryImportSummaryDialog.kt`, `app/src/main/res/values/strings.xml`
-  Acceptance: the coverage notice is rendered from `sensitiveExclusions()` so it cannot drift, and names every excluded store; the import summary states that overwritten rows lose their previous frequency and shortcut and are not covered by undo.
-  Complexity: S
-
 - [ ] P2 — Bring the lagging build and library pins current
   Why: nine pins are behind their latest stable as of 2026-08-11, and two of them matter beyond hygiene: `androidx-core` 1.19.0 adds `TextAttributeCompat`, the compat backport of the API 37 suggestion-selected attribute the editor already writes behind an API-37 guard; and `buildTools` is pinned to 36.0.0 against `compileSdk 37`.
   Evidence: verified against Maven metadata 2026-08-11 — Gradle 9.6.1 → 9.7.0, `androidx-core` 1.18.0 → 1.19.0, `androidx-sqlite` 2.6.2 → 2.7.0, Coil 3.4.0 → 3.5.0, Roborazzi 1.70.0 → 1.71.0, Kotest 6.2.3 → 6.2.4, KSP 2.3.9 → 2.3.11, `buildTools` 36.0.0 → 37.0.0; `gradle/libs.versions.toml`, `gradle/tools.versions.toml`, `gradle/wrapper/gradle-wrapper.properties`
@@ -164,13 +157,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Touches: `app/settings/mcp/McpSettingsScreen.kt`, `app/src/main/res/values/strings.xml`, `docs/PRIVACY_AND_AI.md`
   Acceptance: the screen carries a persistent parked-state banner stating that no daemon is bound or dispatchable in this build (or the screen is gated behind a developer toggle until a live action exists); trust and toggle state remain editable and persisted; README/PRIVACY_AND_AI wording matches.
   Complexity: M
-
-- [ ] P2 — Persist or caption the in-memory addon invocation audit
-  Why: `AddonInvocationAudit` is an in-memory object by design, so the privacy audit screen silently resets on process death — an empty log after a reboot reads as "no AI invocation ever occurred", which is the exact misreading the audit surface exists to prevent.
-  Evidence: `ime/addons/AddonInvocationAudit.kt:43-49` ("nothing is persisted"); `PrivacyAuditDisplay.kt`; wired in production via `NlpAddonHub.kt:98-160` since commit 491d90d93
-  Touches: `ime/addons/AddonInvocationAudit.kt`, `app/settings/privacy/PrivacyAuditScreen.kt`, `app/src/main/res/values/strings.xml`
-  Acceptance: either a bounded, size-capped local persistence (covered by the backup exclude inventory) or an explicit "since keyboard start" caption with the process start time on the audit screen; a test pins whichever contract is chosen.
-  Complexity: S
 
 - [ ] P2 — Add Transcribro to the external voice-IME providers
   Why: the offline voice handoff supports exactly three voice IMEs (FUTO, WhisperInput, Whisper), and FUTO's standalone Voice Input is in maintenance mode. Transcribro (whisper.cpp + Silero VAD, on-device, actively developed, F-Droid) is the current best-maintained private voice IME and costs one list entry to support.

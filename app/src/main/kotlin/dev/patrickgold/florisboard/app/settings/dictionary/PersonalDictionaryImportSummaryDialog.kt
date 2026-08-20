@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.app.settings.dictionary
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -83,6 +84,15 @@ fun PersonalDictionaryImportSummaryDialog(
                             R.string.settings__udm__import_summary__updated,
                             "count" to result.updatedExistingCount,
                         ),
+                    )
+                    // An in-place update replaces freq and shortcut outright and
+                    // the undo action only removes inserted rows, so say so
+                    // rather than letting "Updated N existing words" read as
+                    // additive.
+                    Text(
+                        text = stringRes(R.string.settings__udm__import_summary__updated_note),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
             }

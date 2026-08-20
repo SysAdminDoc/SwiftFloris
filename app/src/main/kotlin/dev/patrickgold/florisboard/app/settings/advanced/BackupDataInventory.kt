@@ -16,6 +16,9 @@
 
 package dev.patrickgold.florisboard.app.settings.advanced
 
+import androidx.annotation.StringRes
+import dev.patrickgold.florisboard.R
+
 /** Android Auto Backup / data-extraction domain a store lives in. */
 enum class BackupDomain(val xmlName: String) {
     Root("root"),
@@ -74,6 +77,12 @@ data class BackupDataEntry(
     val section: BackupSection? = null,
     /** True when Android's rules must carry an explicit `<exclude>` for this path. */
     val requiresAndroidExclude: Boolean = false,
+    /**
+     * Short user-facing name, required for every store a manual archive never
+     * carries so the Backup screen can list them without a hand-written copy
+     * that drifts. Stores the archive does carry are named by their section.
+     */
+    @StringRes val omissionLabel: Int? = null,
 )
 
 /**
@@ -160,6 +169,7 @@ object BackupDataInventory {
             path = "clipboard_files",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__clipboard_file_records,
         ),
         BackupDataEntry(
             id = "clipboard_media_files",
@@ -183,6 +193,7 @@ object BackupDataInventory {
             path = "clipboard_history_key.xml",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__clipboard_keys,
         ),
         BackupDataEntry(
             id = "clipboard_media_key",
@@ -190,6 +201,7 @@ object BackupDataInventory {
             path = "clipboard_media_key.xml",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__clipboard_keys,
         ),
         BackupDataEntry(
             id = "scheduled_backup_config",
@@ -197,6 +209,7 @@ object BackupDataInventory {
             path = "${ScheduledBackupStore.PREFS_FILE_NAME}.xml",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__scheduled_backup,
         ),
         BackupDataEntry(
             id = "personal_dictionary",
@@ -204,6 +217,7 @@ object BackupDataInventory {
             path = "floris_user_dictionary",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__personal_dictionary,
         ),
         BackupDataEntry(
             id = "personal_dictionary_key",
@@ -211,6 +225,7 @@ object BackupDataInventory {
             path = "floris_user_dictionary_key.xml",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__personal_dictionary_key,
         ),
         BackupDataEntry(
             id = "tasker_auth",
@@ -218,6 +233,7 @@ object BackupDataInventory {
             path = "swiftfloris_tasker_auth.xml",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__tasker_auth,
         ),
         BackupDataEntry(
             id = "personal_bigrams",
@@ -225,6 +241,7 @@ object BackupDataInventory {
             path = "personal_bigrams",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__phrase_predictions,
         ),
         BackupDataEntry(
             id = "personal_trigrams",
@@ -232,6 +249,7 @@ object BackupDataInventory {
             path = "personal_trigrams",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__phrase_predictions,
         ),
         BackupDataEntry(
             id = "correction_outcome_priors",
@@ -239,6 +257,7 @@ object BackupDataInventory {
             path = "correction_outcome_priors",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__autocorrect_history,
         ),
         BackupDataEntry(
             id = "typing_traces",
@@ -246,6 +265,7 @@ object BackupDataInventory {
             path = "swiftkey_typing_traces.jsonl",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__typing_traces,
         ),
         BackupDataEntry(
             id = "typing_trace_flag",
@@ -253,6 +273,7 @@ object BackupDataInventory {
             path = "swiftkey_trace.enabled",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__typing_traces,
         ),
         BackupDataEntry(
             id = "sync_identity",
@@ -260,6 +281,7 @@ object BackupDataInventory {
             path = "sync",
             disposition = BackupDisposition.SensitiveExcluded,
             requiresAndroidExclude = true,
+            omissionLabel = R.string.backup_omission__sync_identity,
         ),
         BackupDataEntry(
             id = "diagnostics",
@@ -280,6 +302,15 @@ object BackupDataInventory {
     /** Stores held back on purpose. */
     fun sensitiveExclusions(): List<BackupDataEntry> =
         entries.filter { it.disposition == BackupDisposition.SensitiveExcluded }
+
+    /**
+     * Stores a manual archive never carries, in the order the Backup screen
+     * lists them. Entries that carry a [BackupSection] are excluded because the
+     * user can opt into archiving those; what is left is what an archive really
+     * leaves behind.
+     */
+    fun archiveOmissions(): List<BackupDataEntry> =
+        sensitiveExclusions().filter { it.section == null }
 
     /** Paths Android's cloud-backup and device-transfer rules must exclude explicitly. */
     fun requiredAndroidExcludes(): Set<Pair<String, String>> =

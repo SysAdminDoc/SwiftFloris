@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- Name every store a backup archive leaves behind, rendered from the backup
+  inventory instead of a hand-written sentence that listed four of thirteen and
+  never mentioned the personal dictionary. A new excluded store without a label
+  now fails a test rather than going unlisted.
+- Say plainly that importing over an existing word replaces its frequency and
+  shortcut, and that undo does not bring the old values back.
+- Say that the privacy audit log covers the current keyboard session, so an
+  empty log after a restart no longer reads as "no AI call ever happened".
 - Keep the personal dictionary on the language you are editing when you delete
   its last word. It previously bounced back to the language list with no
   explanation, which also made the per-language empty state unreachable; that

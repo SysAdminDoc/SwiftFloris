@@ -144,6 +144,24 @@ class BackupDataInventoryTest : FunSpec({
         BackupDataInventory.notYetCovered().shouldBeEmpty()
     }
 
+    test("every store an archive omits carries a user-facing label") {
+        // The Backup screen renders its "what an archive leaves behind" card
+        // from these labels. A store added without one would be silently
+        // dropped from that list, which is how the old hand-written sentence
+        // ended up naming four of the thirteen.
+        BackupDataInventory.archiveOmissions()
+            .filter { it.omissionLabel == null }
+            .map { it.id }
+            .shouldBeEmpty()
+    }
+
+    test("archive omissions exclude the stores a section can carry") {
+        BackupDataInventory.archiveOmissions()
+            .filter { it.section != null }
+            .map { it.id }
+            .shouldBeEmpty()
+    }
+
     test("sensitive exclusions all carry an explicit Android rule") {
         BackupDataInventory.sensitiveExclusions()
             .filterNot { it.requiresAndroidExclude }
