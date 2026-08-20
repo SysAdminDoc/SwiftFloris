@@ -101,10 +101,4 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P3
 
-- [ ] P3 — Share one `NlpAddonHub` between the smartbar action and the NLP manager
-  Why: `QuickAction` constructs `NlpAddonHub.production()` per invocation while `NlpManager` holds a long-lived instance — harmless today because the audit sink is a global object, but silently wrong the day the hub gains any per-instance state (cache, cooldown, rate limit), and two construction sites already drifted once before the hub became load-bearing.
-  Evidence: `ime/keyboard/QuickAction.kt:112` vs `ime/nlp/NlpManager.kt:69`; commit 491d90d93
-  Touches: `ime/keyboard/QuickAction.kt`, `ime/nlp/NlpManager.kt`
-  Acceptance: one production hub instance is shared (injected or resolved via the existing manager), construction-site count for `NlpAddonHub.production()` is one, and a test pins it.
-  Complexity: S
 

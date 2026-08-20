@@ -61,12 +61,14 @@ import kotlin.properties.Delegates
 
 private const val BLANK_STR_PATTERN = "^\\s*$"
 
-class NlpManager(context: Context) {
+class NlpManager(
+    context: Context,
+    internal val addonHub: NlpAddonHub,
+) {
     private val blankStrRegex = Regex(BLANK_STR_PATTERN)
 
     private val appContext = context.applicationContext
     private val prefs by FlorisPreferenceStore
-    private val addonHub = NlpAddonHub.production()
     private val dictionaryManager = DictionaryManager.default()
     private val clipboardManager by context.clipboardManager()
     private val editorInstance by context.editorInstance()

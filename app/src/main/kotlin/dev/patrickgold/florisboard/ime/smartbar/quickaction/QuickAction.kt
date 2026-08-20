@@ -27,9 +27,9 @@ import dev.patrickgold.florisboard.editorInstance
 import dev.patrickgold.florisboard.ime.calendar.CalendarPermissionActivity
 import dev.patrickgold.florisboard.ime.keyboard.ComputingEvaluator
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
+import dev.patrickgold.florisboard.nlpAddonHub
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
-import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.translate.TranslationLanguagePackManager
 import dev.patrickgold.florisboard.ime.translate.TranslationRouter
 import dev.patrickgold.florisboard.ime.translate.TranslationSuppressionReason
@@ -109,7 +109,7 @@ sealed class QuickAction {
                 inputType = activeInfo.inputAttributes.raw,
                 imeOptions = activeInfo.imeOptions.raw,
             )
-            val addonHub = NlpAddonHub.production()
+            val addonHub by context.nlpAddonHub()
             val scope = context.quickActionCoroutineScope()
             if (scope == null) {
                 Toast.makeText(

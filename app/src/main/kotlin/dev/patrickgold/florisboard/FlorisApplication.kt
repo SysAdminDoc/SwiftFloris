@@ -36,6 +36,7 @@ import dev.patrickgold.florisboard.ime.editor.EditorInstance
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardManager
 import dev.patrickgold.florisboard.ime.media.emoji.FlorisEmojiCompat
 import dev.patrickgold.florisboard.ime.nlp.NlpManager
+import dev.patrickgold.florisboard.ime.smartcompose.NlpAddonHub
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingManager
 import dev.patrickgold.florisboard.ime.text.keyboard.AdaptiveTouchModel
 import dev.patrickgold.florisboard.ime.theme.PerAppAccentController
@@ -78,7 +79,8 @@ class FlorisApplication : Application() {
     val extensionManager = lazy { ExtensionManager(this) }
     val glideTypingManager = lazy { GlideTypingManager(this) }
     val keyboardManager = lazy { KeyboardManager(this) }
-    val nlpManager = lazy { NlpManager(this) }
+    val nlpAddonHub = lazy { NlpAddonHub.production() }
+    val nlpManager = lazy { NlpManager(this, nlpAddonHub.value) }
     val snippetManager = lazy { dev.patrickgold.florisboard.ime.snippet.SnippetManager(this) }
     val subtypeManager = lazy { SubtypeManager(this) }
     val themeManager = lazy { ThemeManager(this) }
@@ -261,6 +263,8 @@ fun Context.glideTypingManager() = this.florisApplication().glideTypingManager
 fun Context.keyboardManager() = this.florisApplication().keyboardManager
 
 fun Context.nlpManager() = this.florisApplication().nlpManager
+
+fun Context.nlpAddonHub() = this.florisApplication().nlpAddonHub
 
 fun Context.perAppAccentController() = this.florisApplication().perAppAccentController
 
