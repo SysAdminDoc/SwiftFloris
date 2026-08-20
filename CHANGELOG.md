@@ -2,6 +2,13 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Make settings search find every preference. It covered 103 of the 276 rows the
+  settings screens declare, so Input Feedback matched none of its 16 preferences,
+  Addons none of 8, MCP none of 9 and Gestures 7 of 28: searching "vibration
+  strength" or "utility key action" returned nothing. The 173 missing rows are
+  indexed, and a new gate fails the build when a screen declares a preference
+  that search cannot reach — the old integrity test iterated the index itself, so
+  it could only check what was already there and never saw an omission.
 - Say on the MCP screen that no daemon runs in this build. The screen offered
   discovery review, a bridge switch and per-daemon toggles while nothing could
   be bound or dispatched, so turning a daemon on looked like it started

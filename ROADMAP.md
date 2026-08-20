@@ -35,11 +35,11 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: a shared snackbar surface exists for both Settings and the IME panels; every deletion either produces an undoable snackbar or keeps its dialog with a stated reason; no destructive action sits in a dialog's dismiss slot.
   Complexity: L
 
-- [ ] P2 — Make the settings search index self-verifying
-  Why: the index is a hand-written list of 106 entries (81 preferences) against roughly 300 rendered `Preference(...)` composables, and its integrity test iterates the index itself, so it validates what is already there and can never detect an omission. Input Feedback indexes 0 of 16, Addons 0 of 8, MCP 0 of 9, Gestures 7 of 28 — "vibration strength" and "utility key action" return nothing. The gap widens with every new preference.
-  Evidence: `app/settings/search/SettingsSearchIndex.kt:119-238`; `app/src/test/.../search/SettingsSearchIndexIntegrityTest.kt:45,55,70`; deep-link landing renders a card at the top of the screen rather than scrolling to the row (`lib/compose/FlorisScreen.kt:250-271`)
-  Touches: `app/settings/search/SettingsSearchIndex.kt`, `app/src/test/.../SettingsSearchIndexIntegrityTest.kt`, `lib/compose/FlorisScreen.kt`
-  Acceptance: the index is generated from, or diffed against, the preference keys the screens actually render, and a test fails when a rendered preference has no entry; a deep link scrolls to and highlights the target row.
+- [ ] P2 — Scroll a settings search result to its row instead of announcing it in a card
+  Why: following a search result now lands on the right screen with every preference indexed, but the target row is only named in a card pinned at the top of the screen. On a long screen like Gestures the user still has to hunt for the row the card is talking about, which is the part of the interaction the card was standing in for.
+  Evidence: `lib/compose/FlorisScreen.kt:250-272` renders `SettingsSearchHighlightCard` above `content()`; `SettingsSearchHighlightStore` already carries the resolved row title, and `SettingsSearchCoverageTest` now guarantees every row has an entry to aim at
+  Touches: `app/src/main/kotlin/.../lib/compose/FlorisScreen.kt`, a new preference wrapper module, the 28 settings screen files
+  Acceptance: following a search result scrolls the target row into view and highlights it for a few seconds, the card is removed or demoted, and a test asserts the scroll position changed for a row below the fold. Note the mechanism this needs: Compose gives a parent no way to locate an arbitrary descendant, so the row has to report its own position. The cheapest route is a thin SwiftFloris wrapper over jetpref's `Preference`/`SwitchPreference`/`ListPreference`/`DialogSliderPreference`/`ColorPickerPreference`/`TextFieldPreference` that compares its resolved `title` against the pending target and reports its offset — the screens then change only their import line, not their call sites.
   Complexity: M
 
 
