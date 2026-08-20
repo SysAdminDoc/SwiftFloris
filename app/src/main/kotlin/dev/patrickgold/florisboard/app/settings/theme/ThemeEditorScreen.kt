@@ -591,6 +591,7 @@ fun ThemeEditorScreen(
                 level = snyggLevel,
                 colorRepresentation = colorRepresentation,
                 definedVariables = definedVariables,
+                siblingProperties = snyggPropertySetForEditing?.properties.orEmpty(),
                 fontNames = fontNames,
                 workspace = workspace,
                 onConfirmNewValue = { name, value ->

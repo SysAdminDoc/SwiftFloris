@@ -3,7 +3,7 @@
   "@defines": {
     "--primary": "#5e81ac",
     "--primary-variant": "#4c6f96",
-    "--secondary": "#b48ead",
+    "--secondary": "#6b5267",
     "--secondary-variant": "#8e6f8a",
     "--background": "#eceff4",
     "--background-variant": "#e5e9f0",
@@ -35,7 +35,7 @@
   },
   "window-move-handle[windowmode=`fixed`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--on-surface)",
     "font-size": "24sp",
     "margin": "16dp 0dp",
     "padding": "8dp",
@@ -53,7 +53,7 @@
   },
   "window-resize-action[windowmode=`floating`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--primary-variant)",
     "shape": "circle()"
   },
   "floating-dock-to-fixed-indicator": {

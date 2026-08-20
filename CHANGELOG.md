@@ -2,6 +2,18 @@
 
 ## Unreleased
 
+- Derive theme contrast coverage from every foreground-bearing selector in each
+  bundled stylesheet instead of a ten-selector list, report all violations at
+  once, and name each WCAG exemption (inactive components, decorative
+  separators, and the 3:1 non-text floor for glyph elements) in the gate.
+- Raise contrast in the bundled themes the widened gate exposed: the extracted
+  landscape action and the borderless focused key popup no longer draw light
+  text on a light surface, and the glide trail, focused emoji tab, and floating
+  resize handle use accent-variant tints that clear the non-text floor in the
+  Floris Day, SwiftKey Pure, and M3E Nord themes.
+- Warn inline in the theme editor when an edited foreground/background pair
+  falls below the 4.5:1 WCAG AA text floor.
+
 - Make the OSV release gate classify numeric CVSS scores and supported vectors
   correctly, fail closed on unknown severity, and run a regression self-test
   beside the release gate.

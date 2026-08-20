@@ -35,7 +35,7 @@
   },
   "window-move-handle[windowmode=`fixed`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--on-surface)",
     "font-size": "24sp",
     "margin": "16dp 0dp",
     "padding": "8dp",

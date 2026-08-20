@@ -37,7 +37,7 @@
   },
   "window-move-handle[windowmode=`fixed`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--on-surface)",
     "font-size": "24sp",
     "margin": "16dp 0dp",
     "padding": "8dp",
@@ -55,7 +55,7 @@
   },
   "window-resize-action[windowmode=`floating`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--secondary-variant)",
     "shape": "circle()"
   },
   "floating-dock-to-fixed-indicator": {
@@ -407,7 +407,7 @@
   },
 
   "glide-trail": {
-    "foreground": "var(--primary)"
+    "foreground": "var(--secondary-variant)"
   },
 
   "incognito-mode-indicator": {
@@ -448,7 +448,7 @@
     "foreground": "var(--on-background)"
   },
   "media-emoji-tab:focus": {
-    "foreground": "var(--primary)"
+    "foreground": "var(--secondary-variant)"
   },
   "media-bottom-row-button": {
     "padding": "16dp 0dp",

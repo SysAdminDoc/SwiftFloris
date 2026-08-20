@@ -89,11 +89,13 @@ import dev.patrickgold.jetpref.material.ui.JetPrefListItem
 import dev.patrickgold.jetpref.material.ui.JetPrefTextField
 import dev.patrickgold.jetpref.material.ui.rememberJetPrefColorPickerState
 import java.io.File
+import java.util.Locale
 import org.florisboard.lib.color.ColorPalette
 import org.florisboard.lib.compose.DpSizeSaver
 import org.florisboard.lib.compose.FlorisChip
 import org.florisboard.lib.compose.FlorisIconButton
 import org.florisboard.lib.compose.FlorisTextButton
+import org.florisboard.lib.compose.FlorisWarningCard
 import org.florisboard.lib.compose.florisVerticalScroll
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.curlyFormat
@@ -187,6 +189,7 @@ internal fun EditPropertyDialog(
     level: SnyggLevel,
     colorRepresentation: ColorRepresentation,
     definedVariables: Map<String, SnyggValue>,
+    siblingProperties: Map<String, SnyggValue>,
     fontNames: List<String>,
     workspace: CacheManager.ExtEditorWorkspace<*>,
     onConfirmNewValue: (String, SnyggValue) -> Boolean,
@@ -329,6 +332,22 @@ internal fun EditPropertyDialog(
                     workspace = workspace,
                     isError = !isPropertyValueValid(),
                 )
+
+                themeContrastWarning(
+                    propertyName = propertyName,
+                    propertyValue = propertyValue,
+                    siblingProperties = siblingProperties,
+                    definedVariables = definedVariables,
+                )?.let { warning ->
+                    FlorisWarningCard(
+                        modifier = Modifier.padding(top = 8.dp),
+                        text = stringRes(R.string.settings__theme_editor__contrast_warning),
+                        secondaryText = stringRes(
+                            R.string.settings__theme_editor__contrast_warning_summary,
+                            "ratio" to "%.2f".format(Locale.US, warning.contrastRatio),
+                        ),
+                    )
+                }
             }
         }
     }

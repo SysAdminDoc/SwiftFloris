@@ -3,7 +3,7 @@
   "@defines": {
     "--primary": "#4caf50",
     "--primary-variant": "#388e3c",
-    "--secondary": "#ff9800",
+    "--secondary": "#9a4d00",
     "--secondary-variant": "#e65100",
     "--background": "#e0e0e0",
     "--background-variant": "#d0d0d0",
@@ -21,7 +21,7 @@
 
     "--incognito-icon-color": "#00000011",
 
-    "--on-primary": "#f0f0f0",
+    "--on-primary": "#06121f",
     "--on-background": "#121212",
     "--on-background-disabled": "#12121248",
     "--on-surface": "#000000",
@@ -42,7 +42,7 @@
   },
   "window-move-handle[windowmode=`fixed`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--on-surface)",
     "font-size": "24sp",
     "margin": "16dp 0dp",
     "padding": "8dp",
@@ -60,7 +60,7 @@
   },
   "window-resize-action[windowmode=`floating`]": {
     "background": "var(--surface)",
-    "foreground": "var(--primary)",
+    "foreground": "var(--primary-variant)",
     "shape": "circle()"
   },
   "floating-dock-to-fixed-indicator": {
@@ -418,7 +418,7 @@
   },
 
   "glide-trail": {
-    "foreground": "var(--primary)"
+    "foreground": "var(--primary-variant)"
   },
 
   "incognito-mode-indicator": {
@@ -459,7 +459,7 @@
     "foreground": "var(--on-background)"
   },
   "media-emoji-tab:focus": {
-    "foreground": "var(--primary)"
+    "foreground": "var(--primary-variant)"
   },
   "media-bottom-row-button": {
     "padding": "16dp 0dp",
