@@ -56,7 +56,7 @@
 | **Editor reliability** | Expected-content generation for selection, text commit, composing finalize, and composing-region replacement paths now happens before `InputConnection` batch edits, with try/finally begin/end pairing and focused call-order tests | Local editor state only |
 | **Alternative layouts** | Colemak / Dvorak / Workman from the FlorisBoard layout pack, plus selectable honeycomb hex layout with clipped hex keys and hex-aware hit testing (only FOSS Android keyboard shipping this — Typewise vacated the consumer market early 2026) | On-device |
 | **AI transparency** | First-run AI/ML explainer plus Settings → About → AI features screen covering next-word, glide, voice, translation, and smart compose; async suggestion work consumes request-scoped privacy snapshots for incognito, no-personalized-learning, offensive-content, and ghost-text sensitivity gates | On-device, no account, no telemetry |
-| **Local release evidence** | `scripts/release-evidence.ps1` discovers and runs every `scripts/test-*.py` self-test, wires every `scripts/check-*` / `scripts/verify-*` gate, and records explicit operator-run reasons for the connected-device baseline and benchmark gates alongside release-front-door, Fastlane metadata, backup/privacy copy, fork identity, layout JSON, locale coverage, public-doc/F-Droid version pins, the semantic trust-capability gate, repo hygiene, root-crash-log, Kotlin build-cache CVE guard, production `runBlocking` allowlist, target-SDK 37 shadow, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, security-dependency freshness, and reproducible-APK gates in `build/release-evidence/<timestamp>/`; high-risk SDK, permission, storage, AIDL, dependency, runtime, and accessibility assertions are normalized in `app/src/main/config/trust-capabilities.json`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.06.00 / KSP 2.3.9 / AboutLibraries 15.0.3 / Roborazzi 1.70.0 | Audit-friendly |
+| **Local release evidence** | `scripts/release-evidence.ps1` discovers and runs every `scripts/test-*.py` self-test, wires every `scripts/check-*` / `scripts/verify-*` gate, and records explicit operator-run reasons for the connected-device baseline and benchmark gates alongside release-front-door, Fastlane metadata, backup/privacy copy, fork identity, layout JSON, locale coverage, public-doc/F-Droid version pins, the semantic trust-capability gate, repo hygiene, root-crash-log, Kotlin build-cache CVE guard, production `runBlocking` allowlist, target-SDK 37 shadow, no-network, data-extraction, cache-disabled Gradle unit-test / lint / release-assemble gates, sample addon APK validation, OSV severity, security-dependency freshness, and reproducible-APK gates in `build/release-evidence/<timestamp>/`; high-risk SDK, permission, storage, AIDL, dependency, runtime, and accessibility assertions are normalized in `app/src/main/config/trust-capabilities.json`; startup crash recovery routes through the local crash dialog; restore/crash diagnostics use project logging with safe fallback copy; Roborazzi visual-regression checks use committed setup, search, settings, theme, and Addons baselines; Macrobenchmark trace sections cover 6 hot paths; dependency freshness is pinned through Compose BOM 2026.08.00 / KSP 2.3.11 / AboutLibraries 15.1.0 / Roborazzi 1.72.0 | Audit-friendly |
 
 ## Distribution
 
@@ -188,10 +188,10 @@ Public project information is available in this README, [Security](docs/SECURITY
 
 **Language and build**
 
-- Kotlin 2.4.10, Compose BOM 2026.06.00, Material 3 + material-kolor.
-- AGP 9.3.0, Gradle 9.6.1, JDK 21.
-- KSP 2.3.9, Room 2.8.4, SQLCipher 4.17.0, Tink Android 1.23.0.
-- Kotest 6.2.3 unit-test runner; Roborazzi 1.70.0 and Robolectric 4.16.1
+- Kotlin 2.4.10, Compose BOM 2026.08.00, Material 3 + material-kolor.
+- AGP 9.3.1, Gradle 9.7.1, JDK 21.
+- KSP 2.3.11, Room 2.8.4, SQLCipher 4.18.0, Tink Android 1.23.0.
+- Kotest 6.2.4 unit-test runner; Roborazzi 1.72.0 and Robolectric 4.16.1
   for screenshot/JVM Android regressions.
 - minSdk **26** (Android 8.0); targetSdk **36** (Android 16); compileSdk **37** (Android 17 APIs available behind behavior gates).
 - Crowdin for translations, synced locally with the Crowdin CLI (this project
@@ -223,7 +223,7 @@ The IME's main work lives under `app/src/main/kotlin/dev/patrickgold/florisboard
 ```bash
 # Android SDK 36 target plus Android SDK 37 compile platform
 # JDK 21+
-# Gradle 9.6.1 (use the bundled wrapper)
+# Gradle 9.7.1 (use the bundled wrapper)
 # NDK 29.0.14206865 - pinned for the reproducible-build image, not used by the
 #   app build itself (there are no native sources)
 ```
@@ -366,7 +366,7 @@ Current SM-S938B / Android 16 baselines record `am start -W` first-render median
 ## Testing
 
 - **Unit tests:** Kotest, run with `./gradlew test`. Last reported HEAD: 998+ tests (post-v1.8.40), expanding with each release. The v1.8.47 hardening pass added defensive tests around dictionary import limits, voice-model atomic install, theme asset traversal, and quick-action serializer fallback.
-- **Visual regression:** Roborazzi 1.70.0, plugin alias active. Run `:app:verifyRoborazziDebug` for committed baselines and `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
+- **Visual regression:** Roborazzi 1.72.0, plugin alias active. Run `:app:verifyRoborazziDebug` for committed baselines and `:app:verifyRoborazziRelease` before APK publication. Baselines cover the maintainer chip, SwiftKey High Contrast, Aurora Animated, and Settings -> Addons surfaces.
 - **Macrobenchmark:** `:benchmark` is wired for AndroidX trace/frame runs, and the adb harness scripts record repeatable IME first-render, first-suggestion, dictionary-load, candidate-row recomposition, theme-switch, and backup/restore baselines. `scripts/check-benchmark-trends.py` compares candidate JSON against the committed baseline set.
 - **No-network gate:** the local Gradle gate verifies the absence of `INTERNET` permission on every release build.
 - **Lint drift:** local lint can run through `scripts/run-lint-debug-with-baseline-check.sh`, which fails stale baseline entries instead of leaving them as console-only noise.

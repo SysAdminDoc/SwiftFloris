@@ -133,9 +133,10 @@ class PersonalDictionaryEncryptionTest : FunSpec({
             "build.gradle.kts",
         ).readText()
 
-        source shouldContain "sqlcipher-android = \"4.17.0\""
-        source shouldContain "androidx-sqlite = \"2.6.2\""
-        source shouldContain "tink-android = \"1.23.0\""
+        // Version floors for these three are owned by .github/security-dependency-freshness.json
+        // and enforced by scripts/check-security-dependency-freshness.py. Repeating the pinned
+        // versions here gave them a second owner that drifted on every bump, so this test asserts
+        // only that the dependencies are declared at all.
         source shouldContain "net.zetetic:sqlcipher-android"
         source shouldContain "androidx.sqlite:sqlite"
         source shouldContain "com.google.crypto.tink:tink-android"

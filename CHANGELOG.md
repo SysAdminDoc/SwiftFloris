@@ -2,6 +2,19 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Bring the build and library pins current: Gradle 9.7.1, AGP 9.3.1, Compose BOM
+  2026.08.00, AndroidX Core 1.19.0, AndroidX SQLite 2.7.0, SQLCipher 4.18.0, Coil
+  3.5.0, KSP 2.3.11, build tools 37.0.0 to match `compileSdk 37`, AboutLibraries
+  15.1.0, Kotest 6.2.4, Roborazzi 1.72.0, Kover 0.9.9, JUnit Vintage 6.1.3 and
+  ComposablePreviewScanner 0.9.3. Kotlin stays on 2.4.10 and Robolectric on
+  4.16.1, both for reasons recorded in `docs/DEPENDENCY_TRIAGE.md`.
+- Stop two tests from pinning dependency versions as literal source text. The
+  SQLCipher, SQLite and Tink version literals had a second owner in a test that
+  had to be edited on every bump, so they now live only in the freshness gate
+  that already enforces them; the AboutLibraries assertion reads its expected
+  version from the version catalog, so a pin bump that leaves the generated
+  licence metadata stale still fails.
+
 - Recognise Transcribro as an offline voice input provider, alongside FUTO Voice
   Input, WhisperInput and Whisper.
 - Name every store a backup archive leaves behind, rendered from the backup
