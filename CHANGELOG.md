@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Fix a context-chain walk that could not terminate: configuring the IME system
+  bars from a wrapped context (a Compose dialog or themed wrapper) spun on the
+  main thread instead of resolving, and a missing window now skips the system
+  bar setup rather than crashing.
 - Derive theme contrast coverage from every foreground-bearing selector in each
   bundled stylesheet instead of a ten-selector list, report all violations at
   once, and name each WCAG exemption (inactive components, decorative

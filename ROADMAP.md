@@ -200,13 +200,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P1
 
-- [ ] P1 — Fix the non-terminating `findWindow()` recursion
-  Why: `Context.findWindow()` recurses on the same receiver instead of unwrapping `baseContext`, so any `ContextWrapper` that is not itself an `Activity` or `InputMethodService` — a Compose `Dialog`, any `ContextThemeWrapper` — loops forever on the main thread, and the call site force-unwraps the result. Today's call sites happen to pass raw IMS/Activity contexts, which is the only reason it has not fired; upstream hit exactly this composing inside a non-Activity window.
-  Evidence: `ime/window/ImeSystemUi.kt:287-292` (`val context = this; … return if (context is ContextWrapper) context.findWindow() else null`), `!!` at `:96`; https://github.com/florisboard/florisboard/issues/3326
-  Touches: `ime/window/ImeSystemUi.kt`, `app/src/test/.../ime/window/`
-  Acceptance: the recursion steps through `baseContext`; a wrapped-but-rooted context resolves, an unrooted chain returns null without hanging, and the `:96` call site handles null without `!!`; a JVM test covers Activity-rooted, IMS-rooted, wrapper-chained, and unrooted contexts.
-  Complexity: S
-
 - [ ] P1 — Cut v1.9.60 for the eight unreleased post-tag commits
   Why: eight commits of shipped fixes (incognito ghost text, read-only system dictionary, merged-manifest permission allowlist, MCP no-bind, data-preservation rewrites, loading states, method.xml capabilities, MCP lifecycle serialization) sit past the `v1.9.59` tag with `gradle.properties` still at 1.9.59/2108 — the exact drift the front-door gate exists to stop, re-accumulating from the other direction. The uncommitted contrast-gate WIP should be finished (see the 2026-08-11 P1 item's note) or explicitly shelved before the cut.
   Evidence: `git log v1.9.59..HEAD` (8 commits, b6f368f8a..89bc87d6a); `gradle.properties:14-15`; `scripts/check-release-front-door.sh` (green today only because HEAD is unreleased)

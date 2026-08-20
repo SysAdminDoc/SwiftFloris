@@ -93,21 +93,26 @@ fun ImeSystemUi() {
     }
 
     val view = LocalView.current
-    val window = view.context.findWindow()!!
-    val windowInsetsController = WindowInsetsControllerCompat(window, view)
+    // Null when this composable is hosted outside the IME or an activity
+    // window, for example inside a Compose Dialog. There is no system bar to
+    // configure in that case, so the effects below are simply skipped.
+    val window = remember(view) { view.context.findWindow() }
+    val windowInsetsController = remember(window, view) {
+        window?.let { WindowInsetsControllerCompat(it, view) }
+    }
 
-    LaunchedEffect(isSystemNavbarVisible) {
+    LaunchedEffect(windowInsetsController, isSystemNavbarVisible) {
         if (isSystemNavbarVisible) {
-            windowInsetsController.show(WindowInsetsCompat.Type.captionBar())
+            windowInsetsController?.show(WindowInsetsCompat.Type.captionBar())
         } else {
-            windowInsetsController.hide(WindowInsetsCompat.Type.captionBar())
+            windowInsetsController?.hide(WindowInsetsCompat.Type.captionBar())
         }
     }
 
-    LaunchedEffect(useDarkIcons, hasBackgroundImage) {
-        windowInsetsController.isAppearanceLightNavigationBars = useDarkIcons
+    LaunchedEffect(windowInsetsController, useDarkIcons, hasBackgroundImage) {
+        windowInsetsController?.isAppearanceLightNavigationBars = useDarkIcons
         if (AndroidVersion.ATLEAST_API29_Q) {
-            window.isNavigationBarContrastEnforced = hasBackgroundImage
+            window?.isNavigationBarContrastEnforced = hasBackgroundImage
         }
     }
 }
@@ -284,9 +289,19 @@ private fun RowScope.NavigationPill() {
     }
 }
 
-private tailrec fun Context.findWindow(): Window? {
-    val context = this
-    if (context is Activity) return context.window
-    if (context is InputMethodService) return context.window?.window
-    return if (context is ContextWrapper) context.findWindow() else null
+/**
+ * Walks the context chain to the [Window] hosting this context, or returns
+ * null when the chain is not rooted in an [Activity] or [InputMethodService].
+ *
+ * A [ContextWrapper] must be unwrapped through its base context: recursing on
+ * the wrapper itself never terminates, because the wrapper is still a
+ * `ContextWrapper` on the next pass.
+ */
+internal tailrec fun Context.findWindow(): Window? {
+    return when (this) {
+        is Activity -> window
+        is InputMethodService -> window?.window
+        is ContextWrapper -> baseContext.findWindow()
+        else -> null
+    }
 }
