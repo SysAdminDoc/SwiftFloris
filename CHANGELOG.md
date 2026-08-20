@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## v1.9.60 — 2026-08-20
 
 - Recognise Transcribro as an offline voice input provider, alongside FUTO Voice
   Input, WhisperInput and Whisper.
@@ -65,7 +65,6 @@
   Floris Day, SwiftKey Pure, and M3E Nord themes.
 - Warn inline in the theme editor when an edited foreground/background pair
   falls below the 4.5:1 WCAG AA text floor.
-
 - Make the OSV release gate classify numeric CVSS scores and supported vectors
   correctly, fail closed on unknown severity, and run a regression self-test
   beside the release gate.
