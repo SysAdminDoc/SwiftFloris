@@ -81,6 +81,17 @@ class ClipboardHistoryDaoTest {
         dao.getAll().shouldContainExactly(recoveryItem)
     }
 
+    @Test
+    fun manualSensitiveMarkPersistsWithoutChangingTheClipboardText() {
+        val dao = database.clipboardItemDao()
+        val item = ClipboardItem.text("one-time code").copy(id = 0L, isSensitive = false)
+        val id = dao.insert(item)
+
+        dao.update(item.copy(id = id, isSensitive = true))
+
+        dao.getAll().single() shouldBe item.copy(id = id, isSensitive = true)
+    }
+
     private fun mediaItem(isPinned: Boolean): ClipboardItem {
         return ClipboardItem(
             type = ItemType.IMAGE,

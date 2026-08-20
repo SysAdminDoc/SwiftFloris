@@ -1950,6 +1950,10 @@
     <string name="clip__clear_history">Clear history</string>
     <string name="clip__unpin_item">Unpin item</string>
     <string name="clip__pin_item">Pin item</string>
+    <string name="clip__reveal_sensitive_item">Reveal sensitive text for 4 seconds</string>
+    <string name="clip__hide_sensitive_item">Hide sensitive text now</string>
+    <string name="clip__mark_item_sensitive">Mark as sensitive</string>
+    <string name="clip__mark_item_not_sensitive">Mark as not sensitive</string>
     <string name="clip__delete_item">Delete</string>
     <string name="clip__paste_item">Paste</string>
     <string name="clip__back_to_text_input">Back to text input</string>

@@ -62,6 +62,7 @@ import androidx.compose.material.icons.filled.Link
 import androidx.compose.material.icons.filled.Movie
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.ToggleOff
 import androidx.compose.material.icons.filled.ToggleOn
@@ -70,6 +71,8 @@ import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.ContentPasteGo
 import androidx.compose.material.icons.outlined.Email
 import androidx.compose.material.icons.outlined.PushPin
+import androidx.compose.material.icons.outlined.Visibility
+import androidx.compose.material.icons.outlined.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -178,9 +181,11 @@ fun ClipboardInputLayout(
     val context = LocalContext.current
     val clipboardManager by context.clipboardManager()
     val keyboardManager by context.keyboardManager()
+    val keyboardState by keyboardManager.activeState.collectAsState()
     val androidKeyguardManager = remember { context.systemService(AndroidKeyguardManager::class) }
 
     val deviceLocked = androidKeyguardManager.let { it.isDeviceLocked || it.isKeyguardLocked }
+    val isIncognitoMode = keyboardState.isIncognitoMode
     val historyEnabled by prefs.clipboard.historyEnabled.collectAsState()
     val historySearchEnabled by prefs.clipboard.historySearchEnabled.collectAsState()
 
@@ -206,6 +211,7 @@ fun ClipboardInputLayout(
     var popupItem by remember(filteredHistory) { mutableStateOf<ClipboardItem?>(null) }
     var pendingMediaDelete by remember { mutableStateOf<ClipboardItem?>(null) }
     var showClearAllHistory by remember { mutableStateOf(false) }
+    var revealedSensitiveItemId by remember { mutableStateOf<Long?>(null) }
     val deletedItemMessage = stringRes(R.string.clipboard__item_deleted)
     val undoActionLabel = stringRes(R.string.action__undo)
 
@@ -221,6 +227,19 @@ fun ClipboardInputLayout(
     LaunchedEffect(historySearchEnabled) {
         if (!historySearchEnabled) {
             searchQuery = ""
+        }
+    }
+
+    LaunchedEffect(revealedSensitiveItemId) {
+        if (revealedSensitiveItemId != null) {
+            delay(ClipboardSensitiveRevealPolicy.REVEAL_DURATION_MS)
+            revealedSensitiveItemId = null
+        }
+    }
+
+    LaunchedEffect(deviceLocked, isIncognitoMode) {
+        if (deviceLocked || isIncognitoMode) {
+            revealedSensitiveItemId = null
         }
     }
 
@@ -384,6 +403,7 @@ fun ClipboardInputLayout(
         item: ClipboardItem,
         contentScrollInsteadOfClip: Boolean,
         mediaGroup: ClipboardMediaItemGroup?,
+        revealSensitive: Boolean = false,
         modifier: Modifier = Modifier,
     ) {
         val attributes = remember(item) {
@@ -563,7 +583,11 @@ fun ClipboardInputLayout(
                 }
             } else {
                 val charLimit = if (contentScrollInsteadOfClip) POPUP_PREVIEW_CHAR_LIMIT else GRID_PREVIEW_CHAR_LIMIT
-                val previewText = capPreviewText(item.displayText(), charLimit)
+                val previewText = if (item.isSensitive && !revealSensitive) {
+                    item.displayText(context)
+                } else {
+                    capPreviewText(item.stringRepresentation(), charLimit)
+                }
                 Column {
                     ClipTextItemDescription(
                         elementName = FlorisImeUi.ClipboardItemDescription.elementName,
@@ -762,6 +786,11 @@ fun ClipboardInputLayout(
                             } else {
                                 null
                             },
+                            revealSensitive = ClipboardSensitiveRevealPolicy.canReveal(
+                                isSensitive = activePopupItem.isSensitive,
+                                isDeviceLocked = deviceLocked,
+                                isIncognitoMode = isIncognitoMode,
+                            ) && revealedSensitiveItemId == activePopupItem.id,
                         )
                         SnyggBox(FlorisImeUi.ClipboardItemTimestamp.elementName) {
                             val formatter = LocalLocalizedDateTimeFormatter.current
@@ -787,6 +816,54 @@ fun ClipboardInputLayout(
                                     clipboardManager.pinClip(activePopupItem)
                                 }
                                 popupItem = null
+                            }
+                            if (activePopupItem.type == ItemType.TEXT) {
+                                val canReveal = ClipboardSensitiveRevealPolicy.canReveal(
+                                    isSensitive = activePopupItem.isSensitive,
+                                    isDeviceLocked = deviceLocked,
+                                    isIncognitoMode = isIncognitoMode,
+                                )
+                                if (canReveal) {
+                                    val isRevealed = revealedSensitiveItemId == activePopupItem.id
+                                    PopupAction(
+                                        icon = if (isRevealed) {
+                                            Icons.Outlined.VisibilityOff
+                                        } else {
+                                            Icons.Outlined.Visibility
+                                        },
+                                        text = stringRes(
+                                            if (isRevealed) {
+                                                R.string.clip__hide_sensitive_item
+                                            } else {
+                                                R.string.clip__reveal_sensitive_item
+                                            },
+                                        ),
+                                    ) {
+                                        revealedSensitiveItemId = if (isRevealed) {
+                                            null
+                                        } else {
+                                            activePopupItem.id
+                                        }
+                                        popupItem = null
+                                    }
+                                }
+                                PopupAction(
+                                    icon = Icons.Default.Security,
+                                    text = stringRes(
+                                        if (activePopupItem.isSensitive) {
+                                            R.string.clip__mark_item_not_sensitive
+                                        } else {
+                                            R.string.clip__mark_item_sensitive
+                                        },
+                                    ),
+                                ) {
+                                    clipboardManager.setClipSensitive(
+                                        activePopupItem,
+                                        isSensitive = !activePopupItem.isSensitive,
+                                    )
+                                    revealedSensitiveItemId = null
+                                    popupItem = null
+                                }
                             }
                             PopupAction(
                                 icon = Icons.Default.Delete,

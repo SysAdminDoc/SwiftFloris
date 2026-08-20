@@ -60,6 +60,10 @@ class ClipboardMediaAccessibilityTest {
             R.string.clipboard__media_item_a11y,
             R.string.clipboard__media_item_a11y_no_group,
             R.string.clipboard__item_actions_a11y,
+            R.string.clip__reveal_sensitive_item,
+            R.string.clip__hide_sensitive_item,
+            R.string.clip__mark_item_sensitive,
+            R.string.clip__mark_item_not_sensitive,
         ).forEach { resId ->
             val value = context.getString(resId)
             assertTrue(value.isNotBlank(), "Clipboard media accessibility string $resId must be non-blank")

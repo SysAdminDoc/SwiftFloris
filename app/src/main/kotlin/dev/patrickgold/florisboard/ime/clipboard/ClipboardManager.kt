@@ -594,6 +594,14 @@ class ClipboardManager(
         }
     }
 
+    /** Persists the user's per-entry sensitive-text classification without changing its content. */
+    fun setClipSensitive(item: ClipboardItem, isSensitive: Boolean) {
+        if (item.type != ItemType.TEXT || item.isSensitive == isSensitive) return
+        ioScope.launch {
+            clipHistoryDao?.update(item.copy(isSensitive = isSensitive))
+        }
+    }
+
     fun pasteItem(item: ClipboardItem) {
         val editorInstance by appContext.editorInstance()
         editorInstance.commitClipboardItem(item).also { result ->

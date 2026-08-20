@@ -10,13 +10,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P3
 
-- [ ] P3 — Add a reveal affordance and manual marking for sensitive clipboard entries
-  Why: sensitive clips render as a fixed asterisk string with no way to confirm what was captured, and classification is fully automatic (two regexes plus the API-33 flag) with no way for a user to mark or unmark an entry — so a false positive is unrecoverable and a false negative is unfixable.
-  Evidence: `ime/clipboard/provider/ClipboardDatabase.kt:233-238`; `app/src/main/res/values/strings_dont_translate.xml:35`; classifier `ime/clipboard/ClipboardSensitiveTextClassifier.kt:19-30`; `ime/clipboard/ClipboardManager.kt:274-301`; no reveal/mask pref in `app/prefs/ClipboardPrefs.kt`; https://github.com/florisboard/florisboard/issues/3323
-  Touches: `ime/clipboard/ClipboardInputLayout.kt`, `ime/clipboard/provider/ClipboardDatabase.kt`, `app/prefs/ClipboardPrefs.kt`, `app/src/main/res/values/strings.xml`, `docs/PRIVACY_AND_AI.md`
-  Acceptance: a long-press action toggles an entry's sensitive flag, and a per-entry reveal shows the content transiently without persisting the unmasked form or changing the a11y label default; revealing is disabled while the incognito or lock-screen gates are active.
-  Complexity: M
-
 ## Research-Driven Additions (2026-08-11)
 
 ### P3

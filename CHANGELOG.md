@@ -9,6 +9,7 @@
 - Raise material-kolor to 5.0.0 now that the Compose BOM is enforced. The full unit suite and Roborazzi theme captures remain green.
 - Decode alternating two-pointer glides as separate traces, committing each word in finger-release order. The existing single-pointer detector behavior remains covered, and the active trail now renders both traces.
 - Add a fork-provenance section to README with the install package identity, merged release permission surface, certificate capture commands, and reproducible-build review checklist. The official release fingerprint remains pending until a signed release APK is published.
+- Add clipboard privacy controls: long-press can mark or unmark a text entry as sensitive, and a deliberate reveal shows it for four seconds only while the device is unlocked and the keyboard is not incognito. The default accessibility label stays masked.
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
   to a pre-release alpha, and Gradle picked that over the Compose BOM's stable
