@@ -77,7 +77,7 @@ metadata.
 
 ```bash
 # 1. Clone at the exact tag you want to reproduce
-git clone --branch v1.9.60 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+git clone --branch v1.9.61 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 
 # 2. Build the release APK (debug-signed fallback fine for byte comparison)
@@ -85,7 +85,7 @@ cd SwiftFloris
 
 # 3. Compare against the published APK (after stripping signatures)
 APK_LOCAL=app/build/outputs/apk/release/app-release.apk
-APK_PUBLISHED=app-release-v1.9.60.apk
+APK_PUBLISHED=app-release-v1.9.61.apk
 
 apkdiff() {
   unzip -p "$1" classes.dex | sha256sum
@@ -115,9 +115,9 @@ in sync with the build. Current stanza:
 
 ```yaml
 Builds:
-  - versionName: "1.9.60"
-    versionCode: 2109
-    commit: v1.9.60
+  - versionName: "1.9.61"
+    versionCode: 2110
+    commit: v1.9.61
     submodules: true
     sudo:
       - apt-get update
@@ -131,8 +131,8 @@ Builds:
 ArchivePolicy: 6
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.9.60"
-CurrentVersionCode: 2109
+CurrentVersion: "1.9.61"
+CurrentVersionCode: 2110
 ```
 
 The F-Droid build server will then attempt a deterministic rebuild and compare

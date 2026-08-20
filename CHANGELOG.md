@@ -1,6 +1,6 @@
 # Changelog
 
-## v1.9.60 — 2026-08-20
+## v1.9.61 — 2026-08-20
 
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
@@ -74,6 +74,8 @@
   that already enforces them; the AboutLibraries assertion reads its expected
   version from the version catalog, so a pin bump that leaves the generated
   licence metadata stale still fails.
+
+## v1.9.60 — 2026-08-20
 
 - Recognise Transcribro as an offline voice input provider, alongside FUTO Voice
   Input, WhisperInput and Whisper.
