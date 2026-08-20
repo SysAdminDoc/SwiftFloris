@@ -19,13 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-- [ ] P1 — Give fork-added strings a translation route SwiftFloris owns
-  Why: v1.9.59 fixed the locale *mapping* and added a coverage gate, but `crowdin.yml` still names upstream FlorisBoard's `FSEC_CROWDIN_PROJECT_ID`/`FSEC_CROWDIN_PERSONAL_TOKEN` and nothing in the tree consumes the file. 2,541 strings ship; locales carry 830–999. No fork-added string — MCP, sync, snippets, migration assistant, typing stats, per-app profiles, settings search — exists in any locale, so Arabic and Hebrew users get a mostly-English RTL settings app.
-  Evidence: `crowdin.yml:1-2`; `app/src/main/res/values/strings.xml` (2,541) vs `values-de` 869 / `values-fr` 872 / `values-ar` 830 / `values-zh-rCN` 999; `settings__mcp__title`, `settings__sync__title`, `settings__migration_assistant__title`, `settings__search__placeholder` absent from `values-de/strings.xml`; no consumer of `crowdin.yml` anywhere in the tree
-  Touches: `crowdin.yml`, `scripts/` (a local CLI wrapper if the pipeline is kept), `CONTRIBUTING.md`, `README.md`, `docs/`
-  Acceptance: either a SwiftFloris-owned Crowdin project is configured and a local script can push source strings and pull translations, or `crowdin.yml` is deleted and `CONTRIBUTING.md` documents a PR-based path; either way `scripts/check-locale-coverage.py` gains a ratchet on fork-added string coverage so the gap cannot silently widen. Resolving the ownership question in RESEARCH.md's Open Questions comes first.
-  Complexity: M
-
 ### P2
 
 - [ ] P2 — Replace source-text assertions with behavioural tests on the security paths

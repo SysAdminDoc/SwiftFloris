@@ -173,6 +173,20 @@ crowdin download            # pull completed translations back into values-*/
 Contributors without Crowdin access can edit a `values-*/strings.xml` directly
 in a pull request; a maintainer reconciles it on the next sync.
 
+**Known gap: fork-added strings have never reached translators.** The
+`FSEC_*` variables above are upstream FlorisBoard's, and nothing in this
+repository consumes `crowdin.yml`, so the ~295 strings SwiftFloris added on top
+of upstream — MCP, sync, snippets, the migration assistant, typing stats,
+per-app profiles, settings search — are translated in **zero** locales. Arabic
+and Hebrew users get a mostly-English RTL settings app. Until a SwiftFloris-owned
+Crowdin project exists, the working path for these strings is a pull request
+editing `values-<code>/strings.xml` by hand.
+
+`python scripts/check-locale-coverage.py --check` keeps the debt visible rather
+than letting it grow quietly: it counts fork-added source strings against
+`FORK_ADDED_SOURCE_CEILING` and fails when a change pushes the total past it.
+Raising that number is fine, but it has to be a deliberate line in the diff.
+
 Every shipped locale must appear in the `languages_mapping` block of
 `crowdin.yml`. A `values-*` directory with no entry there can be edited by hand
 but never round-trips — an upload will not carry it and a download will not

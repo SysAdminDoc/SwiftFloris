@@ -194,6 +194,40 @@ RESOURCE_COVERAGE_FLOORS = {
 }
 
 
+# Strings this fork added on top of upstream FlorisBoard.  None of them has ever
+# been submitted for translation, so every locale carries 0 of them and a
+# conventional "must not regress" floor would be satisfied by doing nothing.
+# What has to stay visible is the opposite direction: the source-side debt
+# growing while the translated side stays at zero.  The ceiling below is the
+# count of fork-added translatable strings in `values/` at the time it was last
+# reviewed.  Adding a feature that ships new user-facing strings pushes the
+# count past it and fails the gate, which forces the number to be raised in a
+# diff a reviewer can see rather than the gap widening silently.
+FORK_ADDED_PREFIXES = (
+    "settings__mcp__",
+    "settings__sync__",
+    "settings__migration_assistant__",
+    "settings__search__",
+    "settings__snippet__",
+    "settings__typing_stats__",
+    "settings__addons__",
+    "settings__per_app__",
+    "settings__theme_editor__contrast_",
+    "voice_input_setup__",
+)
+
+FORK_ADDED_SOURCE_CEILING = 295
+
+
+def fork_added_names(resources: dict[str, "Resource"]) -> set[str]:
+    """Identities of fork-added translatable strings."""
+    return {
+        identity
+        for identity, resource in resources.items()
+        if resource.name.startswith(FORK_ADDED_PREFIXES)
+    }
+
+
 @dataclass(frozen=True)
 class Resource:
     identity: str
@@ -555,6 +589,7 @@ def build_report(root: Path, *, check: bool, ratchet: bool) -> dict[str, object]
                     identity.split(":", 1)[1] for identity in missing_critical
                 ],
                 "critical_exact_base_count": exact_base_count(resources, critical),
+                "fork_added_count": len(fork_added_names(base) & set(resources)),
                 "status": (
                     "complete_reviewed"
                     if not missing and bcp_locale in REVIEWED_UI_LOCALES
@@ -566,6 +601,11 @@ def build_report(root: Path, *, check: bool, ratchet: bool) -> dict[str, object]
                 in set(typing_languages),
             }
         )
+
+    best_fork_added_coverage = max(
+        (int(report["fork_added_count"]) for report in locale_reports),
+        default=0,
+    )
 
     floor_errors: list[str] = []
     if ratchet:
@@ -590,6 +630,16 @@ def build_report(root: Path, *, check: bool, ratchet: bool) -> dict[str, object]
                 floor_errors.append(
                     f"{directory}: critical coverage regressed from {critical_floor} to {critical_count}"
                 )
+
+        fork_added_source = fork_added_names(base)
+        if len(fork_added_source) > FORK_ADDED_SOURCE_CEILING:
+            floor_errors.append(
+                f"fork-added source strings grew from {FORK_ADDED_SOURCE_CEILING} to "
+                f"{len(fork_added_source)}, and the best-covered locale still translates "
+                f"{best_fork_added_coverage} of them; raise FORK_ADDED_SOURCE_CEILING "
+                "deliberately, and see CONTRIBUTING.md for how these strings reach "
+                "translators"
+            )
 
     complete_ui_locales = sorted(REVIEWED_UI_LOCALES)
     complete_errors: list[str] = []
