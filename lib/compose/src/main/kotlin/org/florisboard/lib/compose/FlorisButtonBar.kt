@@ -81,7 +81,7 @@ class FlorisButtonBarScope(rowScope: RowScope) : RowScope by rowScope {
         FlorisButton(
             modifier = modifier
                 .padding(start = 16.dp)
-                .defaultMinSize(minHeight = 44.dp),
+                .defaultMinSize(minHeight = FlorisTouchTarget.MinSize),
             enabled = enabled,
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
@@ -104,7 +104,7 @@ class FlorisButtonBarScope(rowScope: RowScope) : RowScope by rowScope {
         FlorisTextButton(
             modifier = modifier
                 .padding(start = 16.dp)
-                .defaultMinSize(minHeight = 44.dp),
+                .defaultMinSize(minHeight = FlorisTouchTarget.MinSize),
             enabled = enabled,
             colors = ButtonDefaults.textButtonColors(
                 contentColor = MaterialTheme.colorScheme.primary,

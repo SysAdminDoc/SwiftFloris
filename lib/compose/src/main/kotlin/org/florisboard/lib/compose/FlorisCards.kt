@@ -513,7 +513,7 @@ fun FlorisEmptyState(
                 FlorisTextButton(
                     modifier = Modifier
                         .padding(top = 8.dp)
-                        .defaultMinSize(minHeight = 44.dp),
+                        .defaultMinSize(minHeight = FlorisTouchTarget.MinSize),
                     onClick = onAction,
                     text = actionLabel,
                 )

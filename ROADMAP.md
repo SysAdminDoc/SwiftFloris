@@ -27,13 +27,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: M
   Note (2026-08-20): reduced but still open — the THREAT_MODEL system-dictionary claim was made true by making the DAO read-only (`e18a59578`), and the doc-integrity gate was widened (`1c4b43b4a`); `docs/PRIVACY_AND_AI.md:236-237` still misstates the dictionary key as "held in Android Keystore", and the Tasker/ACCESSIBILITY corrections remain undone.
 
-- [ ] P1 — Raise the shared touch-target minimum from 44 dp to 48 dp
-  Why: the shared Settings widgets standardise on `44.dp` — the iOS figure — which is 4 dp under the Android/WCAG 2.5.5 floor, while two composables in the same file correctly use `minimumInteractiveComponentSize()`. Every text button, chip and card action in Settings is affected. `docs/ACCESSIBILITY.md:141` claims 48 dp on every interactive element, and `TouchTargetWcagTest` only measures keyboard row heights on one synthetic device, so nothing catches it.
-  Evidence: `lib/compose/FlorisButtons.kt:69,106,143,206`, `FlorisButtonBar.kt:84,107`, `FlorisChip.kt:57`, `FlorisCards.kt:516`; correct usage at `FlorisButtons.kt:179,215`; `app/src/test/.../ime/window/TouchTargetWcagTest.kt:37-60`; `docs/ACCESSIBILITY.md:141`
-  Touches: `lib/compose/FlorisButtons.kt`, `FlorisButtonBar.kt`, `FlorisChip.kt`, `FlorisCards.kt`, the Roborazzi settings baselines, `docs/ACCESSIBILITY.md`
-  Acceptance: no shared interactive widget declares a minimum below 48 dp; the Roborazzi baselines are re-recorded; a test asserts the floor for the shared widgets, not only for keyboard rows.
-  Complexity: S
-
 - [ ] P1 — Give fork-added strings a translation route SwiftFloris owns
   Why: v1.9.59 fixed the locale *mapping* and added a coverage gate, but `crowdin.yml` still names upstream FlorisBoard's `FSEC_CROWDIN_PROJECT_ID`/`FSEC_CROWDIN_PERSONAL_TOKEN` and nothing in the tree consumes the file. 2,541 strings ship; locales carry 830–999. No fork-added string — MCP, sync, snippets, migration assistant, typing stats, per-app profiles, settings search — exists in any locale, so Arabic and Hebrew users get a mostly-English RTL settings app.
   Evidence: `crowdin.yml:1-2`; `app/src/main/res/values/strings.xml` (2,541) vs `values-de` 869 / `values-fr` 872 / `values-ar` 830 / `values-zh-rCN` 999; `settings__mcp__title`, `settings__sync__title`, `settings__migration_assistant__title`, `settings__search__placeholder` absent from `values-de/strings.xml`; no consumer of `crowdin.yml` anywhere in the tree

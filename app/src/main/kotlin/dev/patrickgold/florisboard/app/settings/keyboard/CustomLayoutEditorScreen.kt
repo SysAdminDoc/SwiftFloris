@@ -72,6 +72,7 @@ import dev.patrickgold.jetpref.material.ui.JetPrefDropdownMenuDefaults
 import kotlinx.coroutines.launch
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisIconButton
+import org.florisboard.lib.compose.FlorisTouchTarget
 import org.florisboard.lib.compose.stringRes
 import org.florisboard.lib.kotlin.curlyFormat
 
@@ -495,7 +496,10 @@ private fun LayoutPreview(
                         OutlinedButton(
                             modifier = Modifier
                                 .padding(horizontal = 2.dp)
-                                .defaultMinSize(minWidth = 44.dp, minHeight = 40.dp),
+                                .defaultMinSize(
+                                    minWidth = FlorisTouchTarget.MinSize,
+                                    minHeight = FlorisTouchTarget.MinSize,
+                                ),
                             shape = MaterialTheme.shapes.small,
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = if (isSelected) {

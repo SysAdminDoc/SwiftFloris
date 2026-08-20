@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Raise the shared Settings widgets to the 48 dp WCAG 2.5.5 touch-target floor
+  through a single named constant, including the custom layout editor's key
+  buttons, and cover the floor with a test that measures the rendered target
+  rather than matching source text.
 - Fix a context-chain walk that could not terminate: configuring the IME system
   bars from a wrapped context (a Compose dialog or themed wrapper) spun on the
   main thread instead of resolving, and a missing window now skips the system

@@ -54,7 +54,7 @@ fun FlorisChip(
                 overflow = TextOverflow.Ellipsis
             )
         },
-        modifier = modifier.defaultMinSize(minHeight = 44.dp),
+        modifier = modifier.defaultMinSize(minHeight = FlorisTouchTarget.MinSize),
         leadingIcon = if (leadingIcons.isNotEmpty()) ({
             Row {
                 for (leadingIcon in leadingIcons) {

@@ -52,7 +52,12 @@ class HomeScreenPremiumPolishContractTest {
 
         val buttonSource = locateSharedButtonSource().readText()
         buttonSource shouldContain "shape: Shape = MaterialTheme.shapes.small"
-        buttonSource shouldContain "defaultMinSize(minHeight = 44.dp)"
+        // The touch-target floor used to be pinned here as the literal
+        // "defaultMinSize(minHeight = 44.dp)", which held the shared widgets 4 dp
+        // under the WCAG 2.5.5 minimum and failed when it was corrected. The floor
+        // now lives in FlorisTouchTarget.MinSize and is covered by
+        // SharedWidgetTouchTargetTest, which measures the rendered target instead
+        // of matching source text.
     }
 
     @Test
