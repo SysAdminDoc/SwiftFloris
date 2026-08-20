@@ -21,13 +21,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P3
 
-- [ ] P3 — Re-evaluate material-kolor 5.0.0 now that the Compose BOM is enforced
-  Why: material-kolor was held at 4.1.1 in the 2026-08-20 pin batch because 5.0.0 escalated `androidx.compose.material3` to `1.5.0-alpha17` through Compose Multiplatform, which needed a newer `compose-foundation` than the BOM ships. The BOM is applied as an `enforcedPlatform` now, so that escalation can no longer happen — the bump may simply work, or may fail the other way if material-kolor 5.0.0 genuinely needs the alpha's API.
-  Evidence: `docs/DEPENDENCY_TRIAGE.md` audit-log entry for 2026-08-20; `gradle/libs.versions.toml` pins `material-kolor = "4.1.1"`; `:app:verifyComposeBomAuthority`
-  Touches: `gradle/libs.versions.toml`, `docs/DEPENDENCY_TRIAGE.md`
-  Acceptance: material-kolor is either current or held with a written reason recorded in the dependency audit log; the full unit suite and Roborazzi verify stay green, and the theme colour surfaces are checked visually because this library generates them.
-  Complexity: S
-
 - [ ] P3 — Decode a true dual-thumb alternating-hand glide
   Why: the detector now traces whichever finger is gliding and survives a second pointer, but it still traces exactly one at a time, so alternating-hand swiping produces one trace with a jump where the hands change over rather than two interleaved words. Two-finger swipe is the most-repeated must-have in the highest-traffic 2026 keyboard discussion and the stated reason people stay on HeliBoard; the pointer plumbing that blocked it is done, the decoding is not.
   Evidence: `ime/text/gestures/GlideTypingGesture.kt` traces a single `pointerId` and hands over only when the current one is unconfirmed; `ime/text/gestures/GlideTypingManager.kt` holds one in-flight gesture; https://news.ycombinator.com/item?id=48656610

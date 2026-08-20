@@ -6,6 +6,7 @@
 - Settings search now scrolls to the matching preference row and briefly highlights it. The shared preference wrappers keep the destination screens unchanged while the row reports its position, and the search card disappears after the row is reached.
 - Replace security-path source checks with behavior tests for encrypted stores, dictionary learning, clipboard policy, backup, sync, MCP consent, privacy gates, and sticker manifest replacement. Roborazzi capture classes are explicitly named in the plain unit-test report, with fixed preview density and font scale for repeatable captures.
 - Share the long-lived `NlpAddonHub` from `NlpManager` with the translation quick action, so future per-instance addon state cannot diverge between typing and smartbar calls.
+- Raise material-kolor to 5.0.0 now that the Compose BOM is enforced. The full unit suite and Roborazzi theme captures remain green.
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
   to a pre-release alpha, and Gradle picked that over the Compose BOM's stable
