@@ -74,12 +74,18 @@ object ClipboardHistoryFilter {
 
     /**
      * @param item the candidate.
-     * @param lowerQuery the search query, already trimmed and lowercased.
+     * @param lowerQuery the search query, trimmed, and lowercased by convention. Matching is
+     *   case-insensitive either way, so a caller that passes a raw query gets the same answer
+     *   rather than a silent miss.
      */
     fun matches(item: ClipboardItem, lowerQuery: String): Boolean {
         if (lowerQuery.isEmpty()) return true
         if (item.type != ItemType.TEXT) return false
         val text = item.text ?: return false
-        return text.lowercase().contains(lowerQuery)
+        // `text.lowercase().contains(...)` allocated a full lowercased copy of the clip for every
+        // item on every keystroke. Retention allows clips up to 64 KiB, so a history of near-limit
+        // entries meant megabytes of throwaway allocation per typed character, on the thread
+        // driving the palette. `contains(ignoreCase = true)` compares in place instead.
+        return text.contains(lowerQuery, ignoreCase = true)
     }
 }

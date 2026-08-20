@@ -57,13 +57,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: the resolved `androidx.compose.material3:material3` version is the one the BOM names, or the alpha is declared explicitly in the catalog with a written reason; a gate fails when a Compose artifact resolves to a version no repository file names; the reproducible-build doc's pinning claim matches what resolution actually does. Verify the Compose Multiplatform libraries still work against the chosen version — they are compiled against the alpha, so forcing the stable line risks the mirror-image `AbstractMethodError` in the jetpref settings UI.
   Complexity: M
 
-- [ ] P2 — Prove the encrypted clipboard survives a very large clip
-  Why: three keyboards report multi-second stalls or crashes on large clipboard payloads, one specifically at ~120 KiB of URLs. SwiftFloris bounds retention at 64 KiB UTF-8 and hands larger live clips to direct-paste only, but the history store is SQLCipher-encrypted and the search/filter path runs over decrypted rows — encryption makes this class worse, not better, and nothing replays it.
-  Evidence: `ime/clipboard/ClipboardTextRetentionPolicy.kt:32`; `ime/clipboard/provider/ClipboardHistoryEncryption.kt:23,45-48`; `ime/clipboard/ClipboardHistoryFilter.kt:51-73`; https://github.com/HeliBorg/HeliBoard/issues/2697 ; https://github.com/florisboard/florisboard/issues/3117 ; https://github.com/florisboard/florisboard/pull/3303
-  Touches: `app/src/test/.../ime/clipboard/`, `ime/clipboard/ClipboardInputLayout.kt`, `ime/clipboard/provider/ClipboardHistoryStore.kt`
-  Acceptance: a test ingests a 120 KiB clip and a history full of near-limit entries, asserts the retention bound is applied off the main thread, and pins a search/filter budget over the encrypted store; the panel opens without a main-thread stall on the attached device.
-  Complexity: M
-
 ### P3
 
 - [ ] P3 — Decode a true dual-thumb alternating-hand glide

@@ -2,6 +2,13 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Stop clipboard search from copying the whole history on every keystroke. Each
+  typed character lowercased every stored clip into a fresh string before
+  searching it, so with a history of near-limit clips a single keystroke
+  allocated megabytes on the thread drawing the panel. Matching now compares in
+  place. A replay covering a full history of 64 KiB clips measures the
+  allocation, because a wall-clock budget loose enough not to flake also passes
+  with the defect present.
 - Make settings search find every preference. It covered 103 of the 276 rows the
   settings screens declare, so Input Feedback matched none of its 16 preferences,
   Addons none of 8, MCP none of 9 and Gestures 7 of 28: searching "vibration

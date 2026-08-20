@@ -84,7 +84,10 @@ class ClipboardHistoryFilterTest : FunSpec({
 
     test("matches predicate respects the per-item type contract") {
         ClipboardHistoryFilter.matches(text(1, "hello"), "hello") shouldBe true
-        ClipboardHistoryFilter.matches(text(1, "hello"), "HELLO") shouldBe false  // pre-lowered
+        // A caller that forgets to lower-case its query used to get a silent miss. Matching is
+        // case-insensitive on both sides now, so the pre-lowering is an optimisation, not a
+        // precondition callers can get wrong.
+        ClipboardHistoryFilter.matches(text(1, "hello"), "HELLO") shouldBe true
         ClipboardHistoryFilter.matches(image(1), "anything") shouldBe false
         ClipboardHistoryFilter.matches(text(1, "hello"), "") shouldBe true
     }
