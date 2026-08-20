@@ -234,6 +234,7 @@ object SettingsSearchIndex {
 
         entry("about", R.string.about__title, R.string.about__title, R.string.settings__home__about_summary, SettingsSearchDestination.ABOUT, "version source license privacy"),
         entry("about.ai", R.string.about__ai_features__title, R.string.about__ai_features__title, R.string.about__ai_features__summary, SettingsSearchDestination.AI_FEATURES, "machine learning disclosure"),
+        entry("about.report-problem", R.string.about__title, R.string.about__report_problem__title, R.string.about__report_problem__summary, SettingsSearchDestination.ABOUT, "bug issue feedback crash"),
         entry("about.project-license", R.string.about__project_license__title, R.string.about__project_license__title, destination = SettingsSearchDestination.PROJECT_LICENSE, keywords = "apache"),
         entry("about.third-party", R.string.about__third_party_licenses__title, R.string.about__third_party_licenses__title, destination = SettingsSearchDestination.THIRD_PARTY_LICENSES, keywords = "open source licenses"),
 

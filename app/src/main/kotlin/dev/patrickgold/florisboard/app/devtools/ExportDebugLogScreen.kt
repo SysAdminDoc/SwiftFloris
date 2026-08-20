@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.app.devtools
 
 import androidx.compose.foundation.BorderStroke
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -53,6 +54,7 @@ import dev.patrickgold.florisboard.clipboardManager
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.devtools.Devtools
 import kotlinx.coroutines.launch
+import dev.patrickgold.florisboard.lib.crashutility.CrashReportFormatter
 import org.florisboard.lib.android.showShortToast
 import org.florisboard.lib.compose.FlorisButtonBar
 import org.florisboard.lib.compose.FlorisInfoCard
@@ -92,6 +94,30 @@ fun ExportDebugLogScreen() = FlorisScreen {
                 },
                 text = stringRes(R.string.devtools__debuglog__copy_log),
                 enabled = debugLog != null,
+            )
+            // Copy was the only way out of this screen, which meant pasting into a browser or a
+            // mail app by hand on the device that is misbehaving. The redaction reminder rides
+            // along with the text so it is in front of the user at the moment they share.
+            val shareLabel = stringRes(R.string.devtools__debuglog__share_log)
+            ButtonBarTextButton(
+                onClick = {
+                    val log = formattedDebugLog ?: return@ButtonBarTextButton
+                    val send = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "SwiftFloris debug log")
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            "${CrashReportFormatter.REDACTION_REMINDER}\n\n${log.joinToString("\n")}",
+                        )
+                    }
+                    if (send.resolveActivity(context.packageManager) != null) {
+                        context.startActivity(Intent.createChooser(send, shareLabel))
+                    } else {
+                        scope.launch { context.showShortToast(R.string.devtools__debuglog__share_unavailable) }
+                    }
+                },
+                text = shareLabel,
+                enabled = formattedDebugLog != null,
             )
             ButtonBarButton(
                 onClick = {

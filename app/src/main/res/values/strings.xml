@@ -2665,6 +2665,14 @@
     <string name="settings__mcp__group_status" comment="MCP settings group title">Status</string>
     <string name="settings__mcp__group_daemons" comment="MCP settings group title">Bound daemons</string>
     <string name="settings__mcp__group_trust" comment="MCP settings group title">Daemon trust</string>
+    <string name="about__report_problem__title" comment="About screen row that starts a bug report">Report a problem</string>
+    <string name="about__report_problem__summary" comment="About screen row summary for the bug report action">Copy your version, build and device details, then open the issue tracker</string>
+    <string name="about__report_problem__copied" comment="Toast after the bug report details were copied">Report details copied. Paste them into the issue, and remove anything you typed or copied before posting.</string>
+    <string name="about__report_problem__copy_failed" comment="Toast when the bug report details could not be copied">Could not copy the report details. The issue form lists what to include.</string>
+    <string name="crash_dialog__share_report" comment="Crash dialog button that shares the report through another app">Share report</string>
+    <string name="crash_dialog__share_report_unavailable" comment="Toast when no app can receive the shared crash report">No app on this device can receive the report. Use Copy instead.</string>
+    <string name="devtools__debuglog__share_log" comment="Debug log screen button that shares the log through another app">Share log</string>
+    <string name="devtools__debuglog__share_unavailable" comment="Toast when no app can receive the shared debug log">No app on this device can receive the log. Use Copy instead.</string>
     <string name="settings__mcp__status_parked" comment="MCP status card title shown while daemon binding is not built into this release">No daemon runs in this build</string>
     <string name="settings__mcp__status_parked_summary" comment="MCP status card summary shown while daemon binding is not built into this release">SwiftFloris has no keyboard action that calls an MCP daemon yet, so nothing on this screen is bound or reachable and enabling a daemon starts nothing. Trust decisions and the settings below are still saved, and take effect in the release that adds the first audited action.</string>
     <string name="settings__mcp__status_disabled" comment="MCP status row title when the bridge is disabled">MCP bridge off</string>

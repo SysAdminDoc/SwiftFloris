@@ -2,6 +2,20 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Add "Report a problem" to Settings → About. Reaching the issue tracker from
+  inside the app previously required an actual crash: the version, build type,
+  commit hash, install source, device and Android version the issue templates ask
+  for were assembled in the crash dialog and nowhere else, so anyone reporting a
+  bug that did not crash had to find all of it by hand. The row copies the same
+  block, with the redaction reminder, and opens the bug report form.
+- Let the crash report and the debug log be shared to another app. Both were
+  copy-to-clipboard only, which meant pasting by hand on the device that is
+  misbehaving. The redaction reminder travels with the shared text.
+- Fix a crash reporter that could crash. It read every field on
+  `Build.VERSION_CODES` as an integer, which holds for the constants a stock
+  platform declares but throws the moment a non-integer field exists — so the
+  failure would land while reporting a failure. It now reads only static integer
+  fields and falls back to naming the SDK level.
 - Stop clipboard search from copying the whole history on every keystroke. Each
   typed character lowercased every stored clip into a fresh string before
   searching it, so with a history of near-limit clips a single keystroke

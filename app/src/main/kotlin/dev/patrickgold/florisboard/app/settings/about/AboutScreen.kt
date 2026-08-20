@@ -16,6 +16,7 @@
 
 package dev.patrickgold.florisboard.app.settings.about
 
+import android.content.Intent
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -28,6 +29,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Code
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.outlined.BugReport
 import androidx.compose.material.icons.outlined.Description
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.NewReleases
@@ -55,6 +57,9 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.clipboardManager
+import androidx.core.net.toUri
+import dev.patrickgold.florisboard.lib.crashutility.CrashReportEnvironment
+import dev.patrickgold.florisboard.lib.crashutility.CrashReportFormatter
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.lib.util.launchUrl
 import dev.patrickgold.jetpref.datastore.ui.Preference
@@ -106,6 +111,42 @@ fun AboutScreen() = FlorisScreen {
                         context.stringRes(R.string.about__version_copied__error, "error_message" to e.message),
                         Toast.LENGTH_SHORT,
                     ).show()
+                }
+            },
+        )
+
+        // The only in-app route to the issue tracker used to be an actual crash: the build type,
+        // commit hash, install source, device and Android version the issue templates ask for were
+        // assembled inside the crash dialog and nowhere else. A user reporting a bug that does not
+        // crash had to find all of it by hand. This copies the same block and opens the tracker.
+        Preference(
+            icon = Icons.Outlined.BugReport,
+            title = stringRes(R.string.about__report_problem__title),
+            summary = stringRes(R.string.about__report_problem__summary),
+            onClick = {
+                val report = CrashReportFormatter.formatProblemReport(
+                    CrashReportEnvironment.current(
+                        context = context,
+                        versionNameMarkdown = context.stringRes(
+                            R.string.florisboard__changelog_url,
+                            "version" to BuildConfig.VERSION_NAME,
+                        ).let { url -> "[${BuildConfig.VERSION_NAME}]($url)" },
+                    ),
+                )
+                val copied = runCatching { clipboardManager.addNewPlaintext(report) }.isSuccess
+                Toast.makeText(
+                    context,
+                    if (copied) {
+                        R.string.about__report_problem__copied
+                    } else {
+                        R.string.about__report_problem__copy_failed
+                    },
+                    Toast.LENGTH_LONG,
+                ).show()
+                runCatching {
+                    context.startActivity(
+                        Intent(Intent.ACTION_VIEW, context.stringRes(R.string.florisboard__bug_report_url).toUri()),
+                    )
                 }
             },
         )

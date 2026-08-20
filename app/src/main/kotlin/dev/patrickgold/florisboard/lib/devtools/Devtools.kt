@@ -31,6 +31,7 @@ import dev.patrickgold.florisboard.subtypeManager
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
+import java.lang.reflect.Modifier
 import java.util.Locale
 import org.florisboard.lib.android.systemService
 
@@ -188,9 +189,18 @@ object Devtools {
     }
 
     fun getAndroidVersion(includeOemBuildId: Boolean = false): String {
-        val fields = Build.VERSION_CODES::class.java.fields
-        val codeName = fields.firstOrNull { it.getInt(Build.VERSION_CODES::class) == Build.VERSION.SDK_INT }?.name
-            ?: return "Unknown"
+        // This reads every field on Build.VERSION_CODES reflectively. It used to call getInt on
+        // all of them and pass a KClass as the receiver: fine for the int constants a stock
+        // platform declares, but it throws IllegalArgumentException the moment a non-int field
+        // exists — which instrumentation adds, and a future platform release could too. The
+        // caller here is the crash reporter, so an exception would mean crashing while reporting
+        // a crash. Filter to static int fields and read them with the null receiver they want.
+        val codeName = runCatching {
+            Build.VERSION_CODES::class.java.fields
+                .filter { Modifier.isStatic(it.modifiers) && it.type == Int::class.javaPrimitiveType }
+                .firstOrNull { it.getInt(null) == Build.VERSION.SDK_INT }
+                ?.name
+        }.getOrNull() ?: return "Unknown (sdk=${Build.VERSION.SDK_INT})"
         return buildString {
             append(Build.VERSION.RELEASE)
             append(" (cn=")

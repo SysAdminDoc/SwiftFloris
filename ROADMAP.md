@@ -43,13 +43,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: M
 
 
-- [ ] P2 — Add an in-app bug-report path that carries the evidence the templates ask for
-  Why: the crash path is good, but the only in-app route to the issue tracker is via an actual crash. `AboutScreen` has no report link, and the build type, commit hash, device and Android version the issue templates demand are computed only inside the crash dialog. Neither the crash dialog nor the debug-log export offers a share intent — both are clipboard-copy only — so a user must paste manually and self-redact.
-  Evidence: `.github/ISSUE_TEMPLATE/bug_report.yml:34-65`; `lib/crashutility/CrashDialogActivity.kt:76-101,113-122,137-146`; `app/settings/about/AboutScreen.kt:73,117-140`; `app/devtools/ExportDebugLogScreen.kt:85-107`
-  Touches: `app/settings/about/AboutScreen.kt`, `app/devtools/ExportDebugLogScreen.kt`, `lib/crashutility/CrashDialogActivity.kt`, `app/src/main/res/xml/file_paths.xml`
-  Acceptance: About offers "Report a problem" with a pre-filled block containing version, versionCode, build type, commit hash, install source, device and Android version; crash reports and debug logs can be shared via `ACTION_SEND` through the existing FileProvider, with the same redaction the crash template asks the user to perform.
-  Complexity: M
-
 - [ ] P2 — Stop transitive Compose Multiplatform dependencies from overriding the Compose BOM
   Why: `docs/REPRODUCIBLE_BUILDS.md` states that every Compose dependency resolves through `gradle/libs.versions.toml` version refs with no floating selectors, but four Compose Multiplatform artifacts (`aboutlibraries-compose-m3`, `jetpref-datastore-ui`, `jetpref-material-ui`, `material-kolor`) each depend on `org.jetbrains.compose.material3:material3`, which carries a constraint on `androidx.compose.material3:material3` at a **pre-release alpha**. Gradle conflict resolution picks the alpha over the BOM's stable pin, so the shipped app has been built against an alpha Material 3 that no file in the repo names. This is how the 2026-08-20 pin batch broke: material-kolor 5.0.0 escalated material3 to 1.5.0-alpha17 against the BOM's foundation 1.12.0 and three screenshot tests died with `AbstractMethodError` on `androidx.compose.foundation.style.CustomStyle.applyStyle`.
   Evidence: `./gradlew :app:dependencyInsight --configuration debugUnitTestRuntimeClasspath --dependency androidx.compose.material3:material3` reports `1.5.0-alpha08`, "By constraint / By conflict resolution: between versions 1.5.0-alpha08, 1.4.0 and 1.3.1"; Compose BOM 2026.08.00 declares `material3 = 1.4.0`, `foundation = 1.12.0`; `docs/REPRODUCIBLE_BUILDS.md:28`

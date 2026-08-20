@@ -70,6 +70,13 @@
             android:text="@string/crash_dialog__copy_to_clipboard" tools:ignore="ButtonStyle"/>
 
         <Button
+            android:id="@+id/share_report"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:padding="8dp"
+            android:text="@string/crash_dialog__share_report" tools:ignore="ButtonStyle"/>
+
+        <Button
             android:id="@+id/open_bug_report_form"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"

@@ -60,6 +60,7 @@ class CrashDialogActivity : ComponentActivity() {
     private val stacktrace by lazy { findViewById<TextView>(R.id.stacktrace) }
     private val reportInstructions by lazy { findViewById<TextView>(R.id.report_instructions) }
     private val copyToClipboard by lazy { findViewById<Button>(R.id.copy_to_clipboard) }
+    private val shareReport by lazy { findViewById<Button>(R.id.share_report) }
     private val openBugReportForm by lazy { findViewById<Button>(R.id.open_bug_report_form) }
     private val close by lazy { findViewById<Button>(R.id.close) }
 
@@ -90,16 +91,7 @@ class CrashDialogActivity : ComponentActivity() {
             }
         }
         errorReport = CrashReportFormatter.formatReport(
-            environment = CrashReportEnvironment(
-                versionNameMarkdown = versionName,
-                versionCode = BuildConfig.VERSION_CODE,
-                applicationId = BuildConfig.APPLICATION_ID,
-                buildType = BuildConfig.BUILD_TYPE,
-                buildCommitHash = BuildConfig.BUILD_COMMIT_HASH,
-                installSource = resolveInstallSource(),
-                deviceName = Devtools.getDeviceName(),
-                androidVersion = Devtools.getAndroidVersion(),
-            ),
+            environment = CrashReportEnvironment.current(this, versionNameMarkdown = versionName),
             debugLogHeader = Devtools.generateDebugLog(this@CrashDialogActivity, prefs, includeLogcat = false),
             stacktraces = stacktraces,
         )
@@ -129,19 +121,32 @@ class CrashDialogActivity : ComponentActivity() {
             startActivity(browserIntent)
         }
 
+        shareReport.setOnClickListener {
+            // Copy-to-clipboard was the only route out of this dialog, so a user filing the report
+            // from a phone had to paste into the browser by hand. ACTION_SEND lets them hand it to
+            // a mail or notes app directly. The text is the same, redaction reminder included.
+            val send = Intent(Intent.ACTION_SEND).apply {
+                type = "text/plain"
+                putExtra(Intent.EXTRA_SUBJECT, "${CrashReportFormatter.PRODUCT_NAME} crash report")
+                putExtra(Intent.EXTRA_TEXT, errorReport)
+            }
+            val chooser = Intent.createChooser(
+                send,
+                resources.getString(R.string.crash_dialog__share_report),
+            )
+            if (send.resolveActivity(packageManager) != null) {
+                startActivity(chooser)
+            } else {
+                Toast.makeText(
+                    this,
+                    resources.getString(R.string.crash_dialog__share_report_unavailable),
+                    Toast.LENGTH_SHORT,
+                ).show()
+            }
+        }
+
         close.setOnClickListener {
             finish()
         }
-    }
-
-    private fun resolveInstallSource(): String {
-        return runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-                packageManager.getInstallSourceInfo(packageName).installingPackageName
-            } else {
-                @Suppress("DEPRECATION")
-                packageManager.getInstallerPackageName(packageName)
-            }
-        }.getOrNull()?.takeUnless { it.isBlank() } ?: "unknown / sideload"
     }
 }
