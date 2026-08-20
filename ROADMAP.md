@@ -137,13 +137,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P2
 
-- [ ] P2 — Make the MCP settings surface honest about the parked engine
-  Why: `FlorisImeService` now pins the MCP lifecycle to null and empties both registries (correct — no binding can occur), but `McpSettingsScreen` still offers discovery review, trust actions, and per-daemon toggles that govern a no-op. A user who enables a daemon there reasonably believes something turned on. The 2026-08-11 audit-hub commit deleted the routing roadmap item as done, so no open item tracks this residue.
-  Evidence: `FlorisImeService.kt:424-434` (`mcpLifecycle = null`, registries pinned empty, parked comment); `app/settings/mcp/McpSettingsScreen.kt`; commit 491d90d93
-  Touches: `app/settings/mcp/McpSettingsScreen.kt`, `app/src/main/res/values/strings.xml`, `docs/PRIVACY_AND_AI.md`
-  Acceptance: the screen carries a persistent parked-state banner stating that no daemon is bound or dispatchable in this build (or the screen is gated behind a developer toggle until a live action exists); trust and toggle state remain editable and persisted; README/PRIVACY_AND_AI wording matches.
-  Complexity: M
-
 ### P3
 
 - [ ] P3 — Share one `NlpAddonHub` between the smartbar action and the NLP manager

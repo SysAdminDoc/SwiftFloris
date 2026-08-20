@@ -2,6 +2,12 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Say on the MCP screen that no daemon runs in this build. The screen offered
+  discovery review, a bridge switch and per-daemon toggles while nothing could
+  be bound or dispatched, so turning a daemon on looked like it started
+  something. Trust decisions and toggles are still saved and apply once binding
+  returns. One flag now decides this for both the keyboard service and Settings,
+  so the two cannot drift apart.
 - Let glide typing work with a second finger on the keyboard. A finger already
   resting on the keys claimed the gesture detector and never let go, because a
   motionless finger is never classified as a glide, so the other hand could not

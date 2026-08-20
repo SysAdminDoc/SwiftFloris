@@ -426,11 +426,15 @@ class FlorisImeService : LifecycleInputMethodService() {
         // bind a daemon that no audited production action can reach. The
         // dispatch router remains available behind NlpAddonHub for the future
         // action that will make this lifecycle safe to re-enable.
-        mcpLifecycle = null
-        dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry.setActive(emptyMap())
-        dev.patrickgold.florisboard.ime.mcp.McpClientRegistry.setActive(
-            dev.patrickgold.florisboard.ime.mcp.NoOpMcpClient,
-        )
+        // McpBindingPolicy is the single owner of that decision; Settings reads the same
+        // flag to tell the user that nothing here is bound.
+        if (!dev.patrickgold.florisboard.ime.mcp.McpBindingPolicy.shouldStartLifecycle()) {
+            mcpLifecycle = null
+            dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry.setActive(emptyMap())
+            dev.patrickgold.florisboard.ime.mcp.McpClientRegistry.setActive(
+                dev.patrickgold.florisboard.ime.mcp.NoOpMcpClient,
+            )
+        }
 
         startAddonRegistry()
     }

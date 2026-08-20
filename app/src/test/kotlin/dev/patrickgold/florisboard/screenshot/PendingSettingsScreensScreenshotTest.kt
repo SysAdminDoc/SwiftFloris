@@ -55,6 +55,7 @@ import dev.patrickgold.florisboard.app.setup.SetupScreen
 import dev.patrickgold.florisboard.ime.smartcompose.AddonInvocationAudit
 import dev.patrickgold.florisboard.ime.mcp.DaemonEntry
 import dev.patrickgold.florisboard.ime.mcp.DaemonKey
+import dev.patrickgold.florisboard.ime.mcp.McpBindingPolicy
 import dev.patrickgold.florisboard.ime.mcp.McpBridgeContract
 import dev.patrickgold.florisboard.ime.mcp.McpConnectionStateStore
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonConnectionState
@@ -62,6 +63,7 @@ import dev.patrickgold.florisboard.ime.mcp.McpDaemonRegistry
 import dev.patrickgold.florisboard.ime.mcp.McpToolDescriptor
 import dev.patrickgold.florisboard.ime.smartcompose.AddonConsentState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
+import io.kotest.matchers.shouldBe
 import kotlinx.coroutines.runBlocking
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
@@ -141,6 +143,28 @@ class PendingSettingsScreensScreenshotTest {
         captureSettingsScreen("mcp_settings_screen.png") {
             McpSettingsScreen()
         }
+    }
+
+    /**
+     * The screen offers discovery review, trust actions and per-daemon toggles while no daemon can
+     * be bound at all, so a user who enables one reasonably believes something turned on. The
+     * notice is what corrects that, and it is rendered from [McpBindingPolicy] — the same flag
+     * `FlorisImeService` reads to decide whether to start the lifecycle — so the screen cannot
+     * keep claiming a live bridge after the service has parked it.
+     */
+    @Test
+    fun mcpSettingsScreenSaysWhenNoDaemonCanBeBound() {
+        seedMcpDaemons()
+        val parkedTitle = composeRule.activity.getString(R.string.settings__mcp__status_parked)
+        composeRule.setContent {
+            SettingsScreenshotFrame(theme = AppTheme.LIGHT) {
+                McpSettingsScreen()
+            }
+        }
+        composeRule.waitForIdle()
+
+        val shown = composeRule.onAllNodes(hasText(parkedTitle)).fetchSemanticsNodes().isNotEmpty()
+        shown shouldBe McpBindingPolicy.showsParkedNotice()
     }
 
     @Test

@@ -42,6 +42,7 @@ import dev.patrickgold.florisboard.ime.mcp.DaemonKey
 import dev.patrickgold.florisboard.ime.mcp.DisabledDaemonSet
 import dev.patrickgold.florisboard.ime.mcp.DisabledToolSet
 import dev.patrickgold.florisboard.ime.mcp.McpAndroidDiscoverer
+import dev.patrickgold.florisboard.ime.mcp.McpBindingPolicy
 import dev.patrickgold.florisboard.ime.mcp.McpConnectionStateStore
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonConnectionState
 import dev.patrickgold.florisboard.ime.mcp.McpDaemonDiscoveryStore
@@ -176,6 +177,16 @@ fun McpSettingsScreen() = FlorisScreen {
             disabledPackages = disabledSet,
             connectionStates = connectionStates,
         )
+        // Sits above every other status card and does not depend on the bridge toggle: while
+        // binding is parked, the toggle and the per-daemon switches below govern a no-op, and
+        // saying so is the only thing that makes the rest of the screen honest.
+        if (McpBindingPolicy.showsParkedNotice()) {
+            FlorisWarningCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.settings__mcp__status_parked),
+                secondaryText = stringRes(R.string.settings__mcp__status_parked_summary),
+            )
+        }
         if (!bridgeEnabled) {
             FlorisInfoCard(
                 modifier = Modifier.padding(8.dp),

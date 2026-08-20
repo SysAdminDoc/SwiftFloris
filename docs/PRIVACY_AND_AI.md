@@ -207,6 +207,13 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 
 ### 2.12 MCP daemon bridge
 
+- **Not running in this release.** No keyboard action dispatches through MCP yet, so
+  `FlorisImeService` starts no MCP lifecycle and pins both registries empty: starting
+  the keyboard cannot discover or bind a daemon, and enabling one in Settings starts
+  nothing. Settings → MCP daemon bridge says so on the screen itself. Trust decisions
+  and per-daemon settings are still saved, and apply in the release that adds the first
+  audited action. The rest of this section describes what the bridge does when it is
+  live. `McpBindingPolicy` is the single flag that governs this.
 - **What runs.** AIDL local-binder bridge to user-installed MCP (Model
   Context Protocol) daemons on the same device. The IME never invokes
   a network socket; it binds an Android service exported by the daemon app.

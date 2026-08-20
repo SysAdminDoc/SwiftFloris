@@ -2665,6 +2665,8 @@
     <string name="settings__mcp__group_status" comment="MCP settings group title">Status</string>
     <string name="settings__mcp__group_daemons" comment="MCP settings group title">Bound daemons</string>
     <string name="settings__mcp__group_trust" comment="MCP settings group title">Daemon trust</string>
+    <string name="settings__mcp__status_parked" comment="MCP status card title shown while daemon binding is not built into this release">No daemon runs in this build</string>
+    <string name="settings__mcp__status_parked_summary" comment="MCP status card summary shown while daemon binding is not built into this release">SwiftFloris has no keyboard action that calls an MCP daemon yet, so nothing on this screen is bound or reachable and enabling a daemon starts nothing. Trust decisions and the settings below are still saved, and take effect in the release that adds the first audited action.</string>
     <string name="settings__mcp__status_disabled" comment="MCP status row title when the bridge is disabled">MCP bridge off</string>
     <string name="settings__mcp__status_disabled_summary" comment="MCP status row summary when the bridge is disabled">SwiftFloris will not discover, trust, or bind MCP daemons at keyboard startup until you enable the bridge.</string>
     <string name="settings__mcp__status_no_daemons" comment="MCP status row title when no daemons are installed">No MCP daemons installed</string>
