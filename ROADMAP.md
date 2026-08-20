@@ -142,13 +142,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P1
 
-- [ ] P1 — Cut v1.9.60 for the eight unreleased post-tag commits
-  Why: eight commits of shipped fixes (incognito ghost text, read-only system dictionary, merged-manifest permission allowlist, MCP no-bind, data-preservation rewrites, loading states, method.xml capabilities, MCP lifecycle serialization) sit past the `v1.9.59` tag with `gradle.properties` still at 1.9.59/2108 — the exact drift the front-door gate exists to stop, re-accumulating from the other direction. The uncommitted contrast-gate WIP should be finished (see the 2026-08-11 P1 item's note) or explicitly shelved before the cut.
-  Evidence: `git log v1.9.59..HEAD` (8 commits, b6f368f8a..89bc87d6a); `gradle.properties:14-15`; `scripts/check-release-front-door.sh` (green today only because HEAD is unreleased)
-  Touches: `gradle.properties`, `README.md` (badge, table header, release log), `fastlane/metadata/android/en-US/changelogs/2109.txt`, `CHANGELOG.md`
-  Acceptance: versionCode/versionName bumped, fastlane changelog written, full release-evidence run green, tag pushed, GitHub Release published with APK + SHA256SUMS, front-door gate green against the published release.
-  Complexity: S
-
 ### P2
 
 - [ ] P2 — Make the MCP settings surface honest about the parked engine
