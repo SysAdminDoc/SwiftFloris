@@ -22,13 +22,14 @@ import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
 
 class ExternalVoiceInputProvidersTest : FunSpec({
-    test("supported offline provider catalog includes FUTO, WhisperInput, and Whisper") {
+    test("supported offline provider catalog includes every on-device voice IME") {
         val providers = ExternalVoiceInputProviders.SupportedOfflineImeProviders
 
-        providers shouldHaveSize 3
+        providers shouldHaveSize 4
         providers.map { it.packageName } shouldContain "org.futo.voiceinput"
         providers.map { it.packageName } shouldContain "com.alexvt.whisperinput"
         providers.map { it.packageName } shouldContain "org.woheller69.whisper"
+        providers.map { it.packageName } shouldContain "dev.soupslurpr.transcribro"
     }
 
     test("provider lookup maps known package names to display labels") {

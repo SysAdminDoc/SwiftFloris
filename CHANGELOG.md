@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Recognise Transcribro as an offline voice input provider, alongside FUTO Voice
+  Input, WhisperInput and Whisper.
 - Name every store a backup archive leaves behind, rendered from the backup
   inventory instead of a hand-written sentence that listed four of thirteen and
   never mentioned the personal dictionary. A new excluded store without a label

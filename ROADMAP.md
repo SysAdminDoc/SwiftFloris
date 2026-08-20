@@ -158,13 +158,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: the screen carries a persistent parked-state banner stating that no daemon is bound or dispatchable in this build (or the screen is gated behind a developer toggle until a live action exists); trust and toggle state remain editable and persisted; README/PRIVACY_AND_AI wording matches.
   Complexity: M
 
-- [ ] P2 — Add Transcribro to the external voice-IME providers
-  Why: the offline voice handoff supports exactly three voice IMEs (FUTO, WhisperInput, Whisper), and FUTO's standalone Voice Input is in maintenance mode. Transcribro (whisper.cpp + Silero VAD, on-device, actively developed, F-Droid) is the current best-maintained private voice IME and costs one list entry to support.
-  Evidence: `ime/voice/ExternalVoiceInputProvider.kt:39-58` (`SupportedOfflineImeProviders`); https://github.com/soupslurpr/Transcribro ; https://github.com/futo-org/voice-input/releases (maintenance cadence)
-  Touches: `ime/voice/ExternalVoiceInputProvider.kt`, `ime/voice/VoiceInputSetupActivity.kt` (provider-agnostic copy where it is FUTO-specific), `app/src/main/res/values/strings.xml`
-  Acceptance: Transcribro's exact package id is verified from its F-Droid listing before coding; with it installed and enabled, the mic action hands off to it and returns; setup guidance lists it alongside the existing three; existing FUTO-first behavior is unchanged when multiple providers are installed.
-  Complexity: S
-
 ### P3
 
 - [ ] P3 — Share one `NlpAddonHub` between the smartbar action and the NLP manager

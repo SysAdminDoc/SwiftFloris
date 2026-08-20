@@ -55,7 +55,18 @@ object ExternalVoiceInputProviders {
         installUrl = "https://f-droid.org/packages/org.woheller69.whisper/",
     )
 
-    val SupportedOfflineImeProviders = listOf(Futo, WhisperInput, Whisper)
+    /**
+     * whisper.cpp plus Silero VAD, on-device. Ships a voice input keyboard, so
+     * the same IME handoff the other providers use applies. Not in the main
+     * F-Droid repository, hence the project page as the install route.
+     */
+    val Transcribro = ExternalVoiceInputProvider(
+        packageName = "dev.soupslurpr.transcribro",
+        label = "Transcribro",
+        installUrl = "https://github.com/soupslurpr/Transcribro",
+    )
+
+    val SupportedOfflineImeProviders = listOf(Futo, WhisperInput, Whisper, Transcribro)
 
     fun byPackageName(packageName: String): ExternalVoiceInputProvider? {
         return SupportedOfflineImeProviders.firstOrNull { it.packageName == packageName }

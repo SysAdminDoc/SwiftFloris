@@ -401,7 +401,7 @@
     <string name="settings__voice_input__status_futo_not_enabled" comment="Voice input status message">FUTO is installed but not enabled</string>
     <string name="settings__voice_input__status_futo_not_enabled_summary" comment="Voice input status summary">Enable FUTO Voice Input in Android keyboard settings before using offline dictation.</string>
     <string name="settings__voice_input__status_futo_not_installed" comment="Voice input status message">Install FUTO Voice Input</string>
-    <string name="settings__voice_input__status_futo_not_installed_summary" comment="Voice input status summary">Install an offline Android voice keyboard such as FUTO Voice Input, WhisperInput, or Whisper to add private dictation through SwiftFloris; SwiftFloris itself does not record audio.</string>
+    <string name="settings__voice_input__status_futo_not_installed_summary" comment="Voice input status summary">Install an offline Android voice keyboard such as FUTO Voice Input, WhisperInput, Whisper, or Transcribro to add private dictation through SwiftFloris; SwiftFloris itself does not record audio.</string>
     <string name="settings__voice_input__status_other_provider" comment="Voice input status message">A voice keyboard is enabled</string>
     <string name="settings__voice_input__status_other_provider_summary" comment="Voice input status summary">SwiftFloris can use an enabled voice keyboard after Android grants that provider microphone access.</string>
     <string name="settings__voice_input__group_embedded_engine" comment="Voice input settings group title">Embedded engine</string>
