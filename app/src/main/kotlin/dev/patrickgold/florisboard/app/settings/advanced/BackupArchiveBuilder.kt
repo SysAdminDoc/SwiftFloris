@@ -87,6 +87,15 @@ internal object BackupArchiveBuilder {
                 dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH))
             }
         }
+        if (selection.keypressSounds) {
+            val keypressSoundsDir = appContext.filesDir.subDir(BackupArchiveStores.KeypressSoundsDirName)
+            if (keypressSoundsDir.exists()) {
+                BackupArchiveStores.copyDirectory(
+                    keypressSoundsDir,
+                    workspaceFilesDir.subDir(BackupArchiveStores.KeypressSoundsDirName),
+                )
+            }
+        }
         if (selection.imeTheme) {
             appContext.filesDir.subDir(ExtensionManager.IME_THEME_PATH).let { dir ->
                 dir.copyRecursively(workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH))

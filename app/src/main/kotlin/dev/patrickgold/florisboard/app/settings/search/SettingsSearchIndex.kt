@@ -291,6 +291,11 @@ object SettingsSearchIndex {
         // keyboard/InputFeedbackScreen.kt
         entry("input-feedback.audio-enabled", R.string.settings__input_feedback__title, R.string.pref__input_feedback__audio_enabled__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
         entry("input-feedback.audio-volume", R.string.settings__input_feedback__title, R.string.pref__input_feedback__audio_volume__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
+        entry("input-feedback.custom-sounds-standard", R.string.settings__input_feedback__title, R.string.pref__input_feedback__custom_sounds__standard__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
+        entry("input-feedback.custom-sounds-delete", R.string.settings__input_feedback__title, R.string.pref__input_feedback__custom_sounds__delete__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
+        entry("input-feedback.custom-sounds-return", R.string.settings__input_feedback__title, R.string.pref__input_feedback__custom_sounds__return__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
+        entry("input-feedback.custom-sounds-spacebar", R.string.settings__input_feedback__title, R.string.pref__input_feedback__custom_sounds__spacebar__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
+        entry("input-feedback.custom-sounds-reset", R.string.settings__input_feedback__title, R.string.pref__input_feedback__custom_sounds__reset__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
         entry("input-feedback.audio-feat-key-press", R.string.settings__input_feedback__title, R.string.pref__input_feedback__audio_feat_key_press__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
         entry("input-feedback.audio-feat-key-long-press", R.string.settings__input_feedback__title, R.string.pref__input_feedback__audio_feat_key_long_press__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),
         entry("input-feedback.audio-feat-key-repeated-action", R.string.settings__input_feedback__title, R.string.pref__input_feedback__audio_feat_key_repeated_action__label, destination = SettingsSearchDestination.INPUT_FEEDBACK),

@@ -394,6 +394,7 @@ class BackupRestorePolicyTest : FunSpec({
         val selector = Backup.FilesSelector()
         selector.jetprefDatastore = false
         selector.imeKeyboard = false
+        selector.keypressSounds = false
         selector.imeTheme = false
         selector.localStickerPacks = false
         selector.snippets = false

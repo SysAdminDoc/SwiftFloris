@@ -42,6 +42,9 @@
             path="ime"/>
         <include
             domain="file"
+            path="keypress_sounds"/>
+        <include
+            domain="file"
             path="sticker_packs"/>
         <include
             domain="file"
@@ -137,6 +140,9 @@
         <include
             domain="file"
             path="ime"/>
+        <include
+            domain="file"
+            path="keypress_sounds"/>
         <include
             domain="file"
             path="sticker_packs"/>

@@ -16,8 +16,15 @@
 
 package dev.patrickgold.florisboard.app.settings.keyboard
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -25,14 +32,21 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
 import dev.patrickgold.florisboard.ime.input.HapticVibrationMode
 import dev.patrickgold.florisboard.ime.input.InputFeedbackActivationMode
+import dev.patrickgold.florisboard.ime.input.KeypressSoundClass
+import dev.patrickgold.florisboard.ime.input.KeypressSoundStore
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
 import dev.patrickgold.florisboard.app.settings.search.DialogSliderPreference
 import dev.patrickgold.jetpref.datastore.ui.ExperimentalJetPrefDatastoreUi
 import dev.patrickgold.florisboard.app.settings.search.ListPreference
+import dev.patrickgold.florisboard.app.settings.search.Preference
 import dev.patrickgold.jetpref.datastore.ui.PreferenceGroup
 import dev.patrickgold.florisboard.app.settings.search.SwitchPreference
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.systemVibratorOrNull
 import org.florisboard.lib.android.vibrate
+import org.florisboard.lib.android.showLongToast
 import org.florisboard.lib.compose.FlorisInfoCard
 import org.florisboard.lib.compose.stringRes
 
@@ -45,6 +59,44 @@ fun InputFeedbackScreen() = FlorisScreen {
 
     val context = LocalContext.current
     val vibrator = context.systemVibratorOrNull()
+    val scope = rememberCoroutineScope()
+    var pendingSoundClass by remember { mutableStateOf<KeypressSoundClass?>(null) }
+    var selectedSoundClasses by remember { mutableStateOf(KeypressSoundStore.available(context)) }
+
+    val soundPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument(),
+    ) { uri ->
+        val soundClass = pendingSoundClass
+        pendingSoundClass = null
+        if (uri == null || soundClass == null) return@rememberLauncherForActivityResult
+        scope.launch {
+            runCatching {
+                withContext(Dispatchers.IO) {
+                    KeypressSoundStore.import(context, soundClass, uri)
+                }
+            }.onSuccess {
+                selectedSoundClasses = KeypressSoundStore.available(context)
+                context.showLongToast(R.string.pref__input_feedback__custom_sounds__imported)
+            }.onFailure { error ->
+                context.showLongToast(
+                    R.string.pref__input_feedback__custom_sounds__import_failed,
+                    "error_message" to (error.message ?: "unknown error"),
+                )
+            }
+        }
+    }
+
+    fun chooseSound(soundClass: KeypressSoundClass) {
+        pendingSoundClass = soundClass
+        soundPicker.launch(arrayOf("audio/*"))
+    }
+
+    @Composable
+    fun soundSummary(soundClass: KeypressSoundClass): String = if (soundClass in selectedSoundClasses) {
+        stringRes(R.string.pref__input_feedback__custom_sounds__selected)
+    } else {
+        stringRes(R.string.pref__input_feedback__custom_sounds__system_default)
+    }
 
     content {
         PreferenceGroup(title = stringRes(R.string.pref__input_feedback__group_audio__label)) {
@@ -63,6 +115,43 @@ fun InputFeedbackScreen() = FlorisScreen {
                 max = 100,
                 stepIncrement = 1,
                 enabledIf = { prefs.inputFeedback.audioEnabled isEqualTo true },
+            )
+            Preference(
+                title = stringRes(R.string.pref__input_feedback__custom_sounds__standard__label),
+                summary = soundSummary(KeypressSoundClass.STANDARD),
+                onClick = { chooseSound(KeypressSoundClass.STANDARD) },
+            )
+            Preference(
+                title = stringRes(R.string.pref__input_feedback__custom_sounds__delete__label),
+                summary = soundSummary(KeypressSoundClass.DELETE),
+                onClick = { chooseSound(KeypressSoundClass.DELETE) },
+            )
+            Preference(
+                title = stringRes(R.string.pref__input_feedback__custom_sounds__return__label),
+                summary = soundSummary(KeypressSoundClass.RETURN),
+                onClick = { chooseSound(KeypressSoundClass.RETURN) },
+            )
+            Preference(
+                title = stringRes(R.string.pref__input_feedback__custom_sounds__spacebar__label),
+                summary = soundSummary(KeypressSoundClass.SPACEBAR),
+                onClick = { chooseSound(KeypressSoundClass.SPACEBAR) },
+            )
+            Preference(
+                title = stringRes(R.string.pref__input_feedback__custom_sounds__reset__label),
+                summary = stringRes(R.string.pref__input_feedback__custom_sounds__reset__summary),
+                onClick = {
+                    scope.launch {
+                        withContext(Dispatchers.IO) {
+                            KeypressSoundStore.deleteAll(context)
+                        }
+                        selectedSoundClasses = emptySet()
+                        context.showLongToast(R.string.pref__input_feedback__custom_sounds__reset_done)
+                    }
+                },
+            )
+            FlorisInfoCard(
+                modifier = Modifier.padding(8.dp),
+                text = stringRes(R.string.pref__input_feedback__custom_sounds__summary),
             )
             SwitchPreference(
                 prefs.inputFeedback.audioFeatKeyPress,

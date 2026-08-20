@@ -55,6 +55,7 @@ internal class RestoreRollbackSnapshot private constructor(
     private val workspace: CacheManager.BackupAndRestoreWorkspace,
     private val selection: Backup.FilesSelection,
     private val keyboardDirExisted: Boolean,
+    private val keypressSoundsDirExisted: Boolean,
     private val themeDirExisted: Boolean,
     private val stickerDirExisted: Boolean,
     private val snippetsDirExisted: Boolean,
@@ -66,6 +67,7 @@ internal class RestoreRollbackSnapshot private constructor(
         private const val SnapshotRootName = "restore-rollback"
         private const val PreferencesDirName = "preferences"
         private const val KeyboardDirName = "keyboard"
+        private const val KeypressSoundsDirName = "keypress-sounds"
         private const val ThemeDirName = "theme"
         private const val StickerDirName = "stickers"
         private const val SnippetsDirName = "snippets"
@@ -104,6 +106,11 @@ internal class RestoreRollbackSnapshot private constructor(
                         selected = selection.imeKeyboard,
                         source = context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH),
                         target = snapshotRoot.subDir(KeyboardDirName),
+                    )
+                    val keypressSoundsExisted = captureDirectory(
+                        selected = selection.keypressSounds,
+                        source = context.filesDir.subDir(BackupArchiveStores.KeypressSoundsDirName),
+                        target = snapshotRoot.subDir(KeypressSoundsDirName),
                     )
                     val themeExisted = captureDirectory(
                         selected = selection.imeTheme,
@@ -169,6 +176,7 @@ internal class RestoreRollbackSnapshot private constructor(
 
                     CapturedStorePresence(
                         keyboardDirExisted = keyboardExisted,
+                        keypressSoundsDirExisted = keypressSoundsExisted,
                         themeDirExisted = themeExisted,
                         stickerDirExisted = stickerExisted,
                         snippetsDirExisted = snippetsExisted,
@@ -182,6 +190,7 @@ internal class RestoreRollbackSnapshot private constructor(
                     workspace = workspace,
                     selection = selection,
                     keyboardDirExisted = directoryPresence.keyboardDirExisted,
+                    keypressSoundsDirExisted = directoryPresence.keypressSoundsDirExisted,
                     themeDirExisted = directoryPresence.themeDirExisted,
                     stickerDirExisted = directoryPresence.stickerDirExisted,
                     snippetsDirExisted = directoryPresence.snippetsDirExisted,
@@ -218,6 +227,7 @@ internal class RestoreRollbackSnapshot private constructor(
 
         private data class CapturedStorePresence(
             val keyboardDirExisted: Boolean,
+            val keypressSoundsDirExisted: Boolean,
             val themeDirExisted: Boolean,
             val stickerDirExisted: Boolean,
             val snippetsDirExisted: Boolean,
@@ -259,6 +269,15 @@ internal class RestoreRollbackSnapshot private constructor(
                     snapshot = snapshotRoot.subDir(KeyboardDirName),
                     target = context.filesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH),
                     existed = keyboardDirExisted,
+                )
+            }
+        }
+        if (selection.keypressSounds) {
+            restoreStep {
+                restoreDirectory(
+                    snapshot = snapshotRoot.subDir(KeypressSoundsDirName),
+                    target = context.filesDir.subDir(BackupArchiveStores.KeypressSoundsDirName),
+                    existed = keypressSoundsDirExisted,
                 )
             }
         }

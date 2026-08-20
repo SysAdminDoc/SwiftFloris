@@ -52,6 +52,7 @@ enum class BackupDisposition {
 enum class BackupSection {
     JetprefDatastore,
     ImeKeyboard,
+    KeypressSounds,
     ImeTheme,
     LocalStickerPacks,
     Snippets,
@@ -112,6 +113,13 @@ object BackupDataInventory {
             path = "ime/keyboard",
             disposition = BackupDisposition.Included,
             section = BackupSection.ImeKeyboard,
+        ),
+        BackupDataEntry(
+            id = "keypress_sounds",
+            domain = BackupDomain.File,
+            path = BackupArchiveStores.KeypressSoundsDirName,
+            disposition = BackupDisposition.Included,
+            section = BackupSection.KeypressSounds,
         ),
         BackupDataEntry(
             id = "ime_theme_extensions",

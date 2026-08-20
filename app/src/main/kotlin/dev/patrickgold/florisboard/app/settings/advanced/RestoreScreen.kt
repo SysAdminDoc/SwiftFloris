@@ -305,6 +305,9 @@ fun RestoreScreen() = FlorisScreen {
                         .subFile("${FlorisPreferenceModel.NAME}.${AndroidAppDataStorage.JETPREF_FILE_EXT}")
                         .exists(),
                     hasImeKeyboard = workspaceFilesDir.subDir(ExtensionManager.IME_KEYBOARD_PATH).exists(),
+                    hasKeypressSounds = workspaceFilesDir
+                        .subDir(BackupArchiveStores.KeypressSoundsDirName)
+                        .exists(),
                     hasImeTheme = workspaceFilesDir.subDir(ExtensionManager.IME_THEME_PATH).exists(),
                     hasLocalStickerPacks = workspaceFilesDir
                         .subDir(LocalStickerPackRepository.StorageDirName)
@@ -344,6 +347,9 @@ fun RestoreScreen() = FlorisScreen {
     ) {
         val workspaceFilesDir = workspace.outputDir.subDir("files")
         restoreFilesSelector.selectAvailableAdditionalStores(
+            keypressSoundsAvailable = workspaceFilesDir
+                .subDir(BackupArchiveStores.KeypressSoundsDirName)
+                .exists(),
             snippetsAvailable = workspaceFilesDir
                 .subDir(BackupArchiveStores.SnippetsDirName)
                 .exists(),
@@ -541,6 +547,16 @@ fun RestoreScreen() = FlorisScreen {
                     dstDir.deleteContentsRecursively()
                 }
                 srcDir.copyRecursively(dstDir, overwrite = true)
+            }
+        }
+        if (selection.keypressSounds) {
+            val srcDir = workspaceFilesDir.subDir(BackupArchiveStores.KeypressSoundsDirName)
+            val dstDir = context.filesDir.subDir(BackupArchiveStores.KeypressSoundsDirName)
+            restoreSelectedSection(sourceExists = srcDir.exists()) {
+                if (shouldReset) {
+                    dstDir.deleteRecursively()
+                }
+                BackupArchiveStores.copyDirectory(srcDir, dstDir)
             }
         }
         if (selection.imeTheme) {

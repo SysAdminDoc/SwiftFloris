@@ -107,6 +107,7 @@ class BackupDataInventoryTest : FunSpec({
         val included = setOf(
             "root" to "jetpref_datastore",
             "file" to "ime",
+            "file" to "keypress_sounds",
             "file" to "sticker_packs",
             "file" to "snippets",
             "file" to "hardware_keyboard_layouts.json",
@@ -125,6 +126,7 @@ class BackupDataInventoryTest : FunSpec({
         val expected = setOf(
             "root" to "jetpref_datastore",
             "file" to "ime",
+            "file" to "keypress_sounds",
             "file" to "sticker_packs",
             "file" to "snippets",
             "file" to "hardware_keyboard_layouts.json",

@@ -17,13 +17,14 @@
 package dev.patrickgold.florisboard.ime.input
 
 import android.inputmethodservice.InputMethodService
+import android.media.AudioAttributes
 import android.media.AudioManager
+import android.media.SoundPool
 import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import androidx.compose.runtime.staticCompositionLocalOf
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
-import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.systemServiceOrNull
@@ -54,6 +55,22 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     private val vibrator = ims.systemVibratorOrNull()
     private val contentResolver = ims.contentResolver
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private val soundPool = SoundPool.Builder()
+        .setAudioAttributes(
+            AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_ASSISTANCE_SONIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                .build(),
+        )
+        .setMaxStreams(KeypressSoundClass.entries.size)
+        .build()
+    private val customSoundIds: Map<KeypressSoundClass, Int> =
+        KeypressSoundClass.entries.mapNotNull { soundClass ->
+            val soundFile = KeypressSoundStore.file(ims, soundClass)
+            if (!soundFile.isFile) return@mapNotNull null
+            val soundId = runCatching { soundPool.load(soundFile.path, 1) }.getOrNull()
+            if (soundId == null || soundId == 0) null else soundClass to soundId
+        }.toMap()
 
     private var systemAudioEnabled: Boolean = false
     private var systemHapticEnabled: Boolean = false
@@ -97,6 +114,7 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
      */
     fun dispose() {
         scope.cancel()
+        soundPool.release()
     }
 
     private fun systemPref(id: String): Boolean {
@@ -105,22 +123,36 @@ class InputFeedbackController private constructor(private val ims: InputMethodSe
     }
 
     private fun performAudioFeedback(data: KeyData, factor: Double) {
-        if (audioManager == null) return
+        if (audioManager == null && customSoundIds.isEmpty()) return
         if (!prefs.inputFeedback.audioEnabled.get()) return
         if (prefs.inputFeedback.audioActivationMode.get() ==
             InputFeedbackActivationMode.RESPECT_SYSTEM_SETTINGS && !systemAudioEnabled) return
 
         scope.launch {
             val volume = (prefs.inputFeedback.audioVolume.get() * factor) / 100.0
-            val effect = when (data.code) {
-                KeyCode.DELETE -> AudioManager.FX_KEYPRESS_DELETE
-                KeyCode.ENTER -> AudioManager.FX_KEYPRESS_RETURN
-                KeyCode.SPACE -> AudioManager.FX_KEYPRESS_SPACEBAR
-                else -> AudioManager.FX_KEYPRESS_STANDARD
-            }
             if (volume in 0.01..1.00) {
-                flogDebug { "Perform audio with volume=$volume and effect=$effect" }
-                audioManager.playSoundEffect(effect, volume.toFloat())
+                val soundClass = KeypressSoundClass.fromKeyCode(data.code)
+                val customSoundId = customSoundIds[soundClass]
+                if (customSoundId != null) {
+                    flogDebug { "Perform custom audio with volume=$volume and class=$soundClass" }
+                    soundPool.play(
+                        customSoundId,
+                        volume.toFloat(),
+                        volume.toFloat(),
+                        1,
+                        0,
+                        1.0f,
+                    )
+                } else {
+                    val effect = when (soundClass) {
+                        KeypressSoundClass.DELETE -> AudioManager.FX_KEYPRESS_DELETE
+                        KeypressSoundClass.RETURN -> AudioManager.FX_KEYPRESS_RETURN
+                        KeypressSoundClass.SPACEBAR -> AudioManager.FX_KEYPRESS_SPACEBAR
+                        KeypressSoundClass.STANDARD -> AudioManager.FX_KEYPRESS_STANDARD
+                    }
+                    flogDebug { "Perform audio with volume=$volume and effect=$effect" }
+                    audioManager?.playSoundEffect(effect, volume.toFloat())
+                }
             }
         }
     }

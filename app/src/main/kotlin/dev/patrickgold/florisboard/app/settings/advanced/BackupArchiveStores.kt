@@ -28,6 +28,7 @@ import org.florisboard.lib.kotlin.io.FsFile
  */
 internal object BackupArchiveStores {
     const val SnippetsDirName = "snippets"
+    const val KeypressSoundsDirName = "keypress_sounds"
     const val HardwareKeyboardLayoutFileName = "hardware_keyboard_layouts.json"
     const val CustomEmojiTagsFileName = "custom_emoji_tags.json"
     const val EmojiPinGroupsFileName = "emoji_pin_groups.json"

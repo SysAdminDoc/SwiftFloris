@@ -102,6 +102,7 @@ object Backup {
     fun scheduledSelection() = FilesSelection(
         jetprefDatastore = true,
         imeKeyboard = true,
+        keypressSounds = true,
         imeTheme = true,
         localStickerPacks = true,
         snippets = true,
@@ -121,6 +122,7 @@ object Backup {
     class FilesSelector {
         var jetprefDatastore by mutableStateOf(true)
         var imeKeyboard by mutableStateOf(true)
+        var keypressSounds by mutableStateOf(true)
         var imeTheme by mutableStateOf(true)
         var localStickerPacks by mutableStateOf(true)
         var snippets by mutableStateOf(true)
@@ -156,6 +158,7 @@ object Backup {
         fun atLeastOneSelected(): Boolean {
             return jetprefDatastore ||
                 imeKeyboard ||
+                keypressSounds ||
                 imeTheme ||
                 localStickerPacks ||
                 snippets ||
@@ -170,6 +173,7 @@ object Backup {
         fun snapshot(): FilesSelection = FilesSelection(
             jetprefDatastore = jetprefDatastore,
             imeKeyboard = imeKeyboard,
+            keypressSounds = keypressSounds,
             imeTheme = imeTheme,
             localStickerPacks = localStickerPacks,
             snippets = snippets,
@@ -192,6 +196,7 @@ object Backup {
         fun selectAll() {
             jetprefDatastore = true
             imeKeyboard = true
+            keypressSounds = true
             imeTheme = true
             localStickerPacks = true
             snippets = true
@@ -205,11 +210,13 @@ object Backup {
         }
 
         fun selectAvailableAdditionalStores(
+            keypressSoundsAvailable: Boolean,
             snippetsAvailable: Boolean,
             hardwareKeyboardLayoutsAvailable: Boolean,
             customEmojiTagsAvailable: Boolean,
             emojiPinGroupsAvailable: Boolean,
         ) {
+            keypressSounds = keypressSoundsAvailable
             snippets = snippetsAvailable
             hardwareKeyboardLayouts = hardwareKeyboardLayoutsAvailable
             customEmojiTags = customEmojiTagsAvailable
@@ -222,6 +229,7 @@ object Backup {
                     arrayListOf(
                         selector.jetprefDatastore,
                         selector.imeKeyboard,
+                        selector.keypressSounds,
                         selector.imeTheme,
                         selector.localStickerPacks,
                         selector.snippets,
@@ -235,26 +243,47 @@ object Backup {
                 },
                 restore = { values ->
                     FilesSelector().apply {
-                        if (values.size >= 7) {
+                        if (values.size >= 12) {
                             jetprefDatastore = values[0]
                             imeKeyboard = values[1]
+                            keypressSounds = values[2]
+                            imeTheme = values[3]
+                            localStickerPacks = values[4]
+                            snippets = values[5]
+                            hardwareKeyboardLayouts = values[6]
+                            customEmojiTags = values[7]
+                            emojiPinGroups = values[8]
+                            clipboardTextItems = values[9]
+                            clipboardImageItems = values[10]
+                            clipboardVideoItems = values[11]
+                            updateCheckboxState()
+                        } else if (values.size >= 11) {
+                            // State saved before custom keypress sounds became a
+                            // selectable portable store.
+                            jetprefDatastore = values[0]
+                            imeKeyboard = values[1]
+                            keypressSounds = true
                             imeTheme = values[2]
                             localStickerPacks = values[3]
-                            if (values.size >= 11) {
-                                snippets = values[4]
-                                hardwareKeyboardLayouts = values[5]
-                                customEmojiTags = values[6]
-                                emojiPinGroups = values[7]
-                                clipboardTextItems = values[8]
-                                clipboardImageItems = values[9]
-                                clipboardVideoItems = values[10]
-                            } else {
-                                // State saved before the four portable stores
-                                // were selectable. Keep their new safe defaults.
-                                clipboardTextItems = values[4]
-                                clipboardImageItems = values[5]
-                                clipboardVideoItems = values[6]
-                            }
+                            snippets = values[4]
+                            hardwareKeyboardLayouts = values[5]
+                            customEmojiTags = values[6]
+                            emojiPinGroups = values[7]
+                            clipboardTextItems = values[8]
+                            clipboardImageItems = values[9]
+                            clipboardVideoItems = values[10]
+                            updateCheckboxState()
+                        } else if (values.size >= 7) {
+                            jetprefDatastore = values[0]
+                            imeKeyboard = values[1]
+                            keypressSounds = true
+                            imeTheme = values[2]
+                            localStickerPacks = values[3]
+                            // State saved before the four portable stores
+                            // were selectable. Keep their new safe defaults.
+                            clipboardTextItems = values[4]
+                            clipboardImageItems = values[5]
+                            clipboardVideoItems = values[6]
                             updateCheckboxState()
                         }
                     }
@@ -266,6 +295,7 @@ object Backup {
     data class FilesSelection(
         val jetprefDatastore: Boolean,
         val imeKeyboard: Boolean,
+        val keypressSounds: Boolean,
         val imeTheme: Boolean,
         val localStickerPacks: Boolean,
         val snippets: Boolean,
@@ -665,6 +695,13 @@ internal fun BackupFilesSelector(
             checked = filesSelector.imeKeyboard,
             text = stringRes(R.string.backup_and_restore__back_up__files_ime_keyboard),
             secondaryText = stringRes(R.string.backup_and_restore__back_up__files_ime_keyboard_summary),
+            enabled = enabled,
+        )
+        CheckboxListItem(
+            onClick = { filesSelector.keypressSounds = !filesSelector.keypressSounds },
+            checked = filesSelector.keypressSounds,
+            text = stringRes(R.string.backup_and_restore__back_up__files_keypress_sounds),
+            secondaryText = stringRes(R.string.backup_and_restore__back_up__files_keypress_sounds_summary),
             enabled = enabled,
         )
         CheckboxListItem(

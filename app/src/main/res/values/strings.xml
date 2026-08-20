@@ -933,6 +933,18 @@
     <string name="pref__input_feedback__audio_enabled__label" comment="Preference title">Enable audio feedback</string>
     <string name="pref__input_feedback__audio_enabled__summary_disabled" comment="Preference summary">Never play sounds for input events, regardless of system settings</string>
     <string name="pref__input_feedback__audio_volume__label" comment="Preference title">Sound volume for input events</string>
+    <string name="pref__input_feedback__custom_sounds__summary" comment="Preference summary">Choose local audio for each key class. Imported files stay on this device and are included in backups.</string>
+    <string name="pref__input_feedback__custom_sounds__standard__label" comment="Preference title">Standard key sound</string>
+    <string name="pref__input_feedback__custom_sounds__delete__label" comment="Preference title">Delete key sound</string>
+    <string name="pref__input_feedback__custom_sounds__return__label" comment="Preference title">Return key sound</string>
+    <string name="pref__input_feedback__custom_sounds__spacebar__label" comment="Preference title">Spacebar sound</string>
+    <string name="pref__input_feedback__custom_sounds__selected" comment="Preference summary">Custom sound selected. Tap to replace it.</string>
+    <string name="pref__input_feedback__custom_sounds__system_default" comment="Preference summary">System sound effect</string>
+    <string name="pref__input_feedback__custom_sounds__reset__label" comment="Preference title">Restore system sounds</string>
+    <string name="pref__input_feedback__custom_sounds__reset__summary" comment="Preference summary">Remove every imported key sound</string>
+    <string name="pref__input_feedback__custom_sounds__imported" comment="Toast after importing a custom sound">Custom key sound imported</string>
+    <string name="pref__input_feedback__custom_sounds__import_failed" comment="Toast after failing to import a custom sound">Could not import the key sound: {error_message}</string>
+    <string name="pref__input_feedback__custom_sounds__reset_done" comment="Toast after clearing custom sounds">System key sounds restored</string>
     <string name="pref__input_feedback__audio_feat_key_press__label" comment="Preference title">Key press sounds</string>
     <string name="pref__input_feedback__audio_feat_key_long_press__label" comment="Preference title">Key long press sounds</string>
     <string name="pref__input_feedback__audio_feat_key_repeated_action__label" comment="Preference title">Key repeated action sounds</string>
@@ -1748,6 +1760,8 @@
     <string name="backup_and_restore__back_up__files_jetpref_datastore_summary">App, keyboard, typing, clipboard, and theme settings</string>
     <string name="backup_and_restore__back_up__files_ime_keyboard">Keyboard extensions</string>
     <string name="backup_and_restore__back_up__files_ime_keyboard_summary">Installed keyboard layouts and custom keyboard extension files</string>
+    <string name="backup_and_restore__back_up__files_keypress_sounds">Custom keypress sounds</string>
+    <string name="backup_and_restore__back_up__files_keypress_sounds_summary">Local sound files selected for standard, delete, return, and spacebar keys</string>
     <string name="backup_and_restore__back_up__files_ime_spelling">Spelling extensions / dictionaries</string>
     <string name="backup_and_restore__back_up__files_ime_theme">Theme extensions</string>
     <string name="backup_and_restore__back_up__files_ime_theme_summary">Installed themes and custom theme extension files</string>

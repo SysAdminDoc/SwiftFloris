@@ -14,13 +14,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P3
 
-- [ ] P3 — Support user-supplied keypress sounds
-  Why: key feedback is limited to the four `AudioManager.FX_KEYPRESS_*` system effects, so the sound is whatever the OEM ships and cannot be themed alongside a Snygg theme. This has been an accepted upstream proposal since 2021 and is a visible, low-risk differentiator that needs no network.
-  Evidence: `ime/input/InputFeedbackController.kt:108-123`; `app/prefs/InputFeedbackPrefs.kt` has volume and effect toggles but no sound source; https://github.com/florisboard/florisboard/issues/1360
-  Touches: `ime/input/InputFeedbackController.kt`, `app/prefs/InputFeedbackPrefs.kt`, `app/settings/keyboard/InputFeedbackScreen.kt`, the extension/backup paths
-  Acceptance: a user can select a local audio file per key class through SAF, playback is pooled and does not allocate on the input path, the choice is covered by backup, and the system-effect default is unchanged when nothing is selected.
-  Complexity: M
-
 - [ ] P3 — Turn the spacebar into a continuous cursor trackpad
   Why: spacebar gestures currently dispatch discrete DPAD key events bound to four swipe directions; Gboard and HeliBoard both ship a continuous drag that moves the cursor proportionally, which is materially better for editing and is the most-cited text-editing improvement of 2026. The existing gesture pipeline and the clamped selection bounds are the hard parts and both already exist.
   Evidence: `app/prefs/GesturesPrefs.kt:90-117` (four discrete swipe actions plus sensitivity; the comment at `:95` already anticipates "continuous vertical trackpad"); `ime/keyboard/KeyboardManager.kt:648-663` dispatches DPAD events; clamping at `ime/editor/EditorInstance.kt:533,544`

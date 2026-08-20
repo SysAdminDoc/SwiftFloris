@@ -45,6 +45,7 @@ class ScheduledBackupPolicyTest : FunSpec({
 
         selection.jetprefDatastore shouldBe true
         selection.imeKeyboard shouldBe true
+        selection.keypressSounds shouldBe true
         selection.imeTheme shouldBe true
         selection.localStickerPacks shouldBe true
         selection.snippets shouldBe true

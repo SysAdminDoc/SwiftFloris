@@ -73,9 +73,11 @@ internal object BackupRestorePolicy {
         hasHardwareKeyboardLayouts: Boolean = false,
         hasCustomEmojiTags: Boolean = false,
         hasEmojiPinGroups: Boolean = false,
+        hasKeypressSounds: Boolean = false,
     ): Boolean {
         return hasJetprefDatastore ||
             hasImeKeyboard ||
+            hasKeypressSounds ||
             hasImeTheme ||
             hasLocalStickerPacks ||
             hasSnippets ||
