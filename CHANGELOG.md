@@ -2,6 +2,15 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Let glide typing work with a second finger on the keyboard. A finger already
+  resting on the keys claimed the gesture detector and never let go, because a
+  motionless finger is never classified as a glide, so the other hand could not
+  swipe at all. Sliding movement was also matched against the wrong pointer,
+  which dropped every move once the gliding finger was not the first one down.
+  A glide already under way now keeps the trace when another finger lands, and
+  the key a glide starts on is resolved from the gliding pointer rather than
+  assumed to be the first — which is what suppresses glides that begin on
+  delete, shift or space.
 - Put SwiftFloris under Android Settings → Apps → Language on Android 13 and
   newer. The app declared no `android:localeConfig`, so the system's per-app
   language picker never listed it and the 43 shipped translations could only be

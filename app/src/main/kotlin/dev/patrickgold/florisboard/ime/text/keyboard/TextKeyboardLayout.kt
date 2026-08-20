@@ -780,7 +780,13 @@ private class TextKeyboardLayoutController(
         flogDebug { "event=$event" }
         swipeGestureDetector.onTouchEvent(event)
         if (isGlideEnabled && keyboard.mode == KeyboardMode.CHARACTERS) {
-            val glidePointer = pointerMap.findById(0)
+            // The traced pointer is not necessarily the first one down, so resolving the glide's
+            // origin key against a hardcoded id 0 left `initialKey` null for any other pointer —
+            // which is what suppresses glides that begin on delete, shift or space. Fall back to
+            // the pointer this event is about while the detector has not adopted one yet.
+            val glidePointerId = glideTypingDetector.tracedPointerId.takeIf { it != -1 }
+                ?: event.getPointerId(event.actionIndex)
+            val glidePointer = pointerMap.findById(glidePointerId)
             val isNotBlocked = glidePointer?.hasTriggeredLongPress != true
             if (isNotBlocked && glideTypingDetector.onTouchEvent(event, glidePointer?.initialKey)) {
                 for (pointer in pointerMap) {

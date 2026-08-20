@@ -42,12 +42,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: the index is generated from, or diffed against, the preference keys the screens actually render, and a test fails when a rendered preference has no entry; a deep link scrolls to and highlights the target row.
   Complexity: M
 
-- [ ] P2 — Let glide typing survive a second pointer
-  Why: the gesture detector tracks one pointer and returns `false` on `ACTION_POINTER_DOWN` whenever one is already tracked; its `ACTION_MOVE` branch compares the tracked id against `event.getPointerId(event.actionIndex)`, which is always index 0 for a move. Dual-thumb swipe is impossible, and a glide begun while another finger rests on the keyboard never registers movement. Two-finger swipe is the single most-repeated must-have in the highest-traffic 2026 keyboard discussion, and it is the stated reason people stay on HeliBoard.
-  Evidence: `ime/text/gestures/GlideTypingGesture.kt:62-90`, `:134-136`, `:164`; https://news.ycombinator.com/item?id=48656610
-  Touches: `ime/text/gestures/GlideTypingGesture.kt`, `ime/text/gestures/GlideTypingManager.kt`, `ime/text/keyboard/TextKeyboardLayout.kt`, `app/src/test/.../gestures/`
-  Acceptance: a glide continues correctly while a second pointer is down, and `ACTION_MOVE` resolves the tracked pointer by index lookup rather than `actionIndex`; a replay test covers a two-pointer sequence in both orders (glide first, rest-finger first). Full dual-thumb alternating-hand decoding is out of this item's scope — this is the prerequisite that unblocks it.
-  Complexity: M
 
 - [ ] P2 — Add an in-app bug-report path that carries the evidence the templates ask for
   Why: the crash path is good, but the only in-app route to the issue tracker is via an actual crash. `AboutScreen` has no report link, and the build type, commit hash, device and Android version the issue templates demand are computed only inside the crash dialog. Neither the crash dialog nor the debug-log export offers a share intent — both are clipboard-copy only — so a user must paste manually and self-redact.
@@ -71,6 +65,13 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Complexity: M
 
 ### P3
+
+- [ ] P3 — Decode a true dual-thumb alternating-hand glide
+  Why: the detector now traces whichever finger is gliding and survives a second pointer, but it still traces exactly one at a time, so alternating-hand swiping produces one trace with a jump where the hands change over rather than two interleaved words. Two-finger swipe is the most-repeated must-have in the highest-traffic 2026 keyboard discussion and the stated reason people stay on HeliBoard; the pointer plumbing that blocked it is done, the decoding is not.
+  Evidence: `ime/text/gestures/GlideTypingGesture.kt` traces a single `pointerId` and hands over only when the current one is unconfirmed; `ime/text/gestures/GlideTypingManager.kt` holds one in-flight gesture; https://news.ycombinator.com/item?id=48656610
+  Touches: `ime/text/gestures/GlideTypingGesture.kt`, `ime/text/gestures/GlideTypingManager.kt`, `ime/text/keyboard/TextKeyboardLayout.kt`, `app/src/test/.../gestures/`
+  Acceptance: two pointers can each carry a trace, the decoder resolves them into words in the order they completed rather than merging them, and the glide trail renders both; a replay test covers alternating-hand input where the second trace starts before the first ends. Single-pointer behaviour stays byte-identical, proved by the existing detector tests.
+  Complexity: L
 
 - [ ] P3 — Offer scrambled digit layouts for PIN and numeric password fields
   Why: shoulder-surfing and touch-trace attacks on a fixed numeric grid are the one keyboard-layer threat a privacy IME can actually mitigate, and no FOSS Android keyboard ships it — upstream accepted the proposal and never implemented it. SwiftFloris already detects password variations for popup suppression, so the field-classification half exists.

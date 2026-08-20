@@ -32,8 +32,12 @@ import kotlin.math.sqrt
  */
 class GlideTypingGesture {
     /**
-     * Class which detects swipes based on given [MotionEvent]s. Only supports single-finger swipes
-     * and ignores additional pointers provided, if any.
+     * Class which detects swipes based on given [MotionEvent]s.
+     *
+     * One pointer at a time is traced. Which one is not fixed: a finger already resting on the
+     * keyboard must not stop the next finger from gliding, and a glide already under way must
+     * not be dropped because a second finger touched down. See [onTouchEvent] for the handover
+     * rule.
      */
     class Detector(
         context: Context,
@@ -44,6 +48,13 @@ class GlideTypingGesture {
         private val keySize = ViewUtils.px2dp(context.resources.getDimension(R.dimen.key_width))
         private val listeners: ArrayList<Listener> = arrayListOf()
         private var pointerId: Int = -1
+
+        /**
+         * Id of the pointer currently being traced, or -1 when none is. Callers that need the key
+         * a glide started on must resolve it against this rather than assuming pointer 0.
+         */
+        val tracedPointerId: Int
+            get() = pointerId
 
         companion object {
             private const val MAX_DETECT_TIME = 500
@@ -63,9 +74,13 @@ class GlideTypingGesture {
                     if (event.actionMasked == MotionEvent.ACTION_DOWN) {
                         resetState()
                     }
+                    // A confirmed glide owns the detector until it ends: a thumb landing on the
+                    // keyboard mid-swipe must not steal the trace. An unconfirmed pointer does
+                    // not own it, because that is what a finger resting on the keys looks like,
+                    // and it used to block every later finger from ever gliding.
                     if (pointerId != -1) {
-                        // if we already have another pointer, we don't care
-                        return false
+                        if (pointerData.isActuallyGesture == true) return false
+                        resetState()
                     }
                     val pointerIndex = event.actionIndex
                     pointerId = event.getPointerId(pointerIndex)
@@ -76,12 +91,15 @@ class GlideTypingGesture {
                     return false
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    if (pointerId != event.getPointerId(event.actionIndex)) {
-                        // not our pointer.
+                    // ACTION_MOVE carries no pointer index of its own — `actionIndex` is always 0
+                    // — so comparing against it dropped every move whenever the traced pointer
+                    // was not the first one down. Resolve by id instead.
+                    val pointerIndex = if (pointerId == -1) -1 else event.findPointerIndex(pointerId)
+                    if (pointerIndex == -1) {
+                        // not our pointer, or it is already gone.
                         return false
                     }
 
-                    val pointerIndex = event.findPointerIndex(pointerId)
                     for (i in 0..event.historySize) {
                         val pos = when (i) {
                             event.historySize -> Position(event.getX(pointerIndex), event.getY(pointerIndex))
@@ -132,7 +150,8 @@ class GlideTypingGesture {
                 }
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_POINTER_UP -> {
-                    if (pointerId != event.getPointerId(event.actionIndex)) {
+                    // Unlike ACTION_MOVE, these do name the pointer that went up.
+                    if (pointerId == -1 || pointerId != event.getPointerId(event.actionIndex)) {
                         // not our pointer.
                         return false
                     }
