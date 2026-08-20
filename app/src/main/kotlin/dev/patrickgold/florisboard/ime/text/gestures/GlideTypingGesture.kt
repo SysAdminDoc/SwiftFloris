@@ -24,6 +24,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.lib.devtools.flogDebug
 import dev.patrickgold.florisboard.lib.util.ViewUtils
+import java.util.LinkedHashMap
 import kotlin.math.pow
 import kotlin.math.sqrt
 
@@ -31,34 +32,34 @@ import kotlin.math.sqrt
  * Wrapper class which holds all enums, interfaces and classes for detecting a gesture.
  */
 class GlideTypingGesture {
-    /**
-     * Class which detects swipes based on given [MotionEvent]s.
-     *
-     * One pointer at a time is traced. Which one is not fixed: a finger already resting on the
-     * keyboard must not stop the next finger from gliding, and a glide already under way must
-     * not be dropped because a second finger touched down. See [onTouchEvent] for the handover
-     * rule.
-     */
+    /** Class which detects one or two independent glides from [MotionEvent]s. */
     class Detector(
         context: Context,
         private val currentTimeMillis: () -> Long = System::currentTimeMillis,
     ) {
         private val prefs by FlorisPreferenceStore
-        private var pointerData: PointerData = PointerData(mutableListOf(), 0)
         private val keySize = ViewUtils.px2dp(context.resources.getDimension(R.dimen.key_width))
         private val listeners: ArrayList<Listener> = arrayListOf()
-        private var pointerId: Int = -1
+        private val activePointers = LinkedHashMap<Int, ActivePointer>()
 
         /**
-         * Id of the pointer currently being traced, or -1 when none is. Callers that need the key
-         * a glide started on must resolve it against this rather than assuming pointer 0.
+         * Id of the pointer currently being traced, or -1 when none is. When two traces are
+         * active, a confirmed trace wins; otherwise the newest unconfirmed pointer is returned
+         * so a resting finger cannot block the next glide.
          */
         val tracedPointerId: Int
-            get() = pointerId
+            get() = activePointers.values.firstOrNull {
+                it.data.isActuallyGesture == true
+            }?.pointerId
+                ?: activePointers.values.lastOrNull {
+                    it.data.isActuallyGesture != false
+                }?.pointerId
+                ?: -1
 
         companion object {
             private const val MAX_DETECT_TIME = 500
             private const val VELOCITY_THRESHOLD = 0.10 // dp per ms
+            private const val MAX_ACTIVE_POINTERS = 2
             private val SWIPE_GESTURE_KEYS = arrayOf(KeyCode.DELETE, KeyCode.SHIFT, KeyCode.SPACE, KeyCode.CJK_SPACE)
         }
 
@@ -69,101 +70,60 @@ class GlideTypingGesture {
          */
         fun onTouchEvent(event: MotionEvent, initialKey: TextKey?): Boolean {
             when (event.actionMasked) {
-                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_DOWN -> {
+                    resetState()
+                    addPointer(event, initialKey)
+                    return false
+                }
                 MotionEvent.ACTION_POINTER_DOWN -> {
-                    if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                        resetState()
+                    if (activePointers.size >= MAX_ACTIVE_POINTERS) {
+                        // Keep confirmed traces. If the second slot is only a resting finger,
+                        // replace it so a third touch can still become a glide.
+                        val inactive = activePointers.values.firstOrNull {
+                            it.data.isActuallyGesture != true
+                        }
+                        if (inactive == null) return false
+                        activePointers.remove(inactive.pointerId)
                     }
-                    // A confirmed glide owns the detector until it ends: a thumb landing on the
-                    // keyboard mid-swipe must not steal the trace. An unconfirmed pointer does
-                    // not own it, because that is what a finger resting on the keys looks like,
-                    // and it used to block every later finger from ever gliding.
-                    if (pointerId != -1) {
-                        if (pointerData.isActuallyGesture == true) return false
-                        resetState()
-                    }
-                    val pointerIndex = event.actionIndex
-                    pointerId = event.getPointerId(pointerIndex)
-                    pointerData.apply {
-                        positions.add(Position(event.getX(pointerIndex), event.getY(pointerIndex)))
-                        startTime = currentTimeMillis()
-                    }
+                    addPointer(event, initialKey)
                     return false
                 }
                 MotionEvent.ACTION_MOVE -> {
-                    // ACTION_MOVE carries no pointer index of its own — `actionIndex` is always 0
-                    // — so comparing against it dropped every move whenever the traced pointer
-                    // was not the first one down. Resolve by id instead.
-                    val pointerIndex = if (pointerId == -1) -1 else event.findPointerIndex(pointerId)
-                    if (pointerIndex == -1) {
-                        // not our pointer, or it is already gone.
-                        return false
-                    }
-
-                    for (i in 0..event.historySize) {
-                        val pos = when (i) {
-                            event.historySize -> Position(event.getX(pointerIndex), event.getY(pointerIndex))
-                            else -> Position(event.getHistoricalX(pointerIndex, i), event.getHistoricalY(pointerIndex, i))
-                        }
-                        pointerData.positions.add(pos)
-                        if (pointerData.isActuallyGesture == null) {
-                            // evaluate whether is actually a gesture
-                            if (pointerData.hasQualifiedBeforeWordBoundary) {
-                                pointerData.isActuallyGesture = true
-                                // Let listener know all those points need to be added.
-                                pointerData.positions.take(pointerData.positions.size - 1).forEach { point ->
-                                    listeners.forEach {
-                                        it.onGlideAddPoint(point)
-                                    }
-                                }
-                            } else {
-                                val dist = ViewUtils.px2dp(pointerData.positions[0].dist(pos))
-                                val time = (currentTimeMillis() - pointerData.startTime) + 1
-                                val thresholdScale = GlideSensitivityPolicy.thresholdScale(prefs.glide.sensitivity.get())
-                                val distanceThreshold = keySize * thresholdScale
-                                val velocityThreshold = VELOCITY_THRESHOLD * thresholdScale
-                                flogDebug { "Distance glided: $dist dp with velocity: ${dist / time} dp/ms" }
-                                if (dist > distanceThreshold &&
-                                    (dist / time) > velocityThreshold &&
-                                    (initialKey?.computedData?.code !in SWIPE_GESTURE_KEYS)
-                                ) {
-                                    pointerData.isActuallyGesture = true
-                                    // Let listener know all those points need to be added.
-                                    pointerData.positions.take(pointerData.positions.size - 1).forEach { point ->
-                                        listeners.forEach {
-                                            it.onGlideAddPoint(point)
-                                        }
-                                    }
-                                } else if (time > MAX_DETECT_TIME) {
-                                    pointerData.isActuallyGesture = false
-                                }
+                    // ACTION_MOVE has no pointer index of its own. Resolve every tracked id so
+                    // alternating-hand traces never get merged or dropped.
+                    activePointers.values.toList().forEach { activePointer ->
+                        val pointerIndex = event.findPointerIndex(activePointer.pointerId)
+                        if (pointerIndex == -1) return@forEach
+                        for (i in 0..event.historySize) {
+                            val pos = when (i) {
+                                event.historySize -> Position(event.getX(pointerIndex), event.getY(pointerIndex))
+                                else -> Position(
+                                    event.getHistoricalX(pointerIndex, i),
+                                    event.getHistoricalY(pointerIndex, i),
+                                )
                             }
-
-                        }
-
-                        if (pointerData.isActuallyGesture == true) {
-                            pointerData.positions.last()
-                                .let { point -> listeners.forEach { it.onGlideAddPoint(point) } }
+                            processPosition(activePointer, pos)
                         }
                     }
-                    return pointerData.isActuallyGesture ?: false
+                    return activePointers.values.any { it.data.isActuallyGesture == true }
                 }
                 MotionEvent.ACTION_UP,
                 MotionEvent.ACTION_POINTER_UP -> {
-                    // Unlike ACTION_MOVE, these do name the pointer that went up.
-                    if (pointerId == -1 || pointerId != event.getPointerId(event.actionIndex)) {
-                        // not our pointer.
-                        return false
+                    val pointerId = event.getPointerId(event.actionIndex)
+                    val activePointer = activePointers.remove(pointerId) ?: return false
+                    if (activePointer.data.isActuallyGesture == true) {
+                        listeners.forEach { listener ->
+                            listener.onGlideComplete(pointerId, activePointer.data.snapshot())
+                        }
                     }
-                    if (pointerData.isActuallyGesture == true) {
-                        listeners.forEach { listener -> listener.onGlideComplete(pointerData) }
-                    }
-                    resetState()
+                    if (event.actionMasked == MotionEvent.ACTION_UP) resetState()
                     return false
                 }
                 MotionEvent.ACTION_CANCEL -> {
-                    if (pointerData.isActuallyGesture == true) {
-                        listeners.forEach { it.onGlideCancelled() }
+                    activePointers.values.forEach { activePointer ->
+                        if (activePointer.data.isActuallyGesture == true) {
+                            listeners.forEach { it.onGlideCancelled(activePointer.pointerId) }
+                        }
                     }
                     resetState()
                 }
@@ -173,21 +133,16 @@ class GlideTypingGesture {
         }
 
         /**
-         * Splits the active gesture at the current point: fires `onGlideWordBoundary` to
-         * every listener with the points gathered so far, then resets the position list
-         * (keeping the pointer id and timing) so that subsequent ACTION_MOVE events feed
-         * a fresh gesture for the next word. Used by Flow Through Space when the trace
-         * crosses into the space bar mid-word without lifting.
+         * Splits the active gesture at the current point. The pointer id is optional for the
+         * single-pointer call site and is required when two thumbs are gliding at once.
          */
-        fun signalWordBoundary() {
-            if (pointerId == -1 || pointerData.isActuallyGesture != true) return
-            if (pointerData.positions.size < 3) return
-            val snapshot = PointerData(
-                positions = pointerData.positions.toMutableList(),
-                startTime = pointerData.startTime,
-                isActuallyGesture = true,
-            )
-            listeners.forEach { listener -> listener.onGlideWordBoundary(snapshot) }
+        fun signalWordBoundary(pointerId: Int = tracedPointerId) {
+            val activePointer = activePointers[pointerId] ?: return
+            val pointerData = activePointer.data
+            if (pointerData.isActuallyGesture != true || pointerData.positions.size < 3) return
+            listeners.forEach { listener ->
+                listener.onGlideWordBoundary(pointerId, pointerData.snapshot())
+            }
             // Keep the pointer alive but start a fresh trace from here.
             val lastPoint = pointerData.positions.lastOrNull()
             pointerData.positions.clear()
@@ -205,21 +160,78 @@ class GlideTypingGesture {
             listeners.remove(listener)
         }
 
-        private fun resetState() {
-            pointerData.apply {
-                positions.clear()
-                startTime = 0
-                isActuallyGesture = null
-                hasQualifiedBeforeWordBoundary = false
-            }
-            pointerId = -1
+        private fun addPointer(event: MotionEvent, initialKey: TextKey?) {
+            val pointerIndex = event.actionIndex
+            val pointerId = event.getPointerId(pointerIndex)
+            activePointers[pointerId] = ActivePointer(
+                pointerId = pointerId,
+                initialKey = initialKey,
+                data = PointerData(
+                    positions = mutableListOf(Position(event.getX(pointerIndex), event.getY(pointerIndex))),
+                    startTime = currentTimeMillis(),
+                    pointerId = pointerId,
+                ),
+            )
         }
+
+        private fun processPosition(activePointer: ActivePointer, pos: Position) {
+            val pointerData = activePointer.data
+            pointerData.positions.add(pos)
+            if (pointerData.isActuallyGesture == null) {
+                if (pointerData.hasQualifiedBeforeWordBoundary) {
+                    pointerData.isActuallyGesture = true
+                    pointerData.positions
+                        .take(pointerData.positions.size - 1)
+                        .forEach { point -> emitPoint(activePointer.pointerId, point) }
+                } else {
+                    val dist = ViewUtils.px2dp(pointerData.positions[0].dist(pos))
+                    val time = (currentTimeMillis() - pointerData.startTime) + 1
+                    val thresholdScale = GlideSensitivityPolicy.thresholdScale(prefs.glide.sensitivity.get())
+                    val distanceThreshold = keySize * thresholdScale
+                    val velocityThreshold = VELOCITY_THRESHOLD * thresholdScale
+                    flogDebug { "Distance glided: $dist dp with velocity: ${dist / time} dp/ms" }
+                    if (dist > distanceThreshold &&
+                        (dist / time) > velocityThreshold &&
+                        (activePointer.initialKey?.computedData?.code !in SWIPE_GESTURE_KEYS)
+                    ) {
+                        pointerData.isActuallyGesture = true
+                        pointerData.positions
+                            .take(pointerData.positions.size - 1)
+                            .forEach { point -> emitPoint(activePointer.pointerId, point) }
+                    } else if (time > MAX_DETECT_TIME) {
+                        pointerData.isActuallyGesture = false
+                    }
+                }
+            }
+            if (pointerData.isActuallyGesture == true) {
+                emitPoint(activePointer.pointerId, pointerData.positions.last())
+            }
+        }
+
+        private fun emitPoint(pointerId: Int, point: Position) {
+            listeners.forEach { it.onGlideAddPoint(pointerId, point) }
+        }
+
+        private fun resetState() {
+            activePointers.clear()
+        }
+
+        private data class ActivePointer(
+            val pointerId: Int,
+            val initialKey: TextKey?,
+            val data: PointerData,
+        )
+
+        private fun PointerData.snapshot(): PointerData = copy(
+            positions = positions.toMutableList(),
+        )
 
         data class PointerData(
             val positions: MutableList<Position>,
             var startTime: Long,
             var isActuallyGesture: Boolean? = null,
             var hasQualifiedBeforeWordBoundary: Boolean = false,
+            val pointerId: Int = -1,
         )
 
         data class Position(val x: Float, val y: Float) {
@@ -235,16 +247,28 @@ class GlideTypingGesture {
          */
         fun onGlideComplete(data: Detector.PointerData) {}
 
+        fun onGlideComplete(pointerId: Int, data: Detector.PointerData) {
+            onGlideComplete(data)
+        }
+
         /**
          * Called when a point is added to a gesture.
          * Will not be called before a series of events is detected as a gesture.
          */
         fun onGlideAddPoint(point: Detector.Position) {}
 
+        fun onGlideAddPoint(pointerId: Int, point: Detector.Position) {
+            onGlideAddPoint(point)
+        }
+
         /**
          * Called to cancel a gesture.
          */
         fun onGlideCancelled() {}
+
+        fun onGlideCancelled(pointerId: Int) {
+            onGlideCancelled()
+        }
 
         /**
          * Called when the user crossed the space bar mid-gesture (Flow Through Space).
@@ -252,5 +276,9 @@ class GlideTypingGesture {
          * the current word — the same finger then continues into the next word's trace.
          */
         fun onGlideWordBoundary(data: Detector.PointerData) {}
+
+        fun onGlideWordBoundary(pointerId: Int, data: Detector.PointerData) {
+            onGlideWordBoundary(data)
+        }
     }
 }

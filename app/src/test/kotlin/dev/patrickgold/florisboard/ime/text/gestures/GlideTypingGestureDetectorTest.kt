@@ -87,6 +87,49 @@ class GlideTypingGestureDetectorTest {
     }
 
     @Test
+    fun alternatingPointersCompleteIndependentTracesInReleaseOrder() {
+        var now = 1_000L
+        val detector = GlideTypingGesture.Detector(context) { now }
+        val listener = RecordingGlideListener()
+        detector.registerListener(listener)
+
+        detector.onTouchEvent(down(pointerId = 0, x = 0f, y = 0f), initialKey = null)
+        detector.onTouchEvent(
+            pointerDown(
+                pointers = listOf(0 to Pt(0f, 0f), 1 to Pt(300f, 300f)),
+                actionIndex = 1,
+            ),
+            initialKey = null,
+        )
+
+        now += 20L
+        detector.onTouchEvent(
+            move(0 to Pt(220f, 0f), 1 to Pt(300f, 80f)),
+            initialKey = null,
+        ) shouldBe true
+        now += 20L
+        detector.onTouchEvent(
+            move(0 to Pt(320f, 0f), 1 to Pt(300f, 0f)),
+            initialKey = null,
+        ) shouldBe true
+
+        // The second hand finishes first. The first trace remains live until its own release.
+        detector.onTouchEvent(
+            pointerUp(
+                pointers = listOf(0 to Pt(320f, 0f), 1 to Pt(300f, 0f)),
+                actionIndex = 1,
+            ),
+            initialKey = null,
+        )
+        listener.completedPointerIds shouldBe listOf(1)
+
+        detector.onTouchEvent(up(pointerId = 0, x = 320f, y = 0f), initialKey = null)
+        listener.completedPointerIds shouldBe listOf(1, 0)
+        listener.completedTraces.map { it.pointerId } shouldBe listOf(1, 0)
+        listener.completedTraces.all { it.positions.size >= 2 } shouldBe true
+    }
+
+    @Test
     fun aFingerAlreadyRestingOnTheKeyboardDoesNotBlockTheNextGlide() {
         var now = 1_000L
         val detector = GlideTypingGesture.Detector(context) { now }
@@ -188,6 +231,8 @@ private fun multiPointerEvent(
 private class RecordingGlideListener : GlideTypingGesture.Listener {
     var boundaries = 0
     var completions = 0
+    val completedPointerIds = mutableListOf<Int>()
+    val completedTraces = mutableListOf<GlideTypingGesture.Detector.PointerData>()
 
     override fun onGlideWordBoundary(data: GlideTypingGesture.Detector.PointerData) {
         boundaries += 1
@@ -195,6 +240,12 @@ private class RecordingGlideListener : GlideTypingGesture.Listener {
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
         completions += 1
+    }
+
+    override fun onGlideComplete(pointerId: Int, data: GlideTypingGesture.Detector.PointerData) {
+        completions += 1
+        completedPointerIds += pointerId
+        completedTraces += data
     }
 }
 

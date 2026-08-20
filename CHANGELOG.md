@@ -7,6 +7,7 @@
 - Replace security-path source checks with behavior tests for encrypted stores, dictionary learning, clipboard policy, backup, sync, MCP consent, privacy gates, and sticker manifest replacement. Roborazzi capture classes are explicitly named in the plain unit-test report, with fixed preview density and font scale for repeatable captures.
 - Share the long-lived `NlpAddonHub` from `NlpManager` with the translation quick action, so future per-instance addon state cannot diverge between typing and smartbar calls.
 - Raise material-kolor to 5.0.0 now that the Compose BOM is enforced. The full unit suite and Roborazzi theme captures remain green.
+- Decode alternating two-pointer glides as separate traces, committing each word in finger-release order. The existing single-pointer detector behavior remains covered, and the active trail now renders both traces.
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
   to a pre-release alpha, and Gradle picked that over the Compose BOM's stable

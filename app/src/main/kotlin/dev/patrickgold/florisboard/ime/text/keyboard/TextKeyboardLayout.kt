@@ -41,6 +41,7 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateMapOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
@@ -273,7 +274,7 @@ fun TextKeyboardLayout(
                     )
                 }
                 if (glideShowTrail && controller.isGliding && controller.glideDataForDrawing.isNotEmpty()) {
-                    controller.glideActiveKey?.let { key ->
+                    controller.glideActiveKeys.values.forEach { key ->
                         val bounds = key.visibleBounds
                         val highlightColor = glideTrailTheme.colorAt(1f, timeMs, glideTrailAccent)
                         drawRoundRect(
@@ -283,14 +284,16 @@ fun TextKeyboardLayout(
                             cornerRadius = CornerRadius(8f, 8f),
                         )
                     }
-                    controller.drawGlideTrail(
-                        this,
-                        controller.glideDataForDrawing,
-                        radius,
-                        glideTrailTheme,
-                        glideTrailAccent,
-                        timeMs,
-                    )
+                    controller.glideDataForDrawing.values.forEach { gestureData ->
+                        controller.drawGlideTrail(
+                            this,
+                            gestureData,
+                            radius,
+                            glideTrailTheme,
+                            glideTrailAccent,
+                            timeMs,
+                        )
+                    }
                 }
             },
     ) {
@@ -737,10 +740,10 @@ private class TextKeyboardLayoutController(
     var isGliding by mutableStateOf(false)
 
     val glideTypingDetector = GlideTypingGesture.Detector(context)
-    val glideDataForDrawing = mutableStateListOf<Pair<GlideTypingGesture.Detector.Position, Long>>()
+    val glideDataForDrawing = mutableStateMapOf<Int, List<Pair<GlideTypingGesture.Detector.Position, Long>>>()
     val fadingGlide = mutableStateListOf<Pair<GlideTypingGesture.Detector.Position, Long>>()
     var fadingGlideRadius by mutableFloatStateOf(0.0f)
-    var glideActiveKey by mutableStateOf<TextKey?>(null)
+    val glideActiveKeys = mutableStateMapOf<Int, TextKey>()
     private val swipeGestureDetector = SwipeGesture.Detector(this)
 
     lateinit var keyboard: TextKeyboard
@@ -784,11 +787,22 @@ private class TextKeyboardLayoutController(
             // origin key against a hardcoded id 0 left `initialKey` null for any other pointer —
             // which is what suppresses glides that begin on delete, shift or space. Fall back to
             // the pointer this event is about while the detector has not adopted one yet.
-            val glidePointerId = glideTypingDetector.tracedPointerId.takeIf { it != -1 }
-                ?: event.getPointerId(event.actionIndex)
+            val eventPointerId = event.getPointerId(event.actionIndex)
+            val glidePointerId = when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_POINTER_DOWN,
+                -> eventPointerId
+                else -> glideTypingDetector.tracedPointerId.takeIf { it != -1 } ?: eventPointerId
+            }
             val glidePointer = pointerMap.findById(glidePointerId)
             val isNotBlocked = glidePointer?.hasTriggeredLongPress != true
-            if (isNotBlocked && glideTypingDetector.onTouchEvent(event, glidePointer?.initialKey)) {
+            val initialKey = glidePointer?.initialKey ?: when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN,
+                MotionEvent.ACTION_POINTER_DOWN,
+                -> keyboard.getKeyForPos(event.getX(event.actionIndex), event.getY(event.actionIndex))
+                else -> null
+            }
+            if (isNotBlocked && glideTypingDetector.onTouchEvent(event, initialKey)) {
                 for (pointer in pointerMap) {
                     if (pointer.activeKey != null) {
                         onTouchCancelInternal(event, pointer)
@@ -1507,41 +1521,70 @@ private class TextKeyboardLayoutController(
         return true
     }
 
-    private var glideHasLeftSpaceBar: Boolean = false
+    private val glidePointersLeftSpaceBar = mutableSetOf<Int>()
 
     override fun onGlideAddPoint(point: GlideTypingGesture.Detector.Position) {
+        onGlideAddPoint(pointerId = 0, point = point)
+    }
+
+    override fun onGlideAddPoint(pointerId: Int, point: GlideTypingGesture.Detector.Position) {
         if (isGlideEnabled) {
-            glideDataForDrawing.add(point to System.currentTimeMillis())
+            glideDataForDrawing[pointerId] = glideDataForDrawing[pointerId].orEmpty() +
+                (point to System.currentTimeMillis())
             val pointed = keyboard.getKeyForPos(point.x, point.y)
-            glideActiveKey = pointed
+            if (pointed != null) glideActiveKeys[pointerId] = pointed
             // Flow Through Space: split the gesture into separate words when the trace
             // crosses the top edge of the space bar after first leaving it.
             if (prefs.glide.flowThroughSpace.get() && keyboard.mode == KeyboardMode.CHARACTERS) {
                 val isOnSpace = pointed?.computedData?.code == KeyCode.SPACE ||
                     pointed?.computedData?.code == KeyCode.CJK_SPACE
                 if (!isOnSpace) {
-                    glideHasLeftSpaceBar = true
-                } else if (glideHasLeftSpaceBar) {
-                    glideHasLeftSpaceBar = false
-                    glideTypingDetector.signalWordBoundary()
+                    glidePointersLeftSpaceBar.add(pointerId)
+                } else if (pointerId in glidePointersLeftSpaceBar) {
+                    glidePointersLeftSpaceBar.remove(pointerId)
+                    glideTypingDetector.signalWordBoundary(pointerId)
                 }
             }
         }
     }
 
     override fun onGlideWordBoundary(data: GlideTypingGesture.Detector.PointerData) {
+        onGlideWordBoundary(data.pointerId, data)
+    }
+
+    override fun onGlideWordBoundary(pointerId: Int, data: GlideTypingGesture.Detector.PointerData) {
         // Match onGlideComplete's trail-fade visual so each finished word feels like a
         // separate finger-up to the user, even though the finger never actually lifted.
-        onGlideCancelled()
+        finishGlidePointer(pointerId)
     }
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
-        glideHasLeftSpaceBar = false
-        onGlideCancelled()
+        onGlideComplete(data.pointerId, data)
+    }
+
+    override fun onGlideComplete(pointerId: Int, data: GlideTypingGesture.Detector.PointerData) {
+        finishGlidePointer(pointerId)
     }
 
     override fun onGlideCancelled() {
-        glideActiveKey = null
+        glideDataForDrawing.keys.toList().forEach(::finishGlidePointer)
+        glideActiveKeys.clear()
+        glidePointersLeftSpaceBar.clear()
+        isGliding = false
+    }
+
+    override fun onGlideCancelled(pointerId: Int) {
+        finishGlidePointer(pointerId)
+    }
+
+    private fun finishGlidePointer(pointerId: Int) {
+        val finished = glideDataForDrawing.remove(pointerId)
+        glideActiveKeys.remove(pointerId)
+        glidePointersLeftSpaceBar.remove(pointerId)
+        if (finished.isNullOrEmpty()) {
+            isGliding = glideDataForDrawing.isNotEmpty()
+            return
+        }
         // Only the fade-out animation is gated on the trail pref. The buffer
         // clear + state reset below MUST run unconditionally: onGlideAddPoint
         // populates `glideDataForDrawing` whenever glide is enabled (it does
@@ -1549,8 +1592,7 @@ private class TextKeyboardLayoutController(
         // leaked the point buffer for the whole session and latched
         // `isGliding` true permanently when the trail was disabled.
         if (prefs.glide.showTrail.get()) {
-            fadingGlide.clear()
-            fadingGlide.addAll(glideDataForDrawing)
+            fadingGlide.addAll(finished)
 
             val animator = ValueAnimator.ofFloat(20.0f, 0.0f)
             animator.interpolator = AccelerateInterpolator()
@@ -1560,8 +1602,7 @@ private class TextKeyboardLayoutController(
             }
             animator.start()
         }
-        glideDataForDrawing.clear()
-        isGliding = false
+        isGliding = glideDataForDrawing.isNotEmpty()
     }
 
     fun drawGlideTrail(

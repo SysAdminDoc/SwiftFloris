@@ -21,13 +21,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P3
 
-- [ ] P3 — Decode a true dual-thumb alternating-hand glide
-  Why: the detector now traces whichever finger is gliding and survives a second pointer, but it still traces exactly one at a time, so alternating-hand swiping produces one trace with a jump where the hands change over rather than two interleaved words. Two-finger swipe is the most-repeated must-have in the highest-traffic 2026 keyboard discussion and the stated reason people stay on HeliBoard; the pointer plumbing that blocked it is done, the decoding is not.
-  Evidence: `ime/text/gestures/GlideTypingGesture.kt` traces a single `pointerId` and hands over only when the current one is unconfirmed; `ime/text/gestures/GlideTypingManager.kt` holds one in-flight gesture; https://news.ycombinator.com/item?id=48656610
-  Touches: `ime/text/gestures/GlideTypingGesture.kt`, `ime/text/gestures/GlideTypingManager.kt`, `ime/text/keyboard/TextKeyboardLayout.kt`, `app/src/test/.../gestures/`
-  Acceptance: two pointers can each carry a trace, the decoder resolves them into words in the order they completed rather than merging them, and the glide trail renders both; a replay test covers alternating-hand input where the second trace starts before the first ends. Single-pointer behaviour stays byte-identical, proved by the existing detector tests.
-  Complexity: L
-
 - [ ] P3 — Offer scrambled digit layouts for PIN and numeric password fields
   Why: shoulder-surfing and touch-trace attacks on a fixed numeric grid are the one keyboard-layer threat a privacy IME can actually mitigate, and no FOSS Android keyboard ships it — upstream accepted the proposal and never implemented it. SwiftFloris already detects password variations for popup suppression, so the field-classification half exists.
   Evidence: no `scramble`/`randomiz` match anywhere in `app/src/main`; existing password detection at `ime/text/keyboard/PasswordFieldPopupGate.kt:25`, used at `ime/text/keyboard/TextKeyboardLayout.kt:350,364`; layouts at `app/src/main/assets/ime/keyboard/org.florisboard.layouts/layouts/{numeric,phone,phone2}`; https://github.com/florisboard/florisboard/issues/3225

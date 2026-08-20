@@ -20,6 +20,7 @@ import android.app.ActivityManager
 import android.content.Context
 import androidx.core.app.ActivityManagerCompat
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
+import dev.patrickgold.florisboard.ime.core.Subtype
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
 import dev.patrickgold.florisboard.ime.text.keyboard.TextKey
 import dev.patrickgold.florisboard.keyboardManager
@@ -41,11 +42,13 @@ import kotlin.math.min
  */
 class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     companion object {
+        private const val DEFAULT_POINTER_ID = 0
         private const val MAX_SUGGESTION_COUNT = 8
         private const val CONTEXT_RESCORE_WINDOW_MS = 6_000L
     }
 
     private val prefs by FlorisPreferenceStore
+    private val appContext = context
     private val keyboardManager by context.keyboardManager()
     private val nlpManager by context.nlpManager()
     private val subtypeManager by context.subtypeManager()
@@ -54,9 +57,11 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     // in-flight classification: the classifier mutates keys/pruner in place.
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val scope = CoroutineScope(Dispatchers.Default.limitedParallelism(1) + SupervisorJob())
-    private var glideTypingClassifier = StatisticalGlideTypingClassifier(context)
+    private val classifierLock = Any()
+    private val classifiers = mutableMapOf<Int, StatisticalGlideTypingClassifier>()
+    private var layoutSnapshot: LayoutSnapshot? = null
     private var lastTime = System.currentTimeMillis()
-    private var previewJob: Job? = null
+    private val previewJobs = mutableMapOf<Int, Job>()
 
     // Written from the main thread (gesture callbacks / post-commit remember),
     // read and cleared from the serialized classifier scope (context rescore).
@@ -76,44 +81,72 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
     }
 
     override fun onGlideComplete(data: GlideTypingGesture.Detector.PointerData) {
-        cancelPreviewJob()
-        commitCurrentGesture()
+        onGlideComplete(data.pointerId, data)
+    }
+
+    override fun onGlideComplete(pointerId: Int, data: GlideTypingGesture.Detector.PointerData) {
+        cancelPreviewJob(pointerId)
+        commitCurrentGesture(pointerId)
     }
 
     override fun onGlideWordBoundary(data: GlideTypingGesture.Detector.PointerData) {
+        onGlideWordBoundary(data.pointerId, data)
+    }
+
+    override fun onGlideWordBoundary(pointerId: Int, data: GlideTypingGesture.Detector.PointerData) {
         // Flow Through Space: commit the current most-confident gesture word, then clear
         // the classifier so the continuing trace starts fresh for the next word. The
         // existing commitGesture path already activates phantom-space, so the next
         // committed word will be auto-prefixed with " ".
-        cancelPreviewJob()
-        commitCurrentGesture()
+        cancelPreviewJob(pointerId)
+        commitCurrentGesture(pointerId)
     }
 
-    private fun commitCurrentGesture() {
+    private fun commitCurrentGesture(pointerId: Int) {
         // Snapshot-and-reset must happen synchronously at the boundary: the
         // finger keeps moving, so deferring the snapshot (or the clear) to the
         // async classification job would append the next word's points to this
         // word's gesture and wipe the head of the next word's trace.
-        val snapshot = glideTypingClassifier.snapshotAndClear()
-        launchSuggestions(snapshot, MAX_SUGGESTION_COUNT, commit = true)
+        val classifier = classifierFor(pointerId)
+        val snapshot = classifier.snapshotAndClear()
+        launchSuggestions(classifier, snapshot, MAX_SUGGESTION_COUNT, commit = true, pointerId = pointerId)
     }
 
     override fun onGlideCancelled() {
-        cancelPreviewJob()
-        glideTypingClassifier.clear()
+        previewJobs.values.forEach(Job::cancel)
+        previewJobs.clear()
+        synchronized(classifierLock) {
+            classifiers.values.forEach { it.clear() }
+        }
         pendingContextRescore = null
     }
 
-    override fun onGlideAddPoint(point: GlideTypingGesture.Detector.Position) {
-        val normalized = GlideTypingGesture.Detector.Position(point.x, point.y)
+    override fun onGlideCancelled(pointerId: Int) {
+        cancelPreviewJob(pointerId)
+        classifierFor(pointerId).clear()
+    }
 
-        this.glideTypingClassifier.addGesturePoint(normalized)
+    override fun onGlideAddPoint(point: GlideTypingGesture.Detector.Position) {
+        onGlideAddPoint(DEFAULT_POINTER_ID, point)
+    }
+
+    override fun onGlideAddPoint(pointerId: Int, point: GlideTypingGesture.Detector.Position) {
+        val normalized = GlideTypingGesture.Detector.Position(point.x, point.y)
+        val classifier = classifierFor(pointerId)
+
+        classifier.addGesturePoint(normalized)
 
         val time = System.currentTimeMillis()
         if (prefs.glide.showPreview.get() && time - lastTime > prefs.glide.previewRefreshDelay.get()) {
             // Cancel any stale preview job so they don't pile up.
-            cancelPreviewJob()
-            previewJob = launchSuggestions(gestureSnapshot = null, maxSuggestionsToShow = 1, commit = false)
+            cancelPreviewJob(pointerId)
+            launchSuggestions(
+                classifier = classifier,
+                gestureSnapshot = null,
+                maxSuggestionsToShow = 1,
+                commit = false,
+                pointerId = pointerId,
+            )?.let { previewJobs[pointerId] = it }
             lastTime = time
         }
     }
@@ -133,16 +166,13 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         // stall the main thread for the whole dictionary normalization pass);
         // run them on the serialized classifier scope instead. Queued commit
         // jobs run after this completes, so they observe the new layout.
-        scope.launch {
-            try {
-                glideTypingClassifier.setLayout(keys, subtype)
-            } catch (cancellation: CancellationException) {
-                // A cancelled build leaves half a dictionary and a half-filled pruner behind.
-                glideTypingClassifier.releaseMemory()
-                throw cancellation
-            } catch (error: OutOfMemoryError) {
-                disableAfterAllocationFailure(error)
-            }
+        val snapshot = LayoutSnapshot(keys.toList(), subtype)
+        val targets = synchronized(classifierLock) {
+            layoutSnapshot = snapshot
+            classifiers.values.toList()
+        }
+        targets.forEach { classifier ->
+            configureClassifier(classifier, snapshot)
         }
     }
 
@@ -152,7 +182,9 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
      * permanently. Only the error class is logged — never the gesture or any typed text.
      */
     private fun disableAfterAllocationFailure(error: Throwable) {
-        glideTypingClassifier.releaseMemory()
+        synchronized(classifierLock) {
+            classifiers.values.forEach { it.releaseMemory() }
+        }
         GlideTypingCapability.disableAfterAllocationFailure()
         flogWarning {
             "Glide typing disabled for this session after ${error::class.java.simpleName} " +
@@ -167,7 +199,13 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
      * @param gestureSnapshot The gesture to classify, taken at the word boundary;
      * null means "classify the live in-progress gesture" (preview path).
      */
-    private fun launchSuggestions(gestureSnapshot: StatisticalGlideTypingClassifier.Gesture?, maxSuggestionsToShow: Int, commit: Boolean): Job? {
+    private fun launchSuggestions(
+        classifier: StatisticalGlideTypingClassifier,
+        gestureSnapshot: StatisticalGlideTypingClassifier.Gesture?,
+        maxSuggestionsToShow: Int,
+        commit: Boolean,
+        pointerId: Int,
+    ): Job? {
         if (!prefs.glide.isEnabledForSubtype(subtypeManager.activeSubtype)) {
             return null
         }
@@ -179,14 +217,14 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
             // The ready check runs inside the serialized scope so a commit that
             // raced a subtype/layout swap waits for the queued setLayout job
             // instead of being dropped (or worse, classified on stale data).
-            if (!glideTypingClassifier.ready) return@launch
+            if (!classifier.ready) return@launch
             // For preview, only compute the few we'll display; for commit, compute all.
             val classifierCount = if (commit) MAX_SUGGESTION_COUNT else maxSuggestionsToShow.coerceAtLeast(1)
             val suggestions = try {
                 if (gestureSnapshot != null) {
-                    glideTypingClassifier.getSuggestionsForSnapshot(gestureSnapshot, classifierCount)
+                    classifier.getSuggestionsForSnapshot(gestureSnapshot, classifierCount)
                 } else {
-                    glideTypingClassifier.getSuggestions(classifierCount, true)
+                    classifier.getSuggestions(classifierCount, true)
                 }
             } catch (error: OutOfMemoryError) {
                 // Classification grows the ideal-gesture cache; if that is what tips the heap
@@ -270,9 +308,40 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         return pending.committedWord to replacement
     }
 
-    private fun cancelPreviewJob() {
-        previewJob?.cancel()
-        previewJob = null
+    private fun cancelPreviewJob(pointerId: Int) {
+        previewJobs.remove(pointerId)?.cancel()
+    }
+
+    private fun classifierFor(pointerId: Int): StatisticalGlideTypingClassifier {
+        val result = synchronized(classifierLock) {
+            val existing = classifiers[pointerId]
+            if (existing != null) {
+                existing to null
+            } else {
+                val created = StatisticalGlideTypingClassifier(appContext)
+                classifiers[pointerId] = created
+                created to layoutSnapshot
+            }
+        }
+        result.second?.let { configureClassifier(result.first, it) }
+        return result.first
+    }
+
+    private fun configureClassifier(
+        classifier: StatisticalGlideTypingClassifier,
+        snapshot: LayoutSnapshot,
+    ) {
+        scope.launch {
+            try {
+                classifier.setLayout(snapshot.keys, snapshot.subtype)
+            } catch (cancellation: CancellationException) {
+                // A cancelled build leaves half a dictionary and a half-filled pruner behind.
+                classifier.releaseMemory()
+                throw cancellation
+            } catch (error: OutOfMemoryError) {
+                disableAfterAllocationFailure(error)
+            }
+        }
     }
 
     private fun rememberPendingGlideCommit(suggestions: List<CharSequence>) {
@@ -288,5 +357,10 @@ class GlideTypingManager(context: Context) : GlideTypingGesture.Listener {
         val committedWord: String,
         val candidates: List<String>,
         val timestampMs: Long,
+    )
+
+    private data class LayoutSnapshot(
+        val keys: List<TextKey>,
+        val subtype: Subtype,
     )
 }
