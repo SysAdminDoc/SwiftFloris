@@ -20,14 +20,11 @@ import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
 import android.provider.OpenableColumns
+import dev.patrickgold.florisboard.lib.io.AtomicFileWriter
 import java.io.File
 import java.io.FileNotFoundException
-import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
-import java.nio.file.AtomicMoveNotSupportedException
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import java.util.Locale
 import java.util.UUID
 import java.util.zip.ZipEntry
@@ -500,34 +497,14 @@ object LocalStickerPackRepository {
     private fun writeManifest(storageDir: File, manifest: LocalStickerPackManifest) {
         storageDir.mkdirs()
         val manifestFile = storageDir.subFile(ManifestFileName)
-        val tempFile = File.createTempFile("$ManifestFileName-", ".tmp", storageDir)
-        try {
-            FileOutputStream(tempFile).use { output ->
-                output.write(JsonCodec.encodeToString(manifest).toByteArray(Charsets.UTF_8))
-                output.fd.sync()
-            }
-            moveReplacing(tempFile, manifestFile)
-        } catch (error: Throwable) {
-            tempFile.delete()
-            throw error
-        }
-    }
-
-    private fun moveReplacing(tempFile: File, targetFile: File) {
-        try {
-            Files.move(
-                tempFile.toPath(),
-                targetFile.toPath(),
-                StandardCopyOption.ATOMIC_MOVE,
-                StandardCopyOption.REPLACE_EXISTING,
-            )
-        } catch (_: AtomicMoveNotSupportedException) {
-            Files.move(
-                tempFile.toPath(),
-                targetFile.toPath(),
-                StandardCopyOption.REPLACE_EXISTING,
-            )
-        }
+        val encoded = JsonCodec.encodeToString(manifest).toByteArray(Charsets.UTF_8)
+        AtomicFileWriter.replace(
+            targetFile = manifestFile,
+            write = { stagedFile -> stagedFile.writeBytes(encoded) },
+            validate = { stagedFile ->
+                JsonCodec.decodeFromString<LocalStickerPackManifest>(stagedFile.readText())
+            },
+        )
     }
 
     private fun readArchiveManifest(zip: ZipFile): LocalStickerPackManifest? {

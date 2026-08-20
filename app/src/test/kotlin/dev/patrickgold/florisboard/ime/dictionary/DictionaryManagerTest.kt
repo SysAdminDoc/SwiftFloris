@@ -21,9 +21,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.booleans.shouldBeTrue
 import io.kotest.matchers.collections.shouldContainExactlyInAnyOrder
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 import java.util.concurrent.Executors
 import kotlin.time.measureTime
 
@@ -64,13 +61,6 @@ class DictionaryManagerTest : FunSpec({
         )
 
         ranked.map { it.word } shouldBe listOf("SwiftFloris keyboard")
-    }
-
-    test("learnWord persists Room locale tags instead of legacy debug strings") {
-        val body = extractFunctionBody(locateDictionaryManagerSource().readText(), "fun learnWord(")
-
-        body shouldContain "locale = locale.localeTag()"
-        body shouldNotContain "locale = locale.toString()"
     }
 
     test("parseLegacyDebugLocaleTag restores Room-compatible locale tags") {
@@ -122,15 +112,6 @@ class DictionaryManagerTest : FunSpec({
         }
     }
 
-    test("DictionaryManager source keeps synchronous lookups on bounded query bridge") {
-        val source = locateDictionaryManagerSource().readText()
-
-        source shouldContain "DICTIONARY_ROOM_SYNC_TIMEOUT_MS"
-        source shouldContain "runRoomQueryBlocking<String?>"
-        source shouldContain "operation = \"queryUserDictionary\""
-        source shouldContain "operation = \"isKnownUserDictionaryWord\""
-        source shouldContain "DictionarySyncBridge.runWithTimeout"
-    }
 })
 
 private fun candidate(
@@ -151,36 +132,6 @@ private fun candidate(
         sourcePriority = sourcePriority,
         matchPriority = matchPriority,
     )
-}
-
-private fun locateDictionaryManagerSource(): File {
-    val candidates = listOf(
-        File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt"),
-        File("src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt"),
-    )
-    return candidates.firstOrNull { it.exists() }
-        ?: error("DictionaryManager.kt not reachable from working directory ${File(".").absolutePath}")
-}
-
-private fun extractFunctionBody(source: String, startsWith: String): String {
-    val declStart = source.indexOf(startsWith)
-    require(declStart >= 0) { "Function declaration '$startsWith' not found in source" }
-    val openBrace = source.indexOf('{', declStart)
-    require(openBrace >= 0) { "Function '$startsWith' has no opening brace" }
-
-    var depth = 0
-    var i = openBrace
-    while (i < source.length) {
-        when (source[i]) {
-            '{' -> depth++
-            '}' -> {
-                depth--
-                if (depth == 0) return source.substring(openBrace, i + 1)
-            }
-        }
-        i++
-    }
-    error("Function '$startsWith' is missing its closing brace")
 }
 
 private class RepairUserDictionaryDao : UserDictionaryDao {

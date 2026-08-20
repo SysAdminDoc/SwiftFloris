@@ -19,15 +19,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ## Research-Driven Additions (2026-08-11)
 
-### P2
-
-- [ ] P2 — Replace source-text assertions with behavioural tests on the security paths
-  Why: 20 test files "verify" behaviour by reading production source and asserting it contains an identifier — 76 such sites. The dictionary-encryption test asserts that a source file contains the strings `"System.loadLibrary(SQLCIPHER_LIBRARY)"` and `"TinkStringPreferenceCrypto.readBytes"`, so it passes if the dictionary is written in plaintext at runtime and fails on a pure rename; one sync test asserts on source indentation. Separately, 31 Roborazzi tests assert nothing under `:app:test` — comparison happens only in the verify task — so a plain unit run reports 31 green tests that cannot fail.
-  Evidence: `app/src/test/.../ime/dictionary/PersonalDictionaryEncryptionTest.kt:44-46,58-60,76-78,101-103`; `lib/io/AtomicFileWriterTest.kt`, `config/ReleaseEvidenceContractTest.kt`, `ime/media/MediaPaletteAccessibilityContractTest.kt`, `app/settings/advanced/PortableBackupScreenContractTest.kt`, `app/settings/sync/SyncSettingsScreenContractTest.kt:37`; the correct pattern at `app/src/androidTest/.../PersonalDictionaryRoomSqlCipherRuntimeTest.kt`; Roborazzi wiring at `app/build.gradle.kts:33-36,435-438`
-  Touches: the 20 contract test files, `app/src/androidTest/`, `app/build.gradle.kts`
-  Acceptance: every security-relevant claim currently asserted against source text is asserted against observable behaviour — on the attached device where a real store is required — and the source-grep assertions are deleted rather than kept alongside; the Roborazzi capture tests are excluded from, or clearly labelled in, the plain unit-test report so the suite's green count reflects assertions.
-  Complexity: L
-
 ### P3
 
 - [ ] P3 — Re-evaluate material-kolor 5.0.0 now that the Compose BOM is enforced

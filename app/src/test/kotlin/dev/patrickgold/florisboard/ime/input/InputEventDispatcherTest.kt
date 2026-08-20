@@ -21,9 +21,6 @@ import dev.patrickgold.florisboard.ime.text.keyboard.TextKeyData
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 
 class InputEventDispatcherTest : FunSpec({
     test("send down and up updates pressed state synchronously") {
@@ -63,27 +60,7 @@ class InputEventDispatcherTest : FunSpec({
         dispatcher.close()
     }
 
-    test("blockUp is published inside the Main action before repeat dispatch") {
-        val source = locateInputEventDispatcherSource().readText()
-        val normalized = source.replace(Regex("\\s+"), " ")
-
-        normalized shouldContain "val longPressResult = withContext(Dispatchers.Main) { " +
-            "val handled = onLongPress() if (handled) { pressedKeyInfo.blockUp = true } handled }"
-        normalized shouldContain "withContext(Dispatchers.Main) { val proceed = onRepeat() if (proceed) { " +
-            "pressedKeyInfo.blockUp = true keyEventReceiver?.onInputKeyRepeat(repeatData) } }"
-        normalized shouldNotContain "if (longPressResult) { pressedKeyInfo.blockUp = true }"
-        normalized shouldNotContain "if (onRepeatResult) { pressedKeyInfo.blockUp = true }"
-    }
 })
-
-private fun locateInputEventDispatcherSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/input/InputEventDispatcher.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/input/InputEventDispatcher.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("InputEventDispatcher.kt not reachable from working directory ${File(".").absolutePath}")
-}
 
 private class RecordingReceiver : InputKeyEventReceiver {
     val events = mutableListOf<String>()

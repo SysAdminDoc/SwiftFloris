@@ -278,11 +278,11 @@ Every surface above is subject to:
   web-password fields and while incognito is active. Dynamic incognito toggles
   re-apply the policy immediately, so the keyboard itself is excluded from
   screenshots and screen recordings during private typing.
-- The **personal-dictionary isolation contract** — the `learnWord` path
-  never references the system `UserDictionary.Words`. The
-  `PersonalDictionaryIsolationTest` also pins the read-only system DAO and
-  Settings editor path, so a future contributor cannot silently restore shared
-  provider writes.
+- The **personal-dictionary isolation contract** is exercised on the attached
+  Android device. `PersonalDictionaryManagerRuntimeTest` proves that the
+  `learnWord` path writes only to the app-private Room store, leaves the system
+  `UserDictionary` DAO absent, and honors the Settings preference, so shared
+  provider writes cannot return silently.
 - The **personal-dictionary backup exclusion** — encrypted DB is excluded
   from both cloud backup and device-to-device transfer (Android Keystore
   wrap key is non-portable).

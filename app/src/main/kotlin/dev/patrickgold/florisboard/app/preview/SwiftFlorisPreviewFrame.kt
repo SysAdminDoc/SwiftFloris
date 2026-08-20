@@ -19,7 +19,10 @@ package dev.patrickgold.florisboard.app.preview
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
 import dev.patrickgold.florisboard.app.apptheme.FlorisAppTheme
@@ -31,9 +34,14 @@ fun SwiftFlorisPreviewFrame(content: @Composable () -> Unit) {
         resourcesContext = LocalContext.current,
         appName = R.string.app_name,
     ) {
-        FlorisAppTheme(theme = AppTheme.LIGHT) {
-            Surface(color = MaterialTheme.colorScheme.background) {
-                content()
+        CompositionLocalProvider(
+            // Preview snapshots run at the generated xxhdpi test density.
+            LocalDensity provides Density(density = 3f, fontScale = 1f),
+        ) {
+            FlorisAppTheme(theme = AppTheme.LIGHT) {
+                Surface(color = MaterialTheme.colorScheme.background) {
+                    content()
+                }
             }
         }
     }

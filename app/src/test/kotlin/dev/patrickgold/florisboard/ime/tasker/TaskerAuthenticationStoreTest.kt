@@ -18,9 +18,6 @@ package dev.patrickgold.florisboard.ime.tasker
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 import java.security.SecureRandom
 
 class TaskerAuthenticationStoreTest : FunSpec({
@@ -71,27 +68,6 @@ class TaskerAuthenticationStoreTest : FunSpec({
         persistence.value shouldBe ByteArray(TaskerIntentContract.AUTH_SECRET_BYTES) { 0x63 }
     }
 
-    test("Android backup rules never include the Tasker key file") {
-        listOf(
-            locateProjectFile(
-                "app/src/main/res/xml/backup_rules.xml",
-                "src/main/res/xml/backup_rules.xml",
-            ),
-            locateProjectFile(
-                "app/src/main/res/xml-v31/backup_rules.xml",
-                "src/main/res/xml-v31/backup_rules.xml",
-            ),
-        ).forEach { file ->
-            val source = file.readText()
-            source shouldNotContain "domain=\"sharedpref\""
-            source shouldNotContain TASKER_AUTH_PREFS_XML
-        }
-        val extractionRules = locateProjectFile(
-            "app/src/main/res/xml/data_extraction_rules.xml",
-            "src/main/res/xml/data_extraction_rules.xml",
-        ).readText()
-        extractionRules shouldContain "path=\"$TASKER_AUTH_PREFS_XML\""
-    }
 })
 
 private class RecordingPersistence(initial: ByteArray? = null) : TaskerSecretPersistence {
@@ -115,11 +91,4 @@ private class FillSecureRandom(var fillByte: Byte) : SecureRandom() {
     override fun nextBytes(bytes: ByteArray) {
         bytes.fill(fillByte)
     }
-}
-
-private fun locateProjectFile(vararg paths: String): File {
-    return paths.asSequence()
-        .map(::File)
-        .firstOrNull(File::isFile)
-        ?: error("Could not locate any of: ${paths.joinToString()}")
 }

@@ -21,6 +21,7 @@ import androidx.room.Room
 import dev.patrickgold.florisboard.app.FlorisPreferenceStore
 import dev.patrickgold.florisboard.ime.nlp.SuggestionCandidate
 import dev.patrickgold.florisboard.ime.nlp.WordSuggestionCandidate
+import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.devtools.LogTopic
 import dev.patrickgold.florisboard.lib.devtools.flogError
@@ -32,7 +33,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import java.io.File
 import java.util.concurrent.Callable
 import java.util.concurrent.ExecutionException
 import java.util.concurrent.ExecutorService
@@ -623,74 +623,36 @@ class DictionaryManager private constructor(context: Context) {
         }
     }
 
-    private data class DatabaseFileBackup(val original: File, val backup: File)
+    private fun moveFlorisUserDictionaryDatabaseFilesAside(
+        context: Context,
+    ): List<EncryptedDatabaseFiles.Backup> = EncryptedDatabaseFiles.moveAside(
+        databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME),
+        suffix = "plaintext",
+        timestampMs = System.currentTimeMillis(),
+    )
 
-    private fun moveFlorisUserDictionaryDatabaseFilesAside(context: Context): List<DatabaseFileBackup> {
-        val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
-        val timestamp = System.currentTimeMillis()
-        val backups = mutableListOf<DatabaseFileBackup>()
-        for (file in florisUserDictionaryDatabaseFiles(databaseFile)) {
-            if (file.exists()) {
-                val backup = File(file.parentFile, "${file.name}.plaintext-$timestamp")
-                if (file.renameTo(backup)) {
-                    backups.add(DatabaseFileBackup(file, backup))
-                } else {
-                    restoreFlorisUserDictionaryDatabaseFiles(backups)
-                    error("Could not move ${file.name} to ${backup.name}")
-                }
-            }
-        }
-        return backups
-    }
+    private fun restoreFlorisUserDictionaryDatabaseFiles(
+        backups: List<EncryptedDatabaseFiles.Backup>,
+    ): Boolean = EncryptedDatabaseFiles.restore(backups)
 
-    private fun restoreFlorisUserDictionaryDatabaseFiles(backups: List<DatabaseFileBackup>): Boolean {
-        var restored = true
-        for ((original, backup) in backups) {
-            if (original.exists() && !original.delete()) {
-                flogWarning(LogTopic.DICTIONARY) { "Could not delete ${original.name} before restoring ${backup.name}" }
-                restored = false
-            }
-            if (backup.exists()) {
-                if (!backup.renameTo(original)) {
-                    flogWarning(LogTopic.DICTIONARY) { "Could not restore ${backup.name} to ${original.name}" }
-                    restored = false
-                }
-            }
-        }
-        return restored
-    }
-
-    private fun deleteBackedUpFlorisUserDictionaryDatabaseFiles(backups: List<DatabaseFileBackup>) {
-        for ((_, backup) in backups) {
-            if (backup.exists() && !backup.delete()) {
-                flogWarning(LogTopic.DICTIONARY) { "Could not delete migrated plaintext user dictionary backup ${backup.name}" }
+    private fun deleteBackedUpFlorisUserDictionaryDatabaseFiles(
+        backups: List<EncryptedDatabaseFiles.Backup>,
+    ) {
+        if (!EncryptedDatabaseFiles.deleteBackups(backups)) {
+            flogWarning(LogTopic.DICTIONARY) {
+                "Could not delete migrated plaintext user dictionary backups"
             }
         }
     }
 
-    private fun quarantineFlorisUserDictionaryDatabaseFiles(context: Context, reason: String): Boolean {
-        val databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME)
-        val timestamp = System.currentTimeMillis()
-        var quarantined = true
-        for (file in florisUserDictionaryDatabaseFiles(databaseFile)) {
-            if (!file.exists()) continue
-            val quarantine = File(file.parentFile, "${file.name}.$reason-$timestamp")
-            if (!file.renameTo(quarantine)) {
-                flogWarning(LogTopic.DICTIONARY) { "Could not preserve ${file.name} as ${quarantine.name}" }
-                quarantined = false
-            }
-        }
-        return quarantined
-    }
-
-    private fun florisUserDictionaryDatabaseFiles(databaseFile: File): List<File> {
-        return listOf(
-            databaseFile,
-            File("${databaseFile.path}-wal"),
-            File("${databaseFile.path}-shm"),
-            File("${databaseFile.path}-journal"),
-        )
-    }
+    private fun quarantineFlorisUserDictionaryDatabaseFiles(
+        context: Context,
+        reason: String,
+    ): Boolean = EncryptedDatabaseFiles.quarantine(
+        databaseFile = context.getDatabasePath(FlorisUserDictionaryDatabase.DB_FILE_NAME),
+        reason = reason,
+        timestampMs = System.currentTimeMillis(),
+    )
 
     private fun <T> runRoomBlocking(block: () -> T): T {
         return runBlocking(Dispatchers.IO) {

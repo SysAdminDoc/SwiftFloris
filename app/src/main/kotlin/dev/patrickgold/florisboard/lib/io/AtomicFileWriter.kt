@@ -18,6 +18,7 @@ package dev.patrickgold.florisboard.lib.io
 
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.AtomicMoveNotSupportedException
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 
@@ -31,12 +32,20 @@ internal fun interface AtomicFileMover {
  */
 internal object AtomicFileWriter {
     private val systemMover = AtomicFileMover { stagedFile, targetFile ->
-        Files.move(
-            stagedFile.toPath(),
-            targetFile.toPath(),
-            StandardCopyOption.ATOMIC_MOVE,
-            StandardCopyOption.REPLACE_EXISTING,
-        )
+        try {
+            Files.move(
+                stagedFile.toPath(),
+                targetFile.toPath(),
+                StandardCopyOption.ATOMIC_MOVE,
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        } catch (_: AtomicMoveNotSupportedException) {
+            Files.move(
+                stagedFile.toPath(),
+                targetFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING,
+            )
+        }
     }
 
     fun replace(

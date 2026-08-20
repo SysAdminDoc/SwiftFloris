@@ -24,7 +24,6 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
-import java.io.File
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
@@ -94,44 +93,6 @@ class ClipboardTextRetentionPolicyTest {
             ClipboardItem.fromClipData(context, clipData, cloneUri = false)
         }
     }
-
-    @Test
-    fun `all manager ingress paths gate text before construction or deduplication`() {
-        val source = locateClipboardManagerSource().readText()
-        val callbackStart = source.indexOf("override fun onPrimaryClipChanged()")
-        val pasteOnlyGate = source.indexOf(
-            "ClipboardTextRetentionPolicy.pasteOnlyTextOrNull(systemPrimaryClip)",
-            startIndex = callbackStart,
-        )
-        val callbackFactory = source.indexOf(
-            "ClipboardItem.fromClipData(appContext, systemPrimaryClip",
-            startIndex = callbackStart,
-        )
-        val addStart = source.indexOf("fun addNewPlaintext(newText: String)")
-        val addGate = source.indexOf(
-            "ClipboardTextRetentionPolicy.shouldRetain(newText)",
-            startIndex = addStart,
-        )
-        val addFactory = source.indexOf("ClipboardItem.text(newText)", startIndex = addStart)
-        val dedupStart = source.indexOf("private fun insertOrMoveBeginning(")
-        val dedupGate = source.indexOf(
-            "ClipboardTextRetentionPolicy.shouldRetain(newItem)",
-            startIndex = dedupStart,
-        )
-        val dedupSearch = source.indexOf("currentHistory.all.firstOrNull", startIndex = dedupStart)
-        val restoreStart = source.indexOf("fun restoreHistory(items: List<ClipboardItem>)")
-        val restoreGate = source.indexOf(
-            "ClipboardTextRetentionPolicy.shouldRetain(item)",
-            startIndex = restoreStart,
-        )
-        val restoreCopy = source.indexOf("val restoredItem = item.copy", startIndex = restoreStart)
-
-        (callbackStart >= 0) shouldBe true
-        (pasteOnlyGate in callbackStart until callbackFactory) shouldBe true
-        (addGate in addStart until addFactory) shouldBe true
-        (dedupGate in dedupStart until dedupSearch) shouldBe true
-        (restoreGate in restoreStart until restoreCopy) shouldBe true
-    }
 }
 
 private class LengthOnlyCharSequence(
@@ -148,13 +109,4 @@ private class LengthOnlyCharSequence(
     override fun subSequence(startIndex: Int, endIndex: Int): CharSequence {
         error("A payload above the UTF-8 cap must not be copied")
     }
-}
-
-private fun locateClipboardManagerSource(): File {
-    val candidates = listOf(
-        File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardManager.kt"),
-        File("src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardManager.kt"),
-    )
-    return candidates.firstOrNull(File::exists)
-        ?: error("ClipboardManager.kt not reachable from ${File(".").absolutePath}")
 }

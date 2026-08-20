@@ -81,6 +81,8 @@ fun PerAppKeyboardProfileScreen() = FlorisScreen {
     previewFieldVisible = true
 
     val context = LocalContext.current
+    val deletedMessage = stringRes(R.string.settings__per_app_keyboard_profiles__deleted)
+    val undoLabel = stringRes(R.string.action__undo)
     val scope = rememberCoroutineScope()
     val prefs by FlorisPreferenceStore
     val editorInstance by context.editorInstance()
@@ -206,8 +208,8 @@ fun PerAppKeyboardProfileScreen() = FlorisScreen {
                 dialogSeed = null
                 if (deletedProfile != null) {
                     FlorisSnackbarController.show(
-                        message = context.getString(R.string.settings__per_app_keyboard_profiles__deleted),
-                        actionLabel = context.getString(R.string.action__undo),
+                        message = deletedMessage,
+                        actionLabel = undoLabel,
                         onAction = {
                             scope.launch {
                                 prefs.privacy.perAppKeyboardProfiles.set(

@@ -69,6 +69,7 @@ import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 import org.junit.After
 import org.junit.Before
+import org.junit.jupiter.api.DisplayName
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -78,13 +79,14 @@ import org.robolectric.annotation.GraphicsMode
 /**
  * F40 screen-level Roborazzi targets for settings surfaces that are otherwise
  * easy to regress without touching policy-level JVM tests. `AddonsSettingsScreen`
- * already has an active registry snapshot in [ThemeAndAddonsScreenshotTest];
+ * already has an active registry snapshot in [RoborazziThemeAndAddonsCaptureTest];
  * this class covers the remaining high-value settings screens.
  */
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class PendingSettingsScreensScreenshotTest {
+@DisplayName("Roborazzi capture: pending settings screens")
+class RoborazziPendingSettingsScreensCaptureTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 

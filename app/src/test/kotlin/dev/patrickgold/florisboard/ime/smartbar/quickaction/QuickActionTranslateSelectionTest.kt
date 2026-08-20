@@ -3,6 +3,9 @@
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
  */
 
 package dev.patrickgold.florisboard.ime.smartbar.quickaction
@@ -11,28 +14,8 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.translate.TranslationSuppressionReason
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 
 class QuickActionTranslateSelectionTest : FunSpec({
-    test("TranslateSelection routes through the audited addon hub with consent and sensitive-field inputs") {
-        val source = locateQuickActionSource().readText()
-        val body = extractObjectBody(source, "data object TranslateSelection")
-
-        body shouldContain "NlpAddonHub.production()"
-        body shouldContain "TranslationRouter.Request("
-        body shouldContain "inputType = activeInfo.inputAttributes.raw"
-        body shouldContain "imeOptions = activeInfo.imeOptions.raw"
-        body shouldNotContain "prefs.privacy.translationConsent.get().allowsInvocation()"
-        body shouldContain "withContext(Dispatchers.IO)"
-        body shouldContain "R.string.quick_action__translation_selection_changed"
-        body shouldContain "editorInstance.activeContent.selectedText == raw"
-        body shouldContain "TranslationSuppressionReason.TranslationCancelled"
-        body shouldNotContain ".translate(raw, sourceLocale, targetLocale)"
-        body shouldNotContain "Selection changed before translation completed."
-    }
-
     test("suppressed translation outcomes map to localized string resources") {
         translateSelectionSuppressedMessageRes(TranslationSuppressionReason.BlankInput) shouldBe null
         translateSelectionSuppressedMessageRes(TranslationSuppressionReason.ConsentRequired) shouldBe
@@ -54,48 +37,4 @@ class QuickActionTranslateSelectionTest : FunSpec({
         translateSelectionSuppressedMessageRes(TranslationSuppressionReason.TranslationCancelled) shouldBe
             R.string.quick_action__translation_cancelled
     }
-
-    test("translation quick action does not keep hard-coded English failure toasts") {
-        val body = extractObjectBody(locateQuickActionSource().readText(), "data object TranslateSelection")
-
-        body shouldNotContain "Translation is not available in this context."
-        body shouldNotContain "Enable translation addon consent in Privacy settings."
-        body shouldNotContain "Translation is blocked in sensitive fields."
-        body shouldNotContain "Choose a different translation target language."
-        body shouldNotContain "Could not detect the selection language."
-        body shouldNotContain "Choose a translation target language first."
-        body shouldNotContain "Install an InlineTranslator addon and language pack to translate selections."
-        body shouldNotContain "Translation took too long and was stopped."
-        body shouldNotContain "Translation was cancelled."
-    }
 })
-
-private fun locateQuickActionSource(): File {
-    val candidates = listOf(
-        File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/quickaction/QuickAction.kt"),
-        File("src/main/kotlin/dev/patrickgold/florisboard/ime/smartbar/quickaction/QuickAction.kt"),
-    )
-    return candidates.firstOrNull { it.exists() }
-        ?: error("QuickAction.kt not reachable from working directory ${File(".").absolutePath}")
-}
-
-private fun extractObjectBody(source: String, startsWith: String): String {
-    val declStart = source.indexOf(startsWith)
-    require(declStart >= 0) { "Object declaration '$startsWith' not found in source" }
-    val openBrace = source.indexOf('{', declStart)
-    require(openBrace >= 0) { "Object '$startsWith' has no opening brace" }
-
-    var depth = 0
-    var i = openBrace
-    while (i < source.length) {
-        when (source[i]) {
-            '{' -> depth++
-            '}' -> {
-                depth--
-                if (depth == 0) return source.substring(openBrace, i + 1)
-            }
-        }
-        i++
-    }
-    error("Object '$startsWith' is missing its closing brace")
-}

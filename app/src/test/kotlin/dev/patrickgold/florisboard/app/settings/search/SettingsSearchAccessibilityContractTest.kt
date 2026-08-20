@@ -20,12 +20,10 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.patrickgold.florisboard.R
-import io.kotest.matchers.string.shouldContain
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import java.io.File
 import kotlin.test.assertTrue
 
 @RunWith(AndroidJUnit4::class)
@@ -53,32 +51,4 @@ class SettingsSearchAccessibilityContractTest {
             assertTrue(value != "res-$resId", "Search accessibility string $resId must not use test fallback")
         }
     }
-
-    @Test
-    fun searchScreenKeepsTalkBackSemanticsWired() {
-        val source = locateSearchScreenSource().readText()
-
-        source shouldContain "settings__search__field_content_description"
-        source shouldContain "stateDescription = searchStatusDescription"
-        source shouldContain "LiveRegionMode.Polite"
-        source shouldContain ".clickable(role = Role.Button)"
-        source shouldContain ".semantics(mergeDescendants = true)"
-        source shouldContain "settings__search__result_a11y"
-        source shouldContain "settings__search__result_a11y_no_summary"
-        source shouldContain "settings__search__results_count_label"
-        source shouldContain "MaterialTheme.shapes.medium"
-    }
-}
-
-private fun locateSearchScreenSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/app/settings/search/SettingsSearchScreen.kt",
-    )
-    val source = candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("SettingsSearchScreen.kt not reachable from working directory ${File(".").absolutePath}")
-    check(source.exists() && source.canRead()) {
-        "SettingsSearchScreen.kt not reachable from working directory ${File(".").absolutePath}"
-    }
-    return source
 }

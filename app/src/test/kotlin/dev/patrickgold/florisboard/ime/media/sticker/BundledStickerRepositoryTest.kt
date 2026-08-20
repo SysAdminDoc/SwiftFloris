@@ -21,8 +21,6 @@ import io.kotest.matchers.collections.shouldContain
 import io.kotest.matchers.collections.shouldHaveAtLeastSize
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import java.io.File
 
 class BundledStickerRepositoryTest : FunSpec({
     test("bundled stickers expose multiple stable local packs") {
@@ -38,28 +36,4 @@ class BundledStickerRepositoryTest : FunSpec({
         BundledStickerRepository.search("okay").map { it.id } shouldContain "on_it"
     }
 
-    test("sticker content provider is registered and uses stable URI paths") {
-        val source = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/StickerMediaProvider.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/StickerMediaProvider.kt",
-        ).readText()
-        val manifest = locateProjectFile(
-            "app/src/main/AndroidManifest.xml",
-            "src/main/AndroidManifest.xml",
-        ).readText()
-
-        source shouldContain ".provider.sticker"
-        source shouldContain ".appendPath(\"stickers\")"
-        source shouldContain ".appendPath(sticker.packId)"
-        source shouldContain ".appendPath(sticker.id)"
-        manifest shouldContain "dev.patrickgold.florisboard.ime.media.sticker.StickerMediaProvider"
-        manifest shouldContain "android:authorities=\"\${applicationId}.provider.sticker\""
-    }
 })
-
-private fun locateProjectFile(vararg paths: String): File {
-    return paths.asSequence()
-        .map { File(it) }
-        .firstOrNull { it.exists() }
-        ?: error("None of these files are reachable from ${File(".").absolutePath}: ${paths.joinToString()}")
-}

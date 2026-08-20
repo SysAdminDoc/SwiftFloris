@@ -144,9 +144,10 @@ Out of scope:
 - `learnWord` writes only to the app-private Floris Room database under
   `getDataDir()`. **Never** to the system `UserDictionary` ContentProvider, which is
   queryable by any app holding `READ_USER_DICTIONARY`.
-- Regression-tested in `PersonalDictionaryIsolationTest` — static-content
-  inspection of `DictionaryManager.kt` `learnWord` body fails the build if a
-  future contributor accidentally references `systemUserDictionaryDao`.
+- Regression-tested on the attached Android device by
+  `PersonalDictionaryManagerRuntimeTest`. The test proves that `learnWord`
+  persists only to the app-private Room database, leaves the system
+  `UserDictionary` DAO absent, and respects the disabled-dictionary preference.
 - `enableSystemUserDictionary` is opt-in; even when on, it only **reads** from
   the system provider, never writes. System mode exposes a read-only DAO, and
   the SwiftFloris Settings screen disables add/edit/delete/import actions. Users
@@ -275,8 +276,11 @@ Out of scope:
   is wired as a `finalizedBy` of each variant's `process<Variant>Manifest`, so any `assemble`/`bundle` of
   that variant exercises it. Assembling the release APK is therefore sufficient; running only
   `verifyNoInternetPermission` is not.
-- [ ] `PersonalDictionaryIsolationTest` passes locally.
-- [ ] `PersonalDictionaryEncryptionTest` passes locally; this includes the SQLCipher/Tink guard and confirms the personal dictionary Room source no longer contains `allowMainThreadQueries`.
+- [ ] `PersonalDictionaryManagerRuntimeTest` and
+  `PersonalDictionaryRoomSqlCipherRuntimeTest` pass locally; the attached
+  device tests cover private-store writes, persistence, and encrypted headers,
+  while `EncryptedDatabaseFilesTest` covers plaintext-file quarantine and
+  recovery.
 - [ ] APK signing fingerprint matches the value pinned in README (release-build only; debug builds use a per-developer keystore).
 - [ ] No new `TODO()` runtime stubs introduced (lint check or grep).
 

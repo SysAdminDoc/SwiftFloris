@@ -49,6 +49,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.keyboard.HoneycombKeyboardRow
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.DisplayName
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -60,7 +61,8 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class PendingKeyboardSurfacesScreenshotTest {
+@DisplayName("Roborazzi capture: pending keyboard surfaces")
+class RoborazziPendingKeyboardSurfacesCaptureTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 

@@ -66,6 +66,7 @@ import org.florisboard.lib.compose.FlorisProgressCard
 import org.florisboard.lib.compose.ProvideLocalizedResources
 import org.florisboard.lib.compose.stringRes
 import org.junit.Before
+import org.junit.jupiter.api.DisplayName
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -82,7 +83,8 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class SettingsRegressionMatrixScreenshotTest {
+@DisplayName("Roborazzi capture: settings regression matrix")
+class RoborazziSettingsRegressionMatrixCaptureTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 
@@ -215,7 +217,8 @@ class SettingsRegressionMatrixScreenshotTest {
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w640dp-h360dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class WideLandscapeSettingsScreenshotTest {
+@DisplayName("Roborazzi capture: wide landscape settings")
+class RoborazziWideLandscapeSettingsCaptureTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 

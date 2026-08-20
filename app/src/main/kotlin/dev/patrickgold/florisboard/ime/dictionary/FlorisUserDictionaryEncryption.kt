@@ -19,6 +19,7 @@ package dev.patrickgold.florisboard.ime.dictionary
 import android.content.Context
 import android.content.SharedPreferences
 import android.util.Log
+import dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFiles
 import dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCrypto
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 import java.io.File
@@ -32,8 +33,6 @@ private const val KEY_PREF_TINK = "sqlcipher_passphrase_tink_v1"
 private const val KEYSTORE_ALIAS = "swiftfloris_user_dictionary_sqlcipher_passphrase_v1"
 private const val LEGACY_KEY_PREF = "sqlcipher_passphrase_v1"
 private const val PASSPHRASE_BYTES = 64
-private val SQLITE_HEADER = "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
-
 internal object FlorisUserDictionaryEncryption {
     fun openHelperFactory(context: Context): SupportOpenHelperFactory? {
         return runCatching {
@@ -44,23 +43,11 @@ internal object FlorisUserDictionaryEncryption {
         }.getOrNull()
     }
 
-    fun isPlaintextSqliteDatabase(file: File): Boolean {
-        if (!file.isFile || file.length() < SQLITE_HEADER.size) return false
-        return runCatching {
-            file.inputStream().use { input ->
-                val header = ByteArray(SQLITE_HEADER.size)
-                input.read(header) == SQLITE_HEADER.size && looksLikePlaintextSqliteHeader(header)
-            }
-        }.getOrDefault(false)
-    }
+    fun isPlaintextSqliteDatabase(file: File): Boolean =
+        EncryptedDatabaseFiles.isPlaintextSqliteDatabase(file)
 
-    internal fun looksLikePlaintextSqliteHeader(header: ByteArray): Boolean {
-        if (header.size < SQLITE_HEADER.size) return false
-        for (index in SQLITE_HEADER.indices) {
-            if (header[index] != SQLITE_HEADER[index]) return false
-        }
-        return true
-    }
+    internal fun looksLikePlaintextSqliteHeader(header: ByteArray): Boolean =
+        EncryptedDatabaseFiles.looksLikePlaintextSqliteHeader(header)
 
     private fun getOrCreatePassphrase(context: Context): ByteArray {
         val appContext = context.applicationContext ?: context

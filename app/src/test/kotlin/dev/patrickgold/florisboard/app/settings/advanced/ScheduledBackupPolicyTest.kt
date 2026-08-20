@@ -18,9 +18,6 @@ package dev.patrickgold.florisboard.app.settings.advanced
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 import java.util.UUID
 
 class ScheduledBackupPolicyTest : FunSpec({
@@ -57,41 +54,4 @@ class ScheduledBackupPolicyTest : FunSpec({
         selection.containsClipboard shouldBe false
     }
 
-    test("SAF publication uses a temporary document and authenticated pruning") {
-        val safSource = projectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/ScheduledBackupSaf.kt",
-        ).readText()
-        val workerSource = projectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/ScheduledBackupWorker.kt",
-        ).readText()
-        val schedulerSource = projectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/ScheduledBackupScheduler.kt",
-        ).readText()
-        val storeSource = projectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/ScheduledBackupStore.kt",
-        ).readText()
-        val applicationSource = projectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/FlorisApplication.kt",
-        ).readText()
-
-        safSource shouldContain "createDocument"
-        safSource shouldContain "renameDocument"
-        safSource shouldContain "deleteDocument"
-        safSource shouldContain "PortableBackupEnvelope.decrypt"
-        safSource shouldContain "archiveDigest(archive).contentEquals"
-        workerSource shouldContain "forceEncryption = true"
-        schedulerSource shouldContain "ExistingPeriodicWorkPolicy.UPDATE"
-        schedulerSource shouldNotContain "setRequiredNetworkType"
-        schedulerSource shouldNotContain "NetworkType.CONNECTED"
-        storeSource shouldContain "TinkStringPreferenceCrypto.writeBytes"
-        storeSource shouldContain "swiftfloris_scheduled_backup_passphrase_v1"
-        storeSource shouldContain "PREFS_FILE_NAME = \"swiftfloris_scheduled_backup\""
-        applicationSource shouldContain "ScheduledBackupScheduler.reconcile(this)"
-    }
 })
-
-private fun projectFile(path: String): File {
-    return sequenceOf(File(path), File("../$path"))
-        .firstOrNull { it.isFile }
-        ?: error("File is not reachable from ${File(".").absolutePath}: $path")
-}

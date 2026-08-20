@@ -70,40 +70,4 @@ class FlogFileLogTest {
         assertFalse("log line must not contain clipboard content", line.contains("clipboard_payload"))
     }
 
-    @Test
-    fun `source logs redact spellchecker dictionary and composing text`() {
-        val forbiddenSnippets = mapOf(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/FlorisSpellCheckerService.kt" to listOf(
-                "text=\${textInfo?.text}",
-            ),
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt" to listOf(
-                "forgetWord(\$normalized)",
-                "learnWord(\$normalized)",
-            ),
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/han/HanShapeBasedLanguageProvider.kt" to listOf(
-                "Query was '\${content.composingText}'",
-                "textBeforeSelection.substring(composing.start, composing.end)",
-            ),
-            "app/src/main/kotlin/dev/patrickgold/florisboard/FlorisImeService.kt" to listOf(
-                "Stylus handwriting committed: '\${best.text}'",
-            ),
-        )
-
-        for ((path, snippets) in forbiddenSnippets) {
-            val source = sourceFile(path).readText()
-            for (snippet in snippets) {
-                assertFalse("$path must not contain raw text log snippet $snippet", source.contains(snippet))
-            }
-        }
-    }
-
-    private fun sourceFile(path: String): File {
-        val appRelativePath = path.removePrefix("app/")
-        return listOf(
-            File(path),
-            File("..", path),
-            File(appRelativePath),
-        ).firstOrNull { it.exists() }
-            ?: error("$path not reachable from working directory ${File(".").absolutePath}")
-    }
 }

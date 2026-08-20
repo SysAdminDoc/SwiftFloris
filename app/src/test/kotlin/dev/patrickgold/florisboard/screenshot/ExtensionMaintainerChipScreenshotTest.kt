@@ -28,6 +28,7 @@ import dev.patrickgold.florisboard.app.ext.ExtensionMaintainerChip
 import dev.patrickgold.florisboard.lib.ext.ExtensionMaintainer
 import org.junit.Rule
 import org.junit.Test
+import org.junit.jupiter.api.DisplayName
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
@@ -68,7 +69,8 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class ExtensionMaintainerChipScreenshotTest {
+@DisplayName("Roborazzi capture: extension maintainer chip")
+class RoborazziExtensionMaintainerChipCaptureTest {
 
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()

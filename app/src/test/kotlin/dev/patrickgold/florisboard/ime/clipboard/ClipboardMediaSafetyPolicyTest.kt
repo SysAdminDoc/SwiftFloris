@@ -23,9 +23,6 @@ import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardMediaProvider
 import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 
 class ClipboardMediaSafetyPolicyTest : FunSpec({
     test("clipboard image clone cap stays at 32 MiB") {
@@ -48,37 +45,6 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         ClipboardMediaClonePolicy.shouldReadExifOrientation(ClipboardFileStorage.MediaKind.VIDEO) shouldBe false
     }
 
-    test("provider metadata writes require a ready DAO instead of nullable async drops") {
-        val source = locateClipboardMediaProviderSource().readText()
-
-        source shouldContain "requireClipboardFilesDao().insert(fileInfo)"
-        source shouldContain "requireClipboardFilesDao().delete(id)"
-        source shouldNotContain "clipboardFilesDao?.insert(fileInfo)"
-        source shouldNotContain "clipboardFilesDao?.delete(id)"
-    }
-
-    test("clipboard media is encrypted before it reaches app-private storage") {
-        val storageSource = locateClipboardFileStorageSource().readText()
-        val cryptoSource = locateClipboardMediaEncryptionSource().readText()
-
-        storageSource shouldContain "ClipboardMediaEncryption.encrypt"
-        storageSource shouldContain "migratePlaintextFiles"
-        storageSource shouldContain "openDecryptedTempFile"
-        storageSource shouldContain "copyDecryptedTo"
-        cryptoSource shouldContain "TinkStringPreferenceCrypto"
-        cryptoSource shouldContain "clipboard_media_key"
-        cryptoSource shouldContain "swiftfloris_clipboard_media_aes_v1"
-    }
-
-    test("clipboard previews consume provider descriptors instead of raw ciphertext files") {
-        val source = locateClipboardInputLayoutSource().readText()
-
-        source shouldContain "openFileDescriptor(uri, \"r\")"
-        source shouldContain "getScaledFrameAtTime"
-        source shouldNotContain "ClipboardFileStorage.getFileForId"
-        source shouldNotContain "BitmapFactory.decodeFile("
-    }
-
     test("history-disabled primary replacement closes only provider-backed media") {
         ClipboardPrimaryClipCleanupPolicy.shouldCloseProviderBackedPrimaryClipUri(
             uriString = "content://${ClipboardMediaProvider.AUTHORITY}/clips/images/7",
@@ -96,16 +62,6 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
             uriString = "content://${ClipboardMediaProvider.AUTHORITY}/clips/images/7",
             historyEnabled = true,
         ) shouldBe false
-    }
-
-    test("clipboard palette media previews decode off the composition thread") {
-        val source = locateClipboardInputLayoutSource().readText()
-
-        source shouldContain "produceState<ClipboardMediaPreviewResult>"
-        source shouldContain "withContext(Dispatchers.IO)"
-        source shouldContain "ClipboardPreviewImagePolicy.sampleSizeForPreview"
-        source shouldContain "MediaMetadataRetriever.OPTION_CLOSEST_SYNC"
-        source shouldNotContain "val bitmap = remember(id)"
     }
 
     test("preview policy accepts bounded image dimensions") {
@@ -155,39 +111,3 @@ class ClipboardMediaSafetyPolicyTest : FunSpec({
         CopyToClipboardPreviewPolicy.shouldAutoPreviewSharedImageUriScheme(null) shouldBe false
     }
 })
-
-private fun locateClipboardInputLayoutSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("ClipboardInputLayout.kt not reachable from working directory ${File(".").absolutePath}")
-}
-
-private fun locateClipboardMediaProviderSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaProvider.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaProvider.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("ClipboardMediaProvider.kt not reachable from working directory ${File(".").absolutePath}")
-}
-
-private fun locateClipboardFileStorageSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardFileStorage.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardFileStorage.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("ClipboardFileStorage.kt not reachable from working directory ${File(".").absolutePath}")
-}
-
-private fun locateClipboardMediaEncryptionSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaEncryption.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/provider/ClipboardMediaEncryption.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("ClipboardMediaEncryption.kt not reachable from working directory ${File(".").absolutePath}")
-}

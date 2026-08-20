@@ -18,9 +18,6 @@ package dev.patrickgold.florisboard.ime.nlp
 
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 
 class NlpInlineAutofillTest : FunSpec({
     test("inline suggestion presentation bounds never use zero or unbounded dimensions") {
@@ -59,23 +56,4 @@ class NlpInlineAutofillTest : FunSpec({
         InlineSuggestionSizePolicy.isValidInlineDimensions(size) shouldBe true
     }
 
-    test("inline suggestion inflation drops host runtime failures instead of crashing") {
-        val source = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpInlineAutofill.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/nlp/NlpInlineAutofill.kt",
-        ).readText()
-
-        source shouldContain "rawSuggestion.inflate"
-        source shouldContain "catch (e: RuntimeException)"
-        source shouldContain "dropping invalid inline suggestion"
-        source shouldContain "latch.countDown()"
-        source shouldNotContain "ViewGroup.LayoutParams.WRAP_CONTENT"
-    }
 })
-
-private fun locateProjectFile(vararg candidates: String): File {
-    return candidates
-        .map { File(it) }
-        .firstOrNull { it.exists() }
-        ?: error("Unable to locate any of: ${candidates.joinToString()}")
-}

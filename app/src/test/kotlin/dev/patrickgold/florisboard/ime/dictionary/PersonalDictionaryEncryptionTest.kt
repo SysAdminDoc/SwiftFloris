@@ -19,156 +19,16 @@ package dev.patrickgold.florisboard.ime.dictionary
 import dev.patrickgold.florisboard.ime.security.TinkStringPreferenceCrypto
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 import java.nio.ByteBuffer
 
 /**
- * ROADMAP N7.4 — personal dictionary encryption regression guard.
+ * JVM-safe regression checks for the value parsers used by the encrypted dictionary.
  *
- * The Android Keystore, SQLCipher native library, and Room open-helper stack are
- * device/runtime services, so this JVM test protects the source-level contract:
- * the Floris personal dictionary must be opened through SQLCipher, its
- * passphrase must be wrapped by Tink with an AndroidKeystore-held key, legacy
- * AndroidX encrypted preferences must migrate once, and backup rules must not
- * create a restored encrypted DB without the non-portable key material.
+ * The SQLCipher open-helper, Keystore key, Room database, and recovery paths are exercised by
+ * [PersonalDictionaryRoomSqlCipherRuntimeTest] on Android. File move, restore, and quarantine
+ * behavior is covered by [dev.patrickgold.florisboard.ime.security.EncryptedDatabaseFilesTest].
  */
 class PersonalDictionaryEncryptionTest : FunSpec({
-    test("Floris user dictionary Room database is opened through SQLCipher") {
-        val source = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
-        ).readText()
-
-        source shouldContain "FlorisUserDictionaryEncryption.openHelperFactory"
-        source shouldContain ".openHelperFactory(factory)"
-        source shouldContain "migratePlaintextFlorisUserDictionaryIfNecessary"
-        source shouldContain "openVerifiedEncryptedFlorisUserDictionary"
-        source shouldContain "runBlocking(Dispatchers.IO)"
-        source shouldNotContain "allowMainThreadQueries"
-    }
-
-    test("encrypted dictionary recovery preserves unreadable stores instead of deleting them") {
-        val source = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/DictionaryManager.kt",
-        ).readText()
-
-        source shouldContain "quarantineFlorisUserDictionaryDatabaseFiles(context, \"unreadable\")"
-        source shouldContain "quarantineFlorisUserDictionaryDatabaseFiles(context, \"failed-migration\")"
-        source shouldContain "replacement aborted because the unreadable store could not be preserved"
-        source shouldContain "renameTo(quarantine)"
-        source shouldNotContain "deleteFlorisUserDictionaryDatabaseFiles"
-        source shouldNotContain "context.deleteDatabase(FlorisUserDictionaryDatabase.DB_FILE_NAME)"
-    }
-
-    test("SQLCipher passphrase is generated locally and wrapped by Tink AndroidKeystore") {
-        val dictionarySource = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/FlorisUserDictionaryEncryption.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/FlorisUserDictionaryEncryption.kt",
-        ).readText()
-        val cryptoSource = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCrypto.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCrypto.kt",
-        ).readText()
-
-        dictionarySource shouldContain "System.loadLibrary(SQLCIPHER_LIBRARY)"
-        dictionarySource shouldContain "SupportOpenHelperFactory"
-        dictionarySource shouldContain "TinkStringPreferenceCrypto.readBytes"
-        dictionarySource shouldContain "TinkStringPreferenceCrypto.writeBytes"
-        dictionarySource shouldContain "SecureRandom().nextBytes"
-        cryptoSource shouldContain "AndroidKeystore.generateNewAes256GcmKey"
-        cryptoSource shouldContain "AndroidKeystore.getAead"
-        cryptoSource shouldContain "createIfMissing = false"
-        cryptoSource shouldContain "createIfMissing = true"
-        cryptoSource shouldContain "associatedData(prefsFileName, key)"
-        cryptoSource shouldContain ".commit()"
-        dictionarySource shouldNotContain "androidx.security.crypto"
-        cryptoSource shouldNotContain "androidx.security.crypto"
-    }
-
-    test("legacy AndroidX encrypted preference passphrases are one-shot migrated via Tink") {
-        val dictionarySource = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/FlorisUserDictionaryEncryption.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/dictionary/FlorisUserDictionaryEncryption.kt",
-        ).readText()
-        val cryptoSource = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCrypto.kt",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/security/TinkStringPreferenceCrypto.kt",
-        ).readText()
-
-        dictionarySource shouldContain "LEGACY_KEY_PREF"
-        dictionarySource shouldContain "TinkStringPreferenceCrypto.readLegacyEncryptedString"
-        dictionarySource shouldContain "persistWrappedPassphrase(prefs, legacyPassphrase)"
-        cryptoSource shouldContain "LEGACY_KEY_KEYSET_ALIAS"
-        cryptoSource shouldContain "LEGACY_VALUE_KEYSET_ALIAS"
-        cryptoSource shouldContain "LEGACY_MASTER_KEY_URI"
-        cryptoSource shouldContain "AndroidKeysetManager.Builder"
-        cryptoSource shouldContain "DeterministicAeadConfig.register"
-        cryptoSource shouldContain "AeadConfig.register"
-    }
-
-    test("clipboard history uses the Room-backed manager, not a parallel Tink store") {
-        val clipboardDir = locateProjectFile(
-            "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard",
-            "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard",
-        )
-        val clipboardSource = File(clipboardDir, "ClipboardManager.kt").readText()
-
-        File(clipboardDir, "ClipboardHistoryManager.kt").exists() shouldBe false
-        clipboardSource shouldContain "ClipboardHistoryDatabase"
-        clipboardSource shouldContain "ClipboardHistoryDao"
-        clipboardSource shouldNotContain "TinkStringPreferenceCrypto"
-        clipboardSource shouldNotContain "clipboard_history_tink_v1"
-    }
-
-    test("SQLCipher, AndroidX SQLite, and Tink dependencies are declared") {
-        val source = locateProjectFile(
-            "gradle/libs.versions.toml",
-            "../gradle/libs.versions.toml",
-        ).readText()
-        val buildScript = locateProjectFile(
-            "app/build.gradle.kts",
-            "build.gradle.kts",
-        ).readText()
-
-        // Version floors for these three are owned by .github/security-dependency-freshness.json
-        // and enforced by scripts/check-security-dependency-freshness.py. Repeating the pinned
-        // versions here gave them a second owner that drifted on every bump, so this test asserts
-        // only that the dependencies are declared at all.
-        source shouldContain "net.zetetic:sqlcipher-android"
-        source shouldContain "androidx.sqlite:sqlite"
-        source shouldContain "com.google.crypto.tink:tink-android"
-        buildScript shouldNotContain "security-crypto"
-    }
-
-    test("backup rules do not transfer encrypted personal dictionary without its key") {
-        val source = locateProjectFile(
-            "app/src/main/res/xml-v31/backup_rules.xml",
-            "src/main/res/xml-v31/backup_rules.xml",
-        ).readText()
-
-        source shouldContain "SQLCipher database key"
-        source shouldNotContain "path=\"floris_user_dictionary\""
-    }
-
-    test("pre Android 12 backup rules allowlist only non typing state") {
-        val source = locateProjectFile(
-            "app/src/main/res/xml/backup_rules.xml",
-            "src/main/res/xml/backup_rules.xml",
-        ).readText()
-
-        source shouldContain "<full-backup-content>"
-        source shouldContain "path=\"jetpref_datastore\""
-        source shouldContain "path=\"ime\""
-        source shouldNotContain "path=\"personal_bigrams"
-        source shouldNotContain "path=\"personal_trigrams"
-        source shouldNotContain "path=\"correction_outcome_priors"
-        source shouldNotContain "path=\"swiftkey_typing_traces"
-        source shouldNotContain "path=\"swiftkey_trace.enabled"
-    }
-
     test("plaintext SQLite header detection distinguishes migrated and encrypted files") {
         val sqliteHeader = "SQLite format 3\u0000".toByteArray(Charsets.US_ASCII)
         val encryptedLikeHeader = ByteArray(sqliteHeader.size) { 0x42 }
@@ -201,10 +61,3 @@ class PersonalDictionaryEncryptionTest : FunSpec({
         TinkStringPreferenceCrypto.decodeLegacyStringPreferenceValue(byteArrayOf(1, 2, 3)) shouldBe null
     }
 })
-
-private fun locateProjectFile(vararg paths: String): File {
-    return paths.asSequence()
-        .map { File(it) }
-        .firstOrNull { it.exists() }
-        ?: error("None of these files are reachable from ${File(".").absolutePath}: ${paths.joinToString()}")
-}

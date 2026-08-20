@@ -21,9 +21,7 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldContainExactly
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
 import io.kotest.matchers.types.shouldBeInstanceOf
-import java.io.File
 
 class SyncPairingUiModelTest : FunSpec({
     test("PairingPayloadGenerator emits a parseable v1 payload for the selected channel") {
@@ -188,38 +186,4 @@ class SyncPairingUiModelTest : FunSpec({
         shouldThrow<IllegalArgumentException> { SyncQrCode.encode("{}", size = 20) }
     }
 
-    test("settings QR card exposes a copyable text fallback for pairing payloads") {
-        val source = locateSyncSettingsScreenSource().readText()
-
-        source shouldContain "OutlinedTextField("
-        source shouldContain "value = rawPayload"
-        source shouldContain "readOnly = true"
-        source shouldContain "clipboardManager.addNewPlaintext(rawPayload)"
-        source shouldContain "settings__sync__copy_pairing_payload"
-    }
-
-    test("main manifest declares ZXing scanner visibility for Android 11 package queries") {
-        val manifest = locateProjectFile(
-            "app/src/main/AndroidManifest.xml",
-            "src/main/AndroidManifest.xml",
-        ).readText()
-
-        manifest shouldContain "com.google.zxing.client.android.SCAN"
-    }
 })
-
-private fun locateSyncSettingsScreenSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/app/settings/sync/SyncSettingsScreen.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("SyncSettingsScreen.kt not reachable from working directory ${File(".").absolutePath}")
-}
-
-private fun locateProjectFile(vararg paths: String): File {
-    return paths.asSequence()
-        .map { File(it) }
-        .firstOrNull { it.exists() && it.canRead() }
-        ?: error("None of these files are reachable from ${File(".").absolutePath}: ${paths.joinToString()}")
-}

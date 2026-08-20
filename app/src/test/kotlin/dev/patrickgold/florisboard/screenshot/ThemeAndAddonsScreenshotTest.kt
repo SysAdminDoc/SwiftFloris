@@ -81,6 +81,7 @@ import org.florisboard.lib.snygg.ui.SnyggText
 import org.florisboard.lib.snygg.ui.rememberSnyggTheme
 import org.junit.After
 import org.junit.Before
+import org.junit.jupiter.api.DisplayName
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -94,7 +95,8 @@ import org.robolectric.annotation.GraphicsMode
 @RunWith(AndroidJUnit4::class)
 @Config(qualifiers = "w360dp-h640dp-xxhdpi", sdk = [35])
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
-class ThemeAndAddonsScreenshotTest {
+@DisplayName("Roborazzi capture: theme and addon surfaces")
+class RoborazziThemeAndAddonsCaptureTest {
     @get:Rule
     val composeRule = createAndroidComposeRule<RoborazziHostActivity>()
 

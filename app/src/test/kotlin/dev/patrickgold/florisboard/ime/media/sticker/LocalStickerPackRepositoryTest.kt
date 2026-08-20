@@ -20,8 +20,6 @@ import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.nulls.shouldNotBeNull
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.file.Files
@@ -81,17 +79,6 @@ class LocalStickerPackRepositoryTest : FunSpec({
         dir.listFiles { file ->
             file.name.startsWith(LocalStickerPackRepository.ManifestFileName) && file.name.endsWith(".tmp")
         }?.toList().orEmpty() shouldBe emptyList()
-    }
-
-    test("manifest persistence replaces by synced move instead of copy-over-target") {
-        val source = locateRepositorySource().readText()
-
-        source shouldContain "File.createTempFile(\"${'$'}ManifestFileName-\", \".tmp\", storageDir)"
-        source shouldContain "output.fd.sync()"
-        source shouldContain "StandardCopyOption.ATOMIC_MOVE"
-        source shouldContain "StandardCopyOption.REPLACE_EXISTING"
-        source shouldContain "moveReplacing(tempFile, manifestFile)"
-        source shouldNotContain "copyTo(manifestFile, overwrite = true)"
     }
 
     test("exports and imports a portable sticker-pack archive") {
@@ -223,15 +210,6 @@ class LocalStickerPackRepositoryTest : FunSpec({
 
 private fun tempDir(): File {
     return Files.createTempDirectory("swiftfloris-local-stickers-").toFile().also { it.deleteOnExit() }
-}
-
-private fun locateRepositorySource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/LocalStickerPackRepository.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/media/sticker/LocalStickerPackRepository.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("LocalStickerPackRepository.kt not reachable from working directory ${File(".").absolutePath}")
 }
 
 private fun samplePngBytes(): ByteArray {

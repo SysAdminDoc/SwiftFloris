@@ -438,7 +438,7 @@ private fun PreviewInstalledAddonRow() {
             manifest = previewAddonManifest(
                 type = AddonType.THEME_PACK,
                 displayName = "Midnight Contrast Theme Pack",
-                packageName = "io.github.sysadmindoc.swiftfloris.addons.theme.midnight",
+                packageName = "io.github.sysadmindoc.swiftfloris.addons.midnight",
             ),
         )
     }

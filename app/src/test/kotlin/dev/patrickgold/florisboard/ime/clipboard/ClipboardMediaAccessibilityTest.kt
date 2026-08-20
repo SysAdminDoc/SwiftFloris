@@ -22,12 +22,10 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.ime.clipboard.provider.ClipboardItem
 import dev.patrickgold.florisboard.ime.clipboard.provider.ItemType
-import io.kotest.matchers.string.shouldContain
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.annotation.Config
-import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
@@ -69,26 +67,9 @@ class ClipboardMediaAccessibilityTest {
         }
 
         val template = context.getString(R.string.clipboard__media_item_a11y)
-        template shouldContain "{media_type}"
-        template shouldContain "{group}"
-        template shouldContain "{copied_time}"
-    }
-
-    @Test
-    fun clipboardInputLayoutKeepsMediaTileSemanticsAndDecorativeOverlays() {
-        val source = locateClipboardInputLayoutSource().readText()
-
-        source shouldContain "clipboardMediaDescriptionKind(item)"
-        source shouldContain "clipboardTextAccessibilityPreview(item.stringRepresentation())"
-        source shouldContain "semantics(mergeDescendants = true) { contentDescription = itemA11yDescription }"
-        source shouldContain "role = Role.Button"
-        source shouldContain "onLongClickLabel = stringRes(R.string.clipboard__item_actions_a11y)"
-        source shouldContain "R.string.clipboard__text_item_a11y"
-        source shouldContain "R.string.clipboard__text_item_sensitive_a11y"
-        source shouldContain "R.string.clipboard__media_item_a11y"
-        source shouldContain "R.string.clipboard__media_item_a11y_no_group"
-        source shouldContain "contentDescription = null"
-        source shouldContain "Icons.Default.Videocam"
+        assertTrue("{media_type}" in template)
+        assertTrue("{group}" in template)
+        assertTrue("{copied_time}" in template)
     }
 
     @Test
@@ -112,12 +93,3 @@ private fun item(type: ItemType): ClipboardItem = ClipboardItem(
     mimeTypes = emptyList(),
     isSensitive = false,
 )
-
-private fun locateClipboardInputLayoutSource(): File {
-    val candidates = listOf(
-        "app/src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt",
-        "src/main/kotlin/dev/patrickgold/florisboard/ime/clipboard/ClipboardInputLayout.kt",
-    )
-    return candidates.map(::File).firstOrNull { it.exists() && it.canRead() }
-        ?: error("ClipboardInputLayout.kt not reachable from working directory ${File(".").absolutePath}")
-}

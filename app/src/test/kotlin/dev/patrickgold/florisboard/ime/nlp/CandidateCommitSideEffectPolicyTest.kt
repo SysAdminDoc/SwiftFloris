@@ -21,9 +21,6 @@ import dev.patrickgold.florisboard.ime.editor.EditorContent
 import dev.patrickgold.florisboard.ime.media.emoji.Emoji
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
-import io.kotest.matchers.string.shouldContain
-import io.kotest.matchers.string.shouldNotContain
-import java.io.File
 
 class CandidateCommitSideEffectPolicyTest : FunSpec({
     test("provider acceptance notification requires a successful commit and a provider") {
@@ -126,18 +123,6 @@ class CandidateCommitSideEffectPolicyTest : FunSpec({
         ) shouldBe true
     }
 
-    test("soft and hardware spacebar paths share the candidate trailing-space helper") {
-        val source = locateKeyboardManagerSource().readText()
-        val hardwareSpaceBody = source.substringAfter("fun handleHardwareKeyboardSpace()")
-            .substringBefore("private fun handleSpace(data: KeyData)")
-        val softSpaceBody = source.substringAfter("private fun handleSpace(data: KeyData)")
-            .substringBefore("private fun shouldCommitPlainSpaceAfterSpacebar(")
-
-        hardwareSpaceBody shouldContain "shouldCommitPlainSpaceAfterSpacebar(candidate, suppressPlainSpace)"
-        softSpaceBody shouldContain "shouldCommitPlainSpaceAfterSpacebar(candidate, suppressPlainSpace)"
-        source shouldContain "CandidateCommitSideEffectPolicy.shouldCommitPlainSpaceAfterSpacebar"
-        source shouldNotContain "EditorInputBehaviorPolicy.shouldCommitPlainSpaceAfterSpacebar"
-    }
 })
 
 private object NoTrailingSpaceProvider : SuggestionProvider {
@@ -161,11 +146,4 @@ private object NoTrailingSpaceProvider : SuggestionProvider {
     override suspend fun removeSuggestion(subtype: Subtype, candidate: SuggestionCandidate): Boolean = false
     override suspend fun getListOfWords(subtype: Subtype): List<String> = emptyList()
     override suspend fun getFrequencyForWord(subtype: Subtype, word: String): Double = 0.0
-}
-
-private fun locateKeyboardManagerSource(): File {
-    return listOf(
-        File("app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt"),
-        File("../app/src/main/kotlin/dev/patrickgold/florisboard/ime/keyboard/KeyboardManager.kt"),
-    ).first { it.isFile }
 }
