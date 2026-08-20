@@ -96,7 +96,18 @@ fun MigrationAssistantScreen() = FlorisScreen {
                 icon = Icons.Default.Lock,
                 title = stringRes(R.string.settings__migration_assistant__encrypted_title),
                 summary = stringRes(R.string.settings__migration_assistant__encrypted_summary),
-                onClick = { navController.navigate(Routes.Settings.Restore) },
+                // .sfexp is produced and consumed by the personal dictionary
+                // screen, not by the archive Restore flow. The import picker
+                // detects the encrypted envelope and prompts for the
+                // passphrase, so the same IMPORT action serves both cases.
+                onClick = {
+                    navController.navigate(
+                        Routes.Settings.UserDictionary(
+                            type = UserDictionaryType.FLORIS,
+                            action = UserDictionaryScreenAction.IMPORT,
+                        ),
+                    )
+                },
             )
             Preference(
                 icon = Icons.Default.ContentPaste,

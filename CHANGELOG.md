@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+- Repair two dead ends in the migration flow: the "SwiftFloris encrypted backup
+  (.sfexp)" tile now opens the personal dictionary import picker, which detects
+  the encrypted envelope and prompts for the passphrase, instead of the archive
+  Restore screen that cannot read it; and an archive storing its dictionary as a
+  SQLite snapshot now explains how to re-export it rather than pointing at an
+  import path that does not exist.
 - Correct four public docs that described protections the code does not have:
   the personal dictionary passphrase is Keystore-wrapped rather than
   Keystore-held, the Tasker receiver is gated by a default-off preference and a

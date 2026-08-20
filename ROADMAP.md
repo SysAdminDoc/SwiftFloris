@@ -26,13 +26,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: either a SwiftFloris-owned Crowdin project is configured and a local script can push source strings and pull translations, or `crowdin.yml` is deleted and `CONTRIBUTING.md` documents a PR-based path; either way `scripts/check-locale-coverage.py` gains a ratchet on fork-added string coverage so the gap cannot silently widen. Resolving the ownership question in RESEARCH.md's Open Questions comes first.
   Complexity: M
 
-- [ ] P1 — Repair the two dead ends in the migration flow
-  Why: the Migration Assistant's "SwiftFloris encrypted backup (.sfexp)" tile navigates to the archive Restore screen, which handles `.sfbak`/ZIP and has no dictionary path — `.sfexp` is produced and consumed only inside the user-dictionary screen. And the importer rejects `.db`/`.sqlite` entries with a message directing the user to an "Import .flbackup path" that exists nowhere in the app. Migration is the fork's headline on-ramp during the SwiftKey account retirement.
-  Evidence: `app/settings/dictionary/MigrationAssistantScreen.kt:95-100` vs `app/settings/dictionary/UserDictionaryScreen.kt:113,1148-1165`; `ime/dictionary/DictionaryImporter.kt:183-192`; `docs/MIGRATE_FROM_SWIFTKEY.md:121,149`
-  Touches: `app/settings/dictionary/MigrationAssistantScreen.kt`, `ime/dictionary/DictionaryImporter.kt`, `docs/MIGRATE_FROM_SWIFTKEY.md`, `app/src/main/res/values/strings.xml`
-  Acceptance: the encrypted-backup tile opens the `.sfexp` import flow; the `.flbackup` SQLite path either works or the error names a route that exists; `docs/MIGRATE_FROM_SWIFTKEY.md` describes only actions the UI offers.
-  Complexity: S
-
 ### P2
 
 - [ ] P2 — Replace source-text assertions with behavioural tests on the security paths

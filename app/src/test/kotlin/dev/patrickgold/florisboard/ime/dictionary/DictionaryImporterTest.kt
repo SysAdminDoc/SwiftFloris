@@ -20,6 +20,8 @@ import io.kotest.assertions.throwables.shouldThrow
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.collections.shouldHaveSize
 import io.kotest.matchers.shouldBe
+import io.kotest.matchers.string.shouldContain
+import io.kotest.matchers.string.shouldNotContain
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.util.zip.ZipEntry
@@ -183,17 +185,25 @@ class DictionaryImporterTest : FunSpec({
         }
     }
 
-    test("FlorisBoard SQLite-snapshot backup raises a clear in-app routing hint") {
-        // ROADMAP §7 Next-6.2 — .flbackup with a raw .db snapshot can't be
-        // round-tripped JVM-side, but the user-facing error must tell the
-        // user exactly where to find the in-app path.
+    test("FlorisBoard SQLite-snapshot backup explains how to re-export") {
+        // A .flbackup carrying a raw .db snapshot cannot be read JVM-side. The
+        // user-facing error used to send the user to an "Import .flbackup path"
+        // that does not exist anywhere in the app, so assert on the message and
+        // not merely on the exception type — that is what let the dead route
+        // survive.
         val zipBytes = makeZip(
             "backup.db" to ByteArray(16),
         )
 
-        shouldThrow<DictionaryImportException> {
+        val error = shouldThrow<DictionaryImportException> {
             importer.import(ByteArrayInputStream(zipBytes))
         }
+
+        val message = error.message.orEmpty()
+        message shouldContain "backup.db"
+        message shouldContain "CSV"
+        // The route named here must exist in the app.
+        message.lowercase() shouldNotContain "import .flbackup path"
     }
 
     test("unknown format raises a clear exception") {

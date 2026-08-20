@@ -181,14 +181,17 @@ class DictionaryImporter {
                         checkEntryLimit(found.size)
                     }
                     name.endsWith(".db") || name.endsWith(".sqlite") -> {
-                        // FlorisBoard backup with raw SQLite snapshot: not
-                        // supported in the JVM importer because we can't
-                        // open a SQLite database without Android's runtime.
-                        // The caller should route .db files to a separate
-                        // Android-side helper (deferred to a follow-up).
+                        // Some FlorisBoard/HeliBoard backups carry the personal
+                        // dictionary as a raw SQLite snapshot rather than the
+                        // CSV/JSON payload this importer reads. There is no
+                        // in-app route that opens such a snapshot, so the
+                        // message must not invent one: tell the user to
+                        // re-export in a supported format instead.
                         throw DictionaryImportException(
-                            "FlorisBoard SQLite snapshot import requires the device's Room runtime; " +
-                                "use the in-app Settings → Personal dictionary → Import .flbackup path.",
+                            "This archive stores its dictionary as a SQLite snapshot (${entry.name}), " +
+                                "which SwiftFloris cannot read. In the keyboard you are migrating from, " +
+                                "export the personal dictionary as CSV or JSON and import that file instead. " +
+                                "Archives whose dictionary is stored as CSV or JSON import normally.",
                         )
                     }
                 }
