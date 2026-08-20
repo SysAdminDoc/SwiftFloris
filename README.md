@@ -318,6 +318,13 @@ Report suspected vulnerabilities through [GitHub Security Advisories](https://gi
 
 SwiftFloris ships first-class **bilingual subtype presets** for SwiftKey-style EN+ES / EN+FR / EN+DE typing, plus per-token language identification over Latin-script subtypes (EN / ES / FR / DE / IT / PT). The multilingual ranker refuses to autocommit when the two strongest plausible replacement candidates come from different enrolled languages, so cross-language autocorrects stop bleeding into the wrong sentence.
 
+The Settings UI language is separate from the language you type in. Pick it under
+**Settings → Other → App language**, or, on Android 13 and newer, under
+**Android Settings → Apps → SwiftFloris → Language**. Both write the same value: the app
+declares `android:localeConfig`, so the system picker lists every shipped translation, and
+choosing one in either place is reflected in the other. Leaving it on the system default
+follows your device language.
+
 Android UI localization is reported separately from typing support. The English
 `values/` resources are the only currently reviewed UI-complete locale; every
 translated `values-*` directory is explicitly reported as partial/fallback

@@ -55,6 +55,31 @@ val projectVersionNameSuffix = projectVersionName.substringAfter("-", "").let { 
     }
 }
 
+/**
+ * BCP-47 tags for every UI translation this APK ships, derived from the `values-<locale>`
+ * resource directories that actually exist. The Settings language picker used to carry a
+ * hand-written list, which drifted: four shipped translations (Asturian, Estonian, Albanian
+ * and Urdu) had no entry and were unreachable from inside the app. Generating the list from
+ * the same directories AAPT reads means adding a translation is enough to publish it, and
+ * `AppUiLocaleTest` fails if the two ever disagree again.
+ *
+ * `values-night` is a UI-mode qualifier rather than a locale, so it is filtered out, and the
+ * `-r<REGION>` resource form is normalised to the BCP-47 `-<REGION>` form.
+ */
+fun shippedUiLocaleTags(): List<String> {
+    val localeDirectory = Regex("^values-([a-z]{2,3})(?:-r([A-Z]{2}))?$")
+    return file("src/main/res").listFiles()
+        .orEmpty()
+        .filter { it.isDirectory }
+        .mapNotNull { directory ->
+            localeDirectory.matchEntire(directory.name)?.let { match ->
+                val (language, region) = match.destructured
+                if (region.isEmpty()) language else "$language-$region"
+            }
+        }
+        .sorted()
+}
+
 kotlin {
     compilerOptions {
         jvmTarget.set(JvmTarget.JVM_11)
@@ -147,6 +172,14 @@ configure<ApplicationExtension> {
             "RELEASE_HISTORY",
             "\"${releaseHistoryExcerpt().escapeForBuildConfig()}\"",
         )
+        // Comma-separated BCP-47 tags for the shipped UI translations. Read by
+        // `AppUiLocale` so the Settings language picker and the generated
+        // `android:localeConfig` describe the same set of locales.
+        buildConfigField(
+            "String",
+            "SHIPPED_UI_LOCALES",
+            "\"${shippedUiLocaleTags().joinToString(separator = ",")}\"",
+        )
 
         sourceSets {
             maybeCreate("main").apply {
@@ -162,6 +195,14 @@ configure<ApplicationExtension> {
             // request to download the language resources for a specific locale.
             enableSplit = false
         }
+    }
+
+    androidResources {
+        // Generates `android:localeConfig` and its locale list from the shipped
+        // `values-<locale>` resources, which is what puts SwiftFloris under
+        // Android Settings -> Apps -> SwiftFloris -> Language on Android 13+.
+        // Without it the app's UI language can only follow the system.
+        generateLocaleConfig = true
     }
 
     buildFeatures {

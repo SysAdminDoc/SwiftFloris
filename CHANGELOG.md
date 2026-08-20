@@ -2,6 +2,17 @@
 
 ## v1.9.60 — 2026-08-20
 
+- Put SwiftFloris under Android Settings → Apps → Language on Android 13 and
+  newer. The app declared no `android:localeConfig`, so the system's per-app
+  language picker never listed it and the 43 shipped translations could only be
+  reached from inside the app.
+- Offer every shipped translation in the in-app language picker. Its list was
+  written by hand and had fallen four behind, so the Asturian, Estonian,
+  Albanian and Urdu translations shipped in the APK with no way to select them.
+  The list is now generated from the same resource directories the build reads.
+- Keep the in-app language choice and Android's per-app language in step: the
+  picker writes through to the system setting, and a language chosen in system
+  Settings wins at startup rather than being overwritten by the stored one.
 - Bring the build and library pins current: Gradle 9.7.1, AGP 9.3.1, Compose BOM
   2026.08.00, AndroidX Core 1.19.0, AndroidX SQLite 2.7.0, SQLCipher 4.18.0, Coil
   3.5.0, KSP 2.3.11, build tools 37.0.0 to match `compileSdk 37`, AboutLibraries

@@ -63,6 +63,7 @@ import dev.patrickgold.jetpref.datastore.model.collectAsState
 import dev.patrickgold.jetpref.datastore.ui.ProvideDefaultDialogPrefStrings
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.florisboard.lib.android.AndroidVersion
 import org.florisboard.lib.android.hideAppIcon
@@ -140,11 +141,29 @@ class FlorisAppActivity : ComponentActivity() {
         prefs.other.settingsTheme.asFlow().collectIn(lifecycleScope) {
             appTheme = it
         }
-        prefs.other.settingsLanguage.asFlow().collectIn(lifecycleScope) {
-            val config = Configuration(resources.configuration)
-            val locale = if (it == "auto") FlorisLocale.default() else FlorisLocale.fromTag(it)
-            config.setLocale(locale.base)
-            resourcesContext = createConfigurationContext(config)
+        lifecycleScope.launch {
+            // Android 13+ owns a per-app language of its own, reachable from system Settings. It
+            // is the more recently expressed intent when the two disagree, so let it win — and do
+            // it before the collector below starts, or the collector would write the stale stored
+            // tag back to the platform first.
+            AppUiLocale.reconcileStoredTag(
+                storedTag = prefs.other.settingsLanguage.get(),
+                systemTag = AppUiLocale.systemAppLocaleTag(this@FlorisAppActivity),
+            )?.let { prefs.other.settingsLanguage.set(it) }
+
+            prefs.other.settingsLanguage.asFlow().collect {
+                val config = Configuration(resources.configuration)
+                val locale = if (it == AppUiLocale.SYSTEM_DEFAULT_TAG) {
+                    FlorisLocale.default()
+                } else {
+                    FlorisLocale.fromTag(it)
+                }
+                config.setLocale(locale.base)
+                resourcesContext = createConfigurationContext(config)
+                // Write through so the choice shows up in system Settings and applies to surfaces
+                // this activity does not render. No-op below API 33.
+                AppUiLocale.applySystemAppLocale(this@FlorisAppActivity, it)
+            }
         }
         if (AndroidVersion.ATMOST_API28_P) {
             prefs.other.showAppIcon.asFlow().collectIn(lifecycleScope) {

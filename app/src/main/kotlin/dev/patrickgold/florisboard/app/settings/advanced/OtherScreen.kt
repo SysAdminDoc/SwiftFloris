@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.vectorResource
 import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.AppTheme
+import dev.patrickgold.florisboard.app.AppUiLocale
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
@@ -88,50 +89,11 @@ fun OtherScreen() = FlorisScreen {
                 icon = Icons.Default.Language,
                 title = stringRes(R.string.pref__other__settings_language__label),
                 entries = listPrefEntries {
-                    listOf(
-                        "auto",
-                        "ar",
-                        "bg",
-                        "bs",
-                        "ca",
-                        "ckb",
-                        "cs",
-                        "da",
-                        "de",
-                        "el",
-                        "en",
-                        "eo",
-                        "es",
-                        "fa",
-                        "fi",
-                        "fr",
-                        "hr",
-                        "hu",
-                        "in",
-                        "it",
-                        "iw",
-                        "ja",
-                        "ko-KR",
-                        "ku",
-                        "lv-LV",
-                        "mk",
-                        "nds-DE",
-                        "nl",
-                        "no",
-                        "pl",
-                        "pt",
-                        "pt-BR",
-                        "ru",
-                        "sk",
-                        "sl",
-                        "sr",
-                        "sv",
-                        "tr",
-                        "uk",
-                        "zgh",
-                        "zh-CN",
-                    ).map { languageTag ->
-                        if (languageTag == "auto") {
+                    // Generated from the shipped `values-<locale>` resources rather than
+                    // hand-written: the old list had drifted and left four translations
+                    // unreachable. See AppUiLocale.
+                    (listOf(AppUiLocale.SYSTEM_DEFAULT_TAG) + AppUiLocale.shippedTags).map { languageTag ->
+                        if (languageTag == AppUiLocale.SYSTEM_DEFAULT_TAG) {
                             entry(
                                 key = "auto",
                                 label = stringRes(R.string.settings__system_default),

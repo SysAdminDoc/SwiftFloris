@@ -70,13 +70,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: a test ingests a 120 KiB clip and a history full of near-limit entries, asserts the retention bound is applied off the main thread, and pins a search/filter budget over the encrypted store; the panel opens without a main-thread stall on the attached device.
   Complexity: M
 
-- [ ] P2 — Add `android:localeConfig` and an in-app UI language picker
-  Why: 43 locales ship but the manifest declares no `localeConfig` and nothing calls `LocaleManager`/`AppCompatDelegate.setApplicationLocales`, so on Android 13+ the app's UI language cannot be chosen in system settings or in-app — it always follows the system. Users typing in one language while wanting the settings UI in another have no route, and this is the standard axis privacy tool comparisons check.
-  Evidence: no `localeConfig`, `locales_config`, `LocaleManager` or `setApplicationLocales` anywhere in `app/src` or `lib/`; `app/src/main/res/values-*` ships 43 locale directories; https://developer.android.com/guide/topics/resources/app-languages
-  Touches: `app/src/main/AndroidManifest.xml`, `app/build.gradle.kts` (AGP `generateLocaleConfig`), `app/settings/localization/LocalizationScreen.kt`, `README.md`
-  Acceptance: the app appears under Android Settings → Apps → Language with the shipped locales listed, and a Settings entry sets the app locale independently of the typing subtype; the locale-coverage gate keeps the generated config and the shipped `values-*` directories in agreement.
-  Complexity: S
-
 ### P3
 
 - [ ] P3 — Offer scrambled digit layouts for PIN and numeric password fields
