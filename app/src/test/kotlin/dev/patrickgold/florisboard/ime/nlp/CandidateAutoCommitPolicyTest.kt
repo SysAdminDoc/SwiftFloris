@@ -137,6 +137,39 @@ class CandidateAutoCommitPolicyTest : FunSpec({
         ) shouldBe strongCorrection
     }
 
+    test("configured confidence threshold controls normal-mode replacement at its boundary") {
+        val boundaryCorrection = candidate("receive", confidence = 0.80, eligible = true)
+        val belowThresholdCorrection = candidate("received", confidence = 0.79, eligible = true)
+
+        CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectConfidenceThreshold = 0.80,
+            currentWord = "recieve",
+            currentWordStart = 0,
+            candidates = listOf(boundaryCorrection),
+            candidateSignals = mapOf("receive" to SwiftKeyCandidateSignals(languageConfidence = 1.0)),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = null,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        ) shouldBe boundaryCorrection
+
+        CandidateAutoCommitPolicy.selectAutoCommitCandidate(
+            autoCorrectEnabled = true,
+            autoCorrectConfidenceThreshold = 0.80,
+            currentWord = "recieve",
+            currentWordStart = 0,
+            candidates = listOf(belowThresholdCorrection),
+            candidateSignals = mapOf("received" to SwiftKeyCandidateSignals(languageConfidence = 1.0)),
+            keyVariation = KeyVariation.NORMAL,
+            rejectionPolicy = AutoCommitSuppression(),
+            userDictionaryShortcutCandidate = null,
+            immediatePhraseRepairCandidate = null,
+            immediateAutoCommitCandidate = null,
+        ) shouldBe null
+    }
+
     test("high confidence mode still honors explicit user dictionary shortcuts") {
         val shortcut = candidate("on my way", confidence = 0.20, eligible = true)
 

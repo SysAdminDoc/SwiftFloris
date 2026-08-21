@@ -192,7 +192,7 @@ class NlpManager(
                 return SpellingResult.validWord()
             }
         }
-        return providerRegistry.spellingProvider(subtype).spell(
+        val result = providerRegistry.spellingProvider(subtype).spell(
             subtype = subtype,
             word = word,
             precedingWords = precedingWords,
@@ -200,6 +200,13 @@ class NlpManager(
             maxSuggestionCount = maxSuggestionCount,
             allowPossiblyOffensive = !prefs.suggestion.blockPossiblyOffensive.get(),
             isPrivateSession = keyboardManager.activeState.isIncognitoMode,
+        )
+        return OffensiveWordPolicy.filterSpellingResult(
+            result = result,
+            tier = OffensiveWordPolicy.tier(
+                blockPossiblyOffensive = prefs.suggestion.blockPossiblyOffensive.get(),
+                blockSlursOnly = prefs.suggestion.blockSlursOnly.get(),
+            ),
         )
     }
 
@@ -254,6 +261,7 @@ class NlpManager(
             emojiMaxCandidateCount = prefs.emoji.suggestionCandidateMaxCount.get(),
             wordSuggestionEnabled = prefs.suggestion.enabled.get(),
             blockPossiblyOffensive = prefs.suggestion.blockPossiblyOffensive.get(),
+            blockSlursOnly = prefs.suggestion.blockSlursOnly.get(),
             isPrivateSession = keyboardManager.activeState.isIncognitoMode,
             isEditorSensitive = SensitiveFieldGuard.isSensitive(
                 editorInfo.inputAttributes.raw,
@@ -265,12 +273,15 @@ class NlpManager(
         activeSuggestionJob = scope.launch {
             val emojiSuggestions = when {
                 requestPrivacy.emojiSuggestionEnabled -> {
-                    emojiSuggestionProvider.suggest(
-                        subtype = subtype,
-                        content = content,
-                        maxCandidateCount = requestPrivacy.emojiMaxCandidateCount,
-                        allowPossiblyOffensive = requestPrivacy.allowPossiblyOffensive,
-                        isPrivateSession = requestPrivacy.isPrivateSession,
+                    OffensiveWordPolicy.filterCandidates(
+                        candidates = emojiSuggestionProvider.suggest(
+                            subtype = subtype,
+                            content = content,
+                            maxCandidateCount = requestPrivacy.emojiMaxCandidateCount,
+                            allowPossiblyOffensive = requestPrivacy.allowPossiblyOffensive,
+                            isPrivateSession = requestPrivacy.isPrivateSession,
+                        ),
+                        tier = requestPrivacy.offensiveFilterTier,
                     )
                 }
                 else -> emptyList()
@@ -288,12 +299,15 @@ class NlpManager(
                 emptyList()
             }
             val suggestions = if (suggestionsEnabled) {
-                suggestionProvider.suggest(
-                    subtype = subtype,
-                    content = content,
-                    maxCandidateCount = 8,
-                    allowPossiblyOffensive = requestPrivacy.allowPossiblyOffensive,
-                    isPrivateSession = requestPrivacy.isPrivateSession,
+                OffensiveWordPolicy.filterCandidates(
+                    candidates = suggestionProvider.suggest(
+                        subtype = subtype,
+                        content = content,
+                        maxCandidateCount = 8,
+                        allowPossiblyOffensive = requestPrivacy.allowPossiblyOffensive,
+                        isPrivateSession = requestPrivacy.isPrivateSession,
+                    ),
+                    tier = requestPrivacy.offensiveFilterTier,
                 )
             } else {
                 emptyList()
@@ -489,6 +503,9 @@ class NlpManager(
         return CandidateAutoCommitPolicy.selectAutoCommitCandidate(
             autoCorrectEnabled = prefs.correction.autoCorrect.get(),
             autoCorrectCommitMode = prefs.correction.autoCorrectCommitMode.get(),
+            autoCorrectConfidenceThreshold = AutoCorrectConfidencePolicy.thresholdFor(
+                prefs.correction.autoCorrectConfidenceThreshold.get(),
+            ),
             keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,
             currentWordStart = currentWordStart,
@@ -512,6 +529,9 @@ class NlpManager(
         return CandidateAutoCommitPolicy.selectSpacebarCandidate(
             autoCorrectEnabled = autoCorrectEnabled,
             autoCorrectCommitMode = prefs.correction.autoCorrectCommitMode.get(),
+            autoCorrectConfidenceThreshold = AutoCorrectConfidencePolicy.thresholdFor(
+                prefs.correction.autoCorrectConfidenceThreshold.get(),
+            ),
             quickPredictionInsertEnabled = quickPredictionInsertEnabled,
             keyVariation = keyboardManager.activeState.keyVariation,
             currentWord = currentWord,

@@ -35,8 +35,10 @@ import dev.patrickgold.florisboard.R
 import dev.patrickgold.florisboard.app.LocalNavController
 import dev.patrickgold.florisboard.app.Routes
 import dev.patrickgold.florisboard.app.enumDisplayEntriesOf
+import dev.patrickgold.florisboard.app.settings.search.DialogSliderPreference
 import dev.patrickgold.florisboard.ime.keyboard.IncognitoMode
 import dev.patrickgold.florisboard.ime.nlp.AutoCorrectCommitMode
+import dev.patrickgold.florisboard.ime.nlp.AutoCorrectConfidencePolicy
 import dev.patrickgold.florisboard.ime.nlp.SpellingLanguageMode
 import dev.patrickgold.florisboard.ime.text.keyboard.TouchCalibrationProfile
 import dev.patrickgold.florisboard.lib.compose.FlorisHyperlinkText
@@ -79,6 +81,15 @@ fun TypingScreen() = FlorisScreen {
                 enabledIf = { prefs.suggestion.enabled isEqualTo true },
             )
             SwitchPreference(
+                prefs.suggestion.blockSlursOnly,
+                title = stringRes(R.string.pref__suggestion__block_slurs_only__label),
+                summary = stringRes(R.string.pref__suggestion__block_slurs_only__summary),
+                enabledIf = {
+                    prefs.suggestion.enabled isEqualTo true &&
+                        prefs.suggestion.blockPossiblyOffensive isEqualTo false
+                },
+            )
+            SwitchPreference(
                 prefs.suggestion.api30InlineSuggestionsEnabled,
                 title = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__label),
                 summary = stringRes(R.string.pref__suggestion__api30_inline_suggestions_enabled__summary),
@@ -107,6 +118,16 @@ fun TypingScreen() = FlorisScreen {
                 prefs.correction.autoCorrectCommitMode,
                 title = stringRes(R.string.pref__correction__auto_correct_commit_mode__label),
                 entries = enumDisplayEntriesOf(AutoCorrectCommitMode::class),
+                enabledIf = { prefs.correction.autoCorrect isEqualTo true },
+            )
+            DialogSliderPreference(
+                prefs.correction.autoCorrectConfidenceThreshold,
+                title = stringRes(R.string.pref__correction__auto_correct_confidence_threshold__label),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                summary = { stringRes(R.string.pref__correction__auto_correct_confidence_threshold__summary, "v" to it) },
+                min = AutoCorrectConfidencePolicy.MIN_PERCENT,
+                max = AutoCorrectConfidencePolicy.MAX_PERCENT,
+                stepIncrement = 1,
                 enabledIf = { prefs.correction.autoCorrect isEqualTo true },
             )
             SwitchPreference(

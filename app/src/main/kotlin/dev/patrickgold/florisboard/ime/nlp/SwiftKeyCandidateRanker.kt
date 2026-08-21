@@ -232,6 +232,7 @@ internal object SwiftKeyCandidateRanker {
         textBeforeCursor: String = "",
         candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
         autoCorrectCommitMode: AutoCorrectCommitMode = AutoCorrectCommitMode.NORMAL,
+        autoCorrectConfidenceThreshold: Double = AutoCorrectConfidencePolicy.LEGACY_THRESHOLD,
         quickPredictionInsertTuning: QuickPredictionInsertTuning = QuickPredictionInsertTuning.Default,
     ): SuggestionCandidate? {
         val typedWordKey = currentWord.trim().normalizedCandidateKey()
@@ -262,7 +263,12 @@ internal object SwiftKeyCandidateRanker {
             middleCandidateKey != null &&
             middleCandidateKey != typedWordKey &&
             !topCandidatesStraddleLanguages &&
-            autoCommitConfidenceAllowsMode(middleCandidate, candidateSignals, autoCorrectCommitMode)
+            autoCommitConfidenceAllowsMode(
+                candidate = middleCandidate,
+                candidateSignals = candidateSignals,
+                mode = autoCorrectCommitMode,
+                confidenceThreshold = autoCorrectConfidenceThreshold,
+            )
         ) {
             return middleCandidate
         }
@@ -271,7 +277,12 @@ internal object SwiftKeyCandidateRanker {
             candidate.isEligibleForAutoCommit &&
                 candidate.text.toString().normalizedCandidateKey() != typedWordKey &&
                 !topCandidatesStraddleLanguages &&
-                autoCommitConfidenceAllowsMode(candidate, candidateSignals, autoCorrectCommitMode)
+                autoCommitConfidenceAllowsMode(
+                    candidate = candidate,
+                    candidateSignals = candidateSignals,
+                    mode = autoCorrectCommitMode,
+                    confidenceThreshold = autoCorrectConfidenceThreshold,
+                )
         }
     }
 
@@ -279,7 +290,9 @@ internal object SwiftKeyCandidateRanker {
         candidate: SuggestionCandidate,
         candidateSignals: Map<String, SwiftKeyCandidateSignals>,
         mode: AutoCorrectCommitMode,
+        confidenceThreshold: Double = AutoCorrectConfidencePolicy.LEGACY_THRESHOLD,
     ): Boolean {
+        if (!AutoCorrectConfidencePolicy.allows(candidate.confidence, confidenceThreshold)) return false
         if (!languageConfidenceAllowsAutoCommit(candidate, candidateSignals)) return false
         return when (mode) {
             AutoCorrectCommitMode.NORMAL -> true

@@ -22,6 +22,7 @@ internal object CandidateAutoCommitPolicy {
     fun selectAutoCommitCandidate(
         autoCorrectEnabled: Boolean,
         autoCorrectCommitMode: AutoCorrectCommitMode = AutoCorrectCommitMode.NORMAL,
+        autoCorrectConfidenceThreshold: Double = AutoCorrectConfidencePolicy.LEGACY_THRESHOLD,
         keyVariation: KeyVariation,
         currentWord: String,
         currentWordStart: Int?,
@@ -53,6 +54,7 @@ internal object CandidateAutoCommitPolicy {
             candidates = listOfNotNull(immediatePhraseRepairCandidate),
             autoCorrectCommitMode = autoCorrectCommitMode,
             candidateSignals = candidateSignals,
+            autoCorrectConfidenceThreshold = autoCorrectConfidenceThreshold,
         )?.let { return it }
 
         candidates.firstOrNull { candidate ->
@@ -61,6 +63,7 @@ internal object CandidateAutoCommitPolicy {
                     candidate = candidate,
                     candidateSignals = candidateSignals,
                     mode = autoCorrectCommitMode,
+                    confidenceThreshold = autoCorrectConfidenceThreshold,
                 ) &&
                 rejectionPolicy.allowsCandidate(currentWord, candidate, currentWordStart)
         }?.let { return it }
@@ -72,12 +75,14 @@ internal object CandidateAutoCommitPolicy {
             candidates = listOfNotNull(immediateAutoCommitCandidate),
             autoCorrectCommitMode = autoCorrectCommitMode,
             candidateSignals = candidateSignals,
+            autoCorrectConfidenceThreshold = autoCorrectConfidenceThreshold,
         )
     }
 
     fun selectSpacebarCandidate(
         autoCorrectEnabled: Boolean,
         autoCorrectCommitMode: AutoCorrectCommitMode = AutoCorrectCommitMode.NORMAL,
+        autoCorrectConfidenceThreshold: Double = AutoCorrectConfidencePolicy.LEGACY_THRESHOLD,
         quickPredictionInsertEnabled: Boolean,
         keyVariation: KeyVariation,
         currentWord: String,
@@ -111,6 +116,7 @@ internal object CandidateAutoCommitPolicy {
                 candidates = listOfNotNull(immediatePhraseRepairCandidate),
                 autoCorrectCommitMode = autoCorrectCommitMode,
                 candidateSignals = candidateSignals,
+                autoCorrectConfidenceThreshold = autoCorrectConfidenceThreshold,
             )?.let { return it }
         }
 
@@ -121,6 +127,7 @@ internal object CandidateAutoCommitPolicy {
             textBeforeCursor = textBeforeCursor,
             candidateSignals = candidateSignals,
             autoCorrectCommitMode = autoCorrectCommitMode,
+            autoCorrectConfidenceThreshold = autoCorrectConfidenceThreshold,
         ) ?: return if (autoCorrectEnabled) {
             firstAllowedCandidate(
                 currentWord = currentWord,
@@ -129,6 +136,7 @@ internal object CandidateAutoCommitPolicy {
                 candidates = listOfNotNull(immediateAutoCommitCandidate),
                 autoCorrectCommitMode = autoCorrectCommitMode,
                 candidateSignals = candidateSignals,
+                autoCorrectConfidenceThreshold = autoCorrectConfidenceThreshold,
             )
         } else {
             null
@@ -164,6 +172,7 @@ internal object CandidateAutoCommitPolicy {
         candidates: List<SuggestionCandidate>,
         autoCorrectCommitMode: AutoCorrectCommitMode? = null,
         candidateSignals: Map<String, SwiftKeyCandidateSignals> = emptyMap(),
+        autoCorrectConfidenceThreshold: Double = AutoCorrectConfidencePolicy.LEGACY_THRESHOLD,
     ): SuggestionCandidate? {
         return candidates.firstOrNull { candidate ->
             candidate.isEligibleForAutoCommit &&
@@ -173,6 +182,7 @@ internal object CandidateAutoCommitPolicy {
                             candidate = candidate,
                             candidateSignals = candidateSignals,
                             mode = autoCorrectCommitMode,
+                            confidenceThreshold = autoCorrectConfidenceThreshold,
                         )
                 ) &&
                 rejectionPolicy.allowsCandidate(currentWord, candidate, currentWordStart)

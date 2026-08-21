@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 202
+        rows shouldHaveSize 204
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -77,6 +77,7 @@ correction__adaptive_touch_model	b	true
 correction__auto_capitalization	b	true
 correction__auto_correct	b	true
 correction__auto_correct_commit_mode	s	NORMAL
+correction__auto_correct_confidence_threshold	i	50
 correction__auto_space_punctuation	b	true
 correction__double_space_period	b	true
 correction__heuristic_smart_compose	b	false
@@ -230,6 +231,7 @@ spelling__use_udm_entries	b	true
 sticker__user_folder_uri	s	<empty>
 suggestion__api30_inline_suggestions_enabled	b	true
 suggestion__block_possibly_offensive	b	false
+suggestion__block_slurs_only	b	false
 suggestion__display_mode	s	CLASSIC
 suggestion__enable_floris_user_dictionary	b	true
 suggestion__enable_system_user_dictionary	b	true

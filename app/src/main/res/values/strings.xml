@@ -1080,8 +1080,10 @@
     <string name="settings__typing__suggestions_ready" comment="Informational message at top of Typing settings">Tune suggestions, corrections, spell checking, and personal dictionaries. Changes take effect immediately in the preview field.</string>
     <string name="pref__suggestion__enabled__summary" comment="Preference summary">Show word completions and typo corrections while you type</string>
     <string name="pref__suggestion__display_mode__label" comment="Preference title">Suggestions display mode</string>
-    <string name="pref__suggestion__block_possibly_offensive__label" comment="Preference title">Block possibly offensive words</string>
-    <string name="pref__suggestion__block_possibly_offensive__summary" comment="Preference summary">Hide potentially offensive words from suggestion candidates</string>
+    <string name="pref__suggestion__block_possibly_offensive__label" comment="Preference title">Block all offensive words</string>
+    <string name="pref__suggestion__block_possibly_offensive__summary" comment="Preference summary">Hide all known offensive words from suggestion candidates</string>
+    <string name="pref__suggestion__block_slurs_only__label" comment="Preference title">Filter slurs only</string>
+    <string name="pref__suggestion__block_slurs_only__summary" comment="Preference summary">Keep ordinary profanity available while filtering the slur list</string>
     <string name="pref__suggestion__api30_inline_suggestions_enabled__label" comment="Preference title">System autofill suggestions</string>
     <string name="pref__suggestion__api30_inline_suggestions_enabled__summary" comment="Preference summary">Show inline suggestions provided by autofill services</string>
     <string name="pref__suggestion__incognito_mode__label" comment="Label of Incognito mode preference in Typing">Incognito mode</string>
@@ -1093,6 +1095,8 @@
     <string name="pref__correction__auto_correct__label" comment="Preference title">Autocorrect</string>
     <string name="pref__correction__auto_correct__summary" comment="Preference summary">Replace mistyped words with the top suggestion when you tap space or punctuation. Turn off to keep suggestions visible without silent replacement.</string>
     <string name="pref__correction__auto_correct_commit_mode__label" comment="Preference title">Autocorrect strength</string>
+    <string name="pref__correction__auto_correct_confidence_threshold__label" comment="Preference title">Autocorrect confidence threshold</string>
+    <string name="pref__correction__auto_correct_confidence_threshold__summary" formatted="false" comment="Preference summary">Only corrections at or above {v}% confidence can replace text automatically</string>
     <string name="pref__correction__quick_prediction_insert__label" comment="Preference title">Quick prediction insert</string>
     <string name="pref__correction__quick_prediction_insert__summary" comment="Preference summary">Tapping space inserts the middle prediction, including next-word predictions when no word is active. Matches the faster SwiftKey spacebar mode.</string>
     <string name="pref__correction__auto_space_punctuation__label" comment="Preference title">Auto-space after punctuation</string>

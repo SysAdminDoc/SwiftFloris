@@ -3,8 +3,7 @@
 
 The scorecard joins deterministic replay fixtures with benchmark JSON produced
 by the existing adb harness. The replay fixtures are executable contracts in
-the JVM test suite; this script turns the same corpus into a compact report
-that can be trended and uploaded by CI.
+the JVM test suite; this script turns the same corpus into a compact report.
 """
 
 from __future__ import annotations
@@ -14,10 +13,9 @@ import json
 import math
 import sys
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -109,7 +107,7 @@ def load_jsonl(path: Path) -> list[dict[str, Any]]:
             except json.JSONDecodeError as exc:
                 raise ValueError(f"{path}:{line_no}: invalid JSON: {exc}") from exc
             if not isinstance(payload, dict):
-                raise ValueError(f"{path}:{line_no}: expected JSON object")
+                raise TypeError(f"{path}:{line_no}: expected JSON object")
             rows.append(payload)
     return rows
 
@@ -125,7 +123,7 @@ def latest_first_suggestion_latency(directory: Path) -> BenchmarkFile | None:
         summary = payload.get("summary")
         runs = payload.get("runs")
         if not isinstance(summary, dict):
-            raise ValueError(f"{path}: missing object 'summary'")
+            raise TypeError(f"{path}: missing object 'summary'")
         if not isinstance(runs, list):
             runs = []
         candidate = BenchmarkFile(
@@ -142,8 +140,10 @@ def latest_first_suggestion_latency(directory: Path) -> BenchmarkFile | None:
 def latest_sort_key(item: BenchmarkFile) -> tuple[datetime, str]:
     try:
         parsed = datetime.fromisoformat(item.measured_at.replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
     except ValueError:
-        parsed = datetime.min
+        parsed = datetime.min.replace(tzinfo=timezone.utc)
     return parsed, item.path.name
 
 
@@ -157,6 +157,106 @@ def percentile(values: list[float], pct: float) -> float | None:
 
 def rate(numerator: int, denominator: int) -> float:
     return float(numerator) / float(denominator) if denominator else 0.0
+
+
+AUTOCORRECT_THRESHOLD_PERCENTAGES = tuple(range(50, 101, 5))
+AUTOCORRECT_MIN_LANGUAGE_CONFIDENCE = 0.40
+
+
+def candidate_confidence(case: dict[str, Any], text: str) -> float:
+    scored = case.get("scored")
+    if not isinstance(scored, list):
+        return 0.0
+    for candidate in scored:
+        if isinstance(candidate, dict) and str(candidate.get("text") or "") == text:
+            value = candidate.get("providerConfidence")
+            if isinstance(value, (int, float)):
+                return max(0.0, min(1.0, float(value)))
+    return 0.0
+
+
+def eligible_nonliteral_candidates(case: dict[str, Any]) -> list[dict[str, Any]]:
+    current_word = str(case.get("currentWord") or "")
+    scored = case.get("scored")
+    if not isinstance(scored, list):
+        return []
+    candidates = []
+    for candidate in scored:
+        if not isinstance(candidate, dict):
+            continue
+        if str(candidate.get("text") or "") == current_word:
+            continue
+        if not bool(candidate.get("autoCommitEligible")):
+            continue
+        language_confidence = candidate.get("languageConfidence", 1.0)
+        if not isinstance(language_confidence, (int, float)):
+            continue
+        if float(language_confidence) < AUTOCORRECT_MIN_LANGUAGE_CONFIDENCE:
+            continue
+        candidates.append(candidate)
+    return candidates
+
+
+def score_autocorrect_thresholds(cases: list[dict[str, Any]]) -> dict[str, Any]:
+    correction_cases = [
+        case
+        for case in cases
+        if str(case.get("currentWord") or "") and
+        isinstance(case.get("expectedSpacebarText"), str) and
+        str(case.get("expectedSpacebarText")) != str(case.get("currentWord") or "")
+    ]
+    literal_cases = [
+        case
+        for case in cases
+        if str(case.get("currentWord") or "") and
+        bool(case.get("typedWordKnown")) and
+        case.get("expectedSpacebarText") is None
+    ]
+
+    rows = []
+    for percent in AUTOCORRECT_THRESHOLD_PERCENTAGES:
+        threshold = percent / 100.0
+        accepted_corrections = sum(
+            1
+            for case in correction_cases
+            if candidate_confidence(case, str(case.get("expectedSpacebarText"))) >= threshold
+        )
+        false_positives = sum(
+            1
+            for case in literal_cases
+            if any(
+                float(candidate.get("providerConfidence", 0.0) or 0.0) >= threshold
+                for candidate in eligible_nonliteral_candidates(case)
+            )
+        )
+        protected_literals = len(literal_cases) - false_positives
+        decision_count = len(correction_cases) + len(literal_cases)
+        correct_decisions = accepted_corrections + protected_literals
+        accuracy = rate(correct_decisions, decision_count)
+        coverage = rate(accepted_corrections, len(correction_cases))
+        precision = rate(accepted_corrections, accepted_corrections + false_positives)
+        score = (accuracy * 0.70) + (coverage * 0.30)
+        rows.append(
+            {
+                "percent": percent,
+                "threshold": threshold,
+                "correctionCaseCount": len(correction_cases),
+                "acceptedCorrectionCount": accepted_corrections,
+                "literalProtectionCaseCount": len(literal_cases),
+                "falsePositiveCount": false_positives,
+                "protectedLiteralCount": protected_literals,
+                "accuracy": accuracy,
+                "coverage": coverage,
+                "precision": precision,
+                "score": score,
+            },
+        )
+
+    selected = max(rows, key=lambda row: (row["score"], row["accuracy"], -row["percent"]))
+    return {
+        "selectedDefaultPercent": selected["percent"],
+        "thresholds": rows,
+    }
 
 
 GLIDE_CONTEXT_MAX_RECOVERABLE_WORD_LENGTH = 4
@@ -465,12 +565,13 @@ def validate(scorecard: dict[str, Any], args: argparse.Namespace) -> list[str]:
 
 def write_markdown(scorecard: dict[str, Any], path: Path) -> None:
     trace = scorecard["traceReplay"]
+    autocorrect = scorecard["autoCorrectConfidence"]
     glide = scorecard["glideReplay"]
     latency = scorecard["firstSuggestionLatency"]
     failures = scorecard["failures"]
     status = "PASS" if not failures else "FAIL"
     lines = [
-        f"# SwiftFloris Typing Quality Scorecard",
+        "# SwiftFloris Typing Quality Scorecard",
         "",
         f"Status: {status}",
         "",
@@ -480,6 +581,7 @@ def write_markdown(scorecard: dict[str, Any], path: Path) -> None:
         f"| Tap correction | Top-4 target rate | {trace['tapCorrection']['top4TargetRate']:.3f} |",
         f"| Next-word prediction | Fixture cases | {trace['nextWordPrediction']['caseCount']} |",
         f"| Next-word prediction | Top-4 target rate | {trace['nextWordPrediction']['top4TargetRate']:.3f} |",
+        f"| Autocorrect confidence | Scorecard-selected default | {autocorrect['selectedDefaultPercent']}% |",
         f"| Glide | Fixture cases | {glide['caseCount']} |",
         f"| Glide | Replacement cases | {glide['replacementCaseCount']} |",
         f"| Glide | Top-1 replacement rate | {glide['top1ReplacementRate']:.3f} |",
@@ -498,6 +600,18 @@ def write_markdown(scorecard: dict[str, Any], path: Path) -> None:
         ])
     else:
         lines.append("| First suggestion latency | Benchmark | missing |")
+    lines.extend([
+        "",
+        "## Autocorrect confidence thresholds",
+        "",
+        "| Threshold | Accuracy | Coverage | Precision | Score |",
+        "| ---: | ---: | ---: | ---: | ---: |",
+    ])
+    lines.extend(
+        f"| {row['percent']}% | {row['accuracy']:.3f} | {row['coverage']:.3f} | "
+        f"{row['precision']:.3f} | {row['score']:.3f} |"
+        for row in autocorrect["thresholds"]
+    )
     if failures:
         lines.extend(["", "## Failures", ""])
         lines.extend(f"- {failure}" for failure in failures)
@@ -512,6 +626,7 @@ def main() -> int:
     glide_cases = load_jsonl(resolve(args.glide_fixtures))
     scorecard = {
         "traceReplay": score_trace_fixtures(trace_cases),
+        "autoCorrectConfidence": score_autocorrect_thresholds(trace_cases),
         "glideReplay": score_glide_fixtures(glide_cases),
         "firstSuggestionLatency": score_latency(resolve(args.benchmark_dir)),
         "thresholds": {

@@ -40,6 +40,7 @@
 | Area | What's in v1.9.61 | Privacy posture |
 |------|-------------------|-----------------|
 | **Autocorrect / prediction** | SCOWL 117k English dictionary, heap-bounded SymSpell d1+d2, bigram + trigram next-word, capitalization-aware completions, contraction handling, instant-remember user-dictionary overlay | On-device |
+| **Typing safety** | All-offensive and slurs-only suggestion filters, plus a 50% to 100% autocorrect confidence threshold selected from the local replay scorecard | On-device |
 | **Multilingual typing** | Bilingual subtype presets (EN+ES / EN+FR / EN+DE), per-token Latin language identification, top-two straddle guard, sentence-local context scoring, opt-in remembered keyboard language per app, and stale-id-safe manual subtype switching | On-device |
 | **Scripts** | Shipped non-Latin layouts use direct key mappings; bundled Noto Nastaliq Urdu rendering is available for Urdu subtype key text | On-device |
 | **Gesture typing** | `StatisticalGlideTypingClassifier` over bounded EN / DE / ES / FR / IT / PT dictionaries with adaptive touch evidence | On-device |

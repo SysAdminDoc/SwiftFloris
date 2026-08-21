@@ -9,7 +9,6 @@ import sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-
 ROOT = Path(__file__).resolve().parents[1]
 SCORECARD = ROOT / "scripts" / "typing-quality-scorecard.py"
 
@@ -123,6 +122,17 @@ def main() -> int:
         if endpoint["caseCount"] != 1 or endpoint["replayHitRate"] != 1.0:
             print(json.dumps(endpoint, indent=2))
             print("expected endpoint-plausibility fixtures to pass")
+            return 1
+        autocorrect = scorecard["autoCorrectConfidence"]
+        if len(autocorrect["thresholds"]) != 11:
+            print(json.dumps(autocorrect, indent=2))
+            print("expected one autocorrect score row for every 5-point threshold")
+            return 1
+        if autocorrect["selectedDefaultPercent"] not in {
+            row["percent"] for row in autocorrect["thresholds"]
+        }:
+            print(json.dumps(autocorrect, indent=2))
+            print("expected the selected autocorrect default to be present in the scorecard")
             return 1
 
         failing = run_scorecard(root, "--max-p95-suggestion-latency-ms", "15")
