@@ -51,9 +51,14 @@ object SplitGutterPostPass {
      *   two halves (typically 80dp converted to px).
      * @return number of keys that were shifted (sum across all rows).
      */
-    fun apply(keyboard: TextKeyboard, gutterPx: Float): Int {
+    internal fun apply(
+        keyboard: TextKeyboard,
+        gutterPx: Float,
+        placement: TextKeyboardSplitLayout.HingePlacement? = null,
+    ): Int {
         require(gutterPx >= 0f) { "gutterPx must be non-negative; was $gutterPx" }
         if (gutterPx == 0f) return 0
+        if (placement != null) return applyHingeAligned(keyboard, placement)
         var shiftedCount = 0
         for ((rowIndex, row) in keyboard.rows().withIndex()) {
             val rowSize = row.size
@@ -68,6 +73,66 @@ object SplitGutterPostPass {
             }
         }
         return shiftedCount
+    }
+
+    private fun applyHingeAligned(
+        keyboard: TextKeyboard,
+        placement: TextKeyboardSplitLayout.HingePlacement,
+    ): Int {
+        val containerWidth = placement.containerWidthPx
+        if (!containerWidth.isFinite() || containerWidth <= 0f) return 0
+        var shiftedCount = 0
+        for ((rowIndex, row) in keyboard.rows().withIndex()) {
+            if (row.isEmpty()) continue
+            val (leftKeyCount, rightKeyCount) =
+                SplitKeyboardLayoutCalculator.qwertyBoundary(rowIndex, row.size)
+            if (leftKeyCount <= 0 || rightKeyCount <= 0) continue
+
+            val leftBoundary = row[leftKeyCount - 1].touchBounds.right
+            val rightBoundary = row[leftKeyCount].touchBounds.left
+            val baseLeftStart = row.first().touchBounds.left
+            val baseRightEnd = row.last().touchBounds.right
+            val leftSpan = leftBoundary - baseLeftStart
+            val rightSpan = baseRightEnd - rightBoundary
+            val leftTargetSpan = placement.hingeLeftPx - baseLeftStart
+            val rightTargetSpan = containerWidth - placement.hingeRightPx
+            if (!leftSpan.isFinite() || !rightSpan.isFinite() || leftSpan <= 0f || rightSpan <= 0f) {
+                continue
+            }
+            if (leftTargetSpan <= 0f || rightTargetSpan <= 0f) continue
+
+            val leftScale = leftTargetSpan / leftSpan
+            val rightScale = rightTargetSpan / rightSpan
+            for (keyIndex in 0 until leftKeyCount) {
+                val key = row[keyIndex]
+                remapBounds(key.touchBounds, baseLeftStart, leftBoundary, 0f, leftScale)
+                remapBounds(key.visibleBounds, baseLeftStart, leftBoundary, 0f, leftScale)
+                shiftedCount++
+            }
+            for (keyIndex in leftKeyCount until row.size) {
+                val key = row[keyIndex]
+                remapBounds(key.touchBounds, rightBoundary, baseRightEnd, placement.hingeRightPx, rightScale)
+                remapBounds(key.visibleBounds, rightBoundary, baseRightEnd, placement.hingeRightPx, rightScale)
+                shiftedCount++
+            }
+        }
+        return shiftedCount
+    }
+
+    private fun remapBounds(
+        bounds: FlorisRect,
+        sourceStart: Float,
+        sourceEnd: Float,
+        targetStart: Float,
+        scale: Float,
+    ) {
+        val left = bounds.left
+        val right = bounds.right
+        bounds.left = targetStart + (left - sourceStart) * scale
+        bounds.right = targetStart + (right - sourceStart) * scale
+        if (right >= sourceEnd) {
+            bounds.right = targetStart + (sourceEnd - sourceStart) * scale
+        }
     }
 }
 

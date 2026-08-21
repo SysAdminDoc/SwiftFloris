@@ -17,12 +17,22 @@
 package dev.patrickgold.florisboard.ime.text.keyboard
 
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.window.ImeVerticalHingeBounds
 import dev.patrickgold.florisboard.ime.window.ImeWindowConstraints
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import dev.patrickgold.florisboard.ime.window.ImeWindowSpec
 
 internal object TextKeyboardSplitLayout {
     private const val MaxGutterWidthFraction = 0.35f
+
+    data class HingePlacement(
+        val containerWidthPx: Float,
+        val hingeLeftPx: Float,
+        val hingeRightPx: Float,
+    ) {
+        val gutterPx: Float
+            get() = hingeRightPx - hingeLeftPx
+    }
 
     fun gutterPx(
         keyboardMode: KeyboardMode,
@@ -53,6 +63,61 @@ internal object TextKeyboardSplitLayout {
         if (!defaultGutterPx.isFinite() || defaultGutterPx <= 0f) return 0f
         if (!keyboardWidthPx.isFinite() || keyboardWidthPx <= 0f) return 0f
         return defaultGutterPx.coerceIn(0f, keyboardWidthPx * MaxGutterWidthFraction)
+    }
+
+    fun hingePlacement(
+        keyboardMode: KeyboardMode,
+        windowSpec: ImeWindowSpec,
+        defaultGutterPx: Float,
+        keyboardWidthPx: Float,
+        keyboardHeightPx: Float,
+        hingeBounds: ImeVerticalHingeBounds?,
+    ): HingePlacement? {
+        val fixedSpec = windowSpec as? ImeWindowSpec.Fixed ?: return null
+        return hingePlacement(
+            keyboardMode = keyboardMode,
+            fixedMode = fixedSpec.fixedMode,
+            splitViable = (fixedSpec.constraints as? ImeWindowConstraints.Fixed.Split)?.isViable == true,
+            defaultGutterPx = defaultGutterPx,
+            keyboardWidthPx = keyboardWidthPx,
+            keyboardHeightPx = keyboardHeightPx,
+            hingeBounds = hingeBounds,
+        )
+    }
+
+    fun hingePlacement(
+        keyboardMode: KeyboardMode,
+        fixedMode: ImeWindowMode.Fixed,
+        splitViable: Boolean,
+        defaultGutterPx: Float,
+        keyboardWidthPx: Float,
+        keyboardHeightPx: Float,
+        hingeBounds: ImeVerticalHingeBounds?,
+    ): HingePlacement? {
+        if (gutterPx(
+                keyboardMode = keyboardMode,
+                fixedMode = fixedMode,
+                splitViable = splitViable,
+                defaultGutterPx = defaultGutterPx,
+                keyboardWidthPx = keyboardWidthPx,
+            ) <= 0f
+        ) {
+            return null
+        }
+        if (hingeBounds == null || !keyboardHeightPx.isFinite() || keyboardHeightPx <= 0f) return null
+        if (hingeBounds.bottomPx <= 0f || hingeBounds.topPx >= keyboardHeightPx) return null
+        if (!keyboardWidthPx.isFinite() || keyboardWidthPx <= 0f) return null
+
+        val hingeLeft = hingeBounds.leftPx.coerceIn(0f, keyboardWidthPx)
+        val hingeRight = hingeBounds.rightPx.coerceIn(0f, keyboardWidthPx)
+        val hingeWidth = hingeRight - hingeLeft
+        if (hingeWidth <= 0f || hingeWidth > keyboardWidthPx * MaxGutterWidthFraction) return null
+        if (hingeLeft <= 0f || hingeRight >= keyboardWidthPx) return null
+        return HingePlacement(
+            containerWidthPx = keyboardWidthPx,
+            hingeLeftPx = hingeLeft,
+            hingeRightPx = hingeRight,
+        )
     }
 
     fun layoutWidthPx(keyboardWidthPx: Float, gutterPx: Float): Float {

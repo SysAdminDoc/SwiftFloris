@@ -68,6 +68,7 @@ androidx-profileinstaller = { module = "androidx.profileinstaller:profileinstall
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx-room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx-room" }
 androidx-sqlite = { module = "androidx.sqlite:sqlite", version.ref = "androidx-sqlite" }
+androidx-window = { module = "androidx.window:window", version.ref = "androidx-window" }
 androidx-window-core = { module = "androidx.window:window-core", version.ref = "androidx-window" }
 androidx-work-runtime = { module = "androidx.work:work-runtime-ktx", version.ref = "androidx-work" }
 cache4k = { module = "io.github.reactivecircus.cache4k:cache4k", version.ref = "cache4k" }

@@ -589,6 +589,7 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.runtime)
     implementation(libs.androidx.sqlite)
+    implementation(libs.androidx.window)
     implementation(libs.androidx.window.core)
     implementation(libs.androidx.work.runtime)
     implementation(libs.cache4k)

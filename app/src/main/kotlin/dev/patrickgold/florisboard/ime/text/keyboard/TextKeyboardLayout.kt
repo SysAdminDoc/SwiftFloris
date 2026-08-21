@@ -107,6 +107,7 @@ import dev.patrickgold.florisboard.ime.text.key.KeyVariation
 import dev.patrickgold.florisboard.ime.theme.FlorisImeUi
 import dev.patrickgold.florisboard.ime.window.ImeWindowConstraints
 import dev.patrickgold.florisboard.ime.window.ImeWindowSpec
+import dev.patrickgold.florisboard.ime.window.LocalImeVerticalHingeBounds
 import dev.patrickgold.florisboard.ime.window.LocalWindowController
 import dev.patrickgold.florisboard.keyboardManager
 import dev.patrickgold.florisboard.lib.FlorisRect
@@ -304,6 +305,7 @@ fun TextKeyboardLayout(
 
         val windowController = LocalWindowController.current
         val windowSpec by windowController.activeWindowSpec.collectAsState()
+        val activeWindowInsets by windowController.activeWindowInsets.collectAsState()
         val keyMarginH by remember { derivedStateOf { windowSpec.keyMarginH.toPx() } }
         val keyMarginV by remember { derivedStateOf { windowSpec.keyMarginV.toPx() } }
 
@@ -315,11 +317,28 @@ fun TextKeyboardLayout(
             defaultGutterPx = splitConstraints?.defaultGutter?.toPx() ?: 0f,
             keyboardWidthPx = keyboardWidth,
         )
-        val layoutKeyboardWidth = TextKeyboardSplitLayout.layoutWidthPx(keyboardWidth, splitGutterPx)
+        val localHingeBounds = LocalImeVerticalHingeBounds.current?.let { hingeBounds ->
+            activeWindowInsets?.boundsPx?.let { windowBounds ->
+                hingeBounds.translatedBy(
+                    dx = -windowBounds.left.toFloat(),
+                    dy = -windowBounds.top.toFloat(),
+                )
+            }
+        }
+        val hingePlacement = TextKeyboardSplitLayout.hingePlacement(
+            keyboardMode = keyboard.mode,
+            windowSpec = windowSpec,
+            defaultGutterPx = splitConstraints?.defaultGutter?.toPx() ?: 0f,
+            keyboardWidthPx = keyboardWidth,
+            keyboardHeightPx = keyboardHeight,
+            hingeBounds = localHingeBounds,
+        )
+        val effectiveSplitGutterPx = hingePlacement?.gutterPx ?: splitGutterPx
+        val layoutKeyboardWidth = TextKeyboardSplitLayout.layoutWidthPx(keyboardWidth, effectiveSplitGutterPx)
 
         val desiredKey = remember(
             keyboard, keyboardWidth, layoutKeyboardWidth, keyboardHeight, keyMarginH, keyMarginV,
-            keyboardRowBaseHeight, evaluator, splitGutterPx
+            keyboardRowBaseHeight, evaluator, effectiveSplitGutterPx, hingePlacement
         ) {
             TextKey(data = TextKeyData.UNSPECIFIED).also { desiredKey ->
                 desiredKey.touchBounds.apply {
@@ -333,8 +352,12 @@ fun TextKeyboardLayout(
                 }
                 desiredKey.visibleBounds.applyFrom(desiredKey.touchBounds).deflateBy(keyMarginH, keyMarginV)
                 keyboard.layout(layoutKeyboardWidth, keyboardHeight, desiredKey, true)
-                if (splitGutterPx > 0f) {
-                    SplitGutterPostPass.apply(keyboard, splitGutterPx)
+                if (effectiveSplitGutterPx > 0f) {
+                    SplitGutterPostPass.apply(
+                        keyboard = keyboard,
+                        gutterPx = effectiveSplitGutterPx,
+                        placement = hingePlacement,
+                    )
                 }
             }
         }

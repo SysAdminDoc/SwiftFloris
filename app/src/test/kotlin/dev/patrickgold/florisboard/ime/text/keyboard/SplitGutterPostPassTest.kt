@@ -131,6 +131,31 @@ class SplitGutterPostPassTest : FunSpec({
             .gutterMeasure shouldBe (gutter plusOrMinus 1e-3f)
     }
 
+    test("hinge-aligned post-pass puts every row gap on the reported hinge") {
+        val finalWidth = 1000f
+        val hingePlacement = TextKeyboardSplitLayout.HingePlacement(
+            containerWidthPx = finalWidth,
+            hingeLeftPx = 470f,
+            hingeRightPx = 530f,
+        )
+        val layoutWidth = TextKeyboardSplitLayout.layoutWidthPx(finalWidth, hingePlacement.gutterPx)
+        val keyboard = fixtureKeyboard(listOf(10, 9, 7), unitWidth = layoutWidth / 10f, rowHeight = 60f)
+
+        SplitGutterPostPass.apply(
+            keyboard = keyboard,
+            gutterPx = hingePlacement.gutterPx,
+            placement = hingePlacement,
+        )
+
+        keyboard.rows().asSequence().forEachIndexed { rowIndex, row ->
+            val snapshot = SplitRowSnapshot.captureRow(rowIndex, row.toList())
+            row[snapshot.leftKeyCount - 1].touchBounds.right shouldBe (470f plusOrMinus 1e-3f)
+            row[snapshot.leftKeyCount].touchBounds.left shouldBe (530f plusOrMinus 1e-3f)
+            snapshot.gutterMeasure shouldBe (60f plusOrMinus 1e-3f)
+            row.last().touchBounds.right shouldBe (finalWidth plusOrMinus 1e-3f)
+        }
+    }
+
     test("split gutter rejects nearest-key rescue") {
         val finalWidth = 1000f
         val gutter = 80f

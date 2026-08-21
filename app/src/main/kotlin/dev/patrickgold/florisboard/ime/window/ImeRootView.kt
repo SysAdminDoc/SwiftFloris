@@ -60,6 +60,7 @@ class ImeRootView(val ims: FlorisImeService) : AbstractComposeView(ims) {
 
     @Composable
     override fun Content() {
+        val verticalHingeBounds = rememberImeVerticalHingeBounds(ims)
         // ROADMAP §7 Next-11.3a — surface the per-app accent flow into the
         // IME compose tree. Snygg theme tokens are *not* (yet) post-processed
         // here; instead, individual Compose surfaces (smartbar, candidate
@@ -70,6 +71,7 @@ class ImeRootView(val ims: FlorisImeService) : AbstractComposeView(ims) {
         CompositionLocalProvider(
             LocalInputFeedbackController provides ims.inputFeedbackController,
             LocalWindowController provides ims.windowController,
+            LocalImeVerticalHingeBounds provides verticalHingeBounds,
             LocalPerAppAccent provides perAppAccent,
         ) {
             ProvideLocalizedResources(

@@ -17,6 +17,7 @@
 package dev.patrickgold.florisboard.ime.text.keyboard
 
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
+import dev.patrickgold.florisboard.ime.window.ImeVerticalHingeBounds
 import dev.patrickgold.florisboard.ime.window.ImeWindowMode
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
@@ -67,5 +68,43 @@ class TextKeyboardSplitLayoutTest : FunSpec({
 
         gutter shouldBe 350f
         TextKeyboardSplitLayout.layoutWidthPx(keyboardWidthPx = 1000f, gutterPx = gutter) shouldBe 650f
+    }
+
+    test("vertical hinge placement uses the reported hinge bounds") {
+        val placement = TextKeyboardSplitLayout.hingePlacement(
+            keyboardMode = KeyboardMode.CHARACTERS,
+            fixedMode = ImeWindowMode.Fixed.SPLIT,
+            splitViable = true,
+            defaultGutterPx = 80f,
+            keyboardWidthPx = 1000f,
+            keyboardHeightPx = 400f,
+            hingeBounds = ImeVerticalHingeBounds(
+                leftPx = 470f,
+                topPx = 0f,
+                rightPx = 530f,
+                bottomPx = 400f,
+            ),
+        )
+
+        placement?.hingeLeftPx shouldBe 470f
+        placement?.hingeRightPx shouldBe 530f
+        placement?.gutterPx shouldBe 60f
+    }
+
+    test("hinge placement ignores a hinge that does not cross the keyboard") {
+        TextKeyboardSplitLayout.hingePlacement(
+            keyboardMode = KeyboardMode.CHARACTERS,
+            fixedMode = ImeWindowMode.Fixed.SPLIT,
+            splitViable = true,
+            defaultGutterPx = 80f,
+            keyboardWidthPx = 1000f,
+            keyboardHeightPx = 400f,
+            hingeBounds = ImeVerticalHingeBounds(
+                leftPx = 470f,
+                topPx = 500f,
+                rightPx = 530f,
+                bottomPx = 900f,
+            ),
+        ) shouldBe null
     }
 })
