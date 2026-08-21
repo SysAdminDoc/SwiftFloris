@@ -97,6 +97,7 @@ import dev.patrickgold.florisboard.ime.popup.PopupUiController
 import dev.patrickgold.florisboard.ime.popup.rememberPopupUiController
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingGesture
+import dev.patrickgold.florisboard.ime.text.gestures.SpaceTouchpadPolicy
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeGesture
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeSensitivityPolicy
@@ -1485,16 +1486,37 @@ private class TextKeyboardLayoutController(
 
     private fun handleSpaceTouchpad(event: SwipeGesture.Event, pointer: TouchPointer): Boolean {
         if (event.type != SwipeGesture.Type.TOUCH_MOVE) return false
-        val isVertical = event.direction == SwipeGesture.Direction.UP ||
-            event.direction == SwipeGesture.Direction.DOWN
-        val isHorizontal = event.direction == SwipeGesture.Direction.LEFT ||
-            event.direction == SwipeGesture.Direction.RIGHT
+        val ratio = prefs.gestures.spaceBarTouchpadRatio.get()
+        val xMovement = SpaceTouchpadPolicy.scaleAxis(
+            relativeUnitCount = event.relUnitCountX,
+            ratioPercent = ratio,
+            remainder = pointer.spaceBarTouchpadRemainderX,
+        )
+        val yMovement = SpaceTouchpadPolicy.scaleAxis(
+            relativeUnitCount = event.relUnitCountY,
+            ratioPercent = ratio,
+            remainder = pointer.spaceBarTouchpadRemainderY,
+        )
+        pointer.spaceBarTouchpadRemainderX = xMovement.remainder
+        pointer.spaceBarTouchpadRemainderY = yMovement.remainder
 
-        if (!isVertical && !isHorizontal) return false
+        val content = editorInstance.activeContent
+        val selection = content.selection
+        val safeBounds = content.safeEditorBounds
+        if (!selection.isValid || !safeBounds.isValid) return true
 
-        val unitCount = if (isHorizontal) abs(event.relUnitCountX) else abs(event.relUnitCountY)
-        val count = if (!pointer.hasTriggeredGestureMove) unitCount - 1 else unitCount
-        if (count <= 0) return true
+        val horizontalPosition = when {
+            selection.isSelectionMode && xMovement.units < 0 -> selection.start
+            selection.isSelectionMode && xMovement.units > 0 -> selection.end
+            else -> selection.start
+        }
+        val safeHorizontalDelta = SpaceTouchpadPolicy.safeDelta(
+            position = horizontalPosition,
+            requestedDelta = xMovement.units,
+            bounds = safeBounds,
+        )
+        val canMoveVertically = selection.start in safeBounds.start..safeBounds.end
+        if (safeHorizontalDelta == 0 && (yMovement.units == 0 || !canMoveVertically)) return true
 
         inputFeedbackController?.gestureMovingSwipe(TextKeyData.SPACE)
         if (!pointer.hasTriggeredMassSelection) {
@@ -1502,21 +1524,14 @@ private class TextKeyboardLayoutController(
             editorInstance.massSelection.begin()
         }
 
-        if (isVertical) {
+        if (safeHorizontalDelta != 0) {
+            val code = if (safeHorizontalDelta < 0) KeyCode.ARROW_LEFT else KeyCode.ARROW_RIGHT
+            keyboardManager.handleArrow(code, abs(safeHorizontalDelta))
+        }
+        if (yMovement.units != 0 && canMoveVertically) {
             keyboardManager.activeState.isManualSelectionMode = true
-            val code = if (event.direction == SwipeGesture.Direction.UP) {
-                KeyCode.ARROW_UP
-            } else {
-                KeyCode.ARROW_DOWN
-            }
-            keyboardManager.handleArrow(code, count)
-        } else {
-            val code = if (event.direction == SwipeGesture.Direction.LEFT) {
-                KeyCode.ARROW_LEFT
-            } else {
-                KeyCode.ARROW_RIGHT
-            }
-            keyboardManager.handleArrow(code, count)
+            val code = if (yMovement.units < 0) KeyCode.ARROW_UP else KeyCode.ARROW_DOWN
+            keyboardManager.handleArrow(code, abs(yMovement.units))
         }
         return true
     }
@@ -1681,6 +1696,8 @@ private class TextKeyboardLayoutController(
         var hasTriggeredGestureMove: Boolean = false
         var hasTriggeredLongPress: Boolean = false
         var hasTriggeredMassSelection: Boolean = false
+        var spaceBarTouchpadRemainderX: Double = 0.0
+        var spaceBarTouchpadRemainderY: Double = 0.0
         var pressedKeyInfo: InputEventDispatcher.PressedKeyInfo? = null
         var adaptiveTouchKey: TextKey? = null
         var adaptiveTouchX: Float = 0.0f
@@ -1693,6 +1710,8 @@ private class TextKeyboardLayoutController(
             hasTriggeredGestureMove = false
             hasTriggeredLongPress = false
             hasTriggeredMassSelection = false
+            spaceBarTouchpadRemainderX = 0.0
+            spaceBarTouchpadRemainderY = 0.0
             pressedKeyInfo = null
             adaptiveTouchKey = null
             adaptiveTouchX = 0.0f

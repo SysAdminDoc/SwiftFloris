@@ -32,6 +32,7 @@ import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingLanguageSupport
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingQuality
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTypingUnavailableReason
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
+import dev.patrickgold.florisboard.ime.text.gestures.SpaceTouchpadPolicy
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.lib.FlorisLocale
 import dev.patrickgold.florisboard.lib.compose.FlorisScreen
@@ -272,6 +273,15 @@ fun GesturesScreen() = FlorisScreen {
                 prefs.gestures.spaceBarTouchpadMode,
                 title = stringRes(R.string.pref__gestures__space_bar_touchpad_mode__label),
                 summary = stringRes(R.string.pref__gestures__space_bar_touchpad_mode__summary),
+            )
+            DialogSliderPreference(
+                prefs.gestures.spaceBarTouchpadRatio,
+                title = stringRes(R.string.pref__gestures__space_bar_touchpad_ratio__label),
+                valueLabel = { stringRes(R.string.unit__percent__symbol, "v" to it) },
+                min = SpaceTouchpadPolicy.MIN_RATIO_PERCENT,
+                max = SpaceTouchpadPolicy.MAX_RATIO_PERCENT,
+                stepIncrement = 5,
+                enabledIf = { prefs.gestures.spaceBarTouchpadMode isEqualTo true },
             )
             DialogSliderPreference(
                 prefs.gestures.spaceBarSwipeSensitivity,

@@ -25,7 +25,7 @@ class AppPrefsPartitionTest : FunSpec({
     test("partition keeps app preference keys, types, and defaults stable") {
         val rows = FlorisPreferenceModelImpl().toGoldenRows()
 
-        rows shouldHaveSize 200
+        rows shouldHaveSize 202
         rows shouldBe EXPECTED_APP_PREFS_GOLDEN.trimIndent().lines()
     }
 
@@ -117,6 +117,8 @@ gestures__space_bar_swipe_left	s	MOVE_CURSOR_LEFT
 gestures__space_bar_swipe_right	s	MOVE_CURSOR_RIGHT
 gestures__space_bar_swipe_sensitivity	i	50
 gestures__space_bar_swipe_up	s	NO_ACTION
+gestures__space_bar_touchpad_mode	b	false
+gestures__space_bar_touchpad_ratio	i	100
 gestures__swipe_distance_threshold	i	32
 gestures__swipe_down	s	HIDE_KEYBOARD
 gestures__swipe_left	s	SWITCH_TO_NEXT_SUBTYPE

@@ -12,6 +12,7 @@
 - Add clipboard privacy controls: long-press can mark or unmark a text entry as sensitive, and a deliberate reveal shows it for four seconds only while the device is unlocked and the keyboard is not incognito. The default accessibility label stays masked.
 - Add an opt-in scrambled keypad for numeric password fields. The permutation is generated per field focus, and the key label, TalkBack text, and committed digit stay aligned. Normal numeric and phone fields are unchanged.
 - Add optional local keypress sounds for standard, delete, return, and spacebar keys. Files are imported through the system picker, loaded into a pooled player, and carried by the existing backup flow. System effects remain the default until a class is selected.
+- Add a spacebar touchpad mode that tracks horizontal and vertical drags, preserves fractional movement at a configurable ratio, and clamps horizontal targets to the editor's safe bounds. Existing discrete spacebar actions remain available when the mode is off.
 - Stop shipping a Material 3 version no file in the repository names. Four
   Compose Multiplatform dependencies each constrain `androidx.compose.material3`
   to a pre-release alpha, and Gradle picked that over the Compose BOM's stable

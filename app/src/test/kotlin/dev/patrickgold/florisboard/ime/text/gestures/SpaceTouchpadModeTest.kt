@@ -10,6 +10,7 @@
 
 package dev.patrickgold.florisboard.ime.text.gestures
 
+import dev.patrickgold.florisboard.ime.editor.EditorRange
 import io.kotest.core.spec.style.FunSpec
 import io.kotest.matchers.shouldBe
 
@@ -48,6 +49,30 @@ class SpaceTouchpadModeTest : FunSpec({
 
         leftEvent.touchpadAxisUnitCount shouldBe 5
         upEvent.touchpadAxisUnitCount shouldBe 3
+    }
+
+    test("diagonal movement keeps both axes available") {
+        val diagonalEvent = swipeEvent(SwipeGesture.Direction.DOWN_RIGHT, relX = 4, relY = 2)
+
+        diagonalEvent.relUnitCountX shouldBe 4
+        diagonalEvent.relUnitCountY shouldBe 2
+    }
+
+    test("ratio keeps fractional movement between events") {
+        val first = SpaceTouchpadPolicy.scaleAxis(1, ratioPercent = 50, remainder = 0.0)
+        val second = SpaceTouchpadPolicy.scaleAxis(1, ratioPercent = 50, remainder = first.remainder)
+
+        first.units shouldBe 0
+        second.units shouldBe 1
+        second.remainder shouldBe 0.0
+    }
+
+    test("ratio is bounded and horizontal targets stay inside safe editor bounds") {
+        SpaceTouchpadPolicy.scaleAxis(4, ratioPercent = 0, remainder = 0.0).units shouldBe 1
+        SpaceTouchpadPolicy.scaleAxis(4, ratioPercent = 500, remainder = 0.0).units shouldBe 8
+
+        SpaceTouchpadPolicy.safeDelta(1, -8, EditorRange(0, 5)) shouldBe -1
+        SpaceTouchpadPolicy.safeDelta(4, 8, EditorRange(0, 5)) shouldBe 1
     }
 })
 

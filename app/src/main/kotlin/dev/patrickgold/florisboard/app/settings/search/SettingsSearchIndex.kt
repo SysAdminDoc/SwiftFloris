@@ -259,6 +259,7 @@ object SettingsSearchIndex {
         entry("gestures.swipe-left", R.string.settings__gestures__title, R.string.pref__gestures__swipe_left__label, destination = SettingsSearchDestination.GESTURES),
         entry("gestures.swipe-right", R.string.settings__gestures__title, R.string.pref__gestures__swipe_right__label, destination = SettingsSearchDestination.GESTURES),
         entry("gestures.space-bar-touchpad-mode", R.string.settings__gestures__title, R.string.pref__gestures__space_bar_touchpad_mode__label, destination = SettingsSearchDestination.GESTURES),
+        entry("gestures.space-bar-touchpad-ratio", R.string.settings__gestures__title, R.string.pref__gestures__space_bar_touchpad_ratio__label, destination = SettingsSearchDestination.GESTURES, keywords = "spacebar cursor trackpad movement speed ratio"),
         entry("gestures.space-bar-swipe-up", R.string.settings__gestures__title, R.string.pref__gestures__space_bar_swipe_up__label, destination = SettingsSearchDestination.GESTURES),
         entry("gestures.space-bar-swipe-down", R.string.settings__gestures__title, R.string.pref__gestures__space_bar_swipe_down__label, destination = SettingsSearchDestination.GESTURES),
         entry("gestures.space-bar-swipe-left", R.string.settings__gestures__title, R.string.pref__gestures__space_bar_swipe_left__label, destination = SettingsSearchDestination.GESTURES),

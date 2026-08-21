@@ -92,6 +92,8 @@ class FlorisPreferenceModelImpl : FlorisPreferenceModel() {
             gestures.spaceBarSwipeLeft to "gestures.spaceBarSwipeLeft",
             gestures.spaceBarSwipeRight to "gestures.spaceBarSwipeRight",
             gestures.spaceBarLongPress to "gestures.spaceBarLongPress",
+            gestures.spaceBarTouchpadMode to "gestures.spaceBarTouchpadMode",
+            gestures.spaceBarTouchpadRatio to "gestures.spaceBarTouchpadRatio",
             gestures.spaceBarSwipeSensitivity to "gestures.spaceBarSwipeSensitivity",
             gestures.symbolFlickEnabled to "gestures.symbolFlickEnabled",
             gestures.deleteKeySwipeLeft to "gestures.deleteKeySwipeLeft",

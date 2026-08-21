@@ -47,6 +47,7 @@ import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickAction
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionArrangement
 import dev.patrickgold.florisboard.ime.smartbar.quickaction.QuickActionJsonConfig
 import dev.patrickgold.florisboard.ime.text.gestures.GlideTrailTheme
+import dev.patrickgold.florisboard.ime.text.gestures.SpaceTouchpadPolicy
 import dev.patrickgold.florisboard.ime.text.gestures.SwipeAction
 import dev.patrickgold.florisboard.ime.text.key.KeyCode
 import dev.patrickgold.florisboard.ime.text.key.KeyHintConfiguration
@@ -113,6 +114,10 @@ open class GesturesPrefs : PreferenceModel() {
     val spaceBarTouchpadMode = boolean(
         key = "gestures__space_bar_touchpad_mode",
         default = false,
+    )
+    val spaceBarTouchpadRatio = int(
+        key = "gestures__space_bar_touchpad_ratio",
+        default = SpaceTouchpadPolicy.DEFAULT_RATIO_PERCENT,
     )
     val spaceBarSwipeSensitivity = int(
         key = "gestures__space_bar_swipe_sensitivity",
