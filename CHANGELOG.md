@@ -14,6 +14,7 @@
 - Add optional local keypress sounds for standard, delete, return, and spacebar keys. Files are imported through the system picker, loaded into a pooled player, and carried by the existing backup flow. System effects remain the default until a class is selected.
 - Add a spacebar touchpad mode that tracks horizontal and vertical drags, preserves fractional movement at a configurable ratio, and clamps horizontal targets to the editor's safe bounds. Existing discrete spacebar actions remain available when the mode is off.
 - Align split-keyboard gutters with vertical hinge bounds reported by AndroidX Window Manager. Each row scales its halves to the hinge, while non-folding windows keep the centered layout.
+- Add a runtime warning when bundled emoji assets declare a different CLDR or Emoji version than the checked-in expectation.
 - Split offensive suggestion filtering into the existing all-offensive switch and a slurs-only option, with exact-token filtering shared by word suggestions and spell-check corrections.
 - Add a 50% to 100% autocorrect confidence slider. The local typing-quality scorecard records every threshold and selects the measured 50% default from the checked-in replay corpus.
 - Stop shipping a Material 3 version no file in the repository names. Four

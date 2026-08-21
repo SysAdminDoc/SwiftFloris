@@ -32,6 +32,14 @@ class EmojiDataVersionTest : FunSpec({
         version.emoji shouldBe "16.0"
     }
 
+    test("version matching is strict for both metadata sources") {
+        val expected = EmojiDataVersion(cldr = "48", emoji = "17.0")
+
+        expected.matches(expected) shouldBe true
+        expected.matches(expected.copy(emoji = "16.0")) shouldBe false
+        expected.matches(expected.copy(cldr = "48.2")) shouldBe false
+    }
+
     test("empty EmojiData has unknown version") {
         val data = EmojiData.empty()
         data.version.cldr shouldBe "unknown"
@@ -87,8 +95,8 @@ class EmojiDataVersionTest : FunSpec({
             val asset = mainAssetText("ime/media/emoji/$locale.txt")
 
             withClue("$locale.txt") {
-                asset shouldContain "# CLDR-VERSION: 48"
-                asset shouldContain "# EMOJI-VERSION: 17.0"
+                asset shouldContain "# CLDR-VERSION: ${EmojiData.BundledVersion.cldr}"
+                asset shouldContain "# EMOJI-VERSION: ${EmojiData.BundledVersion.emoji}"
                 asset shouldNotContain "# EMOJI-VERSION: 16.0"
             }
         }

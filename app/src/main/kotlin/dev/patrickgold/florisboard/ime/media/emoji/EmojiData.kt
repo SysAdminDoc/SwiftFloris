@@ -17,10 +17,12 @@
 package dev.patrickgold.florisboard.ime.media.emoji
 
 import android.content.Context
+import android.util.Log
 import dev.patrickgold.florisboard.lib.FlorisLocale
-import org.florisboard.lib.android.bufferedReader
 import io.github.reactivecircus.cache4k.Cache
+import org.florisboard.lib.android.bufferedReader
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
 
 private typealias EmojiDataByCategoryImpl = EnumMap<EmojiCategory, MutableList<EmojiSet>>
 private typealias EmojiDataBySkinToneImpl = EnumMap<EmojiSkinTone, MutableList<Emoji>>
@@ -30,7 +32,11 @@ typealias EmojiDataBySkinTone = Map<EmojiSkinTone, List<Emoji>>
 data class EmojiDataVersion(
     val cldr: String = "unknown",
     val emoji: String = "unknown",
-)
+) {
+    fun matches(other: EmojiDataVersion): Boolean {
+        return cldr == other.cldr && emoji == other.emoji
+    }
+}
 
 data class EmojiData(
     val byCategory: EmojiDataByCategory,
@@ -38,7 +44,13 @@ data class EmojiData(
     val version: EmojiDataVersion = EmojiDataVersion(),
 ) {
     companion object {
+        private const val TAG = "EmojiData"
+        private const val BUNDLED_ASSET_PREFIX = "ime/media/emoji/"
+        /** The metadata the checked-in emoji assets are expected to declare. */
+        val BundledVersion = EmojiDataVersion(cldr = "48", emoji = "17.0")
+
         private val cache = Cache.Builder<String, EmojiData>().build()
+        private val reportedVersionMismatches = ConcurrentHashMap.newKeySet<String>()
         val Fallback = empty()
 
         private fun newByCategory(): EmojiDataByCategoryImpl {
@@ -62,9 +74,11 @@ data class EmojiData(
         }
 
         suspend fun get(context: Context, path: String): EmojiData {
-            return cache.get(path) {
+            val data = cache.get(path) {
                 loadEmojiDataMap(context, path)
             }
+            reportVersionMismatch(path, data.version)
+            return data
         }
 
         suspend fun get(context: Context, locale: FlorisLocale): EmojiData {
@@ -78,6 +92,17 @@ data class EmojiData(
         private fun loadEmojiDataMap(context: Context, path: String): EmojiData {
             return context.assets.bufferedReader(path).useLines { lines ->
                 parseEmojiDataLines(lines)
+            }
+        }
+
+        private fun reportVersionMismatch(path: String, version: EmojiDataVersion) {
+            if (!path.startsWith(BUNDLED_ASSET_PREFIX) || version.matches(BundledVersion)) return
+            if (reportedVersionMismatches.add(path)) {
+                Log.w(
+                    TAG,
+                    "Emoji asset $path declares CLDR ${version.cldr} / Emoji ${version.emoji}; " +
+                        "expected CLDR ${BundledVersion.cldr} / Emoji ${BundledVersion.emoji}",
+                )
             }
         }
 
