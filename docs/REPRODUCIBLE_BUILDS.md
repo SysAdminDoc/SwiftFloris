@@ -25,7 +25,7 @@ verify it matches the official Release artifact.
 | cmdline tools | `gradle/tools.versions.toml` `cmdlineTools` + `cmdlineToolsChecksum` | 14742923 | SHA-256 pinned |
 | Rust toolchain | `gradle/tools.versions.toml` `rustToolchain` | 1.93.0 | dormant pin retained for future out-of-tree native addons; `:app` ships no Rust today (the `:lib:native` placeholder was dropped in v1.8.185) |
 
-All Compose / library dependencies live behind `gradle/libs.versions.toml` version refs — no transitive `+` or `latest.release` selectors.
+All Compose / library dependencies live behind `gradle/libs.versions.toml` version refs: no transitive `+` or `latest.release` selectors.
 
 The Compose BOM is applied as an `enforcedPlatform`, which is what makes that true for Compose. It was not true before: four Compose Multiplatform dependencies (`aboutlibraries-compose-m3`, `jetpref-datastore-ui`, `jetpref-material-ui`, `material-kolor`) depend on `org.jetbrains.compose.material3`, which constrains `androidx.compose.material3:material3` to a pre-release alpha, and ordinary conflict resolution picked that alpha over the BOM's stable pin. The app shipped against a Material 3 version no file here named. `./gradlew :app:verifyComposeBomAuthority` fails the build if any `androidx.compose` artifact resolves to a pre-release version again.
 `scripts/check-public-doc-version-pins.py` verifies this table plus the README and security version claims against
@@ -77,7 +77,7 @@ metadata.
 
 ```bash
 # 1. Clone at the exact tag you want to reproduce
-git clone --branch v1.9.61 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
+git clone --branch v1.9.62 --depth 1 https://github.com/SysAdminDoc/SwiftFloris.git
 cd SwiftFloris
 
 # 2. Build the release APK (debug-signed fallback fine for byte comparison)
@@ -85,7 +85,7 @@ cd SwiftFloris
 
 # 3. Compare against the published APK (after stripping signatures)
 APK_LOCAL=app/build/outputs/apk/release/app-release.apk
-APK_PUBLISHED=app-release-v1.9.61.apk
+APK_PUBLISHED=app-release-v1.9.62.apk
 
 apkdiff() {
   unzip -p "$1" classes.dex | sha256sum
@@ -115,9 +115,9 @@ in sync with the build. Current stanza:
 
 ```yaml
 Builds:
-  - versionName: "1.9.61"
-    versionCode: 2110
-    commit: v1.9.61
+  - versionName: "1.9.62"
+    versionCode: 2111
+    commit: v1.9.62
     submodules: true
     sudo:
       - apt-get update
@@ -131,10 +131,10 @@ Builds:
 ArchivePolicy: 6
 AutoUpdateMode: Version
 UpdateCheckMode: Tags
-CurrentVersion: "1.9.61"
-CurrentVersionCode: 2110
+CurrentVersion: "1.9.62"
+CurrentVersionCode: 2111
 ```
 
 The F-Droid build server will then attempt a deterministic rebuild and compare
-SHA-256 — passing earns the verified ✔ badge alongside HeliBoard, Fossify,
+SHA-256: passing earns the verified ✔ badge alongside HeliBoard, Fossify,
 FlickBoard, and Thumb-Key.

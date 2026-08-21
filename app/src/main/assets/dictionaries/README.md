@@ -11,11 +11,11 @@ English, preserving word frequencies for completions, corrections, and autocorre
 
 The English dictionary is a merge of three sources:
 
-1. **Curated high-frequency corpus (~50k words, freq band 128–255).** The original frequency-ranked subset shipped
+1. **Curated high-frequency corpus (~50k words, freq band 128-255).** The original frequency-ranked subset shipped
    with SwiftFloris, derived from the FlorisBoard project's bundled dictionary. Real-world frequency data informs the
-   ranking — common words like `the`, `of`, `and` sit at 254–255.
+   ranking: common words like `the`, `of`, `and` sit at 254-255.
 
-2. **SCOWL long-tail expansion (~67k additional words, freq band 80–127).** Sourced from Kevin Atkinson's
+2. **SCOWL long-tail expansion (~67k additional words, freq band 80-127).** Sourced from Kevin Atkinson's
    [Spell-Checker Oriented Word Lists v2020.12.07](http://wordlist.aspell.net/), specifically the
    `english-words.{10,20,35,40,50,60}` + `american-words.{10,20,35,40,50,60}` + selected proper-name lists.
    These words are included for spell-check membership (so legitimate uncommon words don't get red-squiggled or
@@ -39,8 +39,8 @@ Profanity is filtered using the
 
 ## Licenses
 
-- **SCOWL** — see `../../../../LICENSES/SCOWL-Copyright.txt`. BSD-style permissive notice; Apache-2.0 compatible.
-- **LDNOOBW** — CC-BY 4.0; attribution preserved in the project NOTICE file (Apache-2.0 § 4(d)).
+- **SCOWL**: see `../../../../LICENSES/SCOWL-Copyright.txt`. BSD-style permissive notice; Apache-2.0 compatible.
+- **LDNOOBW**: CC-BY 4.0; attribution preserved in the project NOTICE file (Apache-2.0 § 4(d)).
 
 ## Regenerating the dictionary
 

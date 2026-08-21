@@ -14,7 +14,7 @@ into their own local release gate.
 
 SwiftFloris's base APK is already gated locally by the no-network check and the 16 KB native-library alignment guard.
 But addons ship as **separate APKs from
-separate repositories** — typically maintained by third parties such as language-pack authors, theme designers, or
+separate repositories**: typically maintained by third parties such as language-pack authors, theme designers, or
 runtime providers (whisper.cpp wrapper, Bergamot wrapper, etc.). When a user installs such an addon, they are
 extending the keyboard's effective trust boundary without re-running the base APK's local gates.
 

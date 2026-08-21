@@ -174,11 +174,39 @@ class FlorisSpellCheckerService : SpellCheckerService() {
         ): Array<SentenceSuggestionsInfo> {
             flogInfo(LogTopic.SPELL_EVENTS)
 
-            // Delegate to AOSP's default sentence-aggregation implementation. The default
-            // splits the sentence into words and calls onGetSuggestionsMultiple, which is
-            // already SwiftFloris-backed via NlpManager. A custom implementation would only
-            // be worthwhile if we needed sentence-level context across word boundaries.
-            return super.onGetSentenceSuggestionsMultiple(textInfos, suggestionsLimit)
+            val fallback = super.onGetSentenceSuggestionsMultiple(textInfos, suggestionsLimit)
+            if (!BuildConfig.DEBUG || textInfos == null || !locale.startsWith("en", ignoreCase = true)) {
+                return fallback
+            }
+
+            // The evaluator lives only in app/src/debug. Reflection keeps release APKs free of
+            // the spike while still exercising Android's real sentence spell-checker callback on
+            // a connected device. A missing or broken evaluator must never affect normal spelling.
+            return Array(textInfos.size) { index ->
+                debugGrammarSuggestion(textInfos[index], suggestionsLimit)
+                    ?: fallback.getOrNull(index)
+                    ?: SentenceSuggestionsInfo(emptyArray(), intArrayOf(), intArrayOf())
+            }
+        }
+
+        private fun debugGrammarSuggestion(
+            textInfo: TextInfo,
+            suggestionsLimit: Int,
+        ): SentenceSuggestionsInfo? {
+            return try {
+                val evaluatorClass = Class.forName(
+                    "dev.patrickgold.florisboard.debug.EnglishGrammarRuleSpike",
+                )
+                val evaluator = evaluatorClass.getField("INSTANCE").get(null)
+                evaluatorClass
+                    .getMethod("evaluate", TextInfo::class.java, Int::class.javaPrimitiveType)
+                    .invoke(evaluator, textInfo, suggestionsLimit) as? SentenceSuggestionsInfo
+            } catch (error: ReflectiveOperationException) {
+                flogWarning(LogTopic.SPELL_EVENTS) {
+                    "Debug proofreader spike unavailable: ${error.javaClass.simpleName}"
+                }
+                null
+            }
         }
 
         override fun onCancel() {

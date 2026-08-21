@@ -1,6 +1,6 @@
 # Privacy and AI in SwiftFloris
 
-**Last updated:** 2026-06-04
+**Last updated:** 2026-08-21
 **EU AI Act Article 50 compliance horizon:** 2 August 2026
 
 This document explains every AI/ML surface in SwiftFloris, what it does,
@@ -28,13 +28,13 @@ Three forces converged on the need for a single explainer:
    2026**. Any AI-assisted feature that interacts directly with users
    must inform the user at first interaction. SwiftFloris ships next-word
    prediction, glide-typing classification, on-device voice transcription,
-   on-device translation, and a smart-compose ghost-text surface — every
+   on-device translation, and a smart-compose ghost-text surface: every
    one of these is in scope.
 2. **2026-05-31 SwiftKey account retirement** is funneling users who
    actively cared about their typing data to alternative keyboards.
    Those users want a concrete answer to "what does this keyboard do
-   with my words?" — not a one-line "no telemetry" footer.
-3. **Industry pattern** — Apple Intelligence, Samsung Galaxy AI, and
+   with my words?": not a one-line "no telemetry" footer.
+3. **Industry pattern**: Apple Intelligence, Samsung Galaxy AI, and
    Microsoft Copilot have all standardized on per-feature "AI
    processing disclosure" surfaces (App Store guideline 5.1.2(i) in
    November 2025 cemented this for iOS). Android keyboards are next.
@@ -45,7 +45,7 @@ keyboard" links here.
 
 ---
 
-## 2. The AI/ML surfaces — per-feature inventory
+## 2. The AI/ML surfaces: per-feature inventory
 
 Each row lists: **what runs**, **where it runs**, **what data it sees**,
 **what it sends to anyone else**, **how to turn it off**.
@@ -73,7 +73,7 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
   words per language). The classifier in
   [`ime/text/gestures/StatisticalGlideTypingClassifier.kt`](../app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/gestures/StatisticalGlideTypingClassifier.kt).
 - **Where.** On this device only. **No cloud lookup. No closed
-  `libjni_latinimegoogle.so` swipe blob** (explicitly rejected — see
+  `libjni_latinimegoogle.so` swipe blob** (explicitly rejected: see
   privacy policy).
 - **Data seen.** Your finger's normalized x/y/t points on the keyboard
   surface during a glide.
@@ -198,11 +198,11 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
 - **Data seen.** The package name of the focused editor (the standard
   IME contract) and that app's icon bitmap.
 - **Data sent.** Nothing leaves the device. **No `PACKAGE_USAGE_STATS`
-  permission required** — the package name comes from the IME contract.
+  permission required**: the package name comes from the IME contract.
 - **Discovery hint.** The one-time Smartbar hint counts distinct editor apps
   in memory only. SwiftFloris persists the hint state, not the package names.
 - **Off switch.** Settings → Theme → "Tint to active app's icon"
-  (default **off** — privacy-by-default even though no extra permission
+  (default **off**: privacy-by-default even though no extra permission
   is required).
 
 ### 2.12 MCP daemon bridge
@@ -228,7 +228,7 @@ Each row lists: **what runs**, **where it runs**, **what data it sees**,
   or binding, even when Android has not granted them: a daemon may hold only
   SwiftFloris's own signature permissions plus a short list of permissions that
   cannot move data off the device. Network permissions are rejected by name,
-  and so is everything else outside the allowlist — including transports such
+  and so is everything else outside the allowlist: including transports such
   as SMS, Bluetooth and nearby-devices that need no `INTERNET` permission, and
   any permission a future Android release adds. The separate
   daemon remains a privacy boundary for its other permissions and behavior,
@@ -259,6 +259,70 @@ may read it for suggestions and show its entries in Settings, but the in-app sys
 dictionary screen is read-only: SwiftFloris never adds, edits, deletes, or imports
 rows into that provider. Use Android's system dictionary settings for those changes.
 
+### 2.14 Rule-based offline proofreader evaluation
+
+**Status:** evaluated on 2026-08-21. No production proofreader engine ships.
+
+The evaluation compared the two credible maintained engines with a small
+SwiftFloris-owned rule set. All three run on the CPU, need no model or GPU, and can
+work without `INTERNET` permission.
+
+| Candidate | Licence fit | Language and Android fit | Decision |
+|---|---|---|---|
+| [Harper 2.8.0](https://github.com/Automattic/harper/releases/tag/v2.8.0) | Apache-2.0, matching SwiftFloris | English only. The core is Rust and has no official Android AAR or JNI API. | Best candidate for a later dedicated addon, once Android bindings and crash isolation are proven. |
+| [LanguageTool 6.7](https://repo1.maven.org/maven2/org/languagetool/) | LGPL-2.1-or-later for the core, with separately licensed resources. It can be distributed beside Apache-2.0 code, but it cannot be relicensed as Apache-2.0. Distribution must preserve its licence, source and replacement rights. | More than 25 languages, but the supported embedded API requires Java 17 and the project recommends its HTTP server. There is no official Android artifact. | Do not put it in the base APK. The licence review, Java runtime surface and dependency size outweigh its language coverage here. |
+| SwiftFloris debug rule set | Apache-2.0 | Four English demonstrative and verb agreement forms in Kotlin. | Keep only as a plumbing proof. Its coverage is too narrow for a user feature. |
+
+#### Measured rule-data size
+
+These are compressed upstream artifact sizes measured on 2026-08-21. LanguageTool
+figures use its 6.7 language JAR plus the POS dictionary named by that module. Every
+LanguageTool configuration also needs the shared 1.83 MiB core JAR and transitive
+libraries, which are not included in the language totals.
+
+| Engine | Language | Rule and dictionary data |
+|---|---|---:|
+| LanguageTool 6.7 | English | 7.15 MiB |
+| LanguageTool 6.7 | German | 21.53 MiB |
+| LanguageTool 6.7 | French | 3.00 MiB |
+| LanguageTool 6.7 | Spanish | 3.38 MiB |
+| Harper 2.8.0 | English | 0.75 MiB source dictionary; compiled rules are code, not a separate language pack |
+
+For scale, Harper's official 2.8.0 x64 CLI archive is 7.84 MiB and its browser
+extension archive is 7.99 MiB. Neither is an Android deliverable. The numbers above
+come from [Maven Central](https://repo1.maven.org/maven2/org/languagetool/) and
+Harper's [versioned dictionary](https://github.com/Automattic/harper/blob/v2.8.0/harper-core/dictionary.dict)
+and [release assets](https://github.com/Automattic/harper/releases/tag/v2.8.0).
+
+#### APK and addon decision
+
+Bundling an engine in the base APK would make every user carry one language's rules,
+plus shared runtime code and native libraries where applicable. That is rejected.
+If proofreading is revisited, it should use a dedicated `PROOFREADER_RUNTIME` addon
+type rather than borrowing the Smart Compose contract. The addon must remain under
+the existing 64 MiB bundle cap, pass the no-network permission check, declare its
+language coverage, and return bounded rule matches through a versioned result schema.
+
+There is one privacy constraint the package boundary cannot solve. Android's
+`SpellCheckerService` sentence callback supplies `TextInfo` and locale, but no
+`EditorInfo`. It cannot run `SensitiveFieldGuard` itself. A production addon must not
+receive text from that system callback until the host can prove the editor is safe.
+An IME smartbar route can use the existing guard because it owns the editor context.
+
+#### Device proof
+
+The retained spike is compiled only into debug APKs. Its English rule marks the verb
+in `This are ready.` and suggests `is`. On a physical SM-S908U1 running Android 16
+(API 36), `GrammarProofreaderSpikeDeviceTest` selected SwiftFloris through
+`TextServicesManager`, opened the existing `FlorisSpellCheckerService`, requested
+sentence suggestions, and received one result at offset 5 with length 3 and
+`RESULT_ATTR_LOOKS_LIKE_GRAMMAR_ERROR`. The callback also preserved the request cookie
+and sequence. Host tests cover singular, plural and valid agreement cases.
+
+The release decision is therefore complete: Android's service path supports grammar
+attributes, but SwiftFloris will not ship LanguageTool, Harper or the handwritten
+rules as a production proofreader in this release.
+
 ---
 
 ## 3. The cross-cutting privacy contract
@@ -266,10 +330,10 @@ rows into that provider. Use Android's system dictionary settings for those chan
 Every surface above is subject to:
 
 - The **no-`INTERNET`** invariant (build gate).
-- The **`SensitiveFieldGuard`** check at every addon dispatch site — sensitive
+- The **`SensitiveFieldGuard`** check at every addon dispatch site: sensitive
   fields (password / numeric-PIN / no-personalised-learning) return a safe
   no-result before any AI provider is asked.
-- The **request-scoped suggestion privacy snapshot** — `NlpManager.suggest`
+- The **request-scoped suggestion privacy snapshot**: `NlpManager.suggest`
   freezes incognito, no-personalised-learning/editor sensitivity, suggestion
   enabled flags, offensive-content preference, and emoji candidate limits before
   async provider work starts, so delayed candidate generation cannot borrow
@@ -283,10 +347,10 @@ Every surface above is subject to:
   `learnWord` path writes only to the app-private Room store, leaves the system
   `UserDictionary` DAO absent, and honors the Settings preference, so shared
   provider writes cannot return silently.
-- The **personal-dictionary backup exclusion** — encrypted DB is excluded
+- The **personal-dictionary backup exclusion**: encrypted DB is excluded
   from both cloud backup and device-to-device transfer (Android Keystore
   wrap key is non-portable).
-- The **portable clipboard-backup boundary** — selecting any clipboard
+- The **portable clipboard-backup boundary**: selecting any clipboard
   section requires a passphrase-encrypted, versioned AES-GCM `.sfbak`
   envelope. Authentication and archive validation complete before live data
   changes; failed or cancelled restores reapply an app-private recovery
@@ -308,14 +372,14 @@ the privacy policy for the full rationale):
 | Microsoft / Google / any vendor account | §1 |
 | Federated learning gradients uploaded anywhere | §1 |
 | Cloud rewrite / Copilot / Gemini API / Bing | Cloud + account-bound |
-| Cloud translator (MS / Google / DeepL) | Cloud — Bergamot addon is the local replacement |
-| Tenor / Giphy GIF search | Cloud + telemetry — bundled local sticker packs are the offline equivalent |
-| Cloud Clipboard sync via vendor | §1 — Next-5 CRDT over Syncthing is the local replacement |
-| OneDrive learned-words backup | §1 — personal-dictionary export to plain CSV/combined-list or passphrase-encrypted `.sfexp` is the local replacement |
+| Cloud translator (MS / Google / DeepL) | Cloud: Bergamot addon is the local replacement |
+| Tenor / Giphy GIF search | Cloud + telemetry: bundled local sticker packs are the offline equivalent |
+| Cloud Clipboard sync via vendor | §1: Next-5 CRDT over Syncthing is the local replacement |
+| OneDrive learned-words backup | §1: personal-dictionary export to plain CSV/combined-list or passphrase-encrypted `.sfexp` is the local replacement |
 | In-keyboard ads / sponsored content | Trust posture |
 | Closed-source `libjni_latinimegoogle.so` blob | Audit posture |
 | MediaPipe LLM Inference (deprecated by Google) | Use LiteRT-LM addon path instead |
-| Self-update (in-app APK download + install) | Supply-chain risk — Obtainium / F-Droid / IzzyOnDroid handle update orchestration |
+| Self-update (in-app APK download + install) | Supply-chain risk: Obtainium / F-Droid / IzzyOnDroid handle update orchestration |
 
 ---
 
@@ -323,16 +387,16 @@ the privacy policy for the full rationale):
 
 Three independent ways to audit the no-network promise:
 
-1. **`aapt dump permissions` against the installed APK** — should list
+1. **`aapt dump permissions` against the installed APK**: should list
    `android.permission.VIBRATE`, `android.permission.POST_NOTIFICATIONS`,
    `android.permission.READ_CALENDAR`, and
    `io.github.sysadmindoc.swiftfloris.permission.BIND_MCP`. Crucially:
    no `android.permission.INTERNET`, `ACCESS_NETWORK_STATE`, or Wi-Fi
    network permission.
-2. **The local release evidence log** — `scripts/release-evidence.ps1` runs
+2. **The local release evidence log**: `scripts/release-evidence.ps1` runs
    `:app:verifyNoInternetPermission` and fails if any `AndroidManifest.xml`
    declares a permission outside the enrollment allowlist.
-3. **The merged manifest** — build `:app:assembleRelease` and inspect
+3. **The merged manifest**: build `:app:assembleRelease` and inspect
    `app/build/intermediates/merged_manifest/release/AndroidManifest.xml`.
 
 ---
@@ -367,10 +431,10 @@ local processing only; nothing leaves the device.
 
 ## 7. Pointers
 
-- [README](../README.md) — front door
-- [Architecture & Stack](../README.md#architecture--stack) — stack and module map
-- [ROADMAP.md](../ROADMAP.md) — full project plan
-- [docs/THREAT_MODEL.md](THREAT_MODEL.md) — attacker scenarios + defenses
-- [docs/SECURITY.md](SECURITY.md) — release-time security + dep scanning
-- [docs/REPRODUCIBLE_BUILDS.md](REPRODUCIBLE_BUILDS.md) — toolchain pin matrix
-- [README keyboard migration](../README.md#keyboard-migration) — 2026-05-31 migration paths
+- [README](../README.md): front door
+- [Architecture & Stack](../README.md#architecture--stack): stack and module map
+- [ROADMAP.md](../ROADMAP.md): full project plan
+- [docs/THREAT_MODEL.md](THREAT_MODEL.md): attacker scenarios + defenses
+- [docs/SECURITY.md](SECURITY.md): release-time security + dep scanning
+- [docs/REPRODUCIBLE_BUILDS.md](REPRODUCIBLE_BUILDS.md): toolchain pin matrix
+- [README keyboard migration](../README.md#keyboard-migration): 2026-05-31 migration paths

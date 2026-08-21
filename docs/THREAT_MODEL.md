@@ -1,7 +1,7 @@
 # SwiftFloris Threat Model
 
 **Last updated:** 2026-07-02 (v1.9.54)
-**Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules — none ship today, none are planned).
+**Scope:** SwiftFloris Android IME, base APK only (no optional cloud-bound modules: none ship today, none are planned).
 **Audience:** maintainers, reviewers, and security-conscious users evaluating SwiftFloris vs proprietary keyboards.
 
 ### What changed since the v1.8.68 baseline
@@ -11,85 +11,85 @@ items. They are referenced by their original finding IDs so the audit trail is t
 the local audit archive and the README release log; the public trust state below is the canonical
 clean-clone summary:
 
-- **v1.8.85** — `verifyNoInternetPermission` now scans **merged** manifests in addition to source
+- **v1.8.85**: `verifyNoInternetPermission` now scans **merged** manifests in addition to source
   manifests, and honours `tools:node="remove"`. Source-only scanning could miss a transitively-
   declared INTERNET permission from an aggregated library; the merged-manifest scan closes it.
-- **v1.9.59** — the same fail-closed enrollment permission allowlist now drives the runtime addon/MCP
+- **v1.9.59**: the same fail-closed enrollment permission allowlist now drives the runtime addon/MCP
   policy, source and merged manifest gates, and addon APK validation. The registry also pins the
   allowlist to `NoNetworkPermissionPolicy` so an unknown permission cannot pass one surface and fail another.
-- **v1.8.85** — Personal dictionary now excluded from cloud-backup AND device-to-device transfer.
+- **v1.8.85**: Personal dictionary now excluded from cloud-backup AND device-to-device transfer.
   New `app/src/main/res/xml/data_extraction_rules.xml` ships the Android-12+ schema with explicit
   excludes for the SQLCipher database and its Tink-wrapped passphrase.
-- **v1.8.86 / v1.8.87** — FLAG_SECURE coverage extended via `keyVariation == PASSWORD` propagation
+- **v1.8.86 / v1.8.87**: FLAG_SECURE coverage extended via `keyVariation == PASSWORD` propagation
   for `TYPE_NUMBER_VARIATION_PASSWORD` and a Compose `DisposableEffect` on the encrypted-dictionary
   passphrase dialog. Previously the numeric-PIN entry path skipped the IME-side screenshot block.
-- **v1.8.95** — `verifyDataExtractionRules` build gate added. Pins the load-bearing
+- **v1.8.95**: `verifyDataExtractionRules` build gate added. Pins the load-bearing
   data_extraction_rules.xml excludes against accidental rewrite (e.g. a tool that "normalizes" the
   XML and drops the personal-dictionary include path). **Superseded 2026-08-20:** that task pinned a
   hand-written 13 of the file's 22 paths, so deleting the Tasker HMAC secret, the clipboard history
   and its keys, or the scheduled-backup prefs left it green. `BackupDataInventoryTest` is now the
   single owner and matches both rule sets exactly against
   `BackupDataInventory.requiredAndroidExcludes()`.
-- **v1.8.85 / v1.8.89** — `ZipUtils.unzip` now aborts atomically on security violations (path
+- **v1.8.85 / v1.8.89**: `ZipUtils.unzip` now aborts atomically on security violations (path
   traversal, oversized entries, decompression bombs). Benign anomalies (a single corrupted entry
   in an otherwise valid archive) continue with a warning so a partially-corrupted dictionary
   import still works.
-- **v1.8.104** — App-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` now always forces
+- **v1.8.104**: App-declared `IME_FLAG_NO_PERSONALIZED_LEARNING` now always forces
   `isIncognitoMode = true` regardless of the user's `prefs.suggestion.incognitoMode` preference.
   Previously a `FORCE_OFF` user preference silently overrode cross-app sensitive-field
   declarations (Signal, ProtonMail, banking).
-- **v1.8.105** — Clipboard cut/copy now gates on `isIncognitoMode` in addition to
+- **v1.8.105**: Clipboard cut/copy now gates on `isIncognitoMode` in addition to
   `isPasswordField()`. Closes the cross-app leakage path where a user typing in an incognito-
   declared field could Cut text into IME-local clipboard history.
-- **v1.8.106** — Voice handoff now early-returns in PASSWORD / numeric-PIN / web-password /
+- **v1.8.106**: Voice handoff now early-returns in PASSWORD / numeric-PIN / web-password /
   incognito fields. External voice IMEs (which typically have full network permission) cannot
   receive sensitive-field audio.
-- **v1.8.111** — Provider-backed clipboard media clones now have a 32 MiB image cap and 128 MiB
+- **v1.8.111**: Provider-backed clipboard media clones now have a 32 MiB image cap and 128 MiB
   video cap; oversized preview dimensions (> 8192 px) are rejected before decode.
-- **v1.8.112** — Provider-backed media closed on automatic history rotation / timed expiry
+- **v1.8.112**: Provider-backed media closed on automatic history rotation / timed expiry
   before the Room rows are deleted. Closes the URI-permission leak window.
-- **v1.8.113** — `VoiceInputSetupActivity` pinned as `android:exported="false"` plus
+- **v1.8.113**: `VoiceInputSetupActivity` pinned as `android:exported="false"` plus
   setup-intent extras validation.
-- **v1.8.114** — External voice IMEs must hold `RECORD_AUDIO` permission before SwiftFloris
+- **v1.8.114**: External voice IMEs must hold `RECORD_AUDIO` permission before SwiftFloris
   considers handoff "ready." Prevents handoff to an IME that lacks mic access.
-- **v1.8.122** — `KenLmTrieReader.readBytesAt(...)` now rejects header/pre-body absolute offsets
+- **v1.8.122**: `KenLmTrieReader.readBytesAt(...)` now rejects header/pre-body absolute offsets
   instead of aliasing them to trie-body zero. Header probe also avoids large-file `toInt()`
   overflow. Closes a precondition-violation bug class on adversarially-crafted KenLM model files.
-- **v1.8.123** — Roborazzi visual-regression is now a hard CI gate (was `continue-on-error`).
+- **v1.8.123**: Roborazzi visual-regression is now a hard CI gate (was `continue-on-error`).
   Catches accidental theme regressions that would expose hidden states.
-- **v1.8.124** — Addon trust pins now expose targeted revoke (`AddonSigningPinSet.withoutPackage`)
+- **v1.8.124**: Addon trust pins now expose targeted revoke (`AddonSigningPinSet.withoutPackage`)
   and reset-all actions in Settings → Addons. Users can disenroll a single compromised addon
   without losing trust for the rest of the addon set.
-- **v1.8.125** — Addon dictionary-pack assets mount via `PackageManager#getResourcesForApplication`,
+- **v1.8.125**: Addon dictionary-pack assets mount via `PackageManager#getResourcesForApplication`,
   no extraction, no temp copies. Closes the symlink-vs-extracted-file confusion class.
-- **v1.8.229** — First-seen non-co-signed addon APKs now stay rejected until Settings records an
+- **v1.8.229**: First-seen non-co-signed addon APKs now stay rejected until Settings records an
   explicit signing-certificate pin for the displayed fingerprint; co-signed addons still enroll
   automatically. Closes the discovery-as-consent gap in optional addon enrollment.
-- **v1.8.230** — Sync sealed-box envelopes now have deterministic v1 schema/vector coverage:
+- **v1.8.230**: Sync sealed-box envelopes now have deterministic v1 schema/vector coverage:
   fixed X25519 keys pin the ephemeral-public-key + nonce + AES-GCM ciphertext shape before any
   CRDT sync transport persists envelopes.
-- **v1.8.231** — Dynamic incognito toggles now re-apply the IME window `FLAG_SECURE`
+- **v1.8.231**: Dynamic incognito toggles now re-apply the IME window `FLAG_SECURE`
   policy immediately for the active field. Plain fields become screenshot-blocked when
   incognito turns on, and password / no-personalized-learning fields stay protected when
   the user attempts to toggle incognito off.
-- **v1.8.236** — Async suggestion candidate generation now consumes an immutable request
+- **v1.8.236**: Async suggestion candidate generation now consumes an immutable request
   privacy snapshot. Emoji/word providers, typing-trace gating, and smart-compose ghost
   text use the field/session privacy facts captured before coroutine launch instead of
   re-reading live incognito or editor-info state after a field switch or privacy toggle.
-- **v1.8.174** — Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
+- **v1.8.174**: Repo-hygiene CI gate now rejects root-level `*.apk` / `*.aab` / `*.jks` /
   `*.keystore` / `local.properties` / `*.backup*` / large branding PNGs. Closes the supply-
   chain footgun where a maintainer's working-tree keystore could land in a commit.
-- **v1.8.175** — F-Droid metadata gate (`scripts/check-fastlane-metadata.sh`) prevents stale
+- **v1.8.175**: F-Droid metadata gate (`scripts/check-fastlane-metadata.sh`) prevents stale
   upstream FlorisBoard branding from publishing on F-Droid; rejects future versionCode bumps
   that ship without a matching per-versionCode changelog file.
 
 The remaining open audit items (see `.ai/research/2026-05-17/SEVENTH_PASS_FINDINGS.md` §2 / §3)
-are local-recogniser bring-up gated (the voice-route findings #1–6, #8, #10), perf polish on
+are local-recogniser bring-up gated (the voice-route findings #1-6, #8, #10), perf polish on
 non-hot paths, or UX polish on dead code paths.
 
 This document enumerates the realistic attacker scenarios SwiftFloris defends against, the
 attack surfaces it deliberately closes, and the gaps that remain. It is the structured
-counterpart to the no-network promise — keep both in sync on every change that touches
+counterpart to the no-network promise: keep both in sync on every change that touches
 permissions, IPC surfaces, or persistence.
 
 ---
@@ -157,7 +157,7 @@ Out of scope:
 ### 3.3 Password-field hardening
 - Suggestions disabled when `keyVariation == PASSWORD` (composing flagged off).
 - Auto-learn skipped on password fields even if the host app forgets to set
-  `IME_FLAG_NO_PERSONALIZED_LEARNING` — many do (see HeliBoard #2124,
+  `IME_FLAG_NO_PERSONALIZED_LEARNING`: many do (see HeliBoard #2124,
   AnySoftKeyboard #1399).
 - IME-local clipboard history skips writes from `performClipboardCut` /
   `performClipboardCopy` when the active field is a password variation.
@@ -244,7 +244,7 @@ Out of scope:
   in `app/proguard-rules.pro` for release builds.
 - No closed-source binary blobs (e.g. `libjni_latinimegoogle.so`); the base
   APK ships **zero** native code as of v1.8.185 (the prior `:lib:native` Rust
-  placeholder was dropped — see `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md` EI11 + the
+  placeholder was dropped: see `docs/archive/research/RESEARCH_FEATURE_PLAN_2026-05-25.md` EI11 + the
   v1.8.185 CHANGELOG entry). When optional native runtimes (LiteRT-LM,
   whisper.cpp, librime, etc.) land they ship as out-of-tree signed addon
   APKs with their own auditable sources, never as a hidden `:app`
@@ -258,7 +258,7 @@ Out of scope:
 | Gap | Severity | Tracker |
 |---|---|---|
 | Reproducible-build verification not yet active on F-Droid | Medium | N6.3 |
-| Voice-command parser uses external FUTO Voice Input — that app has its own threat model and permissions | Low (FUTO is offline; user makes the trust decision when installing it) | Documented under "External components" in README |
+| Voice-command parser uses external FUTO Voice Input: that app has its own threat model and permissions | Low (FUTO is offline; user makes the trust decision when installing it) | Documented under "External components" in README |
 
 ---
 
@@ -289,5 +289,5 @@ Out of scope:
 ## 6. Reporting a vulnerability
 
 Open a GitHub issue or, for embargo-required disclosures, contact the maintainer
-listed in `LICENSE` / repository profile. There is no separate security@ alias —
+listed in `LICENSE` / repository profile. There is no separate security@ alias :
 the project is small enough that public-issue triage is the operating mode.

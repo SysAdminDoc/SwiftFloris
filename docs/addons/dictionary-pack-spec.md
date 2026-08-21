@@ -3,7 +3,7 @@
 This document defines the exact APK + manifest +
 descriptor shape an external dictionary-pack addon must take to be enrolled
 by the SwiftFloris IME at runtime. It is the foundation that the bundled
-Polish (2025 baseline) addon — and every future language pack — will follow.
+Polish (2025 baseline) addon: and every future language pack: will follow.
 
 The contract is intentionally minimal: a dictionary pack is just an APK
 whose `assets/` directory contains a `.fldic` word list (and optionally a
@@ -149,7 +149,7 @@ path. As of v1.8.124, the same screen can reset saved signing-certificate pins
 or trust a changed certificate after confirmation and rescan. As of v1.8.125,
 the Latin dictionary loader mounts the addon's `assets/` via the standard
 [`PackageManager#getResourcesForApplication`](https://developer.android.com/reference/android/content/pm/PackageManager#getResourcesForApplication(java.lang.String))
-+ `AssetManager` flow — no extraction, no temp-file copy, no permission
++ `AssetManager` flow: no extraction, no temp-file copy, no permission
 escalation. Addon asset text reads enforce the existing per-addon byte cap
 before materializing a string; an oversized asset is skipped rather than loaded.
 As of v1.8.126, Settings → Addons also lists mounted dictionary-pack descriptor
@@ -188,4 +188,4 @@ data. Production language packs should keep their larger datasets in separate
 addon repositories and copy the same manifest, descriptor, signing, and
 verification shape. Validation can also be exercised in unit tests via
 `DictionaryPackDescriptor.parse(rawJson)` and `DictionaryPackCatalog.build(...)`
-— see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.
+: see `DictionaryPackDescriptorTest` and `DictionaryPackCatalogTest`.

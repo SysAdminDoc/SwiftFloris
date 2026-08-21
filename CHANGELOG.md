@@ -1,6 +1,11 @@
 # Changelog
 
-## v1.9.61 — 2026-08-20
+## v1.9.62 (2026-08-21)
+
+- Evaluate offline rule-based proofreading without adding a production engine. LanguageTool's licence, Java surface, and per-language data cost rule it out for the base APK. Harper is the cleaner future addon candidate, but it has no official Android library and supports English only.
+- Add a debug-only English agreement rule and device test. The test reaches `FlorisSpellCheckerService` through Android's `TextServicesManager` and proves that the existing sentence path returns `RESULT_ATTR_LOOKS_LIKE_GRAMMAR_ERROR` on a physical Android 16 device.
+
+## v1.9.61: 2026-08-20
 
 - Add one snackbar surface to Settings and the keyboard panels. Clipboard text deletion and per-app profile deletion can now be undone, media deletion asks for confirmation, and Delete no longer sits in the profile dialog's dismiss controls.
 - Settings search now scrolls to the matching preference row and briefly highlights it. The shared preference wrappers keep the destination screens unchanged while the row reports its position, and the search card disappears after the row is reached.
@@ -34,7 +39,7 @@
   misbehaving. The redaction reminder travels with the shared text.
 - Fix a crash reporter that could crash. It read every field on
   `Build.VERSION_CODES` as an integer, which holds for the constants a stock
-  platform declares but throws the moment a non-integer field exists — so the
+  platform declares but throws the moment a non-integer field exists: so the
   failure would land while reporting a failure. It now reads only static integer
   fields and falls back to naming the SDK level.
 - Stop clipboard search from copying the whole history on every keystroke. Each
@@ -49,7 +54,7 @@
   Addons none of 8, MCP none of 9 and Gestures 7 of 28: searching "vibration
   strength" or "utility key action" returned nothing. The 173 missing rows are
   indexed, and a new gate fails the build when a screen declares a preference
-  that search cannot reach — the old integrity test iterated the index itself, so
+  that search cannot reach: the old integrity test iterated the index itself, so
   it could only check what was already there and never saw an omission.
 - Say on the MCP screen that no daemon runs in this build. The screen offered
   discovery review, a bridge switch and per-daemon toggles while nothing could
@@ -64,7 +69,7 @@
   which dropped every move once the gliding finger was not the first one down.
   A glide already under way now keeps the trace when another finger lands, and
   the key a glide starts on is resolved from the gliding pointer rather than
-  assumed to be the first — which is what suppresses glides that begin on
+  assumed to be the first: which is what suppresses glides that begin on
   delete, shift or space.
 - Put SwiftFloris under Android Settings → Apps → Language on Android 13 and
   newer. The app declared no `android:localeConfig`, so the system's per-app
@@ -90,7 +95,7 @@
   version from the version catalog, so a pin bump that leaves the generated
   licence metadata stale still fails.
 
-## v1.9.60 — 2026-08-20
+## v1.9.60: 2026-08-20
 
 - Recognise Transcribro as an offline voice input provider, alongside FUTO Voice
   Input, WhisperInput and Whisper.
@@ -196,11 +201,11 @@
   empty states, automatically start the first addon scan, and add a Roborazzi
   baseline for the theme loading surface.
 
-## v1.9.59 — 2026-08-11
+## v1.9.59: 2026-08-11
 
 - Screen addon and MCP daemon enrolment against a permission allowlist so
-  transports that need no `INTERNET` permission — SMS, Bluetooth,
-  nearby-devices, shared storage — are rejected alongside the network ones.
+  transports that need no `INTERNET` permission: SMS, Bluetooth,
+  nearby-devices, shared storage: are rejected alongside the network ones.
 - Clear leftover cache off the main thread at startup, so a cold keyboard
   start no longer blocks on a recursive delete.
 - Replace a typed word by selecting it and committing over the selection
@@ -223,7 +228,7 @@
 - Declare the bundled emoji data as Unicode Emoji 17.0, which is what CLDR 48
   generated; the assets already carried every Emoji 17.0 character.
 
-## v1.9.58 — 2026-08-02
+## v1.9.58: 2026-08-02
 
 - Keep trust-capability evidence aligned with SQLCipher clipboard fallback and
   manifest permission-removal directives, and make the release-front-door
@@ -244,7 +249,7 @@
 - Add programmable Page Up/Page Down key codes, Android page-key dispatch, custom-layout editor support, localized labels, and Terminal/Navigation preset coverage.
 - Import Unicode Keyboard3 XML as hardened local keyboard extensions with bounded XML parsing, versioned bundled-CLDR allowlists, deterministic compilation, source provenance, and security/conformance diagnostics.
 
-## Roadmap archive — 2026-08-10 — ROADMAP.md
+## Roadmap archive: 2026-08-10: ROADMAP.md
 
 <details>
 <summary>Original roadmap snapshot</summary>
@@ -314,7 +319,7 @@ gated on external deliverables or hardware testing live in
 
 ### P3
 
-## Audit Findings — 2026-08-02
+## Audit Findings: 2026-08-02
 
 Baseline for this pass: `.\gradlew.bat :app:testDebugUnitTest :app:lintDebug`
 → **BUILD SUCCESSFUL in 4m 34s**, no failing tests, no lint failures. Nothing
