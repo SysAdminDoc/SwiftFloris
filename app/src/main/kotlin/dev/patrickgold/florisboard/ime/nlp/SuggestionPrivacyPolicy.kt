@@ -90,6 +90,16 @@ internal object SuggestionPrivacyPolicy {
             keyVariation != KeyVariation.PASSWORD
     }
 
+    fun shouldRecordAdaptiveTouchSample(
+        isAdaptiveTouchEnabled: Boolean,
+        isIncognitoMode: Boolean,
+        keyVariation: KeyVariation,
+    ): Boolean {
+        return isAdaptiveTouchEnabled &&
+            !isIncognitoMode &&
+            keyVariation != KeyVariation.PASSWORD
+    }
+
     fun allowsGhostText(
         isPrivateSession: Boolean,
         isEditorSensitive: Boolean,

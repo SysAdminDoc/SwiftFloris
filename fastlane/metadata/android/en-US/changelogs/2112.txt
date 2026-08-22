@@ -1,0 +1,1 @@
+Adaptive touch refinement and learning now stop in password, incognito, and app-declared no-personalized-learning sessions. Normal text fields keep learning, and focused privacy tests cover all four paths.

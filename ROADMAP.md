@@ -6,13 +6,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
 
 ### P0
 
-- [ ] P0: Stop adaptive-touch learning in private sessions
-  Why: Manual incognito and app-declared no-learning sessions can currently mutate the persisted touch model.
-  Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/TextKeyboardLayout.kt:981-988 and :1149-1157; app/src/main/kotlin/dev/patrickgold/florisboard/ime/text/keyboard/AdaptiveTouchModel.kt; Android EditorInfo IME_FLAG_NO_PERSONALIZED_LEARNING.
-  Touches: TextKeyboardLayout.kt, AdaptiveTouchModel.kt, adaptive-touch policy tests.
-  Acceptance: Password, manual-incognito, and app-declared no-learning sessions never change adaptive-touch sample counts, means, variances, or persisted state; normal fields still learn; focused tests cover all four cases.
-  Complexity: S
-
 - [ ] P0: Confine raw-content developer tools to debug builds
   Why: A release user can enable overlays that display clipboard text, surrounding editor text, selections, composition, and spelling words.
   Evidence: app/src/main/kotlin/dev/patrickgold/florisboard/app/settings/advanced/OtherScreen.kt:131-135; app/src/main/kotlin/dev/patrickgold/florisboard/app/Routes.kt:297-312 and :441-452; app/src/main/kotlin/dev/patrickgold/florisboard/app/devtools/DevtoolsOverlay.kt:70-143 and :177-193.

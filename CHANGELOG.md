@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.9.63 (2026-08-22)
+
+- Stop adaptive-touch refinement and persistence in password, incognito, and app-declared no-personalized-learning sessions. Normal text fields still learn, and focused privacy tests cover all four paths.
+
 ## v1.9.62 (2026-08-21)
 
 - Evaluate offline rule-based proofreading without adding a production engine. LanguageTool's licence, Java surface, and per-language data cost rule it out for the base APK. Harper is the cleaner future addon candidate, but it has no official Android library and supports English only.

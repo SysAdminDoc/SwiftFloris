@@ -91,6 +91,7 @@ import dev.patrickgold.florisboard.ime.keyboard.FlorisImeSizing
 import dev.patrickgold.florisboard.ime.keyboard.KeyData
 import dev.patrickgold.florisboard.ime.keyboard.KeyboardMode
 import dev.patrickgold.florisboard.ime.keyboard.SpaceBarMode
+import dev.patrickgold.florisboard.ime.nlp.SuggestionPrivacyPolicy
 import dev.patrickgold.florisboard.ime.nlp.TouchDecoderCandidate
 import dev.patrickgold.florisboard.ime.popup.ExceptionsForKeyCodes
 import dev.patrickgold.florisboard.ime.popup.PopupUiController
@@ -980,7 +981,11 @@ private class TextKeyboardLayoutController(
         val touchY = event.getY(pointer.index)
         val canCaptureTextTap = keyboard.mode == KeyboardMode.CHARACTERS &&
             keyboardManager.activeState.keyVariation != KeyVariation.PASSWORD
-        val adaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get() && canCaptureTextTap
+        val adaptiveTouchEnabled = SuggestionPrivacyPolicy.shouldRecordAdaptiveTouchSample(
+            isAdaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get(),
+            isIncognitoMode = keyboardManager.activeState.isIncognitoMode,
+            keyVariation = keyboardManager.activeState.keyVariation,
+        ) && keyboard.mode == KeyboardMode.CHARACTERS
         val calibration = prefs.correction.touchCalibrationProfile.get()
         val touchDecoderEnabled = prefs.correction.autoCorrect.get() &&
             canCaptureTextTap &&
@@ -1151,7 +1156,11 @@ private class TextKeyboardLayoutController(
         if (pointer.hasTriggeredGestureMove || pointer.hasTriggeredLongPress) return
         if (pointer.adaptiveTouchKey !== activeKey) return
         if (committedData.code != activeKey.computedData.code) return
-        if (prefs.correction.adaptiveTouchModel.get()) {
+        if (SuggestionPrivacyPolicy.shouldRecordAdaptiveTouchSample(
+                isAdaptiveTouchEnabled = prefs.correction.adaptiveTouchModel.get(),
+                isIncognitoMode = keyboardManager.activeState.isIncognitoMode,
+                keyVariation = keyboardManager.activeState.keyVariation,
+            )) {
             AdaptiveTouchModel.recordTap(activeKey, pointer.adaptiveTouchX, pointer.adaptiveTouchY)
         }
         recordTouchDecoderEvidence(activeKey, committedData, pointer.adaptiveTouchX, pointer.adaptiveTouchY)

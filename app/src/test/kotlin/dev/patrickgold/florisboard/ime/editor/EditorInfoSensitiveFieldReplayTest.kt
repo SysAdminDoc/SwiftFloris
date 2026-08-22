@@ -110,6 +110,44 @@ class EditorInfoSensitiveFieldReplayTest : FunSpec({
         ) shouldBe false
     }
 
+    test("normal fields permit adaptive touch samples") {
+        SuggestionPrivacyPolicy.shouldRecordAdaptiveTouchSample(
+            isAdaptiveTouchEnabled = true,
+            isIncognitoMode = false,
+            keyVariation = KeyVariation.NORMAL,
+        ) shouldBe true
+    }
+
+    test("PASSWORD variation suppresses adaptive touch samples") {
+        SuggestionPrivacyPolicy.shouldRecordAdaptiveTouchSample(
+            isAdaptiveTouchEnabled = true,
+            isIncognitoMode = false,
+            keyVariation = KeyVariation.PASSWORD,
+        ) shouldBe false
+    }
+
+    test("incognito mode suppresses adaptive touch samples") {
+        SuggestionPrivacyPolicy.shouldRecordAdaptiveTouchSample(
+            isAdaptiveTouchEnabled = true,
+            isIncognitoMode = true,
+            keyVariation = KeyVariation.NORMAL,
+        ) shouldBe false
+    }
+
+    test("app-declared NO_PERSONALIZED_LEARNING suppresses adaptive touch samples") {
+        val appDeclaredPrivate = SuggestionPrivacyPolicy.resolveIncognitoMode(
+            appDeclaredNoPersonalizedLearning = true,
+            preference = IncognitoMode.FORCE_OFF,
+            isDynamicIncognitoForced = false,
+        )
+
+        SuggestionPrivacyPolicy.shouldRecordAdaptiveTouchSample(
+            isAdaptiveTouchEnabled = true,
+            isIncognitoMode = appDeclaredPrivate,
+            keyVariation = KeyVariation.NORMAL,
+        ) shouldBe false
+    }
+
     test("EMAIL_ADDRESS variation permits suggestions and learning") {
         val snapshot = SuggestionPrivacyPolicy.snapshotSuggestionRequest(
             emojiSuggestionEnabled = true,
