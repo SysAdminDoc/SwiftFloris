@@ -4,7 +4,7 @@
     "min": 26,
     "target": 36,
     "compile": 37,
-    "buildTools": "36.0.0"
+    "buildTools": "37.0.0"
   },
   "baseApp": {
     "usesPermissions": [
@@ -43,7 +43,7 @@
     "clipboardHistory": "encrypted_or_unknown",
     "clipboardMedia": "plaintext_app_private_files",
     "personalDictionary": "sqlcipher_room",
-    "sqlcipherVersion": "4.17.0"
+    "sqlcipherVersion": "4.18.0"
   },
   "mcp": {
     "appRole": "aidl_client",

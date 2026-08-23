@@ -13,13 +13,6 @@ Actionable work only. Historical and completed roadmap material is archived in C
   Acceptance: The release APK contains no raw-content overlay controls or navigable routes; debug overlays suppress or redact content in password, incognito, and no-learning sessions; variant and policy tests fail if either guarantee regresses.
   Complexity: M
 
-- [ ] P0: Restore the canonical trust-capability registry
-  Why: Release evidence cannot pass from a clean checkout because the canonical registry disagrees with the live build and storage pins.
-  Evidence: app/src/main/config/trust-capabilities.json:7 and :46; gradle/tools.versions.toml:2; gradle/libs.versions.toml; scripts/check-trust-capabilities.py:340 and :449-451; scripts/release-evidence.ps1:281.
-  Touches: trust-capabilities.json, check-trust-capabilities.py fixtures, release-evidence.ps1, public trust facts derived from the registry.
-  Acceptance: The registry records Build Tools 37.0.0 and SQLCipher 4.18.0 from their live owners; `scripts/check-trust-capabilities.py` and `scripts/test-check-trust-capabilities.py` pass; fixtures changing either live pin without the registry fail with the exact mismatched field; release evidence reaches its next gate from a clean checkout.
-  Complexity: S
-
 - [ ] P0: Fail closed across every Android backup transport
   Why: Android 16 QPR2 treats a missing backup-mode section as fully enabled for eligible app data, while SwiftFloris defines cloud and device transfer only and enables cloud backup without an encryption-capability requirement.
   Evidence: https://developer.android.com/identity/data/autobackup; https://developer.android.com/privacy-and-security/risks/backup-best-practices; app/src/main/AndroidManifest.xml:111-113; app/src/main/res/xml/data_extraction_rules.xml; app/src/main/res/xml/backup_rules.xml; app/src/main/res/xml-v31/backup_rules.xml.

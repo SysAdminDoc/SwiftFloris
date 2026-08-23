@@ -3,6 +3,7 @@
 ## v1.9.63 (2026-08-22)
 
 - Stop adaptive-touch refinement and persistence in password, incognito, and app-declared no-personalized-learning sessions. Normal text fields still learn, and focused privacy tests cover all four paths.
+- Restore the canonical release trust registry to Build Tools 37.0.0 and SQLCipher 4.18.0. Exact drift fixtures now fail when either live owner changes without a matching registry update.
 
 ## v1.9.62 (2026-08-21)
 

@@ -146,13 +146,28 @@ def main() -> int:
                 "mcp.aidlMethods",
             ),
             (
-                "dependency catalog drift",
+                "Build Tools catalog drift",
+                lambda root: replace(
+                    root / "gradle/tools.versions.toml",
+                    'buildTools = "37.0.0"',
+                    'buildTools = "37.0.1"',
+                ),
+                (
+                    "sdk.buildTools is '37.0.0'; "
+                    "live value is '37.0.1'"
+                ),
+            ),
+            (
+                "SQLCipher catalog drift",
                 lambda root: replace(
                     root / "gradle/libs.versions.toml",
-                    'sqlcipher-android = "4.17.0"',
                     'sqlcipher-android = "4.18.0"',
+                    'sqlcipher-android = "4.18.1"',
                 ),
-                "storage.sqlcipherVersion",
+                (
+                    "storage.sqlcipherVersion is '4.18.0'; "
+                    "live value is '4.18.1'"
+                ),
             ),
             (
                 "runtime capability drift",

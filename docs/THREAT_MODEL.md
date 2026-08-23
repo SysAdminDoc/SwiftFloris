@@ -189,7 +189,7 @@ Out of scope:
 
 ### 3.5 SQLCipher personal dictionary
 - The app-private personal Room dictionary opens through SQLCipher
-  (`net.zetetic:sqlcipher-android` 4.17.0). The 64-byte SQLCipher passphrase is
+  (`net.zetetic:sqlcipher-android` 4.18.0). The 64-byte SQLCipher passphrase is
   generated locally, wrapped by Tink `Aead`, and protected by an
   AndroidKeystore-held AES-256-GCM key.
 - Existing AndroidX encrypted-preference passphrase payloads migrate once into
